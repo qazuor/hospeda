@@ -1,6 +1,6 @@
-import { PermissionEnum } from '@repo/types';
 import { z } from 'zod';
 import { UserIdSchema } from '../../common/id.schema.js';
+import { PermissionEnumSchema } from '../../enums/permission.schema.js';
 
 /**
  * Zod schema for the assignment of a permission to a user.
@@ -8,9 +8,7 @@ import { UserIdSchema } from '../../common/id.schema.js';
  */
 export const UserPermissionAssignmentSchema = z.object({
     userId: UserIdSchema,
-    permission: z.nativeEnum(PermissionEnum, {
-        message: 'zodError.userPermission.permission.required'
-    })
+    permission: PermissionEnumSchema
 });
 
 export type UserPermissionAssignment = z.infer<typeof UserPermissionAssignmentSchema>;

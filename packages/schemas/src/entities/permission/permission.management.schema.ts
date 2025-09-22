@@ -1,8 +1,8 @@
 import { z } from 'zod';
+import { AssignmentResultSchema, RemovalResultSchema } from '../../api/result.schema.js';
 import { UserIdSchema } from '../../common/id.schema.js';
-import { AssignmentResultSchema, RemovalResultSchema } from '../../common/result.schema.js';
-import { PermissionEnumSchema } from '../../enums/permission.enum.schema.js';
-import { RoleEnumSchema } from '../../enums/role.enum.schema.js';
+import { PermissionEnumSchema } from '../../enums/permission.schema.js';
+import { RoleEnumSchema } from '../../enums/role.schema.js';
 
 // ============================================================================
 // RESULT SCHEMAS - Permission-specific list responses

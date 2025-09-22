@@ -109,9 +109,34 @@ export const UserProfileFromProviderSchema = z.object({
         .optional()
 });
 
+/**
+ * User Auth Identity Schema - Main entity schema
+ *
+ * Represents an external OAuth2 identity linked to the user (e.g., Google, GitHub).
+ * Captures the normalized provider/user mapping and selected profile fields.
+ */
+export const UserAuthIdentitySchema = z.object({
+    id: z.string().uuid(),
+    userId: z.string().uuid(),
+    provider: z.string().min(1),
+    providerUserId: z.string().min(1),
+    email: z.string().email().optional(),
+    username: z.string().optional(),
+    avatarUrl: z.string().url().optional(),
+    raw: z.unknown().optional(),
+    lastLoginAt: z.coerce.date().optional(),
+    createdAt: z.coerce.date(),
+    updatedAt: z.coerce.date(),
+    createdById: z.string().uuid().optional(),
+    updatedById: z.string().uuid().optional(),
+    deletedAt: z.coerce.date().optional(),
+    deletedById: z.string().uuid().optional()
+});
+
 // ============================================================================
 // TYPE EXPORTS
 // ============================================================================
 
 export type UserIdentityInput = z.infer<typeof UserIdentityInputSchema>;
 export type UserProfileFromProvider = z.infer<typeof UserProfileFromProviderSchema>;
+export type UserAuthIdentity = z.infer<typeof UserAuthIdentitySchema>;

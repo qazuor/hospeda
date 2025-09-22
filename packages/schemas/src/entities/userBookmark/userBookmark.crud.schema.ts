@@ -27,6 +27,7 @@ export const UserBookmarkCreateInputSchema = UserBookmarkSchema.omit({
     lifecycleState: true,
     adminInfo: true
 }).strict();
+export type UserBookmarkCreateInput = z.infer<typeof UserBookmarkCreateInputSchema>;
 
 /**
  * Schema for updating an existing user bookmark
@@ -40,6 +41,7 @@ export const UserBookmarkUpdateInputSchema = UserBookmarkCreateInputSchema.parti
         entityType: UserBookmarkCreateInputSchema.shape.entityType
     })
     .strict();
+export type UserBookmarkUpdateInput = z.infer<typeof UserBookmarkUpdateInputSchema>;
 
 // ============================================================================
 // OUTPUT SCHEMAS
@@ -54,6 +56,7 @@ export const UserBookmarkCreateOutputSchema = z
         userBookmark: UserBookmarkSchema
     })
     .strict();
+export type UserBookmarkCreateOutput = z.infer<typeof UserBookmarkCreateOutputSchema>;
 
 /**
  * Schema for user bookmark update response
@@ -64,6 +67,7 @@ export const UserBookmarkUpdateOutputSchema = z
         userBookmark: UserBookmarkSchema
     })
     .strict();
+export type UserBookmarkUpdateOutput = z.infer<typeof UserBookmarkUpdateOutputSchema>;
 
 /**
  * Schema for user bookmark get response
@@ -74,13 +78,4 @@ export const UserBookmarkGetOutputSchema = z
         userBookmark: UserBookmarkSchema
     })
     .strict();
-
-// ============================================================================
-// TYPE EXPORTS
-// ============================================================================
-
-export type UserBookmarkCreateInput = z.infer<typeof UserBookmarkCreateInputSchema>;
-export type UserBookmarkUpdateInput = z.infer<typeof UserBookmarkUpdateInputSchema>;
-export type UserBookmarkCreateOutput = z.infer<typeof UserBookmarkCreateOutputSchema>;
-export type UserBookmarkUpdateOutput = z.infer<typeof UserBookmarkUpdateOutputSchema>;
 export type UserBookmarkGetOutput = z.infer<typeof UserBookmarkGetOutputSchema>;
