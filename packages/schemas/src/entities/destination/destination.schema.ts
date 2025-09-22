@@ -12,7 +12,7 @@ import { BaseVisibilityFields } from '../../common/visibility.schema.js';
 import { AttractionSchema } from '../attraction/attraction.schema.js';
 import { DestinationReviewSchema } from '../destinationReview/destinationReview.schema.js';
 import { TagSchema } from '../tag/tag.schema.js';
-import { DestinationRatingSchema } from './destination.rating.schema.js';
+import { DestinationRatingSchema } from './subtypes/destination.rating.schema.js';
 
 /**
  * Destination Schema - Main Entity Schema

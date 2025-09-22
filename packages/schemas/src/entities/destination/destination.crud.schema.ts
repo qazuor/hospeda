@@ -30,12 +30,14 @@ export const DestinationCreateInputSchema = DestinationSchema.omit({
     deletedAt: true,
     deletedById: true
 });
+export type DestinationCreateInput = z.infer<typeof DestinationCreateInputSchema>;
 
 /**
  * Schema for destination creation response
  * Returns the complete destination object
  */
 export const DestinationCreateOutputSchema = DestinationSchema;
+export type DestinationCreateOutput = z.infer<typeof DestinationCreateOutputSchema>;
 
 // ============================================================================
 // UPDATE SCHEMAS
@@ -56,18 +58,21 @@ export const DestinationUpdateInputSchema = DestinationSchema.omit({
 })
     .partial()
     .strict();
+export type DestinationUpdateInput = z.infer<typeof DestinationUpdateInputSchema>;
 
 /**
  * Schema for partial destination updates (PATCH)
  * Same as update but explicitly named for clarity
  */
 export const DestinationPatchInputSchema = DestinationUpdateInputSchema;
+export type DestinationPatchInput = z.infer<typeof DestinationPatchInputSchema>;
 
 /**
  * Schema for destination update response
  * Returns the complete updated destination object
  */
 export const DestinationUpdateOutputSchema = DestinationSchema;
+export type DestinationUpdateOutput = z.infer<typeof DestinationUpdateOutputSchema>;
 
 // ============================================================================
 // DELETE SCHEMAS
@@ -86,6 +91,7 @@ export const DestinationDeleteInputSchema = z.object({
         .optional()
         .default(false)
 });
+export type DestinationDeleteInput = z.infer<typeof DestinationDeleteInputSchema>;
 
 /**
  * Schema for destination deletion response
@@ -103,6 +109,7 @@ export const DestinationDeleteOutputSchema = z.object({
         })
         .optional()
 });
+export type DestinationDeleteOutput = z.infer<typeof DestinationDeleteOutputSchema>;
 
 // ============================================================================
 // RESTORE SCHEMAS
@@ -115,12 +122,14 @@ export const DestinationDeleteOutputSchema = z.object({
 export const DestinationRestoreInputSchema = z.object({
     id: DestinationIdSchema
 });
+export type DestinationRestoreInput = z.infer<typeof DestinationRestoreInputSchema>;
 
 /**
  * Schema for destination restoration response
  * Returns the complete restored destination object
  */
 export const DestinationRestoreOutputSchema = DestinationSchema;
+export type DestinationRestoreOutput = z.infer<typeof DestinationRestoreOutputSchema>;
 
 // ============================================================================
 // FEATURE TOGGLE SCHEMAS
@@ -136,12 +145,14 @@ export const DestinationFeatureToggleInputSchema = z.object({
         message: 'zodError.destination.featureToggle.isFeatured.required'
     })
 });
+export type DestinationFeatureToggleInput = z.infer<typeof DestinationFeatureToggleInputSchema>;
 
 /**
  * Schema for destination feature toggle response
  * Returns the updated destination object
  */
 export const DestinationFeatureToggleOutputSchema = DestinationSchema;
+export type DestinationFeatureToggleOutput = z.infer<typeof DestinationFeatureToggleOutputSchema>;
 
 // ============================================================================
 // BULK OPERATIONS SCHEMAS
@@ -168,6 +179,7 @@ export const DestinationBulkOperationInputSchema = z.object({
         .optional()
         .default(false)
 });
+export type DestinationBulkOperationInput = z.infer<typeof DestinationBulkOperationInputSchema>;
 
 /**
  * Schema for bulk destination operations response
@@ -192,21 +204,4 @@ export const DestinationBulkOperationOutputSchema = z.object({
         failed: z.number().int().min(0)
     })
 });
-
-// ============================================================================
-// TYPE EXPORTS
-// ============================================================================
-
-export type DestinationCreateInput = z.infer<typeof DestinationCreateInputSchema>;
-export type DestinationCreateOutput = z.infer<typeof DestinationCreateOutputSchema>;
-export type DestinationUpdateInput = z.infer<typeof DestinationUpdateInputSchema>;
-export type DestinationPatchInput = z.infer<typeof DestinationPatchInputSchema>;
-export type DestinationUpdateOutput = z.infer<typeof DestinationUpdateOutputSchema>;
-export type DestinationDeleteInput = z.infer<typeof DestinationDeleteInputSchema>;
-export type DestinationDeleteOutput = z.infer<typeof DestinationDeleteOutputSchema>;
-export type DestinationRestoreInput = z.infer<typeof DestinationRestoreInputSchema>;
-export type DestinationRestoreOutput = z.infer<typeof DestinationRestoreOutputSchema>;
-export type DestinationFeatureToggleInput = z.infer<typeof DestinationFeatureToggleInputSchema>;
-export type DestinationFeatureToggleOutput = z.infer<typeof DestinationFeatureToggleOutputSchema>;
-export type DestinationBulkOperationInput = z.infer<typeof DestinationBulkOperationInputSchema>;
 export type DestinationBulkOperationOutput = z.infer<typeof DestinationBulkOperationOutputSchema>;
