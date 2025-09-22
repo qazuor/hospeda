@@ -9,3 +9,5 @@ export * from './amenity.query.schema.js'; // List, Search, Summary, Stats, Filt
 
 // Relations
 export * from './amenity.relations.schema.js'; // Schemas with related entities
+
+// Types are exported inline from their schema files
