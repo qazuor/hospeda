@@ -315,7 +315,7 @@ export const DestinationWithNearbySchema = DestinationSchema.extend({
                 summary: true,
                 location: true,
                 media: true,
-                rating: true,
+                averageRating: true,
                 accommodationsCount: true,
                 distance: true // Distance in kilometers
             }).extend({
@@ -333,7 +333,7 @@ export const DestinationWithNearbySchema = DestinationSchema.extend({
                 summary: true,
                 location: true,
                 media: true,
-                rating: true,
+                averageRating: true,
                 accommodationsCount: true
             })
         )
