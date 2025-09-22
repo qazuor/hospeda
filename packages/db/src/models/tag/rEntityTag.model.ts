@@ -1,4 +1,4 @@
-import type { EntityTagType } from '@repo/types';
+import type { EntityTag } from '@repo/schemas';
 import { type and, count, desc, eq } from 'drizzle-orm';
 import { BaseModel } from '../../base/base.model';
 import { getDb } from '../../client';
@@ -6,7 +6,7 @@ import { rEntityTag } from '../../schemas/tag/r_entity_tag.dbschema';
 import { DbError } from '../../utils/error';
 import { logError, logQuery } from '../../utils/logger';
 
-export class REntityTagModel extends BaseModel<EntityTagType> {
+export class REntityTagModel extends BaseModel<EntityTag> {
     protected table = rEntityTag;
     protected entityName = 'rEntityTag';
 
@@ -19,7 +19,7 @@ export class REntityTagModel extends BaseModel<EntityTagType> {
     async findWithRelations(
         where: Record<string, unknown>,
         relations: Record<string, boolean>
-    ): Promise<EntityTagType | null> {
+    ): Promise<EntityTag | null> {
         const db = getDb();
         try {
             const withObj: Record<string, true> = {};
@@ -32,7 +32,7 @@ export class REntityTagModel extends BaseModel<EntityTagType> {
                     with: withObj
                 });
                 logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
-                return result as EntityTagType | null;
+                return result as EntityTag | null;
             }
             const result = await this.findOne(where);
             logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
