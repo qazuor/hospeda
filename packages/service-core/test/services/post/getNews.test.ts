@@ -1,6 +1,6 @@
 import { PostModel } from '@repo/db';
-import type { PostId } from '@repo/types';
-import { RoleEnum, VisibilityEnum } from '@repo/types';
+import type { PostIdType } from '@repo/schemas';
+import { RoleEnum, VisibilityEnum } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it } from 'vitest';
 import { PostService } from '../../../src/services/post/post.service';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
@@ -30,7 +30,7 @@ describe('PostService.getNews', () => {
     });
 
     it('should return news posts (success)', async () => {
-        const posts = [createMockPost(), createMockPost({ id: getMockId('post', '2') as PostId })];
+        const posts = [createMockPost(), createMockPost({ id: getMockId('post', '2') as PostIdType })];
         (modelMock.findAll as Mock).mockResolvedValue({ items: posts, total: 2 });
         const params = {};
         const result = await service.getNews(actor, params);

@@ -1,5 +1,5 @@
 import type { PostSponsorshipModel } from '@repo/db';
-import { PermissionEnum, ServiceErrorCode } from '@repo/types';
+import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostSponsorshipService } from '../../../src/services/postSponsorship/postSponsorship.service';
 import { createActor } from '../../factories/actorFactory';
@@ -12,9 +12,12 @@ describe('PostSponsorshipService.count', () => {
     let modelMock: ReturnType<typeof createModelMock>;
     let loggerMock: ReturnType<typeof createLoggerMock>;
     let actor: ReturnType<typeof createActor>;
+
     const validInput = {
-        sponsorId: getMockPostSponsorId('sponsor-1'),
-        postId: getMockId('post', 'post-1') as any // PostId branded type
+        sponsorId: getMockPostSponsorId(),
+        postId: getMockId('post'),
+        page: 1,
+        pageSize: 10
     };
 
     beforeEach(() => {
@@ -46,7 +49,7 @@ describe('PostSponsorshipService.count', () => {
     });
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
-        const invalid = { sponsorId: '' as any, postId: '' as any };
+        const invalid = { sponsorId: '' as any, postId: '' as any, page: 1, pageSize: 10 };
         const result = await service.count(actor, invalid);
         expect(result.error).toBeDefined();
         expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);

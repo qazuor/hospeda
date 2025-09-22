@@ -1,5 +1,5 @@
 import type { PostSponsorModel } from '@repo/db';
-import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/types';
+import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostSponsorService } from '../../../src/services/postSponsor/postSponsor.service';
 import { createActor } from '../../factories/actorFactory';
@@ -19,7 +19,7 @@ describe('PostSponsorService.search', () => {
     let modelMock: ReturnType<typeof createModelMock>;
     let loggerMock: ReturnType<typeof createLoggerMock>;
     let actor: ReturnType<typeof createActor>;
-    const validInput = { filters: { name: 'Sponsor' }, pagination: { page: 1, pageSize: 10 } };
+    const validInput = { name: 'Sponsor', page: 1, pageSize: 10 };
 
     beforeEach(() => {
         modelMock = createModelMock(['findAll']);
@@ -68,7 +68,7 @@ describe('PostSponsorService.search', () => {
     });
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
-        const invalid = { filters: { name: '' }, pagination: { page: 1, pageSize: 10 } };
+        const invalid = { name: '', page: 1, pageSize: 10 };
         const result = await service.search(actor, invalid);
         expect(result.error).toBeDefined();
         expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
@@ -143,7 +143,8 @@ describe('PostSponsorService.search', () => {
         } as PaginatedMock<ReturnType<typeof createMockPostSponsor>>);
         const result = await service.search(actor, {
             ...validInput,
-            pagination: { page: 2, pageSize: 1 }
+            page: 2,
+            pageSize: 1
         });
         expect(result.data).toBeDefined();
         expect(result.data?.items).toHaveLength(1);
@@ -166,8 +167,8 @@ describe('PostSponsorService.search', () => {
             pageSize: 10
         } as PaginatedMock<ReturnType<typeof createMockPostSponsor>>);
         const result = await service.search(actor, {
-            filters: {},
-            pagination: { page: 1, pageSize: 10 }
+            page: 1,
+            pageSize: 10
         });
         expect(result.data).toBeDefined();
         expect(result.data?.items).toHaveLength(1);

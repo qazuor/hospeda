@@ -1,5 +1,5 @@
 import { PostModel } from '@repo/db';
-import type { PostId } from '@repo/types';
+import type { PostIdType } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it } from 'vitest';
 import { PostService } from '../../../src/services/post/post.service';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
@@ -18,7 +18,7 @@ describe('PostService.unlike', () => {
     let modelMock: PostModel;
     let loggerMock: ServiceLogger;
     const actor = createActor({ id: getMockId('user') });
-    const postId = getMockId('post') as PostId;
+    const postId = getMockId('post') as PostIdType;
 
     beforeEach(() => {
         modelMock = createTypedModelMock(PostModel, ['findOne', 'update']);

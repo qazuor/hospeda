@@ -1,6 +1,6 @@
 import { PostModel } from '@repo/db';
-import type { PostId } from '@repo/types';
-import { type DestinationId, RoleEnum, VisibilityEnum } from '@repo/types';
+import type { PostIdType } from '@repo/schemas';
+import { type DestinationIdType, RoleEnum, VisibilityEnum } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it } from 'vitest';
 import { PostService } from '../../../src/services/post/post.service';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
@@ -23,7 +23,7 @@ describe('PostService.getByRelatedDestination', () => {
         role: RoleEnum.USER,
         permissions: []
     };
-    const destinationId = getMockId('destination') as DestinationId;
+    const destinationId = getMockId('destination') as DestinationIdType;
 
     beforeEach(() => {
         modelMock = createTypedModelMock(PostModel, ['findAll']);
@@ -35,7 +35,7 @@ describe('PostService.getByRelatedDestination', () => {
         const posts = [
             createMockPost({ relatedDestinationId: destinationId }),
             createMockPost({
-                id: getMockId('post', '2') as PostId,
+                id: getMockId('post', '2') as PostIdType,
                 relatedDestinationId: destinationId
             })
         ];
@@ -98,7 +98,7 @@ describe('PostService.getByRelatedDestination', () => {
     it('should return forbidden if actor is missing', async () => {
         // purposely invalid
         const result = await service.getByRelatedDestination(null as any, {
-            destinationId: destinationId as DestinationId
+            destinationId: destinationId as DestinationIdType
         });
         expect(result.error?.code).toBe('UNAUTHORIZED');
     });
