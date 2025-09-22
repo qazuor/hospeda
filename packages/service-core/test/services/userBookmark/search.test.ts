@@ -1,5 +1,5 @@
 import { UserBookmarkModel } from '@repo/db';
-import { PermissionEnum } from '@repo/types';
+import { PermissionEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { UserBookmarkService } from '../../../src/services/userBookmark/userBookmark.service';
 import { createActor } from '../../factories/actorFactory';
@@ -27,7 +27,13 @@ describe('UserBookmarkService.search', () => {
 
     it('should search bookmarks (success)', async () => {
         asMock(modelMock.findAll).mockResolvedValue({ items: [bookmark], total: 1 });
-        const result = await service.search(actor, { userId: bookmark.userId });
+        const result = await service.search(actor, {
+            page: 1,
+            pageSize: 10,
+            sortBy: 'createdAt',
+            sortOrder: 'desc',
+            filters: { userId: bookmark.userId }
+        });
         expectSuccess(result);
         expect(result.data?.items).toHaveLength(1);
         expect(result.data?.items[0]).toEqual(bookmark);
@@ -35,7 +41,13 @@ describe('UserBookmarkService.search', () => {
 
     it('should return INTERNAL_ERROR if model throws', async () => {
         asMock(modelMock.findAll).mockRejectedValue(new Error('DB error'));
-        const result = await service.search(actor, { userId: bookmark.userId });
+        const result = await service.search(actor, {
+            page: 1,
+            pageSize: 10,
+            sortBy: 'createdAt',
+            sortOrder: 'desc',
+            filters: { userId: bookmark.userId }
+        });
         expectInternalError(result);
     });
 });

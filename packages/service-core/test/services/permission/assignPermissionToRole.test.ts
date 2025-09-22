@@ -1,5 +1,5 @@
 import type { RRolePermissionModel, RUserPermissionModel } from '@repo/db';
-import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/types';
+import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PermissionService } from '../../../src/services/permission/permission.service';
 import { createActor } from '../../factories/actorFactory';

@@ -1,5 +1,5 @@
 import { UserBookmarkModel } from '@repo/db';
-import { type EntityTypeEnum, PermissionEnum } from '@repo/types';
+import { PermissionEnum, type EntityTypeEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { UserBookmarkService } from '../../../src/services/userBookmark/userBookmark.service';
 import { createActor } from '../../factories/actorFactory';

@@ -1,11 +1,11 @@
-import type { AccommodationId, UserBookmarkId, UserBookmarkType, UserId } from '@repo/types';
+import type { UserBookmark } from '@repo/schemas';
 import {
     EntityTypeEnum,
     LifecycleStatusEnum,
     PermissionEnum,
     RoleEnum,
     ServiceErrorCode
-} from '@repo/types';
+} from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
     canAccessBookmark,
@@ -13,12 +13,12 @@ import {
 } from '../../../src/services/userBookmark/userBookmark.permissions';
 import { ServiceError } from '../../../src/types';
 
-const userId = 'user-uuid' as UserId;
-const bookmarkId = 'bookmark-uuid' as UserBookmarkId;
-const entityId = 'entity-uuid' as AccommodationId;
-const otherUserId = 'other-uuid' as UserId;
+const userId = 'user-uuid' as string;
+const bookmarkId = 'bookmark-uuid' as string;
+const entityId = 'entity-uuid' as string;
+const otherUserId = 'other-uuid' as string;
 
-type MockActor = { id: UserId; role: RoleEnum; permissions: PermissionEnum[] };
+type MockActor = { id: string; role: RoleEnum; permissions: PermissionEnum[] };
 
 const owner: MockActor = {
     id: userId,
@@ -31,7 +31,7 @@ const other: MockActor = {
     permissions: [PermissionEnum.USER_VIEW_PROFILE]
 };
 
-const bookmark: UserBookmarkType = {
+const bookmark: UserBookmark = {
     id: bookmarkId,
     userId,
     entityId,
@@ -43,7 +43,7 @@ const bookmark: UserBookmarkType = {
     createdById: userId,
     updatedById: userId,
     lifecycleState: LifecycleStatusEnum.ACTIVE
-} as UserBookmarkType;
+} as UserBookmark;
 
 describe('userBookmark.permissions', () => {
     it('canAccessBookmark allows owner', () => {

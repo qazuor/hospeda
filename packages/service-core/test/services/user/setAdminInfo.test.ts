@@ -1,6 +1,6 @@
 import { UserModel } from '@repo/db';
-import type { AdminInfoType, UserId } from '@repo/types';
-import { PermissionEnum, RoleEnum, type UserType } from '@repo/types';
+import type { AdminInfoType } from '@repo/schemas';
+import { PermissionEnum, RoleEnum, type User } from '@repo/schemas';
 import { beforeEach, describe, it } from 'vitest';
 import { UserService } from '../../../src/services/user/user.service';
 import { createActor } from '../../factories/actorFactory';
@@ -25,7 +25,7 @@ function asMock(fn: unknown) {
 describe('UserService - setAdminInfo', () => {
     let service: UserService;
     let superAdmin: Actor;
-    let entity: UserType;
+    let entity: User;
 
     beforeEach(() => {
         modelMock = createTypedModelMock(UserModel, ['findById', 'update']);
@@ -45,9 +45,9 @@ describe('UserService - setAdminInfo', () => {
 
     it('should return FORBIDDEN if user has no permission', async () => {
         // Arrange
-        const forbiddenUser = createUser({ id: getMockId('user', 'user-entity-id') as UserId });
+        const forbiddenUser = createUser({ id: getMockId('user', 'user-entity-id') as string });
         const forbiddenActor = createActor({
-            id: getMockId('user', 'actor-id-different') as UserId,
+            id: getMockId('user', 'actor-id-different') as string,
             role: RoleEnum.USER,
             permissions: []
         });

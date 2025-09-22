@@ -5,7 +5,7 @@
  * Covers: success (admin, super admin), forbidden, validation error, internal error, lifecycle hook errors.
  */
 import { UserModel } from '@repo/db';
-import { RoleEnum } from '@repo/types';
+import { RoleEnum } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UserService } from '../../../src/services/user/user.service';
 import { createUser } from '../../factories/userFactory';
@@ -37,39 +37,59 @@ describe('UserService.count', () => {
 
     it('should return the count if actor is admin', async () => {
         asMock(userModelMock.count).mockResolvedValue(42);
-        const filters = { role: RoleEnum.USER };
-        const result = await service.count(admin, { filters });
+        const searchParams = {
+            role: RoleEnum.USER,
+            page: 1,
+            pageSize: 10,
+            sortOrder: 'asc' as const
+        };
+        const result = await service.count(admin, searchParams);
         expectSuccess(result);
         expect(result.data).toEqual({ count: 42 });
-        expect(asMock(userModelMock.count)).toHaveBeenCalledWith(filters);
+        expect(asMock(userModelMock.count)).toHaveBeenCalledWith(searchParams);
     });
 
     it('should return the count if actor is super admin', async () => {
         asMock(userModelMock.count).mockResolvedValue(7);
-        const filters = { role: RoleEnum.USER };
-        const result = await service.count(superAdmin, { filters });
+        const searchParams = {
+            role: RoleEnum.USER,
+            page: 1,
+            pageSize: 10,
+            sortOrder: 'asc' as const
+        };
+        const result = await service.count(superAdmin, searchParams);
         expectSuccess(result);
         expect(result.data).toEqual({ count: 7 });
-        expect(asMock(userModelMock.count)).toHaveBeenCalledWith(filters);
+        expect(asMock(userModelMock.count)).toHaveBeenCalledWith(searchParams);
     });
 
     it('should return FORBIDDEN if actor is not admin or super admin', async () => {
         asMock(userModelMock.count).mockResolvedValue(0);
-        const filters = { role: RoleEnum.USER };
-        const result = await service.count(user, { filters });
+        const searchParams = {
+            role: RoleEnum.USER,
+            page: 1,
+            pageSize: 10,
+            sortOrder: 'asc' as const
+        };
+        const result = await service.count(user, searchParams);
         expectForbiddenError(result);
     });
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
-        // @ts-expect-error purposely invalid
-        const result = await service.count(admin, { filters: { role: 123 } });
+        // @ts-expect-error purposely invalid - invalid role value
+        const result = await service.count(admin, { role: 123, page: 1, pageSize: 10 });
         expectValidationError(result);
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {
         asMock(userModelMock.count).mockRejectedValue(new Error('DB error'));
-        const filters = { role: RoleEnum.USER };
-        const result = await service.count(admin, { filters });
+        const searchParams = {
+            role: RoleEnum.USER,
+            page: 1,
+            pageSize: 10,
+            sortOrder: 'asc' as const
+        };
+        const result = await service.count(admin, searchParams);
         expectInternalError(result);
     });
 
@@ -79,8 +99,13 @@ describe('UserService.count', () => {
             service as unknown as { _beforeCount: () => void },
             '_beforeCount'
         ).mockRejectedValue(new Error('beforeCount error'));
-        const filters = { role: RoleEnum.USER };
-        const result = await service.count(admin, { filters });
+        const searchParams = {
+            role: RoleEnum.USER,
+            page: 1,
+            pageSize: 10,
+            sortOrder: 'asc' as const
+        };
+        const result = await service.count(admin, searchParams);
         expectInternalError(result);
     });
 
@@ -90,8 +115,13 @@ describe('UserService.count', () => {
             service as unknown as { _afterCount: () => void },
             '_afterCount'
         ).mockRejectedValue(new Error('afterCount error'));
-        const filters = { role: RoleEnum.USER };
-        const result = await service.count(admin, { filters });
+        const searchParams = {
+            role: RoleEnum.USER,
+            page: 1,
+            pageSize: 10,
+            sortOrder: 'asc' as const
+        };
+        const result = await service.count(admin, searchParams);
         expectInternalError(result);
     });
 });

@@ -5,7 +5,7 @@
  * Covers: success (super admin, self), forbidden, not found, internal error, lifecycle hook errors, edge cases.
  */
 import { UserModel } from '@repo/db';
-import { RoleEnum, type UserId } from '@repo/types';
+import { RoleEnum } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UserService } from '../../../src/services/user/user.service';
 import { createUser } from '../../factories/userFactory';
@@ -19,7 +19,7 @@ import {
 import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
 import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
 
-const getActor = (role: RoleEnum = RoleEnum.SUPER_ADMIN, id?: UserId) => createUser({ role, id });
+const getActor = (role: RoleEnum = RoleEnum.SUPER_ADMIN, id?: string) => createUser({ role, id });
 const getUser = (overrides = {}) => createUser({ ...overrides });
 const asMock = <T>(fn: T) => fn as unknown as Mock;
 
@@ -30,11 +30,11 @@ describe('UserService.getByName', () => {
     let service: UserService;
     let userModelMock: UserModel;
     let loggerMock: ReturnType<typeof createLoggerMock>;
-    const userId = getMockId('user', 'user-1') as UserId;
+    const userId = getMockId('user', 'user-1') as string;
     const name = 'Test User';
     const superAdmin = getActor(RoleEnum.SUPER_ADMIN, userId);
     const selfUser = getActor(RoleEnum.USER, userId);
-    const otherUser = getActor(RoleEnum.USER, getMockId('user', 'other') as UserId);
+    const otherUser = getActor(RoleEnum.USER, getMockId('user', 'other') as string);
 
     beforeEach(() => {
         userModelMock = createTypedModelMock(UserModel, ['findOne']);

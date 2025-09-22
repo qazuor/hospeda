@@ -1,11 +1,11 @@
-import type { AccommodationId, UserBookmarkId, UserBookmarkType, UserId } from '@repo/types';
+import type { UserBookmark } from '@repo/schemas';
 import {
     EntityTypeEnum,
     LifecycleStatusEnum,
     PermissionEnum,
     RoleEnum,
     ServiceErrorCode
-} from '@repo/types';
+} from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
     normalizeCreateInput,
@@ -18,19 +18,19 @@ import {
 import { ServiceError } from '../../../src/types';
 
 const baseBookmark = {
-    userId: 'user-uuid' as UserId,
-    entityId: 'entity-uuid' as AccommodationId,
+    userId: 'user-uuid' as string,
+    entityId: 'entity-uuid' as string,
     entityType: EntityTypeEnum.ACCOMMODATION,
     name: '  My Bookmark  ',
     description: '  Some description  '
 };
 
-const userId = 'user-uuid' as UserId;
-const otherUserId = 'other-uuid' as UserId;
-const bookmarkId = 'bookmark-uuid' as UserBookmarkId;
-const entityId = 'entity-uuid' as AccommodationId;
+const userId = 'user-uuid' as string;
+const otherUserId = 'other-uuid' as string;
+const bookmarkId = 'bookmark-uuid' as string;
+const entityId = 'entity-uuid' as string;
 
-type MockActor = { id: UserId; role: RoleEnum; permissions: PermissionEnum[] };
+type MockActor = { id: string; role: RoleEnum; permissions: PermissionEnum[] };
 
 describe('userBookmark.normalizers', () => {
     it('normalizeCreateInput trims name and description', () => {
@@ -61,7 +61,7 @@ describe('userBookmark.normalizers', () => {
 });
 
 describe('userBookmark.permissions', () => {
-    const bookmark: UserBookmarkType = {
+    const bookmark: UserBookmark = {
         id: bookmarkId,
         userId,
         entityId,
