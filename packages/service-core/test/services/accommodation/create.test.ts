@@ -1,12 +1,9 @@
 import type { AccommodationModel } from '@repo/db';
-import { AccommodationCreateInputSchema } from '@repo/schemas';
-import { ServiceErrorCode } from '@repo/types';
+import { ServiceErrorCode } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { z } from 'zod';
-import { ZodError } from 'zod';
 import * as helpers from '../../../src/services/accommodation/accommodation.helpers';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
-import { createNewAccommodationInput } from '../../factories/accommodationFactory';
+import { createMockAccommodationCreateInput } from '../../factories/accommodationFactory';
 import { createActor, createAdminActor } from '../../factories/actorFactory';
 import { createMockBaseModel } from '../../factories/baseServiceFactory';
 import { createLoggerMock } from '../../utils/modelMockFactory';
@@ -16,19 +13,6 @@ const mockLogger = createLoggerMock();
 
 beforeEach(() => {
     vi.spyOn(helpers, 'generateSlug').mockResolvedValue('mock-slug');
-    vi.spyOn(AccommodationCreateInputSchema, 'parse').mockImplementation((input: unknown) => {
-        const typedInput = input as z.infer<typeof AccommodationCreateInputSchema>;
-        if (!typedInput || !typedInput.name) {
-            throw new ZodError([
-                {
-                    code: 'custom',
-                    message: 'Invalid input',
-                    path: ['name']
-                }
-            ]);
-        }
-        return typedInput;
-    });
 });
 
 describe('AccommodationService.create', () => {
@@ -48,18 +32,17 @@ describe('AccommodationService.create', () => {
     it('should create an accommodation when permissions and input are valid', async () => {
         // Arrange
         const actor = createAdminActor();
-        const input = {
-            ...createNewAccommodationInput(),
+        const input = createMockAccommodationCreateInput({
             reviewsCount: 0,
             averageRating: 0,
-            tags: [],
-            features: undefined,
-            schedule: undefined
-        };
+            tags: []
+        });
+
         const created = { ...input, id: 'mock-id', slug: 'mock-slug' };
         (model.create as Mock).mockResolvedValue(created);
         // Act
         const result = await service.create(actor, input);
+
         // Assert
         expect(result.data).toBeDefined();
         expect(result.data?.id).toBe('mock-id');
@@ -70,14 +53,11 @@ describe('AccommodationService.create', () => {
     it('should return FORBIDDEN if actor lacks permission', async () => {
         // Arrange
         const actor = createActor({ permissions: [] });
-        const input = {
-            ...createNewAccommodationInput(),
+        const input = createMockAccommodationCreateInput({
             reviewsCount: 0,
             averageRating: 0,
-            tags: [],
-            features: undefined,
-            schedule: undefined
-        };
+            tags: []
+        });
         // Act
         const result = await service.create(actor, input);
         // Assert
@@ -90,13 +70,12 @@ describe('AccommodationService.create', () => {
         // Arrange
         const actor = createAdminActor();
         const input = {
-            ...createNewAccommodationInput(),
-            name: undefined,
-            reviewsCount: 0,
-            averageRating: 0,
-            tags: [],
-            features: undefined,
-            schedule: undefined
+            ...createMockAccommodationCreateInput({
+                reviewsCount: 0,
+                averageRating: 0,
+                tags: []
+            }),
+            name: undefined
         };
         // Act
         const result = await service.create(
@@ -112,14 +91,11 @@ describe('AccommodationService.create', () => {
     it('should return INTERNAL_ERROR if model throws', async () => {
         // Arrange
         const actor = createAdminActor();
-        const input = {
-            ...createNewAccommodationInput(),
+        const input = createMockAccommodationCreateInput({
             reviewsCount: 0,
             averageRating: 0,
-            tags: [],
-            features: undefined,
-            schedule: undefined
-        };
+            tags: []
+        });
         (model.create as Mock).mockRejectedValue(new Error('DB error'));
         // Act
         const result = await service.create(actor, input);

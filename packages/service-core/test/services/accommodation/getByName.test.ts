@@ -1,5 +1,5 @@
 import type { AccommodationModel } from '@repo/db';
-import { PermissionEnum, ServiceErrorCode } from '@repo/types';
+import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as permissionHelpers from '../../../src/services/accommodation/accommodation.permissions';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';

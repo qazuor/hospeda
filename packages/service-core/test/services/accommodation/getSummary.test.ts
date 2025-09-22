@@ -1,18 +1,19 @@
 /**
  * @fileoverview
- * Test suite for the AccommodationService.getSummary method.
+ * Test suite for the Ac		let accommodation: Accommodation;et accommodation: Accommodation;ommodationService.getSummary method.
  * Ensures robust, type-safe, and homogeneous handling of summary retrieval, validation, permission, and error propagation logic.
  *
  * All test data, comments, and documentation are in English, following project guidelines.
  */
 import { AccommodationModel } from '@repo/db';
 import type { AccommodationSummaryParamsSchema } from '@repo/schemas';
-import { ServiceErrorCode } from '@repo/types';
+import { LifecycleStatusEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { z } from 'zod';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 import { ServiceError } from '../../../src/types';
-import { AccommodationFactoryBuilder } from '../../factories/accommodationFactory';
+import type { AccommodationFactoryBuilder } from '../../factories/accommodationFactory';
+import { createMockAccommodation } from '../../factories/accommodationFactory';
 import { ActorFactoryBuilder } from '../../factories/actorFactory';
 import * as permissionHelpers from '../../helpers/../../src/services/accommodation/accommodation.permissions';
 import {
@@ -50,8 +51,8 @@ describe('AccommodationService.getSummary', () => {
         modelMock = createTypedModelMock(AccommodationModel, ['findOne']);
         service = createServiceTestInstance(AccommodationService, modelMock);
         actor = new ActorFactoryBuilder().host().build();
-        accommodation = new AccommodationFactoryBuilder().public().build();
-        input = { idOrSlug: accommodation.id };
+        accommodation = createMockAccommodation({ lifecycleState: LifecycleStatusEnum.ACTIVE });
+        input = { id: accommodation.id };
     });
 
     it('should return summary for an accommodation', async () => {
@@ -60,15 +61,18 @@ describe('AccommodationService.getSummary', () => {
         const result = await service.getSummary(actor, input);
         expectSuccess(result);
         expect(result.data).toEqual({
-            id: accommodation.id,
-            slug: accommodation.slug,
-            name: accommodation.name,
-            type: accommodation.type,
-            media: accommodation.media,
-            location: accommodation.location,
-            isFeatured: accommodation.isFeatured,
-            averageRating: 0,
-            reviewsCount: 0
+            accommodation: {
+                id: accommodation.id,
+                slug: accommodation.slug,
+                name: accommodation.name,
+                type: accommodation.type,
+                media: accommodation.media,
+                location: accommodation.location,
+                isFeatured: accommodation.isFeatured,
+                ownerId: accommodation.ownerId,
+                averageRating: 0,
+                reviewsCount: 0
+            }
         });
         expect(modelMock.findOne).toHaveBeenCalledWith({ id: accommodation.id });
         expect(permissionHelpers.checkCanView).toHaveBeenCalledWith(actor, accommodation);
@@ -86,8 +90,9 @@ describe('AccommodationService.getSummary', () => {
         asMock(modelMock.findOne).mockResolvedValue(noLocation);
         vi.spyOn(permissionHelpers, 'checkCanView').mockReturnValue();
         const result = await service.getSummary(actor, input);
-        // The method returns null, so the test expects data === null
-        expect(result.data).toBeNull();
+        // When no location, the method logs a warning and returns null in data
+        expect(result.data).toEqual({ accommodation: null });
+        expect(result.error).toBeUndefined();
         expect(modelMock.findOne).toHaveBeenCalledWith({ id: accommodation.id });
         expect(permissionHelpers.checkCanView).toHaveBeenCalledWith(actor, noLocation);
     });
@@ -111,7 +116,7 @@ describe('AccommodationService.getSummary', () => {
     });
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
-        const result = await service.getSummary(actor, { idOrSlug: '' });
+        const result = await service.getSummary(actor, { id: '' });
         expectValidationError(result);
     });
 });

@@ -4,7 +4,7 @@
  * Covers success, permissions, validation, and model error propagation.
  */
 import type { AccommodationModel } from '@repo/db';
-import { type AccommodationType, PermissionEnum, ServiceErrorCode } from '@repo/types';
+import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as permissionHelpers from '../../../src/services/accommodation/accommodation.permissions';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
@@ -36,54 +36,12 @@ describe('AccommodationService.getTopRated', () => {
     it('returns mapped top-rated accommodations with required fields', async () => {
         // Arrange
         const actor = createListActor();
-        const base: AccommodationType = createAccommodationWithMockIds({
+        const base = createAccommodationWithMockIds({
             averageRating: 5,
             reviewsCount: 25,
             isFeatured: true
         });
-        const items: AccommodationType[] = [
-            {
-                ...base,
-                amenities: [
-                    {
-                        accommodationId: base.id,
-                        amenityId: 'amenity-1' as any,
-                        isOptional: false,
-                        amenity: {
-                            id: 'amenity-1' as any,
-                            slug: 'wifi',
-                            name: 'WiFi',
-                            isFeatured: false,
-                            isBuiltin: true,
-                            type: 'CONNECTIVITY' as any,
-                            createdAt: new Date(),
-                            updatedAt: new Date(),
-                            createdById: 'user-1' as any,
-                            updatedById: 'user-1' as any,
-                            lifecycleState: 'ACTIVE' as any
-                        }
-                    }
-                ],
-                features: [
-                    {
-                        accommodationId: base.id,
-                        featureId: 'feature-1' as any,
-                        feature: {
-                            id: 'feature-1' as any,
-                            slug: 'pool',
-                            name: 'Pool',
-                            isFeatured: true,
-                            isBuiltin: false,
-                            createdAt: new Date(),
-                            updatedAt: new Date(),
-                            createdById: 'user-1' as any,
-                            updatedById: 'user-1' as any,
-                            lifecycleState: 'ACTIVE' as any
-                        }
-                    }
-                ]
-            }
-        ];
+        const items = [base];
         (model.findTopRated as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(items);
 
         // Act
@@ -91,16 +49,18 @@ describe('AccommodationService.getTopRated', () => {
 
         // Assert
         expect(result.error).toBeUndefined();
-        expect(Array.isArray(result.data)).toBe(true);
-        const first = result.data?.[0];
+        expect(result.data).toBeDefined();
+        expect(result.data?.accommodations).toBeDefined();
+        expect(Array.isArray(result.data?.accommodations)).toBe(true);
+        const first = result.data?.accommodations?.[0];
         expect(first?.name).toBe(base.name);
         expect(first?.slug).toBe(base.slug);
         expect(first?.summary).toBe(base.summary);
         expect(first?.price).toEqual(base.price);
         expect(first?.type).toBe(base.type);
         expect(first?.isFeatured).toBe(true);
-        expect(Array.isArray(first?.amenities)).toBe(true);
-        expect(Array.isArray(first?.features)).toBe(true);
+        // Note: amenities and features are not part of the new schema structure
+        // They are handled through relations in the database
     });
 
     it('enforces list permission', async () => {
@@ -139,7 +99,7 @@ describe('AccommodationService.getTopRated', () => {
         );
 
         // Act
-        const result = await service.getTopRated(actor, {});
+        const result = await service.getTopRated(actor, { limit: 10 });
 
         // Assert
         expect(result.error).toBeDefined();
