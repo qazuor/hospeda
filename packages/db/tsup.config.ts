@@ -11,7 +11,7 @@ export default defineConfig({
     dts: true,
     bundle: true,
     tsconfig: './tsconfig.json',
-    noExternal: [/@repo\/.*/, '@repo/schemas', '@repo/types', '@repo/utils'],
+    noExternal: [/@repo\/.*/, '@repo/schemas', '@repo/utils'],
     esbuildOptions(options) {
         options.resolveExtensions = ['.ts', '.js', '.json'];
     }

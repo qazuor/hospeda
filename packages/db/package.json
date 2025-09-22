@@ -39,7 +39,6 @@
         "@repo/config": "workspace:*",
         "@repo/logger": "workspace:*",
         "@repo/schemas": "workspace:*",
-        "@repo/types": "workspace:*",
         "@repo/utils": "workspace:*",
         "bcryptjs": "^3.0.2",
         "drizzle-orm": "^0.29.5"
