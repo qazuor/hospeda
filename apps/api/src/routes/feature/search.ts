@@ -7,11 +7,14 @@ import { createListRoute } from '../../utils/route-factory';
 
 const searchQuerySchema = {
     page: z.string().transform(Number).pipe(z.number().min(1)).optional(),
-    limit: z.string().transform(Number).pipe(z.number().min(1).max(100)).optional(),
+    pageSize: z.string().transform(Number).pipe(z.number().min(1).max(100)).optional(),
     name: z.string().optional(),
     slug: z.string().optional(),
     isFeatured: z.enum(['true', 'false']).optional(),
-    isBuiltin: z.enum(['true', 'false']).optional()
+    isBuiltin: z.enum(['true', 'false']).optional(),
+    sortBy: z.string().optional(),
+    sortOrder: z.enum(['asc', 'desc']).optional(),
+    q: z.string().optional()
 };
 
 export const searchFeaturesRoute = createListRoute({
@@ -26,14 +29,17 @@ export const searchFeaturesRoute = createListRoute({
         const actor = getActorFromContext(ctx);
         const q = query as {
             page?: number;
-            limit?: number;
+            pageSize?: number;
             name?: string;
             slug?: string;
             isFeatured?: 'true' | 'false';
             isBuiltin?: 'true' | 'false';
+            sortBy?: string;
+            sortOrder?: 'asc' | 'desc';
+            q?: string;
         };
         const page = q.page ?? 1;
-        const pageSize = q.limit ?? 10;
+        const pageSize = q.pageSize ?? 20;
         const service = new FeatureService({ logger: apiLogger });
         const result = await service.search(actor, {
             // This matches the SearchFeatureSchema (service expects these fields at root)

@@ -7,12 +7,15 @@ import { createListRoute } from '../../utils/route-factory';
 
 // Instantiate service inside handler for test mocks
 
-// Query schema mirrors SearchAmenitySchema (filters: name, type; pagination via page/limit)
+// Query schema using standardized BaseSearchSchema pattern
 const searchQuerySchema = {
     page: z.string().transform(Number).pipe(z.number().min(1)).optional(),
-    limit: z.string().transform(Number).pipe(z.number().min(1).max(100)).optional(),
+    pageSize: z.string().transform(Number).pipe(z.number().min(1).max(100)).optional(),
     name: z.string().optional(),
-    type: z.string().optional()
+    type: z.string().optional(),
+    sortBy: z.string().optional(),
+    sortOrder: z.enum(['asc', 'desc']).optional(),
+    q: z.string().optional()
 };
 
 export const searchAmenitiesRoute = createListRoute({
@@ -26,24 +29,38 @@ export const searchAmenitiesRoute = createListRoute({
     responseSchema: z.object({ id: z.string().uuid() }).partial(),
     handler: async (ctx: Context, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
-        const q = query as { page?: number; limit?: number; name?: string; type?: string };
+        const q = query as {
+            page?: number;
+            pageSize?: number;
+            name?: string;
+            type?: string;
+            sortBy?: string;
+            sortOrder?: 'asc' | 'desc';
+            q?: string;
+        };
         const page = q.page ?? 1;
-        const pageSize = q.limit ?? 10;
+        const pageSize = q.pageSize ?? 20;
         const service = new AmenityService({ logger: apiLogger });
+
+        // Standardized service call interface
         const result = await service.search(actor, {
-            // Cast to match SearchAmenityInput shape (filters optional)
-            // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-            filters: q.name || q.type ? { name: q.name, type: q.type } : undefined,
-            pagination: { page, pageSize }
+            page,
+            pageSize,
+            filters: q.name ? { name: q.name } : undefined,
+            sortBy: q.sortBy,
+            sortOrder: q.sortOrder || 'asc',
+            q: q.q
         });
+
         if (result.error) throw new Error(result.error.message);
+
         return {
-            items: result.data.items,
+            items: result.data?.items || [],
             pagination: {
                 page,
                 limit: pageSize,
-                total: result.data.total,
-                totalPages: Math.ceil(result.data.total / pageSize)
+                total: result.data?.total || 0,
+                totalPages: Math.ceil((result.data?.total || 0) / pageSize)
             }
         };
     }

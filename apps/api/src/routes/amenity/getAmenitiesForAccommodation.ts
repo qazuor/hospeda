@@ -20,18 +20,32 @@ export const getAmenitiesForAccommodationRoute = createListRoute({
     responseSchema: z.object({ id: z.string().uuid() }).partial(),
     requestQuery: {
         page: z.string().transform(Number).pipe(z.number().min(1)).optional(),
-        limit: z.string().transform(Number).pipe(z.number().min(1).max(100)).optional()
+        pageSize: z.string().transform(Number).pipe(z.number().min(1).max(100)).optional(),
+        sortBy: z.string().optional(),
+        sortOrder: z.enum(['asc', 'desc']).optional(),
+        q: z.string().optional()
     },
     handler: async (ctx: Context, params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const service = new AmenityService({ logger: apiLogger });
-        const result = await service.getAmenitiesForAccommodation(actor, {
-            accommodationId: params.accommodationId as string
-        });
-        if (result.error) throw new Error(result.error.message);
-        const q = query as { page?: number; limit?: number };
+        const q = query as {
+            page?: number;
+            pageSize?: number;
+            sortBy?: string;
+            sortOrder?: 'asc' | 'desc';
+            q?: string;
+        };
         const page = q.page ?? 1;
-        const pageSize = q.limit ?? 10;
+        const pageSize = q.pageSize ?? 20;
+
+        const result = await service.getAmenitiesForAccommodation(actor, {
+            accommodationId: params.accommodationId as string,
+            page,
+            pageSize
+        });
+
+        if (result.error) throw new Error(result.error.message);
+
         return {
             items: result.data.amenities,
             pagination: {
