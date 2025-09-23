@@ -31,7 +31,6 @@
         "@repo/logger": "workspace:*",
         "@repo/schemas": "workspace:*",
         "@repo/service-core": "workspace:*",
-        "@repo/types": "workspace:*",
         "@repo/utils": "workspace:*",
         "dotenv": "^17.2.1",
         "pg": "^8.11.1",
