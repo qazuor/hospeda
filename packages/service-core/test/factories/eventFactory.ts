@@ -1,5 +1,6 @@
 import type {
     Event,
+    EventCreateInput,
     EventIdType,
     EventLocationIdType,
     EventOrganizerIdType,
@@ -57,21 +58,8 @@ export const getMockEvent = (overrides: Partial<Event> = {}): Event => ({
 export const createMockEvent = (overrides: Partial<Event> = {}): Event => getMockEvent(overrides);
 
 export const createMockEventCreateInput = (
-    overrides: Partial<
-        Omit<
-            Event,
-            | 'id'
-            | 'createdAt'
-            | 'updatedAt'
-            | 'createdById'
-            | 'updatedById'
-            | 'deletedAt'
-            | 'deletedById'
-            | 'moderationState'
-            | 'tags'
-        >
-    > = {}
-) => {
+    overrides: Partial<EventCreateInput> = {}
+): EventCreateInput => {
     const baseEvent = getMockEvent();
     // Remove fields that are not allowed in create schema per EventCreateInputSchema
     const {
@@ -89,6 +77,8 @@ export const createMockEventCreateInput = (
 
     return {
         ...createInput,
+        // organizerId is optional for creation, only add if provided
+        ...(createInput.organizerId ? { organizerId: createInput.organizerId } : {}),
         ...overrides
     };
 };
