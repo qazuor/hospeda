@@ -1,4 +1,5 @@
 import { z } from '@hono/zod-openapi';
+import type { PriceCurrencyEnum } from '@repo/schemas';
 import { AmenityService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../utils/actor';
@@ -35,8 +36,13 @@ export const addAmenityToAccommodationRoute = createCRUDRoute({
         const payload = {
             accommodationId: params.accommodationId as string,
             amenityId: parsed.amenityId,
-            isOptional: parsed.isOptional,
-            additionalCost: parsed.additionalCost,
+            isOptional: parsed.isOptional ?? false,
+            additionalCost: parsed.additionalCost
+                ? {
+                      price: parsed.additionalCost.amount,
+                      currency: parsed.additionalCost.currency as PriceCurrencyEnum
+                  }
+                : undefined,
             additionalCostPercent: parsed.additionalCostPercent
         };
         const service = new AmenityService({ logger: apiLogger });

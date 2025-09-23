@@ -1,4 +1,5 @@
 import { z } from '@hono/zod-openapi';
+import type { AmenitiesTypeEnum } from '@repo/schemas';
 import { AmenityService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../utils/actor';
@@ -37,7 +38,11 @@ export const updateAmenityRoute = createCRUDRoute({
     responseSchema: z.object({ id: z.string().uuid() }).partial(),
     handler: async (ctx: Context, params, body) => {
         const actor = getActorFromContext(ctx);
-        const input = body as z.infer<typeof amenityUpdateBodySchema>;
+        const bodyData = body as z.infer<typeof amenityUpdateBodySchema>;
+        const input = {
+            ...bodyData,
+            type: bodyData.type ? (bodyData.type as AmenitiesTypeEnum) : undefined
+        };
         const service = new AmenityService({ logger: apiLogger });
         const result = await service.update(actor, params.id as string, input);
         if (result.error) throw new Error(result.error.message);

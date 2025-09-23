@@ -14,8 +14,11 @@ export const getAccommodationsByFeatureRoute = createListRoute({
     requestParams: { featureId: z.string().uuid() },
     responseSchema: z.object({ id: z.string().uuid() }).partial(),
     requestQuery: {
-        page: z.string().transform(Number).pipe(z.number().min(1)).optional(),
-        limit: z.string().transform(Number).pipe(z.number().min(1).max(100)).optional()
+        page: z.coerce.number().int().min(1).default(1),
+        pageSize: z.coerce.number().int().min(1).max(100).default(20),
+        sortBy: z.string().optional(),
+        sortOrder: z.enum(['asc', 'desc']).default('asc'),
+        q: z.string().optional()
     },
     handler: async (ctx: Context, params, _body, query) => {
         const actor = getActorFromContext(ctx);
@@ -24,14 +27,14 @@ export const getAccommodationsByFeatureRoute = createListRoute({
             featureId: params.featureId as string
         });
         if (result.error) throw new Error(result.error.message);
-        const q = query as { page?: number; limit?: number };
+        const q = query as { page?: number; pageSize?: number };
         const page = q.page ?? 1;
-        const pageSize = q.limit ?? 10;
+        const pageSize = q.pageSize ?? 20;
         return {
             items: result.data.accommodations,
             pagination: {
                 page,
-                limit: pageSize,
+                pageSize,
                 total: result.data.accommodations.length,
                 totalPages: 1
             }
