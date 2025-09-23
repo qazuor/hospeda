@@ -1,4 +1,4 @@
-import { EventCreateSchema, EventDetailSchema } from '@repo/schemas';
+import { EventCreateInputSchema, EventSchema } from '@repo/schemas';
 import { EventService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../utils/actor';
@@ -15,8 +15,8 @@ const eventService = new EventService({ logger: apiLogger });
  *
  * - Method: POST
  * - Path: `/`
- * - Body: `EventCreateSchema`
- * - Response: `EventDetailSchema`
+ * - Body: `EventCreateInputSchema`
+ * - Response: `EventSchema`
  */
 export const createEventRoute = createCRUDRoute({
     method: 'post',
@@ -24,8 +24,8 @@ export const createEventRoute = createCRUDRoute({
     summary: 'Create event',
     description: 'Creates a new event',
     tags: ['Events'],
-    requestBody: EventCreateSchema,
-    responseSchema: EventDetailSchema,
+    requestBody: EventCreateInputSchema,
+    responseSchema: EventSchema,
     handler: async (ctx: Context, _params, body: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const result = await eventService.create(actor, body as never);

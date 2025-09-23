@@ -1,4 +1,4 @@
-import { EventDetailSchema, EventIdSchema } from '@repo/schemas';
+import { EventIdSchema, EventSchema } from '@repo/schemas';
 import { EventService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../utils/actor';
@@ -14,7 +14,7 @@ export const eventGetByIdRoute = createCRUDRoute({
     description: 'Retrieves an event by its ID using the EventService',
     tags: ['Events'],
     requestParams: { id: EventIdSchema },
-    responseSchema: EventDetailSchema.nullable(),
+    responseSchema: EventSchema.nullable(),
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const result = await eventService.getById(actor, params.id as string);

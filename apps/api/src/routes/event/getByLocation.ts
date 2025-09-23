@@ -17,18 +17,21 @@ export const getEventsByLocationRoute = createListRoute({
         locationId: EventLocationIdSchema
     },
     requestQuery: {
-        page: z.string().transform(Number).pipe(z.number().min(1)).optional(),
-        limit: z.string().transform(Number).pipe(z.number().min(1).max(100)).optional()
+        page: z.coerce.number().int().min(1).default(1),
+        pageSize: z.coerce.number().int().min(1).max(100).default(20),
+        sortBy: z.string().optional(),
+        sortOrder: z.enum(['asc', 'desc']).default('asc'),
+        q: z.string().optional()
     },
     responseSchema: EventListItemSchema,
     handler: async (ctx, params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { locationId } = params as { locationId: string };
-        const { page, limit } = (query || {}) as { page?: number; limit?: number };
+        const { page, pageSize } = (query || {}) as { page?: number; pageSize?: number };
         const result = await eventService.getByLocation(actor, {
             locationId: locationId as unknown as never,
-            page,
-            pageSize: limit
+            page: page ?? 1,
+            pageSize: pageSize ?? 20
         });
         if (result.error) throw new Error(result.error.message);
         return result.data as never;

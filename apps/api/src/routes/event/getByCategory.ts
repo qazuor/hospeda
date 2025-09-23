@@ -28,8 +28,11 @@ export const getEventsByCategoryRoute = createListRoute({
         const result = await eventService.getByCategory(actor, {
             // biome-ignore lint/suspicious/noExplicitAny: enum passthrough from zod
             category: category as any,
-            page,
-            pageSize
+            page: page ?? 1,
+            pageSize: pageSize ?? 10,
+            sortBy: 'startDate',
+            sortOrder: 'asc',
+            isPublished: true
         });
         if (result.error) throw new Error(result.error.message);
         return result.data as never;
