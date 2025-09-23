@@ -4,5 +4,6 @@
     "name": "Relax",
     "slug": "relax",
     "color": "LIGHT_BLUE",
-    "notes": "Experiencias de relajación y descanso"
+    "notes": "Experiencias de relajación y descanso",
+    "lifecycleState": "ARCHIVED"
 }

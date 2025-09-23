@@ -4,5 +4,6 @@
     "name": "Fotografía",
     "slug": "fotograf-a",
     "color": "GREEN",
-    "notes": "Lugares ideales para la fotografía"
+    "notes": "Lugares ideales para la fotografía",
+    "lifecycleState": "ACTIVE"
 }

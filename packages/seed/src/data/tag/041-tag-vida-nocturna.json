@@ -4,5 +4,6 @@
     "name": "Vida Nocturna",
     "slug": "vida-nocturna",
     "color": "GREY",
-    "notes": "Entretenimiento y actividades nocturnas"
+    "notes": "Entretenimiento y actividades nocturnas",
+    "lifecycleState": "ACTIVE"
 }
