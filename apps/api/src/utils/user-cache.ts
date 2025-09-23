@@ -1,6 +1,6 @@
+import type { User } from '@repo/schemas';
+import { AuthProviderEnum } from '@repo/schemas';
 import { UserService } from '@repo/service-core';
-import type { UserType } from '@repo/types';
-import { AuthProviderEnum } from '@repo/types';
 import { LRUCache } from 'lru-cache';
 import { createGuestActor } from './actor.js';
 import { apiLogger } from './logger.js';
@@ -9,7 +9,7 @@ import { apiLogger } from './logger.js';
  * Cached user data with metadata
  */
 interface CachedUser {
-    user: UserType;
+    user: User;
     timestamp: number;
     hitCount: number;
 }
@@ -41,7 +41,7 @@ export class UserCache {
         ttl: 5 * 60 * 1000 // 5 minutes TTL
     });
 
-    private pendingQueries = new Map<string, Promise<UserType | null>>();
+    private pendingQueries = new Map<string, Promise<User | null>>();
     private stats = {
         hitCount: 0,
         missCount: 0
@@ -72,7 +72,7 @@ export class UserCache {
      * @param clerkUserId - Clerk user ID (e.g., "user_31HTUXqo9ZFzgAfNCFhPlBVXbA1")
      * @returns User object or null if not found
      */
-    async getUser(clerkUserId: string): Promise<UserType | null> {
+    async getUser(clerkUserId: string): Promise<User | null> {
         // Check cache first
         const cached = this.cache.get(clerkUserId);
         if (cached) {
@@ -180,7 +180,7 @@ export class UserCache {
      * Query user from database
      * Private method that handles the actual DB interaction
      */
-    private async queryDatabase(clerkUserId: string): Promise<UserType | null> {
+    private async queryDatabase(clerkUserId: string): Promise<User | null> {
         const guestActor = createGuestActor();
 
         const result = await this.userService.getByAuthProviderId(guestActor, {
