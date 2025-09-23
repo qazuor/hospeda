@@ -806,9 +806,6 @@ importers:
       '@repo/service-core':
         specifier: workspace:*
         version: link:../service-core
-      '@repo/types':
-        specifier: workspace:*
-        version: link:../types
       '@repo/utils':
         specifier: workspace:*
         version: link:../utils
@@ -852,9 +849,6 @@ importers:
       '@repo/schemas':
         specifier: workspace:*
         version: link:../schemas
-      '@repo/types':
-        specifier: workspace:*
-        version: link:../types
       '@repo/utils':
         specifier: workspace:*
         version: link:../utils
