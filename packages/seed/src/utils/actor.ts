@@ -1,5 +1,5 @@
+import type { PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
-import type { PermissionEnum, RoleEnum } from '@repo/types';
 import superAdminData from '../data/user/required/super-admin-user.json';
 
 /**

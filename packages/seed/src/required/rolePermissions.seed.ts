@@ -1,5 +1,5 @@
 import { RRolePermissionModel } from '@repo/db';
-import { PermissionEnum, RoleEnum } from '@repo/types';
+import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { STATUS_ICONS } from '../utils/icons.js';
 import { logger } from '../utils/logger.js';
 import { summaryTracker } from '../utils/summaryTracker.js';
