@@ -30,7 +30,10 @@ describe('PostService.getNews', () => {
     });
 
     it('should return news posts (success)', async () => {
-        const posts = [createMockPost(), createMockPost({ id: getMockId('post', '2') as PostIdType })];
+        const posts = [
+            createMockPost(),
+            createMockPost({ id: getMockId('post', '2') as PostIdType })
+        ];
         (modelMock.findAll as Mock).mockResolvedValue({ items: posts, total: 2 });
         const params = {};
         const result = await service.getNews(actor, params);

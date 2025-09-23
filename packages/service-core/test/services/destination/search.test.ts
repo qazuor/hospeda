@@ -245,7 +245,10 @@ describe('DestinationService.search and count', () => {
         );
         (model.findAll as import('vitest').Mock).mockResolvedValue(paginated(entities, 99, 10));
         await serviceWithNorm.search(admin, { filters: {}, page: 1, pageSize: 10 });
-        expect(normalizer).toHaveBeenCalledWith({ filters: {}, page: 1, pageSize: 10, sortOrder: 'asc' }, admin);
+        expect(normalizer).toHaveBeenCalledWith(
+            { filters: {}, page: 1, pageSize: 10, sortOrder: 'asc' },
+            admin
+        );
         expect(model.findAll).toHaveBeenCalledWith({}, { page: 99, pageSize: 10 });
     });
 });
