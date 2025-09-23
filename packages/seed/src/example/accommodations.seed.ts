@@ -1,6 +1,6 @@
 import path from 'node:path';
+import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { AccommodationService, AmenityService, FeatureService } from '@repo/service-core/index.js';
-import { PermissionEnum, RoleEnum } from '@repo/types';
 import exampleManifest from '../manifest-example.json';
 import { logger } from '../utils/logger.js';
 import type { SeedContext } from '../utils/seedContext.js';
