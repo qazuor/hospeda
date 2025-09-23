@@ -14,17 +14,19 @@ export const eventListRoute = createListRoute({
     description: 'Returns a paginated list of events using the EventService',
     tags: ['Events'],
     requestQuery: {
-        page: z.string().transform(Number).pipe(z.number().min(1)).optional(),
-        limit: z.string().transform(Number).pipe(z.number().min(1).max(100)).optional(),
-        search: z.string().optional(),
-        sortOrder: z.enum(['ASC', 'DESC']).optional()
+        page: z.coerce.number().int().min(1).default(1),
+        pageSize: z.coerce.number().int().min(1).max(100).default(20),
+        sortBy: z.string().optional(),
+        sortOrder: z.enum(['asc', 'desc']).default('asc'),
+        q: z.string().optional(),
+        search: z.string().optional()
     },
     responseSchema: EventListItemSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
-        const queryData = query as { page?: number; limit?: number };
+        const queryData = query as { page?: number; pageSize?: number };
         const page = queryData.page ?? 1;
-        const pageSize = queryData.limit ?? 10;
+        const pageSize = queryData.pageSize ?? 20;
 
         const result = await eventService.list(actor, { page, pageSize });
         if (result.error) throw new Error(result.error.message);
@@ -33,7 +35,7 @@ export const eventListRoute = createListRoute({
             items: result.data?.items || [],
             pagination: {
                 page,
-                limit: pageSize,
+                pageSize,
                 total: result.data?.total || 0,
                 totalPages: Math.ceil((result.data?.total || 0) / pageSize)
             }

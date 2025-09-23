@@ -15,13 +15,19 @@ export const getFreeEventsRoute = createListRoute({
     tags: ['Events'],
     requestQuery: {
         page: z.string().transform(Number).pipe(z.number().min(1)).optional(),
-        limit: z.string().transform(Number).pipe(z.number().min(1).max(100)).optional()
+        pageSize: z.string().transform(Number).pipe(z.number().min(1).max(100)).optional(),
+        sortBy: z.string().optional(),
+        sortOrder: z.enum(['asc', 'desc']).optional(),
+        q: z.string().optional()
     },
     responseSchema: EventListItemSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
-        const { page, limit } = (query || {}) as { page?: number; limit?: number };
-        const result = await eventService.getFreeEvents(actor, { page, pageSize: limit });
+        const { page, pageSize } = (query || {}) as { page?: number; pageSize?: number };
+        const result = await eventService.getFreeEvents(actor, {
+            page: page ?? 1,
+            pageSize: pageSize ?? 20
+        });
         if (result.error) throw new Error(result.error.message);
         return result.data as never;
     },

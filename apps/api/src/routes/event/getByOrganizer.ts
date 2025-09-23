@@ -18,17 +18,20 @@ export const getEventsByOrganizerRoute = createListRoute({
     },
     requestQuery: {
         page: z.string().transform(Number).pipe(z.number().min(1)).optional(),
-        limit: z.string().transform(Number).pipe(z.number().min(1).max(100)).optional()
+        pageSize: z.string().transform(Number).pipe(z.number().min(1).max(100)).optional(),
+        sortBy: z.string().optional(),
+        sortOrder: z.enum(['asc', 'desc']).optional(),
+        q: z.string().optional()
     },
     responseSchema: EventListItemSchema,
     handler: async (ctx, params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { organizerId } = params as { organizerId: string };
-        const { page, limit } = (query || {}) as { page?: number; limit?: number };
+        const { page, pageSize } = (query || {}) as { page?: number; pageSize?: number };
         const result = await eventService.getByOrganizer(actor, {
             organizerId: organizerId as unknown as never,
-            page,
-            pageSize: limit
+            page: page ?? 1,
+            pageSize: pageSize ?? 20
         });
         if (result.error) throw new Error(result.error.message);
         return result.data as never;

@@ -14,25 +14,34 @@ export const getUpcomingEventsRoute = createListRoute({
     description: 'Returns a paginated list of upcoming events between two dates',
     tags: ['Events'],
     requestQuery: {
-        fromDate: z.string().datetime().optional().default(new Date().toISOString()),
-        toDate: z.string().datetime().optional(),
-        page: z.string().transform(Number).pipe(z.number().min(1)).optional(),
-        limit: z.string().transform(Number).pipe(z.number().min(1).max(100)).optional()
+        page: z.coerce.number().int().min(1).default(1),
+        pageSize: z.coerce.number().int().min(1).max(100).default(20),
+        sortBy: z.string().optional(),
+        sortOrder: z.enum(['asc', 'desc']).default('asc'),
+        q: z.string().optional(),
+        daysAhead: z.coerce.number().int().min(1).max(365).default(30),
+        city: z.string().optional(),
+        country: z.string().optional(),
+        maxPrice: z.coerce.number().min(0).optional()
     },
     responseSchema: EventListItemSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
-        const { fromDate, toDate, page, limit } = (query || {}) as {
-            fromDate?: string;
-            toDate?: string;
+        const { daysAhead, city, country, maxPrice, page, pageSize } = (query || {}) as {
+            daysAhead?: number;
+            city?: string;
+            country?: string;
+            maxPrice?: number;
             page?: number;
-            limit?: number;
+            pageSize?: number;
         };
         const result = await eventService.getUpcoming(actor, {
-            fromDate: fromDate ? new Date(fromDate) : new Date(),
-            toDate: toDate ? new Date(toDate) : undefined,
-            page,
-            pageSize: limit
+            daysAhead: daysAhead ?? 30,
+            city,
+            country,
+            maxPrice,
+            page: page ?? 1,
+            pageSize: pageSize ?? 20
         });
         if (result.error) throw new Error(result.error.message);
         return result.data as never;
