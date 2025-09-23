@@ -13,7 +13,7 @@ describe('GET /events (list enhanced)', () => {
     });
 
     it('returns items[] and pagination object with expected keys', async () => {
-        const res = await app.request(`${base}?page=2&limit=5`);
+        const res = await app.request(`${base}?page=2&pageSize=5`);
         expect([200, 400]).toContain(res.status);
         if (res.status === 200) {
             const body = await res.json();
@@ -22,7 +22,7 @@ describe('GET /events (list enhanced)', () => {
             expect(Array.isArray(body.data.items)).toBe(true);
             expect(body.data).toHaveProperty('pagination');
             expect(body.data.pagination).toHaveProperty('page');
-            expect(body.data.pagination).toHaveProperty('limit');
+            expect(body.data.pagination).toHaveProperty('pageSize');
             expect(body.data.pagination).toHaveProperty('total');
             expect(body.data.pagination).toHaveProperty('totalPages');
         }
