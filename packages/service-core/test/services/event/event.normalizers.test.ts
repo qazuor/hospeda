@@ -1,4 +1,4 @@
-import type { EventSchema } from '@repo/schemas';
+import type { EventCreateInputSchema, EventOrganizerIdType } from '@repo/schemas';
 import {
     EventCategoryEnum,
     LifecycleStatusEnum,
@@ -14,12 +14,11 @@ import {
 import { getMockId } from '../../factories/utilsFactory';
 
 /**
- * Helper para crear un input compatible con EventSchema (fechas string, IDs y enums correctos).
+ * Helper para crear un input compatible con EventCreateInputSchema
  */
 const createMockEventSchemaInput = (
-    overrides: Partial<z.infer<typeof EventSchema>> = {}
-): z.infer<typeof EventSchema> => ({
-    id: getMockId('event'),
+    overrides: Partial<z.infer<typeof EventCreateInputSchema>> = {}
+): z.infer<typeof EventCreateInputSchema> => ({
     slug: 'test-event',
     name: 'Test Event',
     summary: 'A test event for normalization',
@@ -29,21 +28,14 @@ const createMockEventSchemaInput = (
     date: { start: new Date('2024-01-01T10:00:00Z'), end: new Date('2024-01-01T12:00:00Z') },
     authorId: getMockId('user'),
     locationId: getMockId('event'),
-    organizerId: getMockId('event'),
+    organizerId: getMockId('event') as EventOrganizerIdType, // Optional field
     pricing: undefined,
     contactInfo: undefined,
     visibility: VisibilityEnum.PUBLIC,
     isFeatured: false,
-    createdAt: new Date('2024-01-01T09:00:00Z'),
-    updatedAt: new Date('2024-01-01T09:00:00Z'),
     lifecycleState: LifecycleStatusEnum.ACTIVE,
-    moderationState: ModerationStatusEnum.PENDING,
-    createdById: getMockId('user'),
-    updatedById: getMockId('user'),
-    deletedAt: undefined,
-    deletedById: undefined,
+    moderationState: ModerationStatusEnum.PENDING, // Optional but provided
     adminInfo: undefined,
-    tags: [],
     seo: undefined,
     ...overrides
 });
