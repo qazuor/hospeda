@@ -39,7 +39,7 @@ describe('GET /accommodations (list)', () => {
 
     it('supports filters and pagination', async () => {
         const res = await app.request(
-            `${base}?city=Miami&page=2&limit=5&sortBy=createdAt&sortOrder=DESC`,
+            `${base}?city=Miami&page=2&pageSize=5&sortBy=createdAt&sortOrder=desc`,
             { headers: { 'user-agent': 'vitest' } }
         );
         expect([200, 400]).toContain(res.status);
@@ -47,6 +47,11 @@ describe('GET /accommodations (list)', () => {
         if (res.status >= 200 && res.status < 300) {
             expect(body).toHaveProperty('data');
             expect(body.data).toHaveProperty('pagination');
+            // Verify new pagination format
+            expect(body.data.pagination).toHaveProperty('page');
+            expect(body.data.pagination).toHaveProperty('pageSize');
+            expect(body.data.pagination).toHaveProperty('total');
+            expect(body.data.pagination).toHaveProperty('totalPages');
         }
     });
 });
