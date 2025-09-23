@@ -1,6 +1,6 @@
 import path from 'node:path';
-import { AccommodationReviewService, RoleEnum } from '@repo/service-core';
-import { PermissionEnum } from '@repo/types';
+import { PermissionEnum, RoleEnum } from '@repo/schemas';
+import { AccommodationReviewService } from '@repo/service-core';
 import exampleManifest from '../manifest-example.json';
 import { STATUS_ICONS } from '../utils/icons.js';
 import type { SeedContext } from '../utils/seedContext.js';

@@ -1,6 +1,6 @@
 import path from 'node:path';
+import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { EventService } from '@repo/service-core';
-import { PermissionEnum, RoleEnum } from '@repo/types';
 import exampleManifest from '../manifest-example.json';
 import type { SeedContext } from '../utils/seedContext.js';
 import { createSeedFactory } from '../utils/seedFactory.js';

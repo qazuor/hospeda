@@ -11,7 +11,7 @@ const eventOrganizerNormalizer = (data: Record<string, unknown>) => {
         name: data.name as string,
         logo: data.logo as string,
         contactInfo: data.contactInfo,
-        social: data.social,
+        socialNetworks: data.socialNetworks,
         lifecycleState: data.lifecycleState
     };
 };

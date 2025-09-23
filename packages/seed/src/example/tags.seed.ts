@@ -9,10 +9,9 @@ import { createSeedFactory } from '../utils/seedFactory.js';
  */
 const tagNormalizer = (data: Record<string, unknown>) => {
     // First exclude metadata fields and auto-generated fields
-    const { $schema, id, lifecycleState, ...cleanData } = data as {
+    const { $schema, id, ...cleanData } = data as {
         $schema?: string;
         id?: string;
-        lifecycleState?: string;
         [key: string]: unknown;
     };
     return cleanData;

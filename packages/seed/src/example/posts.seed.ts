@@ -1,6 +1,6 @@
 import path from 'node:path';
-import { PostService, RoleEnum } from '@repo/service-core';
-import { PermissionEnum } from '@repo/types';
+import { PermissionEnum, RoleEnum } from '@repo/schemas';
+import { PostService } from '@repo/service-core';
 import exampleManifest from '../manifest-example.json';
 import type { SeedContext } from '../utils/seedContext.js';
 import { createSeedFactory } from '../utils/seedFactory.js';

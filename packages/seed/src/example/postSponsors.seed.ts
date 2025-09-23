@@ -13,9 +13,7 @@ const postSponsorNormalizer = (data: Record<string, unknown>) => {
         type: data.type,
         logo: data.logo,
         contactInfo: data.contactInfo,
-        socialNetworks: data.socialNetworks,
-        visibility: data.visibility,
-        lifecycleState: data.lifecycleState
+        socialNetworks: data.socialNetworks
     };
 };
 
