@@ -1,11 +1,16 @@
 import {
     AccommodationTypeEnum,
     AmenitiesTypeEnum,
+    AuthProviderEnum,
+    BillingCycleEnum,
     ClientTypeEnum,
+    EntityPermissionReasonEnum,
     EntityTypeEnum,
     EventCategoryEnum,
     LifecycleStatusEnum,
     ModerationStatusEnum,
+    PaymentMethodEnum,
+    PaymentStatusEnum,
     PermissionCategoryEnum,
     PermissionEnum,
     PostCategoryEnum,
@@ -13,6 +18,7 @@ import {
     PriceCurrencyEnum,
     RecurrenceTypeEnum,
     RoleEnum,
+    SubscriptionStatusEnum,
     TagColorEnum,
     VisibilityEnum
 } from '@repo/schemas';
@@ -65,3 +71,21 @@ export const ModerationStatusPgEnum = pgEnum(
 export const TagColorPgEnum = pgEnum('tag_color_enum', enumToTuple(TagColorEnum));
 
 export const VisibilityPgEnum = pgEnum('visibility_enum', enumToTuple(VisibilityEnum));
+
+export const AuthProviderPgEnum = pgEnum('auth_provider_enum', enumToTuple(AuthProviderEnum));
+
+export const BillingCyclePgEnum = pgEnum('billing_cycle_enum', enumToTuple(BillingCycleEnum));
+
+export const EntityPermissionReasonPgEnum = pgEnum(
+    'entity_permission_reason_enum',
+    enumToTuple(EntityPermissionReasonEnum)
+);
+
+export const PaymentMethodPgEnum = pgEnum('payment_method_enum', enumToTuple(PaymentMethodEnum));
+
+export const PaymentStatusPgEnum = pgEnum('payment_status_enum', enumToTuple(PaymentStatusEnum));
+
+export const SubscriptionStatusPgEnum = pgEnum(
+    'subscription_status_enum',
+    enumToTuple(SubscriptionStatusEnum)
+);
