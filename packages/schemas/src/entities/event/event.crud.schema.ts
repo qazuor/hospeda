@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { EventIdSchema } from '../../common/id.schema.js';
+import { ModerationStatusEnumSchema } from '../../enums/index.js';
 import { EventSchema } from './event.schema.js';
 
 /**
@@ -23,6 +24,7 @@ import { EventSchema } from './event.schema.js';
  * Omits auto-generated fields like id and audit fields
  * Makes slug optional since it can be auto-generated
  * Allows moderationState and tags for seed data
+ * Makes moderationState optional (will default to PENDING if not provided)
  */
 export const EventCreateInputSchema = EventSchema.omit({
     id: true,
@@ -33,7 +35,9 @@ export const EventCreateInputSchema = EventSchema.omit({
     deletedAt: true,
     deletedById: true
 }).extend({
-    slug: z.string().min(1, { message: 'zodError.event.slug.min' }).optional()
+    slug: z.string().min(1, { message: 'zodError.event.slug.min' }).optional(),
+    // Make moderationState optional for creation
+    moderationState: ModerationStatusEnumSchema.optional()
 });
 
 /**

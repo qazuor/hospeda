@@ -126,6 +126,7 @@ describe('Event CRUD Schemas', () => {
                         start: new Date('2024-12-25T10:00:00Z')
                     },
                     authorId: '123e4567-e89b-12d3-a456-426614174000',
+                    organizerId: '123e4567-e89b-12d3-a456-426614174001',
                     visibility: 'PUBLIC',
                     lifecycleState: 'ACTIVE'
                 };
@@ -163,6 +164,7 @@ describe('Event CRUD Schemas', () => {
                     isFree: false
                 },
                 authorId: '123e4567-e89b-12d3-a456-426614174000',
+                organizerId: '123e4567-e89b-12d3-a456-426614174001',
                 visibility: 'PUBLIC',
                 lifecycleState: 'ACTIVE'
             };
@@ -184,6 +186,7 @@ describe('Event CRUD Schemas', () => {
                     isFree: true
                 },
                 authorId: '123e4567-e89b-12d3-a456-426614174000',
+                organizerId: '123e4567-e89b-12d3-a456-426614174001',
                 visibility: 'PUBLIC',
                 lifecycleState: 'ACTIVE'
             };
@@ -203,6 +206,7 @@ describe('Event CRUD Schemas', () => {
                 },
                 locationId: '123e4567-e89b-12d3-a456-426614174002',
                 authorId: '123e4567-e89b-12d3-a456-426614174000',
+                organizerId: '123e4567-e89b-12d3-a456-426614174001',
                 visibility: 'PUBLIC',
                 lifecycleState: 'ACTIVE'
             };
@@ -242,6 +246,7 @@ describe('Event CRUD Schemas', () => {
                     ]
                 },
                 authorId: '123e4567-e89b-12d3-a456-426614174000',
+                organizerId: '123e4567-e89b-12d3-a456-426614174001',
                 visibility: 'PUBLIC',
                 lifecycleState: 'ACTIVE'
             };
@@ -531,7 +536,8 @@ describe('Event CRUD Schemas', () => {
                 },
                 visibility: 'PUBLIC',
                 lifecycleState: 'ACTIVE',
-                authorId: '123e4567-e89b-12d3-a456-426614174000'
+                authorId: '123e4567-e89b-12d3-a456-426614174000',
+                organizerId: '123e4567-e89b-12d3-a456-426614174001'
             };
 
             // Test create
@@ -578,6 +584,7 @@ describe('Event CRUD Schemas', () => {
                     category,
                     date: { start: new Date('2024-12-25T10:00:00Z') },
                     authorId: '123e4567-e89b-12d3-a456-426614174000',
+                    organizerId: '123e4567-e89b-12d3-a456-426614174001',
                     visibility: 'PUBLIC',
                     lifecycleState: 'ACTIVE'
                 };
