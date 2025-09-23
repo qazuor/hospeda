@@ -3,7 +3,7 @@
     "id": "028-amenity-outdoors-balcony",
     "name": "balcony",
     "slug": "balcony",
-    "description": "Balcón",
+    "description": "Balcón privado",
     "type": "OUTDOORS",
     "icon": "amenity",
     "isBuiltin": false,

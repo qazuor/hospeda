@@ -3,7 +3,7 @@
     "id": "027-amenity-outdoors-terrace",
     "name": "terrace",
     "slug": "terrace",
-    "description": "Terraza",
+    "description": "Terraza privada",
     "type": "OUTDOORS",
     "icon": "amenity",
     "isBuiltin": false,

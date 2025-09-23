@@ -3,7 +3,7 @@
     "id": "066-amenity-general-appliances-spa",
     "name": "spa",
     "slug": "spa",
-    "description": "Spa",
+    "description": "Spa y relajación",
     "type": "GENERAL_APPLIANCES",
     "icon": "amenity",
     "isBuiltin": false,

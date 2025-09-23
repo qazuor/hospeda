@@ -3,7 +3,7 @@
     "id": "023-amenity-outdoors-fireplace",
     "name": "fireplace",
     "slug": "fireplace",
-    "description": "Chimenea",
+    "description": "Chimenea funcional",
     "type": "OUTDOORS",
     "icon": "amenity",
     "isBuiltin": false,

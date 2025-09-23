@@ -3,7 +3,7 @@
     "id": "015-amenity-outdoors-pool",
     "name": "pool",
     "slug": "pool",
-    "description": "Piscina",
+    "description": "Piscina privada",
     "type": "OUTDOORS",
     "icon": "amenity",
     "isBuiltin": false,
