@@ -130,12 +130,11 @@ export class PostService extends BaseCrudService<
                 );
             }
         }
-        const slug = await generatePostSlug(
-            String(normalized.category),
-            normalized.title,
-            isNews,
-            date
-        );
+
+        // Generate slug only if not provided
+        const slug =
+            normalized.slug ||
+            (await generatePostSlug(String(normalized.category), normalized.title, isNews, date));
         return {
             ...normalized,
             slug

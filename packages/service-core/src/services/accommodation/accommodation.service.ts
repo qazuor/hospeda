@@ -211,8 +211,13 @@ export class AccommodationService extends BaseCrudService<
         data: AccommodationCreateInput,
         _actor: Actor
     ): Promise<Partial<Accommodation>> {
-        const slug = await generateSlug(data.type as string, data.name as string);
-        return { ...data, slug } as unknown as Partial<Accommodation>;
+        // Only generate a slug if one is not already provided
+        if (!data.slug) {
+            const slug = await generateSlug(data.type as string, data.name as string);
+            return { slug };
+        }
+        // If slug is provided, return empty object to avoid overwriting
+        return {};
     }
 
     protected async _afterCreate(entity: Accommodation): Promise<Accommodation> {

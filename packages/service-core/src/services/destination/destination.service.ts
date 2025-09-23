@@ -310,8 +310,13 @@ export class DestinationService extends BaseCrudService<
         data: DestinationCreateInput,
         _actor: Actor
     ): Promise<Partial<Destination>> {
-        const slug = await generateDestinationSlug(data.name);
-        return { slug };
+        // Only generate a slug if one is not already provided
+        if (!data.slug) {
+            const slug = await generateDestinationSlug(data.name);
+            return { slug };
+        }
+        // If slug is provided, return empty object to avoid overwriting
+        return {};
     }
 
     /**
