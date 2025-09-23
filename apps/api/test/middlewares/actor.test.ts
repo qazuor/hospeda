@@ -2,10 +2,10 @@ import {
     LifecycleStatusEnum,
     PermissionEnum,
     RoleEnum,
-    type UserId,
-    type UserType,
+    type User,
+    type UserIdType,
     VisibilityEnum
-} from '@repo/types';
+} from '@repo/schemas';
 /**
  * Actor Middleware Tests
  * Tests the universal actor middleware functionality
@@ -45,9 +45,9 @@ const mockUserCache = vi.mocked(userCache);
 const mockCreateGuestActor = vi.mocked(createGuestActor);
 const mockApiLogger = vi.mocked(apiLogger);
 
-// Helper function to create a complete UserType mock
-const createMockUser = (overrides: Partial<UserType> = {}): UserType => ({
-    id: 'user-123' as UserId,
+// Helper function to create a complete User mock
+const createMockUser = (overrides: Partial<User> = {}): User => ({
+    id: 'user-123' as UserIdType,
     slug: 'test-user',
     role: RoleEnum.USER,
     permissions: [PermissionEnum.ACCESS_API_PUBLIC],
@@ -55,8 +55,8 @@ const createMockUser = (overrides: Partial<UserType> = {}): UserType => ({
     visibility: VisibilityEnum.PUBLIC,
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
-    createdById: 'creator-id' as UserId,
-    updatedById: 'updater-id' as UserId,
+    createdById: 'creator-id' as UserIdType,
+    updatedById: 'updater-id' as UserIdType,
     ...overrides
 });
 
@@ -174,7 +174,7 @@ describe('Actor Middleware', () => {
     describe('Authenticated User Handling', () => {
         it('should create user actor for authenticated users', async () => {
             const mockUser = createMockUser({
-                id: 'user-123' as UserId,
+                id: 'user-123' as UserIdType,
                 role: RoleEnum.USER,
                 permissions: [PermissionEnum.ACCESS_API_PUBLIC, PermissionEnum.USER_UPDATE_PROFILE]
             });
@@ -429,7 +429,7 @@ describe('Actor Middleware', () => {
         it('should handle user with minimal permissions', async () => {
             // Create a user with minimal permissions to test edge cases
             const mockUser = createMockUser({
-                id: 'user-123' as UserId,
+                id: 'user-123' as UserIdType,
                 role: RoleEnum.USER,
                 permissions: [] // Empty permissions array
             });

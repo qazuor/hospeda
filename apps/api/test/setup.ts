@@ -532,62 +532,72 @@ vi.mock('@repo/service-core', () => {
 
         // Summary / Stats / Destinations
         async getSummary(_actor: unknown, _params: { id: string }) {
+            // Return zero reviews for specific test UUID
+            if (_params.id === '00000000-0000-4000-8000-000000000000') {
+                return {
+                    data: {
+                        id: '00000000-0000-4000-8000-000000000000',
+                        slug: 'zero-reviews-accommodation',
+                        name: 'Zero Reviews Accommodation',
+                        summary: 'This accommodation has no reviews yet.',
+                        type: 'HOTEL',
+                        price: { price: 75.0, currency: 'USD' },
+                        location: { city: 'Test City', country: 'Test Country' },
+                        media: { featuredImage: { url: 'https://example.com/zero-image.jpg' } },
+                        averageRating: 0,
+                        reviewsCount: 0,
+                        isFeatured: false,
+                        ownerId: '12345678-1234-4567-8901-123456789013'
+                    }
+                };
+            }
+
             return {
                 data: {
-                    id: '12345678-1234-4567-8901-123456789012',
+                    id: _params.id, // Use the actual ID from the request
                     slug: 'test-accommodation',
                     name: 'Test Accommodation',
                     summary: 'This is a lovely test accommodation perfect for your stay.',
                     type: 'HOTEL',
+                    price: { price: 150.5, currency: 'USD' },
+                    location: { city: 'Test City', country: 'Test Country' },
+                    media: { featuredImage: { url: 'https://example.com/image.jpg' } },
                     averageRating: 4.5,
                     reviewsCount: 42,
                     isFeatured: true,
-                    visibility: 'PUBLIC',
-                    lifecycleState: 'ACTIVE',
-                    createdAt: '2024-01-01T00:00:00.000Z',
-                    updatedAt: '2024-01-01T00:00:00.000Z',
-                    ownerId: '12345678-1234-4567-8901-123456789013',
-                    destinationId: '12345678-1234-4567-8901-123456789014'
+                    ownerId: '12345678-1234-4567-8901-123456789013'
                 }
             };
         }
-        async getStats(_actor: unknown, _params: { id?: string }) {
+        async getStats(_actor: unknown, _params: { idOrSlug?: string }) {
+            // Return null for non-existent accommodation
+            if (_params.idOrSlug === '87654321-4321-4321-8765-876543218765') {
+                return { data: null };
+            }
+
+            // Return zero stats for specific test UUID
+            if (_params.idOrSlug === '00000000-0000-4000-8000-000000000000') {
+                return {
+                    data: {
+                        stats: {
+                            total: 1,
+                            totalFeatured: 0,
+                            averagePrice: 0,
+                            averageRating: 0,
+                            totalByType: { HOTEL: 1 }
+                        }
+                    }
+                };
+            }
+
             return {
                 data: {
-                    // Accommodation counts
-                    total: 150,
-                    public: 120,
-                    private: 25,
-                    draft: 5,
-                    featured: 15,
-
-                    // Type breakdown
-                    byType: {
-                        HOTEL: 80,
-                        CABIN: 35,
-                        HOSTEL: 20,
-                        APARTMENT: 15
-                    },
-
-                    // Destination breakdown
-                    byDestination: {
-                        'destination-1': 75,
-                        'destination-2': 45,
-                        'destination-3': 30
-                    },
-
-                    // Review statistics
-                    averageRating: 4.5,
-                    totalReviews: 42,
-                    reviewsCount: 42, // Keep for backward compatibility
-
-                    // Rating distribution
-                    rating: {
-                        1: 2,
-                        2: 3,
-                        3: 8,
-                        4: 15,
-                        5: 14
+                    stats: {
+                        total: 1,
+                        totalFeatured: 1,
+                        averagePrice: 150.5,
+                        averageRating: 4.5,
+                        totalByType: { HOTEL: 1 }
                     }
                 }
             };
@@ -705,6 +715,210 @@ vi.mock('@repo/service-core', () => {
 
         async getAccommodations(_actor: unknown, _params: { destinationId: string }) {
             return { data: { accommodations: [] } };
+        }
+    }
+
+    // Attraction service mock
+    class AttractionService {
+        async create(_actor: unknown, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id: 'attraction_mock_id',
+                    name: String((body as any).name || 'Attraction Mock'),
+                    slug: (body as any).slug || 'attraction-mock',
+                    type: String((body as any).type || 'MUSEUM'),
+                    description: String((body as any).description || 'Mock attraction description'),
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+
+        async update(_actor: unknown, id: string, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id,
+                    name: String((body as any).name || 'Attraction Updated'),
+                    slug: (body as any).slug || 'attraction-updated'
+                }
+            };
+        }
+
+        async softDelete(_actor: unknown, id: string) {
+            if (id === '87654321-4321-4321-8765-876543218765') return { data: null };
+            return { data: { id, deletedAt: new Date().toISOString() } };
+        }
+
+        async restore(_actor: unknown, id: string) {
+            if (id === '87654321-4321-4321-8765-876543218765') return { data: null };
+            return { data: { id } };
+        }
+
+        async hardDelete(_actor: unknown, id: string) {
+            if (id === '87654321-4321-4321-8765-876543218765') return { data: null };
+            return { data: { id, deleted: true, count: 1 } };
+        }
+
+        async list(_actor: unknown, _opts?: { page?: number; pageSize?: number }) {
+            return { data: { items: [], total: 0 } };
+        }
+
+        async getById(_actor: unknown, id: string) {
+            if (id === '87654321-4321-4321-8765-876543218765') return { data: null };
+            return {
+                data: {
+                    id,
+                    name: 'Test Attraction',
+                    slug: 'test-attraction',
+                    type: 'MUSEUM',
+                    description: 'Test attraction description',
+                    createdAt: '2024-01-01T00:00:00.000Z',
+                    updatedAt: '2024-01-01T00:00:00.000Z'
+                }
+            };
+        }
+
+        async getBySlug(_actor: unknown, slug: string) {
+            return {
+                data: {
+                    id: 'attraction_by_slug',
+                    name: 'Attraction By Slug',
+                    slug,
+                    type: 'MUSEUM',
+                    description: 'Attraction description',
+                    createdAt: '2024-01-01T00:00:00.000Z',
+                    updatedAt: '2024-01-01T00:00:00.000Z'
+                }
+            };
+        }
+
+        async getByName(_actor: unknown, name: string) {
+            return {
+                data: {
+                    id: 'attraction_by_name',
+                    name,
+                    slug: 'attraction-by-name',
+                    type: 'MUSEUM',
+                    description: 'Attraction description',
+                    createdAt: '2024-01-01T00:00:00.000Z',
+                    updatedAt: '2024-01-01T00:00:00.000Z'
+                }
+            };
+        }
+
+        async count(_actor: unknown) {
+            return { data: { count: 10 } };
+        }
+
+        async search(_actor: unknown, _params: { q?: string }) {
+            return { data: { items: [], total: 0 } };
+        }
+
+        async getAttractionsForDestination(_actor: unknown, _destinationId: string) {
+            return { data: [] };
+        }
+
+        async getDestinationsByAttraction(_actor: unknown, _attractionId: string) {
+            return { data: [] };
+        }
+
+        async addAttractionToDestination(
+            _actor: unknown,
+            _attractionId: string,
+            _destinationId: string
+        ) {
+            return { data: { success: true } };
+        }
+
+        async removeAttractionFromDestination(
+            _actor: unknown,
+            _attractionId: string,
+            _destinationId: string
+        ) {
+            return { data: { success: true } };
+        }
+    }
+
+    // Feature service mock
+    class FeatureService {
+        async create(_actor: unknown, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id: 'feature_mock_id',
+                    name: String((body as any).name || 'Feature Mock'),
+                    slug: (body as any).slug || 'feature-mock',
+                    type: String((body as any).type || 'GENERAL'),
+                    description: String((body as any).description || 'Mock feature description'),
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+
+        async update(_actor: unknown, id: string, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id,
+                    name: String((body as any).name || 'Feature Updated'),
+                    slug: (body as any).slug || 'feature-updated'
+                }
+            };
+        }
+
+        async softDelete(_actor: unknown, id: string) {
+            if (id === '87654321-4321-4321-8765-876543218765') return { data: null };
+            return { data: { id, deletedAt: new Date().toISOString() } };
+        }
+
+        async restore(_actor: unknown, id: string) {
+            if (id === '87654321-4321-4321-8765-876543218765') return { data: null };
+            return { data: { id } };
+        }
+
+        async hardDelete(_actor: unknown, id: string) {
+            if (id === '87654321-4321-4321-8765-876543218765') return { data: null };
+            return { data: { id, deleted: true, count: 1 } };
+        }
+
+        async list(_actor: unknown, _opts?: { page?: number; pageSize?: number }) {
+            return { data: { items: [], total: 0 } };
+        }
+
+        async getById(_actor: unknown, id: string) {
+            if (id === '87654321-4321-4321-8765-876543218765') return { data: null };
+            return {
+                data: {
+                    id,
+                    name: 'Test Feature',
+                    slug: 'test-feature',
+                    type: 'GENERAL',
+                    description: 'Test feature description',
+                    createdAt: '2024-01-01T00:00:00.000Z',
+                    updatedAt: '2024-01-01T00:00:00.000Z'
+                }
+            };
+        }
+
+        async getBySlug(_actor: unknown, slug: string) {
+            return {
+                data: {
+                    id: 'feature_by_slug',
+                    name: 'Feature By Slug',
+                    slug,
+                    type: 'GENERAL',
+                    description: 'Feature description',
+                    createdAt: '2024-01-01T00:00:00.000Z',
+                    updatedAt: '2024-01-01T00:00:00.000Z'
+                }
+            };
+        }
+
+        async count(_actor: unknown) {
+            return { data: { count: 5 } };
+        }
+
+        async search(_actor: unknown, _params: { q?: string }) {
+            return { data: { items: [], total: 0 } };
         }
     }
 
@@ -1011,6 +1225,8 @@ vi.mock('@repo/service-core', () => {
         UserService,
         AccommodationReviewService,
         DestinationReviewService,
+        AttractionService,
+        FeatureService,
         AmenityService
     };
 });

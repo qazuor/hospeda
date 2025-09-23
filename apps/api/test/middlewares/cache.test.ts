@@ -378,8 +378,8 @@ describe('Cache Middleware', () => {
             };
 
             const key1 = keyGenerator?.(context as unknown as Context);
-            // Small delay to ensure timestamp difference
-            await new Promise((resolve) => setTimeout(resolve, 1));
+            // Increased delay to ensure timestamp difference in fast environments
+            await new Promise((resolve) => setTimeout(resolve, 10));
             const key2 = keyGenerator?.(context as unknown as Context);
 
             expect(key1).not.toBe(key2);

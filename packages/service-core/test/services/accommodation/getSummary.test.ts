@@ -66,6 +66,7 @@ describe('AccommodationService.getSummary', () => {
                 slug: accommodation.slug,
                 name: accommodation.name,
                 type: accommodation.type,
+                summary: accommodation.summary,
                 media: accommodation.media,
                 location: accommodation.location,
                 isFeatured: accommodation.isFeatured,
