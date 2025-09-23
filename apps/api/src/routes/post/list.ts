@@ -14,24 +14,25 @@ export const postListRoute = createListRoute({
     description: 'Returns a paginated list of posts',
     tags: ['Posts'],
     requestQuery: {
-        page: z.string().transform(Number).pipe(z.number().min(1)).optional(),
-        limit: z.string().transform(Number).pipe(z.number().min(1).max(100)).optional(),
-        q: z.string().optional(),
-        sortOrder: z.enum(['ASC', 'DESC']).optional()
+        page: z.coerce.number().int().min(1).default(1),
+        pageSize: z.coerce.number().int().min(1).max(100).default(20),
+        sortBy: z.string().optional(),
+        sortOrder: z.enum(['asc', 'desc']).default('asc'),
+        q: z.string().optional()
     },
     responseSchema: PostListItemSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
-        const { page, limit } = (query || {}) as { page?: number; limit?: number };
-        const result = await postService.list(actor, { page, pageSize: limit });
+        const { page, pageSize } = (query || {}) as { page?: number; pageSize?: number };
+        const result = await postService.list(actor, { page, pageSize });
         if (result.error) throw new Error(result.error.message);
         return {
             items: result.data?.items || [],
             pagination: {
                 page: page ?? 1,
-                limit: limit ?? 10,
+                pageSize: pageSize ?? 20,
                 total: result.data?.total || 0,
-                totalPages: Math.ceil((result.data?.total || 0) / (limit ?? 10))
+                totalPages: Math.ceil((result.data?.total || 0) / (pageSize ?? 20))
             }
         };
     },

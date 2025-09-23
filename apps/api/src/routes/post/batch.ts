@@ -1,4 +1,4 @@
-import { PostDetailSchema } from '@repo/schemas';
+import { PostSchema } from '@repo/schemas';
 import { PostService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -19,7 +19,7 @@ const BatchPostRequestSchema = z.object({
 /**
  * Response schema for batch post loading
  */
-const BatchPostResponseSchema = z.array(PostDetailSchema.nullable());
+const BatchPostResponseSchema = z.array(PostSchema.nullable());
 
 export const postBatchRoute = createCRUDRoute({
     method: 'post',

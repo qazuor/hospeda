@@ -1,4 +1,4 @@
-import { PostCreateSchema, PostDetailSchema } from '@repo/schemas';
+import { PostCreateInputSchema, PostSchema } from '@repo/schemas';
 import { PostService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../utils/actor';
@@ -13,8 +13,8 @@ export const createPostRoute = createCRUDRoute({
     summary: 'Create post',
     description: 'Creates a new post',
     tags: ['Posts'],
-    requestBody: PostCreateSchema,
-    responseSchema: PostDetailSchema,
+    requestBody: PostCreateInputSchema,
+    responseSchema: PostSchema,
     handler: async (ctx: Context, _params, body: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const result = await postService.create(actor, body as never);

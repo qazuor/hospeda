@@ -16,28 +16,34 @@ export const getNewsPostsRoute = createListRoute({
     requestQuery: {
         fromDate: z.string().datetime().optional(),
         toDate: z.string().datetime().optional(),
-        page: z.string().transform(Number).pipe(z.number().min(1)).optional(),
-        limit: z.string().transform(Number).pipe(z.number().min(1).max(100)).optional()
+        page: z.coerce.number().int().min(1).default(1),
+        pageSize: z.coerce.number().int().min(1).max(100).default(20),
+        sortBy: z.string().optional(),
+        sortOrder: z.enum(['asc', 'desc']).default('asc'),
+        q: z.string().optional()
     },
     responseSchema: PostListItemSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
-        const { fromDate, toDate, page, limit } = (query || {}) as {
+        const { fromDate, toDate, page, pageSize } = (query || {}) as {
             fromDate?: string;
             toDate?: string;
             page?: number;
-            limit?: number;
+            pageSize?: number;
         };
         const result = await postService.getNews(actor, {
             fromDate: fromDate ? new Date(fromDate) : undefined,
-            toDate: toDate ? new Date(toDate) : undefined,
-            page,
-            pageSize: limit
+            toDate: toDate ? new Date(toDate) : undefined
         });
         if (result.error) throw new Error(result.error.message);
         return {
             items: (result.data as never) || [],
-            pagination: { page: page ?? 1, limit: limit ?? 10, total: 0, totalPages: 0 }
+            pagination: {
+                page: page ?? 1,
+                pageSize: pageSize ?? 20,
+                total: 0,
+                totalPages: 0
+            }
         };
     },
     options: { skipAuth: true, skipValidation: true, cacheTTL: 60 }
