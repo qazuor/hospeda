@@ -1,4 +1,4 @@
-import { ServiceErrorCode } from '@repo/types';
+import { ServiceErrorCode } from '@repo/schemas';
 /**
  * Response formatting middleware
  * Ensures consistent response format across the API

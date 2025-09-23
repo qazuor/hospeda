@@ -5,8 +5,8 @@
  * Uses high-performance user cache to minimize database queries
  */
 import { getAuth } from '@hono/clerk-auth';
+import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
-import { PermissionEnum, RoleEnum } from '@repo/types';
 import type { MiddlewareHandler } from 'hono';
 import { createGuestActor } from '../utils/actor';
 import { apiLogger } from '../utils/logger';

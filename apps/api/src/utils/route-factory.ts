@@ -5,7 +5,7 @@
  */
 
 import { createRoute, z } from '@hono/zod-openapi';
-import { ServiceErrorCode } from '@repo/types';
+import { ServiceErrorCode } from '@repo/schemas';
 import type { Context, MiddlewareHandler } from 'hono';
 import { secureHeaders } from 'hono/secure-headers';
 import { createRouter } from './create-app';

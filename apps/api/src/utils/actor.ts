@@ -1,9 +1,9 @@
+import { PermissionEnum, RoleEnum } from '@repo/schemas';
 /**
  * Actor utilities for API layer
  * Provides helpers to create and manage actors for service calls
  */
 import type { Actor } from '@repo/service-core';
-import { PermissionEnum, RoleEnum } from '@repo/types';
 import type { Context } from 'hono';
 import { apiLogger } from './logger';
 
