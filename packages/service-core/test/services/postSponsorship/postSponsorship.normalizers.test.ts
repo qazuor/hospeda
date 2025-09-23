@@ -1,5 +1,5 @@
 import type { PostSponsorshipCreateInput, PostSponsorshipUpdateInput } from '@repo/schemas';
-import { PriceCurrencyEnum } from '@repo/schemas';
+import { LifecycleStatusEnum, PriceCurrencyEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
     normalizeCreateInput,
@@ -20,6 +20,7 @@ describe('postSponsorship.normalizers', () => {
                 postId: getMockId('post', 'post-1') as any,
                 message: '  Sponsored message  ',
                 description: '  Some description  ',
+                lifecycleState: LifecycleStatusEnum.ACTIVE,
                 paid: { price: 100, currency: PriceCurrencyEnum.USD },
                 paidAt: new Date('2024-01-01T00:00:00.000Z'),
                 fromDate: new Date('2024-01-01T00:00:00.000Z'),
@@ -38,6 +39,7 @@ describe('postSponsorship.normalizers', () => {
                 postId: getMockId('post', 'post-2') as any,
                 message: 'Message',
                 description: 'Desc',
+                lifecycleState: LifecycleStatusEnum.ACTIVE,
                 paid: { price: 100, currency: PriceCurrencyEnum.USD },
                 isHighlighted: false
             };

@@ -61,7 +61,9 @@ export const createMockPostSponsorshipCreateInput = (
         fromDate: new Date(),
         toDate: new Date(),
         isHighlighted: false,
-        ...overrides
+        ...overrides,
+        // Ensure lifecycleState is always defined
+        lifecycleState: overrides.lifecycleState || LifecycleStatusEnum.ACTIVE
     };
 };
 
