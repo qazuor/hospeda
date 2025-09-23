@@ -24,6 +24,7 @@ import { PostSponsorshipSchema } from './postSponsorship.schema.js';
 /**
  * Schema for creating a new post sponsorship
  * Omits auto-generated fields like id and audit fields
+ * Allows lifecycleState as optional
  */
 export const PostSponsorshipCreateInputSchema = PostSponsorshipSchema.omit({
     id: true,
@@ -33,8 +34,7 @@ export const PostSponsorshipCreateInputSchema = PostSponsorshipSchema.omit({
     updatedById: true,
     deletedAt: true,
     deletedById: true,
-    adminInfo: true,
-    lifecycleState: true
+    adminInfo: true
 }).strict();
 
 /**

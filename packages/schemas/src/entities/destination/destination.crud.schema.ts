@@ -20,6 +20,7 @@ import { DestinationSchema } from './destination.schema.js';
 /**
  * Schema for creating a new destination
  * Omits auto-generated fields like id and audit fields
+ * Makes slug optional since it can be auto-generated
  */
 export const DestinationCreateInputSchema = DestinationSchema.omit({
     id: true,
@@ -29,6 +30,12 @@ export const DestinationCreateInputSchema = DestinationSchema.omit({
     updatedById: true,
     deletedAt: true,
     deletedById: true
+}).extend({
+    slug: z
+        .string()
+        .min(3, { message: 'zodError.destination.slug.min' })
+        .max(50, { message: 'zodError.destination.slug.max' })
+        .optional()
 });
 export type DestinationCreateInput = z.infer<typeof DestinationCreateInputSchema>;
 
