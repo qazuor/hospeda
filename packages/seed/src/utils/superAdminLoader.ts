@@ -1,6 +1,6 @@
 import { UserModel } from '@repo/db';
+import { AuthProviderEnum, PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
-import { AuthProviderEnum, PermissionEnum, RoleEnum } from '@repo/types';
 import superAdminInput from '../data/user/required/super-admin-user.json';
 import { STATUS_ICONS } from './icons.js';
 import { logger } from './logger.js';
