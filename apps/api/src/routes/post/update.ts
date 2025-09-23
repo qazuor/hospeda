@@ -1,4 +1,4 @@
-import { PostDetailSchema, PostIdSchema, PostUpdateSchema } from '@repo/schemas';
+import { PostIdSchema, PostSchema, PostUpdateInputSchema } from '@repo/schemas';
 import { PostService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../utils/actor';
@@ -14,8 +14,8 @@ export const updatePostRoute = createCRUDRoute({
     description: 'Updates an existing post',
     tags: ['Posts'],
     requestParams: { id: PostIdSchema },
-    requestBody: PostUpdateSchema,
-    responseSchema: PostDetailSchema,
+    requestBody: PostUpdateInputSchema,
+    responseSchema: PostSchema,
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,

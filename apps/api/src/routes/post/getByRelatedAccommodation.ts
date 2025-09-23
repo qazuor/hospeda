@@ -15,8 +15,11 @@ export const getPostsByRelatedAccommodationRoute = createListRoute({
     tags: ['Posts'],
     requestParams: { accommodationId: AccommodationIdSchema },
     requestQuery: {
-        page: z.string().transform(Number).pipe(z.number().min(1)).optional(),
-        limit: z.string().transform(Number).pipe(z.number().min(1).max(100)).optional()
+        page: z.coerce.number().int().min(1).default(1),
+        pageSize: z.coerce.number().int().min(1).max(100).default(20),
+        sortBy: z.string().optional(),
+        sortOrder: z.enum(['asc', 'desc']).default('asc'),
+        q: z.string().optional()
     },
     responseSchema: PostListItemSchema,
     handler: async (ctx, params) => {

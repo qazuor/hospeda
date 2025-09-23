@@ -16,7 +16,10 @@ export const getPostsByCategoryRoute = createListRoute({
     requestParams: { category: PostCategoryEnumSchema },
     requestQuery: {
         page: z.string().transform(Number).pipe(z.number().min(1)).optional(),
-        limit: z.string().transform(Number).pipe(z.number().min(1).max(100)).optional()
+        pageSize: z.string().transform(Number).pipe(z.number().min(1).max(100)).optional(),
+        sortBy: z.string().optional(),
+        sortOrder: z.enum(['asc', 'desc']).optional(),
+        q: z.string().optional()
     },
     responseSchema: PostListItemSchema,
     handler: async (ctx, params) => {
