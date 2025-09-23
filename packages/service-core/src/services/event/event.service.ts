@@ -151,18 +151,25 @@ export class EventService extends BaseCrudService<
      */
     protected async _beforeCreate(input: EventCreateInput, _actor: Actor): Promise<Partial<Event>> {
         const normalized = await normalizeCreateInput(input);
-        // Ensure all required fields are present
-        if (!normalized.category || !normalized.name || !normalized.date?.start) {
-            throw new Error(
-                'Missing required fields for slug generation: category, name, or date.start'
+
+        // Only generate a slug if one is not already provided
+        if (!normalized.slug) {
+            // Ensure all required fields are present for slug generation
+            if (!normalized.category || !normalized.name || !normalized.date?.start) {
+                throw new Error(
+                    'Missing required fields for slug generation: category, name, or date.start'
+                );
+            }
+            const slug = await generateEventSlug(
+                String(normalized.category),
+                normalized.name,
+                normalized.date.start
             );
+            return { slug };
         }
-        const slug = await generateEventSlug(
-            String(normalized.category),
-            normalized.name,
-            normalized.date.start
-        );
-        return { ...normalized, slug };
+
+        // If slug is provided, return empty object to avoid overwriting
+        return {};
     }
 
     /**
