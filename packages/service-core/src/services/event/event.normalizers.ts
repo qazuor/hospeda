@@ -10,7 +10,8 @@ import { normalizeAdminInfo } from '../../utils';
 
 /**
  * Normalizes input data for creating an event.
- * Converts date fields from string to Date and IDs to branded types for compatibility with the model/domain type.
+ * IDs are converted to branded types for compatibility with the model/domain type.
+ * Date conversion is handled by the schema transformation.
  * @param input - The raw input for event creation (schema type)
  * @returns The normalized input as Partial<Event>
  */
@@ -20,11 +21,6 @@ export const normalizeCreateInput = (input: EventCreateInput): Partial<Event> =>
     return {
         ...rest,
         ...(adminInfo ? { adminInfo } : {}),
-        date: {
-            ...input.date,
-            start: new Date(input.date.start),
-            end: input.date.end ? new Date(input.date.end) : undefined
-        },
         locationId: input.locationId as EventLocationIdType,
         organizerId: input.organizerId as EventOrganizerIdType
     } as Partial<Event>;
