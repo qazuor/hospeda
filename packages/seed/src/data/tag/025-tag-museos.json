@@ -4,5 +4,6 @@
     "name": "Museos",
     "slug": "museos",
     "color": "PURPLE",
-    "notes": "Espacios de arte y historia"
+    "notes": "Espacios de arte y historia",
+    "lifecycleState": "ACTIVE"
 }

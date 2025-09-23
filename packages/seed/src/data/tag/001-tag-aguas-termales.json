@@ -4,5 +4,6 @@
     "name": "Aguas Termales",
     "slug": "aguas-termales",
     "color": "CYAN",
-    "icon": "hot-springs"
+    "icon": "hot-springs",
+    "lifecycleState": "ACTIVE"
 }

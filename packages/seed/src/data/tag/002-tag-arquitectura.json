@@ -4,5 +4,6 @@
     "name": "Arquitectura",
     "slug": "arquitectura",
     "color": "GREY",
-    "notes": "Edificaciones y construcciones destacadas"
+    "notes": "Edificaciones y construcciones destacadas",
+    "lifecycleState": "DRAFT"
 }
