@@ -1,4 +1,4 @@
-import { AccommodationDetailSchema, AccommodationIdSchema } from '@repo/schemas';
+import { AccommodationIdSchema, AccommodationSchema } from '@repo/schemas';
 import { AccommodationService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../utils/actor';
@@ -21,7 +21,7 @@ export const softDeleteAccommodationRoute = createCRUDRoute({
     requestParams: {
         id: AccommodationIdSchema
     },
-    responseSchema: AccommodationDetailSchema.nullable(),
+    responseSchema: AccommodationSchema.nullable(),
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         // Get the ID from the path params
         const id = params.id as string;

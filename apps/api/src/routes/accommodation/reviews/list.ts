@@ -18,30 +18,35 @@ export const listAccommodationReviewsRoute = createListRoute({
         accommodationId: AccommodationIdSchema
     },
     requestQuery: {
-        page: z.string().transform(Number).pipe(z.number().min(1)).optional(),
-        limit: z.string().transform(Number).pipe(z.number().min(1).max(100)).optional()
+        page: z.coerce.number().int().min(1).default(1),
+        pageSize: z.coerce.number().int().min(1).max(100).default(20),
+        sortBy: z.string().optional(),
+        sortOrder: z.enum(['asc', 'desc']).default('asc'),
+        q: z.string().optional()
     },
     responseSchema: z.object(AccommodationReviewSchema.shape),
     handler: async (ctx: Context, params, _body, query) => {
         const actor = getActorFromContext(ctx);
         // query is validated and always defined in createListRoute; cast explicitly for types
-        const validatedQuery = query as { page?: number; limit?: number };
+        const validatedQuery = query as { page?: number; pageSize?: number };
         const page = validatedQuery.page ?? 1;
-        const pageSize = validatedQuery.limit ?? 10;
+        const pageSize = validatedQuery.pageSize ?? 20;
         const service = new AccommodationReviewService({ logger: apiLogger });
         const result = await service.listByAccommodation(actor, {
             accommodationId: params.accommodationId as z.infer<typeof AccommodationIdSchema>,
             page,
-            pageSize
+            pageSize,
+            sortBy: 'createdAt' as const,
+            sortOrder: 'desc' as const
         });
         if (result.error) throw new Error(result.error.message);
         return {
-            items: result.data.items,
+            items: result.data.accommodationReviews || [],
             pagination: {
                 page,
-                limit: pageSize,
-                total: result.data.total,
-                totalPages: Math.ceil(result.data.total / pageSize)
+                pageSize,
+                total: result.data.accommodationReviews?.length || 0,
+                totalPages: 1
             }
         };
     }

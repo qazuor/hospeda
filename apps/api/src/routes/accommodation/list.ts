@@ -22,33 +22,44 @@ export const accommodationListRoute = createListRoute({
     description: 'Returns a paginated list of accommodations using the AccommodationService',
     tags: ['Accommodations'],
     requestQuery: {
-        page: z.string().transform(Number).pipe(z.number().min(1)).optional(),
-        limit: z.string().transform(Number).pipe(z.number().min(1).max(100)).optional(),
-        search: z.string().optional(),
-        sortOrder: z.enum(['ASC', 'DESC']).optional()
+        page: z.coerce.number().int().min(1).default(1),
+        pageSize: z.coerce.number().int().min(1).max(100).default(20),
+        sortBy: z.string().optional(),
+        sortOrder: z.enum(['asc', 'desc']).default('asc'),
+        q: z.string().optional(),
+        search: z.string().optional()
     },
     responseSchema: accommodationSchema,
     handler: async (ctx, _params, _body, query) => {
         // Get actor from context (can be guest)
         const actor = getActorFromContext(ctx);
 
-        const queryData = query as { page?: number; limit?: number; search?: string };
+        const queryData = query as {
+            page?: number;
+            pageSize?: number;
+            search?: string;
+            q?: string;
+        };
         const page = queryData.page ?? 1;
-        const pageSize = queryData.limit ?? 10;
+        const pageSize = queryData.pageSize ?? 20;
 
-        // Call the real accommodation service with relations
-        const result = await accommodationService.searchForList(actor, {
-            pagination: { page, pageSize },
-            filters: queryData.search ? { destinationId: queryData.search } : undefined
+        // Call the real accommodation service with standard list method
+        const result = await accommodationService.list(actor, {
+            page,
+            pageSize
         });
 
+        if (result.error) {
+            throw new Error(result.error.message);
+        }
+
         return {
-            items: result.items || [],
+            items: result.data?.items || [],
             pagination: {
                 page,
-                limit: pageSize,
-                total: result.total || 0,
-                totalPages: Math.ceil((result.total || 0) / pageSize)
+                pageSize: pageSize,
+                total: result.data?.total || 0,
+                totalPages: Math.ceil((result.data?.total || 0) / pageSize)
             }
         };
     },

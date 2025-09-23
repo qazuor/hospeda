@@ -34,8 +34,7 @@ const getTopRatedByDestinationHandler = async (c: Context) => {
     // Get top-rated accommodations by destination (provide required defaults)
     const result = await accommodationService.getTopRatedByDestination(actor, {
         destinationId,
-        limit: 10,
-        onlyFeatured: false
+        limit: 10
     });
 
     if (result.error) {

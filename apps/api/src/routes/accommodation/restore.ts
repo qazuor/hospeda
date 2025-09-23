@@ -2,7 +2,7 @@
  * Restore accommodation endpoint
  * Handles restoration of soft-deleted accommodations using AccommodationService
  */
-import { AccommodationDetailSchema, AccommodationIdSchema } from '@repo/schemas';
+import { AccommodationIdSchema, AccommodationSchema } from '@repo/schemas';
 import { AccommodationService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../utils/actor';
@@ -25,7 +25,7 @@ export const restoreAccommodationRoute = createCRUDRoute({
     requestParams: {
         id: AccommodationIdSchema
     },
-    responseSchema: AccommodationDetailSchema.nullable(),
+    responseSchema: AccommodationSchema.nullable(),
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const id = params.id as string;
 

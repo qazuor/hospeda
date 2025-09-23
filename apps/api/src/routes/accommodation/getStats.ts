@@ -29,7 +29,7 @@ const getStatsHandler = async (ctx: Context, params: Record<string, unknown>) =>
     }
 
     // Call the stats service
-    const statsResult = await accommodationService.getStats(actor, { id });
+    const statsResult = await accommodationService.getStats(actor, { idOrSlug: id });
 
     if (statsResult.error) {
         throw new Error(statsResult.error.message);
@@ -47,18 +47,11 @@ const getStatsHandler = async (ctx: Context, params: Record<string, unknown>) =>
             name: accommodationResult.data.name
         },
         stats: {
-            reviewsCount: statsResult.data.reviewsCount || 0,
-            averageRating: statsResult.data.averageRating || 0,
-            ratingDistribution: statsResult.data.rating || {
-                1: 0,
-                2: 0,
-                3: 0,
-                4: 0,
-                5: 0
-            },
-            // Optional fields that may be added later - provide defaults if not available
-            totalBookings: 0, // TODO: Add when service implements this field
-            occupancyRate: 0 // TODO: Add when service implements this field
+            total: statsResult.data.stats.total,
+            totalFeatured: statsResult.data.stats.totalFeatured,
+            averagePrice: statsResult.data.stats.averagePrice,
+            averageRating: statsResult.data.stats.averageRating,
+            totalByType: statsResult.data.stats.totalByType
         }
     };
 

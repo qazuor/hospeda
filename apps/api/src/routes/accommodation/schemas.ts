@@ -2,31 +2,45 @@ import { z } from '@hono/zod-openapi';
 
 // Import modular schemas from @repo/schemas for validation
 import {
-    AccommodationByDestinationSchema,
-    AccommodationDetailSchema,
+    AccommodationByDestinationOutputSchema,
+    AccommodationByDestinationParamsSchema,
+    AccommodationCreateInputSchema,
+    AccommodationFaqAddInputSchema,
+    AccommodationFaqRemoveInputSchema,
+    AccommodationFaqUpdateInputSchema,
+    AccommodationFiltersSchema,
     AccommodationListItemSchema,
-    AccommodationSearchCompositionSchema,
-    AccommodationSearchFiltersSchema,
-    AccommodationSearchPaginationSchema,
-    AccommodationSearchSortSchema,
+    AccommodationSchema,
+    AccommodationSearchResultSchema,
+    AccommodationSearchSchema,
     AccommodationStatsSchema,
     AccommodationSummarySchema,
-    TopRatedAccommodationsSchema
+    AccommodationTopRatedOutputSchema,
+    AccommodationUpdateInputSchema
 } from '@repo/schemas';
 
-// Import service schemas from @repo/schemas for validation
-import {
-    AddFaqServiceSchema,
-    CreateAccommodationServiceSchema,
-    GetAccommodationServiceSchema,
-    GetByDestinationServiceSchema,
-    GetFaqsServiceSchema,
-    GetTopRatedServiceSchema,
-    RemoveFaqServiceSchema,
-    SearchAccommodationServiceSchema,
-    UpdateAccommodationServiceSchema,
-    UpdateFaqServiceSchema
-} from '@repo/schemas';
+// Re-export with expected names for backward compatibility
+export const AccommodationDetailSchema = AccommodationSchema;
+export const AccommodationByDestinationSchema = AccommodationByDestinationOutputSchema;
+export const AccommodationSearchCompositionSchema = AccommodationSearchSchema;
+export const AccommodationSearchFiltersSchema = AccommodationFiltersSchema;
+export const AccommodationSearchPaginationSchema = AccommodationSearchResultSchema;
+export const AccommodationSearchSortSchema = AccommodationSearchSchema;
+export const TopRatedAccommodationsSchema = AccommodationTopRatedOutputSchema;
+
+// Service schemas - mapped to correct schemas
+export const AddFaqServiceSchema = AccommodationFaqAddInputSchema;
+export const CreateAccommodationServiceSchema = AccommodationCreateInputSchema;
+export const GetAccommodationServiceSchema = AccommodationSchema;
+export const GetByDestinationServiceSchema = AccommodationByDestinationParamsSchema;
+export const GetFaqsServiceSchema = z.object({
+    accommodationId: z.string()
+});
+export const GetTopRatedServiceSchema = z.object({});
+export const RemoveFaqServiceSchema = AccommodationFaqRemoveInputSchema;
+export const SearchAccommodationServiceSchema = AccommodationSearchSchema;
+export const UpdateAccommodationServiceSchema = AccommodationUpdateInputSchema;
+export const UpdateFaqServiceSchema = AccommodationFaqUpdateInputSchema;
 
 /**
  * Accommodation API schemas - Optimized for maximum reuse
