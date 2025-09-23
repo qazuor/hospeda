@@ -26,8 +26,8 @@
         "zipCode": "3206",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -31.044,
-            "longitude": -58.0936
+            "lat": "-31.044",
+            "long": "-58.0936"
         },
         "street": "Camino al Arroyo S/N",
         "number": "S/N",

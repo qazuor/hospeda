@@ -25,8 +25,8 @@
         "zipCode": "3260",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -32.4802,
-            "longitude": -58.2374
+            "lat": "-32.4802",
+            "long": "-58.2374"
         },
         "street": "Calle Los Alerces",
         "number": "45",

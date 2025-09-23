@@ -29,8 +29,8 @@
         "zipCode": "3200",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -31.3918,
-            "longitude": -58.0181
+            "lat": "-31.3918",
+            "long": "-58.0181"
         },
         "street": "Calle Urquiza",
         "number": "568",

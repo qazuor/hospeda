@@ -31,8 +31,8 @@
         "zipCode": "2826",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -33.7048,
-            "longitude": -58.6491
+            "lat": "-33.7048",
+            "long": "-58.6491"
         },
         "street": "Isla Los Sauces",
         "number": "s/n",

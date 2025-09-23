@@ -31,8 +31,8 @@
         "zipCode": "2847",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -32.187,
-            "longitude": -58.7362
+            "lat": "-32.187",
+            "long": "-58.7362"
         },
         "street": "Calle Sarmiento",
         "number": "1300",

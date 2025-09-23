@@ -30,8 +30,8 @@
         "zipCode": "2840",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -32.2137,
-            "longitude": -58.141
+            "lat": "-32.2137",
+            "long": "-58.141"
         },
         "street": "Calle Los Ceibos",
         "number": "450",

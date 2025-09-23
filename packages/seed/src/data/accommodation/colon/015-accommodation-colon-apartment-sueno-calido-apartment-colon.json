@@ -30,8 +30,8 @@
         "zipCode": "2840",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -32.2185,
-            "longitude": -58.1465
+            "lat": "-32.2185",
+            "long": "-58.1465"
         },
         "street": "Calle San Martín",
         "number": "1230",

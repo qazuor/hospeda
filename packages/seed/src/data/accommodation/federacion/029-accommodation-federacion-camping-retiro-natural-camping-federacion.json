@@ -26,8 +26,8 @@
         "zipCode": "3206",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -31.0234,
-            "longitude": -57.8982
+            "lat": "-31.0234",
+            "long": "-57.8982"
         },
         "street": "Camino al Bosque S/N",
         "number": "S/N",

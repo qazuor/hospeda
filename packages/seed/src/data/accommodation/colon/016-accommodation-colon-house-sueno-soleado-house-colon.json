@@ -26,8 +26,8 @@
         "zipCode": "2840",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -32.2302,
-            "longitude": -58.1523
+            "lat": "-32.2302",
+            "long": "-58.1523"
         },
         "street": "Calle Los Girasoles",
         "number": "320",

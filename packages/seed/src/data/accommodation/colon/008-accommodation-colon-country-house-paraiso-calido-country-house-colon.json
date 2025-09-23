@@ -26,8 +26,8 @@
         "zipCode": "2840",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -32.228,
-            "longitude": -58.154
+            "lat": "-32.228",
+            "long": "-58.154"
         },
         "street": "Camino a Pescadores S/N",
         "number": "S/N",

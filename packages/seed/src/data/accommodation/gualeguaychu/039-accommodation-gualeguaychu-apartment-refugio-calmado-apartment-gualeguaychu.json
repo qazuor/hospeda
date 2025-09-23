@@ -28,8 +28,8 @@
         "zipCode": "2820",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -33.0073,
-            "longitude": -58.5131
+            "lat": "-33.0073",
+            "long": "-58.5131"
         },
         "street": "Calle Entre Ríos",
         "number": "500",

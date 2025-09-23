@@ -25,8 +25,8 @@
         "zipCode": "2847",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -32.1844,
-            "longitude": -58.7549
+            "lat": "-32.1844",
+            "long": "-58.7549"
         },
         "street": "Calle Los Robles",
         "number": "150",

@@ -31,8 +31,8 @@
         "zipCode": "2847",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -32.2018,
-            "longitude": -58.7519
+            "lat": "-32.2018",
+            "long": "-58.7519"
         },
         "street": "Calle Los Nogales",
         "number": "80",

@@ -30,8 +30,8 @@
         "zipCode": "3200",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -31.4011,
-            "longitude": -58.0299
+            "lat": "-31.4011",
+            "long": "-58.0299"
         },
         "street": "Avenida Las Heras",
         "number": "2500",

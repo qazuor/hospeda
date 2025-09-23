@@ -25,8 +25,8 @@
         "zipCode": "3206",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -31.0592,
-            "longitude": -58.0997
+            "lat": "-31.0592",
+            "long": "-58.0997"
         },
         "street": "Calle Las Colonias",
         "number": "120",

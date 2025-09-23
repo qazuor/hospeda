@@ -28,8 +28,8 @@
         "zipCode": "3206",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -31.008,
-            "longitude": -57.9029
+            "lat": "-31.008",
+            "long": "-57.9029"
         },
         "street": "Calle Los Robles",
         "number": "50",

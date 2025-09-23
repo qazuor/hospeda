@@ -28,8 +28,8 @@
         "zipCode": "2845",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -32.3665,
-            "longitude": -58.2965
+            "lat": "-32.3665",
+            "long": "-58.2965"
         },
         "street": "Calle Los Horneros",
         "number": "50",

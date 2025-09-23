@@ -29,8 +29,8 @@
         "zipCode": "3228",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -30.7345,
-            "longitude": -58.0315
+            "lat": "-30.7345",
+            "long": "-58.0315"
         },
         "street": "Camino Vecinal S/N",
         "number": "S/N",

@@ -29,8 +29,8 @@
         "zipCode": "2820",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -33.0015,
-            "longitude": -58.5228
+            "lat": "-33.0015",
+            "long": "-58.5228"
         },
         "street": "Calle Jujuy",
         "number": "800",

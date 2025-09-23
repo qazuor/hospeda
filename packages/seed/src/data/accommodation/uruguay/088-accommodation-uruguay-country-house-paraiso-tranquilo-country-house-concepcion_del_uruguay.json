@@ -25,8 +25,8 @@
         "zipCode": "3260",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -32.4906,
-            "longitude": -58.2309
+            "lat": "-32.4906",
+            "long": "-58.2309"
         },
         "street": "Camino al Ñandubay S/N",
         "number": "S/N",

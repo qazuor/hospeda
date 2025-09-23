@@ -25,8 +25,8 @@
         "zipCode": "3228",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -30.7392,
-            "longitude": -58.0387
+            "lat": "-30.7392",
+            "long": "-58.0387"
         },
         "street": "Ruta Provincial 2",
         "number": "Km 15.5",

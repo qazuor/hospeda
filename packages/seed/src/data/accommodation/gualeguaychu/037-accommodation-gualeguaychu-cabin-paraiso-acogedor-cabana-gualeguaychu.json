@@ -28,8 +28,8 @@
         "zipCode": "2820",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -33.013,
-            "longitude": -58.5259
+            "lat": "-33.013",
+            "long": "-58.5259"
         },
         "street": "Camino a la Playa S/N",
         "number": "S/N",
