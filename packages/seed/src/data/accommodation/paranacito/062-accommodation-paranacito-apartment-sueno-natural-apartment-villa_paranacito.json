@@ -28,8 +28,8 @@
         "zipCode": "2826",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -33.6998,
-            "longitude": -58.648
+            "lat": "-33.6998",
+            "long": "-58.648"
         },
         "street": "Calle Los Álamos",
         "number": "80",

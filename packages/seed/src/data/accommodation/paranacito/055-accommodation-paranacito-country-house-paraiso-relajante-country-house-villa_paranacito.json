@@ -25,8 +25,8 @@
         "zipCode": "2826",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -33.7014,
-            "longitude": -58.6602
+            "lat": "-33.7014",
+            "long": "-58.6602"
         },
         "street": "Camino Rural Delta S/N",
         "number": "S/N",

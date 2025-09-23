@@ -31,8 +31,8 @@
         "zipCode": "2847",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -32.1988,
-            "longitude": -58.7439
+            "lat": "-32.1988",
+            "long": "-58.7439"
         },
         "street": "Camino a El Palmar S/N",
         "number": "S/N",

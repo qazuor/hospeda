@@ -29,8 +29,8 @@
         "zipCode": "3260",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -32.4859,
-            "longitude": -58.2254
+            "lat": "-32.4859",
+            "long": "-58.2254"
         },
         "street": "Calle Alem",
         "number": "350",

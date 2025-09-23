@@ -31,8 +31,8 @@
         "zipCode": "2845",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -32.3554,
-            "longitude": -58.3014
+            "lat": "-32.3554",
+            "long": "-58.3014"
         },
         "street": "Avenida Las Palmeras",
         "number": "150",

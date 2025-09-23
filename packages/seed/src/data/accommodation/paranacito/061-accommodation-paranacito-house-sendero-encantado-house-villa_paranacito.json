@@ -30,8 +30,8 @@
         "zipCode": "2826",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -33.707,
-            "longitude": -58.6549
+            "lat": "-33.707",
+            "long": "-58.6549"
         },
         "street": "Calle Los Cerezos",
         "number": "50",

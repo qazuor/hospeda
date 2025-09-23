@@ -29,8 +29,8 @@
         "zipCode": "3200",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -31.398,
-            "longitude": -58.0218
+            "lat": "-31.398",
+            "long": "-58.0218"
         },
         "street": "Calle Las Rosas",
         "number": "55",

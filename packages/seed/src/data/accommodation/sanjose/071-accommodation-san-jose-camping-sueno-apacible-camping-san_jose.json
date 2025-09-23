@@ -26,8 +26,8 @@
         "zipCode": "2847",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -32.1911,
-            "longitude": -58.7414
+            "lat": "-32.1911",
+            "long": "-58.7414"
         },
         "street": "Camino al Arroyo S/N",
         "number": "S/N",

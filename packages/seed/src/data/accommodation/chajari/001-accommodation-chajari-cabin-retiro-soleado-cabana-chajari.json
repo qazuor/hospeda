@@ -31,8 +31,8 @@
         "zipCode": "3228",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -30.7521,
-            "longitude": -58.0429
+            "lat": "-30.7521",
+            "long": "-58.0429"
         },
         "street": "Ruta Provincial 3",
         "number": "Km 5",

@@ -26,8 +26,8 @@
         "zipCode": "3260",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -32.4807,
-            "longitude": -58.239
+            "lat": "-32.4807",
+            "long": "-58.239"
         },
         "street": "Calle 3 de Febrero",
         "number": "1200",

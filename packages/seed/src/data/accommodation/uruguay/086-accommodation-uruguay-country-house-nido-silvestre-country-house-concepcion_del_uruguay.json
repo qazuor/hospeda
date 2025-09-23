@@ -30,8 +30,8 @@
         "zipCode": "3260",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -32.4825,
-            "longitude": -58.2295
+            "lat": "-32.4825",
+            "long": "-58.2295"
         },
         "street": "Camino a Estancia S/N",
         "number": "S/N",

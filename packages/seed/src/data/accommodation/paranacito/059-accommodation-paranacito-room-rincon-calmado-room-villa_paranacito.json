@@ -28,8 +28,8 @@
         "zipCode": "2826",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -33.7068,
-            "longitude": -58.6493
+            "lat": "-33.7068",
+            "long": "-58.6493"
         },
         "street": "Calle Los Jacarandás",
         "number": "45",

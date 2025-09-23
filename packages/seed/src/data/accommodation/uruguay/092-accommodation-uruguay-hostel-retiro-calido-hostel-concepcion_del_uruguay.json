@@ -26,8 +26,8 @@
         "zipCode": "3260",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -32.4807,
-            "longitude": -58.2224
+            "lat": "-32.4807",
+            "long": "-58.2224"
         },
         "street": "Calle Los Naranjos",
         "number": "25",

@@ -27,8 +27,8 @@
         "zipCode": "2820",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -33.0149,
-            "longitude": -58.5242
+            "lat": "-33.0149",
+            "long": "-58.5242"
         },
         "street": "Calle Alberdi",
         "number": "478",

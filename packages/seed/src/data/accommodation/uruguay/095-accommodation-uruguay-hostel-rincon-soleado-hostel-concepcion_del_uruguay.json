@@ -30,8 +30,8 @@
         "zipCode": "3260",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -32.474,
-            "longitude": -58.231
+            "lat": "-32.474",
+            "long": "-58.231"
         },
         "street": "Calle Eva Perón",
         "number": "680",

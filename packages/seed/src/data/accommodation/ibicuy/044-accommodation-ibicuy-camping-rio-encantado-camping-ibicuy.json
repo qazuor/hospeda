@@ -28,8 +28,8 @@
         "zipCode": "2826",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -33.7732,
-            "longitude": -58.8313
+            "lat": "-33.7732",
+            "long": "-58.8313"
         },
         "street": "Camino a Isla S/N",
         "number": "S/N",

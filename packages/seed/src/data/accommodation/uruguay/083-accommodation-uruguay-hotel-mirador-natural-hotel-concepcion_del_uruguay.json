@@ -31,8 +31,8 @@
         "zipCode": "3260",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -32.4912,
-            "longitude": -58.2256
+            "lat": "-32.4912",
+            "long": "-58.2256"
         },
         "street": "Avenida Costanera",
         "number": "1500",

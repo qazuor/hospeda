@@ -30,8 +30,8 @@
         "zipCode": "3260",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -32.4764,
-            "longitude": -58.2246
+            "lat": "-32.4764",
+            "long": "-58.2246"
         },
         "street": "Camino al Campo S/N",
         "number": "S/N",

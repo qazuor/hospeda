@@ -29,8 +29,8 @@
         "zipCode": "2820",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -33.0103,
-            "longitude": -58.5184
+            "lat": "-33.0103",
+            "long": "-58.5184"
         },
         "street": "Camino a La Estancia S/N",
         "number": "S/N",

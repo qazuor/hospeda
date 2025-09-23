@@ -30,8 +30,8 @@
         "zipCode": "2845",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -32.3724,
-            "longitude": -58.2901
+            "lat": "-32.3724",
+            "long": "-58.2901"
         },
         "street": "Camino Rural E",
         "number": "S/N",

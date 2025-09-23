@@ -31,8 +31,8 @@
         "zipCode": "3260",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -32.4834,
-            "longitude": -58.2344
+            "lat": "-32.4834",
+            "long": "-58.2344"
         },
         "street": "Calle Artigas",
         "number": "50",

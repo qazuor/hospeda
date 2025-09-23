@@ -29,8 +29,8 @@
         "zipCode": "3260",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -32.4826,
-            "longitude": -58.2352
+            "lat": "-32.4826",
+            "long": "-58.2352"
         },
         "street": "Calle Los Ceibos",
         "number": "120",

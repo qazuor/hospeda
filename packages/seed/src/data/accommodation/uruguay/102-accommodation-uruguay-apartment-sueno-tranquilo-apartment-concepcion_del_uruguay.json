@@ -28,8 +28,8 @@
         "zipCode": "3260",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -32.488,
-            "longitude": -58.2337
+            "lat": "-32.488",
+            "long": "-58.2337"
         },
         "street": "Calle Los Sauces",
         "number": "789",

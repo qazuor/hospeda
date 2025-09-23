@@ -25,8 +25,8 @@
         "zipCode": "3260",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -32.478,
-            "longitude": -58.2317
+            "lat": "-32.478",
+            "long": "-58.2317"
         },
         "street": "Calle 9 de Julio",
         "number": "870",

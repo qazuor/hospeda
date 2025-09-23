@@ -29,8 +29,8 @@
         "zipCode": "2840",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -32.2134,
-            "longitude": -58.1445
+            "lat": "-32.2134",
+            "long": "-58.1445"
         },
         "street": "Ribera del Uruguay",
         "number": "S/N",

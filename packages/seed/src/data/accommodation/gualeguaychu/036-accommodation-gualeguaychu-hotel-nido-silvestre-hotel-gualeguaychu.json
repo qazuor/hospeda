@@ -25,8 +25,8 @@
         "zipCode": "2820",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -33.0075,
-            "longitude": -58.5127
+            "lat": "-33.0075",
+            "long": "-58.5127"
         },
         "street": "Avenida Parque Sur",
         "number": "1500",

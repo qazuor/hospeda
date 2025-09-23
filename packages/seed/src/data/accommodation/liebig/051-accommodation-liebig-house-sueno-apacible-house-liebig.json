@@ -26,8 +26,8 @@
         "zipCode": "3206",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -31.0542,
-            "longitude": -58.1069
+            "lat": "-31.0542",
+            "long": "-58.1069"
         },
         "street": "Calle Los Ciruelos",
         "number": "88",

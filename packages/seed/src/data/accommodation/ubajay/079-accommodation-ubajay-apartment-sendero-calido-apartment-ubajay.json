@@ -30,8 +30,8 @@
         "zipCode": "2845",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -32.3681,
-            "longitude": -58.2906
+            "lat": "-32.3681",
+            "long": "-58.2906"
         },
         "street": "Calle Los Lapachos",
         "number": "180",

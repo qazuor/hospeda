@@ -30,8 +30,8 @@
         "zipCode": "3206",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -31.0151,
-            "longitude": -57.8941
+            "lat": "-31.0151",
+            "long": "-57.8941"
         },
         "street": "Calle Los Ceibos",
         "number": "125",

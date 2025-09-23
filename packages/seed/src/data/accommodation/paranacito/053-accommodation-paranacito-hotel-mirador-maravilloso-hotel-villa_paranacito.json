@@ -29,8 +29,8 @@
         "zipCode": "2826",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -33.7056,
-            "longitude": -58.6551
+            "lat": "-33.7056",
+            "long": "-58.6551"
         },
         "street": "Ribera del Paraná S/N",
         "number": "S/N",

@@ -30,8 +30,8 @@
         "zipCode": "2845",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -32.3673,
-            "longitude": -58.2983
+            "lat": "-32.3673",
+            "long": "-58.2983"
         },
         "street": "Camino al Arroyo S/N",
         "number": "S/N",

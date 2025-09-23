@@ -30,8 +30,8 @@
         "zipCode": "3260",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -32.4815,
-            "longitude": -58.2405
+            "lat": "-32.4815",
+            "long": "-58.2405"
         },
         "street": "Calle Los Paraísos",
         "number": "305",

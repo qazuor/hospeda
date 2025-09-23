@@ -30,8 +30,8 @@
         "zipCode": "2847",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -32.1941,
-            "longitude": -58.7417
+            "lat": "-32.1941",
+            "long": "-58.7417"
         },
         "street": "Calle 3 de Febrero",
         "number": "1100",

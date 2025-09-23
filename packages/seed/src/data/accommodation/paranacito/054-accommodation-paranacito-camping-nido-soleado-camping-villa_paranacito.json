@@ -25,8 +25,8 @@
         "zipCode": "2826",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -33.7065,
-            "longitude": -58.6487
+            "lat": "-33.7065",
+            "long": "-58.6487"
         },
         "street": "Camino al Sol S/N",
         "number": "S/N",

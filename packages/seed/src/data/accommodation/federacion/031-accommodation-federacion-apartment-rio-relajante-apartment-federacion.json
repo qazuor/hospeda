@@ -26,8 +26,8 @@
         "zipCode": "3206",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -31.0246,
-            "longitude": -57.9007
+            "lat": "-31.0246",
+            "long": "-57.9007"
         },
         "street": "Calle Paraná",
         "number": "800",

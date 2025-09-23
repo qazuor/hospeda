@@ -25,8 +25,8 @@
         "zipCode": "2820",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -33.002,
-            "longitude": -58.5148
+            "lat": "-33.002",
+            "long": "-58.5148"
         },
         "street": "Calle Los Jazmines",
         "number": "350",
