@@ -28,8 +28,8 @@
         "zipCode": "2820",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -33.0198,
-            "longitude": -58.5196
+            "lat": "-33.0198",
+            "long": "-58.5196"
         },
         "street": "Calle Los Tilos",
         "number": "110",

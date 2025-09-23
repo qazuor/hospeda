@@ -25,8 +25,8 @@
         "zipCode": "2840",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -32.232,
-            "longitude": -58.1554
+            "lat": "-32.232",
+            "long": "-58.1554"
         },
         "street": "Calle Mitre",
         "number": "980",

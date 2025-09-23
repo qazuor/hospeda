@@ -30,8 +30,8 @@
         "zipCode": "2840",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -32.2167,
-            "longitude": -58.1488
+            "lat": "-32.2167",
+            "long": "-58.1488"
         },
         "street": "Calle Los Aromos",
         "number": "150",

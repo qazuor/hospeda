@@ -26,8 +26,8 @@
         "zipCode": "3260",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -32.4862,
-            "longitude": -58.2229
+            "lat": "-32.4862",
+            "long": "-58.2229"
         },
         "street": "Camino Vecinal Este S/N",
         "number": "S/N",

@@ -31,8 +31,8 @@
         "zipCode": "3260",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -32.4913,
-            "longitude": -58.2296
+            "lat": "-32.4913",
+            "long": "-58.2296"
         },
         "street": "Calle de la Constitución",
         "number": "350",

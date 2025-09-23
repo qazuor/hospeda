@@ -26,8 +26,8 @@
         "zipCode": "2840",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -32.217,
-            "longitude": -58.1462
+            "lat": "-32.217",
+            "long": "-58.1462"
         },
         "street": "Calle 12 de Abril",
         "number": "550",

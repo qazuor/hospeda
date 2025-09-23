@@ -31,8 +31,8 @@
         "zipCode": "3206",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -31.0242,
-            "longitude": -57.8846
+            "lat": "-31.0242",
+            "long": "-57.8846"
         },
         "street": "Camino Rural C",
         "number": "S/N",

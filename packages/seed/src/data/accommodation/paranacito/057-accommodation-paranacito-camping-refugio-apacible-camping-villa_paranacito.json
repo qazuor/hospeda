@@ -25,8 +25,8 @@
         "zipCode": "2826",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -33.7059,
-            "longitude": -58.6604
+            "lat": "-33.7059",
+            "long": "-58.6604"
         },
         "street": "Camino Costero S/N",
         "number": "S/N",

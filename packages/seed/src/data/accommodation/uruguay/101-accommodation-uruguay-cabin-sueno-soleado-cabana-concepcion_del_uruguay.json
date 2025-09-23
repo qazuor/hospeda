@@ -29,8 +29,8 @@
         "zipCode": "3260",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -32.4832,
-            "longitude": -58.2287
+            "lat": "-32.4832",
+            "long": "-58.2287"
         },
         "street": "Camino Vecinal Sur S/N",
         "number": "S/N",

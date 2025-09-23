@@ -31,8 +31,8 @@
         "zipCode": "2826",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -33.7069,
-            "longitude": -58.6588
+            "lat": "-33.7069",
+            "long": "-58.6588"
         },
         "street": "Avenida Costanera S/N",
         "number": "S/N",

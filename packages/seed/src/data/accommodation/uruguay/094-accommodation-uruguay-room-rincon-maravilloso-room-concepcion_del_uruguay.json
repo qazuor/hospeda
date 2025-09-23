@@ -30,8 +30,8 @@
         "zipCode": "3260",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -32.4819,
-            "longitude": -58.238
+            "lat": "-32.4819",
+            "long": "-58.238"
         },
         "street": "Calle Los Robles",
         "number": "112",

@@ -30,8 +30,8 @@
         "zipCode": "2840",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -32.2269,
-            "longitude": -58.1569
+            "lat": "-32.2269",
+            "long": "-58.1569"
         },
         "street": "Calle Las Retamas",
         "number": "85",

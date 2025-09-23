@@ -30,8 +30,8 @@
         "zipCode": "3200",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -31.3841,
-            "longitude": -58.0269
+            "lat": "-31.3841",
+            "long": "-58.0269"
         },
         "street": "Calle Las Acacias",
         "number": "210",

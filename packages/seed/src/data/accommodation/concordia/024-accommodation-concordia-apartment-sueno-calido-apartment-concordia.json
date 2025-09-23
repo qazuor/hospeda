@@ -30,8 +30,8 @@
         "zipCode": "3200",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -31.3884,
-            "longitude": -58.0221
+            "lat": "-31.3884",
+            "long": "-58.0221"
         },
         "street": "Calle Los Fresnos",
         "number": "150",

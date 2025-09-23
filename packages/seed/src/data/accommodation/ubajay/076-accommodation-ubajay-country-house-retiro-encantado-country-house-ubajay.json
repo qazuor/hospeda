@@ -28,8 +28,8 @@
         "zipCode": "2845",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -32.3559,
-            "longitude": -58.2965
+            "lat": "-32.3559",
+            "long": "-58.2965"
         },
         "street": "Camino Rural Este S/N",
         "number": "S/N",

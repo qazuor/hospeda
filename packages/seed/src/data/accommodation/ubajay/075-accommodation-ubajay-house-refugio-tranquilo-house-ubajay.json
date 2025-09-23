@@ -25,8 +25,8 @@
         "zipCode": "2845",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -32.3569,
-            "longitude": -58.2976
+            "lat": "-32.3569",
+            "long": "-58.2976"
         },
         "street": "Calle Los Tilos",
         "number": "88",

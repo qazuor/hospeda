@@ -30,8 +30,8 @@
         "zipCode": "2820",
         "country": "Argentina",
         "coordinates": {
-            "latitude": -33.0161,
-            "longitude": -58.5113
+            "lat": "-33.0161",
+            "long": "-58.5113"
         },
         "street": "Camino a la Costa S/N",
         "number": "S/N",
