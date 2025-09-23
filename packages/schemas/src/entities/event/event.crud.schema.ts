@@ -21,6 +21,8 @@ import { EventSchema } from './event.schema.js';
 /**
  * Schema for creating a new event
  * Omits auto-generated fields like id and audit fields
+ * Makes slug optional since it can be auto-generated
+ * Allows moderationState and tags for seed data
  */
 export const EventCreateInputSchema = EventSchema.omit({
     id: true,
@@ -29,10 +31,10 @@ export const EventCreateInputSchema = EventSchema.omit({
     createdById: true,
     updatedById: true,
     deletedAt: true,
-    deletedById: true,
-    moderationState: true,
-    tags: true
-}).strict();
+    deletedById: true
+}).extend({
+    slug: z.string().min(1, { message: 'zodError.event.slug.min' }).optional()
+});
 
 /**
  * Schema for event creation response

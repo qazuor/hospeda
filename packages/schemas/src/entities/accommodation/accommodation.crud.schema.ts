@@ -20,6 +20,7 @@ import { AccommodationSchema } from './accommodation.schema.js';
 /**
  * Schema for creating a new accommodation
  * Omits auto-generated fields like id and audit fields
+ * Makes slug optional since it can be auto-generated
  */
 export const AccommodationCreateInputSchema = AccommodationSchema.omit({
     id: true,
@@ -29,6 +30,12 @@ export const AccommodationCreateInputSchema = AccommodationSchema.omit({
     updatedById: true,
     deletedAt: true,
     deletedById: true
+}).extend({
+    slug: z
+        .string()
+        .min(3, { message: 'zodError.accommodation.slug.min' })
+        .max(100, { message: 'zodError.accommodation.slug.max' })
+        .optional()
 });
 
 // Type: Create Input
