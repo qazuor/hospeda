@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { CreateUserSchema, UpdateUserSchema, UserSchema } from '@repo/schemas';
+import { UserCreateInputSchema, UserSchema, UserUpdateInputSchema } from '@repo/schemas';
 
 /**
  * User API schemas
@@ -16,17 +16,15 @@ export const userResponseSchema = z
 
 /**
  * User creation schema for API input
- * Uses real CreateUserSchema from @repo/schemas with OpenAPI wrapper
+ * Uses real UserCreateInputSchema from @repo/schemas with OpenAPI wrapper
  */
-export const userCreateSchema = z.object(CreateUserSchema.shape).openapi('UserCreate');
+export const userCreateSchema = z.object(UserCreateInputSchema.shape).openapi('UserCreate');
 
 /**
  * User update schema for API input
- * Uses real UpdateUserSchema from @repo/schemas with OpenAPI wrapper
+ * Uses real UserUpdateInputSchema from @repo/schemas with OpenAPI wrapper
  */
-export const userUpdateSchema = z
-    .object(UpdateUserSchema.omit({ id: true }).shape)
-    .openapi('UserUpdate');
+export const userUpdateSchema = z.object(UserUpdateInputSchema.shape).openapi('UserUpdate');
 
 /**
  * Legacy schema for backward compatibility
