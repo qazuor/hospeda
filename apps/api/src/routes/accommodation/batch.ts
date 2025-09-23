@@ -1,4 +1,4 @@
-import { AccommodationDetailSchema } from '@repo/schemas';
+import { AccommodationSchema } from '@repo/schemas';
 import { AccommodationService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -19,7 +19,7 @@ const BatchAccommodationRequestSchema = z.object({
 /**
  * Response schema for batch accommodation loading
  */
-const BatchAccommodationResponseSchema = z.array(AccommodationDetailSchema.nullable());
+const BatchAccommodationResponseSchema = z.array(AccommodationSchema.nullable());
 
 export const accommodationBatchRoute = createCRUDRoute({
     method: 'post',
