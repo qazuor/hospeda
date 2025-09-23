@@ -3,7 +3,7 @@
     "id": "007-amenity-kitchen-coffee-maker",
     "name": "coffee_maker",
     "slug": "coffee_maker",
-    "description": "Cafetera",
+    "description": "Cafetera disponible",
     "type": "KITCHEN",
     "icon": "amenity",
     "isBuiltin": false,

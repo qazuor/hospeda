@@ -3,7 +3,7 @@
     "id": "034-amenity-outdoors-solarium",
     "name": "solarium",
     "slug": "solarium",
-    "description": "Solárium",
+    "description": "Solárium disponible",
     "type": "OUTDOORS",
     "icon": "amenity",
     "isBuiltin": false,
