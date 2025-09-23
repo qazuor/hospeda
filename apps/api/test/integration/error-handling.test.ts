@@ -4,7 +4,7 @@
  * without losing information or causing interference between middlewares
  */
 
-import { ServiceErrorCode } from '@repo/types';
+import { ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../src/app';
 import { resetMetrics } from '../../src/middlewares/metrics';
