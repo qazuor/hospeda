@@ -62,13 +62,13 @@ export const attractionBatchRoute = createCRUDRoute({
             const requiredFields = ['id', 'name'];
             const fieldsToInclude = [...new Set([...requiredFields, ...fields])];
 
-            return attractions.map((attraction) => {
+            return attractions.map((attraction: unknown) => {
                 if (!attraction) return null;
 
                 const filtered: Record<string, unknown> = {};
                 for (const field of fieldsToInclude) {
-                    if (field in attraction) {
-                        filtered[field] = attraction[field as keyof typeof attraction];
+                    if (attraction && typeof attraction === 'object' && field in attraction) {
+                        filtered[field] = (attraction as Record<string, unknown>)[field];
                     }
                 }
 
