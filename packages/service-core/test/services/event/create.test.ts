@@ -1,5 +1,10 @@
 import { EventModel } from '@repo/db';
-import { EventCategoryEnum, PermissionEnum, VisibilityEnum } from '@repo/schemas';
+import {
+    EventCategoryEnum,
+    ModerationStatusEnum,
+    PermissionEnum,
+    VisibilityEnum
+} from '@repo/schemas';
 import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as helpers from '../../../src/services/event/event.helpers';
 import { EventService } from '../../../src/services/event/event.service';
@@ -24,7 +29,10 @@ describe('EventService.create', () => {
     let loggerMock: ServiceLogger;
     const actorWithPerm = createUser({ permissions: [PermissionEnum.EVENT_CREATE] });
     const actorNoPerm = createUser();
-    const rawInput = createEventInput({ visibility: VisibilityEnum.PUBLIC });
+    const rawInput = createEventInput({
+        visibility: VisibilityEnum.PUBLIC,
+        moderationState: ModerationStatusEnum.PENDING
+    });
     const validInput = rawInput;
     const createdEvent = createMockEvent();
 
@@ -80,7 +88,9 @@ describe('EventService.create', () => {
             name: 'Jazz Night',
             date: { start: new Date('2024-07-01'), end: new Date('2024-07-01') },
             locationId: createEventInput().locationId,
-            organizerId: createEventInput().organizerId
+            organizerId: createEventInput().organizerId,
+            moderationState: ModerationStatusEnum.PENDING,
+            slug: undefined // Remove slug to force generation
         };
         const result = await service.create(actorWithPerm, input);
         expect(helpers.generateEventSlug).toHaveBeenCalledWith(
@@ -102,7 +112,8 @@ describe('EventService.create', () => {
             name: '',
             date: { start: new Date('invalid'), end: new Date('invalid') },
             locationId: createEventInput().locationId,
-            organizerId: createEventInput().organizerId
+            organizerId: createEventInput().organizerId,
+            moderationState: ModerationStatusEnum.PENDING
         };
         const result = await service.create(actorWithPerm, input);
         expectValidationError(result);
