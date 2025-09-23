@@ -15,7 +15,7 @@ const AccommodationListResponseSchema = z.object({
         items: z.array(accommodationListItemSchema),
         pagination: z.object({
             page: z.number().min(1),
-            limit: z.number().min(1),
+            pageSize: z.number().min(1),
             total: z.number().min(0),
             totalPages: z.number().min(0)
         })
@@ -62,7 +62,7 @@ describe('GET /accommodations (Enhanced List)', () => {
 
                 // Pagination validation
                 expect(responseData.data.pagination.page).toBe(1); // Default page
-                expect(responseData.data.pagination.limit).toBeGreaterThan(0);
+                expect(responseData.data.pagination.pageSize).toBeGreaterThan(0);
                 expect(responseData.data.pagination.total).toBeGreaterThanOrEqual(0);
                 expect(responseData.data.pagination.totalPages).toBeGreaterThanOrEqual(0);
 
@@ -130,14 +130,14 @@ describe('GET /accommodations (Enhanced List)', () => {
     describe('Pagination Parameters', () => {
         it('should handle valid pagination parameters', async () => {
             const paginationTests = [
-                { page: 1, limit: 5 },
-                { page: 2, limit: 10 },
-                { page: 1, limit: 20 },
-                { page: 3, limit: 15 }
+                { page: 1, pageSize: 5 },
+                { page: 2, pageSize: 10 },
+                { page: 1, pageSize: 20 },
+                { page: 3, pageSize: 15 }
             ];
 
-            for (const { page, limit } of paginationTests) {
-                const response = await app.request(`${baseUrl}?page=${page}&limit=${limit}`, {
+            for (const { page, pageSize } of paginationTests) {
+                const response = await app.request(`${baseUrl}?page=${page}&pageSize=${pageSize}`, {
                     headers: {
                         'user-agent': 'vitest',
                         Accept: 'application/json'
@@ -149,24 +149,24 @@ describe('GET /accommodations (Enhanced List)', () => {
                 const data = await response.json();
                 expect(data.success).toBe(true);
                 expect(data.data.pagination.page).toBe(page);
-                expect(data.data.pagination.limit).toBe(limit);
-                expect(data.data.items.length).toBeLessThanOrEqual(limit);
+                expect(data.data.pagination.pageSize).toBe(pageSize);
+                expect(data.data.items.length).toBeLessThanOrEqual(pageSize);
             }
         });
 
         it('should validate pagination parameter bounds', async () => {
             const invalidPaginationTests = [
-                { page: 0, limit: 10, expected: 400 }, // Invalid page
-                { page: -1, limit: 10, expected: 400 }, // Negative page
-                { page: 1, limit: 0, expected: 400 }, // Invalid limit
-                { page: 1, limit: -5, expected: 400 }, // Negative limit
-                { page: 1, limit: 1001, expected: 400 }, // Limit too high
-                { page: 'invalid', limit: 10, expected: 400 }, // Non-numeric page
-                { page: 1, limit: 'invalid', expected: 400 } // Non-numeric limit
+                { page: 0, pageSize: 10, expected: 400 }, // Invalid page
+                { page: -1, pageSize: 10, expected: 400 }, // Negative page
+                { page: 1, pageSize: 0, expected: 400 }, // Invalid pageSize
+                { page: 1, pageSize: -5, expected: 400 }, // Negative pageSize
+                { page: 1, pageSize: 1001, expected: 400 }, // pageSize too high
+                { page: 'invalid', pageSize: 10, expected: 400 }, // Non-numeric page
+                { page: 1, pageSize: 'invalid', expected: 400 } // Non-numeric pageSize
             ];
 
-            for (const { page, limit, expected } of invalidPaginationTests) {
-                const response = await app.request(`${baseUrl}?page=${page}&limit=${limit}`, {
+            for (const { page, pageSize, expected } of invalidPaginationTests) {
+                const response = await app.request(`${baseUrl}?page=${page}&pageSize=${pageSize}`, {
                     headers: {
                         'user-agent': 'vitest',
                         Accept: 'application/json'
@@ -184,7 +184,7 @@ describe('GET /accommodations (Enhanced List)', () => {
         });
 
         it('should calculate total pages correctly', async () => {
-            const response = await app.request(`${baseUrl}?limit=5`, {
+            const response = await app.request(`${baseUrl}?pageSize=5`, {
                 headers: {
                     'user-agent': 'vitest',
                     Accept: 'application/json'
@@ -194,9 +194,9 @@ describe('GET /accommodations (Enhanced List)', () => {
             expect(response.status).toBe(200);
 
             const data = await response.json();
-            const { total, limit, totalPages } = data.data.pagination;
+            const { total, pageSize, totalPages } = data.data.pagination;
 
-            const expectedTotalPages = Math.ceil(total / limit);
+            const expectedTotalPages = Math.ceil(total / pageSize);
             expect(totalPages).toBe(expectedTotalPages);
         });
     });
@@ -492,7 +492,7 @@ describe('GET /accommodations (Enhanced List)', () => {
                     minRating: 4.0,
                     isFeatured: 'true',
                     page: 1,
-                    limit: 10,
+                    pageSize: 10,
                     sortBy: 'averageRating',
                     sortOrder: 'DESC'
                 },
@@ -503,7 +503,7 @@ describe('GET /accommodations (Enhanced List)', () => {
                     amenities: 'wifi,pool',
                     features: 'pet-friendly',
                     page: 2,
-                    limit: 5
+                    pageSize: 5
                 },
                 {
                     country: 'USA',
@@ -552,15 +552,15 @@ describe('GET /accommodations (Enhanced List)', () => {
                     }
 
                     // Validate pagination was applied
-                    if (filters.page && filters.limit) {
+                    if (filters.page && filters.pageSize) {
                         expect(data.data.pagination.page).toBe(
                             Number.parseInt(filters.page.toString(), 10)
                         );
-                        expect(data.data.pagination.limit).toBe(
-                            Number.parseInt(filters.limit.toString(), 10)
+                        expect(data.data.pagination.pageSize).toBe(
+                            Number.parseInt(filters.pageSize.toString(), 10)
                         );
                         expect(data.data.items.length).toBeLessThanOrEqual(
-                            Number.parseInt(filters.limit.toString(), 10)
+                            Number.parseInt(filters.pageSize.toString(), 10)
                         );
                     }
                 }
@@ -650,7 +650,7 @@ describe('GET /accommodations (Enhanced List)', () => {
     describe('Performance and Caching', () => {
         it('should handle concurrent requests efficiently', async () => {
             const promises = Array.from({ length: 5 }, (_, i) =>
-                app.request(`${baseUrl}?page=${i + 1}&limit=5`, {
+                app.request(`${baseUrl}?page=${i + 1}&pageSize=5`, {
                     headers: {
                         'user-agent': 'vitest',
                         Accept: 'application/json'
@@ -677,8 +677,8 @@ describe('GET /accommodations (Enhanced List)', () => {
             // Cache headers should be present due to cacheTTL configuration
         });
 
-        it('should handle large limit values appropriately', async () => {
-            const response = await app.request(`${baseUrl}?limit=100`, {
+        it('should handle large pageSize values appropriately', async () => {
+            const response = await app.request(`${baseUrl}?pageSize=100`, {
                 headers: {
                     'user-agent': 'vitest',
                     Accept: 'application/json'
@@ -697,10 +697,10 @@ describe('GET /accommodations (Enhanced List)', () => {
     describe('Data Consistency and Validation', () => {
         it('should maintain consistent data structure across pages', async () => {
             const [page1, page2] = await Promise.all([
-                app.request(`${baseUrl}?page=1&limit=5`, {
+                app.request(`${baseUrl}?page=1&pageSize=5`, {
                     headers: { 'user-agent': 'vitest', Accept: 'application/json' }
                 }),
-                app.request(`${baseUrl}?page=2&limit=5`, {
+                app.request(`${baseUrl}?page=2&pageSize=5`, {
                     headers: { 'user-agent': 'vitest', Accept: 'application/json' }
                 })
             ]);
@@ -726,7 +726,7 @@ describe('GET /accommodations (Enhanced List)', () => {
         });
 
         it('should return unique items (no duplicates)', async () => {
-            const response = await app.request(`${baseUrl}?limit=50`, {
+            const response = await app.request(`${baseUrl}?pageSize=50`, {
                 headers: {
                     'user-agent': 'vitest',
                     Accept: 'application/json'
