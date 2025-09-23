@@ -1,4 +1,4 @@
-import { DestinationDetailSchema, DestinationIdSchema } from '@repo/schemas';
+import { DestinationIdSchema, DestinationSchema } from '@repo/schemas';
 import { DestinationService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../utils/actor';
@@ -16,7 +16,7 @@ export const destinationGetByIdRoute = createCRUDRoute({
     requestParams: {
         id: DestinationIdSchema
     },
-    responseSchema: DestinationDetailSchema.nullable(),
+    responseSchema: DestinationSchema.nullable(),
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const result = await destinationService.getById(actor, params.id as string);

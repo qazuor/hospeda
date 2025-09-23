@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { DestinationDetailSchema } from '@repo/schemas';
+import { DestinationSchema } from '@repo/schemas';
 import { DestinationService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../utils/actor';
@@ -17,7 +17,7 @@ export const getDestinationBySlugRoute = createCRUDRoute({
     requestParams: {
         slug: z.string().min(1)
     },
-    responseSchema: DestinationDetailSchema.nullable(),
+    responseSchema: DestinationSchema.nullable(),
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const slug = params.slug as string;

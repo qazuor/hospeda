@@ -1,7 +1,7 @@
 import {
-    DestinationDetailSchema,
     DestinationIdSchema,
-    DestinationUpdateSchema
+    DestinationSchema,
+    DestinationUpdateInputSchema
 } from '@repo/schemas';
 import { DestinationService } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -22,8 +22,8 @@ export const patchDestinationRoute = createCRUDRoute({
     description: 'Partially updates a destination by ID with only the provided fields',
     tags: ['Destinations'],
     requestParams: { id: DestinationIdSchema },
-    requestBody: DestinationUpdateSchema, // Already .partial() so perfect for PATCH
-    responseSchema: DestinationDetailSchema,
+    requestBody: DestinationUpdateInputSchema, // Already .partial() so perfect for PATCH
+    responseSchema: DestinationSchema,
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,

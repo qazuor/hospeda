@@ -22,7 +22,11 @@ export const getDestinationAccommodationsRoute = createCRUDRoute({
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const id = params.id as string;
-        const result = await destinationService.getAccommodations(actor, { destinationId: id });
+        const result = await destinationService.getAccommodations(actor, {
+            destinationId: id,
+            page: 1,
+            pageSize: 20
+        });
         if (result.error) throw new Error(result.error.message);
         return result.data;
     },

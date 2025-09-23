@@ -1,7 +1,7 @@
 import {
-    DestinationDetailSchema,
     DestinationIdSchema,
-    DestinationUpdateSchema
+    DestinationSchema,
+    DestinationUpdateInputSchema
 } from '@repo/schemas';
 import { DestinationService } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -18,8 +18,8 @@ export const updateDestinationRoute = createCRUDRoute({
     description: 'Updates a destination by ID',
     tags: ['Destinations'],
     requestParams: { id: DestinationIdSchema },
-    requestBody: DestinationUpdateSchema,
-    responseSchema: DestinationDetailSchema,
+    requestBody: DestinationUpdateInputSchema,
+    responseSchema: DestinationSchema,
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
