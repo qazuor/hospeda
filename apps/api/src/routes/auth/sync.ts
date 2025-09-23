@@ -1,9 +1,9 @@
 import { createClerkClient } from '@clerk/backend';
 import { getAuth } from '@hono/clerk-auth';
 import { z } from '@hono/zod-openapi';
+import { AuthProviderEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { UserService } from '@repo/service-core';
-import { AuthProviderEnum } from '@repo/types';
 import { createGuestActor } from '../../utils/actor';
 import { env } from '../../utils/env';
 import { apiLogger } from '../../utils/logger';
@@ -88,7 +88,7 @@ export const authSyncRoute = createSimpleRoute({
                 lastName: clerkUser.lastName ?? undefined,
                 displayName: clerkUser.fullName ?? undefined,
                 contactInfo: undefined,
-                profile: clerkUser.imageUrl ? { avatar: clerkUser.imageUrl } : undefined
+                profile: clerkUser.imageUrl ? { avatar: { url: clerkUser.imageUrl } } : undefined
             } as const;
             type ExternalAccount = {
                 id: string;
