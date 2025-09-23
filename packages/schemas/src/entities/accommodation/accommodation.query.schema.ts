@@ -152,6 +152,7 @@ export const AccommodationSummarySchema = AccommodationSchema.pick({
     id: true,
     name: true,
     slug: true,
+    summary: true, // Add summary field since it's needed for accommodation summary
     type: true,
     price: true,
     location: true,
