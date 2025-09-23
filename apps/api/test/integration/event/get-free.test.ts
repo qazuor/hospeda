@@ -13,7 +13,7 @@ describe('GET /events/free', () => {
     });
 
     it('returns 200 and supports pagination', async () => {
-        const res = await app.request(`${base}/free?page=1&limit=10`);
+        const res = await app.request(`${base}/free?page=1&pageSize=10`);
         expect([200, 400]).toContain(res.status);
     });
 });

@@ -17,11 +17,11 @@ describe('Event - Pagination bounds', () => {
         expect([400]).toContain(res.status);
     });
 
-    it('limit must be within bounds', async () => {
-        const tooHigh = await app.request(`${base}?limit=1000`);
+    it('pageSize must be within bounds', async () => {
+        const tooHigh = await app.request(`${base}?pageSize=1000`);
         expect([400]).toContain(tooHigh.status);
 
-        const negative = await app.request(`${base}?limit=-5`);
+        const negative = await app.request(`${base}?pageSize=-5`);
         expect([400]).toContain(negative.status);
     });
 });

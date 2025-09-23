@@ -15,7 +15,7 @@ const DestinationListResponseSchema = z.object({
         items: z.array(DestinationListItemSchema),
         pagination: z.object({
             page: z.number().min(1),
-            limit: z.number().min(1),
+            pageSize: z.number().min(1),
             total: z.number().min(0),
             totalPages: z.number().min(0)
         })
@@ -56,7 +56,7 @@ describe('GET /destinations (Enhanced List)', () => {
                     expect(res.success).toBe(true);
                     expect(Array.isArray(res.data.items)).toBe(true);
                     expect(res.data.pagination.page).toBe(1);
-                    expect(res.data.pagination.limit).toBeGreaterThan(0);
+                    expect(res.data.pagination.pageSize).toBeGreaterThan(0);
                     expect(res.data.pagination.total).toBeGreaterThanOrEqual(0);
                     expect(res.data.pagination.totalPages).toBeGreaterThanOrEqual(0);
                     expect(typeof res.metadata.timestamp).toBe('string');
@@ -70,14 +70,14 @@ describe('GET /destinations (Enhanced List)', () => {
     describe('Pagination Parameters', () => {
         it('should handle valid pagination parameters', async () => {
             const paginationCases = [
-                { page: 1, limit: 5 },
-                { page: 2, limit: 10 },
-                { page: 1, limit: 20 },
-                { page: 3, limit: 15 }
+                { page: 1, pageSize: 5 },
+                { page: 2, pageSize: 10 },
+                { page: 1, pageSize: 20 },
+                { page: 3, pageSize: 15 }
             ];
 
-            for (const { page, limit } of paginationCases) {
-                const response = await app.request(`${baseUrl}?page=${page}&limit=${limit}`, {
+            for (const { page, pageSize } of paginationCases) {
+                const response = await app.request(`${baseUrl}?page=${page}&pageSize=${pageSize}`, {
                     headers: {
                         'user-agent': 'vitest',
                         Accept: 'application/json'
@@ -90,8 +90,8 @@ describe('GET /destinations (Enhanced List)', () => {
                     expect(parsed.success).toBe(true);
                     if (parsed.success) {
                         expect(parsed.data.data.pagination.page).toBe(page);
-                        expect(parsed.data.data.pagination.limit).toBe(limit);
-                        expect(parsed.data.data.items.length).toBeLessThanOrEqual(limit);
+                        expect(parsed.data.data.pagination.pageSize).toBe(pageSize);
+                        expect(parsed.data.data.items.length).toBeLessThanOrEqual(pageSize);
                     }
                 }
             }
@@ -99,21 +99,21 @@ describe('GET /destinations (Enhanced List)', () => {
 
         it('should validate pagination bounds', async () => {
             const invalidCases = [
-                { page: 0, limit: 10 },
-                { page: -1, limit: 10 },
-                { page: 1, limit: 0 },
-                { page: 1, limit: -5 }
+                { page: 0, pageSize: 10 },
+                { page: -1, pageSize: 10 },
+                { page: 1, pageSize: 0 },
+                { page: 1, pageSize: -5 }
             ];
-            for (const { page, limit } of invalidCases) {
-                const response = await app.request(`${baseUrl}?page=${page}&limit=${limit}`, {
+            for (const { page, pageSize } of invalidCases) {
+                const response = await app.request(`${baseUrl}?page=${page}&pageSize=${pageSize}`, {
                     headers: { 'user-agent': 'vitest' }
                 });
                 expect([400]).toContain(response.status);
             }
         });
 
-        it('should calculate total pages correctly when limit is provided', async () => {
-            const response = await app.request(`${baseUrl}?limit=5`, {
+        it('should calculate total pages correctly when pageSize is provided', async () => {
+            const response = await app.request(`${baseUrl}?pageSize=5`, {
                 headers: {
                     'user-agent': 'vitest',
                     Accept: 'application/json'
@@ -122,8 +122,8 @@ describe('GET /destinations (Enhanced List)', () => {
             expect([200, 400]).toContain(response.status);
             if (response.status === 200) {
                 const data = await response.json();
-                const { total, limit, totalPages } = data.data.pagination;
-                expect(totalPages).toBe(Math.ceil(total / limit));
+                const { total, pageSize, totalPages } = data.data.pagination;
+                expect(totalPages).toBe(Math.ceil(total / pageSize));
             }
         });
     });
