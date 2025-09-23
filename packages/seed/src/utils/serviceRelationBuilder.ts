@@ -1,5 +1,5 @@
+import { ServiceErrorCode } from '@repo/schemas';
 import type { ServiceContext } from '@repo/service-core';
-import { ServiceErrorCode } from '@repo/types';
 import { errorHistory } from './errorHistory.js';
 import { STATUS_ICONS } from './icons.js';
 import { logger } from './logger.js';
