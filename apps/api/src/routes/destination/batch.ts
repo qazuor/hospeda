@@ -1,4 +1,4 @@
-import { DestinationDetailSchema } from '@repo/schemas';
+import { DestinationSchema } from '@repo/schemas';
 import { DestinationService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -19,7 +19,7 @@ const BatchDestinationRequestSchema = z.object({
 /**
  * Response schema for batch destination loading
  */
-const BatchDestinationResponseSchema = z.array(DestinationDetailSchema.nullable());
+const BatchDestinationResponseSchema = z.array(DestinationSchema.nullable());
 
 export const destinationBatchRoute = createCRUDRoute({
     method: 'post',

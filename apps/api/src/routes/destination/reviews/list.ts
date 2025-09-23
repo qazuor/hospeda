@@ -18,15 +18,18 @@ export const listDestinationReviewsRoute = createListRoute({
         destinationId: DestinationIdSchema
     },
     requestQuery: {
-        page: z.string().transform(Number).pipe(z.number().min(1)).optional(),
-        limit: z.string().transform(Number).pipe(z.number().min(1).max(100)).optional()
+        page: z.coerce.number().int().min(1).default(1),
+        pageSize: z.coerce.number().int().min(1).max(100).default(20),
+        sortBy: z.string().optional(),
+        sortOrder: z.enum(['asc', 'desc']).default('asc'),
+        q: z.string().optional()
     },
     responseSchema: z.object(DestinationReviewSchema.shape),
     handler: async (ctx: Context, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
-        const validatedQuery = query as { page?: number; limit?: number };
+        const validatedQuery = query as { page?: number; pageSize?: number };
         const page = validatedQuery.page ?? 1;
-        const pageSize = validatedQuery.limit ?? 10;
+        const pageSize = validatedQuery.pageSize ?? 20;
         // Reuse generic list from BaseCrudService with a where filter if needed; for now, simple list
         const service = new DestinationReviewService({ logger: apiLogger });
         const result = await service.list(actor, { page, pageSize });
@@ -35,7 +38,7 @@ export const listDestinationReviewsRoute = createListRoute({
             items: result.data.items,
             pagination: {
                 page,
-                limit: pageSize,
+                pageSize,
                 total: result.data.total,
                 totalPages: Math.ceil(result.data.total / pageSize)
             }
