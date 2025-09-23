@@ -1,4 +1,4 @@
-import { EventDetailSchema } from '@repo/schemas';
+import { EventSchema } from '@repo/schemas';
 import { EventService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -19,7 +19,7 @@ const BatchEventRequestSchema = z.object({
 /**
  * Response schema for batch event loading
  */
-const BatchEventResponseSchema = z.array(EventDetailSchema.nullable());
+const BatchEventResponseSchema = z.array(EventSchema.nullable());
 
 export const eventBatchRoute = createCRUDRoute({
     method: 'post',

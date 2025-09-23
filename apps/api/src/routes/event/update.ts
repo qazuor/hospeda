@@ -1,4 +1,4 @@
-import { EventDetailSchema, EventIdSchema, EventUpdateSchema } from '@repo/schemas';
+import { EventIdSchema, EventSchema, EventUpdateInputSchema } from '@repo/schemas';
 import { EventService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../utils/actor';
@@ -16,8 +16,8 @@ const eventService = new EventService({ logger: apiLogger });
  * - Method: PUT
  * - Path: `/{id}`
  * - Params: `id` (EventId)
- * - Body: `EventUpdateSchema`
- * - Response: `EventDetailSchema`
+ * - Body: `EventUpdateInputSchema`
+ * - Response: `EventSchema`
  */
 export const updateEventRoute = createCRUDRoute({
     method: 'put',
@@ -26,8 +26,8 @@ export const updateEventRoute = createCRUDRoute({
     description: 'Updates an existing event',
     tags: ['Events'],
     requestParams: { id: EventIdSchema },
-    requestBody: EventUpdateSchema,
-    responseSchema: EventDetailSchema,
+    requestBody: EventUpdateInputSchema,
+    responseSchema: EventSchema,
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,

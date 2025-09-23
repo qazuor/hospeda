@@ -12,9 +12,9 @@ const handler = async (ctx: Context, params: Record<string, unknown>) => {
     const validation = EventIdSchema.safeParse(id);
     if (!validation.success) throw validation.error;
     const actor = getActorFromContext(ctx);
-    const result = await eventService.getSummary(actor, { id: id as unknown as never });
+    const result = await eventService.getSummary(actor, { eventId: id });
     if (result.error) throw new Error(result.error.message);
-    return result.data?.summary ?? null;
+    return result.data ?? null;
 };
 
 export const getEventSummaryRoute = createCRUDRoute({
