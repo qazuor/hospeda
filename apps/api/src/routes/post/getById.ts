@@ -1,4 +1,4 @@
-import { PostDetailSchema, PostIdSchema } from '@repo/schemas';
+import { PostIdSchema, PostSchema } from '@repo/schemas';
 import { PostService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../utils/actor';
@@ -14,7 +14,7 @@ export const postGetByIdRoute = createCRUDRoute({
     description: 'Retrieves a post by its ID',
     tags: ['Posts'],
     requestParams: { id: PostIdSchema },
-    responseSchema: PostDetailSchema.nullable(),
+    responseSchema: PostSchema.nullable(),
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const result = await postService.getById(actor, params.id as string);
