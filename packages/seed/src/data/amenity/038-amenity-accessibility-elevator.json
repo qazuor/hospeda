@@ -3,7 +3,7 @@
     "id": "038-amenity-accessibility-elevator",
     "name": "elevator",
     "slug": "elevator",
-    "description": "Ascensor",
+    "description": "Ascensor disponible",
     "type": "ACCESSIBILITY",
     "icon": "amenity",
     "isBuiltin": false,

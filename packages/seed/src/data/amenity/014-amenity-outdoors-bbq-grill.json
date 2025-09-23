@@ -3,7 +3,7 @@
     "id": "014-amenity-outdoors-bbq-grill",
     "name": "bbq_grill",
     "slug": "bbq_grill",
-    "description": "Parrilla",
+    "description": "Parrilla para barbacoa",
     "type": "OUTDOORS",
     "icon": "amenity",
     "isBuiltin": false,

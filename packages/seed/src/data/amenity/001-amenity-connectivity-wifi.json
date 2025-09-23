@@ -3,7 +3,7 @@
     "id": "001-amenity-connectivity-wifi",
     "name": "wifi",
     "slug": "wifi",
-    "description": "Wi-Fi",
+    "description": "Conexión Wi-Fi",
     "type": "CONNECTIVITY",
     "icon": "amenity",
     "isBuiltin": false,

@@ -3,7 +3,7 @@
     "id": "046-amenity-services-mini-bar",
     "name": "mini_bar",
     "slug": "mini_bar",
-    "description": "Mini bar",
+    "description": "Mini bar en habitación",
     "type": "SERVICES",
     "icon": "amenity",
     "isBuiltin": false,

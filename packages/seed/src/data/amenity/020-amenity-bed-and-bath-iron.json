@@ -3,7 +3,7 @@
     "id": "020-amenity-bed-and-bath-iron",
     "name": "iron",
     "slug": "iron",
-    "description": "Plancha",
+    "description": "Plancha de ropa",
     "type": "BED_AND_BATH",
     "icon": "amenity",
     "isBuiltin": false,

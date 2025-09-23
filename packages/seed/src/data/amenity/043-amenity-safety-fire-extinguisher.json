@@ -3,7 +3,7 @@
     "id": "043-amenity-safety-fire-extinguisher",
     "name": "fire_extinguisher",
     "slug": "fire_extinguisher",
-    "description": "Extintor",
+    "description": "Extintor de incendios",
     "type": "SAFETY",
     "icon": "amenity",
     "isBuiltin": false,

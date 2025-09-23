@@ -3,7 +3,7 @@
     "id": "083-amenity-services-bar",
     "name": "bar",
     "slug": "bar",
-    "description": "Bar",
+    "description": "Bar en el hotel",
     "type": "SERVICES",
     "icon": "amenity",
     "isBuiltin": false,

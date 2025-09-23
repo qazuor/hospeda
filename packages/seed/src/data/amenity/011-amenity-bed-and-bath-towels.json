@@ -3,7 +3,7 @@
     "id": "011-amenity-bed-and-bath-towels",
     "name": "towels",
     "slug": "towels",
-    "description": "Toallas",
+    "description": "Toallas incluidas",
     "type": "BED_AND_BATH",
     "icon": "amenity",
     "isBuiltin": false,

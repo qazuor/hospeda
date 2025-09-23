@@ -3,7 +3,7 @@
     "id": "026-amenity-outdoors-sauna",
     "name": "sauna",
     "slug": "sauna",
-    "description": "Sauna",
+    "description": "Sauna disponible",
     "type": "OUTDOORS",
     "icon": "amenity",
     "isBuiltin": false,
