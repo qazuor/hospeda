@@ -4,5 +4,6 @@
     "name": "Pesca",
     "slug": "pesca",
     "color": "BLUE",
-    "notes": "Actividades de pesca deportiva y recreativa"
+    "notes": "Actividades de pesca deportiva y recreativa",
+    "lifecycleState": "DRAFT"
 }
