@@ -4,9 +4,8 @@
  */
 
 import { z } from '@hono/zod-openapi';
+import { RoleEnum } from '@repo/schemas';
 import { UserService } from '@repo/service-core';
-import type { UserId } from '@repo/types';
-import { RoleEnum } from '@repo/types';
 import { apiLogger } from '../../utils/logger';
 import { createCRUDRoute } from '../../utils/route-factory';
 import { userCache } from '../../utils/user-cache';
@@ -46,10 +45,7 @@ export const updateUserRoute = createCRUDRoute({
         const actor = ctx.get('actor');
 
         // Call the real user service
-        const result = await userService.update(actor, id as string, {
-            id: id as UserId,
-            ...userData
-        });
+        const result = await userService.update(actor, id as string, userData);
 
         if (result.error) {
             throw new Error(result.error.message);

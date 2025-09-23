@@ -17,32 +17,42 @@ export const listUsersRoute = createListRoute({
     description: 'Returns a paginated list of users',
     tags: ['Users'],
     requestQuery: {
-        page: z.string().transform(Number).pipe(z.number().min(1)).optional(),
-        limit: z.string().transform(Number).pipe(z.number().min(1).max(100)).optional(),
-        search: z.string().optional(),
-        sortOrder: z.enum(['ASC', 'DESC']).optional()
+        page: z.coerce.number().int().min(1).default(1),
+        pageSize: z.coerce.number().int().min(1).max(100).default(20),
+        sortBy: z.string().optional(),
+        sortOrder: z.enum(['asc', 'desc']).default('asc'),
+        q: z.string().optional(),
+        search: z.string().optional()
     },
     responseSchema: z.object({ id: z.string().uuid() }).partial(),
     handler: async (ctx: Context, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
-        const queryData = query as { page?: number; limit?: number; search?: string };
+        const queryData = query as {
+            page?: number;
+            pageSize?: number;
+            search?: string;
+            q?: string;
+        };
         const page = queryData.page ?? 1;
-        const pageSize = queryData.limit ?? 10;
-        const search = queryData.search;
+        const pageSize = queryData.pageSize ?? 20;
 
         const service = new UserService({ logger: apiLogger });
-        const result = await service.searchForList(actor, {
-            pagination: { page, pageSize },
-            ...(search && { filters: { q: search } })
+        const result = await service.list(actor, {
+            page,
+            pageSize
         });
 
+        if (result.error) {
+            throw new Error(result.error.message);
+        }
+
         return {
-            items: result.items,
+            items: result.data?.items || [],
             pagination: {
                 page,
-                limit: pageSize,
-                total: result.total,
-                totalPages: Math.ceil(result.total / pageSize)
+                pageSize,
+                total: result.data?.total || 0,
+                totalPages: Math.ceil((result.data?.total || 0) / pageSize)
             }
         };
     },

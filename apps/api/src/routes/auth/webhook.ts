@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
+import { AuthProviderEnum } from '@repo/schemas';
 import { UserService } from '@repo/service-core';
-import { AuthProviderEnum } from '@repo/types';
 import { Webhook } from 'svix';
 import { createGuestActor } from '../../utils/actor';
 import { env } from '../../utils/env';
@@ -76,7 +76,7 @@ export const clerkWebhookRoute = createSimpleRoute({
                 firstName,
                 lastName,
                 displayName,
-                profile: imageUrl ? { avatar: imageUrl } : undefined
+                profile: imageUrl ? { avatar: { url: imageUrl } } : undefined
             } as const;
             const externalAccounts =
                 (data?.external_accounts as Array<Record<string, unknown>>) || [];
