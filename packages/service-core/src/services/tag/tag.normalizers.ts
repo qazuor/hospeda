@@ -24,11 +24,12 @@ export const normalizeCreateInput = async (
     if (color && !Object.values(TagColorEnum).includes(color)) {
         throw new ServiceError(ServiceErrorCode.VALIDATION_ERROR, 'Invalid tag color');
     }
+    const normalizedLifecycleState = input.lifecycleState || 'ACTIVE';
     return {
         name,
         slug,
         color,
-        lifecycleState: input.lifecycleState,
+        lifecycleState: normalizedLifecycleState,
         icon: input.icon?.trim() || undefined,
         notes: input.notes?.trim() || undefined
     };
