@@ -439,6 +439,7 @@ export class AccommodationService extends BaseCrudService<
                     ownerId: entity.ownerId,
                     slug: entity.slug,
                     name: entity.name,
+                    summary: entity.summary,
                     isFeatured: entity.isFeatured,
                     reviewsCount: 0,
                     averageRating: 0,
