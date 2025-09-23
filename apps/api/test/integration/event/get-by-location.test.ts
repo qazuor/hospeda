@@ -14,7 +14,7 @@ describe('GET /events/location/:locationId', () => {
 
     it('returns 200 for valid location and accepts pagination', async () => {
         const res = await app.request(
-            `${base}/location/00000000-0000-0000-0000-000000000002?page=1&limit=10`
+            `${base}/location/00000000-0000-0000-0000-000000000002?page=1&pageSize=10`
         );
         expect([200, 400, 404]).toContain(res.status);
     });

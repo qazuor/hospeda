@@ -12,8 +12,8 @@ describe('Event - List sorting + filters combo', () => {
         app = initApp();
     });
 
-    it('sortOrder + q + limit + page', async () => {
-        const res = await app.request(`${base}?sortOrder=ASC&q=music&page=1&limit=5`);
+    it('sortOrder + q + pageSize + page', async () => {
+        const res = await app.request(`${base}?sortOrder=asc&q=music&page=1&pageSize=5`);
         expect([200, 400]).toContain(res.status);
         if (res.status === 200) {
             const body = await res.json();

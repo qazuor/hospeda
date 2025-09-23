@@ -15,7 +15,7 @@ describe('GET /events/upcoming', () => {
     it('returns 200 and supports date range + pagination', async () => {
         const from = new Date().toISOString();
         const res = await app.request(
-            `${base}/upcoming?fromDate=${encodeURIComponent(from)}&page=1&limit=5`
+            `${base}/upcoming?fromDate=${encodeURIComponent(from)}&page=1&pageSize=5`
         );
         expect([200, 400]).toContain(res.status);
     });

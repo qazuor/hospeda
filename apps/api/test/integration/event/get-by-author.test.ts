@@ -14,7 +14,7 @@ describe('GET /events/author/:authorId', () => {
 
     it('returns 200 for valid author and accepts pagination', async () => {
         const res = await app.request(
-            `${base}/author/00000000-0000-0000-0000-000000000001?page=1&limit=10`
+            `${base}/author/00000000-0000-0000-0000-000000000001?page=1&pageSize=10`
         );
         expect([200, 400, 404]).toContain(res.status);
     });
