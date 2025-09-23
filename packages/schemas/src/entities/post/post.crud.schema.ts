@@ -21,6 +21,7 @@ import { PostSchema } from './post.schema.js';
 /**
  * Schema for creating a new post
  * Omits auto-generated fields like id and audit fields
+ * Makes slug optional as it can be auto-generated from title
  */
 export const PostCreateInputSchema = PostSchema.omit({
     id: true,
@@ -30,6 +31,8 @@ export const PostCreateInputSchema = PostSchema.omit({
     updatedById: true,
     deletedAt: true,
     deletedById: true
+}).extend({
+    slug: z.string().min(1, { message: 'zodError.post.slug.min' }).optional()
 });
 
 /**
