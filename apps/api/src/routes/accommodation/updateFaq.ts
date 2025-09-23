@@ -62,7 +62,7 @@ export const updateFaqRoute = createCRUDRoute({
             faq: {
                 question: updateData.question ?? existingFaq.question,
                 answer: updateData.answer ?? existingFaq.answer,
-                order: updateData.order ?? 0
+                category: updateData.category ?? existingFaq.category
             }
         });
 

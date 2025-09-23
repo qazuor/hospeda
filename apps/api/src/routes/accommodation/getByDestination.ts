@@ -35,7 +35,9 @@ const getByDestinationHandler = async (c: Context) => {
 
     // Get accommodations by destination
     const result = await accommodationService.getByDestination(actor, {
-        destinationId
+        destinationId,
+        page: 1,
+        pageSize: 20
     });
 
     if (result.error) {
