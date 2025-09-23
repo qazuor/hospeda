@@ -1,6 +1,6 @@
 import path from 'node:path';
-import { RoleEnum, UserBookmarkService } from '@repo/service-core';
-import { EntityTypeEnum, PermissionEnum } from '@repo/types';
+import { EntityTypeEnum, PermissionEnum, RoleEnum } from '@repo/schemas';
+import { UserBookmarkService } from '@repo/service-core';
 import exampleManifest from '../manifest-example.json';
 import type { SeedContext } from '../utils/seedContext.js';
 import { createSeedFactory } from '../utils/seedFactory.js';
