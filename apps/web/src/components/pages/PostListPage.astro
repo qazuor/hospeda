@@ -4,7 +4,7 @@ import { getPosts } from '@/data/db/posts';
 import MainLayout from '@/layout/MainLayout.astro';
 import { getLangFromUrl, useTranslations } from '@/utils';
 import { getBlogIndexUrlWithPage, getPostUrl } from '@/utils/urls';
-import type { PostType } from '@repo/types';
+import type { Post } from '@repo/schemas';
 
 export interface Props {
     page: number;
@@ -92,7 +92,7 @@ const getReadingTime = (content: string) => {
                 {posts.length > 0 ? (
                     <div class="space-y-12">
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                            {posts.map((post: PostType) => (
+                            {posts.map((post: Post) => (
                                 <article class="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden">
                                     <div class="aspect-video bg-gradient-to-br from-emerald-400 to-teal-500 relative">
                                         {post.media && post.media.featuredImage ? (

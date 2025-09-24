@@ -1,10 +1,10 @@
 ---
 import DestinationCard from '@/components/destinations/DestinationCard.astro';
 import { getDestinationsIndexUrl, getLangFromUrl, useTranslations } from '@/utils';
-import type { DestinationType } from '@repo/types';
+import type { Destination } from '@repo/schemas';
 
 interface Props {
-    destinations: DestinationType[];
+    destinations: Destination[];
     title: string;
     subtitle?: string;
     showSeeAll?: boolean;

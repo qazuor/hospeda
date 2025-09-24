@@ -1,10 +1,10 @@
 ---
 import EventCard from '@/components/events/EventCard.astro';
 import { getEventsIndexUrl, getLangFromUrl, useTranslations } from '@/utils';
-import type { EventType } from '@repo/types';
+import type { Event } from '@repo/schemas';
 
 interface Props {
-    events: EventType[];
+    events: Event[];
     title: string;
     subtitle?: string;
     showSeeAll?: boolean;
