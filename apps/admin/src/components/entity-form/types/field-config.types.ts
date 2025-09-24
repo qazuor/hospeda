@@ -1,4 +1,4 @@
-import type { PermissionEnum } from '@repo/types';
+import type { PermissionEnum } from '@repo/schemas';
 import type { ZodSchema } from 'zod';
 import type {
     EntityTypeEnum,

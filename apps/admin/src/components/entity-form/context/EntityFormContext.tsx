@@ -1,4 +1,4 @@
-import type { PermissionEnum } from '@repo/types';
+import type { PermissionEnum } from '@repo/schemas';
 import type { ReactFormApi } from '@tanstack/react-form';
 import * as React from 'react';
 import type { AutosaveStrategyEnum, FormModeEnum } from '../enums/form-config.enums';
