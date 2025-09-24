@@ -54,7 +54,7 @@ export const searchFeaturesRoute = createListRoute({
             items: (result as { data: { items: unknown[]; total: number } }).data.items,
             pagination: {
                 page,
-                limit: pageSize,
+                pageSize,
                 total: (result as { data: { items: unknown[]; total: number } }).data.total,
                 totalPages: Math.ceil(
                     (result as { data: { items: unknown[]; total: number } }).data.total / pageSize
