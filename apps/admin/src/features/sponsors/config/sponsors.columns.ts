@@ -1,6 +1,6 @@
 import type { ColumnConfig } from '@/components/entity-list/types';
 import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable';
-import { ClientTypeEnum, LifecycleStatusEnum } from '@repo/types';
+import { ClientTypeEnum, LifecycleStatusEnum } from '@repo/schemas';
 import type { Sponsor } from '../schemas/sponsors.schemas';
 
 /**

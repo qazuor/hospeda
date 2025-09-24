@@ -1,4 +1,4 @@
-import { ClientTypeEnum, LifecycleStatusEnum } from '@repo/types';
+import { ClientTypeEnum, LifecycleStatusEnum } from '@repo/schemas';
 import { z } from 'zod';
 
 /**

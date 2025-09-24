@@ -1,5 +1,5 @@
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
-import type { PermissionEnum } from '@repo/types';
+import type { PermissionEnum } from '@repo/schemas';
 import { useNavigate } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 
