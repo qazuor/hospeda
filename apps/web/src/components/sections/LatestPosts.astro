@@ -1,10 +1,10 @@
 ---
 import PostCard from '@/components/blog/PostCard.astro';
 import { getBlogIndexUrl, getLangFromUrl, useTranslations } from '@/utils';
-import type { PostType } from '@repo/types';
+import type { Post } from '@repo/schemas';
 
 interface Props {
-    posts: PostType[];
+    posts: Post[];
     title: string;
     subtitle?: string;
     showSeeAll?: boolean;
