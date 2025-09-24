@@ -1,6 +1,6 @@
 import { ensureDatabase } from '@/server/db';
+import type { Destination } from '@repo/schemas';
 import { DestinationService } from '@repo/service-core';
-import type { DestinationType } from '@repo/types';
 
 import { getCurrentUser } from '@/data/user';
 
@@ -20,7 +20,7 @@ export const getDestinations = async ({
     pageSize?: number;
     filters?: Record<string, unknown>;
 } = {}): Promise<{
-    destinations: DestinationType[];
+    destinations: Destination[];
     total: number;
     page: number;
     pageSize: number;
@@ -32,8 +32,9 @@ export const getDestinations = async ({
     const destinationService = new DestinationService({});
 
     const result = await destinationService.search(actor, {
-        filters,
-        pagination: { page, pageSize }
+        page: 1,
+        pageSize: pageSize,
+        filters: filters
     });
 
     const destinations = result.data?.items ?? [];
@@ -41,7 +42,7 @@ export const getDestinations = async ({
     const totalPages = Math.ceil(total / pageSize);
 
     return {
-        destinations,
+        destinations: destinations as Destination[],
         total,
         page,
         pageSize,
@@ -59,7 +60,7 @@ export const getDestinationBySlug = async ({
     locals?: { auth?: LocalsAuth };
     slug: string;
 }): Promise<{
-    destination: DestinationType | null;
+    destination: Destination | null;
 }> => {
     ensureDatabase();
     const { actor } = await getCurrentUser({ locals });
@@ -69,7 +70,7 @@ export const getDestinationBySlug = async ({
     const result = await destinationService.getBySlug(actor, slug);
 
     return {
-        destination: result.data ?? null
+        destination: (result.data as Destination) ?? null
     };
 };
 
@@ -83,7 +84,7 @@ export const getFeaturedDestinations = async ({
     locals?: { auth?: LocalsAuth };
     limit?: number;
 } = {}): Promise<{
-    destinations: DestinationType[];
+    destinations: Destination[];
 }> => {
     ensureDatabase();
     const { actor } = await getCurrentUser({ locals });
@@ -91,12 +92,13 @@ export const getFeaturedDestinations = async ({
     const destinationService = new DestinationService({});
 
     const result = await destinationService.search(actor, {
-        filters: { isFeatured: true },
-        pagination: { page: 1, pageSize: limit }
+        page: 1,
+        pageSize: limit,
+        filters: { isFeatured: true }
     });
 
     return {
-        destinations: result.data?.items ?? []
+        destinations: (result.data?.items as Destination[]) ?? []
     };
 };
 
@@ -111,7 +113,7 @@ export const getAllDestinations = async ({
     locals
 }: {
     locals?: { auth?: LocalsAuth };
-} = {}): Promise<DestinationType[]> => {
+} = {}): Promise<Destination[]> => {
     ensureDatabase();
     const { actor } = await getCurrentUser({ locals });
     const destinationService = new DestinationService({});
@@ -122,7 +124,7 @@ export const getAllDestinations = async ({
             page: 1,
             pageSize: 1000 // Large enough to get all destinations
         });
-        return data?.items ?? [];
+        return (data?.items as Destination[]) ?? [];
     } catch (error) {
         console.error('Error fetching all destinations:', error);
         return [];

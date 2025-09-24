@@ -1,6 +1,6 @@
 import { ensureDatabase } from '@/server/db';
+import type { Event } from '@repo/schemas';
 import { EventService } from '@repo/service-core';
-import type { EventType } from '@repo/types';
 
 import { getCurrentUser } from '@/data/user';
 
@@ -20,7 +20,7 @@ export const getEvents = async ({
     pageSize?: number;
     filters?: Record<string, unknown>;
 } = {}): Promise<{
-    events: EventType[];
+    events: Event[];
     total: number;
     page: number;
     pageSize: number;
@@ -32,8 +32,9 @@ export const getEvents = async ({
     const eventService = new EventService({});
 
     const result = await eventService.search(actor, {
-        filters,
-        pagination: { page, pageSize }
+        page,
+        pageSize,
+        filters
     });
 
     const events = result.data?.items ?? [];
@@ -41,7 +42,7 @@ export const getEvents = async ({
     const totalPages = Math.ceil(total / pageSize);
 
     return {
-        events,
+        events: events as Event[],
         total,
         page,
         pageSize,
@@ -59,7 +60,7 @@ export const getEventBySlug = async ({
     locals?: { auth?: LocalsAuth };
     slug: string;
 }): Promise<{
-    event: EventType | null;
+    event: Event | null;
 }> => {
     ensureDatabase();
     const { actor } = await getCurrentUser({ locals });
@@ -69,7 +70,7 @@ export const getEventBySlug = async ({
     const result = await eventService.getBySlug(actor, slug);
 
     return {
-        event: result.data ?? null
+        event: (result.data as Event) ?? null
     };
 };
 
@@ -83,7 +84,7 @@ export const getUpcomingEvents = async ({
     locals?: { auth?: LocalsAuth };
     limit?: number;
 } = {}): Promise<{
-    events: EventType[];
+    events: Event[];
 }> => {
     ensureDatabase();
     const { actor } = await getCurrentUser({ locals });
@@ -91,13 +92,13 @@ export const getUpcomingEvents = async ({
     const eventService = new EventService({});
 
     const result = await eventService.getUpcoming(actor, {
-        fromDate: new Date(),
         page: 1,
-        pageSize: limit
+        pageSize: limit,
+        daysAhead: 30 // Get events for the next 30 days
     });
 
     return {
-        events: result.data?.items ?? []
+        events: (result.data?.items as Event[]) ?? []
     };
 };
 
@@ -112,7 +113,7 @@ export const getAllEvents = async ({
     locals
 }: {
     locals?: { auth?: LocalsAuth };
-} = {}): Promise<EventType[]> => {
+} = {}): Promise<Event[]> => {
     ensureDatabase();
     const { actor } = await getCurrentUser({ locals });
     const eventService = new EventService({});
@@ -123,7 +124,7 @@ export const getAllEvents = async ({
             page: 1,
             pageSize: 1000 // Large enough to get all events
         });
-        return data?.items ?? [];
+        return (data?.items as Event[]) ?? [];
     } catch (error) {
         console.error('Error fetching all events:', error);
         return [];

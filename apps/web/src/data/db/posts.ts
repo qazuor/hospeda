@@ -1,6 +1,6 @@
 import { ensureDatabase } from '@/server/db';
+import type { Post } from '@repo/schemas';
 import { PostService } from '@repo/service-core';
-import type { PostType } from '@repo/types';
 
 import { getCurrentUser } from '@/data/user';
 
@@ -20,7 +20,7 @@ export const getPosts = async ({
     pageSize?: number;
     filters?: Record<string, unknown>;
 } = {}): Promise<{
-    posts: PostType[];
+    posts: Post[];
     total: number;
     page: number;
     pageSize: number;
@@ -42,7 +42,7 @@ export const getPosts = async ({
     const totalPages = Math.ceil(total / pageSize);
 
     return {
-        posts,
+        posts: posts as Post[],
         total,
         page,
         pageSize,
@@ -60,7 +60,7 @@ export const getPostBySlug = async ({
     locals?: { auth?: LocalsAuth };
     slug: string;
 }): Promise<{
-    post: PostType | null;
+    post: Post | null;
 }> => {
     ensureDatabase();
     const { actor } = await getCurrentUser({ locals });
@@ -70,7 +70,7 @@ export const getPostBySlug = async ({
     const result = await postService.getBySlug(actor, slug);
 
     return {
-        post: result.data ?? null
+        post: (result.data as Post) ?? null
     };
 };
 
@@ -84,7 +84,7 @@ export const getFeaturedPosts = async ({
     locals?: { auth?: LocalsAuth };
     limit?: number;
 } = {}): Promise<{
-    posts: PostType[];
+    posts: Post[];
 }> => {
     ensureDatabase();
     const { actor } = await getCurrentUser({ locals });
@@ -97,7 +97,7 @@ export const getFeaturedPosts = async ({
     const posts = result.data?.slice(0, limit) ?? [];
 
     return {
-        posts
+        posts: posts as Post[]
     };
 };
 
@@ -112,7 +112,7 @@ export const getAllPosts = async ({
     locals
 }: {
     locals?: { auth?: LocalsAuth };
-} = {}): Promise<PostType[]> => {
+} = {}): Promise<Post[]> => {
     ensureDatabase();
     const { actor } = await getCurrentUser({ locals });
     const postService = new PostService({});
@@ -123,7 +123,7 @@ export const getAllPosts = async ({
             page: 1,
             pageSize: 1000 // Large enough to get all posts
         });
-        return data?.items ?? [];
+        return (data?.items as Post[]) ?? [];
     } catch (error) {
         console.error('Error fetching all posts:', error);
         return [];
