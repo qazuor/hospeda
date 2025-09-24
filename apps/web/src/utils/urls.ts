@@ -1,11 +1,11 @@
-import type { AccommodationType, DestinationType, EventType, PostType } from '@repo/types';
+import type { Accommodation, Destination, Event, Post } from '@repo/schemas';
 import { normalizeTrailingSlash } from '@reunmedia/astro-normalize-trailing-slash';
 
 /**
  * Returns the public URL for a given post.
  * By default: `/blog/[slug]`
  */
-export function getPostUrl(post: Pick<PostType, 'slug'>): string {
+export function getPostUrl(post: Pick<Post, 'slug'>): string {
     return normalizeTrailingSlash(`/publicaciones/${post.slug}`);
 }
 
@@ -13,7 +13,7 @@ export function getPostUrl(post: Pick<PostType, 'slug'>): string {
  * Returns the public URL for a given destination.
  * Default: `/destinos/[slug]`
  */
-export function getDestinationUrl(destination: Pick<DestinationType, 'slug'>): string {
+export function getDestinationUrl(destination: Pick<Destination, 'slug'>): string {
     return normalizeTrailingSlash(`/destinos/${destination.slug}`);
 }
 
@@ -21,7 +21,7 @@ export function getDestinationUrl(destination: Pick<DestinationType, 'slug'>): s
  * Returns the public URL for a given accommodation.
  * Default: `/alojamientos/[slug]`
  */
-export function getAccommodationUrl(accommodation: Pick<AccommodationType, 'slug'>): string {
+export function getAccommodationUrl(accommodation: Pick<Accommodation, 'slug'>): string {
     return normalizeTrailingSlash(`/alojamientos/${accommodation.slug}`);
 }
 
@@ -29,7 +29,7 @@ export function getAccommodationUrl(accommodation: Pick<AccommodationType, 'slug
  * Returns the public URL for a given event.
  * Default: `/eventos/[slug]`
  */
-export function getEventUrl(event: Pick<EventType, 'slug'>): string {
+export function getEventUrl(event: Pick<Event, 'slug'>): string {
     return normalizeTrailingSlash(`/eventos/${event.slug}`);
 }
 

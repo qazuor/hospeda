@@ -2,7 +2,7 @@
  * Utility functions for formatting data
  */
 
-import type { BaseLocationType, BasePriceType } from '@repo/types';
+import type { BaseLocationType, PriceType } from '@repo/schemas';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -11,7 +11,7 @@ import { es } from 'date-fns/locale';
  * @param price - The price to format
  * @returns Formatted price string
  */
-export const formatPrice = (price: BasePriceType): string => {
+export const formatPrice = (price: PriceType): string => {
     return new Intl.NumberFormat('es-AR', {
         style: 'currency',
         currency: price.currency || 'ARS',
