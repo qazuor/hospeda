@@ -1,4 +1,4 @@
-import type { PermissionEnum } from '@repo/types';
+import type { PermissionEnum } from '@repo/schemas';
 import * as React from 'react';
 import type { EntityConfig } from '../../entity-form/types/entity-config.types';
 

@@ -4,7 +4,7 @@ import { EntityErrorBoundary } from '@/components/error-boundaries';
 import { Icon } from '@/components/icons';
 import { Button } from '@/components/ui-wrapped/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui-wrapped/Card';
-import type { PermissionEnum } from '@repo/types';
+import type { PermissionEnum } from '@repo/schemas';
 
 import React, { Suspense, type ReactNode } from 'react';
 
