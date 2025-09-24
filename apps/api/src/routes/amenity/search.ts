@@ -58,7 +58,7 @@ export const searchAmenitiesRoute = createListRoute({
             items: result.data?.items || [],
             pagination: {
                 page,
-                limit: pageSize,
+                pageSize,
                 total: result.data?.total || 0,
                 totalPages: Math.ceil((result.data?.total || 0) / pageSize)
             }
