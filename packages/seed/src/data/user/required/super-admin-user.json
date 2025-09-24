@@ -2,6 +2,8 @@
     "$schema": "../../schemas/user.schema.json",
     "id": "super-admin-user",
     "slug": "super-admin-user",
+    "authProvider": "CLERK",
+    "authProviderUserId": "user_31HTUXqo9ZFzgAfNCFhPlBVXbA1",
     "role": "SUPER_ADMIN",
     "permissions": [
         "accommodation.create",
