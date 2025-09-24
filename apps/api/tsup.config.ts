@@ -17,7 +17,6 @@ export default defineConfig({
         '@repo/db',
         '@repo/logger',
         '@repo/schemas',
-        '@repo/types',
         '@repo/utils',
         '@repo/service-core',
         '@repo/seed'
