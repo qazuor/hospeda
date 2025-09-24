@@ -1,7 +1,7 @@
 import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type { SelectOption } from '@/components/entity-form/types/field-config.types';
 import type { useTranslations } from '@repo/i18n';
-import { LifecycleStatusEnum, ModerationStatusEnum, PermissionEnum } from '@repo/types';
+import { LifecycleStatusEnum, ModerationStatusEnum, PermissionEnum } from '@repo/schemas';
 import type { ConsolidatedSectionConfig } from '../../types/consolidated-config.types';
 
 /**

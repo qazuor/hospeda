@@ -1,5 +1,5 @@
 import { useTranslations } from '@repo/i18n';
-import { AccommodationTypeEnum, PermissionEnum } from '@repo/types';
+import { AccommodationTypeEnum, PermissionEnum } from '@repo/schemas';
 import { useNavigate } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 

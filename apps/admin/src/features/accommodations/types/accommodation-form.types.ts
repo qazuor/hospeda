@@ -1,11 +1,11 @@
 import type { FormModeEnum } from '@/components/entity-form/enums/form-config.enums';
-import type { AccommodationType } from '@repo/types';
+import type { Accommodation } from '@repo/schemas';
 
 /**
  * Accommodation form data type
  * Extends the core accommodation type with form-specific properties
  */
-export type AccommodationFormData = AccommodationType & {
+export type AccommodationFormData = Accommodation & {
     // Form-specific computed fields
     _isNew?: boolean;
     _isDirty?: boolean;
