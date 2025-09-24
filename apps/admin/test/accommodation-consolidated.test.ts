@@ -26,7 +26,7 @@ describe('AccommodationConsolidatedConfig', () => {
             );
 
             expect(config).toBeDefined();
-            expect(config.sections).toHaveLength(1); // Solo basic-info por ahora
+            expect(config.sections).toHaveLength(7); // Todas las secciones consolidadas
             expect(config.metadata).toBeDefined();
             expect(config.metadata?.title).toBe('Accommodation');
         });
@@ -68,7 +68,7 @@ describe('AccommodationConsolidatedConfig', () => {
             );
             const viewSections = filterSectionsByMode(config.sections, 'view');
 
-            expect(viewSections).toHaveLength(1);
+            expect(viewSections).toHaveLength(7);
             expect(viewSections[0].id).toBe('basic-info');
 
             // Todos los campos deben estar presentes en view mode
@@ -82,7 +82,7 @@ describe('AccommodationConsolidatedConfig', () => {
             );
             const editSections = filterSectionsByMode(config.sections, 'edit');
 
-            expect(editSections).toHaveLength(1);
+            expect(editSections).toHaveLength(6);
             expect(editSections[0].id).toBe('basic-info');
 
             // Todos los campos deben estar presentes en edit mode
@@ -96,7 +96,7 @@ describe('AccommodationConsolidatedConfig', () => {
             );
             const createSections = filterSectionsByMode(config.sections, 'create');
 
-            expect(createSections).toHaveLength(1);
+            expect(createSections).toHaveLength(5);
             expect(createSections[0].id).toBe('basic-info');
 
             // isFeatured no debe estar presente en create mode
