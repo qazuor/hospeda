@@ -37,8 +37,7 @@
         "chalk": "^5.4.1",
         "dotenv": "^16.5.0",
         "@repo/config": "workspace:*",
-        "@repo/logger": "workspace:*",
-        "@repo/types": "workspace:*"
+        "@repo/logger": "workspace:*"
     },
     "devDependencies": {
         "@repo/typescript-config": "workspace:*",
