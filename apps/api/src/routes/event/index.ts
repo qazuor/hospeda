@@ -3,7 +3,7 @@ import { eventBatchRoute } from './batch';
 import { createEventRoute } from './create';
 import { getEventsByAuthorRoute } from './getByAuthor';
 import { getEventsByCategoryRoute } from './getByCategory';
-import { eventGetByIdRoute } from './getById';
+import { getEventByIdRoute } from './getById';
 import { getEventsByLocationRoute } from './getByLocation';
 import { getEventsByOrganizerRoute } from './getByOrganizer';
 import { getEventBySlugRoute } from './getBySlug';
@@ -20,7 +20,7 @@ const app = createRouter();
 
 app.route('/', eventListRoute);
 app.route('/', eventBatchRoute);
-app.route('/', eventGetByIdRoute);
+app.route('/', getEventByIdRoute);
 app.route('/', getEventSummaryRoute);
 app.route('/', getEventBySlugRoute);
 app.route('/', createEventRoute);

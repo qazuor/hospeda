@@ -7,11 +7,11 @@ import { createCRUDRoute } from '../../utils/route-factory';
 
 const eventService = new EventService({ logger: apiLogger });
 
-export const eventGetByIdRoute = createCRUDRoute({
+export const getEventByIdRoute = createCRUDRoute({
     method: 'get',
     path: '/{id}',
     summary: 'Get event by ID',
-    description: 'Retrieves an event by its ID using the EventService',
+    description: 'Retrieves event details by unique identifier',
     tags: ['Events'],
     requestParams: { id: EventIdSchema },
     responseSchema: EventSchema.nullable(),
