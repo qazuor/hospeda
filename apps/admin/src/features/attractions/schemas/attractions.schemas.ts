@@ -1,4 +1,4 @@
-import { LifecycleStatusEnum } from '@repo/types';
+import { LifecycleStatusEnum } from '@repo/schemas';
 import { z } from 'zod';
 
 export const AttractionListItemSchema = z
