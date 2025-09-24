@@ -1,10 +1,10 @@
+import { AccommodationCreateInputSchema, AccommodationSchema } from '@repo/schemas';
 import { AccommodationService } from '@repo/service-core';
 import type { Context } from 'hono';
 import type { z } from 'zod';
 import { getActorFromContext } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
 import { createCRUDRoute } from '../../utils/route-factory';
-import { accommodationCreateSchema, accommodationSchema } from './schemas';
 
 const accommodationService = new AccommodationService({ logger: apiLogger });
 
@@ -18,8 +18,8 @@ export const createAccommodationRoute = createCRUDRoute({
     summary: 'Create accommodation',
     description: 'Creates a new accommodation using the AccommodationService',
     tags: ['Accommodations'],
-    requestBody: accommodationCreateSchema,
-    responseSchema: accommodationSchema,
+    requestBody: AccommodationCreateInputSchema,
+    responseSchema: AccommodationSchema,
     handler: async (
         ctx: Context,
         _params: Record<string, unknown>,
@@ -29,7 +29,7 @@ export const createAccommodationRoute = createCRUDRoute({
         const actor = getActorFromContext(ctx);
 
         // Cast body to the correct type (it's already validated by the requestBody schema)
-        const validatedBody = body as z.infer<typeof accommodationCreateSchema>;
+        const validatedBody = body as z.infer<typeof AccommodationCreateInputSchema>;
 
         // Call the real accommodation service
         const result = await accommodationService.create(actor, validatedBody);

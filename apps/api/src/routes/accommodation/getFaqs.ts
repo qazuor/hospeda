@@ -4,12 +4,30 @@
  * ✅ Migrated to use createSimpleRoute (Route Factory)
  */
 
+import { z } from '@hono/zod-openapi';
 import { AccommodationService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { createGuestActor } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
 import { createSimpleRoute } from '../../utils/route-factory';
-import { faqListResponseSchema } from './schemas';
+
+// Local FAQ schemas
+const faqResponseSchema = z
+    .object({
+        id: z.string(),
+        question: z.string(),
+        answer: z.string(),
+        order: z.number(),
+        createdAt: z.string(),
+        updatedAt: z.string()
+    })
+    .openapi('FaqResponse');
+
+const faqListResponseSchema = z
+    .object({
+        faqs: z.array(faqResponseSchema)
+    })
+    .openapi('FaqListResponse');
 
 // Initialize service once
 const accommodationService = new AccommodationService({ logger: apiLogger });

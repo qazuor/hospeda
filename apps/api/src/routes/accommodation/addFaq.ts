@@ -4,12 +4,38 @@
  * ✅ Migrated to use createCRUDRoute (Route Factory)
  */
 
+import { z } from '@hono/zod-openapi';
+import { AccommodationFaqAddInputSchema } from '@repo/schemas';
 import { AccommodationService } from '@repo/service-core';
-import { z } from 'zod';
 import { getActorFromContext } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
 import { createCRUDRoute } from '../../utils/route-factory';
-import { ParamsSchema, faqCreateSchema, faqResponseSchema } from './schemas';
+
+// Local schemas for API
+const ParamsSchema = z.object({
+    id: z
+        .string()
+        .uuid('Invalid accommodation ID format')
+        .openapi({
+            param: { name: 'id', in: 'path' },
+            example: 'acc_1234567890'
+        })
+});
+
+const faqResponseSchema = z
+    .object({
+        id: z.string(),
+        question: z.string(),
+        answer: z.string(),
+        order: z.number(),
+        createdAt: z.string(),
+        updatedAt: z.string()
+    })
+    .openapi('FaqResponse');
+
+const faqCreateSchema = z
+    .object(AccommodationFaqAddInputSchema.shape.faq.shape)
+    .openapi('FaqCreate');
 
 // Initialize service once
 const accommodationService = new AccommodationService({ logger: apiLogger });
