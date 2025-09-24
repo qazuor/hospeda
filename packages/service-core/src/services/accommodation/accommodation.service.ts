@@ -46,12 +46,12 @@ import {
     type WithOwnerIdParams,
     WithOwnerIdParamsSchema
 } from '@repo/schemas';
-import { generateSlug } from './accommodation.helpers';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { parseIdOrSlug } from '../../utils';
 import { DestinationService } from '../destination/destination.service';
+import { generateSlug } from './accommodation.helpers';
 import {
     normalizeAccommodationOutput,
     normalizeCreateInput,
