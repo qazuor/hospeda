@@ -9,5 +9,5 @@ export default defineConfig({
     target: 'node18',
     splitting: false,
     bundle: true,
-    external: ['@repo/config', '@repo/logger', '@repo/types']
+    external: ['@repo/config', '@repo/logger']
 });
