@@ -48,27 +48,21 @@ export const checkCanViewFeature = (_actor: Actor, _feature: Feature): void => {
 };
 
 /**
- * Checks if the actor can list features. Requires ACCOMMODATION_FEATURES_EDIT permission.
+ * Checks if the actor can list features. All users can list features (public).
  */
 export const checkCanListFeatures = (actor: Actor): void => {
-    if (!hasPermission(actor, PermissionEnum.ACCOMMODATION_FEATURES_EDIT)) {
-        throw new ServiceError(
-            ServiceErrorCode.FORBIDDEN,
-            'Forbidden: missing ACCOMMODATION_FEATURES_EDIT permission'
-        );
-    }
+    if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'FORBIDDEN: no actor');
+    // Listing is allowed for any actor; results are filtered elsewhere.
+    return;
 };
 
 /**
- * Checks if the actor can count features. Requires ACCOMMODATION_FEATURES_EDIT permission.
+ * Checks if the actor can count features. All users can count features (public).
  */
 export const checkCanCountFeatures = (actor: Actor): void => {
-    if (!hasPermission(actor, PermissionEnum.ACCOMMODATION_FEATURES_EDIT)) {
-        throw new ServiceError(
-            ServiceErrorCode.FORBIDDEN,
-            'Forbidden: missing ACCOMMODATION_FEATURES_EDIT permission'
-        );
-    }
+    if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'FORBIDDEN: no actor');
+    // Counting is allowed for any actor; results are filtered elsewhere.
+    return;
 };
 
 /**
