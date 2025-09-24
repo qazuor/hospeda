@@ -43,7 +43,7 @@ export const getFeaturesForAccommodationRoute = createListRoute({
             items: result.data.features,
             pagination: {
                 page,
-                limit: pageSize,
+                pageSize,
                 total: result.data.features.length,
                 totalPages: 1
             }

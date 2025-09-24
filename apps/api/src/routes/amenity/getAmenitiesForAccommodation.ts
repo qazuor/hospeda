@@ -50,7 +50,7 @@ export const getAmenitiesForAccommodationRoute = createListRoute({
             items: result.data.amenities,
             pagination: {
                 page,
-                limit: pageSize,
+                pageSize,
                 total: result.data.amenities.length,
                 totalPages: 1
             }
