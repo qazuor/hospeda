@@ -45,7 +45,7 @@ const PaginatedDestinationsSchema = z
             items: z.array(DestinationListItemClientSchema),
             pagination: z.object({
                 page: z.number(),
-                limit: z.number(),
+                pageSize: z.number(), // Changed from 'limit' to 'pageSize' for consistency
                 total: z.number(),
                 totalPages: z.number()
             })
@@ -90,7 +90,7 @@ export const getDestinations = async ({
 }: GetDestinationsInput): Promise<GetDestinationsOutput> => {
     const params = new URLSearchParams();
     params.set('page', String(page));
-    params.set('limit', String(pageSize)); // API uses 'limit' instead of 'pageSize'
+    params.set('pageSize', String(pageSize)); // API uses consistent pageSize
     if (q) params.set('search', q); // API uses 'search' instead of 'q'
     if (sort && sort.length > 0) params.set('sort', JSON.stringify(sort));
 
@@ -106,6 +106,6 @@ export const getDestinations = async ({
         data: apiResponse.data.items,
         total: apiResponse.data.pagination.total,
         page: apiResponse.data.pagination.page,
-        pageSize: apiResponse.data.pagination.limit
+        pageSize: apiResponse.data.pagination.pageSize
     };
 };

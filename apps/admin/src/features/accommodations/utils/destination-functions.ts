@@ -56,7 +56,7 @@ export const stableDestinationSearchFn = async (query: string): Promise<SelectOp
     }
 
     try {
-        const searchPath = `/api/v1/public/destinations?search=${encodeURIComponent(query)}&limit=15`;
+        const searchPath = `/api/v1/public/destinations?search=${encodeURIComponent(query)}&pageSize=15`;
 
         const response = await fetchApi({
             path: searchPath
@@ -144,7 +144,7 @@ export const stableDestinationLoadByIdsFn = async (ids: string[]): Promise<Selec
  * This function loads all destinations at once for client-side filtering
  */
 export const stableDestinationLoadAllFn = async (): Promise<SelectOption[]> => {
-    const searchPath = '/api/v1/public/destinations?limit=100'; // Load all destinations
+    const searchPath = '/api/v1/public/destinations?pageSize=100'; // Load all destinations
 
     const response = await fetchApi({
         path: searchPath

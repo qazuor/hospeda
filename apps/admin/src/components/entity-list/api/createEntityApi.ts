@@ -14,7 +14,7 @@ export const createEntityApi = <TData>(endpoint: string, itemSchema: z.ZodSchema
                 items: z.array(itemSchema),
                 pagination: z.object({
                     page: z.number(),
-                    limit: z.number(),
+                    pageSize: z.number(), // API uses consistent pageSize
                     total: z.number(),
                     totalPages: z.number()
                 })
@@ -41,7 +41,7 @@ export const createEntityApi = <TData>(endpoint: string, itemSchema: z.ZodSchema
     }: EntityQueryParams): Promise<EntityQueryResponse<TData>> => {
         const params = new URLSearchParams();
         params.set('page', String(page));
-        params.set('limit', String(pageSize)); // API uses 'limit' instead of 'pageSize'
+        params.set('pageSize', String(pageSize)); // API uses consistent pageSize
 
         if (q) {
             params.set('search', q); // API uses 'search' instead of 'q'
@@ -63,7 +63,7 @@ export const createEntityApi = <TData>(endpoint: string, itemSchema: z.ZodSchema
             data: apiResponse.data.items,
             total: apiResponse.data.pagination.total,
             page: apiResponse.data.pagination.page,
-            pageSize: apiResponse.data.pagination.limit
+            pageSize: apiResponse.data.pagination.pageSize
         };
     };
 

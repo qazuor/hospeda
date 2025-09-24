@@ -12,7 +12,7 @@ export const searchDestinations = async (query: string): Promise<SelectOption[]>
         const response = await fetchApi<{
             data: { items: Array<{ id: string; name: string; description?: string }> };
         }>({
-            path: `/api/v1/public/destinations?search=${encodeURIComponent(query)}&limit=20`,
+            path: `/api/v1/public/destinations?search=${encodeURIComponent(query)}&pageSize=20`,
             method: 'GET'
         });
 
@@ -75,7 +75,7 @@ export const loadAllDestinations = async (): Promise<SelectOption[]> => {
         const response = await fetchApi<{
             data: { items: Array<{ id: string; name: string; description?: string }> };
         }>({
-            path: '/api/v1/public/destinations?limit=100',
+            path: '/api/v1/public/destinations?pageSize=100',
             method: 'GET'
         });
 

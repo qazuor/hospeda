@@ -94,15 +94,28 @@ export const useAccommodationListQuery = (
             const response = await fetchApi({
                 path: `/api/v1/public/accommodations?${searchParams.toString()}`
             });
-            const apiResponse = response.data as {
-                items: AccommodationCore[];
-                pagination: {
-                    page: number;
-                    limit: number;
+
+            // ✅ Actualizado para usar el formato de respuesta estándar de la API
+            const standardResponse = response.data as {
+                success: boolean;
+                data: {
+                    items: AccommodationCore[];
+                    pagination: {
+                        page: number;
+                        limit: number;
+                        total: number;
+                        totalPages: number;
+                    };
+                };
+                metadata: {
+                    timestamp: string;
+                    requestId: string;
                     total: number;
-                    totalPages: number;
+                    count: number;
                 };
             };
+
+            const apiResponse = standardResponse.data;
             return {
                 accommodations: apiResponse.items,
                 total: apiResponse.pagination.total,
@@ -152,8 +165,16 @@ export const useAccommodationSearchQuery = (
             const response = await fetchApi({
                 path: `/api/v1/public/accommodations/search?${searchParams.toString()}`
             });
-            const apiResponse = response.data as { items: AccommodationCore[] };
-            return apiResponse.items;
+
+            // ✅ Actualizado para manejar respuesta estándar (aunque esta ruta puede no existir)
+            const standardResponse = response.data as {
+                success: boolean;
+                data: {
+                    items: AccommodationCore[];
+                };
+            };
+
+            return standardResponse.data.items;
         },
         enabled: (options?.enabled ?? true) && query.length >= 2,
         staleTime: 30 * 1000, // 30 seconds for search
