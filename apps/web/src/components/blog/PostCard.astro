@@ -1,8 +1,8 @@
 ---
 import { formatDate, getPostUrl } from '@/utils';
-import type { PostType } from '@repo/types';
+import type { Post } from '@repo/schemas';
 
-const { post } = Astro.props as { post: PostType };
+const { post } = Astro.props as { post: Post };
 
 const formattedDate = post.createdAt ? formatDate(post.createdAt) : '';
 

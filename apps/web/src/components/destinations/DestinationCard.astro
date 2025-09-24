@@ -2,10 +2,10 @@
 import { FavoriteButton } from '@/components/shared/FavoriteButton.client';
 import { getDestinationUrl, getLangFromUrl, useTranslations } from '@/utils';
 import { MapIcon, StarIcon } from '@repo/icons';
-import { DestinationType } from '@repo/types';
+import { Destination } from '@repo/schemas';
 
 interface Props {
-    destination: DestinationType;
+    destination: Destination;
 }
 
 const { destination } = Astro.props;

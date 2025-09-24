@@ -3,10 +3,10 @@ import { FavoriteButton } from '@/components/shared/FavoriteButton.client';
 import { TranslationKeys } from '@/i18n/translation-keys';
 import { formatPrice, getAccommodationUrl, getLangFromUrl, useTranslations } from '@/utils';
 import { CoffeeMakerIcon, MapIcon, ParkingIcon, PoolIcon, StarIcon, WifiIcon } from '@repo/icons';
-import { AccommodationType } from '@repo/types';
+import { Accommodation } from '@repo/schemas';
 
 interface Props {
-    accommodation: AccommodationType;
+    accommodation: Accommodation;
 }
 
 const { accommodation } = Astro.props;
