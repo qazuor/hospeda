@@ -1,6 +1,6 @@
 import type { ColumnConfig } from '@/components/entity-list/types';
 import { BadgeColor, ColumnType, CompoundLayout, EntityType } from '@/components/table/DataTable';
-import { LifecycleStatusEnum } from '@repo/types';
+import { LifecycleStatusEnum } from '@repo/schemas';
 import type { EventLocation } from '../schemas/event-locations.schemas';
 
 /**
