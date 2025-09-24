@@ -1,9 +1,9 @@
 ---
 import { formatDate } from '@/utils';
 import { EventIcon } from '@repo/icons';
-import type { PostType } from '@repo/types';
+import type { Post } from '@repo/schemas';
 
-const { post }: { post: PostType } = Astro.props;
+const { post }: { post: Post } = Astro.props;
 
 const formattedDate = post.createdAt ? formatDate(new Date(post.createdAt)) : '';
 ---
