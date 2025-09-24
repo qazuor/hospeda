@@ -3,11 +3,11 @@
  * Uses AccommodationService for real data retrieval with pagination
  */
 import { z } from '@hono/zod-openapi';
+import { AccommodationListItemSchema } from '@repo/schemas';
 import { AccommodationService } from '@repo/service-core';
 import { getActorFromContext } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
 import { createListRoute } from '../../utils/route-factory';
-import { accommodationSchema } from './schemas';
 
 const accommodationService = new AccommodationService({ logger: apiLogger });
 
@@ -29,7 +29,7 @@ export const accommodationListRoute = createListRoute({
         q: z.string().optional(),
         search: z.string().optional()
     },
-    responseSchema: accommodationSchema,
+    responseSchema: AccommodationListItemSchema,
     handler: async (ctx, _params, _body, query) => {
         // Get actor from context (can be guest)
         const actor = getActorFromContext(ctx);

@@ -2,9 +2,9 @@
  * Integration tests for GET /accommodations/:id/stats endpoint
  * Tests response data validation against AccommodationStatsSchema
  */
+import { AccommodationStatsSchema } from '@repo/schemas';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
-import { accommodationStatsSchema } from '../../../src/routes/accommodation/schemas';
 import { validateApiEnv } from '../../../src/utils/env';
 
 describe('GET /accommodations/:id/stats', () => {
@@ -41,7 +41,7 @@ describe('GET /accommodations/:id/stats', () => {
 
             // Validate against AccommodationStatsSchema
             const statsData = data.data;
-            const schemaValidation = accommodationStatsSchema.safeParse(statsData);
+            const schemaValidation = AccommodationStatsSchema.safeParse(statsData);
 
             // Schema validation might fail due to mock data structure differences
             if (!schemaValidation.success) {

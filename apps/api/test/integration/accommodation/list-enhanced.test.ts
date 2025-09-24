@@ -2,17 +2,17 @@
  * Enhanced integration tests for GET /accommodations (list) endpoint
  * Tests comprehensive filtering, pagination, sorting and response validation
  */
+import { AccommodationListItemSchema } from '@repo/schemas';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import { initApp } from '../../../src/app';
-import { accommodationListItemSchema } from '../../../src/routes/accommodation/schemas';
 import { validateApiEnv } from '../../../src/utils/env';
 
 // Response schema for list endpoint
 const AccommodationListResponseSchema = z.object({
     success: z.boolean(),
     data: z.object({
-        items: z.array(accommodationListItemSchema),
+        items: z.array(AccommodationListItemSchema),
         pagination: z.object({
             page: z.number().min(1),
             pageSize: z.number().min(1),
