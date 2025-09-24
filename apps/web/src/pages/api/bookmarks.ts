@@ -1,4 +1,4 @@
-import { EntityTypeEnum } from '@repo/types';
+import { EntityTypeEnum } from '@repo/schemas';
 import type { APIRoute } from 'astro';
 import { z } from 'zod';
 
