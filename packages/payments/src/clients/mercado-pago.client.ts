@@ -1,5 +1,5 @@
 import type { ILogger } from '@repo/logger';
-import type { PaymentMethodEnum, PaymentStatusEnum, PriceCurrencyEnum } from '@repo/types';
+import type { PaymentMethodEnum, PaymentStatusEnum, PriceCurrencyEnum } from '@repo/schemas';
 import MercadoPago, { Payment, Preference } from 'mercadopago';
 import type { MercadoPagoConfig } from '../config/mercado-pago.config.js';
 

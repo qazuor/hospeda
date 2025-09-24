@@ -1,15 +1,15 @@
 import type { ILogger } from '@repo/logger';
 import type {
-    NewPaymentInputType,
-    PaymentId,
-    PaymentPlanId,
-    PaymentPlanType,
+    Payment,
+    PaymentCreateInput,
+    PaymentIdType,
+    PaymentPlan,
+    PaymentPlanIdType,
     PaymentStatusEnum,
-    PaymentType,
     PaymentTypeEnum,
-    UpdatePaymentInputType,
-    UserId
-} from '@repo/types';
+    PaymentUpdateInput,
+    UserIdType
+} from '@repo/schemas';
 import type { MercadoPagoClient } from '../clients/mercado-pago.client.js';
 import type { PaymentContext, PaymentPreference, PaymentResult } from '../types/index.js';
 import { generateExternalReference, isPaymentSuccessful, isValidPrice } from '../utils/index.js';
@@ -18,20 +18,20 @@ import { generateExternalReference, isPaymentSuccessful, isValidPrice } from '..
  * Payment repository interface for database operations
  */
 export interface PaymentRepository {
-    create(payment: NewPaymentInputType): Promise<PaymentType>;
-    update(id: PaymentId, updates: UpdatePaymentInputType): Promise<PaymentType>;
-    findById(id: PaymentId): Promise<PaymentType | null>;
-    findByExternalReference(reference: string): Promise<PaymentType | null>;
-    findByMercadoPagoId(mercadoPagoId: string): Promise<PaymentType | null>;
+    create(payment: PaymentCreateInput): Promise<Payment>;
+    update(id: PaymentIdType, updates: PaymentUpdateInput): Promise<Payment>;
+    findById(id: PaymentIdType): Promise<Payment | null>;
+    findByExternalReference(reference: string): Promise<Payment | null>;
+    findByMercadoPagoId(mercadoPagoId: string): Promise<Payment | null>;
 }
 
 /**
  * Payment plan repository interface for database operations
  */
 export interface PaymentPlanRepository {
-    findById(id: PaymentPlanId): Promise<PaymentPlanType | null>;
-    findBySlug(slug: string): Promise<PaymentPlanType | null>;
-    findActive(): Promise<PaymentPlanType[]>;
+    findById(id: PaymentPlanIdType): Promise<PaymentPlan | null>;
+    findBySlug(slug: string): Promise<PaymentPlan | null>;
+    findActive(): Promise<PaymentPlan[]>;
 }
 
 /**
@@ -79,7 +79,7 @@ export class PaymentService {
 
             // Get payment plan
             const paymentPlan = await this.paymentPlanRepository.findById(
-                context.paymentPlanId as PaymentPlanId
+                context.paymentPlanId as PaymentPlanIdType
             );
             if (!paymentPlan) {
                 throw new Error(`Payment plan not found: ${context.paymentPlanId}`);
@@ -107,8 +107,8 @@ export class PaymentService {
 
             // Create payment record
             const payment = await this.paymentRepository.create({
-                userId: context.userId as UserId,
-                paymentPlanId: context.paymentPlanId as PaymentPlanId,
+                userId: context.userId as UserIdType,
+                paymentPlanId: context.paymentPlanId as PaymentPlanIdType,
                 type: 'one_time' as PaymentTypeEnum,
                 status: 'pending' as PaymentStatusEnum,
                 amount: paymentPlan.price,
@@ -233,7 +233,7 @@ export class PaymentService {
                 status: updatedPayment.status,
                 amount: updatedPayment.amount,
                 currency: updatedPayment.currency,
-                mercadoPagoPaymentId,
+                mercadoPagoPaymentIdType: mercadoPagoPaymentId,
                 externalReference: updatedPayment.externalReference,
                 metadata: updatedPayment.metadata
             };
@@ -254,7 +254,7 @@ export class PaymentService {
      * @param paymentId - Payment ID
      * @returns Payment or null if not found
      */
-    async getPayment(paymentId: PaymentId): Promise<PaymentType | null> {
+    async getPayment(paymentId: PaymentIdType): Promise<Payment | null> {
         return this.paymentRepository.findById(paymentId);
     }
 
@@ -263,7 +263,7 @@ export class PaymentService {
      * @param paymentId - Payment ID
      * @returns True if payment is successful
      */
-    async isPaymentSuccessful(paymentId: PaymentId): Promise<boolean> {
+    async isPaymentSuccessful(paymentId: PaymentIdType): Promise<boolean> {
         const payment = await this.paymentRepository.findById(paymentId);
         return payment ? isPaymentSuccessful(payment.status) : false;
     }
@@ -272,7 +272,7 @@ export class PaymentService {
      * Gets all active payment plans
      * @returns List of active payment plans
      */
-    async getActivePaymentPlans(): Promise<PaymentPlanType[]> {
+    async getActivePaymentPlans(): Promise<PaymentPlan[]> {
         return this.paymentPlanRepository.findActive();
     }
 
@@ -281,7 +281,7 @@ export class PaymentService {
      * @param slug - Payment plan slug
      * @returns Payment plan or null if not found
      */
-    async getPaymentPlanBySlug(slug: string): Promise<PaymentPlanType | null> {
+    async getPaymentPlanBySlug(slug: string): Promise<PaymentPlan | null> {
         return this.paymentPlanRepository.findBySlug(slug);
     }
 }
