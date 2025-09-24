@@ -15,7 +15,7 @@ export const searchUsers = async (
     if (!query.trim()) return [];
 
     try {
-        let path = `/api/v1/public/users?search=${encodeURIComponent(query)}&limit=20`;
+        let path = `/api/v1/public/users?search=${encodeURIComponent(query)}&pageSize=20`;
 
         if (options?.roleFilter && options.roleFilter.length > 0) {
             path += `&roles=${options.roleFilter.join(',')}`;
@@ -117,7 +117,7 @@ export const loadInitialUsers = async (options?: {
     statusFilter?: string[];
 }): Promise<SelectOption[]> => {
     try {
-        let path = '/api/v1/public/users?limit=10';
+        let path = '/api/v1/public/users?pageSize=10';
 
         if (options?.roleFilter && options.roleFilter.length > 0) {
             path += `&roles=${options.roleFilter.join(',')}`;
@@ -172,7 +172,7 @@ export const loadAllUsers = async (options?: {
     adminLogger.warn('loadAllUsers called - not recommended for large user datasets');
 
     try {
-        let path = '/api/v1/public/users?limit=1000';
+        let path = '/api/v1/public/users?pageSize=1000';
 
         if (options?.roleFilter && options.roleFilter.length > 0) {
             path += `&roles=${options.roleFilter.join(',')}`;
