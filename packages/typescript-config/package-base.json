@@ -12,8 +12,6 @@
             "@repo/logger/*": ["../logger/src/*"],
             "@repo/schemas": ["../schemas/src/index.ts"],
             "@repo/schemas/*": ["../schemas/src/*"],
-            "@repo/types": ["../types/src/index.ts"],
-            "@repo/types/*": ["../types/src/*"],
             "@repo/ui": ["../ui/src/index.ts"],
             "@repo/ui/*": ["../ui/src/*"],
             "@repo/utils": ["../utils/src/index.ts"],
