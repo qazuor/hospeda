@@ -4,8 +4,7 @@
  */
 
 import { z } from '@hono/zod-openapi';
-import { RoleEnum } from '@repo/schemas';
-import { UserSchema } from '@repo/schemas';
+import { RoleEnum, UserSchema } from '@repo/schemas';
 import { UserService } from '@repo/service-core';
 import { apiLogger } from '../../utils/logger';
 import { createCRUDRoute } from '../../utils/route-factory';
