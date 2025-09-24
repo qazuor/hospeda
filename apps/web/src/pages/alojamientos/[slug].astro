@@ -8,7 +8,7 @@ import AccommodationRating from '@/components/accommodations/AccommodationRating
 import { getAccommodationBySlug, getAllAccommodations } from '@/data/db';
 import Layout from '@/layout/MainLayout.astro';
 import { getLangFromUrl, useTranslations } from '@/utils/i18n';
-import type { AccommodationType } from '@repo/types';
+import type { Accommodation } from '@repo/schemas';
 import type { GetStaticPaths } from 'astro';
 
 /**
@@ -38,10 +38,10 @@ const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
 
 // Get accommodation from props (passed by getStaticPaths) or fallback to API call
-const { accommodation: propsAccommodation } = Astro.props as { accommodation?: AccommodationType };
+const { accommodation: propsAccommodation } = Astro.props as { accommodation?: Accommodation };
 const { slug } = Astro.params;
 
-let accommodation: AccommodationType | null = propsAccommodation || null;
+let accommodation: Accommodation | null = propsAccommodation || null;
 
 // Fallback for development or if props are not available
 if (!accommodation && slug && typeof slug === 'string') {
