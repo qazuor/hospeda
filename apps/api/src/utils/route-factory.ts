@@ -5,10 +5,11 @@
  */
 
 import { createRoute, z } from '@hono/zod-openapi';
-import { ServiceErrorCode } from '@repo/schemas';
+import { PaginationQuerySchema, ServiceErrorCode } from '@repo/schemas';
 import type { Context, MiddlewareHandler } from 'hono';
 import { secureHeaders } from 'hono/secure-headers';
 import { createRouter } from './create-app';
+import { createOpenAPISchema } from './openapi-schema';
 import { ResponseFactory } from './response-factory';
 import {
     type PaginatedResult,
@@ -210,6 +211,7 @@ const applyRouteMiddlewares = (app: ReturnType<typeof createRouter>, options?: R
 /**
  * Helper function to create simple routes (like health checks, version endpoints)
  * Reduces boilerplate for endpoints that don't need complex validation
+ * Automatically converts z.date() schemas to OpenAPI-compatible string datetime
  */
 export const createSimpleRoute = (options: SimpleRouteInterface) => {
     const app = createRouter();
@@ -223,7 +225,7 @@ export const createSimpleRoute = (options: SimpleRouteInterface) => {
         summary: options.summary,
         description: options.description,
         tags: options.tags,
-        responses: ResponseFactory.createCRUDResponses(options.responseSchema)
+        responses: ResponseFactory.createCRUDResponses(createOpenAPISchema(options.responseSchema))
     });
 
     app.openapi(route, async (ctx) => {
@@ -244,7 +246,8 @@ export const createSimpleRoute = (options: SimpleRouteInterface) => {
 /**
  * Helper function to create CRUD routes with standardized structure
  * Provides a consistent interface for all CRUD operations
- * Version 2.0 - Improved type safety, eliminated dangerous type assertions
+ * Version 2.1 - Automatic OpenAPI schema conversion for date fields
+ * Automatically converts z.date() schemas to OpenAPI-compatible string datetime
  */
 export const createCRUDRoute = (options: CreateOpenApiRouteInterface) => {
     const app = createRouter();
@@ -261,13 +264,17 @@ export const createCRUDRoute = (options: CreateOpenApiRouteInterface) => {
         request: createRequestOptions({
             params: options.requestParams || {},
             // Do not declare a body for GET/DELETE requests to avoid JSON parsing on empty bodies
+            // Apply OpenAPI conversion to request body schemas
             body:
                 options.method === 'get' || options.method === 'delete'
                     ? undefined
-                    : options.requestBody,
+                    : options.requestBody
+                      ? createOpenAPISchema(options.requestBody)
+                      : undefined,
             query: options.requestQuery || {}
         }),
-        responses: ResponseFactory.createCRUDResponses(options.responseSchema)
+        // Apply OpenAPI conversion to response schemas
+        responses: ResponseFactory.createCRUDResponses(createOpenAPISchema(options.responseSchema))
     });
 
     app.openapi(route, async (ctx) => {
@@ -301,17 +308,33 @@ export const createCRUDRoute = (options: CreateOpenApiRouteInterface) => {
 /**
  * Helper function to create standardized list API responses with pagination
  * Reduces boilerplate for list endpoints that need pagination
- * Version 2.0 - Improved type safety, eliminated dangerous type assertions
+ * Version 2.2 - Automatic pagination validation and unknown parameter rejection
+ * Automatically converts z.date() schemas to OpenAPI-compatible string datetime
+ * Automatically validates pagination parameters and rejects unknown query params
  */
 export const createListRoute = (
     options: CreateOpenApiRouteInterface & {
-        requestQuery: Record<string, z.ZodTypeAny>;
+        requestQuery?: Record<string, z.ZodTypeAny>; // Now optional - pagination is auto-added
+        allowedQueryParams?: string[]; // Whitelist of additional allowed params
     }
 ) => {
     const app = createRouter();
 
     // Apply route-specific middlewares
     applyRouteMiddlewares(app, options.options);
+
+    // Auto-merge pagination with custom query params
+    const finalQuery = {
+        ...PaginationQuerySchema.shape,
+        ...(options.requestQuery || {})
+    };
+
+    // Calculate all allowed query parameter names
+    const allowedParams = [
+        ...Object.keys(PaginationQuerySchema.shape),
+        ...Object.keys(options.requestQuery || {}),
+        ...(options.allowedQueryParams || [])
+    ];
 
     const route = createRoute({
         method: options.method,
@@ -321,14 +344,33 @@ export const createListRoute = (
         tags: options.tags,
         request: {
             params: options.requestParams ? createParamsRequest(options.requestParams) : undefined,
-            query: createQueryRequest(options.requestQuery)
+            query: createQueryRequest(finalQuery)
         },
-        responses: ResponseFactory.createListResponses(options.responseSchema)
+        // Apply OpenAPI conversion to response schemas
+        responses: ResponseFactory.createListResponses(createOpenAPISchema(options.responseSchema))
     });
 
     app.openapi(route, async (ctx) => {
         try {
-            // ✅ Use proper validation for query parameters (they get transformed)
+            // Validate that only allowed query parameters are provided
+            const rawQuery = ctx.req.query();
+            const providedParams = Object.keys(rawQuery);
+            const invalidParams = providedParams.filter((param) => !allowedParams.includes(param));
+
+            if (invalidParams.length > 0) {
+                return ctx.json(
+                    {
+                        success: false,
+                        error: {
+                            code: ServiceErrorCode.INVALID_PAGINATION_PARAMS,
+                            message: 'Invalid pagination parameters provided'
+                        }
+                    },
+                    400
+                );
+            }
+
+            // ✅ Use proper validation for query parameters (they get transformed by Zod)
             const params = ctx.req.param() || {};
             // biome-ignore lint/suspicious/noExplicitAny: Hono validation returns transformed data
             const query = (ctx.req as any).valid('query');

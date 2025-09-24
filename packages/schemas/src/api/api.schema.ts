@@ -19,40 +19,24 @@ import { z } from 'zod';
 /**
  * Schema for pagination query parameters
  * Used across all list endpoints for consistent pagination
+ * Uses z.coerce for query string conversion
  */
 export const PaginationQuerySchema = z.object({
-    page: z
+    page: z.coerce
         .number({
             message: 'zodError.pagination.page.invalidType'
         })
         .int({ message: 'zodError.pagination.page.int' })
         .min(1, { message: 'zodError.pagination.page.min' })
-        .optional()
         .default(1),
-    pageSize: z
+    pageSize: z.coerce
         .number({
             message: 'zodError.pagination.pageSize.invalidType'
         })
         .int({ message: 'zodError.pagination.pageSize.int' })
         .min(1, { message: 'zodError.pagination.pageSize.min' })
         .max(100, { message: 'zodError.pagination.pageSize.max' })
-        .optional()
-        .default(20),
-    limit: z
-        .number({
-            message: 'zodError.pagination.limit.invalidType'
-        })
-        .int({ message: 'zodError.pagination.limit.int' })
-        .min(1, { message: 'zodError.pagination.limit.min' })
-        .max(100, { message: 'zodError.pagination.limit.max' })
-        .optional(),
-    offset: z
-        .number({
-            message: 'zodError.pagination.offset.invalidType'
-        })
-        .int({ message: 'zodError.pagination.offset.int' })
-        .min(0, { message: 'zodError.pagination.offset.min' })
-        .optional()
+        .default(20)
 });
 export type PaginationQuery = z.infer<typeof PaginationQuerySchema>;
 

@@ -187,21 +187,6 @@ export const PaginationMetadataSchema = z.object({
         })
         .int({ message: 'zodError.pagination.previousPage.int' })
         .min(1, { message: 'zodError.pagination.previousPage.min' })
-        .optional(),
-    offset: z
-        .number({
-            message: 'zodError.pagination.offset.invalidType'
-        })
-        .int({ message: 'zodError.pagination.offset.int' })
-        .min(0, { message: 'zodError.pagination.offset.min' })
-        .optional(),
-    limit: z
-        .number({
-            message: 'zodError.pagination.limit.invalidType'
-        })
-        .int({ message: 'zodError.pagination.limit.int' })
-        .min(1, { message: 'zodError.pagination.limit.min' })
-        .max(100, { message: 'zodError.pagination.limit.max' })
         .optional()
 });
 export type PaginationMetadata = z.infer<typeof PaginationMetadataSchema>;
