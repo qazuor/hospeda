@@ -3,6 +3,7 @@ import { EventService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
+import { transformApiInputToDomain } from '../../utils/openapi-schema';
 import { createCRUDRoute } from '../../utils/route-factory';
 
 const eventService = new EventService({ logger: apiLogger });
@@ -16,8 +17,8 @@ const eventService = new EventService({ logger: apiLogger });
  * - Method: PUT
  * - Path: `/{id}`
  * - Params: `id` (EventId)
- * - Body: `EventUpdateInputSchema`
- * - Response: `EventSchema`
+ * - Body: `EventUpdateInputSchema` (automatically converted for OpenAPI)
+ * - Response: `EventSchema` (automatically converted for OpenAPI)
  */
 export const updateEventRoute = createCRUDRoute({
     method: 'put',
@@ -35,8 +36,13 @@ export const updateEventRoute = createCRUDRoute({
     ) => {
         const actor = getActorFromContext(ctx);
         const id = params.id as string;
-        const result = await eventService.update(actor, id, body as never);
+
+        // Transform API input (string dates) to domain format (Date objects)
+        const domainInput = transformApiInputToDomain(body);
+
+        const result = await eventService.update(actor, id, domainInput as never);
         if (result.error) throw new Error(result.error.message);
+
         return result.data;
     }
 });
