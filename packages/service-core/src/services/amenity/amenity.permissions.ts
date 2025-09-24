@@ -56,11 +56,9 @@ export const checkCanViewAmenity = (_actor: Actor, _amenity: Amenity): void => {
  * All users can list amenities (public).
  */
 export const checkCanListAmenities = (actor: Actor): void => {
-    // While amenities are public, the action of querying them should require an authenticated user.
-    // This prevents unauthenticated API scraping.
-    if (!actor || actor.role === 'GUEST') {
-        throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: You must be logged in.');
-    }
+    if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'FORBIDDEN: no actor');
+    // Listing is allowed for any actor; results are filtered elsewhere.
+    return;
 };
 
 /**
@@ -68,11 +66,9 @@ export const checkCanListAmenities = (actor: Actor): void => {
  * All users can count amenities (public).
  */
 export const checkCanCountAmenities = (actor: Actor): void => {
-    // While amenities are public, the action of querying them should require an authenticated user.
-    // This prevents unauthenticated API scraping.
-    if (!actor || actor.role === 'GUEST') {
-        throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: You must be logged in.');
-    }
+    if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'FORBIDDEN: no actor');
+    // Counting is allowed for any actor; results are filtered elsewhere.
+    return;
 };
 
 /**
