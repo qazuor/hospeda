@@ -1,10 +1,10 @@
 ---
 import AccommodationCard from '@/components/accommodations/AccommodationCard.astro';
 import { getAccommodationsIndexUrl, getLangFromUrl, useTranslations } from '@/utils';
-import type { AccommodationType } from '@repo/types';
+import type { Accommodation } from '@repo/schemas';
 
 interface Props {
-    accommodations: AccommodationType[];
+    accommodations: Accommodation[];
     title: string;
     subtitle?: string;
     showSeeAll?: boolean;
@@ -42,7 +42,7 @@ const { accommodations, title, subtitle, showSeeAll = true } = Astro.props;
 
         <div class='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-8'>
             {
-                accommodations.map((accommodation: AccommodationType) => (
+                accommodations.map((accommodation: Accommodation) => (
                     <AccommodationCard accommodation={accommodation} />
                 ))
             }

@@ -4,7 +4,7 @@ import { getEvents } from '@/data/db/events';
 import MainLayout from '@/layout/MainLayout.astro';
 import { getLangFromUrl, useTranslations } from '@/utils';
 import { getEventUrl, getEventsIndexUrlWithPage } from '@/utils/urls';
-import type { EventType } from '@repo/types';
+import type { Event } from '@repo/schemas';
 
 export interface Props {
     page: number;
@@ -93,7 +93,7 @@ const formatTime = (date: Date | string) => {
                 {events.length > 0 ? (
                     <div class="space-y-12">
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {events.map((event: EventType) => (
+                            {events.map((event: Event) => (
                                 <article class="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden">
                                     <div class="aspect-video bg-gradient-to-br from-purple-400 to-pink-500 relative">
                                         {event.media && event.media.featuredImage ? (
