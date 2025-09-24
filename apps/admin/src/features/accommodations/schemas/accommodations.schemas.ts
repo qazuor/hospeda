@@ -4,7 +4,7 @@ import {
     ModerationStatusEnum,
     PriceCurrencyEnum,
     VisibilityEnum
-} from '@repo/types';
+} from '@repo/schemas';
 import { z } from 'zod';
 
 /**

@@ -5,12 +5,12 @@
  * including schemas, permissions, and caching strategies.
  */
 
-import { AccommodationTypeEnum, LifecycleStatusEnum } from '@repo/types';
+import { AccommodationTypeEnum, LifecycleStatusEnum } from '@repo/schemas';
 import { z } from 'zod';
 
 /**
  * Simplified schemas that work with TanStack Start
- * Using enums from @repo/types for consistency
+ * Using enums from @repo/schemas for consistency
  */
 const accommodationSchema = z.object({
     id: z.string().uuid(),
