@@ -1,4 +1,4 @@
-import type { BasePriceType, PriceCurrencyEnum } from '@repo/types';
+import type { PriceCurrencyEnum, PriceType } from '@repo/schemas';
 import type { ReactNode } from 'react';
 
 type PriceCellProps = {
@@ -7,7 +7,7 @@ type PriceCellProps = {
 
 /**
  * PriceCell component for rendering price values with currency formatting.
- * Expects a BasePriceType object with price and currency properties.
+ * Expects a PriceType object with price and currency properties.
  * Handles various currency formats and provides fallbacks for missing data.
  */
 export const PriceCell = ({ value }: PriceCellProps): ReactNode => {
@@ -20,7 +20,7 @@ export const PriceCell = ({ value }: PriceCellProps): ReactNode => {
         return <span className="text-gray-900 dark:text-gray-100">{String(value)}</span>;
     }
 
-    const priceData = value as BasePriceType;
+    const priceData = value as PriceType;
 
     // Handle missing price
     if (priceData.price === null || priceData.price === undefined) {

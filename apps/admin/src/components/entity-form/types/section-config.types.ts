@@ -1,4 +1,4 @@
-import type { PermissionEnum } from '@repo/types';
+import type { PermissionEnum } from '@repo/schemas';
 import type * as React from 'react';
 import type { LayoutTypeEnum } from '../enums/form-config.enums';
 import type { Actor, FieldConfig } from './field-config.types';

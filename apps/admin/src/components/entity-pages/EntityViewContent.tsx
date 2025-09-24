@@ -2,7 +2,7 @@ import { EntityViewSection } from '@/components/entity-form';
 import { LazySectionWrapper } from '@/components/entity-form/sections/LazySectionWrapper';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
 import { useLazySections } from '@/hooks';
-import type { PermissionEnum } from '@repo/types';
+import type { PermissionEnum } from '@repo/schemas';
 import type { ReactNode } from 'react';
 
 /**
