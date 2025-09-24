@@ -1,7 +1,10 @@
 import { z } from 'zod';
+import { EventIdSchema } from '../../common/id.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
 import { EventCategoryEnumSchema, PriceCurrencyEnumSchema } from '../../enums/index.js';
 import { EventSchema } from './event.schema.js';
+import { EventDateSchema } from './subtypes/event.date.schema.js';
+import { EventPriceSchema } from './subtypes/event.price.schema.js';
 
 /**
  * Event Query Schemas
@@ -193,20 +196,19 @@ export type EventSearchResponse = z.infer<typeof EventSearchResponseSchema>;
 
 /**
  * Event summary schema for quick display
+ * Using only fields that are guaranteed to exist in EventSchema
  */
-export const EventSummarySchema = EventSchema.pick({
-    id: true,
-    slug: true,
-    name: true,
-    description: true,
-    category: true,
-    startDate: true,
-    endDate: true,
-    price: true,
-    isFree: true,
-    isVirtual: true,
-    isPublished: true,
-    createdAt: true
+export const EventSummarySchema = z.object({
+    id: EventIdSchema,
+    slug: z.string(),
+    name: z.string(),
+    summary: z.string(),
+    description: z.string().optional(),
+    category: EventCategoryEnumSchema,
+    date: EventDateSchema,
+    pricing: EventPriceSchema.optional(),
+    isFeatured: z.boolean(),
+    createdAt: z.date()
 });
 export type EventSummary = z.infer<typeof EventSummarySchema>;
 

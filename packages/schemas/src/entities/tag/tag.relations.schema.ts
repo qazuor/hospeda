@@ -84,7 +84,7 @@ const PostSummarySchema = z.object({
     title: z.string(),
     summary: z.string().optional(),
     category: z.string().optional(),
-    publishedAt: z.date().optional(),
+    publishedAt: z.coerce.date().optional(),
     isFeatured: z.boolean(),
     author: z
         .object({

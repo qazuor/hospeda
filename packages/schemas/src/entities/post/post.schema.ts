@@ -84,7 +84,7 @@ export const PostSchema = z.object({
     shares: z.number().int().min(0).default(0),
 
     // Display fields
-    publishedAt: z.date().optional(), // Publication date (can be different from createdAt)
+    publishedAt: z.coerce.date().optional(), // Publication date (can be different from createdAt)
     readingTimeMinutes: z.number().int().min(0).default(5), // Estimated reading time
 
     // Related entities
