@@ -4,12 +4,46 @@
  * ✅ Migrated to use createCRUDRoute (Route Factory)
  */
 
+import { AccommodationFaqAddInputSchema } from '@repo/schemas';
 import { AccommodationService } from '@repo/service-core';
 import { z } from 'zod';
 import { getActorFromContext } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
 import { createCRUDRoute } from '../../utils/route-factory';
-import { FaqParamsSchema, faqResponseSchema, faqUpdateSchema } from './schemas';
+
+// Local schemas for API
+const FaqParamsSchema = z.object({
+    id: z
+        .string()
+        .uuid('Invalid accommodation ID format')
+        .openapi({
+            param: { name: 'id', in: 'path' },
+            example: 'acc_1234567890'
+        }),
+    faqId: z
+        .string()
+        .uuid('Invalid FAQ ID format')
+        .openapi({
+            param: { name: 'faqId', in: 'path' },
+            example: 'faq_1234567890'
+        })
+});
+
+const faqResponseSchema = z
+    .object({
+        id: z.string(),
+        question: z.string(),
+        answer: z.string(),
+        order: z.number(),
+        createdAt: z.string(),
+        updatedAt: z.string()
+    })
+    .openapi('FaqResponse');
+
+const faqCreateSchema = z
+    .object(AccommodationFaqAddInputSchema.shape.faq.shape)
+    .openapi('FaqCreate');
+const faqUpdateSchema = faqCreateSchema.partial().openapi('FaqUpdate');
 
 // Initialize service once
 const accommodationService = new AccommodationService({ logger: apiLogger });

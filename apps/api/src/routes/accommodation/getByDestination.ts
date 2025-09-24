@@ -4,13 +4,12 @@
  * ✅ Migrated to use createSimpleRoute (Route Factory)
  */
 
+import { AccommodationByDestinationOutputSchema } from '@repo/schemas';
 import { AccommodationService } from '@repo/service-core';
 import type { Context } from 'hono';
-import { z } from 'zod';
 import { createGuestActor } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
 import { createSimpleRoute } from '../../utils/route-factory';
-import { accommodationSchema } from './schemas';
 
 // Initialize service once
 const accommodationService = new AccommodationService({ logger: apiLogger });
@@ -57,7 +56,7 @@ export const getByDestinationRoute = createSimpleRoute({
     summary: 'Get accommodations by destination',
     description: 'Retrieve all accommodations for a specific destination',
     tags: ['Accommodations'],
-    responseSchema: z.array(accommodationSchema).openapi('AccommodationsByDestinationResponse'),
+    responseSchema: AccommodationByDestinationOutputSchema,
     handler: getByDestinationHandler
 });
 

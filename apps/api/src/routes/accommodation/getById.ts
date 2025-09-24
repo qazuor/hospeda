@@ -1,10 +1,9 @@
-import { AccommodationIdSchema } from '@repo/schemas';
+import { AccommodationIdSchema, AccommodationSchema } from '@repo/schemas';
 import { AccommodationService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
 import { createCRUDRoute } from '../../utils/route-factory';
-import { accommodationSchema } from './schemas';
 
 const accommodationService = new AccommodationService({ logger: apiLogger });
 
@@ -21,7 +20,7 @@ export const accommodationGetByIdRoute = createCRUDRoute({
     requestParams: {
         id: AccommodationIdSchema
     },
-    responseSchema: accommodationSchema.nullable(),
+    responseSchema: AccommodationSchema.nullable(),
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         // Get actor from context (can be guest)
         const actor = getActorFromContext(ctx);

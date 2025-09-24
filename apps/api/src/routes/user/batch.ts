@@ -1,10 +1,10 @@
+import { UserSchema } from '@repo/schemas';
 import { UserService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
 import { createCRUDRoute } from '../../utils/route-factory';
-import { UserSchema } from './schemas';
 
 const userService = new UserService({ logger: apiLogger });
 

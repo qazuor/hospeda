@@ -1,14 +1,14 @@
+import { z } from '@hono/zod-openapi';
 /**
  * Patch accommodation endpoint
  * Handles partial updates to existing accommodations using AccommodationService
  */
-import { z } from '@hono/zod-openapi';
+import { AccommodationSchema, AccommodationUpdateInputSchema } from '@repo/schemas';
 import { AccommodationService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
 import { createCRUDRoute } from '../../utils/route-factory';
-import { accommodationSchema, accommodationUpdateSchema } from './schemas';
 
 const accommodationService = new AccommodationService({ logger: apiLogger });
 
@@ -27,8 +27,8 @@ export const patchAccommodationRoute = createCRUDRoute({
     requestParams: {
         id: z.string().min(1, 'Accommodation ID is required')
     },
-    requestBody: accommodationUpdateSchema, // Already .partial() so perfect for PATCH
-    responseSchema: accommodationSchema,
+    requestBody: AccommodationUpdateInputSchema, // Already .partial() so perfect for PATCH
+    responseSchema: AccommodationSchema,
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
@@ -38,7 +38,7 @@ export const patchAccommodationRoute = createCRUDRoute({
         const actor = getActorFromContext(ctx);
 
         // Cast body to the correct type (it's already validated by the requestBody schema)
-        const validatedBody = body as z.infer<typeof accommodationUpdateSchema>;
+        const validatedBody = body as z.infer<typeof AccommodationUpdateInputSchema>;
 
         // Call the accommodation service (same method as PUT - it already handles partial updates)
         const result = await accommodationService.update(actor, params.id as string, validatedBody);
