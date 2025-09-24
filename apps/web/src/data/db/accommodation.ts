@@ -1,7 +1,7 @@
 import { getCurrentUser } from '@/data/user';
 import { ensureDatabase } from '@/server/db';
+import type { Accommodation } from '@repo/schemas';
 import { AccommodationService, DestinationService } from '@repo/service-core';
-import type { AccommodationType } from '@repo/types';
 
 /**
  * Returns paginated accommodations data.
@@ -19,7 +19,7 @@ export const getAccommodations = async ({
     pageSize?: number;
     filters?: Record<string, unknown>;
 } = {}): Promise<{
-    accommodations: AccommodationType[];
+    accommodations: Accommodation[];
     total: number;
     page: number;
     pageSize: number;
@@ -49,7 +49,7 @@ export const getAccommodations = async ({
         const totalPages = Math.ceil(data.total / pageSize);
 
         return {
-            accommodations: data.items,
+            accommodations: data.items as Accommodation[],
             total: data.total,
             page,
             pageSize,
@@ -84,20 +84,22 @@ type GetAccommodationsByDestinationInput = {
 export const getAccommodationsByDestination = async ({
     destinationId,
     locals
-}: GetAccommodationsByDestinationInput = {}): Promise<AccommodationType[]> => {
+}: GetAccommodationsByDestinationInput = {}): Promise<Accommodation[]> => {
     ensureDatabase();
     const { actor } = await getCurrentUser({ locals });
     if (destinationId) {
         const destinationService = new DestinationService({});
         const { data, error } = await destinationService.getAccommodations(actor, {
-            destinationId
+            destinationId,
+            page: 1,
+            pageSize: 100 // Get a reasonable number for destination page
         });
         if (error || !data) return [];
-        return data.accommodations;
+        return data.accommodations as Accommodation[];
     }
     const accommodationService = new AccommodationService({});
     const { data } = await accommodationService.list(actor, { page: 1, pageSize: 10 });
-    return data?.items ?? [];
+    return (data?.items as Accommodation[]) ?? [];
 };
 
 /**
@@ -112,12 +114,12 @@ type GetAccommodationBySlugInput = { slug: string; locals?: { auth?: LocalsAuth 
 export const getAccommodationBySlug = async ({
     slug,
     locals
-}: GetAccommodationBySlugInput): Promise<AccommodationType | null> => {
+}: GetAccommodationBySlugInput): Promise<Accommodation | null> => {
     ensureDatabase();
     const { actor } = await getCurrentUser({ locals });
     const accommodationService = new AccommodationService({});
     const { data } = await accommodationService.getBySlug(actor, slug);
-    return data ?? null;
+    return (data as Accommodation) ?? null;
 };
 
 /**
@@ -133,7 +135,7 @@ type GetAllAccommodationsInput = {
 
 export const getAllAccommodations = async ({
     locals
-}: GetAllAccommodationsInput = {}): Promise<AccommodationType[]> => {
+}: GetAllAccommodationsInput = {}): Promise<Accommodation[]> => {
     ensureDatabase();
     const { actor } = await getCurrentUser({ locals });
     const accommodationService = new AccommodationService({});
@@ -144,7 +146,7 @@ export const getAllAccommodations = async ({
             page: 1,
             pageSize: 1000 // Large enough to get all accommodations
         });
-        return data?.items ?? [];
+        return (data?.items as Accommodation[]) ?? [];
     } catch (error) {
         console.error('Error fetching all accommodations:', error);
         return [];

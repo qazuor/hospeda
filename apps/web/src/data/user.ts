@@ -1,6 +1,17 @@
+import type { UserIdType } from '@repo/schemas';
+import { RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
-import type { UserId } from '@repo/types';
-import { RoleEnum, createPublicUser } from '@repo/types';
+
+// TODO [65f6d873-5eb5-4c5d-8671-639ffabe73d7]: Temporary implementation until we move createPublicUser to @repo/schemas
+const createPublicUser = () => ({
+    id: '',
+    email: 'guest@example.com',
+    firstName: 'Guest',
+    lastName: 'User',
+    fullName: 'Guest User',
+    role: RoleEnum.GUEST,
+    permissions: []
+});
 
 type LocalsAuth = () => { userId?: string | null } | undefined | null;
 
@@ -36,7 +47,7 @@ export const getCurrentUser = async ({
             const userId = authData?.userId;
             if (userId) {
                 const actor: Actor = {
-                    id: userId as UserId,
+                    id: userId as UserIdType,
                     role: RoleEnum.USER,
                     permissions: []
                 };
