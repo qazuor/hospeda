@@ -1,4 +1,4 @@
-import { LifecycleStatusEnum, ModerationStatusEnum, RoleEnum, VisibilityEnum } from '@repo/types';
+import { LifecycleStatusEnum, ModerationStatusEnum, RoleEnum, VisibilityEnum } from '@repo/schemas';
 import { z } from 'zod';
 
 export const UserListItemSchema = z

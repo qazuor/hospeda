@@ -3,7 +3,7 @@ import {
     ModerationStatusEnum,
     PostCategoryEnum,
     VisibilityEnum
-} from '@repo/types';
+} from '@repo/schemas';
 import { z } from 'zod';
 
 export const PostListItemSchema = z

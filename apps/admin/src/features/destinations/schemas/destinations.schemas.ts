@@ -1,4 +1,4 @@
-import { LifecycleStatusEnum, ModerationStatusEnum, VisibilityEnum } from '@repo/types';
+import { LifecycleStatusEnum, ModerationStatusEnum, VisibilityEnum } from '@repo/schemas';
 import { z } from 'zod';
 
 /**
