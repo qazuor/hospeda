@@ -19,9 +19,9 @@ export const createPostsColumns = (): readonly ColumnConfig<Post>[] => [
         })
     },
     {
-        id: 'postType',
+        id: 'category',
         header: 'Type',
-        accessorKey: 'postType',
+        accessorKey: 'category',
         enableSorting: true,
         columnType: ColumnType.BADGE,
         badgeOptions: [
@@ -33,42 +33,49 @@ export const createPostsColumns = (): readonly ColumnConfig<Post>[] => [
             { value: 'OTHER', label: 'Other', color: BadgeColor.GRAY }
         ]
     },
+    // {
+    //     id: 'author',
+    //     header: 'Author',
+    //     accessorKey: 'authorName', // This field doesn't exist in PostListItemSchema
+    //     enableSorting: true,
+    //     columnType: ColumnType.ENTITY,
+    //     entityOptions: {
+    //         entityType: EntityType.USER,
+    //         color: BadgeColor.PINK
+    //     },
+    //     linkHandler: (row) =>
+    //         row.authorId && row.authorId !== null
+    //             ? {
+    //                   to: '/users/$id',
+    //                   params: { id: row.authorId }
+    //               }
+    //             : undefined
+    // },
     {
-        id: 'author',
-        header: 'Author',
-        accessorKey: 'authorName',
+        id: 'authorId',
+        header: 'Author ID',
+        accessorKey: 'authorId',
         enableSorting: true,
-        columnType: ColumnType.ENTITY,
-        entityOptions: {
-            entityType: EntityType.USER,
-            color: BadgeColor.PINK
-        },
-        linkHandler: (row) =>
-            row.authorId && row.authorId !== null
-                ? {
-                      to: '/users/$id',
-                      params: { id: row.authorId }
-                  }
-                : undefined
+        columnType: ColumnType.STRING
     },
-    {
-        id: 'destination',
-        header: 'Destination',
-        accessorKey: 'destinationName',
-        enableSorting: true,
-        columnType: ColumnType.ENTITY,
-        entityOptions: {
-            entityType: EntityType.DESTINATION,
-            color: BadgeColor.GREEN
-        },
-        linkHandler: (row) =>
-            row.destinationId && row.destinationId !== null
-                ? {
-                      to: '/destinations/$id',
-                      params: { id: row.destinationId }
-                  }
-                : undefined
-    },
+    // {
+    //     id: 'destination',
+    //     header: 'Destination',
+    //     accessorKey: 'destinationName', // This field doesn't exist in PostListItemSchema
+    //     enableSorting: true,
+    //     columnType: ColumnType.ENTITY,
+    //     entityOptions: {
+    //         entityType: EntityType.DESTINATION,
+    //         color: BadgeColor.GREEN
+    //     },
+    //     linkHandler: (row) =>
+    //         row.destinationId && row.destinationId !== null
+    //             ? {
+    //                   to: '/destinations/$id',
+    //                   params: { id: row.destinationId }
+    //               }
+    //             : undefined
+    // },
     {
         id: 'publishedAt',
         header: 'Published',
@@ -77,9 +84,9 @@ export const createPostsColumns = (): readonly ColumnConfig<Post>[] => [
         columnType: ColumnType.DATE
     },
     {
-        id: 'readingTime',
+        id: 'readingTimeMinutes',
         header: 'Reading Time',
-        accessorKey: 'readingTime',
+        accessorKey: 'readingTimeMinutes',
         enableSorting: true,
         columnType: ColumnType.NUMBER
     },
