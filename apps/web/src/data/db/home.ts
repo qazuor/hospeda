@@ -1,4 +1,5 @@
 import { ensureDatabase } from '@/server/db';
+import type { Accommodation, Destination, Event, Post } from '@repo/schemas';
 import {
     AccommodationReviewService,
     AccommodationService,
@@ -7,7 +8,6 @@ import {
     EventService,
     PostService
 } from '@repo/service-core';
-import type { AccommodationType, DestinationType, EventType, PostType } from '@repo/types';
 
 import { getCurrentUser } from '@/data/user';
 
@@ -38,10 +38,10 @@ type LocalsAuth = () => { userId?: string | null } | undefined | null;
 export const getHomeData = async ({
     locals
 }: { locals?: { auth?: LocalsAuth } } = {}): Promise<{
-    destinations: DestinationType[];
-    accommodations: AccommodationType[];
-    events: EventType[];
-    posts: PostType[];
+    destinations: Destination[];
+    accommodations: Accommodation[];
+    events: Event[];
+    posts: Post[];
     testimonials: TestimonialType[];
 }> => {
     ensureDatabase();
@@ -55,12 +55,13 @@ export const getHomeData = async ({
         // Featured destinations (filters: isFeatured true)
         destinationService.search(actor, {
             filters: { isFeatured: true },
-            pagination: { page: 1, pageSize: 8 }
+            page: 1,
+            pageSize: 8
         }),
         // Latest posts (fallback to featured for demo; ideally use getFeatured or category)
         postService.getFeatured(actor, {}),
         // Upcoming events from today forward
-        eventService.getUpcoming(actor, { fromDate: new Date(), page: 1, pageSize: 6 })
+        eventService.getUpcoming(actor, { daysAhead: 30, page: 1, pageSize: 6 })
     ]);
 
     const destinations = destRes.data?.items ?? [];
@@ -70,10 +71,9 @@ export const getHomeData = async ({
     // For home “FeaturedAccommodations”: use top-rated already filtered and ordered
     const accommodationService = new AccommodationService({});
     const topRatedRes = await accommodationService.getTopRated(actor, {
-        limit: 9,
-        onlyFeatured: true
+        limit: 9
     });
-    const accommodations: AccommodationType[] = topRatedRes.data ?? [];
+    const accommodations: Accommodation[] = topRatedRes.data?.accommodations ?? [];
 
     // Testimonials: Get recent reviews from both accommodations and destinations
     const accommodationReviewService = new AccommodationReviewService({});
@@ -84,8 +84,8 @@ export const getHomeData = async ({
         destinationReviewService.listWithUser(actor, { page: 1, pageSize: 15 })
     ]);
 
-    const accommodationReviews = accommodationReviewsRes.data?.items ?? [];
-    const destinationReviews = destinationReviewsRes.data?.items ?? [];
+    const accommodationReviews = accommodationReviewsRes.data?.accommodationReviews ?? [];
+    const destinationReviews = destinationReviewsRes.data?.data ?? [];
 
     // Get unique accommodation and destination IDs to fetch names
     const accommodationIds = [...new Set(accommodationReviews.map((r) => r.accommodationId))];
@@ -125,7 +125,7 @@ export const getHomeData = async ({
             // Get user name from the user relation
             const userName = review.user
                 ? `${review.user.firstName || ''} ${review.user.lastName || ''}`.trim() ||
-                  review.user.email?.split('@')[0] ||
+                  review.user.displayName ||
                   'Usuario Anónimo'
                 : `Usuario ${review.userId.slice(0, 8)}`;
 
@@ -157,7 +157,7 @@ export const getHomeData = async ({
             // Get user name from the user relation
             const userName = review.user
                 ? `${review.user.firstName || ''} ${review.user.lastName || ''}`.trim() ||
-                  review.user.email?.split('@')[0] ||
+                  review.user.displayName ||
                   'Usuario Anónimo'
                 : `Usuario ${review.userId.slice(0, 8)}`;
 
