@@ -433,8 +433,12 @@ export class EventService extends BaseCrudService<
                     id: event.id,
                     slug: event.slug,
                     name: event.name,
+                    summary: event.summary,
                     description: event.description,
                     category: event.category,
+                    date: event.date,
+                    pricing: event.pricing,
+                    isFeatured: event.isFeatured,
                     createdAt: event.createdAt
                 };
                 return summary;
