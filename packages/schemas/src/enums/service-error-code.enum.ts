@@ -11,6 +11,8 @@ export enum ServiceErrorCode {
     INTERNAL_ERROR = 'INTERNAL_ERROR',
     /** Entity or assignment already exists */
     ALREADY_EXISTS = 'ALREADY_EXISTS',
+    /** Invalid pagination parameters provided */
+    INVALID_PAGINATION_PARAMS = 'INVALID_PAGINATION_PARAMS',
     /**
      * Method is not implemented.
      * Use this code for public service methods that are stubs or not yet implemented.
