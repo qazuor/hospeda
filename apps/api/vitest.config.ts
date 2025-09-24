@@ -23,7 +23,6 @@ export default defineConfig({
     resolve: {
         alias: {
             '@': resolve(__dirname, './src'),
-            '@repo/types': resolve(__dirname, '../../packages/types/src'),
             '@repo/schemas': resolve(__dirname, '../../packages/schemas/src'),
             '@repo/db': resolve(__dirname, '../../packages/db/src'),
             '@repo/logger': resolve(__dirname, '../../packages/logger/src'),

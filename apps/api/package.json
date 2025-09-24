@@ -29,7 +29,6 @@
         "@repo/logger": "workspace:*",
         "@repo/schemas": "workspace:*",
         "@repo/service-core": "workspace:*",
-        "@repo/types": "workspace:*",
         "@repo/utils": "workspace:*",
         "@scalar/hono-api-reference": "^0.9.12",
         "dotenv": "^16.5.0",
