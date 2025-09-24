@@ -33,8 +33,6 @@
             "@repo/logger/*": ["../../packages/logger/src/*"],
             "@repo/schemas": ["../../packages/schemas/src/index.ts"],
             "@repo/schemas/*": ["../../packages/schemas/src/*"],
-            "@repo/types": ["../../packages/types/src/index.ts"],
-            "@repo/types/*": ["../../packages/types/src/*"],
             "@repo/utils": ["../../packages/utils/src/index.ts"],
             "@repo/utils/*": ["../../packages/utils/src/*"],
             "@repo/auth-ui": ["../../packages/auth-ui/src/index.ts"],
