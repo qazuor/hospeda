@@ -3,7 +3,7 @@
  * @module payments/config/mercado-pago
  */
 
-import { PriceCurrencyEnum } from '@repo/types';
+import { PriceCurrencyEnum } from '@repo/schemas';
 
 /**
  * Mercado Pago environment type

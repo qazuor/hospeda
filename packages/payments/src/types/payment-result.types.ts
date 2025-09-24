@@ -3,7 +3,7 @@
  * @module payments/types/payment-result
  */
 
-import type { PaymentId, SubscriptionId } from '@repo/types';
+import type { PaymentIdType, SubscriptionIdType } from '@repo/schemas';
 
 /**
  * Result of processing a payment notification
@@ -80,7 +80,7 @@ export interface PaymentResult {
     /** Payment ID */
     paymentId?: string;
     /** Mercado Pago Payment ID */
-    mercadoPagoPaymentId?: string;
+    mercadoPagoPaymentIdType?: string;
     /** External reference */
     externalReference?: string;
     /** Payment status */
@@ -110,7 +110,7 @@ export interface SubscriptionResult {
     /** Payment Plan ID */
     paymentPlanId?: string;
     /** Mercado Pago Subscription ID */
-    mercadoPagoSubscriptionId?: string;
+    mercadoPagoSubscriptionIdType?: string;
     /** Next billing date */
     nextBillingDate?: Date;
     /** Subscription status */
@@ -130,7 +130,7 @@ export interface PaymentCreationResult {
     /** Whether the creation was successful */
     success: boolean;
     /** Created payment ID */
-    paymentId?: PaymentId;
+    paymentId?: PaymentIdType;
     /** Mercado Pago preference ID */
     preferenceId?: string;
     /** Payment initialization URL */
@@ -146,9 +146,9 @@ export interface SubscriptionCreationResult {
     /** Whether the creation was successful */
     success: boolean;
     /** Created subscription ID */
-    subscriptionId?: SubscriptionId;
+    subscriptionId?: SubscriptionIdType;
     /** Mercado Pago subscription ID */
-    mercadoPagoSubscriptionId?: string;
+    mercadoPagoSubscriptionIdType?: string;
     /** Error message if creation failed */
     errorMessage?: string;
 }
@@ -172,9 +172,9 @@ export interface WebhookProcessingResult {
     /** Whether the processing was successful */
     success: boolean;
     /** Payment ID if this was a payment webhook */
-    paymentId?: PaymentId;
+    paymentId?: PaymentIdType;
     /** Subscription ID if this was a subscription webhook */
-    subscriptionId?: SubscriptionId;
+    subscriptionId?: SubscriptionIdType;
     /** Error message if processing failed */
     errorMessage?: string;
     /** Actions taken during processing */

@@ -3,7 +3,7 @@
  * @module payments/utils/payment
  */
 
-import { BillingCycleEnum, type PriceCurrencyEnum } from '@repo/types';
+import { BillingCycleEnum, type PriceCurrencyEnum } from '@repo/schemas';
 
 /**
  * Calculates the next billing date based on current date and billing cycle
