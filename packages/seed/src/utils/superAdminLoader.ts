@@ -13,14 +13,16 @@ const updateClerkMetadata = async (clerkUserId: string, dbUserId: string): Promi
     try {
         const clerkSecretKey = process.env.CLERK_SECRET_KEY;
         if (!clerkSecretKey) {
-            logger.warn(`${STATUS_ICONS.Warning} CLERK_SECRET_KEY not found, skipping metadata update`);
+            logger.warn(
+                `${STATUS_ICONS.Warning} CLERK_SECRET_KEY not found, skipping metadata update`
+            );
             return;
         }
 
         const response = await fetch(`https://api.clerk.com/v1/users/${clerkUserId}/metadata`, {
             method: 'PATCH',
             headers: {
-                'Authorization': `Bearer ${clerkSecretKey}`,
+                Authorization: `Bearer ${clerkSecretKey}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
@@ -42,7 +44,9 @@ const updateClerkMetadata = async (clerkUserId: string, dbUserId: string): Promi
             msg: `${STATUS_ICONS.Success} Clerk metadata updated for user ${clerkUserId}`
         });
     } catch (error) {
-        logger.warn(`${STATUS_ICONS.Warning} Failed to update Clerk metadata: ${(error as Error).message}`);
+        logger.warn(
+            `${STATUS_ICONS.Warning} Failed to update Clerk metadata: ${(error as Error).message}`
+        );
     }
 };
 
@@ -125,9 +129,12 @@ export async function loadSuperAdminAndGetActor(): Promise<Actor> {
                     logger.info(
                         `${STATUS_ICONS.Success} Linked super admin with auth provider (${seedAuthProvider})`
                     );
-                    
+
                     // Update Clerk metadata with the database user ID
-                    await updateClerkMetadata(seedSuperAdminAuthProviderUserId, existingSuperAdmin.id);
+                    await updateClerkMetadata(
+                        seedSuperAdminAuthProviderUserId,
+                        existingSuperAdmin.id
+                    );
                 } else if (!seedSuperAdminAuthProviderUserId) {
                     logger.warn(
                         `${STATUS_ICONS.Warning} SEED_SUPER_ADMIN_AUTH_PROVIDER_USER_ID not set; super admin won't be linked to auth provider`
@@ -167,15 +174,16 @@ export async function loadSuperAdminAndGetActor(): Promise<Actor> {
         logger.success({
             msg: `${STATUS_ICONS.UserSuperAdmin} Super admin created: "${createdUser.displayName || 'Super Admin'}" (ID: ${realSuperAdminId})`
         });
-        
+
         // Update Clerk metadata with the database user ID if authProviderUserId exists
-        const authProviderUserId = createdUser.authProviderUserId || 
-                                 seedSuperAdminAuthProviderUserId || 
-                                 superAdminInput.authProviderUserId;
+        const authProviderUserId =
+            createdUser.authProviderUserId ||
+            seedSuperAdminAuthProviderUserId ||
+            superAdminInput.authProviderUserId;
         if (authProviderUserId) {
             await updateClerkMetadata(authProviderUserId, realSuperAdminId);
         }
-        
+
         logger.info(`${subSeparator}`);
 
         summaryTracker.trackProcessStep(
