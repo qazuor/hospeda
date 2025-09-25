@@ -48,21 +48,27 @@ export const checkCanViewFeature = (_actor: Actor, _feature: Feature): void => {
 };
 
 /**
- * Checks if the actor can list features. All users can list features (public).
+ * Checks if the actor can list features. Requires ACCOMMODATION_FEATURES_EDIT permission.
  */
 export const checkCanListFeatures = (actor: Actor): void => {
-    if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'FORBIDDEN: no actor');
-    // Listing is allowed for any actor; results are filtered elsewhere.
-    return;
+    if (!hasPermission(actor, PermissionEnum.ACCOMMODATION_FEATURES_EDIT)) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Forbidden: missing ACCOMMODATION_FEATURES_EDIT permission'
+        );
+    }
 };
 
 /**
- * Checks if the actor can count features. All users can count features (public).
+ * Checks if the actor can count features. Requires ACCOMMODATION_FEATURES_EDIT permission.
  */
 export const checkCanCountFeatures = (actor: Actor): void => {
-    if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'FORBIDDEN: no actor');
-    // Counting is allowed for any actor; results are filtered elsewhere.
-    return;
+    if (!hasPermission(actor, PermissionEnum.ACCOMMODATION_FEATURES_EDIT)) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Forbidden: missing ACCOMMODATION_FEATURES_EDIT permission'
+        );
+    }
 };
 
 /**
@@ -83,6 +89,42 @@ export const checkCanAddFeatureToAccommodation = (actor: Actor): void => {
  * Uses ACCOMMODATION_FEATURES_EDIT permission.
  */
 export const checkCanRemoveFeatureFromAccommodation = (actor: Actor): void => {
+    if (!hasPermission(actor, PermissionEnum.ACCOMMODATION_FEATURES_EDIT)) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Forbidden: missing ACCOMMODATION_FEATURES_EDIT permission'
+        );
+    }
+};
+
+/**
+ * Checks if the actor can search features. Requires ACCOMMODATION_FEATURES_EDIT permission.
+ */
+export const checkCanSearchFeatures = (actor: Actor): void => {
+    if (!hasPermission(actor, PermissionEnum.ACCOMMODATION_FEATURES_EDIT)) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Forbidden: missing ACCOMMODATION_FEATURES_EDIT permission'
+        );
+    }
+};
+
+/**
+ * Checks if the actor can get features for an accommodation. Requires ACCOMMODATION_FEATURES_EDIT permission.
+ */
+export const checkCanGetFeaturesForAccommodation = (actor: Actor): void => {
+    if (!hasPermission(actor, PermissionEnum.ACCOMMODATION_FEATURES_EDIT)) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Forbidden: missing ACCOMMODATION_FEATURES_EDIT permission'
+        );
+    }
+};
+
+/**
+ * Checks if the actor can get accommodations by feature. Requires ACCOMMODATION_FEATURES_EDIT permission.
+ */
+export const checkCanGetAccommodationsByFeature = (actor: Actor): void => {
     if (!hasPermission(actor, PermissionEnum.ACCOMMODATION_FEATURES_EDIT)) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
