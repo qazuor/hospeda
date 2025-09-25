@@ -10,6 +10,38 @@ export const PaginationSchema = z.object({
 export type PaginationType = z.infer<typeof PaginationSchema>;
 
 /**
+ * Legacy pagination params schema (for backward compatibility with tests)
+ * Uses limit/offset pattern instead of page/pageSize
+ */
+export const PaginationParamsSchema = z.object({
+    limit: z.number().int().positive().max(100).default(10),
+    offset: z.number().int().min(0).default(0),
+    order: z.enum(['asc', 'desc']).default('desc'),
+    orderBy: z.string().optional()
+});
+export type PaginationParamsType = z.infer<typeof PaginationParamsSchema>;
+
+/**
+ * Search params schema extending pagination params
+ */
+export const SearchParamsSchema = PaginationParamsSchema.extend({
+    q: z.string().optional(),
+    name: z.string().optional()
+});
+export type SearchParamsType = z.infer<typeof SearchParamsSchema>;
+
+/**
+ * Cursor pagination params schema
+ */
+export const CursorPaginationParamsSchema = z.object({
+    limit: z.number().int().positive().max(100).default(10),
+    cursor: z.string().optional(),
+    order: z.enum(['asc', 'desc']).default('desc'),
+    orderBy: z.string().optional()
+});
+export type CursorPaginationParamsType = z.infer<typeof CursorPaginationParamsSchema>;
+
+/**
  * Standard sorting schema with sortBy/sortOrder pattern
  */
 export const SortingSchema = z.object({
@@ -52,6 +84,6 @@ export const CursorPaginationResultSchema = <T extends z.ZodTypeAny>(itemSchema:
         pagination: z.object({
             nextCursor: z.string().optional(),
             hasMore: z.boolean(),
-            pageSize: z.number().int().positive() // Changed from 'limit' to 'pageSize'
+            limit: z.number().int().min(0) // Allow 0 or positive integers as per test expectation
         })
     });
