@@ -72,6 +72,39 @@ export const checkCanCountAmenities = (actor: Actor): void => {
 };
 
 /**
+ * Checks if the actor can search amenities. All users can search amenities (public).
+ */
+export const checkCanSearchAmenities = (actor: Actor): void => {
+    if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'FORBIDDEN: no actor');
+    // Searching is allowed for any actor; results are filtered elsewhere.
+    return;
+};
+
+/**
+ * Checks if the actor can get amenities for accommodation. Requires ACCOMMODATION_AMENITIES_EDIT permission.
+ */
+export const checkCanGetAmenitiesForAccommodation = (actor: Actor): void => {
+    if (!hasPermission(actor, PermissionEnum.ACCOMMODATION_AMENITIES_EDIT)) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Forbidden: missing ACCOMMODATION_AMENITIES_EDIT permission'
+        );
+    }
+};
+
+/**
+ * Checks if the actor can get accommodations by amenity. Requires ACCOMMODATION_AMENITIES_EDIT permission.
+ */
+export const checkCanGetAccommodationsByAmenity = (actor: Actor): void => {
+    if (!hasPermission(actor, PermissionEnum.ACCOMMODATION_AMENITIES_EDIT)) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Forbidden: missing ACCOMMODATION_AMENITIES_EDIT permission'
+        );
+    }
+};
+
+/**
  * Checks if the actor can add an amenity to an accommodation.
  * Uses ACCOMMODATION_AMENITIES_EDIT permission.
  */
