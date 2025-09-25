@@ -1,4 +1,4 @@
-import { PostListItemSchema, type PostListItem } from '@repo/schemas';
+import { type PostListItem, PostListItemSchema } from '@repo/schemas';
 
 // Re-export the official schema from @repo/schemas for consistency
 export { PostListItemSchema };
