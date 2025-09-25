@@ -34,6 +34,8 @@ import {
     checkCanCountAmenities,
     checkCanCreateAmenity,
     checkCanDeleteAmenity,
+    checkCanGetAccommodationsByAmenity,
+    checkCanGetAmenitiesForAccommodation,
     checkCanListAmenities,
     checkCanRemoveAmenityFromAccommodation,
     checkCanUpdateAmenity,
@@ -137,7 +139,7 @@ export class AmenityService extends BaseCrudRelatedService<
             input: { ...params, actor },
             schema: AmenityGetAccommodationsInputSchema,
             execute: async (validatedParams, actor) => {
-                this._canList(actor);
+                checkCanGetAccommodationsByAmenity(actor);
                 const { amenityId } = validatedParams;
                 const amenity = await this.model.findOne({ id: amenityId as AmenityId });
                 if (!amenity) {
@@ -183,7 +185,7 @@ export class AmenityService extends BaseCrudRelatedService<
             input: { ...params, actor },
             schema: AmenityGetForAccommodationInputSchema,
             execute: async (validatedParams, actor) => {
-                this._canList(actor);
+                checkCanGetAmenitiesForAccommodation(actor);
                 const { accommodationId } = validatedParams;
                 // Find all relations with this accommodationId
                 const { items: relations } = await this.relatedModel.findAll({ accommodationId });
