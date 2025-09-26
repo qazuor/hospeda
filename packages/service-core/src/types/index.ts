@@ -1,11 +1,11 @@
 import type {
     BaseSearchSchema,
     EntityPermissionReasonEnum,
-    PaginationSchema,
+    HttpPaginationSchema,
+    HttpSortingSchema,
     PermissionEnum,
     RoleEnum,
-    ServiceErrorCode,
-    SortingSchema
+    ServiceErrorCode
 } from '@repo/schemas';
 import type { z } from 'zod';
 import type { ServiceLogger } from '../utils/service-logger';
@@ -172,6 +172,6 @@ export interface BaseModel<T> {
 }
 
 // --- Search Types ---
-export type SortingType = z.infer<typeof SortingSchema>;
-export type PaginationType = z.infer<typeof PaginationSchema>;
+export type SortingType = z.infer<typeof HttpSortingSchema>;
+export type PaginationType = z.infer<typeof HttpPaginationSchema>;
 export type BaseSearchType = z.infer<typeof BaseSearchSchema>;
