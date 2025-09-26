@@ -3,106 +3,10 @@ import { ZodError, z } from 'zod';
 import {
     CursorPaginationParamsSchema,
     CursorPaginationResultSchema,
-    PaginationParamsSchema,
-    PaginationResultSchema,
-    SearchParamsSchema
+    PaginationResultSchema
 } from '../../src/common/pagination.schema.js';
 
 describe('Pagination Schemas', () => {
-    describe('PaginationParamsSchema', () => {
-        it('should validate with default values', () => {
-            const result = PaginationParamsSchema.parse({});
-
-            expect(result.limit).toBe(10);
-            expect(result.offset).toBe(0);
-            expect(result.order).toBe('desc');
-        });
-
-        it('should validate with all custom parameters', () => {
-            const params = {
-                limit: 25,
-                offset: 50,
-                order: 'asc' as const,
-                orderBy: 'name'
-            };
-
-            expect(() => PaginationParamsSchema.parse(params)).not.toThrow();
-            const result = PaginationParamsSchema.parse(params);
-            expect(result.limit).toBe(25);
-            expect(result.offset).toBe(50);
-            expect(result.order).toBe('asc');
-            expect(result.orderBy).toBe('name');
-        });
-
-        it('should enforce limit boundaries', () => {
-            // Too small limit
-            expect(() => PaginationParamsSchema.parse({ limit: 0 })).toThrow(ZodError);
-
-            // Too large limit
-            expect(() => PaginationParamsSchema.parse({ limit: 101 })).toThrow(ZodError);
-
-            // Valid boundaries
-            expect(() => PaginationParamsSchema.parse({ limit: 1 })).not.toThrow();
-            expect(() => PaginationParamsSchema.parse({ limit: 100 })).not.toThrow();
-        });
-
-        it('should enforce non-negative offset', () => {
-            expect(() => PaginationParamsSchema.parse({ offset: -1 })).toThrow(ZodError);
-            expect(() => PaginationParamsSchema.parse({ offset: 0 })).not.toThrow();
-            expect(() => PaginationParamsSchema.parse({ offset: 1000 })).not.toThrow();
-        });
-
-        it('should validate order enum values', () => {
-            expect(() => PaginationParamsSchema.parse({ order: 'asc' })).not.toThrow();
-            expect(() => PaginationParamsSchema.parse({ order: 'desc' })).not.toThrow();
-            expect(() => PaginationParamsSchema.parse({ order: 'invalid' })).toThrow(ZodError);
-        });
-
-        it('should require integer values for limit and offset', () => {
-            expect(() => PaginationParamsSchema.parse({ limit: 10.5 })).toThrow(ZodError);
-            expect(() => PaginationParamsSchema.parse({ offset: 5.5 })).toThrow(ZodError);
-        });
-    });
-
-    describe('SearchParamsSchema', () => {
-        it('should extend PaginationParamsSchema', () => {
-            const params = {
-                limit: 20,
-                offset: 10,
-                order: 'asc' as const,
-                q: 'search term',
-                name: 'entity name'
-            };
-
-            expect(() => SearchParamsSchema.parse(params)).not.toThrow();
-            const result = SearchParamsSchema.parse(params);
-            expect(result.limit).toBe(20);
-            expect(result.offset).toBe(10);
-            expect(result.order).toBe('asc');
-            expect(result.q).toBe('search term');
-            expect(result.name).toBe('entity name');
-        });
-
-        it('should validate with only search fields', () => {
-            const params = {
-                q: 'search only'
-            };
-
-            expect(() => SearchParamsSchema.parse(params)).not.toThrow();
-            const result = SearchParamsSchema.parse(params);
-            expect(result.q).toBe('search only');
-            expect(result.limit).toBe(10); // Default from parent
-        });
-
-        it('should allow empty search params', () => {
-            const result = SearchParamsSchema.parse({});
-
-            expect(result.q).toBeUndefined();
-            expect(result.name).toBeUndefined();
-            expect(result.limit).toBe(10); // Default from parent
-        });
-    });
-
     describe('PaginationResultSchema', () => {
         it('should validate valid pagination result', () => {
             const TestItemSchema = z.object({
@@ -212,9 +116,7 @@ describe('Pagination Schemas', () => {
                 id: z.string().uuid(),
                 count: z.number().min(0)
             });
-
             const TestPaginationSchema = PaginationResultSchema(TestItemSchema);
-
             const validResult = {
                 data: [{ id: '550e8400-e29b-41d4-a716-446655440000', count: 5 }],
                 pagination: {
@@ -226,7 +128,6 @@ describe('Pagination Schemas', () => {
                     hasPreviousPage: false
                 }
             };
-
             const invalidResult = {
                 data: [{ id: 'invalid-uuid', count: -1 }],
                 pagination: {
@@ -238,7 +139,6 @@ describe('Pagination Schemas', () => {
                     hasPreviousPage: false
                 }
             };
-
             expect(() => TestPaginationSchema.parse(validResult)).not.toThrow();
             expect(() => TestPaginationSchema.parse(invalidResult)).toThrow(ZodError);
         });
