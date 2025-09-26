@@ -13,22 +13,6 @@ export type PaginationType = z.infer<typeof PaginationSchema>;
  * Legacy pagination params schema (for backward compatibility with tests)
  * Uses limit/offset pattern instead of page/pageSize
  */
-export const PaginationParamsSchema = z.object({
-    limit: z.number().int().positive().max(100).default(10),
-    offset: z.number().int().min(0).default(0),
-    order: z.enum(['asc', 'desc']).default('desc'),
-    orderBy: z.string().optional()
-});
-export type PaginationParamsType = z.infer<typeof PaginationParamsSchema>;
-
-/**
- * Search params schema extending pagination params
- */
-export const SearchParamsSchema = PaginationParamsSchema.extend({
-    q: z.string().optional(),
-    name: z.string().optional()
-});
-export type SearchParamsType = z.infer<typeof SearchParamsSchema>;
 
 /**
  * Cursor pagination params schema
