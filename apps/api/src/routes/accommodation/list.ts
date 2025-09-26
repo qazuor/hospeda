@@ -1,10 +1,10 @@
+import { AccommodationListItemSchema, AccommodationSearchSchema } from '@repo/schemas';
+import { AccommodationService } from '@repo/service-core';
 /**
  * Accommodation list endpoint
  * Uses AccommodationService for real data retrieval with pagination
  */
 import { z } from 'zod';
-import { AccommodationListItemSchema, AccommodationSearchSchema } from '@repo/schemas';
-import { AccommodationService } from '@repo/service-core';
 import { getActorFromContext } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
 import { createListRoute } from '../../utils/route-factory';
