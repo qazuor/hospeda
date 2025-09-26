@@ -1,3 +1,13 @@
+## Cambios Recientes (Septiembre 2025)
+
+- Eliminados schemas legacy: `PaginationParamsSchema`, `SearchParamsSchema`.
+- Schemas activos: `PaginationSchema`, `CursorPaginationParamsSchema`, `PaginationResultSchema`, `CursorPaginationResultSchema`.
+- Eliminado `response.schema.ts`, ahora se usa `base-response.schema.ts`.
+- Tests legacy removidos, cobertura actual en `test/common/pagination.schema.test.ts` y `pagination.test.ts`.
+- Todos los barrels y exports actualizados para evitar duplicidad y referencias obsoletas.
+
+### Notas
+- Si se agregan nuevos schemas, deben incluir tests y documentación en la migración correspondiente.
 
 ## @repo/schemas
 
