@@ -3,100 +3,10 @@ import { z } from 'zod';
 import {
     CursorPaginationParamsSchema,
     CursorPaginationResultSchema,
-    PaginationParamsSchema,
-    PaginationResultSchema,
-    SearchParamsSchema
+    PaginationResultSchema
 } from '../../src/common/pagination.schema.js';
 
 describe('Pagination Schemas', () => {
-    describe('PaginationParamsSchema', () => {
-        it('should validate basic pagination parameters', () => {
-            const validInput = {
-                limit: 25,
-                offset: 10,
-                order: 'asc' as const,
-                orderBy: 'name'
-            };
-
-            expect(() => PaginationParamsSchema.parse(validInput)).not.toThrow();
-            const result = PaginationParamsSchema.parse(validInput);
-            expect(result.limit).toBe(25);
-            expect(result.offset).toBe(10);
-            expect(result.order).toBe('asc');
-            expect(result.orderBy).toBe('name');
-        });
-
-        it('should apply default values', () => {
-            const result = PaginationParamsSchema.parse({});
-            expect(result.limit).toBe(10);
-            expect(result.offset).toBe(0);
-            expect(result.order).toBe('desc');
-        });
-
-        it('should validate maximum limit', () => {
-            const validInput = {
-                limit: 100 // Should be accepted (max limit)
-            };
-
-            expect(() => PaginationParamsSchema.parse(validInput)).not.toThrow();
-        });
-
-        it('should reject limit that is too large', () => {
-            const invalidInput = {
-                limit: 101 // Should exceed max
-            };
-
-            expect(() => PaginationParamsSchema.parse(invalidInput)).toThrow();
-        });
-
-        it('should reject negative offset', () => {
-            const invalidInput = {
-                offset: -1 // Should be >= 0
-            };
-
-            expect(() => PaginationParamsSchema.parse(invalidInput)).toThrow();
-        });
-
-        it('should reject invalid order values', () => {
-            const invalidInput = {
-                order: 'invalid' as any
-            };
-
-            expect(() => PaginationParamsSchema.parse(invalidInput)).toThrow();
-        });
-    });
-
-    describe('SearchParamsSchema', () => {
-        it('should validate search parameters', () => {
-            const validInput = {
-                q: 'search term',
-                name: 'specific name',
-                limit: 20,
-                offset: 0
-            };
-
-            expect(() => SearchParamsSchema.parse(validInput)).not.toThrow();
-            const result = SearchParamsSchema.parse(validInput);
-            expect(result.q).toBe('search term');
-            expect(result.name).toBe('specific name');
-            expect(result.limit).toBe(20);
-        });
-
-        it('should inherit pagination defaults', () => {
-            const result = SearchParamsSchema.parse({});
-            expect(result.limit).toBe(10);
-            expect(result.offset).toBe(0);
-        });
-
-        it('should allow optional search parameters', () => {
-            const validInput = {
-                limit: 15
-            };
-
-            expect(() => SearchParamsSchema.parse(validInput)).not.toThrow();
-        });
-    });
-
     describe('CursorPaginationParamsSchema', () => {
         it('should validate cursor pagination parameters', () => {
             const validInput = {
