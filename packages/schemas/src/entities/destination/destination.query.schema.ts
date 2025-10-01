@@ -1,5 +1,7 @@
 import { z } from 'zod';
+import { HttpPaginationSchema, HttpSortingSchema } from '../../api/http/base-http.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
+import { type OpenApiSchemaMetadata, applyOpenApiMetadata } from '../../utils/openapi.utils.js';
 import { DestinationSchema } from './destination.schema.js';
 
 /**
@@ -224,3 +226,136 @@ export const DestinationSummaryExtendedSchema = DestinationSchema.pick({
     tags: true,
     climate: true
 });
+
+// ============================================================================
+// HTTP-COMPATIBLE SCHEMAS
+// ============================================================================
+
+/**
+ * HTTP-compatible destination search schema with query string coercion
+ */
+export const HttpDestinationSearchSchema = HttpPaginationSchema.merge(HttpSortingSchema).extend({
+    // Search
+    q: z.string().optional(),
+
+    // Basic filters
+    isFeatured: z.coerce.boolean().optional(),
+
+    // Location filters
+    country: z.string().length(2).optional(),
+    state: z.string().min(1).max(100).optional(),
+    city: z.string().min(1).max(100).optional(),
+
+    // Geographic radius search with coercion
+    latitude: z.coerce.number().min(-90).max(90).optional(),
+    longitude: z.coerce.number().min(-180).max(180).optional(),
+    radius: z.coerce.number().positive().optional(),
+
+    // Date filters with coercion
+    createdAfter: z.coerce.date().optional(),
+    createdBefore: z.coerce.date().optional(),
+
+    // Statistical filters with coercion
+    minAccommodations: z.coerce.number().int().min(0).optional(),
+    maxAccommodations: z.coerce.number().int().min(0).optional(),
+    minAttractions: z.coerce.number().int().min(0).optional(),
+    maxAttractions: z.coerce.number().int().min(0).optional(),
+    minRating: z.coerce.number().min(0).max(5).optional(),
+    maxRating: z.coerce.number().min(0).max(5).optional(),
+
+    // Content filters with coercion
+    hasDescription: z.coerce.boolean().optional(),
+    hasMedia: z.coerce.boolean().optional(),
+    hasClimateInfo: z.coerce.boolean().optional(),
+
+    // Array filters (comma-separated)
+    tags: z
+        .string()
+        .transform((val) => val.split(',').filter(Boolean))
+        .optional()
+});
+
+export type HttpDestinationSearch = z.infer<typeof HttpDestinationSearchSchema>;
+
+// ============================================================================
+// OPENAPI METADATA
+// ============================================================================
+
+/**
+ * OpenAPI metadata for destination search schema
+ */
+export const DESTINATION_SEARCH_METADATA: OpenApiSchemaMetadata = {
+    ref: 'DestinationSearch',
+    description:
+        'Schema for searching and filtering destinations with location and statistics filters',
+    title: 'Destination Search Parameters',
+    example: {
+        page: 1,
+        pageSize: 20,
+        sortBy: 'name',
+        sortOrder: 'asc',
+        q: 'beach paradise',
+        isFeatured: true,
+        country: 'ES',
+        minAccommodations: 5,
+        minRating: 4.0,
+        hasMedia: true,
+        tags: 'beach,tropical,family-friendly'
+    },
+    fields: {
+        page: {
+            description: 'Page number (1-based)',
+            example: 1,
+            minimum: 1
+        },
+        pageSize: {
+            description: 'Number of items per page',
+            example: 20,
+            minimum: 1,
+            maximum: 100
+        },
+        q: {
+            description: 'Search query (searches name, description, location)',
+            example: 'beach paradise',
+            maxLength: 100
+        },
+        isFeatured: {
+            description: 'Filter featured destinations',
+            example: true
+        },
+        country: {
+            description: 'Filter by country code (ISO 3166-1 alpha-2)',
+            example: 'ES',
+            minLength: 2,
+            maxLength: 2
+        },
+        minAccommodations: {
+            description: 'Minimum number of accommodations',
+            example: 5,
+            minimum: 0
+        },
+        minRating: {
+            description: 'Minimum average rating',
+            example: 4.0,
+            minimum: 0,
+            maximum: 5
+        },
+        hasMedia: {
+            description: 'Filter destinations with media content',
+            example: true
+        },
+        tags: {
+            description: 'Comma-separated list of tags',
+            example: 'beach,tropical,family-friendly'
+        }
+    },
+    tags: ['destinations', 'search']
+};
+
+/**
+ * Destination search schema with OpenAPI metadata applied
+ */
+export const DestinationSearchSchemaWithMetadata = applyOpenApiMetadata(
+    HttpDestinationSearchSchema,
+    DESTINATION_SEARCH_METADATA
+);
