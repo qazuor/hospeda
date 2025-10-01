@@ -1,7 +1,9 @@
 import { z } from 'zod';
+import { HttpPaginationSchema, HttpSortingSchema } from '../../api/http/base-http.schema.js';
 import { EventIdSchema } from '../../common/id.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
 import { EventCategoryEnumSchema, PriceCurrencyEnumSchema } from '../../enums/index.js';
+import { type OpenApiSchemaMetadata, applyOpenApiMetadata } from '../../utils/openapi.utils.js';
 import { EventSchema } from './event.schema.js';
 import { EventDateSchema } from './subtypes/event.date.schema.js';
 import { EventPriceSchema } from './subtypes/event.price.schema.js';
@@ -321,3 +323,146 @@ export const EventSummaryInputSchema = z.object({
 export const EventSummaryOutputSchema = EventSummarySchema;
 export type EventSummaryInput = z.infer<typeof EventSummaryInputSchema>;
 export type EventSummaryOutput = z.infer<typeof EventSummaryOutputSchema>;
+
+// ============================================================================
+// HTTP-COMPATIBLE SCHEMAS
+// ============================================================================
+
+/**
+ * HTTP-compatible event search schema with query string coercion
+ */
+export const HttpEventSearchSchema = HttpPaginationSchema.merge(HttpSortingSchema).extend({
+    // Search
+    q: z.string().optional(),
+
+    // Basic filters
+    category: EventCategoryEnumSchema.optional(),
+    isFeatured: z.coerce.boolean().optional(),
+    isVirtual: z.coerce.boolean().optional(),
+    isFree: z.coerce.boolean().optional(),
+
+    // Price filters with coercion
+    minPrice: z.coerce.number().min(0).optional(),
+    maxPrice: z.coerce.number().min(0).optional(),
+    price: z.coerce.number().min(0).optional(),
+    currency: PriceCurrencyEnumSchema.optional(),
+
+    // Date filters with coercion
+    startDateAfter: z.coerce.date().optional(),
+    startDateBefore: z.coerce.date().optional(),
+    endDateAfter: z.coerce.date().optional(),
+    endDateBefore: z.coerce.date().optional(),
+
+    // Location filters
+    locationId: z.string().uuid().optional(),
+    organizerId: z.string().uuid().optional(),
+    city: z.string().optional(),
+    state: z.string().optional(),
+    country: z.string().optional(),
+
+    // Capacity filters with coercion
+    minCapacity: z.coerce.number().int().min(1).optional(),
+    maxCapacity: z.coerce.number().int().min(1).optional(),
+
+    // Numeric filters with coercion
+    minDuration: z.coerce.number().int().min(1).optional(),
+    maxDuration: z.coerce.number().int().min(1).optional(),
+
+    // Boolean filters with coercion
+    hasTickets: z.coerce.boolean().optional(),
+    isPublished: z.coerce.boolean().optional(),
+    allowsRegistration: z.coerce.boolean().optional()
+});
+
+export type HttpEventSearch = z.infer<typeof HttpEventSearchSchema>;
+
+// ============================================================================
+// OPENAPI METADATA
+// ============================================================================
+
+/**
+ * OpenAPI metadata for event search schema
+ */
+export const EVENT_SEARCH_METADATA: OpenApiSchemaMetadata = {
+    ref: 'EventSearch',
+    description: 'Schema for searching and filtering events with comprehensive options',
+    title: 'Event Search Parameters',
+    example: {
+        page: 1,
+        pageSize: 20,
+        sortBy: 'startDate',
+        sortOrder: 'asc',
+        q: 'music festival',
+        category: 'entertainment',
+        isFeatured: true,
+        isFree: false,
+        minPrice: 25,
+        maxPrice: 200,
+        city: 'Barcelona',
+        country: 'ES',
+        startDateAfter: '2025-10-01T00:00:00Z'
+    },
+    fields: {
+        page: {
+            description: 'Page number (1-based)',
+            example: 1,
+            minimum: 1
+        },
+        pageSize: {
+            description: 'Number of items per page',
+            example: 20,
+            minimum: 1,
+            maximum: 100
+        },
+        q: {
+            description: 'Search query (searches name, description, location)',
+            example: 'music festival',
+            maxLength: 100
+        },
+        category: {
+            description: 'Filter by event category',
+            example: 'entertainment',
+            enum: ['entertainment', 'education', 'business', 'sports', 'cultural', 'other']
+        },
+        isFeatured: {
+            description: 'Filter featured events',
+            example: true
+        },
+        isFree: {
+            description: 'Filter free events',
+            example: false
+        },
+        minPrice: {
+            description: 'Minimum ticket price',
+            example: 25,
+            minimum: 0
+        },
+        maxPrice: {
+            description: 'Maximum ticket price',
+            example: 200,
+            minimum: 0
+        },
+        city: {
+            description: 'Filter by city name',
+            example: 'Barcelona'
+        },
+        country: {
+            description: 'Filter by country code',
+            example: 'ES'
+        },
+        startDateAfter: {
+            description: 'Filter events starting after this date',
+            example: '2025-10-01T00:00:00Z',
+            format: 'date-time'
+        }
+    },
+    tags: ['events', 'search']
+};
+
+/**
+ * Event search schema with OpenAPI metadata applied
+ */
+export const EventSearchSchemaWithMetadata = applyOpenApiMetadata(
+    HttpEventSearchSchema,
+    EVENT_SEARCH_METADATA
+);

@@ -1,5 +1,7 @@
 import { z } from 'zod';
+import { HttpPaginationSchema, HttpSortingSchema } from '../../api/http/base-http.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
+import { type OpenApiSchemaMetadata, applyOpenApiMetadata } from '../../utils/openapi.utils.js';
 import { EventLocationSchema } from './eventLocation.schema.js';
 
 /**
@@ -195,3 +197,35 @@ export const EventLocationCountInputSchema = z.object({
     filters: EventLocationFiltersSchema.optional()
 });
 export const EventLocationCountOutputSchema = z.object({ count: z.number().int().min(0) });
+
+// ============================================================================
+// HTTP-COMPATIBLE SCHEMAS & OPENAPI METADATA
+// ============================================================================
+
+export const HttpEventLocationSearchSchema = HttpPaginationSchema.merge(HttpSortingSchema).extend({
+    q: z.string().optional(),
+    name: z.string().optional(),
+    city: z.string().optional(),
+    country: z.string().length(2).optional(),
+    hasCoordinates: z.coerce.boolean().optional(),
+    isActive: z.coerce.boolean().optional(),
+    capacity: z.coerce.number().int().min(1).optional()
+});
+
+export const EVENT_LOCATION_SEARCH_METADATA: OpenApiSchemaMetadata = {
+    ref: 'EventLocationSearch',
+    description: 'Schema for searching event locations',
+    title: 'Event Location Search Parameters',
+    example: { page: 1, pageSize: 20, q: 'conference center', city: 'Barcelona', country: 'ES' },
+    fields: {
+        q: { description: 'Search query', example: 'conference center' },
+        city: { description: 'Filter by city', example: 'Barcelona' },
+        country: { description: 'Filter by country code', example: 'ES' }
+    },
+    tags: ['event-locations', 'search']
+};
+
+export const EventLocationSearchSchemaWithMetadata = applyOpenApiMetadata(
+    HttpEventLocationSearchSchema,
+    EVENT_LOCATION_SEARCH_METADATA
+);
