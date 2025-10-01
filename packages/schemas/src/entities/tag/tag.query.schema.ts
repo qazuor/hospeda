@@ -1,5 +1,7 @@
 import { z } from 'zod';
+import { HttpPaginationSchema, HttpSortingSchema } from '../../api/http/base-http.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
+import { type OpenApiSchemaMetadata, applyOpenApiMetadata } from '../../utils/openapi.utils.js';
 import { TagSchema } from './tag.schema.js';
 
 /**
@@ -274,3 +276,121 @@ export const PopularTagsSimpleOutputSchema = z.object({
 });
 
 export type PopularTagsSimpleOutput = z.infer<typeof PopularTagsSimpleOutputSchema>;
+
+// ============================================================================
+// HTTP-COMPATIBLE SCHEMAS
+// ============================================================================
+
+/**
+ * HTTP-compatible tag search schema with query string coercion
+ */
+export const HttpTagSearchSchema = HttpPaginationSchema.merge(HttpSortingSchema).extend({
+    // Search
+    q: z.string().optional(),
+
+    // Basic filters
+    name: z.string().optional(),
+    color: z
+        .string()
+        .regex(/^#[0-9A-Fa-f]{6}$/)
+        .optional(),
+
+    // Usage filters with coercion
+    minUsageCount: z.coerce.number().int().min(0).optional(),
+    maxUsageCount: z.coerce.number().int().min(0).optional(),
+    isPopular: z.coerce.boolean().optional(),
+
+    // Date filters with coercion
+    createdAfter: z.coerce.date().optional(),
+    createdBefore: z.coerce.date().optional(),
+
+    // Content filters with coercion
+    hasDescription: z.coerce.boolean().optional(),
+
+    // Pattern filters
+    nameStartsWith: z.string().min(1).max(50).optional(),
+    nameEndsWith: z.string().min(1).max(50).optional(),
+    nameContains: z.string().min(1).max(50).optional(),
+
+    // Array filters (comma-separated)
+    colors: z
+        .string()
+        .transform((val) => val.split(',').filter(Boolean))
+        .optional(),
+    categories: z
+        .string()
+        .transform((val) => val.split(',').filter(Boolean))
+        .optional()
+});
+
+export type HttpTagSearch = z.infer<typeof HttpTagSearchSchema>;
+
+// ============================================================================
+// OPENAPI METADATA
+// ============================================================================
+
+/**
+ * OpenAPI metadata for tag search schema
+ */
+export const TAG_SEARCH_METADATA: OpenApiSchemaMetadata = {
+    ref: 'TagSearch',
+    description: 'Schema for searching and filtering tags with usage statistics and categorization',
+    title: 'Tag Search Parameters',
+    example: {
+        page: 1,
+        pageSize: 20,
+        sortBy: 'usageCount',
+        sortOrder: 'desc',
+        q: 'travel',
+        isPopular: true,
+        minUsageCount: 5,
+        color: '#FF5733',
+        nameContains: 'beach'
+    },
+    fields: {
+        page: {
+            description: 'Page number (1-based)',
+            example: 1,
+            minimum: 1
+        },
+        pageSize: {
+            description: 'Number of items per page',
+            example: 20,
+            minimum: 1,
+            maximum: 100
+        },
+        q: {
+            description: 'Search query (searches name, description)',
+            example: 'travel',
+            maxLength: 100
+        },
+        isPopular: {
+            description: 'Filter popular tags',
+            example: true
+        },
+        minUsageCount: {
+            description: 'Minimum usage count across entities',
+            example: 5,
+            minimum: 0
+        },
+        color: {
+            description: 'Filter by exact color (hex format)',
+            example: '#FF5733',
+            pattern: '^#[0-9A-Fa-f]{6}$'
+        },
+        nameContains: {
+            description: 'Filter tags whose names contain this text',
+            example: 'beach',
+            maxLength: 50
+        }
+    },
+    tags: ['tags', 'search']
+};
+
+/**
+ * Tag search schema with OpenAPI metadata applied
+ */
+export const TagSearchSchemaWithMetadata = applyOpenApiMetadata(
+    HttpTagSearchSchema,
+    TAG_SEARCH_METADATA
+);

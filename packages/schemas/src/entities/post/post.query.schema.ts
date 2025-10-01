@@ -1,6 +1,8 @@
 import { z } from 'zod';
+import { HttpPaginationSchema, HttpSortingSchema } from '../../api/http/base-http.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
 import { LifecycleStatusEnumSchema, PostCategoryEnumSchema } from '../../enums/index.js';
+import { type OpenApiSchemaMetadata, applyOpenApiMetadata } from '../../utils/openapi.utils.js';
 import { PostSchema } from './post.schema.js';
 
 /**
@@ -227,3 +229,140 @@ export const PostSearchOutputSchema = PostSearchResponseSchema;
 
 // Additional missing legacy exports
 export const PostSearchResultSchema = PostSearchResponseSchema;
+
+// ============================================================================
+// HTTP-COMPATIBLE SCHEMAS
+// ============================================================================
+
+/**
+ * HTTP-compatible post search schema with query string coercion
+ */
+export const HttpPostSearchSchema = HttpPaginationSchema.merge(HttpSortingSchema).extend({
+    // Search
+    q: z.string().optional(),
+
+    // Basic filters
+    status: LifecycleStatusEnumSchema.optional(),
+    category: PostCategoryEnumSchema.optional(),
+    isFeatured: z.coerce.boolean().optional(),
+    isPublished: z.coerce.boolean().optional(),
+
+    // Author filters
+    authorId: z.string().uuid().optional(),
+
+    // Date filters with coercion
+    createdAfter: z.coerce.date().optional(),
+    createdBefore: z.coerce.date().optional(),
+    publishedAfter: z.coerce.date().optional(),
+    publishedBefore: z.coerce.date().optional(),
+
+    // Content filters with coercion
+    hasMedia: z.coerce.boolean().optional(),
+    hasExcerpt: z.coerce.boolean().optional(),
+
+    // Engagement filters with coercion
+    minViews: z.coerce.number().int().min(0).optional(),
+    maxViews: z.coerce.number().int().min(0).optional(),
+    minLikes: z.coerce.number().int().min(0).optional(),
+    maxLikes: z.coerce.number().int().min(0).optional(),
+    minComments: z.coerce.number().int().min(0).optional(),
+    maxComments: z.coerce.number().int().min(0).optional(),
+
+    // Array filters (comma-separated)
+    tags: z
+        .string()
+        .transform((val) => val.split(',').filter(Boolean))
+        .optional(),
+    authorIds: z
+        .string()
+        .transform((val) => val.split(',').filter(Boolean))
+        .optional()
+});
+
+export type HttpPostSearch = z.infer<typeof HttpPostSearchSchema>;
+
+// ============================================================================
+// OPENAPI METADATA
+// ============================================================================
+
+/**
+ * OpenAPI metadata for post search schema
+ */
+export const POST_SEARCH_METADATA: OpenApiSchemaMetadata = {
+    ref: 'PostSearch',
+    description:
+        'Schema for searching and filtering blog posts with content and engagement filters',
+    title: 'Post Search Parameters',
+    example: {
+        page: 1,
+        pageSize: 20,
+        sortBy: 'publishedAt',
+        sortOrder: 'desc',
+        q: 'travel tips',
+        category: 'travel',
+        isFeatured: true,
+        isPublished: true,
+        authorId: '123e4567-e89b-12d3-a456-426614174000',
+        minViews: 100,
+        hasMedia: true,
+        tags: 'travel,tips,guide'
+    },
+    fields: {
+        page: {
+            description: 'Page number (1-based)',
+            example: 1,
+            minimum: 1
+        },
+        pageSize: {
+            description: 'Number of items per page',
+            example: 20,
+            minimum: 1,
+            maximum: 100
+        },
+        q: {
+            description: 'Search query (searches title, content, excerpt)',
+            example: 'travel tips',
+            maxLength: 100
+        },
+        category: {
+            description: 'Filter by post category',
+            example: 'travel',
+            enum: ['travel', 'accommodation', 'tips', 'guide', 'news', 'other']
+        },
+        isFeatured: {
+            description: 'Filter featured posts',
+            example: true
+        },
+        isPublished: {
+            description: 'Filter published posts',
+            example: true
+        },
+        authorId: {
+            description: 'Filter by author UUID',
+            example: '123e4567-e89b-12d3-a456-426614174000',
+            format: 'uuid'
+        },
+        minViews: {
+            description: 'Minimum view count',
+            example: 100,
+            minimum: 0
+        },
+        hasMedia: {
+            description: 'Filter posts with media content',
+            example: true
+        },
+        tags: {
+            description: 'Comma-separated list of tags',
+            example: 'travel,tips,guide'
+        }
+    },
+    tags: ['posts', 'search']
+};
+
+/**
+ * Post search schema with OpenAPI metadata applied
+ */
+export const PostSearchSchemaWithMetadata = applyOpenApiMetadata(
+    HttpPostSearchSchema,
+    POST_SEARCH_METADATA
+);
