@@ -1,5 +1,7 @@
 import { z } from 'zod';
+import { HttpPaginationSchema, HttpSortingSchema } from '../../api/http/base-http.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
+import { type OpenApiSchemaMetadata, applyOpenApiMetadata } from '../../utils/openapi.utils.js';
 import { AccommodationReviewSchema } from './accommodationReview.schema.js';
 
 /**
@@ -331,3 +333,39 @@ export type AccommodationReviewStatsWrapper = z.infer<typeof AccommodationReview
 export type AccommodationReviewWithUserListWrapper = z.infer<
     typeof AccommodationReviewWithUserListWrapperSchema
 >;
+
+// ============================================================================
+// HTTP-COMPATIBLE SCHEMAS & OPENAPI METADATA
+// ============================================================================
+
+export const HttpAccommodationReviewSearchSchema = HttpPaginationSchema.merge(
+    HttpSortingSchema
+).extend({
+    q: z.string().optional(),
+    accommodationId: z.string().uuid().optional(),
+    userId: z.string().uuid().optional(),
+    minRating: z.coerce.number().int().min(1).max(5).optional(),
+    maxRating: z.coerce.number().int().min(1).max(5).optional(),
+    isVerified: z.coerce.boolean().optional(),
+    hasImages: z.coerce.boolean().optional(),
+    languageCode: z.string().length(2).optional()
+});
+
+export const ACCOMMODATION_REVIEW_SEARCH_METADATA: OpenApiSchemaMetadata = {
+    ref: 'AccommodationReviewSearch',
+    description: 'Schema for searching accommodation reviews',
+    title: 'Accommodation Review Search Parameters',
+    example: { page: 1, pageSize: 20, q: 'great stay', minRating: 4, hasImages: true },
+    fields: {
+        q: { description: 'Search query in review content', example: 'great stay' },
+        accommodationId: { description: 'Filter by accommodation', example: 'uuid-here' },
+        minRating: { description: 'Minimum rating (1-5)', example: 4 },
+        hasImages: { description: 'Filter reviews with images', example: true }
+    },
+    tags: ['accommodation-reviews', 'search']
+};
+
+export const AccommodationReviewSearchSchemaWithMetadata = applyOpenApiMetadata(
+    HttpAccommodationReviewSearchSchema,
+    ACCOMMODATION_REVIEW_SEARCH_METADATA
+);
