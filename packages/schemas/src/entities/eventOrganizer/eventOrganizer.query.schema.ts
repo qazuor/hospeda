@@ -1,5 +1,7 @@
 import { z } from 'zod';
+import { HttpPaginationSchema, HttpSortingSchema } from '../../api/http/base-http.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
+import { type OpenApiSchemaMetadata, applyOpenApiMetadata } from '../../utils/openapi.utils.js';
 import { EventOrganizerSchema } from './eventOrganizer.schema.js';
 
 /**
@@ -205,3 +207,41 @@ export const EventOrganizerStatsParamsSchema = z.object({
 export const EventOrganizerSummaryParamsSchema = z.object({
     organizerId: z.string().uuid()
 });
+
+// ============================================================================
+// HTTP-COMPATIBLE SCHEMAS & OPENAPI METADATA
+// ============================================================================
+
+export const HttpEventOrganizerSearchSchema = HttpPaginationSchema.merge(HttpSortingSchema).extend({
+    q: z.string().optional(),
+    name: z.string().optional(),
+    isVerified: z.coerce.boolean().optional(),
+    isActive: z.coerce.boolean().optional(),
+    minEventsCount: z.coerce.number().int().min(0).optional(),
+    city: z.string().optional(),
+    country: z.string().length(2).optional()
+});
+
+export const EVENT_ORGANIZER_SEARCH_METADATA: OpenApiSchemaMetadata = {
+    ref: 'EventOrganizerSearch',
+    description: 'Schema for searching event organizers',
+    title: 'Event Organizer Search Parameters',
+    example: {
+        page: 1,
+        pageSize: 20,
+        q: 'conference organizer',
+        isVerified: true,
+        minEventsCount: 5
+    },
+    fields: {
+        q: { description: 'Search query', example: 'conference organizer' },
+        isVerified: { description: 'Filter verified organizers', example: true },
+        minEventsCount: { description: 'Minimum events organized', example: 5 }
+    },
+    tags: ['event-organizers', 'search']
+};
+
+export const EventOrganizerSearchSchemaWithMetadata = applyOpenApiMetadata(
+    HttpEventOrganizerSearchSchema,
+    EVENT_ORGANIZER_SEARCH_METADATA
+);
