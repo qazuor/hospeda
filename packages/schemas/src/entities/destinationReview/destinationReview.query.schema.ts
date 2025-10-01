@@ -1,5 +1,7 @@
 import { z } from 'zod';
+import { HttpPaginationSchema, HttpSortingSchema } from '../../api/http/base-http.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
+import { type OpenApiSchemaMetadata, applyOpenApiMetadata } from '../../utils/openapi.utils.js';
 import { DestinationReviewSchema } from './destinationReview.schema.js';
 
 /**
@@ -328,3 +330,42 @@ export const DestinationReviewStatsOutputSchema = DestinationReviewStatsResponse
 
 // Additional schemas preserved for backward compatibility
 export const DestinationReviewSearchFiltersSchema = DestinationReviewFiltersSchema;
+
+// ============================================================================
+// HTTP-COMPATIBLE SCHEMAS & OPENAPI METADATA
+// ============================================================================
+
+export const HttpDestinationReviewSearchSchema = HttpPaginationSchema.merge(
+    HttpSortingSchema
+).extend({
+    q: z.string().optional(),
+    destinationId: z.string().uuid().optional(),
+    userId: z.string().uuid().optional(),
+    minRating: z.coerce.number().int().min(1).max(5).optional(),
+    maxRating: z.coerce.number().int().min(1).max(5).optional(),
+    isVerified: z.coerce.boolean().optional(),
+    hasImages: z.coerce.boolean().optional(),
+    languageCode: z.string().length(2).optional(),
+    visitType: z
+        .enum(['BUSINESS', 'LEISURE', 'FAMILY', 'ROMANTIC', 'ADVENTURE', 'CULTURAL'])
+        .optional()
+});
+
+export const DESTINATION_REVIEW_SEARCH_METADATA: OpenApiSchemaMetadata = {
+    ref: 'DestinationReviewSearch',
+    description: 'Schema for searching destination reviews',
+    title: 'Destination Review Search Parameters',
+    example: { page: 1, pageSize: 20, q: 'amazing experience', minRating: 4, visitType: 'LEISURE' },
+    fields: {
+        q: { description: 'Search query in review content', example: 'amazing experience' },
+        destinationId: { description: 'Filter by destination', example: 'uuid-here' },
+        minRating: { description: 'Minimum rating (1-5)', example: 4 },
+        visitType: { description: 'Type of visit', example: 'LEISURE' }
+    },
+    tags: ['destination-reviews', 'search']
+};
+
+export const DestinationReviewSearchSchemaWithMetadata = applyOpenApiMetadata(
+    HttpDestinationReviewSearchSchema,
+    DESTINATION_REVIEW_SEARCH_METADATA
+);
