@@ -1,5 +1,7 @@
 import { z } from 'zod';
+import { HttpPaginationSchema, HttpSortingSchema } from '../../api/http/base-http.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
+import { type OpenApiSchemaMetadata, applyOpenApiMetadata } from '../../utils/openapi.utils.js';
 import { PaymentPlanSchema } from './payment-plan.schema.js';
 import { PaymentSchema } from './payment.schema.js';
 import { SubscriptionSchema } from './subscription.schema.js';
@@ -580,3 +582,145 @@ export const SubscriptionStatsSchema = SubscriptionAnalyticsResponseSchema;
 
 // Additional missing legacy exports
 export const PaymentSearchResultSchema = PaymentSearchResponseSchema;
+
+// ============================================================================
+// HTTP-COMPATIBLE SCHEMAS
+// ============================================================================
+
+/**
+ * HTTP-compatible payment search schema with query string coercion
+ */
+export const HttpPaymentSearchSchema = HttpPaginationSchema.merge(HttpSortingSchema).extend({
+    // Search
+    q: z.string().optional(),
+
+    // Entity relation filters
+    userId: z.string().uuid().optional(),
+    planId: z.string().uuid().optional(),
+
+    // Status filters
+    status: z
+        .enum(['pending', 'processing', 'completed', 'failed', 'cancelled', 'refunded'])
+        .optional(),
+
+    // Amount filters with coercion
+    minAmount: z.coerce.number().min(0).optional(),
+    maxAmount: z.coerce.number().min(0).optional(),
+    amount: z.coerce.number().min(0).optional(),
+
+    // Currency filters
+    currency: z.string().length(3).optional(),
+
+    // Date filters with coercion
+    createdAfter: z.coerce.date().optional(),
+    createdBefore: z.coerce.date().optional(),
+    processedAfter: z.coerce.date().optional(),
+    processedBefore: z.coerce.date().optional(),
+
+    // Method filters
+    paymentMethod: z.string().optional(),
+
+    // Array filters (comma-separated)
+    userIds: z
+        .string()
+        .transform((val) => val.split(',').filter(Boolean))
+        .optional(),
+    planIds: z
+        .string()
+        .transform((val) => val.split(',').filter(Boolean))
+        .optional(),
+    statuses: z
+        .string()
+        .transform((val) => val.split(',').filter(Boolean))
+        .optional(),
+    currencies: z
+        .string()
+        .transform((val) => val.split(',').filter(Boolean))
+        .optional()
+});
+
+export type HttpPaymentSearch = z.infer<typeof HttpPaymentSearchSchema>;
+
+// ============================================================================
+// OPENAPI METADATA
+// ============================================================================
+
+/**
+ * OpenAPI metadata for payment search schema
+ */
+export const PAYMENT_SEARCH_METADATA: OpenApiSchemaMetadata = {
+    ref: 'PaymentSearch',
+    description: 'Schema for searching and filtering payments with comprehensive financial filters',
+    title: 'Payment Search Parameters',
+    example: {
+        page: 1,
+        pageSize: 20,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+        q: 'subscription',
+        status: 'completed',
+        minAmount: 10,
+        maxAmount: 1000,
+        currency: 'USD',
+        userId: '123e4567-e89b-12d3-a456-426614174000',
+        createdAfter: '2025-01-01T00:00:00Z'
+    },
+    fields: {
+        page: {
+            description: 'Page number (1-based)',
+            example: 1,
+            minimum: 1
+        },
+        pageSize: {
+            description: 'Number of items per page',
+            example: 20,
+            minimum: 1,
+            maximum: 100
+        },
+        q: {
+            description: 'Search query (searches description, reference)',
+            example: 'subscription',
+            maxLength: 100
+        },
+        status: {
+            description: 'Filter by payment status',
+            example: 'completed',
+            enum: ['pending', 'processing', 'completed', 'failed', 'cancelled', 'refunded']
+        },
+        minAmount: {
+            description: 'Minimum payment amount',
+            example: 10,
+            minimum: 0
+        },
+        maxAmount: {
+            description: 'Maximum payment amount',
+            example: 1000,
+            minimum: 0
+        },
+        currency: {
+            description: 'Filter by currency code (ISO 4217)',
+            example: 'USD',
+            minLength: 3,
+            maxLength: 3
+        },
+        userId: {
+            description: 'Filter by user UUID',
+            example: '123e4567-e89b-12d3-a456-426614174000',
+            format: 'uuid'
+        },
+        createdAfter: {
+            description: 'Filter payments created after this date',
+            example: '2025-01-01T00:00:00Z',
+            format: 'date-time'
+        }
+    },
+    tags: ['payments', 'search']
+};
+
+/**
+ * Payment search schema with OpenAPI metadata applied
+ */
+export const PaymentSearchSchemaWithMetadata = applyOpenApiMetadata(
+    HttpPaymentSearchSchema,
+    PAYMENT_SEARCH_METADATA
+);

@@ -1,6 +1,8 @@
 import { z } from 'zod';
+import { HttpPaginationSchema, HttpSortingSchema } from '../../api/http/base-http.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
 import { EntityTypeEnumSchema } from '../../enums/index.js';
+import { type OpenApiSchemaMetadata, applyOpenApiMetadata } from '../../utils/openapi.utils.js';
 import { UserBookmarkSchema } from './userBookmark.schema.js';
 
 /**
@@ -253,3 +255,101 @@ export const UserBookmarkListByUserOutputSchema = UserBookmarkListResponseSchema
 export const UserBookmarkListByEntityOutputSchema = UserBookmarkListResponseSchema;
 export const UserBookmarkCountOutputSchema = UserBookmarkCountResponseSchema;
 export const UserBookmarkPaginatedListOutputSchema = UserBookmarkListResponseSchema;
+
+// ============================================================================
+// HTTP-COMPATIBLE SCHEMAS
+// ============================================================================
+
+/**
+ * HTTP-compatible user bookmark search schema with query string coercion
+ */
+export const HttpUserBookmarkSearchSchema = HttpPaginationSchema.merge(HttpSortingSchema).extend({
+    // Search
+    q: z.string().optional(),
+
+    // User filters
+    userId: z.string().uuid().optional(),
+
+    // Entity filters
+    entityId: z.string().uuid().optional(),
+    entityType: EntityTypeEnumSchema.optional(),
+
+    // Date filters with coercion
+    createdAfter: z.coerce.date().optional(),
+    createdBefore: z.coerce.date().optional(),
+
+    // Array filters (comma-separated)
+    userIds: z
+        .string()
+        .transform((val) => val.split(',').filter(Boolean))
+        .optional(),
+    entityIds: z
+        .string()
+        .transform((val) => val.split(',').filter(Boolean))
+        .optional(),
+    entityTypes: z
+        .string()
+        .transform((val) => val.split(',').filter(Boolean))
+        .optional()
+});
+
+export type HttpUserBookmarkSearch = z.infer<typeof HttpUserBookmarkSearchSchema>;
+
+// ============================================================================
+// OPENAPI METADATA
+// ============================================================================
+
+/**
+ * OpenAPI metadata for user bookmark search schema
+ */
+export const USER_BOOKMARK_SEARCH_METADATA: OpenApiSchemaMetadata = {
+    ref: 'UserBookmarkSearch',
+    description: 'Schema for searching and filtering user bookmarks by entity type and date',
+    title: 'User Bookmark Search Parameters',
+    example: {
+        page: 1,
+        pageSize: 20,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+        userId: '123e4567-e89b-12d3-a456-426614174000',
+        entityType: 'accommodation',
+        createdAfter: '2025-01-01T00:00:00Z'
+    },
+    fields: {
+        page: {
+            description: 'Page number (1-based)',
+            example: 1,
+            minimum: 1
+        },
+        pageSize: {
+            description: 'Number of items per page',
+            example: 20,
+            minimum: 1,
+            maximum: 100
+        },
+        userId: {
+            description: 'Filter by user UUID',
+            example: '123e4567-e89b-12d3-a456-426614174000',
+            format: 'uuid'
+        },
+        entityType: {
+            description: 'Filter by bookmarked entity type',
+            example: 'accommodation',
+            enum: ['accommodation', 'destination', 'attraction', 'event', 'post']
+        },
+        createdAfter: {
+            description: 'Filter bookmarks created after this date',
+            example: '2025-01-01T00:00:00Z',
+            format: 'date-time'
+        }
+    },
+    tags: ['bookmarks', 'search']
+};
+
+/**
+ * User bookmark search schema with OpenAPI metadata applied
+ */
+export const UserBookmarkSearchSchemaWithMetadata = applyOpenApiMetadata(
+    HttpUserBookmarkSearchSchema,
+    USER_BOOKMARK_SEARCH_METADATA
+);
