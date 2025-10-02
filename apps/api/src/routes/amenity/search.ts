@@ -46,7 +46,7 @@ export const searchAmenitiesRoute = createListRoute({
         const result = await service.search(actor, {
             page,
             pageSize,
-            filters: q.name ? { name: q.name } : undefined,
+            ...(q.name ? { name: q.name } : {}),
             sortBy: q.sortBy,
             sortOrder: q.sortOrder || 'asc',
             q: q.q

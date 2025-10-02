@@ -1,6 +1,8 @@
 import { z } from 'zod';
+import { HttpPaginationSchema, HttpSortingSchema } from '../../api/http/base-http.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
 import { LifecycleStatusEnumSchema } from '../../enums/index.js';
+import { type OpenApiSchemaMetadata, applyOpenApiMetadata } from '../../utils/openapi.utils.js';
 import { AttractionSchema } from './attraction.schema.js';
 
 /**
@@ -217,4 +219,129 @@ export const AttractionsByDestinationOutputSchema = AttractionListResponseSchema
 export const DestinationsByAttractionInputSchema = DestinationsByAttractionSchema;
 export const DestinationsByAttractionOutputSchema = AttractionListResponseSchema;
 export const AttractionCountOutputSchema = z.object({ count: z.number().int().min(0) });
+
+// ============================================================================
+// HTTP-COMPATIBLE SCHEMAS
+// ============================================================================
+
+/**
+ * HTTP-compatible attraction search schema with query string coercion
+ */
+export const HttpAttractionSearchSchema = HttpPaginationSchema.merge(HttpSortingSchema).extend({
+    // Search
+    q: z.string().optional(),
+
+    // Basic filters
+    name: z.string().optional(),
+    slug: z.string().optional(),
+    isFeatured: z.coerce.boolean().optional(),
+    isBuiltin: z.coerce.boolean().optional(),
+
+    // Lifecycle state
+    lifecycleState: LifecycleStatusEnumSchema.optional(),
+
+    // Date filters with coercion
+    createdAfter: z.coerce.date().optional(),
+    createdBefore: z.coerce.date().optional(),
+
+    // Location filters
+    destinationId: z.string().uuid().optional(),
+    city: z.string().optional(),
+    country: z.string().length(2).optional(),
+
+    // Content filters with coercion
+    hasDescription: z.coerce.boolean().optional(),
+    hasMedia: z.coerce.boolean().optional(),
+    hasCoordinates: z.coerce.boolean().optional(),
+
+    // Numeric filters with coercion
+    minVisitorsPerYear: z.coerce.number().int().min(0).optional(),
+    maxVisitorsPerYear: z.coerce.number().int().min(0).optional(),
+
+    // Boolean filters with coercion
+    isOpen: z.coerce.boolean().optional(),
+    acceptsReservations: z.coerce.boolean().optional()
+});
+
+export type HttpAttractionSearch = z.infer<typeof HttpAttractionSearchSchema>;
+
+// ============================================================================
+// OPENAPI METADATA
+// ============================================================================
+
+/**
+ * OpenAPI metadata for attraction search schema
+ */
+export const ATTRACTION_SEARCH_METADATA: OpenApiSchemaMetadata = {
+    ref: 'AttractionSearch',
+    description: 'Schema for searching and filtering attractions with comprehensive options',
+    title: 'Attraction Search Parameters',
+    example: {
+        page: 1,
+        pageSize: 20,
+        sortBy: 'name',
+        sortOrder: 'asc',
+        q: 'museum',
+        isFeatured: true,
+        destinationId: '123e4567-e89b-12d3-a456-426614174000',
+        city: 'Barcelona',
+        country: 'ES',
+        hasMedia: true,
+        isOpen: true
+    },
+    fields: {
+        page: {
+            description: 'Page number (1-based)',
+            example: 1,
+            minimum: 1
+        },
+        pageSize: {
+            description: 'Number of items per page',
+            example: 20,
+            minimum: 1,
+            maximum: 100
+        },
+        q: {
+            description: 'Search query (searches name, description)',
+            example: 'museum',
+            maxLength: 100
+        },
+        isFeatured: {
+            description: 'Filter featured attractions',
+            example: true
+        },
+        destinationId: {
+            description: 'Filter by destination UUID',
+            example: '123e4567-e89b-12d3-a456-426614174000',
+            format: 'uuid'
+        },
+        city: {
+            description: 'Filter by city name',
+            example: 'Barcelona'
+        },
+        country: {
+            description: 'Filter by country code (ISO 3166-1 alpha-2)',
+            example: 'ES',
+            minLength: 2,
+            maxLength: 2
+        },
+        hasMedia: {
+            description: 'Filter attractions with media content',
+            example: true
+        },
+        isOpen: {
+            description: 'Filter attractions currently open',
+            example: true
+        }
+    },
+    tags: ['attractions', 'search']
+};
+
+/**
+ * Attraction search schema with OpenAPI metadata applied
+ */
+export const AttractionSearchSchemaWithMetadata = applyOpenApiMetadata(
+    HttpAttractionSearchSchema,
+    ATTRACTION_SEARCH_METADATA
+);
 export const AttractionStatsOutputSchema = z.object({ stats: AttractionStatsSchema.nullable() });
