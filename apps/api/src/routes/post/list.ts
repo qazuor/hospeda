@@ -1,5 +1,4 @@
-import { z } from '@hono/zod-openapi';
-import { PostListItemSchema } from '@repo/schemas';
+import { type HttpPostSearch, HttpPostSearchSchema, PostListItemSchema } from '@repo/schemas';
 import { PostService } from '@repo/service-core';
 import { getActorFromContext } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
@@ -13,17 +12,12 @@ export const postListRoute = createListRoute({
     summary: 'List posts',
     description: 'Returns a paginated list of posts',
     tags: ['Posts'],
-    requestQuery: {
-        page: z.coerce.number().int().min(1).default(1),
-        pageSize: z.coerce.number().int().min(1).max(100).default(20),
-        sortBy: z.string().optional(),
-        sortOrder: z.enum(['asc', 'desc']).default('asc'),
-        q: z.string().optional()
-    },
+    requestQuery: HttpPostSearchSchema.shape, // ✅ Using @repo/schemas
     responseSchema: PostListItemSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
-        const { page, pageSize } = (query || {}) as { page?: number; pageSize?: number };
+        const searchParams = query as HttpPostSearch;
+        const { page, pageSize } = searchParams;
         const result = await postService.list(actor, { page, pageSize });
         if (result.error) throw new Error(result.error.message);
         return {
