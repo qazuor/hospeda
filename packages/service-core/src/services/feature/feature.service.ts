@@ -12,7 +12,7 @@ import {
     GetAccommodationsByFeatureSchema,
     GetFeaturesForAccommodationSchema,
     RemoveFeatureFromAccommodationInputSchema,
-    SimpleFeatureSearchSchema as SearchFeatureSchema,
+    HttpFeatureSearchSchema as SearchFeatureSchema,
     ServiceErrorCode,
     FeatureUpdateInputSchema as UpdateFeatureSchema
 } from '@repo/schemas';
