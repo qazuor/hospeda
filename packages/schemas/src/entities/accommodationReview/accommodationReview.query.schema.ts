@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { HttpPaginationSchema, HttpSortingSchema } from '../../api/http/base-http.schema.js';
+import { HttpPaginationSchema, HttpSortingSchema, HttpQueryFields } from '../../api/http/base-http.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
 import { type OpenApiSchemaMetadata, applyOpenApiMetadata } from '../../utils/openapi.utils.js';
 import { AccommodationReviewSchema } from './accommodationReview.schema.js';
@@ -344,10 +344,10 @@ export const HttpAccommodationReviewSearchSchema = HttpPaginationSchema.merge(
     q: z.string().optional(),
     accommodationId: z.string().uuid().optional(),
     userId: z.string().uuid().optional(),
-    minRating: z.coerce.number().int().min(1).max(5).optional(),
-    maxRating: z.coerce.number().int().min(1).max(5).optional(),
-    isVerified: z.coerce.boolean().optional(),
-    hasImages: z.coerce.boolean().optional(),
+    minRating: HttpQueryFields.minRating(),
+    maxRating: HttpQueryFields.maxRating(),
+    isVerified: HttpQueryFields.isVerified(),
+    hasImages: HttpQueryFields.hasImages(),
     languageCode: z.string().length(2).optional()
 });
 
