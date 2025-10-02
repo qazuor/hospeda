@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { HttpPaginationSchema, HttpSortingSchema } from '../../api/http/base-http.schema.js';
+import { HttpPaginationSchema, HttpSortingSchema, HttpQueryFields } from '../../api/http/base-http.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
 import { type OpenApiSchemaMetadata, applyOpenApiMetadata } from '../../utils/openapi.utils.js';
 import { EventOrganizerSchema } from './eventOrganizer.schema.js';
@@ -215,9 +215,9 @@ export const EventOrganizerSummaryParamsSchema = z.object({
 export const HttpEventOrganizerSearchSchema = HttpPaginationSchema.merge(HttpSortingSchema).extend({
     q: z.string().optional(),
     name: z.string().optional(),
-    isVerified: z.coerce.boolean().optional(),
-    isActive: z.coerce.boolean().optional(),
-    minEventsCount: z.coerce.number().int().min(0).optional(),
+    isVerified: HttpQueryFields.isVerified(),
+    isActive: HttpQueryFields.isActive(),
+    minEventsCount: HttpQueryFields.minEventsCount(),
     city: z.string().optional(),
     country: z.string().length(2).optional()
 });
