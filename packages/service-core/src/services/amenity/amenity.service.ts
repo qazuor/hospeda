@@ -320,8 +320,8 @@ export class AmenityService extends BaseCrudRelatedService<
      * @returns An object containing the search results, page, pageSize, and total count.
      */
     protected async _executeSearch(params: AmenitySearchInput, _actor: Actor) {
-        const { filters = {}, page = 1, pageSize = 10 } = params;
-        return this.model.findAll(filters, { page, pageSize });
+        const { page = 1, pageSize = 10, ...filterParams } = params;
+        return this.model.findAll(filterParams, { page, pageSize });
     }
 
     /**
@@ -335,9 +335,9 @@ export class AmenityService extends BaseCrudRelatedService<
         params: AmenitySearchInput
     ): Promise<AmenitySearchForListOutput> {
         this._canSearch(actor);
-        const { filters = {}, page = 1, pageSize = 10 } = params;
+        const { page = 1, pageSize = 10, ...filterParams } = params;
 
-        const result = await this.model.findAll(filters, { page, pageSize });
+        const result = await this.model.findAll(filterParams, { page, pageSize });
 
         // Get accommodation counts for each amenity
         const itemsWithCounts = await Promise.all(
@@ -373,8 +373,8 @@ export class AmenityService extends BaseCrudRelatedService<
      * @returns An object containing the count of amenities.
      */
     protected async _executeCount(params: AmenitySearchInput, _actor: Actor) {
-        const { filters = {} } = params;
-        const count = await this.model.count(filters);
+        const { ...filterParams } = params;
+        const count = await this.model.count(filterParams);
         return { count };
     }
 
