@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { HttpPaginationSchema, HttpSortingSchema } from '../../api/http/base-http.schema.js';
+import { HttpPaginationSchema, HttpSortingSchema, HttpQueryFields } from '../../api/http/base-http.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
 import { LifecycleStatusEnumSchema } from '../../enums/index.js';
 import { type OpenApiSchemaMetadata, applyOpenApiMetadata } from '../../utils/openapi.utils.js';
@@ -234,15 +234,15 @@ export const HttpAttractionSearchSchema = HttpPaginationSchema.merge(HttpSorting
     // Basic filters
     name: z.string().optional(),
     slug: z.string().optional(),
-    isFeatured: z.coerce.boolean().optional(),
-    isBuiltin: z.coerce.boolean().optional(),
+    isFeatured: HttpQueryFields.isFeatured(),
+    isBuiltin: HttpQueryFields.isBuiltin(),
 
     // Lifecycle state
     lifecycleState: LifecycleStatusEnumSchema.optional(),
 
     // Date filters with coercion
-    createdAfter: z.coerce.date().optional(),
-    createdBefore: z.coerce.date().optional(),
+    createdAfter: HttpQueryFields.createdAfter(),
+    createdBefore: HttpQueryFields.createdBefore(),
 
     // Location filters
     destinationId: z.string().uuid().optional(),
@@ -250,17 +250,17 @@ export const HttpAttractionSearchSchema = HttpPaginationSchema.merge(HttpSorting
     country: z.string().length(2).optional(),
 
     // Content filters with coercion
-    hasDescription: z.coerce.boolean().optional(),
-    hasMedia: z.coerce.boolean().optional(),
-    hasCoordinates: z.coerce.boolean().optional(),
+    hasDescription: HttpQueryFields.hasDescription(),
+    hasMedia: HttpQueryFields.hasMedia(),
+    hasCoordinates: HttpQueryFields.hasCoordinates(),
 
     // Numeric filters with coercion
-    minVisitorsPerYear: z.coerce.number().int().min(0).optional(),
-    maxVisitorsPerYear: z.coerce.number().int().min(0).optional(),
+    minVisitorsPerYear: HttpQueryFields.minVisitorsPerYear(),
+    maxVisitorsPerYear: HttpQueryFields.maxVisitorsPerYear(),
 
     // Boolean filters with coercion
-    isOpen: z.coerce.boolean().optional(),
-    acceptsReservations: z.coerce.boolean().optional()
+    isOpen: HttpQueryFields.isOpen(),
+    acceptsReservations: HttpQueryFields.acceptsReservations()
 });
 
 export type HttpAttractionSearch = z.infer<typeof HttpAttractionSearchSchema>;
