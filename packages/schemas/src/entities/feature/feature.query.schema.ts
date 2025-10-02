@@ -1,7 +1,8 @@
 import { z } from 'zod';
-import { HttpPaginationSchema, HttpSortingSchema } from '../../api/http/base-http.schema.js';
+import { HttpPaginationSchema, HttpSortingSchema, HttpQueryFields, createArrayQueryParam } from '../../api/http/base-http.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
-import { type OpenApiSchemaMetadata, applyOpenApiMetadata } from '../../utils/openapi.utils.js';
+import { applyOpenApiMetadata } from '../../utils/openapi.utils.js';
+import { createSearchMetadata } from '../../utils/openapi-metadata.factory.js';
 import { FeatureSchema } from './feature.schema.js';
 
 /**
@@ -77,7 +78,46 @@ export const FeatureFiltersSchema = z.object({
  * - filters: Feature-specific filtering options
  */
 export const FeatureSearchSchema = BaseSearchSchema.extend({
-    filters: FeatureFiltersSchema.optional(),
+    // Basic filters (flattened from FeatureFiltersSchema)
+    name: z.string().optional(),
+    slug: z.string().optional(),
+    category: z.string().optional(),
+    icon: z.string().optional(),
+
+    // Availability filters
+    isAvailable: z.boolean().optional(),
+    hasIcon: z.boolean().optional(),
+    hasDescription: z.boolean().optional(),
+
+    // Priority filters
+    minPriority: z.number().int().min(0).max(100).optional(),
+    maxPriority: z.number().int().min(0).max(100).optional(),
+
+    // Usage filters
+    minUsageCount: z.number().int().min(0).optional(),
+    maxUsageCount: z.number().int().min(0).optional(),
+    isUnused: z.boolean().optional(),
+
+    // Date filters
+    createdAfter: z.date().optional(),
+    createdBefore: z.date().optional(),
+
+    // Content pattern filters
+    nameStartsWith: z.string().min(1).max(50).optional(),
+    nameEndsWith: z.string().min(1).max(50).optional(),
+    nameContains: z.string().min(1).max(50).optional(),
+    descriptionContains: z.string().min(1).max(100).optional(),
+
+    // Popularity filters
+    isPopular: z.boolean().optional(),
+    popularityThreshold: z.number().int().min(1).optional(),
+
+    // Premium/payment filters
+    isPremium: z.boolean().optional(),
+    requiresPayment: z.boolean().optional(),
+
+    // Category grouping
+    categories: z.array(z.string()).optional(),
 
     // Feature-specific search options
     searchInDescription: z.boolean().default(true).optional(),
@@ -278,16 +318,10 @@ export type FeatureListOutput = FeatureListResponse;
 export type FeatureSearchOutput = FeatureSearchResponse;
 export type FeatureSearchResult = FeatureSearchResultItem;
 
-// Legacy compatibility exports
-export const FeatureListInputSchema = FeatureSearchSchema;
-export const FeatureListOutputSchema = FeatureListResponseSchema;
-export const FeatureSearchInputSchema = FeatureSearchSchema;
-export const FeatureSearchOutputSchema = FeatureSearchResponseSchema;
-export const FeatureCategoriesInputSchema = FeatureCategoriesSchema;
-export const PopularFeaturesInputSchema = PopularFeaturesSchema;
-export const FeaturePriorityDistributionInputSchema = FeaturePriorityDistributionSchema;
+// ============================================================================
+// COMPUTED SCHEMAS (Keep - these are used for specialized responses)
+// ============================================================================
 
-// Additional missing legacy exports
 export const FeatureCategoriesOutputSchema = z.object({
     categories: z.array(
         z.object({
@@ -298,8 +332,6 @@ export const FeatureCategoriesOutputSchema = z.object({
         })
     )
 });
-
-export const FeatureSearchResultSchema = FeatureSearchResponseSchema;
 
 export const FeaturePriorityDistributionOutputSchema = z.object({
     distribution: z.array(
@@ -323,18 +355,6 @@ export const PopularFeaturesOutputSchema = z.object({
     timeframe: z.string()
 });
 
-// Simple search schema for legacy compatibility
-export const SimpleFeatureSearchSchema = z
-    .object({
-        name: z.string().optional(),
-        slug: z.string().optional(),
-        isFeatured: z.boolean().optional(),
-        isBuiltin: z.boolean().optional()
-    })
-    .strict();
-
-export type SimpleFeatureSearch = z.infer<typeof SimpleFeatureSearchSchema>;
-
 // ============================================================================
 // HTTP-COMPATIBLE SCHEMAS
 // ============================================================================
@@ -352,27 +372,24 @@ export const HttpFeatureSearchSchema = HttpPaginationSchema.merge(HttpSortingSch
     category: z.string().optional(),
     icon: z.string().optional(),
 
-    // Availability filters with coercion
-    isAvailable: z.coerce.boolean().optional(),
-    hasIcon: z.coerce.boolean().optional(),
-    hasDescription: z.coerce.boolean().optional(),
-    isFeatured: z.coerce.boolean().optional(),
-    isBuiltin: z.coerce.boolean().optional(),
+    // Availability filters using factories
+    isAvailable: HttpQueryFields.isAvailable(),
+    hasIcon: HttpQueryFields.hasIcon(),
+    hasDescription: HttpQueryFields.hasDescription(),
+    isFeatured: HttpQueryFields.isFeatured(),
+    isBuiltin: HttpQueryFields.isBuiltin(),
 
-    // Date filters with coercion
-    createdAfter: z.coerce.date().optional(),
-    createdBefore: z.coerce.date().optional(),
+    // Date filters using factories
+    createdAfter: HttpQueryFields.createdAfter(),
+    createdBefore: HttpQueryFields.createdBefore(),
 
-    // Usage filters with coercion
-    minUsageCount: z.coerce.number().int().min(0).optional(),
-    maxUsageCount: z.coerce.number().int().min(0).optional(),
-    isPopular: z.coerce.boolean().optional(),
+    // Usage filters using factories
+    minUsageCount: HttpQueryFields.minUsageCount(),
+    maxUsageCount: HttpQueryFields.maxUsageCount(),
+    isPopular: HttpQueryFields.isPopular(),
 
-    // Array filters (comma-separated)
-    categories: z
-        .string()
-        .transform((val) => val.split(',').filter(Boolean))
-        .optional()
+    // Array filters
+    categories: createArrayQueryParam('Comma-separated list of categories to filter by')
 });
 
 export type HttpFeatureSearch = z.infer<typeof HttpFeatureSearchSchema>;
@@ -382,71 +399,35 @@ export type HttpFeatureSearch = z.infer<typeof HttpFeatureSearchSchema>;
 // ============================================================================
 
 /**
- * OpenAPI metadata for feature search schema
- */
-export const FEATURE_SEARCH_METADATA: OpenApiSchemaMetadata = {
-    ref: 'FeatureSearch',
-    description:
-        'Schema for searching and filtering accommodation features with availability and usage filters',
-    title: 'Feature Search Parameters',
-    example: {
-        page: 1,
-        pageSize: 20,
-        sortBy: 'name',
-        sortOrder: 'asc',
-        q: 'pool',
-        category: 'amenities',
-        isAvailable: true,
-        hasIcon: true,
-        isFeatured: true,
-        minUsageCount: 10
-    },
-    fields: {
-        page: {
-            description: 'Page number (1-based)',
-            example: 1,
-            minimum: 1
-        },
-        pageSize: {
-            description: 'Number of items per page',
-            example: 20,
-            minimum: 1,
-            maximum: 100
-        },
-        q: {
-            description: 'Search query (searches name, description)',
-            example: 'pool',
-            maxLength: 100
-        },
-        category: {
-            description: 'Filter by feature category',
-            example: 'amenities'
-        },
-        isAvailable: {
-            description: 'Filter available features',
-            example: true
-        },
-        hasIcon: {
-            description: 'Filter features with icons',
-            example: true
-        },
-        isFeatured: {
-            description: 'Filter featured features',
-            example: true
-        },
-        minUsageCount: {
-            description: 'Minimum usage count across accommodations',
-            example: 10,
-            minimum: 0
-        }
-    },
-    tags: ['features', 'search']
-};
-
-/**
  * Feature search schema with OpenAPI metadata applied
  */
 export const FeatureSearchSchemaWithMetadata = applyOpenApiMetadata(
     HttpFeatureSearchSchema,
-    FEATURE_SEARCH_METADATA
+    createSearchMetadata({
+        entityName: 'Feature',
+        entityNameLower: 'features',
+        exampleQuery: 'pool',
+        fields: {
+            category: {
+                description: 'Filter by feature category',
+                example: 'amenities'
+            },
+            isAvailable: {
+                description: 'Filter available features',
+                example: true
+            },
+            hasIcon: {
+                description: 'Filter features with icons',
+                example: true
+            },
+            isFeatured: {
+                description: 'Filter featured features',
+                example: true
+            },
+            minUsageCount: {
+                description: 'Minimum usage count across accommodations',
+                example: 10
+            }
+        }
+    })
 );
