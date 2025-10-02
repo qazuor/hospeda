@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { HttpPaginationSchema, HttpSortingSchema } from '../../api/http/base-http.schema.js';
+import { HttpPaginationSchema, HttpSortingSchema, HttpQueryFields } from '../../api/http/base-http.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
 import { type OpenApiSchemaMetadata, applyOpenApiMetadata } from '../../utils/openapi.utils.js';
 import { PaymentPlanSchema } from './payment-plan.schema.js';
@@ -604,18 +604,18 @@ export const HttpPaymentSearchSchema = HttpPaginationSchema.merge(HttpSortingSch
         .optional(),
 
     // Amount filters with coercion
-    minAmount: z.coerce.number().min(0).optional(),
-    maxAmount: z.coerce.number().min(0).optional(),
-    amount: z.coerce.number().min(0).optional(),
+    minAmount: HttpQueryFields.minAmount(),
+    maxAmount: HttpQueryFields.maxAmount(),
+    amount: HttpQueryFields.amount(),
 
     // Currency filters
     currency: z.string().length(3).optional(),
 
     // Date filters with coercion
-    createdAfter: z.coerce.date().optional(),
-    createdBefore: z.coerce.date().optional(),
-    processedAfter: z.coerce.date().optional(),
-    processedBefore: z.coerce.date().optional(),
+    createdAfter: HttpQueryFields.createdAfter(),
+    createdBefore: HttpQueryFields.createdBefore(),
+    processedAfter: HttpQueryFields.processedAfter(),
+    processedBefore: HttpQueryFields.processedBefore(),
 
     // Method filters
     paymentMethod: z.string().optional(),
