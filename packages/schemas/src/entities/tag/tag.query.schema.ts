@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { HttpPaginationSchema, HttpSortingSchema } from '../../api/http/base-http.schema.js';
+import { HttpPaginationSchema, HttpSortingSchema, HttpQueryFields } from '../../api/http/base-http.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
 import { type OpenApiSchemaMetadata, applyOpenApiMetadata } from '../../utils/openapi.utils.js';
 import { TagSchema } from './tag.schema.js';
@@ -296,16 +296,16 @@ export const HttpTagSearchSchema = HttpPaginationSchema.merge(HttpSortingSchema)
         .optional(),
 
     // Usage filters with coercion
-    minUsageCount: z.coerce.number().int().min(0).optional(),
-    maxUsageCount: z.coerce.number().int().min(0).optional(),
-    isPopular: z.coerce.boolean().optional(),
+    minUsageCount: HttpQueryFields.minUsageCount(),
+    maxUsageCount: HttpQueryFields.maxUsageCount(),
+    isPopular: HttpQueryFields.isPopular(),
 
     // Date filters with coercion
-    createdAfter: z.coerce.date().optional(),
-    createdBefore: z.coerce.date().optional(),
+    createdAfter: HttpQueryFields.createdAfter(),
+    createdBefore: HttpQueryFields.createdBefore(),
 
     // Content filters with coercion
-    hasDescription: z.coerce.boolean().optional(),
+    hasDescription: HttpQueryFields.hasDescription(),
 
     // Pattern filters
     nameStartsWith: z.string().min(1).max(50).optional(),

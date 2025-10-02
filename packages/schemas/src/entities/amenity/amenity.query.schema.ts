@@ -1,7 +1,8 @@
 import { z } from 'zod';
-import { HttpPaginationSchema, HttpSortingSchema } from '../../api/http/base-http.schema.js';
+import { HttpPaginationSchema, HttpSortingSchema, HttpQueryFields } from '../../api/http/base-http.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
-import { type OpenApiSchemaMetadata, applyOpenApiMetadata } from '../../utils/openapi.utils.js';
+import { applyOpenApiMetadata } from '../../utils/openapi.utils.js';
+import { createSearchMetadata } from '../../utils/openapi-metadata.factory.js';
 import { AmenitySchema } from './amenity.schema.js';
 
 /**
@@ -121,22 +122,22 @@ export const HttpAmenitySearchSchema = HttpPaginationSchema.merge(HttpSortingSch
     icon: z.string().optional(),
 
     // Boolean filters with coercion
-    hasIcon: z.coerce.boolean().optional(),
-    hasDescription: z.coerce.boolean().optional(),
-    isUnused: z.coerce.boolean().optional(),
-    isPopular: z.coerce.boolean().optional(),
-    searchInDescription: z.coerce.boolean().default(true).optional(),
-    fuzzySearch: z.coerce.boolean().default(true).optional(),
-    groupByCategory: z.coerce.boolean().default(false).optional(),
+    hasIcon: HttpQueryFields.hasIcon(),
+    hasDescription: HttpQueryFields.hasDescription(),
+    isUnused: HttpQueryFields.isUnused(),
+    isPopular: HttpQueryFields.isPopular(),
+    searchInDescription: HttpQueryFields.searchInDescription(),
+    fuzzySearch: HttpQueryFields.fuzzySearch(),
+    groupByCategory: HttpQueryFields.groupByCategory(),
 
     // Numeric filters with coercion
-    minUsageCount: z.coerce.number().int().min(0).optional(),
-    maxUsageCount: z.coerce.number().int().min(0).optional(),
-    popularityThreshold: z.coerce.number().int().min(1).optional(),
+    minUsageCount: HttpQueryFields.minUsageCount(),
+    maxUsageCount: HttpQueryFields.maxUsageCount(),
+    popularityThreshold: HttpQueryFields.popularityThreshold(),
 
     // Date filters with coercion
-    createdAfter: z.coerce.date().optional(),
-    createdBefore: z.coerce.date().optional(),
+    createdAfter: HttpQueryFields.createdAfter(),
+    createdBefore: HttpQueryFields.createdBefore(),
 
     // String pattern filters
     nameStartsWith: z.string().min(1).max(50).optional(),
@@ -153,78 +154,34 @@ export const HttpAmenitySearchSchema = HttpPaginationSchema.merge(HttpSortingSch
 
 export type HttpAmenitySearch = z.infer<typeof HttpAmenitySearchSchema>;
 
-// ============================================================================
-// OPENAPI METADATA
-// ============================================================================
-
-/**
- * OpenAPI metadata for amenity search schema
- */
-export const AMENITY_SEARCH_METADATA: OpenApiSchemaMetadata = {
-    ref: 'AmenitySearch',
-    description: 'Schema for searching and filtering amenities with comprehensive options',
-    title: 'Amenity Search Parameters',
-    example: {
-        page: 1,
-        pageSize: 20,
-        sortBy: 'name',
-        sortOrder: 'asc',
-        q: 'wifi',
-        category: 'connectivity',
-        hasIcon: true,
-        isPopular: true,
-        minUsageCount: 10,
-        nameContains: 'pool'
-    },
-    fields: {
-        page: {
-            description: 'Page number (1-based)',
-            example: 1,
-            minimum: 1
-        },
-        pageSize: {
-            description: 'Number of items per page',
-            example: 20,
-            minimum: 1,
-            maximum: 100
-        },
-        q: {
-            description: 'Search query (searches name, description)',
-            example: 'wifi',
-            maxLength: 100
-        },
-        category: {
-            description: 'Filter by amenity category',
-            example: 'connectivity'
-        },
-        hasIcon: {
-            description: 'Filter amenities that have icons',
-            example: true
-        },
-        isPopular: {
-            description: 'Filter popular amenities',
-            example: true
-        },
-        minUsageCount: {
-            description: 'Minimum usage count across accommodations',
-            example: 10,
-            minimum: 0
-        },
-        nameContains: {
-            description: 'Filter amenities whose names contain this text',
-            example: 'pool',
-            maxLength: 50
-        }
-    },
-    tags: ['amenities', 'search']
-};
-
 /**
  * Amenity search schema with OpenAPI metadata applied
  */
 export const AmenitySearchSchemaWithMetadata = applyOpenApiMetadata(
     HttpAmenitySearchSchema,
-    AMENITY_SEARCH_METADATA
+    createSearchMetadata({
+        entityName: 'Amenity',
+        entityNameLower: 'amenities',
+        exampleQuery: 'pool',
+        fields: {
+            category: {
+                description: 'Filter by amenity category',
+                example: 'pool'
+            },
+            hasIcon: {
+                description: 'Filter amenities with icons',
+                example: true
+            },
+            isPopular: {
+                description: 'Filter popular amenities',
+                example: true
+            },
+            minUsageCount: {
+                description: 'Minimum usage count across accommodations',
+                example: 10
+            }
+        }
+    })
 );
 
 // ============================================================================
