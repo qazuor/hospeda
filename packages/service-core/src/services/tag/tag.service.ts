@@ -154,8 +154,8 @@ export class TagService extends BaseCrudRelatedService<
      * @returns A paginated list of tags matching the criteria.
      */
     protected async _executeSearch(params: z.infer<typeof TagSearchInputSchema>, _actor: Actor) {
-        const { filters = {}, page = 1, pageSize = 10 } = params;
-        return this.model.findAll(filters, { page, pageSize });
+        const { page = 1, pageSize = 10, ...filterParams } = params;
+        return this.model.findAll(filterParams, { page, pageSize });
     }
 
     /**
@@ -165,8 +165,8 @@ export class TagService extends BaseCrudRelatedService<
      * @returns An object containing the total count of tags matching the criteria.
      */
     protected async _executeCount(params: z.infer<typeof TagSearchInputSchema>, _actor: Actor) {
-        const { filters = {} } = params;
-        const count = await this.model.count(filters);
+        const { ...filterParams } = params;
+        const count = await this.model.count(filterParams);
         return { count };
     }
 

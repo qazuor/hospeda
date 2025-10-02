@@ -199,7 +199,7 @@ export class FeatureService extends BaseCrudRelatedService<
         total: number;
     }> {
         this._canSearch(actor);
-        const { filters = {}, pagination } = params;
+        const { pagination, filters = {} } = params;
         const { name, slug, isFeatured, isBuiltin } = filters;
         const page = pagination?.page ?? 1;
         const pageSize = pagination?.pageSize ?? 10;
