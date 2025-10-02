@@ -12,7 +12,7 @@ describe('FeatureService.count', () => {
     let featureModelMock: ReturnType<typeof createModelMock>;
     let loggerMock: ReturnType<typeof createLoggerMock>;
     let actor: Actor;
-    const countParams = { name: 'Test Feature' };
+    const countParams = { name: 'Test Feature', page: 1, pageSize: 10 };
 
     beforeEach(() => {
         featureModelMock = createModelMock(['count']);

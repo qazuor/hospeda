@@ -3,12 +3,11 @@ import { describe, expect, it } from 'vitest';
 import { ZodError } from 'zod';
 import {
     FeatureFiltersSchema,
-    FeatureListInputSchema,
     FeatureListItemSchema,
-    FeatureListOutputSchema,
-    FeatureSearchInputSchema,
-    FeatureSearchOutputSchema,
-    FeatureSearchResultSchema,
+    FeatureListResponseSchema,
+    FeatureSearchSchema,
+    FeatureSearchResponseSchema,
+    FeatureSearchResultItemSchema,
     FeatureStatsSchema,
     FeatureSummarySchema
 } from '../../../src/entities/feature/feature.query.schema.js';
@@ -84,16 +83,16 @@ describe('Feature Query Schemas', () => {
         });
     });
 
-    describe('FeatureListInputSchema', () => {
+    describe('FeatureSearchSchema', () => {
         it('should validate list input with pagination', () => {
             const listInput = {
                 page: 1,
                 pageSize: 20
             };
 
-            expect(() => FeatureListInputSchema.parse(listInput)).not.toThrow();
+            expect(() => FeatureSearchSchema.parse(listInput)).not.toThrow();
 
-            const result = FeatureListInputSchema.parse(listInput);
+            const result = FeatureSearchSchema.parse(listInput);
             expect(result.page).toBe(1);
             expect(result.pageSize).toBe(20);
         });
@@ -101,9 +100,9 @@ describe('Feature Query Schemas', () => {
         it('should validate list input with defaults', () => {
             const listInput = {};
 
-            expect(() => FeatureListInputSchema.parse(listInput)).not.toThrow();
+            expect(() => FeatureSearchSchema.parse(listInput)).not.toThrow();
 
-            const result = FeatureListInputSchema.parse(listInput);
+            const result = FeatureSearchSchema.parse(listInput);
             expect(result.page).toBe(1); // Default value
             expect(result.pageSize).toBe(10); // Default value
         });
@@ -113,7 +112,7 @@ describe('Feature Query Schemas', () => {
                 page: 0
             };
 
-            expect(() => FeatureListInputSchema.parse(listInput)).toThrow(ZodError);
+            expect(() => FeatureSearchSchema.parse(listInput)).toThrow(ZodError);
         });
 
         it('should reject list input with invalid pageSize', () => {
@@ -121,7 +120,7 @@ describe('Feature Query Schemas', () => {
                 pageSize: 0
             };
 
-            expect(() => FeatureListInputSchema.parse(listInput)).toThrow(ZodError);
+            expect(() => FeatureSearchSchema.parse(listInput)).toThrow(ZodError);
         });
     });
 
@@ -168,7 +167,7 @@ describe('Feature Query Schemas', () => {
         });
     });
 
-    describe('FeatureListOutputSchema', () => {
+    describe('FeatureListResponseSchema', () => {
         it('should validate list output', () => {
             const listOutput = {
                 data: [
@@ -190,9 +189,9 @@ describe('Feature Query Schemas', () => {
                 }
             };
 
-            expect(() => FeatureListOutputSchema.parse(listOutput)).not.toThrow();
+            expect(() => FeatureListResponseSchema.parse(listOutput)).not.toThrow();
 
-            const result = FeatureListOutputSchema.parse(listOutput);
+            const result = FeatureListResponseSchema.parse(listOutput);
             expect(Array.isArray(result.data)).toBe(true);
             expect(typeof result.pagination.total).toBe('number');
             expect(typeof result.pagination.page).toBe('number');
@@ -213,7 +212,7 @@ describe('Feature Query Schemas', () => {
                 }
             };
 
-            expect(() => FeatureListOutputSchema.parse(listOutput)).not.toThrow();
+            expect(() => FeatureListResponseSchema.parse(listOutput)).not.toThrow();
         });
 
         it('should reject list output with negative total', () => {
@@ -229,28 +228,11 @@ describe('Feature Query Schemas', () => {
                 }
             };
 
-            expect(() => FeatureListOutputSchema.parse(listOutput)).toThrow(ZodError);
+            expect(() => FeatureListResponseSchema.parse(listOutput)).toThrow(ZodError);
         });
     });
 
-    describe('FeatureSearchInputSchema', () => {
-        it('should validate search input with pagination and filters', () => {
-            const searchInput = {
-                pagination: {
-                    page: 1,
-                    pageSize: 20
-                },
-                filters: {
-                    category: faker.lorem.word()
-                }
-            };
-
-            expect(() => FeatureSearchInputSchema.parse(searchInput)).not.toThrow();
-
-            const result = FeatureSearchInputSchema.parse(searchInput);
-            // Pagination is not part of input schema
-            expect(result.filters).toBeDefined();
-        });
+    describe('FeatureSearchSchema', () => {
 
         it('should validate search input with query', () => {
             const searchInput = {
@@ -259,18 +241,18 @@ describe('Feature Query Schemas', () => {
                 pageSize: 20
             };
 
-            expect(() => FeatureSearchInputSchema.parse(searchInput)).not.toThrow();
+            expect(() => FeatureSearchSchema.parse(searchInput)).not.toThrow();
 
-            const result = FeatureSearchInputSchema.parse(searchInput);
+            const result = FeatureSearchSchema.parse(searchInput);
             expect(result.q).toBe(searchInput.q);
         });
 
         it('should validate search input with defaults', () => {
             const searchInput = {};
 
-            expect(() => FeatureSearchInputSchema.parse(searchInput)).not.toThrow();
+            expect(() => FeatureSearchSchema.parse(searchInput)).not.toThrow();
 
-            const _result = FeatureSearchInputSchema.parse(searchInput);
+            const _result = FeatureSearchSchema.parse(searchInput);
             // BaseSearchSchema doesn't have defaults, so these would be undefined
             // Pagination is not part of input schema
         });
@@ -281,11 +263,11 @@ describe('Feature Query Schemas', () => {
                 pageSize: -1 // Invalid: should be positive
             };
 
-            expect(() => FeatureSearchInputSchema.parse(searchInput)).toThrow(ZodError);
+            expect(() => FeatureSearchSchema.parse(searchInput)).toThrow(ZodError);
         });
     });
 
-    describe('FeatureSearchResultSchema', () => {
+    describe('FeatureSearchResultItemSchema', () => {
         it('should validate search result', () => {
             const searchResult = {
                 data: [
@@ -307,11 +289,11 @@ describe('Feature Query Schemas', () => {
                 }
             };
 
-            expect(() => FeatureSearchResultSchema.parse(searchResult)).not.toThrow();
+            expect(() => FeatureSearchResultItemSchema.parse(searchResult)).not.toThrow();
         });
     });
 
-    describe('FeatureSearchOutputSchema', () => {
+    describe('FeatureSearchResponseSchema', () => {
         it('should validate search output', () => {
             const searchOutput = {
                 data: [
@@ -337,9 +319,9 @@ describe('Feature Query Schemas', () => {
                 }
             };
 
-            expect(() => FeatureSearchOutputSchema.parse(searchOutput)).not.toThrow();
+            expect(() => FeatureSearchResponseSchema.parse(searchOutput)).not.toThrow();
 
-            const result = FeatureSearchOutputSchema.parse(searchOutput);
+            const result = FeatureSearchResponseSchema.parse(searchOutput);
             expect(Array.isArray(result.data)).toBe(true);
             expect(typeof result.pagination.total).toBe('number');
             // SearchInfo is not part of output schema
@@ -358,7 +340,7 @@ describe('Feature Query Schemas', () => {
                 }
             };
 
-            expect(() => FeatureSearchOutputSchema.parse(searchOutput)).not.toThrow();
+            expect(() => FeatureSearchResponseSchema.parse(searchOutput)).not.toThrow();
         });
     });
 
