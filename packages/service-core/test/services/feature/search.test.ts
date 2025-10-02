@@ -15,7 +15,7 @@ describe('FeatureService.search', () => {
     let actor: Actor;
     const feature = FeatureFactoryBuilder.create({ name: 'Test Feature' });
     const paginated = { items: [feature], total: 1 };
-    const searchParams = { name: 'Test Feature' };
+    const searchParams = { name: 'Test Feature', page: 1, pageSize: 10 };
 
     beforeEach(() => {
         featureModelMock = createModelMock(['findAll']);
