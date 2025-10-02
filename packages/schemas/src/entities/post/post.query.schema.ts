@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { HttpPaginationSchema, HttpSortingSchema } from '../../api/http/base-http.schema.js';
+import { HttpPaginationSchema, HttpSortingSchema, HttpQueryFields } from '../../api/http/base-http.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
 import { LifecycleStatusEnumSchema, PostCategoryEnumSchema } from '../../enums/index.js';
 import { type OpenApiSchemaMetadata, applyOpenApiMetadata } from '../../utils/openapi.utils.js';
@@ -244,29 +244,29 @@ export const HttpPostSearchSchema = HttpPaginationSchema.merge(HttpSortingSchema
     // Basic filters
     status: LifecycleStatusEnumSchema.optional(),
     category: PostCategoryEnumSchema.optional(),
-    isFeatured: z.coerce.boolean().optional(),
-    isPublished: z.coerce.boolean().optional(),
+    isFeatured: HttpQueryFields.isFeatured(),
+    isPublished: HttpQueryFields.isPublished(),
 
     // Author filters
     authorId: z.string().uuid().optional(),
 
     // Date filters with coercion
-    createdAfter: z.coerce.date().optional(),
-    createdBefore: z.coerce.date().optional(),
-    publishedAfter: z.coerce.date().optional(),
-    publishedBefore: z.coerce.date().optional(),
+    createdAfter: HttpQueryFields.createdAfter(),
+    createdBefore: HttpQueryFields.createdBefore(),
+    publishedAfter: HttpQueryFields.publishedAfter(),
+    publishedBefore: HttpQueryFields.publishedBefore(),
 
     // Content filters with coercion
-    hasMedia: z.coerce.boolean().optional(),
-    hasExcerpt: z.coerce.boolean().optional(),
+    hasMedia: HttpQueryFields.hasMedia(),
+    hasExcerpt: HttpQueryFields.hasExcerpt(),
 
     // Engagement filters with coercion
-    minViews: z.coerce.number().int().min(0).optional(),
-    maxViews: z.coerce.number().int().min(0).optional(),
-    minLikes: z.coerce.number().int().min(0).optional(),
-    maxLikes: z.coerce.number().int().min(0).optional(),
-    minComments: z.coerce.number().int().min(0).optional(),
-    maxComments: z.coerce.number().int().min(0).optional(),
+    minViews: HttpQueryFields.minViews(),
+    maxViews: HttpQueryFields.maxViews(),
+    minLikes: HttpQueryFields.minLikes(),
+    maxLikes: HttpQueryFields.maxLikes(),
+    minComments: HttpQueryFields.minComments(),
+    maxComments: HttpQueryFields.maxComments(),
 
     // Array filters (comma-separated)
     tags: z
