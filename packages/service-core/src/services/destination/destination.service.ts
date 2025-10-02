@@ -121,7 +121,13 @@ export class DestinationService extends BaseCrudService<
      * @returns A paginated list of destinations matching the filters
      */
     protected async _executeSearch(params: DestinationSearchInput, _actor: Actor) {
-        const { filters = {}, page = 1, pageSize = 10 } = params;
+        const { page = 1, pageSize = 10, filters = {} } = params;
+        // Build where clause from filters (similar to other services)
+        const where: Record<string, unknown> = {};
+        if (filters.country) where.country = filters.country;
+        if (filters.state) where.state = filters.state;
+        if (filters.city) where.city = filters.city;
+        if (filters.isFeatured !== undefined) where.isFeatured = filters.isFeatured;
         return this.model.findAll(filters, { page, pageSize });
     }
 
@@ -153,10 +159,16 @@ export class DestinationService extends BaseCrudService<
         this._canSearch(actor);
 
         // Extract parameters
-        const { filters = {}, page = 1, pageSize = 10 } = params;
+        const { page = 1, pageSize = 10, filters = {} } = params;
+        // Build where clause from filters (similar to other services)
+        const where: Record<string, unknown> = {};
+        if (filters.country) where.country = filters.country;
+        if (filters.state) where.state = filters.state;
+        if (filters.city) where.city = filters.city;
+        if (filters.isFeatured !== undefined) where.isFeatured = filters.isFeatured;
 
         // Use the model method that includes attractions
-        const result = await this.model.findAll(filters, {
+        const result = await this.model.findAll(where, {
             page,
             pageSize
         });
