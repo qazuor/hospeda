@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { HttpPaginationSchema, HttpSortingSchema } from '../../api/http/base-http.schema.js';
+import { HttpPaginationSchema, HttpSortingSchema, HttpQueryFields } from '../../api/http/base-http.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
 import { RoleEnumSchema } from '../../enums/index.js';
 import { type OpenApiSchemaMetadata, applyOpenApiMetadata } from '../../utils/openapi.utils.js';
@@ -94,21 +94,21 @@ export const HttpUserSearchSchema = HttpPaginationSchema.merge(HttpSortingSchema
 
     // Basic filters with coercion
     role: RoleEnumSchema.optional(),
-    isActive: z.coerce.boolean().optional(),
-    isEmailVerified: z.coerce.boolean().optional(),
+    isActive: HttpQueryFields.isActive(),
+    isEmailVerified: HttpQueryFields.isEmailVerified(),
 
     // Date filters with coercion
-    createdAfter: z.coerce.date().optional(),
-    createdBefore: z.coerce.date().optional(),
-    lastLoginAfter: z.coerce.date().optional(),
-    lastLoginBefore: z.coerce.date().optional(),
+    createdAfter: HttpQueryFields.createdAfter(),
+    createdBefore: HttpQueryFields.createdBefore(),
+    lastLoginAfter: HttpQueryFields.lastLoginAfter(),
+    lastLoginBefore: HttpQueryFields.lastLoginBefore(),
 
     // String filters
     country: z.string().length(2).optional(),
 
     // Numeric filters with coercion
-    minAge: z.coerce.number().int().min(13).max(120).optional(),
-    maxAge: z.coerce.number().int().min(13).max(120).optional(),
+    minAge: HttpQueryFields.minAge(),
+    maxAge: HttpQueryFields.maxAge(),
 
     // Array filters (comma-separated strings converted to arrays)
     tags: z
@@ -117,8 +117,8 @@ export const HttpUserSearchSchema = HttpPaginationSchema.merge(HttpSortingSchema
         .optional(),
 
     // Boolean filters with coercion
-    hasActiveSubscription: z.coerce.boolean().optional(),
-    hasAccommodations: z.coerce.boolean().optional()
+    hasActiveSubscription: HttpQueryFields.hasActiveSubscription(),
+    hasAccommodations: HttpQueryFields.hasAccommodations()
 });
 
 export type HttpUserSearch = z.infer<typeof HttpUserSearchSchema>;
