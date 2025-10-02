@@ -32,12 +32,15 @@ const scalarRoute = createRoute({
 app.openapi(scalarRoute, async (c) => {
     const scalarMiddleware = Scalar({
         url: '/docs/openapi.json',
-        theme: 'kepler',
-        layout: 'classic',
+        theme: 'moon',
+        layout: 'modern',
         defaultHttpClient: {
             targetKey: 'js',
             clientKey: 'fetch'
-        }
+        },
+        hideDarkModeToggle: true,
+        slug: 'api-1',
+        title: 'API #1'
         // biome-ignore lint/suspicious/noExplicitAny: Scalar middleware has type compatibility issues with Hono versions
     }) as any;
 
