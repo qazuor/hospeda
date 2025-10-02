@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { HttpPaginationSchema, HttpSortingSchema } from '../../api/http/base-http.schema.js';
+import { HttpPaginationSchema, HttpSortingSchema, HttpQueryFields } from '../../api/http/base-http.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
 import { type OpenApiSchemaMetadata, applyOpenApiMetadata } from '../../utils/openapi.utils.js';
 import { EventLocationSchema } from './eventLocation.schema.js';
@@ -207,9 +207,9 @@ export const HttpEventLocationSearchSchema = HttpPaginationSchema.merge(HttpSort
     name: z.string().optional(),
     city: z.string().optional(),
     country: z.string().length(2).optional(),
-    hasCoordinates: z.coerce.boolean().optional(),
-    isActive: z.coerce.boolean().optional(),
-    capacity: z.coerce.number().int().min(1).optional()
+    hasCoordinates: HttpQueryFields.hasCoordinates(),
+    isActive: HttpQueryFields.isActive(),
+    capacity: HttpQueryFields.capacity()
 });
 
 export const EVENT_LOCATION_SEARCH_METADATA: OpenApiSchemaMetadata = {

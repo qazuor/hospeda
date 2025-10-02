@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { HttpPaginationSchema, HttpSortingSchema } from '../../api/http/base-http.schema.js';
+import { HttpPaginationSchema, HttpSortingSchema, HttpQueryFields } from '../../api/http/base-http.schema.js';
 import { EventIdSchema } from '../../common/id.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
 import { EventCategoryEnumSchema, PriceCurrencyEnumSchema } from '../../enums/index.js';
@@ -337,21 +337,21 @@ export const HttpEventSearchSchema = HttpPaginationSchema.merge(HttpSortingSchem
 
     // Basic filters
     category: EventCategoryEnumSchema.optional(),
-    isFeatured: z.coerce.boolean().optional(),
-    isVirtual: z.coerce.boolean().optional(),
-    isFree: z.coerce.boolean().optional(),
+    isFeatured: HttpQueryFields.isFeatured(),
+    isVirtual: HttpQueryFields.isVirtual(),
+    isFree: HttpQueryFields.isFree(),
 
     // Price filters with coercion
-    minPrice: z.coerce.number().min(0).optional(),
-    maxPrice: z.coerce.number().min(0).optional(),
-    price: z.coerce.number().min(0).optional(),
+    minPrice: HttpQueryFields.minPrice(),
+    maxPrice: HttpQueryFields.maxPrice(),
+    price: HttpQueryFields.price(),
     currency: PriceCurrencyEnumSchema.optional(),
 
     // Date filters with coercion
-    startDateAfter: z.coerce.date().optional(),
-    startDateBefore: z.coerce.date().optional(),
-    endDateAfter: z.coerce.date().optional(),
-    endDateBefore: z.coerce.date().optional(),
+    startDateAfter: HttpQueryFields.startDateAfter(),
+    startDateBefore: HttpQueryFields.startDateBefore(),
+    endDateAfter: HttpQueryFields.endDateAfter(),
+    endDateBefore: HttpQueryFields.endDateBefore(),
 
     // Location filters
     locationId: z.string().uuid().optional(),
@@ -361,17 +361,17 @@ export const HttpEventSearchSchema = HttpPaginationSchema.merge(HttpSortingSchem
     country: z.string().optional(),
 
     // Capacity filters with coercion
-    minCapacity: z.coerce.number().int().min(1).optional(),
-    maxCapacity: z.coerce.number().int().min(1).optional(),
+    minCapacity: HttpQueryFields.minCapacity(),
+    maxCapacity: HttpQueryFields.maxCapacity(),
 
     // Numeric filters with coercion
-    minDuration: z.coerce.number().int().min(1).optional(),
-    maxDuration: z.coerce.number().int().min(1).optional(),
+    minDuration: HttpQueryFields.minDuration(),
+    maxDuration: HttpQueryFields.maxDuration(),
 
     // Boolean filters with coercion
-    hasTickets: z.coerce.boolean().optional(),
-    isPublished: z.coerce.boolean().optional(),
-    allowsRegistration: z.coerce.boolean().optional()
+    hasTickets: HttpQueryFields.hasTickets(),
+    isPublished: HttpQueryFields.isPublished(),
+    allowsRegistration: HttpQueryFields.allowsRegistration()
 });
 
 export type HttpEventSearch = z.infer<typeof HttpEventSearchSchema>;
