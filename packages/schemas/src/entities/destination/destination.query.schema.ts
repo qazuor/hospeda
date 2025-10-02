@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { HttpPaginationSchema, HttpSortingSchema } from '../../api/http/base-http.schema.js';
+import { HttpPaginationSchema, HttpSortingSchema, HttpQueryFields } from '../../api/http/base-http.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
 import { type OpenApiSchemaMetadata, applyOpenApiMetadata } from '../../utils/openapi.utils.js';
 import { DestinationSchema } from './destination.schema.js';
@@ -239,7 +239,7 @@ export const HttpDestinationSearchSchema = HttpPaginationSchema.merge(HttpSortin
     q: z.string().optional(),
 
     // Basic filters
-    isFeatured: z.coerce.boolean().optional(),
+    isFeatured: HttpQueryFields.isFeatured(),
 
     // Location filters
     country: z.string().length(2).optional(),
@@ -247,26 +247,26 @@ export const HttpDestinationSearchSchema = HttpPaginationSchema.merge(HttpSortin
     city: z.string().min(1).max(100).optional(),
 
     // Geographic radius search with coercion
-    latitude: z.coerce.number().min(-90).max(90).optional(),
-    longitude: z.coerce.number().min(-180).max(180).optional(),
-    radius: z.coerce.number().positive().optional(),
+    latitude: HttpQueryFields.latitude(),
+    longitude: HttpQueryFields.longitude(),
+    radius: HttpQueryFields.radius(),
 
     // Date filters with coercion
-    createdAfter: z.coerce.date().optional(),
-    createdBefore: z.coerce.date().optional(),
+    createdAfter: HttpQueryFields.createdAfter(),
+    createdBefore: HttpQueryFields.createdBefore(),
 
     // Statistical filters with coercion
-    minAccommodations: z.coerce.number().int().min(0).optional(),
-    maxAccommodations: z.coerce.number().int().min(0).optional(),
-    minAttractions: z.coerce.number().int().min(0).optional(),
-    maxAttractions: z.coerce.number().int().min(0).optional(),
-    minRating: z.coerce.number().min(0).max(5).optional(),
-    maxRating: z.coerce.number().min(0).max(5).optional(),
+    minAccommodations: HttpQueryFields.minAccommodations(),
+    maxAccommodations: HttpQueryFields.maxAccommodations(),
+    minAttractions: HttpQueryFields.minAttractions(),
+    maxAttractions: HttpQueryFields.maxAttractions(),
+    minRating: HttpQueryFields.minRating(),
+    maxRating: HttpQueryFields.maxRating(),
 
     // Content filters with coercion
-    hasDescription: z.coerce.boolean().optional(),
-    hasMedia: z.coerce.boolean().optional(),
-    hasClimateInfo: z.coerce.boolean().optional(),
+    hasDescription: HttpQueryFields.hasDescription(),
+    hasMedia: HttpQueryFields.hasMedia(),
+    hasClimateInfo: HttpQueryFields.hasClimateInfo(),
 
     // Array filters (comma-separated)
     tags: z

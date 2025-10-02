@@ -1,8 +1,9 @@
 import { z } from 'zod';
-import { HttpPaginationSchema, HttpSortingSchema } from '../../api/http/base-http.schema.js';
+import { HttpPaginationSchema, HttpSortingSchema, HttpQueryFields } from '../../api/http/base-http.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
 import { AccommodationTypeEnumSchema, PriceCurrencyEnumSchema } from '../../enums/index.js';
-import { type OpenApiSchemaMetadata, applyOpenApiMetadata } from '../../utils/openapi.utils.js';
+import { applyOpenApiMetadata } from '../../utils/openapi.utils.js';
+import { createSearchMetadata } from '../../utils/openapi-metadata.factory.js';
 import { AccommodationSchema } from './accommodation.schema.js';
 
 /**
@@ -134,38 +135,38 @@ export const HttpAccommodationSearchSchema = HttpPaginationSchema.merge(HttpSort
 
     // Basic filters
     type: AccommodationTypeEnumSchema.optional(),
-    isFeatured: z.coerce.boolean().optional(),
+    isFeatured: HttpQueryFields.isFeatured(),
 
     // Price filters with coercion
-    minPrice: z.coerce.number().min(0).optional(),
-    maxPrice: z.coerce.number().min(0).optional(),
+    minPrice: HttpQueryFields.minPrice(),
+    maxPrice: HttpQueryFields.maxPrice(),
     currency: PriceCurrencyEnumSchema.optional(),
 
     // Date filters with coercion
-    createdAfter: z.coerce.date().optional(),
-    createdBefore: z.coerce.date().optional(),
-    checkIn: z.coerce.date().optional(),
-    checkOut: z.coerce.date().optional(),
+    createdAfter: HttpQueryFields.createdAfter(),
+    createdBefore: HttpQueryFields.createdBefore(),
+    checkIn: HttpQueryFields.checkIn(),
+    checkOut: HttpQueryFields.checkOut(),
 
     // Location filters
     destinationId: z.string().uuid().optional(),
     country: z.string().length(2).optional(),
     city: z.string().optional(),
-    latitude: z.coerce.number().min(-90).max(90).optional(),
-    longitude: z.coerce.number().min(-180).max(180).optional(),
-    radius: z.coerce.number().positive().optional(),
+    latitude: HttpQueryFields.latitude(),
+    longitude: HttpQueryFields.longitude(),
+    radius: HttpQueryFields.radius(),
 
     // Capacity filters with coercion
-    minGuests: z.coerce.number().int().min(1).optional(),
-    maxGuests: z.coerce.number().int().min(1).optional(),
-    minBedrooms: z.coerce.number().int().min(0).optional(),
-    maxBedrooms: z.coerce.number().int().min(0).optional(),
-    minBathrooms: z.coerce.number().int().min(0).optional(),
-    maxBathrooms: z.coerce.number().int().min(0).optional(),
+    minGuests: HttpQueryFields.minGuests(),
+    maxGuests: HttpQueryFields.maxGuests(),
+    minBedrooms: HttpQueryFields.minBedrooms(),
+    maxBedrooms: HttpQueryFields.maxBedrooms(),
+    minBathrooms: HttpQueryFields.minBathrooms(),
+    maxBathrooms: HttpQueryFields.maxBathrooms(),
 
     // Rating filters with coercion
-    minRating: z.coerce.number().min(0).max(5).optional(),
-    maxRating: z.coerce.number().min(0).max(5).optional(),
+    minRating: HttpQueryFields.minRating(),
+    maxRating: HttpQueryFields.maxRating(),
 
     // Array filters (comma-separated)
     amenities: z
@@ -177,7 +178,7 @@ export const HttpAccommodationSearchSchema = HttpPaginationSchema.merge(HttpSort
     hostId: z.string().uuid().optional(),
 
     // Boolean filters with coercion
-    isAvailable: z.coerce.boolean().optional()
+    isAvailable: HttpQueryFields.isAvailable()
 });
 
 export type HttpAccommodationSearch = z.infer<typeof HttpAccommodationSearchSchema>;
@@ -187,96 +188,49 @@ export type HttpAccommodationSearch = z.infer<typeof HttpAccommodationSearchSche
 // ============================================================================
 
 /**
- * OpenAPI metadata for accommodation search schema
- */
-export const ACCOMMODATION_SEARCH_METADATA: OpenApiSchemaMetadata = {
-    ref: 'AccommodationSearch',
-    description: 'Schema for searching and filtering accommodations with comprehensive filters',
-    title: 'Accommodation Search Parameters',
-    example: {
-        page: 1,
-        pageSize: 20,
-        sortBy: 'createdAt',
-        sortOrder: 'desc',
-        q: 'beachfront villa',
-        type: 'villa',
-        isFeatured: true,
-        minPrice: 100,
-        maxPrice: 500,
-        currency: 'USD',
-        destinationId: '123e4567-e89b-12d3-a456-426614174000',
-        minGuests: 2,
-        maxGuests: 8,
-        minRating: 4.0,
-        amenities: 'pool,wifi,parking'
-    },
-    fields: {
-        page: {
-            description: 'Page number (1-based)',
-            example: 1,
-            minimum: 1
-        },
-        pageSize: {
-            description: 'Number of items per page',
-            example: 20,
-            minimum: 1,
-            maximum: 100
-        },
-        q: {
-            description: 'Search query (searches name, description, location)',
-            example: 'beachfront villa',
-            maxLength: 100
-        },
-        type: {
-            description: 'Filter by accommodation type',
-            example: 'villa',
-            enum: ['apartment', 'house', 'villa', 'hotel', 'hostel', 'other']
-        },
-        minPrice: {
-            description: 'Minimum price per night',
-            example: 100,
-            minimum: 0
-        },
-        maxPrice: {
-            description: 'Maximum price per night',
-            example: 500,
-            minimum: 0
-        },
-        destinationId: {
-            description: 'Filter by destination UUID',
-            example: '123e4567-e89b-12d3-a456-426614174000',
-            format: 'uuid'
-        },
-        minGuests: {
-            description: 'Minimum guest capacity',
-            example: 2,
-            minimum: 1
-        },
-        maxGuests: {
-            description: 'Maximum guest capacity',
-            example: 8,
-            minimum: 1
-        },
-        minRating: {
-            description: 'Minimum average rating',
-            example: 4.0,
-            minimum: 0,
-            maximum: 5
-        },
-        amenities: {
-            description: 'Comma-separated list of required amenity IDs',
-            example: 'pool,wifi,parking'
-        }
-    },
-    tags: ['accommodations', 'search']
-};
-
-/**
  * Accommodation search schema with OpenAPI metadata applied
  */
 export const AccommodationSearchSchemaWithMetadata = applyOpenApiMetadata(
     HttpAccommodationSearchSchema,
-    ACCOMMODATION_SEARCH_METADATA
+    createSearchMetadata({
+        entityName: 'Accommodation',
+        entityNameLower: 'accommodations',
+        exampleQuery: 'beachfront villa',
+        fields: {
+            type: {
+                description: 'Filter by accommodation type',
+                example: 'villa'
+            },
+            minPrice: {
+                description: 'Minimum price per night',
+                example: 100
+            },
+            maxPrice: {
+                description: 'Maximum price per night',
+                example: 500
+            },
+            destinationId: {
+                description: 'Filter by destination UUID',
+                example: '123e4567-e89b-12d3-a456-426614174000'
+            },
+            minGuests: {
+                description: 'Minimum guest capacity',
+                example: 2
+            },
+            maxGuests: {
+                description: 'Maximum guest capacity',
+                example: 8
+            },
+            minRating: {
+                description: 'Minimum average rating',
+                example: 4.0
+            },
+            amenities: {
+                description: 'Comma-separated list of required amenity IDs',
+                example: 'pool,wifi,parking'
+            }
+        }
+    })
 );
 
 // ============================================================================
@@ -326,41 +280,16 @@ export const AccommodationSummarySchema = AccommodationSchema.pick({
 // Type: Summary
 export type AccommodationSummary = z.infer<typeof AccommodationSummarySchema>;
 
-// ============================================================================
-// LEGACY COMPATIBILITY EXPORTS
-// ============================================================================
-
-// Legacy schema aliases for backward compatibility with .type.ts files
-export const AccommodationListInputSchema = AccommodationSearchSchema;
-export const AccommodationListOutputSchema = AccommodationSearchResultSchema;
-export const AccommodationSearchInputSchema = AccommodationSearchSchema;
-export const AccommodationSearchOutputSchema = AccommodationSearchResultSchema;
-export const AccommodationListWithTotalOutputSchema = AccommodationSearchResultSchema;
-
-// Additional legacy schemas that may be referenced
-export const AccommodationByDestinationOutputSchema = AccommodationSearchResultSchema;
-export const AccommodationByDestinationParamsSchema = AccommodationSearchSchema;
-export type AccommodationByDestinationParams = z.infer<
-    typeof AccommodationByDestinationParamsSchema
->;
-export const AccommodationListItemWithMiniRelationsSchema = AccommodationListItemSchema;
-export const AccommodationNormalizedSchema = AccommodationSchema;
-export const AccommodationStatsOutputSchema = z.object({
+// Essential schemas that are actually used
+export const AccommodationStatsSchema = z.object({
     total: z.number(),
     totalFeatured: z.number(),
     averagePrice: z.number().optional(),
     averageRating: z.number().optional(),
     totalByType: z.record(z.string(), z.number())
 });
-export type AccommodationStatsOutput = z.infer<typeof AccommodationStatsOutputSchema>;
-export const AccommodationStatsResponseSchema = AccommodationStatsOutputSchema;
-export const AccommodationStatsSchema = AccommodationStatsOutputSchema;
-export const AccommodationStatsParamsSchema = z.object({
-    destinationId: z.string().uuid().optional(),
-    dateFrom: z.date().optional(),
-    dateTo: z.date().optional()
-});
-export type AccommodationStatsParams = z.infer<typeof AccommodationStatsParamsSchema>;
+export type AccommodationStats = z.infer<typeof AccommodationStatsSchema>;
+
 export const AccommodationSummaryParamsSchema = z.object({
     id: z.string().uuid()
 });
