@@ -1,5 +1,4 @@
-import { z } from '@hono/zod-openapi';
-import { DestinationListItemSchema } from '@repo/schemas';
+import { DestinationListItemSchema, HttpDestinationSearchSchema } from '@repo/schemas';
 import { DestinationService } from '@repo/service-core';
 import { getActorFromContext } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
@@ -13,14 +12,7 @@ export const destinationListRoute = createListRoute({
     summary: 'List destinations',
     description: 'Returns a paginated list of destinations using the DestinationService',
     tags: ['Destinations'],
-    requestQuery: {
-        page: z.coerce.number().int().min(1).default(1),
-        pageSize: z.coerce.number().int().min(1).max(100).default(20),
-        sortBy: z.string().optional(),
-        sortOrder: z.enum(['asc', 'desc']).default('asc'),
-        q: z.string().optional(),
-        search: z.string().optional()
-    },
+    requestQuery: HttpDestinationSearchSchema.shape, // ✅ Using @repo/schemas
     responseSchema: DestinationListItemSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
