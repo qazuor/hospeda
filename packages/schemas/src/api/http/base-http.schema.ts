@@ -120,7 +120,8 @@ export const HttpQueryFields = {
     // Boolean fields (most common)
     isFeatured: () => z.coerce.boolean().optional().describe('Filter by featured status'),
     isActive: () => z.coerce.boolean().optional().describe('Filter by active status'),
-    isEmailVerified: () => z.coerce.boolean().optional().describe('Filter by email verification status'),
+    isEmailVerified: () =>
+        z.coerce.boolean().optional().describe('Filter by email verification status'),
     isPublished: () => z.coerce.boolean().optional().describe('Filter by published status'),
     isVerified: () => z.coerce.boolean().optional().describe('Filter by verified status'),
     isAvailable: () => z.coerce.boolean().optional().describe('Filter by availability status'),
@@ -130,33 +131,47 @@ export const HttpQueryFields = {
     isPublic: () => z.coerce.boolean().optional().describe('Filter by public/private status'),
     isBuiltin: () => z.coerce.boolean().optional().describe('Filter by builtin/custom status'),
     hasIcon: () => z.coerce.boolean().optional().describe('Filter by presence of icon'),
-    hasDescription: () => z.coerce.boolean().optional().describe('Filter by presence of description'),
+    hasDescription: () =>
+        z.coerce.boolean().optional().describe('Filter by presence of description'),
     hasMedia: () => z.coerce.boolean().optional().describe('Filter by presence of media'),
     hasExcerpt: () => z.coerce.boolean().optional().describe('Filter by presence of excerpt'),
     hasLocation: () => z.coerce.boolean().optional().describe('Filter by presence of location'),
-    hasClimateInfo: () => z.coerce.boolean().optional().describe('Filter by presence of climate information'),
-    hasCoordinates: () => z.coerce.boolean().optional().describe('Filter by presence of coordinates'),
+    hasClimateInfo: () =>
+        z.coerce.boolean().optional().describe('Filter by presence of climate information'),
+    hasCoordinates: () =>
+        z.coerce.boolean().optional().describe('Filter by presence of coordinates'),
     isPopular: () => z.coerce.boolean().optional().describe('Filter by popular tags'),
     isUnused: () => z.coerce.boolean().optional().describe('Filter by unused status'),
-    searchInDescription: () => z.coerce.boolean().default(true).optional().describe('Include description in search'),
+    searchInDescription: () =>
+        z.coerce.boolean().default(true).optional().describe('Include description in search'),
     fuzzySearch: () => z.coerce.boolean().default(true).optional().describe('Enable fuzzy search'),
-    groupByCategory: () => z.coerce.boolean().default(false).optional().describe('Group results by category'),
-    popularityThreshold: () => z.coerce.number().int().min(1).optional().describe('Popularity threshold filter'),
+    groupByCategory: () =>
+        z.coerce.boolean().default(false).optional().describe('Group results by category'),
+    popularityThreshold: () =>
+        z.coerce.number().int().min(1).optional().describe('Popularity threshold filter'),
     hasImages: () => z.coerce.boolean().optional().describe('Filter by presence of images'),
 
     // Date fields (very common)
     createdAfter: () => z.coerce.date().optional().describe('Filter items created after this date'),
-    createdBefore: () => z.coerce.date().optional().describe('Filter items created before this date'),
-    publishedAfter: () => z.coerce.date().optional().describe('Filter items published after this date'),
-    publishedBefore: () => z.coerce.date().optional().describe('Filter items published before this date'),
-    lastLoginAfter: () => z.coerce.date().optional().describe('Filter users who logged in after this date'),
-    lastLoginBefore: () => z.coerce.date().optional().describe('Filter users who logged in before this date'),
+    createdBefore: () =>
+        z.coerce.date().optional().describe('Filter items created before this date'),
+    publishedAfter: () =>
+        z.coerce.date().optional().describe('Filter items published after this date'),
+    publishedBefore: () =>
+        z.coerce.date().optional().describe('Filter items published before this date'),
+    lastLoginAfter: () =>
+        z.coerce.date().optional().describe('Filter users who logged in after this date'),
+    lastLoginBefore: () =>
+        z.coerce.date().optional().describe('Filter users who logged in before this date'),
     checkIn: () => z.coerce.date().optional().describe('Check-in date filter'),
     checkOut: () => z.coerce.date().optional().describe('Check-out date filter'),
-    startDateAfter: () => z.coerce.date().optional().describe('Filter events starting after this date'),
-    startDateBefore: () => z.coerce.date().optional().describe('Filter events starting before this date'),
+    startDateAfter: () =>
+        z.coerce.date().optional().describe('Filter events starting after this date'),
+    startDateBefore: () =>
+        z.coerce.date().optional().describe('Filter events starting before this date'),
     endDateAfter: () => z.coerce.date().optional().describe('Filter events ending after this date'),
-    endDateBefore: () => z.coerce.date().optional().describe('Filter events ending before this date'),
+    endDateBefore: () =>
+        z.coerce.date().optional().describe('Filter events ending before this date'),
 
     // Price fields (common in commerce entities)
     minPrice: () => z.coerce.number().min(0).optional().describe('Minimum price filter'),
@@ -172,54 +187,82 @@ export const HttpQueryFields = {
     // Capacity fields (accommodations, venues)
     minGuests: () => z.coerce.number().int().min(1).optional().describe('Minimum guest capacity'),
     maxGuests: () => z.coerce.number().int().min(1).optional().describe('Maximum guest capacity'),
-    minCapacity: () => z.coerce.number().int().min(1).optional().describe('Minimum capacity filter'),
-    maxCapacity: () => z.coerce.number().int().min(1).optional().describe('Maximum capacity filter'),
+    minCapacity: () =>
+        z.coerce.number().int().min(1).optional().describe('Minimum capacity filter'),
+    maxCapacity: () =>
+        z.coerce.number().int().min(1).optional().describe('Maximum capacity filter'),
     capacity: () => z.coerce.number().int().min(1).optional().describe('Exact capacity filter'),
     hasTickets: () => z.coerce.boolean().optional().describe('Filter by ticket availability'),
-    allowsRegistration: () => z.coerce.boolean().optional().describe('Filter by registration availability'),
-    minDuration: () => z.coerce.number().int().min(1).optional().describe('Minimum duration filter (minutes)'),
-    maxDuration: () => z.coerce.number().int().min(1).optional().describe('Maximum duration filter (minutes)'),
+    allowsRegistration: () =>
+        z.coerce.boolean().optional().describe('Filter by registration availability'),
+    minDuration: () =>
+        z.coerce.number().int().min(1).optional().describe('Minimum duration filter (minutes)'),
+    maxDuration: () =>
+        z.coerce.number().int().min(1).optional().describe('Maximum duration filter (minutes)'),
 
     // User-specific fields
     minBedrooms: () => z.coerce.number().int().min(0).optional().describe('Minimum bedroom count'),
     maxBedrooms: () => z.coerce.number().int().min(0).optional().describe('Maximum bedroom count'),
-    minBathrooms: () => z.coerce.number().int().min(0).optional().describe('Minimum bathroom count'),
-    maxBathrooms: () => z.coerce.number().int().min(0).optional().describe('Maximum bathroom count'),
+    minBathrooms: () =>
+        z.coerce.number().int().min(0).optional().describe('Minimum bathroom count'),
+    maxBathrooms: () =>
+        z.coerce.number().int().min(0).optional().describe('Maximum bathroom count'),
 
     // Usage/count fields (common in analytics)
-    minUsageCount: () => z.coerce.number().int().min(0).optional().describe('Minimum usage count filter'),
-    maxUsageCount: () => z.coerce.number().int().min(0).optional().describe('Maximum usage count filter'),
+    minUsageCount: () =>
+        z.coerce.number().int().min(0).optional().describe('Minimum usage count filter'),
+    maxUsageCount: () =>
+        z.coerce.number().int().min(0).optional().describe('Maximum usage count filter'),
     minViews: () => z.coerce.number().int().min(0).optional().describe('Minimum view count filter'),
     maxViews: () => z.coerce.number().int().min(0).optional().describe('Maximum view count filter'),
     minLikes: () => z.coerce.number().int().min(0).optional().describe('Minimum like count filter'),
     maxLikes: () => z.coerce.number().int().min(0).optional().describe('Maximum like count filter'),
-    minComments: () => z.coerce.number().int().min(0).optional().describe('Minimum comment count filter'),
-    maxComments: () => z.coerce.number().int().min(0).optional().describe('Maximum comment count filter'),
-    minFollowers: () => z.coerce.number().int().min(0).optional().describe('Minimum follower count filter'),
-    maxFollowers: () => z.coerce.number().int().min(0).optional().describe('Maximum follower count filter'),
-    minEventsCount: () => z.coerce.number().int().min(0).optional().describe('Minimum events count filter'),
-    minAccommodations: () => z.coerce.number().int().min(0).optional().describe('Minimum accommodation count filter'),
-    maxAccommodations: () => z.coerce.number().int().min(0).optional().describe('Maximum accommodation count filter'),
-    minAttractions: () => z.coerce.number().int().min(0).optional().describe('Minimum attraction count filter'),
-    maxAttractions: () => z.coerce.number().int().min(0).optional().describe('Maximum attraction count filter'),
-    minVisitorsPerYear: () => z.coerce.number().int().min(0).optional().describe('Minimum visitors per year filter'),
-    maxVisitorsPerYear: () => z.coerce.number().int().min(0).optional().describe('Maximum visitors per year filter'),
-    minAge: () => z.coerce.number().int().min(13).max(120).optional().describe('Minimum age filter'),
-    maxAge: () => z.coerce.number().int().min(13).max(120).optional().describe('Maximum age filter'),
-    hasActiveSubscription: () => z.coerce.boolean().optional().describe('Filter by active subscription status'),
-    hasAccommodations: () => z.coerce.boolean().optional().describe('Filter by accommodation ownership'),
+    minComments: () =>
+        z.coerce.number().int().min(0).optional().describe('Minimum comment count filter'),
+    maxComments: () =>
+        z.coerce.number().int().min(0).optional().describe('Maximum comment count filter'),
+    minFollowers: () =>
+        z.coerce.number().int().min(0).optional().describe('Minimum follower count filter'),
+    maxFollowers: () =>
+        z.coerce.number().int().min(0).optional().describe('Maximum follower count filter'),
+    minEventsCount: () =>
+        z.coerce.number().int().min(0).optional().describe('Minimum events count filter'),
+    minAccommodations: () =>
+        z.coerce.number().int().min(0).optional().describe('Minimum accommodation count filter'),
+    maxAccommodations: () =>
+        z.coerce.number().int().min(0).optional().describe('Maximum accommodation count filter'),
+    minAttractions: () =>
+        z.coerce.number().int().min(0).optional().describe('Minimum attraction count filter'),
+    maxAttractions: () =>
+        z.coerce.number().int().min(0).optional().describe('Maximum attraction count filter'),
+    minVisitorsPerYear: () =>
+        z.coerce.number().int().min(0).optional().describe('Minimum visitors per year filter'),
+    maxVisitorsPerYear: () =>
+        z.coerce.number().int().min(0).optional().describe('Maximum visitors per year filter'),
+    minAge: () =>
+        z.coerce.number().int().min(13).max(120).optional().describe('Minimum age filter'),
+    maxAge: () =>
+        z.coerce.number().int().min(13).max(120).optional().describe('Maximum age filter'),
+    hasActiveSubscription: () =>
+        z.coerce.boolean().optional().describe('Filter by active subscription status'),
+    hasAccommodations: () =>
+        z.coerce.boolean().optional().describe('Filter by accommodation ownership'),
     isOpen: () => z.coerce.boolean().optional().describe('Filter by open/closed status'),
-    acceptsReservations: () => z.coerce.boolean().optional().describe('Filter by reservation acceptance'),
-    
+    acceptsReservations: () =>
+        z.coerce.boolean().optional().describe('Filter by reservation acceptance'),
+
     // Payment-specific fields
     minAmount: () => z.coerce.number().min(0).optional().describe('Minimum amount filter'),
     maxAmount: () => z.coerce.number().min(0).optional().describe('Maximum amount filter'),
     amount: () => z.coerce.number().min(0).optional().describe('Exact amount filter'),
-    processedAfter: () => z.coerce.date().optional().describe('Filter payments processed after date'),
-    processedBefore: () => z.coerce.date().optional().describe('Filter payments processed before date'),
+    processedAfter: () =>
+        z.coerce.date().optional().describe('Filter payments processed after date'),
+    processedBefore: () =>
+        z.coerce.date().optional().describe('Filter payments processed before date'),
 
     // Geolocation fields (common in location-based entities)
     latitude: () => z.coerce.number().min(-90).max(90).optional().describe('Latitude coordinate'),
-    longitude: () => z.coerce.number().min(-180).max(180).optional().describe('Longitude coordinate'),
+    longitude: () =>
+        z.coerce.number().min(-180).max(180).optional().describe('Longitude coordinate'),
     radius: () => z.coerce.number().positive().optional().describe('Search radius in kilometers')
 };
