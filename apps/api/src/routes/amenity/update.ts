@@ -34,7 +34,7 @@ export const updateAmenityRoute = createCRUDRoute({
     tags: ['Amenities'],
     requestParams: { id: z.string().uuid() },
     requestBody: amenityUpdateBodySchema,
-    // TODO [08fa6a72-e3c9-4441-8922-f7206a5e002e]: Replace with AmenityDetail schema when available
+    // TODO [385dd198-534a-4bba-bfae-a8ff2ea15fb4]: Replace with AmenityDetail schema when available
     responseSchema: z.object({ id: z.string().uuid() }).partial(),
     handler: async (ctx: Context, params, body) => {
         const actor = getActorFromContext(ctx);

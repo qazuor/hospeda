@@ -16,7 +16,7 @@ export const amenityGetByIdRoute = createCRUDRoute({
     requestParams: {
         id: z.string().uuid()
     },
-    // TODO [9947f822-c031-4baa-9c3a-c8b6d3d3ce19]: Replace with AmenityDetail schema when available in @repo/schemas
+    // TODO [9f9b7059-df3c-4a22-b5be-24922520282b]: Replace with AmenityDetail schema when available in @repo/schemas
     responseSchema: z.object({ id: z.string().uuid() }).partial(),
     handler: async (ctx: Context, params) => {
         const actor = getActorFromContext(ctx);
