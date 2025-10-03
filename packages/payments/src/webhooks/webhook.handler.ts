@@ -217,7 +217,7 @@ export class WebhookHandler {
                 'Handling subscription notification'
             );
 
-            // TODO [72e2a7a8-88cb-48b9-9586-23906f3babf1]: Implement subscription notification handling
+            // TODO [916e0167-42cc-498b-ab5d-77100138fd26]: Implement subscription notification handling
             // This would involve fetching the subscription from Mercado Pago
             // and updating our local subscription record
 
@@ -263,7 +263,7 @@ export class WebhookHandler {
 
             // If this is a subscription payment, activate the subscription
             if (payment.type === 'subscription') {
-                // TODO [c455a983-65e1-4da4-8901-f2355d30c1e4]: Activate user features based on payment plan
+                // TODO [a238264a-9940-4bb9-8a68-c2a0ef14589e]: Activate user features based on payment plan
                 this.logger.info(
                     {
                         paymentId: paymentResult.paymentId,
@@ -276,7 +276,7 @@ export class WebhookHandler {
 
             // If this is a one-time payment, activate the features
             if (payment.type === 'one_time') {
-                // TODO [6d1497bd-631c-4840-82d0-23ef800f0064]: Activate user features based on payment plan
+                // TODO [1e22b515-1478-429c-b2ac-884a83bd25a6]: Activate user features based on payment plan
                 this.logger.info(
                     {
                         paymentId: paymentResult.paymentId,
@@ -287,9 +287,9 @@ export class WebhookHandler {
                 );
             }
 
-            // TODO [1d3cfe61-7190-4ad9-a2c0-76e4ff4a60f5]: Send confirmation email to user
-            // TODO [5f9dcece-f5f9-4161-bbcf-a2ef39fb98f1]: Update user permissions/features
-            // TODO [50d7a642-fdda-48a6-95ee-7b054f5c638d]: Log analytics event
+            // TODO [fe08e3da-168d-4ef3-9ba6-32d0152ff9a5]: Send confirmation email to user
+            // TODO [bab4f9df-3c9d-499a-9db3-a391a65d010e]: Update user permissions/features
+            // TODO [d54c8796-77ac-43fb-a11e-9831c8732e4e]: Log analytics event
         } catch (error) {
             this.logger.error(
                 {
