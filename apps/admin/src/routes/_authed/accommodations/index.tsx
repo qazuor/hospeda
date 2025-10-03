@@ -7,7 +7,7 @@ import {
 } from '@/features/accommodations/config/accommodations.config';
 import { createFileRoute } from '@tanstack/react-router';
 
-// HACK [09ce144b-12fc-4a8c-a17b-20b7e315d901]: Prevent TypeScript error for TanStack Router auto-generated import
+// HACK [761005c9-4b1e-44f8-bf67-6093ec391abd]: Prevent TypeScript error for TanStack Router auto-generated import
 createFileRoute;
 
 export const Route = AccommodationsRoute;
