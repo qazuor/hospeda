@@ -268,7 +268,7 @@ export class AccommodationModel extends BaseModel<Accommodation> {
             {
                 reviewsCount: stats.reviewsCount,
                 averageRating: stats.averageRating
-                // TODO [f6fe35e2-6167-4be4-9268-e46c0a42673f]: rating needs to be handled separately as it's not part of the main accommodation entity
+                // TODO [d78aa8c7-506c-430c-88f3-c9d0cfabf345]: rating needs to be handled separately as it's not part of the main accommodation entity
                 // rating: stats.rating
             }
         );

@@ -290,7 +290,7 @@ describe('BaseModel', () => {
         expect(result).toBe(1);
     });
 
-    // TODO [5bcfefdf-6887-4a23-953d-904d4e7c703f]: Investigate why this test fails despite the mock being logically correct.
+    // TODO [91b99338-ac42-4718-86ae-d5bf67aac588]: Investigate why this test fails despite the mock being logically correct.
     // The mock for db.select().from()... seems to be misbehaving with vitest's vi.fn().
     // it('findAll with pagination returns paginated items and total', async () => {
     //     let callCount = 0;
