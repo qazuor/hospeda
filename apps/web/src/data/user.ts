@@ -2,7 +2,7 @@ import type { UserIdType } from '@repo/schemas';
 import { RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 
-// TODO [65f6d873-5eb5-4c5d-8671-639ffabe73d7]: Temporary implementation until we move createPublicUser to @repo/schemas
+// TODO [5273dbee-26fc-465c-817e-e174678685e0]: Temporary implementation until we move createPublicUser to @repo/schemas
 const createPublicUser = () => ({
     id: '',
     email: 'guest@example.com',
