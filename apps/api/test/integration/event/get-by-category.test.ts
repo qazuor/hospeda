@@ -13,7 +13,7 @@ describe('GET /events/category/:category', () => {
     });
 
     it('returns 200 for valid category and accepts pagination', async () => {
-        const res = await app.request(`${base}/category/CONCERT?page=1&limit=10`);
+        const res = await app.request(`${base}/category/CONCERT?page=1&pageSize=10`);
         expect([200, 400, 404]).toContain(res.status);
     });
 });

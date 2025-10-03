@@ -14,7 +14,7 @@ describe('Event - Performance and rate limit', () => {
 
     it('handles multiple quick requests without crashing', async () => {
         const requests = Array.from({ length: 5 }).map((_, i) =>
-            app.request(`${base}?page=${i + 1}&limit=1`)
+            app.request(`${base}?page=${i + 1}&pageSize=1`)
         );
         const responses = await Promise.all(requests);
         for (const res of responses) {
