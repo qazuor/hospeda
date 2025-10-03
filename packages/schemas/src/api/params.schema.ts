@@ -91,19 +91,20 @@ export type IdOrSlugParams = z.infer<typeof IdOrSlugParamsSchema>;
 // ----------------------------------------------------------------------------
 
 /**
- * Schema for optional limit parameter
+ * With pageSize params schema for pagination
  * Can be composed with other param schemas for queries like "top-rated".
  */
-export const WithLimitParamsSchema = z.object({
-    limit: z
+export const WithPageSizeParamsSchema = z.object({
+    pageSize: z
         .number({
-            message: 'zodError.params.limit.invalidType'
+            message: 'zodError.params.pageSize.invalidType'
         })
-        .int({ message: 'zodError.params.limit.int' })
-        .min(1, { message: 'zodError.params.limit.min' })
-        .max(100, { message: 'zodError.params.limit.max' })
+        .int({ message: 'zodError.params.pageSize.int' })
+        .min(1, { message: 'zodError.params.pageSize.min' })
+        .max(100, { message: 'zodError.params.pageSize.max' })
         .optional()
 });
+export type WithPageSizeParams = z.infer<typeof WithPageSizeParamsSchema>;
 
 /**
  * Schema for ownerId parameter (User relationship)

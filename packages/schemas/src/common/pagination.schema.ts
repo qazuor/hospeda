@@ -10,12 +10,8 @@ export const PaginationSchema = z.object({
 export type PaginationType = z.infer<typeof PaginationSchema>;
 
 /**
- * Legacy pagination params schema (for backward compatibility with tests)
- * Uses limit/offset pattern instead of page/pageSize
- */
-
-/**
- * Cursor pagination params schema
+ * Cursor pagination params schema (for cursor-based pagination)
+ * Uses limit/cursor pattern for infinite scroll scenarios
  */
 export const CursorPaginationParamsSchema = z.object({
     limit: z.number().int().positive().max(100).default(10),
