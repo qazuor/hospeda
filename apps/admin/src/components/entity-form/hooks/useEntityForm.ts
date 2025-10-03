@@ -65,7 +65,7 @@ export const useEntityForm = () => {
                 if (!hasPermission) return false;
             }
 
-            // TODO [c38ec98e-273b-49c3-91af-011bb3dc96b3]: Check section visibility conditions (visibleIf)
+            // TODO [029c627e-837c-4029-aca8-d7f930051e51]: Check section visibility conditions (visibleIf)
             // For now, show all permitted sections
             return true;
         });
@@ -81,7 +81,7 @@ export const useEntityForm = () => {
                 if (!hasPermission) return false;
             }
 
-            // TODO [1315f5d0-d88c-4666-9918-12fb8415c1ff]: Check section editability conditions (editableIf)
+            // TODO [0de46953-1f05-48af-84d6-a09f4eb2fdf9]: Check section editability conditions (editableIf)
             // For now, show all permitted sections
             return true;
         });

@@ -17,7 +17,7 @@ export type { TabConfig, TabsLayoutProps } from './TabsLayout';
 export { AccordionLayout } from './AccordionLayout';
 export type { AccordionLayoutProps, AccordionSectionConfig } from './AccordionLayout';
 
-// TODO [6a3d260c-7fff-4bd8-89b4-82666d6286dc]: Implement additional layout types
+// TODO [e542525d-f745-4c05-b261-a1b01ad932e6]: Implement additional layout types
 // export { SplitLayout } from './SplitLayout';
 // export type { SplitLayoutProps } from './SplitLayout';
 
