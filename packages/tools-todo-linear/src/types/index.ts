@@ -124,6 +124,10 @@ export type TodoLinearConfig = {
     excludePatterns: string[];
     /** Project root directory */
     projectRoot: string;
+    /** IDE label name (default: 'From IDE') */
+    ideLabelName: string;
+    /** IDE link template for opening files (default: 'vscode://file//{filePath}:{lineNumber}') */
+    ideLinkTemplate: string;
 };
 
 /**

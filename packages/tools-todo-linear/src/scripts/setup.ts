@@ -15,6 +15,8 @@ interface SetupConfig {
     TODO_LINEAR_API_KEY: string;
     TODO_LINEAR_TEAM_ID: string;
     TODO_LINEAR_DEFAULT_USER_EMAIL: string;
+    TODO_LINEAR_IDE_LABEL_NAME?: string;
+    TODO_LINEAR_IDE_LINK_TEMPLATE?: string;
 }
 
 async function main() {
@@ -84,11 +86,37 @@ async function promptForConfig(): Promise<SetupConfig> {
             throw new Error('Default user email is required');
         }
 
-        return {
+        // IDE Label Name (optional)
+        logger.info('\n4. IDE Label Name (optional)');
+        logger.info('   Label name to add to issues created from your IDE (default: "From IDE")');
+        const TODO_LINEAR_IDE_LABEL_NAME = await question(
+            chalk.white('   Enter IDE label name (press Enter for default): ')
+        );
+
+        // IDE Link Template (optional)
+        logger.info('\n5. IDE Link Template (optional)');
+        logger.info('   Template for creating links to open files in your IDE');
+        logger.info('   Use {filePath} and {lineNumber} as placeholders');
+        logger.info('   Default: vscode://file//{filePath}:{lineNumber}');
+        const TODO_LINEAR_IDE_LINK_TEMPLATE = await question(
+            chalk.white('   Enter IDE link template (press Enter for default): ')
+        );
+
+        const config: SetupConfig = {
             TODO_LINEAR_API_KEY: TODO_LINEAR_API_KEY.trim(),
             TODO_LINEAR_TEAM_ID: TODO_LINEAR_TEAM_ID.trim(),
             TODO_LINEAR_DEFAULT_USER_EMAIL: TODO_LINEAR_DEFAULT_USER_EMAIL.trim()
         };
+
+        if (TODO_LINEAR_IDE_LABEL_NAME.trim()) {
+            config.TODO_LINEAR_IDE_LABEL_NAME = TODO_LINEAR_IDE_LABEL_NAME.trim();
+        }
+
+        if (TODO_LINEAR_IDE_LINK_TEMPLATE.trim()) {
+            config.TODO_LINEAR_IDE_LINK_TEMPLATE = TODO_LINEAR_IDE_LINK_TEMPLATE.trim();
+        }
+
+        return config;
     } finally {
         rl.close();
     }
@@ -129,6 +157,14 @@ async function saveConfig(projectRoot: string, config: SetupConfig) {
     existingVars.set('TODO_LINEAR_API_KEY', config.TODO_LINEAR_API_KEY);
     existingVars.set('TODO_LINEAR_TEAM_ID', config.TODO_LINEAR_TEAM_ID);
     existingVars.set('TODO_LINEAR_DEFAULT_USER_EMAIL', config.TODO_LINEAR_DEFAULT_USER_EMAIL);
+    
+    if (config.TODO_LINEAR_IDE_LABEL_NAME) {
+        existingVars.set('TODO_LINEAR_IDE_LABEL_NAME', config.TODO_LINEAR_IDE_LABEL_NAME);
+    }
+    
+    if (config.TODO_LINEAR_IDE_LINK_TEMPLATE) {
+        existingVars.set('TODO_LINEAR_IDE_LINK_TEMPLATE', config.TODO_LINEAR_IDE_LINK_TEMPLATE);
+    }
 
     // Build new content
     const newLines: string[] = [];
@@ -144,13 +180,24 @@ async function saveConfig(projectRoot: string, config: SetupConfig) {
     newLines.push(`TODO_LINEAR_API_KEY=${config.TODO_LINEAR_API_KEY}`);
     newLines.push(`TODO_LINEAR_TEAM_ID=${config.TODO_LINEAR_TEAM_ID}`);
     newLines.push(`TODO_LINEAR_DEFAULT_USER_EMAIL=${config.TODO_LINEAR_DEFAULT_USER_EMAIL}`);
+    
+    if (config.TODO_LINEAR_IDE_LABEL_NAME) {
+        newLines.push(`TODO_LINEAR_IDE_LABEL_NAME=${config.TODO_LINEAR_IDE_LABEL_NAME}`);
+    }
+    
+    if (config.TODO_LINEAR_IDE_LINK_TEMPLATE) {
+        newLines.push(`TODO_LINEAR_IDE_LINK_TEMPLATE=${config.TODO_LINEAR_IDE_LINK_TEMPLATE}`);
+    }
+    
     newLines.push('');
 
     // Add other existing variables (excluding the ones we just set)
     const todoLinearKeys = new Set([
         'TODO_LINEAR_API_KEY',
         'TODO_LINEAR_TEAM_ID',
-        'TODO_LINEAR_DEFAULT_USER_EMAIL'
+        'TODO_LINEAR_DEFAULT_USER_EMAIL',
+        'TODO_LINEAR_IDE_LABEL_NAME',
+        'TODO_LINEAR_IDE_LINK_TEMPLATE'
     ]);
     for (const [key, value] of existingVars) {
         if (!todoLinearKeys.has(key)) {
@@ -169,6 +216,18 @@ async function saveConfig(projectRoot: string, config: SetupConfig) {
     logger.info(`   Linear API Key: ${config.TODO_LINEAR_API_KEY.substring(0, 8)}...`);
     logger.info(`   Linear Team ID: ${config.TODO_LINEAR_TEAM_ID}`);
     logger.info(`   Default User Email: ${config.TODO_LINEAR_DEFAULT_USER_EMAIL}`);
+    
+    if (config.TODO_LINEAR_IDE_LABEL_NAME) {
+        logger.info(`   IDE Label Name: ${config.TODO_LINEAR_IDE_LABEL_NAME}`);
+    } else {
+        logger.info('   IDE Label Name: From IDE (default)');
+    }
+    
+    if (config.TODO_LINEAR_IDE_LINK_TEMPLATE) {
+        logger.info(`   IDE Link Template: ${config.TODO_LINEAR_IDE_LINK_TEMPLATE}`);
+    } else {
+        logger.info('   IDE Link Template: vscode://file//{filePath}:{lineNumber} (default)');
+    }
 }
 
 // Run if called directly

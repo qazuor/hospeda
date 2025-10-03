@@ -162,14 +162,14 @@ export class TodoLinearClient {
     }
 
     /**
-     * Builds issue description with file location and Cursor link
+     * Builds issue description with file location and IDE link
      * Content above the separator is managed by the tool, content below is preserved for user edits
      */
     private buildIssueDescription(comment: ParsedComment): string {
         const relativePath = this.makeRelativePath(comment.filePath);
-        const cursorLink = this.createCursorLink(comment.filePath, comment.line);
+        const ideLink = this.createIDELink(comment.filePath, comment.line);
 
-        let description = `Found in: [${relativePath}:${comment.line}](${cursorLink})\n\n`;
+        let description = `Found in: [${relativePath}:${comment.line}](${ideLink})\n\n`;
 
         if (comment.description) {
             description += `${comment.description}\n\n`;
@@ -231,13 +231,17 @@ export class TodoLinearClient {
     }
 
     /**
-     * Creates a Cursor link for opening files
+     * Creates an IDE link for opening files
      */
-    private createCursorLink(filePath: string, line: number): string {
+    private createIDELink(filePath: string, line: number): string {
         const absolutePath = filePath.startsWith('/')
             ? filePath
             : resolve(this.config.projectRoot, filePath);
-        return `hospeda://open?file=${absolutePath}&line=${line}&col=1`;
+        
+        // Use configurable template
+        return this.config.ideLinkTemplate
+            .replace('{filePath}', absolutePath)
+            .replace('{lineNumber}', line.toString());
     }
 
     /**
@@ -256,10 +260,10 @@ export class TodoLinearClient {
     private async resolveLabels(comment: ParsedComment): Promise<string[]> {
         const labels: string[] = [];
 
-        // Add "From Cursor" label
-        const cursorLabelId = await this.getLabelId('From Cursor');
-        if (cursorLabelId) {
-            labels.push(cursorLabelId);
+        // Add IDE label
+        const ideLabelId = await this.getLabelId(this.config.ideLabelName);
+        if (ideLabelId) {
+            labels.push(ideLabelId);
         }
 
         // Add location-based labels
@@ -391,7 +395,7 @@ export class TodoLinearClient {
      */
     private generateLabelColor(name: string): string {
         const colors = {
-            'from cursor': '#4F46E5',
+            'from ide': '#4F46E5',
             todo: '#EF4444',
             hack: '#F59E0B',
             debug: '#10B981',
