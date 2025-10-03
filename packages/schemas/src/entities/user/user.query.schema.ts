@@ -1,5 +1,9 @@
 import { z } from 'zod';
-import { HttpPaginationSchema, HttpSortingSchema, HttpQueryFields } from '../../api/http/base-http.schema.js';
+import {
+    HttpPaginationSchema,
+    HttpQueryFields,
+    HttpSortingSchema
+} from '../../api/http/base-http.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
 import { RoleEnumSchema } from '../../enums/index.js';
 import { type OpenApiSchemaMetadata, applyOpenApiMetadata } from '../../utils/openapi.utils.js';
