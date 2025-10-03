@@ -71,7 +71,7 @@ export const getHomeData = async ({
     // For home “FeaturedAccommodations”: use top-rated already filtered and ordered
     const accommodationService = new AccommodationService({});
     const topRatedRes = await accommodationService.getTopRated(actor, {
-        limit: 9
+        pageSize: 9
     });
     const accommodations: Accommodation[] = topRatedRes.data?.accommodations ?? [];
 
