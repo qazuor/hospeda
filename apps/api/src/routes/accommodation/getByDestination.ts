@@ -4,7 +4,7 @@
  * ✅ Migrated to use createSimpleRoute (Route Factory)
  */
 
-import { AccommodationByDestinationOutputSchema } from '@repo/schemas';
+import { AccommodationListWrapperSchema } from '@repo/schemas';
 import { AccommodationService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { createGuestActor } from '../../utils/actor';
@@ -56,7 +56,7 @@ export const getByDestinationRoute = createSimpleRoute({
     summary: 'Get accommodations by destination',
     description: 'Retrieve all accommodations for a specific destination',
     tags: ['Accommodations'],
-    responseSchema: AccommodationByDestinationOutputSchema,
+    responseSchema: AccommodationListWrapperSchema,
     handler: getByDestinationHandler
 });
 
