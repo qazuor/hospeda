@@ -14,7 +14,7 @@ describe('GET /events/organizer/:organizerId', () => {
 
     it('returns 200 for valid organizer and accepts pagination', async () => {
         const res = await app.request(
-            `${base}/organizer/00000000-0000-0000-0000-000000000003?page=1&limit=10`
+            `${base}/organizer/00000000-0000-0000-0000-000000000003?page=1&pageSize=10`
         );
         expect([200, 400, 404]).toContain(res.status);
     });
