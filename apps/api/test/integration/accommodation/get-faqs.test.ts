@@ -141,7 +141,7 @@ describe('GET /accommodations/:id/faqs', () => {
 
     describe('Query Parameters and Filtering', () => {
         it('should handle pagination parameters', async () => {
-            const response = await app.request(`${baseUrl}/${validUuid}/faqs?page=1&limit=10`, {
+            const response = await app.request(`${baseUrl}/${validUuid}/faqs?page=1&pageSize=10`, {
                 headers: {
                     'user-agent': 'vitest',
                     Accept: 'application/json'
@@ -203,8 +203,8 @@ describe('GET /accommodations/:id/faqs', () => {
         it('should validate invalid query parameters', async () => {
             const invalidQueries = [
                 'page=-1',
-                'limit=0',
-                'limit=1001', // Assuming max limit
+                'pageSize=0',
+                'pageSize=1001', // Assuming max pageSize
                 'sortOrder=INVALID'
             ];
 
