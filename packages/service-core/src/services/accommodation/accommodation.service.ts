@@ -28,9 +28,9 @@ import {
     type AccommodationIdType,
     type AccommodationListWrapper,
     type AccommodationSearchInput,
-    AccommodationSearchInputSchema,
     type AccommodationSearchResult,
-    type AccommodationStatsOutput,
+    AccommodationSearchSchema,
+    type AccommodationStats,
     type AccommodationStatsWrapper,
     type AccommodationSummaryParams,
     AccommodationSummaryParamsSchema,
@@ -79,7 +79,7 @@ export class AccommodationService extends BaseCrudService<
     AccommodationModel,
     typeof AccommodationCreateInputSchema,
     typeof AccommodationUpdateInputSchema,
-    typeof AccommodationSearchInputSchema
+    typeof AccommodationSearchSchema
 > {
     static readonly ENTITY_NAME = 'accommodation';
     protected readonly entityName = AccommodationService.ENTITY_NAME;
@@ -103,7 +103,7 @@ export class AccommodationService extends BaseCrudService<
     /**
      * @inheritdoc
      */
-    protected readonly searchSchema = AccommodationSearchInputSchema;
+    protected readonly searchSchema = AccommodationSearchSchema;
 
     /**
      * @inheritdoc
@@ -369,7 +369,7 @@ export class AccommodationService extends BaseCrudService<
      * Returns top-rated accommodations, optionally filtered by destination, type, and featured flag.
      * The output is a compact summary tailored for cards/lists and includes joined amenities/features only when related.
      * @param actor - The actor performing the action
-     * @param params - Input with optional limit, destinationId, type and onlyFeatured
+     * @param params - Input with optional pageSize, destinationId, type and onlyFeatured
      * @returns List of summarized accommodations ordered by rating
      */
     public async getTopRated(
@@ -383,7 +383,7 @@ export class AccommodationService extends BaseCrudService<
             execute: async (validated, actor) => {
                 this._canList(actor);
                 const items = await this.model.findTopRated({
-                    limit: validated.limit,
+                    limit: validated.pageSize,
                     destinationId: validated.destinationId
                     // type: validated.type, // Field not available in schema
                     // onlyFeatured: validated.onlyFeatured // Field not available in schema
@@ -488,7 +488,7 @@ export class AccommodationService extends BaseCrudService<
                 }
 
                 // Create the stats object following AccommodationStatsSchema format
-                const stats: AccommodationStatsOutput = {
+                const stats: AccommodationStats = {
                     total: 1, // Single accommodation
                     totalFeatured: result.data.isFeatured ? 1 : 0,
                     averagePrice: result.data.price?.price,
@@ -520,9 +520,15 @@ export class AccommodationService extends BaseCrudService<
             schema: AccommodationByDestinationParamsSchema,
             execute: async (validated, actor) => {
                 this._canList(actor);
-                const result = await this.model.findAll({
-                    destinationId: validated.destinationId
-                });
+                const result = await this.model.findAll(
+                    {
+                        destinationId: validated.destinationId
+                    },
+                    {
+                        page: validated.page,
+                        pageSize: validated.pageSize
+                    }
+                );
 
                 const accommodations = Array.isArray(result.items)
                     ? result.items.map(
@@ -562,7 +568,7 @@ export class AccommodationService extends BaseCrudService<
                 }
 
                 const items = await this.model.findTopRated({
-                    limit: validated.limit,
+                    limit: validated.pageSize,
                     destinationId: validated.destinationId
                 });
 
