@@ -5,6 +5,6 @@ import { describe, it } from 'vitest';
  */
 describe('AmenityService normalizers', () => {
     it('should test normalizer logic', () => {
-        // TODO [34f46f1c-9c57-4bf8-8be3-61db34b4c9e1]: Test logic
+        // TODO [6d584b88-b443-4dd7-ac14-5843ab022c28]: Test logic
     });
 });
