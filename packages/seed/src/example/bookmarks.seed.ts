@@ -15,7 +15,7 @@ const bookmarkNormalizer = (data: Record<string, unknown>) => {
         id?: string;
         [key: string]: unknown;
     };
-    // HACK [380669cb-4ab3-4ef6-be3e-92de306a75b6]: to dont modify all jsons
+    // HACK [c771c17a-bd54-4f93-8e01-57ef9a5a0d7a]: to dont modify all jsons
     // biome-ignore lint/performance/noDelete: <explanation>
     delete cleanData.lifecycleState;
     return cleanData;
@@ -74,7 +74,7 @@ const preProcessBookmark = async (item: unknown, context: SeedContext) => {
         if (realUserId) {
             // We need to get the user data to create the actor
             // For now, we'll use a basic actor structure
-            // TODO [30b45d00-89c4-4994-8f63-47bbb6e3a7ad]: Get full user data from database if needed
+            // TODO [400416f5-209d-4408-993c-29bd6a819627]: Get full user data from database if needed
             context.actor = {
                 id: realUserId,
                 role: RoleEnum.SUPER_ADMIN, // Default role, should be updated with actual user role
