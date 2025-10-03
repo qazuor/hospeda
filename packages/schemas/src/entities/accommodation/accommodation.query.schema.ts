@@ -1,9 +1,13 @@
 import { z } from 'zod';
-import { HttpPaginationSchema, HttpSortingSchema, HttpQueryFields } from '../../api/http/base-http.schema.js';
+import {
+    HttpPaginationSchema,
+    HttpQueryFields,
+    HttpSortingSchema
+} from '../../api/http/base-http.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
 import { AccommodationTypeEnumSchema, PriceCurrencyEnumSchema } from '../../enums/index.js';
-import { applyOpenApiMetadata } from '../../utils/openapi.utils.js';
 import { createSearchMetadata } from '../../utils/openapi-metadata.factory.js';
+import { applyOpenApiMetadata } from '../../utils/openapi.utils.js';
 import { AccommodationSchema } from './accommodation.schema.js';
 
 /**
@@ -303,10 +307,19 @@ export type AccommodationSummaryWrapper = z.infer<typeof AccommodationSummaryWra
 
 export const AccommodationTopRatedOutputSchema = AccommodationSearchResultSchema;
 export const AccommodationTopRatedParamsSchema = z.object({
-    limit: z.number().int().min(1).max(100).default(10),
+    pageSize: z.number().int().min(1).max(100).default(10),
     destinationId: z.string().uuid().optional()
 });
 export type AccommodationTopRatedParams = z.infer<typeof AccommodationTopRatedParamsSchema>;
+
+export const AccommodationByDestinationParamsSchema = z.object({
+    destinationId: z.string().uuid(),
+    page: z.number().int().min(1).optional(),
+    pageSize: z.number().int().min(1).max(100).optional()
+});
+export type AccommodationByDestinationParams = z.infer<
+    typeof AccommodationByDestinationParamsSchema
+>;
 
 // Mini schemas for related entities (these should ideally be imported from their respective files)
 export const DestinationMiniSchema = z.object({
