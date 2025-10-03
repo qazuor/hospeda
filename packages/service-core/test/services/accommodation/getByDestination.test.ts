@@ -78,7 +78,10 @@ describe('AccommodationService.getByDestination', () => {
         expect(result.data).toEqual({
             accommodations: accommodations
         });
-        expect(modelMock.findAll).toHaveBeenCalledWith({ destinationId });
+        expect(modelMock.findAll).toHaveBeenCalledWith(
+            { destinationId },
+            { page: 1, pageSize: 10 }
+        );
         expect(permissionHelpers.checkCanList).toHaveBeenCalledWith(actor);
     });
 
@@ -104,7 +107,10 @@ describe('AccommodationService.getByDestination', () => {
             destinationId
         });
         expectInternalError(result);
-        expect(modelMock.findAll).toHaveBeenCalledWith({ destinationId });
+        expect(modelMock.findAll).toHaveBeenCalledWith(
+            { destinationId },
+            { page: 1, pageSize: 10 }
+        );
     });
 
     it('should return VALIDATION_ERROR for invalid input', async () => {

@@ -45,7 +45,7 @@ describe('AccommodationService.getTopRated', () => {
         (model.findTopRated as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(items);
 
         // Act
-        const result = await service.getTopRated(actor, { limit: 5 });
+        const result = await service.getTopRated(actor, { pageSize: 5 });
 
         // Assert
         expect(result.error).toBeUndefined();
@@ -71,7 +71,7 @@ describe('AccommodationService.getTopRated', () => {
         });
 
         // Act
-        const result = await service.getTopRated(actor, { limit: 3 });
+        const result = await service.getTopRated(actor, { pageSize: 3 });
 
         // Assert
         expect(result.error).toBeDefined();
@@ -79,12 +79,12 @@ describe('AccommodationService.getTopRated', () => {
         expect(result.data).toBeUndefined();
     });
 
-    it('validates input (limit must be >=1)', async () => {
+    it('validates input (pageSize must be >=1)', async () => {
         // Arrange
         const actor = createListActor();
 
         // Act
-        const result = await service.getTopRated(actor, { limit: 0 as unknown as number });
+        const result = await service.getTopRated(actor, { pageSize: 0 as unknown as number });
 
         // Assert
         expect(result.error).toBeDefined();
@@ -99,7 +99,7 @@ describe('AccommodationService.getTopRated', () => {
         );
 
         // Act
-        const result = await service.getTopRated(actor, { limit: 10 });
+        const result = await service.getTopRated(actor, { pageSize: 10 });
 
         // Assert
         expect(result.error).toBeDefined();
