@@ -18,6 +18,7 @@ const DEFAULT_EXCLUDE_PATTERNS = [
     '**/node_modules/**',
     '**/dist/**',
     '**/build/**',
+    '**/out/**',
     '**/.git/**',
     '**/coverage/**',
     '**/*.min.js',

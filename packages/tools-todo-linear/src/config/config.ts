@@ -18,6 +18,8 @@ export function loadConfig(projectRoot: string): TodoLinearConfig {
     const linearApiKey = process.env.TODO_LINEAR_API_KEY;
     const linearTeamId = process.env.TODO_LINEAR_TEAM_ID;
     const defaultUserEmail = process.env.TODO_LINEAR_DEFAULT_USER_EMAIL;
+    const ideLabelName = process.env.TODO_LINEAR_IDE_LABEL_NAME || 'From IDE';
+    const ideLinkTemplate = process.env.TODO_LINEAR_IDE_LINK_TEMPLATE || 'vscode://file//{filePath}:{lineNumber}';
 
     if (!linearApiKey) {
         throw new Error(
@@ -46,7 +48,9 @@ export function loadConfig(projectRoot: string): TodoLinearConfig {
         defaultUserEmail,
         includePatterns: [], // Will use defaults in FileScanner
         excludePatterns: [], // Will use defaults in FileScanner
-        projectRoot
+        projectRoot,
+        ideLabelName,
+        ideLinkTemplate
     };
 }
 
