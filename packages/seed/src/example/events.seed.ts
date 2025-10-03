@@ -72,7 +72,7 @@ const preProcessEvent = async (item: unknown, context: SeedContext) => {
         if (realAuthorId) {
             // We need to get the user data to create the actor
             // For now, we'll use a basic actor structure
-            // TODO [c84ff438-2aff-4be2-abeb-c951d95f84f8]: Get full user data from database if needed
+            // TODO [1835e313-9959-45fc-8745-f5e2358390bc]: Get full user data from database if needed
             context.actor = {
                 id: realAuthorId,
                 role: RoleEnum.SUPER_ADMIN, // Default role, should be updated with actual user role
