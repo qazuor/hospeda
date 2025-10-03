@@ -56,7 +56,7 @@ export const EntityFormProvider: React.FC<EntityFormProviderProps> = ({
                 setDirtyFields({});
             } catch (error) {
                 console.error('Form save error:', error);
-                // TODO [3832ed9c-6912-4b73-ad35-9b33964ea20b]: Handle save errors properly
+                // TODO [415e697e-d781-4607-aaee-c4ac33a1274d]: Handle save errors properly
             } finally {
                 setIsSaving(false);
             }
@@ -147,7 +147,7 @@ export const EntityFormProvider: React.FC<EntityFormProviderProps> = ({
                     }
 
                     // Additional field-specific validations can be added here
-                    // TODO [8b7679d7-b418-4e49-9bf6-32abe66f29ef]: Implement Zod schema validation for more complex rules
+                    // TODO [971163d7-f8f9-415f-ba4a-7012f596e75e]: Implement Zod schema validation for more complex rules
                 }
             }
 
@@ -195,7 +195,7 @@ export const EntityFormProvider: React.FC<EntityFormProviderProps> = ({
             setErrors({});
         } catch (error) {
             console.error('Form save and publish error:', error);
-            // TODO [a94ad5b5-aacd-4abb-a6f8-74ff9b387361]: Handle save errors properly
+            // TODO [f6fb8c53-c85b-4320-824e-bd228ed129a0]: Handle save errors properly
         } finally {
             setIsSaving(false);
         }
@@ -217,7 +217,7 @@ export const EntityFormProvider: React.FC<EntityFormProviderProps> = ({
     const validateField = React.useCallback(
         async (fieldId: string): Promise<string | undefined> => {
             try {
-                // TODO [9bb3c263-1d2c-4df8-a649-9a7feb259975]: Implement field validation using Zod schemas
+                // TODO [40021f50-1cb5-4311-b52c-4826d308538f]: Implement field validation using Zod schemas
                 // This would extract the field schema from the main entity schema
                 // and validate the current field value
 
