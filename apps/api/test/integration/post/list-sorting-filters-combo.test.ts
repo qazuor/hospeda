@@ -13,7 +13,7 @@ describe('Post - List sorting + filters combo', () => {
     });
 
     it('supports q + sortOrder + pagination', async () => {
-        const res = await app.request(`${base}?q=test&sortOrder=ASC&page=1&limit=10`);
+        const res = await app.request(`${base}?q=test&sortOrder=ASC&page=1&pageSize=10`);
         expect([200, 400]).toContain(res.status);
     });
 });

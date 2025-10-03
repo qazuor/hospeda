@@ -13,7 +13,7 @@ describe('GET /posts (list enhanced)', () => {
     });
 
     it('supports pagination and returns pagination metadata', async () => {
-        const res = await app.request(`${base}?page=1&limit=5`);
+        const res = await app.request(`${base}?page=1&pageSize=5`);
         expect([200, 400]).toContain(res.status);
         if (res.status === 200) {
             const body = await res.json();

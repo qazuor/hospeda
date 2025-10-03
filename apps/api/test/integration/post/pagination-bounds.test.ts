@@ -18,7 +18,7 @@ describe('Post - Pagination bounds', () => {
     });
 
     it('rejects invalid limit', async () => {
-        const res = await app.request(`${base}?limit=9999`);
+        const res = await app.request(`${base}?pageSize=9999`);
         expect([400]).toContain(res.status);
     });
 });

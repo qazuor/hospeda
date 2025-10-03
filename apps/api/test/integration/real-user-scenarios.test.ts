@@ -468,7 +468,7 @@ describe.skip('Real User Scenarios End-to-End', () => {
             }
 
             // Step 3: Frontend handles pagination
-            const paginatedRes = await app.request('/api/v1/accommodations?page=1&limit=10', {
+            const paginatedRes = await app.request('/api/v1/accommodations?page=1&pageSize=10', {
                 headers: {
                     'user-agent': 'Mozilla/5.0 (frontend pagination)',
                     accept: 'application/json',
