@@ -5,9 +5,9 @@ import {
     FeatureFiltersSchema,
     FeatureListItemSchema,
     FeatureListResponseSchema,
-    FeatureSearchSchema,
     FeatureSearchResponseSchema,
     FeatureSearchResultItemSchema,
+    FeatureSearchSchema,
     FeatureStatsSchema,
     FeatureSummarySchema
 } from '../../../src/entities/feature/feature.query.schema.js';
@@ -233,7 +233,6 @@ describe('Feature Query Schemas', () => {
     });
 
     describe('FeatureSearchSchema', () => {
-
         it('should validate search input with query', () => {
             const searchInput = {
                 q: faker.lorem.words(2),
@@ -269,27 +268,17 @@ describe('Feature Query Schemas', () => {
 
     describe('FeatureSearchResultItemSchema', () => {
         it('should validate search result', () => {
-            const searchResult = {
-                data: [
-                    {
-                        id: faker.string.uuid(),
-                        name: faker.lorem.words({ min: 2, max: 5 }),
-                        slug: faker.lorem.slug(3),
-                        createdAt: faker.date.past(),
-                        updatedAt: faker.date.recent()
-                    }
-                ],
-                pagination: {
-                    total: 1,
-                    page: 1,
-                    pageSize: 20,
-                    totalPages: 1,
-                    hasNextPage: false,
-                    hasPreviousPage: false
-                }
+            const searchResultItem = {
+                id: faker.string.uuid(),
+                name: faker.lorem.words({ min: 2, max: 5 }),
+                slug: faker.lorem.slug(3),
+                createdAt: faker.date.past(),
+                updatedAt: faker.date.recent(),
+                score: 0.85,
+                matchedFields: ['name', 'description'] as const
             };
 
-            expect(() => FeatureSearchResultItemSchema.parse(searchResult)).not.toThrow();
+            expect(() => FeatureSearchResultItemSchema.parse(searchResultItem)).not.toThrow();
         });
     });
 

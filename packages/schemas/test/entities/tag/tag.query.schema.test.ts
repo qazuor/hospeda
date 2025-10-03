@@ -364,7 +364,7 @@ describe('Tag Query Schemas', () => {
     describe('PopularTagsInputSchema', () => {
         it('should validate valid popular tags input', () => {
             const validInput = {
-                limit: 50,
+                pageSize: 50,
                 entityType: 'accommodations',
                 timeframe: 'month'
             };
@@ -376,25 +376,25 @@ describe('Tag Query Schemas', () => {
             const minimalInput = {};
 
             const result = PopularTagsInputSchema.parse(minimalInput);
-            expect(result.limit).toBe(20);
+            expect(result.pageSize).toBe(20);
             expect(result.entityType).toBe('all');
             expect(result.timeframe).toBe('all');
         });
 
-        it('should validate limit constraints', () => {
-            const validLimits = [1, 50, 100];
+        it('should validate pageSize constraints', () => {
+            const validPageSizes = [1, 50, 100];
 
-            for (const limit of validLimits) {
-                const input = { limit };
+            for (const pageSize of validPageSizes) {
+                const input = { pageSize };
                 expect(() => PopularTagsInputSchema.parse(input)).not.toThrow();
             }
         });
 
-        it('should reject invalid limit values', () => {
-            const invalidLimits = [0, -1, 101, 200];
+        it('should reject invalid pageSize values', () => {
+            const invalidPageSizes = [0, -1, 101, 200];
 
-            for (const limit of invalidLimits) {
-                const input = { limit };
+            for (const pageSize of invalidPageSizes) {
+                const input = { pageSize };
                 expect(() => PopularTagsInputSchema.parse(input)).toThrow(ZodError);
             }
         });
@@ -622,7 +622,7 @@ describe('Tag Query Schemas', () => {
 
             // Popular tags input
             const popularInput = {
-                limit: 10,
+                pageSize: 10,
                 entityType: 'accommodations'
             };
             expect(() => PopularTagsInputSchema.parse(popularInput)).not.toThrow();
