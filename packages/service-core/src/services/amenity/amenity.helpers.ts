@@ -2,7 +2,7 @@
  * Helper utilities for AmenityService.
  * Add utility functions as needed.
  */
-// TODO [f9f3b9f6-8dd1-46f8-8427-efcecf1f56a7]: Implement helper functions for AmenityService
+// TODO [89cd3a45-416d-471b-9b7e-cc875e593cdb]: Implement helper functions for AmenityService
 
 import type { AmenityModel } from '@repo/db';
 import { createUniqueSlug } from '@repo/utils';
