@@ -1,5 +1,9 @@
 import { z } from 'zod';
-import { HttpPaginationSchema, HttpSortingSchema, HttpQueryFields } from '../../api/http/base-http.schema.js';
+import {
+    HttpPaginationSchema,
+    HttpQueryFields,
+    HttpSortingSchema
+} from '../../api/http/base-http.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
 import { type OpenApiSchemaMetadata, applyOpenApiMetadata } from '../../utils/openapi.utils.js';
 import { TagSchema } from './tag.schema.js';
@@ -122,7 +126,7 @@ export const TagSearchResponseSchema = PaginationResultSchema(TagSearchResultIte
  * Schema for popular tags input
  */
 export const PopularTagsSchema = z.object({
-    limit: z.number().int().min(1).max(100).default(20),
+    pageSize: z.number().int().min(1).max(100).default(20),
     entityType: z
         .enum(['all', 'accommodations', 'destinations', 'posts', 'events', 'users'])
         .default('all'),

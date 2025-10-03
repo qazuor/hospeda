@@ -1,8 +1,13 @@
 import { z } from 'zod';
-import { HttpPaginationSchema, HttpSortingSchema, HttpQueryFields, createArrayQueryParam } from '../../api/http/base-http.schema.js';
+import {
+    HttpPaginationSchema,
+    HttpQueryFields,
+    HttpSortingSchema,
+    createArrayQueryParam
+} from '../../api/http/base-http.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
-import { applyOpenApiMetadata } from '../../utils/openapi.utils.js';
 import { createSearchMetadata } from '../../utils/openapi-metadata.factory.js';
+import { applyOpenApiMetadata } from '../../utils/openapi.utils.js';
 import { FeatureSchema } from './feature.schema.js';
 
 /**
@@ -199,7 +204,7 @@ export const FeatureCategoriesSchema = z.object({
  * Schema for popular features input
  */
 export const PopularFeaturesSchema = z.object({
-    limit: z.number().int().min(1).max(100).default(20),
+    pageSize: z.number().int().min(1).max(100).default(20),
     category: z.string().optional(),
     timeframe: z.enum(['all', 'year', 'month', 'week']).default('all'),
     onlyAvailable: z.boolean().default(true),
