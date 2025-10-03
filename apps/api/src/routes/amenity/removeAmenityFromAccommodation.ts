@@ -17,7 +17,7 @@ export const removeAmenityFromAccommodationRoute = createCRUDRoute({
         accommodationId: z.string().uuid(),
         amenityId: z.string().uuid()
     },
-    // TODO [71e06620-d250-4dd4-9f97-7a3e78c46d57]: Replace with a proper relation schema when available
+    // TODO [5483ab40-aa63-41f9-a5ce-67a9acdcfd7a]: Replace with a proper relation schema when available
     responseSchema: z.object({ relation: z.object({ amenityId: z.string().uuid() }).partial() }),
     handler: async (ctx: Context, params) => {
         const actor = getActorFromContext(ctx);
