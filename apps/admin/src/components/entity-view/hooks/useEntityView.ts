@@ -84,7 +84,7 @@ export const useEntityView = () => {
                 if (!hasVisibleFieldsWithData) return false;
             }
 
-            // TODO [23e14ede-00e2-4d82-af79-d7a1a4788a55]: Check section visibility conditions (visibleIf)
+            // TODO [4987614f-b36e-466f-81fc-852dac77cff9]: Check section visibility conditions (visibleIf)
             // For now, show all permitted sections
             return true;
         });

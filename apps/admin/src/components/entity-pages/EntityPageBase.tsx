@@ -87,7 +87,7 @@ export const EntityPageBase = <T = Record<string, unknown>>({
     // Handle save function
     const handleSave = React.useCallback(
         async (values: Record<string, unknown>) => {
-            // DEBUG [3ac2cd4f-636f-4197-8086-e79219df2bac]: Log all form values
+            // DEBUG [5c0b7d80-66f4-4f80-9857-121e3ae51820]: Log all form values
             // biome-ignore lint/suspicious/noConsoleLog: Temporary debugging
             console.log('[EntityPageBase] All form values:', values);
 
@@ -104,7 +104,7 @@ export const EntityPageBase = <T = Record<string, unknown>>({
                 }
             }
 
-            // DEBUG [cd101b08-1036-4f48-b34d-20dc52afb9b3]: Log filtered values being sent to API
+            // DEBUG [f8ad7c68-c0aa-483f-b059-a28c12bc733a]: Log filtered values being sent to API
             // biome-ignore lint/suspicious/noConsoleLog: Temporary debugging
             console.log('[EntityPageBase] Filtered values for API:', fieldsToSave);
 
