@@ -29,7 +29,7 @@ const GlobalErrorFallback: React.FC<GlobalErrorFallbackProps> = ({ error, resetE
      * Report error to support (placeholder)
      */
     const handleReportError = () => {
-        // TODO [f72910b5-0cb6-4b44-8e9f-5e5eed39c606]: Implement error reporting to support system
+        // TODO [9f1d0844-4c25-4d15-a332-01447cb70164]: Implement error reporting to support system
         const errorReport = {
             message: error.message,
             stack: error.stack,
