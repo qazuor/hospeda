@@ -102,7 +102,7 @@ function logWithLevel(
             break;
     }
 
-    // TODO [868ec349-452b-487d-b867-1b9db90507a9]: Implement file logging if save is enabled
+    // TODO [df398191-8fa7-4522-933f-641b4e80bbdd]: Implement file logging if save is enabled
     // This would check config.SAVE, category.options.save, and options.save
 }
 
