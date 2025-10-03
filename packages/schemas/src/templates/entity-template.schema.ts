@@ -39,7 +39,7 @@ import { applyOpenApiMetadata } from '../utils/openapi.utils.js';
  * });
  */
 export const EntitySpecificSchema = z.object({
-    // TODO [bbb4c37c-8851-4bcc-8642-f8bdf63c7408]: Replace with actual entity fields
+    // TODO [7c6001ee-1c55-46fd-8b64-d28ddb7b8d02]: Replace with actual entity fields
     name: z.string().min(1, { message: 'zodError.required' }).describe('Entity name'),
     description: z.string().optional().describe('Optional entity description')
 });
@@ -77,7 +77,7 @@ export const UpdateEntitySchema = EntitySpecificSchema.partial().describe('Entit
 export const SearchEntitySchema = BaseSearchSchema.extend({
     // Entity-specific search filters (flat structure)
     name: z.string().optional().describe('Filter by entity name (partial match)')
-    // TODO [18e5af79-cba8-4712-b54e-d2942f31aeaf]: Add more entity-specific search filters here
+    // TODO [44ed757d-1d9d-4281-a292-a98bf7e1a5a0]: Add more entity-specific search filters here
     // status: z.string().optional().describe('Filter by status'),
     // category: z.string().optional().describe('Filter by category'),
 }).describe('Entity search parameters with filters');
