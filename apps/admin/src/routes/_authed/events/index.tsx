@@ -4,7 +4,7 @@
 import { EventsPageComponent, EventsRoute } from '@/features/events/config/events.config';
 import { createFileRoute } from '@tanstack/react-router';
 
-// HACK [a3ab8d1b-7234-4c01-8e56-0811af4c8fb8]: Prevent TypeScript error for TanStack Router auto-generated import
+// HACK [5180f75f-5778-4475-92d7-8180a9aded6a]: Prevent TypeScript error for TanStack Router auto-generated import
 createFileRoute;
 
 export const Route = EventsRoute;
