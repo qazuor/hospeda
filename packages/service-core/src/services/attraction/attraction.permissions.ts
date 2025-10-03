@@ -11,7 +11,7 @@ import { hasPermission } from '../../utils';
  */
 export function checkCanViewAttraction(actor: Actor): void {
     if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'FORBIDDEN: no actor');
-    // TODO [53c01808-7e37-42db-a971-8dcfd0626147]: Add visibility logic if attractions have visibility, else use permissions only
+    // TODO [c763a877-694f-4c9c-b37b-50d8a4150a17]: Add visibility logic if attractions have visibility, else use permissions only
     if (
         hasPermission(actor, PermissionEnum.DESTINATION_VIEW_PRIVATE) ||
         hasPermission(actor, PermissionEnum.DESTINATION_VIEW_DRAFT)
