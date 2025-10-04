@@ -2,7 +2,7 @@ import { fetchApi } from '@/lib/api/client';
 import { z } from 'zod';
 
 // Browser-safe minimal schema for destination list items
-// TODO [e87dfe86-2735-4448-983e-7af15737d9f0]: Replace with a browser-safe build export from @repo/schemas when available
+// TODO [2f994712-1b4c-441f-8834-3684cf54f029]: Replace with a browser-safe build export from @repo/schemas when available
 const DestinationListItemClientSchema = z
     .object({
         id: z.string(),

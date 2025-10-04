@@ -86,7 +86,7 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
         const isVisible = React.useMemo(() => {
             if (!config.visibleIf) return hasViewPermission;
 
-            // TODO [e2824288-7f11-4f84-b9f0-0ee7d88ef893]: Implement predicate evaluation
+            // TODO [6c97a93d-b065-4ae6-acc9-5bbd73cd04b8]: Implement predicate evaluation
             // For now, just check permissions
             return hasViewPermission;
         }, [config.visibleIf, hasViewPermission]);
@@ -102,7 +102,7 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
                     if (!hasFieldPermission) return false;
                 }
 
-                // TODO [7fe8e310-9114-451f-96d2-7ed25397fdb1]: Check field visibility conditions
+                // TODO [faaaadca-60a3-4158-8c86-8463bb3d8c83]: Check field visibility conditions
                 // For now, show all permitted fields
                 return true;
             });
@@ -297,7 +297,7 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
                     );
 
                 case 'TABS':
-                    // TODO [54a1a7d4-641b-4745-b780-2997eec523e6]: Implement tabs layout for nested sections
+                    // TODO [3de5ec95-ae42-4dff-9971-3828f61dedbc]: Implement tabs layout for nested sections
                     return <div className="space-y-4">{visibleFields.map(renderField)}</div>;
 
                 // case 'ACCORDION':
