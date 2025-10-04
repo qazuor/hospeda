@@ -2,6 +2,8 @@
  * Type definitions for the TODO-Linear synchronization system v2
  */
 
+import type { AIConfig } from '../ai/types.js';
+
 /**
  * Type of comment that can be tracked
  */
@@ -51,6 +53,14 @@ export type TrackedComment = {
     updatedAt: string;
     /** Whether this issue is orphaned (doesn't exist in Linear) */
     isOrphan: boolean;
+    /** AI analysis state */
+    aiState?: 'PENDING' | 'COMPLETED' | 'FAILED' | 'DISABLED' | 'SKIPPED';
+    /** Number of AI analysis retry attempts */
+    aiRetryCount?: number;
+    /** Last AI analysis error message */
+    aiLastError?: string;
+    /** When AI analysis was last attempted */
+    aiLastRetry?: string;
 };
 
 /**
@@ -106,6 +116,21 @@ export type SyncResult = {
     orphans: string[];
     /** List of errors encountered */
     errors: string[];
+    /** AI processing statistics */
+    aiStats: {
+        /** Total items with AI analysis */
+        total: number;
+        /** Items successfully analyzed */
+        completed: number;
+        /** Items pending analysis */
+        pending: number;
+        /** Items failed analysis */
+        failed: number;
+        /** Items with AI disabled */
+        disabled: number;
+        /** Items skipped by AI */
+        skipped: number;
+    };
 };
 
 /**
@@ -128,6 +153,8 @@ export type TodoLinearConfig = {
     ideLabelName: string;
     /** IDE link template for opening files (default: 'vscode://file//{filePath}:{lineNumber}') */
     ideLinkTemplate: string;
+    /** AI configuration */
+    ai: AIConfig;
 };
 
 /**
@@ -158,3 +185,16 @@ export type SyncLists = {
     /** Orphaned issue IDs found in code */
     orphans: string[];
 };
+
+// Re-export AI types
+export type {
+    AIAnalysis,
+    AIEnhancedTodo,
+    AIProvider,
+    AIProviderInterface,
+    AIState,
+    CodeContext,
+    EffortEstimate,
+    Priority,
+    PromptTemplate
+} from '../ai/types.js';
