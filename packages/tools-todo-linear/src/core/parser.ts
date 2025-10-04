@@ -210,7 +210,7 @@ export class CommentParser {
     /**
      * Creates a comment key for tracking
      */
-    createCommentKey(comment: ParsedComment): string {
-        return `${comment.filePath}:${comment.line}:${comment.title.toLowerCase().trim()}`;
+    static generateCommentKey(comment: ParsedComment): string {
+        return `${comment.filePath}:${comment.line}:${comment.title?.toLowerCase().trim() || ''}`;
     }
 }
