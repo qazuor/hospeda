@@ -16,7 +16,7 @@ export const normalizeCreateInput = (
         ...data,
         message: typeof data.message === 'string' ? data.message.trim() : data.message,
         description: data.description.trim()
-        // TODO [c4cff8af-2c87-462c-9448-3c3bb6670d83]: normalize paid, dates if needed
+        // TODO [27c6f09b-f23b-49ca-9d9b-860b4b4b4034]: normalize paid, dates if needed
     };
 };
 
@@ -34,6 +34,6 @@ export const normalizeUpdateInput = (
     const normalized: PostSponsorshipUpdateInput = { ...data };
     if (typeof data.message === 'string') normalized.message = data.message.trim();
     if (typeof data.description === 'string') normalized.description = data.description.trim();
-    // TODO [dd0fff10-6575-4a85-b9c1-c78a1efaf604]: normalize paid, dates if needed
+    // TODO [75517b9a-78f1-43e7-80f9-c9be4ad28d2a]: normalize paid, dates if needed
     return normalized;
 };

@@ -11,7 +11,7 @@
  * @returns {Promise<string>} The unique slug
  */
 export const generatePostSponsorSlug = async (name: string): Promise<string> => {
-    // TODO [679d5ccb-a3c5-4ad5-a89d-331a1ffbe362]: Implement slug generation logic
+    // TODO [dbcf6289-a6d1-466f-bf3b-d8fe09f78259]: Implement slug generation logic
     return name
         .toLowerCase()
         .replace(/\s+/g, '-')
@@ -26,7 +26,7 @@ export const generatePostSponsorSlug = async (name: string): Promise<string> => 
  * @returns {boolean} Whether the contact info is valid
  */
 export const validateSponsorContact = (contact: unknown): boolean => {
-    // TODO [8f65051f-5ce0-426b-b364-697331c951df]: Implement contact validation logic
+    // TODO [7adfb12d-6950-4fab-aed5-84c5cf5caa17]: Implement contact validation logic
     return !!contact;
 };
 
@@ -46,6 +46,6 @@ export const validateSponsorContact = (contact: unknown): boolean => {
  * ```
  */
 export const normalizeSocialInfo = (social: unknown): unknown => {
-    // TODO [d037c5a7-99d9-445b-bbcb-f6b30d6bc6a5]: Implement social media normalization logic
+    // TODO [52195538-9399-41b3-a39a-8165a65d112e]: Implement social media normalization logic
     return social;
 };

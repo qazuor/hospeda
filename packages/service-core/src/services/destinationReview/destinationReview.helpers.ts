@@ -1,4 +1,4 @@
-// TODO [efab969e-8efa-4b35-aa5a-ef0ec28dc6b3]: Add destinationReview-specific helpers if needed.
+// TODO [78cd7b62-eac0-4e24-ab04-f53e60474f00]: Add destinationReview-specific helpers if needed.
 
 import type { DestinationRatingInput, DestinationReview } from '@repo/schemas';
 

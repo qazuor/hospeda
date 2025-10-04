@@ -90,7 +90,7 @@ export class DestinationReviewService extends BaseCrudService<
         _params: DestinationReviewSearchInput,
         _actor: Actor
     ): Promise<PaginatedListOutput<DestinationReview>> {
-        // TODO [531cf855-d0ef-4b9d-ba99-b190858767b3]: Implement search logic using Drizzle ORM
+        // TODO [1c0a050e-06df-4237-bd1e-a3bb2561f161]: Implement search logic using Drizzle ORM
         throw new Error('Not implemented');
     }
 
@@ -98,7 +98,7 @@ export class DestinationReviewService extends BaseCrudService<
         _params: DestinationReviewSearchInput,
         _actor: Actor
     ): Promise<{ count: number }> {
-        // TODO [6c03cb9f-1839-44c6-ba3f-88514913d0cf]: Implement count logic using Drizzle ORM
+        // TODO [d17db392-32f5-4ef4-8382-51dfeb2ea9e4]: Implement count logic using Drizzle ORM
         throw new Error('Not implemented');
     }
 
@@ -125,7 +125,7 @@ export class DestinationReviewService extends BaseCrudService<
         result: { count: number },
         _actor: Actor
     ): Promise<{ count: number }> {
-        // TODO [f553370a-f61a-428b-b044-4142c3642108]: Implement logic to update stats after delete if needed
+        // TODO [4f8cb558-6df6-4095-bc09-bcd871673c75]: Implement logic to update stats after delete if needed
         return result;
     }
 

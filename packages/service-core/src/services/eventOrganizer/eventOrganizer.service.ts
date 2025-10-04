@@ -75,19 +75,19 @@ export class EventOrganizerService extends BaseCrudService<
         checkCanUpdateEventOrganizer(actor);
     }
     protected async _canView(_actor: Actor, _entity: EventOrganizer) {
-        // TODO [0656ffe0-823a-442d-b36a-da49073ac753]: Implement fine-grained view permissions if needed
+        // TODO [74a2c0b1-7e1a-4663-ac24-0aae01b9f079]: Implement fine-grained view permissions if needed
         return;
     }
     protected async _canList(_actor: Actor) {
-        // TODO [f27348e1-7e0a-4280-95f4-49e96f82a94a]: Implement list permissions if needed
+        // TODO [fafc85ef-f637-4f33-9f34-bb0d186a6649]: Implement list permissions if needed
         return;
     }
     protected async _canSearch(_actor: Actor) {
-        // TODO [c215a0a0-5ccb-4513-998a-fdcdaee43283]: Implement search permissions if needed
+        // TODO [3e22743d-e742-4dba-9ef6-1264778d3234]: Implement search permissions if needed
         return;
     }
     protected async _canCount(_actor: Actor) {
-        // TODO [b6cee389-5c34-442c-ae49-748d86bc0be4]: Implement count permissions if needed
+        // TODO [a0412059-0a6b-4b8d-9aa0-d511813a9d1f]: Implement count permissions if needed
         return;
     }
     protected async _canUpdateVisibility(
@@ -95,7 +95,7 @@ export class EventOrganizerService extends BaseCrudService<
         _entity: EventOrganizer,
         _newVisibility: VisibilityEnum
     ) {
-        // TODO [afe1d9d5-0260-4d50-8e72-3740c9455ba1]: Implement visibility update permissions if needed
+        // TODO [f363c84e-aa3a-49c8-be3d-49465b951f17]: Implement visibility update permissions if needed
         return;
     }
 
