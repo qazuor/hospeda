@@ -20,7 +20,7 @@ export const amenityListRoute = createListRoute({
         sortOrder: z.enum(['asc', 'desc']).default('asc'),
         q: z.string().optional()
     },
-    // TODO [b54339ee-8219-45cf-ac18-36ef415b6fbf]: Replace with AmenityListItem schema when available in @repo/schemas
+    // TODO [98f0fa38-9738-4944-a60e-b4286ad70422]: Replace with AmenityListItem schema when available in @repo/schemas
     responseSchema: z.object({ id: z.string().uuid() }).partial(),
     handler: async (ctx: Context, _params, _body, query) => {
         const actor = getActorFromContext(ctx);

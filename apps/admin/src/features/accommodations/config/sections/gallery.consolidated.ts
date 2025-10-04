@@ -12,7 +12,7 @@ import type { ConsolidatedSectionConfig } from '../../types/consolidated-config.
 export const createGalleryConsolidatedSection = (
     _t: ReturnType<typeof useTranslations>['t']
 ): ConsolidatedSectionConfig => {
-    // TODO [6a6fe6ed-d639-4e93-a024-735b0ca0a666]: Opciones para el tipo de imagen (para uso futuro)
+    // TODO [d80cb99a-5051-48c3-8497-7b3123cb6b9e]: Opciones para el tipo de imagen (para uso futuro)
     // const imageTypeOptions: SelectOption[] = [
     //     { value: 'main', label: 'Imagen Principal' },
     //     { value: 'exterior', label: 'Vista Exterior' },
@@ -26,7 +26,7 @@ export const createGalleryConsolidatedSection = (
     //     { value: 'other', label: 'Otro' }
     // ];
 
-    // TODO [c37c8b2d-64a3-420d-b661-315094ef37de]: Opciones para el tipo de video (para uso futuro)
+    // TODO [15e59edc-ab20-4f08-be41-aabef538894f]: Opciones para el tipo de video (para uso futuro)
     // const videoTypeOptions: SelectOption[] = [
     //     { value: 'tour', label: 'Tour Virtual' },
     //     { value: 'promotional', label: 'Video Promocional' },

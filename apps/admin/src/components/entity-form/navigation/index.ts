@@ -13,7 +13,7 @@ export type { SmartNavigationProps } from './SmartNavigation';
 export { SmartBreadcrumbs } from './SmartBreadcrumbs';
 export type { SmartBreadcrumbsProps } from './SmartBreadcrumbs';
 
-// TODO [eaff8d56-574d-4294-a2e2-cd2a5153f4b3]: Add more navigation components
+// TODO [f8850fd6-95da-4db1-9793-77c08f2f9343]: Add more navigation components
 // export { SectionTabs } from './SectionTabs';
 // export type { SectionTabsProps } from './SectionTabs';
 

@@ -12,7 +12,7 @@ import type { ConsolidatedSectionConfig } from '../../types/consolidated-config.
 export const createAmenitiesConsolidatedSection = (
     _t: ReturnType<typeof useTranslations>['t']
 ): ConsolidatedSectionConfig => {
-    // TODO [b63540c6-cbef-4362-b8a1-67e5c6f53cf4]: Opciones para las categorías de amenities (para uso futuro)
+    // TODO [ca3a2e81-660c-47ac-93b3-d6c92aa09d18]: Opciones para las categorías de amenities (para uso futuro)
     // const amenityCategoryOptions: SelectOption[] = [
     //     { value: AmenitiesTypeEnum.CLIMATE_CONTROL, label: 'Control de Clima' },
     //     { value: AmenitiesTypeEnum.CONNECTIVITY, label: 'Conectividad' },

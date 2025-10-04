@@ -9,7 +9,7 @@ import { eventOrganizerRoutes } from './event-organizer';
 import { postRoutes } from './post';
 import { sponsorRoutes } from './sponsor';
 
-// DEBUG [7e5df9c4-5b38-4397-a8d7-296195fdf518]: Add logging around accommodation route import
+// DEBUG [9a74c567-5be7-4ffb-8d4d-f9e95dde7bd4]: Add logging around accommodation route import
 apiLogger.debug('🏠 Loading accommodation routes...');
 apiLogger.debug('✅ Accommodation routes loaded successfully');
 
@@ -71,7 +71,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
     // Public routes
     app.route('/api/v1/public/users', userRoutes);
 
-    // DEBUG [ce44867a-d2aa-4805-8411-1c10789e9888]: Add logging around route registration
+    // DEBUG [2cef851d-ab39-42f7-a742-b896b94a0628]: Add logging around route registration
     try {
         apiLogger.debug('🔗 Registering accommodation routes...');
         app.route('/api/v1/public/accommodations', accommodationRoutes);
