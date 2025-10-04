@@ -15,7 +15,7 @@ export class TrackingManager {
     private trackingData: TrackingData;
 
     constructor(projectRoot: string) {
-        this.trackingFilePath = resolve(projectRoot, '.todo-linear-tracking.json');
+        this.trackingFilePath = resolve(projectRoot, '.todoLinear', 'tracking.json');
         this.trackingData = this.loadTrackingData();
     }
 
@@ -72,12 +72,12 @@ export class TrackingManager {
      * Finds a tracked comment by file path, line, and title
      */
     findByLocation(filePath: string, line: number, title: string): TrackedComment | undefined {
-        const normalizedTitle = title.toLowerCase().trim();
+        const normalizedTitle = title?.toLowerCase().trim() || '';
         return this.trackingData.comments.find(
             (comment) =>
                 comment.filePath === filePath &&
                 comment.line === line &&
-                comment.title.toLowerCase().trim() === normalizedTitle
+                (comment.title?.toLowerCase().trim() || '') === normalizedTitle
         );
     }
 
@@ -85,9 +85,9 @@ export class TrackingManager {
      * Finds tracked comments by title (case-insensitive)
      */
     findByTitle(title: string): TrackedComment[] {
-        const normalizedTitle = title.toLowerCase().trim();
+        const normalizedTitle = title?.toLowerCase().trim() || '';
         return this.trackingData.comments.filter(
-            (comment) => comment.title.toLowerCase().trim() === normalizedTitle
+            (comment) => (comment.title?.toLowerCase().trim() || '') === normalizedTitle
         );
     }
 
@@ -101,7 +101,11 @@ export class TrackingManager {
     /**
      * Updates an existing tracked comment
      */
-    updateTrackedComment(linearId: string, updates: Partial<TrackedComment>): boolean {
+    updateTrackedComment(
+        linearId: string,
+        updates: Partial<TrackedComment>,
+        autoSave = true
+    ): boolean {
         const index = this.trackingData.comments.findIndex(
             (comment) => comment.linearId === linearId
         );
@@ -123,6 +127,11 @@ export class TrackingManager {
             isOrphan: updates.isOrphan ?? existingComment?.isOrphan ?? false,
             updatedAt: new Date().toISOString()
         };
+
+        if (autoSave) {
+            this.saveTrackingData();
+        }
+
         return true;
     }
 
@@ -225,8 +234,123 @@ export class TrackingManager {
      * Creates a unique key for a comment
      */
     static createCommentKey(filePath: string, line: number, title: string): CommentKey {
-        const normalizedTitle = title.toLowerCase().trim();
+        const normalizedTitle = title?.toLowerCase().trim() || '';
         return `${filePath}:${line}:${normalizedTitle}`;
+    }
+
+    /**
+     * Updates AI state for a tracked comment
+     */
+    updateAIState(
+        linearId: string,
+        state: 'PENDING' | 'COMPLETED' | 'FAILED' | 'DISABLED' | 'SKIPPED',
+        retryCount?: number,
+        error?: string,
+        autoSave = true
+    ): boolean {
+        const index = this.trackingData.comments.findIndex(
+            (comment) => comment.linearId === linearId
+        );
+        if (index === -1) {
+            return false;
+        }
+
+        const existingComment = this.trackingData.comments[index];
+        if (!existingComment) {
+            return false;
+        }
+
+        const now = new Date().toISOString();
+        this.trackingData.comments[index] = {
+            ...existingComment,
+            aiState: state,
+            aiRetryCount: retryCount ?? existingComment.aiRetryCount ?? 0,
+            aiLastError: error,
+            aiLastRetry: state === 'FAILED' ? now : existingComment.aiLastRetry,
+            updatedAt: now
+        };
+
+        if (autoSave) {
+            this.saveTrackingData();
+        }
+
+        return true;
+    }
+
+    /**
+     * Gets all tracked comments that need AI processing
+     */
+    getCommentsForAIProcessing(maxRetries: number): TrackedComment[] {
+        return this.trackingData.comments.filter((comment) => {
+            // Skip if AI is completed
+            if (comment.aiState === 'COMPLETED') {
+                return false;
+            }
+
+            // Skip if permanently disabled
+            if (comment.aiState === 'DISABLED') {
+                return false;
+            }
+
+            // Skip if globally skipped
+            if (comment.aiState === 'SKIPPED') {
+                return false;
+            }
+
+            // Skip if max retries exceeded
+            if ((comment.aiRetryCount ?? 0) >= maxRetries) {
+                return false;
+            }
+
+            return true;
+        });
+    }
+
+    /**
+     * Gets AI analysis statistics
+     */
+    getAIStats(): {
+        pending: number;
+        completed: number;
+        failed: number;
+        disabled: number;
+        skipped: number;
+        total: number;
+    } {
+        const stats = {
+            pending: 0,
+            completed: 0,
+            failed: 0,
+            disabled: 0,
+            skipped: 0,
+            total: this.trackingData.comments.length
+        };
+
+        for (const comment of this.trackingData.comments) {
+            switch (comment.aiState) {
+                case 'PENDING':
+                    stats.pending++;
+                    break;
+                case 'COMPLETED':
+                    stats.completed++;
+                    break;
+                case 'FAILED':
+                    stats.failed++;
+                    break;
+                case 'DISABLED':
+                    stats.disabled++;
+                    break;
+                case 'SKIPPED':
+                    stats.skipped++;
+                    break;
+                default:
+                    // Null or undefined - count as pending
+                    stats.pending++;
+                    break;
+            }
+        }
+
+        return stats;
     }
 
     /**
@@ -242,7 +366,9 @@ export class TrackingManager {
             title: comment.title,
             createdAt: now,
             updatedAt: now,
-            isOrphan: false
+            isOrphan: false,
+            aiState: 'PENDING',
+            aiRetryCount: 0
         };
     }
 }
