@@ -1,6 +1,6 @@
 {
     "name": "@repo/tools-todo-linear",
-    "version": "0.0.0",
+    "version": "1.0.0",
     "private": true,
     "type": "module",
     "main": "dist/index.js",
@@ -28,6 +28,7 @@
         "todo:sync": "tsx src/scripts/sync.ts",
         "todo:sync:verbose": "tsx src/scripts/sync.ts verbose",
         "todo:watch": "tsx src/scripts/watch.ts",
+        "todo:ai-stats": "tsx src/scripts/ai-stats.ts",
         "todo:clean": "tsx src/scripts/clean.ts"
     },
     "dependencies": {
