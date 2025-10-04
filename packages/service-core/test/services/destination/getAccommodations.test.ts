@@ -151,6 +151,6 @@ describe('DestinationService.getAccommodations', () => {
 
         // Assert
         expectForbiddenError(result);
-        // TODO [c4842833-14c2-4ba9-95c1-02d17c4880fa]: If permission helper is mockable, add: expect(permissionHelpers.checkCanView).toHaveBeenCalledWith(input.actor, destination);
+        // TODO [010c5439-06c0-41aa-bb42-e0d4cd76e859]: If permission helper is mockable, add: expect(permissionHelpers.checkCanView).toHaveBeenCalledWith(input.actor, destination);
     });
 });

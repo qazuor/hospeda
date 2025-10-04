@@ -148,6 +148,6 @@ describe('DestinationService.getSummary', () => {
 
         // Assert
         expectForbiddenError(result);
-        // TODO [1a2290c3-f85e-49b3-836c-27177006ca9b]: If permission helper is mockable, add: expect(permissionHelpers.checkCanView).toHaveBeenCalledWith(input.actor, destination);
+        // TODO [58db9346-15a4-4753-8b5f-2b09883d5cba]: If permission helper is mockable, add: expect(permissionHelpers.checkCanView).toHaveBeenCalledWith(input.actor, destination);
     });
 });
