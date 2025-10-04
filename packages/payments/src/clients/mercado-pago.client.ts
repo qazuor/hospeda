@@ -304,7 +304,7 @@ export class MercadoPagoClient {
             return true;
         }
 
-        // TODO [fa0621bb-0930-4355-87dd-17cfc42f18ac]: Implement proper signature validation based on Mercado Pago documentation
+        // TODO [081f3ad4-37ee-4e54-8f13-422ee0c86884]: Implement proper signature validation based on Mercado Pago documentation
         // This is a placeholder implementation
         this.logger.info(
             {
