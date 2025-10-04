@@ -3,7 +3,7 @@
  * Contains utility functions for slug generation, data validation, and other domain-specific operations.
  */
 
-// TODO [bdbee6d4-09bd-4e93-b708-d316d3737c4f]: Implement slug generation or other helpers if required for event organizers.
+// TODO [99bba423-6266-41ee-ac36-b5488d2f2446]: Implement slug generation or other helpers if required for event organizers.
 
 /**
  * Placeholder for future helper functions related to event organizers.
