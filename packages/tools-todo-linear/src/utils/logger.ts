@@ -180,6 +180,16 @@ class Logger {
     }
 
     /**
+     * AI-specific warning logging with warning icon and yellow color
+     */
+    aiWarn(message: string, ...args: unknown[]): void {
+        if (this.shouldLog(LogLevel.WARN)) {
+            const formatted = this.formatMessage('WARN', `⚠️  ${message}`);
+            console.warn(chalk.yellow(formatted), ...args);
+        }
+    }
+
+    /**
      * Creates a child logger with a specific prefix
      */
     child(prefix: string): Logger {
@@ -210,6 +220,7 @@ export const {
     progress,
     step,
     raw,
+    aiWarn,
     setLevel,
     setPrefix,
     setTimestamp,
