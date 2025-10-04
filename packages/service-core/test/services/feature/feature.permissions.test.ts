@@ -1,4 +1,4 @@
-// TODO [265708bf-2534-4c55-b5e4-d745c8b15771]: Implement tests for all permission check functions in feature.permissions.ts, covering all permission and error scenarios.
+// TODO [36f9ceba-6e8b-4512-acbf-2a304b845cd6]: Implement tests for all permission check functions in feature.permissions.ts, covering all permission and error scenarios.
 
 import type { Feature } from '@repo/schemas';
 import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
