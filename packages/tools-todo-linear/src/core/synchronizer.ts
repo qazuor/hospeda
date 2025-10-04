@@ -1,4 +1,5 @@
 import type {
+    AIAnalysis,
     ParsedComment,
     SyncLists,
     SyncOperation,
@@ -33,7 +34,7 @@ export class TodoSynchronizer {
     /**
      * Performs a full synchronization
      */
-    async sync(verbose = false): Promise<SyncResult> {
+    async sync(verbose = false, forceRetryFailed = false): Promise<SyncResult> {
         const startTime = Date.now();
         const operations: SyncOperation[] = [];
         const errors: string[] = [];
@@ -46,20 +47,57 @@ export class TodoSynchronizer {
             // Step 1: Scan all files for TODO comments
             allComments = await this.scanner.scanAllFiles();
 
-            // Step 2: Classify comments and build sync lists
-            const syncLists = await this.classifyComments(allComments, verbose);
+            // Step 1.5: Warm up label cache to avoid duplicate creation errors
+            logger.step('⚙️  Warming up label cache...');
+            await this.client.warmupCache();
 
-            // Step 3: Process CREATE operations
+            // Step 2: Classify comments and build sync lists
+            const syncLists = await this.classifyComments(allComments, verbose, forceRetryFailed);
+
+            // Step 3: Process AI analysis for all relevant comments
+            let aiAnalysisResults = new Map<string, AIAnalysis>();
+            if (this.config.ai.enabled) {
+                // Extract ParsedComment objects from both arrays
+                const commentsToAnalyze = [
+                    ...syncLists.toCreate,
+                    ...syncLists.toUpdate.map((item) => item.comment)
+                ];
+                if (commentsToAnalyze.length > 0) {
+                    logger.step(
+                        `\n🤖 Processing AI analysis for ${commentsToAnalyze.length} comments...`
+                    );
+                    try {
+                        aiAnalysisResults = await this.client.processAIAnalysis(commentsToAnalyze);
+                        logger.success(
+                            `✅ AI analysis completed for ${aiAnalysisResults.size} comments`
+                        );
+                    } catch (error) {
+                        logger.warn(
+                            `⚠️ AI analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+                        );
+                    }
+                }
+            }
+
+            // Step 4: Process CREATE operations
             if (syncLists.toCreate.length > 0) {
                 logger.step(`\n📝 Creating ${syncLists.toCreate.length} new issues...`);
-                const createOps = await this.processCreateOperations(syncLists.toCreate, verbose);
+                const createOps = await this.processCreateOperations(
+                    syncLists.toCreate,
+                    verbose,
+                    aiAnalysisResults
+                );
                 operations.push(...createOps);
             }
 
-            // Step 4: Process UPDATE operations
+            // Step 5: Process UPDATE operations
             if (syncLists.toUpdate.length > 0) {
                 logger.step(`\n🔄 Updating ${syncLists.toUpdate.length} existing issues...`);
-                const updateOps = await this.processUpdateOperations(syncLists.toUpdate, verbose);
+                const updateOps = await this.processUpdateOperations(
+                    syncLists.toUpdate,
+                    verbose,
+                    aiAnalysisResults
+                );
                 operations.push(...updateOps);
             }
 
@@ -98,6 +136,9 @@ export class TodoSynchronizer {
         const failed = operations.filter((op) => !op.success).length;
         const skipped = operations.filter((op) => op.skipped).length;
 
+        // Calculate AI statistics
+        const aiStats = this.calculateAIStats();
+
         return {
             operations,
             totalComments: allComments.length,
@@ -106,7 +147,8 @@ export class TodoSynchronizer {
             skipped,
             duration,
             orphans,
-            errors
+            errors,
+            aiStats
         };
     }
 
@@ -115,7 +157,8 @@ export class TodoSynchronizer {
      */
     private async classifyComments(
         allComments: ParsedComment[],
-        verbose: boolean
+        verbose: boolean,
+        forceRetryFailed = false
     ): Promise<SyncLists> {
         const syncLists: SyncLists = {
             toCreate: [],
@@ -143,16 +186,20 @@ export class TodoSynchronizer {
                     // Issue is tracked
                     processedTrackedIds.add(tracked.linearId);
 
-                    if (this.hasCommentChanged(comment, tracked)) {
+                    const hasChanged = this.hasCommentChanged(comment, tracked);
+                    const needsAIRetry = this.needsAIRetry(tracked, forceRetryFailed);
+
+                    if (hasChanged || needsAIRetry) {
                         syncLists.toUpdate.push({ comment, tracked });
                         if (verbose) {
+                            const reason = hasChanged ? 'content changed' : 'AI retry needed';
                             logger.verbose(
-                                `🔄 UPDATE: ${comment.filePath}:${comment.line} - "${comment.title}"`
+                                `🔄 UPDATE: ${comment.filePath}:${comment.line} - "${comment.title}" (${reason})`
                             );
                         }
                     } else if (verbose) {
                         logger.verbose(
-                            `⏭️  SKIP: ${comment.filePath}:${comment.line} - "${comment.title}" (no changes)`
+                            `⏭️  SKIP: ${comment.filePath}:${comment.line} - "${comment.title}" (no changes, AI complete)`
                         );
                     }
                 } else {
@@ -219,10 +266,39 @@ export class TodoSynchronizer {
      */
     private hasCommentChanged(comment: ParsedComment, tracked: TrackedComment): boolean {
         return (
-            comment.title.toLowerCase().trim() !== tracked.title.toLowerCase().trim() ||
+            (comment.title?.toLowerCase().trim() || '') !==
+                (tracked.title?.toLowerCase().trim() || '') ||
             comment.line !== tracked.line ||
             comment.filePath !== tracked.filePath
         );
+    }
+
+    /**
+     * Checks if a tracked comment needs AI retry processing
+     */
+    private needsAIRetry(tracked: TrackedComment, forceRetryFailed = false): boolean {
+        const maxRetries = 3; // Match the batch processor config
+        const retryCount = tracked.aiRetryCount ?? 0;
+
+        // Check if AI state is PENDING (failed or not yet processed)
+        if (tracked.aiState === 'PENDING') {
+            return retryCount < maxRetries;
+        }
+
+        // Check if AI state is FAILED but still has retries left
+        if (tracked.aiState === 'FAILED') {
+            // Normal retry: only if hasn't exceeded retry limit
+            if (retryCount < maxRetries) {
+                return true;
+            }
+
+            // Forced retry: even if exceeded limit (when explicitly requested)
+            if (forceRetryFailed) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -230,7 +306,8 @@ export class TodoSynchronizer {
      */
     private async processCreateOperations(
         comments: ParsedComment[],
-        verbose: boolean
+        verbose: boolean,
+        aiAnalysisResults: Map<string, AIAnalysis>
     ): Promise<SyncOperation[]> {
         const operations: SyncOperation[] = [];
 
@@ -240,11 +317,13 @@ export class TodoSynchronizer {
                     logger.verbose(`   📝 Creating issue for: ${comment.filePath}:${comment.line}`);
                 }
 
-                const issueId = await this.client.createIssue(comment);
+                // Get AI analysis for this comment if available
+                const aiAnalysis = aiAnalysisResults.get(`${comment.filePath}:${comment.line}`);
+                const issueId = await this.client.createIssueWithAnalysis(comment, aiAnalysis);
 
                 // Log the creation
                 logger.info(
-                    `📝 ${comment.title} (${comment.filePath}:${comment.line}) -> ${issueId}`
+                    `📝 ${comment.title} (${comment.filePath}:${comment.line}) -> ${this.generateLinearUrl(issueId)}`
                 );
                 if (verbose) {
                     logger.verbose(`   ✅ Created issue ${issueId} successfully`);
@@ -256,6 +335,23 @@ export class TodoSynchronizer {
                 // Add to tracking
                 const trackedComment = TrackingManager.createTrackedComment(comment, issueId);
                 this.tracking.addTrackedComment(trackedComment);
+
+                // Update AI state based on whether AI was processed for this comment in this sync
+                if (this.config.ai.enabled) {
+                    // Check if this comment was processed with AI in this sync
+                    const aiAnalysis = aiAnalysisResults.get(`${comment.filePath}:${comment.line}`);
+                    if (aiAnalysis) {
+                        // AI analysis was successful for this comment
+                        this.tracking.updateAIState(issueId, 'COMPLETED', 0);
+                    } else {
+                        // AI is enabled but this comment wasn't processed (maybe batch processing failed)
+                        // Set to PENDING so it will be processed in future syncs
+                        this.tracking.updateAIState(issueId, 'PENDING', 0);
+                    }
+                } else {
+                    // If AI is globally disabled, mark as skipped
+                    this.tracking.updateAIState(issueId, 'SKIPPED', 0);
+                }
 
                 operations.push({
                     type: 'create',
@@ -291,7 +387,8 @@ export class TodoSynchronizer {
      */
     private async processUpdateOperations(
         updates: Array<{ comment: ParsedComment; tracked: TrackedComment }>,
-        verbose: boolean
+        verbose: boolean,
+        aiAnalysisResults: Map<string, AIAnalysis>
     ): Promise<SyncOperation[]> {
         const operations: SyncOperation[] = [];
 
@@ -305,11 +402,12 @@ export class TodoSynchronizer {
 
                 // Update issue in Linear
                 const commentWithId = { ...comment, issueId: tracked.linearId };
-                await this.client.updateIssue(commentWithId);
+                const aiAnalysis = aiAnalysisResults.get(`${comment.filePath}:${comment.line}`);
+                await this.client.updateIssueWithAnalysis(commentWithId, aiAnalysis, this.tracking);
 
                 // Log the update
                 logger.info(
-                    `🔄 ${comment.title} (${comment.filePath}:${comment.line}) -> ${tracked.linearId}`
+                    `🔄 ${comment.title} (${comment.filePath}:${comment.line}) -> ${this.generateLinearUrl(tracked.linearId)}`
                 );
                 if (verbose) {
                     logger.verbose(`   ✅ Updated issue ${tracked.linearId} successfully`);
@@ -327,6 +425,23 @@ export class TodoSynchronizer {
                     title: comment.title,
                     type: comment.type
                 });
+
+                // Update AI state based on whether AI was processed for this comment in this sync
+                if (this.config.ai.enabled) {
+                    if (aiAnalysis) {
+                        // AI analysis was successful for this comment
+                        this.tracking.updateAIState(tracked.linearId, 'COMPLETED', 0);
+                    } else {
+                        // AI is enabled but this comment wasn't processed (maybe batch processing failed)
+                        // Increment retry count but keep as PENDING for future attempts
+                        const currentRetryCount = tracked.aiRetryCount ?? 0;
+                        this.tracking.updateAIState(
+                            tracked.linearId,
+                            'PENDING',
+                            currentRetryCount + 1
+                        );
+                    }
+                }
 
                 operations.push({
                     type: 'update',
@@ -476,5 +591,53 @@ export class TodoSynchronizer {
             lastSync,
             trackingFileExists: this.tracking.trackingFileExists()
         };
+    }
+
+    /**
+     * Calculates AI processing statistics from tracking data
+     */
+    private calculateAIStats() {
+        const trackedComments = this.tracking.getAllTrackedComments();
+
+        const stats = {
+            total: 0,
+            completed: 0,
+            pending: 0,
+            failed: 0,
+            disabled: 0,
+            skipped: 0
+        };
+
+        for (const comment of trackedComments) {
+            if (comment.aiState) {
+                stats.total++;
+                switch (comment.aiState) {
+                    case 'COMPLETED':
+                        stats.completed++;
+                        break;
+                    case 'PENDING':
+                        stats.pending++;
+                        break;
+                    case 'FAILED':
+                        stats.failed++;
+                        break;
+                    case 'DISABLED':
+                        stats.disabled++;
+                        break;
+                    case 'SKIPPED':
+                        stats.skipped++;
+                        break;
+                }
+            }
+        }
+
+        return stats;
+    }
+
+    /**
+     * Generates a Linear issue URL from an issue ID
+     */
+    private generateLinearUrl(issueId: string): string {
+        return `https://linear.app/issue/${issueId}`;
     }
 }
