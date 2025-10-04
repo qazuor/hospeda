@@ -5,6 +5,6 @@ import { describe, it } from 'vitest';
  */
 describe('AmenityService helpers', () => {
     it('should test helper logic', () => {
-        // TODO [822f6549-fda8-4c83-b0d7-d5aea7668714]: Test logic
+        // TODO [52e26a56-15c3-4454-9585-d4fb56f3eea5]: Test logic
     });
 });
