@@ -16,7 +16,7 @@ export const getAccommodationsByAmenityRoute = createListRoute({
     requestParams: {
         amenityId: z.string().uuid()
     },
-    // TODO [da0884a7-16a0-40f2-9616-3af1145b048b]: Replace with AccommodationListItem schema when available in @repo/schemas
+    // TODO [bfd77908-2f5f-4d92-a263-63f480c697a3]: Replace with AccommodationListItem schema when available in @repo/schemas
     responseSchema: z.object({ id: z.string().uuid() }).partial(),
     requestQuery: {
         page: z.coerce.number().int().min(1).default(1),

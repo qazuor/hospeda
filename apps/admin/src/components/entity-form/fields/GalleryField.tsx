@@ -154,7 +154,7 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
                 onChange?.([...value, ...newImages]);
             } catch (error) {
                 console.error('Upload failed:', error);
-                // TODO [53e9b5d5-5dd1-4c7e-aafe-9b1e29ef67cc]: Show error toast
+                // TODO [fb28368b-af46-45ee-924f-19bef2a7506a]: Show error toast
             } finally {
                 setIsUploading(false);
             }
