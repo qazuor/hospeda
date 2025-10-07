@@ -66,15 +66,48 @@ export const TagFiltersSchema = z.object({
 
 /**
  * Complete tag search schema combining base search with tag-specific filters
+ * MIGRATED TO FLAT PATTERN: All filters are at the top level for HTTP compatibility
  *
  * Provides:
  * - page/pageSize: Standardized pagination
  * - sortBy/sortOrder: Sorting with 'asc'/'desc' values
  * - q: Text search query
- * - filters: Tag-specific filtering options
+ * - Entity-specific filters: Flattened for consistency
  */
 export const TagSearchSchema = BaseSearchSchema.extend({
-    filters: TagFiltersSchema.optional(),
+    // Basic filters (flattened from TagFiltersSchema)
+    name: z.string().optional(),
+    color: z
+        .string()
+        .regex(/^#[0-9A-Fa-f]{6}$/)
+        .optional(),
+
+    // Usage filters
+    minUsageCount: z.number().int().min(0).optional(),
+    maxUsageCount: z.number().int().min(0).optional(),
+    isUnused: z.boolean().optional(),
+
+    // Entity type filters
+    usedInAccommodations: z.boolean().optional(),
+    usedInDestinations: z.boolean().optional(),
+    usedInPosts: z.boolean().optional(),
+    usedInEvents: z.boolean().optional(),
+    usedInUsers: z.boolean().optional(),
+
+    // Date filters
+    createdAfter: z.date().optional(),
+    createdBefore: z.date().optional(),
+    lastUsedAfter: z.date().optional(),
+    lastUsedBefore: z.date().optional(),
+
+    // Name pattern filters
+    nameStartsWith: z.string().min(1).max(50).optional(),
+    nameEndsWith: z.string().min(1).max(50).optional(),
+    nameContains: z.string().min(1).max(50).optional(),
+
+    // Length filters
+    minNameLength: z.number().int().min(1).optional(),
+    maxNameLength: z.number().int().min(1).optional(),
 
     // Tag-specific search options
     fuzzySearch: z.boolean().default(true).optional()

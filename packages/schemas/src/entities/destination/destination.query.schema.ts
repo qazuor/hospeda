@@ -61,15 +61,42 @@ export type DestinationFilters = z.infer<typeof DestinationFiltersSchema>;
 
 /**
  * Complete destination search schema combining base search with destination-specific filters
+ * MIGRATED TO FLAT PATTERN: All filters are at the top level for HTTP compatibility
  *
  * Provides:
  * - page/pageSize: Standardized pagination
  * - sortBy/sortOrder: Sorting with 'asc'/'desc' values
  * - q: Text search query
- * - filters: Destination-specific filtering options
+ * - Entity-specific filters: Flattened for consistency
  */
 export const DestinationSearchSchema = BaseSearchSchema.extend({
-    filters: DestinationFiltersSchema.optional()
+    // Basic filters (flattened from DestinationFiltersSchema)
+    isFeatured: z.boolean().optional(),
+
+    // Location filters
+    country: z.string().length(2).optional(), // ISO country code
+    state: z.string().min(1).max(100).optional(),
+    city: z.string().min(1).max(100).optional(),
+
+    // Geographic radius search
+    latitude: z.number().min(-90).max(90).optional(),
+    longitude: z.number().min(-180).max(180).optional(),
+    radius: z.number().min(0).max(1000).optional(), // kilometers
+
+    // Accommodation metrics
+    minAccommodations: z.number().int().min(0).optional(),
+    maxAccommodations: z.number().int().min(0).optional(),
+
+    // Rating filter
+    minRating: z.number().min(0).max(5).optional(),
+
+    // Tags filter
+    tags: z.array(z.string().uuid()).optional(),
+
+    // Features
+    hasAttractions: z.boolean().optional(),
+    climate: z.string().min(1).max(50).optional(),
+    bestSeason: z.string().min(1).max(50).optional()
 });
 export type DestinationSearchInput = z.infer<typeof DestinationSearchSchema>;
 

@@ -90,15 +90,67 @@ export type EventFilters = z.infer<typeof EventFiltersSchema>;
 
 /**
  * Complete event search schema combining base search with event-specific filters
+ * MIGRATED TO FLAT PATTERN: All filters are at the top level for HTTP compatibility
  *
  * Provides:
  * - page/pageSize: Standardized pagination
  * - sortBy/sortOrder: Sorting with 'asc'/'desc' values
  * - q: Text search query
- * - filters: Event-specific filtering options
+ * - Entity-specific filters: Flattened for consistency
  */
 export const EventSearchSchema = BaseSearchSchema.extend({
-    filters: EventFiltersSchema.optional()
+    // Basic filters (flattened from EventFiltersSchema)
+    category: EventCategoryEnumSchema.optional(),
+    isFeatured: z.boolean().optional(),
+    isVirtual: z.boolean().optional(),
+
+    // Price filters
+    minPrice: z.number().min(0).optional(),
+    maxPrice: z.number().min(0).optional(),
+    price: z.number().min(0).optional(),
+    currency: PriceCurrencyEnumSchema.optional(),
+    isFree: z.boolean().optional(),
+
+    // Date filters
+    startDateAfter: z.date().optional(),
+    startDateBefore: z.date().optional(),
+    endDateAfter: z.date().optional(),
+    endDateBefore: z.date().optional(),
+
+    // Location filters
+    locationId: z.string().uuid().optional(),
+    organizerId: z.string().uuid().optional(),
+    city: z.string().optional(),
+    state: z.string().optional(),
+    country: z.string().optional(),
+
+    // Capacity filters
+    minCapacity: z.number().int().min(0).optional(),
+    maxCapacity: z.number().int().min(0).optional(),
+    hasCapacityLimit: z.boolean().optional(),
+
+    // Status filters
+    isPublished: z.boolean().optional(),
+    isActive: z.boolean().optional(),
+    isCancelled: z.boolean().optional(),
+    isPrivate: z.boolean().optional(),
+
+    // Registration filters
+    requiresRegistration: z.boolean().optional(),
+    hasRegistrationFee: z.boolean().optional(),
+    registrationOpen: z.boolean().optional(),
+
+    // Content filters
+    hasDescription: z.boolean().optional(),
+    hasImages: z.boolean().optional(),
+    hasVideo: z.boolean().optional(),
+
+    // Author filters
+    authorId: z.string().uuid().optional(),
+
+    // Tag filters
+    tags: z.array(z.string()).optional(),
+    tag: z.string().optional()
 });
 export type EventSearchInput = z.infer<typeof EventSearchSchema>;
 

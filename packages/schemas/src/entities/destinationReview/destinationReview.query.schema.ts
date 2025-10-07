@@ -81,15 +81,63 @@ export const DestinationReviewFiltersSchema = z.object({
 
 /**
  * Complete destination review search schema combining base search with review-specific filters
+ * MIGRATED TO FLAT PATTERN: All filters are at the top level for HTTP compatibility
  *
  * Provides:
  * - page/pageSize: Standardized pagination
  * - sortBy/sortOrder: Sorting with 'asc'/'desc' values
  * - q: Text search query
- * - filters: DestinationReview-specific filtering options
+ * - Entity-specific filters: Flattened for consistency
  */
 export const DestinationReviewSearchSchema = BaseSearchSchema.extend({
-    filters: DestinationReviewFiltersSchema.optional()
+    // Entity relation filters (flattened from DestinationReviewFiltersSchema)
+    destinationId: z.string().uuid().optional(),
+    userId: z.string().uuid().optional(),
+
+    // Rating filters
+    minRating: z.number().min(1).max(5).optional(),
+    maxRating: z.number().min(1).max(5).optional(),
+    rating: z.number().min(1).max(5).optional(),
+
+    // Content filters
+    hasTitle: z.boolean().optional(),
+    hasContent: z.boolean().optional(),
+    hasImages: z.boolean().optional(),
+    minContentLength: z.number().int().min(0).optional(),
+    maxContentLength: z.number().int().min(0).optional(),
+
+    // Date filters
+    reviewedAfter: z.date().optional(),
+    reviewedBefore: z.date().optional(),
+    visitedAfter: z.date().optional(),
+    visitedBefore: z.date().optional(),
+
+    // Status filters
+    isVerified: z.boolean().optional(),
+    isPublished: z.boolean().optional(),
+    isFlagged: z.boolean().optional(),
+
+    // Response filters
+    hasOwnerResponse: z.boolean().optional(),
+    responseAfter: z.date().optional(),
+    responseBefore: z.date().optional(),
+
+    // Helpful/voting filters
+    minHelpfulVotes: z.number().int().min(0).optional(),
+    minTotalVotes: z.number().int().min(0).optional(),
+
+    // Language filter
+    language: z.string().length(2).optional(),
+
+    // Trip type filters
+    tripType: z.string().optional(),
+    travelSeason: z.string().optional(),
+    isBusinessTravel: z.boolean().optional(),
+    isReturningVisitor: z.boolean().optional(),
+
+    // Recommendation filters
+    isRecommended: z.boolean().optional(),
+    wouldVisitAgain: z.boolean().optional()
 });
 
 // ============================================================================

@@ -75,15 +75,57 @@ export const AccommodationReviewFiltersSchema = z.object({
 
 /**
  * Complete accommodation review search schema combining base search with review-specific filters
+ * MIGRATED TO FLAT PATTERN: All filters are at the top level for HTTP compatibility
  *
  * Provides:
  * - page/pageSize: Standardized pagination
  * - sortBy/sortOrder: Sorting with 'asc'/'desc' values
  * - q: Text search query
- * - filters: AccommodationReview-specific filtering options
+ * - Entity-specific filters: Flattened for consistency
  */
 export const AccommodationReviewSearchSchema = BaseSearchSchema.extend({
-    filters: AccommodationReviewFiltersSchema.optional()
+    // Entity relation filters (flattened from AccommodationReviewFiltersSchema)
+    accommodationId: z.string().uuid().optional(),
+    userId: z.string().uuid().optional(),
+
+    // Rating filters
+    minRating: z.number().min(1).max(5).optional(),
+    maxRating: z.number().min(1).max(5).optional(),
+    rating: z.number().min(1).max(5).optional(),
+
+    // Content filters
+    hasContent: z.boolean().optional(),
+    hasImages: z.boolean().optional(),
+    minContentLength: z.number().int().min(0).optional(),
+    maxContentLength: z.number().int().min(0).optional(),
+
+    // Date filters
+    reviewedAfter: z.date().optional(),
+    reviewedBefore: z.date().optional(),
+    stayDateAfter: z.date().optional(),
+    stayDateBefore: z.date().optional(),
+
+    // Status filters
+    isVerified: z.boolean().optional(),
+    isPublished: z.boolean().optional(),
+    isFlagged: z.boolean().optional(),
+
+    // Response filters
+    hasOwnerResponse: z.boolean().optional(),
+    responseAfter: z.date().optional(),
+    responseBefore: z.date().optional(),
+
+    // Helpful/voting filters
+    minHelpfulVotes: z.number().int().min(0).optional(),
+    minTotalVotes: z.number().int().min(0).optional(),
+
+    // Language filter
+    language: z.string().length(2).optional(),
+
+    // Guest type filters
+    guestType: z.string().optional(),
+    isBusinessTravel: z.boolean().optional(),
+    isReturningGuest: z.boolean().optional()
 });
 
 // ============================================================================

@@ -55,15 +55,36 @@ export const UserBookmarkFiltersSchema = z.object({
 
 /**
  * Complete user bookmark search schema combining base search with bookmark-specific filters
+ * MIGRATED TO FLAT PATTERN: All filters are at the top level for HTTP compatibility
  *
  * Provides:
  * - page/pageSize: Standardized pagination
  * - sortBy/sortOrder: Sorting with 'asc'/'desc' values
  * - q: Text search query
- * - filters: UserBookmark-specific filtering options
+ * - Entity-specific filters: Flattened for consistency
  */
 export const UserBookmarkSearchSchema = BaseSearchSchema.extend({
-    filters: UserBookmarkFiltersSchema.optional()
+    // User filters (flattened from UserBookmarkFiltersSchema)
+    userId: z.string().uuid().optional(),
+
+    // Entity filters
+    entityId: z.string().uuid().optional(),
+    entityType: EntityTypeEnumSchema.optional(),
+
+    // Date filters
+    bookmarkedAfter: z.date().optional(),
+    bookmarkedBefore: z.date().optional(),
+
+    // Entity type grouping
+    entityTypes: z.array(EntityTypeEnumSchema).optional(),
+
+    // Collection/organization filters
+    isPrivate: z.boolean().optional(),
+    hasNotes: z.boolean().optional(),
+
+    // Content-based filters
+    notes: z.string().optional(),
+    noteContains: z.string().optional()
 });
 
 // ============================================================================

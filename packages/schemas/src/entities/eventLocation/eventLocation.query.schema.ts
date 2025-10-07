@@ -70,15 +70,51 @@ export type EventLocationFilters = z.infer<typeof EventLocationFiltersSchema>;
 
 /**
  * Complete event location search schema combining base search with event location-specific filters
+ * MIGRATED TO FLAT PATTERN: All filters are at the top level for HTTP compatibility
  *
  * Provides:
  * - page/pageSize: Standardized pagination
  * - sortBy/sortOrder: Sorting with 'asc'/'desc' values
  * - q: Text search query
- * - filters: EventLocation-specific filtering options
+ * - Entity-specific filters: Flattened for consistency
  */
 export const EventLocationSearchSchema = BaseSearchSchema.extend({
-    filters: EventLocationFiltersSchema.optional()
+    // Basic filters (flattened from EventLocationFiltersSchema)
+    name: z.string().optional(),
+    city: z.string().optional(),
+    state: z.string().optional(),
+    country: z.string().optional(),
+
+    // Address filters
+    streetAddress: z.string().optional(),
+    postalCode: z.string().optional(),
+
+    // Capacity filters
+    minCapacity: z.number().int().min(0).optional(),
+    maxCapacity: z.number().int().min(0).optional(),
+
+    // Type/category filters
+    locationType: z.string().optional(),
+    venueType: z.string().optional(),
+
+    // Features filters
+    hasParking: z.boolean().optional(),
+    isAccessible: z.boolean().optional(),
+    isIndoor: z.boolean().optional(),
+    isOutdoor: z.boolean().optional(),
+
+    // Geographic radius search
+    latitude: z.number().min(-90).max(90).optional(),
+    longitude: z.number().min(-180).max(180).optional(),
+    radius: z.number().min(0).max(1000).optional(), // kilometers
+
+    // Event-related filters
+    hasUpcomingEvents: z.boolean().optional(),
+    minEventsHosted: z.number().int().min(0).optional(),
+
+    // Operating status
+    isActive: z.boolean().optional(),
+    isVerified: z.boolean().optional()
 });
 export type EventLocationSearchInput = z.infer<typeof EventLocationSearchSchema>;
 
