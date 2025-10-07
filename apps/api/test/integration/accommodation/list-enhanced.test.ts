@@ -109,7 +109,7 @@ describe('GET /accommodations (Enhanced List)', () => {
 
         it('should handle empty results gracefully', async () => {
             // Use filter that likely returns no results
-            const response = await app.request(`${baseUrl}?city=NonExistentCity123`, {
+            const response = await app.request(`${baseUrl}?name=NonExistentAccommodation123`, {
                 headers: {
                     'user-agent': 'vitest',
                     Accept: 'application/json'
