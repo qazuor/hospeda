@@ -34,7 +34,7 @@ describe('DestinationService.count', () => {
     it('should return the count if actor has permission', async () => {
         (model.count as Mock).mockResolvedValue(42);
         const result = await service.count(actor, {
-            filters: { country: 'AR' },
+            country: 'AR',
             page: 1,
             pageSize: 10
         });
@@ -51,7 +51,7 @@ describe('DestinationService.count', () => {
             throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Permission denied');
         });
         const result = await service.count(noPermsActor, {
-            filters: { country: 'AR' },
+            country: 'AR',
             page: 1,
             pageSize: 10
         });
@@ -61,7 +61,7 @@ describe('DestinationService.count', () => {
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
         const result = await service.count(actor, {
-            filters: { country: 123 },
+            country: 123,
             page: 1,
             pageSize: 10
         } as any);
@@ -72,7 +72,7 @@ describe('DestinationService.count', () => {
     it('should return INTERNAL_ERROR if model throws', async () => {
         asMock(model.count).mockRejectedValue(new Error('DB error'));
         const result = await service.count(actor, {
-            filters: { country: 'AR' },
+            country: 'AR',
             page: 1,
             pageSize: 10
         });
@@ -86,7 +86,7 @@ describe('DestinationService.count', () => {
             '_beforeCount'
         ).mockRejectedValue(new Error('before error'));
         const result = await service.count(actor, {
-            filters: { country: 'AR' },
+            country: 'AR',
             page: 1,
             pageSize: 10
         });
@@ -100,7 +100,7 @@ describe('DestinationService.count', () => {
             '_afterCount'
         ).mockRejectedValue(new Error('after error'));
         const result = await service.count(actor, {
-            filters: { country: 'AR' },
+            country: 'AR',
             page: 1,
             pageSize: 10
         });
