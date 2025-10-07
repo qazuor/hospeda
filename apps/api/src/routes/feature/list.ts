@@ -1,4 +1,9 @@
-import { z } from '@hono/zod-openapi';
+/**
+ * Feature list endpoint - Migrated to use @repo/schemas HTTP patterns
+ * Uses standardized HTTP schemas with automatic coercion and flat filter pattern
+ */
+
+import { FeatureListItemSchema, FeatureSearchHttpSchema } from '@repo/schemas';
 import { FeatureService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../utils/actor';
@@ -9,21 +14,16 @@ export const featureListRoute = createListRoute({
     method: 'get',
     path: '/features',
     summary: 'List features',
-    description: 'Returns a paginated list of features',
+    description: 'Returns a paginated list of features using standardized HTTP schemas',
     tags: ['Features'],
-    requestQuery: {
-        page: z.coerce.number().int().min(1).default(1),
-        pageSize: z.coerce.number().int().min(1).max(100).default(20),
-        sortBy: z.string().optional(),
-        sortOrder: z.enum(['asc', 'desc']).default('asc'),
-        q: z.string().optional()
-    },
-    responseSchema: z.object({ id: z.string().uuid() }).partial(),
+    requestQuery: FeatureSearchHttpSchema.shape,
+    responseSchema: FeatureListItemSchema,
     handler: async (ctx: Context, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
-        const q = query as { page?: number; pageSize?: number };
-        const page = q.page ?? 1;
-        const pageSize = q.pageSize ?? 20;
+        const searchParams = query as { page?: number; pageSize?: number; q?: string };
+        const page = searchParams.page ?? 1;
+        const pageSize = searchParams.pageSize ?? 20;
+
         const service = new FeatureService({ logger: apiLogger });
 
         const result = await service.list(actor, {
@@ -44,5 +44,9 @@ export const featureListRoute = createListRoute({
                 totalPages: Math.ceil((result.data?.total || 0) / pageSize)
             }
         };
+    },
+    options: {
+        skipAuth: true,
+        cacheTTL: 120
     }
 });

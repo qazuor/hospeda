@@ -1,4 +1,4 @@
-import { z } from '@hono/zod-openapi';
+import { EventOrganizerListItemSchema, EventOrganizerSearchHttpSchema } from '@repo/schemas';
 import { EventOrganizerService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../utils/actor';
@@ -9,16 +9,10 @@ export const eventOrganizerListRoute = createListRoute({
     method: 'get',
     path: '/event-organizers',
     summary: 'List event organizers',
-    description: 'Returns a paginated list of event organizers',
+    description: 'Returns a paginated list of event organizers using standardized HTTP schemas',
     tags: ['Event Organizers'],
-    requestQuery: {
-        page: z.coerce.number().int().min(1).default(1),
-        pageSize: z.coerce.number().int().min(1).max(100).default(20),
-        sortBy: z.string().optional(),
-        sortOrder: z.enum(['asc', 'desc']).default('asc'),
-        q: z.string().optional()
-    },
-    responseSchema: z.object({ id: z.string().uuid() }).partial(),
+    requestQuery: EventOrganizerSearchHttpSchema.shape,
+    responseSchema: EventOrganizerListItemSchema,
     handler: async (ctx: Context, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const q = query as { page?: number; pageSize?: number };
