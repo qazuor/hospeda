@@ -1,5 +1,8 @@
-import { z } from '@hono/zod-openapi';
-import { type HttpFeatureSearch, HttpFeatureSearchSchema } from '@repo/schemas';
+import {
+    FeatureListItemSchema,
+    type HttpFeatureSearch,
+    HttpFeatureSearchSchema
+} from '@repo/schemas';
 import { FeatureService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../utils/actor';
@@ -13,7 +16,7 @@ export const searchFeaturesRoute = createListRoute({
     description: 'Search and filter features by name, category, availability, and other criteria',
     tags: ['Features'],
     requestQuery: HttpFeatureSearchSchema.shape, // ✅ Using @repo/schemas
-    responseSchema: z.object({ id: z.string().uuid() }).partial(),
+    responseSchema: FeatureListItemSchema,
     handler: async (ctx: Context, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const searchParams = query as HttpFeatureSearch;

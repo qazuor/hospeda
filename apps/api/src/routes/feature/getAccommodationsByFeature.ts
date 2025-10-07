@@ -1,4 +1,4 @@
-import { z } from '@hono/zod-openapi';
+import { AccommodationListItemSchema, BaseHttpSearchSchema, FeatureIdSchema } from '@repo/schemas';
 import { FeatureService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../utils/actor';
@@ -11,15 +11,9 @@ export const getAccommodationsByFeatureRoute = createListRoute({
     summary: 'Get accommodations by feature',
     description: 'Returns a list of accommodations that include a specific feature',
     tags: ['Features', 'Accommodations'],
-    requestParams: { featureId: z.string().uuid() },
-    responseSchema: z.object({ id: z.string().uuid() }).partial(),
-    requestQuery: {
-        page: z.coerce.number().int().min(1).default(1),
-        pageSize: z.coerce.number().int().min(1).max(100).default(20),
-        sortBy: z.string().optional(),
-        sortOrder: z.enum(['asc', 'desc']).default('asc'),
-        q: z.string().optional()
-    },
+    requestParams: { featureId: FeatureIdSchema },
+    responseSchema: AccommodationListItemSchema,
+    requestQuery: BaseHttpSearchSchema.shape,
     handler: async (ctx: Context, params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const service = new FeatureService({ logger: apiLogger });
