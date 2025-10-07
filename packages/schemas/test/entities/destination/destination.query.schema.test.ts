@@ -81,11 +81,9 @@ describe('Destination Query Schemas', () => {
                 sortBy: 'name',
                 sortOrder: 'asc' as const,
                 q: 'beautiful beach',
-                filters: {
-                    isFeatured: true,
-                    country: 'US',
-                    minRating: 4.0
-                }
+                isFeatured: true,
+                country: 'US',
+                minRating: 4.0
             };
             expect(() => DestinationSearchSchema.parse(input)).not.toThrow();
             const result = DestinationSearchSchema.parse(input);
@@ -94,9 +92,9 @@ describe('Destination Query Schemas', () => {
             // sortBy doesn't have default values in BaseSearchSchema
             // sortOrder doesn't have default values in BaseSearchSchema
             expect(result.q).toBe('beautiful beach');
-            expect(result.filters?.isFeatured).toBe(true);
-            expect(result.filters?.country).toBe('US');
-            expect(result.filters?.minRating).toBe(4.0);
+            expect(result.isFeatured).toBe(true);
+            expect(result.country).toBe('US');
+            expect(result.minRating).toBe(4.0);
         });
 
         it('should apply default pagination values', () => {

@@ -171,19 +171,15 @@ export const createValidEventOrganizerFilters = () => ({
 });
 
 export const createValidEventOrganizerSearchInput = () => ({
-    pagination: {
-        page: faker.number.int({ min: 1, max: 10 }),
-        pageSize: faker.number.int({ min: 10, max: 50 })
-    },
-    filters: createValidEventOrganizerFilters()
+    page: faker.number.int({ min: 1, max: 10 }),
+    pageSize: faker.number.int({ min: 10, max: 50 }),
+    ...createValidEventOrganizerFilters()
 });
 
 export const createValidEventOrganizerListInput = () => ({
     page: faker.number.int({ min: 1, max: 10 }),
     pageSize: faker.number.int({ min: 10, max: 50 }),
-    filters: {
-        name: faker.helpers.maybe(() => faker.company.name(), { probability: 0.5 })
-    }
+    name: faker.helpers.maybe(() => faker.company.name(), { probability: 0.5 })
 });
 
 // ============================================================================

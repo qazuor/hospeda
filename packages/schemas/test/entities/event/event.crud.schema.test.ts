@@ -418,9 +418,7 @@ describe('Event CRUD Schemas', () => {
 
         it('should validate search with location filters', () => {
             const searchWithLocation = {
-                filters: {
-                    organizerId: 'invalid-uuid' // This should fail UUID validation
-                }
+                organizerId: 'invalid-uuid' // This should fail UUID validation
             };
 
             const result = EventSearchInputSchema.safeParse(searchWithLocation);
@@ -480,9 +478,7 @@ describe('Event CRUD Schemas', () => {
 
         it('should reject invalid category in search', () => {
             const invalidCategorySearch = {
-                filters: {
-                    category: 'INVALID_CATEGORY'
-                }
+                category: 'INVALID_CATEGORY'
             };
 
             const result = EventSearchInputSchema.safeParse(invalidCategorySearch);
@@ -491,9 +487,7 @@ describe('Event CRUD Schemas', () => {
 
         it('should reject invalid UUID formats', () => {
             const invalidUuidSearch = {
-                filters: {
-                    organizerId: 'not-a-uuid'
-                }
+                organizerId: 'not-a-uuid'
             };
 
             const result = EventSearchInputSchema.safeParse(invalidUuidSearch);
