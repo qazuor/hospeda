@@ -40,12 +40,8 @@ describe('DestinationReview Query Schemas', () => {
 
         it('should validate rating range', () => {
             const invalidRatingRange = {
-                filters: {
-                    rating: {
-                        min: 6, // Invalid: max is 5
-                        max: 5
-                    }
-                }
+                minRating: 6, // Invalid: max is 5
+                maxRating: 5
             };
 
             const result = DestinationReviewSearchInputSchema.safeParse(invalidRatingRange);
