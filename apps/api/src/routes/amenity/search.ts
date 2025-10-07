@@ -1,5 +1,9 @@
-import { z } from '@hono/zod-openapi';
-import { type HttpAmenitySearch, HttpAmenitySearchSchema } from '@repo/schemas';
+import {
+    AmenitySchema,
+    type HttpAmenitySearch,
+    HttpAmenitySearchSchema,
+    createPaginatedResponseSchema
+} from '@repo/schemas';
 import { AmenityService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../utils/actor';
@@ -13,7 +17,7 @@ export const searchAmenitiesRoute = createListRoute({
     description: 'Search amenities by filters and pagination',
     tags: ['Amenities'],
     requestQuery: HttpAmenitySearchSchema.shape, // ✅ Using @repo/schemas
-    responseSchema: z.object({ id: z.string().uuid() }).partial(),
+    responseSchema: createPaginatedResponseSchema(AmenitySchema),
     handler: async (ctx: Context, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const searchParams = query as HttpAmenitySearch;

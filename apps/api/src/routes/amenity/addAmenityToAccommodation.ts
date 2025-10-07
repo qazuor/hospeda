@@ -1,5 +1,10 @@
-import { z } from '@hono/zod-openapi';
-import type { PriceCurrencyEnum } from '@repo/schemas';
+import type { z } from '@hono/zod-openapi';
+import {
+    AccommodationAmenityRelationSchema,
+    AccommodationIdSchema,
+    AmenityAddToAccommodationInputSchema,
+    type PriceCurrencyEnum
+} from '@repo/schemas';
 import { AmenityService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../utils/actor';
@@ -15,31 +20,20 @@ export const addAmenityToAccommodationRoute = createCRUDRoute({
     description: 'Creates a relation between an amenity and an accommodation',
     tags: ['Amenities', 'Accommodations'],
     requestParams: {
-        accommodationId: z.string().uuid()
+        accommodationId: AccommodationIdSchema
     },
-    requestBody: z.object({
-        amenityId: z.string().uuid(),
-        isOptional: z.boolean().optional(),
-        additionalCost: z.object({ amount: z.number(), currency: z.string() }).optional(),
-        additionalCostPercent: z.number().min(0).max(100).optional()
-    }),
-    // TODO [d9f108ab-4cba-4a48-9ff9-3df536c6d784]: Replace with a proper relation schema when available
-    responseSchema: z.object({ relation: z.object({ amenityId: z.string().uuid() }).partial() }),
+    requestBody: AmenityAddToAccommodationInputSchema,
+    responseSchema: AccommodationAmenityRelationSchema,
     handler: async (ctx: Context, params, body) => {
         const actor = getActorFromContext(ctx);
-        const parsed = body as {
-            amenityId: string;
-            isOptional?: boolean;
-            additionalCost?: { amount: number; currency: string };
-            additionalCostPercent?: number;
-        };
+        const parsed = body as z.infer<typeof AmenityAddToAccommodationInputSchema>;
         const payload = {
             accommodationId: params.accommodationId as string,
             amenityId: parsed.amenityId,
             isOptional: parsed.isOptional ?? false,
             additionalCost: parsed.additionalCost
                 ? {
-                      price: parsed.additionalCost.amount,
+                      price: parsed.additionalCost.price,
                       currency: parsed.additionalCost.currency as PriceCurrencyEnum
                   }
                 : undefined,
@@ -48,6 +42,6 @@ export const addAmenityToAccommodationRoute = createCRUDRoute({
         const service = new AmenityService({ logger: apiLogger });
         const result = await service.addAmenityToAccommodation(actor, payload);
         if (result.error) throw new Error(result.error.message);
-        return { relation: result.data.relation };
+        return result.data;
     }
 });
