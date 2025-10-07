@@ -277,7 +277,7 @@ export class TodoSynchronizer {
      * Checks if a tracked comment needs AI retry processing
      */
     private needsAIRetry(tracked: TrackedComment, forceRetryFailed = false): boolean {
-        const maxRetries = 3; // Match the batch processor config
+        const maxRetries = this.config.ai.maxRetries; // Use configured max retries
         const retryCount = tracked.aiRetryCount ?? 0;
 
         // Check if AI state is PENDING (failed or not yet processed)
