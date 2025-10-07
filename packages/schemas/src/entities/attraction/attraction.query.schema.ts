@@ -87,12 +87,12 @@ export const AttractionListItemSchema = AttractionSchema.pick({
     id: true,
     slug: true,
     name: true,
-    summary: true,
+    description: true,
+    icon: true,
+    destinationId: true,
     isFeatured: true,
     isBuiltin: true,
     lifecycleState: true,
-    location: true,
-    media: true,
     createdAt: true,
     updatedAt: true
 });
