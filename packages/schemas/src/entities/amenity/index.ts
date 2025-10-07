@@ -7,6 +7,9 @@ export * from './amenity.crud.schema.js'; // Create, Update, Delete, Restore sch
 // Query operations
 export * from './amenity.query.schema.js'; // List, Search, Summary, Stats, Filters schemas
 
+// HTTP operations
+export * from './amenity.http.schema.js'; // HTTP-compatible schemas with coercion
+
 // Relations
 export * from './amenity.relations.schema.js'; // Schemas with related entities
 
