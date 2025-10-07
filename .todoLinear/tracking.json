@@ -1204,10 +1204,10 @@
             "linearId": "74a2c0b1-7e1a-4663-ac24-0aae01b9f079",
             "type": "todo",
             "filePath": "packages/service-core/src/services/eventOrganizer/eventOrganizer.service.ts",
-            "line": 78,
+            "line": 77,
             "title": "Implement fine-grained view permissions if needed",
             "createdAt": "2025-10-04T12:55:31.131Z",
-            "updatedAt": "2025-10-04T14:29:29.302Z",
+            "updatedAt": "2025-10-07T18:58:23.460Z",
             "isOrphan": false,
             "aiState": "COMPLETED",
             "aiRetryCount": 0
@@ -1216,10 +1216,10 @@
             "linearId": "fafc85ef-f637-4f33-9f34-bb0d186a6649",
             "type": "todo",
             "filePath": "packages/service-core/src/services/eventOrganizer/eventOrganizer.service.ts",
-            "line": 82,
+            "line": 81,
             "title": "Implement list permissions if needed",
             "createdAt": "2025-10-04T12:55:32.728Z",
-            "updatedAt": "2025-10-04T14:29:31.613Z",
+            "updatedAt": "2025-10-07T18:58:25.678Z",
             "isOrphan": false,
             "aiState": "COMPLETED",
             "aiRetryCount": 0
@@ -1228,10 +1228,10 @@
             "linearId": "3e22743d-e742-4dba-9ef6-1264778d3234",
             "type": "todo",
             "filePath": "packages/service-core/src/services/eventOrganizer/eventOrganizer.service.ts",
-            "line": 86,
+            "line": 85,
             "title": "Implement search permissions if needed",
             "createdAt": "2025-10-04T12:55:33.531Z",
-            "updatedAt": "2025-10-07T13:22:19.933Z",
+            "updatedAt": "2025-10-07T18:58:26.966Z",
             "isOrphan": false,
             "aiState": "COMPLETED",
             "aiRetryCount": 0
@@ -1240,10 +1240,10 @@
             "linearId": "a0412059-0a6b-4b8d-9aa0-d511813a9d1f",
             "type": "todo",
             "filePath": "packages/service-core/src/services/eventOrganizer/eventOrganizer.service.ts",
-            "line": 90,
+            "line": 89,
             "title": "Implement count permissions if needed",
             "createdAt": "2025-10-04T12:55:34.240Z",
-            "updatedAt": "2025-10-07T03:23:30.151Z",
+            "updatedAt": "2025-10-07T18:58:29.858Z",
             "isOrphan": false,
             "aiState": "COMPLETED",
             "aiRetryCount": 0
@@ -1252,10 +1252,10 @@
             "linearId": "f363c84e-aa3a-49c8-be3d-49465b951f17",
             "type": "todo",
             "filePath": "packages/service-core/src/services/eventOrganizer/eventOrganizer.service.ts",
-            "line": 98,
+            "line": 97,
             "title": "Implement visibility update permissions if needed",
             "createdAt": "2025-10-04T12:55:35.021Z",
-            "updatedAt": "2025-10-04T12:55:35.021Z",
+            "updatedAt": "2025-10-07T18:58:30.629Z",
             "isOrphan": false,
             "aiState": "COMPLETED",
             "aiRetryCount": 0
@@ -1573,5 +1573,5 @@
             "aiRetryCount": 0
         }
     ],
-    "lastSync": "2025-10-07T17:02:56.988Z"
+    "lastSync": "2025-10-07T18:59:54.410Z"
 }
