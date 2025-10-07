@@ -1,4 +1,4 @@
-import { z } from '@hono/zod-openapi';
+import { AmenityIdSchema, AmenitySchema } from '@repo/schemas';
 import { AmenityService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../utils/actor';
@@ -13,8 +13,8 @@ export const restoreAmenityRoute = createCRUDRoute({
     summary: 'Restore amenity',
     description: 'Restores a soft-deleted amenity',
     tags: ['Amenities'],
-    requestParams: { id: z.string().uuid() },
-    responseSchema: z.object({ id: z.string().uuid() }).partial(),
+    requestParams: { id: AmenityIdSchema },
+    responseSchema: AmenitySchema,
     handler: async (ctx: Context, params) => {
         const actor = getActorFromContext(ctx);
         const service = new AmenityService({ logger: apiLogger });
