@@ -4,6 +4,8 @@
  */
 
 import { webcrypto } from 'node:crypto';
+import { ServiceErrorCode } from '@repo/schemas';
+import { ServiceError } from '@repo/service-core';
 import { afterAll, afterEach, beforeAll, beforeEach, vi } from 'vitest';
 
 // Polyfill crypto for Hono request-id middleware
@@ -505,12 +507,19 @@ vi.mock('@repo/service-core', () => {
         ) {
             // Handle non-existent accommodation
             if (_params.accommodationId === '87654321-4321-4321-8765-876543218765') {
-                return { data: null };
+                return {
+                    error: new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found')
+                };
             }
 
             // Handle non-existent FAQ
             if (_params.faqId === '87654321-4321-4321-8765-876543218766') {
-                return { data: null };
+                return {
+                    error: new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        'FAQ not found for this accommodation'
+                    )
+                };
             }
 
             return {
