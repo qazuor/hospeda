@@ -32,7 +32,7 @@ describe('UserBookmarkService.search', () => {
             pageSize: 10,
             sortBy: 'createdAt',
             sortOrder: 'desc',
-            filters: { userId: bookmark.userId }
+            userId: bookmark.userId
         });
         expectSuccess(result);
         expect(result.data?.items).toHaveLength(1);
@@ -46,7 +46,7 @@ describe('UserBookmarkService.search', () => {
             pageSize: 10,
             sortBy: 'createdAt',
             sortOrder: 'desc',
-            filters: { userId: bookmark.userId }
+            userId: bookmark.userId
         });
         expectInternalError(result);
     });

@@ -62,7 +62,7 @@ describe('DestinationService.search and count', () => {
 
         // Act
         const result = await service.search(admin, {
-            filters: params,
+            ...params,
             page: 1,
             pageSize: 10
         });
@@ -80,7 +80,7 @@ describe('DestinationService.search and count', () => {
 
         // Act
         const result = await service.search(admin, {
-            filters: params,
+            ...params,
             page: 1,
             pageSize: 10
         });
@@ -97,7 +97,7 @@ describe('DestinationService.search and count', () => {
 
         // Act
         const result = await service.search(admin, {
-            filters: invalidParams,
+            ...invalidParams,
             page: 1,
             pageSize: 10
         });
@@ -113,7 +113,7 @@ describe('DestinationService.search and count', () => {
 
         // Act
         const result = await service.search(admin, {
-            filters: params,
+            ...params,
             page: 1,
             pageSize: 10
         });
@@ -126,7 +126,7 @@ describe('DestinationService.search and count', () => {
         (model.count as import('vitest').Mock).mockResolvedValue(5);
         const params = { country: 'AR' };
         const result = await service.count(admin, {
-            filters: params,
+            ...params,
             page: 1,
             pageSize: 10
         });
@@ -137,7 +137,7 @@ describe('DestinationService.search and count', () => {
     it('should return 0 count if no destinations match', async () => {
         (model.count as import('vitest').Mock).mockResolvedValue(0);
         const params = { country: 'ZZ' };
-        const result = await service.count(admin, { filters: params, page: 1, pageSize: 10 });
+        const result = await service.count(admin, { ...params, page: 1, pageSize: 10 });
         expectSuccess(result);
         expect(result.data?.count).toBe(0);
     });
@@ -150,7 +150,7 @@ describe('DestinationService.search and count', () => {
         const params = { country: 'AR' };
 
         // Act
-        const result = await service.count(guest, { filters: params, page: 1, pageSize: 10 });
+        const result = await service.count(guest, { ...params, page: 1, pageSize: 10 });
 
         // Assert
         expectForbiddenError(result);
@@ -162,7 +162,7 @@ describe('DestinationService.search and count', () => {
 
         // Act
         const result = await service.count(admin, {
-            filters: invalidParams,
+            ...invalidParams,
             page: 1,
             pageSize: 10
         });
@@ -177,7 +177,7 @@ describe('DestinationService.search and count', () => {
         const params = { country: 'AR' };
 
         // Act
-        const result = await service.count(admin, { filters: params, page: 1, pageSize: 10 });
+        const result = await service.count(admin, { ...params, page: 1, pageSize: 10 });
 
         // Assert
         expectInternalError(result);
@@ -200,7 +200,7 @@ describe('DestinationService.search and count', () => {
         const filters = { tags: [tag.id] }; // Use tag ID instead of full object
 
         // Act
-        const result = await service.search(admin, { filters: filters, page: 1, pageSize: 10 });
+        const result = await service.search(admin, { ...filters, page: 1, pageSize: 10 });
 
         // Assert
         expectSuccess(result);
@@ -214,7 +214,7 @@ describe('DestinationService.search and count', () => {
             '_beforeSearch'
         ).mockRejectedValue(new Error('beforeSearch error'));
         const params = { state: 'Entre Ríos' };
-        const result = await service.search(admin, { filters: params, page: 1, pageSize: 10 });
+        const result = await service.search(admin, { ...params, page: 1, pageSize: 10 });
         expect(result.data).toBeUndefined();
         expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
     });
@@ -226,7 +226,7 @@ describe('DestinationService.search and count', () => {
             '_afterSearch'
         ).mockRejectedValue(new Error('afterSearch error'));
         const params = { state: 'Entre Ríos' };
-        const result = await service.search(admin, { filters: params, page: 1, pageSize: 10 });
+        const result = await service.search(admin, { ...params, page: 1, pageSize: 10 });
         expect(result.data).toBeUndefined();
         expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
     });
@@ -244,11 +244,8 @@ describe('DestinationService.search and count', () => {
             model as unknown as DestinationModel
         );
         (model.findAll as import('vitest').Mock).mockResolvedValue(paginated(entities, 99, 10));
-        await serviceWithNorm.search(admin, { filters: {}, page: 1, pageSize: 10 });
-        expect(normalizer).toHaveBeenCalledWith(
-            { filters: {}, page: 1, pageSize: 10, sortOrder: 'asc' },
-            admin
-        );
+        await serviceWithNorm.search(admin, { page: 1, pageSize: 10 });
+        expect(normalizer).toHaveBeenCalledWith({ page: 1, pageSize: 10, sortOrder: 'asc' }, admin);
         expect(model.findAll).toHaveBeenCalledWith({}, { page: 99, pageSize: 10 });
     });
 });
