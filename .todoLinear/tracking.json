@@ -577,90 +577,6 @@
             "aiRetryCount": 0
         },
         {
-            "linearId": "d9f108ab-4cba-4a48-9ff9-3df536c6d784",
-            "type": "todo",
-            "filePath": "apps/api/src/routes/amenity/addAmenityToAccommodation.ts",
-            "line": 26,
-            "title": "Replace with a proper relation schema when available",
-            "createdAt": "2025-10-04T12:54:33.843Z",
-            "updatedAt": "2025-10-04T13:28:11.555Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "4296f2da-6f2a-4bb5-bc09-3236ed96d2ec",
-            "type": "todo",
-            "filePath": "apps/api/src/routes/amenity/create.ts",
-            "line": 36,
-            "title": "Replace with AmenityDetail schema when available",
-            "createdAt": "2025-10-04T12:54:34.848Z",
-            "updatedAt": "2025-10-04T13:28:14.424Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "bfd77908-2f5f-4d92-a263-63f480c697a3",
-            "type": "todo",
-            "filePath": "apps/api/src/routes/amenity/getAccommodationsByAmenity.ts",
-            "line": 19,
-            "title": "Replace with AccommodationListItem schema when available in @repo/schemas",
-            "createdAt": "2025-10-04T12:54:35.682Z",
-            "updatedAt": "2025-10-04T13:36:03.545Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "3b72c63b-4369-4689-9165-938804cebefd",
-            "type": "todo",
-            "filePath": "apps/api/src/routes/amenity/getAmenitiesForAccommodation.ts",
-            "line": 19,
-            "title": "Replace with AmenityListItem schema when available in @repo/schemas",
-            "createdAt": "2025-10-04T12:54:36.422Z",
-            "updatedAt": "2025-10-04T13:36:06.193Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "871b589d-4f7a-4632-ba3f-a8ace324b763",
-            "type": "todo",
-            "filePath": "apps/api/src/routes/amenity/removeAmenityFromAccommodation.ts",
-            "line": 20,
-            "title": "Replace with a proper relation schema when available",
-            "createdAt": "2025-10-04T12:54:38.289Z",
-            "updatedAt": "2025-10-04T13:36:09.811Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "e2740aba-8404-4a79-99e4-b32fe5cce1e3",
-            "type": "todo",
-            "filePath": "apps/api/src/routes/amenity/show.ts",
-            "line": 19,
-            "title": "Replace with AmenityDetail schema when available in @repo/schemas",
-            "createdAt": "2025-10-04T12:54:39.687Z",
-            "updatedAt": "2025-10-04T13:36:13.099Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "05d00237-2d2b-40ea-9a0f-5a5b086031c2",
-            "type": "todo",
-            "filePath": "apps/api/src/routes/amenity/update.ts",
-            "line": 37,
-            "title": "Replace with AmenityDetail schema when available",
-            "createdAt": "2025-10-04T12:54:40.438Z",
-            "updatedAt": "2025-10-07T03:10:19.738Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
             "linearId": "347d6794-6683-4ac1-8b6c-8e80ea565739",
             "type": "todo",
             "filePath": "apps/api/src/routes/destination/getAccommodations.ts",
@@ -700,10 +616,10 @@
             "linearId": "43674f95-d006-4cf4-8d4a-70c83e1be04e",
             "type": "todo",
             "filePath": "apps/api/src/routes/user/update.ts",
-            "line": 56,
+            "line": 50,
             "title": "Improve this by storing Clerk ID mapping or adding a method to get Clerk ID by user ID",
             "createdAt": "2025-10-04T12:54:43.965Z",
-            "updatedAt": "2025-10-04T15:26:59.544Z",
+            "updatedAt": "2025-10-07T21:47:24.111Z",
             "isOrphan": false,
             "aiState": "COMPLETED",
             "aiRetryCount": 0
@@ -1573,5 +1489,5 @@
             "aiRetryCount": 0
         }
     ],
-    "lastSync": "2025-10-07T18:59:54.410Z"
+    "lastSync": "2025-10-07T21:49:26.752Z"
 }
