@@ -1,4 +1,4 @@
-import { z } from '@hono/zod-openapi';
+import { PostSponsorSchema, PostSponsorSearchHttpSchema } from '@repo/schemas';
 import { PostSponsorService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../utils/actor';
@@ -9,16 +9,10 @@ export const sponsorListRoute = createListRoute({
     method: 'get',
     path: '/sponsors',
     summary: 'List sponsors',
-    description: 'Returns a paginated list of sponsors',
+    description: 'Returns a paginated list of sponsors using standardized HTTP schemas',
     tags: ['Sponsors'],
-    requestQuery: {
-        page: z.coerce.number().int().min(1).default(1),
-        pageSize: z.coerce.number().int().min(1).max(100).default(20),
-        sortBy: z.string().optional(),
-        sortOrder: z.enum(['asc', 'desc']).default('asc'),
-        q: z.string().optional()
-    },
-    responseSchema: z.object({ id: z.string().uuid() }).partial(),
+    requestQuery: PostSponsorSearchHttpSchema.shape,
+    responseSchema: PostSponsorSchema,
     handler: async (ctx: Context, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const q = query as { page?: number; pageSize?: number };
