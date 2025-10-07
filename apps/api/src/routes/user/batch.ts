@@ -1,25 +1,15 @@
-import { UserSchema } from '@repo/schemas';
+import {
+    type UserBatchRequest,
+    UserBatchRequestSchema,
+    UserBatchResponseSchema
+} from '@repo/schemas';
 import { UserService } from '@repo/service-core';
 import type { Context } from 'hono';
-import { z } from 'zod';
 import { getActorFromContext } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
 import { createCRUDRoute } from '../../utils/route-factory';
 
 const userService = new UserService({ logger: apiLogger });
-
-/**
- * Request schema for batch user loading
- */
-const BatchUserRequestSchema = z.object({
-    ids: z.array(z.string()).min(1).max(100), // Limit to 100 IDs per request
-    fields: z.array(z.string()).optional() // Optional field selection
-});
-
-/**
- * Response schema for batch user loading
- */
-const BatchUserResponseSchema = z.array(UserSchema.nullable());
 
 export const userBatchRoute = createCRUDRoute({
     method: 'post',
@@ -27,11 +17,11 @@ export const userBatchRoute = createCRUDRoute({
     summary: 'Get multiple users by IDs',
     description: 'Retrieves multiple users by their IDs for entity select components',
     tags: ['Users'],
-    requestBody: BatchUserRequestSchema,
-    responseSchema: BatchUserResponseSchema,
+    requestBody: UserBatchRequestSchema,
+    responseSchema: UserBatchResponseSchema,
     handler: async (ctx: Context, _params, body: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
-        const { ids, fields } = body as { ids: string[]; fields?: string[] };
+        const { ids, fields } = body as UserBatchRequest;
 
         // Load all users by their IDs
         const users = await Promise.all(

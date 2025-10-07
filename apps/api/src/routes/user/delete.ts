@@ -3,7 +3,7 @@
  * This demonstrates the proper usage of the response factory in a real endpoint
  */
 
-import { z } from '@hono/zod-openapi';
+import { DeleteResultSchema, UserIdSchema } from '@repo/schemas';
 import { UserService } from '@repo/service-core';
 import { apiLogger } from '../../utils/logger';
 import { createCRUDRoute } from '../../utils/route-factory';
@@ -20,12 +20,9 @@ export const deleteUserRoute = createCRUDRoute({
     description: 'Deletes a user',
     tags: ['Users'],
     requestParams: {
-        id: z.string().min(3).describe('User ID')
+        id: UserIdSchema
     },
-    responseSchema: z.object({
-        deleted: z.boolean(),
-        id: z.string()
-    }),
+    responseSchema: DeleteResultSchema,
     handler: async (ctx, params) => {
         const { id } = params;
 
