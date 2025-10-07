@@ -1,25 +1,11 @@
-import { EventSchema } from '@repo/schemas';
+import { EventBatchRequestSchema, EventBatchResponseSchema } from '@repo/schemas';
 import { EventService } from '@repo/service-core';
 import type { Context } from 'hono';
-import { z } from 'zod';
 import { getActorFromContext } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
 import { createCRUDRoute } from '../../utils/route-factory';
 
 const eventService = new EventService({ logger: apiLogger });
-
-/**
- * Request schema for batch event loading
- */
-const BatchEventRequestSchema = z.object({
-    ids: z.array(z.string()).min(1).max(100), // Limit to 100 IDs per request
-    fields: z.array(z.string()).optional() // Optional field selection
-});
-
-/**
- * Response schema for batch event loading
- */
-const BatchEventResponseSchema = z.array(EventSchema.nullable());
 
 export const eventBatchRoute = createCRUDRoute({
     method: 'post',
@@ -27,8 +13,8 @@ export const eventBatchRoute = createCRUDRoute({
     summary: 'Get multiple events by IDs',
     description: 'Retrieves multiple events by their IDs for entity select components',
     tags: ['Events'],
-    requestBody: BatchEventRequestSchema,
-    responseSchema: BatchEventResponseSchema,
+    requestBody: EventBatchRequestSchema,
+    responseSchema: EventBatchResponseSchema,
     handler: async (ctx: Context, _params, body: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const { ids, fields } = body as { ids: string[]; fields?: string[] };
