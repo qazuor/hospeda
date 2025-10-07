@@ -68,15 +68,49 @@ export const PostFiltersSchema = z.object({
 
 /**
  * Complete post search schema combining base search with post-specific filters
+ * MIGRATED TO FLAT PATTERN: All filters are at the top level for HTTP compatibility
  *
  * Provides:
  * - page/pageSize: Standardized pagination
  * - sortBy/sortOrder: Sorting with 'asc'/'desc' values
  * - q: Text search query
- * - filters: Post-specific filtering options
+ * - Entity-specific filters: Flattened for consistency
  */
 export const PostSearchSchema = BaseSearchSchema.extend({
-    filters: PostFiltersSchema.optional()
+    // Basic filters (flattened from PostFiltersSchema)
+    status: LifecycleStatusEnumSchema.optional(),
+    category: PostCategoryEnumSchema.optional(),
+    isFeatured: z.boolean().optional(),
+    isPublished: z.boolean().optional(),
+
+    // Author filters
+    authorId: z.string().uuid().optional(),
+
+    // Date range filters
+    publishedAfter: z.date().optional(),
+    publishedBefore: z.date().optional(),
+    createdAfter: z.date().optional(),
+    createdBefore: z.date().optional(),
+
+    // Content filters
+    hasMedia: z.boolean().optional(),
+    hasFeaturedImage: z.boolean().optional(),
+
+    // Reading time filters
+    minReadingTime: z.number().int().min(1).optional(),
+    maxReadingTime: z.number().int().min(1).optional(),
+
+    // Tags filter
+    tags: z.array(z.string().uuid()).optional(),
+
+    // Related entities
+    destinationId: z.string().uuid().optional(),
+    accommodationId: z.string().uuid().optional(),
+    eventId: z.string().uuid().optional(),
+
+    // Sponsorship filters
+    isSponsored: z.boolean().optional(),
+    sponsorId: z.string().uuid().optional()
 });
 
 // ============================================================================

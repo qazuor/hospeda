@@ -44,15 +44,26 @@ export const EventOrganizerFiltersSchema = z.object({
 
 /**
  * Complete event organizer search schema combining base search with event organizer-specific filters
+ * MIGRATED TO FLAT PATTERN: All filters are at the top level for HTTP compatibility
  *
  * Provides:
  * - page/pageSize: Standardized pagination
  * - sortBy/sortOrder: Sorting with 'asc'/'desc' values
  * - q: Text search query
- * - filters: EventOrganizer-specific filtering options
+ * - Entity-specific filters: Flattened for consistency
  */
 export const EventOrganizerSearchSchema = BaseSearchSchema.extend({
-    filters: EventOrganizerFiltersSchema.optional()
+    // Basic filters (flattened from EventOrganizerFiltersSchema)
+    name: z.string().optional(),
+
+    // Contact information filters (for filtering by nested contact info)
+    personalEmail: z.string().email().optional(),
+    workEmail: z.string().email().optional(),
+    mobilePhone: z.string().optional(),
+    website: z.string().url().optional(),
+
+    // Lifecycle filter (this exists in main schema)
+    lifecycleState: z.string().optional()
 });
 
 // ============================================================================
