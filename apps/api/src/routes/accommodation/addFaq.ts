@@ -4,38 +4,18 @@
  * ✅ Migrated to use createCRUDRoute (Route Factory)
  */
 
-import { z } from '@hono/zod-openapi';
-import { AccommodationFaqAddInputSchema } from '@repo/schemas';
+import {
+    type AccommodationFaqAddInput,
+    AccommodationFaqSingleOutputSchema,
+    AccommodationIdSchema,
+    FaqCreatePayloadSchema,
+    type FaqCreatePayloadType
+} from '@repo/schemas';
 import { AccommodationService } from '@repo/service-core';
+import type { Context } from 'hono';
 import { getActorFromContext } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
 import { createCRUDRoute } from '../../utils/route-factory';
-
-// Local schemas for API
-const ParamsSchema = z.object({
-    id: z
-        .string()
-        .uuid('Invalid accommodation ID format')
-        .openapi({
-            param: { name: 'id', in: 'path' },
-            example: 'acc_1234567890'
-        })
-});
-
-const faqResponseSchema = z
-    .object({
-        id: z.string(),
-        question: z.string(),
-        answer: z.string(),
-        order: z.number(),
-        createdAt: z.string(),
-        updatedAt: z.string()
-    })
-    .openapi('FaqResponse');
-
-const faqCreateSchema = z
-    .object(AccommodationFaqAddInputSchema.shape.faq.shape)
-    .openapi('FaqCreate');
 
 // Initialize service once
 const accommodationService = new AccommodationService({ logger: apiLogger });
@@ -51,31 +31,28 @@ export const addFaqRoute = createCRUDRoute({
     description: 'Add a new frequently asked question to a specific accommodation',
     tags: ['Accommodations', 'FAQs'],
     requestParams: {
-        id: ParamsSchema.shape.id
+        id: AccommodationIdSchema
     },
-    requestBody: faqCreateSchema,
-    responseSchema: z
-        .object({
-            faq: faqResponseSchema
-        })
-        .openapi('AddFaqResponse'),
-    handler: async (c, params, body) => {
+    requestBody: FaqCreatePayloadSchema,
+    responseSchema: AccommodationFaqSingleOutputSchema,
+    handler: async (c: Context, params, body) => {
         // Get actor from context (authenticated user for protected endpoint)
         const actor = getActorFromContext(c);
 
-        // Add FAQ to accommodation
-        const result = await accommodationService.addFaq(actor, {
+        // Combine path param with body to form the service input
+        const input: AccommodationFaqAddInput = {
             accommodationId: params.id as string,
-            faq: body as z.infer<typeof faqCreateSchema>
-        });
+            faq: body as FaqCreatePayloadType
+        };
+
+        // Add FAQ to accommodation
+        const result = await accommodationService.addFaq(actor, input);
 
         if (result.error) {
             throw new Error(`${result.error.code}: ${result.error.message}`);
         }
 
-        return {
-            faq: result.data.faq
-        };
+        return result.data;
     }
 });
 
