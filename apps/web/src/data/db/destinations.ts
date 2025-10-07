@@ -34,7 +34,7 @@ export const getDestinations = async ({
     const result = await destinationService.search(actor, {
         page: 1,
         pageSize: pageSize,
-        filters: filters
+        ...filters
     });
 
     const destinations = result.data?.items ?? [];
@@ -94,7 +94,7 @@ export const getFeaturedDestinations = async ({
     const result = await destinationService.search(actor, {
         page: 1,
         pageSize: limit,
-        filters: { isFeatured: true }
+        isFeatured: true
     });
 
     return {
