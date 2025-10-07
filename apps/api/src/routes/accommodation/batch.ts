@@ -1,25 +1,11 @@
-import { AccommodationSchema } from '@repo/schemas';
+import { AccommodationBatchRequestSchema, AccommodationBatchResponseSchema } from '@repo/schemas';
 import { AccommodationService } from '@repo/service-core';
 import type { Context } from 'hono';
-import { z } from 'zod';
 import { getActorFromContext } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
 import { createCRUDRoute } from '../../utils/route-factory';
 
 const accommodationService = new AccommodationService({ logger: apiLogger });
-
-/**
- * Request schema for batch accommodation loading
- */
-const BatchAccommodationRequestSchema = z.object({
-    ids: z.array(z.string()).min(1).max(100), // Limit to 100 IDs per request
-    fields: z.array(z.string()).optional() // Optional field selection
-});
-
-/**
- * Response schema for batch accommodation loading
- */
-const BatchAccommodationResponseSchema = z.array(AccommodationSchema.nullable());
 
 export const accommodationBatchRoute = createCRUDRoute({
     method: 'post',
@@ -27,8 +13,8 @@ export const accommodationBatchRoute = createCRUDRoute({
     summary: 'Get multiple accommodations by IDs',
     description: 'Retrieves multiple accommodations by their IDs for entity select components',
     tags: ['Accommodations'],
-    requestBody: BatchAccommodationRequestSchema,
-    responseSchema: BatchAccommodationResponseSchema,
+    requestBody: AccommodationBatchRequestSchema,
+    responseSchema: AccommodationBatchResponseSchema,
     handler: async (ctx: Context, _params, body: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const { ids, fields } = body as { ids: string[]; fields?: string[] };
