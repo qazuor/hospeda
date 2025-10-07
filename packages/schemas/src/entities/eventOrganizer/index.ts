@@ -6,3 +6,6 @@ export * from './eventOrganizer.crud.schema.js'; // Create, Update, Delete, Rest
 
 // Query operations
 export * from './eventOrganizer.query.schema.js'; // List, Search, Count, Filters schemas
+
+// HTTP operations
+export * from './eventOrganizer.http.schema.js'; // HTTP-compatible schemas with query coercion
