@@ -146,12 +146,12 @@ export class DestinationReviewService extends BaseCrudService<
             schema: DestinationReviewSearchInputSchema,
             execute: async (validData, validatedActor) => {
                 await this._canList(validatedActor);
-                const { page, pageSize, filters = {} } = validData;
+                const { page, pageSize, ...filterParams } = validData;
 
                 // Default filters for public access
                 const defaultFilters = {
                     deletedAt: null,
-                    ...filters
+                    ...filterParams
                 };
 
                 const result = await this.model.findAllWithUser(defaultFilters, { page, pageSize });
