@@ -1,4 +1,4 @@
-import { z } from '@hono/zod-openapi';
+import { DeleteResultSchema, FeatureIdSchema } from '@repo/schemas';
 import { FeatureService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../utils/actor';
@@ -11,8 +11,8 @@ export const softDeleteFeatureRoute = createCRUDRoute({
     summary: 'Soft delete feature',
     description: 'Marks a feature as deleted',
     tags: ['Features'],
-    requestParams: { id: z.string().uuid() },
-    responseSchema: z.object({ id: z.string().uuid() }).partial(),
+    requestParams: { id: FeatureIdSchema },
+    responseSchema: DeleteResultSchema,
     handler: async (ctx: Context, params) => {
         const actor = getActorFromContext(ctx);
         const service = new FeatureService({ logger: apiLogger });

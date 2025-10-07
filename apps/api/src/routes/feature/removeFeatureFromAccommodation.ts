@@ -1,4 +1,9 @@
-import { z } from '@hono/zod-openapi';
+import {
+    AccommodationIdSchema,
+    FeatureIdSchema,
+    RemovalResultSchema,
+    type RemoveFeatureFromAccommodationInput
+} from '@repo/schemas';
 import { FeatureService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../utils/actor';
@@ -11,17 +16,17 @@ export const removeFeatureFromAccommodationRoute = createCRUDRoute({
     summary: 'Remove feature from accommodation',
     description: 'Removes a relation between a feature and an accommodation',
     tags: ['Features', 'Accommodations'],
-    requestParams: { accommodationId: z.string().uuid(), featureId: z.string().uuid() },
-    responseSchema: z.object({ relation: z.object({ featureId: z.string().uuid() }).partial() }),
+    requestParams: { accommodationId: AccommodationIdSchema, featureId: FeatureIdSchema },
+    responseSchema: RemovalResultSchema,
     handler: async (ctx: Context, params) => {
         const actor = getActorFromContext(ctx);
-        const payload = {
+        const payload: RemoveFeatureFromAccommodationInput = {
             accommodationId: params.accommodationId as string,
             featureId: params.featureId as string
         };
         const service = new FeatureService({ logger: apiLogger });
         const result = await service.removeFeatureFromAccommodation(actor, payload);
         if (result.error) throw new Error(result.error.message);
-        return { relation: result.data.relation };
+        return result.data;
     }
 });

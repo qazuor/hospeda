@@ -1,41 +1,15 @@
+import {
+    type FeatureBatchRequest,
+    FeatureBatchRequestSchema,
+    FeatureBatchResponseSchema
+} from '@repo/schemas';
 import { FeatureService } from '@repo/service-core';
 import type { Context } from 'hono';
-import { z } from 'zod';
 import { getActorFromContext } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
 import { createCRUDRoute } from '../../utils/route-factory';
 
 const featureService = new FeatureService({ logger: apiLogger });
-
-/**
- * Request schema for batch feature loading
- */
-const BatchFeatureRequestSchema = z.object({
-    ids: z.array(z.string()).min(1).max(100), // Limit to 100 IDs per request
-    fields: z.array(z.string()).optional() // Optional field selection
-});
-
-/**
- * Basic feature schema for API responses
- * TODO [batch-feature-schema]: Replace with proper FeatureDetailSchema when available in @repo/schemas
- */
-const FeatureResponseSchema = z.object({
-    id: z.string(),
-    slug: z.string(),
-    name: z.string(),
-    description: z.string().optional(),
-    icon: z.string().optional(),
-    isBuiltin: z.boolean().optional(),
-    isFeatured: z.boolean().optional(),
-    createdAt: z.string(),
-    updatedAt: z.string(),
-    deletedAt: z.string().nullable().optional()
-});
-
-/**
- * Response schema for batch feature loading
- */
-const BatchFeatureResponseSchema = z.array(FeatureResponseSchema.nullable());
 
 export const featureBatchRoute = createCRUDRoute({
     method: 'post',
@@ -43,11 +17,11 @@ export const featureBatchRoute = createCRUDRoute({
     summary: 'Get multiple features by IDs',
     description: 'Retrieves multiple features by their IDs for entity select components',
     tags: ['Features'],
-    requestBody: BatchFeatureRequestSchema,
-    responseSchema: BatchFeatureResponseSchema,
+    requestBody: FeatureBatchRequestSchema,
+    responseSchema: FeatureBatchResponseSchema,
     handler: async (ctx: Context, _params, body: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
-        const { ids, fields } = body as { ids: string[]; fields?: string[] };
+        const { ids, fields } = body as FeatureBatchRequest;
 
         // Load all features by their IDs
         const features = await Promise.all(
