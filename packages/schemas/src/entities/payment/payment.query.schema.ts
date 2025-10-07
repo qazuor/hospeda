@@ -193,9 +193,63 @@ export const SubscriptionFiltersSchema = z.object({
 
 /**
  * Complete payment search schema combining base search with payment-specific filters
+ * MIGRATED TO FLAT PATTERN: All filters are at the top level for HTTP compatibility
  */
 export const PaymentSearchSchema = BaseSearchSchema.extend({
-    filters: PaymentFiltersSchema.optional(),
+    // Entity relation filters (flattened from PaymentFiltersSchema)
+    userId: z.string().uuid().optional(),
+    planId: z.string().uuid().optional(),
+    userIds: z.array(z.string().uuid()).optional(),
+    planIds: z.array(z.string().uuid()).optional(),
+
+    // Status filters
+    status: z
+        .enum(['pending', 'processing', 'completed', 'failed', 'cancelled', 'refunded'])
+        .optional(),
+    statuses: z
+        .array(z.enum(['pending', 'processing', 'completed', 'failed', 'cancelled', 'refunded']))
+        .optional(),
+
+    // Amount filters
+    minAmount: z.number().min(0).optional(),
+    maxAmount: z.number().min(0).optional(),
+    amount: z.number().min(0).optional(),
+
+    // Currency filters
+    currency: z.string().length(3).optional(),
+    currencies: z.array(z.string().length(3)).optional(),
+
+    // Date filters
+    createdAfter: z.date().optional(),
+    createdBefore: z.date().optional(),
+    processedAfter: z.date().optional(),
+    processedBefore: z.date().optional(),
+
+    // Payment method filters
+    paymentMethod: z.string().optional(),
+    paymentMethods: z.array(z.string()).optional(),
+
+    // External provider filters
+    mpPaymentId: z.string().optional(),
+    mpStatus: z.string().optional(),
+    stripePaymentIntentId: z.string().optional(),
+
+    // Status flags
+    hasRefunds: z.boolean().optional(),
+    isRefunded: z.boolean().optional(),
+    hasFailed: z.boolean().optional(),
+    isCompleted: z.boolean().optional(),
+
+    // Failure analysis
+    failureReason: z.string().optional(),
+    hasFailureReason: z.boolean().optional(),
+
+    // Metadata filters
+    hasMetadata: z.boolean().optional(),
+    metadataKey: z.string().optional(),
+    metadataValue: z.string().optional(),
+
+    // Additional search options
     searchInMetadata: z.boolean().default(false).optional()
 });
 

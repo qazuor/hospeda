@@ -65,15 +65,46 @@ export const AttractionFiltersSchema = z.object({
 
 /**
  * Complete attraction search schema combining base search with attraction-specific filters
+ * MIGRATED TO FLAT PATTERN: All filters are at the top level for HTTP compatibility
  *
  * Provides:
  * - page/pageSize: Standardized pagination
  * - sortBy/sortOrder: Sorting with 'asc'/'desc' values
  * - q: Text search query
- * - filters: Attraction-specific filtering options
+ * - Entity-specific filters: Flattened for consistency
  */
 export const AttractionSearchSchema = BaseSearchSchema.extend({
-    filters: AttractionFiltersSchema.optional()
+    // Basic filters (flattened from AttractionFiltersSchema)
+    name: z.string().optional(),
+    slug: z.string().optional(),
+    isFeatured: z.boolean().optional(),
+    isBuiltin: z.boolean().optional(),
+
+    // Lifecycle state
+    lifecycleState: LifecycleStatusEnumSchema.optional(),
+
+    // Location filters
+    destinationId: z.string().uuid().optional(),
+
+    // Type/category filters
+    category: z.string().optional(),
+    subcategory: z.string().optional(),
+
+    // Accessibility filters
+    isAccessible: z.boolean().optional(),
+    isIndoor: z.boolean().optional(),
+    isOutdoor: z.boolean().optional(),
+
+    // Pricing filters
+    isFree: z.boolean().optional(),
+    hasEntryFee: z.boolean().optional(),
+
+    // Tags filter
+    tags: z.array(z.string().uuid()).optional(),
+
+    // Operating status
+    isOperational: z.boolean().optional(),
+    isTemporarilyClosed: z.boolean().optional()
 });
 
 // ============================================================================
