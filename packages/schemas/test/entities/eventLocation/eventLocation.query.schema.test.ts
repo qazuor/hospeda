@@ -79,25 +79,21 @@ describe('EventLocation Query Schemas', () => {
 
         it('should validate search input with filters', () => {
             const searchInput = {
-                filters: {
-                    city: 'New York',
-                    name: 'central'
-                }
+                city: 'New York',
+                name: 'central'
             };
 
             expect(() => EventLocationSearchInputSchema.parse(searchInput)).not.toThrow();
 
             const result = EventLocationSearchInputSchema.parse(searchInput);
-            expect(result.filters?.city).toBe('New York');
-            expect(result.filters?.name).toBe('central');
+            expect(result.city).toBe('New York');
+            expect(result.name).toBe('central');
         });
 
         it('should validate search input with q parameter', () => {
             const searchInput = {
                 q: 'search text',
-                filters: {
-                    city: 'New York'
-                },
+                city: 'New York',
                 page: 2,
                 pageSize: 20
             };
@@ -185,9 +181,7 @@ describe('EventLocation Query Schemas', () => {
             const listInput = {
                 page: 3,
                 pageSize: 25,
-                filters: {
-                    city: 'Los Angeles'
-                }
+                city: 'Los Angeles'
             };
 
             expect(() => EventLocationListInputSchema.parse(listInput)).not.toThrow();
@@ -195,7 +189,7 @@ describe('EventLocation Query Schemas', () => {
             const result = EventLocationListInputSchema.parse(listInput);
             expect(result.page).toBe(3);
             expect(result.pageSize).toBe(25);
-            expect(result.filters?.city).toBe('Los Angeles');
+            expect(result.city).toBe('Los Angeles');
         });
 
         it('should reject list input with invalid page', () => {

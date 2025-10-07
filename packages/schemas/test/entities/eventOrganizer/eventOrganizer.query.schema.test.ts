@@ -231,19 +231,15 @@ describe('EventOrganizer Query Schemas', () => {
             expect(() => EventOrganizerSearchInputSchema.parse(searchInput)).not.toThrow();
 
             const result = EventOrganizerSearchInputSchema.parse(searchInput);
-            // Pagination is not part of input schema
-            expect(result.filters).toBeDefined();
+            // With flat pattern, filters are direct properties
+            expect(result).toBeDefined();
         });
 
         it('should validate search input with query', () => {
             const searchInput = {
-                filters: {
-                    q: faker.lorem.words(2)
-                },
-                pagination: {
-                    page: 1,
-                    pageSize: 20
-                }
+                q: faker.lorem.words(2),
+                page: 1,
+                pageSize: 20
             };
 
             expect(() => EventOrganizerSearchInputSchema.parse(searchInput)).not.toThrow();
@@ -312,9 +308,7 @@ describe('EventOrganizer Query Schemas', () => {
     describe('EventOrganizerCountInputSchema', () => {
         it('should validate count input with filters', () => {
             const countInput = {
-                filters: {
-                    name: faker.company.name()
-                }
+                name: faker.company.name()
             };
 
             expect(() => EventOrganizerCountInputSchema.parse(countInput)).not.toThrow();
@@ -327,9 +321,7 @@ describe('EventOrganizer Query Schemas', () => {
         });
 
         it('should validate count input with undefined filters', () => {
-            const countInput = {
-                filters: undefined
-            };
+            const countInput = {};
 
             expect(() => EventOrganizerCountInputSchema.parse(countInput)).not.toThrow();
         });

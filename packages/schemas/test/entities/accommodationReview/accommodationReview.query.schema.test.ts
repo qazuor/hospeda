@@ -100,9 +100,7 @@ describe('AccommodationReview Query Schemas', () => {
 
         it('should validate rating range', () => {
             const invalidData = {
-                filters: {
-                    rating: 6 // Max is 5
-                }
+                rating: 6 // Max is 5
             };
 
             const result = AccommodationReviewSearchParamsSchema.safeParse(invalidData);
