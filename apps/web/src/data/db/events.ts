@@ -34,7 +34,7 @@ export const getEvents = async ({
     const result = await eventService.search(actor, {
         page,
         pageSize,
-        filters
+        ...filters
     });
 
     const events = result.data?.items ?? [];

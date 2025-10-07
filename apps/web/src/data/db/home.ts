@@ -52,9 +52,9 @@ export const getHomeData = async ({
     const eventService = new EventService({});
 
     const [destRes, postRes, eventRes] = await Promise.all([
-        // Featured destinations (filters: isFeatured true)
+        // Featured destinations (isFeatured true)
         destinationService.search(actor, {
-            filters: { isFeatured: true },
+            isFeatured: true,
             page: 1,
             pageSize: 8
         }),
