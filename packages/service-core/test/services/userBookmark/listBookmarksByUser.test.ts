@@ -38,7 +38,7 @@ describe('UserBookmarkService.listBookmarksByUser', () => {
             pageSize: 10,
             sortBy: 'createdAt',
             sortOrder: 'desc',
-            filters: { userId: bookmark.userId }
+            userId: bookmark.userId
         });
         expectSuccess(result);
         expect(result.data?.bookmarks).toBeDefined();
@@ -48,16 +48,14 @@ describe('UserBookmarkService.listBookmarksByUser', () => {
 
     it('should return FORBIDDEN if actor is not the owner', async () => {
         asMock(modelMock.findAll).mockResolvedValue({ items: [bookmark], total: 1 });
-        const otherActor = createActor({
-            id: 'not-owner',
-            permissions: [PermissionEnum.USER_BOOKMARK_MANAGE]
-        });
+        const otherActor = createActor({ id: 'other-id' });
+
         const result = await service.listBookmarksByUser(otherActor, {
             page: 1,
             pageSize: 10,
             sortBy: 'createdAt',
             sortOrder: 'desc',
-            filters: { userId: bookmark.userId }
+            userId: bookmark.userId
         });
         expectForbiddenError(result);
     });
@@ -68,7 +66,7 @@ describe('UserBookmarkService.listBookmarksByUser', () => {
             pageSize: 10,
             sortBy: 'createdAt',
             sortOrder: 'desc',
-            filters: { userId: 'not-a-uuid' }
+            userId: 'not-a-uuid'
         });
         expectValidationError(result);
     });
@@ -80,7 +78,7 @@ describe('UserBookmarkService.listBookmarksByUser', () => {
             pageSize: 10,
             sortBy: 'createdAt',
             sortOrder: 'desc',
-            filters: { userId: bookmark.userId }
+            userId: bookmark.userId
         });
         expectInternalError(result);
     });
