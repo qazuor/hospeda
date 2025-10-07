@@ -1,5 +1,4 @@
-import { z } from '@hono/zod-openapi';
-import { PostIdSchema } from '@repo/schemas';
+import { PostIdSchema, SuccessSchema } from '@repo/schemas';
 import { PostService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../utils/actor';
@@ -15,7 +14,7 @@ export const unlikePostRoute = createCRUDRoute({
     description: 'Unlikes a post by ID',
     tags: ['Posts'],
     requestParams: { id: PostIdSchema },
-    responseSchema: z.object({ success: z.boolean() }),
+    responseSchema: SuccessSchema,
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const id = params.id as string;
