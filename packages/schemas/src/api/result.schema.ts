@@ -79,3 +79,17 @@ export const RemovalResultSchema = z.object({
 });
 
 export type RemovalResult = z.infer<typeof RemovalResultSchema>;
+
+/**
+ * Webhook response schema
+ * Use for webhook endpoints that return ok boolean.
+ */
+export const WebhookResponseSchema = z.object({
+    ok: z
+        .boolean({
+            message: 'zodError.result.ok.invalidType'
+        })
+        .default(true)
+});
+
+export type WebhookResponse = z.infer<typeof WebhookResponseSchema>;
