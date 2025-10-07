@@ -1,4 +1,4 @@
-import { z } from '@hono/zod-openapi';
+import { AccommodationIdSchema, AmenityIdSchema, DeleteResultSchema } from '@repo/schemas';
 import { AmenityService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../utils/actor';
@@ -14,11 +14,10 @@ export const removeAmenityFromAccommodationRoute = createCRUDRoute({
     description: 'Removes a relation between an amenity and an accommodation',
     tags: ['Amenities', 'Accommodations'],
     requestParams: {
-        accommodationId: z.string().uuid(),
-        amenityId: z.string().uuid()
+        accommodationId: AccommodationIdSchema,
+        amenityId: AmenityIdSchema
     },
-    // TODO [871b589d-4f7a-4632-ba3f-a8ace324b763]: Replace with a proper relation schema when available
-    responseSchema: z.object({ relation: z.object({ amenityId: z.string().uuid() }).partial() }),
+    responseSchema: DeleteResultSchema,
     handler: async (ctx: Context, params) => {
         const actor = getActorFromContext(ctx);
         const payload = {
@@ -28,6 +27,6 @@ export const removeAmenityFromAccommodationRoute = createCRUDRoute({
         const service = new AmenityService({ logger: apiLogger });
         const result = await service.removeAmenityFromAccommodation(actor, payload);
         if (result.error) throw new Error(result.error.message);
-        return { relation: result.data.relation };
+        return result.data;
     }
 });

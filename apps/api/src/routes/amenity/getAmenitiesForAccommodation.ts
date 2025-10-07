@@ -1,4 +1,5 @@
 import { z } from '@hono/zod-openapi';
+import { AccommodationIdSchema, AmenitySchema, createPaginatedResponseSchema } from '@repo/schemas';
 import { AmenityService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../utils/actor';
@@ -14,10 +15,9 @@ export const getAmenitiesForAccommodationRoute = createListRoute({
     description: 'Returns a list of amenities associated to a given accommodation',
     tags: ['Amenities', 'Accommodations'],
     requestParams: {
-        accommodationId: z.string().uuid()
+        accommodationId: AccommodationIdSchema
     },
-    // TODO [3b72c63b-4369-4689-9165-938804cebefd]: Replace with AmenityListItem schema when available in @repo/schemas
-    responseSchema: z.object({ id: z.string().uuid() }).partial(),
+    responseSchema: createPaginatedResponseSchema(AmenitySchema),
     requestQuery: {
         page: z.string().transform(Number).pipe(z.number().min(1)).optional(),
         pageSize: z.string().transform(Number).pipe(z.number().min(1).max(100)).optional(),

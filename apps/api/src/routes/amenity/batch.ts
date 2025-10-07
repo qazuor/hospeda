@@ -1,42 +1,15 @@
+import {
+    type AmenityBatchRequest,
+    AmenityBatchRequestSchema,
+    AmenityBatchResponseSchema
+} from '@repo/schemas';
 import { AmenityService } from '@repo/service-core';
 import type { Context } from 'hono';
-import { z } from 'zod';
 import { getActorFromContext } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
 import { createCRUDRoute } from '../../utils/route-factory';
 
 const amenityService = new AmenityService({ logger: apiLogger });
-
-/**
- * Request schema for batch amenity loading
- */
-const BatchAmenityRequestSchema = z.object({
-    ids: z.array(z.string()).min(1).max(100), // Limit to 100 IDs per request
-    fields: z.array(z.string()).optional() // Optional field selection
-});
-
-/**
- * Basic amenity schema for API responses
- * TODO [batch-amenity-schema]: Replace with proper AmenityDetailSchema when available in @repo/schemas
- */
-const AmenityResponseSchema = z.object({
-    id: z.string(),
-    slug: z.string(),
-    name: z.string(),
-    type: z.string(),
-    icon: z.string().optional(),
-    description: z.string().optional(),
-    isBuiltin: z.boolean().optional(),
-    isFeatured: z.boolean().optional(),
-    createdAt: z.string(),
-    updatedAt: z.string(),
-    deletedAt: z.string().nullable().optional()
-});
-
-/**
- * Response schema for batch amenity loading
- */
-const BatchAmenityResponseSchema = z.array(AmenityResponseSchema.nullable());
 
 export const amenityBatchRoute = createCRUDRoute({
     method: 'post',
@@ -44,11 +17,11 @@ export const amenityBatchRoute = createCRUDRoute({
     summary: 'Get multiple amenities by IDs',
     description: 'Retrieves multiple amenities by their IDs for entity select components',
     tags: ['Amenities'],
-    requestBody: BatchAmenityRequestSchema,
-    responseSchema: BatchAmenityResponseSchema,
+    requestBody: AmenityBatchRequestSchema,
+    responseSchema: AmenityBatchResponseSchema,
     handler: async (ctx: Context, _params, body: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
-        const { ids, fields } = body as { ids: string[]; fields?: string[] };
+        const { ids, fields } = body as AmenityBatchRequest;
 
         // Load all amenities by their IDs
         const amenities = await Promise.all(

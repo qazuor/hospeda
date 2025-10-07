@@ -1,4 +1,4 @@
-import { z } from '@hono/zod-openapi';
+import { AmenityIdSchema, DeleteResultSchema } from '@repo/schemas';
 import { AmenityService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../utils/actor';
@@ -13,9 +13,8 @@ export const softDeleteAmenityRoute = createCRUDRoute({
     summary: 'Soft delete amenity',
     description: 'Marks an amenity as deleted',
     tags: ['Amenities'],
-    requestParams: { id: z.string().uuid() },
-    // Minimal response schema
-    responseSchema: z.object({ id: z.string().uuid() }).partial(),
+    requestParams: { id: AmenityIdSchema },
+    responseSchema: DeleteResultSchema,
     handler: async (ctx: Context, params) => {
         const actor = getActorFromContext(ctx);
         const service = new AmenityService({ logger: apiLogger });
