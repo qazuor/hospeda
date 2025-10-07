@@ -7,6 +7,9 @@ export * from './user.crud.schema.js'; // Create, Update, Delete, Restore schema
 // Query operations
 export * from './user.query.schema.js'; // List, Search, Summary, Stats, Filters schemas
 
+// Batch operations
+export * from './user.batch.schema.js'; // Batch request/response schemas
+
 // HTTP operations
 export * from './user.http.schema.js'; // HTTP-compatible schemas with coercion
 

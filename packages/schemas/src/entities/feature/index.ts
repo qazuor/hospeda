@@ -12,3 +12,6 @@ export * from './feature.http.schema.js'; // HTTP-compatible schemas with coerci
 
 // Relations
 export * from './feature.relations.schema.js'; // Schemas with related entities
+
+// Batch operations
+export * from './feature.batch.schema.js'; // Batch request and response schemas

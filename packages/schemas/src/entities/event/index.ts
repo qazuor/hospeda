@@ -7,6 +7,9 @@ export * from './event.crud.schema.js'; // Create, Update, Delete, Restore schem
 // Query operations
 export * from './event.query.schema.js'; // List, Search, Summary, Stats, Filters schemas
 
+// Batch operations
+export * from './event.batch.schema.js'; // Batch retrieval schemas
+
 // Relations
 export * from './event.relations.schema.js'; // Schemas with related entities
 
