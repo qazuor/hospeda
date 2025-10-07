@@ -1,4 +1,4 @@
-import { z } from '@hono/zod-openapi';
+import { AttractionListItemSchema, AttractionSearchHttpSchema } from '@repo/schemas';
 import { AttractionService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../utils/actor';
@@ -9,16 +9,10 @@ export const attractionListRoute = createListRoute({
     method: 'get',
     path: '/attractions',
     summary: 'List attractions',
-    description: 'Returns a paginated list of attractions',
+    description: 'Returns a paginated list of attractions using standardized HTTP schemas',
     tags: ['Attractions'],
-    requestQuery: {
-        page: z.coerce.number().int().min(1).default(1),
-        pageSize: z.coerce.number().int().min(1).max(100).default(20),
-        sortBy: z.string().optional(),
-        sortOrder: z.enum(['asc', 'desc']).default('asc'),
-        q: z.string().optional()
-    },
-    responseSchema: z.object({ id: z.string().uuid() }).partial(),
+    requestQuery: AttractionSearchHttpSchema.shape,
+    responseSchema: AttractionListItemSchema,
     handler: async (ctx: Context, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const q = query as { page?: number; pageSize?: number };

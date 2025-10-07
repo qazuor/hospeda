@@ -1,9 +1,9 @@
 /**
- * Example endpoint showing how to use ResponseFactory.createListResponses
- * This demonstrates how to handle paginated responses with proper typing
+ * User list endpoint - Migrated to use @repo/schemas HTTP patterns
+ * Uses standardized HTTP schemas with automatic coercion
  */
 
-import { z } from '@hono/zod-openapi';
+import { UserListItemSchema, UserSearchHttpSchema } from '@repo/schemas';
 import { UserService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../utils/actor';
@@ -14,27 +14,24 @@ export const listUsersRoute = createListRoute({
     method: 'get',
     path: '/',
     summary: 'List users',
-    description: 'Returns a paginated list of users',
+    description: 'Returns a paginated list of users using standardized HTTP schemas',
     tags: ['Users'],
-    requestQuery: {
-        page: z.coerce.number().int().min(1).default(1),
-        pageSize: z.coerce.number().int().min(1).max(100).default(20),
-        sortBy: z.string().optional(),
-        sortOrder: z.enum(['asc', 'desc']).default('asc'),
-        q: z.string().optional(),
-        search: z.string().optional()
-    },
-    responseSchema: z.object({ id: z.string().uuid() }).partial(),
+    requestQuery: UserSearchHttpSchema.shape,
+    responseSchema: UserListItemSchema,
     handler: async (ctx: Context, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
-        const queryData = query as {
+        const searchParams = query as {
             page?: number;
             pageSize?: number;
-            search?: string;
             q?: string;
+            email?: string;
+            role?: string;
+            status?: string;
+            isActive?: boolean;
         };
-        const page = queryData.page ?? 1;
-        const pageSize = queryData.pageSize ?? 20;
+
+        const page = searchParams.page ?? 1;
+        const pageSize = searchParams.pageSize ?? 20;
 
         const service = new UserService({ logger: apiLogger });
         const result = await service.list(actor, {
