@@ -1,4 +1,4 @@
-import { z } from '@hono/zod-openapi';
+import { FeatureIdSchema, FeatureSchema } from '@repo/schemas';
 import { FeatureService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../utils/actor';
@@ -11,8 +11,8 @@ export const featureGetByIdRoute = createCRUDRoute({
     summary: 'Get feature by ID',
     description: 'Retrieves a feature by ID',
     tags: ['Features'],
-    requestParams: { id: z.string().uuid() },
-    responseSchema: z.object({ id: z.string().uuid() }).partial(),
+    requestParams: { id: FeatureIdSchema },
+    responseSchema: FeatureSchema,
     handler: async (ctx: Context, params) => {
         const actor = getActorFromContext(ctx);
         const service = new FeatureService({ logger: apiLogger });
