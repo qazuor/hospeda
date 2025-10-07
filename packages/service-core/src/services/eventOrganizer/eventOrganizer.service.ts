@@ -1,7 +1,6 @@
 import { EventOrganizerModel } from '@repo/db';
 import type {
     EventOrganizer,
-    EventOrganizerCountInput,
     EventOrganizerCreateInput,
     EventOrganizerListInput,
     EventOrganizerSearchInput,
@@ -104,9 +103,9 @@ export class EventOrganizerService extends BaseCrudService<
         params: EventOrganizerSearchInput,
         _actor: Actor
     ): Promise<PaginatedListOutput<EventOrganizer>> {
-        const { filters = {}, page = 1, pageSize = 10, q } = params;
-        const where: Record<string, unknown> = {};
-        if (filters.name) where.name = filters.name;
+        const { page = 1, pageSize = 10, sortBy, sortOrder, q, name, ...otherFilters } = params;
+        const where: Record<string, unknown> = { ...otherFilters };
+        if (name) where.name = name;
         if (q) {
             // Partial search by name (case-insensitive)
             where.name = { $ilike: `%${q}%` };
@@ -115,12 +114,12 @@ export class EventOrganizerService extends BaseCrudService<
     }
 
     protected async _executeCount(
-        params: EventOrganizerCountInput,
+        params: EventOrganizerSearchInput,
         _actor: Actor
     ): Promise<{ count: number }> {
-        const { filters = {} } = params;
-        const where: Record<string, unknown> = {};
-        if (filters.name) where.name = filters.name;
+        const { page, pageSize, sortBy, sortOrder, q, name, ...otherFilters } = params;
+        const where: Record<string, unknown> = { ...otherFilters };
+        if (name) where.name = name;
         const count = await this.model.count(where);
         return { count };
     }
@@ -136,12 +135,12 @@ export class EventOrganizerService extends BaseCrudService<
         params: EventOrganizerListInput
     ): Promise<{ items: EventOrganizer[]; total: number }> {
         this._canList(actor);
-        const { filters = {}, page = 1, pageSize = 10, q } = params;
+        const { page = 1, pageSize = 10, q, name, ...otherFilters } = params;
 
-        const where: Record<string, unknown> = {};
+        const where: Record<string, unknown> = { ...otherFilters };
 
-        if (filters.name) {
-            where.name = { $ilike: `%${filters.name}%` };
+        if (name) {
+            where.name = { $ilike: `%${name}%` };
         }
         if (q) {
             where.$or = [{ name: { $ilike: `%${q}%` } }];

@@ -204,8 +204,8 @@ export class EventService extends BaseCrudService<
      * @returns Paginated list of events matching the criteria
      */
     protected async _executeSearch(params: EventSearchInput, _actor: Actor) {
-        const { page = 1, pageSize = 10, filters = {} } = params;
-        return this.model.findAll(filters, { page, pageSize });
+        const { page = 1, pageSize = 10, ...filterParams } = params;
+        return this.model.findAll(filterParams, { page, pageSize });
     }
 
     /**

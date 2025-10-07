@@ -192,12 +192,12 @@ export class AccommodationReviewService extends BaseCrudService<
             schema: AccommodationReviewListWithUserParamsSchema,
             execute: async (validated, validatedActor) => {
                 await this._canList(validatedActor);
-                const { page = 1, pageSize = 10, filters = {} } = validated;
+                const { page = 1, pageSize = 10, ...filterParams } = validated;
 
                 // Default filters for public access
                 const defaultFilters = {
                     deletedAt: null,
-                    ...filters
+                    ...filterParams
                 };
 
                 const result = await this.model.findAllWithUser(defaultFilters, { page, pageSize });

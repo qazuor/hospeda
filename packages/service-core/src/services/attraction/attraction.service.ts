@@ -373,8 +373,7 @@ export class AttractionService extends BaseCrudRelatedService<
         params: AttractionSearchInput,
         _actor: Actor
     ): Promise<PaginatedListOutput<Attraction>> {
-        const filters = params.filters ?? {};
-        const { name, slug, isFeatured, isBuiltin, destinationId } = filters;
+        const { name, slug, isFeatured, isBuiltin, destinationId } = params;
         const where: Record<string, unknown> = {};
         if (name) where.name = name;
         if (slug) where.slug = slug;
@@ -389,8 +388,7 @@ export class AttractionService extends BaseCrudRelatedService<
         params: AttractionSearchInput,
         _actor: Actor
     ): Promise<CountResponse> {
-        const filters = params.filters ?? {};
-        const { name, slug, isFeatured, isBuiltin, destinationId } = filters;
+        const { name, slug, isFeatured, isBuiltin, destinationId } = params;
         const where: Record<string, unknown> = {};
         if (name) where.name = name;
         if (slug) where.slug = slug;
@@ -412,8 +410,7 @@ export class AttractionService extends BaseCrudRelatedService<
         params: AttractionSearchInput
     ): Promise<AttractionListWithCountsResponse> {
         this._canSearch(actor);
-        const filters = params.filters ?? {};
-        const { name, slug, isFeatured, isBuiltin, destinationId } = filters;
+        const { name, slug, isFeatured, isBuiltin, destinationId } = params;
         const page = params.page ?? 1;
         const pageSize = params.pageSize ?? 10;
 

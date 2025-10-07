@@ -113,7 +113,7 @@ export class UserBookmarkService extends BaseCrudService<
             input: { ...params, actor },
             schema: UserBookmarkSearchSchema,
             execute: async (validated) => {
-                if (actor.id !== validated.filters?.userId) {
+                if (actor.id !== validated.userId) {
                     throw new ServiceError(
                         ServiceErrorCode.FORBIDDEN,
                         'FORBIDDEN: Only owner can list bookmarks'
@@ -121,7 +121,7 @@ export class UserBookmarkService extends BaseCrudService<
                 }
                 const { page, pageSize } = validated;
                 const { items } = await this.model.findAll(
-                    { userId: validated.filters?.userId },
+                    { userId: validated.userId },
                     { page, pageSize }
                 );
                 return { bookmarks: items };
@@ -199,8 +199,7 @@ export class UserBookmarkService extends BaseCrudService<
     }
 
     protected async _executeSearch(params: UserBookmarkSearchInput, _actor: Actor) {
-        const { page, pageSize, filters } = params;
-        const searchFilters = filters || {};
+        const { page, pageSize, ...searchFilters } = params;
 
         const { items, total } = await this.model.findAll(searchFilters, {
             page,
@@ -210,8 +209,7 @@ export class UserBookmarkService extends BaseCrudService<
     }
 
     protected async _executeCount(params: UserBookmarkSearchInput, _actor: Actor) {
-        const { filters } = params;
-        const searchFilters = filters || {};
+        const { page, pageSize, sortBy, sortOrder, ...searchFilters } = params;
 
         const count = await this.model.count(searchFilters);
         return { count };

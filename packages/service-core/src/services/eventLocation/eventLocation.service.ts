@@ -100,11 +100,21 @@ export class EventLocationService extends BaseCrudService<
         _actor: Actor
     ): Promise<PaginatedListOutput<EventLocation>> {
         try {
-            const { filters = {}, page = 1, pageSize = 20, q } = params;
-            const where: WhereWithOr = {};
-            if (filters.city) where.city = filters.city;
-            if (filters.state) where.state = filters.state;
-            if (filters.country) where.country = filters.country;
+            const {
+                page = 1,
+                pageSize = 20,
+                sortBy,
+                sortOrder,
+                q,
+                city,
+                state,
+                country,
+                ...otherFilters
+            } = params;
+            const where: WhereWithOr = { ...otherFilters };
+            if (city) where.city = city;
+            if (state) where.state = state;
+            if (country) where.country = country;
             // Free text search (q): busca en city, state y country (case-insensitive)
             if (q) {
                 where.or = [
@@ -127,11 +137,12 @@ export class EventLocationService extends BaseCrudService<
         _actor: Actor
     ): Promise<{ count: number }> {
         try {
-            const { filters = {}, q } = params;
-            const where: WhereWithOr = {};
-            if (filters.city) where.city = filters.city;
-            if (filters.state) where.state = filters.state;
-            if (filters.country) where.country = filters.country;
+            const { q, city, state, country, page, pageSize, sortBy, sortOrder, ...otherFilters } =
+                params;
+            const where: WhereWithOr = { ...otherFilters };
+            if (city) where.city = city;
+            if (state) where.state = state;
+            if (country) where.country = country;
             if (q) {
                 where.or = [
                     { city: { $ilike: `%${q}%` } },
@@ -160,18 +171,18 @@ export class EventLocationService extends BaseCrudService<
         params: EventLocationSearchInput
     ): Promise<{ items: EventLocation[]; total: number }> {
         this._canSearch(actor);
-        const { filters = {}, page = 1, pageSize = 10, q } = params;
+        const { page = 1, pageSize = 10, q, city, state, country, ...otherFilters } = params;
 
-        const where: Record<string, unknown> = {};
+        const where: Record<string, unknown> = { ...otherFilters };
 
-        if (filters.city) {
-            where.city = { $ilike: `%${filters.city}%` };
+        if (city) {
+            where.city = { $ilike: `%${city}%` };
         }
-        if (filters.state) {
-            where.state = { $ilike: `%${filters.state}%` };
+        if (state) {
+            where.state = { $ilike: `%${state}%` };
         }
-        if (filters.country) {
-            where.country = { $ilike: `%${filters.country}%` };
+        if (country) {
+            where.country = { $ilike: `%${country}%` };
         }
         if (q) {
             where.$or = [
