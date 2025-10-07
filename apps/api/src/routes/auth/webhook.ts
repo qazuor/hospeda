@@ -1,5 +1,4 @@
-import { z } from '@hono/zod-openapi';
-import { AuthProviderEnum } from '@repo/schemas';
+import { AuthProviderEnum, WebhookResponseSchema } from '@repo/schemas';
 import { UserService } from '@repo/service-core';
 import { Webhook } from 'svix';
 import { createGuestActor } from '../../utils/actor';
@@ -17,7 +16,7 @@ export const clerkWebhookRoute = createSimpleRoute({
     description: 'Handles Clerk user events for synchronization',
     tags: ['Auth'],
     options: { skipAuth: true },
-    responseSchema: z.object({ ok: z.boolean() }).openapi('ClerkWebhookResponse'),
+    responseSchema: WebhookResponseSchema,
     handler: async (c) => {
         const svixId = c.req.header('svix-id') ?? '';
         const svixTimestamp = c.req.header('svix-timestamp') ?? '';
