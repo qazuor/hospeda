@@ -3,8 +3,13 @@
  * This demonstrates the proper usage of the response factory in a real endpoint
  */
 
-import { z } from '@hono/zod-openapi';
-import { LifecycleStatusEnum, RoleEnum, UserSchema, VisibilityEnum } from '@repo/schemas';
+import {
+    LifecycleStatusEnum,
+    type UserCreateInput,
+    UserCreateInputSchema,
+    UserSchema,
+    VisibilityEnum
+} from '@repo/schemas';
 import { UserService } from '@repo/service-core';
 import { apiLogger } from '../../utils/logger';
 import { createCRUDRoute } from '../../utils/route-factory';
@@ -20,20 +25,10 @@ export const createUserRoute = createCRUDRoute({
     summary: 'Create user',
     description: 'Creates a new user',
     tags: ['Users'],
-    requestBody: z.object({
-        firstName: z.string().min(2),
-        lastName: z.string().min(2),
-        displayName: z.string().min(2).optional(),
-        role: z.nativeEnum(RoleEnum).default(RoleEnum.USER)
-    }),
+    requestBody: UserCreateInputSchema,
     responseSchema: UserSchema,
     handler: async (ctx, _params, body) => {
-        const userData = body as {
-            firstName: string;
-            lastName: string;
-            displayName?: string;
-            role: RoleEnum;
-        };
+        const userData = body as UserCreateInput;
 
         // Get actor from context (assuming it's set by auth middleware)
         const actor = ctx.get('actor');
