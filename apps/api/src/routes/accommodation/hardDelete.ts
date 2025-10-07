@@ -2,7 +2,7 @@
  * Hard delete accommodation endpoint
  * Handles permanent deletion of accommodations using AccommodationService
  */
-import { z } from '@hono/zod-openapi';
+import { AccommodationIdSchema, DeleteResultSchema } from '@repo/schemas';
 import { AccommodationService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../utils/actor';
@@ -24,12 +24,9 @@ export const hardDeleteAccommodationRoute = createCRUDRoute({
         'Permanently removes an accommodation from the database using the AccommodationService',
     tags: ['Accommodations'],
     requestParams: {
-        id: z.string().min(1, 'Accommodation ID is required')
+        id: AccommodationIdSchema
     },
-    responseSchema: z.object({
-        count: z.number(),
-        message: z.string()
-    }),
+    responseSchema: DeleteResultSchema,
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         // Get authenticated actor from context
         const actor = getActorFromContext(ctx);
