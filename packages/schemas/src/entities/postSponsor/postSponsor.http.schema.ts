@@ -96,3 +96,104 @@ export const PostSponsorGetHttpSchema = z.object({
 });
 
 export type PostSponsorGetHttp = z.infer<typeof PostSponsorGetHttpSchema>;
+
+/**
+ * HTTP to Domain Conversion Functions
+ * These functions convert HTTP request data to domain-compatible formats
+ */
+
+import type {
+    PostSponsorCreateInputSchema,
+    PostSponsorUpdateInputSchema
+} from './postSponsor.crud.schema.js';
+
+/**
+ * Convert HTTP search parameters to domain search format
+ */
+export function httpToDomainPostSponsorSearch(
+    httpData: PostSponsorSearchHttp
+): Partial<PostSponsorSearchHttp> {
+    return {
+        ...httpData,
+        // Convert string arrays to proper arrays if needed
+        types: httpData.types,
+        industries: httpData.industries,
+        // Convert boolean flags properly
+        hasLogo: httpData.hasLogo,
+        hasWebsite: httpData.hasWebsite,
+        hasDescription: httpData.hasDescription,
+        isActive: httpData.isActive,
+        hasTwitter: httpData.hasTwitter,
+        hasFacebook: httpData.hasFacebook,
+        hasInstagram: httpData.hasInstagram,
+        hasLinkedIn: httpData.hasLinkedIn
+    };
+}
+
+/**
+ * Convert HTTP post sponsor creation data to domain format
+ */
+export function httpToDomainPostSponsorCreate(
+    httpData: PostSponsorCreateHttp
+): z.infer<typeof PostSponsorCreateInputSchema> {
+    return {
+        name: httpData.name,
+        type: httpData.type,
+        description: httpData.description || '', // Required in domain
+        logo: httpData.logo ? { url: httpData.logo } : undefined,
+        contactInfo: {
+            mobilePhone: httpData.phone || '',
+            personalEmail: httpData.email,
+            website: httpData.website
+        },
+        socialNetworks: {
+            twitter: httpData.twitter,
+            facebook: httpData.facebook,
+            instagram: httpData.instagram,
+            linkedIn: httpData.linkedin
+        }
+    };
+}
+
+/**
+ * Convert HTTP post sponsor update data to domain format
+ */
+export function httpToDomainPostSponsorUpdate(
+    httpData: PostSponsorUpdateHttp
+): z.infer<typeof PostSponsorUpdateInputSchema> {
+    const result: Partial<z.infer<typeof PostSponsorUpdateInputSchema>> = {};
+
+    if (httpData.name !== undefined) result.name = httpData.name;
+    if (httpData.type !== undefined) result.type = httpData.type;
+    if (httpData.description !== undefined) result.description = httpData.description;
+    if (httpData.logo !== undefined)
+        result.logo = httpData.logo ? { url: httpData.logo } : undefined;
+
+    if (
+        httpData.email !== undefined ||
+        httpData.phone !== undefined ||
+        httpData.website !== undefined
+    ) {
+        result.contactInfo = {
+            mobilePhone: httpData.phone || '', // Required field
+            personalEmail: httpData.email,
+            website: httpData.website
+        };
+    }
+
+    if (
+        httpData.twitter !== undefined ||
+        httpData.facebook !== undefined ||
+        httpData.instagram !== undefined ||
+        httpData.linkedin !== undefined
+    ) {
+        result.socialNetworks = {
+            twitter: httpData.twitter,
+            facebook: httpData.facebook,
+            instagram: httpData.instagram,
+            linkedIn: httpData.linkedin
+        };
+    }
+
+    return result;
+}
