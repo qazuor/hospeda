@@ -95,3 +95,75 @@ export const AmenityGetHttpSchema = z.object({
 });
 
 export type AmenityGetHttp = z.infer<typeof AmenityGetHttpSchema>;
+
+// ============================================================================
+// HTTP TO DOMAIN CONVERSION FUNCTIONS
+// ============================================================================
+
+import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
+import type { AmenityCreateInput, AmenityUpdateInput } from './amenity.crud.schema.js';
+import type { AmenitySearchInput } from './amenity.query.schema.js';
+
+/**
+ * Convert HTTP search parameters to domain search object
+ * Maps HTTP query parameters to properly typed domain search fields
+ */
+export const httpToDomainAmenitySearch = (httpParams: AmenitySearchHttp): AmenitySearchInput => ({
+    // Base pagination and sorting
+    page: httpParams.page,
+    pageSize: httpParams.pageSize,
+    sortBy: httpParams.sortBy,
+    sortOrder: httpParams.sortOrder,
+    q: httpParams.q,
+
+    // Amenity-specific filters that exist in BOTH HTTP and domain schemas
+    name: httpParams.name,
+    slug: httpParams.slug,
+    category: httpParams.category,
+    icon: httpParams.icon,
+    hasIcon: httpParams.hasIcon,
+    hasDescription: httpParams.hasDescription,
+    minUsageCount: httpParams.minUsageCount,
+    maxUsageCount: httpParams.maxUsageCount,
+    createdAfter: httpParams.createdAfter,
+    createdBefore: httpParams.createdBefore
+
+    // Note: Many HTTP search fields like isActive, isPopular, isFeatured, etc.
+    // don't exist in the domain search schema - these are filtered at service layer
+});
+
+/**
+ * Convert HTTP create data to domain create input
+ * Maps HTTP form/JSON data to domain object with required fields
+ */
+export const httpToDomainAmenityCreate = (httpData: AmenityCreateHttp): AmenityCreateInput => ({
+    // Basic amenity fields that exist in domain schema
+    name: httpData.name,
+    slug: httpData.slug,
+    description: httpData.description,
+    type: httpData.type,
+    icon: httpData.icon,
+    isFeatured: httpData.isFeatured,
+    isBuiltin: false, // Default for user-created amenities
+
+    // Required fields with defaults for domain schema
+    lifecycleState: LifecycleStatusEnum.ACTIVE
+
+    // Note: category, priority, isActive, isPopular from HTTP schema
+    // don't exist in domain schema - these are handled at service layer
+});
+
+/**
+ * Convert HTTP update data to domain update input
+ * Maps HTTP PATCH data to domain object (all fields optional for updates)
+ */
+export const httpToDomainAmenityUpdate = (httpData: AmenityUpdateHttp): AmenityUpdateInput => ({
+    // Map only fields that exist in domain schema
+    name: httpData.name,
+    slug: httpData.slug,
+    description: httpData.description,
+    type: httpData.type,
+    icon: httpData.icon,
+    isFeatured: httpData.isFeatured,
+    isBuiltin: httpData.isActive !== undefined ? !httpData.isActive : undefined // Map isActive inversely to isBuiltin
+});

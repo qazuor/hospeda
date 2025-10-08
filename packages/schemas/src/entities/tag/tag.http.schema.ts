@@ -76,3 +76,97 @@ export type TagCreateHttp = z.infer<typeof TagCreateHttpSchema>;
 export const TagUpdateHttpSchema = TagCreateHttpSchema.partial();
 
 export type TagUpdateHttp = z.infer<typeof TagUpdateHttpSchema>;
+
+// ============================================================================
+// HTTP TO DOMAIN CONVERSION FUNCTIONS
+// ============================================================================
+
+import type { TagSearchInput } from './tag.query.schema.js';
+
+import type { TagCreateInput, TagUpdateInput } from './tag.crud.schema.js';
+
+import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
+import { TagColorEnum } from '../../enums/tag-color.enum.js';
+
+/**
+ * Convert HTTP tag search parameters to domain search schema
+ * Handles coercion from HTTP query strings to proper domain types
+ */
+export const httpToDomainTagSearch = (httpParams: TagSearchHttp): TagSearchInput => {
+    return {
+        // Base search fields
+        page: httpParams.page,
+        pageSize: httpParams.pageSize,
+        sortBy: httpParams.sortBy,
+        sortOrder: httpParams.sortOrder,
+        q: httpParams.q,
+
+        // Basic filters
+        name: httpParams.name,
+        color: httpParams.color,
+
+        // Usage filters
+        minUsageCount: httpParams.minUsageCount,
+        maxUsageCount: httpParams.maxUsageCount,
+        isUnused: httpParams.isUnused,
+
+        // Entity type usage filters
+        usedInAccommodations: httpParams.usedInAccommodations,
+        usedInDestinations: httpParams.usedInDestinations,
+        usedInPosts: httpParams.usedInPosts,
+        usedInEvents: httpParams.usedInEvents,
+        usedInUsers: httpParams.usedInUsers,
+
+        // Date filters
+        createdAfter: httpParams.createdAfter,
+        createdBefore: httpParams.createdBefore,
+        lastUsedAfter: httpParams.lastUsedAfter,
+        lastUsedBefore: httpParams.lastUsedBefore,
+
+        // Name pattern filters
+        nameStartsWith: httpParams.nameStartsWith,
+        nameEndsWith: httpParams.nameEndsWith,
+        nameContains: httpParams.nameContains,
+
+        // Length filters
+        minNameLength: httpParams.minNameLength,
+        maxNameLength: httpParams.maxNameLength,
+
+        // Search options
+        fuzzySearch: httpParams.fuzzySearch
+    };
+};
+
+/**
+ * Convert HTTP tag create data to domain create input
+ * Handles form data conversion to proper domain types
+ * Sets default lifecycle state to ACTIVE
+ * Note: HTTP color (hex) is mapped to enum color
+ * Note: HTTP description is mapped to domain notes field
+ * Note: isSystem field from HTTP not available in domain schema
+ */
+export const httpToDomainTagCreate = (httpData: TagCreateHttp): TagCreateInput => {
+    return {
+        name: httpData.name,
+        slug: httpData.name.toLowerCase().replace(/\s+/g, '-'), // Generate slug from name
+        color: TagColorEnum.BLUE, // Default color since HTTP hex doesn't map directly to enum
+        notes: httpData.description, // Map description to notes
+        lifecycleState: LifecycleStatusEnum.ACTIVE
+    };
+};
+
+/**
+ * Convert HTTP tag update data to domain update input
+ * Handles partial updates from HTTP PATCH requests
+ * Note: HTTP color (hex) is mapped to enum color
+ * Note: HTTP description is mapped to domain notes field
+ * Note: isSystem field from HTTP not available in domain schema
+ */
+export const httpToDomainTagUpdate = (httpData: TagUpdateHttp): TagUpdateInput => {
+    return {
+        name: httpData.name,
+        slug: httpData.name ? httpData.name.toLowerCase().replace(/\s+/g, '-') : undefined,
+        color: httpData.color ? TagColorEnum.BLUE : undefined, // Default color if provided
+        notes: httpData.description // Map description to notes
+    };
+};
