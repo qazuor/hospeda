@@ -1,5 +1,9 @@
-import { z } from '@hono/zod-openapi';
-import { AccommodationSchema, AmenityIdSchema, createPaginatedResponseSchema } from '@repo/schemas';
+import {
+    AccommodationSchema,
+    AmenityAccommodationsHttpSchema,
+    AmenityIdSchema,
+    createPaginatedResponseSchema
+} from '@repo/schemas';
 import { AmenityService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../utils/actor';
@@ -18,13 +22,7 @@ export const getAccommodationsByAmenityRoute = createListRoute({
         amenityId: AmenityIdSchema
     },
     responseSchema: createPaginatedResponseSchema(AccommodationSchema),
-    requestQuery: {
-        page: z.coerce.number().int().min(1).default(1),
-        pageSize: z.coerce.number().int().min(1).max(100).default(20),
-        sortBy: z.string().optional(),
-        sortOrder: z.enum(['asc', 'desc']).default('asc'),
-        q: z.string().optional()
-    },
+    requestQuery: AmenityAccommodationsHttpSchema.shape,
     handler: async (ctx: Context, params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const service = new AmenityService({ logger: apiLogger });
