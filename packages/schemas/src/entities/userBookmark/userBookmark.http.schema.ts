@@ -118,6 +118,20 @@ export const UserBookmarkUpdateHttpSchema = z.object({
 
 export type UserBookmarkUpdateHttp = z.infer<typeof UserBookmarkUpdateHttpSchema>;
 
+/**
+ * HTTP-compatible user bookmark toggle schema
+ * Handles adding/removing bookmarks for any entity type via HTTP
+ */
+export const UserBookmarkToggleHttpSchema = z.object({
+    entityId: z.string().uuid(),
+    entityType: z.nativeEnum(EntityTypeEnum, {
+        message: 'Invalid entity type'
+    }),
+    action: z.enum(['ADD', 'REMOVE'])
+});
+
+export type UserBookmarkToggleHttp = z.infer<typeof UserBookmarkToggleHttpSchema>;
+
 // ============================================================================
 // HTTP TO DOMAIN CONVERSION FUNCTIONS
 // ============================================================================
