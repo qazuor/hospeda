@@ -5,12 +5,12 @@
 
 export * from './http/base-http.schema.js';
 export {
-    createOperationResultSchema,
-    createPaginatedResponseSchema,
-    createSingleItemResponseSchema,
     ErrorResponseSchema,
     PaginationMetadataSchema,
     ResponseMetadataSchema,
+    createOperationResultSchema,
+    createPaginatedResponseSchema,
+    createSingleItemResponseSchema,
     type ErrorResponse,
     type PaginationMetadata,
     type ResponseMetadata
@@ -18,5 +18,6 @@ export {
 
 export * from './api.schema.js'; // Query parameters (pagination, sort, search, date/price/location ranges)
 export * from './health.schema.js'; // Health check schemas (health, database, liveness, readiness)
+export * from './info.schema.js'; // API information schemas (metadata, version info)
 export * from './params.schema.js'; // Path parameters (IDs, slugs, entity-specific parameters)
 export * from './result.schema.js'; // Result schemas (success, delete, restore, assignment, removal)
