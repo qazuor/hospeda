@@ -66,6 +66,19 @@ export const DestinationReviewSearchHttpSchema = BaseHttpSearchSchema.extend({
 export type DestinationReviewSearchHttp = z.infer<typeof DestinationReviewSearchHttpSchema>;
 
 /**
+ * HTTP-compatible destination reviews by destination schema
+ * For listing reviews of a specific destination with basic pagination
+ */
+export const DestinationReviewsByDestinationHttpSchema = BaseHttpSearchSchema.extend({
+    // No additional filters needed - uses basic pagination from BaseHttpSearchSchema
+    // destinationId comes from path params, not query params
+});
+
+export type DestinationReviewsByDestinationHttp = z.infer<
+    typeof DestinationReviewsByDestinationHttpSchema
+>;
+
+/**
  * HTTP-compatible destination review creation schema
  * Handles form data and JSON input for creating reviews via HTTP
  */
