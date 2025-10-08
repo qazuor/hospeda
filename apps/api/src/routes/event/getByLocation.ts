@@ -1,5 +1,8 @@
-import { z } from '@hono/zod-openapi';
-import { EventListItemSchema, EventLocationIdSchema } from '@repo/schemas';
+import {
+    EventByLocationHttpSchema,
+    EventListItemSchema,
+    EventLocationIdSchema
+} from '@repo/schemas';
 import { EventService } from '@repo/service-core';
 import { getActorFromContext } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
@@ -16,13 +19,7 @@ export const getEventsByLocationRoute = createListRoute({
     requestParams: {
         locationId: EventLocationIdSchema
     },
-    requestQuery: {
-        page: z.coerce.number().int().min(1).default(1),
-        pageSize: z.coerce.number().int().min(1).max(100).default(20),
-        sortBy: z.string().optional(),
-        sortOrder: z.enum(['asc', 'desc']).default('asc'),
-        q: z.string().optional()
-    },
+    requestQuery: EventByLocationHttpSchema.shape,
     responseSchema: EventListItemSchema,
     handler: async (ctx, params, _body, query) => {
         const actor = getActorFromContext(ctx);

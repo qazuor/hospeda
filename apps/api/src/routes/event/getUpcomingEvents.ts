@@ -1,5 +1,4 @@
-import { z } from '@hono/zod-openapi';
-import { EventListItemSchema } from '@repo/schemas';
+import { EventListItemSchema, EventUpcomingHttpSchema } from '@repo/schemas';
 import { EventService } from '@repo/service-core';
 import { getActorFromContext } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
@@ -13,17 +12,7 @@ export const getUpcomingEventsRoute = createListRoute({
     summary: 'List upcoming events',
     description: 'Returns a paginated list of upcoming events between two dates',
     tags: ['Events'],
-    requestQuery: {
-        page: z.coerce.number().int().min(1).default(1),
-        pageSize: z.coerce.number().int().min(1).max(100).default(20),
-        sortBy: z.string().optional(),
-        sortOrder: z.enum(['asc', 'desc']).default('asc'),
-        q: z.string().optional(),
-        daysAhead: z.coerce.number().int().min(1).max(365).default(30),
-        city: z.string().optional(),
-        country: z.string().optional(),
-        maxPrice: z.coerce.number().min(0).optional()
-    },
+    requestQuery: EventUpcomingHttpSchema.shape,
     responseSchema: EventListItemSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
