@@ -1,21 +1,12 @@
-import { LifecycleStatusEnum } from '@repo/schemas';
-import { z } from 'zod';
+import type { AmenityListItem } from '@repo/schemas';
+import { AmenityWithAccommodationCountSchema as BaseAmenityListItemSchema } from '@repo/schemas';
 
-export const AmenityListItemSchema = z
-    .object({
-        id: z.string(),
-        name: z.string(),
-        slug: z.string(),
-        type: z.string().optional(),
-        description: z.string().optional(),
-        icon: z.string().optional(),
-        isBuiltin: z.boolean().optional(),
-        isFeatured: z.boolean().optional(),
-        accommodationCount: z.number().optional(),
-        lifecycleState: z.nativeEnum(LifecycleStatusEnum).optional(),
-        createdAt: z.string().optional(),
-        updatedAt: z.string().optional()
-    })
-    .passthrough();
+/**
+ * Schema for amenity list items in admin
+ * Uses AmenityWithAccommodationCountSchema from @repo/schemas
+ */
+export const AmenityListItemSchema = BaseAmenityListItemSchema;
 
-export type Amenity = z.infer<typeof AmenityListItemSchema>;
+export type Amenity = AmenityListItem & {
+    accommodationCount?: number;
+};
