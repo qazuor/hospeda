@@ -4,27 +4,15 @@
  */
 
 import { z } from '@hono/zod-openapi';
+import { ExampleTaskCreateSchema, ExampleTaskSchema, ExampleTaskUpdateSchema } from '@repo/schemas';
 import { createCRUDRoute } from '../../utils/route-factory';
 
 /**
  * Example schemas for demonstration
  */
-const TaskSchema = z.object({
-    id: z.string().uuid(),
-    title: z.string().min(1).max(200),
-    description: z.string().optional(),
-    completed: z.boolean().default(false),
-    createdAt: z.string().datetime(),
-    updatedAt: z.string().datetime()
-});
-
-const CreateTaskSchema = TaskSchema.omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true
-});
-
-const UpdateTaskSchema = CreateTaskSchema.partial();
+const TaskSchema = ExampleTaskSchema;
+const CreateTaskSchema = ExampleTaskCreateSchema;
+const UpdateTaskSchema = ExampleTaskUpdateSchema;
 
 /**
  * Example: Create task endpoint with improved type safety

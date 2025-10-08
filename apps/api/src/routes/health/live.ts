@@ -4,7 +4,8 @@
  * ⚠️ REVERTED from createSimpleRoute due to security headers issue
  * TODO: Fix route factory security headers and re-migrate
  */
-import { createRoute, z } from '@hono/zod-openapi';
+import { createRoute } from '@hono/zod-openapi';
+import { HealthLivenessSchema } from '@repo/schemas';
 import { createRouter } from '../../utils/create-app';
 
 const app = createRouter();
@@ -21,17 +22,7 @@ const liveRoute = createRoute({
             description: 'Service is alive',
             content: {
                 'application/json': {
-                    schema: z.object({
-                        success: z.boolean(),
-                        data: z.object({
-                            alive: z.boolean(),
-                            timestamp: z.string()
-                        }),
-                        metadata: z.object({
-                            timestamp: z.string(),
-                            requestId: z.string()
-                        })
-                    })
+                    schema: HealthLivenessSchema
                 }
             }
         }
