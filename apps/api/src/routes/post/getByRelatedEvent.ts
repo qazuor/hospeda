@@ -1,5 +1,4 @@
-import { z } from '@hono/zod-openapi';
-import { EventIdSchema, PostListItemSchema } from '@repo/schemas';
+import { EventIdSchema, PostByEventHttpSchema, PostListItemSchema } from '@repo/schemas';
 import { PostService } from '@repo/service-core';
 import { getActorFromContext } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
@@ -7,20 +6,14 @@ import { createListRoute } from '../../utils/route-factory';
 
 const postService = new PostService({ logger: apiLogger });
 
-export const getPostsByRelatedEventRoute = createListRoute({
+export const postsByEventRoute = createListRoute({
     method: 'get',
-    path: '/event/{eventId}',
-    summary: 'List posts by related event',
-    description: 'Returns posts related to an event',
+    path: '/posts/event/{eventId}',
+    summary: 'Get posts by related event',
+    description: 'Returns posts that are related to a specific event',
     tags: ['Posts'],
     requestParams: { eventId: EventIdSchema },
-    requestQuery: {
-        page: z.coerce.number().int().min(1).default(1),
-        pageSize: z.coerce.number().int().min(1).max(100).default(20),
-        sortBy: z.string().optional(),
-        sortOrder: z.enum(['asc', 'desc']).default('asc'),
-        q: z.string().optional()
-    },
+    requestQuery: PostByEventHttpSchema.shape,
     responseSchema: PostListItemSchema,
     handler: async (ctx, params) => {
         const actor = getActorFromContext(ctx);
