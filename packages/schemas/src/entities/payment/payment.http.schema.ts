@@ -116,3 +116,75 @@ export const PaymentUpdateHttpSchema = z.object({
 });
 
 export type PaymentUpdateHttp = z.infer<typeof PaymentUpdateHttpSchema>;
+
+/**
+ * HTTP to Domain Conversion Functions
+ * These functions convert HTTP request data to domain-compatible formats
+ */
+
+import {
+    PaymentMethodEnumSchema,
+    PaymentStatusEnumSchema,
+    PaymentTypeEnumSchema,
+    PriceCurrencyEnumSchema
+} from '../../enums/index.js';
+import type { PaymentCreateInputSchema, PaymentUpdateInputSchema } from './payment.crud.schema.js';
+import type { PaymentSearchInputSchema } from './payment.query.schema.js';
+
+/**
+ * Convert HTTP search parameters to domain search format
+ */
+export function httpToDomainPaymentSearch(
+    httpData: PaymentSearchHttp
+): z.infer<typeof PaymentSearchInputSchema> {
+    return {
+        ...httpData,
+        // Convert string arrays to proper arrays if needed
+        userIds: httpData.userIds,
+        planIds: httpData.planIds,
+        statuses: httpData.statuses?.map((s) => PaymentStatusHttpSchema.parse(s)),
+        currencies: httpData.currencies,
+        paymentMethods: httpData.paymentMethods,
+        // Convert boolean flags properly
+        hasRefunds: httpData.hasRefunds,
+        isRefunded: httpData.isRefunded,
+        hasFailed: httpData.hasFailed,
+        isCompleted: httpData.isCompleted,
+        hasFailureReason: httpData.hasFailureReason,
+        hasMetadata: httpData.hasMetadata,
+        searchInMetadata: httpData.searchInMetadata
+    };
+}
+
+/**
+ * Convert HTTP payment creation data to domain format
+ */
+export function httpToDomainPaymentCreate(
+    httpData: PaymentCreateHttp
+): z.infer<typeof PaymentCreateInputSchema> {
+    return {
+        userId: httpData.userId,
+        paymentPlanId: httpData.planId,
+        type: PaymentTypeEnumSchema.enum.SUBSCRIPTION, // Default type
+        status: PaymentStatusEnumSchema.enum.PENDING, // Default status
+        paymentMethod: PaymentMethodEnumSchema.optional().parse(httpData.paymentMethod),
+        amount: httpData.amount,
+        currency: PriceCurrencyEnumSchema.parse(httpData.currency),
+        description: httpData.description,
+        metadata: httpData.metadata
+    };
+}
+
+/**
+ * Convert HTTP payment update data to domain format
+ */
+export function httpToDomainPaymentUpdate(
+    httpData: PaymentUpdateHttp
+): z.infer<typeof PaymentUpdateInputSchema> {
+    return {
+        status: httpData.status ? PaymentStatusEnumSchema.parse(httpData.status) : undefined,
+        mercadoPagoPaymentId: httpData.mpPaymentId,
+        failureReason: httpData.failureReason,
+        metadata: httpData.metadata
+    };
+}

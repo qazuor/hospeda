@@ -117,3 +117,101 @@ export const UserBookmarkUpdateHttpSchema = z.object({
 });
 
 export type UserBookmarkUpdateHttp = z.infer<typeof UserBookmarkUpdateHttpSchema>;
+
+// ============================================================================
+// HTTP TO DOMAIN CONVERSION FUNCTIONS
+// ============================================================================
+
+import type { UserBookmarkSearchInput } from './userBookmark.query.schema.js';
+
+import type {
+    UserBookmarkCreateInput,
+    UserBookmarkUpdateInput
+} from './userBookmark.crud.schema.js';
+
+import { EntityTypeEnum } from '../../enums/entity-type.enum.js';
+
+/**
+ * Convert HTTP user bookmark search parameters to domain search schema
+ * Handles coercion from HTTP query strings to proper domain types
+ * Note: HTTP has specific entity IDs but domain uses generic entityType/entityId
+ */
+export const httpToDomainUserBookmarkSearch = (
+    httpParams: UserBookmarkSearchHttp
+): UserBookmarkSearchInput => {
+    return {
+        // Base search fields
+        page: httpParams.page,
+        pageSize: httpParams.pageSize,
+        sortBy: httpParams.sortBy,
+        sortOrder: httpParams.sortOrder,
+        q: httpParams.q,
+
+        // Available filters
+        userId: httpParams.userId,
+        entityId:
+            httpParams.accommodationId ||
+            httpParams.destinationId ||
+            httpParams.postId ||
+            httpParams.tagId ||
+            httpParams.eventId
+
+        // Note: many HTTP-specific filters not available in domain search
+    };
+};
+
+/**
+ * Convert HTTP user bookmark create data to domain create input
+ * Handles form data conversion to proper domain types
+ * Determines entityType based on which ID is provided
+ */
+export const httpToDomainUserBookmarkCreate = (
+    httpData: UserBookmarkCreateHttp
+): UserBookmarkCreateInput => {
+    // Determine entity type and ID from the provided data
+    let entityType: EntityTypeEnum;
+    let entityId: string;
+
+    if (httpData.accommodationId) {
+        entityType = EntityTypeEnum.ACCOMMODATION;
+        entityId = httpData.accommodationId;
+    } else if (httpData.destinationId) {
+        entityType = EntityTypeEnum.DESTINATION;
+        entityId = httpData.destinationId;
+    } else if (httpData.postId) {
+        entityType = EntityTypeEnum.POST;
+        entityId = httpData.postId;
+    } else if (httpData.eventId) {
+        entityType = EntityTypeEnum.EVENT;
+        entityId = httpData.eventId;
+    } else {
+        // Default fallback (should not happen due to HTTP schema validation)
+        entityType = EntityTypeEnum.ACCOMMODATION;
+        entityId = httpData.tagId || '';
+    }
+
+    return {
+        userId: httpData.userId,
+        entityId,
+        entityType,
+        name: undefined, // Not available in HTTP schema
+        description: httpData.notes // Map notes to description
+    };
+};
+
+/**
+ * Convert HTTP user bookmark update data to domain update input
+ * Handles partial updates from HTTP PATCH requests
+ * Note: Update schema only allows updating the bookmark itself, not entity references
+ */
+export const httpToDomainUserBookmarkUpdate = (
+    httpData: UserBookmarkUpdateHttp
+): UserBookmarkUpdateInput => {
+    // For updates, we need the required fields. Since they're not available in HTTP update,
+    // this function is simplified to handle only description changes.
+    // In practice, the entity reference fields would come from the existing bookmark.
+    return {
+        description: httpData.notes // Map notes to description
+        // Note: userId, entityId, entityType are typically not updated and would come from existing entity
+    } as UserBookmarkUpdateInput;
+};
