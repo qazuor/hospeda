@@ -1,5 +1,8 @@
-import { z } from '@hono/zod-openapi';
-import { DestinationIdSchema, PostListItemSchema } from '@repo/schemas';
+import {
+    DestinationIdSchema,
+    PostByDestinationHttpSchema,
+    PostListItemSchema
+} from '@repo/schemas';
 import { PostService } from '@repo/service-core';
 import { getActorFromContext } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
@@ -7,20 +10,14 @@ import { createListRoute } from '../../utils/route-factory';
 
 const postService = new PostService({ logger: apiLogger });
 
-export const getPostsByRelatedDestinationRoute = createListRoute({
+export const postsByDestinationRoute = createListRoute({
     method: 'get',
-    path: '/destination/{destinationId}',
-    summary: 'List posts by related destination',
-    description: 'Returns posts related to a destination',
+    path: '/posts/destination/{destinationId}',
+    summary: 'Get posts by related destination',
+    description: 'Returns posts that are related to a specific destination',
     tags: ['Posts'],
     requestParams: { destinationId: DestinationIdSchema },
-    requestQuery: {
-        page: z.coerce.number().int().min(1).default(1),
-        pageSize: z.coerce.number().int().min(1).max(100).default(20),
-        sortBy: z.string().optional(),
-        sortOrder: z.enum(['asc', 'desc']).default('asc'),
-        q: z.string().optional()
-    },
+    requestQuery: PostByDestinationHttpSchema.shape,
     responseSchema: PostListItemSchema,
     handler: async (ctx, params) => {
         const actor = getActorFromContext(ctx);
