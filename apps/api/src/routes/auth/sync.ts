@@ -1,7 +1,6 @@
 import { createClerkClient } from '@clerk/backend';
 import { getAuth } from '@hono/clerk-auth';
-import { z } from '@hono/zod-openapi';
-import { AuthProviderEnum } from '@repo/schemas';
+import { AuthProviderEnum, SyncUserResponseSchema } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { UserService } from '@repo/service-core';
 import { createGuestActor } from '../../utils/actor';
@@ -20,11 +19,7 @@ export const authSyncRoute = createSimpleRoute({
         'Ensures the authenticated IdP user exists in DB, creates/updates as needed, and returns the DB user.',
     tags: ['Auth'],
     options: { skipAuth: true },
-    responseSchema: z
-        .object({
-            user: z.object({ id: z.string() }).passthrough()
-        })
-        .openapi('AuthSyncResponse'),
+    responseSchema: SyncUserResponseSchema,
     handler: async (c) => {
         try {
             const auth = getAuth(c);

@@ -3,7 +3,8 @@ import { getAuth } from '@hono/clerk-auth';
  * Authentication status route
  * Simple endpoint to check authentication status and actor information
  */
-import { createRoute, z } from '@hono/zod-openapi';
+import { createRoute } from '@hono/zod-openapi';
+import { AuthStatusResponseSchema } from '@repo/schemas';
 import { getActorFromContext } from '../../utils/actor';
 import { createRouter } from '../../utils/create-app';
 
@@ -20,22 +21,7 @@ export const authStatusOpenAPIRoute = createRoute({
             description: 'Authentication status response',
             content: {
                 'application/json': {
-                    schema: z.object({
-                        success: z.boolean(),
-                        data: z.object({
-                            isAuthenticated: z.boolean(),
-                            userId: z.string().nullish(),
-                            actor: z.object({
-                                id: z.string(),
-                                role: z.string(),
-                                permissions: z.array(z.string())
-                            })
-                        }),
-                        metadata: z.object({
-                            timestamp: z.string(),
-                            requestId: z.string()
-                        })
-                    })
+                    schema: AuthStatusResponseSchema
                 }
             }
         }
