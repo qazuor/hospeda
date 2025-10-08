@@ -7,6 +7,9 @@ export * from './post.crud.schema.js'; // Create, Update, Delete, Restore schema
 // Query operations
 export * from './post.query.schema.js'; // List, Search, Summary, Stats, Filters schemas
 
+// HTTP operations
+export * from './post.http.schema.js'; // HTTP-compatible schemas with query coercion
+
 // Batch operations
 export * from './post.batch.schema.js'; // Batch request/response schemas
 
