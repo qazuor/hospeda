@@ -1,6 +1,7 @@
 import { createEntityListPage } from '@/components/entity-list';
 import type { EntityConfig } from '@/components/entity-list/types';
 import { EntityType } from '@/components/table/DataTable';
+import type { z } from 'zod';
 import { type Event, EventListItemSchema } from '../schemas/events.schemas';
 import { createEventsColumns } from './events.columns';
 
@@ -12,7 +13,8 @@ export const eventsConfig: EntityConfig<Event> = {
     apiEndpoint: '/api/v1/public/events',
     basePath: '/events',
     detailPath: '/events/[slug]',
-    listItemSchema: EventListItemSchema,
+    // Schemas - Use type assertion for Zod version compatibility
+    listItemSchema: EventListItemSchema as unknown as z.ZodSchema<Event>,
     searchConfig: {
         minChars: 3,
         debounceMs: 400,

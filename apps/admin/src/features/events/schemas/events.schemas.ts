@@ -1,4 +1,6 @@
+import type { EventListItem } from '@repo/schemas';
 import {
+    EventListItemSchema as BaseEventListItemSchema,
     EventCategoryEnum,
     LifecycleStatusEnum,
     ModerationStatusEnum,
@@ -7,53 +9,43 @@ import {
 } from '@repo/schemas';
 import { z } from 'zod';
 
-export const EventListItemSchema = z
-    .object({
-        id: z.string(),
-        slug: z.string(),
-        name: z.string(),
-        description: z.string().optional(),
-        destinationId: z.string().nullable().optional(),
-        destinationName: z.string().optional(),
-        organizerId: z.string().nullable().optional(),
-        organizerName: z.string().optional(),
-        locationId: z.string().nullable().optional(),
-        locationName: z.string().optional(),
-        eventType: z.nativeEnum(EventCategoryEnum).optional(),
-        startDate: z.string().optional(),
-        endDate: z.string().optional(),
-        capacity: z.number().optional(),
-        attendeesCount: z.number().optional(),
-        ticketPrice: z.number().optional(),
-        currency: z.nativeEnum(PriceCurrencyEnum).optional(),
-        isFeatured: z.boolean().optional(),
-        visibility: z.nativeEnum(VisibilityEnum).optional(),
-        lifecycleState: z.nativeEnum(LifecycleStatusEnum).optional(),
-        moderationState: z.nativeEnum(ModerationStatusEnum).optional(),
-        createdAt: z.string().optional(),
-        updatedAt: z.string().optional(),
-        tags: z.array(z.string()).optional(),
-        media: z
-            .object({
-                featuredImage: z
-                    .object({
-                        url: z.string().url(),
-                        caption: z.string().optional(),
-                        description: z.string().optional()
-                    })
-                    .optional(),
-                gallery: z
-                    .array(
-                        z.object({
-                            url: z.string().url(),
-                            caption: z.string().optional(),
-                            description: z.string().optional()
-                        })
-                    )
-                    .optional()
-            })
-            .optional()
-    })
-    .passthrough();
+/**
+ * Schema for event list items in admin
+ * Extends the base EventListItemSchema with admin-specific fields
+ */
+export const EventListItemSchema = BaseEventListItemSchema.extend({
+    // Admin-specific fields for list management
+    destinationId: z.string().nullable().optional(),
+    destinationName: z.string().optional(),
+    organizerName: z.string().optional(),
+    locationName: z.string().optional(),
+    eventType: z.nativeEnum(EventCategoryEnum).optional(),
+    startDate: z.string().optional(),
+    endDate: z.string().optional(),
+    capacity: z.number().optional(),
+    attendeesCount: z.number().optional(),
+    ticketPrice: z.number().optional(),
+    currency: z.nativeEnum(PriceCurrencyEnum).optional(),
+    visibility: z.nativeEnum(VisibilityEnum).optional(),
+    lifecycleState: z.nativeEnum(LifecycleStatusEnum).optional(),
+    moderationState: z.nativeEnum(ModerationStatusEnum).optional(),
+    tags: z.array(z.string()).optional()
+});
 
-export type Event = z.infer<typeof EventListItemSchema>;
+export type Event = EventListItem & {
+    destinationId?: string | null;
+    destinationName?: string;
+    organizerName?: string;
+    locationName?: string;
+    eventType?: EventCategoryEnum;
+    startDate?: string;
+    endDate?: string;
+    capacity?: number;
+    attendeesCount?: number;
+    ticketPrice?: number;
+    currency?: PriceCurrencyEnum;
+    visibility?: VisibilityEnum;
+    lifecycleState?: LifecycleStatusEnum;
+    moderationState?: ModerationStatusEnum;
+    tags?: string[];
+};
