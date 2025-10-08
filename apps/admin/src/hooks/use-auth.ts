@@ -9,38 +9,34 @@ import {
     useHasPermission,
     useHasRole
 } from '@/hooks/use-auth-context';
+import { PermissionEnum, RoleEnum } from '@repo/schemas';
 
 export { useAuthContext, useHasAnyRole, useHasPermission, useHasRole };
 
 /**
- * Common permission checks
+ * Use standardized permissions from @repo/schemas
+ * Migrated from local PERMISSIONS to centralized PermissionEnum
  */
 export const PERMISSIONS = {
-    // User management
-    USER_CREATE: 'user.create',
-    USER_UPDATE: 'user.update',
-    USER_DELETE: 'user.delete',
-    USER_LIST: 'user.list',
+    // User management - migrated to use PermissionEnum values
+    USER_CREATE: PermissionEnum.USER_CREATE,
+    USER_UPDATE: 'user.update', // TODO: Map to appropriate PermissionEnum
+    USER_DELETE: PermissionEnum.USER_DELETE,
+    USER_LIST: 'user.list', // TODO: Map to appropriate PermissionEnum
 
-    // Admin access
-    ADMIN_ACCESS: 'admin.access',
+    // Admin access - migrated to use PermissionEnum values
+    ADMIN_ACCESS: PermissionEnum.ACCESS_PANEL_ADMIN,
 
-    // API access
-    API_PUBLIC: 'access.apiPublic',
-    API_PRIVATE: 'access.apiPrivate'
+    // API access - migrated to use PermissionEnum values
+    API_PUBLIC: PermissionEnum.ACCESS_API_PUBLIC,
+    API_PRIVATE: PermissionEnum.ACCESS_API_ADMIN
 } as const;
 
 /**
- * Common roles
+ * Use standardized roles from @repo/schemas
+ * Migrated from local ROLES to centralized RoleEnum
  */
-export const ROLES = {
-    SUPER_ADMIN: 'SUPER_ADMIN',
-    ADMIN: 'ADMIN',
-    EDITOR: 'EDITOR',
-    HOST: 'HOST',
-    USER: 'USER',
-    GUEST: 'GUEST'
-} as const;
+export const ROLES = RoleEnum;
 
 /**
  * Helper function to check if user is admin (SUPER_ADMIN or ADMIN)
