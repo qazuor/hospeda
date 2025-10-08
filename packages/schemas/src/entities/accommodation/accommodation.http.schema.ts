@@ -129,3 +129,203 @@ export const AccommodationGetHttpSchema = z.object({
 });
 
 export type AccommodationGetHttp = z.infer<typeof AccommodationGetHttpSchema>;
+
+// ============================================================================
+// HTTP TO DOMAIN CONVERSION FUNCTIONS
+// ============================================================================
+
+import type {
+    AccommodationCreateInput,
+    AccommodationUpdateInput
+} from './accommodation.crud.schema.js';
+import type { AccommodationSearch } from './accommodation.query.schema.js';
+
+/**
+ * Convert HTTP search parameters to domain search object
+ * Only maps fields that exist in both HTTP and domain schemas
+ */
+export const httpToDomainAccommodationSearch = (
+    httpParams: AccommodationSearchHttp
+): AccommodationSearch => ({
+    // Base pagination and sorting
+    page: httpParams.page,
+    pageSize: httpParams.pageSize,
+    sortBy: httpParams.sortBy,
+    sortOrder: httpParams.sortOrder,
+    q: httpParams.q,
+
+    // Entity-specific filters that exist in BOTH schemas
+    type: httpParams.type,
+    isFeatured: httpParams.isFeatured,
+    minPrice: httpParams.minPrice,
+    maxPrice: httpParams.maxPrice,
+    currency: httpParams.currency,
+    destinationId: httpParams.destinationId,
+    latitude: httpParams.latitude,
+    longitude: httpParams.longitude,
+    radius: httpParams.radius,
+    minGuests: httpParams.minGuests,
+    maxGuests: httpParams.maxGuests,
+    minBedrooms: httpParams.minBedrooms,
+    maxBedrooms: httpParams.maxBedrooms,
+    minBathrooms: httpParams.minBathrooms,
+    maxBathrooms: httpParams.maxBathrooms,
+    minRating: httpParams.minRating,
+    maxRating: httpParams.maxRating,
+    amenities: httpParams.amenities,
+    checkIn: httpParams.checkIn,
+    checkOut: httpParams.checkOut,
+    isAvailable: httpParams.isAvailable
+
+    // Note: Fields like country, city, hostId, createdAfter, createdBefore
+    // exist in domain schema but not in HTTP schema, so they're not mapped
+});
+
+import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
+import { ModerationStatusEnum } from '../../enums/moderation-status.enum.js';
+import { VisibilityEnum } from '../../enums/visibility.enum.js';
+
+/**
+ * Convert HTTP create data to domain create input
+ * Transforms HTTP form/JSON data to domain object with basic required fields
+ * TODO: Add proper nested object structures for location, price, etc.
+ */
+export const httpToDomainAccommodationCreate = (
+    httpData: AccommodationCreateHttp
+): AccommodationCreateInput => ({
+    // Basic required fields
+    name: httpData.name,
+    summary: httpData.description?.substring(0, 300) || httpData.name, // Generate summary from description or use name
+    description: httpData.description ?? '', // Required field, provide default
+    type: httpData.type,
+    destinationId: httpData.destinationId,
+    ownerId: httpData.hostId, // Map hostId to ownerId
+    isFeatured: httpData.isFeatured,
+
+    // Required fields with sensible defaults using proper enums
+    moderationState: ModerationStatusEnum.PENDING,
+    lifecycleState: LifecycleStatusEnum.ACTIVE,
+    reviewsCount: 0,
+    averageRating: 0,
+    visibility: VisibilityEnum.PUBLIC
+
+    // TODO [e3c50239-c30b-4d2a-8498-8ae1b10e1263]: Add proper nested structures:
+    // - location: { state, zipCode, country, coordinates }
+    // - price: { price, currency }
+    // - extraInfo: { capacity, bedrooms, bathrooms, minNights }
+});
+
+/**
+ * Convert HTTP update data to domain update input
+ * Transforms HTTP PATCH data to domain object (all fields optional for updates)
+ */
+export const httpToDomainAccommodationUpdate = (
+    httpData: AccommodationUpdateHttp
+): AccommodationUpdateInput => ({
+    // Only map fields that exist in both schemas
+    name: httpData.name,
+    description: httpData.description,
+    type: httpData.type,
+    isFeatured: httpData.isFeatured,
+    destinationId: httpData.destinationId
+
+    // TODO [954f7b21-33f4-4ad2-a67d-4618aba863f9]: Add nested object mappings for location, price, extraInfo
+    // Current HTTP schema has flat fields (address, latitude, longitude, basePrice, etc.)
+    // Domain schema expects nested objects which need proper transformation
+});
+
+// ============================================================================
+// COMPILE-TIME VALIDATION
+// ============================================================================
+
+/**
+ * Type-level validation to ensure HTTP→Domain conversion covers all fields
+ * These checks will cause TypeScript compilation errors if schemas are inconsistent
+ */
+
+// Check 1: All domain search fields are mapped in HTTP conversion
+type DomainSearchFields = keyof AccommodationSearch;
+type HttpConversionFields = keyof ReturnType<typeof httpToDomainAccommodationSearch>;
+type MissingSearchFields = Exclude<DomainSearchFields, HttpConversionFields>;
+
+// This will be 'never' if all fields are mapped, otherwise TypeScript will show missing fields
+const _searchFieldsCheck: MissingSearchFields extends never ? true : never =
+    true as MissingSearchFields extends never ? true : never;
+
+// Check 2: HTTP search conversion output is compatible with domain type
+const _searchTypeCheck: ReturnType<
+    typeof httpToDomainAccommodationSearch
+> extends AccommodationSearch
+    ? true
+    : never = true as ReturnType<typeof httpToDomainAccommodationSearch> extends AccommodationSearch
+    ? true
+    : never;
+
+// Check 3: All domain create fields are mapped in HTTP conversion
+type DomainCreateFields = keyof AccommodationCreateInput;
+type HttpCreateConversionFields = keyof ReturnType<typeof httpToDomainAccommodationCreate>;
+type MissingCreateFields = Exclude<DomainCreateFields, HttpCreateConversionFields>;
+
+const _createFieldsCheck: MissingCreateFields extends never ? true : never =
+    true as MissingCreateFields extends never ? true : never;
+
+// Check 4: HTTP create conversion output is compatible with domain type
+const _createTypeCheck: ReturnType<
+    typeof httpToDomainAccommodationCreate
+> extends AccommodationCreateInput
+    ? true
+    : never = true as ReturnType<
+    typeof httpToDomainAccommodationCreate
+> extends AccommodationCreateInput
+    ? true
+    : never;
+
+// Check 5: All domain update fields are mapped in HTTP conversion
+type DomainUpdateFields = keyof AccommodationUpdateInput;
+type HttpUpdateConversionFields = keyof ReturnType<typeof httpToDomainAccommodationUpdate>;
+type MissingUpdateFields = Exclude<DomainUpdateFields, HttpUpdateConversionFields>;
+
+const _updateFieldsCheck: MissingUpdateFields extends never ? true : never =
+    true as MissingUpdateFields extends never ? true : never;
+
+// Check 6: HTTP update conversion output is compatible with domain type
+const _updateTypeCheck: ReturnType<
+    typeof httpToDomainAccommodationUpdate
+> extends AccommodationUpdateInput
+    ? true
+    : never = true as ReturnType<
+    typeof httpToDomainAccommodationUpdate
+> extends AccommodationUpdateInput
+    ? true
+    : never;
+
+/**
+ * Runtime validation function for development/testing
+ * Validates that conversion functions work correctly
+ */
+export const validateAccommodationSchemaConsistency = () => {
+    // These assignments will fail at compile time if schemas are inconsistent
+    const searchCheck: typeof _searchFieldsCheck = true;
+    const searchTypeCheck: typeof _searchTypeCheck = true;
+    const createCheck: typeof _createFieldsCheck = true;
+    const createTypeCheck: typeof _createTypeCheck = true;
+    const updateCheck: typeof _updateFieldsCheck = true;
+    const updateTypeCheck: typeof _updateTypeCheck = true;
+
+    return {
+        searchCheck,
+        searchTypeCheck,
+        createCheck,
+        createTypeCheck,
+        updateCheck,
+        updateTypeCheck
+    };
+};
+
+// Suppress unused variable warnings for validation checks
+void _searchFieldsCheck;
+void _searchTypeCheck;
+void _createFieldsCheck;
+void _createTypeCheck;
+void _updateFieldsCheck;
+void _updateTypeCheck;
