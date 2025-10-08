@@ -12,6 +12,8 @@ import {
     createBooleanQueryParam
 } from '../../api/http/base-http.schema.js';
 import { RoleEnum, RoleEnumSchema } from '../../enums/index.js';
+import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
+import { VisibilityEnum } from '../../enums/visibility.enum.js';
 
 /**
  * User status enumeration for HTTP requests
@@ -106,3 +108,82 @@ export const UserGetHttpSchema = z.object({
 });
 
 export type UserGetHttp = z.infer<typeof UserGetHttpSchema>;
+
+// ============================================================================
+// HTTP TO DOMAIN CONVERSION FUNCTIONS
+// ============================================================================
+
+import type { UserCreateInput, UserUpdateInput } from './user.crud.schema.js';
+import type { UserSearch } from './user.query.schema.js';
+
+/**
+ * Convert HTTP search parameters to domain search object
+ * Maps HTTP query parameters to properly typed domain search fields
+ */
+export const httpToDomainUserSearch = (httpParams: UserSearchHttp): UserSearch => ({
+    // Base pagination and sorting
+    page: httpParams.page,
+    pageSize: httpParams.pageSize,
+    sortBy: httpParams.sortBy,
+    sortOrder: httpParams.sortOrder,
+    q: httpParams.q,
+
+    // User-specific filters that exist in BOTH HTTP and domain schemas
+    role: httpParams.role,
+    isActive: httpParams.isActive,
+    isEmailVerified: httpParams.isEmailVerified,
+    createdAfter: httpParams.createdAfter,
+    createdBefore: httpParams.createdBefore,
+    lastLoginAfter: httpParams.lastLoginAfter,
+    lastLoginBefore: httpParams.lastLoginBefore,
+    minAge: httpParams.minAge,
+    maxAge: httpParams.maxAge
+
+    // Note: Fields like email, firstName, lastName, etc. exist in HTTP schema
+    // but not in domain search schema for privacy/security reasons
+});
+
+/**
+ * Convert HTTP create data to domain create input
+ * Maps HTTP form/JSON data to domain object with required fields and proper structure
+ */
+export const httpToDomainUserCreate = (httpData: UserCreateHttp): UserCreateInput => ({
+    // Basic fields that exist in domain schema
+    firstName: httpData.firstName,
+    lastName: httpData.lastName,
+    birthDate: httpData.dateOfBirth, // Map dateOfBirth to birthDate
+    role: httpData.role,
+
+    // Required fields with defaults for domain schema
+    slug: `${httpData.firstName.toLowerCase()}-${httpData.lastName.toLowerCase()}-${Date.now()}`, // Generate slug
+    permissions: [], // Default empty permissions array
+    lifecycleState: LifecycleStatusEnum.ACTIVE, // Default lifecycle state
+    visibility: VisibilityEnum.PUBLIC, // Default visibility
+
+    // Map contact info with required mobilePhone field
+    contactInfo: {
+        personalEmail: httpData.email,
+        mobilePhone: httpData.phone || '+1234567890' // Provide default if phone not provided
+    }
+
+    // Note: Many domain fields have defaults or are optional
+    // The service layer will handle setting additional fields as needed
+});
+
+/**
+ * Convert HTTP update data to domain update input
+ * Maps HTTP PATCH data to domain object (all fields optional for updates)
+ */
+export const httpToDomainUserUpdate = (httpData: UserUpdateHttp): UserUpdateInput => ({
+    // Basic updateable fields
+    firstName: httpData.firstName,
+    lastName: httpData.lastName,
+    birthDate: httpData.dateOfBirth,
+    role: httpData.role
+
+    // Note: Contact info updates are complex due to required mobilePhone field
+    // The service layer should handle merging existing contactInfo with new data
+
+    // Note: Complex fields like avatar, settings, etc. may need
+    // special handling in the service layer
+});
