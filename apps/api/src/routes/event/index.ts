@@ -1,7 +1,7 @@
 import { createRouter } from '../../utils/create-app';
 import { eventBatchRoute } from './batch';
 import { createEventRoute } from './create';
-import { getEventsByAuthorRoute } from './getByAuthor';
+import { eventsByAuthorRoute } from './getByAuthor';
 import { getEventsByCategoryRoute } from './getByCategory';
 import { getEventByIdRoute } from './getById';
 import { getEventsByLocationRoute } from './getByLocation';
@@ -28,7 +28,7 @@ app.route('/', updateEventRoute);
 app.route('/', softDeleteEventRoute);
 app.route('/', hardDeleteEventRoute);
 app.route('/', restoreEventRoute);
-app.route('/', getEventsByAuthorRoute);
+app.route('/', eventsByAuthorRoute);
 app.route('/', getEventsByLocationRoute);
 app.route('/', getEventsByOrganizerRoute);
 app.route('/', getEventsByCategoryRoute);
