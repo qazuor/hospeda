@@ -1,4 +1,4 @@
-import { z } from '@hono/zod-openapi';
+import { CacheStatsResponseSchema } from '@repo/schemas';
 import { createSimpleRoute } from '../../utils/route-factory';
 import { userCache } from '../../utils/user-cache';
 
@@ -13,26 +13,7 @@ export const cacheStatsRoute = createSimpleRoute({
     description: 'Returns comprehensive cache performance metrics for monitoring and debugging',
     tags: ['Auth', 'Monitoring'],
     options: { skipAuth: true }, // Allow monitoring without authentication
-    responseSchema: z
-        .object({
-            cache: z.object({
-                size: z.number().describe('Current number of cached users'),
-                maxSize: z.number().describe('Maximum cache capacity'),
-                hitCount: z.number().describe('Total cache hits since startup'),
-                missCount: z.number().describe('Total cache misses since startup'),
-                hitRate: z.number().min(0).max(1).describe('Cache hit rate (0-1)'),
-                pendingQueries: z.number().describe('Number of queries currently in progress')
-            }),
-            performance: z.object({
-                hitRatePercentage: z.string().describe('Hit rate as percentage'),
-                totalRequests: z.number().describe('Total requests processed'),
-                efficiency: z
-                    .enum(['excellent', 'good', 'fair', 'poor'])
-                    .describe('Cache efficiency rating')
-            }),
-            recommendations: z.array(z.string()).describe('Performance recommendations')
-        })
-        .openapi('CacheStatsResponse'),
+    responseSchema: CacheStatsResponseSchema,
     handler: async () => {
         const stats = userCache.getStats();
         const totalRequests = stats.hitCount + stats.missCount;

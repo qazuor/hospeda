@@ -1,4 +1,4 @@
-import { z } from '@hono/zod-openapi';
+import { AuthMeResponseSchema } from '@repo/schemas';
 import { createGuestActor } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
 import { createSimpleRoute } from '../../utils/route-factory';
@@ -10,12 +10,7 @@ export const authMeRoute = createSimpleRoute({
     description: 'Returns current actor resolved by middleware and auth status.',
     tags: ['Auth'],
     options: { skipAuth: true }, // Skip auth middleware to check auth status
-    responseSchema: z
-        .object({
-            actor: z.object({ id: z.string(), role: z.string(), permissions: z.array(z.string()) }),
-            isAuthenticated: z.boolean()
-        })
-        .openapi('AuthMeResponse'),
+    responseSchema: AuthMeResponseSchema,
     handler: async (c) => {
         try {
             // Get actor from context (set by actor middleware)
