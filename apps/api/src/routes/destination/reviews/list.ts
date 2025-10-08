@@ -1,5 +1,9 @@
 import { z } from '@hono/zod-openapi';
-import { DestinationIdSchema, DestinationReviewSchema } from '@repo/schemas';
+import {
+    DestinationIdSchema,
+    DestinationReviewSchema,
+    DestinationReviewsByDestinationHttpSchema
+} from '@repo/schemas';
 import { DestinationReviewService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -17,13 +21,7 @@ export const listDestinationReviewsRoute = createListRoute({
     requestParams: {
         destinationId: DestinationIdSchema
     },
-    requestQuery: {
-        page: z.coerce.number().int().min(1).default(1),
-        pageSize: z.coerce.number().int().min(1).max(100).default(20),
-        sortBy: z.string().optional(),
-        sortOrder: z.enum(['asc', 'desc']).default('asc'),
-        q: z.string().optional()
-    },
+    requestQuery: DestinationReviewsByDestinationHttpSchema.shape,
     responseSchema: z.object(DestinationReviewSchema.shape),
     handler: async (ctx: Context, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
