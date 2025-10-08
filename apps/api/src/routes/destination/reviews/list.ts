@@ -1,4 +1,3 @@
-import { z } from '@hono/zod-openapi';
 import {
     DestinationIdSchema,
     DestinationReviewSchema,
@@ -22,7 +21,7 @@ export const listDestinationReviewsRoute = createListRoute({
         destinationId: DestinationIdSchema
     },
     requestQuery: DestinationReviewsByDestinationHttpSchema.shape,
-    responseSchema: z.object(DestinationReviewSchema.shape),
+    responseSchema: DestinationReviewSchema,
     handler: async (ctx: Context, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const validatedQuery = query as { page?: number; pageSize?: number };

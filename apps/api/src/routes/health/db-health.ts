@@ -4,23 +4,10 @@
  */
 import { createRoute, z } from '@hono/zod-openapi';
 import { getDb, sql } from '@repo/db';
+import { HealthDatabaseSchema } from '@repo/schemas';
 import { createRouter } from '../../utils/create-app';
 
 const app = createRouter();
-
-// Database health check schema
-const DatabaseHealthDataSchema = z.object({
-    status: z.enum(['up', 'down']),
-    database: z.object({
-        status: z.enum(['connected', 'disconnected']),
-        responseTime: z.number().optional(),
-        error: z.string().optional()
-    }),
-    timestamp: z.string(),
-    uptime: z.number(),
-    version: z.string(),
-    environment: z.string()
-});
 
 // Database health check route
 const dbHealthRoute = createRoute({
@@ -36,7 +23,7 @@ const dbHealthRoute = createRoute({
                 'application/json': {
                     schema: z.object({
                         success: z.boolean(),
-                        data: DatabaseHealthDataSchema,
+                        data: HealthDatabaseSchema,
                         metadata: z.object({
                             timestamp: z.string(),
                             requestId: z.string()
@@ -51,7 +38,7 @@ const dbHealthRoute = createRoute({
                 'application/json': {
                     schema: z.object({
                         success: z.boolean(),
-                        data: DatabaseHealthDataSchema,
+                        data: HealthDatabaseSchema,
                         metadata: z.object({
                             timestamp: z.string(),
                             requestId: z.string()

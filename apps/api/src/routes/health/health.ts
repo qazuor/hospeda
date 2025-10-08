@@ -3,18 +3,10 @@
  * Returns the health status of the API
  */
 import { createRoute, z } from '@hono/zod-openapi';
+import { HealthSystemSchema } from '@repo/schemas';
 import { createRouter } from '../../utils/create-app';
 
 const app = createRouter();
-
-// Health check schema
-const HealthDataSchema = z.object({
-    status: z.enum(['healthy', 'unhealthy']),
-    timestamp: z.string(),
-    uptime: z.number(),
-    version: z.string(),
-    environment: z.string()
-});
 
 // Health check route
 const healthRoute = createRoute({
@@ -30,7 +22,7 @@ const healthRoute = createRoute({
                 'application/json': {
                     schema: z.object({
                         success: z.boolean(),
-                        data: HealthDataSchema,
+                        data: HealthSystemSchema,
                         metadata: z.object({
                             timestamp: z.string(),
                             requestId: z.string()

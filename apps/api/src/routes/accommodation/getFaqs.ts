@@ -5,27 +5,17 @@
  */
 
 import { z } from '@hono/zod-openapi';
+import { AccommodationFaqSchema } from '@repo/schemas';
 import { AccommodationService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { createGuestActor } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
 import { createSimpleRoute } from '../../utils/route-factory';
 
-// Local FAQ schemas
-const faqResponseSchema = z
-    .object({
-        id: z.string(),
-        question: z.string(),
-        answer: z.string(),
-        order: z.number(),
-        createdAt: z.string(),
-        updatedAt: z.string()
-    })
-    .openapi('FaqResponse');
-
+// FAQ list response schema using AccommodationFaqSchema
 const faqListResponseSchema = z
     .object({
-        faqs: z.array(faqResponseSchema)
+        faqs: z.array(AccommodationFaqSchema)
     })
     .openapi('FaqListResponse');
 

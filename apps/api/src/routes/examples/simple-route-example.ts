@@ -3,19 +3,13 @@
  * Demonstrates how to create simple endpoints with minimal boilerplate
  */
 
-import { z } from '@hono/zod-openapi';
+import { SystemHealthSchema, SystemPingSchema, SystemVersionSchema } from '@repo/schemas';
 import { createSimpleRoute } from '../../utils/route-factory';
 
 /**
  * Example: Version endpoint using createSimpleRoute
  * This demonstrates the new simple route factory for endpoints that don't need complex validation
  */
-const VersionSchema = z.object({
-    version: z.string(),
-    environment: z.string(),
-    buildTime: z.string(),
-    commit: z.string().optional()
-});
 
 export const versionRoute = createSimpleRoute({
     method: 'get',
@@ -23,7 +17,7 @@ export const versionRoute = createSimpleRoute({
     summary: 'Get API version information',
     description: 'Returns version, environment, and build information',
     tags: ['System'],
-    responseSchema: VersionSchema,
+    responseSchema: SystemVersionSchema,
     handler: async (_ctx) => {
         return {
             version: '2.0.0',
@@ -41,19 +35,13 @@ export const versionRoute = createSimpleRoute({
 /**
  * Example: Health check with custom middleware
  */
-const HealthSchema = z.object({
-    status: z.string(),
-    timestamp: z.string(),
-    uptime: z.number()
-});
-
 export const quickHealthRoute = createSimpleRoute({
     method: 'get',
     path: '/quick-health',
     summary: 'Quick health check',
     description: 'Lightweight health check endpoint',
     tags: ['Health'],
-    responseSchema: HealthSchema,
+    responseSchema: SystemHealthSchema,
     handler: async () => {
         return {
             status: 'ok',
@@ -71,19 +59,13 @@ export const quickHealthRoute = createSimpleRoute({
 /**
  * Example: Using createSimpleRoute with POST method
  */
-const PingSchema = z.object({
-    message: z.string(),
-    timestamp: z.string(),
-    requestId: z.string()
-});
-
 export const pingRoute = createSimpleRoute({
     method: 'post',
     path: '/ping',
     summary: 'Ping endpoint',
     description: 'Simple ping endpoint that echoes back a response',
     tags: ['System'],
-    responseSchema: PingSchema,
+    responseSchema: SystemPingSchema,
     handler: async (ctx) => {
         return {
             message: 'pong',

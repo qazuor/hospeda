@@ -3,6 +3,7 @@
  * Endpoints for exposing application metrics
  */
 import { createRoute } from '@hono/zod-openapi';
+import { MetricsResponseSchema } from '@repo/schemas/metrics';
 import { z } from 'zod';
 import {
     getApiMetrics,
@@ -12,28 +13,6 @@ import {
     resetMetrics
 } from '../../middlewares/metrics';
 import { createRouter } from '../../utils/create-app';
-
-// Metrics response schema
-const MetricsResponseSchema = z.object({
-    summary: z.object({
-        totalRequests: z.number(),
-        totalErrors: z.number(),
-        globalErrorRate: z.number(),
-        activeConnections: z.number(),
-        timestamp: z.string()
-    }),
-    endpoints: z.array(
-        z.object({
-            endpoint: z.string(),
-            requests: z.number(),
-            errors: z.number(),
-            errorRate: z.number(),
-            avgResponseTime: z.number(),
-            maxResponseTime: z.number(),
-            minResponseTime: z.number()
-        })
-    )
-});
 
 // Get all metrics endpoint
 const getMetricsRoute = createRoute({

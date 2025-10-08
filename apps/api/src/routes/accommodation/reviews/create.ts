@@ -1,4 +1,4 @@
-import { z } from '@hono/zod-openapi';
+import type { z } from '@hono/zod-openapi';
 import {
     AccommodationIdSchema,
     AccommodationReviewCreateInputSchema,
@@ -21,8 +21,8 @@ export const createAccommodationReviewRoute = createCRUDRoute({
     requestParams: {
         accommodationId: AccommodationIdSchema
     },
-    requestBody: z.object(AccommodationReviewCreateInputSchema.shape),
-    responseSchema: z.object(AccommodationReviewSchema.shape),
+    requestBody: AccommodationReviewCreateInputSchema,
+    responseSchema: AccommodationReviewSchema,
     handler: async (ctx: Context, params, body) => {
         const actor = getActorFromContext(ctx);
         const input = body as z.infer<typeof AccommodationReviewCreateInputSchema>;

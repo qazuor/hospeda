@@ -3,14 +3,8 @@
  * Indicates if the service is ready to serve requests
  * ✅ Migrated to use createSimpleRoute (Route Factory 2.0)
  */
-import { z } from '@hono/zod-openapi';
+import { HealthReadinessSchema } from '@repo/schemas';
 import { createSimpleRoute } from '../../utils/route-factory';
-
-// Readiness check schema
-const ReadinessDataSchema = z.object({
-    ready: z.boolean(),
-    timestamp: z.string()
-});
 
 // ✅ Migrated to createSimpleRoute - 70% less boilerplate!
 export const readyRoutes = createSimpleRoute({
@@ -19,7 +13,7 @@ export const readyRoutes = createSimpleRoute({
     summary: 'Readiness check',
     description: 'Indicates if the service is ready to serve requests',
     tags: ['Health'],
-    responseSchema: ReadinessDataSchema,
+    responseSchema: HealthReadinessSchema,
     handler: async () => ({
         ready: true,
         timestamp: new Date().toISOString()
