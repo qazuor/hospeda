@@ -17,6 +17,7 @@ export {
 } from './response/base-response.schema.js';
 
 export * from './api.schema.js'; // Query parameters (pagination, sort, search, date/price/location ranges)
+export * from './auth.schema.js'; // Authentication schemas (actor, auth status, cache stats)
 export * from './health.schema.js'; // Health check schemas (health, database, liveness, readiness)
 export * from './info.schema.js'; // API information schemas (metadata, version info)
 export * from './params.schema.js'; // Path parameters (IDs, slugs, entity-specific parameters)
