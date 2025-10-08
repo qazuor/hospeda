@@ -112,3 +112,133 @@ export type EventCreateHttp = z.infer<typeof EventCreateHttpSchema>;
 export const EventUpdateHttpSchema = EventCreateHttpSchema.partial();
 
 export type EventUpdateHttp = z.infer<typeof EventUpdateHttpSchema>;
+
+// ============================================================================
+// HTTP TO DOMAIN CONVERSION FUNCTIONS
+// ============================================================================
+
+import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
+import { ModerationStatusEnum } from '../../enums/moderation-status.enum.js';
+import { VisibilityEnum } from '../../enums/visibility.enum.js';
+import type { EventCreateInput, EventUpdateInput } from './event.crud.schema.js';
+import type { EventSearchInput } from './event.query.schema.js';
+
+/**
+ * Convert HTTP search parameters to domain search object
+ * Maps HTTP query parameters to properly typed domain search fields
+ */
+export const httpToDomainEventSearch = (httpParams: EventSearchHttp): EventSearchInput => ({
+    // Base pagination and sorting
+    page: httpParams.page,
+    pageSize: httpParams.pageSize,
+    sortBy: httpParams.sortBy,
+    sortOrder: httpParams.sortOrder,
+    q: httpParams.q,
+
+    // Event-specific filters that exist in both HTTP and domain schemas
+    category: httpParams.category,
+    isFeatured: httpParams.isFeatured,
+    isVirtual: httpParams.isVirtual,
+    minPrice: httpParams.minPrice,
+    maxPrice: httpParams.maxPrice,
+    price: httpParams.price,
+    currency: httpParams.currency,
+    isFree: httpParams.isFree,
+    startDateAfter: httpParams.startDateAfter,
+    startDateBefore: httpParams.startDateBefore,
+    endDateAfter: httpParams.endDateAfter,
+    endDateBefore: httpParams.endDateBefore,
+    locationId: httpParams.locationId,
+    organizerId: httpParams.organizerId,
+    city: httpParams.city,
+    state: httpParams.state,
+    country: httpParams.country,
+    minCapacity: httpParams.minCapacity,
+    maxCapacity: httpParams.maxCapacity,
+    hasCapacityLimit: httpParams.hasCapacityLimit,
+    isPublished: httpParams.isPublished,
+    isActive: httpParams.isActive,
+    isCancelled: httpParams.isCancelled,
+    isPrivate: httpParams.isPrivate,
+    requiresRegistration: httpParams.requiresRegistration,
+    hasRegistrationFee: httpParams.hasRegistrationFee,
+    registrationOpen: httpParams.registrationOpen,
+    hasDescription: httpParams.hasDescription,
+    hasImages: httpParams.hasImages,
+    hasVideo: httpParams.hasVideo,
+    authorId: httpParams.authorId,
+    tag: httpParams.tag,
+    tags: httpParams.tags
+});
+
+/**
+ * Convert HTTP create data to domain create input
+ * Maps HTTP form/JSON data to domain object with required fields
+ */
+export const httpToDomainEventCreate = (httpData: EventCreateHttp): EventCreateInput => ({
+    // Map HTTP title to domain name
+    name: httpData.title,
+    slug:
+        httpData.slug ||
+        httpData.title
+            .toLowerCase()
+            .replace(/\s+/g, '-')
+            .replace(/[^a-z0-9-]/g, ''),
+    summary: httpData.description.substring(0, 300), // Generate summary from description
+    description: httpData.description,
+    category: httpData.category,
+
+    // Map HTTP dates to domain date object
+    date: {
+        start: httpData.startDate,
+        end: httpData.endDate
+    },
+
+    // Map HTTP pricing to domain pricing object
+    ...(httpData.price !== undefined && {
+        pricing: {
+            price: httpData.price,
+            currency: httpData.currency,
+            isFree: httpData.price === 0
+        }
+    }),
+
+    locationId: httpData.locationId,
+    organizerId: httpData.organizerId,
+    authorId: httpData.authorId,
+    isFeatured: httpData.isFeatured,
+
+    // Required fields with defaults for domain schema
+    lifecycleState: LifecycleStatusEnum.ACTIVE,
+    visibility: VisibilityEnum.PUBLIC,
+    moderationState: ModerationStatusEnum.PENDING
+});
+
+/**
+ * Convert HTTP update data to domain update input
+ * Maps HTTP PATCH data to domain object (all fields optional for updates)
+ */
+export const httpToDomainEventUpdate = (httpData: EventUpdateHttp): EventUpdateInput => ({
+    // Map HTTP title to domain name
+    name: httpData.title,
+    slug: httpData.slug,
+    summary: httpData.description?.substring(0, 300),
+    description: httpData.description,
+    category: httpData.category,
+
+    // Map HTTP dates to domain date object (if provided)
+    ...(httpData.startDate && {
+        date: {
+            start: httpData.startDate,
+            ...(httpData.endDate && { end: httpData.endDate })
+        }
+    }),
+
+    locationId: httpData.locationId,
+    organizerId: httpData.organizerId,
+    authorId: httpData.authorId,
+    isFeatured: httpData.isFeatured
+
+    // Note: Pricing updates are complex due to nested structure
+    // The service layer should handle merging pricing data properly
+});
