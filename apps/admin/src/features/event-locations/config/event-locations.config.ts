@@ -1,6 +1,7 @@
 import { createEntityListPage } from '@/components/entity-list';
 import type { EntityConfig } from '@/components/entity-list/types';
 import { EntityType } from '@/components/table/DataTable';
+import type { z } from 'zod';
 import {
     type EventLocation,
     EventLocationListItemSchema
@@ -20,8 +21,8 @@ export const eventLocationsConfig: EntityConfig<EventLocation> = {
     basePath: '/event-locations',
     detailPath: '/event-locations/[id]',
 
-    // Schemas
-    listItemSchema: EventLocationListItemSchema,
+    // Schemas - Use type assertion for Zod version compatibility
+    listItemSchema: EventLocationListItemSchema as unknown as z.ZodSchema<EventLocation>,
 
     // Search configuration
     searchConfig: {
