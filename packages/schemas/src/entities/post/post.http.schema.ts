@@ -57,6 +57,128 @@ export const PostSearchHttpSchema = BaseHttpSearchSchema.extend({
 export type PostSearchHttp = z.infer<typeof PostSearchHttpSchema>;
 
 /**
+ * HTTP-compatible schema for posts related to a specific destination
+ * Extends base search with destination-specific parameters
+ */
+export const PostByDestinationHttpSchema = BaseHttpSearchSchema.extend({
+    // Standard pagination
+    page: z.coerce.number().int().min(1).default(1),
+    pageSize: z.coerce.number().int().min(1).max(100).default(20),
+
+    // Sorting
+    sortBy: z.string().optional(),
+    sortOrder: z.enum(['asc', 'desc']).default('asc'),
+
+    // Search query
+    q: z.string().optional(),
+
+    // Post-specific filters
+    category: PostCategoryEnumSchema.optional(),
+    isFeatured: createBooleanQueryParam('Filter featured posts'),
+    isPublished: createBooleanQueryParam('Filter published posts')
+});
+
+export type PostByDestinationHttp = z.infer<typeof PostByDestinationHttpSchema>;
+
+/**
+ * HTTP-compatible schema for posts related to a specific accommodation
+ * Extends base search with accommodation-specific parameters
+ */
+export const PostByAccommodationHttpSchema = BaseHttpSearchSchema.extend({
+    // Standard pagination
+    page: z.coerce.number().int().min(1).default(1),
+    pageSize: z.coerce.number().int().min(1).max(100).default(20),
+
+    // Sorting
+    sortBy: z.string().optional(),
+    sortOrder: z.enum(['asc', 'desc']).default('asc'),
+
+    // Search query
+    q: z.string().optional(),
+
+    // Post-specific filters
+    category: PostCategoryEnumSchema.optional(),
+    isFeatured: createBooleanQueryParam('Filter featured posts'),
+    isPublished: createBooleanQueryParam('Filter published posts')
+});
+
+export type PostByAccommodationHttp = z.infer<typeof PostByAccommodationHttpSchema>;
+
+/**
+ * HTTP-compatible schema for posts related to a specific event
+ * Extends base search with event-specific parameters
+ */
+export const PostByEventHttpSchema = BaseHttpSearchSchema.extend({
+    // Standard pagination
+    page: z.coerce.number().int().min(1).default(1),
+    pageSize: z.coerce.number().int().min(1).max(100).default(20),
+
+    // Sorting
+    sortBy: z.string().optional(),
+    sortOrder: z.enum(['asc', 'desc']).default('asc'),
+
+    // Search query
+    q: z.string().optional(),
+
+    // Post-specific filters
+    category: PostCategoryEnumSchema.optional(),
+    isFeatured: createBooleanQueryParam('Filter featured posts'),
+    isPublished: createBooleanQueryParam('Filter published posts')
+});
+
+export type PostByEventHttp = z.infer<typeof PostByEventHttpSchema>;
+
+/**
+ * HTTP-compatible schema for featured posts
+ * Specific schema for featured posts endpoint
+ */
+export const PostFeaturedHttpSchema = BaseHttpSearchSchema.extend({
+    // Standard pagination
+    page: z.coerce.number().int().min(1).default(1),
+    pageSize: z.coerce.number().int().min(1).max(100).default(20),
+
+    // Sorting
+    sortBy: z.string().optional(),
+    sortOrder: z.enum(['asc', 'desc']).default('desc'),
+
+    // Search query
+    q: z.string().optional(),
+
+    // Featured-specific filters
+    category: PostCategoryEnumSchema.optional(),
+    isPublished: createBooleanQueryParam('Filter published posts').default(true)
+});
+
+export type PostFeaturedHttp = z.infer<typeof PostFeaturedHttpSchema>;
+
+/**
+ * HTTP-compatible schema for news posts
+ * Specific schema for news posts endpoint
+ */
+export const PostNewsHttpSchema = BaseHttpSearchSchema.extend({
+    // Standard pagination
+    page: z.coerce.number().int().min(1).default(1),
+    pageSize: z.coerce.number().int().min(1).max(100).default(20),
+
+    // Sorting
+    sortBy: z.string().optional(),
+    sortOrder: z.enum(['asc', 'desc']).default('desc'),
+
+    // Search query
+    q: z.string().optional(),
+
+    // News-specific filters
+    category: PostCategoryEnumSchema.optional(),
+    isPublished: createBooleanQueryParam('Filter published posts').default(true),
+
+    // Date filters for news
+    fromDate: z.string().datetime().optional(),
+    toDate: z.string().datetime().optional()
+});
+
+export type PostNewsHttp = z.infer<typeof PostNewsHttpSchema>;
+
+/**
  * HTTP-compatible post creation schema
  * Handles form data and JSON input for creating posts via HTTP
  */
