@@ -60,6 +60,33 @@ export const AccommodationReviewSearchHttpSchema = BaseHttpSearchSchema.extend({
 export type AccommodationReviewSearchHttp = z.infer<typeof AccommodationReviewSearchHttpSchema>;
 
 /**
+ * HTTP-compatible schema for reviews of a specific accommodation
+ * Simplified schema for listing reviews by accommodation ID
+ */
+export const AccommodationReviewsByAccommodationHttpSchema = BaseHttpSearchSchema.extend({
+    // Standard pagination
+    page: z.coerce.number().int().min(1).default(1),
+    pageSize: z.coerce.number().int().min(1).max(100).default(20),
+
+    // Sorting
+    sortBy: z.string().optional(),
+    sortOrder: z.enum(['asc', 'desc']).default('desc'),
+
+    // Search query
+    q: z.string().optional(),
+
+    // Review-specific filters
+    minRating: z.coerce.number().min(1).max(5).optional(),
+    maxRating: z.coerce.number().min(1).max(5).optional(),
+    isVerified: createBooleanQueryParam('Filter verified reviews'),
+    hasImages: createBooleanQueryParam('Filter reviews with images')
+});
+
+export type AccommodationReviewsByAccommodationHttp = z.infer<
+    typeof AccommodationReviewsByAccommodationHttpSchema
+>;
+
+/**
  * HTTP-compatible accommodation review creation schema
  * Handles form data and JSON input for creating reviews via HTTP
  */

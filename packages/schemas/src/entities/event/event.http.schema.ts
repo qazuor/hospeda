@@ -75,6 +75,80 @@ export const EventSearchHttpSchema = BaseHttpSearchSchema.extend({
 export type EventSearchHttp = z.infer<typeof EventSearchHttpSchema>;
 
 /**
+ * HTTP-compatible schema for events by author
+ * Specific schema for events by author endpoint
+ */
+export const EventByAuthorHttpSchema = BaseHttpSearchSchema.extend({
+    // Standard pagination
+    page: z.coerce.number().int().min(1).default(1),
+    pageSize: z.coerce.number().int().min(1).max(100).default(20),
+
+    // Sorting
+    sortBy: z.string().optional(),
+    sortOrder: z.enum(['asc', 'desc']).default('desc'),
+
+    // Search query
+    q: z.string().optional(),
+
+    // Event-specific filters
+    category: EventCategoryEnumSchema.optional(),
+    isFeatured: createBooleanQueryParam('Filter featured events'),
+    isVirtual: createBooleanQueryParam('Filter virtual events')
+});
+
+export type EventByAuthorHttp = z.infer<typeof EventByAuthorHttpSchema>;
+
+/**
+ * HTTP-compatible schema for events by location
+ * Specific schema for events by location endpoint
+ */
+export const EventByLocationHttpSchema = BaseHttpSearchSchema.extend({
+    // Standard pagination
+    page: z.coerce.number().int().min(1).default(1),
+    pageSize: z.coerce.number().int().min(1).max(100).default(20),
+
+    // Sorting
+    sortBy: z.string().optional(),
+    sortOrder: z.enum(['asc', 'desc']).default('desc'),
+
+    // Search query
+    q: z.string().optional(),
+
+    // Event-specific filters
+    category: EventCategoryEnumSchema.optional(),
+    isFeatured: createBooleanQueryParam('Filter featured events'),
+    isVirtual: createBooleanQueryParam('Filter virtual events')
+});
+
+export type EventByLocationHttp = z.infer<typeof EventByLocationHttpSchema>;
+
+/**
+ * HTTP-compatible schema for upcoming events
+ * Specific schema for upcoming events endpoint
+ */
+export const EventUpcomingHttpSchema = BaseHttpSearchSchema.extend({
+    // Standard pagination
+    page: z.coerce.number().int().min(1).default(1),
+    pageSize: z.coerce.number().int().min(1).max(100).default(20),
+
+    // Sorting
+    sortBy: z.string().optional(),
+    sortOrder: z.enum(['asc', 'desc']).default('asc'),
+
+    // Search query
+    q: z.string().optional(),
+
+    // Upcoming-specific filters
+    daysAhead: z.coerce.number().int().min(1).max(365).default(30),
+    category: EventCategoryEnumSchema.optional(),
+    maxPrice: z.coerce.number().min(0).optional(),
+    isFree: createBooleanQueryParam('Filter free events'),
+    isVirtual: createBooleanQueryParam('Filter virtual events')
+});
+
+export type EventUpcomingHttp = z.infer<typeof EventUpcomingHttpSchema>;
+
+/**
  * HTTP-compatible event creation schema
  * Handles form data and JSON input for creating events via HTTP
  */

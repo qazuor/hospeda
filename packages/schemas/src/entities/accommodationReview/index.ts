@@ -13,3 +13,6 @@ export * from './accommodationReview.crud.schema.js';
 
 // Query schemas
 export * from './accommodationReview.query.schema.js';
+
+// HTTP operations
+export * from './accommodationReview.http.schema.js';
