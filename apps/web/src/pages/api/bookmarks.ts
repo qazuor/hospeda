@@ -1,17 +1,6 @@
-import { EntityTypeEnum } from '@repo/schemas';
+import { UserBookmarkToggleHttpSchema } from '@repo/schemas';
 import type { APIRoute } from 'astro';
 import { z } from 'zod';
-
-/**
- * Schema for bookmark request
- */
-const BookmarkRequestSchema = z.object({
-    entityId: z.string().min(1, 'Entity ID is required'),
-    entityType: z.nativeEnum(EntityTypeEnum, {
-        message: 'Invalid entity type'
-    }),
-    action: z.enum(['ADD', 'REMOVE'])
-});
 
 /**
  * POST /api/bookmarks
@@ -21,7 +10,7 @@ export const POST: APIRoute = async ({ request }) => {
     try {
         // Parse and validate request body
         const body = await request.json();
-        const validated = BookmarkRequestSchema.parse(body);
+        const validated = UserBookmarkToggleHttpSchema.parse(body);
 
         // TODO [4b866013-2275-403f-bf5c-3115da246f2d]: Get user ID from Clerk session
         // TODO [45dfe67e-94f2-4b69-b8ff-8ea5e8276c39]: Call the bookmark service
