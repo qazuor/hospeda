@@ -1,6 +1,7 @@
 import { createEntityListPage } from '@/components/entity-list';
 import type { EntityConfig } from '@/components/entity-list/types';
 import { EntityType } from '@/components/table/DataTable';
+import type { z } from 'zod';
 import { type Destination, DestinationListItemSchema } from '../schemas/destinations.schemas';
 import { createDestinationsColumns } from './destinations.columns';
 
@@ -21,8 +22,8 @@ export const destinationsConfig: EntityConfig<Destination> = {
     basePath: '/destinations',
     detailPath: '/destinations/[slug]',
 
-    // Schemas
-    listItemSchema: DestinationListItemSchema,
+    // Schemas - Use type assertion for Zod version compatibility
+    listItemSchema: DestinationListItemSchema as unknown as z.ZodSchema<Destination>,
 
     // Search configuration
     searchConfig: {
