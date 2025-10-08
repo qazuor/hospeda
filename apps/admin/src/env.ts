@@ -31,30 +31,30 @@ const AdminEnvSchema = z.object({
     // Feature Flags
     VITE_ENABLE_DEVTOOLS: z
         .string()
-        .transform((val) => val === 'true')
         .default('false')
+        .transform((val) => val === 'true')
         .describe('Enable React DevTools'),
     VITE_ENABLE_QUERY_DEVTOOLS: z
         .string()
-        .transform((val) => val === 'true')
         .default('false')
+        .transform((val) => val === 'true')
         .describe('Enable TanStack Query DevTools'),
     VITE_ENABLE_ROUTER_DEVTOOLS: z
         .string()
-        .transform((val) => val === 'true')
         .default('false')
+        .transform((val) => val === 'true')
         .describe('Enable TanStack Router DevTools'),
 
     // UI Configuration
     VITE_DEFAULT_PAGE_SIZE: z
         .string()
-        .transform((val) => Number.parseInt(val, 10))
         .default('25')
+        .transform((val) => Number.parseInt(val, 10))
         .describe('Default pagination size'),
     VITE_MAX_PAGE_SIZE: z
         .string()
-        .transform((val) => Number.parseInt(val, 10))
         .default('100')
+        .transform((val) => Number.parseInt(val, 10))
         .describe('Maximum pagination size'),
 
     // Development

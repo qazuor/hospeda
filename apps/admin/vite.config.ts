@@ -78,9 +78,9 @@ try {
 } catch (error) {
     console.error('❌ Admin App environment validation FAILED');
 
-    if (error instanceof z.ZodError && error.errors && Array.isArray(error.errors)) {
-        const errorMessages = error.errors
-            .map((err) => `  - ${err.path.join('.')}: ${err.message}`)
+    if (error instanceof z.ZodError && error.issues && Array.isArray(error.issues)) {
+        const errorMessages = error.issues
+            .map((err: z.ZodIssue) => `  - ${err.path.join('.')}: ${err.message}`)
             .join('\n');
         console.error(`❌ Environment validation failed for Admin App:\n${errorMessages}`);
         process.exit(1);

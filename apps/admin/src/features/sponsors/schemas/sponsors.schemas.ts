@@ -1,5 +1,5 @@
-import { PostSponsorSchema } from '@repo/schemas';
 import type { ClientTypeEnum, ContactInfo, LifecycleStatusEnum } from '@repo/schemas';
+import { PostSponsorSchema } from '@repo/schemas';
 import { z } from 'zod';
 
 /**
