@@ -1,6 +1,7 @@
 import { createEntityListPage } from '@/components/entity-list';
 import type { EntityConfig } from '@/components/entity-list/types';
 import { EntityType } from '@/components/table/DataTable';
+import type { z } from 'zod';
 import { type Feature, FeatureListItemSchema } from '../schemas/features.schemas';
 import { createFeaturesColumns } from './features.columns';
 
@@ -17,8 +18,8 @@ export const featuresConfig: EntityConfig<Feature> = {
     basePath: '/features',
     detailPath: '/features/[slug]',
 
-    // Schemas
-    listItemSchema: FeatureListItemSchema,
+    // Schemas - Use type assertion for Zod version compatibility
+    listItemSchema: FeatureListItemSchema as unknown as z.ZodSchema<Feature>,
 
     // Search configuration
     searchConfig: {

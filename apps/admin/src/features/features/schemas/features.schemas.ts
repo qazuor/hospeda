@@ -1,20 +1,21 @@
-import { LifecycleStatusEnum } from '@repo/schemas';
+import type { FeatureListItem } from '@repo/schemas';
+import {
+    FeatureListItemSchema as BaseFeatureListItemSchema,
+    LifecycleStatusEnum
+} from '@repo/schemas';
 import { z } from 'zod';
 
-export const FeatureListItemSchema = z
-    .object({
-        id: z.string(),
-        name: z.string(),
-        slug: z.string(),
-        description: z.string().optional(),
-        icon: z.string().optional(),
-        isBuiltin: z.boolean().optional(),
-        is_featured: z.boolean().optional(),
-        accommodationCount: z.number().optional(),
-        lifecycleState: z.nativeEnum(LifecycleStatusEnum).optional(),
-        createdAt: z.string().optional(),
-        updatedAt: z.string().optional()
-    })
-    .passthrough();
+/**
+ * Schema for feature list items in admin
+ * Extends the base FeatureListItemSchema with admin-specific fields
+ */
+export const FeatureListItemSchema = BaseFeatureListItemSchema.extend({
+    // Admin-specific fields for list management
+    accommodationCount: z.number().optional(),
+    lifecycleState: z.nativeEnum(LifecycleStatusEnum).optional()
+});
 
-export type Feature = z.infer<typeof FeatureListItemSchema>;
+export type Feature = FeatureListItem & {
+    accommodationCount?: number;
+    lifecycleState?: LifecycleStatusEnum;
+};
