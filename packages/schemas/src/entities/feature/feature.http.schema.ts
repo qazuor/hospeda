@@ -92,3 +92,56 @@ export const FeatureGetHttpSchema = z.object({
 });
 
 export type FeatureGetHttp = z.infer<typeof FeatureGetHttpSchema>;
+
+/**
+ * HTTP to Domain Conversion Functions
+ * These functions convert HTTP request data to domain-compatible formats
+ */
+
+import type { FeatureCreateInputSchema, FeatureUpdateInputSchema } from './feature.crud.schema.js';
+
+/**
+ * Convert HTTP search parameters to domain search format
+ */
+export function httpToDomainFeatureSearch(httpData: FeatureSearchHttp): Partial<FeatureSearchHttp> {
+    return {
+        ...httpData,
+        isAvailable: httpData.isAvailable,
+        hasIcon: httpData.hasIcon,
+        hasDescription: httpData.hasDescription,
+        isPopular: httpData.isPopular,
+        isPremium: httpData.isPremium,
+        requiresPayment: httpData.requiresPayment,
+        isUnused: httpData.isUnused
+    };
+}
+
+/**
+ * Convert HTTP feature creation data to domain format
+ */
+export function httpToDomainFeatureCreate(
+    httpData: FeatureCreateHttp
+): z.infer<typeof FeatureCreateInputSchema> {
+    return {
+        name: httpData.name,
+        slug: httpData.slug || httpData.name.toLowerCase().replace(/\s+/g, '-'),
+        description: httpData.description,
+        icon: httpData.icon,
+        isBuiltin: false, // Default value
+        isFeatured: false // Default value
+    };
+}
+
+/**
+ * Convert HTTP feature update data to domain format
+ */
+export function httpToDomainFeatureUpdate(
+    httpData: FeatureUpdateHttp
+): z.infer<typeof FeatureUpdateInputSchema> {
+    return {
+        name: httpData.name,
+        slug: httpData.slug,
+        description: httpData.description,
+        icon: httpData.icon
+    };
+}
