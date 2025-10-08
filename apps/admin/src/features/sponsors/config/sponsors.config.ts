@@ -1,6 +1,7 @@
 import { createEntityListPage } from '@/components/entity-list';
 import type { EntityConfig } from '@/components/entity-list/types';
 import { EntityType } from '@/components/table/DataTable';
+import type { z } from 'zod';
 import { type Sponsor, SponsorListItemSchema } from '../schemas/sponsors.schemas';
 import { createSponsorsColumns } from './sponsors.columns';
 
@@ -17,8 +18,8 @@ export const sponsorsConfig: EntityConfig<Sponsor> = {
     basePath: '/sponsors',
     detailPath: '/sponsors/[id]',
 
-    // Schemas
-    listItemSchema: SponsorListItemSchema,
+    // Schemas - Use type assertion for Zod version compatibility
+    listItemSchema: SponsorListItemSchema as unknown as z.ZodSchema<Sponsor>,
 
     // Search configuration
     searchConfig: {
