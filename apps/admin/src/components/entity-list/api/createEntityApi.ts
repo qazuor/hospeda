@@ -1,44 +1,37 @@
 import { fetchApi } from '@/lib/api/client';
-import { z } from 'zod';
+import { createPaginatedResponseSchema } from '@repo/schemas';
+import type { z } from 'zod';
 import type { EntityQueryParams, EntityQueryResponse } from '../types';
 
 /**
  * Creates a generic API client for entity lists
  *
- * NOTE: This currently duplicates createPaginatedResponseSchema from @repo/schemas
- * due to Zod version incompatibility (admin: v3.25.76, schemas: v4.0.8).
- *
- * TODO Phase 4.1: After Zod version alignment, replace with:
- * import { createPaginatedResponseSchema } from '@repo/schemas';
- * const PaginatedResponseSchema = createPaginatedResponseSchema(itemSchema);
+ * ✅ Now using createPaginatedResponseSchema from @repo/schemas
+ * after Zod v4 compatibility has been resolved
  */
 export const createEntityApi = <TData>(endpoint: string, itemSchema: z.ZodSchema<TData>) => {
-    // Temporary schema replicating @repo/schemas structure until version compatibility resolved
-    const PaginatedResponseSchema = z
-        .object({
-            success: z.literal(true), // Align with @repo/schemas using literal(true)
-            data: z.object({
-                items: z.array(itemSchema),
-                pagination: z.object({
-                    page: z.number().int().positive(), // Match @repo/schemas validation
-                    pageSize: z.number().int().positive(),
-                    total: z.number().int().nonnegative(),
-                    totalPages: z.number().int().nonnegative(),
-                    hasNextPage: z.boolean(), // Add fields from @repo/schemas
-                    hasPreviousPage: z.boolean()
-                })
-            }),
-            metadata: z
-                .object({
-                    timestamp: z.string().datetime(), // Align with @repo/schemas datetime validation
-                    requestId: z.string().optional(),
-                    version: z.string().optional() // Add version field from @repo/schemas
-                })
-                .optional()
-        })
-        .strict();
+    // Use centralized schema from @repo/schemas
+    const PaginatedResponseSchema = createPaginatedResponseSchema(itemSchema);
 
-    type ApiResponse = z.infer<typeof PaginatedResponseSchema>;
+    type ApiResponse = {
+        success: true;
+        data: {
+            items: TData[];
+            pagination: {
+                page: number;
+                pageSize: number;
+                total: number;
+                totalPages: number;
+                hasNextPage: boolean;
+                hasPreviousPage: boolean;
+            };
+        };
+        metadata?: {
+            timestamp: string;
+            requestId?: string;
+            version?: string;
+        };
+    };
 
     /**
      * Fetch entities with query parameters
@@ -65,8 +58,8 @@ export const createEntityApi = <TData>(endpoint: string, itemSchema: z.ZodSchema
             path: `${endpoint}?${params.toString()}`
         });
 
-        // Parse the API response
-        const apiResponse: ApiResponse = PaginatedResponseSchema.parse(data);
+        // Parse the API response using the centralized schema
+        const apiResponse = PaginatedResponseSchema.parse(data) as ApiResponse;
 
         // Adapt to the expected format
         return {
