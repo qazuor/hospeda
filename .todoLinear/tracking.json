@@ -604,10 +604,10 @@
             "linearId": "2cef851d-ab39-42f7-a742-b896b94a0628",
             "type": "debug",
             "filePath": "apps/api/src/routes/index.ts",
-            "line": 74,
+            "line": 65,
             "title": "Add logging around route registration",
             "createdAt": "2025-10-04T12:54:43.181Z",
-            "updatedAt": "2025-10-07T03:23:17.839Z",
+            "updatedAt": "2025-10-08T03:44:12.770Z",
             "isOrphan": false,
             "aiState": "COMPLETED",
             "aiRetryCount": 0
@@ -652,10 +652,10 @@
             "linearId": "4b866013-2275-403f-bf5c-3115da246f2d",
             "type": "todo",
             "filePath": "apps/web/src/pages/api/bookmarks.ts",
-            "line": 26,
+            "line": 15,
             "title": "Get user ID from Clerk session",
             "createdAt": "2025-10-04T12:54:47.194Z",
-            "updatedAt": "2025-10-04T15:27:09.556Z",
+            "updatedAt": "2025-10-08T17:45:09.907Z",
             "isOrphan": false,
             "aiState": "COMPLETED",
             "aiRetryCount": 0
@@ -664,10 +664,10 @@
             "linearId": "45dfe67e-94f2-4b69-b8ff-8ea5e8276c39",
             "type": "todo",
             "filePath": "apps/web/src/pages/api/bookmarks.ts",
-            "line": 27,
+            "line": 16,
             "title": "Call the bookmark service",
             "createdAt": "2025-10-04T12:54:47.937Z",
-            "updatedAt": "2025-10-07T03:10:36.414Z",
+            "updatedAt": "2025-10-08T17:45:12.390Z",
             "isOrphan": false,
             "aiState": "COMPLETED",
             "aiRetryCount": 0
@@ -1487,31 +1487,7 @@
             "isOrphan": false,
             "aiState": "COMPLETED",
             "aiRetryCount": 0
-        },
-        {
-            "linearId": "e3c50239-c30b-4d2a-8498-8ae1b10e1263",
-            "type": "todo",
-            "filePath": "packages/schemas/src/entities/accommodation/accommodation.http.schema.ts",
-            "line": 212,
-            "title": "Add proper nested structures:",
-            "createdAt": "2025-10-08T00:55:40.477Z",
-            "updatedAt": "2025-10-08T00:55:40.477Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "954f7b21-33f4-4ad2-a67d-4618aba863f9",
-            "type": "todo",
-            "filePath": "packages/schemas/src/entities/accommodation/accommodation.http.schema.ts",
-            "line": 232,
-            "title": "Add nested object mappings for location, price, extraInfo",
-            "createdAt": "2025-10-08T00:55:45.557Z",
-            "updatedAt": "2025-10-08T00:55:45.557Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
         }
     ],
-    "lastSync": "2025-10-08T02:00:50.627Z"
+    "lastSync": "2025-10-08T17:48:37.425Z"
 }
