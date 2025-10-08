@@ -1,6 +1,7 @@
 import { createEntityListPage } from '@/components/entity-list';
 import type { EntityConfig } from '@/components/entity-list/types';
 import { EntityType } from '@/components/table/DataTable';
+import type { z } from 'zod';
 import { type Amenity, AmenityListItemSchema } from '../schemas/amenities.schemas';
 import { createAmenitiesColumns } from './amenities.columns';
 
@@ -17,8 +18,8 @@ export const amenitiesConfig: EntityConfig<Amenity> = {
     basePath: '/amenities',
     detailPath: '/amenities/[slug]',
 
-    // Schemas
-    listItemSchema: AmenityListItemSchema,
+    // Schemas - Use type assertion for Zod version compatibility
+    listItemSchema: AmenityListItemSchema as unknown as z.ZodSchema<Amenity>,
 
     // Search configuration
     searchConfig: {
