@@ -86,3 +86,113 @@ export const EventOrganizerGetHttpSchema = z.object({
 });
 
 export type EventOrganizerGetHttp = z.infer<typeof EventOrganizerGetHttpSchema>;
+
+// ============================================================================
+// HTTP TO DOMAIN CONVERSION FUNCTIONS
+// ============================================================================
+
+import type { EventOrganizerSearchInput } from './eventOrganizer.query.schema.js';
+
+import type {
+    EventOrganizerCreateInput,
+    EventOrganizerUpdateInput
+} from './eventOrganizer.crud.schema.js';
+
+import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
+
+/**
+ * Convert HTTP event organizer search parameters to domain search schema
+ * Handles coercion from HTTP query strings to proper domain types
+ */
+export const httpToDomainEventOrganizerSearch = (
+    httpParams: EventOrganizerSearchHttp
+): EventOrganizerSearchInput => {
+    return {
+        // Base search fields
+        page: httpParams.page,
+        pageSize: httpParams.pageSize,
+        sortBy: httpParams.sortBy,
+        sortOrder: httpParams.sortOrder,
+        q: httpParams.q,
+
+        // Text search filters (only available fields)
+        name: httpParams.name,
+        // Note: description not available in domain search
+
+        // Contact filters (using specific field names from domain schema)
+        personalEmail: httpParams.email, // Map generic email to personalEmail
+        workEmail: httpParams.email, // Can also map to workEmail
+        mobilePhone: httpParams.phone,
+        website: httpParams.website
+
+        // Note: boolean filters like isActive, isVerified not available in search
+        // Note: arrays like emails, names may not be available in domain search
+    };
+};
+
+/**
+ * Convert HTTP event organizer create data to domain create input
+ * Handles form data conversion to proper domain types
+ * Sets default lifecycle state to ACTIVE and handles nested object structure
+ */
+export const httpToDomainEventOrganizerCreate = (
+    httpData: EventOrganizerCreateHttp
+): EventOrganizerCreateInput => {
+    return {
+        name: httpData.name,
+        description: httpData.description,
+        logo: httpData.logo,
+        lifecycleState: LifecycleStatusEnum.ACTIVE,
+
+        // Contact info as nested object (mobilePhone is required in domain)
+        contactInfo: {
+            personalEmail: httpData.email,
+            workEmail: httpData.email,
+            mobilePhone: httpData.phone || '', // Default empty string if not provided
+            website: httpData.website
+        },
+
+        // Social networks as nested object
+        socialNetworks: {
+            twitter: httpData.twitter,
+            facebook: httpData.facebook,
+            instagram: httpData.instagram,
+            linkedIn: httpData.linkedin // Note: field name is linkedIn (capital I)
+        }
+    };
+};
+
+/**
+ * Convert HTTP event organizer update data to domain update input
+ * Handles partial updates from HTTP PATCH requests
+ */
+export const httpToDomainEventOrganizerUpdate = (
+    httpData: EventOrganizerUpdateHttp
+): EventOrganizerUpdateInput => {
+    return {
+        name: httpData.name,
+        description: httpData.description,
+        logo: httpData.logo,
+
+        // Contact info as nested object (only if phone is provided, since it's required)
+        contactInfo: httpData.phone
+            ? {
+                  personalEmail: httpData.email,
+                  workEmail: httpData.email,
+                  mobilePhone: httpData.phone,
+                  website: httpData.website
+              }
+            : undefined,
+
+        // Social networks as nested object (only if fields are provided)
+        socialNetworks:
+            httpData.twitter || httpData.facebook || httpData.instagram || httpData.linkedin
+                ? {
+                      twitter: httpData.twitter,
+                      facebook: httpData.facebook,
+                      instagram: httpData.instagram,
+                      linkedIn: httpData.linkedin // Note: field name is linkedIn (capital I)
+                  }
+                : undefined
+    };
+};

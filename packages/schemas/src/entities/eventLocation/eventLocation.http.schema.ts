@@ -106,3 +106,124 @@ export const EventLocationGetHttpSchema = z.object({
 });
 
 export type EventLocationGetHttp = z.infer<typeof EventLocationGetHttpSchema>;
+
+// ============================================================================
+// HTTP TO DOMAIN CONVERSION FUNCTIONS
+// ============================================================================
+
+import type { EventLocationSearchInput } from './eventLocation.query.schema.js';
+
+import type {
+    EventLocationCreateInput,
+    EventLocationUpdateInput
+} from './eventLocation.crud.schema.js';
+
+/**
+ * Convert HTTP event location search parameters to domain search schema
+ * Handles coercion from HTTP query strings to proper domain types
+ */
+export const httpToDomainEventLocationSearch = (
+    httpParams: EventLocationSearchHttp
+): EventLocationSearchInput => {
+    return {
+        // Base search fields
+        page: httpParams.page,
+        pageSize: httpParams.pageSize,
+        sortBy: httpParams.sortBy,
+        sortOrder: httpParams.sortOrder,
+        q: httpParams.q,
+
+        // Text search filters (only available fields)
+        name: httpParams.name,
+        city: httpParams.city,
+        state: httpParams.state,
+        country: httpParams.country,
+
+        // Geographic filters
+        latitude: httpParams.latitude,
+        longitude: httpParams.longitude,
+        radius: httpParams.radius,
+
+        // Capacity filters
+        minCapacity: httpParams.minCapacity,
+        maxCapacity: httpParams.maxCapacity,
+
+        // Boolean filters (only available fields)
+        hasParking: httpParams.hasParking,
+        isAccessible: httpParams.isAccessible
+
+        // Note: many HTTP fields like description, hasWifi, hasAirConditioning, etc.
+        // are not available in domain search schema
+    };
+};
+
+import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
+
+/**
+ * Convert HTTP event location create data to domain create input
+ * Handles form data conversion to proper domain types
+ * Sets default lifecycle state to ACTIVE and handles required fields
+ */
+export const httpToDomainEventLocationCreate = (
+    httpData: EventLocationCreateHttp
+): EventLocationCreateInput => {
+    return {
+        // Required fields from BaseLocationSchema
+        state: httpData.state || '', // Default if not provided
+        country: httpData.country,
+        zipCode: httpData.postalCode || '', // Required zipCode
+
+        // Optional fields
+        street: httpData.street,
+        number: httpData.number,
+        floor: httpData.floor,
+        apartment: undefined, // Not in HTTP schema but in domain
+        neighborhood: undefined, // Not in HTTP schema but in domain
+        city: httpData.city,
+
+        // Coordinates
+        coordinates:
+            httpData.latitude && httpData.longitude
+                ? {
+                      lat: httpData.latitude.toString(),
+                      long: httpData.longitude.toString()
+                  }
+                : undefined,
+
+        // Lifecycle state
+        lifecycleState: LifecycleStatusEnum.ACTIVE
+
+        // Note: capacity, venueType, and amenity fields from HTTP schema
+        // are not available in domain schema structure
+    };
+};
+
+/**
+ * Convert HTTP event location update data to domain update input
+ * Handles partial updates from HTTP PATCH requests
+ */
+export const httpToDomainEventLocationUpdate = (
+    httpData: EventLocationUpdateHttp
+): EventLocationUpdateInput => {
+    return {
+        // Optional fields that can be updated
+        state: httpData.state,
+        country: httpData.country,
+        zipCode: httpData.postalCode,
+        street: httpData.street,
+        number: httpData.number,
+        floor: httpData.floor,
+        city: httpData.city,
+
+        // Coordinates
+        coordinates:
+            httpData.latitude && httpData.longitude
+                ? {
+                      lat: httpData.latitude.toString(),
+                      long: httpData.longitude.toString()
+                  }
+                : undefined
+
+        // Note: many HTTP amenity fields are not available in domain schema
+    };
+};
