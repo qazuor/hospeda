@@ -255,17 +255,107 @@ export const PaymentSearchSchema = BaseSearchSchema.extend({
 
 /**
  * Complete payment plan search schema combining base search with plan-specific filters
+ * MIGRATED TO FLAT PATTERN: All filters are at the top level for HTTP compatibility
  */
 export const PaymentPlanSearchSchema = BaseSearchSchema.extend({
-    filters: PaymentPlanFiltersSchema.optional(),
+    // Status filters (flattened from PaymentPlanFiltersSchema)
+    isActive: z.boolean().optional(),
+    isPublic: z.boolean().optional(),
+    isRecommended: z.boolean().optional(),
+
+    // Price filters
+    minPrice: z.number().min(0).optional(),
+    maxPrice: z.number().min(0).optional(),
+    price: z.number().min(0).optional(),
+
+    // Currency filters
+    currency: z.string().length(3).optional(),
+    currencies: z.array(z.string().length(3)).optional(),
+
+    // Billing cycle filters
+    billingCycle: z.enum(['monthly', 'quarterly', 'yearly']).optional(),
+    billingCycles: z.array(z.enum(['monthly', 'quarterly', 'yearly'])).optional(),
+
+    // Feature filters
+    hasFeature: z.string().optional(),
+    featureCount: z.number().int().min(0).optional(),
+    minFeatureCount: z.number().int().min(0).optional(),
+
+    // Popularity filters
+    minSubscriberCount: z.number().int().min(0).optional(),
+    maxSubscriberCount: z.number().int().min(0).optional(),
+    isPopular: z.boolean().optional(),
+
+    // Date filters
+    createdAfter: z.date().optional(),
+    createdBefore: z.date().optional(),
+
+    // Category filters
+    category: z.string().optional(),
+    categories: z.array(z.string()).optional(),
+
+    // Trial filters
+    hasTrialPeriod: z.boolean().optional(),
+    minTrialDays: z.number().int().min(0).optional(),
+    maxTrialDays: z.number().int().min(0).optional(),
+
+    // Additional search options
     includeInactive: z.boolean().default(false).optional()
 });
 
 /**
  * Complete subscription search schema combining base search with subscription-specific filters
+ * MIGRATED TO FLAT PATTERN: All filters are at the top level for HTTP compatibility
  */
 export const SubscriptionSearchSchema = BaseSearchSchema.extend({
-    filters: SubscriptionFiltersSchema.optional(),
+    // Entity relation filters (flattened from SubscriptionFiltersSchema)
+    userId: z.string().uuid().optional(),
+    planId: z.string().uuid().optional(),
+    userIds: z.array(z.string().uuid()).optional(),
+    planIds: z.array(z.string().uuid()).optional(),
+
+    // Status filters
+    status: z.enum(['active', 'cancelled', 'expired', 'suspended', 'pending']).optional(),
+    statuses: z
+        .array(z.enum(['active', 'cancelled', 'expired', 'suspended', 'pending']))
+        .optional(),
+
+    // Date filters
+    startedAfter: z.date().optional(),
+    startedBefore: z.date().optional(),
+    expiresAfter: z.date().optional(),
+    expiresBefore: z.date().optional(),
+    nextBillingAfter: z.date().optional(),
+    nextBillingBefore: z.date().optional(),
+
+    // Renewal filters
+    autoRenew: z.boolean().optional(),
+    willRenew: z.boolean().optional(),
+    hasAutoRenewal: z.boolean().optional(),
+
+    // Trial filters
+    isTrialActive: z.boolean().optional(),
+    hadTrial: z.boolean().optional(),
+    inTrialPeriod: z.boolean().optional(),
+    trialEndedAfter: z.date().optional(),
+    trialEndedBefore: z.date().optional(),
+
+    // Cancellation filters
+    isCancelled: z.boolean().optional(),
+    cancelledAfter: z.date().optional(),
+    cancelledBefore: z.date().optional(),
+    cancellationReason: z.string().optional(),
+
+    // Billing filters
+    billingCycle: z.enum(['monthly', 'quarterly', 'yearly']).optional(),
+    nextBillingIn: z.number().int().min(0).optional(), // days
+    isOverdue: z.boolean().optional(),
+
+    // Usage filters
+    hasUsageData: z.boolean().optional(),
+    isOverUsageLimit: z.boolean().optional(),
+
+    // Additional search options
     includeExpired: z.boolean().default(false).optional(),
     groupByStatus: z.boolean().default(false).optional()
 });
