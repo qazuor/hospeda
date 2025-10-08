@@ -1,5 +1,4 @@
-import { z } from '@hono/zod-openapi';
-import { PostListItemSchema } from '@repo/schemas';
+import { PostFeaturedHttpSchema, PostListItemSchema } from '@repo/schemas';
 import { PostService } from '@repo/service-core';
 import { getActorFromContext } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
@@ -7,21 +6,13 @@ import { createListRoute } from '../../utils/route-factory';
 
 const postService = new PostService({ logger: apiLogger });
 
-export const getFeaturedPostsRoute = createListRoute({
+export const featuredPostsRoute = createListRoute({
     method: 'get',
-    path: '/featured',
-    summary: 'List featured posts',
-    description: 'Returns featured posts with optional date filters',
+    path: '/posts/featured',
+    summary: 'Get featured posts',
+    description: 'Returns featured posts with pagination',
     tags: ['Posts'],
-    requestQuery: {
-        fromDate: z.string().datetime().optional(),
-        toDate: z.string().datetime().optional(),
-        page: z.coerce.number().int().min(1).default(1),
-        pageSize: z.coerce.number().int().min(1).max(100).default(20),
-        sortBy: z.string().optional(),
-        sortOrder: z.enum(['asc', 'desc']).default('asc'),
-        q: z.string().optional()
-    },
+    requestQuery: PostFeaturedHttpSchema.shape,
     responseSchema: PostListItemSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);

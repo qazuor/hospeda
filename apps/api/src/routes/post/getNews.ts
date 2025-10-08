@@ -1,5 +1,4 @@
-import { z } from '@hono/zod-openapi';
-import { PostListItemSchema } from '@repo/schemas';
+import { PostListItemSchema, PostNewsHttpSchema } from '@repo/schemas';
 import { PostService } from '@repo/service-core';
 import { getActorFromContext } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
@@ -13,15 +12,7 @@ export const getNewsPostsRoute = createListRoute({
     summary: 'List news posts',
     description: 'Returns news posts with optional date filters',
     tags: ['Posts'],
-    requestQuery: {
-        fromDate: z.string().datetime().optional(),
-        toDate: z.string().datetime().optional(),
-        page: z.coerce.number().int().min(1).default(1),
-        pageSize: z.coerce.number().int().min(1).max(100).default(20),
-        sortBy: z.string().optional(),
-        sortOrder: z.enum(['asc', 'desc']).default('asc'),
-        q: z.string().optional()
-    },
+    requestQuery: PostNewsHttpSchema.shape,
     responseSchema: PostListItemSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
