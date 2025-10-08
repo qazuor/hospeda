@@ -197,8 +197,18 @@ export type EventOrganizerSearchOutput = EventOrganizerSearchResponse;
 export type EventOrganizerSearchResult = EventOrganizerSearchResultItem;
 
 // Additional compatibility schemas
-const EventOrganizerCountInputInternalSchema = z.object({
-    filters: EventOrganizerFiltersSchema.optional()
+const EventOrganizerCountInputInternalSchema = BaseSearchSchema.extend({
+    // Basic filters (flattened from EventOrganizerFiltersSchema for compatibility)
+    name: z.string().optional(),
+
+    // Contact information filters (for filtering by nested contact info)
+    personalEmail: z.string().email().optional(),
+    workEmail: z.string().email().optional(),
+    mobilePhone: z.string().optional(),
+    website: z.string().url().optional(),
+
+    // Lifecycle filter (this exists in main schema)
+    lifecycleState: z.string().optional()
 });
 const EventOrganizerCountWrapperSchema = z.object({ count: z.number().int().min(0) });
 export type EventOrganizerCountInput = z.infer<typeof EventOrganizerCountInputInternalSchema>;
@@ -209,8 +219,18 @@ export const EventOrganizerListInputSchema = EventOrganizerSearchSchema;
 export const EventOrganizerListOutputSchema = EventOrganizerListResponseSchema;
 export const EventOrganizerSearchInputSchema = EventOrganizerSearchSchema;
 export const EventOrganizerSearchOutputSchema = EventOrganizerSearchResponseSchema;
-export const EventOrganizerCountInputSchema = z.object({
-    filters: EventOrganizerFiltersSchema.optional()
+export const EventOrganizerCountInputSchema = BaseSearchSchema.extend({
+    // Basic filters (flattened from EventOrganizerFiltersSchema for compatibility)
+    name: z.string().optional(),
+
+    // Contact information filters (for filtering by nested contact info)
+    personalEmail: z.string().email().optional(),
+    workEmail: z.string().email().optional(),
+    mobilePhone: z.string().optional(),
+    website: z.string().url().optional(),
+
+    // Lifecycle filter (this exists in main schema)
+    lifecycleState: z.string().optional()
 });
 export const EventOrganizerCountOutputSchema = z.object({ count: z.number().int().min(0) });
 
