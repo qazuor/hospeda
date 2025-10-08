@@ -13,10 +13,13 @@ export const createAttractionsColumns = (): readonly ColumnConfig<Attraction>[] 
             entityType: EntityType.ATTRACTION,
             color: BadgeColor.TEAL
         },
-        linkHandler: (row) => ({
-            to: '/attractions/$slug',
-            params: { slug: row.slug }
-        })
+        linkHandler: (row) =>
+            row.slug
+                ? {
+                      to: '/attractions/$slug',
+                      params: { slug: row.slug }
+                  }
+                : undefined
     },
     {
         id: 'slug',

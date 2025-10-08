@@ -1,19 +1,12 @@
-import { LifecycleStatusEnum } from '@repo/schemas';
-import { z } from 'zod';
+import type { AttractionListItem } from '@repo/schemas';
+import { AttractionWithDestinationCountSchema as BaseAttractionListItemSchema } from '@repo/schemas';
 
-export const AttractionListItemSchema = z
-    .object({
-        id: z.string(),
-        name: z.string(),
-        slug: z.string(),
-        description: z.string().optional(),
-        icon: z.string().optional(),
-        isBuiltin: z.boolean().optional(),
-        destinationCount: z.number().optional(),
-        lifecycleState: z.nativeEnum(LifecycleStatusEnum).optional(),
-        createdAt: z.string().optional(),
-        updatedAt: z.string().optional()
-    })
-    .passthrough();
+/**
+ * Schema for attraction list items in admin
+ * Uses AttractionWithDestinationCountSchema from @repo/schemas
+ */
+export const AttractionListItemSchema = BaseAttractionListItemSchema;
 
-export type Attraction = z.infer<typeof AttractionListItemSchema>;
+export type Attraction = AttractionListItem & {
+    destinationCount?: number;
+};
