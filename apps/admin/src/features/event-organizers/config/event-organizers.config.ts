@@ -1,6 +1,7 @@
 import { createEntityListPage } from '@/components/entity-list';
 import type { EntityConfig } from '@/components/entity-list/types';
 import { EntityType } from '@/components/table/DataTable';
+import type { z } from 'zod';
 import {
     type EventOrganizer,
     EventOrganizerListItemSchema
@@ -20,8 +21,8 @@ export const eventOrganizersConfig: EntityConfig<EventOrganizer> = {
     basePath: '/event-organizers',
     detailPath: '/event-organizers/[id]',
 
-    // Schemas
-    listItemSchema: EventOrganizerListItemSchema,
+    // Schemas - Use type assertion for Zod version compatibility
+    listItemSchema: EventOrganizerListItemSchema as unknown as z.ZodSchema<EventOrganizer>,
 
     // Search configuration
     searchConfig: {
