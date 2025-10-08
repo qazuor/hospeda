@@ -22,17 +22,8 @@ import { metricsRoutes } from './metrics';
 import { userRoutes } from './user';
 
 // ✅ Root endpoint using createSimpleRoute
-import { z } from '@hono/zod-openapi';
+import { ApiInfoSchema } from '@repo/schemas';
 import { createSimpleRoute } from '../utils/route-factory';
-
-const ApiInfoSchema = z.object({
-    name: z.string(),
-    version: z.string(),
-    description: z.string(),
-    status: z.string(),
-    timestamp: z.string(),
-    documentation: z.string()
-});
 
 const rootRoute = createSimpleRoute({
     method: 'get',
