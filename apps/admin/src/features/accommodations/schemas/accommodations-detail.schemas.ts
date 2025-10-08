@@ -115,7 +115,7 @@ export const AccommodationEditSchema = z
         summary: z.string().min(1, 'Summary is required').max(500, 'Summary too long'),
         description: z.string().min(1, 'Description is required'),
         type: z.nativeEnum(AccommodationTypeEnum, {
-            required_error: 'Accommodation type is required'
+            message: 'Accommodation type is required'
         }),
 
         // Ownership & Location
