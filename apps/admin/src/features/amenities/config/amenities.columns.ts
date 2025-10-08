@@ -13,10 +13,13 @@ export const createAmenitiesColumns = (): readonly ColumnConfig<Amenity>[] => [
             entityType: EntityType.AMENITY,
             color: BadgeColor.CYAN
         },
-        linkHandler: (row) => ({
-            to: '/amenities/$slug',
-            params: { slug: row.slug }
-        })
+        linkHandler: (row) =>
+            row.slug
+                ? {
+                      to: '/amenities/$slug',
+                      params: { slug: row.slug }
+                  }
+                : undefined
     },
     {
         id: 'slug',
