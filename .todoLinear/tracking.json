@@ -1487,7 +1487,31 @@
             "isOrphan": false,
             "aiState": "COMPLETED",
             "aiRetryCount": 0
+        },
+        {
+            "linearId": "e3c50239-c30b-4d2a-8498-8ae1b10e1263",
+            "type": "todo",
+            "filePath": "packages/schemas/src/entities/accommodation/accommodation.http.schema.ts",
+            "line": 212,
+            "title": "Add proper nested structures:",
+            "createdAt": "2025-10-08T00:55:40.477Z",
+            "updatedAt": "2025-10-08T00:55:40.477Z",
+            "isOrphan": false,
+            "aiState": "COMPLETED",
+            "aiRetryCount": 0
+        },
+        {
+            "linearId": "954f7b21-33f4-4ad2-a67d-4618aba863f9",
+            "type": "todo",
+            "filePath": "packages/schemas/src/entities/accommodation/accommodation.http.schema.ts",
+            "line": 232,
+            "title": "Add nested object mappings for location, price, extraInfo",
+            "createdAt": "2025-10-08T00:55:45.557Z",
+            "updatedAt": "2025-10-08T00:55:45.557Z",
+            "isOrphan": false,
+            "aiState": "COMPLETED",
+            "aiRetryCount": 0
         }
     ],
-    "lastSync": "2025-10-07T21:49:26.752Z"
+    "lastSync": "2025-10-08T02:00:50.627Z"
 }
