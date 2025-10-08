@@ -96,6 +96,17 @@ export const AmenityGetHttpSchema = z.object({
 
 export type AmenityGetHttp = z.infer<typeof AmenityGetHttpSchema>;
 
+/**
+ * HTTP-compatible schema for getting accommodations by amenity
+ * For listing accommodations that include a specific amenity with basic pagination
+ */
+export const AmenityAccommodationsHttpSchema = BaseHttpSearchSchema.extend({
+    // No additional filters needed - uses basic pagination from BaseHttpSearchSchema
+    // amenityId comes from path params, not query params
+});
+
+export type AmenityAccommodationsHttp = z.infer<typeof AmenityAccommodationsHttpSchema>;
+
 // ============================================================================
 // HTTP TO DOMAIN CONVERSION FUNCTIONS
 // ============================================================================
