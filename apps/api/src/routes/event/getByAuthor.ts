@@ -1,5 +1,4 @@
-import { z } from '@hono/zod-openapi';
-import { EventListItemSchema, UserIdSchema } from '@repo/schemas';
+import { EventByAuthorHttpSchema, EventListItemSchema, UserIdSchema } from '@repo/schemas';
 import { EventService } from '@repo/service-core';
 import { getActorFromContext } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
@@ -7,22 +6,14 @@ import { createListRoute } from '../../utils/route-factory';
 
 const eventService = new EventService({ logger: apiLogger });
 
-export const getEventsByAuthorRoute = createListRoute({
+export const eventsByAuthorRoute = createListRoute({
     method: 'get',
-    path: '/author/{authorId}',
-    summary: 'List events by author',
-    description: 'Returns a paginated list of events authored by the specified user',
+    path: '/events/author/{authorId}',
+    summary: 'Get events by author',
+    description: 'Returns events created by a specific author',
     tags: ['Events'],
-    requestParams: {
-        authorId: UserIdSchema
-    },
-    requestQuery: {
-        page: z.coerce.number().int().min(1).default(1),
-        pageSize: z.coerce.number().int().min(1).max(100).default(20),
-        sortBy: z.string().optional(),
-        sortOrder: z.enum(['asc', 'desc']).default('asc'),
-        q: z.string().optional()
-    },
+    requestParams: { authorId: UserIdSchema },
+    requestQuery: EventByAuthorHttpSchema.shape,
     responseSchema: EventListItemSchema,
     handler: async (ctx, params, _body, query) => {
         const actor = getActorFromContext(ctx);

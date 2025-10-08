@@ -1,5 +1,8 @@
-import { z } from '@hono/zod-openapi';
-import { AccommodationIdSchema, AccommodationReviewSchema } from '@repo/schemas';
+import {
+    AccommodationIdSchema,
+    AccommodationReviewSchema,
+    AccommodationReviewsByAccommodationHttpSchema
+} from '@repo/schemas';
 import { AccommodationReviewService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -12,19 +15,14 @@ export const listAccommodationReviewsRoute = createListRoute({
     method: 'get',
     path: '/{accommodationId}/reviews',
     summary: 'List accommodation reviews',
-    description: 'Returns a paginated list of reviews for a specific accommodation',
+    description:
+        'Returns a paginated list of reviews for a specific accommodation using HTTP schemas',
     tags: ['Accommodations', 'Reviews'],
     requestParams: {
         accommodationId: AccommodationIdSchema
     },
-    requestQuery: {
-        page: z.coerce.number().int().min(1).default(1),
-        pageSize: z.coerce.number().int().min(1).max(100).default(20),
-        sortBy: z.string().optional(),
-        sortOrder: z.enum(['asc', 'desc']).default('asc'),
-        q: z.string().optional()
-    },
-    responseSchema: z.object(AccommodationReviewSchema.shape),
+    requestQuery: AccommodationReviewsByAccommodationHttpSchema.shape,
+    responseSchema: AccommodationReviewSchema,
     handler: async (ctx: Context, params, _body, query) => {
         const actor = getActorFromContext(ctx);
         // query is validated and always defined in createListRoute; cast explicitly for types
@@ -33,7 +31,7 @@ export const listAccommodationReviewsRoute = createListRoute({
         const pageSize = validatedQuery.pageSize ?? 20;
         const service = new AccommodationReviewService({ logger: apiLogger });
         const result = await service.listByAccommodation(actor, {
-            accommodationId: params.accommodationId as z.infer<typeof AccommodationIdSchema>,
+            accommodationId: params.accommodationId as string,
             page,
             pageSize,
             sortBy: 'createdAt' as const,
