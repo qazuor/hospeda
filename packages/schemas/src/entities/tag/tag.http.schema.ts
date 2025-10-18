@@ -63,7 +63,7 @@ export const TagCreateHttpSchema = z.object({
         .string()
         .regex(/^#[0-9A-Fa-f]{6}$/)
         .optional(),
-    description: z.string().max(200).optional(),
+    notes: z.string().max(200).optional(), // Changed from 'description' to 'notes' for consistency with domain
     isSystem: z.coerce.boolean().default(false)
 });
 
@@ -142,7 +142,6 @@ export const httpToDomainTagSearch = (httpParams: TagSearchHttp): TagSearchInput
  * Handles form data conversion to proper domain types
  * Sets default lifecycle state to ACTIVE
  * Note: HTTP color (hex) is mapped to enum color
- * Note: HTTP description is mapped to domain notes field
  * Note: isSystem field from HTTP not available in domain schema
  */
 export const httpToDomainTagCreate = (httpData: TagCreateHttp): TagCreateInput => {
@@ -150,7 +149,7 @@ export const httpToDomainTagCreate = (httpData: TagCreateHttp): TagCreateInput =
         name: httpData.name,
         slug: httpData.name.toLowerCase().replace(/\s+/g, '-'), // Generate slug from name
         color: TagColorEnum.BLUE, // Default color since HTTP hex doesn't map directly to enum
-        notes: httpData.description, // Map description to notes
+        notes: httpData.notes, // Direct field mapping - no conversion needed now that HTTP uses 'notes'
         lifecycleState: LifecycleStatusEnum.ACTIVE
     };
 };
@@ -159,7 +158,6 @@ export const httpToDomainTagCreate = (httpData: TagCreateHttp): TagCreateInput =
  * Convert HTTP tag update data to domain update input
  * Handles partial updates from HTTP PATCH requests
  * Note: HTTP color (hex) is mapped to enum color
- * Note: HTTP description is mapped to domain notes field
  * Note: isSystem field from HTTP not available in domain schema
  */
 export const httpToDomainTagUpdate = (httpData: TagUpdateHttp): TagUpdateInput => {
@@ -167,6 +165,6 @@ export const httpToDomainTagUpdate = (httpData: TagUpdateHttp): TagUpdateInput =
         name: httpData.name,
         slug: httpData.name ? httpData.name.toLowerCase().replace(/\s+/g, '-') : undefined,
         color: httpData.color ? TagColorEnum.BLUE : undefined, // Default color if provided
-        notes: httpData.description // Map description to notes
+        notes: httpData.notes // Direct field mapping - no conversion needed now that HTTP uses 'notes'
     };
 };

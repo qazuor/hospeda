@@ -77,7 +77,7 @@ export const UserCreateHttpSchema = z.object({
         .regex(/^\+[1-9]\d{1,14}$/)
         .optional(),
     bio: z.string().max(1000).optional(),
-    dateOfBirth: z.coerce.date().max(new Date()).optional(),
+    birthDate: z.coerce.date().max(new Date()).optional(), // Changed from 'dateOfBirth' to 'birthDate' for consistency with domain
     role: RoleEnumSchema.default(RoleEnum.GUEST),
     status: UserStatusHttpSchema.default('pending')
 });
@@ -151,7 +151,7 @@ export const httpToDomainUserCreate = (httpData: UserCreateHttp): UserCreateInpu
     // Basic fields that exist in domain schema
     firstName: httpData.firstName,
     lastName: httpData.lastName,
-    birthDate: httpData.dateOfBirth, // Map dateOfBirth to birthDate
+    birthDate: httpData.birthDate, // Direct field mapping - no conversion needed now that HTTP uses 'birthDate'
     role: httpData.role,
 
     // Required fields with defaults for domain schema
@@ -178,7 +178,7 @@ export const httpToDomainUserUpdate = (httpData: UserUpdateHttp): UserUpdateInpu
     // Basic updateable fields
     firstName: httpData.firstName,
     lastName: httpData.lastName,
-    birthDate: httpData.dateOfBirth,
+    birthDate: httpData.birthDate, // Direct field mapping - no conversion needed now that HTTP uses 'birthDate'
     role: httpData.role
 
     // Note: Contact info updates are complex due to required mobilePhone field

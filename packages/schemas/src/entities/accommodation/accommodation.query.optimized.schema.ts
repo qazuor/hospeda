@@ -60,7 +60,7 @@ export const AccommodationSearchSchema = BaseSearchSchema.extend({
 
     // Array filters
     amenities: z.array(z.string().uuid()).optional(),
-    hostId: z.string().uuid().optional(),
+    ownerId: z.string().uuid().optional(),
 
     // Availability filters
     checkIn: z.date().optional(),
@@ -87,7 +87,7 @@ export const HttpAccommodationSearchSchema = createEntityHttpSearchSchema({
         type: AccommodationTypeEnumSchema.optional(),
         currency: PriceCurrencyEnumSchema.optional(),
         destinationId: z.string().uuid().optional(),
-        hostId: z.string().uuid().optional()
+        ownerId: z.string().uuid().optional()
     }
 });
 
@@ -132,8 +132,8 @@ export const ACCOMMODATION_SEARCH_METADATA = createEnhancedSearchMetadata({
     includeDates: true,
     customFields: {
         type: { description: 'Filter by accommodation type', example: 'villa' },
-        hostId: {
-            description: 'Filter by host ID',
+        ownerId: {
+            description: 'Filter by owner ID',
             example: '123e4567-e89b-12d3-a456-426614174000'
         },
         destinationId: {
