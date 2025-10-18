@@ -8,6 +8,7 @@ import { AmenityService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
+import { extractPaginationParams, getPaginationResponse } from '../../utils/pagination';
 import { createListRoute } from '../../utils/route-factory';
 
 export const searchAmenitiesRoute = createListRoute({
@@ -16,13 +17,12 @@ export const searchAmenitiesRoute = createListRoute({
     summary: 'Search amenities',
     description: 'Search amenities by filters and pagination',
     tags: ['Amenities'],
-    requestQuery: HttpAmenitySearchSchema.shape, // ✅ Using @repo/schemas
+    requestQuery: HttpAmenitySearchSchema.shape,
     responseSchema: createPaginatedResponseSchema(AmenitySchema),
     handler: async (ctx: Context, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const searchParams = query as HttpAmenitySearch;
-        const page = searchParams.page ?? 1;
-        const pageSize = searchParams.pageSize ?? 20;
+        const { page, pageSize } = extractPaginationParams(searchParams);
 
         const service = new AmenityService({ logger: apiLogger });
         const result = await service.search(actor, searchParams);
@@ -33,12 +33,7 @@ export const searchAmenitiesRoute = createListRoute({
 
         return {
             items: result.data?.items || [],
-            pagination: {
-                page,
-                pageSize,
-                total: result.data?.total || 0,
-                totalPages: Math.ceil((result.data?.total || 0) / pageSize)
-            }
+            pagination: getPaginationResponse(result.data?.total || 0, { page, pageSize })
         };
     }
 });
