@@ -29,6 +29,7 @@ export * from './location.schema.js';
 export * from './media.schema.js';
 export * from './moderation.schema.js';
 // Skip pagination.schema.js to avoid conflicts with base.schema.js
+export * from './params.schema.js';
 export * from './price.schema.js';
 export * from './review.schema.js';
 export * from './seo.schema.js';

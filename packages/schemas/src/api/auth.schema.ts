@@ -89,3 +89,13 @@ export const SyncUserResponseSchema = z.object({
 });
 
 export type SyncUserResponse = z.infer<typeof SyncUserResponseSchema>;
+
+/**
+ * Sign out response schema for /auth/signout endpoint
+ */
+export const AuthSignOutResponseSchema = z.object({
+    message: z.string().describe('Success message'),
+    cacheCleared: z.boolean().describe('Whether cache was cleared')
+});
+
+export type AuthSignOutResponse = z.infer<typeof AuthSignOutResponseSchema>;

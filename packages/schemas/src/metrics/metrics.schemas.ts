@@ -30,3 +30,26 @@ export const MetricsResponseSchema = z.object({
         })
     )
 });
+
+export type MetricsResponse = z.infer<typeof MetricsResponseSchema>;
+
+/**
+ * Metrics API response wrapper schemas
+ * Consistent response format for metrics endpoints
+ */
+export const MetricsSuccessResponseSchema = z.object({
+    success: z.boolean(),
+    data: MetricsResponseSchema
+});
+
+export type MetricsSuccessResponse = z.infer<typeof MetricsSuccessResponseSchema>;
+
+/**
+ * Simple success response for metrics operations
+ */
+export const MetricsOperationResponseSchema = z.object({
+    success: z.boolean(),
+    message: z.string()
+});
+
+export type MetricsOperationResponse = z.infer<typeof MetricsOperationResponseSchema>;
