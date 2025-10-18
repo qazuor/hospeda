@@ -577,30 +577,6 @@
             "aiRetryCount": 0
         },
         {
-            "linearId": "9a74c567-5be7-4ffb-8d4d-f9e95dde7bd4",
-            "type": "debug",
-            "filePath": "apps/api/src/routes/index.ts",
-            "line": 12,
-            "title": "Add logging around accommodation route import",
-            "createdAt": "2025-10-04T12:54:42.436Z",
-            "updatedAt": "2025-10-07T03:10:23.231Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "2cef851d-ab39-42f7-a742-b896b94a0628",
-            "type": "debug",
-            "filePath": "apps/api/src/routes/index.ts",
-            "line": 65,
-            "title": "Add logging around route registration",
-            "createdAt": "2025-10-04T12:54:43.181Z",
-            "updatedAt": "2025-10-08T03:44:12.770Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
             "linearId": "43674f95-d006-4cf4-8d4a-70c83e1be04e",
             "type": "todo",
             "filePath": "apps/api/src/routes/user/update.ts",
@@ -1477,5 +1453,5 @@
             "aiRetryCount": 0
         }
     ],
-    "lastSync": "2025-10-18T01:35:14.298Z"
+    "lastSync": "2025-10-18T18:21:08.882Z"
 }
