@@ -100,7 +100,7 @@ export const AccommodationCreateHttpSchema = z.object({
 
     // Relations
     destinationId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
-    hostId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
+    ownerId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
 });
 
 export type AccommodationCreateHttp = z.infer<typeof AccommodationCreateHttpSchema>;
@@ -110,7 +110,7 @@ export type AccommodationCreateHttp = z.infer<typeof AccommodationCreateHttpSche
  * Handles partial updates via HTTP PATCH requests
  */
 export const AccommodationUpdateHttpSchema = AccommodationCreateHttpSchema.partial().omit({
-    hostId: true // Host cannot be changed after creation
+    ownerId: true // Owner cannot be changed after creation
 });
 
 export type AccommodationUpdateHttp = z.infer<typeof AccommodationUpdateHttpSchema>;
@@ -177,7 +177,7 @@ export const httpToDomainAccommodationSearch = (
     checkOut: httpParams.checkOut,
     isAvailable: httpParams.isAvailable
 
-    // Note: Fields like country, city, hostId, createdAfter, createdBefore
+    // Note: Fields like country, city, ownerId, createdAfter, createdBefore
     // exist in domain schema but not in HTTP schema, so they're not mapped
 });
 
@@ -198,7 +198,7 @@ export const httpToDomainAccommodationCreate = (
     description: httpData.description ?? '', // Required field, provide default
     type: httpData.type,
     destinationId: httpData.destinationId,
-    ownerId: httpData.hostId, // Map hostId to ownerId
+    ownerId: httpData.ownerId,
     isFeatured: httpData.isFeatured,
 
     // Required fields with sensible defaults using proper enums
@@ -262,8 +262,8 @@ export const httpToDomainAccommodationUpdate = (
                   zipCode: '', // Would need additional HTTP fields
                   country: '', // Would need additional HTTP fields
                   coordinates: {
-                      lat: httpData.latitude.toString(),
-                      long: httpData.longitude.toString()
+                      lat: httpData.latitude?.toString() || '',
+                      long: httpData.longitude?.toString() || ''
                   }
               }
           }

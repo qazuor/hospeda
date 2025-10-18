@@ -65,7 +65,7 @@ export const EventLocationCreateHttpSchema = z.object({
     city: z.string().min(2).max(50),
     state: z.string().min(2).max(50).optional(),
     country: z.string().length(2), // ISO country code
-    postalCode: z.string().min(3).max(10).optional(),
+    zipCode: z.string().min(3).max(10).optional(),
 
     // Geographic coordinates
     latitude: z.coerce.number().min(-90).max(90),
@@ -171,7 +171,7 @@ export const httpToDomainEventLocationCreate = (
         // Required fields from BaseLocationSchema
         state: httpData.state || '', // Default if not provided
         country: httpData.country,
-        zipCode: httpData.postalCode || '', // Required zipCode
+        zipCode: httpData.zipCode || '', // Required zipCode
 
         // Optional fields
         street: httpData.street,
@@ -209,7 +209,7 @@ export const httpToDomainEventLocationUpdate = (
         // Optional fields that can be updated
         state: httpData.state,
         country: httpData.country,
-        zipCode: httpData.postalCode,
+        zipCode: httpData.zipCode,
         street: httpData.street,
         number: httpData.number,
         floor: httpData.floor,

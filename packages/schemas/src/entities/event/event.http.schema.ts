@@ -153,7 +153,7 @@ export type EventUpcomingHttp = z.infer<typeof EventUpcomingHttpSchema>;
  * Handles form data and JSON input for creating events via HTTP
  */
 export const EventCreateHttpSchema = z.object({
-    title: z.string().min(5).max(200),
+    name: z.string().min(5).max(200), // Changed from 'title' to 'name' for consistency with domain
     slug: z
         .string()
         .min(5)
@@ -250,11 +250,11 @@ export const httpToDomainEventSearch = (httpParams: EventSearchHttp): EventSearc
  * Maps HTTP form/JSON data to domain object with required fields
  */
 export const httpToDomainEventCreate = (httpData: EventCreateHttp): EventCreateInput => ({
-    // Map HTTP title to domain name
-    name: httpData.title,
+    // Direct field mapping - no conversion needed now that HTTP uses 'name'
+    name: httpData.name,
     slug:
         httpData.slug ||
-        httpData.title
+        httpData.name
             .toLowerCase()
             .replace(/\s+/g, '-')
             .replace(/[^a-z0-9-]/g, ''),
@@ -293,8 +293,8 @@ export const httpToDomainEventCreate = (httpData: EventCreateHttp): EventCreateI
  * Maps HTTP PATCH data to domain object (all fields optional for updates)
  */
 export const httpToDomainEventUpdate = (httpData: EventUpdateHttp): EventUpdateInput => ({
-    // Map HTTP title to domain name
-    name: httpData.title,
+    // Direct field mapping - no conversion needed now that HTTP uses 'name'
+    name: httpData.name,
     slug: httpData.slug,
     summary: httpData.description?.substring(0, 300),
     description: httpData.description,

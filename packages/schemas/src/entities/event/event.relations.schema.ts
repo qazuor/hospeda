@@ -57,7 +57,7 @@ const LocationSummarySchema = z.object({
     city: z.string(),
     state: z.string().optional(),
     country: z.string(),
-    postalCode: z.string().optional(),
+    zipCode: z.string().optional(),
     coordinates: z
         .object({
             latitude: z.number(),
