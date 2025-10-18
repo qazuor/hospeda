@@ -33,7 +33,7 @@ export const EventLocationFiltersSchema = z.object({
 
     // Address filters
     streetAddress: z.string().optional(),
-    postalCode: z.string().optional(),
+    zipCode: z.string().optional(),
 
     // Capacity filters
     minCapacity: z.number().int().min(0).optional(),
@@ -87,7 +87,7 @@ export const EventLocationSearchSchema = BaseSearchSchema.extend({
 
     // Address filters
     streetAddress: z.string().optional(),
-    postalCode: z.string().optional(),
+    zipCode: z.string().optional(),
 
     // Capacity filters
     minCapacity: z.number().int().min(0).optional(),
@@ -230,7 +230,7 @@ const EventLocationCountInputInternalSchema = BaseSearchSchema.extend({
 
     // Address filters
     streetAddress: z.string().optional(),
-    postalCode: z.string().optional(),
+    zipCode: z.string().optional(),
 
     // Capacity filters
     minCapacity: z.number().int().min(0).optional(),
@@ -277,7 +277,7 @@ export const EventLocationCountInputSchema = BaseSearchSchema.extend({
 
     // Address filters
     streetAddress: z.string().optional(),
-    postalCode: z.string().optional(),
+    zipCode: z.string().optional(),
 
     // Capacity filters
     minCapacity: z.number().int().min(0).optional(),

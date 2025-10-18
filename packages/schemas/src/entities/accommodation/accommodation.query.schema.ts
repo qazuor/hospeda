@@ -64,8 +64,8 @@ export const AccommodationFiltersSchema = z.object({
     // Amenities filter
     amenities: z.array(z.string().uuid()).optional(),
 
-    // Host filter
-    hostId: z.string().uuid().optional(),
+    // Owner filter
+    ownerId: z.string().uuid().optional(),
 
     // Availability filters
     checkIn: z.date().optional(),
@@ -107,7 +107,7 @@ export const AccommodationSearchSchema = BaseSearchSchema.extend({
     minRating: z.number().min(0).max(5).optional(),
     maxRating: z.number().min(0).max(5).optional(),
     amenities: z.array(z.string().uuid()).optional(),
-    hostId: z.string().uuid().optional(),
+    ownerId: z.string().uuid().optional(),
     checkIn: z.date().optional(),
     checkOut: z.date().optional(),
     isAvailable: z.boolean().optional()
@@ -179,7 +179,7 @@ export const HttpAccommodationSearchSchema = HttpPaginationSchema.merge(HttpSort
         .optional(),
 
     // UUID filters
-    hostId: z.string().uuid().optional(),
+    ownerId: z.string().uuid().optional(),
 
     // Boolean filters with coercion
     isAvailable: HttpQueryFields.isAvailable()
