@@ -7,6 +7,7 @@ import { AccommodationReviewService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
+import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createListRoute } from '../../../utils/route-factory';
 
 // Lazy-instantiate service inside handler to ensure tests pick the mock
@@ -25,10 +26,7 @@ export const listAccommodationReviewsRoute = createListRoute({
     responseSchema: AccommodationReviewSchema,
     handler: async (ctx: Context, params, _body, query) => {
         const actor = getActorFromContext(ctx);
-        // query is validated and always defined in createListRoute; cast explicitly for types
-        const validatedQuery = query as { page?: number; pageSize?: number };
-        const page = validatedQuery.page ?? 1;
-        const pageSize = validatedQuery.pageSize ?? 20;
+        const { page, pageSize } = extractPaginationParams(query || {});
         const service = new AccommodationReviewService({ logger: apiLogger });
         const result = await service.listByAccommodation(actor, {
             accommodationId: params.accommodationId as string,
@@ -40,12 +38,10 @@ export const listAccommodationReviewsRoute = createListRoute({
         if (result.error) throw new Error(result.error.message);
         return {
             items: result.data.accommodationReviews || [],
-            pagination: {
+            pagination: getPaginationResponse(result.data.accommodationReviews?.length || 0, {
                 page,
-                pageSize,
-                total: result.data.accommodationReviews?.length || 0,
-                totalPages: 1
-            }
+                pageSize
+            })
         };
     }
 });
