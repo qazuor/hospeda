@@ -9,7 +9,6 @@ import { eventOrganizerRoutes } from './event-organizer';
 import { postRoutes } from './post';
 import { sponsorRoutes } from './sponsor';
 
-// DEBUG [9a74c567-5be7-4ffb-8d4d-f9e95dde7bd4]: Add logging around accommodation route import
 apiLogger.debug('🏠 Loading accommodation routes...');
 apiLogger.debug('✅ Accommodation routes loaded successfully');
 
@@ -21,7 +20,6 @@ import { dbHealthRoutes, healthRoutes, liveRoutes, readyRoutes } from './health'
 import { metricsRoutes } from './metrics';
 import { userRoutes } from './user';
 
-// ✅ Root endpoint using createSimpleRoute
 import { ApiInfoSchema } from '@repo/schemas';
 import { createSimpleRoute } from '../utils/route-factory';
 
@@ -47,7 +45,6 @@ const rootRoute = createSimpleRoute({
 });
 
 export const setupRoutes = (app: AppOpenAPI) => {
-    // ✅ Root endpoint migrated to createSimpleRoute
     app.route('/', rootRoute);
 
     // Health check routes
@@ -62,7 +59,6 @@ export const setupRoutes = (app: AppOpenAPI) => {
     // Public routes
     app.route('/api/v1/public/users', userRoutes);
 
-    // DEBUG [2cef851d-ab39-42f7-a742-b896b94a0628]: Add logging around route registration
     try {
         apiLogger.debug('🔗 Registering accommodation routes...');
         app.route('/api/v1/public/accommodations', accommodationRoutes);
