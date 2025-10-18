@@ -397,18 +397,6 @@
             "aiRetryCount": 0
         },
         {
-            "linearId": "2f994712-1b4c-441f-8834-3684cf54f029",
-            "type": "todo",
-            "filePath": "apps/admin/src/features/destinations/api/getDestinations.ts",
-            "line": 5,
-            "title": "Replace with a browser-safe build export from @repo/schemas when available",
-            "createdAt": "2025-10-04T12:54:12.052Z",
-            "updatedAt": "2025-10-04T15:26:49.317Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
             "linearId": "51754d18-af8c-4c60-be83-0fc12c41c34e",
             "type": "todo",
             "filePath": "apps/admin/src/lib/error-boundaries/GlobalErrorBoundary.tsx",
@@ -1489,5 +1477,5 @@
             "aiRetryCount": 0
         }
     ],
-    "lastSync": "2025-10-08T17:48:37.425Z"
+    "lastSync": "2025-10-18T01:35:14.298Z"
 }
