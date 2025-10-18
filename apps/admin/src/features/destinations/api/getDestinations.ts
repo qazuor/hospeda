@@ -1,65 +1,17 @@
 import { fetchApi } from '@/lib/api/client';
-import { z } from 'zod';
+import {
+    DestinationListItemWithStringAttractionsSchema,
+    createPaginatedResponseSchema
+} from '@repo/schemas';
+import type { z } from 'zod';
 
-// Browser-safe minimal schema for destination list items
-// TODO [2f994712-1b4c-441f-8834-3684cf54f029]: Replace with a browser-safe build export from @repo/schemas when available
-const DestinationListItemClientSchema = z
-    .object({
-        id: z.string(),
-        slug: z.string(),
-        name: z.string(),
-        city: z.string().optional(),
-        country: z.string().optional(),
-        averageRating: z.number().optional(),
-        reviewsCount: z.number().optional(),
-        accommodationsCount: z.number().optional(),
-        featuredImage: z.string().url().optional(),
-        attractions: z.array(z.string()).optional(), // Array of attraction names
-        media: z
-            .object({
-                featuredImage: z
-                    .object({
-                        url: z.string().url(),
-                        caption: z.string().optional(),
-                        description: z.string().optional()
-                    })
-                    .optional(),
-                gallery: z
-                    .array(
-                        z.object({
-                            url: z.string().url(),
-                            caption: z.string().optional(),
-                            description: z.string().optional()
-                        })
-                    )
-                    .optional()
-            })
-            .optional()
-    })
-    .passthrough(); // Allow additional fields from the API
+// Use centralized schema from @repo/schemas
+const DestinationListItemClientSchema =
+    DestinationListItemWithStringAttractionsSchema.passthrough();
 
-const PaginatedDestinationsSchema = z
-    .object({
-        success: z.boolean(),
-        data: z.object({
-            items: z.array(DestinationListItemClientSchema),
-            pagination: z.object({
-                page: z.number(),
-                pageSize: z.number(), // Changed from 'limit' to 'pageSize' for consistency
-                total: z.number(),
-                totalPages: z.number()
-            })
-        }),
-        metadata: z.object({
-            timestamp: z.string(),
-            requestId: z.string(),
-            total: z.number(),
-            count: z.number()
-        })
-    })
-    .strict();
+const PaginatedDestinationsSchema = createPaginatedResponseSchema(DestinationListItemClientSchema);
 
-export type Destination = z.infer<typeof DestinationListItemClientSchema>;
+export type Destination = z.infer<typeof DestinationListItemWithStringAttractionsSchema>;
 
 // Raw API response type
 type ApiResponse = z.infer<typeof PaginatedDestinationsSchema>;
