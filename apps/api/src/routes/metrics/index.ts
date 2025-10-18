@@ -3,7 +3,7 @@
  * Endpoints for exposing application metrics
  */
 import { createRoute } from '@hono/zod-openapi';
-import { MetricsResponseSchema } from '@repo/schemas/metrics';
+import { MetricsOperationResponseSchema, MetricsSuccessResponseSchema } from '@repo/schemas';
 import { z } from 'zod';
 import {
     getApiMetrics,
@@ -25,10 +25,7 @@ const getMetricsRoute = createRoute({
         200: {
             content: {
                 'application/json': {
-                    schema: z.object({
-                        success: z.boolean(),
-                        data: MetricsResponseSchema
-                    })
+                    schema: MetricsSuccessResponseSchema
                 }
             },
             description: 'Metrics data retrieved successfully'
@@ -67,10 +64,7 @@ const getApiMetricsRoute = createRoute({
         200: {
             content: {
                 'application/json': {
-                    schema: z.object({
-                        success: z.boolean(),
-                        data: MetricsResponseSchema
-                    })
+                    schema: MetricsSuccessResponseSchema
                 }
             },
             description: 'API metrics data retrieved successfully'
@@ -89,10 +83,7 @@ const getSystemMetricsRoute = createRoute({
         200: {
             content: {
                 'application/json': {
-                    schema: z.object({
-                        success: z.boolean(),
-                        data: MetricsResponseSchema
-                    })
+                    schema: MetricsSuccessResponseSchema
                 }
             },
             description: 'System metrics data retrieved successfully'
@@ -111,10 +102,7 @@ const resetMetricsRoute = createRoute({
         200: {
             content: {
                 'application/json': {
-                    schema: z.object({
-                        success: z.boolean(),
-                        message: z.string()
-                    })
+                    schema: MetricsOperationResponseSchema
                 }
             },
             description: 'Metrics reset successfully'

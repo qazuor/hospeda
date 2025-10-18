@@ -2,9 +2,9 @@
  * Database health check route
  * Returns the health status of the database connection
  */
-import { createRoute, z } from '@hono/zod-openapi';
+import { createRoute } from '@hono/zod-openapi';
 import { getDb, sql } from '@repo/db';
-import { HealthDatabaseSchema } from '@repo/schemas';
+import { DatabaseHealthResponseSchema } from '@repo/schemas';
 import { createRouter } from '../../utils/create-app';
 
 const app = createRouter();
@@ -21,14 +21,7 @@ const dbHealthRoute = createRoute({
             description: 'Database health status',
             content: {
                 'application/json': {
-                    schema: z.object({
-                        success: z.boolean(),
-                        data: HealthDatabaseSchema,
-                        metadata: z.object({
-                            timestamp: z.string(),
-                            requestId: z.string()
-                        })
-                    })
+                    schema: DatabaseHealthResponseSchema
                 }
             }
         },
@@ -36,14 +29,7 @@ const dbHealthRoute = createRoute({
             description: 'Database is down',
             content: {
                 'application/json': {
-                    schema: z.object({
-                        success: z.boolean(),
-                        data: HealthDatabaseSchema,
-                        metadata: z.object({
-                            timestamp: z.string(),
-                            requestId: z.string()
-                        })
-                    })
+                    schema: DatabaseHealthResponseSchema
                 }
             }
         }
