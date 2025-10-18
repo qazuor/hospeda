@@ -7,6 +7,7 @@ import { DestinationReviewService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
+import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createListRoute } from '../../../utils/route-factory';
 
 // Instantiate inside handler to play well with test mocks
@@ -24,21 +25,14 @@ export const listDestinationReviewsRoute = createListRoute({
     responseSchema: DestinationReviewSchema,
     handler: async (ctx: Context, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
-        const validatedQuery = query as { page?: number; pageSize?: number };
-        const page = validatedQuery.page ?? 1;
-        const pageSize = validatedQuery.pageSize ?? 20;
+        const { page, pageSize } = extractPaginationParams(query || {});
         // Reuse generic list from BaseCrudService with a where filter if needed; for now, simple list
         const service = new DestinationReviewService({ logger: apiLogger });
         const result = await service.list(actor, { page, pageSize });
         if (result.error) throw new Error(result.error.message);
         return {
             items: result.data.items,
-            pagination: {
-                page,
-                pageSize,
-                total: result.data.total,
-                totalPages: Math.ceil(result.data.total / pageSize)
-            }
+            pagination: getPaginationResponse(result.data.total, { page, pageSize })
         };
     }
 });
