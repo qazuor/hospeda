@@ -26,6 +26,27 @@ export const WithReviewStateSchema = z.object({
 });
 export type WithReviewState = z.infer<typeof WithReviewStateSchema>;
 
+/**
+ * Helper function to create averageRating field that handles both string and number inputs
+ * PostgreSQL numeric fields are returned as strings by the driver
+ */
+export const createAverageRatingField = (
+    options: { optional?: boolean; default?: number } = {}
+) => {
+    const baseSchema = z
+        .union([z.string(), z.number()]) // Accept both string and number from DB
+        .transform((val) => (typeof val === 'string' ? Number.parseFloat(val) : val)) // Convert string to number
+        .pipe(z.number().min(0).max(5));
+
+    if (options.default !== undefined) {
+        return options.optional
+            ? baseSchema.default(options.default).optional()
+            : baseSchema.default(options.default);
+    }
+
+    return options.optional ? baseSchema.optional() : baseSchema;
+};
+
 export const WithModerationStateSchema = z.object({
     moderationState: ModerationStatusEnumSchema
 });

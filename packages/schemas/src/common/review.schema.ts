@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { createAverageRatingField } from './helpers.schema.js';
 
 /**
  * Base review relation fields (for entities that have separate review tables)
@@ -11,14 +12,9 @@ export const BaseReviewFields = {
         })
         .int()
         .min(0)
-        .default(0),
-    averageRating: z
-        .number({
-            message: 'zodError.common.averageRating.required'
-        })
-        .min(0)
-        .max(5)
         .default(0)
+        .optional(),
+    averageRating: createAverageRatingField({ optional: true, default: 0 })
 } as const;
 
 /**
