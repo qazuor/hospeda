@@ -1,5 +1,4 @@
-import { z } from '@hono/zod-openapi';
-import { EventCategoryEnumSchema, EventListItemSchema } from '@repo/schemas';
+import { EventCategoryEnumSchema, EventListItemSchema, HttpPaginationSchema } from '@repo/schemas';
 import { EventService } from '@repo/service-core';
 import { getActorFromContext } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
@@ -16,10 +15,7 @@ export const getEventsByCategoryRoute = createListRoute({
     requestParams: {
         category: EventCategoryEnumSchema
     },
-    requestQuery: {
-        page: z.string().transform(Number).pipe(z.number().min(1)).optional(),
-        pageSize: z.string().transform(Number).pipe(z.number().min(1).max(100)).optional()
-    },
+    requestQuery: HttpPaginationSchema.shape,
     responseSchema: EventListItemSchema,
     handler: async (ctx, params, _body, query) => {
         const actor = getActorFromContext(ctx);

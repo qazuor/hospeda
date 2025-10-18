@@ -4,20 +4,12 @@
  * ✅ Migrated to use createSimpleRoute (Route Factory)
  */
 
-import { z } from '@hono/zod-openapi';
-import { AccommodationFaqSchema } from '@repo/schemas';
+import { AccommodationFaqListOutputSchema } from '@repo/schemas';
 import { AccommodationService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { createGuestActor } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
 import { createSimpleRoute } from '../../utils/route-factory';
-
-// FAQ list response schema using AccommodationFaqSchema
-const faqListResponseSchema = z
-    .object({
-        faqs: z.array(AccommodationFaqSchema)
-    })
-    .openapi('FaqListResponse');
 
 // Initialize service once
 const accommodationService = new AccommodationService({ logger: apiLogger });
@@ -64,7 +56,7 @@ export const getFaqsRoute = createSimpleRoute({
     summary: 'Get accommodation FAQs',
     description: 'Retrieve all frequently asked questions for a specific accommodation',
     tags: ['Accommodations', 'FAQs'],
-    responseSchema: faqListResponseSchema,
+    responseSchema: AccommodationFaqListOutputSchema,
     handler: getFaqsHandler
 });
 

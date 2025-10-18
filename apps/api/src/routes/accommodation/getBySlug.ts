@@ -1,9 +1,9 @@
-import { z } from '@hono/zod-openapi';
 /**
  * Get accommodation by slug endpoint
  * Handles retrieving accommodation by slug using AccommodationService
  */
 import { AccommodationSchema } from '@repo/schemas';
+import { AccommodationSlugRequestParamsSchema } from '@repo/schemas/common';
 import { AccommodationService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../utils/actor';
@@ -22,9 +22,7 @@ export const getAccommodationBySlugRoute = createCRUDRoute({
     summary: 'Get accommodation by slug',
     description: 'Retrieves an accommodation by its slug using the AccommodationService',
     tags: ['Accommodations'],
-    requestParams: {
-        slug: z.string().min(1, 'Accommodation slug is required')
-    },
+    requestParams: AccommodationSlugRequestParamsSchema.shape,
     responseSchema: AccommodationSchema.nullable(),
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         // Get actor from context (can be guest)

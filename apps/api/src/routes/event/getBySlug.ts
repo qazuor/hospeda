@@ -1,5 +1,5 @@
-import { z } from '@hono/zod-openapi';
 import { EventSchema } from '@repo/schemas';
+import { SlugRequestParamsSchema } from '@repo/schemas/common';
 import { EventService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../utils/actor';
@@ -25,9 +25,7 @@ export const getEventBySlugRoute = createCRUDRoute({
     summary: 'Get event by slug',
     description: 'Retrieves an event by its slug',
     tags: ['Events'],
-    requestParams: {
-        slug: z.string().min(1)
-    },
+    requestParams: SlugRequestParamsSchema.shape,
     responseSchema: EventSchema.nullable(),
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);

@@ -1,5 +1,5 @@
-import { z } from '@hono/zod-openapi';
 import { PostSchema } from '@repo/schemas';
+import { SlugRequestParamsSchema } from '@repo/schemas/common';
 import { PostService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../utils/actor';
@@ -14,7 +14,7 @@ export const getPostBySlugRoute = createCRUDRoute({
     summary: 'Get post by slug',
     description: 'Retrieves a post by its slug',
     tags: ['Posts'],
-    requestParams: { slug: z.string().min(1) },
+    requestParams: SlugRequestParamsSchema.shape,
     responseSchema: PostSchema.nullable(),
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);

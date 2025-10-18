@@ -1,5 +1,5 @@
 import { getAuth } from '@hono/clerk-auth';
-import { z } from '@hono/zod-openapi';
+import { AuthSignOutResponseSchema } from '@repo/schemas';
 import { clearRateLimitStore } from '../../middlewares/rate-limit';
 import { apiLogger } from '../../utils/logger';
 import { createSimpleRoute } from '../../utils/route-factory';
@@ -16,12 +16,7 @@ export const authSignOutRoute = createSimpleRoute({
     description: 'Invalidates user cache and performs server-side cleanup for sign out',
     tags: ['Auth'],
     options: { skipAuth: true }, // Allow sign out without authentication
-    responseSchema: z
-        .object({
-            message: z.string().describe('Success message'),
-            cacheCleared: z.boolean().describe('Whether cache was cleared')
-        })
-        .openapi('SignOutResponse'),
+    responseSchema: AuthSignOutResponseSchema,
     handler: async (c) => {
         try {
             // Get the current user ID from Clerk if available

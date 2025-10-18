@@ -3,8 +3,8 @@
  * This demonstrates the proper usage of the response factory in a real endpoint
  */
 
-import { z } from '@hono/zod-openapi';
 import { UserSchema } from '@repo/schemas';
+import { UserIdRequestParamsSchema } from '@repo/schemas/common';
 import { UserService } from '@repo/service-core';
 import { getActorFromContext } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
@@ -21,9 +21,7 @@ export const getUserByIdRoute = createCRUDRoute({
     summary: 'Get user by ID',
     description: 'Retrieves a user by their ID',
     tags: ['Users'],
-    requestParams: {
-        id: z.string().min(3).describe('User ID')
-    },
+    requestParams: UserIdRequestParamsSchema.shape,
     responseSchema: UserSchema,
     handler: async (ctx, params) => {
         const { id } = params;
