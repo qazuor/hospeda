@@ -216,11 +216,13 @@ export const EventListItemSchema = EventSchema.pick({
     pricing: true,
     isFeatured: true,
     media: true,
-    locationId: true,
-    organizerId: true,
     authorId: true,
     createdAt: true,
     updatedAt: true
+}).extend({
+    // Handle optional foreign keys that might be null from database
+    locationId: z.string().uuid().nullable().optional(),
+    organizerId: z.string().uuid().nullable().optional()
 });
 export type EventListItem = z.infer<typeof EventListItemSchema>;
 
