@@ -8,6 +8,7 @@ import { AmenityService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
+import { extractPaginationParams, getPaginationResponse } from '../../utils/pagination';
 import { createListRoute } from '../../utils/route-factory';
 
 // Instantiate service inside handler for test mocks
@@ -26,9 +27,7 @@ export const getAccommodationsByAmenityRoute = createListRoute({
     handler: async (ctx: Context, params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const service = new AmenityService({ logger: apiLogger });
-        const q = query as { page?: number; pageSize?: number };
-        const page = q.page ?? 1;
-        const pageSize = q.pageSize ?? 20;
+        const { page, pageSize } = extractPaginationParams(query || {});
 
         const result = await service.getAccommodationsByAmenity(actor, {
             amenityId: params.amenityId as string,
@@ -40,12 +39,7 @@ export const getAccommodationsByAmenityRoute = createListRoute({
 
         return {
             items: result.data.accommodations,
-            pagination: {
-                page,
-                pageSize,
-                total: result.data.accommodations.length,
-                totalPages: 1
-            }
+            pagination: getPaginationResponse(result.data.accommodations.length, { page, pageSize })
         };
     }
 });

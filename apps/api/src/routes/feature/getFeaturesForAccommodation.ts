@@ -3,6 +3,7 @@ import { FeatureService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
+import { extractPaginationParams, getPaginationResponse } from '../../utils/pagination';
 import { createListRoute } from '../../utils/route-factory';
 
 export const getFeaturesForAccommodationRoute = createListRoute({
@@ -17,15 +18,7 @@ export const getFeaturesForAccommodationRoute = createListRoute({
     handler: async (ctx: Context, params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const service = new FeatureService({ logger: apiLogger });
-        const q = query as {
-            page?: number;
-            pageSize?: number;
-            sortBy?: string;
-            sortOrder?: 'asc' | 'desc';
-            q?: string;
-        };
-        const page = q.page ?? 1;
-        const pageSize = q.pageSize ?? 20;
+        const { page, pageSize } = extractPaginationParams(query || {});
 
         const result = await service.getFeaturesForAccommodation(actor, {
             accommodationId: params.accommodationId as string
@@ -35,12 +28,7 @@ export const getFeaturesForAccommodationRoute = createListRoute({
 
         return {
             items: result.data.features,
-            pagination: {
-                page,
-                pageSize,
-                total: result.data.features.length,
-                totalPages: 1
-            }
+            pagination: getPaginationResponse(result.data.features.length, { page, pageSize })
         };
     }
 });
