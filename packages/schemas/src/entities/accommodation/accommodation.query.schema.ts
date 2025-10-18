@@ -4,6 +4,7 @@ import {
     HttpQueryFields,
     HttpSortingSchema
 } from '../../api/http/base-http.schema.js';
+import { createAverageRatingField } from '../../common/helpers.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
 import { AccommodationTypeEnumSchema, PriceCurrencyEnumSchema } from '../../enums/index.js';
 import { createSearchMetadata } from '../../utils/openapi-metadata.factory.js';
@@ -253,12 +254,14 @@ export const AccommodationListItemSchema = AccommodationSchema.pick({
     price: true,
     location: true,
     media: true,
-    reviewsCount: true,
-    averageRating: true,
     isFeatured: true,
     ownerId: true,
     createdAt: true,
     updatedAt: true
+}).extend({
+    // Explicitly make review fields optional since they might not be present in list responses
+    reviewsCount: z.number().int().min(0).default(0).optional(),
+    averageRating: createAverageRatingField({ optional: true, default: 0 })
 });
 
 // Type: List Item
@@ -276,10 +279,12 @@ export const AccommodationSummarySchema = AccommodationSchema.pick({
     price: true,
     location: true,
     media: true,
-    reviewsCount: true,
-    averageRating: true,
     isFeatured: true,
     ownerId: true
+}).extend({
+    // Explicitly make review fields optional since they might not be present in summary responses
+    reviewsCount: z.number().int().min(0).default(0).optional(),
+    averageRating: createAverageRatingField({ optional: true, default: 0 })
 });
 // Type: Summary
 export type AccommodationSummary = z.infer<typeof AccommodationSummarySchema>;
@@ -289,7 +294,7 @@ export const AccommodationStatsSchema = z.object({
     total: z.number(),
     totalFeatured: z.number(),
     averagePrice: z.number().optional(),
-    averageRating: z.number().optional(),
+    averageRating: createAverageRatingField({ optional: true }),
     totalByType: z.record(z.string(), z.number())
 });
 export type AccommodationStats = z.infer<typeof AccommodationStatsSchema>;

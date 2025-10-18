@@ -116,10 +116,17 @@ export const DestinationListItemSchema = DestinationSchema.pick({
     location: true,
     media: true,
     accommodationsCount: true,
-    averageRating: true,
-    reviewsCount: true,
     createdAt: true,
     updatedAt: true
+}).extend({
+    // Explicitly make review fields optional since they might not be present in list responses
+    reviewsCount: z.number().int().min(0).default(0).optional(),
+    averageRating: z
+        .union([z.string(), z.number()]) // Accept both string and number from DB
+        .transform((val) => (typeof val === 'string' ? Number.parseFloat(val) : val)) // Convert string to number
+        .pipe(z.number().min(0).max(5))
+        .default(0)
+        .optional()
 });
 export type DestinationListItem = z.infer<typeof DestinationListItemSchema>;
 
@@ -172,9 +179,16 @@ export const DestinationSummarySchema = DestinationSchema.pick({
     media: true,
     location: true,
     isFeatured: true,
-    averageRating: true,
-    reviewsCount: true,
     accommodationsCount: true
+}).extend({
+    // Explicitly make review fields optional since they might not be present in summary responses
+    reviewsCount: z.number().int().min(0).default(0).optional(),
+    averageRating: z
+        .union([z.string(), z.number()]) // Accept both string and number from DB
+        .transform((val) => (typeof val === 'string' ? Number.parseFloat(val) : val)) // Convert string to number
+        .pipe(z.number().min(0).max(5))
+        .default(0)
+        .optional()
 });
 export type DestinationSummary = z.infer<typeof DestinationSummarySchema>;
 
@@ -184,7 +198,11 @@ export type DestinationSummary = z.infer<typeof DestinationSummarySchema>;
 export const DestinationStatsSchema = z.object({
     accommodationsCount: z.number().int().min(0).default(0),
     reviewsCount: z.number().int().min(0).default(0),
-    averageRating: z.number().min(0).max(5).default(0),
+    averageRating: z
+        .union([z.string(), z.number()]) // Accept both string and number from DB
+        .transform((val) => (typeof val === 'string' ? Number.parseFloat(val) : val)) // Convert string to number
+        .pipe(z.number().min(0).max(5))
+        .default(0),
     attractionsCount: z.number().int().min(0).default(0),
     eventsCount: z.number().int().min(0).default(0)
 });
@@ -250,12 +268,19 @@ export const DestinationSummaryExtendedSchema = DestinationSchema.pick({
     media: true,
     location: true,
     isFeatured: true,
-    averageRating: true,
-    reviewsCount: true,
     accommodationsCount: true,
     attractions: true,
     tags: true,
     climate: true
+}).extend({
+    // Explicitly make review fields optional since they might not be present in extended summary responses
+    reviewsCount: z.number().int().min(0).default(0).optional(),
+    averageRating: z
+        .union([z.string(), z.number()]) // Accept both string and number from DB
+        .transform((val) => (typeof val === 'string' ? Number.parseFloat(val) : val)) // Convert string to number
+        .pipe(z.number().min(0).max(5))
+        .default(0)
+        .optional()
 });
 
 // ============================================================================
