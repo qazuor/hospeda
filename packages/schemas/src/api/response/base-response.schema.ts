@@ -103,3 +103,30 @@ export const SuccessResponseSchema = z.object({
 });
 
 export type SuccessResponse = z.infer<typeof SuccessResponseSchema>;
+
+/**
+ * Factory for creating data response schemas with metadata
+ * Used for health checks, metrics, and other endpoints that return data with metadata
+ *
+ * @param dataSchema - Schema for the response data
+ * @returns Schema for responses with success, data, and metadata
+ */
+export const createDataResponseSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
+    z.object({
+        success: z.boolean(),
+        data: dataSchema,
+        metadata: ResponseMetadataSchema
+    });
+
+/**
+ * Factory for creating simple data response schemas
+ * Used for endpoints that return structured data without complex metadata
+ *
+ * @param dataSchema - Schema for the response data
+ * @returns Schema for responses with success and data
+ */
+export const createSimpleDataResponseSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
+    z.object({
+        success: z.boolean(),
+        data: dataSchema
+    });
