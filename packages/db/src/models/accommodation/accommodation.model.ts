@@ -24,8 +24,8 @@ export class AccommodationModel extends BaseModel<Accommodation> {
         const db = getDb();
 
         const whereClauses = [];
-        if (params.hostId) {
-            whereClauses.push(eq(this.table.ownerId, params.hostId));
+        if (params.ownerId) {
+            whereClauses.push(eq(this.table.ownerId, params.ownerId));
         }
         if (params.type) {
             whereClauses.push(eq(this.table.type, params.type));
@@ -53,8 +53,8 @@ export class AccommodationModel extends BaseModel<Accommodation> {
         const db = getDb();
 
         const whereClauses = [];
-        if (params.hostId) {
-            whereClauses.push(eq(this.table.ownerId, params.hostId));
+        if (params.ownerId) {
+            whereClauses.push(eq(this.table.ownerId, params.ownerId));
         }
         if (params.type) {
             whereClauses.push(eq(this.table.type, params.type));
@@ -115,8 +115,8 @@ export class AccommodationModel extends BaseModel<Accommodation> {
         const db = getDb();
 
         const whereClauses = [];
-        if (params.hostId) {
-            whereClauses.push(eq(this.table.ownerId, params.hostId));
+        if (params.ownerId) {
+            whereClauses.push(eq(this.table.ownerId, params.ownerId));
         }
         if (params.type) {
             whereClauses.push(eq(this.table.type, params.type));
