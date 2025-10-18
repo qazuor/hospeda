@@ -1,11 +1,12 @@
 import { AccommodationListItemSchema, AccommodationSearchHttpSchema } from '@repo/schemas';
 import { AccommodationService } from '@repo/service-core';
+import { getActorFromContext } from '../../utils/actor';
 /**
  * Accommodation list endpoint
  * Uses AccommodationService for real data retrieval with pagination
  */
-import { getActorFromContext } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
+import { extractPaginationParams, getPaginationResponse } from '../../utils/pagination';
 import { createListRoute } from '../../utils/route-factory';
 
 const accommodationService = new AccommodationService({ logger: apiLogger });
@@ -23,16 +24,11 @@ export const accommodationListRoute = createListRoute({
     requestQuery: AccommodationSearchHttpSchema.shape,
     responseSchema: AccommodationListItemSchema,
     handler: async (ctx, _params, _body, query) => {
-        // Get actor from context (can be guest)
         const actor = getActorFromContext(ctx);
 
-        // Ensure query is defined and has defaults
-        const queryParams = query || {};
-        const page = Number(queryParams.page) || 1;
-        const pageSize = Number(queryParams.pageSize) || 20;
+        const { page, pageSize } = extractPaginationParams(query || {});
 
-        // Call the real accommodation service with the full query params
-        const result = await accommodationService.list(actor, queryParams);
+        const result = await accommodationService.list(actor, query || {});
 
         if (result.error) {
             throw new Error(result.error.message);
@@ -40,12 +36,7 @@ export const accommodationListRoute = createListRoute({
 
         return {
             items: result.data?.items || [],
-            pagination: {
-                page,
-                pageSize,
-                total: result.data?.total || 0,
-                totalPages: Math.ceil((result.data?.total || 0) / pageSize)
-            }
+            pagination: getPaginationResponse(result.data?.total || 0, { page, pageSize })
         };
     },
     options: {

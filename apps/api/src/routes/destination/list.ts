@@ -1,7 +1,8 @@
-import { DestinationListItemSchema, HttpDestinationSearchSchema } from '@repo/schemas';
+import { DestinationListItemSchema, DestinationSearchSchema } from '@repo/schemas';
 import { DestinationService } from '@repo/service-core';
 import { getActorFromContext } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
+import { extractPaginationParams, getPaginationResponse } from '../../utils/pagination';
 import { createListRoute } from '../../utils/route-factory';
 
 const destinationService = new DestinationService({ logger: apiLogger });
@@ -12,18 +13,11 @@ export const destinationListRoute = createListRoute({
     summary: 'List destinations',
     description: 'Returns a paginated list of destinations using the DestinationService',
     tags: ['Destinations'],
-    requestQuery: HttpDestinationSearchSchema.shape, // ✅ Using @repo/schemas
+    requestQuery: DestinationSearchSchema.shape,
     responseSchema: DestinationListItemSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
-        const queryData = query as {
-            page?: number;
-            pageSize?: number;
-            search?: string;
-            q?: string;
-        };
-        const page = queryData.page ?? 1;
-        const pageSize = queryData.pageSize ?? 20;
+        const { page, pageSize } = extractPaginationParams(query as Record<string, unknown>);
 
         const result = await destinationService.list(actor, {
             page,
@@ -36,12 +30,7 @@ export const destinationListRoute = createListRoute({
 
         return {
             items: result.data?.items || [],
-            pagination: {
-                page,
-                pageSize,
-                total: result.data?.total || 0,
-                totalPages: Math.ceil((result.data?.total || 0) / pageSize)
-            }
+            pagination: getPaginationResponse(result.data?.total || 0, { page, pageSize })
         };
     },
     options: {

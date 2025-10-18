@@ -3,6 +3,7 @@ import { EventLocationService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
+import { extractPaginationParams, getPaginationResponse } from '../../utils/pagination';
 import { createListRoute } from '../../utils/route-factory';
 
 export const eventLocationListRoute = createListRoute({
@@ -15,9 +16,7 @@ export const eventLocationListRoute = createListRoute({
     responseSchema: EventLocationListItemSchema,
     handler: async (ctx: Context, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
-        const q = query as { page?: number; pageSize?: number };
-        const page = q.page ?? 1;
-        const pageSize = q.pageSize ?? 20;
+        const { page, pageSize } = extractPaginationParams(query as Record<string, unknown>);
 
         const service = new EventLocationService({ logger: apiLogger });
         const result = await service.list(actor, {
@@ -31,12 +30,7 @@ export const eventLocationListRoute = createListRoute({
 
         return {
             items: result.data?.items || [],
-            pagination: {
-                page,
-                pageSize,
-                total: result.data?.total || 0,
-                totalPages: Math.ceil((result.data?.total || 0) / pageSize)
-            }
+            pagination: getPaginationResponse(result.data?.total || 0, { page, pageSize })
         };
     }
 });
