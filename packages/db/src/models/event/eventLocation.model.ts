@@ -5,4 +5,8 @@ import { eventLocations } from '../../schemas/event/event_location.dbschema';
 export class EventLocationModel extends BaseModel<EventLocation> {
     protected table = eventLocations;
     protected entityName = 'eventLocations';
+
+    protected getTableName(): string {
+        return 'eventLocations';
+    }
 }
