@@ -54,8 +54,13 @@ describe('DestinationSchema', () => {
             const invalidData = {
                 ...createValidDestination(),
                 location: {
-                    // Invalid location structure
-                    invalidField: 'invalid'
+                    state: '', // Invalid: too short (min 2)
+                    country: 'A', // Invalid: too short (min 2)
+                    zipCode: '', // Invalid: too short (min 1)
+                    coordinates: {
+                        lat: 'invalid', // Invalid coordinate
+                        long: '2.3522'
+                    }
                 }
             };
 
@@ -139,11 +144,17 @@ describe('DestinationSchema', () => {
             it('should reject invalid location data', () => {
                 const validData = createValidDestination();
                 const invalidLocations = [
-                    {}, // Empty location
-                    { city: 'Paris' }, // Missing required fields
                     {
-                        city: 'Paris',
-                        country: 'France',
+                        state: 'A', // Invalid: too short (min 2)
+                        country: '', // Invalid: too short (min 2)
+                        zipCode: '' // Invalid: too short (min 1)
+                    },
+                    {
+                        state: 'A'.repeat(51), // Invalid: too long (max 50)
+                        country: 'B'.repeat(51), // Invalid: too long (max 50)
+                        zipCode: 'C'.repeat(21) // Invalid: too long (max 20)
+                    },
+                    {
                         coordinates: {
                             lat: 'invalid', // Invalid coordinate
                             long: '2.3522'
