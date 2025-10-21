@@ -138,6 +138,10 @@ describe('BaseService: update', () => {
             protected override normalizers = {
                 update: normalizer
             };
+
+            protected getDefaultListRelations() {
+                return undefined;
+            }
         }
         const normalizedService = createServiceTestInstance(ServiceWithNormalizer, localModelMock);
         const updateData = { name: 'Updated Name' };
