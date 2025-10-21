@@ -24,7 +24,7 @@ describe('PostService.list', () => {
 
     it('should return a list of posts if actor is authenticated', async () => {
         const posts = [createMockPost(), createMockPost()];
-        (modelMock.findAll as Mock).mockResolvedValue({
+        (modelMock.findAllWithRelations as Mock).mockResolvedValue({
             items: posts,
             page: 1,
             pageSize: 20,
@@ -54,18 +54,18 @@ describe('PostService.list', () => {
                 visibility: VisibilityEnum.PUBLIC
             })
         ];
-        (modelMock.findAll as Mock).mockResolvedValue({
+        (modelMock.findAllWithRelations as Mock).mockResolvedValue({
             items: mockPosts,
             total: 1
         });
         const result = await service.list(guestActor, { page: 1, pageSize: 20 });
         expectSuccess(result);
         expect(result.data?.items).toEqual(mockPosts);
-        expect(modelMock.findAll as Mock).toHaveBeenCalled();
+        expect(modelMock.findAllWithRelations as Mock).toHaveBeenCalled();
     });
 
     it('should return an empty list if there are no posts', async () => {
-        (modelMock.findAll as Mock).mockResolvedValue({
+        (modelMock.findAllWithRelations as Mock).mockResolvedValue({
             items: [],
             page: 1,
             pageSize: 20,
@@ -79,7 +79,7 @@ describe('PostService.list', () => {
     });
 
     it('should return INTERNAL_ERROR if model.findAll throws', async () => {
-        (modelMock.findAll as Mock).mockRejectedValue(new Error('DB error'));
+        (modelMock.findAllWithRelations as Mock).mockRejectedValue(new Error('DB error'));
         const result = await service.list(actor, { page: 1, pageSize: 20 });
         expectInternalError(result);
     });

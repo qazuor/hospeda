@@ -26,7 +26,7 @@ describe('UserBookmarkService.list', () => {
     });
 
     it('should list bookmarks for a user (success)', async () => {
-        asMock(modelMock.findAll).mockResolvedValue({ items: [bookmark], total: 1 });
+        asMock(modelMock.findAllWithRelations).mockResolvedValue({ items: [bookmark], total: 1 });
         const result = await service.list(actor, {});
         expectSuccess(result);
         expect(result.data?.items).toHaveLength(1);
@@ -34,7 +34,7 @@ describe('UserBookmarkService.list', () => {
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {
-        asMock(modelMock.findAll).mockRejectedValue(new Error('DB error'));
+        asMock(modelMock.findAllWithRelations).mockRejectedValue(new Error('DB error'));
         const result = await service.list(actor, {});
         expectInternalError(result);
     });
