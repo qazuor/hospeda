@@ -1,4 +1,3 @@
-import type { AdminInfoType } from '@repo/schemas';
 import type { ZodObject } from 'zod';
 import type { BaseModel, ServiceContext } from '../types';
 import { BaseCrudService } from './base.crud.service';
@@ -15,7 +14,7 @@ import { BaseCrudService } from './base.crud.service';
  * @template TSearchSchema The Zod schema for validating entity search input.
  */
 export abstract class BaseCrudRelatedService<
-    TEntity extends { id: string; adminInfo?: AdminInfoType; deletedAt?: Date | null },
+    TEntity extends { id: string; deletedAt?: Date | null },
     TModel extends BaseModel<TEntity>,
     TRelatedModel,
     TCreateSchema extends ZodObject,

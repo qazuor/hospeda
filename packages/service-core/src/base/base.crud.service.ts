@@ -41,7 +41,7 @@ type CrudNormalizers<TCreate, TUpdate, TSearch> = {
  * @template TSearchSchema The Zod schema for validating entity search input.
  */
 export abstract class BaseCrudService<
-    TEntity extends { id: string; adminInfo?: AdminInfoType; deletedAt?: Date | null },
+    TEntity extends { id: string; deletedAt?: Date | null },
     TModel extends BaseModel<TEntity>,
     TCreateSchema extends ZodObject,
     TUpdateSchema extends ZodObject,
@@ -1134,11 +1134,11 @@ export abstract class BaseCrudService<
      * Gets the admin info for an entity by ID.
      * Only users with update permission can access.
      * @param input - ServiceInput<{ id: string }>
-     * @returns ServiceOutput<{ adminInfo: AdminInfoType | undefined }>
+     * @returns ServiceOutput<{ adminInfo: unknown }>
      */
     public async getAdminInfo(
         input: ServiceInput<{ id: string }>
-    ): Promise<ServiceOutput<{ adminInfo: AdminInfoType | undefined }>> {
+    ): Promise<ServiceOutput<{ adminInfo: unknown }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getAdminInfo',
             input,
@@ -1152,7 +1152,7 @@ export abstract class BaseCrudService<
                     );
                 }
                 this._canUpdate(actor, entity);
-                return { adminInfo: entity.adminInfo };
+                return { adminInfo: (entity as Record<string, unknown>).adminInfo };
             }
         });
     }
@@ -1183,7 +1183,7 @@ export abstract class BaseCrudService<
                 if (!normalized) {
                     throw new ServiceError(ServiceErrorCode.VALIDATION_ERROR, 'Invalid adminInfo');
                 }
-                await this.model.update({ id }, { adminInfo: normalized } as Partial<TEntity>);
+                await this.model.update({ id }, { adminInfo: normalized } as unknown as Partial<TEntity>);
                 return { adminInfo: normalized };
             }
         });
