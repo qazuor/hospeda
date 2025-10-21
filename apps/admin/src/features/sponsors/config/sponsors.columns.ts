@@ -75,7 +75,7 @@ export const createSponsorsColumns = (): readonly ColumnConfig<Sponsor>[] =>
             enableSorting: false,
             columnType: ColumnType.LINK,
             linkHandler: (row) => {
-                const website = row.contact?.website;
+                const website = row.contactInfo?.website;
                 if (website) {
                     return { to: website };
                 }
