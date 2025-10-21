@@ -40,6 +40,10 @@ export class EventOrganizerService extends BaseCrudService<
     protected readonly createSchema = EventOrganizerCreateInputSchema;
     protected readonly updateSchema = EventOrganizerUpdateInputSchema;
     protected readonly searchSchema = EventOrganizerSearchInputSchema;
+
+    protected getDefaultListRelations() {
+        return undefined;
+    }
     protected readonly normalizers = {
         create: normalizeCreateInput as unknown as (
             data: EventOrganizerCreateInput,
