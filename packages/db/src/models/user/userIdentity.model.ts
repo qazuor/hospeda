@@ -5,4 +5,8 @@ import { userAuthIdentities } from '../../schemas/user/user_identity.dbschema';
 export class UserIdentityModel extends BaseModel<UserAuthIdentity> {
     protected table = userAuthIdentities;
     protected entityName = 'user_auth_identities';
+
+    protected getTableName(): string {
+        return 'user_auth_identities';
+    }
 }

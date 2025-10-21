@@ -10,6 +10,10 @@ export class UserModel extends BaseModel<User> {
     protected table = users;
     protected entityName = 'users';
 
+    protected getTableName(): string {
+        return 'users';
+    }
+
     /**
      * Override findAll to handle text search with 'q' parameter
      */

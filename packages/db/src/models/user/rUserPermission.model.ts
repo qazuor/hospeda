@@ -10,6 +10,10 @@ export class RUserPermissionModel extends BaseModel<UserPermissionAssignment> {
     protected table = userPermission;
     protected entityName = 'userPermission';
 
+    protected getTableName(): string {
+        return 'rUserPermissions';
+    }
+
     /**
      * Finds a RUserPermission with specified relations populated.
      * @param where - The filter object

@@ -10,6 +10,10 @@ export class REntityTagModel extends BaseModel<EntityTag> {
     protected table = rEntityTag;
     protected entityName = 'rEntityTag';
 
+    protected getTableName(): string {
+        return 'rEntityTags';
+    }
+
     /**
      * Finds a REntityTag with specified relations populated.
      * @param where - The filter object
