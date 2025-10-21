@@ -5,4 +5,8 @@ import { features } from '../../schemas/accommodation/feature.dbschema';
 export class FeatureModel extends BaseModel<Feature> {
     protected table = features;
     protected entityName = 'features';
+
+    protected getTableName(): string {
+        return 'features';
+    }
 }
