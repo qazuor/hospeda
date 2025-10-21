@@ -10,6 +10,10 @@ export class RRolePermissionModel extends BaseModel<RolePermissionAssignment> {
     protected table = rolePermission;
     protected entityName = 'rolePermission';
 
+    protected getTableName(): string {
+        return 'rRolePermissions';
+    }
+
     /**
      * Finds a RRolePermission with specified relations populated.
      * @param where - The filter object
