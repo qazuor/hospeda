@@ -33,19 +33,25 @@ export const BaseLocationSchema = z.object({
             message: 'zodError.common.location.state.required'
         })
         .min(2, { message: 'zodError.common.location.state.min' })
-        .max(50, { message: 'zodError.common.location.state.max' }),
+        .max(50, { message: 'zodError.common.location.state.max' })
+        .nullable()
+        .optional(),
     zipCode: z
         .string({
             message: 'zodError.common.location.zipCode.required'
         })
         .min(1, { message: 'zodError.common.location.zipCode.min' })
-        .max(20, { message: 'zodError.common.location.zipCode.max' }),
+        .max(20, { message: 'zodError.common.location.zipCode.max' })
+        .nullable()
+        .optional(),
     country: z
         .string({
             message: 'zodError.common.location.country.required'
         })
         .min(2, { message: 'zodError.common.location.country.min' })
-        .max(50, { message: 'zodError.common.location.country.max' }),
+        .max(50, { message: 'zodError.common.location.country.max' })
+        .nullable()
+        .optional(),
     coordinates: CoordinatesSchema.optional()
 });
 export type BaseLocationType = z.infer<typeof BaseLocationSchema>;
