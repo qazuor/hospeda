@@ -36,6 +36,10 @@ export class EventLocationService extends BaseCrudService<
     protected readonly createSchema = EventLocationCreateInputSchema;
     protected readonly updateSchema = EventLocationUpdateInputSchema;
     protected readonly searchSchema = EventLocationSearchInputSchema;
+
+    protected getDefaultListRelations() {
+        return undefined;
+    }
     protected normalizers = {
         create: normalizeCreateInput,
         update: normalizeUpdateInput

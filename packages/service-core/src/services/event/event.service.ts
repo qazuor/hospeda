@@ -63,6 +63,10 @@ export class EventService extends BaseCrudService<
     protected readonly updateSchema = EventUpdateInputSchema;
     protected readonly searchSchema = EventSearchInputSchema;
 
+    protected getDefaultListRelations() {
+        return { organizer: true, location: true };
+    }
+
     constructor(ctx: ServiceContext & { model?: EventModel }) {
         super(ctx, EventService.ENTITY_NAME);
         this.model = ctx.model ?? new EventModel();
