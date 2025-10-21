@@ -9,6 +9,10 @@ export class RDestinationAttractionModel extends BaseModel<DestinationAttraction
     protected table = rDestinationAttraction;
     protected entityName = 'rDestinationAttraction';
 
+    protected getTableName(): string {
+        return 'rDestinationAttractions';
+    }
+
     /**
      * Finds a RDestinationAttraction with specified relations populated.
      * @param where - The filter object

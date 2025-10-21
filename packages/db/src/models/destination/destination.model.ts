@@ -12,6 +12,10 @@ export class DestinationModel extends BaseModel<Destination> {
     protected table = destinations;
     protected entityName = 'destinations';
 
+    protected getTableName(): string {
+        return 'destinations';
+    }
+
     /**
      * Finds a destination with specified relations populated.
      * @param where - The filter object
