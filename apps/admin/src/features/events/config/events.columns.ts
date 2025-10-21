@@ -35,24 +35,6 @@ export const createEventsColumns = (): readonly ColumnConfig<Event>[] => [
         ]
     },
     {
-        id: 'destination',
-        header: 'Destination',
-        accessorKey: 'destinationName',
-        enableSorting: true,
-        columnType: ColumnType.ENTITY,
-        entityOptions: {
-            entityType: EntityType.DESTINATION,
-            color: BadgeColor.GREEN
-        },
-        linkHandler: (row) =>
-            row.destinationId && row.destinationId !== null
-                ? {
-                      to: '/destinations/$id',
-                      params: { id: row.destinationId }
-                  }
-                : undefined
-    },
-    {
         id: 'organizer',
         header: 'Organizer',
         accessorKey: 'organizerName',
