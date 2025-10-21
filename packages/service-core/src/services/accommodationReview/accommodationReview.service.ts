@@ -44,6 +44,14 @@ export class AccommodationReviewService extends BaseCrudService<
     protected readonly createSchema = AccommodationReviewCreateInputSchema;
     protected readonly updateSchema = AccommodationReviewUpdateInputSchema;
     protected readonly searchSchema = AccommodationReviewSearchParamsSchema;
+
+    protected getDefaultListRelations() {
+        return {
+            user: true,
+            accommodation: true
+        };
+    }
+
     protected normalizers = {
         create: normalizeCreateInput,
         update: normalizeUpdateInput

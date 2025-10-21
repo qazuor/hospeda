@@ -51,6 +51,11 @@ export class FeatureService extends BaseCrudRelatedService<
     public readonly createSchema = CreateFeatureSchema;
     public readonly updateSchema = UpdateFeatureSchema;
     public readonly searchSchema = SearchFeatureSchema;
+
+    protected getDefaultListRelations() {
+        return undefined;
+    }
+
     protected readonly accommodationModel: AccommodationModel;
 
     constructor(
