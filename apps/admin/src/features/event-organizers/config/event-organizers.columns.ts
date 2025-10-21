@@ -65,18 +65,18 @@ export const createEventOrganizersColumns = (): readonly ColumnConfig<EventOrgan
         {
             id: 'social',
             header: 'Social Networks',
-            accessorKey: 'social',
+            accessorKey: 'socialNetworks',
             enableSorting: false,
             columnType: ColumnType.WIDGET,
             widgetRenderer: (row) => {
-                const social = row.social;
+                const social = row.socialNetworks;
                 if (!social) return null;
 
                 const networks = [];
                 if (social.facebook) networks.push('Facebook');
                 if (social.twitter) networks.push('Twitter');
                 if (social.instagram) networks.push('Instagram');
-                if (social.linkedin) networks.push('LinkedIn');
+                if (social.linkedIn) networks.push('LinkedIn');
                 if (social.youtube) networks.push('YouTube');
 
                 return networks.length > 0 ? networks.join(', ') : 'None';

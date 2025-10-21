@@ -77,12 +77,12 @@ export const createEventLocationsColumns = (): readonly ColumnConfig<EventLocati
         {
             id: 'coordinates',
             header: 'Coordinates',
-            accessorKey: 'latitude',
+            accessorKey: 'coordinates',
             enableSorting: false,
             columnType: ColumnType.WIDGET,
             widgetRenderer: (row) => {
-                if (row.latitude != null && row.longitude != null) {
-                    return `${row.latitude.toFixed(6)}, ${row.longitude.toFixed(6)}`;
+                if (row.coordinates?.lat != null && row.coordinates?.long != null) {
+                    return `${Number.parseFloat(row.coordinates.lat).toFixed(6)}, ${Number.parseFloat(row.coordinates.long).toFixed(6)}`;
                 }
                 return 'Not available';
             },
