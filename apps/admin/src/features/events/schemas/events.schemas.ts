@@ -1,51 +1,35 @@
-import type { EventListItem } from '@repo/schemas';
-import {
-    EventListItemSchema as BaseEventListItemSchema,
-    EventCategoryEnum,
-    LifecycleStatusEnum,
-    ModerationStatusEnum,
-    PriceCurrencyEnum,
-    VisibilityEnum
-} from '@repo/schemas';
+/**
+ * Admin Event Schemas
+ *
+ * Base fields available from EventSchema:
+ * - Category: event.category
+ * - Location: event.locationId
+ * - Organizer: event.organizerId
+ * - Dates: event.date.start, event.date.end
+ * - Pricing: event.pricing?.price, event.pricing?.currency
+ * - Status: event.visibility, event.lifecycleState, event.moderationState, event.tags
+ *
+ * Admin Extensions:
+ * - organizerName, locationName: Display names for admin UI
+ * - capacity: Admin-specific capacity management
+ */
+
+import { EventListItemSchema as BaseEventListItemSchema } from '@repo/schemas';
 import { z } from 'zod';
 
 /**
- * Schema for event list items in admin
- * Extends the base EventListItemSchema with admin-specific fields
+ * Admin Event List Item Schema - Extends base with admin display fields
  */
 export const EventListItemSchema = BaseEventListItemSchema.extend({
-    // Admin-specific fields for list management
-    destinationId: z.string().nullable().optional(),
-    destinationName: z.string().optional(),
+    // Display names for admin list (fetched via joins/relations)
     organizerName: z.string().optional(),
     locationName: z.string().optional(),
-    eventType: z.nativeEnum(EventCategoryEnum).optional(),
-    startDate: z.string().optional(),
-    endDate: z.string().optional(),
-    capacity: z.number().optional(),
-    attendeesCount: z.number().optional(),
-    ticketPrice: z.number().optional(),
-    currency: z.nativeEnum(PriceCurrencyEnum).optional(),
-    visibility: z.nativeEnum(VisibilityEnum).optional(),
-    lifecycleState: z.nativeEnum(LifecycleStatusEnum).optional(),
-    moderationState: z.nativeEnum(ModerationStatusEnum).optional(),
-    tags: z.array(z.string()).optional()
+
+    // Admin-specific capacity override
+    capacity: z.number().optional()
 });
 
-export type Event = EventListItem & {
-    destinationId?: string | null;
-    destinationName?: string;
-    organizerName?: string;
-    locationName?: string;
-    eventType?: EventCategoryEnum;
-    startDate?: string;
-    endDate?: string;
-    capacity?: number;
-    attendeesCount?: number;
-    ticketPrice?: number;
-    currency?: PriceCurrencyEnum;
-    visibility?: VisibilityEnum;
-    lifecycleState?: LifecycleStatusEnum;
-    moderationState?: ModerationStatusEnum;
-    tags?: string[];
-};
+/**
+ * Type for event list items with admin extensions
+ */
+export type Event = z.infer<typeof EventListItemSchema>;
