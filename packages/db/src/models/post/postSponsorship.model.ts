@@ -9,6 +9,10 @@ export class PostSponsorshipModel extends BaseModel<PostSponsorship> {
     protected table = postSponsorships;
     protected entityName = 'postSponsorships';
 
+    protected getTableName(): string {
+        return 'postSponsorships';
+    }
+
     /**
      * Finds a PostSponsorship with specified relations populated.
      * @param where - The filter object

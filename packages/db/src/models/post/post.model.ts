@@ -9,6 +9,10 @@ export class PostModel extends BaseModel<Post> {
     protected table = posts;
     protected entityName = 'posts';
 
+    protected getTableName(): string {
+        return 'posts';
+    }
+
     /**
      * Finds a post with specified relations populated.
      * @param where - The filter object
