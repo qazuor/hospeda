@@ -5,4 +5,8 @@ import { accommodationIaData } from '../../schemas/accommodation/accommodation_i
 export class AccommodationIaDataModel extends BaseModel<AccommodationIaData> {
     protected table = accommodationIaData;
     protected entityName = 'accommodationIaData';
+
+    protected getTableName(): string {
+        return 'accommodationIaData';
+    }
 }
