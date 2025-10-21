@@ -30,6 +30,10 @@ const SearchTestEntitySchemaWithFilters = z.object({
 
 class SearchTestService extends TestService {
     public override searchSchema = SearchTestEntitySchemaWithFilters;
+
+    protected getDefaultListRelations() {
+        return undefined;
+    }
 }
 
 /**

@@ -151,6 +151,10 @@ describe('BaseService: list', () => {
             protected override normalizers = {
                 list: normalizer
             };
+
+            protected getDefaultListRelations() {
+                return undefined;
+            }
         }
         const normalizedService = createServiceTestInstance(ServiceWithNormalizer, localModelMock);
         const options = { page: 1, pageSize: 10 };
