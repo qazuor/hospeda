@@ -1,4 +1,4 @@
-import { DestinationListItemSchema, DestinationSearchSchema } from '@repo/schemas';
+import { DestinationListItemSchema, DestinationSearchHttpSchema } from '@repo/schemas';
 import { DestinationService } from '@repo/service-core';
 import { getActorFromContext } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
@@ -13,7 +13,7 @@ export const destinationListRoute = createListRoute({
     summary: 'List destinations',
     description: 'Returns a paginated list of destinations using the DestinationService',
     tags: ['Destinations'],
-    requestQuery: DestinationSearchSchema.shape,
+    requestQuery: DestinationSearchHttpSchema.shape,
     responseSchema: DestinationListItemSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
