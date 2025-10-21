@@ -34,6 +34,11 @@ export class PostSponsorService extends BaseCrudService<
     public readonly createSchema = PostSponsorCreateInputSchema;
     public readonly updateSchema = PostSponsorUpdateInputSchema;
     public readonly searchSchema = PostSponsorSearchInputSchema;
+
+    protected getDefaultListRelations() {
+        return undefined;
+    }
+
     public readonly normalizers = {
         create: normalizeCreateInput,
         update: normalizeUpdateInput
