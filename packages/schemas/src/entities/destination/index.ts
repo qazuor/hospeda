@@ -7,6 +7,9 @@ export * from './destination.crud.schema.js'; // Create, Update, Delete, Restore
 // Query operations
 export * from './destination.query.schema.js'; // List, Search, Summary, Stats, Filters schemas
 
+// HTTP operations
+export * from './destination.http.schema.js'; // HTTP-compatible schemas with query coercion
+
 // Batch operations
 export * from './destination.batch.schema.js'; // Batch retrieval schemas
 
