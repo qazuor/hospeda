@@ -22,7 +22,9 @@ export type StandardModelMock = {
     hardDelete: Mock;
     count: Mock;
     findAll: Mock;
+    findAllWithRelations: Mock;
     findWithRelations: Mock;
+    getTableName: Mock;
     table: string;
     entityName: string;
     getClient: () => unknown;
@@ -51,7 +53,9 @@ export function createModelMock(methods: string[] = []): StandardModelMock {
         hardDelete: vi.fn(),
         count: vi.fn(),
         findAll: vi.fn(),
+        findAllWithRelations: vi.fn(),
         findWithRelations: vi.fn(),
+        getTableName: vi.fn().mockReturnValue('mock_table'),
         table: 'mock_table',
         entityName: 'mock_entity',
         getClient: () => ({}),
@@ -136,6 +140,11 @@ export function createTypedModelMock<M extends new (...args: unknown[]) => unkno
 export class MockBaseModel<T> extends BaseModel<T> {
     protected table = {} as any;
     protected entityName = 'mock_entity';
+
+    protected getTableName(): string {
+        return 'mockTable';
+    }
+
     findById = vi.fn();
     findOne = vi.fn();
     create = vi.fn();
@@ -145,6 +154,7 @@ export class MockBaseModel<T> extends BaseModel<T> {
     hardDelete = vi.fn();
     count = vi.fn();
     findAll = vi.fn();
+    findAllWithRelations = vi.fn();
     findWithRelations = vi.fn();
     raw = vi.fn();
     protected override getClient = vi.fn();
