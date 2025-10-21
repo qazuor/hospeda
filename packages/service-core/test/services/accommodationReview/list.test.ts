@@ -61,7 +61,7 @@ describe('list', () => {
             updatedById: getMockId('user', 'user-1') as UserIdType,
             adminInfo: undefined
         };
-        (reviewModel.findAll as Mock).mockResolvedValue({ items: [review], total: 1 });
+        (reviewModel.findAllWithRelations as Mock).mockResolvedValue({ items: [review], total: 1 });
 
         // Act
         const result = await service.list(actor, { page: 1, pageSize: 10 });
@@ -99,7 +99,7 @@ describe('list', () => {
             adminInfo: undefined
         };
         const mockReviews = [mockReview];
-        (reviewModel.findAll as Mock).mockResolvedValue({
+        (reviewModel.findAllWithRelations as Mock).mockResolvedValue({
             items: mockReviews,
             total: 1
         });
@@ -108,6 +108,10 @@ describe('list', () => {
         // Assert
         expectSuccess(result);
         expect(result.data?.items).toEqual(mockReviews);
-        expect(reviewModel.findAll as Mock).toHaveBeenCalled();
+        expect(reviewModel.findAllWithRelations as Mock).toHaveBeenCalledWith(
+            { user: true, accommodation: true },
+            {},
+            { page: 1, pageSize: 10 }
+        );
     });
 });
