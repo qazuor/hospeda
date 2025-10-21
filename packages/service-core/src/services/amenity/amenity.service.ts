@@ -62,6 +62,11 @@ export class AmenityService extends BaseCrudRelatedService<
     protected readonly createSchema = AmenityCreateInputSchema;
     protected readonly updateSchema = AmenityUpdateInputSchema;
     protected readonly searchSchema = AmenitySearchInputSchema;
+
+    protected getDefaultListRelations() {
+        return undefined;
+    }
+
     protected readonly accommodationModel: AccommodationModel;
 
     constructor(

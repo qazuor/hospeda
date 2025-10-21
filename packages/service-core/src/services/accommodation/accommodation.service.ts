@@ -108,6 +108,16 @@ export class AccommodationService extends BaseCrudService<
     /**
      * @inheritdoc
      */
+    protected getDefaultListRelations() {
+        return {
+            destination: true,
+            owner: true
+        };
+    }
+
+    /**
+     * @inheritdoc
+     */
     protected normalizers = {
         create: normalizeCreateInput,
         update: normalizeUpdateInput,
