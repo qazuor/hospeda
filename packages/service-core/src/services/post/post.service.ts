@@ -70,6 +70,10 @@ export class PostService extends BaseCrudService<
     public readonly filterSchema = PostFilterInputSchema;
     public readonly searchSchema = PostFilterInputSchema;
 
+    protected getDefaultListRelations() {
+        return { author: true };
+    }
+
     /**
      * Private property to temporarily store the id for update operations.
      */
