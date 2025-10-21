@@ -32,7 +32,7 @@ describe('EventService.list', () => {
     });
 
     it('should return paginated events (success)', async () => {
-        (modelMock.findAll as Mock).mockResolvedValue(paginatedResult);
+        (modelMock.findAllWithRelations as Mock).mockResolvedValue(paginatedResult);
         const result = await service.list(actorWithPerm, { page, pageSize });
         expectSuccess(result);
         expect(result.data).toMatchObject(paginatedResult);
@@ -40,27 +40,32 @@ describe('EventService.list', () => {
 
     it('should return success even if actor has no specific permissions', async () => {
         const emptyResult = { items: [], page, pageSize, total: 0 };
-        (modelMock.findAll as Mock).mockResolvedValue(emptyResult);
+        (modelMock.findAllWithRelations as Mock).mockResolvedValue(emptyResult);
         const result = await service.list(actorNoPerm, { page, pageSize });
         expectSuccess(result);
         expect(result.data).toMatchObject(emptyResult);
     });
 
     it('should return empty result if no events found', async () => {
-        (modelMock.findAll as Mock).mockResolvedValue({ items: [], page, pageSize, total: 0 });
+        (modelMock.findAllWithRelations as Mock).mockResolvedValue({
+            items: [],
+            page,
+            pageSize,
+            total: 0
+        });
         const result = await service.list(actorWithPerm, { page, pageSize });
         expectSuccess(result);
         expect(result.data?.items).toHaveLength(0);
     });
 
     it('should return INTERNAL_ERROR if model.findAll throws', async () => {
-        (modelMock.findAll as Mock).mockRejectedValue(new Error('DB error'));
+        (modelMock.findAllWithRelations as Mock).mockRejectedValue(new Error('DB error'));
         const result = await service.list(actorWithPerm, { page, pageSize });
         expectInternalError(result);
     });
 
     it('should return INTERNAL_ERROR if _afterList throws', async () => {
-        (modelMock.findAll as Mock).mockResolvedValue(paginatedResult);
+        (modelMock.findAllWithRelations as Mock).mockResolvedValue(paginatedResult);
         vi.spyOn(service as unknown as { _afterList: () => void }, '_afterList').mockRejectedValue(
             new Error('hook error')
         );

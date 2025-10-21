@@ -55,7 +55,7 @@ describe('AccommodationService.list', () => {
     });
 
     it('should return a paginated list of accommodations', async () => {
-        asMock(model.findAll).mockResolvedValue(paginated(entities, 1, 2));
+        asMock(model.findAllWithRelations).mockResolvedValue(paginated(entities, 1, 2));
         const result = await service.list(actor, { page: 1, pageSize: 2 });
         expect(result.data).toBeDefined();
         expect(result.data?.items?.length).toBe(2);
@@ -66,7 +66,11 @@ describe('AccommodationService.list', () => {
         const firstEntity = entities[0] as NonNullable<(typeof entities)[0]>;
         expect(firstItem.id).toBe(firstEntity.id);
         expect(result.error).toBeUndefined();
-        expect(model.findAll).toHaveBeenCalledWith({}, { page: 1, pageSize: 2 });
+        expect(model.findAllWithRelations).toHaveBeenCalledWith(
+            { destination: true, owner: true },
+            {},
+            { page: 1, pageSize: 2 }
+        );
     });
 
     it('should return FORBIDDEN if actor lacks permission', async () => {
@@ -80,14 +84,14 @@ describe('AccommodationService.list', () => {
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {
-        asMock(model.findAll).mockRejectedValue(new Error('DB error'));
+        asMock(model.findAllWithRelations).mockRejectedValue(new Error('DB error'));
         const result = await service.list(actor, { page: 1, pageSize: 2 });
         expect(result.data).toBeUndefined();
         expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
     });
 
     it('should handle errors from the _beforeList hook', async () => {
-        asMock(model.findAll).mockResolvedValue(paginated(entities));
+        asMock(model.findAllWithRelations).mockResolvedValue(paginated(entities));
         vi.spyOn(
             service as unknown as { _beforeList: () => void },
             '_beforeList'
@@ -98,7 +102,7 @@ describe('AccommodationService.list', () => {
     });
 
     it('should handle errors from the _afterList hook', async () => {
-        asMock(model.findAll).mockResolvedValue(paginated(entities));
+        asMock(model.findAllWithRelations).mockResolvedValue(paginated(entities));
         vi.spyOn(service as unknown as { _afterList: () => void }, '_afterList').mockRejectedValue(
             new Error('afterList error')
         );
@@ -119,9 +123,13 @@ describe('AccommodationService.list', () => {
             { logger: mockLogger },
             model as unknown as AccommodationModel
         );
-        asMock(model.findAll).mockResolvedValue(paginated(entities, 99, 10));
+        asMock(model.findAllWithRelations).mockResolvedValue(paginated(entities, 99, 10));
         await serviceWithNorm.list(actor, { page: 1, pageSize: 10 });
         expect(normalizer).toHaveBeenCalledWith({ page: 1, pageSize: 10 }, actor);
-        expect(model.findAll).toHaveBeenCalledWith({}, { page: 99, pageSize: 10 });
+        expect(model.findAllWithRelations).toHaveBeenCalledWith(
+            { destination: true, owner: true },
+            {},
+            { page: 99, pageSize: 10 }
+        );
     });
 });
