@@ -19,6 +19,10 @@ class DummyModel extends BaseModel<DummyType> {
         { count?: () => { as: () => string } } | object
     >;
     protected entityName = 'dummy';
+
+    protected getTableName(): string {
+        throw new Error('getTableName not implemented in base test model');
+    }
 }
 
 class NoIdModel extends BaseModel<{ foo: string }> {
@@ -27,6 +31,10 @@ class NoIdModel extends BaseModel<{ foo: string }> {
         foo: { count: () => ({ as: () => 'COUNT_COL' }) }
     } as unknown as Record<string, { count: () => { as: () => string } }>;
     protected entityName = 'noid';
+
+    protected getTableName(): string {
+        throw new Error('getTableName not implemented in test model');
+    }
 }
 
 vi.mock('../../src/client', () => ({
@@ -329,4 +337,265 @@ describe('BaseModel', () => {
     //     expect(result.total).toBe(10);
     //     expect(result.items.length).toBe(5);
     // });
+
+    describe('findAllWithRelations', () => {
+        // Add getTableName method to our dummy model for testing
+        class DummyModelWithTableName extends DummyModel {
+            protected getTableName(): string {
+                return 'dummies';
+            }
+        }
+
+        let modelWithTableName: DummyModelWithTableName;
+
+        beforeEach(() => {
+            modelWithTableName = new DummyModelWithTableName();
+        });
+
+        it('should fall back to findAll when no relations requested', async () => {
+            getDb.mockReturnValue({
+                select: () => ({ from: () => ({ where: () => [{ id: '1', name: 'test' }] }) })
+            });
+
+            const result = await modelWithTableName.findAllWithRelations({});
+
+            expect(result).toEqual({ items: [{ id: '1', name: 'test' }], total: 1 });
+            expect(logQuery).toHaveBeenCalledWith(
+                'dummy',
+                'findAllWithRelations',
+                { where: {}, options: {}, relations: {} },
+                'Falling back to findAll - no relations requested'
+            );
+        });
+
+        it('should fall back to findAll when relations has no true values', async () => {
+            getDb.mockReturnValue({
+                select: () => ({ from: () => ({ where: () => [{ id: '1' }] }) })
+            });
+
+            const result = await modelWithTableName.findAllWithRelations({
+                destination: false,
+                owner: false
+            });
+
+            expect(result).toEqual({ items: [{ id: '1' }], total: 1 });
+            expect(logQuery).toHaveBeenCalledWith(
+                'dummy',
+                'findAllWithRelations',
+                { where: {}, options: {}, relations: { destination: false, owner: false } },
+                'Falling back to findAll - no relations requested'
+            );
+        });
+
+        it('should use query.tableName.findMany with relations when relations requested', async () => {
+            const mockFindMany = vi
+                .fn()
+                .mockResolvedValue([
+                    { id: '1', name: 'test', destination: { id: 'd1', name: 'dest1' } }
+                ]);
+            vi.spyOn(modelWithTableName, 'count').mockResolvedValue(1);
+
+            getDb.mockReturnValue({
+                query: {
+                    dummies: {
+                        findMany: mockFindMany
+                    }
+                }
+            });
+
+            const result = await modelWithTableName.findAllWithRelations({
+                destination: true
+            });
+
+            // Since no pagination options provided, it uses default values and includes limit/offset
+            expect(mockFindMany).toHaveBeenCalledWith({
+                where: undefined, // buildWhereClause returns undefined for empty object
+                with: { destination: true },
+                limit: 20, // default pageSize
+                offset: 0 // default offset for page 1
+            });
+            expect(result).toEqual({
+                items: [{ id: '1', name: 'test', destination: { id: 'd1', name: 'dest1' } }],
+                total: 1
+            });
+        });
+
+        it('should handle pagination with relations', async () => {
+            const mockFindMany = vi.fn().mockResolvedValue([
+                { id: '1', destination: { id: 'd1' } },
+                { id: '2', destination: { id: 'd2' } }
+            ]);
+            vi.spyOn(modelWithTableName, 'count').mockResolvedValue(10);
+
+            getDb.mockReturnValue({
+                query: {
+                    dummies: {
+                        findMany: mockFindMany
+                    }
+                }
+            });
+
+            const result = await modelWithTableName.findAllWithRelations(
+                { destination: true },
+                {},
+                { page: 2, pageSize: 2 }
+            );
+
+            expect(mockFindMany).toHaveBeenCalledWith({
+                where: undefined, // buildWhereClause returns undefined for empty object
+                with: { destination: true },
+                limit: 2,
+                offset: 2
+            });
+            expect(result.total).toBe(10);
+            expect(result.items).toHaveLength(2);
+        });
+
+        it('should throw error when tableName is not defined', async () => {
+            // Reset mocks for this specific test
+            logError.mockClear();
+            logError.mockImplementation(() => {}); // Don't throw error in logger
+
+            // Use original DummyModel without getTableName implementation
+            const modelWithoutTableName = new DummyModel();
+
+            await expect(
+                modelWithoutTableName.findAllWithRelations({ destination: true })
+            ).rejects.toThrow(Error);
+
+            expect(logError).toHaveBeenCalledWith(
+                'dummy',
+                'findAllWithRelations',
+                { where: {}, options: {}, relations: { destination: true } },
+                expect.any(Error)
+            );
+        });
+
+        it('should throw error when query table is invalid', async () => {
+            // Reset mocks for this specific test
+            logError.mockClear();
+            logError.mockImplementation(() => {}); // Don't throw error in logger
+
+            getDb.mockReturnValue({
+                query: {
+                    dummies: null // Invalid table
+                }
+            });
+
+            await expect(
+                modelWithTableName.findAllWithRelations({ destination: true })
+            ).rejects.toThrow(Error);
+        });
+
+        it('should throw error when findMany method is missing', async () => {
+            // Reset mocks for this specific test
+            logError.mockClear();
+            logError.mockImplementation(() => {}); // Don't throw error in logger
+
+            getDb.mockReturnValue({
+                query: {
+                    dummies: {} // Missing findMany method
+                }
+            });
+
+            await expect(
+                modelWithTableName.findAllWithRelations({ destination: true })
+            ).rejects.toThrow(Error);
+        });
+
+        it('should handle database errors gracefully', async () => {
+            // Reset mocks for this specific test
+            logError.mockClear();
+            logError.mockImplementation(() => {}); // Don't throw error in logger
+
+            const mockFindMany = vi.fn().mockRejectedValue(new Error('Database connection failed'));
+
+            getDb.mockReturnValue({
+                query: {
+                    dummies: {
+                        findMany: mockFindMany
+                    }
+                }
+            });
+
+            await expect(
+                modelWithTableName.findAllWithRelations({ destination: true })
+            ).rejects.toThrow(Error);
+
+            expect(logError).toHaveBeenCalledWith(
+                'dummy',
+                'findAllWithRelations',
+                { where: {}, options: {}, relations: { destination: true } },
+                expect.any(Error)
+            );
+        });
+
+        it('should validate relations parameter', async () => {
+            // Reset mocks for this specific test
+            logError.mockClear();
+            logError.mockImplementation(() => {}); // Don't throw error in logger
+
+            await expect(modelWithTableName.findAllWithRelations(null as any)).rejects.toThrow(
+                Error
+            );
+
+            await expect(modelWithTableName.findAllWithRelations('invalid' as any)).rejects.toThrow(
+                Error
+            );
+        });
+
+        it('should handle empty results from database', async () => {
+            const mockFindMany = vi.fn().mockResolvedValue([]);
+            vi.spyOn(modelWithTableName, 'count').mockResolvedValue(0);
+
+            getDb.mockReturnValue({
+                query: {
+                    dummies: {
+                        findMany: mockFindMany
+                    }
+                }
+            });
+
+            const result = await modelWithTableName.findAllWithRelations({
+                destination: true
+            });
+
+            expect(result).toEqual({ items: [], total: 0 });
+        });
+
+        it('should log query execution with correct parameters', async () => {
+            const mockFindMany = vi.fn().mockResolvedValue([{ id: '1' }]);
+            vi.spyOn(modelWithTableName, 'count').mockResolvedValue(1);
+
+            getDb.mockReturnValue({
+                query: {
+                    dummies: {
+                        findMany: mockFindMany
+                    }
+                }
+            });
+
+            await modelWithTableName.findAllWithRelations(
+                { destination: true, owner: true },
+                { name: 'test' },
+                { page: 1, pageSize: 5 }
+            );
+
+            expect(logQuery).toHaveBeenCalledWith(
+                'dummy',
+                'findAllWithRelations',
+                {
+                    where: { name: 'test' },
+                    options: { page: 1, pageSize: 5 },
+                    relations: { destination: true, owner: true }
+                },
+                {
+                    itemCount: 1,
+                    total: 1,
+                    hasRelations: true,
+                    isPaginated: true // Should be true when page/pageSize are specified
+                }
+            );
+        });
+    });
 });
