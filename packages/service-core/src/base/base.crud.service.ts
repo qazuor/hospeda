@@ -1,4 +1,4 @@
-import type { AdminInfoType } from '@repo/schemas';
+import type { AdminInfoType, ListRelationsConfig } from '@repo/schemas';
 import { ServiceErrorCode, VisibilityEnum } from '@repo/schemas';
 import type { ZodObject } from 'zod';
 import { z } from 'zod';
@@ -14,7 +14,7 @@ import {
 import { normalizeAdminInfo, validateEntity } from '../utils';
 import { BaseService } from './base.service';
 
-type ListOptions = { page?: number; pageSize?: number };
+type ListOptions = { page?: number; pageSize?: number; relations?: ListRelationsConfig };
 
 type CrudNormalizers<TCreate, TUpdate, TSearch> = {
     create?: (data: TCreate, actor: Actor) => TCreate | Promise<TCreate>;
@@ -72,6 +72,14 @@ export abstract class BaseCrudService<
      * Must be defined by the concrete service class.
      */
     protected abstract readonly searchSchema: TSearchSchema;
+
+    /**
+     * Default relations configuration for list operations.
+     * Concrete services can override this to specify which relations should be included by default
+     * when listing entities. Return undefined to use no relations.
+     * @returns Relations configuration object or undefined for no relations
+     */
+    protected abstract getDefaultListRelations(): ListRelationsConfig;
 
     protected declare normalizers?: CrudNormalizers<
         z.infer<TCreateSchema>,
@@ -281,14 +289,14 @@ export abstract class BaseCrudService<
 
     /**
      * Lifecycle hook executed after normalization but before listing entities.
-     * @param options The pagination options for the query.
+     * @param options The pagination and relations options for the query.
      * @param _actor The user or system performing the action.
-     * @returns The processed pagination options.
+     * @returns The processed options.
      */
     protected async _beforeList(
-        options: { page?: number; pageSize?: number },
+        options: { page?: number; pageSize?: number; relations?: ListRelationsConfig },
         _actor: Actor
-    ): Promise<{ page?: number; pageSize?: number }> {
+    ): Promise<{ page?: number; pageSize?: number; relations?: ListRelationsConfig }> {
         return options;
     }
 
@@ -730,17 +738,21 @@ export abstract class BaseCrudService<
      * Fetches a paginated list of all entities.
      * The lifecycle includes permission checks (`_canList`), normalization, and lifecycle hooks.
      * @param actor The user or system performing the action.
-     * @param options Pagination options (`{ page, pageSize }`).
+     * @param options Pagination and relations options (`{ page, pageSize, relations }`).
      * @returns A `ServiceOutput` object containing the paginated list or a `ServiceError`.
      */
     public async list(
         actor: Actor,
-        options: { page?: number; pageSize?: number } = {}
+        options: { page?: number; pageSize?: number; relations?: ListRelationsConfig } = {}
     ): Promise<ServiceOutput<PaginatedListOutput<TEntity>>> {
         return this.runWithLoggingAndValidation({
             methodName: 'list',
             input: { actor, ...options },
-            schema: z.object({ page: z.number().optional(), pageSize: z.number().optional() }),
+            schema: z.object({
+                page: z.number().optional(),
+                pageSize: z.number().optional(),
+                relations: z.record(z.string(), z.boolean()).optional()
+            }),
             execute: async (validatedOptions, validatedActor) => {
                 await this._canList(validatedActor);
 
@@ -749,7 +761,21 @@ export abstract class BaseCrudService<
                     validatedOptions;
                 const processedOptions = await this._beforeList(normalized, validatedActor);
 
-                const result = await this.model.findAll({}, processedOptions);
+                // Determine which relations to use: provided relations or service defaults
+                const relationsToUse = processedOptions.relations ?? this.getDefaultListRelations();
+
+                // Use findAllWithRelations if relations are specified, otherwise use regular findAll
+                const result = relationsToUse
+                    ? await this.model.findAllWithRelations(
+                          relationsToUse,
+                          {},
+                          {
+                              page: processedOptions.page,
+                              pageSize: processedOptions.pageSize
+                          }
+                      )
+                    : await this.model.findAll({}, processedOptions);
+
                 return this._afterList(result, validatedActor);
             }
         });
@@ -1183,7 +1209,9 @@ export abstract class BaseCrudService<
                 if (!normalized) {
                     throw new ServiceError(ServiceErrorCode.VALIDATION_ERROR, 'Invalid adminInfo');
                 }
-                await this.model.update({ id }, { adminInfo: normalized } as unknown as Partial<TEntity>);
+                await this.model.update({ id }, {
+                    adminInfo: normalized
+                } as unknown as Partial<TEntity>);
                 return { adminInfo: normalized };
             }
         });
