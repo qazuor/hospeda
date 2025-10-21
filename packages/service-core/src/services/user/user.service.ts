@@ -70,6 +70,10 @@ export class UserService extends BaseCrudService<
     protected readonly updateSchema = UserUpdateInputSchema;
     protected readonly searchSchema = UserSearchSchema;
 
+    protected getDefaultListRelations() {
+        return undefined;
+    }
+
     constructor(ctx: ServiceContext, model?: UserModel) {
         super(ctx, UserService.ENTITY_NAME);
         this.logger = ctx.logger ?? serviceLogger;

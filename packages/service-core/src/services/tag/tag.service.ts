@@ -75,6 +75,10 @@ export class TagService extends BaseCrudRelatedService<
      */
     protected readonly searchSchema = TagSearchInputSchema;
 
+    protected getDefaultListRelations() {
+        return undefined;
+    }
+
     protected normalizers = {
         create: normalizeCreateInput,
         update: normalizeUpdateInput
