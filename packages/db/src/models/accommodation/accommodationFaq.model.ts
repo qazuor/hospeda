@@ -5,4 +5,8 @@ import { accommodationFaqs } from '../../schemas/accommodation/accommodation_faq
 export class AccommodationFaqModel extends BaseModel<AccommodationFaq> {
     protected table = accommodationFaqs;
     protected entityName = 'accommodationFaqs';
+
+    protected getTableName(): string {
+        return 'accommodationFaqs';
+    }
 }

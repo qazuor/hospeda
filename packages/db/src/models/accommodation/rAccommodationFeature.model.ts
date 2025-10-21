@@ -9,6 +9,10 @@ export class RAccommodationFeatureModel extends BaseModel<AccommodationFeature> 
     protected table = rAccommodationFeature;
     protected entityName = 'rAccommodationFeature';
 
+    protected getTableName(): string {
+        return 'rAccommodationFeatures';
+    }
+
     /**
      * Finds a RAccommodationFeature with specified relations populated.
      * @param where - The filter object

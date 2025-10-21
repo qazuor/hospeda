@@ -23,6 +23,10 @@ export class AccommodationReviewModel extends BaseModel<AccommodationReview> {
     protected table = accommodationReviews;
     protected entityName = 'accommodationReviews';
 
+    protected getTableName(): string {
+        return 'accommodationReviews';
+    }
+
     /**
      * Finds accommodation reviews with user information included.
      * @param where - The filter object to apply

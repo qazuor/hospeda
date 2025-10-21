@@ -20,6 +20,10 @@ export class AccommodationModel extends BaseModel<Accommodation> {
     protected table = accommodations;
     protected entityName = 'accommodations';
 
+    protected getTableName(): string {
+        return 'accommodations';
+    }
+
     public async countByFilters(params: AccommodationSearchInput): Promise<{ count: number }> {
         const db = getDb();
 

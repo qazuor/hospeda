@@ -19,6 +19,10 @@ export class AccommodationModel extends BaseModel<Accommodation> {
      */
     protected entityName = 'accommodations';
 
+    protected getTableName(): string {
+        return 'accommodations';
+    }
+
     /**
      * Finds an accommodation with specified relations populated.
      * @param where - The filter object
