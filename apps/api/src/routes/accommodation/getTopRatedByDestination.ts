@@ -1,7 +1,6 @@
 /**
- * GET /api/v1/public/accommodations/top-rated
- * Get top-rated accommodations by destination
- * ✅ Migrated to use createSimpleRoute (Route Factory)
+ * GET /api/v1/public/accommodations/top-rated-by-destination
+ * Get top-rated accommodations grouped by destination
  */
 
 import { AccommodationTopRatedOutputSchema } from '@repo/schemas';

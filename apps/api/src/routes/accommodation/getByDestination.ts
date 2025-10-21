@@ -1,7 +1,6 @@
 /**
- * GET /api/v1/public/accommodations/destination/:destinationId
- * Get accommodations by destination
- * ✅ Migrated to use createSimpleRoute (Route Factory)
+ * GET /api/v1/public/accommodations/by-destination
+ * Get accommodations filtered by destination
  */
 
 import { AccommodationListWrapperSchema } from '@repo/schemas';

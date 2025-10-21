@@ -1,7 +1,6 @@
 /**
  * GET /api/v1/public/accommodations/:id/faqs
  * Get all FAQs for an accommodation
- * ✅ Migrated to use createSimpleRoute (Route Factory)
  */
 
 import { AccommodationFaqListOutputSchema } from '@repo/schemas';

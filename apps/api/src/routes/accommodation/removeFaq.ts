@@ -1,7 +1,6 @@
 /**
  * DELETE /api/v1/public/accommodations/:id/faqs/:faqId
- * Remove an FAQ from an accommodation
- * ✅ Migrated to use createCRUDRoute (Route Factory)
+ * Remove an existing FAQ from an accommodation
  */
 
 import { AccommodationFaqIdSchema, AccommodationIdSchema, DeleteResultSchema } from '@repo/schemas';

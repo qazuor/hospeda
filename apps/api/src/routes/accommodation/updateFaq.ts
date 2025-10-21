@@ -1,7 +1,6 @@
 /**
  * PUT /api/v1/public/accommodations/:id/faqs/:faqId
  * Update an existing FAQ for an accommodation
- * ✅ Migrated to use createCRUDRoute (Route Factory)
  */
 
 import {
