@@ -1,33 +1,19 @@
-import type { EventOrganizerListItem } from '@repo/schemas';
-import { EventOrganizerListItemSchema as BaseEventOrganizerListItemSchema } from '@repo/schemas';
-import { z } from 'zod';
-
 /**
- * Schema for event organizer list items in admin
- * Extends the base EventOrganizerListItemSchema with admin-specific fields
+ * Admin Event Organizer Schemas
+ *
+ * All fields available from base EventOrganizerSchema:
+ * - Social networks: eventOrganizer.socialNetworks.facebook, etc.
+ * - Contact fields, lifecycle fields, admin fields from base schema
+ *
+ * Note: socialNetworks uses "linkedIn" (not "linkedin")
  */
-export const EventOrganizerListItemSchema = BaseEventOrganizerListItemSchema.extend({
-    // Admin-specific social media structure (differs from base socialNetworks)
-    social: z
-        .object({
-            facebook: z.string().url().nullable().optional(),
-            twitter: z.string().url().nullable().optional(),
-            instagram: z.string().url().nullable().optional(),
-            linkedin: z.string().url().nullable().optional(),
-            youtube: z.string().url().nullable().optional()
-        })
-        .nullable()
-        .optional()
-});
 
-export const EventOrganizerListItemClientSchema = EventOrganizerListItemSchema;
+// Re-export base schemas - no admin extensions needed
+export {
+    EventOrganizerListItemSchema,
+    type EventOrganizer,
+    type EventOrganizerListItem
+} from '@repo/schemas';
 
-export type EventOrganizer = EventOrganizerListItem & {
-    social?: {
-        facebook?: string | null;
-        twitter?: string | null;
-        instagram?: string | null;
-        linkedin?: string | null;
-        youtube?: string | null;
-    } | null;
-};
+// Client schema is identical to base - re-export for compatibility
+export { EventOrganizerListItemSchema as EventOrganizerListItemClientSchema } from '@repo/schemas';

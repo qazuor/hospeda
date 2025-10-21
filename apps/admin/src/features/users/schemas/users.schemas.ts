@@ -1,51 +1,29 @@
-import type { User as UserFromSchema } from '@repo/schemas';
+import {
+    AdminActivityExtensionSchema,
+    AdminStatusExtensionSchema,
+    AdminTagsExtensionSchema
+} from '@/shared/schemas';
 import { UserListItemWithCountsSchema, UserSchema } from '@repo/schemas';
-import { z } from 'zod';
+import type { z } from 'zod';
 
 /**
- * MIGRATION NOTE: Previously contained 45+ lines of duplicated UserListItemSchema.
- * Now using @repo/schemas as single source of truth.
+ * Extended user list item schema for admin compatibility
+ *
+ * Extensions:
+ * - Admin status fields: Uses AdminStatusExtensionSchema
+ * - Admin activity fields: Uses AdminActivityExtensionSchema
+ * - Admin tags: Uses AdminTagsExtensionSchema
  */
-
-// Use UserListItemWithCountsSchema as it includes admin-specific count fields
-export const UserListItemSchema = UserListItemWithCountsSchema.extend({
-    // Add any legacy fields for backward compatibility if needed
-    email: z.string().email().optional(), // Extract email from contactInfo
-    username: z.string().optional(), // Username as alias
-    avatar: z.string().url().optional(), // Extract avatar from profile
-
-    // Legacy count fields with different names (for compatibility)
-    accommodationCount: z.number().optional(),
-    likesCount: z.number().optional(),
-    followersCount: z.number().optional(),
-    followingCount: z.number().optional(),
-    postsCount: z.number().optional(),
-
-    // Additional admin fields
-    isEmailVerified: z.boolean().optional(),
-    isActive: z.boolean().optional(),
-    lastLoginAt: z.string().optional(),
-    tags: z.array(z.string()).optional()
-});
+export const UserListItemSchema = UserListItemWithCountsSchema.extend(
+    AdminStatusExtensionSchema.shape
+)
+    .extend(AdminActivityExtensionSchema.shape)
+    .extend(AdminTagsExtensionSchema.shape);
 
 // Re-export main schema
 export { UserSchema };
 
 /**
- * User type - using explicit type for compatibility
+ * Type for user list items with admin extensions
  */
-export type User = UserFromSchema & {
-    // Admin-specific extensions
-    email?: string;
-    username?: string;
-    avatar?: string;
-    accommodationCount?: number;
-    likesCount?: number;
-    followersCount?: number;
-    followingCount?: number;
-    postsCount?: number;
-    isEmailVerified?: boolean;
-    isActive?: boolean;
-    lastLoginAt?: string;
-    tags?: string[];
-};
+export type User = z.infer<typeof UserListItemSchema>;

@@ -1,12 +1,14 @@
-import type { AttractionListItem } from '@repo/schemas';
 import { AttractionWithDestinationCountSchema as BaseAttractionListItemSchema } from '@repo/schemas';
+import type { z } from 'zod';
 
 /**
- * Schema for attraction list items in admin
- * Uses AttractionWithDestinationCountSchema from @repo/schemas
+ * Admin Attraction Schemas
+ *
+ * Uses AttractionWithDestinationCountSchema which includes destinationCount
  */
 export const AttractionListItemSchema = BaseAttractionListItemSchema;
 
-export type Attraction = AttractionListItem & {
-    destinationCount?: number;
-};
+/**
+ * Type for attraction list items
+ */
+export type Attraction = z.infer<typeof AttractionListItemSchema>;
