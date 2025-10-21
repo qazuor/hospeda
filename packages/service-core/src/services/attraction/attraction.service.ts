@@ -67,6 +67,11 @@ export class AttractionService extends BaseCrudRelatedService<
     public readonly createSchema = AttractionCreateInputSchema;
     public readonly updateSchema = AttractionUpdateInputSchema;
     public readonly searchSchema = AttractionSearchInputSchema;
+
+    protected getDefaultListRelations() {
+        return undefined;
+    }
+
     protected readonly destinationModel: DestinationModel;
     protected normalizers = {
         create: normalizeCreateInput,

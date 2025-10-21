@@ -38,6 +38,10 @@ export class DestinationReviewService extends BaseCrudService<
     protected readonly createSchema = DestinationReviewCreateInputSchema;
     protected readonly updateSchema = DestinationReviewUpdateInputSchema;
     protected readonly searchSchema = DestinationReviewSearchInputSchema;
+
+    protected getDefaultListRelations() {
+        return { user: true, destination: true };
+    }
     protected normalizers = {
         create: normalizeCreateInput,
         update: normalizeUpdateInput
