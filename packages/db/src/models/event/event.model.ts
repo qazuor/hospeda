@@ -9,6 +9,10 @@ export class EventModel extends BaseModel<Event> {
     protected table = events;
     protected entityName = 'events';
 
+    protected getTableName(): string {
+        return 'events';
+    }
+
     /**
      * Finds an event with specified relations populated.
      * @param where - The filter object
