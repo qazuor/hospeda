@@ -20,6 +20,6 @@ export type AdminInfoType = z.infer<typeof AdminInfoSchema>;
  * Base admin info fields (basic version as agreed - only notes and favorite)
  */
 export const BaseAdminFields = {
-    adminInfo: AdminInfoSchema.optional()
+    adminInfo: AdminInfoSchema.nullable().optional()
 } as const;
 export type BaseAdminFieldsType = typeof BaseAdminFields;
