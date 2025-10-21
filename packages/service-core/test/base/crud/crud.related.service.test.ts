@@ -22,6 +22,11 @@ class TestRelatedService extends BaseCrudRelatedService<
     protected createSchema = DummySchema;
     protected updateSchema = DummySchema;
     protected searchSchema = DummySchema;
+
+    protected getDefaultListRelations() {
+        return undefined;
+    }
+
     protected _canCreate() {}
     protected _canUpdate() {}
     protected _canSoftDelete() {}
@@ -63,6 +68,10 @@ describe('BaseCrudRelatedService', () => {
         class CustomService extends TestRelatedService {
             customMethod() {
                 return 'ok';
+            }
+
+            protected getDefaultListRelations() {
+                return undefined;
             }
         }
         const custom = new CustomService(ctx, 'TestEntity');

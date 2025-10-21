@@ -137,6 +137,10 @@ describe('BaseService: getById', () => {
             protected override normalizers = {
                 view: normalizer
             };
+
+            protected getDefaultListRelations() {
+                return undefined;
+            }
         }
         const normalizedService = createServiceTestInstance(ServiceWithNormalizer, localModelMock);
 

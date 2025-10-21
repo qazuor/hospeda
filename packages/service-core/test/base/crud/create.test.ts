@@ -151,6 +151,10 @@ describe('BaseService: create', () => {
             protected override normalizers = {
                 create: normalizer
             };
+
+            protected getDefaultListRelations() {
+                return undefined;
+            }
         }
         const normalizedService = createServiceTestInstance(ServiceWithNormalizer, localModelMock);
         // Act
@@ -170,6 +174,10 @@ describe('BaseService: create', () => {
                     throw new Error('Normalizer fail');
                 }
             };
+
+            protected getDefaultListRelations() {
+                return undefined;
+            }
         }
         const service = createServiceTestInstance(ServiceWithBadNormalizer, modelMock);
         const data = { name: 'New Entity', value: 456 };
