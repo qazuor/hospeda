@@ -1,31 +1,15 @@
-import type { DestinationListItem } from '@repo/schemas';
-import {
-    DestinationListItemSchema as BaseDestinationListItemSchema,
-    LifecycleStatusEnum,
-    ModerationStatusEnum,
-    VisibilityEnum
-} from '@repo/schemas';
-import { z } from 'zod';
-
 /**
- * Schema for destination list items in admin
- * Extends the base DestinationListItemSchema with admin-specific fields
+ * Admin Destination Schemas
+ *
+ * All fields are available from base DestinationSchema:
+ * - Location: destination.location.city, destination.location.country
+ * - Attractions: destination.attractions (AttractionSchema objects)
+ * - Status: destination.visibility, destination.lifecycleState, destination.moderationState
  */
-export const DestinationListItemSchema = BaseDestinationListItemSchema.extend({
-    // Admin-specific fields for list management
-    city: z.string().optional(),
-    country: z.string().optional(),
-    attractions: z.array(z.string()).optional(),
-    visibility: z.nativeEnum(VisibilityEnum).optional(),
-    lifecycleState: z.nativeEnum(LifecycleStatusEnum).optional(),
-    moderationState: z.nativeEnum(ModerationStatusEnum).optional()
-});
 
-export type Destination = DestinationListItem & {
-    city?: string;
-    country?: string;
-    attractions?: string[];
-    visibility?: VisibilityEnum;
-    lifecycleState?: LifecycleStatusEnum;
-    moderationState?: ModerationStatusEnum;
-};
+// Re-export base schemas - no admin extensions needed
+export {
+    DestinationListItemSchema,
+    type Destination,
+    type DestinationListItem
+} from '@repo/schemas';
