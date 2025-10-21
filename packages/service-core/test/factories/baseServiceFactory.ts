@@ -13,6 +13,8 @@ export const createMockBaseModel = <T = any>(): BaseModel<T> => {
     const mockModel = {
         findById: vi.fn(),
         findAll: vi.fn(),
+        findAllWithRelations: vi.fn(),
+        getTableName: vi.fn().mockReturnValue('mock_table'),
         create: vi.fn(),
         update: vi.fn(),
         delete: vi.fn(),

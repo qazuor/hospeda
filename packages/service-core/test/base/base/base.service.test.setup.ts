@@ -48,6 +48,10 @@ export class TestService extends BaseCrudService<
     protected searchSchema = SearchTestEntitySchema;
     protected logger: ServiceLogger = serviceLogger as ServiceLogger;
 
+    protected getDefaultListRelations() {
+        return undefined;
+    }
+
     /**
      * Homogeneous constructor: receives ctx and model (optional), like all services.
      * @param ctx - Service context (must include logger)
