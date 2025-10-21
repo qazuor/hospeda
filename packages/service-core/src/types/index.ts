@@ -169,6 +169,11 @@ export interface BaseModel<T> {
         where: Record<string, unknown>,
         options?: { page?: number; pageSize?: number }
     ): Promise<PaginatedListOutput<T>>;
+    findAllWithRelations(
+        relations: Record<string, boolean>,
+        where?: Record<string, unknown>,
+        options?: { page?: number; pageSize?: number }
+    ): Promise<PaginatedListOutput<T>>;
 }
 
 // --- Search Types ---

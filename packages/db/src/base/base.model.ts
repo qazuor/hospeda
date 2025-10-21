@@ -1,3 +1,4 @@
+import type { PaginatedListOptions } from '@repo/schemas';
 import type { SQL, Table } from 'drizzle-orm';
 import { count } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
@@ -23,6 +24,12 @@ export abstract class BaseModel<T> {
      * The entity name (for logging and error context)
      */
     protected abstract entityName: string;
+
+    /**
+     * Get the table name for dynamic relation queries
+     * This is required for the generic findAllWithRelations implementation
+     */
+    protected abstract getTableName(): string;
 
     /**
      * Gets the database client, either from transaction or global connection.
@@ -400,5 +407,143 @@ export abstract class BaseModel<T> {
         tx?: NodePgDatabase<typeof schema>
     ): Promise<void> {
         await this.update({ id }, data, tx);
+    }
+
+    /**
+     * Finds all entities with specified relations populated.
+     *
+     * @param relations Relations to include (e.g., { destination: true, owner: true })
+     * @param where Filter conditions
+     * @param options Pagination and other options
+     * @returns Promise resolving to paginated list with relations
+     */
+    async findAllWithRelations(
+        relations: Record<string, boolean>,
+        where: Record<string, unknown> = {},
+        options: PaginatedListOptions = {}
+    ): Promise<{ items: T[]; total: number }> {
+        const db = this.getClient();
+        const { page = 1, pageSize = 20 } = options;
+        const offset = (page - 1) * pageSize;
+        const safeWhere = where ?? {};
+
+        try {
+            // Validate relations object
+            if (!relations || typeof relations !== 'object') {
+                throw new Error('Relations must be a valid object');
+            }
+
+            // Check if any relations are actually requested
+            const hasRelations = Object.values(relations).some(Boolean);
+
+            if (!hasRelations) {
+                // Fall back to regular findAll if no relations requested
+                logQuery(
+                    this.entityName,
+                    'findAllWithRelations',
+                    { where: safeWhere, options, relations },
+                    'Falling back to findAll - no relations requested'
+                );
+                return this.findAll(safeWhere, options);
+            }
+
+            // Get table name for dynamic query
+            const tableName = this.getTableName();
+            if (!tableName) {
+                throw new Error(`Table name not defined for entity: ${this.entityName}`);
+            }
+
+            // Build WHERE clause using existing helper
+            const whereClause = buildWhereClause(safeWhere, this.table as unknown);
+
+            // Build the query with relations using dynamic table access
+            // Dynamic access to db.query[tableName] - type safety verified at runtime
+            const queryTable = (db.query as Record<string, unknown>)[tableName];
+            if (!queryTable || typeof queryTable !== 'object' || !('findMany' in queryTable)) {
+                throw new Error(`Invalid table configuration for: ${tableName}`);
+            }
+
+            // Type assertion for the query method - verified above that findMany exists
+            interface QueryableTable {
+                findMany: (options: {
+                    where?: unknown;
+                    with?: Record<string, boolean>;
+                    limit?: number;
+                    offset?: number;
+                }) => Promise<unknown[]>;
+            }
+            const typedQueryTable = queryTable as QueryableTable;
+
+            // Check if pagination is requested
+            const isPaginated = page !== undefined && pageSize !== undefined;
+
+            if (isPaginated) {
+                const queryOptions = {
+                    where: whereClause,
+                    with: relations,
+                    limit: pageSize,
+                    offset: offset
+                };
+
+                // Execute query with relations and get total count
+                const [items, totalCount] = await Promise.all([
+                    typedQueryTable.findMany(queryOptions),
+                    this.count(safeWhere)
+                ]);
+
+                const result = { items: items as T[], total: totalCount };
+
+                logQuery(
+                    this.entityName,
+                    'findAllWithRelations',
+                    { where: safeWhere, options, relations },
+                    {
+                        itemCount: items.length,
+                        total: totalCount,
+                        hasRelations: true,
+                        isPaginated: true
+                    }
+                );
+
+                return result;
+            }
+
+            // No pagination - get all items
+            const queryOptions = {
+                where: whereClause,
+                with: relations
+            };
+
+            const items = await typedQueryTable.findMany(queryOptions);
+            const result = { items: items as T[], total: items.length };
+
+            logQuery(
+                this.entityName,
+                'findAllWithRelations',
+                { where: safeWhere, options, relations },
+                {
+                    itemCount: items.length,
+                    total: items.length,
+                    hasRelations: true,
+                    isPaginated: false
+                }
+            );
+
+            return result;
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            logError(
+                this.entityName,
+                'findAllWithRelations',
+                { where: safeWhere, options, relations },
+                err
+            );
+            throw new DbError(
+                this.entityName,
+                'findAllWithRelations',
+                { where: safeWhere, options, relations },
+                err.message
+            );
+        }
     }
 }
