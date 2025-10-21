@@ -1,12 +1,10 @@
 /**
  * Readiness check route
  * Indicates if the service is ready to serve requests
- * ✅ Migrated to use createSimpleRoute (Route Factory 2.0)
  */
 import { HealthReadinessSchema } from '@repo/schemas';
 import { createSimpleRoute } from '../../utils/route-factory';
 
-// ✅ Migrated to createSimpleRoute - 70% less boilerplate!
 export const readyRoutes = createSimpleRoute({
     method: 'get',
     path: '/ready',

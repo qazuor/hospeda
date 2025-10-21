@@ -1,4 +1,7 @@
-import { AccommodationListItemSchema, AccommodationSearchHttpSchema } from '@repo/schemas';
+import {
+    AccommodationSearchHttpSchema,
+    AccommodationWithBasicRelationsSchema
+} from '@repo/schemas';
 import { AccommodationService } from '@repo/service-core';
 import { getActorFromContext } from '../../utils/actor';
 /**
@@ -22,7 +25,7 @@ export const accommodationListRoute = createListRoute({
     description: 'Returns a paginated list of accommodations using the AccommodationService',
     tags: ['Accommodations'],
     requestQuery: AccommodationSearchHttpSchema.shape,
-    responseSchema: AccommodationListItemSchema,
+    responseSchema: AccommodationWithBasicRelationsSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
 
