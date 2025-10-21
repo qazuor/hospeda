@@ -39,6 +39,10 @@ export class UserBookmarkService extends BaseCrudService<
     protected readonly createSchema = UserBookmarkCreateInputSchema;
     protected readonly updateSchema = UserBookmarkUpdateInputSchema;
     protected readonly searchSchema = UserBookmarkSearchSchema;
+
+    protected getDefaultListRelations() {
+        return { user: true };
+    }
     protected normalizers = {
         create: normalizeCreateInput,
         update: normalizeUpdateInput
