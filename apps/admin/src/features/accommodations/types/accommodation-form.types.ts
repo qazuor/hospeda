@@ -1,16 +1,12 @@
 import type { FormModeEnum } from '@/components/entity-form/enums/form-config.enums';
+import type { ClientStateExtension } from '@/shared/schemas';
 import type { Accommodation } from '@repo/schemas';
 
 /**
  * Accommodation form data type
- * Extends the core accommodation type with form-specific properties
+ * Extends the core accommodation type with shared client state properties
  */
-export type AccommodationFormData = Accommodation & {
-    // Form-specific computed fields
-    _isNew?: boolean;
-    _isDirty?: boolean;
-    _hasUnsavedChanges?: boolean;
-};
+export type AccommodationFormData = Accommodation & ClientStateExtension;
 
 /**
  * Accommodation form props

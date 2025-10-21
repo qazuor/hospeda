@@ -1,10 +1,15 @@
-import type { ClientTypeEnum, ContactInfo, LifecycleStatusEnum } from '@repo/schemas';
 import { PostSponsorSchema } from '@repo/schemas';
-import { z } from 'zod';
+import type { z } from 'zod';
 
 /**
- * Schema for sponsor (PostSponsor) list items in admin
+ * Admin Sponsor Schemas
+ *
  * Creates a list item schema from the base PostSponsorSchema
+ *
+ * Contact info access:
+ * - Email: sponsor.contactInfo?.personalEmail or sponsor.contactInfo?.workEmail
+ * - Phone: sponsor.contactInfo?.mobilePhone, sponsor.contactInfo?.homePhone, sponsor.contactInfo?.workPhone
+ * - Website: sponsor.contactInfo?.website
  */
 export const SponsorListItemSchema = PostSponsorSchema.pick({
     id: true,
@@ -15,33 +20,11 @@ export const SponsorListItemSchema = PostSponsorSchema.pick({
     lifecycleState: true,
     createdAt: true,
     updatedAt: true
-}).extend({
-    // Admin-specific field mapping
-    contact: z
-        .object({
-            email: z.string().email().nullable().optional(),
-            phone: z.string().nullable().optional(),
-            website: z.string().url().nullable().optional()
-        })
-        .nullable()
-        .optional()
 });
 
 export const SponsorListItemClientSchema = SponsorListItemSchema;
 
-// Define explicit type for Zod compatibility with proper types
-export type Sponsor = {
-    id: string;
-    name: string;
-    type: ClientTypeEnum;
-    description: string;
-    contactInfo?: ContactInfo;
-    lifecycleState: LifecycleStatusEnum;
-    createdAt: Date;
-    updatedAt: Date;
-    contact?: {
-        email?: string | null;
-        phone?: string | null;
-        website?: string | null;
-    } | null;
-};
+/**
+ * Type for sponsor list items
+ */
+export type Sponsor = z.infer<typeof SponsorListItemSchema>;
