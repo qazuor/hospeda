@@ -4,7 +4,7 @@ import {
     AdminTagsExtensionSchema
 } from '@/shared/schemas';
 import { UserListItemWithCountsSchema, UserSchema } from '@repo/schemas';
-import type { z } from 'zod';
+import { z } from 'zod';
 
 /**
  * Extended user list item schema for admin compatibility
@@ -20,10 +20,26 @@ export const UserListItemSchema = UserListItemWithCountsSchema.extend(
     .extend(AdminActivityExtensionSchema.shape)
     .extend(AdminTagsExtensionSchema.shape);
 
+// Admin-specific schema with computed fields for handling nested data
+export const UserListItemWithComputedFieldsSchema = UserListItemSchema.extend({
+    primaryEmail: z.string().optional(),
+    locationCity: z.string().optional(),
+    accommodationsCount: z.number().optional(),
+    eventsCount: z.number().optional(),
+    postsCount: z.number().optional()
+}).transform((data) => ({
+    ...data,
+    primaryEmail: data.contactInfo?.personalEmail || data.contactInfo?.workEmail || undefined,
+    locationCity: data.location?.city || undefined,
+    accommodationsCount: data.accommodationsCount || 0,
+    eventsCount: data.eventsCount || 0,
+    postsCount: data.postsCount || 0
+}));
+
 // Re-export main schema
 export { UserSchema };
 
 /**
- * Type for user list items with admin extensions
+ * Type for user list items with admin extensions and computed fields
  */
-export type User = z.infer<typeof UserListItemSchema>;
+export type User = z.infer<typeof UserListItemWithComputedFieldsSchema>;

@@ -19,18 +19,19 @@ export const createEventsColumns = (): readonly ColumnConfig<Event>[] => [
         })
     },
     {
-        id: 'eventType',
-        header: 'Type',
-        accessorKey: 'eventType',
+        id: 'category',
+        header: 'Category',
+        accessorKey: 'category',
         enableSorting: true,
         columnType: ColumnType.BADGE,
         badgeOptions: [
-            { value: 'CONFERENCE', label: 'Conference', color: BadgeColor.BLUE },
-            { value: 'WORKSHOP', label: 'Workshop', color: BadgeColor.CYAN },
-            { value: 'FESTIVAL', label: 'Festival', color: BadgeColor.PURPLE },
-            { value: 'CONCERT', label: 'Concert', color: BadgeColor.PINK },
-            { value: 'EXHIBITION', label: 'Exhibition', color: BadgeColor.GREEN },
+            { value: 'CULTURE', label: 'Culture', color: BadgeColor.YELLOW },
             { value: 'SPORTS', label: 'Sports', color: BadgeColor.ORANGE },
+            { value: 'FESTIVAL', label: 'Festival', color: BadgeColor.PURPLE },
+            { value: 'WORKSHOP', label: 'Workshop', color: BadgeColor.CYAN },
+            { value: 'MUSIC', label: 'Music', color: BadgeColor.BLUE },
+            { value: 'GASTRONOMY', label: 'Gastronomy', color: BadgeColor.PINK },
+            { value: 'NATURE', label: 'Nature', color: BadgeColor.GREEN },
             { value: 'OTHER', label: 'Other', color: BadgeColor.GRAY }
         ]
     },
@@ -44,28 +45,21 @@ export const createEventsColumns = (): readonly ColumnConfig<Event>[] => [
     {
         id: 'startDate',
         header: 'Start Date',
-        accessorKey: 'startDate',
+        accessorKey: 'date.start',
         enableSorting: true,
         columnType: ColumnType.DATE
     },
     {
-        id: 'capacity',
-        header: 'Capacity',
-        accessorKey: 'capacity',
+        id: 'location',
+        header: 'Location',
+        accessorKey: 'locationName',
         enableSorting: true,
-        columnType: ColumnType.NUMBER
-    },
-    {
-        id: 'attendeesCount',
-        header: 'Attendees',
-        accessorKey: 'attendeesCount',
-        enableSorting: true,
-        columnType: ColumnType.NUMBER
+        columnType: ColumnType.STRING
     },
     {
         id: 'ticketPrice',
         header: 'Price',
-        accessorKey: 'ticketPrice',
+        accessorKey: 'pricing.price',
         enableSorting: true,
         columnType: ColumnType.PRICE
     },

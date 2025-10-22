@@ -2,7 +2,7 @@ import { createEntityListPage } from '@/components/entity-list';
 import type { EntityConfig } from '@/components/entity-list/types';
 import { EntityType } from '@/components/table/DataTable';
 import type { z } from 'zod';
-import { type User, UserListItemSchema } from '../schemas/users.schemas';
+import { type User, UserListItemWithComputedFieldsSchema } from '../schemas/users.schemas';
 import { createUsersColumns } from './users.columns';
 
 /**
@@ -23,7 +23,7 @@ export const usersConfig: EntityConfig<User> = {
     detailPath: '/users/[id]',
 
     // Schemas - Use type assertion for Zod version compatibility
-    listItemSchema: UserListItemSchema as unknown as z.ZodSchema<User>,
+    listItemSchema: UserListItemWithComputedFieldsSchema as unknown as z.ZodSchema<User>,
 
     // Search configuration
     searchConfig: {
