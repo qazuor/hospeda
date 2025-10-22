@@ -39,7 +39,7 @@ export const listUsersRoute = createListRoute({
         };
     },
     options: {
-        skipAuth: true,
+        skipAuth: false, // Require proper admin authentication
         skipValidation: true,
         cacheTTL: 60,
         customRateLimit: { requests: 200, windowMs: 60000 }
