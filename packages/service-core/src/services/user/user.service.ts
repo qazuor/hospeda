@@ -26,6 +26,7 @@ import {
     UserSetPermissionsInputSchema,
     UserUpdateInputSchema
 } from '@repo/schemas';
+import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, ServiceContext, ServiceLogger, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
@@ -581,6 +582,40 @@ export class UserService extends BaseCrudService<
     protected async _executeCount(params: UserSearch, _actor: Actor) {
         const count = await this.model.count(params);
         return { count };
+    }
+
+    /**
+     * Override the list method to use findAllWithCounts for better performance
+     */
+    public async list(
+        actor: Actor,
+        options: { page?: number; pageSize?: number; relations?: Record<string, boolean> } = {}
+    ) {
+        return this.runWithLoggingAndValidation({
+            methodName: 'list',
+            input: { actor, ...options },
+            schema: z.object({
+                page: z.number().optional(),
+                pageSize: z.number().optional(),
+                relations: z.record(z.string(), z.boolean()).optional()
+            }),
+            execute: async (validatedOptions, validatedActor) => {
+                await this._canList(validatedActor);
+
+                const normalized =
+                    (await this.normalizers?.list?.(validatedOptions || {}, validatedActor)) ??
+                    (validatedOptions || {});
+                const processedOptions = await this._beforeList(normalized, validatedActor);
+
+                // Use the efficient findAllWithCounts method
+                const result = await this.model.findAllWithCounts(processedOptions, {
+                    page: processedOptions.page,
+                    pageSize: processedOptions.pageSize
+                });
+
+                return this._afterList(result, validatedActor);
+            }
+        });
     }
 
     /**

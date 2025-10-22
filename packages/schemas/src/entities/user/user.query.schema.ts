@@ -231,12 +231,16 @@ export const UserSearchSchemaWithMetadata = applyOpenApiMetadata(
  */
 export const UserListItemSchema = UserSchema.pick({
     id: true,
+    slug: true,
     displayName: true,
     firstName: true,
     lastName: true,
+    authProvider: true,
     role: true,
     lifecycleState: true,
+    visibility: true,
     contactInfo: true,
+    location: true,
     profile: true,
     createdAt: true,
     updatedAt: true
@@ -281,7 +285,8 @@ export const UserListItemWithCountsSchema = UserListItemSchema.extend({
     accommodationsCount: z.number().int().min(0).default(0),
     reviewsCount: z.number().int().min(0).default(0),
     bookingsCount: z.number().int().min(0).default(0),
-    eventsCount: z.number().int().min(0).default(0)
+    eventsCount: z.number().int().min(0).default(0),
+    postsCount: z.number().int().min(0).default(0)
 });
 
 export const UserListWithCountsOutputSchema = PaginationResultSchema(UserListItemWithCountsSchema);
