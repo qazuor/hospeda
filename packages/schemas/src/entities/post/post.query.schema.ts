@@ -137,6 +137,65 @@ export const PostListItemSchema = PostSchema.pick({
 });
 
 /**
+ * Post list item with relations - includes author and related entities
+ */
+export const PostListItemWithRelationsSchema = PostListItemSchema.extend({
+    author: z
+        .object({
+            id: z.string().uuid(),
+            displayName: z.string().optional(),
+            firstName: z.string().optional(),
+            lastName: z.string().optional(),
+            email: z.string().email().optional(),
+            avatar: z.string().optional()
+        })
+        .nullable()
+        .optional(),
+    relatedAccommodation: z
+        .object({
+            id: z.string().uuid(),
+            name: z.string().optional(),
+            slug: z.string().optional()
+        })
+        .nullable()
+        .optional(),
+    relatedDestination: z
+        .object({
+            id: z.string().uuid(),
+            name: z.string().optional(),
+            slug: z.string().optional()
+        })
+        .nullable()
+        .optional(),
+    relatedEvent: z
+        .object({
+            id: z.string().uuid(),
+            name: z.string().optional(),
+            slug: z.string().optional()
+        })
+        .nullable()
+        .optional(),
+    sponsorship: z
+        .object({
+            id: z.string().uuid(),
+            message: z.string().optional(),
+            isHighlighted: z.boolean().optional(),
+            sponsor: z
+                .object({
+                    id: z.string().uuid(),
+                    name: z.string(),
+                    type: z.string().optional(),
+                    description: z.string().optional()
+                })
+                .nullable()
+                .optional()
+        })
+        .nullable()
+        .optional()
+});
+export type PostListItemWithRelations = z.infer<typeof PostListItemWithRelationsSchema>;
+
+/**
  * Post search result item - extends list item with search relevance score
  */
 export const PostSearchResultItemSchema = PostListItemSchema.extend({
