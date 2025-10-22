@@ -82,6 +82,7 @@ export enum EntityType {
     POST = 'post',
     USER = 'user',
     SPONSOR = 'sponsor',
+    SPONSORSHIP = 'sponsorship',
     ATTRACTION = 'attraction',
     FEATURE = 'feature',
     AMENITY = 'amenity'
