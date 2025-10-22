@@ -1156,10 +1156,10 @@
             "linearId": "4897f21b-e8fb-4ce5-84ec-05c54365649f",
             "type": "todo",
             "filePath": "packages/service-core/src/services/post/post.service.ts",
-            "line": 697,
+            "line": 704,
             "title": "Implement comment removal logic",
             "createdAt": "2025-10-04T12:55:38.949Z",
-            "updatedAt": "2025-10-21T18:06:32.082Z",
+            "updatedAt": "2025-10-22T02:28:54.522Z",
             "isOrphan": false,
             "aiState": "COMPLETED",
             "aiRetryCount": 0
@@ -1240,10 +1240,10 @@
             "linearId": "75f0bcbd-c7bf-445d-85fc-d850ba3f6357",
             "type": "todo",
             "filePath": "packages/service-core/src/services/postSponsorship/postSponsorship.service.ts",
-            "line": 83,
+            "line": 86,
             "title": "Implement visibility update permissions if needed",
             "createdAt": "2025-10-04T12:55:46.498Z",
-            "updatedAt": "2025-10-21T18:05:32.658Z",
+            "updatedAt": "2025-10-22T02:28:57.105Z",
             "isOrphan": false,
             "aiState": "COMPLETED",
             "aiRetryCount": 0
@@ -1264,10 +1264,10 @@
             "linearId": "9c6be2f7-0222-48da-8720-29a963022db8",
             "type": "todo",
             "filePath": "packages/service-core/src/services/user/user.service.ts",
-            "line": 347,
+            "line": 348,
             "title": "Implement soft delete permission logic if needed",
             "createdAt": "2025-10-04T12:55:48.688Z",
-            "updatedAt": "2025-10-21T18:05:36.041Z",
+            "updatedAt": "2025-10-22T02:28:58.525Z",
             "isOrphan": false,
             "aiState": "COMPLETED",
             "aiRetryCount": 0
@@ -1276,10 +1276,10 @@
             "linearId": "054aee66-64a9-4fa1-a2b3-12c8de136817",
             "type": "todo",
             "filePath": "packages/service-core/src/services/user/user.service.ts",
-            "line": 360,
+            "line": 361,
             "title": "Implement hard delete permission logic if needed",
             "createdAt": "2025-10-04T12:55:50.578Z",
-            "updatedAt": "2025-10-21T18:06:38.507Z",
+            "updatedAt": "2025-10-22T02:28:59.236Z",
             "isOrphan": false,
             "aiState": "COMPLETED",
             "aiRetryCount": 0
@@ -1288,10 +1288,10 @@
             "linearId": "52d85ec2-ceaa-4a8f-822c-4beab0aa65f0",
             "type": "todo",
             "filePath": "packages/service-core/src/services/user/user.service.ts",
-            "line": 373,
+            "line": 374,
             "title": "Adjust logic if public view is allowed",
             "createdAt": "2025-10-04T12:55:51.511Z",
-            "updatedAt": "2025-10-21T18:08:52.094Z",
+            "updatedAt": "2025-10-22T02:29:05.184Z",
             "isOrphan": false,
             "aiState": "COMPLETED",
             "aiRetryCount": 0
@@ -1300,10 +1300,10 @@
             "linearId": "2e05093b-26ee-45d7-8dc1-f48c4bd78f13",
             "type": "todo",
             "filePath": "packages/service-core/src/services/user/user.service.ts",
-            "line": 386,
+            "line": 387,
             "title": "Implement visibility update permission logic if needed",
             "createdAt": "2025-10-04T12:55:52.216Z",
-            "updatedAt": "2025-10-21T18:05:38.391Z",
+            "updatedAt": "2025-10-22T02:29:06.987Z",
             "isOrphan": false,
             "aiState": "COMPLETED",
             "aiRetryCount": 0
@@ -1453,5 +1453,5 @@
             "aiRetryCount": 0
         }
     ],
-    "lastSync": "2025-10-21T18:11:36.132Z"
+    "lastSync": "2025-10-22T02:30:55.572Z"
 }
