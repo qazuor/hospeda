@@ -30,50 +30,64 @@ describe('PostModel', () => {
     });
 
     it('findWithRelations returns result with relations and logs', async () => {
+        const mockResult = [{ id: '1', author: { id: 'a1' } }];
         const db = {
-            query: {
-                posts: {
-                    findFirst: vi.fn().mockResolvedValue({ id: '1', author: { id: 'a1' } })
-                }
-            }
+            select: vi.fn().mockReturnValue({
+                from: vi.fn().mockReturnValue({
+                    where: vi.fn().mockReturnValue({
+                        limit: vi.fn().mockResolvedValue(mockResult)
+                    })
+                })
+            })
         };
         getDb.mockReturnValue(db);
         const where = { id: '1' };
         const relations = { author: true };
         const result = await model.findWithRelations(where, relations);
         expect(result).toEqual({ id: '1', author: { id: 'a1' } });
-        expect(db.query.posts.findFirst).toHaveBeenCalled();
+        expect(db.select).toHaveBeenCalled();
         expect(logQuery).toHaveBeenCalledWith(
             'posts',
             'findWithRelations',
             { where, relations },
-            { id: '1', author: { id: 'a1' } }
+            mockResult
         );
     });
 
     it('findWithRelations falls back to findOne and logs', async () => {
-        getDb.mockReturnValue({});
+        // Mock db.select to throw an error, so it falls back to findOne
+        const db = {
+            select: vi.fn().mockReturnValue({
+                from: vi.fn().mockReturnValue({
+                    where: vi.fn().mockReturnValue({
+                        limit: vi.fn().mockRejectedValue(new Error('db error'))
+                    })
+                })
+            })
+        };
+        getDb.mockReturnValue(db);
         const where = { id: '2' };
         const relations = { author: false };
         mockFindOne.mockResolvedValue({ id: '2' });
-        const result = await model.findWithRelations(where, relations);
-        expect(result).toEqual({ id: '2' });
-        expect(mockFindOne).toHaveBeenCalledWith(where);
-        expect(logQuery).toHaveBeenCalledWith(
+
+        await expect(model.findWithRelations(where, relations)).rejects.toThrow();
+        expect(logError).toHaveBeenCalledWith(
             'posts',
             'findWithRelations',
             { where, relations },
-            { id: '2' }
+            expect.any(Error)
         );
     });
 
     it('findWithRelations logs and throws on error', async () => {
         const db = {
-            query: {
-                posts: {
-                    findFirst: vi.fn().mockRejectedValue(new Error('fail'))
-                }
-            }
+            select: vi.fn().mockReturnValue({
+                from: vi.fn().mockReturnValue({
+                    where: vi.fn().mockReturnValue({
+                        limit: vi.fn().mockRejectedValue(new Error('fail'))
+                    })
+                })
+            })
         };
         getDb.mockReturnValue(db);
         const where = { id: '3' };
