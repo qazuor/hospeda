@@ -22,12 +22,12 @@ export const EventWithOrganizerSchema = EventSchema.extend({
 });
 
 export const EventWithLocationSchema = EventSchema.extend({
-    eventLocation: LocationSummarySchema.optional()
+    location: LocationSummarySchema.optional()
 });
 
 export const EventWithBasicRelationsSchema = EventSchema.extend({
     organizer: OrganizerSummarySchema.optional(),
-    eventLocation: LocationSummarySchema.optional()
+    location: LocationSummarySchema.optional()
 });
 
 export type EventWithOrganizer = z.infer<typeof EventWithOrganizerSchema>;

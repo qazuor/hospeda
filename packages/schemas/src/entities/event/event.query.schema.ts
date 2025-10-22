@@ -227,6 +227,31 @@ export const EventListItemSchema = EventSchema.pick({
 export type EventListItem = z.infer<typeof EventListItemSchema>;
 
 /**
+ * Event list item with relations - includes organizer and location data
+ */
+export const EventListItemWithRelationsSchema = EventListItemSchema.extend({
+    organizer: z
+        .object({
+            id: z.string().uuid(),
+            name: z.string().optional(),
+            logo: z.string().optional()
+        })
+        .nullable()
+        .optional(),
+    location: z
+        .object({
+            id: z.string().uuid(),
+            placeName: z.string().optional(),
+            city: z.string().optional(),
+            street: z.string().optional(),
+            number: z.string().optional()
+        })
+        .nullable()
+        .optional()
+});
+export type EventListItemWithRelations = z.infer<typeof EventListItemWithRelationsSchema>;
+
+/**
  * Event search result item - extends list item with search relevance score
  */
 export const EventSearchResultItemSchema = EventListItemSchema.extend({
