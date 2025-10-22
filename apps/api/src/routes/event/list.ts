@@ -1,4 +1,4 @@
-import { EventListItemSchema, EventSearchHttpSchema } from '@repo/schemas';
+import { EventListItemWithRelationsSchema, EventSearchHttpSchema } from '@repo/schemas';
 import { EventService } from '@repo/service-core';
 import { getActorFromContext } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
@@ -14,7 +14,7 @@ export const eventListRoute = createListRoute({
     description: 'Returns a paginated list of events using the EventService',
     tags: ['Events'],
     requestQuery: EventSearchHttpSchema.shape,
-    responseSchema: EventListItemSchema,
+    responseSchema: EventListItemWithRelationsSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query as Record<string, unknown>);
