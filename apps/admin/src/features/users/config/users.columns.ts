@@ -1,5 +1,5 @@
 import type { ColumnConfig } from '@/components/entity-list/types';
-import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable';
+import { BadgeColor, ColumnType, CompoundLayout, EntityType } from '@/components/table/DataTable';
 import type { User } from '../schemas/users.schemas';
 
 export const createUsersColumns = (): readonly ColumnConfig<User>[] => [
@@ -19,23 +19,24 @@ export const createUsersColumns = (): readonly ColumnConfig<User>[] => [
         })
     },
     {
+        id: 'fullName',
+        header: 'Full Name',
+        accessorKey: 'firstName',
+        enableSorting: false,
+        columnType: ColumnType.COMPOUND,
+        compoundOptions: {
+            columns: [
+                { id: 'firstName', accessorKey: 'firstName', columnType: ColumnType.STRING },
+                { id: 'lastName', accessorKey: 'lastName', columnType: ColumnType.STRING }
+            ],
+            layout: CompoundLayout.HORIZONTAL,
+            separator: ' '
+        }
+    },
+    {
         id: 'slug',
         header: 'Slug',
         accessorKey: 'slug',
-        enableSorting: true,
-        columnType: ColumnType.STRING
-    },
-    {
-        id: 'firstName',
-        header: 'First Name',
-        accessorKey: 'firstName',
-        enableSorting: true,
-        columnType: ColumnType.STRING
-    },
-    {
-        id: 'lastName',
-        header: 'Last Name',
-        accessorKey: 'lastName',
         enableSorting: true,
         columnType: ColumnType.STRING
     },
@@ -70,37 +71,43 @@ export const createUsersColumns = (): readonly ColumnConfig<User>[] => [
     {
         id: 'email',
         header: 'Email',
-        accessorKey: 'contactInfo.email',
+        accessorKey: 'primaryEmail',
         enableSorting: false,
         columnType: ColumnType.STRING
     },
     {
         id: 'location',
         header: 'Location',
-        accessorKey: 'location.city',
+        accessorKey: 'locationCity',
         enableSorting: false,
         columnType: ColumnType.STRING
     },
     {
         id: 'accommodationCount',
         header: 'Accommodations',
-        accessorKey: 'accommodationCount',
+        accessorKey: 'accommodationsCount',
         enableSorting: true,
-        columnType: ColumnType.NUMBER
+        columnType: ColumnType.NUMBER,
+        startVisibleOnTable: false,
+        startVisibleOnGrid: true
     },
     {
         id: 'eventsCount',
         header: 'Events',
         accessorKey: 'eventsCount',
         enableSorting: true,
-        columnType: ColumnType.NUMBER
+        columnType: ColumnType.NUMBER,
+        startVisibleOnTable: false,
+        startVisibleOnGrid: true
     },
     {
         id: 'postsCount',
         header: 'Posts',
         accessorKey: 'postsCount',
         enableSorting: true,
-        columnType: ColumnType.NUMBER
+        columnType: ColumnType.NUMBER,
+        startVisibleOnTable: false,
+        startVisibleOnGrid: true
     },
     {
         id: 'visibility',
