@@ -1,5 +1,8 @@
 import type { PostSponsorshipModel } from '@repo/db';
-import { PostSponsorshipModel as RealPostSponsorshipModel } from '@repo/db';
+import {
+    PostModel as RealPostModel,
+    PostSponsorshipModel as RealPostSponsorshipModel
+} from '@repo/db';
 import type { PostSponsorship, PostSponsorshipSearchInput } from '@repo/schemas';
 import {
     PostSponsorshipCreateInputSchema,
@@ -81,6 +84,91 @@ export class PostSponsorshipService extends BaseCrudService<
     }
     protected _canUpdateVisibility(_actor: Actor, _entity: unknown, _newVisibility: unknown) {
         // TODO [75f0bcbd-c7bf-445d-85fc-d850ba3f6357]: Implement visibility update permissions if needed
+    }
+
+    /**
+     * After creating a post sponsorship, update the post's sponsorship_id field
+     */
+    protected async _afterCreate(entity: PostSponsorship, actor: Actor): Promise<PostSponsorship> {
+        try {
+            this.logger.info(
+                `Executing _afterCreate hook for PostSponsorship: ${entity.id} -> Post: ${entity.postId}`
+            );
+
+            const postModel = new RealPostModel();
+
+            // Update the post's sponsorship_id to point to this new sponsorship
+            const updateResult = await postModel.update(
+                { id: entity.postId },
+                {
+                    sponsorshipId: entity.id,
+                    updatedById: actor.id
+                }
+            );
+
+            if (updateResult) {
+                this.logger.info(
+                    `Successfully updated post ${entity.postId} with sponsorship_id: ${entity.id}`
+                );
+            } else {
+                this.logger.warn(
+                    `Failed to update post ${entity.postId} with sponsorship_id: ${entity.id}`
+                );
+            }
+
+            return entity;
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            this.logger.error(
+                `Error in _afterCreate hook for PostSponsorship ${entity.id}: ${errorMessage}`
+            );
+            // Don't throw the error to avoid breaking the creation process
+            return entity;
+        }
+    }
+
+    /**
+     * Before deleting a post sponsorship, clear the post's sponsorship_id field
+     */
+    protected async _beforeSoftDelete(id: string, actor: Actor): Promise<string> {
+        // Get the sponsorship entity to know which post to update
+        const sponsorship = await this.model.findOne({ id });
+        if (sponsorship) {
+            const postModel = new RealPostModel();
+
+            // Clear the post's sponsorship_id when the sponsorship is deleted
+            await postModel.update(
+                { id: sponsorship.postId },
+                {
+                    sponsorshipId: undefined,
+                    updatedById: actor.id
+                }
+            );
+        }
+
+        return id;
+    }
+
+    /**
+     * Before hard deleting a post sponsorship, clear the post's sponsorship_id field
+     */
+    protected async _beforeHardDelete(id: string, actor: Actor): Promise<string> {
+        // Get the sponsorship entity to know which post to update
+        const sponsorship = await this.model.findOne({ id });
+        if (sponsorship) {
+            const postModel = new RealPostModel();
+
+            // Clear the post's sponsorship_id when the sponsorship is hard deleted
+            await postModel.update(
+                { id: sponsorship.postId },
+                {
+                    sponsorshipId: undefined,
+                    updatedById: actor.id
+                }
+            );
+        }
+
+        return id;
     }
 
     protected async _executeSearch(
