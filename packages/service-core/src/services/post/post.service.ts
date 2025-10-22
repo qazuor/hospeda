@@ -8,6 +8,7 @@ import type {
     GetPostNewsInput,
     GetPostStatsInput,
     GetPostSummaryInput,
+    ListRelationsConfig,
     Post,
     PostCreateInput,
     PostEngagementStats,
@@ -70,8 +71,14 @@ export class PostService extends BaseCrudService<
     public readonly filterSchema = PostFilterInputSchema;
     public readonly searchSchema = PostFilterInputSchema;
 
-    protected getDefaultListRelations() {
-        return { author: true };
+    protected getDefaultListRelations(): ListRelationsConfig {
+        return {
+            author: true,
+            relatedAccommodation: true,
+            relatedDestination: true,
+            relatedEvent: true,
+            sponsorship: { sponsor: true } // Nested relation: sponsorship -> sponsor
+        };
     }
 
     /**
