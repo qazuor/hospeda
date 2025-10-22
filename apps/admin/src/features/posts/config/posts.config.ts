@@ -2,7 +2,7 @@ import { createEntityListPage } from '@/components/entity-list';
 import type { EntityConfig } from '@/components/entity-list/types';
 import { EntityType } from '@/components/table/DataTable';
 import type { z } from 'zod';
-import { type Post, PostListItemSchema } from '../schemas/posts.schemas';
+import { type Post, PostListItemWithComputedFieldsSchema } from '../schemas/posts.schemas';
 import { createPostsColumns } from './posts.columns';
 
 export const postsConfig: EntityConfig<Post> = {
@@ -19,7 +19,7 @@ export const postsConfig: EntityConfig<Post> = {
     detailPath: '/posts/[slug]',
 
     // Schemas
-    listItemSchema: PostListItemSchema as unknown as z.ZodSchema<Post>,
+    listItemSchema: PostListItemWithComputedFieldsSchema as unknown as z.ZodSchema<Post>,
 
     // Search configuration
     searchConfig: {
