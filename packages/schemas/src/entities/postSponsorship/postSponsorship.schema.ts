@@ -29,7 +29,7 @@ export const PostSponsorshipSchema = z.object({
     message: z
         .string()
         .min(5, { message: 'zodError.post.sponsorship.message.min' })
-        .max(300, { message: 'zodError.post.sponsorship.message.max' })
+        .max(50, { message: 'zodError.post.sponsorship.message.max' })
         .optional(),
 
     description: z
