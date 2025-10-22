@@ -59,7 +59,11 @@ describe('PostService - Relations Support', () => {
 
             // Verify
             expect(relations).toEqual({
-                author: true
+                author: true,
+                relatedAccommodation: true,
+                relatedDestination: true,
+                relatedEvent: true,
+                sponsorship: { sponsor: true }
             });
         });
     });
@@ -75,7 +79,13 @@ describe('PostService - Relations Support', () => {
             // Verify
             expect(result.data).toBeDefined();
             expect(mockModel.findAllWithRelations).toHaveBeenCalledWith(
-                { author: true },
+                {
+                    author: true,
+                    relatedAccommodation: true,
+                    relatedDestination: true,
+                    relatedEvent: true,
+                    sponsorship: { sponsor: true }
+                },
                 {},
                 { page: undefined, pageSize: undefined }
             );

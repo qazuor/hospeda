@@ -139,7 +139,7 @@ describe('PostSponsorshipSchema', () => {
                     undefined, // Optional field
                     'Hello', // Minimum length (5 chars)
                     'Valid sponsorship message',
-                    'A'.repeat(300) // Maximum length
+                    'A'.repeat(50) // Maximum length
                 ];
 
                 for (const message of validMessages) {
@@ -153,7 +153,7 @@ describe('PostSponsorshipSchema', () => {
                 const invalidMessages = [
                     '', // Empty
                     'Hi', // Too short (min 5)
-                    'A'.repeat(301) // Too long (max 300)
+                    'A'.repeat(51) // Too long (max 50)
                 ];
 
                 for (const message of invalidMessages) {
@@ -228,6 +228,9 @@ describe('PostSponsorshipSchema', () => {
         describe('date fields', () => {
             it('should accept valid dates', () => {
                 const validData = createValidPostSponsorship();
+                // Ensure message is valid length
+                validData.message = 'Valid message';
+
                 const validDates = [
                     undefined, // Optional fields
                     new Date(),
@@ -340,6 +343,8 @@ describe('PostSponsorshipSchema', () => {
     describe('Type Inference', () => {
         it('should infer correct TypeScript types', () => {
             const validData = createValidPostSponsorship();
+            // Ensure message is valid length
+            validData.message = 'Valid message';
             const result = PostSponsorshipSchema.parse(validData);
 
             // TypeScript should infer these correctly

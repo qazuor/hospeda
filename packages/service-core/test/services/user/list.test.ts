@@ -35,42 +35,42 @@ describe('UserService.list', () => {
     const user = getActor(RoleEnum.USER);
 
     beforeEach(() => {
-        userModelMock = createTypedModelMock(UserModel, ['findAll']);
+        userModelMock = createTypedModelMock(UserModel, ['findAllWithCounts']);
         loggerMock = createLoggerMock();
         service = createServiceTestInstance(UserService, userModelMock, loggerMock);
         entities = [getUser(), getUser()];
     });
 
     it('should return a paginated list of users (admin)', async () => {
-        asMock(userModelMock.findAll).mockResolvedValue(paginated(entities, 1, 2));
+        asMock(userModelMock.findAllWithCounts).mockResolvedValue(paginated(entities, 1, 2));
         const result = await service.list(admin, { page: 1, pageSize: 2 });
         expectSuccess(result);
         expect(result.data?.items?.length).toBe(2);
-        expect(asMock(userModelMock.findAll)).toHaveBeenCalledWith({}, { page: 1, pageSize: 2 });
+        expect(asMock(userModelMock.findAllWithCounts)).toHaveBeenCalledWith({ page: 1, pageSize: 2 }, { page: 1, pageSize: 2 });
     });
 
     it('should return a paginated list of users (super admin)', async () => {
-        asMock(userModelMock.findAll).mockResolvedValue(paginated(entities, 1, 2));
+        asMock(userModelMock.findAllWithCounts).mockResolvedValue(paginated(entities, 1, 2));
         const result = await service.list(superAdmin, { page: 1, pageSize: 2 });
         expectSuccess(result);
         expect(result.data?.items?.length).toBe(2);
-        expect(asMock(userModelMock.findAll)).toHaveBeenCalledWith({}, { page: 1, pageSize: 2 });
+        expect(asMock(userModelMock.findAllWithCounts)).toHaveBeenCalledWith({ page: 1, pageSize: 2 }, { page: 1, pageSize: 2 });
     });
 
     it('should return FORBIDDEN if actor is not admin or super admin', async () => {
-        asMock(userModelMock.findAll).mockResolvedValue(paginated(entities, 1, 2));
+        asMock(userModelMock.findAllWithCounts).mockResolvedValue(paginated(entities, 1, 2));
         const result = await service.list(user, { page: 1, pageSize: 2 });
         expectForbiddenError(result);
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {
-        asMock(userModelMock.findAll).mockRejectedValue(new Error('DB error'));
+        asMock(userModelMock.findAllWithCounts).mockRejectedValue(new Error('DB error'));
         const result = await service.list(admin, { page: 1, pageSize: 2 });
         expectInternalError(result);
     });
 
     it('should handle errors from the _beforeList hook', async () => {
-        asMock(userModelMock.findAll).mockResolvedValue(paginated(entities));
+        asMock(userModelMock.findAllWithCounts).mockResolvedValue(paginated(entities));
         vi.spyOn(
             service as unknown as { _beforeList: () => void },
             '_beforeList'
@@ -80,7 +80,7 @@ describe('UserService.list', () => {
     });
 
     it('should handle errors from the _afterList hook', async () => {
-        asMock(userModelMock.findAll).mockResolvedValue(paginated(entities));
+        asMock(userModelMock.findAllWithCounts).mockResolvedValue(paginated(entities));
         vi.spyOn(service as unknown as { _afterList: () => void }, '_afterList').mockRejectedValue(
             new Error('afterList error')
         );
@@ -97,9 +97,9 @@ describe('UserService.list', () => {
             };
         }
         const serviceWithNorm = new ServiceWithNormalizer({ logger: loggerMock }, userModelMock);
-        asMock(userModelMock.findAll).mockResolvedValue(paginated(entities, 99, 10));
+        asMock(userModelMock.findAllWithCounts).mockResolvedValue(paginated(entities, 99, 10));
         await serviceWithNorm.list(admin, { page: 1, pageSize: 10 });
         expect(normalizer).toHaveBeenCalledWith({ page: 1, pageSize: 10 }, admin);
-        expect(asMock(userModelMock.findAll)).toHaveBeenCalledWith({}, { page: 99, pageSize: 10 });
+        expect(asMock(userModelMock.findAllWithCounts)).toHaveBeenCalledWith({ page: 99, pageSize: 10 }, { page: 99, pageSize: 10 });
     });
 });

@@ -35,7 +35,12 @@ describe('PostSponsorshipService.list', () => {
 
     it('should list post sponsorships when permissions are valid', async () => {
         const items = [createMockPostSponsorship({ id: getMockPostSponsorshipId('mock-id-1') })];
-        modelMock.findAllWithRelations.mockResolvedValue({ items, total: 1, page: 1, pageSize: 10 });
+        modelMock.findAllWithRelations.mockResolvedValue({
+            items,
+            total: 1,
+            page: 1,
+            pageSize: 10
+        });
         const result = await service.list(actor, {});
         expect(result.data).toBeDefined();
         expect(result.data?.items).toBeDefined();
@@ -53,7 +58,12 @@ describe('PostSponsorshipService.list', () => {
     it('should return FORBIDDEN if actor lacks permission', async () => {
         actor = createActor({ permissions: [] });
         const items = [createMockPostSponsorship({ id: getMockPostSponsorshipId('mock-id-1') })];
-        modelMock.findAllWithRelations.mockResolvedValue({ items, total: 1, page: 1, pageSize: 10 });
+        modelMock.findAllWithRelations.mockResolvedValue({
+            items,
+            total: 1,
+            page: 1,
+            pageSize: 10
+        });
         const result = await service.list(actor, {});
         expect(result.error).toBeDefined();
         expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
@@ -69,7 +79,12 @@ describe('PostSponsorshipService.list', () => {
     });
 
     it('should return an empty list if there are no post sponsorships', async () => {
-        modelMock.findAllWithRelations.mockResolvedValue({ items: [], total: 0, page: 1, pageSize: 10 });
+        modelMock.findAllWithRelations.mockResolvedValue({
+            items: [],
+            total: 0,
+            page: 1,
+            pageSize: 10
+        });
         const result = await service.list(actor, {});
         expect(result.data).toBeDefined();
         expect(result.data?.items).toHaveLength(0);
@@ -82,7 +97,12 @@ describe('PostSponsorshipService.list', () => {
             createMockPostSponsorship({ id: getMockPostSponsorshipId('mock-id-1') }),
             createMockPostSponsorship({ id: getMockPostSponsorshipId('mock-id-2') })
         ];
-        modelMock.findAllWithRelations.mockResolvedValue({ items, total: 2, page: 1, pageSize: 10 });
+        modelMock.findAllWithRelations.mockResolvedValue({
+            items,
+            total: 2,
+            page: 1,
+            pageSize: 10
+        });
         const result = await service.list(actor, {});
         expect(result.data).toBeDefined();
         expect(result.data?.items).toHaveLength(2);
@@ -96,7 +116,12 @@ describe('PostSponsorshipService.list', () => {
             permissions: Object.values(PermissionEnum)
         });
         const items = [createMockPostSponsorship({ id: getMockPostSponsorshipId('mock-id-1') })];
-        modelMock.findAllWithRelations.mockResolvedValue({ items, total: 1, page: 1, pageSize: 10 });
+        modelMock.findAllWithRelations.mockResolvedValue({
+            items,
+            total: 1,
+            page: 1,
+            pageSize: 10
+        });
         const result = await service.list(actor, {});
         expect(result.data).toBeDefined();
         expect(result.data?.items).toHaveLength(1);

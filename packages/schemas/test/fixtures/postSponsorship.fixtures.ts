@@ -22,7 +22,9 @@ export const createValidPostSponsorship = () => ({
     postId: faker.string.uuid(),
 
     // Optional message
-    message: faker.helpers.maybe(() => faker.lorem.sentence(), { probability: 0.6 }),
+    message: faker.helpers.maybe(() => faker.lorem.words({ min: 2, max: 8 }).substring(0, 50), {
+        probability: 0.6
+    }),
 
     // Required description
     description: faker.lorem.paragraph(),
@@ -84,7 +86,7 @@ export const createPostSponsorshipMaxValues = () => ({
     ...createMinimalPostSponsorship(),
 
     // Maximum length values
-    message: 'A'.repeat(300), // Maximum length (300 chars)
+    message: 'A'.repeat(50), // Maximum length (50 chars)
     description: 'A'.repeat(500), // Maximum length (500 chars)
     paid: {
         price: 999999.99, // Large price
@@ -120,7 +122,7 @@ export const createPostSponsorshipTooLong = () => ({
     ...createMinimalPostSponsorship(),
 
     // Too long values
-    message: createTooLongString(301), // Too long (max 300)
+    message: createTooLongString(51), // Too long (max 50)
     description: createTooLongString(501), // Too long (max 500)
     paid: {
         price: faker.number.float({ min: 100, max: 1000 }),
@@ -155,7 +157,7 @@ export const createPostSponsorshipCreateInput = () => {
  * Creates PostSponsorship update input with partial data
  */
 export const createPostSponsorshipUpdateInput = () => ({
-    message: faker.lorem.sentence(),
+    message: faker.lorem.words({ min: 2, max: 8 }).substring(0, 50),
     description: faker.lorem.paragraph(),
     paid: {
         price: faker.number.float({ min: 200, max: 2000, fractionDigits: 2 }),
