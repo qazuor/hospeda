@@ -353,13 +353,13 @@ export abstract class BaseModel<T> {
     /**
      * Finds an entity with its relations.
      * @param where - The filter object
-     * @param relations - The relations to include
+     * @param relations - The relations to include (supports nested relations)
      * @param tx - Optional transaction client
      * @returns Promise resolving to the entity or null if not found
      */
     async findWithRelations(
         where: Record<string, unknown>,
-        relations: Record<string, boolean>,
+        relations: Record<string, boolean | Record<string, unknown>>,
         tx?: NodePgDatabase<typeof schema>
     ): Promise<T | null> {
         const db = this.getClient(tx);
@@ -411,14 +411,15 @@ export abstract class BaseModel<T> {
 
     /**
      * Finds all entities with specified relations populated.
+     * Supports nested relations (e.g., { sponsorship: { sponsor: true } })
      *
-     * @param relations Relations to include (e.g., { destination: true, owner: true })
+     * @param relations Relations to include (e.g., { destination: true, sponsorship: { sponsor: true } })
      * @param where Filter conditions
      * @param options Pagination and other options
      * @returns Promise resolving to paginated list with relations
      */
     async findAllWithRelations(
-        relations: Record<string, boolean>,
+        relations: Record<string, boolean | Record<string, unknown>>,
         where: Record<string, unknown> = {},
         options: PaginatedListOptions = {}
     ): Promise<{ items: T[]; total: number }> {
@@ -434,7 +435,14 @@ export abstract class BaseModel<T> {
             }
 
             // Check if any relations are actually requested
-            const hasRelations = Object.values(relations).some(Boolean);
+            const hasRelations = Object.values(relations).some((value) => {
+                // Check for boolean true or object with relations
+                if (typeof value === 'boolean') return value;
+                if (typeof value === 'object' && value !== null) {
+                    return Object.values(value).some(Boolean);
+                }
+                return false;
+            });
 
             if (!hasRelations) {
                 // Fall back to regular findAll if no relations requested
@@ -467,20 +475,43 @@ export abstract class BaseModel<T> {
             interface QueryableTable {
                 findMany: (options: {
                     where?: unknown;
-                    with?: Record<string, boolean>;
+                    with?: Record<string, boolean | Record<string, unknown>>;
                     limit?: number;
                     offset?: number;
                 }) => Promise<unknown[]>;
             }
             const typedQueryTable = queryTable as QueryableTable;
 
+            /**
+             * Transforms relations config to Drizzle ORM syntax
+             * Converts { sponsorship: { sponsor: true } } to { sponsorship: { with: { sponsor: true } } }
+             */
+            const transformRelationsForDrizzle = (
+                relations: Record<string, boolean | Record<string, unknown>>
+            ) => {
+                const transformed: Record<string, boolean | { with: Record<string, unknown> }> = {};
+
+                for (const [key, value] of Object.entries(relations)) {
+                    if (typeof value === 'boolean') {
+                        // Simple relation: { author: true }
+                        transformed[key] = value;
+                    } else if (typeof value === 'object' && value !== null) {
+                        // Nested relation: { sponsorship: { sponsor: true } } -> { sponsorship: { with: { sponsor: true } } }
+                        transformed[key] = { with: value };
+                    }
+                }
+
+                return transformed;
+            };
+
             // Check if pagination is requested
             const isPaginated = page !== undefined && pageSize !== undefined;
 
             if (isPaginated) {
+                const transformedRelations = transformRelationsForDrizzle(relations);
                 const queryOptions = {
                     where: whereClause,
-                    with: relations,
+                    with: transformedRelations,
                     limit: pageSize,
                     offset: offset
                 };
@@ -509,9 +540,10 @@ export abstract class BaseModel<T> {
             }
 
             // No pagination - get all items
+            const transformedRelations = transformRelationsForDrizzle(relations);
             const queryOptions = {
                 where: whereClause,
-                with: relations
+                with: transformedRelations
             };
 
             const items = await typedQueryTable.findMany(queryOptions);
