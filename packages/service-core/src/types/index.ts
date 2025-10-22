@@ -170,7 +170,7 @@ export interface BaseModel<T> {
         options?: { page?: number; pageSize?: number }
     ): Promise<PaginatedListOutput<T>>;
     findAllWithRelations(
-        relations: Record<string, boolean>,
+        relations: Record<string, boolean | Record<string, unknown>>,
         where?: Record<string, unknown>,
         options?: { page?: number; pageSize?: number }
     ): Promise<PaginatedListOutput<T>>;
