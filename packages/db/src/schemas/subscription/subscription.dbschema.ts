@@ -3,7 +3,7 @@ import { relations } from 'drizzle-orm';
 import { jsonb, pgTable, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { pricingPlans } from '../catalog/pricingPlan.dbschema';
 import { clients } from '../client/client.dbschema';
-import { SubscriptionStatusPgEnum } from '../enums.dbschema';
+import { SubscriptionStatusPgEnum } from '../enums.dbschema.js';
 import { users } from '../user/user.dbschema';
 import { subscriptionItems } from './subscriptionItem.dbschema';
 
