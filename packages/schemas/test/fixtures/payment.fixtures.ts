@@ -25,17 +25,7 @@ const createPaymentEntityFields = () => ({
         'ticket',
         'account_money'
     ] as PaymentMethodEnum[]),
-    status: faker.helpers.arrayElement([
-        'pending',
-        'approved',
-        'authorized',
-        'in_process',
-        'in_mediation',
-        'rejected',
-        'cancelled',
-        'refunded',
-        'charged_back'
-    ] as PaymentStatusEnum[]),
+    status: faker.helpers.arrayElement(['pending', 'approved', 'rejected'] as PaymentStatusEnum[]),
     type: faker.helpers.arrayElement(['one_time', 'subscription'] as PaymentTypeEnum[]),
     description: faker.helpers.maybe(() => faker.lorem.sentence(), { probability: 0.7 }),
     externalReference: faker.helpers.maybe(() => faker.string.alphanumeric(20), {
@@ -228,14 +218,14 @@ export const createMultiplePayments = (count = 3) =>
  * Create payments by status for testing grouping
  */
 export const createPaymentsByStatus = () => ({
-    COMPLETED: [
-        { ...createValidPayment(), status: 'COMPLETED' as PaymentStatusEnum },
-        { ...createValidPayment(), status: 'COMPLETED' as PaymentStatusEnum }
+    APPROVED: [
+        { ...createValidPayment(), status: 'approved' as PaymentStatusEnum },
+        { ...createValidPayment(), status: 'approved' as PaymentStatusEnum }
     ],
-    PENDING: [{ ...createValidPayment(), status: 'PENDING' as PaymentStatusEnum }],
-    FAILED: [
-        { ...createValidPayment(), status: 'FAILED' as PaymentStatusEnum },
-        { ...createValidPayment(), status: 'FAILED' as PaymentStatusEnum }
+    PENDING: [{ ...createValidPayment(), status: 'pending' as PaymentStatusEnum }],
+    REJECTED: [
+        { ...createValidPayment(), status: 'rejected' as PaymentStatusEnum },
+        { ...createValidPayment(), status: 'rejected' as PaymentStatusEnum }
     ]
 });
 

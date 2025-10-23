@@ -73,17 +73,7 @@ describe('PaymentSchema', () => {
         });
 
         it('should validate all payment statuses', () => {
-            const statuses = [
-                'pending',
-                'approved',
-                'authorized',
-                'in_process',
-                'in_mediation',
-                'rejected',
-                'cancelled',
-                'refunded',
-                'charged_back'
-            ];
+            const statuses = ['pending', 'approved', 'rejected'];
 
             for (const status of statuses) {
                 const paymentData = {
