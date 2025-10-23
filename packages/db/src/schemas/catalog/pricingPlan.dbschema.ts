@@ -1,10 +1,10 @@
 import type { AdminInfoType } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import { bigint, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
-import { BillingIntervalPgEnum, BillingSchemePgEnum } from '../enums.dbschema.ts';
-import { users } from '../user/user.dbschema.ts';
-import { pricingTiers } from './pricingTier.dbschema.ts';
-import { products } from './product.dbschema.ts';
+import { BillingIntervalPgEnum, BillingSchemePgEnum } from '../enums.dbschema.js';
+import { users } from '../user/user.dbschema.js';
+import { pricingTiers } from './pricingTier.dbschema.js';
+import { products } from './product.dbschema.js';
 
 export const pricingPlans = pgTable('pricing_plans', {
     id: uuid('id').primaryKey().defaultRandom(),
