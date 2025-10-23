@@ -1,15 +1,9 @@
 import type { AdminInfoType } from '@repo/schemas';
-import { CampaignChannelEnum } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
-import { decimal, jsonb, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { decimal, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { adSlots } from '../campaign/adSlot.dbschema.js';
+import { CampaignChannelPgEnum } from '../enums.dbschema.js';
 import { users } from '../user/user.dbschema.js';
-
-// Enum for campaign channels in database
-export const campaignChannelEnum = pgEnum('campaign_channel', [
-    CampaignChannelEnum.WEB,
-    CampaignChannelEnum.SOCIAL
-]);
 
 /**
  * AD_PRICING_CATALOG Schema - Etapa 2.4: Grupo Facturación y Pagos
@@ -24,7 +18,7 @@ export const adPricingCatalog = pgTable('ad_pricing_catalog', {
         .notNull(),
 
     // Channel-specific pricing
-    channel: campaignChannelEnum('channel').notNull(),
+    channel: CampaignChannelPgEnum('channel').notNull(),
 
     // Pricing structure
     basePrice: decimal('base_price', { precision: 10, scale: 2 }).notNull(),
