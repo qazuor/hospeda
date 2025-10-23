@@ -46,7 +46,10 @@ describe('UserService.list', () => {
         const result = await service.list(admin, { page: 1, pageSize: 2 });
         expectSuccess(result);
         expect(result.data?.items?.length).toBe(2);
-        expect(asMock(userModelMock.findAllWithCounts)).toHaveBeenCalledWith({ page: 1, pageSize: 2 }, { page: 1, pageSize: 2 });
+        expect(asMock(userModelMock.findAllWithCounts)).toHaveBeenCalledWith(
+            { page: 1, pageSize: 2 },
+            { page: 1, pageSize: 2 }
+        );
     });
 
     it('should return a paginated list of users (super admin)', async () => {
@@ -54,7 +57,10 @@ describe('UserService.list', () => {
         const result = await service.list(superAdmin, { page: 1, pageSize: 2 });
         expectSuccess(result);
         expect(result.data?.items?.length).toBe(2);
-        expect(asMock(userModelMock.findAllWithCounts)).toHaveBeenCalledWith({ page: 1, pageSize: 2 }, { page: 1, pageSize: 2 });
+        expect(asMock(userModelMock.findAllWithCounts)).toHaveBeenCalledWith(
+            { page: 1, pageSize: 2 },
+            { page: 1, pageSize: 2 }
+        );
     });
 
     it('should return FORBIDDEN if actor is not admin or super admin', async () => {
@@ -100,6 +106,9 @@ describe('UserService.list', () => {
         asMock(userModelMock.findAllWithCounts).mockResolvedValue(paginated(entities, 99, 10));
         await serviceWithNorm.list(admin, { page: 1, pageSize: 10 });
         expect(normalizer).toHaveBeenCalledWith({ page: 1, pageSize: 10 }, admin);
-        expect(asMock(userModelMock.findAllWithCounts)).toHaveBeenCalledWith({ page: 99, pageSize: 10 }, { page: 99, pageSize: 10 });
+        expect(asMock(userModelMock.findAllWithCounts)).toHaveBeenCalledWith(
+            { page: 99, pageSize: 10 },
+            { page: 99, pageSize: 10 }
+        );
     });
 });
