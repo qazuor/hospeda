@@ -2,7 +2,7 @@ import type { AdminInfoType } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import { jsonb, pgTable, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { clients } from '../client/client.dbschema';
-import { SponsorshipEntityTypePgEnum, SponsorshipStatusPgEnum } from '../enums.dbschema';
+import { SponsorshipEntityTypePgEnum, SponsorshipStatusPgEnum } from '../enums.dbschema.js';
 import { events } from '../event/event.dbschema';
 import { posts } from '../post/post.dbschema';
 import { users } from '../user/user.dbschema';
