@@ -2,8 +2,7 @@ import { DiscountTypeEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
     type InsertDiscountCode,
-    discountCodes,
-    discountTypeEnum
+    discountCodes
 } from '../../../src/schemas/promotion/discountCode.dbschema';
 
 describe('DiscountCode Schema Tests', () => {
@@ -30,8 +29,8 @@ describe('DiscountCode Schema Tests', () => {
         });
 
         it('should have discount type enum with correct values', () => {
-            expect(discountTypeEnum.enumValues).toContain(DiscountTypeEnum.PERCENTAGE);
-            expect(discountTypeEnum.enumValues).toContain(DiscountTypeEnum.FIXED_AMOUNT);
+            expect(Object.values(DiscountTypeEnum)).toContain(DiscountTypeEnum.PERCENTAGE);
+            expect(Object.values(DiscountTypeEnum)).toContain(DiscountTypeEnum.FIXED_AMOUNT);
         });
     });
 
