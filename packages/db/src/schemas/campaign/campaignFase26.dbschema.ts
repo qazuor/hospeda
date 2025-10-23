@@ -2,7 +2,7 @@ import type { AdminInfoType } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import { jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { clients } from '../client/client.dbschema';
-import { CampaignChannelPgEnum, CampaignStatusPgEnum } from '../enums.dbschema';
+import { CampaignChannelPgEnum, CampaignStatusPgEnum } from '../enums.dbschema.js';
 import { users } from '../user/user.dbschema';
 import { adMediaAssets } from './adMediaAsset.dbschema';
 import { adSlotReservations } from './adSlotReservation.dbschema';
