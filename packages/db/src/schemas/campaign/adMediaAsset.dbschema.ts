@@ -1,7 +1,7 @@
 import type { AdminInfoType } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import { jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
-import { MediaAssetTypePgEnum } from '../enums.dbschema';
+import { MediaAssetTypePgEnum } from '../enums.dbschema.js';
 import { users } from '../user/user.dbschema';
 import { campaignsFase26 } from './campaignFase26.dbschema';
 

@@ -1,7 +1,7 @@
 import type { AdminInfoType } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import { jsonb, pgTable, timestamp, uuid } from 'drizzle-orm/pg-core';
-import { AdSlotReservationStatusPgEnum } from '../enums.dbschema';
+import { AdSlotReservationStatusPgEnum } from '../enums.dbschema.js';
 import { users } from '../user/user.dbschema';
 import { adSlots } from './adSlot.dbschema';
 import { campaignsFase26 } from './campaignFase26.dbschema';
