@@ -2,7 +2,7 @@ import type { AdminInfoType } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import { boolean, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { clients } from '../client/client.dbschema';
-import { PaymentProviderPgEnum } from '../enums.dbschema';
+import { PaymentProviderPgEnum } from '../enums.dbschema.js';
 import { users } from '../user/user.dbschema';
 
 export const paymentMethods = pgTable('payment_methods', {

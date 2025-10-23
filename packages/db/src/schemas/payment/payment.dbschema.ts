@@ -1,7 +1,7 @@
 import type { AdminInfoType } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import { decimal, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
-import { PaymentProviderPgEnum, PaymentStatusPgEnum } from '../enums.dbschema';
+import { PaymentProviderPgEnum, PaymentStatusPgEnum } from '../enums.dbschema.js';
 import { users } from '../user/user.dbschema';
 import { invoices } from './invoice.dbschema';
 import { refunds } from './refund.dbschema';
