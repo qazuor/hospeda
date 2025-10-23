@@ -1,26 +1,19 @@
 import type { AdminInfoType } from '@repo/schemas';
-import { DiscountTypeEnum } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import {
     bigint,
     decimal,
     integer,
     jsonb,
-    pgEnum,
     pgTable,
     text,
     timestamp,
     uuid
 } from 'drizzle-orm/pg-core';
+import { DiscountTypePgEnum } from '../enums.dbschema.js';
 import { users } from '../user/user.dbschema.js';
 import { discountCodeUsages } from './discountCodeUsage.dbschema.js';
 import { promotions } from './promotion.dbschema.js';
-
-// Enum for discount type in database
-export const discountTypeEnum = pgEnum('discount_type', [
-    DiscountTypeEnum.PERCENTAGE,
-    DiscountTypeEnum.FIXED_AMOUNT
-]);
 
 /**
  * DISCOUNT_CODE Schema - Etapa 2.5: Grupo Promociones y Descuentos
@@ -37,7 +30,7 @@ export const discountCodes = pgTable('discount_codes', {
     code: text('code').notNull().unique(),
 
     // Discount type and amounts
-    discountType: discountTypeEnum('discount_type').notNull(),
+    discountType: DiscountTypePgEnum('discount_type').notNull(),
     percentOff: decimal('percent_off', { precision: 5, scale: 2 }), // null if fixed amount
     amountOffMinor: bigint('amount_off_minor', { mode: 'number' }), // null if percentage, in minor currency units (cents)
 
