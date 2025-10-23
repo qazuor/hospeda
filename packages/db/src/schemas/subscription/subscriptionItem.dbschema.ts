@@ -4,7 +4,7 @@ import { jsonb, pgTable, timestamp, uuid } from 'drizzle-orm/pg-core';
 import {
     SubscriptionItemEntityTypePgEnum,
     SubscriptionItemSourceTypePgEnum
-} from '../enums.dbschema';
+} from '../enums.dbschema.js';
 import { users } from '../user/user.dbschema';
 import { purchases } from './purchase.dbschema';
 import { subscriptions } from './subscription.dbschema';
