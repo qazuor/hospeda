@@ -1,9 +1,6 @@
 import { CampaignChannelEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
-import {
-    adPricingCatalog,
-    campaignChannelEnum
-} from '../../../src/schemas/payment/adPricingCatalog.dbschema.js';
+import { adPricingCatalog } from '../../../src/schemas/payment/adPricingCatalog.dbschema.js';
 
 describe('AdPricingCatalog DB Schema', () => {
     describe('table structure', () => {
@@ -86,7 +83,7 @@ describe('AdPricingCatalog DB Schema', () => {
 
     describe('enum configuration', () => {
         it('should have correct campaign channel enum values', () => {
-            expect(campaignChannelEnum.enumValues).toEqual([
+            expect(Object.values(CampaignChannelEnum)).toEqual([
                 CampaignChannelEnum.WEB,
                 CampaignChannelEnum.SOCIAL
             ]);

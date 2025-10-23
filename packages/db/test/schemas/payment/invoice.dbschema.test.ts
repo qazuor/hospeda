@@ -1,6 +1,6 @@
 import { InvoiceStatusEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
-import { invoiceStatusEnum, invoices } from '../../../src/schemas/payment/invoice.dbschema.js';
+import { invoices } from '../../../src/schemas/payment/invoice.dbschema.js';
 
 describe('Invoice DB Schema', () => {
     describe('table structure', () => {
@@ -81,7 +81,7 @@ describe('Invoice DB Schema', () => {
 
     describe('enum configuration', () => {
         it('should have correct invoice status enum values', () => {
-            expect(invoiceStatusEnum.enumValues).toEqual([
+            expect(Object.values(InvoiceStatusEnum)).toEqual([
                 InvoiceStatusEnum.OPEN,
                 InvoiceStatusEnum.PAID,
                 InvoiceStatusEnum.VOID
