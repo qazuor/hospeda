@@ -2,7 +2,7 @@ import type { AdminInfoType } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import { boolean, date, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { clients } from '../client/client.dbschema';
-import { ListingStatusPgEnum } from '../enums.dbschema';
+import { ListingStatusPgEnum } from '../enums.dbschema.js';
 import { users } from '../user/user.dbschema';
 import { benefitListingPlans } from './benefitListingPlan.dbschema';
 import { benefitPartners } from './benefitPartner.dbschema';
