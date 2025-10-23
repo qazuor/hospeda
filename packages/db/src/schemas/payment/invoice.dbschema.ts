@@ -1,16 +1,10 @@
 import type { AdminInfoType } from '@repo/schemas';
 import { InvoiceStatusEnum } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
-import { decimal, jsonb, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { decimal, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { clients } from '../client/client.dbschema.js';
+import { InvoiceStatusPgEnum } from '../enums.dbschema.js';
 import { users } from '../user/user.dbschema.js';
-
-// Enum for invoice status in database
-export const invoiceStatusEnum = pgEnum('invoice_status', [
-    InvoiceStatusEnum.OPEN,
-    InvoiceStatusEnum.PAID,
-    InvoiceStatusEnum.VOID
-]);
 
 export const invoices = pgTable('invoices', {
     id: uuid('id').primaryKey().defaultRandom(),
@@ -24,7 +18,7 @@ export const invoices = pgTable('invoices', {
     invoiceNumber: text('invoice_number').notNull().unique(),
 
     // Status
-    status: invoiceStatusEnum('status').notNull().default(InvoiceStatusEnum.OPEN),
+    status: InvoiceStatusPgEnum('status').notNull().default(InvoiceStatusEnum.OPEN),
 
     // Amount and currency fields
     subtotalAmount: decimal('subtotal_amount', { precision: 10, scale: 2 }).notNull(),
