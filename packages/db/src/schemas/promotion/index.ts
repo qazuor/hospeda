@@ -16,7 +16,6 @@ export {
 export {
     discountCodes,
     discountCodeRelations,
-    discountTypeEnum,
     type DiscountCode,
     type InsertDiscountCode
 } from './discountCode.dbschema.js';
