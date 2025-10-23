@@ -3,7 +3,7 @@ import { relations } from 'drizzle-orm';
 import { jsonb, pgTable, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { accommodations } from '../accommodation/accommodation.dbschema';
 import { clients } from '../client/client.dbschema';
-import { FeaturedStatusPgEnum, FeaturedTypePgEnum } from '../enums.dbschema';
+import { FeaturedStatusPgEnum, FeaturedTypePgEnum } from '../enums.dbschema.js';
 import { users } from '../user/user.dbschema';
 
 export const featuredAccommodations = pgTable('featured_accommodations', {
