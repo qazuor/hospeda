@@ -10,15 +10,21 @@ import {
     CampaignChannelEnum,
     CampaignStatusEnum,
     ClientTypeEnum,
+    DiscountTypeEnum,
     EntityPermissionReasonEnum,
     EntityTypeEnum,
     EventCategoryEnum,
     FeaturedStatusEnum,
     FeaturedTypeEnum,
+    InvoiceStatusEnum,
     LifecycleStatusEnum,
     ListingStatusEnum,
     MediaAssetTypeEnum,
     ModerationStatusEnum,
+    NotificationChannelEnum,
+    NotificationRecipientTypeEnum,
+    NotificationStatusEnum,
+    NotificationTypeEnum,
     PaymentMethodEnum,
     PaymentProviderEnum,
     PaymentStatusEnum,
@@ -179,3 +185,27 @@ export const ServiceOrderStatusPgEnum = pgEnum(
 );
 
 export const ListingStatusPgEnum = pgEnum('listing_status_enum', enumToTuple(ListingStatusEnum));
+
+export const InvoiceStatusPgEnum = pgEnum('invoice_status_enum', enumToTuple(InvoiceStatusEnum));
+
+export const DiscountTypePgEnum = pgEnum('discount_type_enum', enumToTuple(DiscountTypeEnum));
+
+export const NotificationChannelPgEnum = pgEnum(
+    'notification_channel_enum',
+    enumToTuple(NotificationChannelEnum)
+);
+
+export const NotificationRecipientTypePgEnum = pgEnum(
+    'notification_recipient_type_enum',
+    enumToTuple(NotificationRecipientTypeEnum)
+);
+
+export const NotificationStatusPgEnum = pgEnum(
+    'notification_status_enum',
+    enumToTuple(NotificationStatusEnum)
+);
+
+export const NotificationTypePgEnum = pgEnum(
+    'notification_type_enum',
+    enumToTuple(NotificationTypeEnum)
+);
