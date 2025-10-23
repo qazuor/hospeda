@@ -1,23 +1,41 @@
 import {
+    AccessRightScopeEnum,
     AccommodationTypeEnum,
+    AdSlotReservationStatusEnum,
     AmenitiesTypeEnum,
     AuthProviderEnum,
     BillingCycleEnum,
+    BillingIntervalEnum,
+    BillingSchemeEnum,
+    CampaignChannelEnum,
+    CampaignStatusEnum,
     ClientTypeEnum,
     EntityPermissionReasonEnum,
     EntityTypeEnum,
     EventCategoryEnum,
+    FeaturedStatusEnum,
+    FeaturedTypeEnum,
     LifecycleStatusEnum,
+    ListingStatusEnum,
+    MediaAssetTypeEnum,
     ModerationStatusEnum,
     PaymentMethodEnum,
+    PaymentProviderEnum,
     PaymentStatusEnum,
     PermissionCategoryEnum,
     PermissionEnum,
     PostCategoryEnum,
     PreferredContactEnum,
     PriceCurrencyEnum,
+    ProductTypeEnum,
+    ProfessionalServiceCategoryEnum,
     RecurrenceTypeEnum,
     RoleEnum,
+    ServiceOrderStatusEnum,
+    SponsorshipEntityTypeEnum,
+    SponsorshipStatusEnum,
+    SubscriptionItemEntityTypeEnum,
+    SubscriptionItemSourceTypeEnum,
     SubscriptionStatusEnum,
     TagColorEnum,
     VisibilityEnum
@@ -30,6 +48,11 @@ export const AccommodationTypePgEnum = pgEnum(
     enumToTuple(AccommodationTypeEnum)
 );
 
+export const AccessRightScopePgEnum = pgEnum(
+    'access_right_scope_enum',
+    enumToTuple(AccessRightScopeEnum)
+);
+
 export const AmenitiesTypePgEnum = pgEnum('amenities_type_enum', enumToTuple(AmenitiesTypeEnum));
 
 export const ClientTypePgEnum = pgEnum('client_type_enum', enumToTuple(ClientTypeEnum));
@@ -40,6 +63,8 @@ export const PreferredContactPgEnum = pgEnum(
 );
 
 export const PriceCurrencyPgEnum = pgEnum('price_currency_enum', enumToTuple(PriceCurrencyEnum));
+
+export const ProductTypePgEnum = pgEnum('product_type_enum', enumToTuple(ProductTypeEnum));
 
 export const EntityTypePgEnum = pgEnum('entity_type_enum', enumToTuple(EntityTypeEnum));
 
@@ -76,6 +101,13 @@ export const AuthProviderPgEnum = pgEnum('auth_provider_enum', enumToTuple(AuthP
 
 export const BillingCyclePgEnum = pgEnum('billing_cycle_enum', enumToTuple(BillingCycleEnum));
 
+export const BillingIntervalPgEnum = pgEnum(
+    'billing_interval_enum',
+    enumToTuple(BillingIntervalEnum)
+);
+
+export const BillingSchemePgEnum = pgEnum('billing_scheme_enum', enumToTuple(BillingSchemeEnum));
+
 export const EntityPermissionReasonPgEnum = pgEnum(
     'entity_permission_reason_enum',
     enumToTuple(EntityPermissionReasonEnum)
@@ -83,9 +115,67 @@ export const EntityPermissionReasonPgEnum = pgEnum(
 
 export const PaymentMethodPgEnum = pgEnum('payment_method_enum', enumToTuple(PaymentMethodEnum));
 
+export const PaymentProviderPgEnum = pgEnum(
+    'payment_provider_enum',
+    enumToTuple(PaymentProviderEnum)
+);
+
 export const PaymentStatusPgEnum = pgEnum('payment_status_enum', enumToTuple(PaymentStatusEnum));
 
 export const SubscriptionStatusPgEnum = pgEnum(
     'subscription_status_enum',
     enumToTuple(SubscriptionStatusEnum)
 );
+
+export const SubscriptionItemSourceTypePgEnum = pgEnum(
+    'subscription_item_source_type_enum',
+    enumToTuple(SubscriptionItemSourceTypeEnum)
+);
+
+export const SubscriptionItemEntityTypePgEnum = pgEnum(
+    'subscription_item_entity_type_enum',
+    enumToTuple(SubscriptionItemEntityTypeEnum)
+);
+
+export const CampaignChannelPgEnum = pgEnum(
+    'campaign_channel_enum',
+    enumToTuple(CampaignChannelEnum)
+);
+
+export const CampaignStatusPgEnum = pgEnum('campaign_status_enum', enumToTuple(CampaignStatusEnum));
+
+export const MediaAssetTypePgEnum = pgEnum(
+    'media_asset_type_enum',
+    enumToTuple(MediaAssetTypeEnum)
+);
+
+export const AdSlotReservationStatusPgEnum = pgEnum(
+    'ad_slot_reservation_status_enum',
+    enumToTuple(AdSlotReservationStatusEnum)
+);
+
+export const SponsorshipEntityTypePgEnum = pgEnum(
+    'sponsorship_entity_type_enum',
+    enumToTuple(SponsorshipEntityTypeEnum)
+);
+
+export const SponsorshipStatusPgEnum = pgEnum(
+    'sponsorship_status_enum',
+    enumToTuple(SponsorshipStatusEnum)
+);
+
+export const FeaturedTypePgEnum = pgEnum('featured_type_enum', enumToTuple(FeaturedTypeEnum));
+
+export const FeaturedStatusPgEnum = pgEnum('featured_status_enum', enumToTuple(FeaturedStatusEnum));
+
+export const ProfessionalServiceCategoryPgEnum = pgEnum(
+    'professional_service_category_enum',
+    enumToTuple(ProfessionalServiceCategoryEnum)
+);
+
+export const ServiceOrderStatusPgEnum = pgEnum(
+    'service_order_status_enum',
+    enumToTuple(ServiceOrderStatusEnum)
+);
+
+export const ListingStatusPgEnum = pgEnum('listing_status_enum', enumToTuple(ListingStatusEnum));
