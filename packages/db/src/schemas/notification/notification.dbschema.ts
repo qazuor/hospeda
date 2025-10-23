@@ -2,6 +2,11 @@ import type { AdminInfoType } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import { boolean, integer, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { clients } from '../client/client.dbschema';
+import {
+    NotificationRecipientTypePgEnum,
+    NotificationStatusPgEnum,
+    NotificationTypePgEnum
+} from '../enums.dbschema.js';
 import { users } from '../user/user.dbschema';
 
 /**
@@ -13,9 +18,7 @@ export const notifications = pgTable('notifications', {
     id: uuid('id').defaultRandom().primaryKey(),
 
     // Polymorphic recipient - can be USER or CLIENT
-    recipientType: text('recipient_type', {
-        enum: ['USER', 'CLIENT']
-    }).notNull(),
+    recipientType: NotificationRecipientTypePgEnum('recipient_type').notNull(),
     recipientId: uuid('recipient_id').notNull(),
 
     // Notification content
@@ -23,9 +26,7 @@ export const notifications = pgTable('notifications', {
     message: text('message').notNull(),
 
     // Notification type and category
-    type: text('type', {
-        enum: ['info', 'warning', 'error', 'success', 'marketing', 'system', 'reminder', 'alert']
-    }).notNull(),
+    type: NotificationTypePgEnum('type').notNull(),
     category: text('category'), // Optional categorization for filtering
 
     // Delivery channels
@@ -63,11 +64,7 @@ export const notifications = pgTable('notifications', {
     deliveredAt: timestamp('delivered_at', { withTimezone: true }),
 
     // Status and retry logic
-    status: text('status', {
-        enum: ['pending', 'scheduled', 'processing', 'delivered', 'failed', 'cancelled']
-    })
-        .notNull()
-        .default('pending'),
+    status: NotificationStatusPgEnum('status').notNull().default('PENDING'),
 
     // Retry configuration
     retryCount: integer('retry_count').notNull().default(0),
