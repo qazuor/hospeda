@@ -1451,7 +1451,127 @@
             "isOrphan": false,
             "aiState": "COMPLETED",
             "aiRetryCount": 0
+        },
+        {
+            "linearId": "69b6291a-203f-43bd-bb69-dc37828e70a9",
+            "type": "todo",
+            "filePath": "packages/db/src/schemas/catalog/pricingPlan.dbschema.ts",
+            "line": 62,
+            "title": "Add benefitListings relation when services schema is implemented",
+            "createdAt": "2025-10-23T22:05:20.876Z",
+            "updatedAt": "2025-10-23T22:05:20.877Z",
+            "isOrphan": false,
+            "aiState": "COMPLETED",
+            "aiRetryCount": 0
+        },
+        {
+            "linearId": "4fcabfc9-aeb6-4701-b367-e50a9ef4cfba",
+            "type": "todo",
+            "filePath": "packages/schemas/src/entities/index.ts",
+            "line": 18,
+            "title": "Enable once migration from old payment model is complete",
+            "createdAt": "2025-10-25T12:33:58.011Z",
+            "updatedAt": "2025-10-25T12:33:58.011Z",
+            "isOrphan": false,
+            "aiState": "COMPLETED",
+            "aiRetryCount": 0
+        },
+        {
+            "linearId": "8eda6b67-553c-4fed-bdf7-a9d369a33846",
+            "type": "todo",
+            "filePath": "packages/schemas/src/entities/index.ts",
+            "line": 22,
+            "title": "Enable once migration from old payment model is complete",
+            "createdAt": "2025-10-25T12:33:58.723Z",
+            "updatedAt": "2025-10-25T12:33:58.723Z",
+            "isOrphan": false,
+            "aiState": "COMPLETED",
+            "aiRetryCount": 0
+        },
+        {
+            "linearId": "08efb1f9-8a95-4c87-bfe9-a2724b1bb4c5",
+            "type": "todo",
+            "filePath": "packages/schemas/src/entities/product/product.relations.schema.ts",
+            "line": 4,
+            "title": "These schemas will be imported from their respective packages when implemented",
+            "createdAt": "2025-10-25T12:34:01.278Z",
+            "updatedAt": "2025-10-25T12:34:01.278Z",
+            "isOrphan": false,
+            "aiState": "COMPLETED",
+            "aiRetryCount": 0
+        },
+        {
+            "linearId": "23751a8c-f5c7-4c62-adab-7c4b7eacecdb",
+            "type": "todo",
+            "filePath": "packages/schemas/src/entities/purchase/purchase.relations.schema.ts",
+            "line": 47,
+            "title": "Add subscription items once SubscriptionItem schema is implemented",
+            "createdAt": "2025-10-25T12:34:05.552Z",
+            "updatedAt": "2025-10-25T12:34:05.552Z",
+            "isOrphan": false,
+            "aiState": "COMPLETED",
+            "aiRetryCount": 0
+        },
+        {
+            "linearId": "744c868c-5387-405e-8996-acb47e90fa25",
+            "type": "todo",
+            "filePath": "packages/schemas/src/entities/purchase/purchase.relations.schema.ts",
+            "line": 62,
+            "title": "Add subscription items once SubscriptionItem schema is implemented",
+            "createdAt": "2025-10-25T12:34:08.728Z",
+            "updatedAt": "2025-10-25T12:34:08.728Z",
+            "isOrphan": false,
+            "aiState": "COMPLETED",
+            "aiRetryCount": 0
+        },
+        {
+            "linearId": "04c4270d-d0a9-496a-9142-7237e8159fca",
+            "type": "todo",
+            "filePath": "packages/schemas/src/entities/subscription/subscription.relations.schema.ts",
+            "line": 47,
+            "title": "Add subscription items once SubscriptionItem schema is implemented",
+            "createdAt": "2025-10-25T12:34:10.870Z",
+            "updatedAt": "2025-10-25T12:34:10.870Z",
+            "isOrphan": false,
+            "aiState": "COMPLETED",
+            "aiRetryCount": 0
+        },
+        {
+            "linearId": "ca06120a-c832-4106-aca9-a25eb7caa3a2",
+            "type": "todo",
+            "filePath": "packages/schemas/src/entities/subscription/subscription.relations.schema.ts",
+            "line": 62,
+            "title": "Add subscription items once SubscriptionItem schema is implemented",
+            "createdAt": "2025-10-25T12:34:11.632Z",
+            "updatedAt": "2025-10-25T12:35:14.342Z",
+            "isOrphan": false,
+            "aiState": "COMPLETED",
+            "aiRetryCount": 0
+        },
+        {
+            "linearId": "47e95c2d-82a1-4509-8998-587c84ef4c85",
+            "type": "todo",
+            "filePath": "packages/schemas/src/entities/subscriptionItem/subscriptionItem.relations.schema.ts",
+            "line": 53,
+            "title": "This will be extended once all target entity schemas are implemented",
+            "createdAt": "2025-10-25T12:34:12.694Z",
+            "updatedAt": "2025-10-25T12:35:17.981Z",
+            "isOrphan": false,
+            "aiState": "COMPLETED",
+            "aiRetryCount": 0
+        },
+        {
+            "linearId": "f08ef1dc-75de-4274-b130-2d0336c0c2ba",
+            "type": "todo",
+            "filePath": "packages/schemas/src/entities/subscriptionItem/subscriptionItem.relations.schema.ts",
+            "line": 74,
+            "title": "Polymorphic target entity once all schemas are implemented",
+            "createdAt": "2025-10-25T12:34:13.483Z",
+            "updatedAt": "2025-10-25T12:35:21.139Z",
+            "isOrphan": false,
+            "aiState": "COMPLETED",
+            "aiRetryCount": 0
         }
     ],
-    "lastSync": "2025-10-22T02:30:55.572Z"
+    "lastSync": "2025-10-25T12:43:10.866Z"
 }
