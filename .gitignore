@@ -71,7 +71,6 @@ yarn-error.log*
 # IDE / Editor configs
 # =========================
 .idea
-.vscode
 *.tsbuildinfo
 
 # =========================
@@ -82,6 +81,7 @@ NOTES.txt
 mcp-todos.json
 packages/seed/mappings/id-mappings.json
 apps/api/package.prod.json
+docs/dev
 
 # TanStack Router generated files
 **/routeTree.gen.ts
