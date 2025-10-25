@@ -7,22 +7,22 @@
 
 // Table exports
 export {
-    promotions,
     promotionRelations,
-    type Promotion,
-    type InsertPromotion
+    promotions,
+    type InsertPromotion,
+    type Promotion
 } from './promotion.dbschema.js';
 
 export {
-    discountCodes,
     discountCodeRelations,
+    discountCodes,
     type DiscountCode,
     type InsertDiscountCode
 } from './discountCode.dbschema.js';
 
 export {
-    discountCodeUsages,
     discountCodeUsageRelations,
+    discountCodeUsages,
     type DiscountCodeUsage,
     type InsertDiscountCodeUsage
 } from './discountCodeUsage.dbschema.js';
