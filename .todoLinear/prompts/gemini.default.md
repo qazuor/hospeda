@@ -7,6 +7,7 @@ You are an expert software engineer analyzing TODO comments in codebases. Your j
 **Task:** Analyze the following TODO comment and provide structured insights.
 
 **Input:**
+
 - File Path: {{$filePath}}
 - Line Number: {{$lineNumber}}
 - TODO Comment: {{$comment}}
@@ -19,6 +20,7 @@ You are an expert software engineer analyzing TODO comments in codebases. Your j
 ```
 
 **Technical Context:**
+
 - File Type: {{$fileType}}
 - Package: {{$packageName}}
 - Imports: {{$imports}}
@@ -43,6 +45,7 @@ Respond with a valid JSON object following this exact structure:
 ```
 
 **Analysis Criteria:**
+
 - Assess technical complexity and dependencies
 - Consider maintainability and code quality impact
 - Evaluate business value and user impact

@@ -1480,10 +1480,10 @@
             "linearId": "8eda6b67-553c-4fed-bdf7-a9d369a33846",
             "type": "todo",
             "filePath": "packages/schemas/src/entities/index.ts",
-            "line": 22,
+            "line": 23,
             "title": "Enable once migration from old payment model is complete",
             "createdAt": "2025-10-25T12:33:58.723Z",
-            "updatedAt": "2025-10-25T12:33:58.723Z",
+            "updatedAt": "2025-10-29T00:12:45.048Z",
             "isOrphan": false,
             "aiState": "COMPLETED",
             "aiRetryCount": 0
@@ -1571,7 +1571,91 @@
             "isOrphan": false,
             "aiState": "COMPLETED",
             "aiRetryCount": 0
+        },
+        {
+            "linearId": "952d6d53-87a5-47ed-a51d-b01b2fa4dd35",
+            "type": "todo",
+            "filePath": "packages/db/src/models/client/client.model.ts",
+            "line": 105,
+            "title": "Implement when invoice tables are available",
+            "createdAt": "2025-10-29T00:12:12.591Z",
+            "updatedAt": "2025-10-29T00:12:12.592Z",
+            "isOrphan": false,
+            "aiState": "COMPLETED",
+            "aiRetryCount": 0
+        },
+        {
+            "linearId": "744fa45c-f98f-443c-a271-9541ed649d17",
+            "type": "todo",
+            "filePath": "packages/db/src/models/client/client.model.ts",
+            "line": 127,
+            "title": "Implement when subscription tables are available",
+            "createdAt": "2025-10-29T00:12:17.814Z",
+            "updatedAt": "2025-10-29T00:12:17.814Z",
+            "isOrphan": false,
+            "aiState": "COMPLETED",
+            "aiRetryCount": 0
+        },
+        {
+            "linearId": "63beffc9-f88e-46f5-a04d-57ae3c350fff",
+            "type": "todo",
+            "filePath": "packages/db/src/models/client/client.model.ts",
+            "line": 142,
+            "title": "Implement when subscription tables are available",
+            "createdAt": "2025-10-29T00:12:20.021Z",
+            "updatedAt": "2025-10-29T00:12:20.021Z",
+            "isOrphan": false,
+            "aiState": "COMPLETED",
+            "aiRetryCount": 0
+        },
+        {
+            "linearId": "33cc3a1b-a7d5-4d1d-9016-f52c527f57f2",
+            "type": "todo",
+            "filePath": "packages/db/src/models/client/client.model.ts",
+            "line": 150,
+            "title": "Implement when subscription tables are available",
+            "createdAt": "2025-10-29T00:12:27.462Z",
+            "updatedAt": "2025-10-29T00:12:27.462Z",
+            "isOrphan": false,
+            "aiState": "COMPLETED",
+            "aiRetryCount": 0
+        },
+        {
+            "linearId": "0d518782-8da2-4dd7-87c2-28b7a17b34ea",
+            "type": "todo",
+            "filePath": "packages/db/src/models/client/client.model.ts",
+            "line": 158,
+            "title": "Implement when subscription tables are available",
+            "createdAt": "2025-10-29T00:12:31.854Z",
+            "updatedAt": "2025-10-29T00:12:31.854Z",
+            "isOrphan": false,
+            "aiState": "COMPLETED",
+            "aiRetryCount": 0
+        },
+        {
+            "linearId": "dc9f225a-7c1a-455e-9928-ef3fec6f53ea",
+            "type": "todo",
+            "filePath": "packages/db/src/models/invoice/invoice.model.ts",
+            "line": 48,
+            "title": "Get actual pricing from subscription items and pricing plans",
+            "createdAt": "2025-10-29T00:12:32.861Z",
+            "updatedAt": "2025-10-29T00:12:32.861Z",
+            "isOrphan": false,
+            "aiState": "COMPLETED",
+            "aiRetryCount": 0
+        },
+        {
+            "linearId": "b687ac52-2e54-487d-8d29-cd636e102075",
+            "type": "todo",
+            "filePath": "packages/db/src/models/invoice/payment.model.ts",
+            "line": 344,
+            "title": "Check if there are already refunds and calculate remaining refundable amount",
+            "createdAt": "2025-10-29T00:12:36.983Z",
+            "updatedAt": "2025-10-29T00:12:36.983Z",
+            "isOrphan": false,
+            "aiState": "COMPLETED",
+            "aiRetryCount": 0
         }
     ],
-    "lastSync": "2025-10-25T12:52:44.042Z"
+    "lastSync": "2025-10-29T00:13:21.194Z"
 }

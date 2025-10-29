@@ -10,17 +10,20 @@ Analyze the following TODO comment and provide a detailed JSON response:
 **Line:** {{$lineNumber}}
 **Comment:** {{$comment}}
 **Code Context:**
+
 ```
 {{$beforeContext}}
 {{$afterContext}}
 ```
 
 **Project Context:**
+
 - File Type: {{$fileType}}
 - Package: {{$packageName}}
 - Imports: {{$imports}}
 
 Provide your analysis in this exact JSON format:
+
 ```json
 {
   "priority": "low|medium|high|critical",
@@ -38,6 +41,7 @@ Provide your analysis in this exact JSON format:
 ```
 
 **Analysis Guidelines:**
+
 - Be specific and actionable in your suggestions
 - Consider the code context and project structure
 - Estimate effort realistically based on the scope
