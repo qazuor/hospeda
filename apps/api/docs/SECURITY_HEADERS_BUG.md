@@ -7,6 +7,7 @@ The security headers bug has been completely resolved through refactoring the se
 ## 🎯 Solution Applied
 
 **Refactored security middleware** (`apps/api/src/middlewares/security.ts`):
+
 - Simplified implementation with single `securityHeadersMiddleware` function
 - Proper environment variable respect with production safety override
 - Clean, maintainable code without hotfix comments
@@ -46,7 +47,7 @@ export const securityHeadersMiddleware = async (c: Context, next: Next) => {
 ## ✅ Key Improvements
 
 1. **Single Source of Truth**: One middleware function instead of multiple conflicting implementations
-2. **Environment Respect**: Properly handles `SECURITY_ENABLED` and `SECURITY_HEADERS_ENABLED` 
+2. **Environment Respect**: Properly handles `SECURITY_ENABLED` and `SECURITY_HEADERS_ENABLED`
 3. **Production Safety**: Always applies headers in production regardless of config
 4. **Documentation Routes**: Smart skipping for routes that need different CSP policies
 5. **Test Coverage**: Comprehensive tests for all scenarios including disabled states

@@ -18,6 +18,7 @@ The Hospeda API implements comprehensive security measures including security he
 ## 🛡️ Security Headers
 
 ### **Comprehensive Header Protection**
+
 The security headers middleware applies a full suite of security headers:
 
 ```typescript
@@ -77,69 +78,83 @@ export const securityHeadersMiddleware = async (c: Context, next: Next) => {
 ### **Applied Security Headers**
 
 #### **Content Security Policy (CSP)**
+
 ```http
 Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self'; font-src 'self' https: data:; object-src 'none'; media-src 'self'; frame-src 'self'
 ```
 
 **Protection Against:**
+
 - Cross-Site Scripting (XSS)
 - Data injection attacks
 - Clickjacking
 - Mixed content vulnerabilities
 
 #### **Strict Transport Security (HSTS)**
+
 ```http
 Strict-Transport-Security: max-age=31536000; includeSubDomains
 ```
 
 **Features:**
+
 - Forces HTTPS connections
 - Prevents protocol downgrade attacks
 - 1-year cache duration
 - Includes all subdomains
 
 #### **X-Frame-Options**
+
 ```http
 X-Frame-Options: SAMEORIGIN
 ```
 
 **Protection:**
+
 - Prevents clickjacking attacks
 - Allows framing from same origin only
 
 #### **X-Content-Type-Options**
+
 ```http
 X-Content-Type-Options: nosniff
 ```
 
 **Protection:**
+
 - Prevents MIME type sniffing
 - Blocks malicious file execution
 
 #### **X-XSS-Protection**
+
 ```http
 X-XSS-Protection: 1; mode=block
 ```
 
 **Protection:**
+
 - Enables XSS filtering
 - Blocks detected XSS attacks
 
 #### **Referrer Policy**
+
 ```http
 Referrer-Policy: strict-origin-when-cross-origin
 ```
 
 **Privacy:**
+
 - Controls referrer information sharing
 - Balances functionality and privacy
 
 #### **Permissions Policy**
+
 ```http
 Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()
 ```
 
 **Protection:**
+
 - Disables unnecessary browser APIs
 - Prevents unauthorized feature access
 
@@ -148,6 +163,7 @@ Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
 ## 🌐 CORS Configuration
 
 ### **Cross-Origin Resource Sharing Setup**
+
 ```typescript
 // src/middlewares/cors.ts
 export const corsMiddleware = cors({
@@ -168,6 +184,7 @@ export const corsMiddleware = cors({
 ```
 
 ### **Environment Configuration**
+
 ```env
 # Development
 CORS_ORIGINS=http://localhost:3000,http://localhost:5173,http://localhost:4173
@@ -181,6 +198,7 @@ CORS_MAX_AGE=86400
 ```
 
 ### **Dynamic CORS for Development**
+
 ```typescript
 const isDevelopment = env.NODE_ENV === 'development';
 
@@ -202,6 +220,7 @@ export const corsMiddleware = cors({
 ## 🚦 Rate Limiting
 
 ### **Advanced Rate Limiting Strategy**
+
 ```typescript
 // src/middlewares/rate-limit.ts
 export const rateLimitMiddleware = async (c: Context, next: Next) => {
@@ -271,6 +290,7 @@ export const rateLimitMiddleware = async (c: Context, next: Next) => {
 ```
 
 ### **IP Address Detection**
+
 ```typescript
 const getClientIP = (c: Context): string => {
   // Priority order for IP detection
@@ -296,6 +316,7 @@ const getClientIP = (c: Context): string => {
 ```
 
 ### **Rate Limiting Configuration**
+
 ```env
 # Standard API
 RATE_LIMIT_ENABLED=true
@@ -317,6 +338,7 @@ RATE_LIMIT_MAX_REQUESTS=5          # 5 attempts per hour
 ## 🔐 Authentication & Authorization
 
 ### **Clerk Integration**
+
 ```typescript
 // src/middlewares/auth.ts
 export const clerkAuth = () => {
@@ -337,6 +359,7 @@ export const clerkAuth = () => {
 ```
 
 ### **Actor-Based Authorization**
+
 ```typescript
 // src/middlewares/actor.ts
 export const actorMiddleware = () => async (c: Context, next: Next) => {
@@ -362,6 +385,7 @@ export const actorMiddleware = () => async (c: Context, next: Next) => {
 ```
 
 ### **Permission-Based Access Control**
+
 ```typescript
 // Route-level permission checking
 export const requirePermission = (permission: string) => {
@@ -400,6 +424,7 @@ export const requirePermission = (permission: string) => {
 ## ✅ Input Validation & Sanitization
 
 ### **Zod Schema Validation**
+
 ```typescript
 // Comprehensive input validation
 const UserRegistrationSchema = z.object({
@@ -433,6 +458,7 @@ const UserRegistrationSchema = z.object({
 ```
 
 ### **SQL Injection Prevention**
+
 ```typescript
 // Safe database queries with parameterized statements
 export const getUserByEmail = async (email: string): Promise<User | null> => {
@@ -450,6 +476,7 @@ const unsafeQuery = `SELECT * FROM users WHERE email = '${email}'`;
 ```
 
 ### **XSS Prevention**
+
 ```typescript
 // HTML sanitization for user content
 import DOMPurify from 'isomorphic-dompurify';
@@ -494,6 +521,7 @@ export const sanitizeResponse = (data: any): any => {
 ## 🔍 Security Monitoring
 
 ### **Security Event Logging**
+
 ```typescript
 // src/utils/security-logging.ts
 export const logSecurityEvent = (event: SecurityEvent) => {
@@ -535,6 +563,7 @@ logSecurityEvent({
 ```
 
 ### **Vulnerability Scanning**
+
 ```typescript
 // Regular security health checks
 export const runSecurityChecks = async (): Promise<SecurityReport> => {
@@ -579,6 +608,7 @@ if (env.NODE_ENV === 'production') {
 ## 🧪 Security Testing
 
 ### **Penetration Testing Helpers**
+
 ```typescript
 describe('Security Tests', () => {
   describe('Rate Limiting', () => {
@@ -635,6 +665,7 @@ describe('Security Tests', () => {
 ## 🚀 Production Security Checklist
 
 ### **Pre-Deployment Checklist**
+
 - [ ] **Security Headers**: All headers properly configured
 - [ ] **HTTPS**: SSL certificates valid and HSTS enabled
 - [ ] **Rate Limiting**: Appropriate limits for all endpoints
@@ -647,6 +678,7 @@ describe('Security Tests', () => {
 - [ ] **Secrets**: No secrets in code or environment files
 
 ### **Security Monitoring**
+
 ```typescript
 // Production security monitoring
 const securityMetrics = {
