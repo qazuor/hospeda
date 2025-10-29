@@ -83,6 +83,7 @@ The component calls the `/api/bookmarks` endpoint with the following payload:
 ## Examples by Entity Type
 
 ### Accommodation
+
 ```astro
 <FavoriteButton 
     client:only
@@ -93,6 +94,7 @@ The component calls the `/api/bookmarks` endpoint with the following payload:
 ```
 
 ### Destination
+
 ```astro
 <FavoriteButton 
     client:only
@@ -103,6 +105,7 @@ The component calls the `/api/bookmarks` endpoint with the following payload:
 ```
 
 ### Event
+
 ```astro
 <FavoriteButton 
     client:only
@@ -113,6 +116,7 @@ The component calls the `/api/bookmarks` endpoint with the following payload:
 ```
 
 ### Post
+
 ```astro
 <FavoriteButton 
     client:only
@@ -142,6 +146,7 @@ The component uses Tailwind CSS classes and includes:
 ## Error Handling
 
 If the API call fails:
+
 1. The optimistic update is reverted
 2. An error is logged to console
 3. The user can try again
