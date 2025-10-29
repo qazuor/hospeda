@@ -5,12 +5,14 @@ Esta carpeta contiene los prompts personalizables para cada proveedor de IA del 
 ## 🎯 Cómo Personalizar Prompts
 
 ### 1. Copiar Template Base
+
 ```bash
 # Ejemplo para OpenAI
 cp openai.example.md openai.md
 ```
 
 ### 2. Editar Variables
+
 Los prompts soportan las siguientes variables que se reemplazan automáticamente:
 
 - `{{$languageInstructions}}` - Instrucciones de idioma (español, inglés, etc.)
@@ -24,6 +26,7 @@ Los prompts soportan las siguientes variables que se reemplazan automáticamente
 - `{{$imports}}` - Imports disponibles en el archivo
 
 ### 3. Sistema de Fallback
+
 - **Prompt personalizado**: `{provider}.md` (ej: `openai.md`)
 - **Prompt ejemplo**: `{provider}.example.md` (ej: `openai.example.md`)
 
@@ -32,26 +35,31 @@ El sistema busca primero el archivo personalizado, si no existe usa el de ejempl
 ## 📋 Prompts Disponibles
 
 ### OpenAI (`openai.example.md`)
+
 - Diseñado para GPT-3.5/GPT-4
 - Enfoque en análisis detallado y estructurado
 - Formato JSON específico
 
 ### Anthropic (`anthropic.example.md`)  
+
 - Optimizado para Claude
 - Énfasis en comprensión de contexto empresarial
 - Guías específicas para implementación
 
 ### Google Gemini (`gemini.example.md`)
+
 - Compatible con Gemini 1.5 Flash
 - Criterios de análisis técnico
 - Evaluación de complejidad y dependencias
 
 ### DeepSeek (`deepseek.example.md`)
+
 - Proveedor **GRATUITO** con límites generosos
 - Enfoque en soluciones prácticas e implementables  
 - Consideraciones de rendimiento y escalabilidad
 
 ### Groq (`groq.example.md`)
+
 - Proveedor **GRATUITO** ultra-rápido
 - Balance entre excelencia técnica y restricciones de entrega
 - Análisis de valor empresarial y urgencia técnica
@@ -59,6 +67,7 @@ El sistema busca primero el archivo personalizado, si no existe usa el de ejempl
 ## ✏️ Ejemplos de Personalización
 
 ### Cambiar Formato de Respuesta
+
 ```markdown
 # En tu prompt personalizado
 Responde con este formato específico:
@@ -70,6 +79,7 @@ Responde con este formato específico:
 ```
 
 ### Personalizar por Proyecto
+
 ```markdown
 # Para proyectos de e-commerce
 Considera siempre el impacto en:
@@ -80,6 +90,7 @@ Considera siempre el impacto en:
 ```
 
 ### Ajustar Idioma Específico
+
 ```markdown
 # Override automático de idioma
 {{$languageInstructions}}
@@ -90,6 +101,7 @@ IMPORTANTE: Además del idioma, usa terminología específica de {{$packageName}
 ## 🔧 Variables de Contexto Avanzadas
 
 ### Ejemplo de Uso Completo
+
 ```markdown
 # Análisis TODO: {{$comment}}
 
@@ -102,8 +114,10 @@ IMPORTANTE: Además del idioma, usa terminología específica de {{$packageName}
 ```
 
 **Metadatos:**
+
 - Paquete: {{$packageName}}
 - Dependencias: {{$imports}}
+
 ```
 
 ## 🚨 Mejores Prácticas

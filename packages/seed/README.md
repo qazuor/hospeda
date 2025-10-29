@@ -464,6 +464,7 @@ export const seedWithErrorHandling = createSeedFactory({
 ### From Old Seed System
 
 **Before:**
+
 ```typescript
 export async function seedAmenities(context: SeedContext) {
     // 100+ lines of boilerplate code
@@ -474,6 +475,7 @@ export async function seedAmenities(context: SeedContext) {
 ```
 
 **After:**
+
 ```typescript
 export const seedAmenities = createSeedFactory({
     entityName: 'Amenities',
@@ -510,4 +512,3 @@ export const seedAmenities = createSeedFactory({
 4. Verify file paths and manifests
 
 ---
-

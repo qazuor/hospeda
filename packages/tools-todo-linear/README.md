@@ -24,6 +24,7 @@ A powerful tool that automatically scans your codebase for TODO, HACK, and DEBUG
 ### 🚫 Problem Solved: Duplicate AI Calls
 
 **Before (Inefficient):**
+
 ```bash
 🤖 Processing AI analysis for 132 comments...     # Batch processing
 📦 Processing batch 1/27 (5 items)
@@ -33,6 +34,7 @@ A powerful tool that automatically scans your codebase for TODO, HACK, and DEBUG
 ```
 
 **After (Optimized):**
+
 ```bash
 🤖 Processing AI analysis for 132 comments...     # Batch processing ONLY
 📦 Processing batch 1/27 (5 items)
@@ -76,20 +78,23 @@ Transform your TODO comments into comprehensive Linear issues with AI assistance
 
 The system now uses **optimized batch processing** to eliminate duplicate AI API calls:
 
-#### **Before Optimization**:
+#### **Before Optimization**
+
 - ❌ Batch processing for all TODOs
 - ❌ Individual AI calls for each TODO creation/update
 - ❌ **Double API usage** causing rate limits
 - ❌ Slower processing and token waste
 
-#### **After Optimization**:
+#### **After Optimization**
+
 - ✅ **Single batch processing** only
 - ✅ Pre-processed AI analysis reused for issue creation
-- ✅ **50% fewer API calls** 
+- ✅ **50% fewer API calls**
 - ✅ Better rate limit compliance
 - ✅ Faster overall synchronization
 
-#### **Benefits**:
+#### **Benefits**
+
 - **💰 Token Efficiency**: Eliminates duplicate AI requests
 - **⚡ Speed**: Faster sync with fewer API bottlenecks
 - **🛡️ Rate Limit Safety**: Reduced chance of hitting provider limits
@@ -156,6 +161,7 @@ Each AI provider requires an API key for authentication:
 ### AI Configuration
 
 **Recommended providers (free with high quotas):**
+
 - **DeepSeek**: 10,000+ requests/day, completely free
 - **Groq**: 6,000 tokens/minute, ultra-fast and free
 
@@ -181,15 +187,17 @@ TODO_LINEAR_AI_MAX_RETRIES=3     # Max retry attempts (0-10)
 Control how AI processes multiple TODOs for optimal performance and rate limiting:
 
 #### **Batch Size (`TODO_LINEAR_AI_BATCH_SIZE`)**
+
 - **Default**: 3 TODOs per request
-- **Range**: 1-20 
+- **Range**: 1-20
 - **Description**: How many TODOs are analyzed in a single AI request
-- **Recommendation**: 
+- **Recommendation**:
   - **Small batches (1-3)**: More reliable, better error isolation
   - **Large batches (5-10)**: Faster processing, fewer API calls
   - **Very large (10+)**: Risk of timeout, harder to debug failures
 
 #### **Delay Between Requests (`TODO_LINEAR_AI_DELAY_MS`)**  
+
 - **Default**: 3000ms (3 seconds)
 - **Range**: 0-30000ms
 - **Description**: Wait time between AI requests to respect rate limits
@@ -199,6 +207,7 @@ Control how AI processes multiple TODOs for optimal performance and rate limitin
   - **Long delay (5000+ms)**: Very safe, slower processing
 
 #### **Max Retries (`TODO_LINEAR_AI_MAX_RETRIES`)**
+
 - **Default**: 3 attempts
 - **Range**: 0-10
 - **Description**: How many times to retry failed AI requests
@@ -445,6 +454,7 @@ node dist/scripts/test-prompts-simple.js
 ```
 
 Expected output:
+
 ```text
 Available prompts:
   openai: CUSTOM      ✅ (using your custom prompt)
@@ -557,6 +567,7 @@ export default {
 ```
 
 ## 🚀 Quick Start
+
 ```
 
 ## 🚀 Quick Start
@@ -627,8 +638,8 @@ pnpm todo:clean
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `TODO_LINEAR_API_KEY` | ✅ | - | Linear API authentication key |
-| `TODO_LINEAR_TEAM_ID` | ✅ | - | Linear team identifier |
+| `LINEAR_API_KEY` | ✅ | - | Linear API authentication key |
+| `LINEAR_TEAM_ID` | ✅ | - | Linear team identifier |
 | `TODO_LINEAR_DEFAULT_USER_EMAIL` | ✅ | - | Default assignee email |
 | `TODO_LINEAR_IDE_LABEL_NAME` | ❌ | `"From IDE"` | Label name for IDE-generated issues |
 | `TODO_LINEAR_IDE_LINK_TEMPLATE` | ❌ | `"vscode://file//{filePath}:{lineNumber}"` | IDE link template |
@@ -709,6 +720,7 @@ Interactive setup wizard with provider selection and quota information:
 ```
 
 The setup automatically:
+
 - Shows providers ordered by generosity (free first)
 - Displays quota and cost information
 - Provides API key links for each provider
