@@ -43,6 +43,7 @@
 ## 🎯 Architecture Overview
 
 ### **Tech Stack**
+
 - **Framework**: Hono (High-performance web framework)
 - **Runtime**: Node.js 18+ with TypeScript 5.0+
 - **Validation**: Zod schemas with custom error transformation
@@ -53,6 +54,7 @@
 - **Security**: Advanced security headers and rate limiting
 
 ### **Core Principles**
+
 1. **Type Safety First**: Everything is strongly typed
 2. **Middleware Composition**: Modular, reusable middleware
 3. **Consistent Response Format**: Standardized API responses
@@ -106,9 +108,11 @@ apps/api/
 ## ⚙️ Setup & Configuration
 
 ### **Environment Variables**
+
 The API uses a comprehensive environment configuration system. See [Environment Variables Guide](./ENVIRONMENT_VARIABLES.md) for complete reference.
 
 ### **Key Configuration**
+
 ```typescript
 // src/utils/env.ts
 export const env = {
@@ -125,6 +129,7 @@ export const env = {
 ## 🔧 Middleware System
 
 ### **Middleware Stack Order**
+
 ```typescript
 // src/utils/create-app.ts
 app.use(requestId())                    // Request tracking
@@ -144,6 +149,7 @@ app.use(requestId())                    // Request tracking
 ### **Key Middleware Features**
 
 #### **Security Headers**
+
 - Comprehensive CSP policies
 - XSS protection
 - Frame options
@@ -151,12 +157,14 @@ app.use(requestId())                    // Request tracking
 - Environment-aware configuration
 
 #### **Rate Limiting**
+
 - IP-based rate limiting
 - Configurable windows and limits
 - Test environment aware
 - Detailed headers and error responses
 
 #### **Metrics Collection**
+
 - Request/response time tracking
 - Success/error rate monitoring
 - Memory usage optimization
@@ -167,6 +175,7 @@ app.use(requestId())                    // Request tracking
 ## 🛣️ Route Factories
 
 ### **Modern Route Creation System**
+
 Our route factory system eliminates boilerplate and ensures consistency:
 
 ```typescript
@@ -215,6 +224,7 @@ See [Route Factory Documentation](./ROUTE_FACTORY_SYSTEM.md) for complete detail
 ## 🔐 Authentication & Authorization
 
 ### **Actor System**
+
 Every request has an actor (authenticated user or guest):
 
 ```typescript
@@ -237,6 +247,7 @@ See [Actor System Documentation](./ACTOR_SYSTEM.md) for complete guide.
 ## 📊 Response Format
 
 ### **Standardized API Responses**
+
 All endpoints return consistent response format:
 
 ```typescript
@@ -270,6 +281,7 @@ All endpoints return consistent response format:
 ## ✅ Validation System
 
 ### **Zod-Powered Validation**
+
 - Comprehensive input validation
 - Type-safe schema definitions
 - User-friendly error messages
@@ -294,6 +306,7 @@ See [Zod Error Transformer Documentation](./ZOD_ERROR_SYSTEM.md) for details.
 ## 🔄 Error Handling
 
 ### **Comprehensive Error Management**
+
 - Global error handler
 - Consistent error formatting
 - Environment-aware error details
@@ -304,6 +317,7 @@ See [Zod Error Transformer Documentation](./ZOD_ERROR_SYSTEM.md) for details.
 ## 📊 Metrics & Monitoring
 
 ### **Advanced Metrics System**
+
 - Request/response time tracking
 - Success/error rate monitoring
 - Memory usage optimization
@@ -316,6 +330,7 @@ See [Zod Error Transformer Documentation](./ZOD_ERROR_SYSTEM.md) for details.
 ## 🧪 Testing Strategy
 
 ### **Comprehensive Test Coverage**
+
 - Unit tests for all utilities
 - Middleware integration tests
 - End-to-end API tests
@@ -327,6 +342,7 @@ See [Zod Error Transformer Documentation](./ZOD_ERROR_SYSTEM.md) for details.
 ## 📖 API Documentation
 
 ### **OpenAPI/Swagger Integration**
+
 - Automatic API documentation generation
 - Interactive API explorer
 - Type-safe schema definitions

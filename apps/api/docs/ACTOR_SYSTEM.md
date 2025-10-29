@@ -7,6 +7,7 @@ The Hospeda API implements a universal actor system that automatically handles b
 ## 🎯 Core Concept
 
 **Every request = One Actor**
+
 - **Authenticated User**: Full user data and permissions
 - **Guest User**: Limited access with consistent interface
 
@@ -41,6 +42,7 @@ export const actorMiddleware = () => async (c: Context, next: Next) => {
 ### 2. Actor Types
 
 #### **User Actor** (Authenticated)
+
 ```typescript
 {
   type: 'USER',
@@ -60,6 +62,7 @@ export const actorMiddleware = () => async (c: Context, next: Next) => {
 ```
 
 #### **Guest Actor** (Unauthenticated)
+
 ```typescript
 {
   type: 'GUEST',
@@ -76,6 +79,7 @@ export const actorMiddleware = () => async (c: Context, next: Next) => {
 ## 🛠️ Usage in Routes
 
 ### **Accessing the Actor**
+
 ```typescript
 // In any route handler
 export const getUserProfile = async (c: Context) => {
@@ -104,6 +108,7 @@ export const getUserProfile = async (c: Context) => {
 ```
 
 ### **Type-Safe Actor Checks**
+
 ```typescript
 // Type guards for safe access
 const isAuthenticatedUser = (actor: Actor): actor is UserActor => {
@@ -120,6 +125,7 @@ if (isAuthenticatedUser(actor)) {
 ## 🔧 Actor Factory Functions
 
 ### **createUserActor**
+
 ```typescript
 export const createUserActor = (user: User): UserActor => ({
   type: 'USER',
@@ -134,6 +140,7 @@ export const createUserActor = (user: User): UserActor => ({
 ```
 
 ### **createGuestActor**
+
 ```typescript
 export const createGuestActor = (): GuestActor => ({
   type: 'GUEST',
@@ -150,6 +157,7 @@ export const createGuestActor = (): GuestActor => ({
 ## 🎨 Advanced Usage Patterns
 
 ### **Permission-Based Access Control**
+
 ```typescript
 const requirePermission = (permission: Permission) => {
   return (actor: Actor): boolean => {
@@ -168,6 +176,7 @@ if (!requirePermission('write')(actor)) {
 ```
 
 ### **Service Layer Integration**
+
 ```typescript
 // Services always receive an actor
 class UserService {
@@ -188,21 +197,25 @@ class UserService {
 ## 📊 Benefits
 
 ### **1. Consistency**
+
 - Every route has the same actor interface
 - No need to check authentication state manually
 - Consistent error handling
 
 ### **2. Type Safety**
+
 - Full TypeScript support
 - Compile-time guarantees
 - IDE autocomplete and refactoring
 
 ### **3. Flexibility**
+
 - Easy to extend with new actor types
 - Permission system can grow with requirements
 - Backward compatible changes
 
 ### **4. Security**
+
 - Centralized authentication logic
 - No forgotten auth checks
 - Audit trail built-in
@@ -210,6 +223,7 @@ class UserService {
 ## 🧪 Testing
 
 ### **Mock Actors for Testing**
+
 ```typescript
 // Test utilities
 export const createMockUserActor = (overrides?: Partial<User>): UserActor => {
@@ -240,11 +254,13 @@ describe('User Profile Route', () => {
 ## 📈 Performance Considerations
 
 ### **Caching Strategy**
+
 - User data is fetched once per request
 - Session validation is cached
 - Database queries are optimized
 
 ### **Memory Management**
+
 - Actors are created per request
 - No persistent state between requests
 - Automatic cleanup
@@ -252,12 +268,14 @@ describe('User Profile Route', () => {
 ## 🔮 Future Enhancements
 
 ### **Planned Features**
+
 - Role-based permissions
 - Organization-level actors
 - Service-to-service actors
 - Actor audit logging
 
 ### **Extension Points**
+
 - Custom actor types
 - Dynamic permission calculation
 - Actor middleware chaining
