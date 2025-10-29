@@ -30,6 +30,7 @@
         "check": "biome check --write .",
         "clean": "rm -rf node_modules dist",
         "test:coverage": "vitest run --coverage",
+        "planning:create": "tsx src/scripts/create-planning-session.ts",
         "planning:sync": "tsx src/scripts/planning-sync.ts",
         "planning:complete": "tsx src/scripts/planning-complete-task.ts",
         "planning:cleanup": "tsx src/scripts/cleanup-issues.ts"

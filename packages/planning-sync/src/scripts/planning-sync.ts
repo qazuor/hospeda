@@ -122,7 +122,7 @@ async function main() {
         console.info(`   • ${result.tasksCreated} tasks created`);
         console.info(`   • ${result.tasksUpdated} tasks updated`);
         console.info(`   • ${result.tasksUnchanged} tasks unchanged`);
-        console.info(`\n💡 Don't forget to commit .linear-sync.json!`);
+        console.info(`\n💡 Don't forget to commit issues-sync.json!`);
     } catch (error) {
         console.error('\n❌ Sync failed:', error);
         process.exit(1);

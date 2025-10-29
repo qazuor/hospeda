@@ -59,7 +59,7 @@ export async function syncPlanningToLinear(
     // Read planning files
     const todosPath = join(sessionPath, 'TODOs.md');
     const pdrPath = join(sessionPath, 'PDR.md');
-    const syncFilePath = join(sessionPath, '.linear-sync.json');
+    const syncFilePath = join(sessionPath, 'issues-sync.json');
 
     const [todosContent, pdrContent] = await Promise.all([
         fs.readFile(todosPath, 'utf-8'),
@@ -171,7 +171,7 @@ export async function markTaskCompleted(
     config: LinearSyncConfig
 ): Promise<CompleteTaskResult> {
     const todosPath = join(sessionPath, 'TODOs.md');
-    const syncFilePath = join(sessionPath, '.linear-sync.json');
+    const syncFilePath = join(sessionPath, 'issues-sync.json');
 
     // Load sync data
     const syncContent = await fs.readFile(syncFilePath, 'utf-8');
@@ -221,7 +221,7 @@ export async function markTaskCompleted(
  * @returns Planning session data or null if not synced
  */
 export async function getPlanningSession(sessionPath: string): Promise<PlanningSession | null> {
-    const syncFilePath = join(sessionPath, '.linear-sync.json');
+    const syncFilePath = join(sessionPath, 'issues-sync.json');
 
     try {
         const content = await fs.readFile(syncFilePath, 'utf-8');
@@ -246,7 +246,7 @@ export async function updateTaskStatusInSync(
     config: LinearSyncConfig
 ): Promise<void> {
     const todosPath = join(sessionPath, 'TODOs.md');
-    const syncFilePath = join(sessionPath, '.linear-sync.json');
+    const syncFilePath = join(sessionPath, 'issues-sync.json');
 
     // Load sync data
     const syncContent = await fs.readFile(syncFilePath, 'utf-8');
@@ -317,7 +317,7 @@ export async function syncPlanning(sessionPath: string, config: SyncConfig): Pro
     // Read planning files
     const todosPath = join(sessionPath, 'TODOs.md');
     const pdrPath = join(sessionPath, 'PDR.md');
-    const syncFilePath = join(sessionPath, '.linear-sync.json');
+    const syncFilePath = join(sessionPath, 'issues-sync.json');
 
     const [todosContent, pdrContent] = await Promise.all([
         fs.readFile(todosPath, 'utf-8'),
@@ -401,7 +401,9 @@ async function syncToGitHub(
     const githubClient = new PlanningGitHubClient(config);
 
     // Extract planning name (kebab-case from feature name)
+    // Remove content in parentheses before converting
     const planningName = data.featureName
+        .replace(/\s*\([^)]*\)\s*/g, '') // Remove parentheses and their content
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-+|-+$/g, '');
@@ -450,7 +452,7 @@ async function syncToGitHub(
                 planningCode: data.planningCode,
                 status: task.status,
                 phase,
-                projectNumber: parentIssue.projectNumber
+                projectId: parentIssue.projectId
             });
             task.githubIssueNumber = subIssue.number;
             tasksCreated++;
