@@ -30,6 +30,7 @@ export type ExampleUpdateInput = Partial<ExampleCreateInput>;
 ```
 
 Update the main export:
+
 ```typescript
 // packages/types/src/index.ts
 export * from './example/example.types.js';
@@ -57,6 +58,7 @@ export type Example = z.infer<typeof ExampleSchema>;
 ```
 
 Create CRUD schemas:
+
 ```typescript
 // packages/schemas/src/entities/example/example.crud.schema.ts
 import { ExampleSchema } from './example.schema.js';
@@ -75,6 +77,7 @@ export type ExampleUpdateInput = z.infer<typeof ExampleUpdateInputSchema>;
 ```
 
 Update schema exports:
+
 ```typescript
 // packages/schemas/src/entities/example/index.ts
 export * from './example.schema.js';
@@ -107,6 +110,7 @@ export type ExampleInsert = typeof exampleTable.$inferInsert;
 ```
 
 Update database exports:
+
 ```typescript
 // packages/db/src/schemas/index.ts
 export * from './example/example.schema.js';
@@ -147,6 +151,7 @@ export class ExampleModel extends BaseModel<Example> {
 ```
 
 Update model exports:
+
 ```typescript
 // packages/db/src/models/index.ts
 export * from './example.model.js';
@@ -196,6 +201,7 @@ export class ExampleService extends BaseCrudService<
 ```
 
 Update service exports:
+
 ```typescript
 // packages/service-core/src/services/index.ts
 export * from './example/example.service.js';
@@ -241,6 +247,7 @@ export const exampleListRoute = createListRoute({
 ```
 
 Register routes in the main app:
+
 ```typescript
 // apps/api/src/index.ts
 import { exampleCRUDRoute, exampleListRoute } from './routes/example/index.js';
@@ -324,6 +331,7 @@ describe('ExampleService.create', () => {
 ## 🧪 Testing Your Service
 
 ### 1. Run Unit Tests
+
 ```bash
 # Test specific service
 pnpm test --filter=service-core -- example
@@ -333,6 +341,7 @@ pnpm test --filter=service-core
 ```
 
 ### 2. Test API Endpoints
+
 ```bash
 # Start the API
 pnpm dev --filter=api
@@ -344,6 +353,7 @@ curl -X POST http://localhost:3000/examples \
 ```
 
 ### 3. Database Migration
+
 ```bash
 # Generate migration for new table
 pnpm db:generate
@@ -355,21 +365,25 @@ pnpm db:migrate
 ## 📝 Best Practices
 
 ### Type Safety
+
 - Always use named exports
 - Define explicit input/output types for all functions
 - Leverage Zod for runtime validation
 
 ### Error Handling
+
 - Use `ServiceError` with appropriate `ServiceErrorCode`
 - Wrap business logic with `runWithLoggingAndValidation`
 - Return standardized `{ success, data?, error? }` responses
 
 ### Testing
+
 - Test both success and error cases
 - Use factories for consistent mock data
 - Mock external dependencies
 
 ### Performance
+
 - Implement proper pagination in `findAll`
 - Add database indexes for search fields
 - Consider caching for read-heavy operations
@@ -377,6 +391,7 @@ pnpm db:migrate
 ## 🔍 Common Patterns
 
 ### Search Implementation
+
 ```typescript
 async findAll(options: ExampleSearchOptions = {}) {
     const { q, category, ...paginationOptions } = options;
@@ -401,6 +416,7 @@ async findAll(options: ExampleSearchOptions = {}) {
 ```
 
 ### Custom Validation
+
 ```typescript
 async create(input: ExampleCreateInput): Promise<ServiceResponse<Example>> {
     return this.runWithLoggingAndValidation(
@@ -422,6 +438,7 @@ async create(input: ExampleCreateInput): Promise<ServiceResponse<Example>> {
 ```
 
 ### Permission Checks
+
 ```typescript
 async update(id: string, input: ExampleUpdateInput): Promise<ServiceResponse<Example>> {
     return this.runWithLoggingAndValidation(
