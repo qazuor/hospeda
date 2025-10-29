@@ -18,6 +18,7 @@ export * from './product/index.js';
 // TODO [4fcabfc9-aeb6-4701-b367-e50a9ef4cfba]: Enable once migration from old payment model is complete
 // export * from './pricingPlan/index.js';
 // export * from './pricingTier/index.js';
+export * from './client-access-right/index.js';
 export * from './client/index.js';
 // TODO [8eda6b67-553c-4fed-bdf7-a9d369a33846]: Enable once migration from old payment model is complete
 // export * from './subscription/index.js';
@@ -40,6 +41,7 @@ export * from './promotion/index.js';
 export * from './sponsorship/index.js';
 
 // === Notifications & Marketing System Entities ===
+export * from './campaign/index.js';
 export * from './notification/index.js';
 
 // === Professional Services System Entities ===
