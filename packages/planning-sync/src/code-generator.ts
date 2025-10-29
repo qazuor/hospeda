@@ -26,12 +26,16 @@ interface CodeRegistry {
  * @example
  * const code = await getPlanningCode('.claude/sessions/planning/user-auth', 'User Authentication');
  * // Returns: P-001
+ *
+ * @example
+ * const code = await getPlanningCode('.claude/sessions/planning/P-004-user-auth', 'User Authentication');
+ * // Returns: P-004 (extracted from folder name)
  */
 export async function getPlanningCode(sessionPath: string, _featureName: string): Promise<string> {
     const registry = await loadCodeRegistry(sessionPath);
-    const syncFile = join(sessionPath, '.linear-sync.json');
+    const syncFile = join(sessionPath, 'issues-sync.json');
 
-    // Check if planning already has a code
+    // Check if planning already has a code in sync file
     try {
         const syncContent = await fs.readFile(syncFile, 'utf-8');
         const syncData = JSON.parse(syncContent);
@@ -39,7 +43,29 @@ export async function getPlanningCode(sessionPath: string, _featureName: string)
             return syncData.planningCode;
         }
     } catch {
-        // File doesn't exist or invalid, proceed to generate new code
+        // File doesn't exist or invalid, proceed to check folder name
+    }
+
+    // Try to extract planning code from folder name (format: P-XXX-feature-name)
+    const folderName = sessionPath.split('/').pop() || '';
+    const folderCodeMatch = folderName.match(/^(P-\d{3})-/);
+
+    if (folderCodeMatch?.[1]) {
+        const planningCode = folderCodeMatch[1];
+        const planningNumber = parsePlanningCode(planningCode);
+
+        // Update registry to ensure this code is tracked
+        if (!registry.plannings[planningCode]) {
+            registry.plannings[planningCode] = 0;
+        }
+
+        // Update lastPlanningNumber if this is higher
+        if (planningNumber > registry.lastPlanningNumber) {
+            registry.lastPlanningNumber = planningNumber;
+            await saveCodeRegistry(sessionPath, registry);
+        }
+
+        return planningCode;
     }
 
     // Generate new planning code
