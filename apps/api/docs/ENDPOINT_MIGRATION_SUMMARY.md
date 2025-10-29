@@ -153,6 +153,7 @@ export const accommodationGetByIdRoute = createCRUDRoute({
 ### 🎁 **New Features Added**
 
 #### **1. Route-Specific Configuration**
+
 ```typescript
 options: {
     skipAuth: true,                              // Skip authentication
@@ -164,12 +165,14 @@ options: {
 ```
 
 #### **2. Automatic Response Formatting**
+
 - ✅ **Consistent Response Structure**: All endpoints now return `{ success, data, metadata }`
 - ✅ **Automatic Error Handling**: Proper HTTP status codes and error messages
 - ✅ **Request ID Tracking**: Automatic request ID in metadata
 - ✅ **Timestamp Metadata**: Automatic timestamps in all responses
 
 #### **3. Enhanced Type Safety**
+
 - ✅ **No More Type Assertions**: Eliminated all dangerous `as never` casts
 - ✅ **Zod Transformations**: Query parameters automatically converted (string → number)
 - ✅ **Runtime Validation**: Schema validation at runtime and compile time
@@ -177,30 +180,36 @@ options: {
 ### 📁 **Files Migrated**
 
 #### **⚠️ Health Endpoints (Partially Reverted)**
+
 - `apps/api/src/routes/health/health.ts` - ⚠️ REVERTED - Security headers issue  
 - `apps/api/src/routes/health/live.ts` - ⚠️ REVERTED - Security headers issue
 - `apps/api/src/routes/health/ready.ts` - ✅ Migrated (not used in failing test)
 
 #### **✅ System Endpoints**
+
 - `apps/api/src/routes/index.ts` - Root API endpoint
 
 #### **✅ Accommodation Endpoints**
+
 - `apps/api/src/routes/accommodation/list.ts` - List accommodations
 - `apps/api/src/routes/accommodation/getById.ts` - Get accommodation by ID
 
 ### 🚀 **Performance Improvements**
 
 #### **1. Caching Strategy**
+
 - **Health Checks**: 10-30 second cache
 - **Data Endpoints**: 1-5 minute cache
 - **Configuration**: Route-specific TTL
 
 #### **2. Rate Limiting**
+
 - **Health Checks**: 1000 req/min (high limit)
 - **Data Endpoints**: 200-300 req/min (balanced)
 - **Custom Limits**: Per-endpoint configuration
 
 #### **3. Response Optimization**
+
 - **Consistent Format**: Reduced parsing overhead
 - **Type Safety**: Compile-time optimizations
 - **Middleware Pipeline**: Optimized execution order
@@ -210,18 +219,21 @@ options: {
 For any remaining endpoints, follow this pattern:
 
 1. **Simple Endpoints** (health, version, status):
+
    ```typescript
    // Replace createRoute + app.openapi with:
    createSimpleRoute({ method, path, handler, options })
    ```
 
 2. **List Endpoints** (with pagination):
+
    ```typescript
    // Replace manual pagination with:
    createListRoute({ requestQuery, handler })
    ```
 
 3. **CRUD Endpoints** (get, post, put, delete):
+
    ```typescript
    // Replace manual validation with:
    createCRUDRoute({ requestParams, requestBody, handler })
@@ -239,6 +251,7 @@ For any remaining endpoints, follow this pattern:
 ### ⚠️ **Known Issues**
 
 #### **Security Headers Problem**
+
 - **Issue**: Route factories don't apply security headers consistently
 - **Affected**: `/health`, `/health/live` endpoints
 - **Status**: Temporarily reverted to old pattern
