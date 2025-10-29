@@ -1,9 +1,0 @@
----
-description: Defines project communication rules, including language and documentation format.
-globs: 
-alwaysApply: false
----
-# Communication
-
-- Always respond in **Spanish** in this chat.
-- All code, comments, types and docs must be in **English**. 
