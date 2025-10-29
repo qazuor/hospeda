@@ -26,8 +26,10 @@
         "test:coverage": "turbo run test:coverage",
         "check": "biome check --write .",
         "typecheck": "turbo run typecheck",
+        "format:md": "markdownlint-cli2 '**/*.md' --fix",
+        "format:md:claude": "markdownlint-cli2 '.claude/**/*.md' --fix",
+        "lint:md": "markdownlint-cli2 '**/*.md'",
         "prepare": "husky install",
-
         "build:api": "pnpm --filter hospeda-api build",
         "prepare:api:prod": "pnpm exec tsx scripts/generate-api-prod-package.ts",
         "deploy:api": "pnpm build:api && pnpm prepare:api:prod && flyctl deploy --config apps/api/fly.toml --dockerfile Dockerfile.api",
@@ -49,7 +51,9 @@
         "todo:sync:verbose": "pnpm --filter @repo/tools-todo-linear todo:sync:verbose",
         "todo:watch": "pnpm --filter @repo/tools-todo-linear todo:watch",
         "todo:clean": "pnpm --filter @repo/tools-todo-linear todo:clean",
-        "todo:old:sync": "pnpm --filter @repo/tools-todo-linear-old todo:sync"
+        "todo:old:sync": "pnpm --filter @repo/tools-todo-linear-old todo:sync",
+        "planning:sync": "tsx scripts/planning-sync.ts",
+        "planning:complete": "tsx scripts/planning-complete-task.ts"
     },
     "devDependencies": {
         "@biomejs/biome": "1.9.4",
@@ -57,6 +61,7 @@
         "@commitlint/config-conventional": "^19.8.1",
         "@types/node": "^22.15.3",
         "husky": "^9.1.7",
+        "markdownlint-cli2": "^0.18.1",
         "tsx": "^4.19.4",
         "turbo": "^2.5.3",
         "typescript": "^5.8.3"
@@ -69,12 +74,19 @@
         "glob": "^11.0.3",
         "zod": "^4.0.8"
     },
-    "workspaces": ["apps/*", "packages/*"],
+    "workspaces": [
+        "apps/*",
+        "packages/*"
+    ],
     "pnpm": {
         "overrides": {
             "react": "19.1.1",
             "react-dom": "19.1.1"
         },
-        "publicHoistPattern": ["react", "react-dom", "*react*"]
+        "publicHoistPattern": [
+            "react",
+            "react-dom",
+            "*react*"
+        ]
     }
 }
