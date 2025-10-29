@@ -18,6 +18,7 @@ The Hospeda API uses a comprehensive testing strategy with Vitest, ensuring high
 ## 🏗️ Testing Architecture
 
 ### **Test Types Pyramid**
+
 ```
     /\
    /  \
@@ -33,6 +34,7 @@ The Hospeda API uses a comprehensive testing strategy with Vitest, ensuring high
 ```
 
 ### **Testing Stack**
+
 - **Test Runner**: Vitest
 - **Assertions**: Vitest's built-in assertions
 - **Mocking**: Vitest mocks + custom utilities
@@ -45,6 +47,7 @@ The Hospeda API uses a comprehensive testing strategy with Vitest, ensuring high
 ## 🔧 Test Configuration
 
 ### **Vitest Configuration**
+
 ```typescript
 // vitest.config.ts
 import { defineConfig } from 'vitest/config';
@@ -80,6 +83,7 @@ export default defineConfig({
 ```
 
 ### **Test Setup**
+
 ```typescript
 // test/setup.ts
 import { beforeAll, beforeEach, afterEach, vi } from 'vitest';
@@ -118,6 +122,7 @@ afterEach(() => {
 ## 🧩 Unit Testing
 
 ### **Testing Utilities and Pure Functions**
+
 ```typescript
 // test/utils/zod-error-transformer.test.ts
 import { describe, expect, it } from 'vitest';
@@ -175,6 +180,7 @@ describe('Zod Error Transformer', () => {
 ```
 
 ### **Testing Middleware**
+
 ```typescript
 // test/middlewares/security.test.ts
 import { describe, expect, it, beforeEach } from 'vitest';
@@ -212,6 +218,7 @@ describe('Security Middleware', () => {
 ```
 
 ### **Testing Route Factories**
+
 ```typescript
 // test/utils/route-factory.test.ts
 import { describe, expect, it } from 'vitest';
@@ -268,6 +275,7 @@ describe('Route Factory', () => {
 ## 🔗 Integration Testing
 
 ### **API Endpoint Testing**
+
 ```typescript
 // test/integration/user/list.test.ts
 import { describe, expect, it, beforeEach } from 'vitest';
@@ -320,6 +328,7 @@ describe('User List Endpoint', () => {
 ```
 
 ### **Middleware Integration Testing**
+
 ```typescript
 // test/integration/middleware-interactions.test.ts
 import { describe, expect, it, beforeEach } from 'vitest';
@@ -395,6 +404,7 @@ describe('Middleware Interactions', () => {
 ## ⚡ Performance Testing
 
 ### **Response Time Testing**
+
 ```typescript
 // test/integration/performance-stack.test.ts
 import { describe, expect, it } from 'vitest';
@@ -463,6 +473,7 @@ describe('Performance Tests', () => {
 ```
 
 ### **Load Testing Utilities**
+
 ```typescript
 // test/utils/load-testing.ts
 export interface LoadTestConfig {
@@ -551,6 +562,7 @@ export const runLoadTest = async (
 ## 🛡️ Security Testing
 
 ### **Authentication Testing**
+
 ```typescript
 // test/security/auth.test.ts
 import { describe, expect, it } from 'vitest';
@@ -602,6 +614,7 @@ describe('Authentication Security', () => {
 ```
 
 ### **Input Validation Security Testing**
+
 ```typescript
 // test/security/validation.test.ts
 import { describe, expect, it } from 'vitest';
@@ -672,6 +685,7 @@ describe('Input Validation Security', () => {
 ```
 
 ### **Rate Limiting Security Testing**
+
 ```typescript
 // test/security/rate-limiting.test.ts
 import { describe, expect, it } from 'vitest';
@@ -726,6 +740,7 @@ describe('Rate Limiting Security', () => {
 ## 🎯 Test Utilities
 
 ### **Mock Factories**
+
 ```typescript
 // test/utils/test-actors.ts
 export const createMockUserActor = (overrides?: Partial<User>): UserActor => {
@@ -763,6 +778,7 @@ export const createMockGuestActor = (): GuestActor => {
 ```
 
 ### **Test Data Generators**
+
 ```typescript
 // test/utils/test-data.ts
 export const generateTestUser = (overrides?: Partial<User>): User => {
@@ -791,6 +807,7 @@ export const generateTestRequest = (overrides?: any) => {
 ```
 
 ### **Database Testing Utilities**
+
 ```typescript
 // test/utils/db-testing.ts
 export const setupTestDatabase = async () => {
@@ -828,6 +845,7 @@ export const createTestTransaction = async () => {
 ## 📊 Test Coverage & Reporting
 
 ### **Coverage Configuration**
+
 ```typescript
 // vitest.config.ts - coverage section
 coverage: {
@@ -866,6 +884,7 @@ coverage: {
 ```
 
 ### **Test Scripts**
+
 ```json
 {
   "scripts": {
@@ -888,6 +907,7 @@ coverage: {
 ## 🚀 CI/CD Integration
 
 ### **GitHub Actions Workflow**
+
 ```yaml
 # .github/workflows/test.yml
 name: Tests
@@ -940,6 +960,7 @@ jobs:
 ## 🔍 Debugging Tests
 
 ### **Debug Configuration**
+
 ```typescript
 // .vscode/launch.json
 {
@@ -961,6 +982,7 @@ jobs:
 ```
 
 ### **Test Debugging Utilities**
+
 ```typescript
 // test/utils/debug.ts
 export const debugTest = (testName: string, data: any) => {

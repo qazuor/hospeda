@@ -20,6 +20,7 @@ The Hospeda API features an advanced, in-memory metrics system that tracks perfo
 ### **Core Components**
 
 #### **1. MetricsStore Class**
+
 Central metrics storage with intelligent memory management:
 
 ```typescript
@@ -36,6 +37,7 @@ class MetricsStore {
 ```
 
 #### **2. Endpoint Metrics Tracking**
+
 ```typescript
 interface EndpointMetrics {
   count: number;
@@ -50,6 +52,7 @@ interface EndpointMetrics {
 ```
 
 #### **3. Configuration System**
+
 ```typescript
 interface MetricsConfig {
   maxEndpoints: number;              // Max tracked endpoints (default: 50)
@@ -65,6 +68,7 @@ interface MetricsConfig {
 ## 📊 Collected Metrics
 
 ### **Request Metrics**
+
 - **Total Requests**: Count per endpoint
 - **Response Times**: Min, max, average, P95, P99
 - **Success Rate**: 2xx vs error responses
@@ -72,12 +76,14 @@ interface MetricsConfig {
 - **Error Rate**: 4xx and 5xx response tracking
 
 ### **System Metrics**
+
 - **Memory Usage**: Real-time memory consumption
 - **Active Endpoints**: Currently tracked endpoints
 - **Cache Hit Rates**: Response caching effectiveness
 - **Rate Limit Violations**: Rate limiting statistics
 
 ### **Performance Metrics**
+
 - **Throughput**: Requests per second
 - **Latency Percentiles**: P95, P99 response times
 - **Slow Requests**: Requests exceeding thresholds
@@ -88,6 +94,7 @@ interface MetricsConfig {
 ## 🔧 Configuration
 
 ### **Environment Variables**
+
 ```env
 # Metrics Configuration
 METRICS_ENABLED=true
@@ -105,6 +112,7 @@ METRICS_PERCENTILES=95,99
 ```
 
 ### **Programmatic Configuration**
+
 ```typescript
 import { configureMetrics } from './middlewares/metrics';
 
@@ -123,6 +131,7 @@ configureMetrics({
 ## 📈 Usage Examples
 
 ### **Basic Metrics Collection**
+
 Metrics are automatically collected for all requests:
 
 ```typescript
@@ -137,6 +146,7 @@ app.use(metricsMiddleware);
 ```
 
 ### **Custom Metrics**
+
 ```typescript
 import { recordCustomMetric, incrementCounter } from './middlewares/metrics';
 
@@ -164,6 +174,7 @@ export const trackDatabaseQuery = async (query: string) => {
 ```
 
 ### **Accessing Metrics Data**
+
 ```typescript
 import { getMetrics, getDetailedMetrics, getMemoryStats } from './middlewares/metrics';
 
@@ -188,9 +199,11 @@ console.log(`Memory usage: ${memory.usedMB}MB / ${memory.limitMB}MB`);
 ## 🌐 Metrics Endpoint
 
 ### **GET /metrics**
+
 Returns comprehensive metrics in multiple formats:
 
 #### **JSON Format (Default)**
+
 ```json
 {
   "success": true,
@@ -228,6 +241,7 @@ Returns comprehensive metrics in multiple formats:
 ```
 
 #### **Prometheus Format**
+
 ```
 # Request metrics
 http_requests_total{endpoint="GET /api/v1/users"} 1250
@@ -240,6 +254,7 @@ http_requests_rate_total 4.27
 ```
 
 ### **Query Parameters**
+
 ```
 GET /metrics?format=prometheus     # Prometheus format
 GET /metrics?format=json          # JSON format (default)
@@ -254,6 +269,7 @@ GET /metrics?reset=true           # Reset metrics after reading
 ### **Automatic Cleanup Strategy**
 
 #### **1. Periodic Cleanup**
+
 ```typescript
 // Runs every 5 minutes (configurable)
 private performCleanup() {
@@ -269,6 +285,7 @@ private performCleanup() {
 ```
 
 #### **2. Memory Limit Enforcement**
+
 ```typescript
 private enforceMemoryLimit() {
   const memoryUsage = this.calculateMemoryUsage();
@@ -281,6 +298,7 @@ private enforceMemoryLimit() {
 ```
 
 #### **3. Sample Limit Management**
+
 ```typescript
 recordResponseTime(endpoint: string, time: number) {
   const metrics = this.getOrCreateMetrics(endpoint);
@@ -295,6 +313,7 @@ recordResponseTime(endpoint: string, time: number) {
 ```
 
 ### **Memory Usage Monitoring**
+
 ```typescript
 export const getMemoryStats = () => {
   const used = calculateCurrentMemoryUsage();
@@ -315,6 +334,7 @@ export const getMemoryStats = () => {
 ## 📊 Advanced Analytics
 
 ### **Percentile Calculations**
+
 ```typescript
 calculatePercentiles(responseTimes: number[]): PercentileData {
   const sorted = [...responseTimes].sort((a, b) => a - b);
@@ -328,6 +348,7 @@ calculatePercentiles(responseTimes: number[]): PercentileData {
 ```
 
 ### **Trend Analysis**
+
 ```typescript
 export const getTrends = (timeWindow: number = 3600000) => {
   const now = Date.now();
@@ -343,6 +364,7 @@ export const getTrends = (timeWindow: number = 3600000) => {
 ```
 
 ### **Alerting Thresholds**
+
 ```typescript
 export const checkAlerts = () => {
   const metrics = getMetrics();
@@ -375,6 +397,7 @@ export const checkAlerts = () => {
 ## 🧪 Testing Metrics
 
 ### **Test Utilities**
+
 ```typescript
 // test/utils/metrics-testing.ts
 export const createMetricsTestSuite = () => {
@@ -405,6 +428,7 @@ export const simulateRequests = async (
 ```
 
 ### **Performance Testing**
+
 ```typescript
 describe('Metrics Performance', () => {
   it('should handle high-frequency requests', async () => {
@@ -442,6 +466,7 @@ describe('Metrics Performance', () => {
 ### **Configuration Recommendations**
 
 #### **High Traffic APIs**
+
 ```env
 METRICS_MAX_ENDPOINTS=100
 METRICS_MAX_SAMPLES_PER_ENDPOINT=500
@@ -450,6 +475,7 @@ METRICS_MEMORY_LIMIT_MB=100
 ```
 
 #### **Standard APIs**
+
 ```env
 METRICS_MAX_ENDPOINTS=50
 METRICS_MAX_SAMPLES_PER_ENDPOINT=200
@@ -458,6 +484,7 @@ METRICS_MEMORY_LIMIT_MB=50
 ```
 
 #### **Low Resource Environments**
+
 ```env
 METRICS_MAX_ENDPOINTS=25
 METRICS_MAX_SAMPLES_PER_ENDPOINT=100
@@ -466,6 +493,7 @@ METRICS_MEMORY_LIMIT_MB=25
 ```
 
 ### **Monitoring Integration**
+
 ```typescript
 // External monitoring integration
 setInterval(() => {
@@ -487,6 +515,7 @@ setInterval(() => {
 ```
 
 ### **Alerting Setup**
+
 ```typescript
 // Production alerting
 const alerts = checkAlerts();
@@ -508,6 +537,7 @@ if (alerts.length > 0) {
 ### **Common Issues**
 
 #### **High Memory Usage**
+
 ```bash
 # Check memory stats
 curl /metrics?format=json | jq '.data.summary.memoryUsage'
@@ -519,6 +549,7 @@ curl /metrics?format=json | jq '.data.summary.memoryUsage'
 ```
 
 #### **Missing Metrics**
+
 ```typescript
 // Verify middleware is applied
 app.use(metricsMiddleware); // Must be early in middleware stack
@@ -528,6 +559,7 @@ console.log('Metrics enabled:', env.METRICS_ENABLED);
 ```
 
 #### **Performance Impact**
+
 ```typescript
 // Monitor metrics collection overhead
 const before = process.hrtime.bigint();
