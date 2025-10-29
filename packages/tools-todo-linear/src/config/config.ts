@@ -15,8 +15,8 @@ export function loadConfig(projectRoot: string): TodoLinearConfig {
     config({ path: resolve(projectRoot, '.env') });
     config({ path: resolve(projectRoot, '.env.local') });
 
-    const linearApiKey = process.env.TODO_LINEAR_API_KEY;
-    const linearTeamId = process.env.TODO_LINEAR_TEAM_ID;
+    const linearApiKey = process.env.LINEAR_API_KEY;
+    const linearTeamId = process.env.LINEAR_TEAM_ID;
     const defaultUserEmail = process.env.TODO_LINEAR_DEFAULT_USER_EMAIL;
     const ideLabelName = process.env.TODO_LINEAR_IDE_LABEL_NAME || 'From IDE';
     const ideLinkTemplate =
@@ -50,14 +50,14 @@ export function loadConfig(projectRoot: string): TodoLinearConfig {
 
     if (!linearApiKey) {
         throw new Error(
-            'Missing required configuration: TODO_LINEAR_API_KEY\n' +
+            'Missing required configuration: LINEAR_API_KEY\n' +
                 'Please run `pnpm todo:setup` to configure the environment variables.'
         );
     }
 
     if (!linearTeamId) {
         throw new Error(
-            'Missing required configuration: TODO_LINEAR_TEAM_ID\n' +
+            'Missing required configuration: LINEAR_TEAM_ID\n' +
                 'Please run `pnpm todo:setup` to configure the environment variables.'
         );
     }

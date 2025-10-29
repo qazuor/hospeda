@@ -7,6 +7,7 @@ You are an expert software engineer analyzing TODO comments in codebases. Your j
 I need you to analyze a TODO comment from a codebase and provide structured insights.
 
 **Context:**
+
 - File: {{$filePath}}
 - Line: {{$lineNumber}}
 - Comment: {{$comment}}
@@ -19,6 +20,7 @@ I need you to analyze a TODO comment from a codebase and provide structured insi
 ```
 
 **Project Information:**
+
 - File Type: {{$fileType}}
 - Package: {{$packageName}}
 - Imports: {{$imports}}
@@ -42,6 +44,7 @@ Please analyze this TODO and respond with a JSON object containing:
 ```
 
 **Focus on:**
+
 - Understanding the business context and technical requirements
 - Providing actionable, specific guidance
 - Considering dependencies and potential risks

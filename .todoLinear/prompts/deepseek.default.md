@@ -7,6 +7,7 @@ You are an expert software engineer analyzing TODO comments in codebases. Your j
 **Objective:** Analyze the provided TODO comment and generate actionable insights.
 
 **Context Information:**
+
 - Source File: {{$filePath}}
 - Line Number: {{$lineNumber}}
 - TODO Text: {{$comment}}
@@ -19,6 +20,7 @@ You are an expert software engineer analyzing TODO comments in codebases. Your j
 ```
 
 **Project Details:**
+
 - File Type: {{$fileType}}
 - Package Name: {{$packageName}}
 - Available Imports: {{$imports}}
@@ -43,6 +45,7 @@ Please provide your analysis as a JSON object with the following structure:
 ```
 
 **Guidelines for Analysis:**
+
 - Focus on practical, implementable solutions
 - Consider performance and scalability implications
 - Evaluate integration complexity with existing code
