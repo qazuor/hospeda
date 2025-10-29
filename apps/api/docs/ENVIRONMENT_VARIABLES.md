@@ -143,6 +143,7 @@ export const env = EnvSchema.parse(process.env);
 ## 📝 Environment Files
 
 ### **Development (.env.local)**
+
 ```env
 NODE_ENV=development
 API_PORT=3001
@@ -152,6 +153,7 @@ SECURITY_ENABLED=true
 ```
 
 ### **Production (.env.production)**
+
 ```env
 NODE_ENV=production
 API_PORT=8080
@@ -162,6 +164,7 @@ COMPRESSION_ENABLED=true
 ```
 
 ### **Testing (.env.test)**
+
 ```env
 NODE_ENV=test
 API_PORT=3002
@@ -173,17 +176,20 @@ CACHE_ENABLED=false
 ## ⚡ Performance Recommendations
 
 ### **Development**
+
 - Disable rate limiting: `RATE_LIMIT_ENABLED=false`
 - Enable debug logging: `LOG_LEVEL=debug`
 - Disable compression: `COMPRESSION_ENABLED=false`
 
 ### **Production**
+
 - Enable all security features
 - Set appropriate rate limits
 - Enable compression and caching
 - Use `info` log level
 
 ### **Testing**
+
 - Disable rate limiting (except specific tests)
 - Disable caching for consistent results
 - Use minimal logging
@@ -191,6 +197,7 @@ CACHE_ENABLED=false
 ## 🔍 Validation & Type Safety
 
 All environment variables are:
+
 - ✅ **Validated** using Zod schemas
 - ✅ **Type-safe** with TypeScript
 - ✅ **Documented** with descriptions
@@ -199,13 +206,16 @@ All environment variables are:
 ## 🚨 Security Notes
 
 ### **Sensitive Variables**
+
 Never commit these to version control:
+
 - `CLERK_SECRET_KEY`
-- `CLERK_WEBHOOK_SECRET` 
+- `CLERK_WEBHOOK_SECRET`
 - `DATABASE_URL`
 - Any production secrets
 
 ### **Environment File Priority**
+
 1. `.env.test` (in test environment)
 2. `.env.local` (local overrides)
 3. `.env` (defaults)
