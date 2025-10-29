@@ -134,6 +134,8 @@ function parseStatus(char: string): TaskStatus {
 
 /**
  * Finalizes a task by generating its ID
+ *
+ * Note: code will be assigned later by the sync process
  */
 function finalizeTask(partial: Partial<PlanningTask>): PlanningTask {
     const title = partial.title || '';
@@ -141,10 +143,12 @@ function finalizeTask(partial: Partial<PlanningTask>): PlanningTask {
 
     return {
         id,
+        code: partial.code || '', // Will be assigned during sync
         title,
         status: partial.status || 'pending',
         description: partial.description?.trim() || undefined,
-        linearIssueId: partial.linearIssueId
+        linearIssueId: partial.linearIssueId,
+        githubIssueNumber: partial.githubIssueNumber
     };
 }
 
