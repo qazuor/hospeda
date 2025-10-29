@@ -39,6 +39,7 @@ Un patrocinador incluye:
 Crea un nuevo patrocinador de publicaciones.
 
 **Ejemplo:**
+
 ```typescript
 {
     name: "Aerolíneas Argentinas",
@@ -75,6 +76,7 @@ Crea un nuevo patrocinador de publicaciones.
 Búsqueda avanzada de patrocinadores con múltiples filtros.
 
 **Parámetros:**
+
 ```typescript
 {
     q?: string;              // Búsqueda de texto libre
@@ -87,10 +89,12 @@ Búsqueda avanzada de patrocinadores con múltiples filtros.
 
 **Búsqueda de Texto Libre (q)**
 Busca coincidencias en:
+
 - `name` (nombre del patrocinador)
 - `description` (descripción corporativa)
 
 **Ejemplo:**
+
 ```typescript
 // Buscar aerolíneas
 const airlines = await postSponsorService.searchForList(actor, {
@@ -129,24 +133,28 @@ enum ClientType {
 ### Ejemplos por Tipo
 
 **ENTERPRISE (Grandes Corporaciones)**
+
 - Aerolíneas internacionales
 - Cadenas hoteleras multinacionales
 - Empresas de turismo globales
 - Marcas de lujo
 
 **SMB (Pequeñas y Medianas Empresas)**
+
 - Hoteles boutique locales
 - Agencias de viaje regionales
 - Restaurantes destacados
 - Tour operadores especializados
 
 **GOVERNMENT (Entidades Gubernamentales)**
+
 - Secretarías de turismo
 - Entes provinciales de promoción
 - Municipios turísticos
 - Institutos nacionales
 
 **NONPROFIT (Sin Fines de Lucro)**
+
 - Fundaciones culturales
 - Organizaciones de conservación
 - Asociaciones turísticas
@@ -157,11 +165,13 @@ enum ClientType {
 ### PostSponsorCreateInput
 
 **Campos Requeridos:**
+
 - `name`: string (3-100 caracteres)
 - `type`: ClientTypeEnum (valor válido del enum)
 - `description`: string (10-500 caracteres)
 
 **Campos Opcionales:**
+
 - `logo`: objeto con url y caption opcional
 - `email`: string (formato email válido)
 - `phone`: string (formato internacional)

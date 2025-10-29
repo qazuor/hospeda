@@ -34,6 +34,7 @@ Mientras que las **amenidades** son servicios y comodidades estándar (WiFi, pis
 - **Features**: "¿Qué lo hace especial?"
 
 **Ejemplos de Features:**
+
 - "Vista panorámica al océano"
 - "Arquitectura histórica del s.XVIII"
 - "Chef privado disponible"
@@ -48,6 +49,7 @@ Mientras que las **amenidades** son servicios y comodidades estándar (WiFi, pis
 Crea una nueva característica distintiva.
 
 **Ejemplo:**
+
 ```typescript
 {
     name: "Vista panorámica al mar",
@@ -89,6 +91,7 @@ Crea una nueva característica distintiva.
 Asocia una característica distintiva con un alojamiento.
 
 **Parámetros:**
+
 ```typescript
 {
     accommodationId: string;
@@ -98,6 +101,7 @@ Asocia una característica distintiva con un alojamiento.
 ```
 
 **Ejemplo:**
+
 ```typescript
 // Añadir vista al mar con contexto específico
 await featureService.addFeatureToAccommodation(actor, {
@@ -116,6 +120,7 @@ Remueve la asociación entre característica y alojamiento.
 Obtiene todas las características distintivas de un alojamiento.
 
 **Respuesta:**
+
 ```typescript
 {
     data: {
@@ -144,6 +149,7 @@ Obtiene todas las características distintivas de un alojamiento.
 Obtiene todos los alojamientos que tienen una característica específica.
 
 **Ejemplo:**
+
 ```typescript
 // Propiedades con chef privado
 const result = await featureService.getAccommodationsByFeature(actor, {
@@ -158,6 +164,7 @@ const result = await featureService.getAccommodationsByFeature(actor, {
 Búsqueda avanzada con conteo de alojamientos asociados.
 
 **Parámetros:**
+
 ```typescript
 {
     filters?: {
@@ -174,6 +181,7 @@ Búsqueda avanzada con conteo de alojamientos asociados.
 ```
 
 **Respuesta con Conteos:**
+
 ```typescript
 {
     data: {
@@ -221,12 +229,14 @@ const gourmet = await featureService.searchForList(actor, {
 ### Features Integradas vs Personalizadas
 
 **Builtin Features (isBuiltin: true)**
+
 - Características predefinidas del sistema
 - Mantenidas por administradores
 - Consistentes entre propiedades
 - Ejemplos: "Pet-friendly", "Business Center", "Eco-friendly"
 
 **Features Personalizadas (isBuiltin: false)**
+
 - Creadas por hosts para destacar singularidades
 - Específicas de cada propiedad
 - Mayor flexibilidad de contenido
@@ -268,9 +278,11 @@ const mountainCabin = {
 ### FeatureCreateInput
 
 **Campos Requeridos:**
+
 - `name`: string (2-100 caracteres)
 
 **Campos Opcionales:**
+
 - `slug`: string (auto-generado si no se proporciona)
 - `description`: string (10-500 caracteres)
 - `icon`: string (1-100 caracteres)

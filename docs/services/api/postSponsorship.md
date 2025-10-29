@@ -38,6 +38,7 @@ Un patrocinio incluye:
 Crea una nueva relación de patrocinio.
 
 **Ejemplo:**
+
 ```typescript
 {
     postId: "post_patagonia_adventure",
@@ -129,10 +130,12 @@ async function calculateTotalRevenue() {
 ### PostSponsorshipCreateInput
 
 **Campos Requeridos:**
+
 - `postId`: string (ID del post patrocinado)
 - `sponsorId`: string (ID del patrocinador)
 
 **Campos Opcionales:**
+
 - `amount`: number (monto del patrocinio)
 - `currency`: string (moneda del pago)
 - `startDate`: date (fecha de inicio)

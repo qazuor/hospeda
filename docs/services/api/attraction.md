@@ -41,6 +41,7 @@ Una atracción incluye:
 Crea una nueva atracción turística.
 
 **Ejemplo:**
+
 ```typescript
 {
     name: "Museo de Arte Contemporáneo",
@@ -94,6 +95,7 @@ Crea una nueva atracción turística.
 Asocia una atracción con un destino turístico.
 
 **Parámetros:**
+
 ```typescript
 {
     destinationId: string;
@@ -102,6 +104,7 @@ Asocia una atracción con un destino turístico.
 ```
 
 **Ejemplo:**
+
 ```typescript
 // Añadir museo a la ciudad
 await attractionService.addAttractionToDestination(actor, {
@@ -119,6 +122,7 @@ Remueve la asociación entre atracción y destino.
 Obtiene todas las atracciones de un destino específico.
 
 **Respuesta:**
+
 ```typescript
 {
     data: {
@@ -149,6 +153,7 @@ Obtiene todas las atracciones de un destino específico.
 Obtiene todos los destinos que incluyen una atracción específica.
 
 **Ejemplo:**
+
 ```typescript
 // Destinos que tienen playas
 const result = await attractionService.getDestinationsByAttraction(actor, {
@@ -163,6 +168,7 @@ const result = await attractionService.getDestinationsByAttraction(actor, {
 Lista atracciones con conteos de destinos asociados.
 
 **Parámetros:**
+
 ```typescript
 {
     filters?: {
@@ -189,6 +195,7 @@ Lista atracciones con conteos de destinos asociados.
 ```
 
 **Respuesta con Conteos:**
+
 ```typescript
 {
     data: {
@@ -239,10 +246,12 @@ const museums = await attractionService.listWithCounts(actor, {
 ### AttractionCreateInput
 
 **Campos Requeridos:**
+
 - `name`: string (3-200 caracteres)
 - `category`: string (categoría válida)
 
 **Campos Opcionales:**
+
 - `slug`: string (auto-generado si no se proporciona)
 - `description`: string (hasta 2000 caracteres)
 - `type`: string (tipo específico dentro de categoría)

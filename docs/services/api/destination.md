@@ -50,18 +50,21 @@ País: "España"
 Crea un nuevo destino turístico.
 
 **Parámetros:**
+
 - `actor`: Actor que ejecuta la operación
 - `input`: Datos del destino a crear
 
 **Permisos Requeridos:** `DESTINATION_CREATE`
 
 **Validaciones:**
+
 - Slug único (se genera automáticamente si no se proporciona)
 - Coordenadas geográficas válidas
 - Jerarquía geográfica consistente
 - Nombre único por nivel geográfico
 
 **Ejemplo de Input:**
+
 ```typescript
 {
     name: "Barcelona",
@@ -101,6 +104,7 @@ Crea un nuevo destino turístico.
 ```
 
 **Respuesta:**
+
 ```typescript
 {
     data: {
@@ -120,12 +124,14 @@ Crea un nuevo destino turístico.
 Obtiene un destino por su ID.
 
 **Parámetros:**
+
 - `actor`: Actor que ejecuta la operación
 - `id`: ID del destino
 
 **Permisos Requeridos:** `DESTINATION_READ` (público con restricciones de visibilidad)
 
 **Ejemplo:**
+
 ```typescript
 const result = await destinationService.getById(actor, "dest_123");
 if (result.data) {
@@ -139,10 +145,12 @@ if (result.data) {
 Obtiene un destino por su slug.
 
 **Parámetros:**
+
 - `actor`: Actor que ejecuta la operación
 - `slug`: Slug del destino
 
 **Ejemplo:**
+
 ```typescript
 const result = await destinationService.getBySlug(actor, "barcelona");
 ```
@@ -160,6 +168,7 @@ Actualiza parcialmente un destino (PATCH - actualización incremental).
 **Permisos Requeridos:** `DESTINATION_EDIT`
 
 **Ejemplo:**
+
 ```typescript
 const result = await destinationService.patch(actor, "dest_123", {
     isFeatured: true,
@@ -194,6 +203,7 @@ Lista destinos con paginación y filtros.
 **Permisos Requeridos:** `DESTINATION_LIST`
 
 **Parámetros de Búsqueda:**
+
 ```typescript
 {
     q?: string;              // Búsqueda por texto (nombre, descripción)
@@ -214,12 +224,14 @@ Lista destinos con paginación y filtros.
 Búsqueda optimizada para listados con información resumida.
 
 **Respuesta Optimizada:**
+
 - Solo campos esenciales para listados
 - Información de ubicación simplificada
 - Counts de alojamientos incluidos
 - Imágenes principales únicamente
 
 **Ejemplo:**
+
 ```typescript
 const result = await destinationService.searchForList(actor, {
     q: "playa mediterráneo",
@@ -237,6 +249,7 @@ const result = await destinationService.searchForList(actor, {
 Obtiene todos los alojamientos de un destino específico.
 
 **Parámetros:**
+
 ```typescript
 {
     destinationId: string;
@@ -247,6 +260,7 @@ Obtiene todos los alojamientos de un destino específico.
 ```
 
 **Respuesta:**
+
 ```typescript
 {
     data: {
@@ -275,6 +289,7 @@ Obtiene todos los alojamientos de un destino específico.
 ```
 
 **Ejemplo:**
+
 ```typescript
 const result = await destinationService.getAccommodations(actor, {
     destinationId: "dest_123",
@@ -289,6 +304,7 @@ const result = await destinationService.getAccommodations(actor, {
 Obtiene un resumen del destino con estadísticas básicas.
 
 **Parámetros:**
+
 ```typescript
 {
     id: string;
@@ -296,6 +312,7 @@ Obtiene un resumen del destino con estadísticas básicas.
 ```
 
 **Respuesta:**
+
 ```typescript
 {
     data: {
@@ -321,6 +338,7 @@ Obtiene un resumen del destino con estadísticas básicas.
 Obtiene estadísticas detalladas del destino.
 
 **Parámetros:**
+
 ```typescript
 {
     id: string;
@@ -329,6 +347,7 @@ Obtiene estadísticas detalladas del destino.
 ```
 
 **Respuesta:**
+
 ```typescript
 {
     data: {
@@ -380,6 +399,7 @@ Actualiza automáticamente las estadísticas cuando se crea/actualiza una reseñ
 **Uso:** Llamado automáticamente por el sistema de reseñas.
 
 **Funcionalidad:**
+
 - Recalcula rating promedio
 - Actualiza count de reseñas
 - Actualiza distribución de ratings
@@ -391,6 +411,7 @@ Actualiza el contador de alojamientos de un destino.
 **Uso:** Llamado automáticamente cuando se crea/elimina un alojamiento.
 
 **Ejemplo interno:**
+
 ```typescript
 // Se ejecuta automáticamente cuando:
 // - Se crea un nuevo alojamiento
@@ -404,11 +425,13 @@ await destinationService.updateAccommodationsCount("dest_123");
 ### DestinationCreateInput
 
 **Campos Requeridos:**
+
 - `name`: string (3-100 caracteres)
 - `summary`: string (10-300 caracteres)
 - `description`: string (30-2000 caracteres)
 
 **Campos Opcionales:**
+
 - `slug`: string (se genera automáticamente)
 - `isFeatured`: boolean (default: false)
 - `location`: Datos de ubicación geográfica
@@ -419,12 +442,14 @@ await destinationService.updateAccommodationsCount("dest_123");
 ### Validaciones Específicas
 
 **Coordenadas Geográficas:**
+
 ```typescript
 latitude: "41.3851"    // ✅ Válido (-90 a 90)
 longitude: "2.1734"    // ✅ Válido (-180 a 180)
 ```
 
 **Jerarquía Geográfica:**
+
 ```typescript
 location: {
     country: "España",     // ✅ Requerido
@@ -435,6 +460,7 @@ location: {
 ```
 
 **Slug Único:**
+
 ```typescript
 // Se genera automáticamente desde el name
 name: "Barcelona" → slug: "barcelona"
@@ -706,19 +732,23 @@ const guggenheim = await destinationService.create(actor, {
 ## 🔗 Relaciones con Otros Servicios
 
 ### Con AccommodationService
+
 - Los alojamientos pertenecen a un destino
 - Se actualiza automáticamente `accommodationsCount`
 - Filtros de búsqueda por destino
 
 ### Con AttractionService
+
 - Las atracciones están ubicadas en destinos
 - Se incluyen en estadísticas de destino
 
 ### Con EventService
+
 - Los eventos se realizan en destinos
 - Contribuyen a estadísticas turísticas
 
 ### Con ReviewService
+
 - Las reseñas afectan rating del destino
 - Se actualizan automáticamente las estadísticas
 

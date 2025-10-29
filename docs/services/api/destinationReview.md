@@ -40,6 +40,7 @@ Una reseña de destino incluye:
 Crea una nueva reseña de destino.
 
 **Ejemplo:**
+
 ```typescript
 {
     destinationId: "dest_mendoza",
@@ -79,6 +80,7 @@ Crea una nueva reseña de destino.
 Lista reseñas de un destino específico con estadísticas completas.
 
 **Parámetros:**
+
 ```typescript
 {
     destinationId: string;
@@ -96,6 +98,7 @@ Lista reseñas de un destino específico con estadísticas completas.
 ```
 
 **Respuesta con Estadísticas:**
+
 ```typescript
 {
     data: {
@@ -227,11 +230,13 @@ const destinationDashboard = {
 ### DestinationReviewCreateInput
 
 **Campos Requeridos:**
+
 - `destinationId`: string (ID del destino)
 - `rating`: number (1.0 - 5.0)
 - `content`: string (experiencia detallada)
 
 **Campos Opcionales:**
+
 - `title`: string (título de la reseña)
 - `visitDate`: date (fecha de visita)
 - `stayDuration`: number (días de estadía)

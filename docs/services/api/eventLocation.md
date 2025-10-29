@@ -39,6 +39,7 @@ Una ubicación de evento incluye:
 Crea una nueva ubicación para eventos.
 
 **Ejemplo:**
+
 ```typescript
 {
     placeName: "Centro Cultural Recoleta",
@@ -69,6 +70,7 @@ Crea una nueva ubicación para eventos.
 Búsqueda avanzada de ubicaciones con soporte para texto libre.
 
 **Parámetros:**
+
 ```typescript
 {
     q?: string;              // Búsqueda de texto libre
@@ -84,12 +86,14 @@ Búsqueda avanzada de ubicaciones con soporte para texto libre.
 
 **Búsqueda de Texto Libre (q)**
 Busca en múltiples campos:
+
 - `city` (ciudad)
 - `state` (estado/provincia)  
 - `country` (país)
 - `placeName` (nombre del lugar)
 
 **Ejemplo:**
+
 ```typescript
 // Buscar "Buenos Aires" en cualquier campo
 const locations = await eventLocationService.searchForList(actor, {
@@ -163,6 +167,7 @@ const completeLocation = {
 ### Normalización Automática
 
 El service aplica normalización automática:
+
 - Capitalización de nombres de ciudades
 - Formato estándar de direcciones
 - Validación de coordenadas geográficas
@@ -173,11 +178,13 @@ El service aplica normalización automática:
 ### EventLocationCreateInput
 
 **Campos Base (heredados de BaseLocationSchema):**
+
 - `latitude`: number (opcional)
 - `longitude`: number (opcional)
 - `postalCode`: string (opcional)
 
 **Campos Específicos:**
+
 - `street`: string (2-50 caracteres, opcional)
 - `number`: string (1-10 caracteres, opcional)
 - `floor`: string (1-10 caracteres, opcional)

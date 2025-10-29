@@ -41,6 +41,7 @@ interface ServiceResult<T> {
 ### Ejemplos de Respuestas
 
 **✅ Operación Exitosa:**
+
 ```typescript
 {
     data: {
@@ -53,6 +54,7 @@ interface ServiceResult<T> {
 ```
 
 **❌ Operación Fallida:**
+
 ```typescript
 {
     error: {
@@ -103,6 +105,7 @@ Los permisos siguen el patrón `{ENTITY}_{ACTION}`:
 ## 📚 Servicios Disponibles
 
 ### 🏨 [Accommodation Service](./accommodation.md)
+
 **Gestión de alojamientos (hoteles, casas, apartamentos)**
 
 - ✅ **CRUD Completo**: Crear, leer, actualizar, eliminar alojamientos
@@ -112,6 +115,7 @@ Los permisos siguen el patrón `{ENTITY}_{ACTION}`:
 - 🏷️ **Etiquetas**: Sistema de categorización
 
 ### 🌟 [AccommodationReview Service](./accommodation-review.md)
+
 **Sistema de reseñas para alojamientos**
 
 - ⭐ **Calificaciones**: Sistema de 1-5 estrellas
@@ -120,6 +124,7 @@ Los permisos siguen el patrón `{ENTITY}_{ACTION}`:
 - 🔒 **Moderación**: Control de contenido inapropiado
 
 ### 🛎️ [Amenity Service](./amenity.md)
+
 **Gestión de amenidades y comodidades**
 
 - 🏊 **Categorías**: Piscina, WiFi, Parking, etc.
@@ -127,6 +132,7 @@ Los permisos siguen el patrón `{ENTITY}_{ACTION}`:
 - 🏨 **Asociaciones**: Vinculación con alojamientos
 
 ### 🎯 [Attraction Service](./attraction.md)
+
 **Atracciones turísticas y puntos de interés**
 
 - 🗺️ **Geolocalización**: Ubicaciones con coordenadas
@@ -134,6 +140,7 @@ Los permisos siguen el patrón `{ENTITY}_{ACTION}`:
 - 🎫 **Categorización**: Tipos de atracciones
 
 ### 🌍 [Destination Service](./destination.md)
+
 **Destinos turísticos y geografía**
 
 - 🗺️ **Jerarquía Geográfica**: Países, estados, ciudades
@@ -142,6 +149,7 @@ Los permisos siguen el patrón `{ENTITY}_{ACTION}`:
 - ⭐ **Destacados**: Destinos populares
 
 ### 🌟 [DestinationReview Service](./destination-review.md)
+
 **Reseñas de destinos turísticos**
 
 - ⭐ **Calificaciones**: Ratings de destinos
@@ -149,6 +157,7 @@ Los permisos siguen el patrón `{ENTITY}_{ACTION}`:
 - 📊 **Agregación**: Estadísticas de rating
 
 ### 🎉 [Event Service](./event.md)
+
 **Eventos y actividades programadas**
 
 - 📅 **Calendario**: Gestión de fechas y horarios
@@ -157,6 +166,7 @@ Los permisos siguen el patrón `{ENTITY}_{ACTION}`:
 - 👥 **Organizadores**: Gestión de responsables
 
 ### 📍 [EventLocation Service](./event-location.md)
+
 **Ubicaciones y venues para eventos**
 
 - 🏢 **Venues**: Salones, centros de convenciones
@@ -164,6 +174,7 @@ Los permisos siguen el patrón `{ENTITY}_{ACTION}`:
 - 🛠️ **Facilidades**: Equipamiento disponible
 
 ### 👤 [EventOrganizer Service](./event-organizer.md)
+
 **Organizadores de eventos**
 
 - 👨‍💼 **Perfiles**: Información de organizadores
@@ -171,6 +182,7 @@ Los permisos siguen el patrón `{ENTITY}_{ACTION}`:
 - ✅ **Verificación**: Estado de validación
 
 ### ⚡ [Feature Service](./feature.md)
+
 **Características y atributos de alojamientos**
 
 - 🏷️ **Atributos**: Propiedades específicas
@@ -178,6 +190,7 @@ Los permisos siguen el patrón `{ENTITY}_{ACTION}`:
 - 🎯 **Filtros**: Para búsquedas avanzadas
 
 ### 🔐 [Permission Service](./permission.md)
+
 **Sistema de permisos y autorización**
 
 - 👤 **Roles**: Gestión de roles de usuario
@@ -185,6 +198,7 @@ Los permisos siguen el patrón `{ENTITY}_{ACTION}`:
 - ✅ **Validación**: Verificación de autorizaciones
 
 ### 📝 [Post Service](./post.md)
+
 **Sistema de publicaciones y contenido**
 
 - 📰 **Blog**: Artículos y noticias
@@ -193,6 +207,7 @@ Los permisos siguen el patrón `{ENTITY}_{ACTION}`:
 - 💝 **Patrocinios**: Contenido promocional
 
 ### 💰 [PostSponsor Service](./post-sponsor.md)
+
 **Patrocinadores de contenido**
 
 - 🏢 **Empresas**: Gestión de patrocinadores
@@ -200,6 +215,7 @@ Los permisos siguen el patrón `{ENTITY}_{ACTION}`:
 - 📊 **Métricas**: ROI y engagement
 
 ### 🤝 [PostSponsorship Service](./post-sponsorship.md)
+
 **Gestión de patrocinios**
 
 - 💼 **Contratos**: Acuerdos de patrocinio
@@ -207,6 +223,7 @@ Los permisos siguen el patrón `{ENTITY}_{ACTION}`:
 - 💰 **Facturación**: Gestión de pagos
 
 ### 🏷️ [Tag Service](./tag.md)
+
 **Sistema de etiquetas y categorización**
 
 - 🔖 **Etiquetas**: Clasificación de contenido
@@ -214,6 +231,7 @@ Los permisos siguen el patrón `{ENTITY}_{ACTION}`:
 - 🔍 **Búsquedas**: Filtrado por tags
 
 ### 👥 [User Service](./user.md)
+
 **Gestión de usuarios y perfiles**
 
 - 👤 **Perfiles**: Información personal
@@ -221,6 +239,7 @@ Los permisos siguen el patrón `{ENTITY}_{ACTION}`:
 - 📊 **Estadísticas**: Actividad de usuarios
 
 ### ⭐ [UserBookmark Service](./user-bookmark.md)
+
 **Favoritos y marcadores de usuario**
 
 - ❤️ **Favoritos**: Alojamientos marcados
