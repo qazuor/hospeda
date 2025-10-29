@@ -12,6 +12,7 @@ The new authentication system provides a fast, efficient, and user-friendly auth
 ## Key Improvements
 
 ### **Before (Old System)**
+
 - ❌ API call on every route navigation
 - ❌ "Checking session..." on every page load
 - ❌ Slow navigation between pages
@@ -19,6 +20,7 @@ The new authentication system provides a fast, efficient, and user-friendly auth
 - ❌ Poor user experience
 
 ### **After (New System)**
+
 - ✅ Session stored in browser (5min TTL)
 - ✅ Instant navigation between pages
 - ✅ Minimal "Loading..." states
@@ -61,6 +63,7 @@ interface AuthContextValue extends AuthState {
 ```
 
 **Key Features:**
+
 - Session storage with 5-minute TTL
 - Automatic session expiration handling
 - Smart refresh logic
@@ -82,6 +85,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 ```
 
 **Improvements:**
+
 - Uses AuthContext instead of direct API calls
 - Minimal loading states (only when no cached session)
 - Smart refresh only when needed
@@ -108,17 +112,20 @@ const initials = useUserInitials();
 ## Session Storage Strategy
 
 ### **Storage Keys:**
+
 - `hospeda_user_session`: User session data
 - `hospeda_session_timestamp`: Session creation time
 - `hospeda_clerk_state`: Clerk authentication state
 
 ### **TTL Management:**
+
 - **5-minute TTL** for session data
 - Automatic cleanup on expiration
 - Smart refresh before expiration
 - Fallback to API when storage unavailable
 
 ### **Data Stored:**
+
 ```typescript
 interface UserSession {
     id: string;
@@ -135,16 +142,19 @@ interface UserSession {
 ## Performance Benefits
 
 ### **Navigation Speed:**
+
 - **Old System**: 200-500ms per navigation (API call)
 - **New System**: 0-50ms per navigation (cached)
 - **Improvement**: 90-95% faster navigation
 
 ### **API Calls Reduction:**
+
 - **Old System**: 1 API call per navigation
 - **New System**: 1 API call per 5 minutes
 - **Reduction**: 95% fewer API calls
 
 ### **User Experience:**
+
 - **Old System**: "Checking session..." on every page
 - **New System**: Instant page loads with cached data
 - **Loading States**: Only shown when absolutely necessary
@@ -160,6 +170,7 @@ Frontend Request → Backend UserCache (1-5ms) → Response
 ```
 
 **Combined Benefits:**
+
 - Frontend: Eliminates API calls (95% reduction)
 - Backend: Eliminates DB queries (90% reduction)
 - **Total Performance Gain**: 99% faster authentication checks
@@ -167,6 +178,7 @@ Frontend Request → Backend UserCache (1-5ms) → Response
 ## Usage Examples
 
 ### **Basic Authentication Check:**
+
 ```typescript
 import { useAuthContext } from '@/contexts/auth-context';
 
@@ -182,6 +194,7 @@ function MyComponent() {
 ```
 
 ### **Permission-Based Rendering:**
+
 ```typescript
 import { useHasPermission, PERMISSIONS } from '@/hooks/use-auth';
 
@@ -199,6 +212,7 @@ function AdminPanel() {
 ```
 
 ### **Role-Based Access:**
+
 ```typescript
 import { useIsAdmin } from '@/hooks/use-auth';
 
@@ -216,16 +230,19 @@ function AdminOnlyComponent() {
 ## Error Handling
 
 ### **Network Errors:**
+
 - Automatic retry with exponential backoff
 - Graceful degradation to cached data
 - User-friendly error messages with retry options
 
 ### **Session Expiration:**
+
 - Automatic refresh before expiration
 - Smooth transition to sign-in when needed
 - No data loss during session refresh
 
 ### **Storage Errors:**
+
 - Fallback to memory-only mode
 - Graceful handling of storage quota exceeded
 - Automatic cleanup of corrupted data
@@ -233,16 +250,19 @@ function AdminOnlyComponent() {
 ## Security Considerations
 
 ### **Session Storage:**
+
 - Data cleared on browser close
 - 5-minute TTL prevents stale data
 - No sensitive data stored (tokens handled by Clerk)
 
 ### **Authentication Flow:**
+
 - Clerk handles all token management
 - Backend validates all requests
 - Frontend only stores user metadata
 
 ### **Permission Checks:**
+
 - Frontend checks for UX only
 - Backend enforces all permissions
 - No security decisions made in frontend
@@ -259,6 +279,7 @@ function AdminOnlyComponent() {
 ### **Example Migration:**
 
 **Before:**
+
 ```typescript
 // Old way - direct API call
 const [user, setUser] = useState(null);
@@ -270,6 +291,7 @@ useEffect(() => {
 ```
 
 **After:**
+
 ```typescript
 // New way - use context
 const { user, isLoading } = useAuthContext();
@@ -294,6 +316,7 @@ const { user, isLoading } = useAuthContext();
 ### **Debug Mode:**
 
 Enable debug logging:
+
 ```typescript
 // In AuthContext
 console.log('AuthContext state:', authState);
@@ -302,12 +325,14 @@ console.log('AuthContext state:', authState);
 ## Future Enhancements
 
 ### **Planned Improvements:**
+
 1. **Background session refresh** (before expiration)
 2. **Offline mode support** with cached permissions
 3. **Multi-tab synchronization** via BroadcastChannel
 4. **Progressive Web App** integration
 
 ### **Performance Monitoring:**
+
 - Session hit/miss rates
 - API call reduction metrics
 - User experience analytics
@@ -324,4 +349,3 @@ The new authentication system provides:
 - **Robust error handling** with automatic recovery
 
 This creates a modern, fast, and reliable authentication experience that scales with your application's growth.
-
