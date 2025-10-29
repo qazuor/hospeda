@@ -93,3 +93,7 @@ docs/dev
 # =========================
 **/drizzle/meta/
 **/migrations/meta/
+
+
+
+.claude/.log/notifications.log
