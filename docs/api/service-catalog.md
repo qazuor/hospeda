@@ -40,11 +40,13 @@ Manages accommodation listings (hotels, apartments, etc.).
 ### Base URL: `/accommodations`
 
 #### List Accommodations
+
 ```http
 GET /accommodations
 ```
 
 **Query Parameters:**
+
 - `page` (number): Page number (default: 1)
 - `pageSize` (number): Items per page (default: 10, max: 100)
 - `q` (string): Search query (name, description)
@@ -55,6 +57,7 @@ GET /accommodations
 - `visibility` (string): `PUBLIC` | `PRIVATE` | `RESTRICTED`
 
 **Response:**
+
 ```typescript
 {
     success: true,
@@ -71,11 +74,13 @@ GET /accommodations
 ```
 
 #### Get Accommodation by ID
+
 ```http
 GET /accommodations/{id}
 ```
 
 **Response:**
+
 ```typescript
 {
     success: true,
@@ -84,6 +89,7 @@ GET /accommodations/{id}
 ```
 
 #### Create Accommodation
+
 ```http
 POST /accommodations
 ```
@@ -91,6 +97,7 @@ POST /accommodations
 **Required Permissions:** `ACCOMMODATION_CREATE`
 
 **Request Body:**
+
 ```typescript
 {
     name: string,
@@ -107,6 +114,7 @@ POST /accommodations
 ```
 
 #### Update Accommodation
+
 ```http
 PUT /accommodations/{id}
 ```
@@ -114,6 +122,7 @@ PUT /accommodations/{id}
 **Required Permissions:** `ACCOMMODATION_UPDATE` or ownership
 
 #### Delete Accommodation
+
 ```http
 DELETE /accommodations/{id}
 ```
@@ -129,27 +138,32 @@ Manages tourist destinations.
 ### Base URL: `/destinations`
 
 #### List Destinations
+
 ```http
 GET /destinations
 ```
 
 **Query Parameters:**
+
 - `page`, `pageSize`: Pagination
 - `q`: Search query
 - `country`: Filter by country
 - `isFeatured`: Filter featured destinations
 
 #### Get Destination by ID
+
 ```http
 GET /destinations/{id}
 ```
 
 #### Get Destination by Slug
+
 ```http
 GET /destinations/slug/{slug}
 ```
 
 #### Create Destination
+
 ```http
 POST /destinations
 ```
@@ -157,6 +171,7 @@ POST /destinations
 **Required Permissions:** `DESTINATION_CREATE`
 
 **Request Body:**
+
 ```typescript
 {
     slug: string,
@@ -178,6 +193,7 @@ Manages user accounts and profiles.
 ### Base URL: `/users`
 
 #### Search Users
+
 ```http
 GET /users
 ```
@@ -185,12 +201,14 @@ GET /users
 **Required Permissions:** `USER_LIST`
 
 **Query Parameters:**
+
 - `page`, `pageSize`: Pagination
 - `q`: Search by name, email
 - `role`: Filter by role
 - `status`: Filter by status
 
 #### Get User by ID
+
 ```http
 GET /users/{id}
 ```
@@ -198,6 +216,7 @@ GET /users/{id}
 **Required Permissions:** `USER_READ` or self-access
 
 #### Update User
+
 ```http
 PUT /users/{id}
 ```
@@ -205,6 +224,7 @@ PUT /users/{id}
 **Required Permissions:** `USER_UPDATE` or self-access
 
 #### Assign Role
+
 ```http
 POST /users/{id}/role
 ```
@@ -212,6 +232,7 @@ POST /users/{id}/role
 **Required Permissions:** `USER_ROLE_ASSIGN`
 
 **Request Body:**
+
 ```typescript
 {
     role: RoleEnum
@@ -219,6 +240,7 @@ POST /users/{id}/role
 ```
 
 #### Add Permission
+
 ```http
 POST /users/{id}/permissions
 ```
@@ -226,6 +248,7 @@ POST /users/{id}/permissions
 **Required Permissions:** `USER_PERMISSION_MANAGE`
 
 **Request Body:**
+
 ```typescript
 {
     permission: PermissionEnum
@@ -241,21 +264,25 @@ Manages user bookmarks for accommodations and destinations.
 ### Base URL: `/user-bookmarks`
 
 #### List User Bookmarks
+
 ```http
 GET /user-bookmarks
 ```
 
 **Query Parameters:**
+
 - `userId`: Filter by user (admins only)
 - `entityType`: Filter by entity type
 - `page`, `pageSize`: Pagination
 
 #### Create Bookmark
+
 ```http
 POST /user-bookmarks
 ```
 
 **Request Body:**
+
 ```typescript
 {
     entityId: string,
@@ -266,6 +293,7 @@ POST /user-bookmarks
 ```
 
 #### Delete Bookmark
+
 ```http
 DELETE /user-bookmarks/{id}
 ```
@@ -279,11 +307,13 @@ Manages events and activities.
 ### Base URL: `/events`
 
 #### List Events
+
 ```http
 GET /events
 ```
 
 **Query Parameters:**
+
 - `page`, `pageSize`: Pagination
 - `q`: Search query
 - `category`: Filter by category
@@ -293,21 +323,25 @@ GET /events
 - `endDate`: Filter events before date
 
 #### Get Upcoming Events
+
 ```http
 GET /events/upcoming
 ```
 
 #### Get Free Events
+
 ```http
 GET /events/free
 ```
 
 #### Get Events by Category
+
 ```http
 GET /events/category/{category}
 ```
 
 #### Create Event
+
 ```http
 POST /events
 ```
@@ -315,6 +349,7 @@ POST /events
 **Required Permissions:** `EVENT_CREATE`
 
 **Request Body:**
+
 ```typescript
 {
     name: string,
@@ -338,11 +373,13 @@ Manages blog posts and content.
 ### Base URL: `/posts`
 
 #### List Posts
+
 ```http
 GET /posts
 ```
 
 **Query Parameters:**
+
 - `page`, `pageSize`: Pagination
 - `q`: Search query
 - `category`: Filter by category
@@ -351,16 +388,19 @@ GET /posts
 - `isNews`: Filter news posts
 
 #### Get Post by ID
+
 ```http
 GET /posts/{id}
 ```
 
 #### Get Post by Slug
+
 ```http
 GET /posts/slug/{slug}
 ```
 
 #### Create Post
+
 ```http
 POST /posts
 ```
@@ -368,6 +408,7 @@ POST /posts
 **Required Permissions:** `POST_CREATE`
 
 **Request Body:**
+
 ```typescript
 {
     slug: string,
@@ -391,11 +432,13 @@ Manages tags for content organization.
 ### Base URL: `/tags`
 
 #### List Tags
+
 ```http
 GET /tags
 ```
 
 #### Create Tag
+
 ```http
 POST /tags
 ```
@@ -403,6 +446,7 @@ POST /tags
 **Required Permissions:** `TAG_CREATE`
 
 **Request Body:**
+
 ```typescript
 {
     name: string,
@@ -420,11 +464,13 @@ Manages accommodation amenities.
 ### Base URL: `/amenities`
 
 #### List Amenities
+
 ```http
 GET /amenities
 ```
 
 #### Create Amenity
+
 ```http
 POST /amenities
 ```
@@ -440,11 +486,13 @@ Manages tourist attractions.
 ### Base URL: `/attractions`
 
 #### List Attractions
+
 ```http
 GET /attractions
 ```
 
 #### Get Attractions by Destination
+
 ```http
 GET /attractions/destination/{destinationId}
 ```
@@ -507,18 +555,22 @@ Default rate limits apply:
 ## 🔒 Permissions Reference
 
 ### User Permissions
+
 - `USER_CREATE`, `USER_READ`, `USER_UPDATE`, `USER_DELETE`
 - `USER_LIST`, `USER_ROLE_ASSIGN`, `USER_PERMISSION_MANAGE`
 
 ### Accommodation Permissions
+
 - `ACCOMMODATION_CREATE`, `ACCOMMODATION_READ`, `ACCOMMODATION_UPDATE`, `ACCOMMODATION_DELETE`
 - `ACCOMMODATION_LIST`, `ACCOMMODATION_MODERATE`
 
 ### Destination Permissions
+
 - `DESTINATION_CREATE`, `DESTINATION_READ`, `DESTINATION_UPDATE`, `DESTINATION_DELETE`
 - `DESTINATION_LIST`, `DESTINATION_MODERATE`
 
 ### Content Permissions
+
 - `POST_CREATE`, `POST_READ`, `POST_UPDATE`, `POST_DELETE`
 - `EVENT_CREATE`, `EVENT_READ`, `EVENT_UPDATE`, `EVENT_DELETE`
 - `TAG_CREATE`, `TAG_UPDATE`, `TAG_DELETE`
@@ -567,6 +619,7 @@ curl -X POST \
 ## 📞 Support
 
 For API support:
+
 - **Documentation Issues**: Update this file with corrections
 - **Permission Issues**: Check the permissions reference above
 - **Rate Limiting**: Contact admin for limit increases
