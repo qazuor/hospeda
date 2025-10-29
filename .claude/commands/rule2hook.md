@@ -8,7 +8,7 @@ Convert natural language project rules into Claude Code hook configurations. Ana
 
 ```bash
 /rule2hook {optional_rules}
-```text
+```
 
 ## Description
 
@@ -93,7 +93,7 @@ Expert system for converting natural language project rules into Claude Code hoo
     ]
   }
 }
-```text
+```
 
 ## Matcher Patterns
 
@@ -125,7 +125,7 @@ Expert system for converting natural language project rules into Claude Code hoo
     }]
   }
 }
-```text
+```
 
 ### Example 2: Git Status Check
 
@@ -146,7 +146,7 @@ Expert system for converting natural language project rules into Claude Code hoo
     }]
   }
 }
-```text
+```
 
 ### Example 3: Security Scan
 
@@ -168,7 +168,7 @@ Expert system for converting natural language project rules into Claude Code hoo
     }]
   }
 }
-```text
+```
 
 ### Example 4: Test Runner
 
@@ -191,7 +191,7 @@ Expert system for converting natural language project rules into Claude Code hoo
     }]
   }
 }
-```text
+```
 
 ### Example 5: Command Logging
 
@@ -213,7 +213,7 @@ Expert system for converting natural language project rules into Claude Code hoo
     }]
   }
 }
-```text
+```
 
 ## Best Practices for Command Generation
 

@@ -1,3 +1,10 @@
+---
+name: react-dev
+description: Builds reusable React 19 components with hooks and state management for Astro and TanStack Start during Phase 2 Implementation
+tools: Read, Write, Edit, Glob, Grep, Bash, mcp__context7__get-library-docs
+model: sonnet
+---
+
 # React Developer Agent
 
 ## Role & Responsibility
@@ -140,7 +147,7 @@ function AccommodationCardComponent({
         {/* Capacity */}
         <div className="flex items-center gap-2 text-sm text-gray-600 mb-3">
           <Users size={16} />
-          <span>Hasta {accommodation.maxGuests} huéspedes</span>
+          <span>Hasta {accommodation.maxGuests} huï¿½spedes</span>
         </div>
 
         {/* Rating */}
@@ -151,7 +158,7 @@ function AccommodationCardComponent({
               {accommodation.averageRating.toFixed(1)}
             </span>
             <span className="text-sm text-gray-500">
-              ({accommodation.reviewCount} reseñas)
+              ({accommodation.reviewCount} reseï¿½as)
             </span>
           </div>
         )}
@@ -723,13 +730,13 @@ export function AccommodationForm({
       >
         {(field) => (
           <div>
-            <Label htmlFor="title">Título *</Label>
+            <Label htmlFor="title">Tï¿½tulo *</Label>
             <Input
               id="title"
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
               onBlur={field.handleBlur}
-              placeholder="Ej: Departamento céntrico con vista al río"
+              placeholder="Ej: Departamento cï¿½ntrico con vista al rï¿½o"
             />
             {field.state.meta.errors && (
               <p className="text-sm text-red-600 mt-1">
@@ -749,7 +756,7 @@ export function AccommodationForm({
       >
         {(field) => (
           <div>
-            <Label htmlFor="description">Descripción *</Label>
+            <Label htmlFor="description">Descripciï¿½n *</Label>
             <Textarea
               id="description"
               value={field.state.value}
@@ -803,7 +810,7 @@ export function AccommodationForm({
         >
           {(field) => (
             <div>
-              <Label htmlFor="maxGuests">Huéspedes máximos *</Label>
+              <Label htmlFor="maxGuests">Huï¿½spedes mï¿½ximos *</Label>
               <Input
                 id="maxGuests"
                 type="number"
@@ -824,7 +831,7 @@ export function AccommodationForm({
 
       {/* Address fields */}
       <div className="space-y-4">
-        <h3 className="font-semibold">Dirección</h3>
+        <h3 className="font-semibold">Direcciï¿½n</h3>
 
         <form.Field name="address.street">
           {(field) => (
@@ -834,7 +841,7 @@ export function AccommodationForm({
                 id="street"
                 value={field.state.value}
                 onChange={(e) => field.handleChange(e.target.value)}
-                placeholder="Ej: San Martín 123"
+                placeholder="Ej: San Martï¿½n 123"
               />
             </div>
           )}
@@ -849,7 +856,7 @@ export function AccommodationForm({
                   id="city"
                   value={field.state.value}
                   onChange={(e) => field.handleChange(e.target.value)}
-                  placeholder="Ej: Concepción del Uruguay"
+                  placeholder="Ej: Concepciï¿½n del Uruguay"
                 />
               </div>
             )}
@@ -863,7 +870,7 @@ export function AccommodationForm({
                   id="province"
                   value={field.state.value}
                   onChange={(e) => field.handleChange(e.target.value)}
-                  placeholder="Ej: Entre Ríos"
+                  placeholder="Ej: Entre Rï¿½os"
                 />
               </div>
             )}

@@ -1,3 +1,10 @@
+---
+name: dependency-mapper
+description: Analyzes and manages dependencies, creates dependency graphs, ensures security and compatibility during all phases
+tools: Read, Write, Bash, Glob, Grep, mcp__socket__depscore
+model: sonnet
+---
+
 # Dependency Mapper Agent
 
 ## Role & Responsibility
@@ -684,7 +691,7 @@ async function checkBundleSizes() {
     const files = await glob(bundle.pattern);
 
     if (files.length === 0) {
-      console.warn(`   No files found for ${bundle.name}`);
+      console.warn(`ï¿½  No files found for ${bundle.name}`);
       continue;
     }
 
@@ -970,9 +977,9 @@ async function generateHealthReport() {
   console.log(`\nDependency Health Score: ${Math.max(score, 0)}/100`);
 
   if (score < 70) {
-    console.error('   Dependency health needs attention!');
+    console.error('ï¿½  Dependency health needs attention!');
   } else if (score < 90) {
-    console.warn('   Dependency health could be improved');
+    console.warn('ï¿½  Dependency health could be improved');
   } else {
     console.log(' Dependency health is good');
   }

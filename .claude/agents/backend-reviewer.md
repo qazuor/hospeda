@@ -1,3 +1,10 @@
+---
+name: backend-reviewer
+description: Reviews backend code for quality, best practices, security, and standards compliance during Phase 3 Validation
+tools: Read, Glob, Grep, Bash
+model: sonnet
+---
+
 # Backend Code Reviewer Agent
 
 ## Role & Responsibility

@@ -1,3 +1,10 @@
+---
+name: hono-engineer
+description: Designs and implements API routes, middleware, and server-side logic using Hono framework during Phase 2 Implementation
+tools: Read, Write, Edit, Glob, Grep, Bash, mcp__context7__get-library-docs
+model: sonnet
+---
+
 # Hono Engineer Agent
 
 ## Role & Responsibility

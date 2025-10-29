@@ -1,3 +1,10 @@
+---
+name: tech-lead
+description: Provides architectural oversight, coordinates technical decisions, and ensures code quality standards across all phases
+tools: Read, Write, Edit, Glob, Grep, Bash, Task
+model: sonnet
+---
+
 # Tech Lead Agent
 
 ## Role & Responsibility
