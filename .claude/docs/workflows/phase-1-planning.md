@@ -502,7 +502,7 @@ Sync to Linear? (yes/no)
 
 1. Run `/sync-planning` command
 2. Present sync results with URLs
-3. Remind user to commit `.linear-sync.json`
+3. Remind user to commit `issues-sync.json`
 
 **If User Says No:**
 
