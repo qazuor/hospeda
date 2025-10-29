@@ -89,6 +89,7 @@ import { SignInForm } from '@repo/auth-ui';
 ```
 
 **Features:**
+
 - OAuth (Google, Facebook)
 - Email/password authentication
 - API sync after successful auth
@@ -109,6 +110,7 @@ import { SignUpForm } from '@repo/auth-ui';
 ```
 
 **Features:**
+
 - OAuth (Google, Facebook)
 - Email/password registration
 - Email verification flow
@@ -125,6 +127,7 @@ import { UserNav } from '../components/auth/UserNav';
 ```
 
 **Features:**
+
 - Shows sign-in/sign-up buttons when not authenticated
 - Shows user avatar/menu when authenticated
 - Responsive design
@@ -144,6 +147,7 @@ import { UserMenu } from '@repo/auth-ui';
 ```
 
 **Features:**
+
 - User avatar and info display
 - Dropdown menu with navigation
 - Dashboard and profile links
@@ -164,6 +168,7 @@ import { SignOutButton } from '@repo/auth-ui';
 ```
 
 **Features:**
+
 - API signout sync
 - Clerk session cleanup
 - Automatic redirection
@@ -224,6 +229,7 @@ const { isSignedIn, user } = useUser();
 ## 🎯 Features Implemented
 
 ### ✅ Core Authentication
+
 - [x] Sign-in with OAuth (Google, Facebook)
 - [x] Sign-in with email/password
 - [x] Sign-up with OAuth
@@ -232,6 +238,7 @@ const { isSignedIn, user } = useUser();
 - [x] Session management
 
 ### ✅ UI Components
+
 - [x] Responsive sign-in form
 - [x] Responsive sign-up form
 - [x] User navigation controls
@@ -240,6 +247,7 @@ const { isSignedIn, user } = useUser();
 - [x] Loading states
 
 ### ✅ Integration
+
 - [x] API sync after authentication
 - [x] Server-side route protection
 - [x] Client-side state management
@@ -247,6 +255,7 @@ const { isSignedIn, user } = useUser();
 - [x] Error handling
 
 ### ✅ Pages
+
 - [x] Sign-in page (`/auth/signin/`)
 - [x] Sign-up page (`/auth/signup/`)
 - [x] OAuth callback page (`/auth/callback/`)
