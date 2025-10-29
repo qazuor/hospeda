@@ -1,12 +1,16 @@
 # @repo/planning-sync
 
-Simple Linear synchronization for Claude Code planning sessions.
+Simple GitHub/Linear synchronization for Claude Code planning sessions.
 
 ## Features
 
-- ✅ Create parent planning issues in Linear
+- ✅ Create parent planning issues in GitHub or Linear
 - ✅ Create sub-issues for each task
-- ✅ Sync task status bidirectionally (TODOs.md ↔ Linear)
+- ✅ Auto-detect and apply labels from task content
+- ✅ Rich issue summaries with metadata
+- ✅ GitHub Projects v2 integration
+- ✅ Parent-child relationships
+- ✅ Sync task status bidirectionally (TODOs.md ↔ GitHub/Linear)
 - ✅ ~200 lines vs ~2000+ in tools-todo-linear
 - ✅ No file scanning, no AI, no complexity
 
@@ -16,14 +20,54 @@ Simple Linear synchronization for Claude Code planning sessions.
 pnpm add @repo/planning-sync
 ```
 
-## Environment Variables
+## Quick Start
+
+### GitHub Sync
+
+**📖 Full Setup Guide**: See [GITHUB-SETUP.md](./GITHUB-SETUP.md) for complete instructions.
+
+**1. Configure GitHub Token** (requires `repo`, `read:project`, `write:project` scopes):
 
 ```bash
+# Add to .env.local
+GITHUB_TOKEN=ghp_your_token_here
+GITHUB_REPO=owner/repo-name
+```
+
+**2. Run Sync**:
+
+```bash
+export GITHUB_TOKEN="ghp_..." && \
+export GITHUB_REPO="owner/repo" && \
+node --import tsx/esm packages/planning-sync/src/scripts/planning-sync.ts \
+  /absolute/path/to/.claude/sessions/planning/P-XXX-feature-name \
+  github
+```
+
+**3. Clean Up Issues** (testing only):
+
+```bash
+gh issue list --state all --limit 1000 --json number -q '.[].number' | \
+  xargs -I {} gh issue delete {} --yes
+```
+
+### Linear Sync
+
+**1. Configure Linear API**:
+
+```bash
+# Add to .env.local
 LINEAR_API_KEY=your_linear_api_key
 LINEAR_TEAM_ID=your_team_id
 ```
 
 Get these from Linear Settings → API → Personal API Keys.
+
+**2. Run Sync**:
+
+```bash
+pnpm run planning:sync /path/to/planning/session
+```
 
 ## Usage
 
@@ -86,7 +130,7 @@ if (session) {
 ├── PDR.md                  # Product requirements
 ├── tech-analysis.md        # Technical analysis
 ├── TODOs.md                # Tasks (parsed by this package)
-└── .linear-sync.json       # Sync state (created by this package)
+└── issues-sync.json        # Sync state (created by this package)
 ```
 
 ### 2. TODOs.md Format
@@ -119,7 +163,7 @@ Status markers:
 └── Write user model tests (sub-issue)
 ```
 
-### 4. Sync State (.linear-sync.json)
+### 4. Sync State (issues-sync.json)
 
 ```json
 {

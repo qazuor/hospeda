@@ -66,14 +66,14 @@ Present the results to the user in a clear format:
    • {result.tasksUnchanged} tasks unchanged
 
 💡 You can now access this planning from any device via Linear.
-   The sync data is saved in .linear-sync.json for future updates.
+   The sync data is saved in issues-sync.json for future updates.
 ```
 
 ### Step 6: Suggest Next Steps
 
 Remind the user:
 
-1. Commit and push the planning files including `.linear-sync.json`
+1. Commit and push the planning files including `issues-sync.json`
 2. They can now view/update tasks in Linear
 3. When completing tasks, confirm with you to sync status back
 
@@ -121,7 +121,7 @@ Try again or sync manually later.
 - The sync is idempotent - you can run it multiple times safely
 - Existing issues will be updated, not duplicated
 - Task status in Linear will match TODOs.md
-- The `.linear-sync.json` file stores the mapping between tasks and Linear issues
+- The `issues-sync.json` file stores the mapping between tasks and Linear issues
 - Always commit this file to git so syncs work across machines
 
 ## Example Usage

@@ -72,7 +72,7 @@ If you answer **yes**, Claude will:
 
 1. Create parent issue in Linear with "[Planning]" prefix
 2. Create sub-issues for each task in TODOs.md
-3. Save mapping in `.linear-sync.json`
+3. Save mapping in `issues-sync.json`
 4. Show you the URLs
 
 **Output:**
@@ -88,7 +88,7 @@ If you answer **yes**, Claude will:
    • 0 tasks updated
    • 0 tasks unchanged
 
-💡 Don't forget to commit .linear-sync.json!
+💡 Don't forget to commit issues-sync.json!
 ```
 
 #### Step 3: Commit and Push
@@ -99,7 +99,7 @@ git commit -m "docs(planning): sync user-auth to Linear"
 git push
 ```
 
-**Important:** Always commit `.linear-sync.json` so syncs work across machines.
+**Important:** Always commit `issues-sync.json` so syncs work across machines.
 
 ### Phase 2: Implementation → Task Completion
 
@@ -120,7 +120,7 @@ Claude will:
 
 1. Update TODOs.md: `- [ ]` → `- [x]`
 2. Update Linear issue state to "Done"
-3. Update `.linear-sync.json` timestamp
+3. Update `issues-sync.json` timestamp
 
 **Output:**
 
@@ -150,7 +150,7 @@ Claude respects your decision and continues without marking complete.
 # Pull latest changes
 git pull
 
-# Claude will automatically detect .linear-sync.json
+# Claude will automatically detect issues-sync.json
 # and sync task status when you continue work
 ```
 
@@ -183,10 +183,10 @@ pnpm planning:complete .claude/sessions/planning/user-auth abc12345
 ├── PDR.md                  # Product requirements
 ├── tech-analysis.md        # Technical analysis
 ├── TODOs.md                # Tasks (source of truth locally)
-└── .linear-sync.json       # Sync state (DO NOT edit manually)
+└── issues-sync.json       # Sync state (DO NOT edit manually)
 ```
 
-### .linear-sync.json
+### issues-sync.json
 
 ```json
 {
@@ -299,7 +299,7 @@ No command needed! Claude automatically asks when you complete a task.
 
 ## Best Practices
 
-### 1. Always Commit .linear-sync.json
+### 1. Always Commit issues-sync.json
 
 ```bash
 git add .claude/sessions/planning/*/. linear-sync.json
@@ -364,13 +364,13 @@ They can coexist and serve different purposes.
 
 **Yes!** Just don't sync. TODOs.md works standalone. Sync is optional.
 
-### What happens if I delete .linear-sync.json?
+### What happens if I delete issues-sync.json?
 
 Next sync will create new issues instead of updating existing ones. **Don't delete it.**
 
 ### Can I sync multiple planning sessions?
 
-**Yes!** Each session has its own `.linear-sync.json`. They're independent.
+**Yes!** Each session has its own `issues-sync.json`. They're independent.
 
 ### Can I share planning with team members?
 
