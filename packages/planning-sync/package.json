@@ -1,35 +1,52 @@
 {
     "name": "@repo/planning-sync",
     "version": "0.1.0",
-    "description": "Simple Linear synchronization for Claude planning sessions",
+    "description": "GitHub and Linear synchronization for Claude planning sessions",
     "type": "module",
-    "main": "./dist/index.js",
-    "types": "./dist/index.d.ts",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
     "exports": {
         ".": {
             "types": "./dist/index.d.ts",
             "import": "./dist/index.js"
         }
     },
+    "keywords": ["linear", "github", "tracking", "sync", "planning"],
+    "author": "hospeda-team",
+    "license": "MIT",
+    "bin": {
+        "plan-sync": "./dist/scripts/sync.js",
+        "plan-watch": "./dist/scripts/watch.js"
+    },
+    "files": ["dist"],
     "scripts": {
-        "build": "tsc",
-        "dev": "tsc --watch",
+        "build": "tsup",
+        "dev": "echo 'Dev mode uses tsconfig paths (no build)'",
+        "typecheck": "tsc --noEmit --project ./tsconfig.json",
+        "test": "vitest run --passWithNoTests",
+        "test:watch": "vitest",
         "lint": "biome check .",
         "format": "biome format --write .",
         "check": "biome check --write .",
         "clean": "rm -rf node_modules dist",
-        "typecheck": "tsc --noEmit --project ./tsconfig.json",
-        "test": "vitest run",
-        "test:watch": "vitest",
-        "test:coverage": "vitest run --coverage"
+        "test:coverage": "vitest run --coverage",
+        "planning:sync": "tsx src/scripts/planning-sync.ts",
+        "planning:complete": "tsx src/scripts/planning-complete-task.ts",
+        "planning:cleanup": "tsx src/scripts/cleanup-issues.ts"
     },
     "dependencies": {
         "@linear/sdk": "^30.0.0",
+        "@octokit/rest": "^20.0.0",
+        "@repo/config": "workspace:*",
         "zod": "^4.0.8"
     },
     "devDependencies": {
+        "@repo/typescript-config": "workspace:*",
         "@types/node": "^22.15.3",
         "@vitest/coverage-v8": "^3.2.4",
+        "dotenv": "^17.2.3",
+        "tsup": "^8.4.0",
+        "tsx": "^4.19.2",
         "typescript": "^5.8.3",
         "vitest": "^3.2.4"
     }
