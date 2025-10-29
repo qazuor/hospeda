@@ -53,12 +53,14 @@ Todos los métodos CRUD heredan de `BaseCrudService` y siguen el patrón estánd
 Crea un nuevo alojamiento.
 
 **Parámetros:**
+
 - `actor`: Actor que ejecuta la operación
 - `input`: Datos del alojamiento a crear
 
 **Permisos Requeridos:** `ACCOMMODATION_CREATE`
 
 **Validaciones:**
+
 - Slug único (se genera automáticamente si no se proporciona)
 - Destino válido y existente
 - Usuario propietario válido
@@ -66,6 +68,7 @@ Crea un nuevo alojamiento.
 - Ubicación con coordenadas válidas
 
 **Ejemplo de Input:**
+
 ```typescript
 {
     name: "Hotel Plaza Central",
@@ -100,6 +103,7 @@ Crea un nuevo alojamiento.
 ```
 
 **Respuesta:**
+
 ```typescript
 {
     data: {
@@ -118,12 +122,14 @@ Crea un nuevo alojamiento.
 Obtiene un alojamiento por su ID.
 
 **Parámetros:**
+
 - `actor`: Actor que ejecuta la operación
 - `id`: ID del alojamiento
 
 **Permisos Requeridos:** `ACCOMMODATION_READ` (público con restricciones de visibilidad)
 
 **Ejemplo:**
+
 ```typescript
 const result = await accommodationService.getById(actor, "acc_789");
 if (result.data) {
@@ -136,10 +142,12 @@ if (result.data) {
 Obtiene un alojamiento por su slug.
 
 **Parámetros:**
+
 - `actor`: Actor que ejecuta la operación  
 - `slug`: Slug del alojamiento
 
 **Ejemplo:**
+
 ```typescript
 const result = await accommodationService.getBySlug(actor, "hotel-plaza-central");
 ```
@@ -151,6 +159,7 @@ Actualiza un alojamiento existente (PUT - reemplaza completamente).
 **Permisos Requeridos:** `ACCOMMODATION_EDIT`
 
 **Validaciones:**
+
 - El actor debe ser el propietario o tener permisos administrativos
 - Todos los campos requeridos deben estar presentes
 
@@ -161,6 +170,7 @@ Actualiza parcialmente un alojamiento (PATCH - actualización incremental).
 **Permisos Requeridos:** `ACCOMMODATION_EDIT`
 
 **Ejemplo:**
+
 ```typescript
 const result = await accommodationService.patch(actor, "acc_789", {
     price: {
@@ -195,6 +205,7 @@ Lista alojamientos con paginación y filtros.
 **Permisos Requeridos:** `ACCOMMODATION_LIST`
 
 **Parámetros de Búsqueda:**
+
 ```typescript
 {
     q?: string;              // Búsqueda por texto
@@ -216,6 +227,7 @@ Lista alojamientos con paginación y filtros.
 Búsqueda avanzada con datos relacionados incluidos (destino, propietario, etc.).
 
 **Respuesta Incluye:**
+
 - Datos del alojamiento
 - Información del destino
 - Datos del propietario
@@ -227,6 +239,7 @@ Búsqueda avanzada con datos relacionados incluidos (destino, propietario, etc.)
 Obtiene todos los alojamientos de un destino específico.
 
 **Parámetros:**
+
 ```typescript
 {
     destinationId: string;
@@ -236,6 +249,7 @@ Obtiene todos los alojamientos de un destino específico.
 ```
 
 **Ejemplo:**
+
 ```typescript
 const result = await accommodationService.getByDestination(actor, {
     destinationId: "dest_madrid",
@@ -249,6 +263,7 @@ const result = await accommodationService.getByDestination(actor, {
 Obtiene todos los alojamientos de un propietario específico.
 
 **Parámetros:**
+
 ```typescript
 {
     ownerId: string;
@@ -260,6 +275,7 @@ Obtiene todos los alojamientos de un propietario específico.
 Obtiene los alojamientos mejor calificados.
 
 **Parámetros:**
+
 ```typescript
 {
     limit?: number;          // Límite de resultados (default: 10)
@@ -278,6 +294,7 @@ Obtiene los alojamientos mejor calificados de un destino específico.
 Obtiene un resumen del alojamiento con estadísticas básicas.
 
 **Parámetros:**
+
 ```typescript
 {
     id: string;
@@ -285,6 +302,7 @@ Obtiene un resumen del alojamiento con estadísticas básicas.
 ```
 
 **Respuesta:**
+
 ```typescript
 {
     data: {
@@ -305,6 +323,7 @@ Obtiene un resumen del alojamiento con estadísticas básicas.
 Obtiene estadísticas detalladas del alojamiento.
 
 **Parámetros:**
+
 ```typescript
 {
     id: string;
@@ -312,6 +331,7 @@ Obtiene estadísticas detalladas del alojamiento.
 ```
 
 **Respuesta:**
+
 ```typescript
 {
     data: {
@@ -344,6 +364,7 @@ Método interno que actualiza automáticamente las estadísticas cuando se crea/
 Obtiene las preguntas frecuentes de un alojamiento.
 
 **Parámetros:**
+
 ```typescript
 {
     accommodationId: string;
@@ -357,6 +378,7 @@ Agrega una nueva FAQ al alojamiento.
 **Permisos Requeridos:** `ACCOMMODATION_EDIT`
 
 **Parámetros:**
+
 ```typescript
 {
     accommodationId: string;
@@ -371,6 +393,7 @@ Agrega una nueva FAQ al alojamiento.
 Actualiza una FAQ existente.
 
 **Parámetros:**
+
 ```typescript
 {
     accommodationId: string;
@@ -386,6 +409,7 @@ Actualiza una FAQ existente.
 Elimina una FAQ del alojamiento.
 
 **Parámetros:**
+
 ```typescript
 {
     accommodationId: string;
@@ -400,6 +424,7 @@ Elimina una FAQ del alojamiento.
 Obtiene todos los datos de IA asociados al alojamiento.
 
 **Parámetros:**
+
 ```typescript
 {
     accommodationId: string;
@@ -413,6 +438,7 @@ Agrega nuevos datos de IA al alojamiento.
 **Permisos Requeridos:** `ACCOMMODATION_EDIT`
 
 **Parámetros:**
+
 ```typescript
 {
     accommodationId: string;
@@ -435,6 +461,7 @@ Elimina datos de IA del alojamiento.
 ### AccommodationCreateInput
 
 **Campos Requeridos:**
+
 - `name`: string (3-100 caracteres)
 - `summary`: string (10-300 caracteres)  
 - `description`: string (30-2000 caracteres)
@@ -443,6 +470,7 @@ Elimina datos de IA del alojamiento.
 - `ownerId`: UUID válido
 
 **Campos Opcionales:**
+
 - `slug`: string (se genera automáticamente)
 - `isFeatured`: boolean (default: false)
 - `contactInfo`: Información de contacto
@@ -455,6 +483,7 @@ Elimina datos de IA del alojamiento.
 ### Validaciones Específicas
 
 **Teléfono Móvil:**
+
 ```typescript
 // Debe seguir formato internacional E.164
 mobilePhone: "+1234567890" // ✅ Válido
@@ -462,12 +491,14 @@ mobilePhone: "+1-234-567-890" // ❌ Inválido (no guiones)
 ```
 
 **Coordenadas:**
+
 ```typescript
 latitude: "40.4168"    // ✅ Válido (-90 a 90)
 longitude: "-3.7038"   // ✅ Válido (-180 a 180)
 ```
 
 **Precios:**
+
 ```typescript
 price: {
     price: 150,           // ✅ Número positivo

@@ -19,6 +19,7 @@ El `AmenityService` gestiona las comodidades y servicios disponibles en alojamie
 
 Una amenidad incluye:
 /db/tsup.config.ts
+
 - **Información Básica**: Nombre, slug, descripción
 - **Clasificación**: Tipo (básica, premium, etc.), categoría
 - **Presentación**: Ícono, color, orden de visualización
@@ -43,6 +44,7 @@ enum AmenitiesType {
     OTHER = "OTHER"            // Otros servicios
 }
 ```
+
 ```
 
 ## 🔧 Métodos CRUD Básicos {#metodos-crud-basicos}
@@ -78,6 +80,7 @@ Crea una nueva amenidad.
 Asocia una amenidad con un alojamiento.
 
 **Parámetros:**
+
 ```typescript
 {
     amenityId: string;
@@ -92,6 +95,7 @@ Asocia una amenidad con un alojamiento.
 ```
 
 **Ejemplo:**
+
 ```typescript
 // Añadir spa con precio personalizado
 await amenityService.addToAccommodation(actor, {
@@ -114,6 +118,7 @@ Remueve la asociación entre amenidad y alojamiento.
 Obtiene todas las amenidades de un alojamiento específico.
 
 **Respuesta:**
+
 ```typescript
 {
     data: {
@@ -144,6 +149,7 @@ Obtiene todas las amenidades de un alojamiento específico.
 Obtiene todos los alojamientos que tienen una amenidad específica.
 
 **Ejemplo:**
+
 ```typescript
 // Hoteles con piscina
 const result = await amenityService.getAccommodations(actor, {
@@ -245,10 +251,12 @@ const wellness = await amenityService.list(actor, {
 ### AmenityCreateInput
 
 **Campos Requeridos:**
+
 - `name`: string (3-100 caracteres)
 - `type`: AmenitiesType enum
 
 **Campos Opcionales:**
+
 - `description`: string (hasta 500 caracteres)
 - `icon`: string (nombre del ícono)
 - `price`: objeto de precio

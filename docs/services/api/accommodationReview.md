@@ -39,6 +39,7 @@ Una reseña de alojamiento incluye:
 Crea una nueva reseña de alojamiento.
 
 **Ejemplo:**
+
 ```typescript
 {
     accommodationId: "acc_hotel_palermo",
@@ -73,6 +74,7 @@ Crea una nueva reseña de alojamiento.
 Lista reseñas de un alojamiento específico con estadísticas.
 
 **Parámetros:**
+
 ```typescript
 {
     accommodationId: string;
@@ -89,6 +91,7 @@ Lista reseñas de un alojamiento específico con estadísticas.
 ```
 
 **Respuesta con Estadísticas:**
+
 ```typescript
 {
     data: {
@@ -184,11 +187,13 @@ const businessReviews = await accommodationReviewService.search(actor, {
 ### AccommodationReviewCreateInput
 
 **Campos Requeridos:**
+
 - `accommodationId`: string (ID del alojamiento)
 - `rating`: number (1.0 - 5.0)
 - `content`: string (comentario escrito)
 
 **Campos Opcionales:**
+
 - `title`: string (título de la reseña)
 - `stayDate`: date (fecha de estadía)
 - `roomType`: string (tipo de habitación)

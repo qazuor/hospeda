@@ -39,6 +39,7 @@ Un organizador de eventos incluye:
 Crea un nuevo organizador de eventos.
 
 **Ejemplo:**
+
 ```typescript
 {
     name: "Secretaría de Turismo y Deportes",
@@ -71,6 +72,7 @@ Crea un nuevo organizador de eventos.
 Búsqueda de organizadores con filtros avanzados.
 
 **Parámetros:**
+
 ```typescript
 {
     q?: string;              // Búsqueda de texto libre en nombre
@@ -84,9 +86,11 @@ Búsqueda de organizadores con filtros avanzados.
 
 **Búsqueda de Texto Libre (q)**
 Busca coincidencias parciales en:
+
 - `name` (nombre del organizador)
 
 **Ejemplo:**
+
 ```typescript
 // Buscar organizadores gubernamentales
 const govOrganizers = await eventOrganizerService.searchForList(actor, {
@@ -213,9 +217,11 @@ const contactValidations = {
 ### EventOrganizerCreateInput
 
 **Campos Requeridos:**
+
 - `name`: string (3-100 caracteres)
 
 **Campos Opcionales:**
+
 - `description`: string (10-500 caracteres)
 - `logo`: string (URL válida)
 - `email`: string (formato email válido)

@@ -49,6 +49,7 @@ Si eres desarrollador y quieres **crear un nuevo servicio** o **modificar servic
 ➡️ **[Guía de Desarrollo de Servicios](./desarrollo/README.md)**
 
 Esta guía incluye:
+
 - Cómo crear un nuevo servicio desde cero
 - Estructura y patrones requeridos
 - Implementación de validaciones y permisos
@@ -62,6 +63,7 @@ Si eres desarrollador de frontend o integrador y quieres **consumir los servicio
 ➡️ **[Documentación de API](./api/README.md)**
 
 Esta documentación incluye:
+
 - Catálogo completo de servicios disponibles
 - Métodos, parámetros y respuestas de cada servicio
 - Ejemplos de uso y casos comunes
