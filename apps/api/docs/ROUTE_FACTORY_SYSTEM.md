@@ -17,7 +17,9 @@ The Route Factory System is our modern approach to creating consistent, type-saf
 ## 🏗️ Factory Types
 
 ### 1. **createSimpleRoute** - Basic endpoints
+
 ### 2. **createListRoute** - Paginated list endpoints  
+
 ### 3. **createCRUDRoute** - Full CRUD operations
 
 ---
@@ -27,6 +29,7 @@ The Route Factory System is our modern approach to creating consistent, type-saf
 **Perfect for**: Health checks, status endpoints, simple GET/POST operations
 
 ### **Basic Usage**
+
 ```typescript
 export const healthRoute = createSimpleRoute({
   method: 'get',
@@ -45,6 +48,7 @@ export const healthRoute = createSimpleRoute({
 ```
 
 ### **With Request Body Validation**
+
 ```typescript
 const CreatePostSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -77,6 +81,7 @@ export const createPostRoute = createSimpleRoute({
 ```
 
 ### **Configuration Options**
+
 ```typescript
 interface SimpleRouteConfig<TBody, TResponse> {
   method: 'get' | 'post' | 'put' | 'patch' | 'delete';
@@ -102,6 +107,7 @@ interface SimpleRouteConfig<TBody, TResponse> {
 **Perfect for**: Paginated lists, search endpoints, filtered collections
 
 ### **Basic Usage**
+
 ```typescript
 const UserListQuerySchema = z.object({
   page: z.string().transform(Number).default('1'),
@@ -140,6 +146,7 @@ export const userListRoute = createListRoute({
 ```
 
 ### **Advanced Filtering**
+
 ```typescript
 const AccommodationListQuerySchema = z.object({
   page: z.string().transform(Number).default('1'),
@@ -180,6 +187,7 @@ export const accommodationListRoute = createListRoute({
 **Perfect for**: Resource management, entity operations, RESTful endpoints
 
 ### **Basic CRUD Setup**
+
 ```typescript
 const UserParamsSchema = z.object({
   id: z.string().uuid('Invalid user ID format')
@@ -246,6 +254,7 @@ export const userCrudRoute = createCRUDRoute({
 ```
 
 ### **Partial CRUD (Only Some Operations)**
+
 ```typescript
 export const profileRoute = createCRUDRoute({
   path: '/profile',
@@ -280,6 +289,7 @@ export const profileRoute = createCRUDRoute({
 ## ⚙️ Middleware Configuration
 
 ### **Built-in Middleware Options**
+
 ```typescript
 interface MiddlewareOptions {
   cache?: boolean | {
@@ -306,6 +316,7 @@ interface MiddlewareOptions {
 ```
 
 ### **Global vs Route-Specific Middleware**
+
 ```typescript
 // Global middleware (applied to all routes)
 app.use(securityHeadersMiddleware);
@@ -330,6 +341,7 @@ export const sensitiveRoute = createSimpleRoute({
 All routes automatically return the standardized response format:
 
 ### **Success Response**
+
 ```typescript
 {
   success: true,
@@ -346,6 +358,7 @@ All routes automatically return the standardized response format:
 ```
 
 ### **Error Response**
+
 ```typescript
 {
   success: false,
@@ -373,6 +386,7 @@ All routes automatically return the standardized response format:
 ## 🧪 Testing Routes
 
 ### **Testing Simple Routes**
+
 ```typescript
 describe('Health Route', () => {
   it('should return health status', async () => {
@@ -389,6 +403,7 @@ describe('Health Route', () => {
 ```
 
 ### **Testing with Authentication**
+
 ```typescript
 describe('User CRUD Route', () => {
   it('should require authentication', async () => {
@@ -413,6 +428,7 @@ describe('User CRUD Route', () => {
 ```
 
 ### **Testing Validation**
+
 ```typescript
 describe('Create User Route', () => {
   it('should validate email format', async () => {
@@ -440,13 +456,16 @@ describe('Create User Route', () => {
 ## 📊 Performance & Monitoring
 
 ### **Built-in Metrics**
+
 All routes automatically track:
+
 - Request/response times
 - Success/error rates
 - Cache hit rates
 - Rate limit violations
 
 ### **Custom Metrics**
+
 ```typescript
 export const analyticsRoute = createSimpleRoute({
   path: '/analytics/track',
@@ -469,6 +488,7 @@ export const analyticsRoute = createSimpleRoute({
 ## 🔮 Advanced Patterns
 
 ### **Route Composition**
+
 ```typescript
 // Shared configurations
 const AuthenticatedRoute = {
@@ -493,6 +513,7 @@ export const adminUserRoute = createCRUDRoute({
 ```
 
 ### **Dynamic Middleware**
+
 ```typescript
 const createConditionalAuth = (condition: (ctx: Context) => boolean) => {
   return async (ctx: Context, next: Next) => {
@@ -510,6 +531,7 @@ const createConditionalAuth = (condition: (ctx: Context) => boolean) => {
 ## 📚 Migration Guide
 
 ### **From Old Pattern**
+
 ```typescript
 // ❌ Old pattern (lots of boilerplate)
 app.openapi(
@@ -545,6 +567,7 @@ app.openapi(
 ```
 
 ### **To New Pattern**
+
 ```typescript
 // ✅ New pattern (clean and type-safe)
 export const userListRoute = createListRoute({
@@ -563,6 +586,7 @@ export const userListRoute = createListRoute({
 ## 🚀 Best Practices
 
 ### **1. Schema Organization**
+
 ```typescript
 // schemas/user.schemas.ts
 export const UserParamsSchema = z.object({
@@ -583,6 +607,7 @@ export const UserResponseSchema = z.object({
 ```
 
 ### **2. Handler Organization**
+
 ```typescript
 // handlers/user.handlers.ts
 export const getUserHandler: CRUDHandler<UserParams, never> = async (ctx, params) => {
@@ -595,6 +620,7 @@ export const createUserHandler: CRUDHandler<UserParams, CreateUser> = async (ctx
 ```
 
 ### **3. Route Registration**
+
 ```typescript
 // routes/user/index.ts
 import { userListRoute, userCrudRoute } from './routes';

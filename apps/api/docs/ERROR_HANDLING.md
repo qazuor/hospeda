@@ -18,6 +18,7 @@ The Hospeda API implements a comprehensive error handling system that provides c
 ## 🏗️ Error Architecture
 
 ### **Error Flow**
+
 ```mermaid
 graph TD
     A[Request] --> B[Validation Middleware]
@@ -35,6 +36,7 @@ graph TD
 ```
 
 ### **Error Types Hierarchy**
+
 ```typescript
 interface ErrorResponse {
   success: false;
@@ -60,6 +62,7 @@ interface ErrorResponse {
 ## 🛠️ Error Types & Handling
 
 ### **1. Validation Errors (400)**
+
 Handled by Zod Error Transformer for detailed, user-friendly validation feedback.
 
 ```typescript
@@ -110,6 +113,7 @@ Handled by Zod Error Transformer for detailed, user-friendly validation feedback
 ```
 
 ### **2. Authentication Errors (401)**
+
 ```typescript
 {
   "success": false,
@@ -124,6 +128,7 @@ Handled by Zod Error Transformer for detailed, user-friendly validation feedback
 ```
 
 ### **3. Authorization Errors (403)**
+
 ```typescript
 {
   "success": false,
@@ -138,6 +143,7 @@ Handled by Zod Error Transformer for detailed, user-friendly validation feedback
 ```
 
 ### **4. Not Found Errors (404)**
+
 ```typescript
 {
   "success": false,
@@ -152,6 +158,7 @@ Handled by Zod Error Transformer for detailed, user-friendly validation feedback
 ```
 
 ### **5. Rate Limiting Errors (429)**
+
 ```typescript
 {
   "success": false,
@@ -167,6 +174,7 @@ Handled by Zod Error Transformer for detailed, user-friendly validation feedback
 ```
 
 ### **6. Server Errors (500)**
+
 ```typescript
 // Production
 {
@@ -230,6 +238,7 @@ export const transformZodError = (error: ZodError): ValidationErrorResponse => {
 ```
 
 ### **User-Friendly Message Generation**
+
 ```typescript
 const generateUserFriendlyMessage = (issue: ZodIssue): string => {
   const fieldName = formatFieldName(issue.path.join('.'));
@@ -265,6 +274,7 @@ const generateUserFriendlyMessage = (issue: ZodIssue): string => {
 ```
 
 ### **Helpful Suggestions**
+
 ```typescript
 const generateSuggestion = (issue: ZodIssue): string | undefined => {
   switch (issue.code) {
@@ -297,6 +307,7 @@ const generateSuggestion = (issue: ZodIssue): string | undefined => {
 ## 🌍 Internationalization
 
 ### **Multi-Language Error Support**
+
 ```typescript
 // src/utils/error-i18n.ts
 const ERROR_MESSAGES = {
@@ -324,6 +335,7 @@ export const translateError = (code: string, locale: string = 'en'): string => {
 ```
 
 ### **Locale Detection**
+
 ```typescript
 // Automatic locale detection from headers
 const detectLocale = (c: Context): string => {
@@ -341,6 +353,7 @@ const detectLocale = (c: Context): string => {
 ## 🔒 Security Considerations
 
 ### **Information Disclosure Prevention**
+
 ```typescript
 const sanitizeError = (error: Error, isProduction: boolean): ErrorInfo => {
   if (isProduction) {
@@ -362,6 +375,7 @@ const sanitizeError = (error: Error, isProduction: boolean): ErrorInfo => {
 ```
 
 ### **Value Sanitization**
+
 ```typescript
 const sanitizeValue = (value: unknown): unknown => {
   if (typeof value === 'string') {
@@ -392,6 +406,7 @@ const isPasswordField = (fieldPath: string): boolean => {
 ## 🧪 Testing Error Handling
 
 ### **Error Response Testing**
+
 ```typescript
 describe('Error Handling', () => {
   it('should return validation errors with user-friendly messages', async () => {
@@ -438,6 +453,7 @@ describe('Error Handling', () => {
 ```
 
 ### **Error Boundary Testing**
+
 ```typescript
 describe('Error Boundaries', () => {
   it('should catch and handle unexpected errors', async () => {
@@ -466,6 +482,7 @@ describe('Error Boundaries', () => {
 ## 📊 Error Monitoring
 
 ### **Error Tracking Integration**
+
 ```typescript
 // src/utils/error-tracking.ts
 import { captureException, captureMessage } from '@sentry/node';
@@ -492,6 +509,7 @@ export const trackError = (error: Error, context: ErrorContext) => {
 ```
 
 ### **Error Metrics**
+
 ```typescript
 // Automatic error rate tracking
 export const recordErrorMetric = (errorCode: string, endpoint: string) => {
@@ -519,6 +537,7 @@ export const recordErrorMetric = (errorCode: string, endpoint: string) => {
 ## 🚀 Production Best Practices
 
 ### **Error Logging Strategy**
+
 ```typescript
 // Different log levels for different error types
 const logError = (error: ErrorInfo, context: RequestContext) => {
@@ -545,6 +564,7 @@ const logError = (error: ErrorInfo, context: RequestContext) => {
 ```
 
 ### **Performance Optimization**
+
 ```typescript
 // Cache error messages to avoid repeated processing
 const errorMessageCache = new Map<string, string>();
