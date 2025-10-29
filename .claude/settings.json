@@ -1,0 +1,204 @@
+{
+    "$schema": "https://json.schemastore.org/claude-code-settings.json",
+    "env": {
+        "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
+        "DISABLE_PROMPT_CACHING": "0",
+        "MCP_TIMEOUT": "30000",
+        "OTEL_METRIC_EXPORT_INTERVAL": "10000",
+        "NODE_ENV": "development"
+    },
+    "includeCoAuthoredBy": false,
+    "permissions": {
+        "allow": [
+            "Bash(pnpm:*)",
+            "Bash(git status:*)",
+            "Bash(git diff:*)",
+            "Bash(git log:*)",
+            "Bash(ls:*)",
+            "Bash(cat:*)",
+            "Bash(pwd:*)",
+            "Bash(cd:*)",
+            "Bash(mkdir:*)",
+            "Bash(grep:*)",
+            "Bash(grep -n:*)",
+            "WebFetch(*)",
+            "Bash(docker:*)",
+            "Bash(docker-compose:*)",
+            "Bash(cat:*)",
+            "Edit",
+            "Find",
+            "Create",
+            "Read",
+            "Write",
+            "Replace",
+            "Bash(tsx:*)",
+            "Bash(npx tsx:*)",
+            "Bash(claude mcp:*)"
+        ],
+        "deny": [
+            "Bash(git add .)",
+            "Bash(rm -rf /)",
+            "Bash(sudo rm:*)",
+            "Bash(format:*)",
+            "Bash(dd:*)",
+            "Edit(/etc/**)",
+            "Edit(/usr/**)",
+            "Edit(~/.ssh/**)"
+        ]
+    },
+    "allowedCommands": [
+        "pnpm",
+        "npm",
+        "node",
+        "git",
+        "bash",
+        "sh",
+        "echo",
+        "cat",
+        "ls",
+        "cd",
+        "pwd",
+        "mkdir",
+        "rm",
+        "cp",
+        "mv",
+        "find",
+        "grep",
+        "sed",
+        "awk",
+        "curl",
+        "wget",
+        "tar",
+        "gzip",
+        "unzip"
+    ],
+    "alwaysAllowedCommands": [
+        "pnpm run typecheck",
+        "pnpm run lint",
+        "pnpm run test",
+        "pnpm run build",
+        "pnpm run dev",
+        "git status",
+        "git diff",
+        "git log",
+        "git branch"
+    ],
+    "alwaysAllowReads": [
+        "**/*.ts",
+        "**/*.tsx",
+        "**/*.js",
+        "**/*.jsx",
+        "**/*.json",
+        "**/*.md",
+        "**/*.astro",
+        "**/*.css",
+        "**/*.html",
+        "**/package.json",
+        "**/tsconfig.json",
+        "**/CLAUDE.md",
+        "**/.claude/**/*",
+        "**/README.md"
+    ],
+    "alwaysAllowWrites": [
+        "**/*.ts",
+        "**/*.tsx",
+        "**/*.js",
+        "**/*.jsx",
+        "**/*.astro",
+        "**/*.css",
+        "**/*.html",
+        "**/*.md",
+        ".claude/sessions/**/*"
+    ],
+    "neverAllowWrites": [
+        ".claude/commands/**/*",
+        "**/node_modules/**/*",
+        "**/.git/**/*",
+        "**/dist/**/*",
+        "**/build/**/*",
+        "**/.next/**/*",
+        "**/.astro/**/*"
+    ],
+    "allowedTools": {
+        "Edit": true,
+        "Bash": [
+            "npm",
+            "node",
+            "ls",
+            "cat",
+            "git*",
+            "find",
+            "grep",
+            "cd",
+            "mkdir",
+            "touch",
+            "cp",
+            "mv",
+            "echo",
+            "pwd",
+            "test",
+            "head",
+            "tail",
+            "less",
+            "more",
+            "nano",
+            "wc",
+            "sort",
+            "uniq",
+            "cut",
+            "sed",
+            "awk",
+            "curl",
+            "wget",
+            "diff",
+            "patch",
+            "tar",
+            "zip",
+            "unzip",
+            "jq",
+            "npm run*"
+        ],
+        "Fetch": true,
+        "mcp__modelcontextprotocol-server-github__server-github": true
+    },
+    "defaultMode": "acceptEdits",
+    "preferences": {
+        "theme": "dark",
+        "autoSave": true
+    },
+    "hooks": {
+        "Stop": [
+            {
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "echo -ne '\\007'",
+                        "timeout": 5
+                    }
+                ]
+            }
+        ],
+        "SubagentStop": [
+            {
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "echo -ne '\\007'",
+                        "timeout": 5
+                    }
+                ]
+            }
+        ],
+        "Notification": [
+            {
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": ".claude/hooks/on-notification.sh",
+                        "timeout": 10
+                    }
+                ]
+            }
+        ]
+    }
+}
