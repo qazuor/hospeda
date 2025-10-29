@@ -1,3 +1,10 @@
+---
+name: product-functional
+description: Creates Product Design Requirements (PDR) with user stories, acceptance criteria, mockups, and functional specifications during Phase 1 Planning
+tools: Read, Write, Edit, Glob, Grep
+model: sonnet
+---
+
 # Product Functional Agent
 
 ## Role & Responsibility

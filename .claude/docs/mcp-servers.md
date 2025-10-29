@@ -1,12 +1,14 @@
 # MCP Servers - Model Context Protocol Integrations
 
-This document lists all MCP (Model Context Protocol) servers integrated into the Hospeda project and how to use them.
+This document lists all MCP (Model Context Protocol) servers integrated into
+the Hospeda project and how to use them.
 
 ---
 
 ## What are MCP Servers?
 
-**MCP Servers** provide extended capabilities to Claude Code by connecting to external services and tools through a standardized protocol.
+**MCP Servers** provide extended capabilities to Claude Code by connecting to
+external services and tools through a standardized protocol.
 
 **Benefits:**
 
@@ -19,10 +21,17 @@ This document lists all MCP (Model Context Protocol) servers integrated into the
 
 ---
 
-## Available MCP Servers (15)
+## Installation Status
 
-### 1. Context7
+**✅ Active:** 19/21 servers installed and configured
+**⏸️ Pending:** 2 servers (DeepL, Semgrep)
 
+## Available MCP Servers (21)
+
+### 1. Context7 ✅
+
+**Status:** Active
+**Type:** HTTP
 **Purpose:** Library documentation access and intelligent caching
 
 **Capabilities:**
@@ -73,8 +82,10 @@ mcp__context7__get-library-docs
 
 ---
 
-### 2. Docker
+### 2. Docker ✅
 
+**Status:** Active
+**Type:** STDIO
 **Purpose:** Container management for local development
 
 **Capabilities:**
@@ -108,8 +119,11 @@ docker restart postgres-dev  # Restart database
 
 ---
 
-### 3. File System
+### 3. File System ✅
 
+**Status:** Active
+**Type:** STDIO
+**Configuration:** `/home/qazuor/projects/WEBS/hospeda`
 **Purpose:** File operations across the project
 
 **Capabilities:**
@@ -135,8 +149,10 @@ docker restart postgres-dev  # Restart database
 
 ---
 
-### 4. Git
+### 4. Git ✅
 
+**Status:** Active
+**Type:** STDIO
 **Purpose:** Version control operations
 
 **Capabilities:**
@@ -169,8 +185,10 @@ docker restart postgres-dev  # Restart database
 
 ---
 
-### 5. GitHub
+### 5. GitHub ✅
 
+**Status:** Active
+**Type:** HTTP
 **Purpose:** GitHub API integration
 
 **Capabilities:**
@@ -195,8 +213,10 @@ docker restart postgres-dev  # Restart database
 
 ---
 
-### 6. Linear
+### 6. Linear ✅
 
+**Status:** Active
+**Type:** HTTP
 **Purpose:** Issue tracking and project management
 
 **Capabilities:**
@@ -221,8 +241,11 @@ docker restart postgres-dev  # Restart database
 
 ---
 
-### 7. PostgreSQL
+### 7. PostgreSQL ✅
 
+**Status:** Active
+**Type:** STDIO
+**Configuration:** `postgresql://hospeda_user:***@localhost:5432/hospeda_dev`
 **Purpose:** Direct database access and operations
 
 **Capabilities:**
@@ -254,8 +277,11 @@ docker restart postgres-dev  # Restart database
 
 ---
 
-### 8. Mercado Pago
+### 8. Mercado Pago ✅
 
+**Status:** Active
+**Type:** HTTP
+**Configuration:** Configured with test credentials
 **Purpose:** Payment processing integration (Argentina)
 
 **Capabilities:**
@@ -284,8 +310,10 @@ docker restart postgres-dev  # Restart database
 
 ---
 
-### 9. Sentry
+### 9. Sentry ✅
 
+**Status:** Active
+**Type:** HTTP
 **Purpose:** Error monitoring and tracking
 
 **Capabilities:**
@@ -311,8 +339,10 @@ docker restart postgres-dev  # Restart database
 
 ---
 
-### 10. Vercel
+### 10. Vercel ✅
 
+**Status:** Active
+**Type:** HTTP
 **Purpose:** Deployment management
 
 **Capabilities:**
@@ -337,8 +367,11 @@ docker restart postgres-dev  # Restart database
 
 ---
 
-### 11. Persistent Memory
+### 11. Persistent Memory ✅
 
+**Status:** Active
+**Type:** STDIO
+**Configuration:** `~/.claude/memory.jsonl`
 **Purpose:** Cross-session knowledge retention
 
 **Capabilities:**
@@ -370,8 +403,11 @@ docker restart postgres-dev  # Restart database
 
 ---
 
-### 12. Chrome
+### 12. Chrome DevTools ✅
 
+**Status:** Active
+**Type:** STDIO
+**Requirement:** Chrome with `--remote-debugging-port=9222`
 **Purpose:** Browser automation and testing
 
 **Capabilities:**
@@ -397,23 +433,43 @@ docker restart postgres-dev  # Restart database
 
 ---
 
-### 13. Serena
+### 13. Serena ✅
 
-**Purpose:** (Custom MCP Server - Please provide details)
+**Status:** Active
+**Type:** STDIO
+**Repository:** https://github.com/oraios/serena
+**Configuration:** Context: `ide-assistant`, Project: `/home/qazuor/projects/WEBS/hospeda`
+**Purpose:** Semantic code analysis and intelligent context understanding
 
-**Status:** Configuration needed
+**Capabilities:**
 
-**Please provide:**
+- Semantic code search and navigation
+- Context-aware code understanding
+- Intelligent code suggestions
+- Project structure analysis
+- Cross-file relationship mapping
 
-- What does this MCP server do?
-- What capabilities does it provide?
-- When should it be used?
-- Which agents use it?
+**Use Cases:**
+
+- Finding related code across the codebase
+- Understanding code dependencies
+- Refactoring with context awareness
+- Code navigation and exploration
+- Architectural analysis
+
+**Used By:**
+
+- All development agents (enhanced context)
+- `architecture-validator` (structure analysis)
+- `debugger` (relationship tracing)
+- Main agent (codebase understanding)
 
 ---
 
-### 14. Sequential Thinking
+### 14. Sequential Thinking ✅
 
+**Status:** Active
+**Type:** STDIO
 **Purpose:** Complex problem solving with step-by-step reasoning
 
 **Capabilities:**
@@ -449,8 +505,11 @@ docker restart postgres-dev  # Restart database
 
 ---
 
-### 15. Neon
+### 15. Neon ✅
 
+**Status:** Active
+**Type:** HTTP
+**Configuration:** Configured with Neon API key
 **Purpose:** Production database management (Neon.tech)
 
 **Capabilities:**
@@ -487,6 +546,187 @@ docker restart postgres-dev  # Restart database
 
 ---
 
+### 16. Socket ✅
+
+**Status:** Active
+**Type:** HTTP
+**Purpose:** Dependency security analysis and vulnerability detection
+
+**Capabilities:**
+
+- Scan package.json for vulnerabilities
+- Detect malicious packages
+- Analyze dependency security
+- Track supply chain risks
+- Monitor open source security
+
+**Use Cases:**
+
+- Security audits
+- Dependency updates
+- Vulnerability detection
+- Supply chain analysis
+- Security compliance
+
+**Used By:**
+
+- `security-engineer` (primary)
+- `backend-reviewer` (dependency review)
+- Main agent (security checks)
+
+---
+
+### 17. Cloudflare Docs ✅
+
+**Status:** Active
+**Type:** HTTP
+**Purpose:** Cloudflare integration and documentation
+
+**Capabilities:**
+
+- Access Cloudflare API documentation
+- Manage Cloudflare resources
+- Configure CDN and DNS
+- Access Workers documentation
+- R2 storage integration
+
+**Use Cases:**
+
+- CDN configuration
+- Edge computing setup
+- DNS management
+- Static asset optimization
+- Workers deployment
+
+**Used By:**
+
+- `deployment-engineer` (primary)
+- `performance-engineer` (CDN optimization)
+
+---
+
+### 18. BrowserStack ✅
+
+**Status:** Active
+**Type:** STDIO
+**Configuration:** Configured with BrowserStack credentials
+**Purpose:** Real browser testing and automation
+
+**Capabilities:**
+
+- Run E2E tests on real browsers
+- Cross-browser compatibility testing
+- Mobile device testing
+- Screenshot capture
+- Automated testing workflows
+
+**Use Cases:**
+
+- Cross-browser testing
+- Mobile responsiveness testing
+- Visual regression testing
+- Browser compatibility verification
+- Real device testing
+
+**Used By:**
+
+- `qa-engineer` (primary)
+- `accessibility-engineer` (browser compliance)
+- `ui-ux-designer` (cross-browser validation)
+
+**Requirements:**
+
+- BrowserStack account
+- Internet access for test execution
+- View test logs at https://www.browserstack.com/automate
+
+---
+
+### 19. DeepL ⏸️
+
+**Status:** Pending installation
+**Type:** HTTP
+**Purpose:** Translation and internationalization workflows
+
+**Capabilities:**
+
+- High-quality text translation
+- Batch translation support
+- Multiple language support
+- Context-aware translations
+- i18n file processing
+
+**Use Cases:**
+
+- Translating UI strings
+- i18n file localization
+- Content translation
+- Multi-language support
+- Documentation translation
+
+**Used By:**
+
+- `i18n-specialist` (primary)
+- `tech-writer` (documentation translation)
+
+**Installation Required:**
+
+```bash
+# Get API key from: https://www.deepl.com/pro-api
+claude mcp add --transport http deepl https://mcp.deepl.com/mcp --header "Authorization: Bearer <YOUR_DEEPL_API_KEY>"
+```
+
+**Free Tier:** 500,000 characters/month
+
+---
+
+### 20. Semgrep ⏸️
+
+**Status:** Pending installation
+**Type:** STDIO
+**Purpose:** Static code security analysis
+
+**Capabilities:**
+
+- Scan code for vulnerabilities
+- Detect security anti-patterns
+- Find secrets in code
+- Custom rule creation
+- Multi-language support
+
+**Use Cases:**
+
+- Security audits
+- Vulnerability scanning
+- Secret detection
+- Code quality checks
+- Security compliance
+
+**Used By:**
+
+- `security-engineer` (primary)
+- `backend-reviewer` (security review)
+- `code-check` command
+
+**Installation Required:**
+
+```bash
+# Option 1: Install with pipx
+sudo apt install pipx
+pipx install semgrep
+semgrep login
+
+# Option 2: Use virtual environment
+python3 -m venv ~/.venvs/semgrep
+~/.venvs/semgrep/bin/pip install semgrep
+~/.venvs/semgrep/bin/semgrep login
+
+# Then install MCP server
+claude mcp add-json semgrep '{"type":"stdio","command":"semgrep","args":["mcp"]}'
+```
+
+---
+
 ## MCP Server Usage by Phase
 
 ### Phase 1: Planning
@@ -502,23 +742,30 @@ docker restart postgres-dev  # Restart database
 - `Git` - Version control
 - `Docker` - Database containers
 - `PostgreSQL` - Database operations
+- `Serena` - Semantic code analysis
+- `Mercado Pago` - Payment integration
 
 ### Phase 3: Validation
 
-- `Chrome` - E2E testing
+- `Chrome DevTools` - E2E testing
+- `BrowserStack` - Cross-browser testing
 - `Sentry` - Error checking
 - `PostgreSQL` - Query validation
+- `Socket` - Security scanning
+- `Semgrep` - Code security analysis (when installed)
 
 ### Phase 4: Finalization
 
 - `GitHub` - Issue linking
 - `Vercel` - Deployment
+- `Cloudflare Docs` - CDN configuration
 - `Neon` - Production database
 
 ### Ongoing
 
 - `Persistent Memory` - Cross-session learning
 - `Sequential Thinking` - Problem solving
+- `Serena` - Code understanding
 
 ---
 
@@ -544,18 +791,31 @@ docker restart postgres-dev  # Restart database
 
 ### QA Engineers
 
-- `Chrome` (testing)
+- `Chrome DevTools` (testing)
+- `BrowserStack` (cross-browser testing)
 - `Sentry` (error monitoring)
+
+### Security Engineers
+
+- `Socket` (dependency security)
+- `Semgrep` (code security - when installed)
+- `Sentry` (security monitoring)
 
 ### Product/Planning
 
 - `Linear` (issue tracking)
 - `Sequential Thinking` (planning)
 
+### Payment & i18n Specialists
+
+- `Mercado Pago` (payment processing)
+- `DeepL` (translation - when installed)
+
 ### Main Agent
 
 - `Persistent Memory` (learning)
 - `Sequential Thinking` (decisions)
+- `Serena` (code understanding)
 - All servers (coordination)
 
 ---
@@ -596,6 +856,73 @@ docker restart postgres-dev  # Restart database
 - Document reasoning chain
 - Present clear conclusions
 
+### Serena
+
+- Use for semantic code search
+- Leverage for architectural analysis
+- Helpful for refactoring decisions
+- Great for understanding code relationships
+
+### Socket & Semgrep
+
+- Run security scans regularly
+- Review dependencies before updates
+- Check for vulnerabilities in new packages
+- Integrate into quality checks
+
+### BrowserStack
+
+- Test on real browsers before deployment
+- Verify cross-browser compatibility
+- Check mobile responsiveness
+- Document browser-specific issues
+
+### Chrome DevTools
+
+- Start Chrome with debugging flag first
+- Use for local E2E testing
+- Combine with automated test suites
+- Capture screenshots for bug reports
+
+### Mercado Pago
+
+- Use test credentials in development
+- Test webhooks thoroughly
+- Handle errors gracefully
+- Document payment flows
+
+---
+
+## Quick Installation Guide
+
+### Active Servers (19)
+
+All currently installed and ready to use:
+
+- ✅ Context7, Linear, GitHub, Sentry, Vercel, Neon, Socket, Cloudflare Docs,
+  Mercado Pago (HTTP)
+- ✅ Docker, FileSystem, Git, PostgreSQL, Memory, Serena, Sequential Thinking,
+  Chrome DevTools, BrowserStack (STDIO)
+
+### Pending Installation (2)
+
+**DeepL** - Translation service
+
+```bash
+# Get free API key: https://www.deepl.com/pro-api
+claude mcp add --transport http deepl https://mcp.deepl.com/mcp \
+  --header "Authorization: Bearer <YOUR_API_KEY>"
+```
+
+**Semgrep** - Security scanning
+
+```bash
+# Install semgrep first
+sudo apt install pipx && pipx install semgrep && semgrep login
+# Then add MCP server
+claude mcp add-json semgrep '{"type":"stdio","command":"semgrep","args":["mcp"]}'
+```
+
 ---
 
 ## Troubleshooting MCP Servers
@@ -620,5 +947,44 @@ docker restart postgres-dev  # Restart database
 
 ---
 
-**Note:** MCP server availability and configuration is managed in Claude Code settings. If a server is unavailable, inform the user and suggest enabling it in the tools menu.
+## Server Status Summary
+
+**Total Servers:** 20 configured (19 active + 2 pending)
+
+**Active HTTP Servers (9):**
+
+1. Context7 ✅
+2. Linear ✅
+3. GitHub ✅
+4. Mercado Pago ✅
+5. Sentry ✅
+6. Vercel ✅
+7. Neon ✅
+8. Socket ✅
+9. Cloudflare Docs ✅
+
+**Active STDIO Servers (10):**
+
+1. Docker ✅
+2. FileSystem ✅
+3. Git ✅
+4. PostgreSQL ✅
+5. Memory ✅
+6. Serena ✅
+7. Sequential Thinking ✅
+8. Chrome DevTools ✅
+9. BrowserStack ✅
+
+**Pending (2):**
+
+1. DeepL ⏸️ (requires API key)
+2. Semgrep ⏸️ (requires installation)
+
+---
+
+**Note:** MCP server availability and configuration is managed in Claude Code
+settings. If a server is unavailable, inform the user and suggest enabling it in
+the tools menu.
+
+**Last Updated:** 2025-10-28 (19/21 servers active)
 

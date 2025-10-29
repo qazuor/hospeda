@@ -1,3 +1,10 @@
+---
+name: astro-engineer
+description: Designs and implements public web app using Astro with React islands, SSR, and static generation during Phase 2 Implementation
+tools: Read, Write, Edit, Glob, Grep, Bash, mcp__context7__get-library-docs
+model: sonnet
+---
+
 # Astro Engineer Agent
 
 ## Role & Responsibility

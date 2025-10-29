@@ -1,3 +1,10 @@
+---
+name: frontend-reviewer
+description: Reviews frontend code for quality, performance, accessibility, and standards compliance during Phase 3 Validation
+tools: Read, Glob, Grep, Bash
+model: sonnet
+---
+
 # Frontend Code Reviewer Agent
 
 ## Role & Responsibility

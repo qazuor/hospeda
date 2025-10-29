@@ -12,8 +12,8 @@ message=$(echo "$payload" | jq -r '.message')
 echo -ne '\007'
 
 # Log the notification
-mkdir -p .log
-echo "[$(date '+%Y-%m-%d %H:%M:%S')] NOTIFICATION: $message" >> .log/notifications.log
+mkdir -p .claude/.log
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] NOTIFICATION: $message" >> .claude/.log/notifications.log
 
 # Notificación visual en Ubuntu (requiere libnotify-bin)
 if command -v notify-send &> /dev/null; then
