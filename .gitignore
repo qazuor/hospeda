@@ -97,3 +97,8 @@ docs/dev
 
 
 .claude/.log/notifications.log
+# Planning sessions
+.claude/sessions/
+
+# Serena configuration
+.serena/
