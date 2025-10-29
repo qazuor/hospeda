@@ -7,16 +7,19 @@ The shared schemas system provides reusable, consistent schema extensions for ad
 ## 🎯 Design Principles
 
 ### 1. **Composition over Duplication**
+
 - Use `.extend(Schema.shape)` to compose multiple extension schemas
 - Avoid duplicating field definitions across entities
 - Reuse common patterns through shared schemas
 
 ### 2. **Semantic Naming**
+
 - Extensions are named by their purpose: `AdminStatusExtension`, `OwnerExtension`
 - Clear distinction between different types of extensions
 - Consistent field names across all entities
 
 ### 3. **Progressive Enhancement**
+
 - Base entity uses `@repo/schemas` as single source of truth
 - Add only admin-specific extensions as needed
 - Minimize the number of extensions per entity
@@ -24,6 +27,7 @@ The shared schemas system provides reusable, consistent schema extensions for ad
 ## 🔧 Available Extensions
 
 ### **Client State Extensions**
+
 ```typescript
 import { ClientStateExtensionSchema } from '@/shared/schemas';
 
@@ -32,6 +36,7 @@ const EntitySchema = BaseSchema.extend(ClientStateExtensionSchema.shape);
 ```
 
 ### **Relation Extensions**
+
 ```typescript
 import { DestinationExtensionSchema, OwnerExtensionSchema } from '@/shared/schemas';
 
@@ -42,6 +47,7 @@ const EntitySchema = BaseSchema
 ```
 
 ### **Admin Management Extensions**
+
 ```typescript
 import { AdminStatusExtensionSchema, AdminActivityExtensionSchema } from '@/shared/schemas';
 
@@ -54,6 +60,7 @@ const EntitySchema = BaseSchema
 ## ✅ Migration Patterns
 
 ### **Pattern 1: Simple Extension Replacement**
+
 ```typescript
 // ❌ Before (duplicated)
 destination: z.object({
@@ -67,6 +74,7 @@ destination: z.object({
 ```
 
 ### **Pattern 2: Multiple Extensions**
+
 ```typescript
 // ❌ Before (mixed concerns)
 export const EntitySchema = BaseSchema.extend({
@@ -84,6 +92,7 @@ export const EntitySchema = BaseSchema
 ```
 
 ### **Pattern 3: Type Inference**
+
 ```typescript
 // ❌ Before (manual types)
 export type Entity = BaseEntity & {
@@ -99,6 +108,7 @@ export type Entity = z.infer<typeof EntitySchema>;
 ## 🚫 Anti-Patterns to Avoid
 
 ### **Don't Duplicate Field Definitions**
+
 ```typescript
 // ❌ Bad - duplicating destination structure
 destination: z.object({
@@ -113,6 +123,7 @@ destination: z.object({
 ```
 
 ### **Don't Mix Extension Concerns**
+
 ```typescript
 // ❌ Bad - mixing UI state with business logic
 export const EntitySchema = BaseSchema.extend({
@@ -129,6 +140,7 @@ export const EntitySchema = BaseSchema
 ```
 
 ### **Don't Create Custom Extensions Without Justification**
+
 ```typescript
 // ❌ Bad - entity-specific when generic would work
 customOwnerField: z.object({
@@ -151,11 +163,13 @@ customOwnerField: z.object({
 ## 🎯 When to Create New Shared Schemas
 
 Create a new shared schema when:
+
 - [ ] The same field structure is used in 3+ entities
 - [ ] The fields represent a cohesive concern (relations, admin status, etc.)
 - [ ] The structure is stable and unlikely to change frequently
 
 Keep entity-specific extensions when:
+
 - [ ] Fields are truly unique to one entity
 - [ ] The structure might change independently
 - [ ] Business logic requires entity-specific validation
