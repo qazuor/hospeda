@@ -10,11 +10,13 @@ Este directorio contiene el sistema de mapeo de IDs para el proceso de seed.
 ## 🔄 Funcionamiento
 
 ### Persistencia Automática
+
 - Los mapeos se guardan **inmediatamente** después de cada operación de `setMapping()`
 - Se cargan automáticamente al inicializar el `IdMapper`
 - **No se guardan al final** - cada mapeo se persiste en tiempo real
 
 ### Estructura del Archivo
+
 ```json
 {
   "entityType": {
@@ -27,6 +29,7 @@ Este directorio contiene el sistema de mapeo de IDs para el proceso de seed.
 ## 🛠️ Uso
 
 ### Getters Específicos
+
 ```typescript
 // En lugar de:
 const realUserId = context.idMapper.getRealId('users', seedUserId);
@@ -38,6 +41,7 @@ const realAccommodationId = context.idMapper.getMappedAccommodationId(seedAccomm
 ```
 
 ### Métodos Disponibles
+
 - `getMappedUserId(seedUserId)` - Obtiene ID real de usuario
 - `getMappedDestinationId(seedDestinationId)` - Obtiene ID real de destino
 - `getMappedAccommodationId(seedAccommodationId)` - Obtiene ID real de alojamiento
@@ -52,6 +56,7 @@ const realAccommodationId = context.idMapper.getMappedAccommodationId(seedAccomm
 - `getMappedLocationId(seedLocationId)` - Obtiene ID real de location
 
 ### Métodos de Persistencia
+
 - `saveMappingsToFile()` - Guarda manualmente todos los mapeos
 - `getMappingsFilePath()` - Obtiene la ruta del archivo de mapeos
 
@@ -68,4 +73,4 @@ const realAccommodationId = context.idMapper.getMappedAccommodationId(seedAccomm
 - **Cada mapeo se guarda inmediatamente** - no hay pérdida de datos si el proceso se interrumpe
 - Los mapeos se mantienen entre ejecuciones
 - Si se resetea la base de datos, los mapeos pueden quedar obsoletos
-- Se recomienda limpiar el archivo si se hace reset completo de la DB 
+- Se recomienda limpiar el archivo si se hace reset completo de la DB

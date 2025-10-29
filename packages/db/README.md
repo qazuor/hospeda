@@ -205,14 +205,19 @@ This package includes a test to ensure all TypeScript enums are in sync with the
 ### Migrations
 
 - **Generate migration:**
+
   ```sh
   pnpm db:generate
   ```
+
 - **Apply migrations:**
+
   ```sh
   pnpm db:migrate
   ```
+
 - **Open Drizzle Studio:**
+
   ```sh
   pnpm db:studio
   ```

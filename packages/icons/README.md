@@ -108,13 +108,16 @@ const sizes = {
 ## Available Icons
 
 ### Entity Icons (10)
+
 - `AccommodationIcon`, `ContentIcon`, `DestinationIcon`, `EventIcon`, `PostIcon`
 - `PermissionIcon`, `PostSponsorIcon`, `PostSponsorshipIcon`, `EventLocationIcon`, `EventOrganizerIcon`
 
 ### Admin Icons (7)
+
 - `DashboardIcon`, `AnalyticsIcon`, `ListIcon`, `ViewAllIcon`, `TagIcon`, `TagsIcon`, `SectionIcon`
 
 ### Amenity Icons (25)
+
 - `WifiIcon`, `AirConditioningIcon`, `PoolIcon`, `ParkingIcon`, `KitchenIcon`
 - `CoffeeMakerIcon`, `HeatingIcon`, `TvIcon`, `BbqGrillIcon`, `WasherIcon`
 - `SafeIcon`, `BreakfastIcon`, `GymIcon`, `RefrigeratorIcon`, `MicrowaveIcon`
@@ -122,18 +125,21 @@ const sizes = {
 - `BalconyIcon`, `ElevatorIcon`, `MiniBarIcon`, `PlaygroundIcon`, `BicyclesIcon`
 
 ### Feature Icons (14)
+
 - `RiverFrontIcon`, `PanoramicViewIcon`, `NaturalEnvironmentIcon`, `PetFriendlyIcon`
 - `FamilySuitableIcon`, `SmartHomeIcon`, `EcologicalIcon`, `SpaFrontIcon`
 - `RuralAreaIcon`, `PavedAccessIcon`, `CentralAreaIcon`, `ModernStyleIcon`
 - `RusticStyleIcon`, `RenewableEnergyIcon`
 
 ### Attraction Icons (16)
+
 - `AmphitheaterIcon`, `MuseumIcon`, `BeachIcon`, `ParkIcon`, `CasinoIcon`
 - `CathedralIcon`, `ShoppingCenterIcon`, `RestaurantIcon`, `AviariumIcon`
 - `AgriculturalCenterIcon`, `EducationalFarmIcon`, `SportsComplexIcon`
 - `CulturalCenterIcon`, `ThermalSpaIcon`, `NatureReserveIcon`, `WetlandsIcon`
 
 ### System Icons (15)
+
 - `HomeIcon`, `AddIcon`, `CreateIcon`, `StarIcon`, `FavoriteIcon`
 - `HamburgerIcon`, `DropdownIcon`, `BreadcrumbsIcon`, `NotificationIcon`
 - `LogoutIcon`, `LightThemeIcon`, `DarkThemeIcon`, `UsersIcon`, `AdminIcon`, `DebugIcon`
@@ -236,6 +242,7 @@ pnpm lint
 ### Icon Management Scripts
 
 #### Generate New Icon
+
 ```bash
 # Generate a new icon with automatic SVG download
 pnpm add:icon <icon-name> [category]
@@ -247,6 +254,7 @@ pnpm add:icon pool amenities
 ```
 
 #### Update All SVGs
+
 ```bash
 # Download and update all icons with real Lucide SVGs
 pnpm update:svgs
@@ -255,6 +263,7 @@ pnpm update:svgs
 ### Icon Categories
 
 Icons are organized into logical categories:
+
 - **`system`**: Core UI icons (home, menu, close, etc.)
 - **`social`**: Social media icons (instagram, whatsapp, etc.)
 - **`communication`**: Contact icons (phone, chat, etc.)

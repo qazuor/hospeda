@@ -5,6 +5,7 @@ Comprehensive testing suite for all Zod schemas in the `@repo/schemas` package.
 ## 🎯 Overview
 
 This testing suite validates:
+
 - **Schema Correctness**: All schemas parse valid data correctly
 - **Validation Logic**: Invalid data is properly rejected
 - **Edge Cases**: Boundary conditions and special cases
@@ -73,7 +74,9 @@ pnpm test entities/accommodation/
 ## 🧪 Test Types
 
 ### 1. **Happy Path Tests**
+
 Validate that correct data passes validation:
+
 ```typescript
 it('should validate complete valid accommodation', () => {
     const validData = createValidAccommodation();
@@ -82,7 +85,9 @@ it('should validate complete valid accommodation', () => {
 ```
 
 ### 2. **Error Case Tests**
+
 Ensure invalid data is rejected:
+
 ```typescript
 it('should reject accommodation with invalid data', () => {
     const invalidData = createInvalidAccommodation();
@@ -91,7 +96,9 @@ it('should reject accommodation with invalid data', () => {
 ```
 
 ### 3. **Edge Case Tests**
+
 Test boundary conditions:
+
 ```typescript
 it('should handle edge case values', () => {
     const edgeCaseData = createAccommodationEdgeCases();
@@ -100,7 +107,9 @@ it('should handle edge case values', () => {
 ```
 
 ### 4. **Field Validation Tests**
+
 Test individual field constraints:
+
 ```typescript
 describe('name field', () => {
     it('should accept valid names', () => {
@@ -114,7 +123,9 @@ describe('name field', () => {
 ```
 
 ### 5. **Integration Tests**
+
 Test cross-schema consistency:
+
 ```typescript
 it('should have consistent ID field types across all schemas', () => {
     // Validate ID consistency across entities
@@ -145,6 +156,7 @@ const result = AccommodationSchema.parse(accommodation);
 ### Common Fixtures
 
 Base field fixtures for consistent testing:
+
 - `createBaseIdFields()`
 - `createBaseAuditFields()`
 - `createBaseContactFields()`
@@ -166,6 +178,7 @@ expect(invalidData).toFailZodValidation(schema);
 ## 📈 Coverage Goals
 
 Target coverage metrics:
+
 - **Line Coverage**: > 95%
 - **Branch Coverage**: > 90%
 - **Function Coverage**: 100%

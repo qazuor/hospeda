@@ -5,7 +5,9 @@ This directory contains standardized templates for creating entity schemas that 
 ## 📁 Template Structure
 
 ### `entity-template.schema.ts`
+
 Complete entity schema template with:
+
 - ✅ **Base-first inheritance** using `BaseAuditSchema`
 - ✅ **Flat filter patterns** replacing nested filter objects
 - ✅ **Consistent error keys** using `zodError.*` pattern
@@ -16,16 +18,20 @@ Complete entity schema template with:
 ## 🚀 Usage Instructions
 
 ### 1. Copy the Template
+
 ```bash
 cp packages/schemas/src/templates/entity-template.schema.ts packages/schemas/src/{entity-name}/{entity-name}.schema.ts
 ```
 
 ### 2. Replace Placeholders
+
 In your copied file, replace all instances of:
+
 - `Entity` → Your entity name (e.g., `Accommodation`, `User`, `Booking`)
 - `entity` → Lowercase entity name (e.g., `accommodation`, `user`, `booking`)
 
 ### 3. Define Entity-Specific Fields
+
 Replace `EntitySpecificSchema` with your actual fields:
 
 ```typescript
@@ -63,6 +69,7 @@ export const AccommodationSpecificSchema = z.object({
 ```
 
 ### 4. Update Search Schema
+
 Add entity-specific search filters to the `SearchEntitySchema`:
 
 ```typescript
@@ -100,6 +107,7 @@ export const SearchAccommodationSchema = BaseSearchSchema.extend({
 ```
 
 ### 5. Update OpenAPI Metadata
+
 Replace the template metadata with your entity-specific details:
 
 ```typescript
@@ -126,6 +134,7 @@ const accommodationMetadata: OpenApiSchemaMetadata = {
 ```
 
 ### 6. Add to Barrel Exports
+
 Update `packages/schemas/src/index.ts`:
 
 ```typescript
@@ -136,6 +145,7 @@ export * from './accommodation/accommodation.schema.js';
 ## ✅ Validation Patterns
 
 ### Pattern Compliance
+
 The template includes compile-time validation to ensure:
 
 - **Audit Fields**: Main schema includes `id`, `createdAt`, `updatedAt`, `deletedAt`
@@ -144,6 +154,7 @@ The template includes compile-time validation to ensure:
 - **Error Key Consistency**: All validation messages use `zodError.*` pattern
 
 ### Migration Validation
+
 Each entity created from this template supports:
 
 1. **Flat Filters**: No nested filter objects (migrated pattern)
@@ -183,16 +194,19 @@ For each entity:
 ## 🚨 Common Issues
 
 ### Import Paths
+
 - Always use `.js` extensions: `import { ... } from './base.schema.js'`
 - Use relative paths for internal imports
 - Use `@repo/schemas` for external consumption
 
 ### Error Messages
+
 - Use `zodError.*` pattern consistently
 - Standard keys: `required`, `invalid`, `minLength`, `maxLength`, `positive`, `integer`, `invalidEnum`
 - Avoid custom error messages unless absolutely necessary
 
 ### OpenAPI Integration
+
 - Always provide `ref`, `description`, `example`, and `fields`
 - Use descriptive examples that match your domain
 - Include format hints for special fields (`uuid`, `date-time`, `email`)

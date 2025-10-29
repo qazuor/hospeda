@@ -7,6 +7,7 @@
 - Todos los barrels y exports actualizados para evitar duplicidad y referencias obsoletas.
 
 ### Notas
+
 - Si se agregan nuevos schemas, deben incluir tests y documentación en la migración correspondiente.
 
 ## @repo/schemas
@@ -18,7 +19,6 @@ Este paquete contiene todos los esquemas Zod utilizados en Hospeda: entidades de
 - Uso: importar desde este paquete para validación de formularios, contratos API y utilidades compartidas.
 
 A continuación, se listan todos los esquemas detectados automáticamente, agrupados por entidad.
-
 
 ### accommodation
 
