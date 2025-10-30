@@ -392,7 +392,11 @@ ${tasklist}
         }
 
         // Priority labels
-        if (content.includes('urgent') || content.includes('critical') || content.includes('blocker')) {
+        if (
+            content.includes('urgent') ||
+            content.includes('critical') ||
+            content.includes('blocker')
+        ) {
             labels.push('priority:high');
         } else if (content.includes('important')) {
             labels.push('priority:medium');
@@ -691,15 +695,18 @@ ${tasklist}
 
             // Use GitHub's Sub-Issues REST API
             // POST /repos/{owner}/{repo}/issues/{issue_number}/sub_issues
-            await this.octokit.request('POST /repos/{owner}/{repo}/issues/{issue_number}/sub_issues', {
-                owner: this.owner,
-                repo: this.repo,
-                issue_number: parentNumber,
-                sub_issue_id: childIssue.id, // Use the numeric ID, not the issue number
-                headers: {
-                    'X-GitHub-Api-Version': '2022-11-28'
+            await this.octokit.request(
+                'POST /repos/{owner}/{repo}/issues/{issue_number}/sub_issues',
+                {
+                    owner: this.owner,
+                    repo: this.repo,
+                    issue_number: parentNumber,
+                    sub_issue_id: childIssue.id, // Use the numeric ID, not the issue number
+                    headers: {
+                        'X-GitHub-Api-Version': '2022-11-28'
+                    }
                 }
-            });
+            );
 
             console.log(`  🔗 Linked #${childNumber} as sub-issue of #${parentNumber}`);
         } catch (error) {

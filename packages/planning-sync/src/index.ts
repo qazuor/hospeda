@@ -168,7 +168,7 @@ export async function syncPlanningToLinear(
 export async function markTaskCompleted(
     sessionPath: string,
     taskId: string,
-    config: LinearSyncConfig
+    config: SyncConfig
 ): Promise<CompleteTaskResult> {
     const todosPath = join(sessionPath, 'TODOs.md');
     const syncFilePath = join(sessionPath, 'issues-sync.json');
@@ -178,22 +178,45 @@ export async function markTaskCompleted(
     const session: PlanningSession = JSON.parse(syncContent);
 
     // Find task by ID or title
-    const task = session.tasks.find((t) => t.id === taskId || t.title === taskId);
+    const task = session.tasks.find(
+        (t) => t.id === taskId || t.title === taskId || t.code === taskId
+    );
 
     if (!task) {
         throw new Error(`Task not found: ${taskId}`);
     }
 
-    if (!task.linearIssueId) {
-        throw new Error(`Task ${taskId} has not been synced to Linear yet`);
-    }
-
     // Update task status
     task.status = 'completed';
 
-    // Update Linear issue
-    const linearClient = new PlanningLinearClient(config);
-    await linearClient.updateIssueStatus(task.linearIssueId, 'completed');
+    let issueUrl: string;
+    let issueId: string;
+
+    if (config.platform === 'github') {
+        if (!task.githubIssueNumber) {
+            throw new Error(`Task ${taskId} has not been synced to GitHub yet`);
+        }
+
+        // Update GitHub issue
+        const githubClient = new PlanningGitHubClient(config);
+        await githubClient.updateIssueStatus(task.githubIssueNumber, 'completed');
+
+        // Get issue URL
+        issueUrl = `https://github.com/${config.repo}/issues/${task.githubIssueNumber}`;
+        issueId = task.githubIssueNumber.toString();
+    } else {
+        if (!task.linearIssueId) {
+            throw new Error(`Task ${taskId} has not been synced to Linear yet`);
+        }
+
+        // Update Linear issue
+        const linearClient = new PlanningLinearClient(config);
+        await linearClient.updateIssueStatus(task.linearIssueId, 'completed');
+
+        // Get issue URL
+        issueUrl = await linearClient.getIssueUrl(task.linearIssueId);
+        issueId = task.linearIssueId;
+    }
 
     // Update TODOs.md
     const todosContent = await fs.readFile(todosPath, 'utf-8');
@@ -204,12 +227,9 @@ export async function markTaskCompleted(
     session.syncedAt = new Date().toISOString();
     await fs.writeFile(syncFilePath, JSON.stringify(session, null, 2), 'utf-8');
 
-    // Get issue URL
-    const issueUrl = await linearClient.getIssueUrl(task.linearIssueId);
-
     return {
         taskId: task.id,
-        issueId: task.linearIssueId,
+        issueId,
         issueUrl
     };
 }
