@@ -13,6 +13,7 @@ export * from './client';
 export * from './destination';
 export * from './event';
 export * from './featuredAccommodation.model';
+export * from './notification.model';
 export * from './post';
 export * from './professionalServiceOrder.model';
 export * from './professionalServiceType.model';
