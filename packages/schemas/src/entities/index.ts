@@ -55,3 +55,7 @@ export * from './benefitListing/index.js';
 export * from './accommodationListing/index.js';
 export * from './accommodationListingPlan/index.js';
 export * from './featuredAccommodation/index.js';
+
+// === Advertising System Entities ===
+export * from './adMediaAsset/index.js';
+export * from './adSlot/index.js';
