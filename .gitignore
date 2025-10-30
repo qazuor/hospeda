@@ -94,11 +94,9 @@ docs/dev
 **/drizzle/meta/
 **/migrations/meta/
 
-
-
 .claude/.log/notifications.log
-# Planning sessions
-.claude/sessions/
 
 # Serena configuration
 .serena/
+
+logs/
