@@ -14,7 +14,6 @@ export const CreateAdSlotSchema = AdSlotSchema.omit({
     createdAt: true,
     updatedAt: true,
     deletedAt: true,
-    version: true,
     performance: true
 })
     .extend({
