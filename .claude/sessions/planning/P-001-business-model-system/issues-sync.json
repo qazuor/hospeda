@@ -4,1135 +4,1135 @@
   "platform": "github",
   "parentGithubIssueNumber": 602,
   "githubRepo": "qazuor/hospeda",
-  "syncedAt": "2025-10-30T01:17:29.359Z",
+  "syncedAt": "2025-10-30T04:32:03.649Z",
   "tasks": [
     {
       "id": "19ccfe87",
-      "code": "T-001-484",
+      "code": "T-001-645",
       "title": "All 26 enums exist and follow naming conventions",
       "status": "completed",
       "githubIssueNumber": 603
     },
     {
       "id": "082b0d84",
-      "code": "T-001-485",
+      "code": "T-001-646",
       "title": "All 35 database tables exist with proper schemas",
       "status": "completed",
       "githubIssueNumber": 604
     },
     {
       "id": "f0a9cbc6",
-      "code": "T-001-486",
+      "code": "T-001-647",
       "title": "All 210 Zod schemas exist and pass validation",
       "status": "completed",
       "githubIssueNumber": 605
     },
     {
       "id": "369c8c84",
-      "code": "T-001-487",
+      "code": "T-001-648",
       "title": "All 24 models (4.1-4.7) exist and extend BaseModel correctly",
       "status": "pending",
       "githubIssueNumber": 606
     },
     {
       "id": "9be066f0",
-      "code": "T-001-488",
+      "code": "T-001-649",
       "title": "All tests for stages 1-4.7 exist and pass",
       "status": "completed",
       "githubIssueNumber": 607
     },
     {
       "id": "8df1d6d1",
-      "code": "T-001-489",
+      "code": "T-001-650",
       "title": "Documentation audit complete",
       "status": "completed",
       "githubIssueNumber": 608
     },
     {
       "id": "97928f2d",
-      "code": "T-001-490",
+      "code": "T-001-651",
       "title": "Count enum files: packages/schemas/src/enums/*.enum.ts",
       "status": "pending",
       "githubIssueNumber": 609
     },
     {
       "id": "e8712b95",
-      "code": "T-001-491",
+      "code": "T-001-652",
       "title": "Count schema files: packages/schemas/src/enums/*.schema.ts",
       "status": "pending",
       "githubIssueNumber": 610
     },
     {
       "id": "1d8fd395",
-      "code": "T-001-492",
+      "code": "T-001-653",
       "title": "Verify all enums imported in barrel file",
       "status": "pending",
       "githubIssueNumber": 611
     },
     {
       "id": "8fd7e684",
-      "code": "T-001-493",
+      "code": "T-001-654",
       "title": "Count table schemas: packages/db/src/schemas/**/*.schema.ts",
       "status": "pending",
       "githubIssueNumber": 612
     },
     {
       "id": "1f2f0cdd",
-      "code": "T-001-494",
+      "code": "T-001-655",
       "title": "Verify migrations exist and are applied",
       "status": "pending",
       "githubIssueNumber": 613
     },
     {
       "id": "ae5a17dc",
-      "code": "T-001-495",
+      "code": "T-001-656",
       "title": "Check indexes are created",
       "status": "pending",
       "githubIssueNumber": 614
     },
     {
       "id": "10ebf27a",
-      "code": "T-001-496",
+      "code": "T-001-657",
       "title": "Verify constraints and triggers",
       "status": "pending",
       "githubIssueNumber": 615
     },
     {
       "id": "517f6190",
-      "code": "T-001-497",
+      "code": "T-001-658",
       "title": "Count schemas: packages/schemas/src/entities/*/*.schema.ts",
       "status": "pending",
       "githubIssueNumber": 616
     },
     {
       "id": "1e9f8dae",
-      "code": "T-001-498",
+      "code": "T-001-659",
       "title": "Verify each entity has 6 schema types",
       "status": "pending",
       "githubIssueNumber": 617
     },
     {
       "id": "25ab26b5",
-      "code": "T-001-499",
+      "code": "T-001-660",
       "title": "Check barrel exports",
       "status": "pending",
       "githubIssueNumber": 618
     },
     {
       "id": "2440bca5",
-      "code": "T-001-500",
+      "code": "T-001-661",
       "title": "Count models: packages/db/src/models/*.model.ts",
       "status": "pending",
       "githubIssueNumber": 619
     },
     {
       "id": "981a4a12",
-      "code": "T-001-501",
+      "code": "T-001-662",
       "title": "Verify all extend BaseModel",
       "status": "pending",
       "githubIssueNumber": 620
     },
     {
       "id": "f4a5c561",
-      "code": "T-001-502",
+      "code": "T-001-663",
       "title": "Check test coverage",
       "status": "pending",
       "githubIssueNumber": 621
     },
     {
       "id": "e244780d",
-      "code": "T-001-503",
+      "code": "T-001-664",
       "title": "Run: pnpm test --filter=@repo/schemas",
       "status": "pending",
       "githubIssueNumber": 622
     },
     {
       "id": "b25abf33",
-      "code": "T-001-504",
+      "code": "T-001-665",
       "title": "Run: pnpm test --filter=@repo/db",
       "status": "pending",
       "githubIssueNumber": 623
     },
     {
       "id": "5ad7f161",
-      "code": "T-001-505",
+      "code": "T-001-666",
       "title": "Check coverage reports",
       "status": "pending",
       "githubIssueNumber": 624
     },
     {
       "id": "f3261d64",
-      "code": "T-001-506",
+      "code": "T-001-667",
       "title": "All ⚠️ issues from audit are resolved",
       "status": "pending",
       "githubIssueNumber": 625
     },
     {
       "id": "0b442040",
-      "code": "T-001-507",
+      "code": "T-001-668",
       "title": "All ❌ missing items are created",
       "status": "pending",
       "githubIssueNumber": 626
     },
     {
       "id": "d301a58e",
-      "code": "T-001-508",
+      "code": "T-001-669",
       "title": "All tests pass",
       "status": "pending",
       "githubIssueNumber": 627
     },
     {
       "id": "228a38de",
-      "code": "T-001-509",
+      "code": "T-001-670",
       "title": "Lint and typecheck pass",
       "status": "pending",
       "githubIssueNumber": 628
     },
     {
       "id": "7de8f554",
-      "code": "T-001-510",
+      "code": "T-001-671",
       "title": "Documentation updated",
       "status": "pending",
       "githubIssueNumber": 629
     },
     {
       "id": "65ce1809",
-      "code": "T-001-511",
+      "code": "T-001-672",
       "title": "Zero lint errors",
       "status": "pending",
       "githubIssueNumber": 630
     },
     {
       "id": "3e50aee5",
-      "code": "T-001-512",
+      "code": "T-001-673",
       "title": "Zero type errors",
       "status": "pending",
       "githubIssueNumber": 631
     },
     {
       "id": "d301a58e",
-      "code": "T-001-513",
+      "code": "T-001-674",
       "title": "All tests pass",
       "status": "pending",
-      "githubIssueNumber": 632
+      "githubIssueNumber": 627
     },
     {
       "id": "1836c49f",
-      "code": "T-001-514",
+      "code": "T-001-675",
       "title": "Coverage ≥ 90% for schemas and db packages",
       "status": "pending",
       "githubIssueNumber": 633
     },
     {
       "id": "5c87afe1",
-      "code": "T-001-515",
+      "code": "T-001-676",
       "title": "No security vulnerabilities in dependencies",
       "status": "pending",
       "githubIssueNumber": 634
     },
     {
       "id": "3030b36b",
-      "code": "T-001-516",
+      "code": "T-001-677",
       "title": "Create `AUDIT_REPORT.md` in planning session folder",
       "status": "pending",
       "githubIssueNumber": 635
     },
     {
       "id": "9897f37e",
-      "code": "T-001-517",
+      "code": "T-001-678",
       "title": "Document all findings with evidence",
       "status": "pending",
       "githubIssueNumber": 636
     },
     {
       "id": "1d8aceed",
-      "code": "T-001-518",
+      "code": "T-001-679",
       "title": "Include metrics (coverage, counts, etc.)",
       "status": "pending",
       "githubIssueNumber": 637
     },
     {
       "id": "245ddffb",
-      "code": "T-001-519",
+      "code": "T-001-680",
       "title": "Add recommendations for proceeding",
       "status": "pending",
       "githubIssueNumber": 638
     },
     {
       "id": "d3be3940",
-      "code": "T-001-520",
+      "code": "T-001-681",
       "title": "Update this TODOs.md with accurate progress",
       "status": "pending",
       "githubIssueNumber": 639
     },
     {
       "id": "120f1a2e",
-      "code": "T-001-521",
+      "code": "T-001-682",
       "title": "Model extends BaseModel correctly",
       "status": "pending",
       "githubIssueNumber": 640
     },
     {
       "id": "653dfda7",
-      "code": "T-001-522",
+      "code": "T-001-683",
       "title": "All CRUD operations work",
       "status": "pending",
       "githubIssueNumber": 641
     },
     {
       "id": "582b766d",
-      "code": "T-001-523",
+      "code": "T-001-684",
       "title": "Soft delete implemented",
       "status": "pending",
       "githubIssueNumber": 642
     },
     {
       "id": "6d12289d",
-      "code": "T-001-524",
+      "code": "T-001-685",
       "title": "Tests pass with ≥90% coverage",
       "status": "pending",
       "githubIssueNumber": 643
     },
     {
       "id": "228a38de",
-      "code": "T-001-525",
+      "code": "T-001-686",
       "title": "Lint and typecheck pass",
       "status": "pending",
-      "githubIssueNumber": 644
+      "githubIssueNumber": 628
     },
     {
       "id": "d768ad4f",
-      "code": "T-001-526",
+      "code": "T-001-687",
       "title": "Test: filter by status enum (PENDING, IN_PROGRESS, COMPLETED, etc.)",
       "status": "pending",
       "githubIssueNumber": 645
     },
     {
       "id": "36856ac4",
-      "code": "T-001-527",
+      "code": "T-001-688",
       "title": "Test: filter by serviceTypeId",
       "status": "pending",
       "githubIssueNumber": 646
     },
     {
       "id": "ee28a459",
-      "code": "T-001-528",
+      "code": "T-001-689",
       "title": "Test: filter by clientId",
       "status": "pending",
       "githubIssueNumber": 647
     },
     {
       "id": "ceba37b2",
-      "code": "T-001-529",
+      "code": "T-001-690",
       "title": "Test: date range queries (orderedAt, deliveryDate, completedAt)",
       "status": "pending",
       "githubIssueNumber": 648
     },
     {
       "id": "73eb1a27",
-      "code": "T-001-530",
+      "code": "T-001-691",
       "title": "Test: filter by status enum",
       "status": "pending",
       "githubIssueNumber": 649
     },
     {
       "id": "1e8c8360",
-      "code": "T-001-531",
+      "code": "T-001-692",
       "title": "Test: filter by isTrial boolean",
       "status": "pending",
       "githubIssueNumber": 650
     },
     {
       "id": "1b4b3510",
-      "code": "T-001-532",
+      "code": "T-001-693",
       "title": "Test: date range queries (fromDate, toDate, trialEndsAt)",
       "status": "pending",
       "githubIssueNumber": 651
     },
     {
       "id": "6ed9f8d9",
-      "code": "T-001-533",
+      "code": "T-001-694",
       "title": "Test: join with accommodationListingPlan",
       "status": "pending",
       "githubIssueNumber": 652
     },
     {
       "id": "fb1f35b6",
-      "code": "T-001-534",
+      "code": "T-001-695",
       "title": "Test: join with accommodation (existing table)",
       "status": "pending",
       "githubIssueNumber": 653
     },
     {
       "id": "b6c1e4c6",
-      "code": "T-001-535",
+      "code": "T-001-696",
       "title": "Test: filter by recipientType + recipientId",
       "status": "pending",
       "githubIssueNumber": 654
     },
     {
       "id": "73eb1a27",
-      "code": "T-001-536",
+      "code": "T-001-697",
       "title": "Test: filter by status enum",
       "status": "pending",
-      "githubIssueNumber": 655
+      "githubIssueNumber": 649
     },
     {
       "id": "79efc4b8",
-      "code": "T-001-537",
+      "code": "T-001-698",
       "title": "Test: filter by channel enum",
       "status": "pending",
       "githubIssueNumber": 656
     },
     {
       "id": "08e80bdd",
-      "code": "T-001-538",
+      "code": "T-001-699",
       "title": "Test: filter by type enum",
       "status": "pending",
       "githubIssueNumber": 657
     },
     {
       "id": "1424bb59",
-      "code": "T-001-539",
+      "code": "T-001-700",
       "title": "Test: scheduled notifications (scheduledFor IS NOT NULL)",
       "status": "pending",
       "githubIssueNumber": 658
     },
     {
       "id": "a536be2d",
-      "code": "T-001-540",
+      "code": "T-001-701",
       "title": "Test: read/unread filtering (readAt IS NULL)",
       "status": "pending",
       "githubIssueNumber": 659
     },
     {
       "id": "b376e0ec",
-      "code": "T-001-541",
+      "code": "T-001-702",
       "title": "Test: retry logic (retryCount)",
       "status": "pending",
       "githubIssueNumber": 660
     },
     {
       "id": "9efee490",
-      "code": "T-001-542",
+      "code": "T-001-703",
       "title": "All 35 models exist",
       "status": "pending",
       "githubIssueNumber": 661
     },
     {
       "id": "4eeb8579",
-      "code": "T-001-543",
+      "code": "T-001-704",
       "title": "All extend BaseModel correctly",
       "status": "pending",
       "githubIssueNumber": 662
     },
     {
       "id": "d10b5ce1",
-      "code": "T-001-544",
+      "code": "T-001-705",
       "title": "All have corresponding tests",
       "status": "pending",
       "githubIssueNumber": 663
     },
     {
       "id": "5c1c8a94",
-      "code": "T-001-545",
+      "code": "T-001-706",
       "title": "Test coverage ≥90% for db package",
       "status": "pending",
       "githubIssueNumber": 664
     },
     {
       "id": "228a38de",
-      "code": "T-001-546",
+      "code": "T-001-707",
       "title": "Lint and typecheck pass",
       "status": "pending",
-      "githubIssueNumber": 665
+      "githubIssueNumber": 628
     },
     {
       "id": "ae09f2cf",
-      "code": "T-001-547",
+      "code": "T-001-708",
       "title": "All barrel exports updated",
       "status": "pending",
       "githubIssueNumber": 666
     },
     {
       "id": "3ac887f3",
-      "code": "T-001-548",
+      "code": "T-001-709",
       "title": "35/35 models complete",
       "status": "pending",
       "githubIssueNumber": 667
     },
     {
       "id": "d301a58e",
-      "code": "T-001-549",
+      "code": "T-001-710",
       "title": "All tests pass",
       "status": "pending",
-      "githubIssueNumber": 668
+      "githubIssueNumber": 627
     },
     {
       "id": "b4a504ff",
-      "code": "T-001-550",
+      "code": "T-001-711",
       "title": "Coverage ≥90%",
       "status": "pending",
       "githubIssueNumber": 669
     },
     {
       "id": "d81ee91c",
-      "code": "T-001-551",
+      "code": "T-001-712",
       "title": "Zero lint/type errors",
       "status": "pending",
       "githubIssueNumber": 670
     },
     {
       "id": "7de8f554",
-      "code": "T-001-552",
+      "code": "T-001-713",
       "title": "Documentation updated",
       "status": "pending",
       "description": "{",
-      "githubIssueNumber": 671
+      "githubIssueNumber": 629
     },
     {
       "id": "4813c93c",
-      "code": "T-001-553",
+      "code": "T-001-714",
       "title": "Service extends BaseCrudService",
       "status": "pending",
       "githubIssueNumber": 672
     },
     {
       "id": "03f30ebf",
-      "code": "T-001-554",
+      "code": "T-001-715",
       "title": "All CRUD operations work through service",
       "status": "pending",
       "githubIssueNumber": 673
     },
     {
       "id": "0e0c08b0",
-      "code": "T-001-555",
+      "code": "T-001-716",
       "title": "Business validation implemented",
       "status": "pending",
       "githubIssueNumber": 674
     },
     {
       "id": "6d12289d",
-      "code": "T-001-556",
+      "code": "T-001-717",
       "title": "Tests pass with ≥90% coverage",
       "status": "pending",
-      "githubIssueNumber": 675
+      "githubIssueNumber": 643
     },
     {
       "id": "228a38de",
-      "code": "T-001-557",
+      "code": "T-001-718",
       "title": "Lint and typecheck pass",
       "status": "pending",
-      "githubIssueNumber": 676
+      "githubIssueNumber": 628
     },
     {
       "id": "42e59768",
-      "code": "T-001-558",
+      "code": "T-001-719",
       "title": "activateSubscription()",
       "status": "pending",
       "githubIssueNumber": 677
     },
     {
       "id": "f2cac153",
-      "code": "T-001-559",
+      "code": "T-001-720",
       "title": "cancelSubscription()",
       "status": "pending",
       "githubIssueNumber": 678
     },
     {
       "id": "df658b50",
-      "code": "T-001-560",
+      "code": "T-001-721",
       "title": "renewSubscription()",
       "status": "pending",
       "githubIssueNumber": 679
     },
     {
       "id": "f71bcf81",
-      "code": "T-001-561",
+      "code": "T-001-722",
       "title": "updatePaymentStatus()",
       "status": "pending",
       "githubIssueNumber": 680
     },
     {
       "id": "90826b1e",
-      "code": "T-001-562",
+      "code": "T-001-723",
       "title": "validatePolymorphicReference()",
       "status": "pending",
       "githubIssueNumber": 681
     },
     {
       "id": "67ab95c0",
-      "code": "T-001-563",
+      "code": "T-001-724",
       "title": "generateAccessRights()",
       "status": "pending",
       "githubIssueNumber": 682
     },
     {
       "id": "4185b910",
-      "code": "T-001-564",
+      "code": "T-001-725",
       "title": "linkToEntity()",
       "status": "pending",
       "githubIssueNumber": 683
     },
     {
       "id": "e013006d",
-      "code": "T-001-565",
+      "code": "T-001-726",
       "title": "Test: link to each of 7 target entity types",
       "status": "pending",
       "githubIssueNumber": 684
     },
     {
       "id": "a531ca55",
-      "code": "T-001-566",
+      "code": "T-001-727",
       "title": "Test: validate invalid entityType",
       "status": "pending",
       "githubIssueNumber": 685
     },
     {
       "id": "f7e881f2",
-      "code": "T-001-567",
+      "code": "T-001-728",
       "title": "Test: validate linkedEntityId doesn't exist",
       "status": "pending",
       "githubIssueNumber": 686
     },
     {
       "id": "cbd6f219",
-      "code": "T-001-568",
+      "code": "T-001-729",
       "title": "Test: access rights generated correctly",
       "status": "pending",
       "githubIssueNumber": 687
     },
     {
       "id": "0d38a2e1",
-      "code": "T-001-569",
+      "code": "T-001-730",
       "title": "Test: subscription vs purchase source handling",
       "status": "pending",
       "githubIssueNumber": 688
     },
     {
       "id": "b7153aa5",
-      "code": "T-001-570",
+      "code": "T-001-731",
       "title": "All 35 services exist",
       "status": "pending",
       "githubIssueNumber": 689
     },
     {
       "id": "7a4c85e2",
-      "code": "T-001-571",
+      "code": "T-001-732",
       "title": "All extend BaseCrudService",
       "status": "pending",
       "githubIssueNumber": 690
     },
     {
       "id": "8f57fefe",
-      "code": "T-001-572",
+      "code": "T-001-733",
       "title": "All have comprehensive tests",
       "status": "pending",
       "githubIssueNumber": 691
     },
     {
       "id": "dc54cad2",
-      "code": "T-001-573",
+      "code": "T-001-734",
       "title": "Test coverage ≥90% for service-core package",
       "status": "pending",
       "githubIssueNumber": 692
     },
     {
       "id": "a3069b85",
-      "code": "T-001-574",
+      "code": "T-001-735",
       "title": "Integration tests between services pass",
       "status": "pending",
       "githubIssueNumber": 693
     },
     {
       "id": "228a38de",
-      "code": "T-001-575",
+      "code": "T-001-736",
       "title": "Lint and typecheck pass",
       "status": "pending",
-      "githubIssueNumber": 694
+      "githubIssueNumber": 628
     },
     {
       "id": "124aaf04",
-      "code": "T-001-576",
+      "code": "T-001-737",
       "title": "Barrel exports updated",
       "status": "pending",
       "githubIssueNumber": 695
     },
     {
       "id": "a0370c90",
-      "code": "T-001-577",
+      "code": "T-001-738",
       "title": "All CRUD endpoints work",
       "status": "pending",
       "githubIssueNumber": 696
     },
     {
       "id": "7e3c86d3",
-      "code": "T-001-578",
+      "code": "T-001-739",
       "title": "Request validation with Zod schemas",
       "status": "pending",
       "githubIssueNumber": 697
     },
     {
       "id": "81aa9d8c",
-      "code": "T-001-579",
+      "code": "T-001-740",
       "title": "Error handling consistent",
       "status": "pending",
       "githubIssueNumber": 698
     },
     {
       "id": "aa0d59a9",
-      "code": "T-001-580",
+      "code": "T-001-741",
       "title": "Authentication/authorization enforced",
       "status": "pending",
       "githubIssueNumber": 699
     },
     {
       "id": "6d12289d",
-      "code": "T-001-581",
+      "code": "T-001-742",
       "title": "Tests pass with ≥90% coverage",
       "status": "pending",
-      "githubIssueNumber": 700
+      "githubIssueNumber": 643
     },
     {
       "id": "2c1e8b0f",
-      "code": "T-001-582",
+      "code": "T-001-743",
       "title": "API documentation generated",
       "status": "pending",
       "githubIssueNumber": 701
     },
     {
       "id": "893c267f",
-      "code": "T-001-583",
+      "code": "T-001-744",
       "title": "All 35 endpoint groups exist",
       "status": "pending",
       "githubIssueNumber": 702
     },
     {
       "id": "158625e1",
-      "code": "T-001-584",
+      "code": "T-001-745",
       "title": "All routes mounted in main app",
       "status": "pending",
       "githubIssueNumber": 703
     },
     {
       "id": "075d8f49",
-      "code": "T-001-585",
+      "code": "T-001-746",
       "title": "OpenAPI documentation generated",
       "status": "pending",
       "githubIssueNumber": 704
     },
     {
       "id": "223392e2",
-      "code": "T-001-586",
+      "code": "T-001-747",
       "title": "Authentication middleware applied",
       "status": "pending",
       "githubIssueNumber": 705
     },
     {
       "id": "2590a3bd",
-      "code": "T-001-587",
+      "code": "T-001-748",
       "title": "Rate limiting configured",
       "status": "pending",
       "githubIssueNumber": 706
     },
     {
       "id": "81aa9d8c",
-      "code": "T-001-588",
+      "code": "T-001-749",
       "title": "Error handling consistent",
       "status": "pending",
-      "githubIssueNumber": 707
+      "githubIssueNumber": 698
     },
     {
       "id": "6d12289d",
-      "code": "T-001-589",
+      "code": "T-001-750",
       "title": "Tests pass with ≥90% coverage",
       "status": "pending",
-      "githubIssueNumber": 708
+      "githubIssueNumber": 643
     },
     {
       "id": "920c16fc",
-      "code": "T-001-590",
+      "code": "T-001-751",
       "title": "Postman/Insomnia collection created",
       "status": "pending",
       "githubIssueNumber": 709
     },
     {
       "id": "eee88e34",
-      "code": "T-001-591",
+      "code": "T-001-752",
       "title": "Load testing (100 concurrent users)",
       "status": "pending",
       "githubIssueNumber": 710
     },
     {
       "id": "5af613c3",
-      "code": "T-001-592",
+      "code": "T-001-753",
       "title": "Database query performance (< 300ms)",
       "status": "pending",
       "githubIssueNumber": 711
     },
     {
       "id": "5d6e1c38",
-      "code": "T-001-593",
+      "code": "T-001-754",
       "title": "API response times (< 500ms)",
       "status": "pending",
       "githubIssueNumber": 712
     },
     {
       "id": "a4bc388a",
-      "code": "T-001-594",
+      "code": "T-001-755",
       "title": "Pagination performance (1000+ records)",
       "status": "pending",
       "githubIssueNumber": 713
     },
     {
       "id": "a31a0563",
-      "code": "T-001-595",
+      "code": "T-001-756",
       "title": "RBAC properly enforced",
       "status": "pending",
       "githubIssueNumber": 714
     },
     {
       "id": "ffd1d490",
-      "code": "T-001-596",
+      "code": "T-001-757",
       "title": "SQL injection prevention validated",
       "status": "pending",
       "githubIssueNumber": 715
     },
     {
       "id": "7e8a3d26",
-      "code": "T-001-597",
+      "code": "T-001-758",
       "title": "XSS prevention validated",
       "status": "pending",
       "githubIssueNumber": 716
     },
     {
       "id": "c9df0136",
-      "code": "T-001-598",
+      "code": "T-001-759",
       "title": "CSRF tokens validated",
       "status": "pending",
       "githubIssueNumber": 717
     },
     {
       "id": "dbbae653",
-      "code": "T-001-599",
+      "code": "T-001-760",
       "title": "Payment data encryption verified",
       "status": "pending",
       "githubIssueNumber": 718
     },
     {
       "id": "cec077c8",
-      "code": "T-001-600",
+      "code": "T-001-761",
       "title": "PCI compliance checklist",
       "status": "pending",
       "githubIssueNumber": 719
     },
     {
       "id": "65ce1809",
-      "code": "T-001-601",
+      "code": "T-001-762",
       "title": "Zero lint errors",
       "status": "pending",
-      "githubIssueNumber": 720
+      "githubIssueNumber": 630
     },
     {
       "id": "3e50aee5",
-      "code": "T-001-602",
+      "code": "T-001-763",
       "title": "Zero type errors",
       "status": "pending",
-      "githubIssueNumber": 721
+      "githubIssueNumber": 631
     },
     {
       "id": "4265ecc6",
-      "code": "T-001-603",
+      "code": "T-001-764",
       "title": "All tests pass (unit + integration + E2E)",
       "status": "pending",
       "githubIssueNumber": 722
     },
     {
       "id": "addc6e4c",
-      "code": "T-001-604",
+      "code": "T-001-765",
       "title": "Overall coverage ≥90%",
       "status": "pending",
       "githubIssueNumber": 723
     },
     {
       "id": "265ce3e3",
-      "code": "T-001-605",
+      "code": "T-001-766",
       "title": "All builds successful",
       "status": "pending",
       "githubIssueNumber": 724
     },
     {
       "id": "f50935e7",
-      "code": "T-001-606",
+      "code": "T-001-767",
       "title": "Performance targets met",
       "status": "pending",
       "githubIssueNumber": 725
     },
     {
       "id": "80bc116d",
-      "code": "T-001-607",
+      "code": "T-001-768",
       "title": "Security audit passed",
       "status": "pending",
       "githubIssueNumber": 726
     },
     {
       "id": "0ee22e28",
-      "code": "T-001-608",
+      "code": "T-001-769",
       "title": "OpenAPI/Swagger documentation",
       "status": "pending",
       "githubIssueNumber": 727
     },
     {
       "id": "da394253",
-      "code": "T-001-609",
+      "code": "T-001-770",
       "title": "Postman collection",
       "status": "pending",
       "githubIssueNumber": 728
     },
     {
       "id": "68411a17",
-      "code": "T-001-610",
+      "code": "T-001-771",
       "title": "Authentication guide",
       "status": "pending",
       "githubIssueNumber": 729
     },
     {
       "id": "8e41babc",
-      "code": "T-001-611",
+      "code": "T-001-772",
       "title": "Rate limiting docs",
       "status": "pending",
       "githubIssueNumber": 730
     },
     {
       "id": "bd431216",
-      "code": "T-001-612",
+      "code": "T-001-773",
       "title": "Error codes reference",
       "status": "pending",
       "githubIssueNumber": 731
     },
     {
       "id": "a38919c6",
-      "code": "T-001-613",
+      "code": "T-001-774",
       "title": "Webhook documentation (Mercado Pago)",
       "status": "pending",
       "githubIssueNumber": 732
     },
     {
       "id": "997d8270",
-      "code": "T-001-614",
+      "code": "T-001-775",
       "title": "ER diagram updated",
       "status": "pending",
       "githubIssueNumber": 733
     },
     {
       "id": "bb9cdbbc",
-      "code": "T-001-615",
+      "code": "T-001-776",
       "title": "Table schemas documented",
       "status": "pending",
       "githubIssueNumber": 734
     },
     {
       "id": "c3fbe0e7",
-      "code": "T-001-616",
+      "code": "T-001-777",
       "title": "Index documentation",
       "status": "pending",
       "githubIssueNumber": 735
     },
     {
       "id": "8615f89f",
-      "code": "T-001-617",
+      "code": "T-001-778",
       "title": "Migration guide",
       "status": "pending",
       "githubIssueNumber": 736
     },
     {
       "id": "fd8dadff",
-      "code": "T-001-618",
+      "code": "T-001-779",
       "title": "Seeding guide",
       "status": "pending",
       "githubIssueNumber": 737
     },
     {
       "id": "85fcad11",
-      "code": "T-001-619",
+      "code": "T-001-780",
       "title": "Architecture overview",
       "status": "pending",
       "githubIssueNumber": 738
     },
     {
       "id": "67b92984",
-      "code": "T-001-620",
+      "code": "T-001-781",
       "title": "Code patterns guide",
       "status": "pending",
       "githubIssueNumber": 739
     },
     {
       "id": "68fb2b18",
-      "code": "T-001-621",
+      "code": "T-001-782",
       "title": "Testing strategy",
       "status": "pending",
       "githubIssueNumber": 740
     },
     {
       "id": "51ea0ccc",
-      "code": "T-001-622",
+      "code": "T-001-783",
       "title": "Contribution guidelines",
       "status": "pending",
       "githubIssueNumber": 741
     },
     {
       "id": "5c24f37c",
-      "code": "T-001-623",
+      "code": "T-001-784",
       "title": "Troubleshooting guide",
       "status": "pending",
       "githubIssueNumber": 742
     },
     {
       "id": "d5938b54",
-      "code": "T-001-624",
+      "code": "T-001-785",
       "title": "Environment setup",
       "status": "pending",
       "githubIssueNumber": 743
     },
     {
       "id": "b28d6f4c",
-      "code": "T-001-625",
+      "code": "T-001-786",
       "title": "Migration procedures",
       "status": "pending",
       "githubIssueNumber": 744
     },
     {
       "id": "1613e1fc",
-      "code": "T-001-626",
+      "code": "T-001-787",
       "title": "Rollback procedures",
       "status": "pending",
       "githubIssueNumber": 745
     },
     {
       "id": "cd947c60",
-      "code": "T-001-627",
+      "code": "T-001-788",
       "title": "Monitoring setup",
       "status": "pending",
       "githubIssueNumber": 746
     },
     {
       "id": "b80decd5",
-      "code": "T-001-628",
+      "code": "T-001-789",
       "title": "Backup strategy",
       "status": "pending",
       "githubIssueNumber": 747
     },
     {
       "id": "0837cb68",
-      "code": "T-001-629",
+      "code": "T-001-790",
       "title": "Add learnings from implementation",
       "status": "pending",
       "githubIssueNumber": 748
     },
     {
       "id": "560029dc",
-      "code": "T-001-630",
+      "code": "T-001-791",
       "title": "Document new patterns discovered",
       "status": "pending",
       "githubIssueNumber": 749
     },
     {
       "id": "97256f69",
-      "code": "T-001-631",
+      "code": "T-001-792",
       "title": "Update common mistakes section",
       "status": "pending",
       "githubIssueNumber": 750
     },
     {
       "id": "cca3d8e3",
-      "code": "T-001-632",
+      "code": "T-001-793",
       "title": "Add business model specific guidelines",
       "status": "pending",
       "githubIssueNumber": 751
     },
     {
       "id": "3e46d1d0",
-      "code": "T-001-633",
+      "code": "T-001-794",
       "title": "All 35 models complete",
       "status": "pending",
       "githubIssueNumber": 752
     },
     {
       "id": "00d8d8ac",
-      "code": "T-001-634",
+      "code": "T-001-795",
       "title": "Tests ≥90% coverage",
       "status": "pending",
       "githubIssueNumber": 753
     },
     {
       "id": "d81ee91c",
-      "code": "T-001-635",
+      "code": "T-001-796",
       "title": "Zero lint/type errors",
       "status": "pending",
-      "githubIssueNumber": 754
+      "githubIssueNumber": 670
     },
     {
       "id": "e8baa831",
-      "code": "T-001-636",
+      "code": "T-001-797",
       "title": "All 35 services complete",
       "status": "pending",
       "githubIssueNumber": 755
     },
     {
       "id": "aa1e2a8c",
-      "code": "T-001-637",
+      "code": "T-001-798",
       "title": "Business logic validated",
       "status": "pending",
       "githubIssueNumber": 756
     },
     {
       "id": "f0351cc2",
-      "code": "T-001-638",
+      "code": "T-001-799",
       "title": "Integration tests pass",
       "status": "pending",
       "githubIssueNumber": 757
     },
     {
       "id": "dd5175f5",
-      "code": "T-001-639",
+      "code": "T-001-800",
       "title": "All 35 API groups complete",
       "status": "pending",
       "githubIssueNumber": 758
     },
     {
       "id": "2c1e8b0f",
-      "code": "T-001-640",
+      "code": "T-001-801",
       "title": "API documentation generated",
       "status": "pending",
-      "githubIssueNumber": 759
+      "githubIssueNumber": 701
     },
     {
       "id": "0df63aca",
-      "code": "T-001-641",
+      "code": "T-001-802",
       "title": "Smoke tests pass",
       "status": "pending",
       "githubIssueNumber": 760
     },
     {
       "id": "8595a18b",
-      "code": "T-001-642",
+      "code": "T-001-803",
       "title": "All E2E scenarios pass",
       "status": "pending",
       "githubIssueNumber": 761
     },
     {
       "id": "f50935e7",
-      "code": "T-001-643",
+      "code": "T-001-804",
       "title": "Performance targets met",
       "status": "pending",
-      "githubIssueNumber": 762
+      "githubIssueNumber": 725
     },
     {
       "id": "80bc116d",
-      "code": "T-001-644",
+      "code": "T-001-805",
       "title": "Security audit passed",
       "status": "pending",
-      "githubIssueNumber": 763
+      "githubIssueNumber": 726
     }
   ]
 }
