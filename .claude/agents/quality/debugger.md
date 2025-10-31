@@ -89,7 +89,7 @@ pnpm dev      # Start services
 # Document any variations
 ```
 
-#### Create Reproduction Test:
+#### Create Reproduction Test
 
 ```typescript
 // tests/bugs/BUG-123-booking-price-calculation.test.ts
@@ -143,7 +143,7 @@ describe('BUG-123: Weekend price calculation', () => {
 
 ### Step 2: Information Gathering
 
-#### Check Logs:
+#### Check Logs
 
 ```typescript
 // Search for relevant log entries
@@ -162,7 +162,7 @@ describe('BUG-123: Weekend price calculation', () => {
 }
 ```
 
-#### Check Database State:
+#### Check Database State
 
 ```sql
 -- Verify data integrity
@@ -175,7 +175,7 @@ WHERE created_at > NOW() - INTERVAL '24 hours'
 AND status = 'error';
 ```
 
-#### Check Related Code:
+#### Check Related Code
 
 ```bash
 # Review recent changes
@@ -188,7 +188,7 @@ git show <commit-hash>
 
 ### Step 3: Hypothesis Formation
 
-#### Use 5 Whys Technique:
+#### Use 5 Whys Technique
 
 ```markdown
 ## 5 Whys Analysis: BUG-123
@@ -224,7 +224,7 @@ git show <commit-hash>
 
 ### Step 4: Investigation
 
-#### Add Debug Logging:
+#### Add Debug Logging
 
 ```typescript
 // Temporarily add detailed logs
@@ -256,7 +256,7 @@ export async function calculatePrice(input: CalculatePriceInput) {
 }
 ```
 
-#### Use Debugger:
+#### Use Debugger
 
 ```json
 // .vscode/launch.json
@@ -276,7 +276,7 @@ export async function calculatePrice(input: CalculatePriceInput) {
 }
 ```
 
-#### Trace Execution:
+#### Trace Execution
 
 ```typescript
 // Add execution tracing
@@ -292,7 +292,7 @@ function isWeekend(date: Date): boolean {
 
 ### Step 5: Fix Development
 
-#### Identify Fix:
+#### Identify Fix
 
 ```typescript
 // BEFORE (buggy code)
@@ -317,7 +317,7 @@ function isWeekend(date: Date): boolean {
 }
 ```
 
-#### Write Test for Fix:
+#### Write Test for Fix
 
 ```typescript
 describe('isWeekend', () => {
@@ -340,7 +340,7 @@ describe('isWeekend', () => {
 });
 ```
 
-#### Verify No Regression:
+#### Verify No Regression
 
 ```bash
 # Run full test suite
@@ -356,7 +356,7 @@ pnpm test:coverage
 
 ### Step 6: Documentation
 
-#### Update Bug Ticket:
+#### Update Bug Ticket
 
 ```markdown
 ## BUG-123: Weekend surcharge not applied
@@ -587,20 +587,20 @@ function Component() {
 
 ### Chrome DevTools
 
-#### Network Tab:
+#### Network Tab
 
 - Check API requests/responses
 - Verify request payloads
 - Check response status codes
 - Analyze timing
 
-#### Console Tab:
+#### Console Tab
 
 - View console.log output
 - Check errors and warnings
 - Execute code snippets
 
-#### React DevTools:
+#### React DevTools
 
 - Inspect component tree
 - Check props and state
