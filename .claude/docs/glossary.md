@@ -426,9 +426,9 @@ Shell script that regenerates the code registry from all TODOs.md files.
 
 **Usage:** `pnpm claude:sync:registry`
 
-### generate-code-registry.cjs
+### generate-code-registry.ts
 
-Node.js script that parses TODOs.md files and generates `.code-registry.json`.
+TypeScript script that parses TODOs.md files and generates `.code-registry.json`.
 
 **Features:**
 

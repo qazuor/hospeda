@@ -22,13 +22,13 @@ echo -e "${BLUE}🔄 Syncing code registry from TODOs.md files...${NC}"
 echo ""
 
 # Check if generate-code-registry script exists
-if [ ! -f ".claude/scripts/generate-code-registry.cjs" ]; then
-  echo "❌ Error: .claude/scripts/generate-code-registry.cjs not found"
+if [ ! -f ".claude/scripts/generate-code-registry.ts" ]; then
+  echo "❌ Error: .claude/scripts/generate-code-registry.ts not found"
   exit 1
 fi
 
 # Run the registry generator
-if node .claude/scripts/generate-code-registry.cjs; then
+if tsx .claude/scripts/generate-code-registry.ts; then
   echo ""
   echo -e "${GREEN}✅ Code registry synced successfully!${NC}"
   echo -e "${YELLOW}💡 Registry file: .claude/sessions/planning/.code-registry.json${NC}"
