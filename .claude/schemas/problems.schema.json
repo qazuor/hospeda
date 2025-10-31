@@ -1,0 +1,55 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://hospeda.dev/schemas/problems.schema.json",
+  "title": "Problems and Improvements",
+  "description": "JSON Schema for Problems and Improvements analysis documents",
+  "type": "object",
+  "required": ["metadata", "problems", "improvements"],
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "required": ["planningCode", "version"],
+      "properties": {
+        "planningCode": {"type": "string", "pattern": "^P(F|R)?\\d{3,4}$"},
+        "version": {"type": "string", "pattern": "^\\d+\\.\\d+(\\.\\d+)?$"},
+        "createdAt": {"type": "string", "format": "date-time"}
+      }
+    },
+    "problems": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "description", "impact", "mitigation"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^PROB-\\d{3}$"},
+          "title": {"type": "string", "minLength": 5},
+          "description": {"type": "string", "minLength": 20},
+          "impact": {"type": "string", "enum": ["high", "medium", "low"]},
+          "category": {"type": "string", "enum": ["technical", "process", "documentation", "performance", "security", "ux"]},
+          "mitigation": {"type": "string", "minLength": 20},
+          "userDecision": {"type": "string", "description": "User's decision on this problem"},
+          "status": {"type": "string", "enum": ["identified", "mitigated", "resolved", "accepted"]},
+          "relatedTasks": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    },
+    "improvements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "description", "benefit"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^IMP-\\d{3}$"},
+          "title": {"type": "string", "minLength": 5},
+          "description": {"type": "string", "minLength": 20},
+          "benefit": {"type": "string", "minLength": 20},
+          "effort": {"type": "string", "enum": ["low", "medium", "high"]},
+          "priority": {"type": "string", "enum": ["P0", "P1", "P2", "P3"]},
+          "userDecision": {"type": "string"},
+          "status": {"type": "string", "enum": ["proposed", "approved", "in-progress", "completed", "rejected"]},
+          "relatedTasks": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    }
+  }
+}
