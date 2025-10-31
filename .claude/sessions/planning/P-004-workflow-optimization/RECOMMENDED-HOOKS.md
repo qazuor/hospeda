@@ -453,7 +453,6 @@ command 2>/dev/null || true
 ## Recursos Adicionales
 
 - [Claude Code Hooks Documentation](https://docs.claude.com/en/docs/claude-code/hooks)
-- [Comando /rule2hook](.claude/commands/rule2hook.md) (si se reactiva en el futuro)
 - [Gitleaks](https://github.com/gitleaks/gitleaks) - Secret detection
 - [Biome](https://biomejs.dev/) - Linter y formatter
 
