@@ -46,6 +46,7 @@ This document tracks the atomic tasks for completing the Hospeda Business Model 
 **Description**: Systematically verify all completed stages (1-4.7) for completeness, correctness, and adherence to standards.
 
 **Acceptance Criteria**:
+
 - [x] All 26 enums exist and follow naming conventions
 - [x] All 35 database tables exist with proper schemas
 - [x] All 210 Zod schemas exist and pass validation
@@ -54,6 +55,7 @@ This document tracks the atomic tasks for completing the Hospeda Business Model 
 - [x] Documentation audit complete
 
 **Checklist**:
+
 ```bash
 # Enums (26 expected)
 - [ ] Count enum files: packages/schemas/src/enums/*.enum.ts
@@ -83,6 +85,7 @@ This document tracks the atomic tasks for completing the Hospeda Business Model 
 ```
 
 **Output**: Create audit report document listing:
+
 - What exists and is correct ✅
 - What exists but has issues ⚠️
 - What is missing ❌
@@ -100,6 +103,7 @@ This document tracks the atomic tasks for completing the Hospeda Business Model 
 **Description**: Address all issues identified in audit before proceeding.
 
 **Acceptance Criteria**:
+
 - [ ] All ⚠️ issues from audit are resolved
 - [ ] All ❌ missing items are created
 - [ ] All tests pass
@@ -107,6 +111,7 @@ This document tracks the atomic tasks for completing the Hospeda Business Model 
 - [ ] Documentation updated
 
 **Process**:
+
 1. Prioritize issues (P0 > P1 > P2)
 2. Fix one at a time with TDD
 3. Commit after each fix
@@ -124,6 +129,7 @@ This document tracks the atomic tasks for completing the Hospeda Business Model 
 **Description**: Run comprehensive quality checks on all completed work.
 
 **Commands**:
+
 ```bash
 # Lint
 cd packages/schemas && pnpm run lint
@@ -144,6 +150,7 @@ pnpm run test
 ```
 
 **Acceptance Criteria**:
+
 - [ ] Zero lint errors
 - [ ] Zero type errors
 - [ ] All tests pass
@@ -164,6 +171,7 @@ pnpm run test
 **Description**: Create comprehensive documentation of audit findings and current state.
 
 **Deliverables**:
+
 - [ ] Create `AUDIT_REPORT.md` in planning session folder
 - [ ] Document all findings with evidence
 - [ ] Include metrics (coverage, counts, etc.)
@@ -171,6 +179,7 @@ pnpm run test
 - [ ] Update this TODOs.md with accurate progress
 
 **Template**:
+
 ```markdown
 # Audit Report - Business Model System
 ## Executive Summary
@@ -210,12 +219,14 @@ pnpm run test
 **Commit**: 86e11b42
 
 **Files to Create**:
+
 ```
 packages/db/src/models/professional-service-type.model.ts
 packages/db/test/models/professional-service-type.model.test.ts
 ```
 
 **TDD Process**:
+
 1. **RED**: Write failing tests
    - [ ] Test: findById returns correct entity
    - [ ] Test: findAll with pagination
@@ -237,6 +248,7 @@ packages/db/test/models/professional-service-type.model.test.ts
    - [ ] Optimize queries
 
 **Acceptance Criteria**:
+
 - [ ] Model extends BaseModel correctly
 - [ ] All CRUD operations work
 - [ ] Soft delete implemented
@@ -255,6 +267,7 @@ packages/db/test/models/professional-service-type.model.test.ts
 **Commit**: 86e11b42
 
 **Files to Create**:
+
 ```
 packages/db/src/models/professional-service-order.model.ts
 packages/db/test/models/professional-service-order.model.test.ts
@@ -263,6 +276,7 @@ packages/db/test/models/professional-service-order.model.test.ts
 **TDD Process**: Same as TASK-100
 
 **Additional Tests**:
+
 - [ ] Test: filter by status enum (PENDING, IN_PROGRESS, COMPLETED, etc.)
 - [ ] Test: filter by serviceTypeId
 - [ ] Test: filter by clientId
@@ -286,6 +300,7 @@ packages/db/test/models/professional-service-order.model.test.ts
 **Commit**: fadefd9d
 
 **Files to Create**:
+
 ```
 packages/db/src/models/accommodation-listing-plan.model.ts
 packages/db/test/models/accommodation-listing-plan.model.test.ts
@@ -307,12 +322,14 @@ packages/db/test/models/accommodation-listing-plan.model.test.ts
 **Commit**: fadefd9d
 
 **Files to Create**:
+
 ```
 packages/db/src/models/accommodation-listing.model.ts
 packages/db/test/models/accommodation-listing.model.test.ts
 ```
 
 **Additional Tests**:
+
 - [ ] Test: filter by status enum
 - [ ] Test: filter by isTrial boolean
 - [ ] Test: date range queries (fromDate, toDate, trialEndsAt)
@@ -331,6 +348,7 @@ packages/db/test/models/accommodation-listing.model.test.ts
 **Commit**: b426f7af
 
 **Files to Create**:
+
 ```
 packages/db/src/models/benefit-partner.model.ts
 packages/db/test/models/benefit-partner.model.test.ts
@@ -407,18 +425,21 @@ packages/db/test/models/benefit-partner.model.test.ts
 **Commit**: 34c383ab
 
 **Files to Create**:
+
 ```
 packages/db/src/models/notification.model.ts
 packages/db/test/models/notification.model.test.ts
 ```
 
 **Special Considerations**:
+
 - Polymorphic recipientType (USER | CLIENT)
 - Polymorphic relatedEntityType
 - Multiple enum fields (status, channel, type)
 - scheduledFor nullable datetime
 
 **Additional Tests**:
+
 - [ ] Test: filter by recipientType + recipientId
 - [ ] Test: filter by status enum
 - [ ] Test: filter by channel enum
@@ -439,6 +460,7 @@ packages/db/test/models/notification.model.test.ts
 **Description**: Validate all 35 models are complete and follow patterns.
 
 **Checklist**:
+
 - [ ] All 35 models exist
 - [ ] All extend BaseModel correctly
 - [ ] All have corresponding tests
@@ -447,6 +469,7 @@ packages/db/test/models/notification.model.test.ts
 - [ ] All barrel exports updated
 
 **Commands**:
+
 ```bash
 cd packages/db && pnpm run lint
 cd packages/db && pnpm run typecheck
@@ -454,6 +477,7 @@ cd packages/db && pnpm run test:coverage
 ```
 
 **Acceptance Criteria**:
+
 - [ ] 35/35 models complete
 - [ ] All tests pass
 - [ ] Coverage ≥90%
@@ -487,12 +511,14 @@ cd packages/db && pnpm run test:coverage
 **Dependencies**: TASK-111
 
 **Files to Create**:
+
 ```
 packages/service-core/src/services/client/client.service.ts
 packages/service-core/test/services/client/client.service.test.ts
 ```
 
 **Service Pattern**:
+
 ```typescript
 export class ClientService extends BaseCrudService<
   Client,
@@ -513,6 +539,7 @@ export class ClientService extends BaseCrudService<
 ```
 
 **TDD Process**:
+
 1. **RED**: Write failing tests
    - [ ] Test: create client with valid data
    - [ ] Test: validate billing email uniqueness
@@ -531,6 +558,7 @@ export class ClientService extends BaseCrudService<
    - [ ] Extract helpers
 
 **Acceptance Criteria**:
+
 - [ ] Service extends BaseCrudService
 - [ ] All CRUD operations work through service
 - [ ] Business validation implemented
@@ -545,6 +573,7 @@ export class ClientService extends BaseCrudService<
 **Dependencies**: TASK-200
 
 **Special Considerations**:
+
 - Access rights validation logic
 - Check overlapping date ranges
 - Validate scope polymorphic references
@@ -564,6 +593,7 @@ export class ClientService extends BaseCrudService<
 **Dependencies**: TASK-202
 
 **Special Considerations**:
+
 - Validate billingScheme + interval combinations
 - Ensure productId exists
 
@@ -575,6 +605,7 @@ export class ClientService extends BaseCrudService<
 **Dependencies**: TASK-203
 
 **Special Considerations**:
+
 - Validate tier quantity ranges don't overlap
 - Ensure minQuantity < maxQuantity
 
@@ -586,12 +617,14 @@ export class ClientService extends BaseCrudService<
 **Dependencies**: TASK-204
 
 **Special Considerations**:
+
 - Complex business logic for subscription lifecycle
 - Handle status transitions (ACTIVE → PAST_DUE → CANCELLED)
 - Calculate renewal dates
 - Validate trial periods
 
 **Custom Methods**:
+
 - [ ] activateSubscription()
 - [ ] cancelSubscription()
 - [ ] renewSubscription()
@@ -613,17 +646,20 @@ export class ClientService extends BaseCrudService<
 **Complexity**: HIGH - Polymorphic system
 
 **Special Considerations**:
+
 - CRITICAL: Polymorphic entity validation
 - Validate linkedEntityId exists in target table
 - Validate entityType matches actual entity
 - Auto-generate CLIENT_ACCESS_RIGHT on creation
 
 **Custom Methods**:
+
 - [ ] validatePolymorphicReference()
 - [ ] generateAccessRights()
 - [ ] linkToEntity()
 
 **Tests**:
+
 - [ ] Test: link to each of 7 target entity types
 - [ ] Test: validate invalid entityType
 - [ ] Test: validate linkedEntityId doesn't exist
@@ -639,6 +675,7 @@ export class ClientService extends BaseCrudService<
 #### TASK-208 to TASK-214: Implement Billing Services
 
 Services to implement:
+
 - InvoiceService (2.5 hours) - Complex invoice generation logic
 - InvoiceLineService (1.5 hours)
 - PaymentService (2 hours) - Mercado Pago integration
@@ -656,6 +693,7 @@ Services to implement:
 **Time**: 13-18 hours
 
 Services:
+
 - PromotionService
 - DiscountCodeService - Complex validation for usage limits
 - DiscountCodeUsageService
@@ -673,6 +711,7 @@ Services:
 **Time**: 16-22 hours
 
 Services:
+
 - ProfessionalServiceTypeService
 - ProfessionalServiceOrderService - Complex status workflow
 - AccommodationListingPlanService
@@ -694,6 +733,7 @@ Services:
 **Type**: Validation
 
 **Checklist**:
+
 - [ ] All 35 services exist
 - [ ] All extend BaseCrudService
 - [ ] All have comprehensive tests
@@ -728,12 +768,14 @@ Services:
 **Dependencies**: TASK-250
 
 **Files to Create**:
+
 ```
 apps/api/src/routes/clients/index.ts
 apps/api/test/routes/clients/index.test.ts
 ```
 
 **Implementation Pattern**:
+
 ```typescript
 import { Hono } from 'hono';
 import { createCRUDRoute, createListRoute } from '@/factories';
@@ -751,6 +793,7 @@ export default app;
 ```
 
 **Test Pattern**:
+
 ```typescript
 describe('Client API Routes', () => {
   describe('GET /clients', () => {
@@ -778,6 +821,7 @@ describe('Client API Routes', () => {
 ```
 
 **Acceptance Criteria**:
+
 - [ ] All CRUD endpoints work
 - [ ] Request validation with Zod schemas
 - [ ] Error handling consistent
@@ -790,6 +834,7 @@ describe('Client API Routes', () => {
 #### TASK-301 to TASK-307: Implement remaining Core API routes
 
 Routes:
+
 - ClientAccessRights (1.5 hours)
 - Products (1 hour)
 - PricingPlans (1 hour)
@@ -805,6 +850,7 @@ Routes:
 **Time**: 27-38 hours
 
 Following same pattern as Stage 6.1, implement API routes for:
+
 - Billing (7 routes)
 - Promotions (3 routes)
 - Campaigns & Advertising (4 routes)
@@ -822,6 +868,7 @@ Following same pattern as Stage 6.1, implement API routes for:
 **Type**: Validation
 
 **Checklist**:
+
 - [ ] All 35 endpoint groups exist
 - [ ] All routes mounted in main app
 - [ ] OpenAPI documentation generated
@@ -832,6 +879,7 @@ Following same pattern as Stage 6.1, implement API routes for:
 - [ ] Postman/Insomnia collection created
 
 **Commands**:
+
 ```bash
 cd apps/api && pnpm run lint
 cd apps/api && pnpm run typecheck
@@ -858,6 +906,7 @@ cd apps/api && pnpm run dev # Manual smoke testing
 **Type**: E2E Test
 
 **Test Scenario**:
+
 1. Create client
 2. Create product + pricing plan
 3. Purchase subscription
@@ -868,6 +917,7 @@ cd apps/api && pnpm run dev # Manual smoke testing
 8. Verify subscription active
 
 **Files**:
+
 ```
 apps/api/test/e2e/subscription-flow.test.ts
 ```
@@ -877,6 +927,7 @@ apps/api/test/e2e/subscription-flow.test.ts
 ### TASK-401: E2E Campaign Flow Test (2-3 hours)
 
 **Test Scenario**:
+
 1. Create client
 2. Purchase campaign product
 3. Create campaign
@@ -890,6 +941,7 @@ apps/api/test/e2e/subscription-flow.test.ts
 ### TASK-402: E2E Professional Service Flow Test (2-3 hours)
 
 **Test Scenario**:
+
 1. Create client
 2. Browse service types
 3. Order professional service
@@ -902,6 +954,7 @@ apps/api/test/e2e/subscription-flow.test.ts
 ### TASK-403: E2E Billing and Invoicing Test (3-4 hours)
 
 **Test Scenario**:
+
 1. Multiple subscriptions and purchases
 2. Generate invoices
 3. Apply discount codes
@@ -914,6 +967,7 @@ apps/api/test/e2e/subscription-flow.test.ts
 ### TASK-404: Polymorphic System Validation (2-3 hours)
 
 **Test Scenario**:
+
 - Create subscription items for all 7 target entity types
 - Verify access rights generation
 - Test polymorphic queries
@@ -924,6 +978,7 @@ apps/api/test/e2e/subscription-flow.test.ts
 ### TASK-405: Performance Testing (3-4 hours)
 
 **Tests**:
+
 - [ ] Load testing (100 concurrent users)
 - [ ] Database query performance (< 300ms)
 - [ ] API response times (< 500ms)
@@ -934,6 +989,7 @@ apps/api/test/e2e/subscription-flow.test.ts
 ### TASK-406: Security Audit (2-3 hours)
 
 **Checklist**:
+
 - [ ] RBAC properly enforced
 - [ ] SQL injection prevention validated
 - [ ] XSS prevention validated
@@ -946,6 +1002,7 @@ apps/api/test/e2e/subscription-flow.test.ts
 ### TASK-407: Final Quality Check (2-3 hours)
 
 **Commands**:
+
 ```bash
 # Full monorepo checks
 pnpm run lint
@@ -961,6 +1018,7 @@ pnpm run test:e2e
 ```
 
 **Acceptance Criteria**:
+
 - [ ] Zero lint errors
 - [ ] Zero type errors
 - [ ] All tests pass (unit + integration + E2E)
@@ -984,6 +1042,7 @@ pnpm run test:e2e
 ### TASK-500: API Documentation (3-4 hours)
 
 **Deliverables**:
+
 - [ ] OpenAPI/Swagger documentation
 - [ ] Postman collection
 - [ ] Authentication guide
@@ -996,6 +1055,7 @@ pnpm run test:e2e
 ### TASK-501: Database Documentation (2-3 hours)
 
 **Deliverables**:
+
 - [ ] ER diagram updated
 - [ ] Table schemas documented
 - [ ] Index documentation
@@ -1007,6 +1067,7 @@ pnpm run test:e2e
 ### TASK-502: Developer Guide (3-4 hours)
 
 **Deliverables**:
+
 - [ ] Architecture overview
 - [ ] Code patterns guide
 - [ ] Testing strategy
@@ -1018,6 +1079,7 @@ pnpm run test:e2e
 ### TASK-503: Deployment Guide (2-3 hours)
 
 **Deliverables**:
+
 - [ ] Environment setup
 - [ ] Migration procedures
 - [ ] Rollback procedures
@@ -1029,6 +1091,7 @@ pnpm run test:e2e
 ### TASK-504: Update CLAUDE.md (1 hour)
 
 **Updates**:
+
 - [ ] Add learnings from implementation
 - [ ] Document new patterns discovered
 - [ ] Update common mistakes section
@@ -1041,12 +1104,14 @@ pnpm run test:e2e
 ### Completion Tracking
 
 **Overall Progress**:
+
 - Phases Complete: 3/8 (37.5%)
 - Tasks Complete: ~100/150+ (estimate)
 - Hours Spent: ~110 hours (estimate)
 - Hours Remaining: ~110 hours
 
 **By Phase**:
+
 - ✅ Phase 1: Foundation (Enums) - 100%
 - ✅ Phase 2: Database - 100%
 - ✅ Phase 3: Schemas - 100%
@@ -1057,6 +1122,7 @@ pnpm run test:e2e
 - ⏳ Phase 8: Documentation - 0%
 
 **By Entity Group**:
+
 - ✅ Identity & Clients: 100%
 - ✅ Catalog & Pricing: 100%
 - ✅ Subscriptions & Purchases: 100%
@@ -1073,12 +1139,14 @@ pnpm run test:e2e
 ### Code Quality Metrics
 
 **Target**:
+
 - Test Coverage: ≥90%
 - Lint Errors: 0
 - Type Errors: 0
 - Security Issues: 0
 
 **Current** (Need to measure in TASK-000):
+
 - Test Coverage: TBD
 - Lint Errors: TBD
 - Type Errors: TBD
@@ -1136,12 +1204,14 @@ graph TD
 ### Risk Mitigation
 
 **High-Risk Areas**:
+
 1. **Polymorphic system** (SUBSCRIPTION_ITEM) - Extra testing needed
 2. **Payment integration** (Mercado Pago) - Webhook reliability
 3. **Access rights generation** - Must be real-time and correct
 4. **Data migrations** - Need rollback plan
 
 **Mitigation Strategies**:
+
 - Extra test coverage for polymorphic code (95%+)
 - Webhook retry queue with exponential backoff
 - Access rights validation in services layer
@@ -1152,21 +1222,25 @@ graph TD
 Each phase must pass quality gates before proceeding:
 
 **Phase 4 Gate** (TASK-111):
+
 - [ ] All 35 models complete
 - [ ] Tests ≥90% coverage
 - [ ] Zero lint/type errors
 
 **Phase 5 Gate** (TASK-250):
+
 - [ ] All 35 services complete
 - [ ] Business logic validated
 - [ ] Integration tests pass
 
 **Phase 6 Gate** (TASK-350):
+
 - [ ] All 35 API groups complete
 - [ ] API documentation generated
 - [ ] Smoke tests pass
 
 **Phase 7 Gate** (TASK-407):
+
 - [ ] All E2E scenarios pass
 - [ ] Performance targets met
 - [ ] Security audit passed
