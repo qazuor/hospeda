@@ -53,7 +53,11 @@
         "todo:clean": "pnpm --filter @repo/tools-todo-linear todo:clean",
         "todo:old:sync": "pnpm --filter @repo/tools-todo-linear-old todo:sync",
         "planning:sync": "tsx scripts/planning-sync.ts",
-        "planning:complete": "tsx scripts/planning-complete-task.ts"
+        "planning:complete": "tsx scripts/planning-complete-task.ts",
+        "claude:validate:docs": ".claude/scripts/validate-docs.sh",
+        "claude:validate:schemas": "tsx .claude/scripts/validate-schemas.ts",
+        "claude:sync:registry": ".claude/scripts/sync-registry.sh",
+        "claude:validate": "pnpm claude:validate:docs && pnpm claude:validate:schemas"
     },
     "devDependencies": {
         "@biomejs/biome": "1.9.4",
