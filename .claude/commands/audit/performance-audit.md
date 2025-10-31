@@ -576,3 +576,11 @@ This command replaces the deprecated `/review-performance` command with enhanced
 - Trend analysis
 - Fix suggestions with code examples
 - Integration with performance budgets
+
+---
+
+## Changelog
+
+| Version | Date | Changes | Author | Related |
+|---------|------|---------|--------|---------|
+| 1.0.0 | 2025-10-31 | Initial version | @tech-lead | P-004 |

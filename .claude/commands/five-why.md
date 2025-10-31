@@ -516,3 +516,11 @@ Root Cause: Insufficient architecture planning in early development
 - Include process improvements, not just technical fixes
 - Present clear tradeoffs for decision making
 
+
+---
+
+## Changelog
+
+| Version | Date | Changes | Author | Related |
+|---------|------|---------|--------|---------|
+| 1.0.0 | 2025-10-31 | Initial version | @tech-lead | P-004 |

@@ -249,3 +249,11 @@ Each package defines:
 - **Cache**: Results cached for unchanged packages
 - **Typical Duration**: 30-60 seconds for full monorepo
 
+
+---
+
+## Changelog
+
+| Version | Date | Changes | Author | Related |
+|---------|------|---------|--------|---------|
+| 1.0.0 | 2025-10-31 | Initial version | @tech-lead | P-004 |

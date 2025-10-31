@@ -392,3 +392,11 @@ This command consolidates functionality from:
 - Deprecated `/pen-test` command
 
 It provides a more comprehensive, structured approach to security validation with automated reporting and fix suggestions.
+
+---
+
+## Changelog
+
+| Version | Date | Changes | Author | Related |
+|---------|------|---------|--------|---------|
+| 1.0.0 | 2025-10-31 | Initial version | @tech-lead | P-004 |

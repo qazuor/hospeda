@@ -762,3 +762,11 @@ description: {description}
 - **Deprecation**: If replacing command, document migration path
 
 This command streamlines command creation while ensuring consistency, usability, and proper integration with the workflow system.
+
+---
+
+## Changelog
+
+| Version | Date | Changes | Author | Related |
+|---------|------|---------|--------|---------|
+| 1.0.0 | 2025-10-31 | Initial version | @tech-lead | P-004 |

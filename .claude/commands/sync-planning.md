@@ -128,3 +128,11 @@ Try again or sync manually later.
 
 ```
 User: "I just finished planning the user authentication feature, can you sync it to Linear?"
+
+---
+
+## Changelog
+
+| Version | Date | Changes | Author | Related |
+|---------|------|---------|--------|---------|
+| 1.0.0 | 2025-10-31 | Initial version | @tech-lead | P-004 |
