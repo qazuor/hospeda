@@ -30,11 +30,13 @@ output: Validated data, transformation results, audit reports, data quality metr
 ## Prerequisites
 
 **Required:**
+
 - JSON data to audit/validate
 - Validation criteria or schema
 - Understanding of expected structure
 
 **Optional:**
+
 - Zod schemas for validation
 - Transformation requirements
 - Data quality metrics
@@ -42,6 +44,7 @@ output: Validated data, transformation results, audit reports, data quality metr
 ## Input
 
 **What the skill needs:**
+
 - **JSON Data**: Data to validate/audit
 - **Schema**: Expected structure (Zod or JSON Schema)
 - **Rules**: Validation and quality rules
@@ -56,6 +59,7 @@ output: Validated data, transformation results, audit reports, data quality metr
 **Actions:**
 
 1. **Parse and inspect JSON**:
+
 ```typescript
 interface DataAnalysis {
   totalRecords: number;
@@ -170,6 +174,7 @@ function detectPattern(values: unknown[]): string {
 ```
 
 **Validation:**
+
 - [ ] Structure identified
 - [ ] Types detected
 - [ ] Patterns recognized
@@ -250,6 +255,7 @@ if (!result.valid) {
 ```
 
 **Validation:**
+
 - [ ] Schema applied correctly
 - [ ] All errors captured
 - [ ] Error messages clear
@@ -427,6 +433,7 @@ export function auditDataQuality(
 ```
 
 **Validation:**
+
 - [ ] Quality metrics calculated
 - [ ] Issues identified and prioritized
 - [ ] Report comprehensive
@@ -561,6 +568,7 @@ export function deepMerge(
 ```
 
 **Validation:**
+
 - [ ] Transformations applied correctly
 - [ ] No data loss
 - [ ] Types preserved
@@ -678,6 +686,7 @@ export function detectAnomalies(
 ```
 
 **Validation:**
+
 - [ ] Outliers detected
 - [ ] Severity assessed
 - [ ] False positives minimized
@@ -790,6 +799,7 @@ function calculateQualityScore(metrics: {
 ```
 
 **Validation:**
+
 - [ ] Report complete
 - [ ] Recommendations actionable
 - [ ] Quality score accurate
@@ -800,6 +810,7 @@ function calculateQualityScore(metrics: {
 ## Output
 
 **Produces:**
+
 - Data structure analysis
 - Schema validation results
 - Data quality metrics
@@ -809,6 +820,7 @@ function calculateQualityScore(metrics: {
 - Actionable recommendations
 
 **Success Criteria:**
+
 - All validations completed
 - Quality issues identified
 - Anomalies detected

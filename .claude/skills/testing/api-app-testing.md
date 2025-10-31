@@ -27,6 +27,7 @@ output: Integration test files, coverage reports, test documentation
 ## Prerequisites
 
 **Required:**
+
 - API routes implemented with Hono
 - Service layer methods available
 - Drizzle models and schemas defined
@@ -34,6 +35,7 @@ output: Integration test files, coverage reports, test documentation
 - Vitest configured
 
 **Optional:**
+
 - OpenAPI documentation
 - Existing test utilities
 - Mock data generators
@@ -41,6 +43,7 @@ output: Integration test files, coverage reports, test documentation
 ## Input
 
 **What the skill needs:**
+
 - API route file path (e.g., `apps/api/routes/bookings.ts`)
 - Service layer module
 - Database models involved
@@ -54,6 +57,7 @@ output: Integration test files, coverage reports, test documentation
 **Objective**: Identify all API endpoints and prepare test structure
 
 **Actions:**
+
 1. List all endpoints in the route file
 2. Identify HTTP methods (GET, POST, PUT, PATCH, DELETE)
 3. Review Zod schemas for request/response validation
@@ -61,6 +65,7 @@ output: Integration test files, coverage reports, test documentation
 5. Set up test database (or mocks)
 
 **Validation:**
+
 - [ ] All endpoints documented
 - [ ] Test data covers happy path and edge cases
 - [ ] Mock services configured if needed
@@ -73,6 +78,7 @@ output: Integration test files, coverage reports, test documentation
 **Objective**: Test successful scenarios for all endpoints
 
 **Actions:**
+
 1. **GET endpoints**:
    - Test fetching single resource
    - Test fetching collection with pagination
@@ -98,6 +104,7 @@ output: Integration test files, coverage reports, test documentation
    - Confirm 404 on re-fetch
 
 **Validation:**
+
 - [ ] All successful responses have correct status codes
 - [ ] Response bodies match Zod schemas
 - [ ] Database state reflects changes
@@ -110,6 +117,7 @@ output: Integration test files, coverage reports, test documentation
 **Objective**: Test all error scenarios and edge cases
 
 **Actions:**
+
 1. **Validation Errors**:
    - Test missing required fields
    - Test invalid field types
@@ -142,6 +150,7 @@ output: Integration test files, coverage reports, test documentation
    - Test unexpected errors
 
 **Validation:**
+
 - [ ] All error responses have correct status codes
 - [ ] Error messages are descriptive and safe
 - [ ] No sensitive data leaked in errors
@@ -154,6 +163,7 @@ output: Integration test files, coverage reports, test documentation
 **Objective**: Ensure Zod schemas are properly enforced
 
 **Actions:**
+
 1. Test request body validation
 2. Test query parameter validation
 3. Test path parameter validation
@@ -162,6 +172,7 @@ output: Integration test files, coverage reports, test documentation
 6. Test request size limits
 
 **Validation:**
+
 - [ ] Invalid requests rejected with 400
 - [ ] Validation errors are descriptive
 - [ ] All fields validated
@@ -174,6 +185,7 @@ output: Integration test files, coverage reports, test documentation
 **Objective**: Test full request-response cycle with database
 
 **Actions:**
+
 1. Test database transactions
 2. Test cascade operations
 3. Test relationship loading
@@ -182,6 +194,7 @@ output: Integration test files, coverage reports, test documentation
 6. Test sorting
 
 **Validation:**
+
 - [ ] Database state correct after operations
 - [ ] Transactions rolled back on errors
 - [ ] Relationships loaded correctly
@@ -194,6 +207,7 @@ output: Integration test files, coverage reports, test documentation
 **Objective**: Ensure API documentation matches implementation
 
 **Actions:**
+
 1. Compare OpenAPI spec with actual routes
 2. Verify request/response examples
 3. Test documented endpoints exist
@@ -201,6 +215,7 @@ output: Integration test files, coverage reports, test documentation
 5. Check authentication documented
 
 **Validation:**
+
 - [ ] All endpoints documented
 - [ ] Schemas match implementation
 - [ ] Examples are accurate
@@ -213,6 +228,7 @@ output: Integration test files, coverage reports, test documentation
 **Objective**: Ensure comprehensive test coverage
 
 **Actions:**
+
 1. Run tests with coverage: `pnpm test:coverage`
 2. Review coverage report
 3. Identify untested code paths
@@ -220,6 +236,7 @@ output: Integration test files, coverage reports, test documentation
 5. Aim for 90%+ coverage
 
 **Validation:**
+
 - [ ] Coverage >= 90%
 - [ ] All endpoints tested
 - [ ] All error paths tested
@@ -230,12 +247,14 @@ output: Integration test files, coverage reports, test documentation
 ## Output
 
 **Produces:**
+
 - Integration test files in `apps/api/test/routes/`
 - Test coverage reports
 - Documentation validation results
 - Test data fixtures
 
 **Success Criteria:**
+
 - All tests passing
 - Coverage >= 90%
 - No console warnings
@@ -357,6 +376,7 @@ describe('/api/bookings', () => {
 
 **Cause**: Race conditions, shared test data, or database state issues
 **Resolution**:
+
 - Use `beforeEach` for test isolation
 - Clear database between tests
 - Use unique test data per test
@@ -366,6 +386,7 @@ describe('/api/bookings', () => {
 
 **Cause**: Not testing all code paths, especially error paths
 **Resolution**:
+
 - Review coverage report for untested lines
 - Add tests for error scenarios
 - Test edge cases and boundary conditions
@@ -375,6 +396,7 @@ describe('/api/bookings', () => {
 
 **Cause**: Real database operations, no connection pooling
 **Resolution**:
+
 - Use in-memory database for tests
 - Use transactions with rollback
 - Mock external services

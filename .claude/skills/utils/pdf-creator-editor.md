@@ -30,11 +30,13 @@ output: Generated PDF files with proper formatting, styling, and metadata
 ## Prerequisites
 
 **Required:**
+
 - Content data to include in PDF
 - Template design or layout requirements
 - Output specifications (size, orientation)
 
 **Optional:**
+
 - Company logo and branding assets
 - Custom fonts
 - Styling requirements
@@ -43,6 +45,7 @@ output: Generated PDF files with proper formatting, styling, and metadata
 ## Input
 
 **What the skill needs:**
+
 - **Content**: Data to include in PDF
 - **Template**: Layout and structure
 - **Styling**: Fonts, colors, spacing
@@ -78,12 +81,14 @@ output: Generated PDF files with proper formatting, styling, and metadata
    - Best for: React-based applications
 
 **Decision Matrix:**
+
 - Simple invoice/receipt → **PDFKit**
 - Complex HTML layout → **Puppeteer**
 - Client-side generation → **jsPDF**
 - React application → **React-PDF**
 
 **Validation:**
+
 - [ ] Library supports required features
 - [ ] Performance acceptable
 - [ ] Dependencies acceptable
@@ -163,6 +168,7 @@ export async function generatePDFFromHTML(
 ```
 
 **Validation:**
+
 - [ ] Library installed correctly
 - [ ] Dependencies resolved
 - [ ] Configuration working
@@ -469,6 +475,7 @@ async function createInvoicePDF(data: InvoiceData): Promise<Buffer> {
 ```
 
 **Validation:**
+
 - [ ] Invoice renders correctly
 - [ ] All data displayed
 - [ ] Calculations accurate
@@ -636,6 +643,7 @@ export async function generateBookingConfirmation(
 ```
 
 **Validation:**
+
 - [ ] Confirmation renders correctly
 - [ ] All booking details included
 - [ ] Branding consistent
@@ -774,6 +782,7 @@ export async function generateMonthlyReport(
 ```
 
 **Validation:**
+
 - [ ] Report data accurate
 - [ ] Charts/tables render correctly
 - [ ] Professional formatting
@@ -784,6 +793,7 @@ export async function generateMonthlyReport(
 ## Output
 
 **Produces:**
+
 - Professional PDF documents
 - Invoices with proper calculations
 - Booking confirmations
@@ -791,6 +801,7 @@ export async function generateMonthlyReport(
 - Properly formatted and styled PDFs
 
 **Success Criteria:**
+
 - PDFs generate without errors
 - All content rendered correctly
 - Professional appearance
