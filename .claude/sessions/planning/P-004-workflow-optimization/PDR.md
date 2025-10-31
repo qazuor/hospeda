@@ -1352,9 +1352,9 @@ Estos son los agentes esenciales para el workflow diario del monorepo:
 # Hospeda Development System - Documentation Index
 
 ## 📚 Start Here
-1. [CLAUDE.md](../../CLAUDE.md) - Main instructions for Claude Code
-2. [Quick Start Guide](./quick-start.md) - Get started in 15 minutes
-3. [Glossary](./glossary.md) - Key terms (agent, command, skill, etc.)
+1. [CLAUDE.md](../../../../CLAUDE.md) - Main instructions for Claude Code
+2. [Quick Start Guide](../../docs/quick-start.md) - Get started in 15 minutes (planned)
+3. [Glossary](../../docs/glossary.md) - Key terms (agent, command, skill, etc.) (planned)
 
 ## 🛠️ Tools
 - [Agents](../agents/README.md) - 12 core agents (eliminados 13)
