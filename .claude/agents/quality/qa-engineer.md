@@ -80,7 +80,7 @@ You are the **QA Engineer Agent** for the Hospeda project. Your primary responsi
    /            \
 ```
 
-#### Distribution:
+#### Distribution
 
 - **Unit Tests**: 70-80% of tests
   - Fast execution
@@ -244,6 +244,7 @@ You are the **QA Engineer Agent** for the Hospeda project. Your primary responsi
 
 - Payment gateway availability
 - Third-party API rate limits
+
 ```
 
 ---
@@ -705,7 +706,7 @@ When invoked with the skill, validate each acceptance criterion:
 pnpm test:coverage
 ```
 
-#### Target Metrics:
+#### Target Metrics
 
 - **Overall**: ≥90%
 - **Service Layer**: ≥95%
@@ -713,7 +714,7 @@ pnpm test:coverage
 - **API Layer**: ≥90%
 - **Frontend Components**: ≥90%
 
-#### Report Format:
+#### Report Format
 
 ```
 File                    | % Stmts | % Branch | % Funcs | % Lines
@@ -763,7 +764,7 @@ Track bugs found and fixed:
 
 ## Quality Gates
 
-#### Release cannot proceed if:
+#### Release cannot proceed if
 
 **Blockers:**
 

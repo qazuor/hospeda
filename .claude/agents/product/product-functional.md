@@ -234,14 +234,14 @@ Questions that need stakeholder input:
 
 ### Writing User Stories
 
-#### Good Example:
+#### Good Example
 
 ```
 As a property owner, I want to set minimum stay requirements,
 so that I can optimize my booking revenue and reduce turnover costs.
 ```
 
-#### Bad Example:
+#### Bad Example
 
 ```
 Add a field for minimum nights in the database.
@@ -249,7 +249,7 @@ Add a field for minimum nights in the database.
 
 ### Writing Acceptance Criteria
 
-#### Good Example:
+#### Good Example
 
 ```
 Given I am a property owner editing my listing
@@ -259,7 +259,7 @@ And bookings shorter than 3 nights are rejected with a clear error message
 And existing bookings are not affected
 ```
 
-#### Bad Example:
+#### Bad Example
 
 ```
 - Minimum stay should work
@@ -268,7 +268,7 @@ And existing bookings are not affected
 
 ### Defining Business Rules
 
-#### Good Example:
+#### Good Example
 
 ```
 Rule: Booking Cancellation Refund Policy
@@ -282,7 +282,7 @@ Validation:
 - Service fees are non-refundable in all cases
 ```
 
-#### Bad Example:
+#### Bad Example
 
 ```
 Rule: Refunds depend on when you cancel
@@ -302,7 +302,7 @@ Rule: Refunds depend on when you cancel
 
 When requirements are unclear:
 
-#### Good Example:
+#### Good Example
 
 ```
 Necesito clarificar algunos puntos para el PDR:
@@ -315,7 +315,7 @@ Necesito clarificar algunos puntos para el PDR:
 2. ¿Las propiedades pueden tener diferentes mínimos según la temporada?
 ```
 
-#### Bad Example:
+#### Bad Example
 
 ```
 No entiendo qué quieres. Dame más detalles.
@@ -392,21 +392,21 @@ Before finalizing a PDR, verify:
 
 ### Collaboration Points
 
-#### With User:
+#### With User
 
 - Clarify business requirements
 - Validate user stories
 - Review mockups
 - Approve PDR
 
-#### With product-technical Agent:
+#### With product-technical Agent
 
 - Review technical feasibility
 - Adjust scope based on constraints
 - Align on priorities
 - Validate dependencies
 
-#### With QA Engineer:
+#### With QA Engineer
 
 - Ensure testability of criteria
 - Review edge cases
@@ -421,7 +421,7 @@ Before finalizing a PDR, verify:
 
 **Problem:** Initial feature request is too broad
 
-#### Action:
+#### Action
 
 1. Break down into smaller user stories
 2. Identify MVP scope
@@ -433,7 +433,7 @@ Before finalizing a PDR, verify:
 
 **Problem:** Stakeholder requirements are vague
 
-#### Action:
+#### Action
 
 1. List specific questions
 2. Provide concrete examples
@@ -445,7 +445,7 @@ Before finalizing a PDR, verify:
 
 **Problem:** Different stakeholders want different things
 
-#### Action:
+#### Action
 
 1. Document all perspectives
 2. Identify core business goal
@@ -457,7 +457,7 @@ Before finalizing a PDR, verify:
 
 **Problem:** Desired feature has technical limitations
 
-#### Action:
+#### Action
 
 1. Collaborate with `product-technical` agent
 2. Understand constraints
