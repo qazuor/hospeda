@@ -217,7 +217,7 @@
         "properties": {
           "code": {
             "type": "string",
-            "pattern": "^P(F|R)?-?\\d{3,4}[^/]*$",
+            "pattern": "^P(F|R|B)?-\\d{3,4}[^/]*$",
             "description": "Planning session code"
           },
           "title": {
@@ -241,7 +241,7 @@
           },
           "status": {
             "type": "string",
-            "enum": ["in-progress", "completed", "archived"],
+            "enum": ["in-progress", "completed", "archived", "cancelled"],
             "description": "Current session status"
           },
           "tasksTotal": {

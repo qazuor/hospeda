@@ -12,7 +12,7 @@
       "properties": {
         "planningCode": {
           "type": "string",
-          "pattern": "^P(F|R)?\\d{3,4}$"
+          "pattern": "^P(F|R|B)?-\\d{3,4}$"
         },
         "relatedPDR": {
           "type": "string",
@@ -226,7 +226,7 @@
             "properties": {
               "code": {
                 "type": "string",
-                "pattern": "^PF\\d{3,4}(-\\d+)?(\\.\\d+)?$"
+                "pattern": "^P(F|R|B)\\d{3,4}-\\d+(\\.\\d+)?$"
               },
               "title": {
                 "type": "string",
@@ -249,7 +249,7 @@
                 "type": "array",
                 "items": {
                   "type": "string",
-                  "pattern": "^PF\\d{3,4}(-\\d+)?(\\.\\d+)?$"
+                  "pattern": "^P(F|R|B)\\d{3,4}-\\d+(\\.\\d+)?$"
                 }
               },
               "phase": {

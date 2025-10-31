@@ -10,7 +10,7 @@
       "type": "object",
       "required": ["planningCode", "version"],
       "properties": {
-        "planningCode": {"type": "string", "pattern": "^P(F|R)?\\d{3,4}$"},
+        "planningCode": {"type": "string", "pattern": "^P(F|R|B)?-\\d{3,4}$"},
         "version": {"type": "string", "pattern": "^\\d+\\.\\d+(\\.\\d+)?$"},
         "createdAt": {"type": "string", "format": "date-time"}
       }
