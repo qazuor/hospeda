@@ -28,6 +28,7 @@ output: Security test suite, vulnerability report, remediation recommendations
 ## Prerequisites
 
 **Required:**
+
 - Authentication system implemented
 - API routes with authorization
 - Input validation with Zod
@@ -35,6 +36,7 @@ output: Security test suite, vulnerability report, remediation recommendations
 - Test environment isolated from production
 
 **Optional:**
+
 - Security scanning tools
 - OWASP ZAP or Burp Suite
 - npm audit / Snyk
@@ -42,6 +44,7 @@ output: Security test suite, vulnerability report, remediation recommendations
 ## Input
 
 **What the skill needs:**
+
 - Application URLs and endpoints
 - Authentication credentials (test accounts)
 - API documentation
@@ -55,6 +58,7 @@ output: Security test suite, vulnerability report, remediation recommendations
 **Objective**: Verify authentication mechanisms are secure
 
 **Actions:**
+
 1. Test valid authentication
 2. Test invalid credentials
 3. Test brute force protection
@@ -66,6 +70,7 @@ output: Security test suite, vulnerability report, remediation recommendations
 9. Test logout functionality
 
 **Validation:**
+
 - [ ] Strong passwords enforced
 - [ ] Failed login attempts limited
 - [ ] Sessions expire appropriately
@@ -75,6 +80,7 @@ output: Security test suite, vulnerability report, remediation recommendations
 **Output**: Authentication security test results
 
 **Example Test:**
+
 ```typescript
 import { describe, it, expect } from 'vitest';
 import { app } from '../../../src/index';
@@ -134,6 +140,7 @@ describe('Authentication Security', () => {
 **Objective**: Ensure proper access control and permissions
 
 **Actions:**
+
 1. Test role-based access control (RBAC)
 2. Test resource ownership validation
 3. Test privilege escalation attempts
@@ -142,6 +149,7 @@ describe('Authentication Security', () => {
 6. Test admin vs user permissions
 
 **Validation:**
+
 - [ ] Users can only access own resources
 - [ ] Admin-only endpoints protected
 - [ ] No privilege escalation possible
@@ -150,6 +158,7 @@ describe('Authentication Security', () => {
 **Output**: Authorization security test results
 
 **Example Test:**
+
 ```typescript
 describe('Authorization Security', () => {
   it('should prevent users from accessing others resources', async () => {
@@ -183,6 +192,7 @@ describe('Authorization Security', () => {
 **Objective**: Prevent injection attacks and malicious input
 
 **Actions:**
+
 1. **SQL Injection Testing**:
    - Test with SQL injection payloads
    - Verify parameterized queries used
@@ -207,6 +217,7 @@ describe('Authorization Security', () => {
    - Test boundary values
 
 **Validation:**
+
 - [ ] All inputs validated with Zod
 - [ ] SQL injection prevented (Drizzle ORM)
 - [ ] XSS prevented (React escaping)
@@ -216,6 +227,7 @@ describe('Authorization Security', () => {
 **Output**: Input validation security results
 
 **Example Test:**
+
 ```typescript
 describe('Input Validation Security', () => {
   it('should prevent SQL injection', async () => {
@@ -255,6 +267,7 @@ describe('Input Validation Security', () => {
 **Objective**: Ensure sensitive data is properly protected
 
 **Actions:**
+
 1. Test encryption at rest
 2. Test encryption in transit (HTTPS)
 3. Test sensitive data exposure
@@ -263,6 +276,7 @@ describe('Input Validation Security', () => {
 6. Test data deletion (proper cleanup)
 
 **Validation:**
+
 - [ ] HTTPS enforced
 - [ ] Sensitive fields encrypted
 - [ ] No secrets in logs
@@ -272,6 +286,7 @@ describe('Input Validation Security', () => {
 **Output**: Data protection security results
 
 **Example Test:**
+
 ```typescript
 describe('Data Protection Security', () => {
   it('should not expose sensitive data in API responses', async () => {
@@ -303,6 +318,7 @@ describe('Data Protection Security', () => {
 **Objective**: Validate API-specific security measures
 
 **Actions:**
+
 1. Test rate limiting
 2. Test CORS configuration
 3. Test request size limits
@@ -311,6 +327,7 @@ describe('Data Protection Security', () => {
 6. Test security headers
 
 **Validation:**
+
 - [ ] Rate limiting active
 - [ ] CORS properly configured
 - [ ] Request size limited
@@ -320,6 +337,7 @@ describe('Data Protection Security', () => {
 **Output**: API security test results
 
 **Example Test:**
+
 ```typescript
 describe('API Security', () => {
   it('should have security headers', async () => {
@@ -347,6 +365,7 @@ describe('API Security', () => {
 **Objective**: Identify vulnerable dependencies
 
 **Actions:**
+
 1. Run `pnpm audit`
 2. Check for outdated packages
 3. Review security advisories
@@ -354,6 +373,7 @@ describe('API Security', () => {
 5. Monitor for new vulnerabilities
 
 **Validation:**
+
 - [ ] No critical vulnerabilities
 - [ ] No high vulnerabilities
 - [ ] Medium vulnerabilities documented
@@ -362,6 +382,7 @@ describe('API Security', () => {
 **Output**: Dependency vulnerability report
 
 **Command:**
+
 ```bash
 pnpm audit --audit-level moderate
 ```
@@ -369,12 +390,14 @@ pnpm audit --audit-level moderate
 ## Output
 
 **Produces:**
+
 - Security test suite
 - Vulnerability report
 - Remediation recommendations
 - Compliance checklist (OWASP Top 10)
 
 **Success Criteria:**
+
 - All security tests passing
 - No critical vulnerabilities
 - Authentication/authorization secure

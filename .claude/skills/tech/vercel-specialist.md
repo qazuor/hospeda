@@ -30,12 +30,14 @@ output: Vercel configuration files, deployment strategy, optimization recommenda
 ## Prerequisites
 
 **Required:**
+
 - Vercel account and project created
 - Application code ready for deployment
 - Environment variables documented
 - Git repository connected to Vercel
 
 **Optional:**
+
 - Custom domain DNS access
 - Team collaboration setup
 - Analytics enabled
@@ -47,12 +49,14 @@ output: Vercel configuration files, deployment strategy, optimization recommenda
 **Objective**: Configure Vercel project for optimal deployment
 
 **Actions:**
+
 1. Create vercel.json configuration
 2. Configure for Astro or TanStack Start
 3. Set build commands and output directories
 4. Test configuration locally
 
 **Validation:**
+
 - [ ] Build command executes successfully
 - [ ] Output directory correct
 - [ ] Install command works with monorepo
@@ -65,12 +69,14 @@ output: Vercel configuration files, deployment strategy, optimization recommenda
 **Objective**: Configure environment variables for all environments
 
 **Actions:**
+
 1. Identify required variables
 2. Set variables in Vercel dashboard
 3. Configure variable scopes
 4. Create .env.example
 
 **Validation:**
+
 - [ ] All required variables configured
 - [ ] Variables scoped correctly
 - [ ] Sensitive data not in git
@@ -83,12 +89,14 @@ output: Vercel configuration files, deployment strategy, optimization recommenda
 **Objective**: Optimize build performance and output
 
 **Actions:**
+
 1. Configure build settings
 2. Enable build caching
 3. Optimize dependencies
 4. Configure concurrent builds
 
 **Validation:**
+
 - [ ] Build time < 3 minutes
 - [ ] Cache hit rate > 80%
 - [ ] Only necessary files included
@@ -101,12 +109,14 @@ output: Vercel configuration files, deployment strategy, optimization recommenda
 **Objective**: Configure automatic and manual deployments
 
 **Actions:**
+
 1. Configure Git integration
 2. Set up preview deployments
 3. Configure production deployments
 4. Test deployment pipeline
 
 **Validation:**
+
 - [ ] Main branch deploys to production
 - [ ] PRs create preview deployments
 - [ ] Deployment checks configured
@@ -119,12 +129,14 @@ output: Vercel configuration files, deployment strategy, optimization recommenda
 **Objective**: Optimize deployed application performance
 
 **Actions:**
+
 1. Configure security headers
 2. Configure redirects and rewrites
 3. Enable Edge Functions if needed
 4. Optimize caching strategy
 
 **Validation:**
+
 - [ ] Security headers set
 - [ ] Caching configured
 - [ ] Redirects working
@@ -137,12 +149,14 @@ output: Vercel configuration files, deployment strategy, optimization recommenda
 **Objective**: Set up monitoring and analytics
 
 **Actions:**
+
 1. Enable Vercel Analytics
 2. Configure Web Vitals tracking
 3. Set up error tracking (Sentry)
 4. Configure logs
 
 **Validation:**
+
 - [ ] Analytics tracking
 - [ ] Error reporting working
 - [ ] Logs accessible
@@ -155,12 +169,14 @@ output: Vercel configuration files, deployment strategy, optimization recommenda
 **Objective**: Configure custom domains
 
 **Actions:**
+
 1. Add domain in Vercel
 2. Configure DNS records
 3. Verify SSL certificate
 4. Set up environment-specific domains
 
 **Validation:**
+
 - [ ] Domain resolves correctly
 - [ ] SSL certificate active
 - [ ] HTTPS enforced
@@ -171,6 +187,7 @@ output: Vercel configuration files, deployment strategy, optimization recommenda
 ## Output
 
 **Produces:**
+
 - vercel.json configuration file
 - Environment variables configured
 - Deployment pipeline active
@@ -178,6 +195,7 @@ output: Vercel configuration files, deployment strategy, optimization recommenda
 - Monitoring and analytics enabled
 
 **Success Criteria:**
+
 - Successful production deployment
 - Build time < 3 minutes
 - Performance score > 90

@@ -28,12 +28,14 @@ output: Performance test reports, bottleneck analysis, optimization recommendati
 ## Prerequisites
 
 **Required:**
+
 - Application deployed or running locally
 - Performance testing tools configured
 - Baseline metrics established
 - Performance budgets defined
 
 **Optional:**
+
 - Production-like data volume
 - Load testing tools (Artillery, K6)
 - APM tool (Sentry, DataDog)
@@ -42,6 +44,7 @@ output: Performance test reports, bottleneck analysis, optimization recommendati
 ## Input
 
 **What the skill needs:**
+
 - Application endpoints and pages
 - Expected load (users, requests/second)
 - Performance budgets
@@ -54,6 +57,7 @@ output: Performance test reports, bottleneck analysis, optimization recommendati
 **Objective**: Identify and optimize slow database queries
 
 **Actions:**
+
 1. Enable query logging in development
 2. Identify slow queries (> 100ms)
 3. Run EXPLAIN on slow queries
@@ -70,6 +74,7 @@ output: Performance test reports, bottleneck analysis, optimization recommendati
    - Select only needed columns
 
 **Validation:**
+
 - [ ] All queries < 100ms (p95)
 - [ ] No N+1 patterns detected
 - [ ] Indexes used effectively
@@ -78,6 +83,7 @@ output: Performance test reports, bottleneck analysis, optimization recommendati
 **Output**: Database performance report with optimization recommendations
 
 **Example Test:**
+
 ```typescript
 import { describe, it, expect } from 'vitest';
 import { db } from '@repo/db';
@@ -119,6 +125,7 @@ describe('Database Performance', () => {
 **Objective**: Ensure API endpoints meet response time targets
 
 **Actions:**
+
 1. Test API response times:
    - GET requests < 200ms
    - POST/PUT requests < 300ms
@@ -139,6 +146,7 @@ describe('Database Performance', () => {
    - Missing caching
 
 **Validation:**
+
 - [ ] API response time < 200ms (p95)
 - [ ] Throughput > 1000 req/s
 - [ ] Error rate < 0.1%
@@ -147,6 +155,7 @@ describe('Database Performance', () => {
 **Output**: API performance report with load test results
 
 **Example Load Test (Artillery):**
+
 ```yaml
 config:
   target: 'http://localhost:3000'
@@ -183,6 +192,7 @@ scenarios:
 **Objective**: Validate Core Web Vitals and rendering performance
 
 **Actions:**
+
 1. Measure Core Web Vitals:
    - LCP (Largest Contentful Paint) < 2.5s
    - FID (First Input Delay) < 100ms
@@ -201,6 +211,7 @@ scenarios:
    - Animation 60fps
 
 **Validation:**
+
 - [ ] LCP < 2.5s
 - [ ] FID < 100ms
 - [ ] CLS < 0.1
@@ -209,6 +220,7 @@ scenarios:
 **Output**: Frontend performance report with Lighthouse scores
 
 **Example Test:**
+
 ```typescript
 import { test, expect } from '@playwright/test';
 
@@ -254,6 +266,7 @@ test('Homepage meets Core Web Vitals', async ({ page }) => {
 **Objective**: Find and prioritize performance issues
 
 **Actions:**
+
 1. Analyze performance profiles
 2. Identify slow operations
 3. Categorize bottlenecks:
@@ -267,6 +280,7 @@ test('Homepage meets Core Web Vitals', async ({ page }) => {
    - Low: < 20% users, < 500ms delay
 
 **Validation:**
+
 - [ ] All bottlenecks identified
 - [ ] Impact assessed
 - [ ] Prioritization clear
@@ -278,6 +292,7 @@ test('Homepage meets Core Web Vitals', async ({ page }) => {
 **Objective**: Apply optimizations and measure impact
 
 **Actions:**
+
 1. **Database Optimizations**:
    - Add indexes
    - Optimize queries
@@ -298,6 +313,7 @@ test('Homepage meets Core Web Vitals', async ({ page }) => {
    - Memoization
 
 **Validation:**
+
 - [ ] Optimizations implemented
 - [ ] Tests passing
 - [ ] Performance improved
@@ -309,6 +325,7 @@ test('Homepage meets Core Web Vitals', async ({ page }) => {
 **Objective**: Ensure optimizations don't break functionality
 
 **Actions:**
+
 1. Run full test suite
 2. Verify functionality unchanged
 3. Re-measure performance
@@ -316,6 +333,7 @@ test('Homepage meets Core Web Vitals', async ({ page }) => {
 5. Document improvements
 
 **Validation:**
+
 - [ ] All tests passing
 - [ ] Performance improved
 - [ ] No regressions introduced
@@ -326,6 +344,7 @@ test('Homepage meets Core Web Vitals', async ({ page }) => {
 ## Output
 
 **Produces:**
+
 - Performance test reports
 - Bottleneck analysis
 - Optimization recommendations
@@ -333,6 +352,7 @@ test('Homepage meets Core Web Vitals', async ({ page }) => {
 - Performance budgets validation
 
 **Success Criteria:**
+
 - All performance targets met
 - Bottlenecks identified and prioritized
 - Optimizations implemented and validated
@@ -362,16 +382,19 @@ test('Homepage meets Core Web Vitals', async ({ page }) => {
 ## Tools
 
 ### Database
+
 - Drizzle query logging
 - EXPLAIN / EXPLAIN ANALYZE
 - PostgreSQL pg_stat_statements
 
 ### API
+
 - Artillery (load testing)
 - K6 (performance testing)
 - autocannon (HTTP benchmarking)
 
 ### Frontend
+
 - Lighthouse
 - Chrome DevTools Performance
 - WebPageTest

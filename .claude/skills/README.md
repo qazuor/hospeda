@@ -59,6 +59,7 @@ This directory contains skill definitions that provide specialized capabilities 
 **Purpose:** Comprehensive E2E testing strategy for web applications
 
 **Capabilities:**
+
 - Design test suites (unit, integration, E2E)
 - Create test fixtures and mocks
 - Implement TDD workflow
@@ -78,6 +79,7 @@ This directory contains skill definitions that provide specialized capabilities 
 **Purpose:** Validate implementation against acceptance criteria from PDR.md
 
 **Capabilities:**
+
 - Validate against PDR.md acceptance criteria
 - Check UI/UX compliance with mockups
 - Validate functionality against user stories
@@ -98,6 +100,7 @@ This directory contains skill definitions that provide specialized capabilities 
 **Purpose:** Comprehensive testing workflow for API endpoints
 
 **Capabilities:**
+
 - Test planning and setup
 - Happy path testing (GET, POST, PUT, DELETE)
 - Error handling testing
@@ -117,6 +120,7 @@ This directory contains skill definitions that provide specialized capabilities 
 **Purpose:** Performance testing and optimization across database, API, and frontend layers
 
 **Capabilities:**
+
 - Database performance testing (query optimization, N+1 detection)
 - API performance testing (load testing, throughput)
 - Frontend performance testing (Core Web Vitals)
@@ -135,6 +139,7 @@ This directory contains skill definitions that provide specialized capabilities 
 **Purpose:** Comprehensive security testing covering OWASP Top 10
 
 **Capabilities:**
+
 - Authentication testing
 - Authorization testing (RBAC)
 - Input validation testing (SQL injection, XSS)
@@ -154,6 +159,7 @@ This directory contains skill definitions that provide specialized capabilities 
 **Purpose:** Test-Driven Development approach ensuring testable, well-designed code
 
 **Capabilities:**
+
 - RED-GREEN-REFACTOR cycle
 - Three Laws of TDD implementation
 - TDD with different layers (DB, Service, API)
@@ -173,6 +179,7 @@ This directory contains skill definitions that provide specialized capabilities 
 **Purpose:** Generate conventional commits following project standards
 
 **Capabilities:**
+
 - Analyze changed files
 - Group changes logically by feature/type
 - Generate commit messages per `commitlint.config.js`
@@ -191,6 +198,7 @@ This directory contains skill definitions that provide specialized capabilities 
 **Purpose:** Vercel deployment, configuration, and optimization for both apps (web/admin)
 
 **Capabilities:**
+
 - Project configuration (vercel.json)
 - Environment variables setup
 - Build optimization
@@ -210,6 +218,7 @@ This directory contains skill definitions that provide specialized capabilities 
 **Purpose:** Shadcn/ui component specialist for consistent UI implementation
 
 **Capabilities:**
+
 - Component selection and installation
 - Theme customization
 - Component implementation
@@ -228,6 +237,7 @@ This directory contains skill definitions that provide specialized capabilities 
 **Purpose:** Mermaid diagram creation for documentation and architecture visualization
 
 **Capabilities:**
+
 - Flowchart creation (processes, decisions)
 - Sequence diagram creation (API interactions)
 - ERD creation (database schemas)
@@ -246,6 +256,7 @@ This directory contains skill definitions that provide specialized capabilities 
 **Purpose:** Auto-learning skill that captures architectural decisions, patterns, and best practices
 
 **Capabilities:**
+
 - Capture architectural decisions
 - Document coding patterns
 - Record configuration gotchas
@@ -268,6 +279,7 @@ This directory contains skill definitions that provide specialized capabilities 
 **Purpose:** Apply Hospeda brand guidelines consistently across all UI
 
 **Capabilities:**
+
 - Apply color palette automatically
 - Use correct typography (fonts, sizes, weights)
 - Maintain tone of voice in copy
@@ -286,6 +298,7 @@ This directory contains skill definitions that provide specialized capabilities 
 **Purpose:** Standardized error handling patterns ensuring consistent, informative error management
 
 **Capabilities:**
+
 - Error class hierarchy implementation
 - Database layer error handling
 - Service layer error handling
@@ -306,6 +319,7 @@ This directory contains skill definitions that provide specialized capabilities 
 **Purpose:** Format markdown files according to project standards
 
 **Capabilities:**
+
 - Format markdown files
 - Fix common formatting issues
 - Ensure consistent style
@@ -324,6 +338,7 @@ This directory contains skill definitions that provide specialized capabilities 
 **Purpose:** PDF creation for invoices, reports, documentation, and contracts
 
 **Capabilities:**
+
 - Generate invoices with proper formatting
 - Create booking confirmations
 - Generate business reports
@@ -342,6 +357,7 @@ This directory contains skill definitions that provide specialized capabilities 
 **Purpose:** JSON data validation, transformation, and auditing for data quality
 
 **Capabilities:**
+
 - Data structure analysis
 - Schema validation with Zod
 - Data quality audit
@@ -354,6 +370,7 @@ This directory contains skill definitions that provide specialized capabilities 
 ## Skills by Category
 
 ### Testing & Quality (6)
+
 - `web-app-testing` - E2E testing strategy
 - `qa-criteria-validator` - Acceptance criteria validation
 - `api-app-testing` - API testing workflow
@@ -362,6 +379,7 @@ This directory contains skill definitions that provide specialized capabilities 
 - `tdd-methodology` - Test-Driven Development
 
 ### Development Tools (5)
+
 - `git-commit-helper` - Conventional commits
 - `vercel-specialist` - Deployment optimization
 - `shadcn-specialist` - UI component implementation
@@ -369,11 +387,13 @@ This directory contains skill definitions that provide specialized capabilities 
 - `add-memory` - Knowledge capture
 
 ### Design & Patterns (3)
+
 - `brand-guidelines` - Brand consistency
 - `error-handling-patterns` - Error hierarchies
 - `markdown-formatter` - Markdown formatting
 
 ### Documentation & Utils (2)
+
 - `pdf-creator-editor` - PDF generation
 - `json-data-auditor` - Data validation
 
@@ -417,12 +437,14 @@ Agent → Needs specific capability → Invokes Skill → Applies expertise
 ## Evolution
 
 ### Initial Skills (4)
+
 - web-app-testing
 - git-commit-helper
 - brand-guidelines
 - qa-criteria-validator
 
 ### Added in Workflow Optimization (12)
+
 - **Testing**: api-app-testing, performance-testing, security-testing, tdd-methodology
 - **Tech**: vercel-specialist, shadcn-specialist, mermaid-diagram-specialist
 - **Utils**: add-memory, pdf-creator-editor, json-data-auditor
@@ -445,6 +467,7 @@ When a new skill is needed:
 Each skill file should contain:
 
 ### YAML Frontmatter
+
 ```yaml
 ---
 name: skill-name
@@ -457,6 +480,7 @@ output: What the skill produces
 ```
 
 ### Content Sections
+
 - **Overview**: Purpose, category, primary users
 - **When to Use This Skill**: Specific scenarios
 - **Prerequisites**: Required and optional inputs

@@ -30,11 +30,13 @@ output: Memory file in .claude/memory/ with structured documentation
 ## Prerequisites
 
 **Required:**
+
 - Clear understanding of what to document
 - Context of the decision/learning
 - Rationale for the approach taken
 
 **Optional:**
+
 - Code examples
 - Related documentation
 - Alternative approaches considered
@@ -42,6 +44,7 @@ output: Memory file in .claude/memory/ with structured documentation
 ## Input
 
 **What the skill needs:**
+
 - **Topic**: What is being documented
 - **Category**: Type of memory (decision, pattern, gotcha, etc.)
 - **Context**: When/why this is relevant
@@ -101,6 +104,7 @@ output: Memory file in .claude/memory/ with structured documentation
    - Mocking approaches
 
 **Validation:**
+
 - [ ] Category appropriate for content
 - [ ] Similar memories don't already exist
 - [ ] Content adds value
@@ -167,6 +171,7 @@ How to implement this decision/pattern.
 ```
 
 **Validation:**
+
 - [ ] All sections filled appropriately
 - [ ] Examples provided where helpful
 - [ ] Rationale clearly explained
@@ -179,6 +184,7 @@ How to implement this decision/pattern.
 **Objective**: Save memory in appropriate location
 
 **File Naming Convention:**
+
 ```
 .claude/memory/
 ├── arch/
@@ -198,6 +204,7 @@ How to implement this decision/pattern.
 ```
 
 **Example - Architectural Decision:**
+
 ```markdown
 ---
 topic: Monorepo Structure with TurboRepo
@@ -306,6 +313,7 @@ hospeda/
 ```
 
 **Example - Pattern:**
+
 ```markdown
 ---
 topic: RO-RO Pattern (Receive Object, Return Object)
@@ -426,6 +434,7 @@ function capitalize(str: string): string {
 ```
 
 **Example - Gotcha:**
+
 ```markdown
 ---
 topic: Fish Shell For Loop Limitation
@@ -495,6 +504,7 @@ bash script.sh
 ```
 
 **Validation:**
+
 - [ ] File created in correct directory
 - [ ] Filename follows convention
 - [ ] Content properly formatted
@@ -547,6 +557,7 @@ Last updated: 2024-02-01
 ```
 
 **Validation:**
+
 - [ ] Index updated with new entry
 - [ ] Link works correctly
 - [ ] Date accurate
@@ -559,6 +570,7 @@ Last updated: 2024-02-01
 **Objective**: Create knowledge graph connections
 
 **Actions:**
+
 1. Identify related memories
 2. Add cross-references in related files
 3. Update new memory with relations
@@ -567,6 +579,7 @@ Last updated: 2024-02-01
 **Example Linking:**
 
 In new memory:
+
 ```markdown
 ## Related Memories
 
@@ -575,6 +588,7 @@ In new memory:
 ```
 
 In related memory, add:
+
 ```markdown
 ## See Also
 
@@ -582,6 +596,7 @@ In related memory, add:
 ```
 
 **Validation:**
+
 - [ ] Bidirectional links created
 - [ ] Links verified working
 - [ ] Relationships meaningful
@@ -592,12 +607,14 @@ In related memory, add:
 ## Output
 
 **Produces:**
+
 - Memory file in appropriate category directory
 - Updated memory index
 - Cross-references to related memories
 - Searchable, structured knowledge
 
 **Success Criteria:**
+
 - Memory captures key information
 - Examples clear and helpful
 - Rationale well explained

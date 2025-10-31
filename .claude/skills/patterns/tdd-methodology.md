@@ -41,12 +41,14 @@ output: Test files written before implementation, 90%+ coverage, well-designed c
 **Objective**: Define expected behavior through a failing test
 
 **Actions:**
+
 1. Identify single behavior to test
 2. Write test that describes expected behavior
 3. Run test - it MUST fail
 4. Verify failure message is clear
 
 **Example:**
+
 ```typescript
 // Step 1: RED - Write failing test
 describe('BookingService', () => {
@@ -74,12 +76,14 @@ describe('BookingService', () => {
 **Objective**: Write minimum code to make test pass
 
 **Actions:**
+
 1. Write simplest code that passes test
 2. Don't add extra features
 3. Don't optimize yet
 4. Run test - it MUST pass
 
 **Example:**
+
 ```typescript
 // Step 2: GREEN - Minimum implementation
 export class BookingService {
@@ -101,6 +105,7 @@ export class BookingService {
 **Objective**: Improve design while keeping tests green
 
 **Actions:**
+
 1. Remove duplication
 2. Improve names
 3. Extract methods/classes
@@ -109,6 +114,7 @@ export class BookingService {
 6. Tests MUST stay green
 
 **Example:**
+
 ```typescript
 // Step 3: REFACTOR - Add proper implementation
 export class BookingService extends BaseCrudService<Booking> {
@@ -142,6 +148,7 @@ export class BookingService extends BaseCrudService<Booking> {
 **Objective**: Continue cycle for next behavior
 
 **Actions:**
+
 1. Pick next behavior
 2. Write failing test (RED)
 3. Make it pass (GREEN)

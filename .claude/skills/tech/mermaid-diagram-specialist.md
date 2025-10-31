@@ -30,17 +30,20 @@ output: Mermaid diagrams (flowchart, sequence, ERD, C4, state, etc.) in markdown
 ## Prerequisites
 
 **Required:**
+
 - Understanding of the system/process to document
 - Access to technical specifications
 - Knowledge of diagram type needed
 
 **Optional:**
+
 - Design system colors for consistency
 - Existing documentation to reference
 
 ## Input
 
 **What the skill needs:**
+
 - Process/system description
 - Entities and relationships (for ERDs)
 - Component interactions (for sequence diagrams)
@@ -54,6 +57,7 @@ output: Mermaid diagrams (flowchart, sequence, ERD, C4, state, etc.) in markdown
 **Objective**: Choose appropriate diagram type for requirements
 
 **Available Diagram Types:**
+
 1. **Flowchart**: Decision flows, algorithms, processes
 2. **Sequence Diagram**: API interactions, message flows
 3. **ERD**: Database schemas, entity relationships
@@ -66,6 +70,7 @@ output: Mermaid diagrams (flowchart, sequence, ERD, C4, state, etc.) in markdown
 10. **User Journey**: User experience flows
 
 **Decision Matrix:**
+
 - Process with decisions → **Flowchart**
 - API/system interactions → **Sequence Diagram**
 - Database structure → **ERD**
@@ -75,6 +80,7 @@ output: Mermaid diagrams (flowchart, sequence, ERD, C4, state, etc.) in markdown
 - Project timeline → **Gantt Chart**
 
 **Validation:**
+
 - [ ] Diagram type matches content
 - [ ] Complexity appropriate
 - [ ] Audience considered
@@ -87,6 +93,7 @@ output: Mermaid diagrams (flowchart, sequence, ERD, C4, state, etc.) in markdown
 **Objective**: Create process and decision flow diagrams
 
 **Syntax:**
+
 ```mermaid
 flowchart TD
     Start([Start]) --> Input[/User Input/]
@@ -100,6 +107,7 @@ flowchart TD
 ```
 
 **Node Shapes:**
+
 - `[Rectangle]` - Process step
 - `([Rounded])` - Start/End
 - `{Diamond}` - Decision
@@ -108,12 +116,14 @@ flowchart TD
 - `((Circle))` - Connector
 
 **Direction Options:**
+
 - `TD` - Top to Down
 - `LR` - Left to Right
 - `BT` - Bottom to Top
 - `RL` - Right to Left
 
 **Example - Booking Flow:**
+
 ```mermaid
 flowchart TD
     Start([User Initiates Booking]) --> CheckDates[Check Date Availability]
@@ -133,6 +143,7 @@ flowchart TD
 ```
 
 **Validation:**
+
 - [ ] All paths covered
 - [ ] Decision points clear
 - [ ] Start and end defined
@@ -145,6 +156,7 @@ flowchart TD
 **Objective**: Document API interactions and message flows
 
 **Syntax:**
+
 ```mermaid
 sequenceDiagram
     actor User
@@ -166,17 +178,20 @@ sequenceDiagram
 ```
 
 **Participant Types:**
+
 - `actor` - Human user
 - `participant` - System/Service
 - `database` - Database
 
 **Arrow Types:**
+
 - `->` - Solid line (synchronous)
 - `-->` - Dotted line (response)
 - `->>` - Solid arrow (async message)
 - `-->>` - Dotted arrow (async response)
 
 **Example - Authentication Flow:**
+
 ```mermaid
 sequenceDiagram
     actor User
@@ -204,6 +219,7 @@ sequenceDiagram
 ```
 
 **Validation:**
+
 - [ ] All participants identified
 - [ ] Message flow logical
 - [ ] Return messages shown
@@ -216,6 +232,7 @@ sequenceDiagram
 **Objective**: Document database schema and relationships
 
 **Syntax:**
+
 ```mermaid
 erDiagram
     USER ||--o{ BOOKING : creates
@@ -243,18 +260,21 @@ erDiagram
 ```
 
 **Relationship Types:**
+
 - `||--||` - One to one
 - `||--o{` - One to many
 - `}o--o{` - Many to many
 - `||--o|` - One to zero or one
 
 **Cardinality Symbols:**
+
 - `||` - Exactly one
 - `o|` - Zero or one
 - `}o` - Zero or more
 - `}|` - One or more
 
 **Example - Full Hospeda ERD:**
+
 ```mermaid
 erDiagram
     USER ||--o{ BOOKING : creates
@@ -321,6 +341,7 @@ erDiagram
 ```
 
 **Validation:**
+
 - [ ] All entities defined
 - [ ] Relationships accurate
 - [ ] Cardinality correct
@@ -333,6 +354,7 @@ erDiagram
 **Objective**: Document system architecture at different levels
 
 **Context Level** (System in environment):
+
 ```mermaid
 C4Context
     title System Context - Hospeda Platform
@@ -353,6 +375,7 @@ C4Context
 ```
 
 **Container Level** (Applications and data stores):
+
 ```mermaid
 C4Container
     title Container - Hospeda Platform
@@ -372,6 +395,7 @@ C4Container
 ```
 
 **Component Level** (Internal structure):
+
 ```mermaid
 C4Component
     title Components - API Application
@@ -390,6 +414,7 @@ C4Component
 ```
 
 **Validation:**
+
 - [ ] Appropriate level selected
 - [ ] All systems/containers shown
 - [ ] Relationships clear
@@ -402,6 +427,7 @@ C4Component
 **Objective**: Document state machines and lifecycles
 
 **Syntax:**
+
 ```mermaid
 stateDiagram-v2
     [*] --> Pending
@@ -418,6 +444,7 @@ stateDiagram-v2
 ```
 
 **Example - Booking Lifecycle:**
+
 ```mermaid
 stateDiagram-v2
     [*] --> Draft : Create Booking
@@ -456,6 +483,7 @@ stateDiagram-v2
 ```
 
 **Validation:**
+
 - [ ] All states defined
 - [ ] Transitions logical
 - [ ] Start/end states marked
@@ -468,6 +496,7 @@ stateDiagram-v2
 **Objective**: Apply consistent styling to diagrams
 
 **Theme Application:**
+
 ```mermaid
 %%{init: {'theme':'base', 'themeVariables': {
   'primaryColor':'#3B82F6',
@@ -483,6 +512,7 @@ flowchart TD
 ```
 
 **Class Styling:**
+
 ```mermaid
 flowchart TD
     A[Normal] --> B[Success]
@@ -496,6 +526,7 @@ flowchart TD
 ```
 
 **Validation:**
+
 - [ ] Colors match brand
 - [ ] Contrast sufficient
 - [ ] Styling consistent
@@ -506,12 +537,14 @@ flowchart TD
 ## Output
 
 **Produces:**
+
 - Mermaid diagram code in markdown
 - Multiple diagram types as needed
 - Styled and themed diagrams
 - Documentation-ready visualizations
 
 **Success Criteria:**
+
 - Diagram accurately represents system
 - All elements properly labeled
 - Relationships clear and correct

@@ -29,12 +29,14 @@ output: Shadcn component implementations, theme customization, accessibility com
 ## Prerequisites
 
 **Required:**
+
 - Shadcn/ui installed in project
 - Tailwind CSS configured
 - Component registry set up
 - Theme tokens defined
 
 **Optional:**
+
 - Design system documentation
 - Figma designs
 - Accessibility requirements (WCAG 2.1 Level AA)
@@ -46,12 +48,14 @@ output: Shadcn component implementations, theme customization, accessibility com
 **Objective**: Choose appropriate Shadcn components for requirements
 
 **Actions:**
+
 1. Review available Shadcn components
 2. Check component documentation
 3. Verify component fits use case
 4. Plan component composition if needed
 
 **Available Components:**
+
 - **Forms**: Button, Input, Textarea, Select, Checkbox, Radio, Switch
 - **Data Display**: Table, Card, Badge, Avatar, Separator
 - **Feedback**: Alert, Toast, Dialog, AlertDialog, Sheet
@@ -60,6 +64,7 @@ output: Shadcn component implementations, theme customization, accessibility com
 - **Layout**: Accordion, Collapsible, Aspect Ratio, Scroll Area
 
 **Validation:**
+
 - [ ] Component available in Shadcn
 - [ ] Component meets accessibility requirements
 - [ ] Component supports required variants
@@ -74,6 +79,7 @@ output: Shadcn component implementations, theme customization, accessibility com
 **Actions:**
 
 1. **Install specific component**:
+
    ```bash
    npx shadcn-ui@latest add button
    npx shadcn-ui@latest add input
@@ -81,6 +87,7 @@ output: Shadcn component implementations, theme customization, accessibility com
    ```
 
 2. **Install multiple components**:
+
    ```bash
    npx shadcn-ui@latest add button input textarea select
    ```
@@ -91,6 +98,7 @@ output: Shadcn component implementations, theme customization, accessibility com
    - Test component renders
 
 4. **Configure component registry** (components.json):
+
    ```json
    {
      "style": "default",
@@ -110,6 +118,7 @@ output: Shadcn component implementations, theme customization, accessibility com
    ```
 
 **Validation:**
+
 - [ ] Components installed correctly
 - [ ] No TypeScript errors
 - [ ] Tailwind classes working
@@ -124,6 +133,7 @@ output: Shadcn component implementations, theme customization, accessibility com
 **Actions:**
 
 1. **Define theme tokens** (globals.css):
+
    ```css
    @layer base {
      :root {
@@ -185,6 +195,7 @@ output: Shadcn component implementations, theme customization, accessibility com
    - Check color combinations
 
 **Validation:**
+
 - [ ] Theme colors match brand
 - [ ] Dark mode works correctly
 - [ ] Contrast ratios WCAG compliant
@@ -199,6 +210,7 @@ output: Shadcn component implementations, theme customization, accessibility com
 **Actions:**
 
 1. **Basic component usage**:
+
    ```tsx
    import { Button } from '@/components/ui/button';
 
@@ -212,6 +224,7 @@ output: Shadcn component implementations, theme customization, accessibility com
    ```
 
 2. **Form components with React Hook Form**:
+
    ```tsx
    import { useForm } from 'react-hook-form';
    import { zodResolver } from '@hookform/resolvers/zod';
@@ -265,6 +278,7 @@ output: Shadcn component implementations, theme customization, accessibility com
    ```
 
 3. **Dialog/Modal implementation**:
+
    ```tsx
    import {
      Dialog,
@@ -299,6 +313,7 @@ output: Shadcn component implementations, theme customization, accessibility com
    ```
 
 4. **Data table implementation**:
+
    ```tsx
    import {
      Table,
@@ -334,6 +349,7 @@ output: Shadcn component implementations, theme customization, accessibility com
    ```
 
 **Validation:**
+
 - [ ] Components render correctly
 - [ ] No TypeScript errors
 - [ ] Styles applied correctly
@@ -348,6 +364,7 @@ output: Shadcn component implementations, theme customization, accessibility com
 **Actions:**
 
 1. **Extend button variants**:
+
    ```tsx
    import { cva } from 'class-variance-authority';
 
@@ -382,6 +399,7 @@ output: Shadcn component implementations, theme customization, accessibility com
    ```
 
 2. **Custom badge variants**:
+
    ```tsx
    const badgeVariants = cva(
      'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold',
@@ -400,6 +418,7 @@ output: Shadcn component implementations, theme customization, accessibility com
    ```
 
 **Validation:**
+
 - [ ] Custom variants work correctly
 - [ ] Variants follow design system
 - [ ] TypeScript types updated
@@ -414,6 +433,7 @@ output: Shadcn component implementations, theme customization, accessibility com
 **Actions:**
 
 1. **Add ARIA labels**:
+
    ```tsx
    <Button aria-label="Close dialog">
      <X className="h-4 w-4" />
@@ -426,6 +446,7 @@ output: Shadcn component implementations, theme customization, accessibility com
    - Test Escape key for modals
 
 3. **Focus management**:
+
    ```tsx
    import { useEffect, useRef } from 'react';
 
@@ -448,6 +469,7 @@ output: Shadcn component implementations, theme customization, accessibility com
    - Test in both light and dark modes
 
 **Validation:**
+
 - [ ] All interactive elements keyboard accessible
 - [ ] ARIA labels present where needed
 - [ ] Focus management correct
@@ -462,6 +484,7 @@ output: Shadcn component implementations, theme customization, accessibility com
 **Actions:**
 
 1. **Unit tests**:
+
    ```tsx
    import { render, screen } from '@testing-library/react';
    import { Button } from './button';
@@ -487,6 +510,7 @@ output: Shadcn component implementations, theme customization, accessibility com
    ```
 
 2. **Accessibility tests**:
+
    ```tsx
    import { axe, toHaveNoViolations } from 'jest-axe';
    expect.extend(toHaveNoViolations);
@@ -504,6 +528,7 @@ output: Shadcn component implementations, theme customization, accessibility com
    - Test responsive behavior
 
 **Validation:**
+
 - [ ] All tests passing
 - [ ] Coverage >= 90%
 - [ ] No accessibility violations
@@ -514,6 +539,7 @@ output: Shadcn component implementations, theme customization, accessibility com
 ## Output
 
 **Produces:**
+
 - Installed and configured Shadcn components
 - Customized theme configuration
 - Accessible component implementations
@@ -521,6 +547,7 @@ output: Shadcn component implementations, theme customization, accessibility com
 - Comprehensive test coverage
 
 **Success Criteria:**
+
 - All components render correctly
 - Theme matches brand guidelines
 - WCAG 2.1 Level AA compliance
