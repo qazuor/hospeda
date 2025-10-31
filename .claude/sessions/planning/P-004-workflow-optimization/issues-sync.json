@@ -10,8 +10,9 @@
       "id": "d4796bcf",
       "code": "T-004-001",
       "title": "**[1h]** Create new directory structure",
-      "status": "pending",
-      "githubIssueNumber": 765
+      "status": "completed",
+      "githubIssueNumber": 765,
+      "completedAt": "2025-10-31T01:10:00.000Z"
     },
     {
       "id": "4fba3385",
