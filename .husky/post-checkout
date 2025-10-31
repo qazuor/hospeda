@@ -1,0 +1,64 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# post-checkout hook - Check registry consistency after branch changes
+# Args: $1 = previous HEAD, $2 = new HEAD, $3 = flag (1 = branch checkout, 0 = file checkout)
+
+PREV_HEAD=$1
+NEW_HEAD=$2
+BRANCH_CHECKOUT=$3
+
+# Only run on branch checkouts (not file checkouts)
+if [ "$BRANCH_CHECKOUT" = "0" ]; then
+  exit 0
+fi
+
+echo "🔍 Checking code registry consistency..."
+
+REGISTRY_FILE=".claude/sessions/planning/.code-registry.json"
+
+# Check if registry file exists
+if [ ! -f "$REGISTRY_FILE" ]; then
+  echo "⚠️  Warning: Code registry not found at $REGISTRY_FILE"
+  echo "   Run 'pnpm planning:sync <session-path>' to generate it"
+  exit 0
+fi
+
+# Check if registry is valid JSON
+if ! jq empty "$REGISTRY_FILE" 2>/dev/null; then
+  echo "❌ Error: Code registry is not valid JSON"
+  echo "   File: $REGISTRY_FILE"
+  echo "   Run 'pnpm planning:sync <session-path>' to regenerate it"
+  exit 0
+fi
+
+# Get registry metadata
+TOTAL_SESSIONS=$(jq -r '.totalSessions // 0' "$REGISTRY_FILE")
+TOTAL_TASKS=$(jq -r '.totalTasks // 0' "$REGISTRY_FILE")
+GENERATED_AT=$(jq -r '.generatedAt // "unknown"' "$REGISTRY_FILE")
+
+echo "✅ Code registry is valid"
+echo "   Sessions: $TOTAL_SESSIONS"
+echo "   Tasks: $TOTAL_TASKS"
+echo "   Last updated: $GENERATED_AT"
+
+# Check if registry is stale (older than 7 days)
+if [ "$GENERATED_AT" != "unknown" ]; then
+  CURRENT_TIME=$(date +%s)
+  REGISTRY_TIME=$(date -d "$GENERATED_AT" +%s 2>/dev/null || echo "0")
+  TIME_DIFF=$((CURRENT_TIME - REGISTRY_TIME))
+  DAYS_OLD=$((TIME_DIFF / 86400))
+
+  if [ $DAYS_OLD -gt 7 ]; then
+    echo "⚠️  Warning: Code registry is $DAYS_OLD days old"
+    echo "   Consider running 'pnpm planning:sync <session-path>' to update it"
+  fi
+fi
+
+# Check for planning session checkpoints
+CHECKPOINT_FILES=$(find .claude/sessions/planning -name ".checkpoint.json" 2>/dev/null | wc -l)
+if [ "$CHECKPOINT_FILES" -gt 0 ]; then
+  echo "📋 Found $CHECKPOINT_FILES active planning sessions"
+fi
+
+echo ""
