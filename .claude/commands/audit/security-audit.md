@@ -45,6 +45,7 @@ Performs a comprehensive security audit of the codebase, combining vulnerability
 ### 1. Authentication & Authorization Review
 
 **Checks:**
+
 - [ ] Authentication mechanism properly implemented (Clerk integration)
 - [ ] JWT token validation and expiry handling
 - [ ] Session management security
@@ -57,6 +58,7 @@ Performs a comprehensive security audit of the codebase, combining vulnerability
 - [ ] Privilege escalation risks
 
 **Tools:**
+
 - Static code analysis for auth patterns
 - Route authorization verification
 - Middleware inspection
@@ -64,6 +66,7 @@ Performs a comprehensive security audit of the codebase, combining vulnerability
 ### 2. Input Validation & Sanitization
 
 **Checks:**
+
 - [ ] All user inputs validated with Zod schemas
 - [ ] SQL injection prevention (Drizzle ORM usage verified)
 - [ ] XSS prevention in frontend components
@@ -76,6 +79,7 @@ Performs a comprehensive security audit of the codebase, combining vulnerability
 - [ ] Header injection prevention
 
 **Tools:**
+
 - Zod schema coverage analysis
 - Input validation pattern verification
 - Grep for dangerous patterns (eval, innerHTML, etc.)
@@ -83,6 +87,7 @@ Performs a comprehensive security audit of the codebase, combining vulnerability
 ### 3. Data Protection & Privacy
 
 **Checks:**
+
 - [ ] Sensitive data encryption at rest
 - [ ] Sensitive data encryption in transit (HTTPS)
 - [ ] Database connection security
@@ -95,6 +100,7 @@ Performs a comprehensive security audit of the codebase, combining vulnerability
 - [ ] Data exposure through error messages
 
 **Tools:**
+
 - Scan for hardcoded secrets
 - Environment variable audit
 - Database security configuration review
@@ -102,6 +108,7 @@ Performs a comprehensive security audit of the codebase, combining vulnerability
 ### 4. API Security
 
 **Checks:**
+
 - [ ] Rate limiting on all public endpoints
 - [ ] API authentication required where needed
 - [ ] Proper error handling (no information leakage)
@@ -114,6 +121,7 @@ Performs a comprehensive security audit of the codebase, combining vulnerability
 - [ ] Mass assignment prevention
 
 **Tools:**
+
 - API endpoint enumeration
 - Rate limit verification
 - CORS configuration review
@@ -121,6 +129,7 @@ Performs a comprehensive security audit of the codebase, combining vulnerability
 ### 5. Infrastructure & Configuration
 
 **Checks:**
+
 - [ ] Security headers configured (CSP, X-Frame-Options, etc.)
 - [ ] HTTP Strict Transport Security (HSTS)
 - [ ] Content Security Policy (CSP)
@@ -133,6 +142,7 @@ Performs a comprehensive security audit of the codebase, combining vulnerability
 - [ ] Default credentials changed
 
 **Tools:**
+
 - pnpm audit
 - Security header verification
 - Configuration file review
@@ -140,6 +150,7 @@ Performs a comprehensive security audit of the codebase, combining vulnerability
 ### 6. Code Security Patterns
 
 **Checks:**
+
 - [ ] No use of dangerous functions (eval, Function constructor)
 - [ ] Secure randomness generation
 - [ ] Proper error handling without information leakage
@@ -152,6 +163,7 @@ Performs a comprehensive security audit of the codebase, combining vulnerability
 - [ ] No commented-out credentials
 
 **Tools:**
+
 - Pattern matching for dangerous code
 - Code complexity analysis
 - Security linting rules
@@ -159,6 +171,7 @@ Performs a comprehensive security audit of the codebase, combining vulnerability
 ### 7. Frontend Security
 
 **Checks:**
+
 - [ ] XSS prevention in React components
 - [ ] Safe HTML rendering
 - [ ] Client-side validation (defense in depth)
@@ -171,6 +184,7 @@ Performs a comprehensive security audit of the codebase, combining vulnerability
 - [ ] Clickjacking prevention
 
 **Tools:**
+
 - React security pattern analysis
 - DOM manipulation review
 - Third-party dependency audit
@@ -178,6 +192,7 @@ Performs a comprehensive security audit of the codebase, combining vulnerability
 ### 8. Penetration Testing Simulation
 
 **Checks:**
+
 - [ ] SQL injection attempts (simulated)
 - [ ] XSS payload tests (simulated)
 - [ ] CSRF token bypass attempts
@@ -190,6 +205,7 @@ Performs a comprehensive security audit of the codebase, combining vulnerability
 - [ ] Session fixation tests
 
 **Tools:**
+
 - Automated security testing
 - Manual code review
 - Attack vector simulation
@@ -338,21 +354,25 @@ Can be integrated into GitHub Actions for automated security checks:
 ## Common Vulnerabilities Detected
 
 ### Authentication Issues
+
 - Missing authentication checks
 - Weak token validation
 - Session management flaws
 
 ### Authorization Issues
+
 - Missing permission checks
 - Privilege escalation risks
 - Insecure direct object references
 
 ### Input Validation
+
 - Missing input validation
 - Inadequate sanitization
 - Type confusion vulnerabilities
 
 ### Data Exposure
+
 - Sensitive data in logs
 - Information disclosure in errors
 - Unencrypted sensitive data
@@ -367,6 +387,7 @@ Can be integrated into GitHub Actions for automated security checks:
 ## Notes
 
 This command consolidates functionality from:
+
 - Deprecated `/review-security` command
 - Deprecated `/pen-test` command
 

@@ -47,6 +47,7 @@ Performs a comprehensive accessibility audit of the application, validating WCAG
 #### Text Alternatives (WCAG 1.1)
 
 **Checks:**
+
 - [ ] All images have meaningful alt text
 - [ ] Decorative images have empty alt (`alt=""`)
 - [ ] Complex images (charts, diagrams) have detailed descriptions
@@ -57,11 +58,13 @@ Performs a comprehensive accessibility audit of the application, validating WCAG
 - [ ] ARIA labels for icon-only buttons
 
 **Tools:**
+
 - Automated alt text validation
 - Missing label detection
 - Link text analysis
 
 **Benchmarks:**
+
 - 100% of images have alt attributes
 - 100% of form controls have labels
 - 0 "click here" or "read more" links without context
@@ -69,6 +72,7 @@ Performs a comprehensive accessibility audit of the application, validating WCAG
 #### Time-Based Media (WCAG 1.2)
 
 **Checks:**
+
 - [ ] Videos have captions
 - [ ] Audio content has transcripts
 - [ ] Video descriptions for visual content
@@ -76,11 +80,13 @@ Performs a comprehensive accessibility audit of the application, validating WCAG
 - [ ] Auto-playing media can be paused
 
 **Tools:**
+
 - Media element detection
 - Caption/transcript verification
 - Control accessibility testing
 
 **Benchmarks:**
+
 - 100% of videos have captions
 - 100% of audio has transcripts
 - No auto-play without controls
@@ -88,6 +94,7 @@ Performs a comprehensive accessibility audit of the application, validating WCAG
 #### Adaptable (WCAG 1.3)
 
 **Checks:**
+
 - [ ] Semantic HTML structure
 - [ ] Heading hierarchy (h1-h6) logical
 - [ ] Lists use proper markup (ul, ol, dl)
@@ -99,12 +106,14 @@ Performs a comprehensive accessibility audit of the application, validating WCAG
 - [ ] ARIA properties valid and necessary
 
 **Tools:**
+
 - HTML validator
 - Heading structure analyzer
 - ARIA validator
 - Landmark detection
 
 **Benchmarks:**
+
 - Logical heading hierarchy (no skipped levels)
 - All major sections have landmarks
 - 100% valid ARIA usage
@@ -112,6 +121,7 @@ Performs a comprehensive accessibility audit of the application, validating WCAG
 #### Distinguishable (WCAG 1.4)
 
 **Checks:**
+
 - [ ] Color contrast ratio ≥ 4.5:1 for normal text
 - [ ] Color contrast ratio ≥ 3:1 for large text (18pt+)
 - [ ] Color contrast ratio ≥ 3:1 for UI components
@@ -122,12 +132,14 @@ Performs a comprehensive accessibility audit of the application, validating WCAG
 - [ ] Focus indicators visible and sufficient contrast
 
 **Tools:**
+
 - Color contrast analyzer
 - Resize testing
 - Focus indicator verification
 - Color-only information detection
 
 **Benchmarks:**
+
 - 100% text meets contrast requirements
 - No content loss at 200% zoom
 - All focus indicators visible (3:1 contrast minimum)
@@ -137,6 +149,7 @@ Performs a comprehensive accessibility audit of the application, validating WCAG
 #### Keyboard Accessible (WCAG 2.1)
 
 **Checks:**
+
 - [ ] All interactive elements keyboard accessible
 - [ ] Tab order logical and intuitive
 - [ ] No keyboard traps (can tab out)
@@ -148,11 +161,13 @@ Performs a comprehensive accessibility audit of the application, validating WCAG
 - [ ] Keyboard shortcuts documented
 
 **Tools:**
+
 - Tab order analyzer
 - Keyboard trap detection
 - Focus management testing
 
 **Benchmarks:**
+
 - 100% interactive elements keyboard accessible
 - Logical tab order throughout
 - No keyboard traps detected
@@ -160,6 +175,7 @@ Performs a comprehensive accessibility audit of the application, validating WCAG
 #### Enough Time (WCAG 2.2)
 
 **Checks:**
+
 - [ ] No time limits or limits can be extended
 - [ ] Auto-updating content can be paused
 - [ ] Session timeout warnings provided
@@ -167,33 +183,39 @@ Performs a comprehensive accessibility audit of the application, validating WCAG
 - [ ] No automatic redirects without warning
 
 **Tools:**
+
 - Timeout detection
 - Auto-update monitoring
 
 **Benchmarks:**
+
 - All timeouts have warnings
 - Users can extend time limits
 
 #### Seizures and Physical Reactions (WCAG 2.3)
 
 **Checks:**
+
 - [ ] No content flashes more than 3 times per second
 - [ ] No animation that could cause seizures
 - [ ] Animation can be disabled (prefers-reduced-motion)
 - [ ] Parallax effects can be disabled
 
 **Tools:**
+
 - Flash detection
 - Animation analyzer
 - Motion preference detection
 
 **Benchmarks:**
+
 - Zero content flashing > 3Hz
 - All animations respect prefers-reduced-motion
 
 #### Navigable (WCAG 2.4)
 
 **Checks:**
+
 - [ ] Skip links for repetitive content
 - [ ] Page titles unique and descriptive
 - [ ] Focus order follows logical sequence
@@ -204,11 +226,13 @@ Performs a comprehensive accessibility audit of the application, validating WCAG
 - [ ] Focus visible when navigating
 
 **Tools:**
+
 - Page title analyzer
 - Navigation structure validator
 - Focus order testing
 
 **Benchmarks:**
+
 - 100% of pages have unique titles
 - Clear navigation structure
 - Logical focus order throughout
@@ -216,6 +240,7 @@ Performs a comprehensive accessibility audit of the application, validating WCAG
 #### Input Modalities (WCAG 2.5)
 
 **Checks:**
+
 - [ ] Touch targets minimum 44x44 pixels
 - [ ] Pointer gestures have keyboard alternative
 - [ ] Click/tap activation on up event (can cancel)
@@ -223,11 +248,13 @@ Performs a comprehensive accessibility audit of the application, validating WCAG
 - [ ] Label text matches accessible name
 
 **Tools:**
+
 - Touch target size analyzer
 - Gesture detection
 - Label/name matching validator
 
 **Benchmarks:**
+
 - 100% touch targets ≥ 44x44px
 - All gestures have alternatives
 - All labels match accessible names
@@ -237,6 +264,7 @@ Performs a comprehensive accessibility audit of the application, validating WCAG
 #### Readable (WCAG 3.1)
 
 **Checks:**
+
 - [ ] Page language declared (lang attribute)
 - [ ] Language changes marked (lang on elements)
 - [ ] Reading level appropriate (or alternatives provided)
@@ -244,16 +272,19 @@ Performs a comprehensive accessibility audit of the application, validating WCAG
 - [ ] Pronunciation guidance for unusual words
 
 **Tools:**
+
 - Language attribute validator
 - Reading level analyzer
 
 **Benchmarks:**
+
 - 100% of pages have lang attribute
 - All language changes marked
 
 #### Predictable (WCAG 3.2)
 
 **Checks:**
+
 - [ ] Focus does not trigger unexpected changes
 - [ ] Input does not trigger unexpected changes
 - [ ] Navigation consistent across pages
@@ -261,11 +292,13 @@ Performs a comprehensive accessibility audit of the application, validating WCAG
 - [ ] No unexpected context changes
 
 **Tools:**
+
 - Navigation consistency checker
 - Component naming validator
 - Context change detection
 
 **Benchmarks:**
+
 - Consistent navigation across site
 - Consistent component labeling
 - No unexpected navigation
@@ -273,6 +306,7 @@ Performs a comprehensive accessibility audit of the application, validating WCAG
 #### Input Assistance (WCAG 3.3)
 
 **Checks:**
+
 - [ ] Error messages clear and specific
 - [ ] Form labels and instructions provided
 - [ ] Error suggestions provided when possible
@@ -282,11 +316,13 @@ Performs a comprehensive accessibility audit of the application, validating WCAG
 - [ ] Help text available for complex inputs
 
 **Tools:**
+
 - Form validation testing
 - Error message analyzer
 - Help text detection
 
 **Benchmarks:**
+
 - 100% of errors identified and described
 - All complex forms have help text
 - Confirmation required for destructive actions
@@ -296,6 +332,7 @@ Performs a comprehensive accessibility audit of the application, validating WCAG
 #### Compatible (WCAG 4.1)
 
 **Checks:**
+
 - [ ] Valid HTML (no parsing errors)
 - [ ] Unique IDs within page
 - [ ] ARIA roles, states, properties valid
@@ -304,11 +341,13 @@ Performs a comprehensive accessibility audit of the application, validating WCAG
 - [ ] Custom components have proper ARIA
 
 **Tools:**
+
 - HTML validator
 - ARIA validator
 - Component role analyzer
 
 **Benchmarks:**
+
 - 100% valid HTML
 - 100% valid ARIA usage
 - All custom components properly labeled
@@ -316,6 +355,7 @@ Performs a comprehensive accessibility audit of the application, validating WCAG
 ### 5. Screen Reader Testing
 
 **Checks:**
+
 - [ ] Test with NVDA (Windows)
 - [ ] Test with JAWS (Windows)
 - [ ] Test with VoiceOver (macOS/iOS)
@@ -328,11 +368,13 @@ Performs a comprehensive accessibility audit of the application, validating WCAG
 - [ ] Error messages announced
 
 **Tools:**
+
 - Screen reader testing
 - ARIA live region verification
 - Announcement monitoring
 
 **Benchmarks:**
+
 - Functional with all major screen readers
 - All content accessible via screen reader
 - Proper announcements for dynamic changes
@@ -340,6 +382,7 @@ Performs a comprehensive accessibility audit of the application, validating WCAG
 ### 6. Keyboard Navigation Testing
 
 **Checks:**
+
 - [ ] Tab through entire page
 - [ ] Reverse tab (Shift+Tab) works
 - [ ] Enter activates buttons/links
@@ -350,11 +393,13 @@ Performs a comprehensive accessibility audit of the application, validating WCAG
 - [ ] Focus indicator always visible
 
 **Tools:**
+
 - Manual keyboard testing
 - Focus trap detection
 - Tab order validation
 
 **Benchmarks:**
+
 - 100% keyboard navigable
 - Logical tab order
 - Visible focus at all times
@@ -362,6 +407,7 @@ Performs a comprehensive accessibility audit of the application, validating WCAG
 ### 7. Mobile Accessibility
 
 **Checks:**
+
 - [ ] Touch targets adequate size (44x44px minimum)
 - [ ] Zoom enabled (not disabled)
 - [ ] Orientation changes supported
@@ -371,11 +417,13 @@ Performs a comprehensive accessibility audit of the application, validating WCAG
 - [ ] Text spacing adjustable
 
 **Tools:**
+
 - Mobile accessibility testing
 - Touch target analyzer
 - Responsive design validator
 
 **Benchmarks:**
+
 - All touch targets ≥ 44x44px
 - Zoom not disabled
 - Functional in portrait and landscape
@@ -383,6 +431,7 @@ Performs a comprehensive accessibility audit of the application, validating WCAG
 ### 8. Form Accessibility
 
 **Checks:**
+
 - [ ] All inputs have associated labels
 - [ ] Required fields indicated accessibly
 - [ ] Error messages associated with fields
@@ -393,11 +442,13 @@ Performs a comprehensive accessibility audit of the application, validating WCAG
 - [ ] Submit buttons clearly labeled
 
 **Tools:**
+
 - Form accessibility analyzer
 - Label association validator
 - Error message testing
 
 **Benchmarks:**
+
 - 100% of inputs labeled
 - All errors programmatically associated
 - Clear field instructions
@@ -543,13 +594,16 @@ Overall Accessibility Score: 85/100 (Good)
   ```tsx
   <img src={product.image} />
   ```
+
 - **Fix**:
+
   ```tsx
   <img
     src={product.image}
     alt={`${product.name} - ${product.category}`}
   />
   ```
+
 - **Testing**: Test with NVDA/VoiceOver to verify descriptions
 - **Priority**: Immediate (legal compliance risk)
 
@@ -615,6 +669,7 @@ Overall Accessibility Score: 85/100 (Good)
 **Score**: 92/100 ✓
 
 **Strengths**:
+
 - Proper semantic HTML (nav, ul, li)
 - Skip navigation link present
 - ARIA current on active page
@@ -622,10 +677,12 @@ Overall Accessibility Score: 85/100 (Good)
 - Logical tab order
 
 **Issues**:
+
 - Mobile menu touch targets: 40x40px (needs 44x44px)
 - Missing aria-label on navigation landmark
 
 **Recommendations**:
+
 1. Increase touch target sizes on mobile
 2. Add aria-label="Primary navigation"
 
@@ -634,16 +691,19 @@ Overall Accessibility Score: 85/100 (Good)
 **Score**: 78/100 ✗
 
 **Strengths**:
+
 - Good error messaging
 - Required fields marked with aria-required
 - Autocomplete attributes present
 
 **Issues**:
+
 - 15% of fields missing labels
 - Error messages not programmatically associated
 - Missing field instructions for complex inputs
 
 **Recommendations**:
+
 1. Add labels to all form fields
 2. Use aria-describedby for error messages
 3. Provide help text for date/time pickers
@@ -655,12 +715,14 @@ Overall Accessibility Score: 85/100 (Good)
 **Status**: Generally Good ✓
 
 **Working**:
+
 - Navigation via headings (H key)
 - Landmark navigation (D key)
 - Form field reading
 - Link list (Insert+F7)
 
 **Issues**:
+
 - Modal announcements delayed
 - Some dynamic content changes not announced
 
@@ -671,12 +733,14 @@ Overall Accessibility Score: 85/100 (Good)
 **Status**: Generally Good ✓
 
 **Working**:
+
 - Rotor navigation
 - Web spots
 - Form navigation
 - Gesture support on iOS
 
 **Issues**:
+
 - Custom dropdown not announced correctly
 
 **Fix**: Add proper ARIA combobox pattern
@@ -805,6 +869,7 @@ Overall Accessibility Score: 85/100 (Good)
 - Screen Readers: NVDA 2023.3, JAWS 2024, VoiceOver
 - Mobile: iOS 17.1, Android 14
 - Resolution: 1920x1080, 1366x768, 375x667 (mobile)
+
 ```
 
 ## Integration with Workflow
@@ -842,6 +907,7 @@ Set up automated accessibility testing:
 ## Common Accessibility Issues
 
 ### Critical
+
 - Missing alt text on images
 - Insufficient color contrast
 - Keyboard traps
@@ -849,6 +915,7 @@ Set up automated accessibility testing:
 - Inaccessible custom controls
 
 ### Serious
+
 - Poor heading structure
 - Missing landmarks
 - Unclear error messages
@@ -856,6 +923,7 @@ Set up automated accessibility testing:
 - No focus indicators
 
 ### Minor
+
 - Redundant ARIA
 - Missing page titles
 - Inconsistent navigation
@@ -864,30 +932,35 @@ Set up automated accessibility testing:
 ## Accessibility Testing Checklist
 
 ### Automated Testing
+
 - [ ] Run axe DevTools
 - [ ] Run Lighthouse accessibility audit
 - [ ] Run WAVE validator
 - [ ] Check color contrast
 
 ### Keyboard Testing
+
 - [ ] Tab through entire page
 - [ ] Test all interactive elements
 - [ ] Verify focus indicators
 - [ ] Test keyboard shortcuts
 
 ### Screen Reader Testing
+
 - [ ] Test with NVDA (Windows)
 - [ ] Test with VoiceOver (macOS/iOS)
 - [ ] Test landmark navigation
 - [ ] Test form announcements
 
 ### Mobile Testing
+
 - [ ] Test with VoiceOver (iOS)
 - [ ] Test with TalkBack (Android)
 - [ ] Verify touch target sizes
 - [ ] Test zoom functionality
 
 ### Compliance Validation
+
 - [ ] WCAG 2.1 Level A compliance
 - [ ] WCAG 2.1 Level AA compliance
 - [ ] Section 508 compliance (if applicable)
@@ -903,6 +976,7 @@ Set up automated accessibility testing:
 ## Notes
 
 This command ensures the application is usable by everyone, including:
+
 - People with visual impairments (blind, low vision, color blind)
 - People with auditory impairments (deaf, hard of hearing)
 - People with motor impairments (limited mobility, tremors)

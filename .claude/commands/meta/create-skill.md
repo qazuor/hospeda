@@ -240,11 +240,13 @@ output: What the skill produces
 **Test Execution**:
 
 Invoke skill from an agent context:
+
 ```
 Use the {skill-name} skill to {task}
 ```
 
 Verify:
+
 - Skill loads correctly
 - Workflow is clear and actionable
 - Output is as documented
@@ -582,7 +584,9 @@ output: Validation report with pass/fail status
 ## Output Format
 
 ```
+
 {example-output}
+
 ```
 
 ## Error Handling
