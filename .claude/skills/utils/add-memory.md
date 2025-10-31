@@ -665,3 +665,11 @@ In related memory, add:
 - Archive, don't delete (keep history)
 - Memories inform future decisions
 - Auto-learning happens during task completion
+
+---
+
+## Changelog
+
+| Version | Date | Changes | Author | Related |
+|---------|------|---------|--------|---------|
+| 1.0.0 | 2025-10-31 | Initial version | @tech-lead | P-004 |

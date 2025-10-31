@@ -424,3 +424,11 @@ test('Homepage meets Core Web Vitals', async ({ page }) => {
 - Performance budgets should be enforced in CI/CD
 - Core Web Vitals directly impact SEO and user experience
 - Small improvements accumulate to significant gains
+
+---
+
+## Changelog
+
+| Version | Date | Changes | Author | Related |
+|---------|------|---------|--------|---------|
+| 1.0.0 | 2025-10-31 | Initial version | @tech-lead | P-004 |

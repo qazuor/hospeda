@@ -341,3 +341,11 @@ app.post('/api/bookings',
 - Makes refactoring safe and confident
 - Tests become living documentation
 - 90% coverage minimum for all code
+
+---
+
+## Changelog
+
+| Version | Date | Changes | Author | Related |
+|---------|------|---------|--------|---------|
+| 1.0.0 | 2025-10-31 | Initial version | @tech-lead | P-004 |

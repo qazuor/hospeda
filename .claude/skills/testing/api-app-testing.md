@@ -430,3 +430,11 @@ describe('/api/bookings', () => {
 - Update tests when changing API contracts
 - Tests are living documentation of API behavior
 - Consider contract testing for API consumers
+
+---
+
+## Changelog
+
+| Version | Date | Changes | Author | Related |
+|---------|------|---------|--------|---------|
+| 1.0.0 | 2025-10-31 | Initial version | @tech-lead | P-004 |
