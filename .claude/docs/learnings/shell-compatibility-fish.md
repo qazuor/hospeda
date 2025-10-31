@@ -38,7 +38,7 @@ ls *.md | xargs -I {} echo {}
 ## Related
 
 - **Documentation:** Fish shell documentation on loops
-- **Best Practices:** [.claude/docs/standards/code-standards.md](.claude/docs/standards/code-standards.md)
+- **Best Practices:** [.claude/docs/standards/code-standards.md](../standards/code-standards.md)
 - **Related Learnings:** None yet
 
 ---

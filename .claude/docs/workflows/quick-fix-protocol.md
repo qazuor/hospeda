@@ -396,7 +396,7 @@ import { validateBooking } from './validators';
 
 ## Decision Tree Integration
 
-When in doubt, use the [Workflow Decision Tree](./../decision-tree.md):
+When in doubt, use the [Workflow Decision Tree](./decision-tree.md):
 
 ```
 Is it < 30 min, 1-2 files, very low risk?

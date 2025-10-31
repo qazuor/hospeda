@@ -132,7 +132,7 @@ mcp__vercel__deploy
 ## Related
 
 - **MCP Servers:** [.claude/docs/mcp-servers.md](../mcp-servers.md)
-- **Development Workflow:** [CLAUDE.md](../../CLAUDE.md#development-workflow)
+- **Development Workflow:** [CLAUDE.md](../../../CLAUDE.md#development-workflow)
 - **Related Learnings:** None yet
 
 ---

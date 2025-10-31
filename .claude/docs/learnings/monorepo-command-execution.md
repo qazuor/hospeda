@@ -54,8 +54,8 @@ pnpm run test        # All packages/apps
 
 ## Related
 
-- **Documentation:** [CLAUDE.md](../../CLAUDE.md#quick-command-reference)
-- **Monorepo Structure:** [CLAUDE.md](../../CLAUDE.md#monorepo-structure-full)
+- **Documentation:** [CLAUDE.md](../../../CLAUDE.md#quick-command-reference)
+- **Monorepo Structure:** [CLAUDE.md](../../../CLAUDE.md#monorepo-structure-full)
 - **Related Learnings:** None yet
 
 ---
