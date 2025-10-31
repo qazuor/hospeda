@@ -306,7 +306,7 @@ Ask Claude to invoke specialized agents:
 
 ```
 "Invoke the tech-lead agent to review my architecture decisions"
-"Use the db-engineer to help design my Drizzle schema"
+"Use the db-drizzle-engineer to help design my Drizzle schema"
 "Call the qa-engineer to validate my test coverage"
 ```
 

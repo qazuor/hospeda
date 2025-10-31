@@ -17,7 +17,7 @@ A specialized AI assistant designed to perform specific tasks within the develop
 - Can be invoked via Task tool
 - Stateless (each invocation is independent)
 
-**Example:** The `db-engineer` agent specializes in Drizzle ORM schemas and database operations.
+**Example:** The `db-drizzle-engineer` agent specializes in Drizzle ORM schemas and database operations.
 
 ### Command
 
@@ -358,7 +358,7 @@ A pattern used for creating consistent API routes with shared configuration.
 
 ### Naming Conventions
 
-**Agents:** kebab-case, domain-descriptive (e.g., `hono-engineer`, `db-engineer`)
+**Agents:** kebab-case, domain-descriptive (e.g., `hono-engineer`, `db-drizzle-engineer`)
 
 **Commands:** kebab-case, action-verb (e.g., `/start-feature-plan`, `/quality-check`)
 

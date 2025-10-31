@@ -105,7 +105,7 @@ mcp__context7__get-library-docs
 
 **Used By:**
 
-- `db-engineer` (primary)
+- `db-drizzle-engineer` (primary)
 - `deployment-engineer`
 - Main agent (for setup)
 
@@ -266,7 +266,7 @@ docker restart postgres-dev  # Restart database
 
 **Used By:**
 
-- `db-engineer` (primary)
+- `db-drizzle-engineer` (primary)
 - `performance-engineer` (query optimization)
 - `debugger` (data analysis)
 
@@ -529,7 +529,7 @@ docker restart postgres-dev  # Restart database
 
 **Used By:**
 
-- `db-engineer` (primary)
+- `db-drizzle-engineer` (primary)
 - `performance-engineer` (query optimization)
 - `deployment-engineer` (production setup)
 
