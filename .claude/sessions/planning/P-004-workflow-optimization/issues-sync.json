@@ -1,0 +1,374 @@
+{
+  "feature": "Product Design Requirements: Optimización del Sistema de Workflow",
+  "planningCode": "P-004",
+  "platform": "github",
+  "parentGithubIssueNumber": 764,
+  "githubRepo": "qazuor/hospeda",
+  "syncedAt": "2025-10-31T01:03:16.192Z",
+  "tasks": [
+    {
+      "id": "d4796bcf",
+      "code": "T-004-001",
+      "title": "**[1h]** Create new directory structure",
+      "status": "pending",
+      "githubIssueNumber": 765
+    },
+    {
+      "id": "4fba3385",
+      "code": "T-004-002",
+      "title": "**[3h]** Create all 7 JSON schemas",
+      "status": "pending",
+      "githubIssueNumber": 766
+    },
+    {
+      "id": "abdb8576",
+      "code": "T-004-003",
+      "title": "**[2h]** Implement code registry system",
+      "status": "pending",
+      "githubIssueNumber": 767
+    },
+    {
+      "id": "537ae024",
+      "code": "T-004-004",
+      "title": "**[4h]** Create validation and sync scripts",
+      "status": "pending",
+      "githubIssueNumber": 768
+    },
+    {
+      "id": "e0f976d5",
+      "code": "T-004-005",
+      "title": "**[4h]** Create core documentation files",
+      "status": "pending",
+      "githubIssueNumber": 769
+    },
+    {
+      "id": "1d8ec88a",
+      "code": "T-004-006",
+      "title": "**[2h]** Create telemetry tracking system",
+      "status": "pending",
+      "githubIssueNumber": 770
+    },
+    {
+      "id": "e4a3b5a2",
+      "code": "T-004-007",
+      "title": "**[2h]** Move deprecated agents to archive",
+      "status": "pending",
+      "githubIssueNumber": 771
+    },
+    {
+      "id": "256da970",
+      "code": "T-004-008",
+      "title": "**[3h]** Update agents absorbing responsibilities",
+      "status": "pending",
+      "githubIssueNumber": 772
+    },
+    {
+      "id": "d0d548d4",
+      "code": "T-004-009",
+      "title": "**[2h]** Rename agents to more specific names",
+      "status": "pending",
+      "githubIssueNumber": 773
+    },
+    {
+      "id": "4e22d59a",
+      "code": "T-004-010",
+      "title": "**[1h]** Update agents README with new structure",
+      "status": "pending",
+      "githubIssueNumber": 774
+    },
+    {
+      "id": "820b780f",
+      "code": "T-004-011",
+      "title": "**[1h]** Delete or move deprecated commands",
+      "status": "pending",
+      "githubIssueNumber": 775
+    },
+    {
+      "id": "f319b112",
+      "code": "T-004-012",
+      "title": "**[3h]** Create audit command replacements",
+      "status": "pending",
+      "githubIssueNumber": 776
+    },
+    {
+      "id": "f2384a9a",
+      "code": "T-004-013",
+      "title": "**[4h]** Create system extensibility commands",
+      "status": "pending",
+      "githubIssueNumber": 777
+    },
+    {
+      "id": "ae7f53ef",
+      "code": "T-004-014",
+      "title": "**[1h]** Update commands README with new structure",
+      "status": "pending",
+      "githubIssueNumber": 778
+    },
+    {
+      "id": "17f5f69d",
+      "code": "T-004-015",
+      "title": "**[6h]** Create 11 new specialized skills",
+      "status": "pending",
+      "githubIssueNumber": 779
+    },
+    {
+      "id": "e578e869",
+      "code": "T-004-016",
+      "title": "**[1h]** Update skills README with new structure",
+      "status": "pending",
+      "githubIssueNumber": 780
+    },
+    {
+      "id": "9b96e742",
+      "code": "T-004-017",
+      "title": "**[2h]** Document Level 1 workflow",
+      "status": "pending",
+      "githubIssueNumber": 781
+    },
+    {
+      "id": "bdddf2aa",
+      "code": "T-004-018",
+      "title": "**[3h]** Document Level 2 workflow",
+      "status": "pending",
+      "githubIssueNumber": 782
+    },
+    {
+      "id": "fcb713f8",
+      "code": "T-004-019",
+      "title": "**[2h]** Create Mermaid diagrams",
+      "status": "pending",
+      "githubIssueNumber": 783
+    },
+    {
+      "id": "60a0cdad",
+      "code": "T-004-020",
+      "title": "**[2h]** Update Phase 1-4 workflow docs",
+      "status": "pending",
+      "githubIssueNumber": 784
+    },
+    {
+      "id": "95d9fae3",
+      "code": "T-004-021",
+      "title": "**[3h]** Restructure main CLAUDE.md",
+      "status": "pending",
+      "githubIssueNumber": 785
+    },
+    {
+      "id": "42e76a85",
+      "code": "T-004-022",
+      "title": "**[2h]** Extract learnings to individual files",
+      "status": "pending",
+      "githubIssueNumber": 786
+    },
+    {
+      "id": "d026ee57",
+      "code": "T-004-023",
+      "title": "**[2h]** Fix all links after restructure",
+      "status": "pending",
+      "githubIssueNumber": 787
+    },
+    {
+      "id": "4d8af052",
+      "code": "T-004-024",
+      "title": "**[1h]** Run all validation scripts",
+      "status": "pending",
+      "githubIssueNumber": 788
+    },
+    {
+      "id": "7b640dce",
+      "code": "T-004-025",
+      "title": "**[2h]** Set up Git hooks with Husky",
+      "status": "pending",
+      "githubIssueNumber": 789
+    },
+    {
+      "id": "2c9ff6ca",
+      "code": "T-004-026",
+      "title": "**[2h]** Build system health monitoring",
+      "status": "pending",
+      "githubIssueNumber": 790
+    },
+    {
+      "id": "bcf8a8d4",
+      "code": "T-004-027",
+      "title": "**[2h]** Create GitHub Actions workflow",
+      "status": "pending",
+      "githubIssueNumber": 791
+    },
+    {
+      "id": "ee1023fd",
+      "code": "T-004-028",
+      "title": "**[2h]** Implement workflow checkpoints",
+      "status": "pending",
+      "githubIssueNumber": 792
+    },
+    {
+      "id": "bd90992c",
+      "code": "T-004-029",
+      "title": "**[3h]** Document design system",
+      "status": "pending",
+      "githubIssueNumber": 793
+    },
+    {
+      "id": "2191ad4c",
+      "code": "T-004-030",
+      "title": "**[2h]** Document system maintenance",
+      "status": "pending",
+      "githubIssueNumber": 794
+    },
+    {
+      "id": "bcc53aaa",
+      "code": "T-004-031",
+      "title": "**[2h]** Review and improve consistency",
+      "status": "pending",
+      "githubIssueNumber": 795
+    },
+    {
+      "id": "a00efc53",
+      "code": "T-004-032",
+      "title": "**[2h]** Document all changes",
+      "status": "pending",
+      "githubIssueNumber": 796
+    },
+    {
+      "id": "deecdf7b",
+      "code": "T-004-033",
+      "title": "**[3h]** Walk through all workflows",
+      "status": "pending",
+      "githubIssueNumber": 797
+    },
+    {
+      "id": "6f58ee83",
+      "code": "T-004-034",
+      "title": "**[2h]** Validate onboarding experience",
+      "status": "pending",
+      "githubIssueNumber": 798
+    },
+    {
+      "id": "c530d97b",
+      "code": "T-004-035",
+      "title": "**[2h]** Complete validation check",
+      "status": "pending",
+      "githubIssueNumber": 799
+    },
+    {
+      "id": "833fe3d1",
+      "code": "T-004-036",
+      "title": "**[1h]** Create baseline metrics",
+      "status": "pending",
+      "githubIssueNumber": 800
+    },
+    {
+      "id": "f4086e91",
+      "code": "T-004-037",
+      "title": "**[1h]** Demo and training",
+      "status": "pending",
+      "githubIssueNumber": 801
+    },
+    {
+      "id": "78ba4db9",
+      "code": "T-004-038",
+      "title": "37 atomic tasks identified (1-3h each)",
+      "status": "completed",
+      "githubIssueNumber": 802
+    },
+    {
+      "id": "178bf1b3",
+      "code": "T-004-039",
+      "title": "0/37 tasks completed (0%)",
+      "status": "pending",
+      "githubIssueNumber": 803
+    },
+    {
+      "id": "cd27eec4",
+      "code": "T-004-040",
+      "title": "All validation scripts pass",
+      "status": "pending",
+      "githubIssueNumber": 804
+    },
+    {
+      "id": "9b64193b",
+      "code": "T-004-041",
+      "title": "CLAUDE.md reduced to 300-400 lines (60% reduction achieved)",
+      "status": "pending",
+      "githubIssueNumber": 805
+    },
+    {
+      "id": "4952d4a8",
+      "code": "T-004-042",
+      "title": "13 agents (52% reduction from 25)",
+      "status": "pending",
+      "githubIssueNumber": 806
+    },
+    {
+      "id": "6ef46203",
+      "code": "T-004-043",
+      "title": "18 commands",
+      "status": "pending",
+      "githubIssueNumber": 807
+    },
+    {
+      "id": "cc4b65cc",
+      "code": "T-004-044",
+      "title": "16 skills",
+      "status": "pending",
+      "githubIssueNumber": 808
+    },
+    {
+      "id": "aa358603",
+      "code": "T-004-045",
+      "title": "0 broken links",
+      "status": "pending",
+      "githubIssueNumber": 809
+    },
+    {
+      "id": "c2dbbd00",
+      "code": "T-004-046",
+      "title": "0 desynchronized counts",
+      "status": "pending",
+      "githubIssueNumber": 810
+    },
+    {
+      "id": "bb1c8f1e",
+      "code": "T-004-047",
+      "title": "Decision tree is clear and actionable",
+      "status": "pending",
+      "githubIssueNumber": 811
+    },
+    {
+      "id": "b1fe9b88",
+      "code": "T-004-048",
+      "title": "quick-start.md enables < 30 min onboarding",
+      "status": "pending",
+      "githubIssueNumber": 812
+    },
+    {
+      "id": "07dc4ca2",
+      "code": "T-004-049",
+      "title": "System health check shows all green",
+      "status": "pending",
+      "githubIssueNumber": 813
+    },
+    {
+      "id": "fb5ca155",
+      "code": "T-004-050",
+      "title": "User satisfied with new structure",
+      "status": "pending",
+      "githubIssueNumber": 814
+    },
+    {
+      "id": "119f55ae",
+      "code": "T-004-051",
+      "title": "All docs in English",
+      "status": "pending",
+      "githubIssueNumber": 815
+    },
+    {
+      "id": "86ff4494",
+      "code": "T-004-052",
+      "title": "Maintainability improved",
+      "status": "pending",
+      "githubIssueNumber": 816
+    }
+  ]
+}
