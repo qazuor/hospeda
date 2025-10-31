@@ -72,7 +72,7 @@ cd .claude/sessions/planning/{feature_name}
 
 ---
 
-### Step 2: Functional Specification
+### Step 2: Functional Specification (PDR Generation)
 
 **Duration:** 1-2 hours
 
@@ -125,20 +125,76 @@ cd .claude/sessions/planning/{feature_name}
 
 **Deliverable:** Complete `PDR.md` sections 1-4
 
-**Review:**
+---
 
-- Present to user
-- Get feedback
-- Iterate until approved
-- **DO NOT proceed without approval**
+### 🔴 CHECKPOINT 1: PDR Review & Approval
+
+**⚠️ MANDATORY USER INTERACTION - DO NOT SKIP**
+
+**Agent Responsibilities:**
+
+1. **Present PDR** to user with clear summary:
+   ```text
+   PDR Generation Complete!
+
+   I've created the Product Design Requirements with:
+   - {n} user stories covering {key areas}
+   - {n} acceptance criteria (all testable)
+   - Mockups/wireframes for {pages/components}
+   - Business rules and technical constraints
+
+   Key highlights:
+   - {Major requirement 1}
+   - {Major requirement 2}
+   - {Major requirement 3}
+
+   Please review PDR.md. I'm ready to:
+   - Clarify any section
+   - Add more details
+   - Modify requirements
+   - Answer questions
+   - Create additional mockups
+
+   What would you like to review or change?
+   ```
+
+2. **Iterate with User:**
+   - Answer all questions
+   - Make requested changes
+   - Add missing details
+   - Refine unclear sections
+   - Continue iterating until user is satisfied
+
+3. **Request Approval:**
+   ```text
+   Are you satisfied with the PDR?
+
+   Reply "approve" to proceed to technical analysis
+   Reply "changes needed" to continue refining
+   ```
+
+4. **Wait for Explicit Approval:**
+   - **DO NOT proceed to Step 3** without approval
+   - **DO NOT generate tech-analysis.md** yet
+   - User must explicitly say "approve" or equivalent
+
+**User Controls Flow:**
+- User can request as many iterations as needed
+- User decides when PDR is ready
+- Planning pace controlled by user satisfaction
 
 ---
 
-### Step 3: Technical Analysis
+### Step 3: Technical Analysis (Only After PDR Approval)
 
 **Duration:** 1-2 hours
 
 **Agent:** `product-technical`
+
+**Prerequisites:**
+- ✅ PDR approved by user
+- ✅ Functional requirements clear
+- ✅ UI/UX designs finalized
 
 **Activities:**
 
@@ -194,20 +250,90 @@ cd .claude/sessions/planning/{feature_name}
 
 **Deliverable:** Complete `tech-analysis.md`
 
-**Review:**
+---
 
-- Technical approach sound?
-- All layers considered?
-- Risks identified?
-- Get user approval
+### 🔴 CHECKPOINT 2: Technical Analysis Review & Approval
+
+**⚠️ MANDATORY USER INTERACTION - DO NOT SKIP**
+
+**Agent Responsibilities:**
+
+1. **Present Technical Analysis** to user:
+   ```text
+   Technical Analysis Complete!
+
+   I've documented the technical approach:
+
+   Architecture:
+   - {Layer 1}: {Approach}
+   - {Layer 2}: {Approach}
+   - {Layer 3}: {Approach}
+
+   Key Technical Decisions:
+   - {Decision 1}: {Rationale}
+   - {Decision 2}: {Rationale}
+   - {Decision 3}: {Rationale}
+
+   Database Changes:
+   - {n} new tables
+   - {n} schema modifications
+   - {Migration strategy}
+
+   API Design:
+   - {n} new endpoints
+   - {Authentication approach}
+   - {Performance strategy}
+
+   Risks Identified:
+   - {Risk 1}: {Mitigation}
+   - {Risk 2}: {Mitigation}
+
+   Please review tech-analysis.md. I'm ready to:
+   - Explain any technical decision
+   - Discuss alternative approaches
+   - Refine the architecture
+   - Address any concerns
+
+   What would you like to discuss?
+   ```
+
+2. **Iterate with User:**
+   - Explain technical decisions
+   - Discuss alternatives if requested
+   - Refine architecture based on feedback
+   - Address technical concerns
+   - Continue until user is satisfied
+
+3. **Request Approval:**
+   ```text
+   Are you satisfied with the technical approach?
+
+   Reply "approve" to proceed to task breakdown
+   Reply "changes needed" to continue refining
+   ```
+
+4. **Wait for Explicit Approval:**
+   - **DO NOT proceed to Step 4** without approval
+   - **DO NOT generate TODOs.md** yet
+   - User must explicitly say "approve" or equivalent
+
+**User Controls Flow:**
+- User can request technical alternatives
+- User can challenge decisions
+- User decides when technical approach is solid
 
 ---
 
-### Step 4: Task Breakdown
+### Step 4: Task Breakdown (Only After Tech Analysis Approval)
 
 **Duration:** 1-2 hours
 
 **Agent:** `product-technical`
+
+**Prerequisites:**
+- ✅ PDR approved by user
+- ✅ Tech analysis approved by user
+- ✅ Architecture decisions finalized
 
 **Activities:**
 
@@ -271,7 +397,52 @@ cd .claude/sessions/planning/{feature_name}
    - P2: Medium (nice to have)
    - P3: Low (could have)
 
-**Deliverable:** Initial `TODOs.md` with task breakdown
+**Deliverable:** Complete `TODOs.md` with task breakdown
+
+---
+
+### ⚪ OPTIONAL CHECKPOINT 3: Task Breakdown Review
+
+**Optional User Interaction (Recommended)**
+
+**Agent Responsibilities:**
+
+1. **Present Task Breakdown** to user:
+   ```text
+   Task Breakdown Complete!
+
+   I've created {n} atomic tasks organized in {m} phases:
+
+   Summary:
+   - Total tasks: {n}
+   - P0 (Critical): {x} tasks
+   - P1 (High): {y} tasks
+   - P2+ (Nice to have): {z} tasks
+   - Estimated total: {hours}h ({days} days)
+
+   Key phases:
+   - Phase 2.1 - Database Layer: {n} tasks ({h}h)
+   - Phase 2.2 - Service Layer: {n} tasks ({h}h)
+   - Phase 2.3 - API Layer: {n} tasks ({h}h)
+   - Phase 2.4 - Frontend Layer: {n} tasks ({h}h)
+
+   All tasks are atomic (1-2 hours each) and dependencies are mapped.
+
+   Would you like to review the task breakdown before we proceed to Phase 2?
+   (yes/no/let's start)
+   ```
+
+2. **If User Wants to Review:**
+   - Discuss task estimates
+   - Adjust priorities if needed
+   - Clarify task descriptions
+   - Address concerns about scope
+
+3. **If User Approves or Skips:**
+   - Proceed to Phase 2 Implementation
+   - Start with first P0 task
+
+**Note:** This checkpoint is optional because user has already approved the technical approach, which defines the task scope
 
 ---
 
