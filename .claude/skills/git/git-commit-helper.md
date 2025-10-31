@@ -741,3 +741,11 @@ When this skill is applied, produce:
 
 **This skill ensures consistent, professional commit history that supports semantic versioning and makes project history easy to understand.**
 
+
+---
+
+## Changelog
+
+| Version | Date | Changes | Author | Related |
+|---------|------|---------|--------|---------|
+| 1.0.0 | 2025-10-31 | Initial version | @tech-lead | P-004 |

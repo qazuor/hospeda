@@ -290,3 +290,11 @@ files:
 ---
 
 **Note**: This skill should be used as part of the documentation quality assurance process and integrated into the project's development workflow for consistent markdown formatting across all documentation files.
+
+---
+
+## Changelog
+
+| Version | Date | Changes | Author | Related |
+|---------|------|---------|--------|---------|
+| 1.0.0 | 2025-10-31 | Initial version | @tech-lead | P-004 |

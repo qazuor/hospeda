@@ -641,3 +641,11 @@ function DeleteButton({ onConfirm }) {
 - Prefer theme tokens over direct colors
 - Test accessibility with screen readers
 - Keep component files under 500 lines
+
+---
+
+## Changelog
+
+| Version | Date | Changes | Author | Related |
+|---------|------|---------|--------|---------|
+| 1.0.0 | 2025-10-31 | Initial version | @tech-lead | P-004 |

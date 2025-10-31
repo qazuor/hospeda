@@ -835,3 +835,11 @@ export async function generateMonthlyReport(
 - Include page numbers on multi-page documents
 - Test file size with various content
 - Consider PDF/A for archival purposes
+
+---
+
+## Changelog
+
+| Version | Date | Changes | Author | Related |
+|---------|------|---------|--------|---------|
+| 1.0.0 | 2025-10-31 | Initial version | @tech-lead | P-004 |

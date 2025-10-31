@@ -264,3 +264,11 @@ if (error) {
 - Error messages should be user-friendly
 - Use HTTP status codes correctly
 - Errors are part of API contract
+
+---
+
+## Changelog
+
+| Version | Date | Changes | Author | Related |
+|---------|------|---------|--------|---------|
+| 1.0.0 | 2025-10-31 | Initial version | @tech-lead | P-004 |

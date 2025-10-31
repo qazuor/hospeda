@@ -612,3 +612,11 @@ flowchart TD
 - Keep diagram source in markdown files, not images
 - Version control diagrams with code
 - Update diagrams during code review
+
+---
+
+## Changelog
+
+| Version | Date | Changes | Author | Related |
+|---------|------|---------|--------|---------|
+| 1.0.0 | 2025-10-31 | Initial version | @tech-lead | P-004 |
