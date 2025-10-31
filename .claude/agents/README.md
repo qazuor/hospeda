@@ -19,14 +19,14 @@ Agents are organized into the following categories:
 ### Backend Development
 
 - **hono-engineer** - Hono framework expert for API development
-- **db-engineer** - Database design, Drizzle ORM, and migrations
+- **db-drizzle-engineer** - Database design, Drizzle ORM, and migrations
 - **backend-reviewer** - Backend code review and quality assurance
 
 ### Frontend Development
 
 - **astro-engineer** - Astro framework expert for web app
-- **react-dev** - React 19 development and best practices
-- **tanstack-engineer** - TanStack Router, Query, Form expert for admin panel
+- **react-senior-dev** - React 19 development and best practices
+- **tanstack-start-engineer** - TanStack Router, Query, Form expert for admin panel
 - **frontend-reviewer** - Frontend code review and quality assurance
 
 ### Design & UX

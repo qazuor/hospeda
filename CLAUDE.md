@@ -139,7 +139,7 @@ hospeda/
 
 - **Product**: `product-functional`, `product-technical`
 - **Architecture**: `tech-lead`, `architecture-validator`
-- **Development**: `hono-engineer`, `db-engineer`, `astro-engineer`, `react-dev`, `tanstack-engineer`
+- **Development**: `hono-engineer`, `db-drizzle-engineer`, `astro-engineer`, `react-senior-dev`, `tanstack-start-engineer`
 - **Code Review**: `backend-reviewer`, `frontend-reviewer`
 - **Design**: `ui-ux-designer`
 - **Quality**: `qa-engineer`, `debugger`

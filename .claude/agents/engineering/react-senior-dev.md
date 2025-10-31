@@ -1,11 +1,11 @@
 ---
-name: react-dev
+name: react-senior-dev
 description: Builds reusable React 19 components with hooks and state management for Astro and TanStack Start during Phase 2 Implementation
 tools: Read, Write, Edit, Glob, Grep, Bash, mcp__context7__get-library-docs
 model: sonnet
 ---
 
-# React Developer Agent
+# React Senior Developer Agent
 
 ## Role & Responsibility
 

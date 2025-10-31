@@ -58,32 +58,32 @@
 
 - [ ] **[0.5h]** Define Zod schemas for {entity}
   - **Dependencies**: None
-  - **Assignee**: @db-engineer
+  - **Assignee**: @db-drizzle-engineer
   - **Status**: Not Started | In Progress | Blocked | Complete
   - **Blockers**: {Any blockers}
   - **Notes**: {Notes}
 
 - [ ] **[0.5h]** Infer types from Zod schemas using `z.infer`
   - **Dependencies**: Task above
-  - **Assignee**: @db-engineer
+  - **Assignee**: @db-drizzle-engineer
   - **Status**: Not Started
   - **Notes**: {Notes}
 
 - [ ] **[0.5h]** Create Drizzle schema for {entity}
   - **Dependencies**: Zod schemas complete
-  - **Assignee**: @db-engineer
+  - **Assignee**: @db-drizzle-engineer
   - **Status**: Not Started
   - **Notes**: {Notes}
 
 - [ ] **[0.5h]** Create {Entity}Model extending BaseModel
   - **Dependencies**: Drizzle schema complete
-  - **Assignee**: @db-engineer
+  - **Assignee**: @db-drizzle-engineer
   - **Status**: Not Started
   - **Notes**: {Notes}
 
 - [ ] **[0.5h]** Override findAll() for custom search (if needed)
   - **Dependencies**: Model created
-  - **Assignee**: @db-engineer
+  - **Assignee**: @db-drizzle-engineer
   - **Status**: Not Started
   - **Notes**: {Notes}
 
@@ -95,7 +95,7 @@
 
 - [ ] **[0.5h]** Generate and apply database migration
   - **Dependencies**: Schema complete, tests passing
-  - **Assignee**: @db-engineer
+  - **Assignee**: @db-drizzle-engineer
   - **Status**: Not Started
   - **Notes**: Test rollback script
 
@@ -161,43 +161,43 @@
 
 - [ ] **[1h]** Create {Feature}Form component
   - **Dependencies**: API ready
-  - **Assignee**: @react-dev
+  - **Assignee**: @react-senior-dev
   - **Status**: Not Started
   - **Notes**: Use TanStack Form
 
 - [ ] **[0.5h]** Implement client-side validation
   - **Dependencies**: Form component
-  - **Assignee**: @react-dev
+  - **Assignee**: @react-senior-dev
   - **Status**: Not Started
   - **Notes**: Use Zod schemas
 
 - [ ] **[1h]** Create {Feature}List component
   - **Dependencies**: API ready
-  - **Assignee**: @react-dev
+  - **Assignee**: @react-senior-dev
   - **Status**: Not Started
   - **Notes**: Pagination, sorting
 
 - [ ] **[0.5h]** Create {Feature}Card component
   - **Dependencies**: None
-  - **Assignee**: @react-dev
+  - **Assignee**: @react-senior-dev
   - **Status**: Not Started
   - **Notes**: Reusable display component
 
 - [ ] **[1h]** Create {Feature}Detail component
   - **Dependencies**: API ready
-  - **Assignee**: @react-dev
+  - **Assignee**: @react-senior-dev
   - **Status**: Not Started
   - **Notes**: {Notes}
 
 - [ ] **[1h]** Setup TanStack Query hooks
   - **Dependencies**: Components created
-  - **Assignee**: @tanstack-engineer
+  - **Assignee**: @tanstack-start-engineer
   - **Status**: Not Started
   - **Notes**: Queries, mutations, cache keys
 
 - [ ] **[0.5h]** Implement error handling and loading states
   - **Dependencies**: Query hooks
-  - **Assignee**: @react-dev
+  - **Assignee**: @react-senior-dev
   - **Status**: Not Started
   - **Notes**: User-friendly errors
 
@@ -223,13 +223,13 @@
 
 - [ ] **[1h]** Create admin {Feature} pages
   - **Dependencies**: API ready
-  - **Assignee**: @tanstack-engineer
+  - **Assignee**: @tanstack-start-engineer
   - **Status**: Not Started
   - **Notes**: TanStack Start routes
 
 - [ ] **[1h]** Implement admin components
   - **Dependencies**: Routes created
-  - **Assignee**: @react-dev
+  - **Assignee**: @react-senior-dev
   - **Status**: Not Started
   - **Notes**: {Notes}
 
