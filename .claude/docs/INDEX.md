@@ -390,11 +390,10 @@ pnpm claude:validate
 - `todos.schema.json` - Task Lists
 - `problems.schema.json` - Problems & Improvements
 - `workflows.schema.json` - Workflow Definitions
-- `hooks.schema.json` - Claude Code Hooks
 - `checkpoint.schema.json` - Workflow Checkpoints
 - `code-registry.schema.json` - Code Registry
 
-**Total:** 8 schemas
+**Total:** 7 schemas
 
 **Validation:** Run `pnpm claude:validate:schemas`
 
