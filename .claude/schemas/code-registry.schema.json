@@ -54,13 +54,13 @@
           },
           "createdAt": {
             "type": "string",
-            "format": "date",
-            "description": "ISO 8601 date when the session was created (YYYY-MM-DD)"
+            "format": "date-time",
+            "description": "ISO 8601 timestamp when the session was created"
           },
           "completedAt": {
             "type": "string",
-            "format": "date",
-            "description": "ISO 8601 date when the session was completed (YYYY-MM-DD)"
+            "format": "date-time",
+            "description": "ISO 8601 timestamp when the session was completed"
           },
           "archivedAt": {
             "type": "string",
