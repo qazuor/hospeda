@@ -58,7 +58,8 @@
         "claude:validate:schemas": "tsx .claude/scripts/validate-schemas.ts",
         "claude:sync:registry": ".claude/scripts/sync-registry.sh",
         "claude:validate": "pnpm claude:validate:docs && pnpm claude:validate:schemas",
-        "telemetry:report": "tsx .claude/scripts/telemetry-report.ts"
+        "telemetry:report": "tsx .claude/scripts/telemetry-report.ts",
+        "health-check": ".claude/scripts/health-check.sh"
     },
     "devDependencies": {
         "@biomejs/biome": "1.9.4",
