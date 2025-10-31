@@ -1093,7 +1093,7 @@ if (booking.status === BookingStatus.CONFIRMED) {
 - Hope it works
 ```
 
-####  Environment Configuration
+#### Environment Configuration
 
 ```typescript
 // GOOD: Environment-specific config
@@ -1206,7 +1206,7 @@ jobs:
 
 ### Pipeline Stages
 
-####  1. Quality Checks (Fail Fast)
+#### 1. Quality Checks (Fail Fast)
 
 ```yaml
 # Run in parallel for speed
@@ -1216,7 +1216,7 @@ jobs:
 - Code coverage (90% minimum)
 ```
 
-####  2. Security Scans
+#### 2. Security Scans
 
 ```yaml
 - Dependency vulnerability scan (pnpm audit)
@@ -1225,7 +1225,7 @@ jobs:
 - License compliance check
 ```
 
-####  3. Build Verification
+#### 3. Build Verification
 
 ```yaml
 - Build all apps and packages
@@ -1234,7 +1234,7 @@ jobs:
 - Test production build locally
 ```
 
-####  4. Integration Tests
+#### 4. Integration Tests
 
 ```yaml
 - API integration tests
@@ -1242,7 +1242,7 @@ jobs:
 - E2E tests (Playwright)
 ```
 
-####  5. Deployment
+#### 5. Deployment
 
 ```yaml
 # Only on main branch
@@ -1254,7 +1254,7 @@ jobs:
 
 ### Pipeline Optimization
 
-####  Caching Strategy
+#### Caching Strategy
 
 ```yaml
 # Cache node_modules
@@ -1275,7 +1275,7 @@ jobs:
     restore-keys: ${{ runner.os }}-turbo-
 ```
 
-####  Matrix Testing
+#### Matrix Testing
 
 ```yaml
 # Test across multiple Node versions
@@ -1287,13 +1287,13 @@ strategy:
 
 ### Continuous Deployment Rules
 
-####  Automatic Deployment (Staging)
+#### Automatic Deployment (Staging)
 
 - **Trigger**: Push to `main` branch
 - **Conditions**: All checks pass
 - **Process**: Automated deployment to staging
 
-####  Manual Deployment (Production)
+#### Manual Deployment (Production)
 
 - **Trigger**: GitHub Release created
 - **Conditions**: Staging verified + manual approval
