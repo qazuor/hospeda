@@ -373,6 +373,7 @@ sequenceDiagram
 ### 4.2 Key Changes Summary
 
 **Added (25 new files):**
+
 - 4 meta-commands
 - 3 audit commands
 - 11 new skills
@@ -385,6 +386,7 @@ sequenceDiagram
 - Code registry system
 
 **Modified (8 files):**
+
 - CLAUDE.md (restructured, ~60% size reduction)
 - agents/README.md (updated counts and structure)
 - commands/README.md (updated counts and categories)
@@ -394,6 +396,7 @@ sequenceDiagram
 - Note: .checkpoint.json files are NOT added to gitignore (tracked for cross-device workflow)
 
 **Removed/Archived (17 files):**
+
 - 12 agent files (6 merged, 3 converted, 3 removed)
 - 5 command files (merged or removed)
 
@@ -550,6 +553,7 @@ PB-003-1          → Planning Bugfix 3, Task 1
 ```
 
 **Benefits**:
+
 - Shorter and clearer than `PF-002-T-003-002-001`
 - Hierarchical structure obvious with dot notation
 - Easy to parse programmatically
@@ -620,12 +624,14 @@ PB-003-1          → Planning Bugfix 3, Task 1
 ```
 
 **Privacy**:
+
 - Local file only, never committed
 - No personal data
 - Only counts and timestamps
 - User can delete anytime
 
 **Usage**:
+
 - Generate report with `pnpm telemetry:report`
 - Review quarterly to identify unused tools
 - Optimize workflows based on actual usage
@@ -653,6 +659,7 @@ PB-003-1          → Planning Bugfix 3, Task 1
 ```
 
 **Purpose**:
+
 - Resume work after pausing
 - Cross-session continuity
 - Progress tracking
@@ -665,6 +672,7 @@ PB-003-1          → Planning Bugfix 3, Task 1
 **Purpose**: Validate documentation consistency
 
 **Checks**:
+
 1. Agent count in README matches actual files
 2. Command count in README matches actual files
 3. Skill count in README matches actual files
@@ -675,6 +683,7 @@ PB-003-1          → Planning Bugfix 3, Task 1
 **Usage**: `pnpm validate:docs`
 
 **Exit codes**:
+
 - 0: All valid
 - 1: Validation errors found
 
@@ -683,6 +692,7 @@ PB-003-1          → Planning Bugfix 3, Task 1
 **Purpose**: Regenerate code registry from TODOs.md files
 
 **Algorithm**:
+
 1. Scan all planning sessions
 2. Parse each TODOs.md
 3. Count total tasks and completed tasks
@@ -698,6 +708,7 @@ PB-003-1          → Planning Bugfix 3, Task 1
 **Purpose**: Overall system health check
 
 **Checks**:
+
 1. All validation scripts pass
 2. No inconsistencies in registry
 3. All hooks configured correctly
@@ -728,6 +739,7 @@ PB-003-1          → Planning Bugfix 3, Task 1
 2. Validate inputs
 
 3. Generate agent file from template:
+
    ```markdown
    ---
    name: {agent-name}
@@ -762,6 +774,7 @@ PB-003-1          → Planning Bugfix 3, Task 1
 **Algorithm**: Similar to /create-agent
 
 **Inputs**:
+
 - Name (kebab-case with slash: /command-name)
 - Category (planning | quality | audit | etc.)
 - Description
@@ -777,6 +790,7 @@ PB-003-1          → Planning Bugfix 3, Task 1
 **Algorithm**: Similar to /create-agent
 
 **Inputs**:
+
 - Name (kebab-case)
 - Category (testing | qa | design | patterns | tech | utils)
 - Description
@@ -792,6 +806,7 @@ PB-003-1          → Planning Bugfix 3, Task 1
 **Features**:
 
 1. **List all commands**:
+
    ```
    /help
 
@@ -808,6 +823,7 @@ PB-003-1          → Planning Bugfix 3, Task 1
    ```
 
 2. **Command details**:
+
    ```
    /help quality-check
 
@@ -828,6 +844,7 @@ PB-003-1          → Planning Bugfix 3, Task 1
    ```
 
 3. **Search**:
+
    ```
    /help search security
 
@@ -850,6 +867,7 @@ PB-003-1          → Planning Bugfix 3, Task 1
 ### 7.1 Level 1: Quick Fix Protocol
 
 **Criteria**:
+
 - Time: < 30 minutes
 - Files: 1-2
 - Risk: Very low
@@ -873,6 +891,7 @@ PB-003-1          → Planning Bugfix 3, Task 1
 ### 7.2 Level 2: Bugfix/Small Feature Workflow
 
 **Criteria**:
+
 - Time: 30 min - 3 hours
 - Files: 2-10
 - Risk: Low-Medium
@@ -901,6 +920,7 @@ PB-003-1          → Planning Bugfix 3, Task 1
 ### 7.3 Level 3: Large Feature Workflow
 
 **Criteria**:
+
 - Time: > 3 hours
 - Files: 10+
 - Risk: Medium-High
@@ -1134,10 +1154,12 @@ User can enable/disable hooks via `.huskyrc`:
 ### 9.2 Hook Performance
 
 **Constraints**:
+
 - Fast hooks (<5s): Always run
 - Slow hooks (>5s): Optional, disabled by default
 
 **Optimizations**:
+
 - Only validate changed files
 - Use incremental validation
 - Cache validation results
@@ -1202,11 +1224,13 @@ User can enable/disable hooks via `.huskyrc`:
 ### 10.2 Content Distribution
 
 **CLAUDE.md keeps**:
+
 - Agent identity
 - Quick reference
 - Links to everything
 
 **Moves to sub-docs**:
+
 - Detailed agent descriptions → `.claude/agents/README.md`
 - Detailed command descriptions → `.claude/commands/README.md`
 - Detailed workflow steps → `.claude/docs/workflows/`
@@ -1497,6 +1521,7 @@ User can enable/disable hooks via `.huskyrc`:
 Changes to agent/command names or workflows could break in-progress work or cause confusion.
 
 **Mitigation**:
+
 1. ✅ Archive old agents/commands, don't delete
 2. ✅ Maintain backward compatibility during transition
 3. ✅ Create migration guide in CHANGELOG.md
@@ -1505,6 +1530,7 @@ Changes to agent/command names or workflows could break in-progress work or caus
 6. ✅ Keep old CLAUDE.md as CLAUDE.md.backup
 
 **Contingency**:
+
 - Quick rollback script to restore old structure
 - Document rollback procedure
 - Git tags before each major change
@@ -1519,6 +1545,7 @@ Changes to agent/command names or workflows could break in-progress work or caus
 Code registry could become out of sync with TODOs.md, causing incorrect tracking.
 
 **Mitigation**:
+
 1. ✅ Registry is computed, not source of truth
 2. ✅ Auto-regenerate from TODOs.md on session start
 3. ✅ Validation hook on commit
@@ -1527,6 +1554,7 @@ Code registry could become out of sync with TODOs.md, causing incorrect tracking
 6. ✅ Alert on session start if inconsistency
 
 **Contingency**:
+
 - Always trust TODOs.md over registry
 - Delete registry.json to force regeneration
 - Manual reconciliation procedure documented
@@ -1541,6 +1569,7 @@ Code registry could become out of sync with TODOs.md, causing incorrect tracking
 Auto-generated agents/commands/skills might have inconsistent quality or miss best practices.
 
 **Mitigation**:
+
 1. ✅ JSON Schema validation of templates
 2. ✅ Templates must be comprehensive
 3. ✅ Post-generation validation
@@ -1548,6 +1577,7 @@ Auto-generated agents/commands/skills might have inconsistent quality or miss be
 5. ✅ If README update fails, warn user
 
 **Contingency**:
+
 - Provide manual update instructions
 - Template improvement based on issues found
 - Version templates and validate
@@ -1562,6 +1592,7 @@ Auto-generated agents/commands/skills might have inconsistent quality or miss be
 Git hooks might become slow and interrupt development flow.
 
 **Mitigation**:
+
 1. ✅ Strict timeouts (fast <5s, slow <30s)
 2. ✅ Only validate changed files
 3. ✅ Slow hooks optional, disabled by default
@@ -1569,6 +1600,7 @@ Git hooks might become slow and interrupt development flow.
 5. ✅ User can disable any hook
 
 **Contingency**:
+
 - Disable problematic hooks
 - Optimize or remove slow validation
 - Move expensive checks to CI only
@@ -1583,6 +1615,7 @@ Git hooks might become slow and interrupt development flow.
 Auto-learning system might suggest too many trivial learnings.
 
 **Mitigation**:
+
 1. ✅ User approval required always
 2. ✅ Threshold: 3+ attempts or significant impact
 3. ✅ Learning proposal format clear
@@ -1590,6 +1623,7 @@ Auto-learning system might suggest too many trivial learnings.
 5. ✅ Quarterly review to remove bad learnings
 
 **Contingency**:
+
 - Disable add-memory if too noisy
 - Increase thresholds
 - Make it opt-in instead of automatic
@@ -1604,6 +1638,7 @@ Auto-learning system might suggest too many trivial learnings.
 GitHub API might fail, rate limit, or be unavailable, blocking work.
 
 **Mitigation**:
+
 1. ✅ Offline-first design
 2. ✅ Sync is optional, not required
 3. ✅ Graceful degradation
@@ -1612,6 +1647,7 @@ GitHub API might fail, rate limit, or be unavailable, blocking work.
 6. ✅ Manual sync available
 
 **Contingency**:
+
 - Work continues without sync
 - Sync later when API available
 - Manual issue creation if needed
@@ -1626,6 +1662,7 @@ GitHub API might fail, rate limit, or be unavailable, blocking work.
 System might become more complex than the problem it solves.
 
 **Mitigation**:
+
 1. ✅ Follow KISS principle strictly
 2. ✅ Validate each feature adds value
 3. ✅ Prototype before full implementation
@@ -1633,6 +1670,7 @@ System might become more complex than the problem it solves.
 5. ✅ Measure actual usage with telemetry
 
 **Contingency**:
+
 - Remove unused features
 - Simplify if complexity grows
 - Iterate based on real usage
@@ -1688,17 +1726,20 @@ System might become more complex than the problem it solves.
 ### Internal Dependencies
 
 **Must exist before starting**:
+
 1. Current CLAUDE.md and documentation structure
 2. Existing planning sessions (PF-001, PF-002, etc.)
 3. Current agents/commands/skills
 
 **Must remain compatible**:
+
 1. Monorepo structure
 2. Package naming conventions
 3. Existing tooling (pnpm, git, etc.)
 4. Existing code standards
 
 **Will be migrated**:
+
 1. Agent definitions (25 → 13)
 2. Command definitions (15 → 18)
 3. Skill definitions (5 → 16)
@@ -1707,6 +1748,7 @@ System might become more complex than the problem it solves.
 ### External Dependencies
 
 **Required packages** (listed in section 3.2):
+
 - husky: ^9.0.0
 - ajv: ^8.12.0
 - ajv-formats: ^2.1.1
@@ -1736,12 +1778,14 @@ System might become more complex than the problem it solves.
 ### 15.1 Validation Testing
 
 **Schema Validation**:
+
 - Test each schema against valid examples
 - Test against invalid examples (should fail)
 - Coverage: All 7 schemas
 - Tool: ajv with examples
 
 **Script Testing**:
+
 - Unit test each validation function
 - Test with valid/invalid inputs
 - Test error handling
@@ -1749,6 +1793,7 @@ System might become more complex than the problem it solves.
 - Coverage: All scripts in `.claude/scripts/`
 
 **Hook Testing**:
+
 - Test each hook with scenarios
 - Test timeout behavior
 - Test with fast/slow operations
@@ -1758,6 +1803,7 @@ System might become more complex than the problem it solves.
 ### 15.2 Integration Testing
 
 **Workflow Testing**:
+
 - Walk through Level 1 workflow end-to-end
 - Walk through Level 2 workflow end-to-end
 - Walk through Level 3 workflow end-to-end
@@ -1765,6 +1811,7 @@ System might become more complex than the problem it solves.
 - Verify registry updated correctly
 
 **Meta-Command Testing**:
+
 - Create agent with /create-agent
 - Create command with /create-command
 - Create skill with /create-skill
@@ -1772,6 +1819,7 @@ System might become more complex than the problem it solves.
 - Verify READMEs updated
 
 **Registry Testing**:
+
 - Create new planning
 - Update tasks
 - Complete tasks
@@ -1781,18 +1829,21 @@ System might become more complex than the problem it solves.
 ### 15.3 User Acceptance Testing
 
 **Onboarding Test**:
+
 - New user follows quick-start.md
 - Time to productivity: < 30 minutes
 - Can find needed documentation: < 2 minutes
 - Understands workflow selection
 
 **Workflow Test**:
+
 - User performs quick fix
 - User performs bugfix
 - User starts large feature
 - Feedback on clarity and efficiency
 
 **Maintenance Test**:
+
 - User adds new agent
 - User adds new command
 - User updates documentation
@@ -1801,16 +1852,19 @@ System might become more complex than the problem it solves.
 ### 15.4 Performance Testing
 
 **Script Performance**:
+
 - validate-docs.sh: < 10s on full repo
 - sync-registry.sh: < 5s
 - health-check.sh: < 15s
 
 **Hook Performance**:
+
 - pre-commit: < 5s typical
 - post-checkout: < 3s
 - All hooks have timeouts
 
 **Decision Time**:
+
 - Workflow selection: < 30s
 - Finding docs: < 60s
 - Understanding command: < 2 min
@@ -1947,36 +2001,43 @@ System might become more complex than the problem it solves.
 ### Rollout Phases (During Implementation)
 
 **Phase 1: Foundation** (2-3 days)
+
 - Risk: Low
 - Testing: Validation scripts locally
 - Rollback: Delete new files, restore from backup
 
 **Phase 2: Consolidation** (2-3 days)
+
 - Risk: Medium
 - Testing: Validate all agents/commands/skills
 - Rollback: Restore from backup, git revert
 
 **Phase 3: Workflows** (1-2 days)
+
 - Risk: Low
 - Testing: Walk through each workflow
 - Rollback: Simple (only docs)
 
 **Phase 4: CLAUDE.md** (1 day)
+
 - Risk: Medium
 - Testing: Verify all links, cross-references
 - Rollback: Restore CLAUDE.md.backup
 
 **Phase 5: Automation** (1 day)
+
 - Risk: Medium
 - Testing: Hooks with actual commits
 - Rollback: Disable hooks, remove from git
 
 **Phase 6: Documentation** (1-2 days)
+
 - Risk: Low
 - Testing: Review all docs
 - Rollback: Simple (only docs)
 
 **Phase 7: Finalization** (0.5 day)
+
 - Risk: Low
 - Testing: Full system walkthrough
 - Rollback: Full branch revert if critical issues
@@ -2010,6 +2071,7 @@ System might become more complex than the problem it solves.
 ### New Documents to Create
 
 **High Priority** (Phase 1-2):
+
 1. `.claude/docs/INDEX.md` - Master index
 2. `.claude/docs/quick-start.md` - 15-min onboarding
 3. `.claude/docs/glossary.md` - Terminology
@@ -2036,6 +2098,7 @@ System might become more complex than the problem it solves.
 ### Documents to Update
 
 **Critical Updates**:
+
 1. `CLAUDE.md` - Complete restructure
 2. `.claude/agents/README.md` - New count and categories
 3. `.claude/commands/README.md` - New count and categories
@@ -2083,6 +2146,7 @@ None - All questions from PDR have been resolved.
 ## 21. Implementation Checklist
 
 **Pre-Implementation**:
+
 - [ ] User approves this tech-analysis.md
 - [ ] TODOs.md created with all 37 tasks
 - [ ] GitHub issues created (optional sync)
@@ -2090,6 +2154,7 @@ None - All questions from PDR have been resolved.
 - [ ] Backup tagged
 
 **Phase 1** (Foundation):
+
 - [ ] Directory structure created
 - [ ] JSON schemas implemented
 - [ ] Code registry system built
@@ -2098,6 +2163,7 @@ None - All questions from PDR have been resolved.
 - [ ] Telemetry system functional
 
 **Phase 2** (Consolidation):
+
 - [ ] Agents archived/consolidated
 - [ ] Commands archived/created
 - [ ] Skills created
@@ -2105,24 +2171,28 @@ None - All questions from PDR have been resolved.
 - [ ] Validation passing
 
 **Phase 3** (Workflows):
+
 - [ ] Quick fix protocol documented
 - [ ] Bugfix/small workflow documented
 - [ ] Diagrams created
 - [ ] Existing workflows updated
 
 **Phase 4** (CLAUDE.md):
+
 - [ ] New CLAUDE.md structure
 - [ ] Learnings migrated
 - [ ] All cross-references updated
 - [ ] Validation passing
 
 **Phase 5** (Automation):
+
 - [ ] Git hooks configured
 - [ ] Health check system working
 - [ ] CI validation set up
 - [ ] Checkpoint system implemented
 
 **Phase 6** (Documentation):
+
 - [ ] Design standards created
 - [ ] Maintenance docs complete
 - [ ] App CLAUDE.md files updated
@@ -2130,6 +2200,7 @@ None - All questions from PDR have been resolved.
 - [ ] All validation passing
 
 **Phase 7** (Finalization):
+
 - [ ] Final validation sweep clean
 - [ ] Reports generated
 - [ ] User training complete
@@ -2157,6 +2228,7 @@ None - All questions from PDR have been resolved.
 
 **Status**: Draft - Pending User Approval
 **Next Steps**:
+
 1. User reviews and provides feedback
 2. Create TODOs.md with atomized tasks
 3. Begin Phase 1 implementation upon approval
