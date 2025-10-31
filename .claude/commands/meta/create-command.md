@@ -157,10 +157,12 @@ description: {one-line description}
 ### Step 1: {Step Name}
 
 **Actions:**
+
 - {action-1}
 - {action-2}
 
 **Checks:**
+
 - [ ] {check-1}
 - [ ] {check-2}
 
@@ -195,6 +197,7 @@ description: {one-line description}
 ## Notes
 
 {additional notes}
+
 ```
 
 ### Step 4: Integration & Documentation
@@ -233,6 +236,7 @@ description: {one-line description}
 ```
 
 Verify:
+
 - Command loads correctly
 - Options work as expected
 - Output matches documentation
@@ -477,9 +481,11 @@ description: {description}
 ### Step 1: {Step Name}
 
 **Actions:**
+
 - {action}
 
 **Checks:**
+
 - [ ] {check}
 
 ## Output Format
@@ -505,6 +511,7 @@ description: {description}
 ## Notes
 
 {notes}
+
 ```
 
 ### Audit Command Template
@@ -550,13 +557,16 @@ description: {description}
 ### 1. {Audit Area}
 
 **Checks:**
+
 - [ ] {check-1}
 - [ ] {check-2}
 
 **Tools:**
+
 - {tool-1}
 
 **Benchmarks:**
+
 - {benchmark-1}
 
 ## Output Format
@@ -588,6 +598,7 @@ description: {description}
 ## Notes
 
 {notes}
+
 ```
 
 ### Utility Command Template
@@ -637,6 +648,7 @@ description: {description}
 ## Notes
 
 {notes}
+
 ```
 
 ## Validation Rules
@@ -658,6 +670,7 @@ description: {description}
 ### Directory Structure
 
 ```
+
 .claude/commands/
 ├── workflow/         # Development workflow commands
 ├── planning/         # Planning and project commands
@@ -665,6 +678,7 @@ description: {description}
 ├── audit/            # Comprehensive audit commands
 ├── meta/             # System management commands
 └── git/              # Git operations
+
 ```
 
 ### File Naming

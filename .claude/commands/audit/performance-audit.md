@@ -45,6 +45,7 @@ Performs a comprehensive performance audit of the application, analyzing databas
 ### 1. Database Performance
 
 **Checks:**
+
 - [ ] N+1 query detection
 - [ ] Missing database indexes
 - [ ] Inefficient query patterns
@@ -57,12 +58,14 @@ Performs a comprehensive performance audit of the application, analyzing databas
 - [ ] Database query caching
 
 **Tools:**
+
 - Drizzle query analysis
 - EXPLAIN query plans
 - Slow query log analysis
 - Index usage statistics
 
 **Benchmarks:**
+
 - Query execution time < 100ms (p95)
 - Index hit ratio > 95%
 - Connection pool utilization < 80%
@@ -70,6 +73,7 @@ Performs a comprehensive performance audit of the application, analyzing databas
 ### 2. API Performance
 
 **Checks:**
+
 - [ ] API response time targets met
 - [ ] Unnecessary data serialization
 - [ ] Missing response compression
@@ -82,12 +86,14 @@ Performs a comprehensive performance audit of the application, analyzing databas
 - [ ] Missing request batching
 
 **Tools:**
+
 - Response time monitoring
 - Payload size analysis
 - Middleware profiling
 - Hono performance metrics
 
 **Benchmarks:**
+
 - API response time < 200ms (p95)
 - Payload size < 100KB (typical)
 - Throughput > 1000 req/s
@@ -96,6 +102,7 @@ Performs a comprehensive performance audit of the application, analyzing databas
 ### 3. Frontend Performance
 
 **Checks:**
+
 - [ ] Initial page load time
 - [ ] Time to First Byte (TTFB)
 - [ ] First Contentful Paint (FCP)
@@ -108,12 +115,14 @@ Performs a comprehensive performance audit of the application, analyzing databas
 - [ ] Missing React.memo/useMemo
 
 **Tools:**
+
 - Lighthouse audit
 - React DevTools Profiler
 - Performance API measurements
 - Render time analysis
 
 **Benchmarks:**
+
 - LCP < 2.5s
 - FID < 100ms
 - CLS < 0.1
@@ -122,6 +131,7 @@ Performs a comprehensive performance audit of the application, analyzing databas
 ### 4. Bundle Size & Assets
 
 **Checks:**
+
 - [ ] Total JavaScript bundle size
 - [ ] Unused dependencies in bundles
 - [ ] Missing code splitting
@@ -134,12 +144,14 @@ Performs a comprehensive performance audit of the application, analyzing databas
 - [ ] Asset compression
 
 **Tools:**
+
 - Bundle analyzer
 - Dependency analysis
 - Asset size calculator
 - Compression verification
 
 **Benchmarks:**
+
 - Main bundle < 200KB (gzipped)
 - Total JS < 500KB (gzipped)
 - Image optimization > 80%
@@ -148,6 +160,7 @@ Performs a comprehensive performance audit of the application, analyzing databas
 ### 5. Rendering Performance
 
 **Checks:**
+
 - [ ] Component render time
 - [ ] Unnecessary effect executions
 - [ ] Missing virtualization for long lists
@@ -160,12 +173,14 @@ Performs a comprehensive performance audit of the application, analyzing databas
 - [ ] Layout thrashing
 
 **Tools:**
+
 - React Profiler
 - Chrome DevTools Performance
 - Frame rate monitoring
 - Layout shift detection
 
 **Benchmarks:**
+
 - Render time < 16ms (60fps)
 - Re-renders minimized
 - Virtual scroll for lists > 100 items
@@ -174,6 +189,7 @@ Performs a comprehensive performance audit of the application, analyzing databas
 ### 6. Network Performance
 
 **Checks:**
+
 - [ ] HTTP/2 or HTTP/3 usage
 - [ ] Resource prioritization
 - [ ] Preload/prefetch strategies
@@ -186,12 +202,14 @@ Performs a comprehensive performance audit of the application, analyzing databas
 - [ ] Offline support
 
 **Tools:**
+
 - Network waterfall analysis
 - Resource timing API
 - Cache hit rate monitoring
 - CDN performance metrics
 
 **Benchmarks:**
+
 - Critical resources preloaded
 - Static assets on CDN
 - Cache hit rate > 80%
@@ -200,6 +218,7 @@ Performs a comprehensive performance audit of the application, analyzing databas
 ### 7. Memory & Resource Usage
 
 **Checks:**
+
 - [ ] Memory leaks detection
 - [ ] Large object allocations
 - [ ] Detached DOM nodes
@@ -212,12 +231,14 @@ Performs a comprehensive performance audit of the application, analyzing databas
 - [ ] Resource cleanup on unmount
 
 **Tools:**
+
 - Memory profiler
 - Heap snapshot analysis
 - Performance monitor
 - Resource tracking
 
 **Benchmarks:**
+
 - Memory usage stable over time
 - No memory leaks
 - Heap size < 100MB (typical)
@@ -226,6 +247,7 @@ Performs a comprehensive performance audit of the application, analyzing databas
 ### 8. Third-Party Performance
 
 **Checks:**
+
 - [ ] Third-party script impact
 - [ ] Analytics overhead
 - [ ] Social media widget performance
@@ -238,12 +260,14 @@ Performs a comprehensive performance audit of the application, analyzing databas
 - [ ] Third-party request count
 
 **Tools:**
+
 - Third-party script analyzer
 - Request blocking simulation
 - Performance budget tracking
 - External dependency audit
 
 **Benchmarks:**
+
 - Third-party impact < 500ms
 - Font loading < 300ms
 - Analytics async loaded
@@ -363,6 +387,7 @@ Overall Performance Score: 78/100 (Good)
   ```
 
 ### PERF-002: Large Bundle Size
+
 [Similar detailed structure]
 
 ## Performance Metrics
@@ -387,16 +412,19 @@ Overall Performance Score: 78/100 (Good)
 ## Optimization Opportunities
 
 ### Database Optimizations
+
 1. Add eager loading for related data
 2. Create missing indexes
 3. Implement query result caching
 
 ### API Optimizations
+
 1. Enable response compression
 2. Implement request batching
 3. Add pagination to large responses
 
 ### Frontend Optimizations
+
 1. Code splitting at route level
 2. Lazy load non-critical components
 3. Optimize image loading
@@ -408,16 +436,19 @@ Overall Performance Score: 78/100 (Good)
 ## Recommendations
 
 ### Immediate Actions (This Sprint)
+
 1. Fix N+1 queries
 2. Add missing database indexes
 3. Enable Gzip compression
 
 ### Short Term (Next Sprint)
+
 1. Implement code splitting
 2. Optimize images
 3. Add service worker
 
 ### Long Term (Next Quarter)
+
 1. Implement CDN
 2. Database query optimization
 3. Performance monitoring
@@ -436,15 +467,18 @@ Overall Performance Score: 78/100 (Good)
 ## Appendix
 
 ### Tools Used
+
 - Lighthouse 10.0
 - React Profiler
 - Chrome DevTools
 - Drizzle Studio
 
 ### Test Environment
+
 - Node.js: 20.10.0
 - Database: PostgreSQL 15
 - Network: Simulated 3G
+
 ```
 
 ## Integration with Workflow
@@ -480,24 +514,28 @@ Set up automated performance tracking:
 ## Common Performance Issues
 
 ### Database
+
 - N+1 query problems
 - Missing indexes
 - Inefficient queries
 - Large result sets
 
 ### API
+
 - Blocking operations
 - Missing caching
 - Large payloads
 - Synchronous processing
 
 ### Frontend
+
 - Large bundles
 - Unnecessary re-renders
 - Missing code splitting
 - Unoptimized images
 
 ### Network
+
 - Missing compression
 - No resource prioritization
 - Inefficient caching
@@ -533,6 +571,7 @@ Set up automated performance tracking:
 ## Notes
 
 This command replaces the deprecated `/review-performance` command with enhanced:
+
 - Automated performance measurement
 - Trend analysis
 - Fix suggestions with code examples

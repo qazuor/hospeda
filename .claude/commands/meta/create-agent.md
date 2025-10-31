@@ -191,6 +191,7 @@ responsibilities:
 ```
 
 Verify:
+
 - Agent loads correctly
 - Prompt expands properly
 - Agent has access to specified tools
@@ -503,7 +504,9 @@ Invoke this agent when:
 
 **Agent Response:**
 ```
+
 {example-response}
+
 ```
 
 **Process:**
@@ -543,6 +546,7 @@ Invoke this agent when:
 ## Notes
 
 {Any additional notes or considerations}
+
 ```
 
 ## Validation Rules
@@ -565,12 +569,14 @@ Invoke this agent when:
 ### Directory Structure
 
 ```
+
 .claude/agents/
 ├── product/           # Product & Planning agents
 ├── engineering/       # Technical development agents
 ├── quality/          # Testing & validation agents
 ├── design/           # UI/UX design agents
 └── specialized/      # Cross-cutting concerns
+
 ```
 
 ### File Naming
