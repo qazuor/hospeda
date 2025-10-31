@@ -153,11 +153,13 @@ Each phase has a dedicated guide with detailed steps:
 
 1. Initialize planning session
 2. Invoke product-functional → Create PDR
-3. Invoke product-technical → Create tech-analysis
-4. Break down into atomic tasks (0.5-4h each)
-5. Get user approval
+3. 🔴 **CHECKPOINT:** Get user approval on PDR
+4. Invoke product-technical → Create tech-analysis
+5. 🔴 **CHECKPOINT:** Get user approval on tech-analysis
+6. Break down into atomic tasks (0.5-4h each)
+7. ⚪ **OPTIONAL:** Review task breakdown
 
-**Estimated time:** 2-8 hours
+**Estimated time:** 2-8 hours (with user interaction)
 
 #### Phase 2: Implementation
 
