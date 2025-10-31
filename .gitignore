@@ -99,4 +99,10 @@ docs/dev
 # Serena configuration
 .serena/
 
+# =========================
+# Claude Code telemetry
+# (local only, privacy-first tracking)
+# =========================
+.claude/.telemetry.json
+
 logs/

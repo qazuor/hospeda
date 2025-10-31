@@ -1,0 +1,298 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://hospeda.dev/schemas/telemetry.schema.json",
+  "title": "Telemetry Data",
+  "description": "JSON Schema for local telemetry tracking (privacy-first, gitignored)",
+  "type": "object",
+  "required": ["version", "createdAt", "lastUpdated"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "const": "1.0",
+      "description": "Telemetry schema version"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When telemetry tracking started"
+    },
+    "lastUpdated": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last telemetry update timestamp"
+    },
+    "agents": {
+      "type": "object",
+      "description": "Agent usage statistics",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["name", "invocations", "lastUsed"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Agent name"
+          },
+          "category": {
+            "type": "string",
+            "description": "Agent category (product, engineering, quality, etc.)"
+          },
+          "invocations": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Number of times invoked"
+          },
+          "lastUsed": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last invocation timestamp"
+          },
+          "averageDuration": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Average execution time in seconds"
+          },
+          "successRate": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100,
+            "description": "Success rate percentage"
+          }
+        }
+      }
+    },
+    "commands": {
+      "type": "object",
+      "description": "Command usage statistics",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["name", "invocations", "lastUsed"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Command name (without slash)"
+          },
+          "invocations": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Number of times executed"
+          },
+          "lastUsed": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last execution timestamp"
+          },
+          "averageDuration": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Average execution time in seconds"
+          },
+          "successRate": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100,
+            "description": "Success rate percentage"
+          }
+        }
+      }
+    },
+    "skills": {
+      "type": "object",
+      "description": "Skill usage statistics",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["name", "invocations", "lastUsed"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Skill name"
+          },
+          "category": {
+            "type": "string",
+            "description": "Skill category (git, qa, documentation, etc.)"
+          },
+          "invocations": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Number of times invoked"
+          },
+          "lastUsed": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last invocation timestamp"
+          }
+        }
+      }
+    },
+    "workflows": {
+      "type": "object",
+      "description": "Workflow execution statistics",
+      "properties": {
+        "level1": {
+          "type": "object",
+          "description": "Quick Fix (< 1 hour)",
+          "properties": {
+            "total": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Total Level 1 workflows"
+            },
+            "averageDuration": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Average duration in minutes"
+            }
+          }
+        },
+        "level2": {
+          "type": "object",
+          "description": "Feature/Refactor (1-40 hours)",
+          "properties": {
+            "total": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Total Level 2 workflows"
+            },
+            "byPhase": {
+              "type": "object",
+              "description": "Time spent per phase",
+              "properties": {
+                "planning": {
+                  "type": "number",
+                  "minimum": 0,
+                  "description": "Hours in Phase 1"
+                },
+                "implementation": {
+                  "type": "number",
+                  "minimum": 0,
+                  "description": "Hours in Phase 2"
+                },
+                "validation": {
+                  "type": "number",
+                  "minimum": 0,
+                  "description": "Hours in Phase 3"
+                },
+                "finalization": {
+                  "type": "number",
+                  "minimum": 0,
+                  "description": "Hours in Phase 4"
+                }
+              }
+            },
+            "averageDuration": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Average duration in hours"
+            }
+          }
+        },
+        "level3": {
+          "type": "object",
+          "description": "Major Initiative (> 40 hours)",
+          "properties": {
+            "total": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Total Level 3 workflows"
+            },
+            "sessions": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Total planning sessions"
+            },
+            "averageDuration": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Average duration in hours"
+            }
+          }
+        }
+      }
+    },
+    "sessions": {
+      "type": "array",
+      "description": "Planning session history",
+      "items": {
+        "type": "object",
+        "required": ["code", "startedAt", "status"],
+        "properties": {
+          "code": {
+            "type": "string",
+            "pattern": "^P(F|R)?-?\\d{3,4}[^/]*$",
+            "description": "Planning session code"
+          },
+          "title": {
+            "type": "string",
+            "description": "Session title/name"
+          },
+          "workflowLevel": {
+            "type": "integer",
+            "enum": [1, 2, 3],
+            "description": "Workflow level used"
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Session start timestamp"
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Session completion timestamp"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["in-progress", "completed", "archived"],
+            "description": "Current session status"
+          },
+          "tasksTotal": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Total tasks in session"
+          },
+          "tasksCompleted": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Completed tasks"
+          },
+          "hoursEstimated": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Estimated hours"
+          },
+          "hoursActual": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Actual hours spent"
+          }
+        }
+      }
+    },
+    "tools": {
+      "type": "object",
+      "description": "Tool usage statistics",
+      "properties": {
+        "validations": {
+          "type": "object",
+          "properties": {
+            "docs": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Times validate-docs.sh run"
+            },
+            "schemas": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Times validate-schemas.ts run"
+            },
+            "registry": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Times sync-registry.sh run"
+            }
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}
