@@ -28,26 +28,28 @@ pnpm install
 
 ```
 .claude/
-├── agents/           # Specialized AI assistants (25 total)
+├── agents/           # Specialized AI assistants (13 total)
 │   ├── product/      # Product & planning agents
 │   ├── engineering/  # Dev agents (Hono, DB, React, etc.)
 │   ├── quality/      # QA & debugging agents
 │   ├── design/       # UI/UX agents
-│   └── specialized/  # Niche expertise (i18n, security, etc.)
-├── commands/         # Slash commands (16 total)
+│   └── specialized/  # Niche expertise (i18n, tech-writer)
+├── commands/         # Slash commands (18 total)
+│   ├── audit/        # Audit commands (security, performance, accessibility)
+│   ├── meta/         # Meta commands (create-agent, create-command, etc.)
 │   ├── git/          # Git operations (/commit)
 │   └── formatting/   # Code formatting
-├── skills/           # Reusable capabilities (5 total)
-│   ├── git/          # Git helpers
-│   ├── qa/           # QA validators
-│   ├── documentation/# Doc formatters
-│   └── planning/     # Planning tools
+├── skills/           # Reusable capabilities (16 total)
+│   ├── testing/      # Testing methodologies
+│   ├── patterns/     # Development patterns (TDD, error handling)
+│   ├── tech/         # Tech specialists (Vercel, Shadcn, Mermaid)
+│   └── utils/        # Utilities (add-memory, JSON auditor, PDF)
 ├── docs/             # Documentation (you are here!)
 │   ├── standards/    # Code & architecture standards
 │   ├── workflows/    # Workflow guides
 │   └── templates/    # Document templates
-├── schemas/          # JSON schemas for validation (8 total)
-├── scripts/          # Automation scripts
+├── schemas/          # JSON schemas for validation (7 total)
+├── scripts/          # Automation scripts (10 total)
 └── sessions/
     └── planning/     # Planning session artifacts
 ```
@@ -70,43 +72,55 @@ pnpm install
 
 The system supports 3 workflow levels based on task complexity:
 
-### Level 1: Quick Fix (< 1 hour)
+### Level 1: Quick Fix (< 30 minutes)
 
 **Use for:**
 
-- Single file changes
-- Typo fixes
-- Small bug fixes
+- Typo fixes in code or docs
+- Formatting and style tweaks
+- Import organization
 - Documentation updates
+- Config adjustments (1-2 files)
 
-**Process:** Edit → Test → Commit
+**Process:** Edit → Quick Validation → Commit
 
-**Example:** Fixing a typo in README.md
+**Example:** Fixing a typo in README.md or comment
 
-### Level 2: Feature/Refactor (1-40 hours)
+**Guide:** [quick-fix-protocol.md](workflows/quick-fix-protocol.md)
+
+### Level 2: Atomic Task / Bugfix-Small (30 min - 3 hours)
 
 **Use for:**
 
-- New features
-- Code refactoring
-- Non-trivial bug fixes
-- Multi-file changes
+- Bugfixes with logic changes
+- Small features (search, filters, sorting)
+- Targeted refactoring (2-10 files)
+- New validation rules
+
+**Process:** Simplified Planning → TDD Implementation → Quality Check → Commit
+
+**Code:** `PB-XXX` (e.g., PB-042)
+
+**Example:** Adding pagination to a table or fixing a calculation bug
+
+**Guide:** [atomic-task-protocol.md](workflows/atomic-task-protocol.md)
+
+### Level 3: Large Feature (> 3 hours, multi-day)
+
+**Use for:**
+
+- Complete features requiring full design
+- Database schema changes
+- API contract changes
+- Architecture changes
 
 **Process:** 4-phase workflow (Planning → Implementation → Validation → Finalization)
 
-**Example:** Adding a new API endpoint with tests
+**Code:** `PF-XXX` (feature) or `PR-XXX` (refactor)
 
-### Level 3: Major Initiative (40+ hours)
+**Example:** Building a complete booking system or adding authentication
 
-**Use for:**
-
-- Large features spanning multiple sessions
-- Architecture changes
-- System-wide refactoring
-
-**Process:** Multi-session coordinated effort with cross-references
-
-**Example:** Migrating from REST to GraphQL
+**Guides:** [phase-1-planning.md](workflows/phase-1-planning.md) through [phase-4-finalization.md](workflows/phase-4-finalization.md)
 
 **Decision tool:** See [workflows/decision-tree.md](workflows/decision-tree.md)
 
