@@ -163,6 +163,7 @@ Comprehensive audit commands for security, performance, and accessibility valida
 8. Penetration testing simulation
 
 **Options:**
+
 - `--scope <area>`: auth, api, database, frontend, all
 - `--depth <level>`: quick, standard, thorough
 - `--report`: Generate detailed security-audit-report.md
@@ -194,6 +195,7 @@ Comprehensive audit commands for security, performance, and accessibility valida
 8. Third-party performance impact
 
 **Options:**
+
 - `--scope <area>`: database, api, frontend, all
 - `--profile`: Enable detailed profiling with measurements
 - `--report`: Generate detailed performance-audit-report.md
@@ -202,6 +204,7 @@ Comprehensive audit commands for security, performance, and accessibility valida
 **Output:** Performance audit report with metrics, trends, and optimization recommendations
 
 **Benchmarks:**
+
 - Query time < 100ms (p95)
 - API response < 200ms (p95)
 - LCP < 2.5s, FID < 100ms, CLS < 0.1
@@ -229,6 +232,7 @@ Comprehensive audit commands for security, performance, and accessibility valida
 8. Form accessibility verification
 
 **Options:**
+
 - `--scope <area>`: navigation, forms, content, all
 - `--level <wcag>`: A, AA, AAA (default: AA)
 - `--report`: Generate detailed accessibility-audit-report.md
@@ -369,6 +373,7 @@ System management and workflow enhancement commands.
 **File:** [meta/help.md](./meta/help.md)
 
 **Topics:**
+
 - `commands` - List and search all commands
 - `agents` - Browse agents by category
 - `skills` - View available skills
@@ -378,6 +383,7 @@ System management and workflow enhancement commands.
 - `glossary` - Terminology and concepts
 
 **Options:**
+
 - `--search <query>`: Search across all documentation
 - `--category <cat>`: Filter by category
 - `--details`: Show detailed information
@@ -460,7 +466,7 @@ git commit -m "{type}({scope}): {subject}
 
 ---
 
-## Total: 16 Commands
+## Total: 18 Commands
 
 ## Command Categories Summary
 
@@ -557,6 +563,7 @@ The following commands have been deprecated and replaced with enhanced versions:
 The new audit commands provide significant improvements over previous review commands:
 
 ### Security Audit
+
 - **8 audit areas** vs previous ad-hoc checks
 - **95+ security checks** comprehensively documented
 - **Penetration testing simulation** integrated
@@ -564,6 +571,7 @@ The new audit commands provide significant improvements over previous review com
 - **Fix suggestions** with code examples
 
 ### Performance Audit
+
 - **8 performance areas** systematically analyzed
 - **Performance budgets** with baseline comparisons
 - **Trend analysis** over time
@@ -571,6 +579,7 @@ The new audit commands provide significant improvements over previous review com
 - **Actionable recommendations** prioritized by impact
 
 ### Accessibility Audit
+
 - **WCAG 2.1 Level AA** comprehensive validation
 - **4 WCAG principles** (Perceivable, Operable, Understandable, Robust)
 - **Screen reader testing** (NVDA, JAWS, VoiceOver, TalkBack)
@@ -584,18 +593,21 @@ The new audit commands provide significant improvements over previous review com
 Meta commands enable self-improvement of the workflow system:
 
 ### System Growth
+
 - **Create agents** when new specialized expertise needed
 - **Create commands** to automate repetitive workflows
 - **Create skills** to codify reusable procedures
 - **Self-documenting** with integrated help system
 
 ### Consistency
+
 - **Templates** ensure consistent structure
 - **Validation** prevents malformed definitions
 - **Best practices** built into wizards
 - **Integration** automatically updates documentation
 
 ### Discoverability
+
 - **Interactive help** with search and navigation
 - **Quick start** gets developers productive in 15 minutes
 - **Examples** for every command, agent, and skill

@@ -61,8 +61,8 @@ echo ""
 echo "🤖 Validating agents..."
 
 if [ -f "${AGENTS_DIR}/README.md" ]; then
-  # Extract count from README (looking for pattern like "## Agents (13)")
-  README_AGENT_COUNT=$(grep -oP '## Agents \(\K\d+' "${AGENTS_DIR}/README.md" || echo "0")
+  # Extract count from README Statistics section (looking for "**Total Agents**: 13")
+  README_AGENT_COUNT=$(grep -oP '\*\*Total Agents\*\*: \K\d+' "${AGENTS_DIR}/README.md" || echo "0")
 
   if [ "${AGENT_COUNT}" -ne "${README_AGENT_COUNT}" ]; then
     echo -e "  ${RED}✗${NC} Agent count mismatch!"
@@ -84,8 +84,8 @@ fi
 echo "⚙️  Validating commands..."
 
 if [ -f "${COMMANDS_DIR}/README.md" ]; then
-  # Extract count from README
-  README_COMMAND_COUNT=$(grep -oP '## Commands \(\K\d+' "${COMMANDS_DIR}/README.md" || echo "0")
+  # Extract count from README (looking for "## Total: 18 Commands")
+  README_COMMAND_COUNT=$(grep -oP '## Total: \K\d+(?= Commands)' "${COMMANDS_DIR}/README.md" || echo "0")
 
   if [ "${COMMAND_COUNT}" -ne "${README_COMMAND_COUNT}" ]; then
     echo -e "  ${RED}✗${NC} Command count mismatch!"
@@ -107,8 +107,8 @@ fi
 echo "🎯 Validating skills..."
 
 if [ -f "${SKILLS_DIR}/README.md" ]; then
-  # Extract count from README
-  README_SKILL_COUNT=$(grep -oP '## Skills \(\K\d+' "${SKILLS_DIR}/README.md" || echo "0")
+  # Extract count from README (looking for "## Total: 16 Skills")
+  README_SKILL_COUNT=$(grep -oP '## Total: \K\d+(?= Skills)' "${SKILLS_DIR}/README.md" || echo "0")
 
   if [ "${SKILL_COUNT}" -ne "${README_SKILL_COUNT}" ]; then
     echo -e "  ${RED}✗${NC} Skill count mismatch!"
