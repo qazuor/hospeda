@@ -13,7 +13,7 @@ CHANGELOG_TEMPLATE="
 
 | Version | Date | Changes | Author | Related |
 |---------|------|---------|--------|---------|
-| 1.0.0 | 2024-10-31 | Initial version | @tech-lead | P-004 |
+| 1.0.0 | 2025-10-31 | Initial version | @tech-lead | P-004 |
 "
 
 # Function to add changelog if not exists
@@ -51,7 +51,7 @@ done
 echo ""
 echo "🎯 Processing skills..."
 for file in .claude/skills/**/*.md; do
-  if [[ -f "$file"]] && [[ "$(basename "$file")" != "README.md" ]]; then
+  if [[ -f "$file" ]] && [[ "$(basename "$file")" != "README.md" ]]; then
     add_changelog "$file"
     ((total++))
   fi
