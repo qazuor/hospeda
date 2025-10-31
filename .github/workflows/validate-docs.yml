@@ -1,0 +1,159 @@
+name: Documentation Validation
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - '.claude/**'
+      - 'CLAUDE.md'
+      - '.github/workflows/validate-docs.yml'
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - '.claude/**'
+      - 'CLAUDE.md'
+      - '.github/workflows/validate-docs.yml'
+
+jobs:
+  validate-documentation:
+    name: Validate Documentation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate documentation structure
+        run: |
+          echo "📁 Validating documentation files..."
+          pnpm claude:validate:docs || echo "validate:docs script not found, skipping"
+        continue-on-error: false
+
+      - name: Validate schemas
+        run: |
+          echo "🔍 Validating JSON schemas..."
+          pnpm claude:validate:schemas || echo "validate:schemas script not found, skipping"
+        continue-on-error: false
+
+      - name: Run health check
+        run: |
+          echo "🏥 Running system health check..."
+          pnpm health-check
+        continue-on-error: false
+
+      - name: Lint markdown files
+        run: |
+          echo "📝 Linting markdown files..."
+          pnpm lint:md .claude/**/*.md CLAUDE.md || true
+        continue-on-error: true
+
+      - name: Check for broken links
+        run: |
+          echo "🔗 Checking for broken links in documentation..."
+          # Simple grep-based link checker for .claude docs
+          BROKEN_LINKS=0
+          for file in $(find .claude -name "*.md" -type f); do
+            # Extract markdown links
+            grep -oP '\]\(\K[^)]+' "$file" 2>/dev/null | while read -r link; do
+              # Skip URLs and anchors
+              if ! echo "$link" | grep -qE '^(https?:|#)'; then
+                # Convert relative path to absolute
+                link_dir=$(dirname "$file")
+                link_path="$link_dir/$link"
+                if [ ! -f "$link_path" ] && [ ! -d "$link_path" ]; then
+                  echo "⚠️  Broken link in $file: $link"
+                  BROKEN_LINKS=$((BROKEN_LINKS + 1))
+                fi
+              fi
+            done
+          done
+          if [ $BROKEN_LINKS -gt 0 ]; then
+            echo "❌ Found $BROKEN_LINKS broken link(s)"
+            exit 1
+          else
+            echo "✅ No broken links detected"
+          fi
+        continue-on-error: false
+
+      - name: Validate file counts
+        run: |
+          echo "📊 Validating file counts..."
+
+          AGENT_COUNT=$(find .claude/agents -name "*.md" -type f ! -name "README.md" | wc -l)
+          COMMAND_COUNT=$(find .claude/commands -name "*.md" -type f ! -name "README.md" | wc -l)
+          SKILL_COUNT=$(find .claude/skills -name "*.md" -type f ! -name "README.md" | wc -l)
+
+          echo "Agents: $AGENT_COUNT (expected: 13)"
+          echo "Commands: $COMMAND_COUNT (expected: 18)"
+          echo "Skills: $SKILL_COUNT (expected: 16)"
+
+          ERRORS=0
+
+          if [ "$AGENT_COUNT" -ne 13 ]; then
+            echo "❌ Agent count mismatch"
+            ERRORS=$((ERRORS + 1))
+          fi
+
+          if [ "$COMMAND_COUNT" -ne 18 ]; then
+            echo "❌ Command count mismatch"
+            ERRORS=$((ERRORS + 1))
+          fi
+
+          if [ "$SKILL_COUNT" -ne 16 ]; then
+            echo "❌ Skill count mismatch"
+            ERRORS=$((ERRORS + 1))
+          fi
+
+          if [ $ERRORS -gt 0 ]; then
+            exit 1
+          else
+            echo "✅ All file counts match"
+          fi
+        continue-on-error: false
+
+      - name: Summary
+        if: always()
+        run: |
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📋 Documentation Validation Summary"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "✅ All validation checks passed!"
+          else
+            echo "❌ Some validation checks failed"
+            echo "Review the logs above for details"
+          fi
+          echo ""

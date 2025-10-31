@@ -1,5 +1,7 @@
 # Hospeda - Modern Tourist Accommodation Platform
 
+[![Documentation Validation](https://github.com/qazuor/hospeda/actions/workflows/validate-docs.yml/badge.svg)](https://github.com/qazuor/hospeda/actions/workflows/validate-docs.yml)
+
 Hospeda is a comprehensive web platform for discovering and managing tourist accommodations in Concepción del Uruguay and the Litoral region of Argentina. Built with modern technologies in a monorepo architecture.
 
 ## Project Overview
