@@ -11,6 +11,35 @@ Commands are invoked using the `/command-name` syntax. Each command:
 - Produces specific deliverables
 - Follows a consistent execution pattern
 
+Commands are organized into subdirectories by category for better organization and discoverability.
+
+---
+
+## Directory Structure
+
+```
+.claude/commands/
+├── README.md                     # This file
+├── start-feature-plan.md         # Planning commands (root level)
+├── start-refactor-plan.md
+├── quality-check.md              # Quality commands (root level)
+├── code-check.md
+├── run-tests.md
+├── add-new-entity.md             # Development commands (root level)
+├── update-docs.md
+├── commit.md                     # Git commands (root level)
+├── five-why.md                   # Analysis commands (root level)
+├── audit/                        # Comprehensive audit commands
+│   ├── security-audit.md
+│   ├── performance-audit.md
+│   └── accessibility-audit.md
+└── meta/                         # System management commands
+    ├── create-agent.md
+    ├── create-command.md
+    ├── create-skill.md
+    └── help.md
+```
+
 ---
 
 ## Planning Commands (2)
@@ -25,7 +54,7 @@ Commands are invoked using the `/command-name` syntax. Each command:
 
 1. Create `.claude/sessions/planning/{feature_name}/` directory
 2. Invoke `product-functional` → Create PDR.md
-3. Invoke `ui-ux-designer` → Mockups/wireframes
+3. Invoke `ux-ui-designer` → Mockups/wireframes
 4. Invoke `product-technical` → tech-analysis.md
 5. Break down into atomic tasks (1-2 hours each)
 6. Iteratively refine until fully atomic
@@ -45,7 +74,7 @@ Commands are invoked using the `/command-name` syntax. Each command:
 **Process:**
 
 1. Invoke `debugger` → Analyze current code
-2. Invoke `architecture-validator` → Identify issues
+2. Invoke `tech-lead` → Identify architectural issues
 3. Invoke `product-technical` → Create refactor plan
 4. Break down into safe, incremental steps
 5. Identify tests to add/update
@@ -67,9 +96,9 @@ Commands are invoked using the `/command-name` syntax. Each command:
 
 1. `/code-check` (lint + typecheck) - **STOP on first error**
 2. `/run-tests` - **STOP on first error**
-3. `/review-code` - report all findings
-4. `/review-security` - report all findings
-5. `/review-performance` - report all findings
+3. `/security-audit --automated` - report all findings
+4. `/performance-audit --quick` - report all findings
+5. Code review by `tech-lead` - report all findings
 
 **Output:** Consolidated quality report with all findings
 
@@ -109,82 +138,104 @@ Commands are invoked using the `/command-name` syntax. Each command:
 
 ---
 
-## Code Review Commands (3)
+## Audit Commands (3)
 
-### `/review-code`
+Comprehensive audit commands for security, performance, and accessibility validation.
 
-**Purpose:** Comprehensive code review
+### `/security-audit`
 
-**File:** [review-code.md](./review-code.md)
+**Purpose:** Comprehensive security vulnerability assessment and penetration testing
+
+**File:** [audit/security-audit.md](./audit/security-audit.md)
+
+**Scope:** Combines previous `/review-security` and `/pen-test` functionality
 
 **Process:**
 
-1. Invoke `backend-reviewer` for backend changes
-2. Invoke `frontend-reviewer` for frontend changes
-3. Invoke `architecture-validator` for consistency
-4. Invoke `tech-lead` for global integration review
-5. Present findings with severity (Critical, High, Medium, Low)
-6. Suggest fixes with code examples
+1. Authentication & authorization review
+2. Input validation & sanitization checks
+3. Data protection & privacy validation
+4. API security assessment
+5. Infrastructure & configuration review
+6. Code security patterns analysis
+7. Frontend security validation
+8. Penetration testing simulation
 
-**Output:** Code review report in `.claude/sessions/planning/{feature_name}/code-review.md`
+**Options:**
+- `--scope <area>`: auth, api, database, frontend, all
+- `--depth <level>`: quick, standard, thorough
+- `--report`: Generate detailed security-audit-report.md
+- `--fix-suggestions`: Include automated fix suggestions
+
+**Output:** Security audit report with categorized findings (Critical, High, Medium, Low)
+
+**Audit Areas:** 8 comprehensive security checks covering OWASP Top 10 and best practices
 
 ---
 
-### `/review-security`
+### `/performance-audit`
 
-**Purpose:** Security audit of codebase
+**Purpose:** Performance optimization analysis and bottleneck identification
 
-**File:** [review-security.md](./review-security.md)
+**File:** [audit/performance-audit.md](./audit/performance-audit.md)
+
+**Scope:** Replaces previous `/review-performance` with enhanced metrics
 
 **Process:**
 
-1. Invoke `security-engineer`
-2. Review authentication implementation
-3. Check authorization logic
-4. Validate input sanitization
-5. Check for SQL injection risks
-6. Review API security
-7. Check dependency vulnerabilities
+1. Database performance (N+1 queries, indexes, query time)
+2. API performance (response time, throughput, payload size)
+3. Frontend performance (LCP, FID, CLS, TTI)
+4. Bundle size & assets (code splitting, tree shaking)
+5. Rendering performance (React profiler, re-renders)
+6. Network performance (HTTP/2, CDN, caching)
+7. Memory & resource usage (leaks, allocations)
+8. Third-party performance impact
 
-**Output:** Security audit report with findings and recommendations
+**Options:**
+- `--scope <area>`: database, api, frontend, all
+- `--profile`: Enable detailed profiling with measurements
+- `--report`: Generate detailed performance-audit-report.md
+- `--benchmarks`: Compare against performance baselines
+
+**Output:** Performance audit report with metrics, trends, and optimization recommendations
+
+**Benchmarks:**
+- Query time < 100ms (p95)
+- API response < 200ms (p95)
+- LCP < 2.5s, FID < 100ms, CLS < 0.1
+- Bundle < 500KB gzipped
 
 ---
 
-### `/review-performance`
+### `/accessibility-audit`
 
-**Purpose:** Performance analysis and optimization
+**Purpose:** WCAG 2.1 Level AA compliance validation and assistive technology testing
 
-**File:** [review-performance.md](./review-performance.md)
+**File:** [audit/accessibility-audit.md](./audit/accessibility-audit.md)
 
-**Process:**
-
-1. Invoke `performance-engineer`
-2. Analyze bundle sizes
-3. Check database query performance
-4. Review Core Web Vitals
-5. Identify bottlenecks
-6. Suggest optimizations
-
-**Output:** Performance report with metrics and recommendations
-
----
-
-### `/pen-test`
-
-**Purpose:** Security penetration testing
-
-**File:** [pen-test.md](./pen-test.md)
+**Scope:** New comprehensive accessibility audit
 
 **Process:**
 
-1. Invoke `security-engineer`
-2. Test for OWASP Top 10 vulnerabilities
-3. Test authentication/authorization
-4. Test input validation
-5. Check for exposed secrets
-6. Test API security
+1. **Perceivable** - Text alternatives, time-based media, adaptable, distinguishable
+2. **Operable** - Keyboard accessible, enough time, seizures prevention, navigable, input modalities
+3. **Understandable** - Readable, predictable, input assistance
+4. **Robust** - Compatible with assistive technologies
+5. Screen reader testing (NVDA, JAWS, VoiceOver, TalkBack)
+6. Keyboard navigation validation
+7. Mobile accessibility testing
+8. Form accessibility verification
 
-**Output:** Penetration testing report with findings
+**Options:**
+- `--scope <area>`: navigation, forms, content, all
+- `--level <wcag>`: A, AA, AAA (default: AA)
+- `--report`: Generate detailed accessibility-audit-report.md
+- `--automated-only`: Run only automated tests (faster)
+
+**Output:** Accessibility audit report with WCAG compliance status and remediation guidance
+
+**Standards:** WCAG 2.1 Level AA compliance (95+ checks)
 
 ---
 
@@ -237,11 +288,113 @@ Commands are invoked using the `/command-name` syntax. Each command:
 
 ---
 
+## Meta Commands (4)
+
+System management and workflow enhancement commands.
+
+### `/create-agent`
+
+**Purpose:** Interactive wizard to create new specialized AI agent
+
+**File:** [meta/create-agent.md](./meta/create-agent.md)
+
+**Process:**
+
+1. **Agent Discovery**: Name, category, responsibilities, phase involvement
+2. **Configuration**: Tools, model preference, related agents
+3. **File Generation**: Create agent file with YAML frontmatter and system prompt
+4. **Integration**: Update agents/README.md, CLAUDE.md, documentation
+5. **Validation**: Validate structure, test invocation
+6. **Commit**: Generate commit message
+
+**Interactive Wizard:** Step-by-step guidance through agent creation
+
+**Output:** New agent file + updated documentation
+
+**Templates:** Technical, Product, Quality, Design agent templates
+
+---
+
+### `/create-command`
+
+**Purpose:** Interactive wizard to create new slash command
+
+**File:** [meta/create-command.md](./meta/create-command.md)
+
+**Process:**
+
+1. **Command Discovery**: Name, type, category, purpose
+2. **Specification**: Options, parameters, examples, process steps
+3. **File Generation**: Create command file with YAML frontmatter
+4. **Integration**: Update commands/README.md, documentation
+5. **Validation**: Validate structure, test execution
+6. **Commit**: Generate commit message
+
+**Interactive Wizard:** Step-by-step command creation
+
+**Output:** New command file + updated documentation
+
+**Templates:** Workflow, Audit, Utility command templates
+
+---
+
+### `/create-skill`
+
+**Purpose:** Interactive wizard to create new skill for reusable workflows
+
+**File:** [meta/create-skill.md](./meta/create-skill.md)
+
+**Process:**
+
+1. **Skill Discovery**: Name, category, purpose, primary users
+2. **Workflow Definition**: Input, process steps, output, success criteria
+3. **File Generation**: Create skill file with comprehensive workflow
+4. **Integration**: Update skills/README.md, agent documentation
+5. **Validation**: Validate structure, test invocation
+6. **Commit**: Generate commit message
+
+**Interactive Wizard:** Step-by-step skill creation
+
+**Output:** New skill file + updated documentation
+
+**Templates:** Workflow, Validation, Utility skill templates
+
+---
+
+### `/help`
+
+**Purpose:** Interactive help system with search and topic navigation
+
+**File:** [meta/help.md](./meta/help.md)
+
+**Topics:**
+- `commands` - List and search all commands
+- `agents` - Browse agents by category
+- `skills` - View available skills
+- `workflow` - Understand development workflow phases
+- `quick-start` - 15-minute getting started guide
+- `architecture` - Project structure overview
+- `glossary` - Terminology and concepts
+
+**Options:**
+- `--search <query>`: Search across all documentation
+- `--category <cat>`: Filter by category
+- `--details`: Show detailed information
+- `--examples`: Show usage examples
+
+**Interactive Menu:** Navigate through help topics with prompts
+
+**Output:** Context-aware help information
+
+**Search:** Full-text search across commands, agents, skills, and documentation
+
+---
+
 ## Git Commands (1)
 
 ### `/commit`
 
-**Purpose:** Prepare git commits following conventional commits
+**Purpose:** Generate conventional commit messages
 
 **File:** [commit.md](./commit.md)
 
@@ -256,21 +409,18 @@ Commands are invoked using the `/command-name` syntax. Each command:
 **Output Format:**
 
 ```bash
-
 # Commit 1: {title}
-
 git add {files...}
 git commit -m "{type}({scope}): {subject}
 
 {body with bullet points}"
 
 # Commit 2: {title}
-
 git add {files...}
 git commit -m "{type}({scope}): {subject}
 
 {body}"
-```text
+```
 
 **Output:** Formatted git commit commands ready to copy-paste
 
@@ -309,16 +459,35 @@ git commit -m "{type}({scope}): {subject}
 
 ---
 
-## Total: 12 Commands
+## Total: 16 Commands
 
 ## Command Categories Summary
 
-- **Planning**: 2 commands (feature, refactor)
-- **Quality Assurance**: 3 commands (quality-check, code-check, run-tests)
-- **Code Review**: 4 commands (review-code, review-security, review-performance, pen-test)
-- **Development**: 2 commands (add-new-entity, update-docs)
-- **Git**: 1 command (commit)
-- **Analysis**: 1 command (five-why)
+- **Planning**: 2 commands (feature planning, refactor planning)
+- **Quality Assurance**: 3 commands (quality check, code check, tests)
+- **Audit**: 3 commands (security, performance, accessibility)
+- **Development**: 2 commands (entity creation, documentation)
+- **Meta**: 4 commands (create agent/command/skill, help)
+- **Git**: 1 command (commit messages)
+- **Analysis**: 1 command (5 Whys root cause)
+
+---
+
+## Command Evolution
+
+### Deprecated Commands
+
+The following commands have been deprecated and replaced with enhanced versions:
+
+- **`/review-code`** → Functionality absorbed into `/quality-check`
+- **`/review-security`** → Replaced by `/security-audit` (enhanced)
+- **`/review-performance`** → Replaced by `/performance-audit` (enhanced)
+- **`/pen-test`** → Merged into `/security-audit`
+
+### New Command Categories
+
+- **Audit Commands** (`audit/`): Comprehensive, report-generating audit commands
+- **Meta Commands** (`meta/`): System management and workflow enhancement
 
 ---
 
@@ -330,14 +499,14 @@ git commit -m "{type}({scope}): {subject}
 
 - `/code-check` - Stop at first lint or typecheck error
 - `/run-tests` - Stop at first test failure
-- `/quality-check` - Stop at lint/typecheck/test errors
+- `/quality-check` - Stop at lint/typecheck/test errors (Phase 1)
 
 **REPORT all findings:**
 
-- `/review-code` - Report all code issues
-- `/review-security` - Report all security findings
-- `/review-performance` - Report all performance issues
-- `/pen-test` - Report all vulnerabilities
+- `/quality-check` - Report all review/audit findings (Phase 2)
+- `/security-audit` - Report all security findings
+- `/performance-audit` - Report all performance issues
+- `/accessibility-audit` - Report all accessibility violations
 
 ### When to Use Each Command
 
@@ -345,17 +514,21 @@ git commit -m "{type}({scope}): {subject}
 
 - `/start-feature-plan` - Every new feature
 - `/start-refactor-plan` - Before refactoring
+- `/help quick-start` - First time using the system
 
 **During implementation:**
 
 - `/code-check` - Frequently during development
 - `/run-tests` - After each significant change
 - `/five-why` - When encountering bugs or unclear decisions
+- `/help --search <topic>` - When looking for specific guidance
 
 **Before merge:**
 
-- `/quality-check` - Always before requesting merge
-- Individual review commands if specific concerns
+- `/quality-check` - **Always** before requesting merge
+- `/security-audit` - If security-related changes
+- `/performance-audit` - If performance-critical changes
+- `/accessibility-audit` - If UI/UX changes
 
 **After implementation:**
 
@@ -365,7 +538,67 @@ git commit -m "{type}({scope}): {subject}
 **Specialized needs:**
 
 - `/add-new-entity` - When adding new domain entities
-- `/pen-test` - Before handling sensitive data or production release
+- `/create-agent` - When new specialized role needed
+- `/create-command` - When automating repetitive workflows
+- `/create-skill` - When codifying reusable procedures
+
+**System exploration:**
+
+- `/help` - Interactive help system
+- `/help commands` - Browse all commands
+- `/help agents` - Explore available agents
+- `/help workflow` - Understand development workflow
+
+---
+
+## Audit Command Benefits
+
+The new audit commands provide significant improvements over previous review commands:
+
+### Security Audit
+- **8 audit areas** vs previous ad-hoc checks
+- **95+ security checks** comprehensively documented
+- **Penetration testing simulation** integrated
+- **Automated report generation** with severity levels
+- **Fix suggestions** with code examples
+
+### Performance Audit
+- **8 performance areas** systematically analyzed
+- **Performance budgets** with baseline comparisons
+- **Trend analysis** over time
+- **Automated profiling** with measurements
+- **Actionable recommendations** prioritized by impact
+
+### Accessibility Audit
+- **WCAG 2.1 Level AA** comprehensive validation
+- **4 WCAG principles** (Perceivable, Operable, Understandable, Robust)
+- **Screen reader testing** (NVDA, JAWS, VoiceOver, TalkBack)
+- **Keyboard navigation** validation
+- **Mobile accessibility** testing
+
+---
+
+## Meta Command Benefits
+
+Meta commands enable self-improvement of the workflow system:
+
+### System Growth
+- **Create agents** when new specialized expertise needed
+- **Create commands** to automate repetitive workflows
+- **Create skills** to codify reusable procedures
+- **Self-documenting** with integrated help system
+
+### Consistency
+- **Templates** ensure consistent structure
+- **Validation** prevents malformed definitions
+- **Best practices** built into wizards
+- **Integration** automatically updates documentation
+
+### Discoverability
+- **Interactive help** with search and navigation
+- **Quick start** gets developers productive in 15 minutes
+- **Examples** for every command, agent, and skill
+- **Glossary** for terminology understanding
 
 ---
 
@@ -378,8 +611,21 @@ If a command needs improvement:
 1. Document the issue in CLAUDE.md Recent Learnings
 2. Discuss with user
 3. Update command file only after user approval
+4. Consider using `/create-command` to create enhanced version
 
 ---
 
-**See individual command files for detailed execution instructions.**
+## Related Documentation
 
+- **Agents**: `.claude/agents/README.md` - Available AI specialists
+- **Skills**: `.claude/skills/README.md` - Reusable workflows
+- **Workflow**: `.claude/docs/workflows/` - Detailed workflow guides
+- **Standards**: `.claude/docs/standards/` - Code and architecture standards
+- **Quick Start**: `.claude/docs/quick-start.md` - 15-minute onboarding
+- **Main Guide**: `CLAUDE.md` - Comprehensive project guide
+
+---
+
+**For detailed execution instructions, see individual command files.**
+
+**For interactive help, use `/help`**
