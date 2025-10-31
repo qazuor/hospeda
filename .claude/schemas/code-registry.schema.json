@@ -1,0 +1,73 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://hospeda.dev/schemas/code-registry.schema.json",
+  "title": "Code Registry",
+  "description": "JSON Schema for the code registry (computed from TODOs.md files)",
+  "type": "object",
+  "required": ["generatedAt", "totalSessions", "totalTasks", "tasks"],
+  "properties": {
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the registry was generated"
+    },
+    "totalSessions": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Total number of planning sessions found"
+    },
+    "totalTasks": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Total number of tasks across all sessions"
+    },
+    "tasks": {
+      "type": "array",
+      "description": "List of all tasks from all planning sessions",
+      "items": {
+        "type": "object",
+        "required": ["code", "planningCode", "sessionPath", "title", "status", "estimatedHours"],
+        "properties": {
+          "code": {
+            "type": "string",
+            "pattern": "^PF\\d{3,4}(-\\d+)?(\\.\\d+)?$",
+            "description": "Task code (e.g., PF004-1, PF004-2.1)"
+          },
+          "planningCode": {
+            "type": "string",
+            "pattern": "^P(F|R)?-?\\d{3,4}[^/]*$",
+            "description": "Planning session code (e.g., P-004, P-004-workflow-optimization)"
+          },
+          "sessionPath": {
+            "type": "string",
+            "description": "Relative path to the planning session directory"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Task title/description"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "in-progress", "completed", "blocked", "skipped"],
+            "description": "Current status of the task"
+          },
+          "estimatedHours": {
+            "type": "number",
+            "minimum": 0.5,
+            "maximum": 4,
+            "description": "Estimated hours to complete (tasks must be atomized: 0.5-4 hours)"
+          },
+          "phase": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 4,
+            "description": "Optional workflow phase (1=Planning, 2=Implementation, 3=Validation, 4=Finalization)"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}
