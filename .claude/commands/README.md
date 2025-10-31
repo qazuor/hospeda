@@ -27,8 +27,9 @@ Commands are organized into subdirectories by category for better organization a
 ├── run-tests.md
 ├── add-new-entity.md             # Development commands (root level)
 ├── update-docs.md
-├── commit.md                     # Git commands (root level)
 ├── five-why.md                   # Analysis commands (root level)
+├── git/
+│   └── commit.md                 # Git commands
 ├── audit/                        # Comprehensive audit commands
 │   ├── security-audit.md
 │   ├── performance-audit.md
@@ -396,7 +397,7 @@ System management and workflow enhancement commands.
 
 **Purpose:** Generate conventional commit messages
 
-**File:** [commit.md](./commit.md)
+**File:** [commit.md](./git/commit.md)
 
 **Process:**
 
