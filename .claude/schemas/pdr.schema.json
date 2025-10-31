@@ -1,0 +1,314 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://hospeda.dev/schemas/pdr.schema.json",
+  "title": "Product Design Requirements (PDR)",
+  "description": "JSON Schema for validating Product Design Requirements documents",
+  "type": "object",
+  "required": ["metadata", "overview", "userStories", "businessRules", "acceptanceCriteria"],
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "required": ["code", "title", "version", "createdAt", "status"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^P(F|R)?\\d{3,4}$",
+          "description": "Planning code (e.g., PF004, P-004, PR001)"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 200,
+          "description": "Title of the product design requirements"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+(\\.\\d+)?$",
+          "description": "Version following semantic versioning (e.g., 1.0, 1.0.0)"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 date-time of creation"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 date-time of last update"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["draft", "review", "approved", "in-progress", "completed", "archived"],
+          "description": "Current status of the PDR"
+        },
+        "author": {
+          "type": "string",
+          "description": "Primary author of the PDR"
+        },
+        "reviewers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of reviewers"
+        }
+      }
+    },
+    "overview": {
+      "type": "object",
+      "required": ["description", "context", "businessValue"],
+      "properties": {
+        "description": {
+          "type": "string",
+          "minLength": 50,
+          "description": "Detailed description of what is being built"
+        },
+        "context": {
+          "type": "string",
+          "minLength": 30,
+          "description": "Context and background information"
+        },
+        "businessValue": {
+          "type": "string",
+          "minLength": 30,
+          "description": "Business value and impact"
+        },
+        "goals": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 10
+          },
+          "minItems": 1,
+          "description": "List of goals to achieve"
+        },
+        "nonGoals": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Explicitly out of scope items"
+        }
+      }
+    },
+    "userStories": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "role", "want", "so"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^US-\\d{3,4}$",
+            "description": "User story ID (e.g., US-001)"
+          },
+          "role": {
+            "type": "string",
+            "minLength": 3,
+            "description": "User role (e.g., 'developer', 'admin', 'user')"
+          },
+          "want": {
+            "type": "string",
+            "minLength": 10,
+            "description": "What the user wants to do"
+          },
+          "so": {
+            "type": "string",
+            "minLength": 10,
+            "description": "Why the user wants it (benefit/value)"
+          },
+          "priority": {
+            "type": "string",
+            "enum": ["P0", "P1", "P2", "P3"],
+            "description": "Priority level (P0=critical, P3=nice-to-have)"
+          },
+          "acceptanceCriteria": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 10
+            },
+            "description": "Specific acceptance criteria for this user story"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Additional notes or considerations"
+          }
+        }
+      }
+    },
+    "businessRules": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "rule", "rationale"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^BR-\\d{1,3}$",
+            "description": "Business rule ID (e.g., BR-1)"
+          },
+          "rule": {
+            "type": "string",
+            "minLength": 10,
+            "description": "The business rule statement"
+          },
+          "rationale": {
+            "type": "string",
+            "minLength": 10,
+            "description": "Why this rule exists"
+          },
+          "category": {
+            "type": "string",
+            "enum": ["validation", "security", "business-logic", "compliance", "performance", "ux"],
+            "description": "Category of the business rule"
+          },
+          "impact": {
+            "type": "string",
+            "enum": ["high", "medium", "low"],
+            "description": "Impact level if rule is violated"
+          }
+        }
+      }
+    },
+    "acceptanceCriteria": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "criterion", "testable"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^AC-\\d{3,4}$",
+            "description": "Acceptance criterion ID (e.g., AC-001)"
+          },
+          "criterion": {
+            "type": "string",
+            "minLength": 10,
+            "description": "The acceptance criterion"
+          },
+          "testable": {
+            "type": "boolean",
+            "description": "Whether this criterion can be automatically tested"
+          },
+          "testType": {
+            "type": "string",
+            "enum": ["unit", "integration", "e2e", "manual"],
+            "description": "Type of test required"
+          },
+          "priority": {
+            "type": "string",
+            "enum": ["P0", "P1", "P2", "P3"]
+          },
+          "relatedUserStories": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^US-\\d{3,4}$"
+            },
+            "description": "Related user story IDs"
+          }
+        }
+      }
+    },
+    "technicalConsiderations": {
+      "type": "object",
+      "properties": {
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Technical dependencies"
+        },
+        "constraints": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Technical constraints"
+        },
+        "risks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["risk", "impact", "mitigation"],
+            "properties": {
+              "risk": {
+                "type": "string"
+              },
+              "impact": {
+                "type": "string",
+                "enum": ["high", "medium", "low"]
+              },
+              "probability": {
+                "type": "string",
+                "enum": ["high", "medium", "low"]
+              },
+              "mitigation": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "outOfScope": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Items explicitly excluded from this PDR"
+    },
+    "openQuestions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["question"],
+        "properties": {
+          "question": {
+            "type": "string"
+          },
+          "answer": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["open", "answered", "blocked"]
+          },
+          "assignedTo": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "mockups": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "path"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["wireframe", "mockup", "prototype", "screenshot"]
+          }
+        }
+      }
+    }
+  }
+}

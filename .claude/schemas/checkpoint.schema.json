@@ -1,0 +1,92 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://hospeda.dev/schemas/checkpoint.schema.json",
+  "title": "Workflow Checkpoint",
+  "description": "JSON Schema for workflow checkpoint tracking",
+  "type": "object",
+  "required": ["workflow", "planningCode", "currentPhase", "currentStep", "totalSteps", "currentTask"],
+  "properties": {
+    "workflow": {
+      "type": "string",
+      "enum": ["feature", "refactor", "bugfix-small", "quick-fix"],
+      "description": "Type of workflow being executed"
+    },
+    "planningCode": {
+      "type": "string",
+      "pattern": "^P(F|R)?-?\\d{3,4}$",
+      "description": "Planning code (e.g., P-004, PF004)"
+    },
+    "currentPhase": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4,
+      "description": "Current workflow phase (1=Planning, 2=Implementation, 3=Validation, 4=Finalization)"
+    },
+    "currentStep": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Current step within the workflow"
+    },
+    "totalSteps": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Total steps in the workflow"
+    },
+    "currentTask": {
+      "type": "string",
+      "pattern": "^PF\\d{3,4}(-\\d+)?(\\.\\d+)?$",
+      "description": "Current task code being worked on"
+    },
+    "taskName": {
+      "type": "string",
+      "description": "Human-readable name of current task"
+    },
+    "previousTaskCompleted": {
+      "type": "string",
+      "pattern": "^PF\\d{3,4}(-\\d+)?(\\.\\d+)?$",
+      "description": "Last completed task code"
+    },
+    "phaseStarted": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the current phase started"
+    },
+    "lastUpdated": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last update timestamp"
+    },
+    "tasksCompleted": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of tasks completed so far"
+    },
+    "hoursSpent": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Total hours spent on this workflow"
+    },
+    "blockers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["task", "reason"],
+        "properties": {
+          "task": {"type": "string"},
+          "reason": {"type": "string"},
+          "since": {"type": "string", "format": "date-time"}
+        }
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "timestamp": {"type": "string", "format": "date-time"},
+          "note": {"type": "string"}
+        }
+      }
+    }
+  }
+}
