@@ -1,7 +1,303 @@
 {
-  "lastPlanningNumber": 4,
-  "plannings": {
-    "P-001": 805,
-    "P-004": 52
-  }
+  "generatedAt": "2025-10-31T01:40:37.676Z",
+  "totalSessions": 2,
+  "totalTasks": 37,
+  "tasks": [
+    {
+      "code": "PF004-1",
+      "planningCode": "P-004-workflow-optimization",
+      "sessionPath": "P-004-workflow-optimization",
+      "title": "Create new directory structure",
+      "status": "pending",
+      "estimatedHours": 1
+    },
+    {
+      "code": "PF004-10",
+      "planningCode": "P-004-workflow-optimization",
+      "sessionPath": "P-004-workflow-optimization",
+      "title": "Update agents README with new structure",
+      "status": "pending",
+      "estimatedHours": 1
+    },
+    {
+      "code": "PF004-11",
+      "planningCode": "P-004-workflow-optimization",
+      "sessionPath": "P-004-workflow-optimization",
+      "title": "Delete or move deprecated commands",
+      "status": "pending",
+      "estimatedHours": 1
+    },
+    {
+      "code": "PF004-12",
+      "planningCode": "P-004-workflow-optimization",
+      "sessionPath": "P-004-workflow-optimization",
+      "title": "Create audit command replacements",
+      "status": "pending",
+      "estimatedHours": 3
+    },
+    {
+      "code": "PF004-13",
+      "planningCode": "P-004-workflow-optimization",
+      "sessionPath": "P-004-workflow-optimization",
+      "title": "Create system extensibility commands",
+      "status": "pending",
+      "estimatedHours": 4
+    },
+    {
+      "code": "PF004-14",
+      "planningCode": "P-004-workflow-optimization",
+      "sessionPath": "P-004-workflow-optimization",
+      "title": "Update commands README with new structure",
+      "status": "pending",
+      "estimatedHours": 1
+    },
+    {
+      "code": "PF004-15",
+      "planningCode": "P-004-workflow-optimization",
+      "sessionPath": "P-004-workflow-optimization",
+      "title": "Create 11 new specialized skills",
+      "status": "pending",
+      "estimatedHours": 6
+    },
+    {
+      "code": "PF004-16",
+      "planningCode": "P-004-workflow-optimization",
+      "sessionPath": "P-004-workflow-optimization",
+      "title": "Update skills README with new structure",
+      "status": "pending",
+      "estimatedHours": 1
+    },
+    {
+      "code": "PF004-17",
+      "planningCode": "P-004-workflow-optimization",
+      "sessionPath": "P-004-workflow-optimization",
+      "title": "Document Level 1 workflow",
+      "status": "pending",
+      "estimatedHours": 2
+    },
+    {
+      "code": "PF004-18",
+      "planningCode": "P-004-workflow-optimization",
+      "sessionPath": "P-004-workflow-optimization",
+      "title": "Document Level 2 workflow",
+      "status": "pending",
+      "estimatedHours": 3
+    },
+    {
+      "code": "PF004-19",
+      "planningCode": "P-004-workflow-optimization",
+      "sessionPath": "P-004-workflow-optimization",
+      "title": "Create Mermaid diagrams",
+      "status": "pending",
+      "estimatedHours": 2
+    },
+    {
+      "code": "PF004-2",
+      "planningCode": "P-004-workflow-optimization",
+      "sessionPath": "P-004-workflow-optimization",
+      "title": "Create all 7 JSON schemas",
+      "status": "pending",
+      "estimatedHours": 3
+    },
+    {
+      "code": "PF004-20",
+      "planningCode": "P-004-workflow-optimization",
+      "sessionPath": "P-004-workflow-optimization",
+      "title": "Update Phase 1-4 workflow docs",
+      "status": "pending",
+      "estimatedHours": 2
+    },
+    {
+      "code": "PF004-21",
+      "planningCode": "P-004-workflow-optimization",
+      "sessionPath": "P-004-workflow-optimization",
+      "title": "Restructure main CLAUDE.md",
+      "status": "pending",
+      "estimatedHours": 3
+    },
+    {
+      "code": "PF004-22",
+      "planningCode": "P-004-workflow-optimization",
+      "sessionPath": "P-004-workflow-optimization",
+      "title": "Extract learnings to individual files",
+      "status": "pending",
+      "estimatedHours": 2
+    },
+    {
+      "code": "PF004-23",
+      "planningCode": "P-004-workflow-optimization",
+      "sessionPath": "P-004-workflow-optimization",
+      "title": "Fix all links after restructure",
+      "status": "pending",
+      "estimatedHours": 2
+    },
+    {
+      "code": "PF004-24",
+      "planningCode": "P-004-workflow-optimization",
+      "sessionPath": "P-004-workflow-optimization",
+      "title": "Run all validation scripts",
+      "status": "pending",
+      "estimatedHours": 1
+    },
+    {
+      "code": "PF004-25",
+      "planningCode": "P-004-workflow-optimization",
+      "sessionPath": "P-004-workflow-optimization",
+      "title": "Set up Git hooks with Husky",
+      "status": "pending",
+      "estimatedHours": 2
+    },
+    {
+      "code": "PF004-26",
+      "planningCode": "P-004-workflow-optimization",
+      "sessionPath": "P-004-workflow-optimization",
+      "title": "Build system health monitoring",
+      "status": "pending",
+      "estimatedHours": 2
+    },
+    {
+      "code": "PF004-27",
+      "planningCode": "P-004-workflow-optimization",
+      "sessionPath": "P-004-workflow-optimization",
+      "title": "Create GitHub Actions workflow",
+      "status": "pending",
+      "estimatedHours": 2
+    },
+    {
+      "code": "PF004-28",
+      "planningCode": "P-004-workflow-optimization",
+      "sessionPath": "P-004-workflow-optimization",
+      "title": "Implement workflow checkpoints",
+      "status": "pending",
+      "estimatedHours": 2
+    },
+    {
+      "code": "PF004-29",
+      "planningCode": "P-004-workflow-optimization",
+      "sessionPath": "P-004-workflow-optimization",
+      "title": "Document design system",
+      "status": "pending",
+      "estimatedHours": 3
+    },
+    {
+      "code": "PF004-3",
+      "planningCode": "P-004-workflow-optimization",
+      "sessionPath": "P-004-workflow-optimization",
+      "title": "Implement code registry system",
+      "status": "pending",
+      "estimatedHours": 2
+    },
+    {
+      "code": "PF004-30",
+      "planningCode": "P-004-workflow-optimization",
+      "sessionPath": "P-004-workflow-optimization",
+      "title": "Document system maintenance",
+      "status": "pending",
+      "estimatedHours": 2
+    },
+    {
+      "code": "PF004-31",
+      "planningCode": "P-004-workflow-optimization",
+      "sessionPath": "P-004-workflow-optimization",
+      "title": "Review and improve consistency",
+      "status": "pending",
+      "estimatedHours": 2
+    },
+    {
+      "code": "PF004-32",
+      "planningCode": "P-004-workflow-optimization",
+      "sessionPath": "P-004-workflow-optimization",
+      "title": "Document all changes",
+      "status": "pending",
+      "estimatedHours": 2
+    },
+    {
+      "code": "PF004-33",
+      "planningCode": "P-004-workflow-optimization",
+      "sessionPath": "P-004-workflow-optimization",
+      "title": "Walk through all workflows",
+      "status": "pending",
+      "estimatedHours": 3
+    },
+    {
+      "code": "PF004-34",
+      "planningCode": "P-004-workflow-optimization",
+      "sessionPath": "P-004-workflow-optimization",
+      "title": "Validate onboarding experience",
+      "status": "pending",
+      "estimatedHours": 2
+    },
+    {
+      "code": "PF004-35",
+      "planningCode": "P-004-workflow-optimization",
+      "sessionPath": "P-004-workflow-optimization",
+      "title": "Complete validation check",
+      "status": "pending",
+      "estimatedHours": 2
+    },
+    {
+      "code": "PF004-36",
+      "planningCode": "P-004-workflow-optimization",
+      "sessionPath": "P-004-workflow-optimization",
+      "title": "Create baseline metrics",
+      "status": "pending",
+      "estimatedHours": 1
+    },
+    {
+      "code": "PF004-37",
+      "planningCode": "P-004-workflow-optimization",
+      "sessionPath": "P-004-workflow-optimization",
+      "title": "Demo and training",
+      "status": "pending",
+      "estimatedHours": 1
+    },
+    {
+      "code": "PF004-4",
+      "planningCode": "P-004-workflow-optimization",
+      "sessionPath": "P-004-workflow-optimization",
+      "title": "Create validation and sync scripts",
+      "status": "pending",
+      "estimatedHours": 4
+    },
+    {
+      "code": "PF004-5",
+      "planningCode": "P-004-workflow-optimization",
+      "sessionPath": "P-004-workflow-optimization",
+      "title": "Create core documentation files",
+      "status": "pending",
+      "estimatedHours": 4
+    },
+    {
+      "code": "PF004-6",
+      "planningCode": "P-004-workflow-optimization",
+      "sessionPath": "P-004-workflow-optimization",
+      "title": "Create telemetry tracking system",
+      "status": "pending",
+      "estimatedHours": 2
+    },
+    {
+      "code": "PF004-7",
+      "planningCode": "P-004-workflow-optimization",
+      "sessionPath": "P-004-workflow-optimization",
+      "title": "Move deprecated agents to archive",
+      "status": "pending",
+      "estimatedHours": 2
+    },
+    {
+      "code": "PF004-8",
+      "planningCode": "P-004-workflow-optimization",
+      "sessionPath": "P-004-workflow-optimization",
+      "title": "Update agents absorbing responsibilities",
+      "status": "pending",
+      "estimatedHours": 3
+    },
+    {
+      "code": "PF004-9",
+      "planningCode": "P-004-workflow-optimization",
+      "sessionPath": "P-004-workflow-optimization",
+      "title": "Rename agents to more specific names",
+      "status": "pending",
+      "estimatedHours": 2
+    }
+  ]
 }
