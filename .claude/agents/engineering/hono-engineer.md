@@ -98,8 +98,7 @@ export const accommodationCRUDRoute = createCRUDRoute({
   requireAuth: true,
   permissions: ['accommodation:write'],
 });
-
-```text
+```
 
 #### Using createListRoute Factory
 
@@ -119,8 +118,7 @@ export const accommodationListRoute = createListRoute({
   defaultPageSize: 20,
   maxPageSize: 100,
 });
-
-```text
+```
 
 #### Registering Routes
 
@@ -139,8 +137,7 @@ accommodationRouter.route('/', accommodationCRUDRoute);
 accommodationRouter.route('/search', accommodationSearchRoute);
 
 export default accommodationRouter;
-
-```text
+```
 
 ### Step 2: Custom Route Implementation
 
@@ -209,8 +206,7 @@ checkAvailabilityRoute.post(
 );
 
 export { checkAvailabilityRoute };
-
-```text
+```
 
 ### Step 3: Middleware Configuration
 
@@ -285,8 +281,7 @@ export async function getActorFromContext(
     metadata: user.metadata,
   };
 }
-
-```text
+```
 
 #### Validation Middleware
 
@@ -336,8 +331,7 @@ export function validateQuery<T>(schema: ZodSchema<T>) {
     }
   });
 }
-
-```text
+```
 
 #### Rate Limiting Middleware
 
@@ -389,8 +383,7 @@ export function createRateLimit(options: {
     },
   });
 }
-
-```text
+```
 
 #### CORS Middleware
 
@@ -423,8 +416,7 @@ export const corsMiddleware = cors({
   maxAge: 600,
   credentials: true,
 });
-
-```text
+```
 
 ### Step 4: Error Handling
 
@@ -521,8 +513,7 @@ export function handleApiError(c: Context, error: unknown) {
     },
   }, 500);
 }
-
-```text
+```
 
 ### Step 5: Response Formatting
 
@@ -613,8 +604,7 @@ export function paginatedResponse<T>(
     },
   }, 200);
 }
-
-```text
+```
 
 ### Step 6: Route Testing
 
@@ -651,8 +641,8 @@ describe('Accommodation CRUD Routes', () => {
         maxGuests: 4,
         address: {
           street: '123 Beach Rd',
-          city: 'Concepci�n del Uruguay',
-          province: 'Entre R�os',
+          city: 'Concepción del Uruguay',
+          province: 'Entre Ríos',
           country: 'Argentina',
         },
       };
@@ -832,8 +822,7 @@ describe('Accommodation CRUD Routes', () => {
     });
   });
 });
-
-```text
+```
 
 ---
 
@@ -841,8 +830,7 @@ describe('Accommodation CRUD Routes', () => {
 
 ### Route Design
 
-####  GOOD: Use factory patterns
-
+#### Good Example
 
 ```typescript
 // Consistent, tested, maintainable
@@ -852,11 +840,9 @@ const accommodationRoutes = createCRUDRoute({
   createSchema: createAccommodationSchema,
   updateSchema: updateAccommodationSchema,
 });
+```
 
-```text
-
-#### L BAD: Manual route implementation
-
+#### Bad Example
 
 ```typescript
 // Duplicated code, inconsistent error handling
@@ -870,13 +856,11 @@ app.post('/accommodations', async (c) => {
     // Inconsistent error response
   }
 });
-
-```text
+```
 
 ### Middleware Application
 
-####  GOOD: Composable middleware
-
+#### Good Example
 
 ```typescript
 // Clear, reusable, testable
@@ -889,11 +873,9 @@ app.post(
     // Handler logic
   }
 );
+```
 
-```text
-
-#### L BAD: Inline checks
-
+#### Bad Example
 
 ```typescript
 // Not reusable, hard to test
@@ -907,13 +889,11 @@ app.post('/accommodations', async (c) => {
 
   // Handler logic
 });
-
-```text
+```
 
 ### Error Handling
 
-####  GOOD: Centralized error handling
-
+#### Good Example
 
 ```typescript
 try {
@@ -931,11 +911,9 @@ try {
 } catch (error) {
   return handleApiError(c, error);
 }
+```
 
-```text
-
-#### L BAD: Scattered error handling
-
+#### Bad Example
 
 ```typescript
 try {
@@ -947,8 +925,7 @@ try {
 } catch (e) {
   return c.json({ message: e.message }, 500); // Different format
 }
-
-```text
+```
 
 ---
 
@@ -990,8 +967,7 @@ app.delete(
     }
   }
 );
-
-```text
+```
 
 ### Pattern 2: Paginated List with Filters
 
@@ -1023,8 +999,7 @@ app.get(
     }
   }
 );
-
-```text
+```
 
 ### Pattern 3: File Upload
 
@@ -1069,8 +1044,7 @@ app.post(
     }
   }
 );
-
-```text
+```
 
 ### Pattern 4: Webhook Handler
 
@@ -1103,8 +1077,7 @@ app.post(
     }
   }
 );
-
-```text
+```
 
 ---
 
@@ -1132,8 +1105,7 @@ describe('Accommodation Routes Unit Tests', () => {
     expect(result.success).toBe(false);
   });
 });
-
-```text
+```
 
 ### Integration Tests
 
@@ -1171,8 +1143,7 @@ describe('Accommodation Routes Integration Tests', () => {
     expect(bookingResponse.status).toBe(201);
   });
 });
-
-```text
+```
 
 ---
 
@@ -1255,15 +1226,23 @@ Before considering API work complete:
 
 API implementation is complete when:
 
-1.  All routes implemented using factories when possible
-2.  Authentication and authorization working
-3.  All inputs validated with Zod
-4.  Errors handled consistently
-5.  Comprehensive tests written
-6.  90%+ test coverage
-7.  OpenAPI documentation complete
-8.  All tests passing
+- [ ] All routes implemented using factories when possible
+- [ ] Authentication and authorization working
+- [ ] All inputs validated with Zod
+- [ ] Errors handled consistently
+- [ ] Comprehensive tests written
+- [ ] 90%+ test coverage
+- [ ] OpenAPI documentation complete
+- [ ] All tests passing
 
 ---
 
 **Remember:** The API layer is the contract between frontend and backend. Make it type-safe, well-documented, and consistent. Good API design prevents bugs and makes frontend development smooth.
+
+---
+
+## Changelog
+
+| Version | Date | Changes | Author | Related |
+|---------|------|---------|--------|---------|
+| 1.0.0 | 2025-10-31 | Initial version | @tech-lead | P-004 |

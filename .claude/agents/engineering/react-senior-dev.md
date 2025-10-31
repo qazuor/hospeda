@@ -147,7 +147,7 @@ function AccommodationCardComponent({
         {/* Capacity */}
         <div className="flex items-center gap-2 text-sm text-gray-600 mb-3">
           <Users size={16} />
-          <span>Hasta {accommodation.maxGuests} hu�spedes</span>
+          <span>Hasta {accommodation.maxGuests} huéspedes</span>
         </div>
 
         {/* Rating */}
@@ -158,7 +158,7 @@ function AccommodationCardComponent({
               {accommodation.averageRating.toFixed(1)}
             </span>
             <span className="text-sm text-gray-500">
-              ({accommodation.reviewCount} rese�as)
+              ({accommodation.reviewCount} reseñas)
             </span>
           </div>
         )}
@@ -182,8 +182,7 @@ function AccommodationCardComponent({
 
 // Memoize component to prevent unnecessary re-renders
 export const AccommodationCard = memo(AccommodationCardComponent);
-
-```text
+```
 
 #### Compound Component Pattern
 
@@ -326,8 +325,7 @@ AccommodationList.List = function List({ children }: { children: ReactNode }) {
 };
 
 export { AccommodationList };
-
-```text
+```
 
 ### Step 2: Custom Hooks
 
@@ -529,8 +527,7 @@ export function useDeleteAccommodation() {
     },
   });
 }
-
-```text
+```
 
 #### React 19 Optimistic Updates Hook
 
@@ -598,8 +595,7 @@ export function useOptimisticFavorite(
     isPending,
   };
 }
-
-```text
+```
 
 #### Custom Form Hook
 
@@ -660,8 +656,7 @@ export function useBookingForm(input: {
     nights,
   };
 }
-
-```text
+```
 
 ### Step 3: Form Components with TanStack Form
 
@@ -730,13 +725,13 @@ export function AccommodationForm({
       >
         {(field) => (
           <div>
-            <Label htmlFor="title">T�tulo *</Label>
+            <Label htmlFor="title">Título *</Label>
             <Input
               id="title"
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
               onBlur={field.handleBlur}
-              placeholder="Ej: Departamento c�ntrico con vista al r�o"
+              placeholder="Ej: Departamento céntrico con vista al río"
             />
             {field.state.meta.errors && (
               <p className="text-sm text-red-600 mt-1">
@@ -756,7 +751,7 @@ export function AccommodationForm({
       >
         {(field) => (
           <div>
-            <Label htmlFor="description">Descripci�n *</Label>
+            <Label htmlFor="description">Descripción *</Label>
             <Textarea
               id="description"
               value={field.state.value}
@@ -810,7 +805,7 @@ export function AccommodationForm({
         >
           {(field) => (
             <div>
-              <Label htmlFor="maxGuests">Hu�spedes m�ximos *</Label>
+              <Label htmlFor="maxGuests">Huéspedes máximos *</Label>
               <Input
                 id="maxGuests"
                 type="number"
@@ -831,7 +826,7 @@ export function AccommodationForm({
 
       {/* Address fields */}
       <div className="space-y-4">
-        <h3 className="font-semibold">Direcci�n</h3>
+        <h3 className="font-semibold">Dirección</h3>
 
         <form.Field name="address.street">
           {(field) => (
@@ -841,7 +836,7 @@ export function AccommodationForm({
                 id="street"
                 value={field.state.value}
                 onChange={(e) => field.handleChange(e.target.value)}
-                placeholder="Ej: San Mart�n 123"
+                placeholder="Ej: San Martín 123"
               />
             </div>
           )}
@@ -856,7 +851,7 @@ export function AccommodationForm({
                   id="city"
                   value={field.state.value}
                   onChange={(e) => field.handleChange(e.target.value)}
-                  placeholder="Ej: Concepci�n del Uruguay"
+                  placeholder="Ej: Concepción del Uruguay"
                 />
               </div>
             )}
@@ -870,7 +865,7 @@ export function AccommodationForm({
                   id="province"
                   value={field.state.value}
                   onChange={(e) => field.handleChange(e.target.value)}
-                  placeholder="Ej: Entre R�os"
+                  placeholder="Ej: Entre Ríos"
                 />
               </div>
             )}
@@ -895,8 +890,7 @@ export function AccommodationForm({
     </form>
   );
 }
-
-```text
+```
 
 ---
 
@@ -904,17 +898,16 @@ export function AccommodationForm({
 
 ### Component Design
 
-####  GOOD: Single responsibility
+#### Good Example: Single responsibility
 
 ```typescript
 // Each component does one thing well
 function AccommodationCard({ accommodation }) { /* Display card */ }
 function AccommodationFilters({ onFilterChange }) { /* Handle filters */ }
 function AccommodationList({ accommodations }) { /* Display list */ }
+```
 
-```text
-
-#### L BAD: God component
+#### Bad Example: God component
 
 ```typescript
 // One component doing everything
@@ -922,12 +915,11 @@ function Accommodations() {
   // Fetching, filtering, sorting, displaying, editing, deleting...
   // Too many responsibilities!
 }
-
-```text
+```
 
 ### Memoization
 
-####  GOOD: Strategic memoization
+#### Good Example: Strategic memoization
 
 ```typescript
 // Memoize expensive calculations
@@ -942,21 +934,19 @@ const handleSelect = useCallback((id: string) => {
 
 // Memoize components with expensive renders
 export const ExpensiveComponent = memo(Component);
+```
 
-```text
-
-#### L BAD: Over-memoization
+#### Bad Example: Over-memoization
 
 ```typescript
 // Unnecessary memoization
 const simpleValue = useMemo(() => props.value, [props.value]);
 const onClick = useCallback(() => setCount(c => c + 1), []); // Simple operation
-
-```text
+```
 
 ### Error Handling
 
-####  GOOD: Proper error boundaries and states
+#### Good Example: Proper error boundaries and states
 
 ```typescript
 function AccommodationList() {
@@ -976,8 +966,7 @@ function AccommodationList() {
 
   return <div>{/* Render data */}</div>;
 }
-
-```text
+```
 
 ---
 
@@ -997,14 +986,22 @@ function AccommodationList() {
 
 ## Success Criteria
 
-1.  All components properly typed
-2.  Custom hooks reusable
-3.  Forms validated with Zod
-4.  Server state managed with TanStack Query
-5.  Accessible (WCAG AA)
-6.  Performance optimized
-7.  Tests passing (90%+ coverage)
+1. All components properly typed
+2. Custom hooks reusable
+3. Forms validated with Zod
+4. Server state managed with TanStack Query
+5. Accessible (WCAG AA)
+6. Performance optimized
+7. Tests passing (90%+ coverage)
 
 ---
 
 **Remember:** React components should be composable, reusable, and performant. Use React 19 features wisely, keep components focused, and always think about the user experience.
+
+---
+
+## Changelog
+
+| Version | Date | Changes | Author | Related |
+|---------|------|---------|--------|---------|
+| 1.0.0 | 2025-10-31 | Initial version | @tech-lead | P-004 |

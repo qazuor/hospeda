@@ -112,7 +112,7 @@ This agent now absorbs responsibilities previously handled by: architecture-vali
 - **Architecture**: Layered monorepo with strict boundaries
 - **Stack**: TypeScript, Hono, Drizzle ORM, Astro, React 19
 - **Methodology**: TDD, SOLID principles, Four-Phase Workflow
-- **Phase**: All phases (Planning � Implementation � Validation � Finalization)
+- **Phase**: All phases (Planning → Implementation → Validation → Finalization)
 
 ### Key Responsibilities by Phase
 
@@ -149,10 +149,10 @@ This agent now absorbs responsibilities previously handled by: architecture-vali
 
 ### Architectural Review
 
-####  Pattern Consistency
+#### Pattern Consistency
 
 ```typescript
-// GOOD: Following established patterns
+// Good Example: Following established patterns
 export class AccommodationService extends BaseCrudService<
   Accommodation,
   AccommodationModel,
@@ -165,38 +165,36 @@ export class AccommodationService extends BaseCrudService<
   }
 }
 
-// BAD: Custom implementation without base class
+// Bad Example: Custom implementation without base class
 export class AccommodationService {
   async create(data: any) {
     // Custom CRUD implementation
   }
 }
+```
 
-```text
-
-####  Layer Boundaries
+#### Layer Boundaries
 
 ```typescript
-// GOOD: Clear separation
+// Good Example: Clear separation
 // API Layer
 app.post('/accommodations', async (c) => {
   const service = new AccommodationService(ctx);
   return service.create(input);
 });
 
-// BAD: Business logic in routes
+// Bad Example: Business logic in routes
 app.post('/accommodations', async (c) => {
   // Direct database access from route
   const result = await db.insert(accommodations).values(data);
   // Complex business logic here
 });
+```
 
-```text
-
-####  Type Safety
+#### Type Safety
 
 ```typescript
-// GOOD: Strict types
+// Good Example: Strict types
 async function processBooking(input: {
   bookingId: string;
   userId: string;
@@ -204,19 +202,18 @@ async function processBooking(input: {
   // Implementation
 }
 
-// BAD: Loose types
+// Bad Example: Loose types
 async function processBooking(input: any): Promise<any> {
   // Implementation
 }
-
-```text
+```
 
 ### Code Quality Review
 
-####  RO-RO Pattern
+#### RO-RO Pattern
 
 ```typescript
-// GOOD: Receive Object, Return Object
+// Good Example: Receive Object, Return Object
 async function calculatePrice(input: {
   accommodation: Accommodation;
   checkIn: Date;
@@ -230,7 +227,7 @@ async function calculatePrice(input: {
   // Implementation
 }
 
-// BAD: Multiple parameters, primitive return
+// Bad Example: Multiple parameters, primitive return
 async function calculatePrice(
   accommodation: Accommodation,
   checkIn: Date,
@@ -239,13 +236,12 @@ async function calculatePrice(
 ): Promise<number> {
   // Implementation
 }
+```
 
-```text
-
-####  Documentation
+#### Documentation
 
 ```typescript
-// GOOD: Comprehensive JSDoc
+// Good Example: Comprehensive JSDoc
 /**
  * Calculate total booking price including taxes and fees
  *
@@ -271,18 +267,17 @@ async function calculatePrice(input: PriceInput): Promise<PriceOutput> {
   // Implementation
 }
 
-// BAD: Missing or minimal documentation
+// Bad Example: Missing or minimal documentation
 // Calculate price
 async function calculatePrice(input: PriceInput): Promise<PriceOutput> {
   // Implementation
 }
+```
 
-```text
-
-####  Error Handling
+#### Error Handling
 
 ```typescript
-// GOOD: Proper error handling with types
+// Good Example: Proper error handling with types
 async function createBooking(input: CreateBookingInput): Promise<Result<Booking>> {
   try {
     // Validation
@@ -314,19 +309,18 @@ async function createBooking(input: CreateBookingInput): Promise<Result<Booking>
   }
 }
 
-// BAD: Throwing raw errors
+// Bad Example: Throwing raw errors
 async function createBooking(input: CreateBookingInput): Promise<Booking> {
   if (!input.accommodationId) {
     throw new Error('Bad input');
   }
   return await this.model.create(input);
 }
-
-```text
+```
 
 ### Testing Review
 
-####  Comprehensive Coverage
+#### Comprehensive Coverage
 
 ```typescript
 describe('AccommodationService', () => {
@@ -373,8 +367,7 @@ describe('AccommodationService', () => {
     });
   });
 });
-
-```text
+```
 
 ---
 
@@ -386,8 +379,7 @@ When invoked in Phase 3 for global review:
 
 #### 1. Architectural Integrity Check
 
-#### Review Points:
-
+##### Review Points
 
 - [ ] All services extend appropriate base classes
 - [ ] Layer boundaries are respected (no layer jumping)
@@ -396,31 +388,27 @@ When invoked in Phase 3 for global review:
 - [ ] Factory patterns used for routes
 - [ ] Model classes properly structured
 
-#### Output Format:
-
+##### Output Format
 
 ```markdown
-
 ## Architectural Review
 
 ### Compliance
 
--  Service layer follows BaseCrudService pattern
--  All routes use factory functions
-- � Found 2 instances of direct DB access in routes (list locations)
-- L Circular dependency detected between X and Y modules
+- ✓ Service layer follows BaseCrudService pattern
+- ✓ All routes use factory functions
+- ✗ Found 2 instances of direct DB access in routes (list locations)
+- ✗ Circular dependency detected between X and Y modules
 
 ### Recommendations
 
 1. Refactor direct DB access in routes to use services
 2. Break circular dependency by introducing interface layer
-
-```text
+```
 
 #### 2. Code Quality Review
 
-#### Review Points:
-
+##### Review Points
 
 - [ ] All exports have JSDoc documentation
 - [ ] RO-RO pattern consistently applied
@@ -429,31 +417,27 @@ When invoked in Phase 3 for global review:
 - [ ] Proper error handling throughout
 - [ ] Consistent naming conventions
 
-#### Output Format:
-
+##### Output Format
 
 ```markdown
-
 ## Code Quality Review
 
 ### Standards Compliance
 
--  JSDoc coverage: 95%
--  RO-RO pattern adherence: 100%
-- � Found 3 uses of `any` type (list locations)
--  Error handling consistent
+- ✓ JSDoc coverage: 95%
+- ✓ RO-RO pattern adherence: 100%
+- ✗ Found 3 uses of `any` type (list locations)
+- ✓ Error handling consistent
 
 ### Issues Found
 
 1. File `services/booking.service.ts:45` - Missing JSDoc
 2. File `models/payment.model.ts:12` - Using `any` instead of `unknown`
-
-```typescript
+```
 
 #### 3. Testing Review
 
-#### Review Points:
-
+##### Review Points
 
 - [ ] 90%+ coverage achieved
 - [ ] All public methods tested
@@ -462,11 +446,9 @@ When invoked in Phase 3 for global review:
 - [ ] AAA pattern used consistently
 - [ ] Mock strategy appropriate
 
-#### Output Format:
-
+##### Output Format
 
 ```markdown
-
 ## Testing Review
 
 ### Coverage Metrics
@@ -475,19 +457,17 @@ When invoked in Phase 3 for global review:
 - Service layer: 95%
 - Model layer: 94%
 - API layer: 88%
-- � Frontend coverage: 78% (below 90% target)
+- ✗ Frontend coverage: 78% (below 90% target)
 
 ### Missing Tests
 
 1. `AccommodationService.calculateSeasonalPrice()` - No tests
 2. Edge cases for concurrent bookings not covered
-
-```text
+```
 
 #### 4. Performance Review
 
-#### Review Points:
-
+##### Review Points
 
 - [ ] N+1 query problems identified
 - [ ] Missing database indexes
@@ -495,30 +475,26 @@ When invoked in Phase 3 for global review:
 - [ ] Memory leak risks
 - [ ] Large data set handling
 
-#### Output Format:
-
+##### Output Format
 
 ```markdown
-
 ## Performance Review
 
 ### Potential Issues
 
-- � N+1 query in `BookingService.getAllWithDetails()`
-- � Missing index on `accommodations.owner_id`
--  Pagination implemented correctly
+- ✗ N+1 query in `BookingService.getAllWithDetails()`
+- ✗ Missing index on `accommodations.owner_id`
+- ✓ Pagination implemented correctly
 
 ### Recommendations
 
 1. Add eager loading for booking details query
 2. Add composite index: `CREATE INDEX idx_accommodations_owner ON accommodations(owner_id)`
-
-```text
+```
 
 #### 5. Security Review
 
-#### Review Points:
-
+##### Review Points
 
 - [ ] SQL injection prevention
 - [ ] XSS prevention
@@ -527,27 +503,24 @@ When invoked in Phase 3 for global review:
 - [ ] Sensitive data handling
 - [ ] Input validation
 
-#### Output Format:
-
+##### Output Format
 
 ```markdown
-
 ## Security Review
 
 ### Findings
 
--  All inputs validated with Zod
--  SQL injection prevented (using Drizzle ORM)
-- � Missing authorization check in `DELETE /accommodations/:id`
--  Sensitive data properly redacted in logs
+- ✓ All inputs validated with Zod
+- ✓ SQL injection prevented (using Drizzle ORM)
+- ✗ Missing authorization check in `DELETE /accommodations/:id`
+- ✓ Sensitive data properly redacted in logs
 
 ### Critical Issues
 
 1. Authorization bypass in accommodation deletion endpoint
    - Location: `routes/accommodations.ts:156`
    - Fix: Add owner verification before delete
-
-```text
+```
 
 ---
 
@@ -555,25 +528,22 @@ When invoked in Phase 3 for global review:
 
 ### Design Patterns
 
-####  Factory Pattern for Routes
-
+#### Factory Pattern for Routes
 
 ```typescript
-// GOOD: Using createCRUDRoute factory
+// Good Example: Using createCRUDRoute factory
 const accommodationRoutes = createCRUDRoute({
   basePath: '/accommodations',
   service: accommodationService,
   createSchema: createAccommodationSchema,
   updateSchema: updateAccommodationSchema,
 });
+```
 
-```text
-
-####  Strategy Pattern for Business Rules
-
+#### Strategy Pattern for Business Rules
 
 ```typescript
-// GOOD: Pluggable pricing strategies
+// Good Example: Pluggable pricing strategies
 interface PricingStrategy {
   calculate(input: PriceInput): Promise<number>;
 }
@@ -589,14 +559,12 @@ class WeekendPricingStrategy implements PricingStrategy {
     // Weekend logic
   }
 }
+```
 
-```text
-
-####  Repository Pattern (via BaseModel)
-
+#### Repository Pattern (via BaseModel)
 
 ```typescript
-// GOOD: Data access abstraction
+// Good Example: Data access abstraction
 export class AccommodationModel extends BaseModel<Accommodation> {
   protected table = accommodationTable;
   protected entityName = 'accommodation';
@@ -608,16 +576,14 @@ export class AccommodationModel extends BaseModel<Accommodation> {
       .where(eq(this.table.ownerId, ownerId));
   }
 }
-
-```text
+```
 
 ### SOLID Principles
 
 #### S - Single Responsibility
 
-
 ```typescript
-// GOOD: Each class has one reason to change
+// Good Example: Each class has one reason to change
 class BookingValidator {
   validate(booking: CreateBooking): ValidationResult {
     // Only validation logic
@@ -640,14 +606,12 @@ class BookingService {
     // Orchestration only
   }
 }
-
-```text
+```
 
 #### O - Open/Closed
 
-
 ```typescript
-// GOOD: Open for extension, closed for modification
+// Good Example: Open for extension, closed for modification
 abstract class BasePriceModifier {
   abstract modify(price: number, context: BookingContext): number;
 }
@@ -663,14 +627,12 @@ class DiscountModifier extends BasePriceModifier {
     return price * (1 - context.discountRate);
   }
 }
-
-```text
+```
 
 #### L - Liskov Substitution
 
-
 ```typescript
-// GOOD: Derived classes are substitutable
+// Good Example: Derived classes are substitutable
 class BaseService<T> {
   async findById(id: string): Promise<T | null> {
     // Base implementation
@@ -687,14 +649,12 @@ class AccommodationService extends BaseService<Accommodation> {
     return accommodation;
   }
 }
-
-```text
+```
 
 #### I - Interface Segregation
 
-
 ```typescript
-// GOOD: Small, focused interfaces
+// Good Example: Small, focused interfaces
 interface Readable<T> {
   findById(id: string): Promise<T | null>;
   findAll(): Promise<T[]>;
@@ -713,14 +673,12 @@ interface Deletable {
 class ReadOnlyService<T> implements Readable<T> {
   // Only read methods
 }
-
-```text
+```
 
 #### D - Dependency Inversion
 
-
 ```typescript
-// GOOD: Depend on abstractions
+// Good Example: Depend on abstractions
 interface PaymentProcessor {
   process(payment: Payment): Promise<PaymentResult>;
 }
@@ -737,8 +695,7 @@ class BookingService {
     private paymentProcessor: PaymentProcessor // Depends on interface
   ) {}
 }
-
-```text
+```
 
 ---
 
@@ -765,8 +722,7 @@ async function createBookingWithPayment(
     return { success: true, data: booking };
   });
 }
-
-```text
+```
 
 ### 2. Validation Flow
 
@@ -781,8 +737,7 @@ app.post(
     return service.create(validatedData);
   }
 );
-
-```text
+```
 
 ### 3. Error Response Format
 
@@ -803,8 +758,7 @@ type SuccessResponse<T> = {
 };
 
 type Result<T> = SuccessResponse<T> | ErrorResponse;
-
-```text
+```
 
 ---
 
@@ -812,7 +766,7 @@ type Result<T> = SuccessResponse<T> | ErrorResponse;
 
 ### When to Approve
 
- **Approve when:**
+**Approve when:**
 
 - Follows all established patterns
 - Maintains architectural integrity
@@ -824,7 +778,7 @@ type Result<T> = SuccessResponse<T> | ErrorResponse;
 
 ### When to Request Changes
 
-� **Request changes when:**
+**Request changes when:**
 
 - Pattern violations found
 - Layer boundaries crossed
@@ -836,7 +790,7 @@ type Result<T> = SuccessResponse<T> | ErrorResponse;
 
 ### When to Escalate
 
-=� **Escalate to user when:**
+**Escalate to user when:**
 
 - Major architectural decision needed
 - Breaking change required
@@ -851,20 +805,18 @@ type Result<T> = SuccessResponse<T> | ErrorResponse;
 
 ### Review Feedback Format
 
-#### Constructive and Specific:
-
+#### Constructive and Specific
 
 ```markdown
-
 ## Review Feedback: Booking Service
 
-###  Strengths
+### ✓ Strengths
 
 1. Well-structured service layer following BaseCrudService
 2. Comprehensive test coverage (94%)
 3. Clear JSDoc documentation
 
-### � Issues to Address
+### ✗ Issues to Address
 
 #### High Priority
 
@@ -889,18 +841,17 @@ type Result<T> = SuccessResponse<T> | ErrorResponse;
    - **Fix:** Add comprehensive JSDoc with examples
    - **Impact:** Code maintainability
 
-### =� Action Items
+### ⚠️ Action Items
 
 - [ ] Fix authorization bypass (CRITICAL)
 - [ ] Add database index
 - [ ] Complete documentation
 
-###  Approval Status
+### ✓ Approval Status
 
 **Status:** Changes Requested
 **Re-review required after:** Security fix implemented
-
-```text
+```
 
 ### Language Policy
 
@@ -949,7 +900,6 @@ type Result<T> = SuccessResponse<T> | ErrorResponse;
 Use this for every review:
 
 ```markdown
-
 ## Tech Lead Review Checklist
 
 ### Architecture
@@ -998,35 +948,33 @@ Use this for every review:
 - [ ] API docs current
 - [ ] Architecture docs updated
 - [ ] Examples provided
-
-```text
+```
 
 ---
 
 ## Anti-Patterns to Block
 
-### L Direct Database Access from Routes
+### Bad Example: Direct Database Access from Routes
 
 ```typescript
-// BAD: Business logic in route
+// Bad Example: Business logic in route
 app.post('/bookings', async (c) => {
   const data = await c.req.json();
   const result = await db.insert(bookings).values(data);
   return c.json(result);
 });
 
-// GOOD: Use service layer
+// Good Example: Use service layer
 app.post('/bookings', async (c) => {
   const service = new BookingService(ctx);
   return service.create(validatedData);
 });
+```
 
-```text
-
-### L God Classes
+### Bad Example: God Classes
 
 ```typescript
-// BAD: Single class doing too much
+// Bad Example: Single class doing too much
 class BookingManager {
   async create() {}
   async validate() {}
@@ -1037,25 +985,24 @@ class BookingManager {
   async handleRefunds() {}
 }
 
-// GOOD: Separate concerns
+// Good Example: Separate concerns
 class BookingService {}
 class BookingValidator {}
 class PriceCalculator {}
 class PaymentProcessor {}
 class EmailService {}
 class InvoiceGenerator {}
+```
 
-```text
-
-### L Magic Numbers/Strings
+### Bad Example: Magic Numbers/Strings
 
 ```typescript
-// BAD
+// Bad Example
 if (booking.status === 'confirmed') {
   const price = booking.price * 1.21; // What is 1.21?
 }
 
-// GOOD
+// Good Example
 const TAX_RATE = 0.21;
 const BookingStatus = {
   CONFIRMED: 'confirmed',
@@ -1066,8 +1013,7 @@ const BookingStatus = {
 if (booking.status === BookingStatus.CONFIRMED) {
   const price = booking.price * (1 + TAX_RATE);
 }
-
-```text
+```
 
 ---
 
@@ -1075,10 +1021,10 @@ if (booking.status === BookingStatus.CONFIRMED) {
 
 ### Deployment Strategies
 
-####  Zero-Downtime Deployment
+#### Zero-Downtime Deployment
 
 ```bash
-# GOOD: Rolling deployment with health checks
+# Good Example: Rolling deployment with health checks
 - Deploy new version to staging
 - Run smoke tests
 - Deploy to 10% of production (canary)
@@ -1086,7 +1032,7 @@ if (booking.status === BookingStatus.CONFIRMED) {
 - Gradually increase to 100%
 - Keep old version ready for rollback
 
-# BAD: Direct replacement without validation
+# Bad Example: Direct replacement without validation
 - Stop production
 - Deploy new version
 - Start production
@@ -1096,7 +1042,7 @@ if (booking.status === BookingStatus.CONFIRMED) {
 #### Environment Configuration
 
 ```typescript
-// GOOD: Environment-specific config
+// Good Example: Environment-specific config
 const config = {
   development: {
     apiUrl: 'http://localhost:3000',
@@ -1112,7 +1058,7 @@ const config = {
   },
 }[process.env.NODE_ENV];
 
-// BAD: Hardcoded values
+// Bad Example: Hardcoded values
 const apiUrl = 'https://api.hospeda.com';
 ```
 
@@ -1121,7 +1067,7 @@ const apiUrl = 'https://api.hospeda.com';
 #### Health Checks
 
 ```typescript
-// GOOD: Comprehensive health endpoint
+// Good Example: Comprehensive health endpoint
 app.get('/health', async (c) => {
   const checks = {
     database: await checkDatabase(),
@@ -1355,35 +1301,43 @@ jobs:
 ### Phase 3 Review Complete When
 
 1. **Architectural Integrity**
-   -  All patterns followed consistently
-   -  No layer violations
-   -  No architectural debt
+   - ✓ All patterns followed consistently
+   - ✓ No layer violations
+   - ✓ No architectural debt
 
 2. **Code Quality**
-   -  All standards met
-   -  Documentation complete
-   -  No quality issues
+   - ✓ All standards met
+   - ✓ Documentation complete
+   - ✓ No quality issues
 
 3. **Testing**
-   -  90%+ coverage achieved
-   -  All critical paths tested
-   -  Integration tests pass
+   - ✓ 90%+ coverage achieved
+   - ✓ All critical paths tested
+   - ✓ Integration tests pass
 
 4. **Performance**
-   -  No major bottlenecks
-   -  Indexes in place
-   -  Efficient queries
+   - ✓ No major bottlenecks
+   - ✓ Indexes in place
+   - ✓ Efficient queries
 
 5. **Security**
-   -  No vulnerabilities
-   -  Auth/authz enforced
-   -  Inputs validated
+   - ✓ No vulnerabilities
+   - ✓ Auth/authz enforced
+   - ✓ Inputs validated
 
 6. **Approval**
-   -  All issues resolved
-   -  Ready for finalization
-   -  User sign-off obtained
+   - ✓ All issues resolved
+   - ✓ Ready for finalization
+   - ✓ User sign-off obtained
 
 ---
 
 **Remember:** Your role is to be the guardian of code quality and architectural integrity. Be thorough but fair, strict but helpful, and always focus on the long-term health of the codebase. Good architecture and quality pay dividends over the project's lifetime.
+
+---
+
+## Changelog
+
+| Version | Date | Changes | Author | Related |
+|---------|------|---------|--------|---------|
+| 1.0.0 | 2025-10-31 | Initial version | @tech-lead | P-004 |

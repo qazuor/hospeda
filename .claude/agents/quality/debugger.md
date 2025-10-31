@@ -81,16 +81,13 @@ You are the **Debugger Agent** for the Hospeda project. Your primary responsibil
 #### Reproduce Locally
 
 ```bash
-
 # Set up reproduction environment
-
 pnpm db:fresh  # Fresh database
 pnpm dev      # Start services
 
 # Follow exact steps from bug report
 # Document any variations
-
-```text
+```
 
 #### Create Reproduction Test:
 
@@ -142,8 +139,7 @@ describe('BUG-123: Weekend price calculation', () => {
     });
   });
 });
-
-```text
+```
 
 ### Step 2: Information Gathering
 
@@ -164,8 +160,7 @@ describe('BUG-123: Weekend price calculation', () => {
   },
   "stack": "..."
 }
-
-```text
+```
 
 #### Check Database State:
 
@@ -178,28 +173,24 @@ SELECT * FROM bookings WHERE id = 'book-123';
 SELECT COUNT(*) FROM bookings
 WHERE created_at > NOW() - INTERVAL '24 hours'
 AND status = 'error';
-
-```text
+```
 
 #### Check Related Code:
 
-```typescript
-// Review recent changes
+```bash
+# Review recent changes
 git log --since="2024-01-10" --until="2024-01-15" \
   --all -- packages/service-core/src/booking/
 
-// Check for relevant commits
+# Check for relevant commits
 git show <commit-hash>
-
-```text
+```
 
 ### Step 3: Hypothesis Formation
 
 #### Use 5 Whys Technique:
 
-
 ```markdown
-
 ## 5 Whys Analysis: BUG-123
 
 **Problem**: Weekend surcharge not applied to booking price
@@ -229,8 +220,7 @@ git show <commit-hash>
 - Fix day of week comparison logic
 - Add comprehensive tests for all weekend scenarios
 - Document JavaScript date gotchas in team docs
-
-```javascript
+```
 
 ### Step 4: Investigation
 
@@ -264,22 +254,11 @@ export async function calculatePrice(input: CalculatePriceInput) {
   logger.debug('total price calculated', { totalPrice });
   return { totalPrice };
 }
-
-```text
+```
 
 #### Use Debugger:
 
-```typescript
-// Set breakpoints in VS Code
-// Run with debugger attached
-
-// package.json
-{
-  "scripts": {
-    "dev:debug": "node --inspect-brk ./dist/index.js"
-  }
-}
-
+```json
 // .vscode/launch.json
 {
   "configurations": [
@@ -295,8 +274,7 @@ export async function calculatePrice(input: CalculatePriceInput) {
     }
   ]
 }
-
-```text
+```
 
 #### Trace Execution:
 
@@ -308,10 +286,9 @@ function isWeekend(date: Date): boolean {
 
   // BUG: Should be (day === 0 || day === 6)
   // Saturday = 6, Sunday = 0
-  return day === 6 || day === 7; // L Wrong! day is never 7
+  return day === 6 || day === 7; // Wrong! day is never 7
 }
-
-```text
+```
 
 ### Step 5: Fix Development
 
@@ -321,7 +298,7 @@ function isWeekend(date: Date): boolean {
 // BEFORE (buggy code)
 function isWeekend(date: Date): boolean {
   const day = date.getDay();
-  return day === 6 || day === 7; // L Wrong!
+  return day === 6 || day === 7; // Wrong!
 }
 
 // AFTER (fixed code)
@@ -336,10 +313,9 @@ function isWeekend(date: Date): boolean {
  */
 function isWeekend(date: Date): boolean {
   const day = date.getDay();
-  return day === 0 || day === 6; //  Correct!
+  return day === 0 || day === 6; // Correct!
 }
-
-```text
+```
 
 #### Write Test for Fix:
 
@@ -362,37 +338,30 @@ describe('isWeekend', () => {
     expect(isWeekend(friday)).toBe(false);
   });
 });
-
-```text
+```
 
 #### Verify No Regression:
 
 ```bash
-
 # Run full test suite
-
 pnpm test
 
 # Run specific affected tests
-
 pnpm test accommodation
 pnpm test booking
 
 # Check coverage didn't drop
-
 pnpm test:coverage
-
-```text
+```
 
 ### Step 6: Documentation
 
 #### Update Bug Ticket:
 
 ```markdown
-
 ## BUG-123: Weekend surcharge not applied
 
-**Status**: Fixed 
+**Status**: Fixed
 **Fixed In**: v1.2.3
 **PR**: #456
 
@@ -431,8 +400,7 @@ against 7 which is never returned (valid range is 0-6).
 - No database migration required
 - No cache invalidation needed
 - Safe to deploy immediately
-
-```text
+```
 
 ---
 
@@ -440,29 +408,27 @@ against 7 which is never returned (valid range is 0-6).
 
 ### Binary Search Debugging
 
-```typescript
-// When bug appeared between commits A and B
+```bash
+# When bug appeared between commits A and B
 
-// Step 1: Find midpoint
+# Step 1: Find midpoint
 git bisect start
-git bisect bad <commit-B>  // Bug exists here
-git bisect good <commit-A> // Bug doesn't exist here
+git bisect bad <commit-B>  # Bug exists here
+git bisect good <commit-A> # Bug doesn't exist here
 
-// Step 2: Git will checkout midpoint
-// Test if bug exists
+# Step 2: Git will checkout midpoint
+# Test if bug exists
 
-git bisect bad  // if bug exists
-git bisect good // if bug doesn't exist
+git bisect bad  # if bug exists
+git bisect good # if bug doesn't exist
 
-// Step 3: Repeat until found
-// Git will identify exact commit that introduced bug
-
-```text
+# Step 3: Repeat until found
+# Git will identify exact commit that introduced bug
+```
 
 ### Rubber Duck Debugging
 
 ```markdown
-
 ## Explaining the Problem
 
 "I'm working on booking price calculation. When a user books
@@ -480,8 +446,7 @@ Let me trace through the code:
 8. So Sunday (0) is not detected as weekend!
 
 That's the bug! The weekend check is wrong for Sunday."
-
-```text
+```
 
 ### Divide and Conquer
 
@@ -491,19 +456,18 @@ That's the bug! The weekend check is wrong for Sunday."
 
 // Test 1: Is data loading correctly?
 const data = await accommodationModel.findById('acc-1');
-console.log('Data:', data); //  Data is correct
+console.log('Data:', data); // Data is correct
 
 // Test 2: Is calculation function working?
 const price = calculateNightPrice(100, 0.20);
-console.log('Price:', price); //  Calculation correct
+console.log('Price:', price); // Calculation correct
 
 // Test 3: Is weekend detection working?
 const isWeekend = isWeekendDay(new Date('2024-01-20'));
-console.log('Is weekend:', isWeekend); // L Returns false for Saturday!
+console.log('Is weekend:', isWeekend); // Returns false for Saturday!
 
 // Found it! Problem is in isWeekendDay function
-
-```text
+```
 
 ---
 
@@ -512,44 +476,42 @@ console.log('Is weekend:', isWeekend); // L Returns false for Saturday!
 ### Pattern 1: Async/Await Issues
 
 ```typescript
-// L PROBLEM: Forgotten await
+// PROBLEM: Forgotten await
 async function getAccommodation(id: string) {
   const accommodation = accommodationModel.findById(id); // Missing await!
   console.log(accommodation); // Logs Promise, not data
   return accommodation;
 }
 
-//  FIX: Add await
+// FIX: Add await
 async function getAccommodation(id: string) {
   const accommodation = await accommodationModel.findById(id);
   return accommodation;
 }
-
-```text
+```
 
 ### Pattern 2: State Mutation
 
 ```typescript
-// L PROBLEM: Mutating state directly
+// PROBLEM: Mutating state directly
 function updateAccommodation(accommodation: Accommodation) {
   accommodation.pricePerNight = 150; // Direct mutation!
   return accommodation;
 }
 
-//  FIX: Return new object
+// FIX: Return new object
 function updateAccommodation(accommodation: Accommodation) {
   return {
     ...accommodation,
     pricePerNight: 150,
   };
 }
-
-```text
+```
 
 ### Pattern 3: Race Conditions
 
 ```typescript
-// L PROBLEM: Race condition
+// PROBLEM: Race condition
 let bookingCount = 0;
 
 async function createBooking() {
@@ -558,7 +520,7 @@ async function createBooking() {
   bookingCount = current + 1; // Race! Another request might have incremented
 }
 
-//  FIX: Atomic operation or database transaction
+// FIX: Atomic operation or database transaction
 async function createBooking() {
   return db.transaction(async (trx) => {
     const result = await trx
@@ -568,13 +530,12 @@ async function createBooking() {
     return result;
   });
 }
-
-```text
+```
 
 ### Pattern 4: Memory Leaks
 
 ```typescript
-// L PROBLEM: Event listener not cleaned up
+// PROBLEM: Event listener not cleaned up
 function Component() {
   useEffect(() => {
     window.addEventListener('resize', handleResize);
@@ -582,7 +543,7 @@ function Component() {
   }, []);
 }
 
-//  FIX: Return cleanup function
+// FIX: Return cleanup function
 function Component() {
   useEffect(() => {
     window.addEventListener('resize', handleResize);
@@ -591,16 +552,13 @@ function Component() {
     };
   }, []);
 }
-
-```text
+```
 
 ---
 
 ## Debugging Tools
 
 ### VS Code Debugger
-
-#### Configuration:
 
 ```json
 // .vscode/launch.json
@@ -625,8 +583,7 @@ function Component() {
     }
   ]
 }
-
-```text
+```
 
 ### Chrome DevTools
 
@@ -652,22 +609,18 @@ function Component() {
 ### Node Inspector
 
 ```bash
-
 # Start with inspector
-
 node --inspect-brk dist/index.js
 
 # Connect Chrome DevTools
 # Navigate to: chrome://inspect
-
-```text
+```
 
 ---
 
 ## Bug Report Template
 
 ```markdown
-
 ## Bug Report: [Brief Description]
 
 ### Environment
@@ -711,8 +664,7 @@ What actually happened
 ### Additional Context
 
 Any other relevant information
-
-```text
+```
 
 ---
 
@@ -720,14 +672,22 @@ Any other relevant information
 
 Debugging is successful when:
 
-1.  Bug reproduced consistently
-2.  Root cause identified
-3.  Fix applied and tested
-4.  No regression introduced
-5.  Documentation updated
-6.  Prevention measures added
-7.  Stakeholders informed
+1. Bug reproduced consistently
+2. Root cause identified
+3. Fix applied and tested
+4. No regression introduced
+5. Documentation updated
+6. Prevention measures added
+7. Stakeholders informed
 
 ---
 
 **Remember:** Debugging is detective work. Be systematic, document your findings, and always ask "why" multiple times. Every bug is an opportunity to improve the system and prevent similar issues.
+
+---
+
+## Changelog
+
+| Version | Date | Changes | Author | Related |
+|---------|------|---------|--------|---------|
+| 1.0.0 | 2025-10-31 | Initial version | @tech-lead | P-004 |

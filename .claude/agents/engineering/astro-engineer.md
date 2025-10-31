@@ -98,8 +98,8 @@ const testimonials = await getCollection('testimonials');
 
 // SEO metadata
 const meta = {
-  title: 'Hospeda - Alojamientos en Concepci�n del Uruguay',
-  description: 'Encuentra el alojamiento perfecto en Concepci�n del Uruguay y la regi�n del Litoral',
+  title: 'Hospeda - Alojamientos en Concepción del Uruguay',
+  description: 'Encuentra el alojamiento perfecto en Concepción del Uruguay y la región del Litoral',
   ogImage: '/images/og-home.jpg',
 };
 ---
@@ -107,8 +107,8 @@ const meta = {
 <BaseLayout {...meta}>
   <!-- Static hero section -->
   <Hero
-    title="Descubr� el Litoral Argentino"
-    subtitle="Los mejores alojamientos en Concepci�n del Uruguay"
+    title="Descubrí el Litoral Argentino"
+    subtitle="Los mejores alojamientos en Concepción del Uruguay"
     ctaText="Explorar alojamientos"
     ctaLink="/accommodations"
   />
@@ -122,7 +122,7 @@ const meta = {
   <!-- Static testimonials -->
   <section class="py-16">
     <h2 class="text-3xl font-bold text-center mb-12">
-      Lo que dicen nuestros hu�spedes
+      Lo que dicen nuestros huéspedes
     </h2>
     <div class="grid md:grid-cols-3 gap-8">
       {testimonials.map((testimonial) => (
@@ -134,8 +134,7 @@ const meta = {
     </div>
   </section>
 </BaseLayout>
-
-```text
+```
 
 #### Dynamic Route with SSR
 
@@ -201,8 +200,7 @@ const meta = {
     </div>
   </div>
 </BaseLayout>
-
-```text
+```
 
 #### Hybrid Rendering with Pagination
 
@@ -239,8 +237,8 @@ const response = await fetch(
 const { data: accommodations, pagination } = await response.json();
 
 const meta = {
-  title: `Alojamientos - P�gina ${pageNum} - Hospeda`,
-  description: 'Explora todos los alojamientos disponibles en la regi�n',
+  title: `Alojamientos - Página ${pageNum} - Hospeda`,
+  description: 'Explora todos los alojamientos disponibles en la región',
 };
 ---
 
@@ -265,8 +263,7 @@ const meta = {
     />
   </div>
 </BaseLayout>
-
-```text
+```
 
 ### Step 2: Layout System
 
@@ -351,8 +348,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     )}
   </body>
 </html>
-
-```text
+```
 
 #### Dashboard Layout (Protected)
 
@@ -403,8 +399,7 @@ const { title, description = '' } = Astro.props;
     </div>
   </div>
 </BaseLayout>
-
-```text
+```
 
 ### Step 3: React Islands
 
@@ -479,7 +474,7 @@ export default function BookingWidget({
     },
     onSuccess: (data) => {
       toast({
-        title: '�Reserva creada!',
+        title: '¡Reserva creada!',
         description: 'Tu reserva ha sido confirmada',
       });
       // Redirect to booking confirmation
@@ -567,7 +562,7 @@ export default function BookingWidget({
           {(field) => (
             <div className="mb-4">
               <label className="block text-sm font-medium mb-2">
-                N�mero de hu�spedes
+                Número de huéspedes
               </label>
               <select
                 value={field.state.value}
@@ -576,7 +571,7 @@ export default function BookingWidget({
               >
                 {Array.from({ length: maxGuests }, (_, i) => i + 1).map((num) => (
                   <option key={num} value={num}>
-                    {num} {num === 1 ? 'hu�sped' : 'hu�spedes'}
+                    {num} {num === 1 ? 'huésped' : 'huéspedes'}
                   </option>
                 ))}
               </select>
@@ -623,8 +618,7 @@ export default function BookingWidget({
     </div>
   );
 }
-
-```text
+```
 
 #### Lazy-loaded Component
 
@@ -644,7 +638,7 @@ interface AccommodationMapProps {
 
 export default function AccommodationMap({
   accommodations,
-  center = { lat: -32.4833, lng: -58.2333 }, // Concepci�n del Uruguay
+  center = { lat: -32.4833, lng: -58.2333 }, // Concepción del Uruguay
 }: AccommodationMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
@@ -696,8 +690,7 @@ export default function AccommodationMap({
     <div ref={mapRef} className="w-full h-96 rounded-lg shadow-lg" />
   );
 }
-
-```text
+```
 
 ### Step 4: Content Collections
 
@@ -757,8 +750,7 @@ export const collections = {
   testimonials: testimonialsCollection,
   faq: faqCollection,
 };
-
-```text
+```
 
 #### Using Content Collections
 
@@ -803,7 +795,7 @@ const meta = {
 
       <div class="flex items-center gap-4 text-gray-600 mb-6">
         <span>{post.data.author}</span>
-        <span>"</span>
+        <span>•</span>
         <time datetime={post.data.pubDate.toISOString()}>
           {post.data.pubDate.toLocaleDateString('es-AR', {
             year: 'numeric',
@@ -842,8 +834,7 @@ const meta = {
     </div>
   </article>
 </BaseLayout>
-
-```text
+```
 
 ### Step 5: API Routes (Server Endpoints)
 
@@ -908,8 +899,7 @@ async function performSearch(params: z.infer<typeof searchSchema>) {
   // Search implementation
   // Call backend API or search service
 }
-
-```text
+```
 
 ---
 
@@ -917,8 +907,7 @@ async function performSearch(params: z.infer<typeof searchSchema>) {
 
 ### Islands Architecture
 
-####  GOOD: Minimal JavaScript
-
+#### ✓ GOOD: Minimal JavaScript
 
 ```astro
 ---
@@ -931,11 +920,9 @@ async function performSearch(params: z.infer<typeof searchSchema>) {
   <!-- Interactive component only where needed -->
   <BookingWidget client:visible {...props} />
 </div>
+```
 
-```text
-
-#### L BAD: Unnecessary hydration
-
+#### ✗ BAD: Unnecessary hydration
 
 ```astro
 ---
@@ -945,13 +932,11 @@ async function performSearch(params: z.infer<typeof searchSchema>) {
 <Content client:load />
 <Footer client:load />
 <!-- Too much JavaScript! -->
-
-```javascript
+```
 
 ### Rendering Strategy
 
-####  GOOD: Choose appropriate strategy
-
+#### ✓ GOOD: Choose appropriate strategy
 
 ```astro
 ---
@@ -966,13 +951,11 @@ export async function getStaticPaths() {
   // Pre-render first few pages
 }
 ---
-
-```text
+```
 
 ### Image Optimization
 
-####  GOOD: Use Astro Image
-
+#### ✓ GOOD: Use Astro Image
 
 ```astro
 ---
@@ -988,17 +971,14 @@ import heroImage from '../assets/hero.jpg';
   loading="lazy"
   format="webp"
 />
+```
 
-```text
+#### ✗ BAD: Unoptimized images
 
-#### L BAD: Unoptimized images
-
-
-```astro
+```html
 <img src="/images/large-image.jpg" alt="Image" />
 <!-- No optimization, slow loading -->
-
-```text
+```
 
 ---
 
@@ -1019,14 +999,22 @@ import heroImage from '../assets/hero.jpg';
 
 ## Success Criteria
 
-1.  All pages render correctly
-2.  Islands hydrate appropriately
-3.  Performance scores >90 (Lighthouse)
-4.  SEO optimized
-5.  Accessible (WCAG AA)
-6.  Content collections working
-7.  Tests passing
+1. All pages render correctly
+2. Islands hydrate appropriately
+3. Performance scores >90 (Lighthouse)
+4. SEO optimized
+5. Accessible (WCAG AA)
+6. Content collections working
+7. Tests passing
 
 ---
 
 **Remember:** Astro's power is in shipping less JavaScript. Use islands strategically, pre-render when possible, and optimize for performance first.
+
+---
+
+## Changelog
+
+| Version | Date | Changes | Author | Related |
+|---------|------|---------|--------|---------|
+| 1.0.0 | 2025-10-31 | Initial version | @tech-lead | P-004 |
