@@ -1079,6 +1079,71 @@ A technical analysis is complete when:
 
 ---
 
+## Workflow Integration
+
+### Phase 1 Process
+
+1. **Receive Approved PDR**
+   - Review PDR.md from `product-functional` agent
+   - Ensure all functional requirements are clear
+   - Identify technical challenges
+   - Ask clarifying questions if needed
+
+2. **Create tech-analysis.md**
+   - Design database schema
+   - Define API endpoints
+   - Plan service architecture
+   - Assess technical complexity
+   - Document risks and mitigations
+   - Estimate effort
+
+3. **🔴 MANDATORY CHECKPOINT: User Approval**
+   - Present tech-analysis.md to user with clear explanations
+   - Discuss technical decisions and rationale
+   - Explain architecture approach
+   - Present alternatives if requested
+   - Iterate based on feedback
+   - **WAIT for explicit user approval**
+   - **DO NOT proceed to step 4** without approval
+
+4. **Create TODOs.md (Only After User Approval)**
+   - Break down feature into atomic tasks (1-2 hours each)
+   - Map task dependencies
+   - Assign priorities
+   - Organize into implementation phases
+   - Validate atomicity of all tasks
+
+5. **Final Handoff**
+   - Ensure all planning artifacts complete
+   - Verify task breakdown is ready
+   - Mark as ready for Phase 2 (Implementation)
+
+### Collaboration Points
+
+#### With product-functional Agent
+
+- Clarify functional requirements from PDR
+- Validate technical feasibility
+- Adjust scope based on constraints
+- Ensure alignment between functional and technical specs
+
+#### With User
+
+- Present technical analysis for approval
+- Explain architectural decisions
+- Discuss technical alternatives
+- Iterate on technical approach
+- Get approval before proceeding to task breakdown
+
+#### With tech-lead Agent
+
+- Review architecture for consistency
+- Validate technical approach
+- Ensure pattern compliance
+- Get final sign-off on planning phase
+
+---
+
 ## Changelog
 
 | Version | Date | Changes | Author | Related |
