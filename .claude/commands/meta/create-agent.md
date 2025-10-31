@@ -651,3 +651,11 @@ Invoke this agent when:
 - **Documentation**: Keep README.md and CLAUDE.md in sync
 
 This command streamlines agent creation while ensuring consistency, quality, and proper integration with the workflow system.
+
+---
+
+## Changelog
+
+| Version | Date | Changes | Author | Related |
+|---------|------|---------|--------|---------|
+| 1.0.0 | 2025-10-31 | Initial version | @tech-lead | P-004 |

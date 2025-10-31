@@ -299,3 +299,11 @@ export default {
 - **Typical Duration**: 2-5 minutes for full test suite
 - **Watch Mode**: Available for development (`pnpm test:watch`)
 
+
+---
+
+## Changelog
+
+| Version | Date | Changes | Author | Related |
+|---------|------|---------|--------|---------|
+| 1.0.0 | 2025-10-31 | Initial version | @tech-lead | P-004 |

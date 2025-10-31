@@ -750,3 +750,11 @@ output: {output}
 - **Naming**: Use action-oriented names (verb-noun pattern preferred)
 
 This command streamlines skill creation while ensuring reusability, clarity, and proper integration with the agent system.
+
+---
+
+## Changelog
+
+| Version | Date | Changes | Author | Related |
+|---------|------|---------|--------|---------|
+| 1.0.0 | 2025-10-31 | Initial version | @tech-lead | P-004 |

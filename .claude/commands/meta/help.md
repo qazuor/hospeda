@@ -682,3 +682,11 @@ The `/help` command is available at all times and integrates with:
 - **Up-to-Date**: Auto-generated from actual agent/command/skill files
 
 This comprehensive help system ensures developers can quickly find the information they need, understand the workflow, and be productive from day one.
+
+---
+
+## Changelog
+
+| Version | Date | Changes | Author | Related |
+|---------|------|---------|--------|---------|
+| 1.0.0 | 2025-10-31 | Initial version | @tech-lead | P-004 |

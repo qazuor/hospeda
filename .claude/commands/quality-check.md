@@ -560,3 +560,11 @@ Quality check behavior can be customized via project configuration:
 ---
 
 **This command is the master quality gate ensuring code meets project standards before finalization and merge.**
+
+---
+
+## Changelog
+
+| Version | Date | Changes | Author | Related |
+|---------|------|---------|--------|---------|
+| 1.0.0 | 2025-10-31 | Initial version | @tech-lead | P-004 |
