@@ -13,7 +13,7 @@ Para usar todas las funcionalidades de GitHub sync (Projects v2 y Relationships)
 ### How to Update Your Token
 
 1. **Go to GitHub Token Settings**:
-   - Navigate to: https://github.com/settings/tokens
+   - Navigate to: <https://github.com/settings/tokens>
    - Or: Profile → Settings → Developer settings → Personal access tokens → Tokens (classic)
 
 2. **Create New Token or Edit Existing**:
@@ -32,6 +32,7 @@ Para usar todas las funcionalidades de GitHub sync (Projects v2 y Relationships)
    - **IMPORTANT**: Copy the token immediately (you won't see it again)
 
 5. **Update Environment Variable**:
+
    ```bash
    # In your .env.local file
    GITHUB_TOKEN=ghp_your_new_token_here
@@ -87,18 +88,21 @@ node --import tsx/esm packages/planning-sync/src/scripts/planning-sync.ts \
 ### ❌ Common Errors to Avoid
 
 **Error 1: Relative paths**
+
 ```bash
 # ❌ DON'T DO THIS
 node --import tsx/esm ... .claude/sessions/planning/P-004...
 ```
 
 **Error 2: Using pnpm exec tsx**
+
 ```bash
 # ❌ DON'T DO THIS
 pnpm exec tsx packages/planning-sync/...
 ```
 
 **Error 3: Wrong working directory**
+
 ```bash
 # ❌ DON'T DO THIS
 cd packages/planning-sync && pnpm run planning:sync ...
@@ -149,6 +153,7 @@ pnpm run planning:cleanup true
 
 1. Create/update GitHub token with required scopes
 2. Add to `.env.local`:
+
    ```bash
    GITHUB_TOKEN=ghp_your_token
    GITHUB_REPO=owner/repo
@@ -157,17 +162,20 @@ pnpm run planning:cleanup true
 ### Testing Workflow
 
 1. **Clean up previous issues**:
+
    ```bash
    gh issue list --state all --limit 1000 --json number -q '.[].number' | \
      xargs -I {} gh issue delete {} --yes
    ```
 
 2. **Delete sync file** (optional, for fresh sync):
+
    ```bash
    rm .claude/sessions/planning/P-XXX-feature/.linear-sync.json
    ```
 
 3. **Run sync**:
+
    ```bash
    export GITHUB_TOKEN="ghp_..." && \
    export GITHUB_REPO="owner/repo" && \
@@ -209,6 +217,7 @@ pnpm run planning:cleanup true
 **Cause**: Token permissions insufficient for relationship mutations.
 
 **Fix**:
+
 - Verify token has `repo` scope (full access)
 - May need additional scopes (GitHub is unclear about this)
 - Falls back to tasklist method (works but less integrated)
