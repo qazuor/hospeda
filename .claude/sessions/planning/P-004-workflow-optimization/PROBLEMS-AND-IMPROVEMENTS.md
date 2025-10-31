@@ -11,6 +11,7 @@ Análisis crítico del sistema propuesto con problemas potenciales y mejoras sug
 **Problema**: De 4-6 skills a 16 skills es un aumento significativo (4x)
 
 **Riesgos**:
+
 - Difícil de mantener todos los skills actualizados
 - Puede ser abrumador para nuevos colaboradores
 - Overlap potencial entre skills similares
@@ -21,12 +22,14 @@ Análisis crítico del sistema propuesto con problemas potenciales y mejoras sug
 **Decisión del Usuario**: Implementar todos de una, documentar claramente cuándo usar cada skill
 
 **Mitigación APROBADA**:
+
 1. ✅ Implementar todos los 16 skills desde el inicio
 2. ✅ Documentar claramente "cuándo usar cada skill" en cada skill file
 3. ✅ Agregar sección en skills/README.md con matriz de uso
 4. ✅ Revisar quarterly qué skills realmente se usan para posible consolidación futura
 
 **Implementación**:
+
 - Crear todos los skills con documentación completa
 - Cada skill debe tener sección "When to use this skill"
 - README.md debe tener decision tree o matriz de skills vs scenarios
@@ -38,6 +41,7 @@ Análisis crítico del sistema propuesto con problemas potenciales y mejoras sug
 **Problema**: `/create-agent`, `/create-command`, `/create-skill` generan archivos automáticamente
 
 **Riesgos**:
+
 - Calidad inconsistente de archivos generados
 - Puede omitir best practices
 - Difícil validar que el output sea correcto
@@ -48,6 +52,7 @@ Análisis crítico del sistema propuesto con problemas potenciales y mejoras sug
 **Decisión del Usuario**: Generar templates y buena documentación, actualizar docs al generar
 
 **Mitigación APROBADA**:
+
 1. ✅ Templates muy estrictos y validados con JSON Schema
 2. ✅ Actualizar documentación (READMEs) automáticamente cuando se generan
 3. ✅ Si falla actualización de docs, avisar al usuario para que lo haga manualmente
@@ -55,6 +60,7 @@ Análisis crítico del sistema propuesto con problemas potenciales y mejoras sug
 5. ✅ Review manual obligatorio antes de commit
 
 **Implementación**:
+
 - Crear templates validados en `.claude/docs/templates/`
 - Meta-commands deben actualizar READMEs automáticamente
 - Si falla, mostrar warning claro y pasos para actualizar manualmente
@@ -67,6 +73,7 @@ Análisis crítico del sistema propuesto con problemas potenciales y mejoras sug
 **Problema**: `.code-registry.json` debe mantenerse sincronizado con TODOs.md y GitHub Issues
 
 **Riesgos**:
+
 - Registry dice X completed pero TODOs.md dice Y
 - Números pueden estar fuera de sync
 - Si alguien edita TODOs.md manualmente, registry no se actualiza
@@ -77,6 +84,7 @@ Análisis crítico del sistema propuesto con problemas potenciales y mejoras sug
 **Decisión del Usuario**: Sí a todas las propuestas de mitigación
 
 **Mitigación APROBADA**:
+
 1. ✅ Validación automática: script que verifica sync
 2. ✅ Hook de git pre-commit que valida consistency
 3. ✅ Source of truth claro (TODOs.md es master, registry es computed)
@@ -96,6 +104,7 @@ Análisis crítico del sistema propuesto con problemas potenciales y mejoras sug
 **Problema**: Feature workflow tiene 24 pasos, puede ser abrumador
 
 **Riesgos**:
+
 - Fácil olvidar un paso
 - Mucho overhead para features medianas
 - Usuario puede sentirse micro-gestionado
@@ -106,6 +115,7 @@ Análisis crítico del sistema propuesto con problemas potenciales y mejoras sug
 **Decisión del Usuario**: Sí a todas las propuestas de mitigación
 
 **Mitigación APROBADA**:
+
 1. ✅ Checklist automática que Claude sigue
 2. ✅ Comandos que encapsulan múltiples pasos (`/start-implementation`)
 3. ✅ Progress indicator visible ("Paso 12/24")
@@ -113,6 +123,7 @@ Análisis crítico del sistema propuesto con problemas potenciales y mejoras sug
 5. ✅ Documentar "express workflow" para features pequeñas-medianas
 
 **Implementación**:
+
 - Workflow completo (24 pasos) solo para Large Features (Nivel 3)
 - Medium workflow (Nivel 2) ya documentado con 11 pasos
 - Small Fix (Nivel 1) con 8 pasos
@@ -126,6 +137,7 @@ Análisis crítico del sistema propuesto con problemas potenciales y mejoras sug
 **Problema**: PDR/Tech Analysis se escriben en español, luego se traducen a inglés
 
 **Riesgos**:
+
 - Pérdida de matices en traducción
 - Puede generar inconsistencias terminológicas
 - Doble trabajo (escribir en ES, traducir a EN)
@@ -136,6 +148,7 @@ Análisis crítico del sistema propuesto con problemas potenciales y mejoras sug
 **Decisión del Usuario**: Solo inglés
 
 **Solución APROBADA**:
+
 1. ✅ Mantener SOLO versión EN en todos los archivos de planificación
 2. ✅ Durante discusión con usuario, hablar en ES (chat)
 3. ✅ Escribir directamente en EN al guardar archivos
@@ -143,6 +156,7 @@ Análisis crítico del sistema propuesto con problemas potenciales y mejoras sug
 5. ✅ Source of truth único: versión EN
 
 **Implementación**:
+
 - PDR.md, tech-analysis.md, TODOs.md: siempre en inglés
 - Chat con usuario: siempre en español
 - Eliminar necesidad de traducción
@@ -155,6 +169,7 @@ Análisis crítico del sistema propuesto con problemas potenciales y mejoras sug
 **Problema**: Skill que "auto-aprende" y actualiza documentación
 
 **Riesgos**:
+
 - Puede agregar learnings triviales
 - Puede modificar docs sin user approval
 - Difícil decidir QUÉ es un learning válido
@@ -165,6 +180,7 @@ Análisis crítico del sistema propuesto con problemas potenciales y mejoras sug
 **Decisión del Usuario**: Sí a todas las propuestas de mitigación
 
 **Mitigación APROBADA**:
+
 1. ✅ Approval obligatorio de usuario antes de agregar learning
 2. ✅ Threshold: solo agregar si se intentó 3+ veces o es significativo
 3. ✅ Review semanal de learnings agregados
@@ -172,6 +188,7 @@ Análisis crítico del sistema propuesto con problemas potenciales y mejoras sug
 5. ✅ Posibilidad de revertir learnings incorrectos
 
 **Implementación**:
+
 - Implementar como "suggest learning" NO "auto-add"
 - Claude propone learning, usuario debe aprobar
 - Mantener log de learnings agregados con fecha y contexto
@@ -185,6 +202,7 @@ Análisis crítico del sistema propuesto con problemas potenciales y mejoras sug
 **Problema**: 6 hooks recomendados ejecutándose en cada acción
 
 **Riesgos**:
+
 - Performance degradation (cada edit ejecuta 3-4 hooks)
 - Puede interrumpir flujo si hooks son lentos
 - Si hook falla, puede bloquear trabajo
@@ -195,6 +213,7 @@ Análisis crítico del sistema propuesto con problemas potenciales y mejoras sug
 **Decisión del Usuario**: Sí a todas las propuestas de mitigación
 
 **Mitigación APROBADA**:
+
 1. ✅ Timeouts cortos (5-10s max para fast, 15-30s para slow)
 2. ✅ Ejecutar en background cuando posible
 3. ✅ Filtros estrictos (solo .ts, solo .md, etc.)
@@ -202,6 +221,7 @@ Análisis crítico del sistema propuesto con problemas potenciales y mejoras sug
 5. ✅ Monitorear performance de hooks
 
 **Implementación**:
+
 - Start con hooks esenciales (markdown format, git status)
 - Agregar hooks de validación gradualmente
 - Medir y reportar impacto en performance
@@ -215,6 +235,7 @@ Análisis crítico del sistema propuesto con problemas potenciales y mejoras sug
 **Problema**: Dependencia de GitHub API que puede fallar
 
 **Riesgos**:
+
 - API rate limits
 - Auth tokens que expiran
 - Network issues
@@ -226,6 +247,7 @@ Análisis crítico del sistema propuesto con problemas potenciales y mejoras sug
 **Decisión del Usuario**: Sí a todas las propuestas + chequeo al inicio de sesión
 
 **Mitigación APROBADA**:
+
 1. ✅ Graceful degradation (trabajar sin sync si falla)
 2. ✅ Retry logic con exponential backoff
 3. ✅ Cache local de issues
@@ -235,6 +257,7 @@ Análisis crítico del sistema propuesto con problemas potenciales y mejoras sug
 7. ✅ **NUEVO**: Avisar si encuentra inconsistencias para que puedan ser resueltas
 
 **Implementación**:
+
 - Hacer sync opcional, NO obligatorio
 - Sistema debe funcionar completamente offline
 - Sync es "nice to have" NO "must have"
@@ -253,11 +276,13 @@ Análisis crítico del sistema propuesto con problemas potenciales y mejoras sug
 **Decisión del Usuario**: Ok, implementar
 
 **Beneficios**:
+
 - Identificar tools infrautilizados (candidates para removal)
 - Optimizar workflows basado en uso real
 - Detectar bottlenecks en proceso
 
 **Implementación APROBADA**:
+
 ```json
 // .claude/.telemetry.json (local, no committear)
 {
@@ -283,6 +308,7 @@ Análisis crítico del sistema propuesto con problemas potenciales y mejoras sug
 **Decisión del Usuario**: Ok, implementar
 
 **Ejemplo**:
+
 ```
 $ /workflow-status
 
@@ -310,6 +336,7 @@ Next: Validar task completa
 **Decisión del Usuario**: Ok, implementar
 
 **Ejemplo**:
+
 ```
 $ /estimate "Agregar sistema de notificaciones"
 
@@ -338,6 +365,7 @@ Razones:
 **Decisión del Usuario**: Ya existen, revisar y mejorar
 
 **Estructura ACTUAL**:
+
 ```
 CLAUDE.md (main - genérico)
 apps/web/CLAUDE.md (específico Astro web app) - EXISTE
@@ -347,12 +375,14 @@ packages/service-core/CLAUDE.md (específico services) - EXISTE
 ```
 
 **Acción**:
+
 - ✅ Revisar CLAUDE.md existentes en cada app/package
 - ✅ Mejorar contenido y consistencia
 - ✅ Asegurar que siguen mismo formato
 - ✅ Actualizar con nuevos patterns y learnings
 
 **Beneficio**:
+
 - Contexto específico cuando trabajas en ese package
 - Main CLAUDE.md más corto
 - Mejor organización
@@ -366,6 +396,7 @@ packages/service-core/CLAUDE.md (específico services) - EXISTE
 **Decisión del Usuario**: Ok, implementar
 
 **Validaciones APROBADAS**:
+
 - Conteos en READMEs coinciden con archivos reales
 - Code registry sincronizado con TODOs.md
 - Todos los agents/commands/skills tienen YAML frontmatter correcto
@@ -373,6 +404,7 @@ packages/service-core/CLAUDE.md (específico services) - EXISTE
 - Ningún link roto en docs
 
 **Implementación**:
+
 ```yaml
 # .github/workflows/validate-claude-config.yml
 name: Validate Claude Config
@@ -394,6 +426,7 @@ jobs:
 **Decisión del Usuario**: Ok, implementar + mostrar ejemplo
 
 **Templates APROBADOS**:
+
 - PDR.schema.json
 - tech-analysis.schema.json
 - TODOs.schema.json
@@ -402,6 +435,7 @@ jobs:
 - skill-definition.schema.json
 
 **Ejemplo de Schema (PDR.schema.json)**:
+
 ```json
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
@@ -454,6 +488,7 @@ jobs:
 ```
 
 **Beneficio**:
+
 - Asegurar consistencia
 - Detectar campos faltantes automáticamente
 - Validación automática en CI
@@ -468,6 +503,7 @@ jobs:
 **Decisión del Usuario**: Ok, implementar
 
 **Ejemplo**:
+
 ```
 $ /health-check
 
@@ -497,6 +533,7 @@ Recommendations:
 **Propuesta**: Usar naming más corto en código
 
 **Alternativa 1: Flat con prefijo**
+
 ```
 PF002-T001
 PF002-T002
@@ -516,12 +553,14 @@ PF002-2.2     (otra subtask de la task 2)
 ```
 
 **Beneficio**:
+
 - ✅ Más fácil de escribir y recordar
 - ✅ Menos verbose en commits
 - ✅ Mantiene trazabilidad completa
 - ✅ Sistema jerárquico claro con punto decimal
 
 **Implementación**:
+
 - Aplicar en todos los nuevos plannings (PF, PR, PB)
 - Actualizar documentación y templates
 - Migrar plannings existentes gradualmente si es necesario
@@ -535,6 +574,7 @@ PF002-2.2     (otra subtask de la task 2)
 **Decisión del Usuario**: Ok, implementar
 
 **Implementación APROBADA**:
+
 ```json
 // .claude/sessions/planning/features/PF-003/.checkpoint.json
 {
@@ -550,6 +590,7 @@ PF002-2.2     (otra subtask de la task 2)
 ```
 
 **Beneficio**:
+
 - Poder pausar trabajo y retomar
 después
 - Cross-session continuity
@@ -566,6 +607,7 @@ después
 **Ubicación**: `.claude/docs/standards/design-standards.md`
 
 **Contenido APROBADO**:
+
 - Color palette
 - Typography scales
 - Component patterns
@@ -576,6 +618,7 @@ después
 - Icon system
 
 **Beneficio**:
+
 - Consistencia visual
 - Reference para ux-ui-designer agent
 - Onboarding de designers
@@ -585,6 +628,7 @@ después
 ## 🎯 Priorización de Mejoras
 
 ### Must Have (Implementar en P-004)
+
 1. ✅ Validación de configs en CI
 2. ✅ CLAUDE.md por app/package
 3. ✅ Design standards doc
@@ -592,12 +636,14 @@ después
 5. ✅ Templates con JSON Schema
 
 ### Should Have (Implementar después)
+
 6. ⚠️ Telemetría y analytics
 7. ⚠️ `/workflow-status` comando
 8. ⚠️ `/health-check` comando
 9. ⚠️ Workflow checkpoints
 
 ### Nice to Have (Considerar futuro)
+
 10. 💡 `/estimate` comando
 11. 💡 Simplificar naming de tasks
 12. 💡 User dashboard de métricas

@@ -9,6 +9,7 @@ Optimización integral del sistema de desarrollo de Hospeda para hacerlo más ef
 ### Contexto Actual
 
 **Sistema Existente:**
+
 - 25 agentes especializados
 - 15 comandos (12 documentados + 3 sin documentar)
 - 5 skills (4 documentados + 1 sin documentar)
@@ -17,6 +18,7 @@ Optimización integral del sistema de desarrollo de Hospeda para hacerlo más ef
 - Documentación en `.claude/docs/` (standards, workflows, templates)
 
 **Problemas Identificados:**
+
 - **Complejidad excesiva**: 25 agentes pueden ser demasiados para mantener
 - **Documentación desincronizada**: READMEs con conteos incorrectos
 - **Confusión de responsabilidades**: Overlap entre skills, commands y agents
@@ -27,6 +29,7 @@ Optimización integral del sistema de desarrollo de Hospeda para hacerlo más ef
 ### Valor de Negocio
 
 **Beneficios Esperados:**
+
 - ⚡ **Mayor velocidad**: Reducción de overhead en decisiones y planificación
 - 🎯 **Mayor claridad**: Mejor comprensión de qué tool usar cuándo
 - 🔧 **Mejor mantenibilidad**: Sistema más fácil de actualizar y evolucionar
@@ -172,6 +175,7 @@ Optimización integral del sistema de desarrollo de Hospeda para hacerlo más ef
 **Complejidad:** Alta
 
 **Nota:** Este US se basa en el sistema unificado propuesto en P-003, donde:
+
 - Package simplificado maneja CRUD básico y state tracking
 - Agent `issue-enricher` maneja enriquecimiento con AI
 - Sistema funciona offline-first
@@ -186,32 +190,39 @@ Optimización integral del sistema de desarrollo de Hospeda para hacerlo más ef
 #### Agentes Existentes por Categoría
 
 **Product & Planning (2):**
+
 - ✅ `product-functional` - Creación de PDRs
 - ✅ `product-technical` - Análisis técnico
 
 **Architecture & Leadership (2):**
+
 - ✅ `tech-lead` - Liderazgo técnico
 - ⚠️ `architecture-validator` - Validación arquitectónica
 
 **Backend Development (3):**
+
 - ✅ `hono-engineer` - APIs con Hono
 - ✅ `db-engineer` - Database & Drizzle
 - ⚠️ `backend-reviewer` - Code review backend
 
 **Frontend Development (4):**
+
 - ✅ `astro-engineer` - Astro web app
 - ✅ `react-dev` - React components
 - ✅ `tanstack-engineer` - TanStack admin panel
 - ⚠️ `frontend-reviewer` - Code review frontend
 
 **Design & UX (1):**
+
 - ✅ `ui-ux-designer` - UI/UX design
 
 **Quality Assurance (2):**
+
 - ✅ `qa-engineer` - Testing & QA
 - ✅ `debugger` - Bug investigation
 
 **Specialized Engineering (5):**
+
 - ❓ `security-engineer` - Security audits
 - ❓ `performance-engineer` - Performance optimization
 - ❓ `accessibility-engineer` - WCAG compliance
@@ -219,16 +230,19 @@ Optimización integral del sistema de desarrollo de Hospeda para hacerlo más ef
 - ✅ `payments-specialist` - Mercado Pago
 
 **DevOps & Infrastructure (2):**
+
 - ❓ `deployment-engineer` - Deployments
 - ❓ `cicd-engineer` - CI/CD pipelines
 
 **Documentation & Maintenance (4):**
+
 - ✅ `tech-writer` - Documentación técnica
 - ⚠️ `dependency-mapper` - Tracking dependencias
 - ⚠️ `changelog-specialist` - Changelogs
 - ❓ `prompt-engineer` - Optimización prompts AI
 
 #### Leyenda
+
 - ✅ **Esencial**: Usado frecuentemente, valor claro
 - ⚠️ **Cuestionable**: Podría consolidarse o redefinirse
 - ❓ **Evaluar**: Raramente usado, valor incierto
@@ -253,28 +267,34 @@ Optimización integral del sistema de desarrollo de Hospeda para hacerlo más ef
 #### Comandos Documentados en README (12)
 
 **Planning (2):**
+
 - ✅ `/start-feature-plan` - Iniciar planning completo
 - ✅ `/start-refactor-plan` - Planning para refactors
 
 **Quality Assurance (3):**
+
 - ✅ `/quality-check` - Check completo de calidad
 - ✅ `/code-check` - Lint + typecheck
 - ✅ `/run-tests` - Ejecutar tests con coverage
 
 **Code Review (4):**
+
 - ✅ `/review-code` - Code review completo
 - ⚠️ `/review-security` - Security audit
 - ⚠️ `/review-performance` - Performance analysis
 - ⚠️ `/pen-test` - Penetration testing
 
 **Development (2):**
+
 - ✅ `/add-new-entity` - Crear entidad full-stack
 - ✅ `/update-docs` - Actualizar documentación
 
 **Git (1):**
+
 - ✅ `/commit` - Generar commits convencionales
 
 **Analysis (1):**
+
 - ✅ `/five-why` - Root cause analysis
 
 #### Comandos NO Documentados en README (3)
@@ -418,6 +438,7 @@ Optimización integral del sistema de desarrollo de Hospeda para hacerlo más ef
 #### Fases Actuales
 
 **Fase 1: Planning**
+
 - Crear sesión en `.claude/sessions/planning/{feature}/`
 - Invocar `product-functional` → PDR.md
 - Invocar `product-technical` → tech-analysis.md
@@ -426,18 +447,21 @@ Optimización integral del sistema de desarrollo de Hospeda para hacerlo más ef
 - Obtener aprobación usuario
 
 **Fase 2: Implementation**
+
 - Seguir TDD (RED → GREEN → REFACTOR)
 - Implementar según plan
 - Actualizar TODOs.md
 - Ejecutar `/code-check` frecuentemente
 
 **Fase 3: Validation**
+
 - Invocar `qa-engineer` con `qa-criteria-validator`
 - Ejecutar `/quality-check`
 - Invocar `tech-lead` para review global
 - Iterar hasta aprobación
 
 **Fase 4: Finalization**
+
 - Invocar `tech-writer` → Actualizar docs
 - Ejecutar `/commit` → Generar commits
 - Presentar commits al usuario
@@ -465,27 +489,32 @@ Una de las mayores fuentes de confusión en el sistema actual es la falta de cla
 #### 🎭 AGENT = Persona/Rol con Responsabilidades
 
 **¿Qué es?**
+
 - Un rol especializado con expertise específica
 - Una "persona virtual" con responsabilidades claras
 - Puede ejecutar trabajo complejo y tomar decisiones
 
 **¿Cómo se usa?**
+
 - Claude lo invoca con Task tool: `subagent_type="agent-name"`
 - Trabaja autónomamente en su área de expertise
 - Puede usar skills como referencia durante su trabajo
 
 **¿Qué produce?**
+
 - Archivos (PDR.md, tech-analysis.md, reports)
 - Análisis y recomendaciones
 - Código generado
 - Decisiones técnicas
 
 **Ejemplos actuales:**
+
 - `product-functional` → Crea PDRs completos
 - `db-engineer` → Diseña schemas y migrations
 - `qa-engineer` → Valida quality y crea tests
 
 **Criterio de creación:**
+
 - ✅ Crear agent si representa un ROL distinto con responsabilidades claras
 - ✅ Si requiere análisis profundo y decisiones autónomas
 - ✅ Si se usa en múltiples partes del workflow
@@ -496,27 +525,32 @@ Una de las mayores fuentes de confusión en el sistema actual es la falta de cla
 #### 🔧 COMMAND = Acción Ejecutable
 
 **¿Qué es?**
+
 - Una acción específica de principio a fin
 - Una secuencia automatizada de pasos
 - Un "botón" que presionas para hacer algo
 
 **¿Cómo se usa?**
+
 - Se invoca con `/command-name`
 - Usuario puede invocarlo directamente: "usa `/quality-check`"
 - Claude puede invocarlo cuando detecta la necesidad
 
 **¿Qué hace internamente?**
+
 - Ejecuta comandos bash
 - Invoca agents para trabajo especializado
 - Genera archivos o reports
 - Orquesta un proceso completo
 
 **Ejemplos actuales:**
+
 - `/start-feature-plan` → Crea sesión + invoca agents + genera planning
 - `/quality-check` → Ejecuta lint + typecheck + tests + reviews
 - `/commit` → Analiza cambios + genera comandos git
 
 **Criterio de creación:**
+
 - ✅ Crear command si el usuario querría invocarlo directamente
 - ✅ Si orquesta múltiples pasos en un proceso conocido
 - ✅ Si produce output concreto (archivos, reports, comandos)
@@ -527,27 +561,32 @@ Una de las mayores fuentes de confusión en el sistema actual es la falta de cla
 #### 📚 SKILL = Conocimiento/Metodología
 
 **¿Qué es?**
+
 - Un "manual de expertise" especializado
 - Una metodología o conjunto de best practices
 - Conocimiento que un agent consulta durante su trabajo
 
 **¿Cómo se usa?**
+
 - **NO se invoca directamente** (no hay `/skill-name`)
 - Un **agent** lo usa internamente mientras trabaja
 - Es como un "libro de referencia" que el agent consulta
 
 **¿Qué contiene?**
+
 - Guías paso a paso
 - Checklists de validación
 - Best practices y patterns
 - Criterios de calidad
 
 **Ejemplos actuales:**
+
 - `web-app-testing` → Metodología de testing que `qa-engineer` consulta
 - `brand-guidelines` → Guías de marca que `ui-ux-designer` sigue
 - `qa-criteria-validator` → Checklist que `qa-engineer` usa
 
 **Criterio de creación:**
+
 - ✅ Crear skill si es conocimiento reutilizable por múltiples agents
 - ✅ Si proporciona guías/checklists/metodología
 - ✅ Si NO ejecuta acciones, solo informa cómo hacerlas
@@ -603,17 +642,20 @@ NIVEL 4: Skills (brand-guidelines, web-app-testing)
 #### ⚠️ Anti-Patterns Actuales
 
 **Problema 1: `markdown-formatter` skill + `/format-markdown` command**
+
 - ❌ Duplicación: ambos formatean markdown
 - ❌ El skill NO es usado por múltiples agents
 - ❌ El skill ejecuta acciones en lugar de guiar
 - ✅ **Solución**: Eliminar skill, mantener solo comando
 
 **Problema 2: Agentes "on-demand" poco usados**
+
 - ❌ `deployment-engineer` raramente se usa (Vercel es automático)
 - ❌ `cicd-engineer` raramente se usa (CI/CD es simple)
 - ✅ **Solución**: Eliminar estos agents
 
 **Problema 3: Agentes que son "comandos disfrazados"**
+
 - ❌ `security-engineer` básicamente ejecuta un checklist → debería ser comando
 - ❌ `performance-engineer` básicamente ejecuta análisis → debería ser comando
 - ✅ **Solución**: Convertir en comandos especializados
@@ -818,35 +860,44 @@ Estos agentes raramente se usan porque el stack actual es simple y automatizado.
 Estos son los agentes esenciales para el workflow diario del monorepo:
 
 ✅ **Product & Planning (2):**
+
 - `product-functional` - Crea PDRs con user stories y acceptance criteria
 - `product-technical` - Análisis técnico y arquitectura
 
 ✅ **Leadership (1):**
+
 - `tech-lead` - Liderazgo técnico + arquitectura + code review completo (consolidado)
 
 ✅ **Backend (2):**
+
 - `hono-engineer` - APIs con Hono framework
 - `db-drizzle-engineer` - Database design con Drizzle ORM, migrations (más específico)
 
 ✅ **Frontend (3):**
+
 - `astro-engineer` - Astro web app (apps/web)
 - `react-senior-dev` - React 19 components expert (compartidos)
 - `tanstack-start-engineer` - TanStack Start admin panel (apps/admin) (más específico)
 
 ✅ **Design (1):**
+
 - `ux-ui-designer` - UX/UI design, mockups, user flows
 
 ✅ **Quality (2):**
+
 - `qa-engineer` - Testing strategy, QA validation, acceptance criteria
 - `debugger` - Bug investigation y troubleshooting
 
 ✅ **Specialized (1):**
+
 - `i18n-specialist` - Internacionalización (crítico para Hospeda)
 
 ✅ **Documentation (1):**
+
 - `tech-writer` - Docs técnicos + dependencies + changelogs (consolidado)
 
 **Cambios respecto a propuesta original:**
+
 - ✏️ `db-engineer` → `db-drizzle-engineer` (más específico al ORM)
 - ✏️ `react-dev` → `react-senior-dev` (nivel de expertise más claro)
 - ✏️ `tanstack-engineer` → `tanstack-start-engineer` (específico a TanStack Start)
@@ -858,11 +909,13 @@ Estos son los agentes esenciales para el workflow diario del monorepo:
 #### Resultado Final
 
 **Antes:**
+
 - 25 agentes totales
 - Overlap y confusión
 - Difícil de mantener
 
 **Después:**
+
 - **13 agentes core** (uso diario)
 - **3 comandos de auditoría** (uso bajo demanda)
 - **12 agentes eliminados** (6 fusionados, 3 eliminados, 3 convertidos a comandos)
@@ -870,6 +923,7 @@ Estos son los agentes esenciales para el workflow diario del monorepo:
 **Simplificación**: **48% reducción** (de 25 a 13)
 
 **Beneficios:**
+
 - ✅ Cada agent tiene propósito claro y no-overlapping
 - ✅ Nombres más específicos reflejan expertise (drizzle, tanstack-start, senior)
 - ✅ Más fácil de mantener y documentar
@@ -976,11 +1030,13 @@ Estos son los agentes esenciales para el workflow diario del monorepo:
 #### Resultado Final
 
 **Antes:**
+
 - 15 comandos (12 documentados + 3 sin documentar)
 - Overlap entre security/pen-test/review-performance
 - Confusión sobre cuál usar cuándo
 
 **Después:**
+
 - **18 comandos** bien definidos y categorizados
 - **0 overlap** entre comandos
 - **Todos documentados** en README
@@ -990,34 +1046,42 @@ Estos son los agentes esenciales para el workflow diario del monorepo:
 **Categorías:**
 
 📋 **Planning (2):**
+
 - `/start-feature-plan`
 - `/start-refactor-plan`
 
 ✅ **Quality (3):**
+
 - `/quality-check` (completo)
 - `/code-check` (rápido)
 - `/run-tests`
 
 🔍 **Auditorías Especializadas (3):**
+
 - `/security-audit` ⭐ NUEVO
 - `/performance-audit` ⭐ NUEVO
 - `/accessibility-audit` ⭐ NUEVO
 
 🛠️ **Development (2):**
+
 - `/add-new-entity`
 - `/update-docs`
 
 📝 **Docs & Git (2):**
+
 - `/format-md`
 - `/commit`
 
 🔗 **Integration (1):**
+
 - `/sync-planning`
 
 🐛 **Analysis (1):**
+
 - `/five-why`
 
 🤖 **Meta-Commands (4):** ⭐ NUEVOS
+
 - `/create-agent` - Crear agentes
 - `/create-command` - Crear comandos
 - `/create-skill` - Crear skills
@@ -1026,6 +1090,7 @@ Estos son los agentes esenciales para el workflow diario del monorepo:
 ---
 
 **Beneficios:**
+
 - ✅ Comandos de auditoría especializados (antes eran agents)
 - ✅ Usuario puede invocar auditorías cuando necesite
 - ✅ **Sistema auto-extensible** (meta-commands)
@@ -1048,7 +1113,7 @@ Estos son los agentes esenciales para el workflow diario del monorepo:
 
 ---
 
-#### Skills EXISTENTES a MANTENER (4):
+#### Skills EXISTENTES a MANTENER (4)
 
 1. ✅ `web-app-testing` - Metodología de testing para web apps
    - Usado por: qa-engineer, astro-engineer, react-senior-dev
@@ -1065,7 +1130,7 @@ Estos son los agentes esenciales para el workflow diario del monorepo:
 
 ---
 
-#### Skills NUEVOS - Testing Especializados (3):
+#### Skills NUEVOS - Testing Especializados (3)
 
 5. ✨ `api-app-testing` - Metodología de testing para APIs
    - **Usado por**: qa-engineer, hono-engineer
@@ -1084,7 +1149,7 @@ Estos son los agentes esenciales para el workflow diario del monorepo:
 
 ---
 
-#### Skills NUEVOS - Development Patterns (2):
+#### Skills NUEVOS - Development Patterns (2)
 
 8. ✨ `tdd-methodology` - Metodología TDD detallada
    - **Usado por**: Todos los engineering agents
@@ -1098,7 +1163,7 @@ Estos son los agentes esenciales para el workflow diario del monorepo:
 
 ---
 
-#### Skills NUEVOS - Technology Specialists (3):
+#### Skills NUEVOS - Technology Specialists (3)
 
 10. ✨ `vercel-specialist` - Expertise en Vercel deployment
     - **Usado por**: tech-lead, astro-engineer, tanstack-start-engineer, hono-engineer
@@ -1117,7 +1182,7 @@ Estos son los agentes esenciales para el workflow diario del monorepo:
 
 ---
 
-#### Skills NUEVOS - Utilities & Automation (4):
+#### Skills NUEVOS - Utilities & Automation (4)
 
 13. ✨ `add-memory` ⭐ - Auto-learning y actualización de memoria
     - **Usado por**: Todos los agents
@@ -1154,21 +1219,24 @@ Estos son los agentes esenciales para el workflow diario del monorepo:
 
 ---
 
-#### Skills a ELIMINAR (1):
+#### Skills a ELIMINAR (1)
 
 ❌ `markdown-formatter` → **ELIMINAR**
-   - Razón: Duplicación con comando `/format-md`
-   - No es conocimiento que agents usan, es acción ejecutable
+
+- Razón: Duplicación con comando `/format-md`
+- No es conocimiento que agents usan, es acción ejecutable
 
 ---
 
-#### Resultado Final:
+#### Resultado Final
 
 **Antes:**
+
 - 5 skills (4 documentados + 1 sin documentar)
 - Poco coverage de especialidades
 
 **Después:**
+
 - **16 skills** especializados y bien categorizados
 - Coverage completo: Testing, Patterns, Tech Specialists, Utilities
 - **add-memory skill** para auto-learning del sistema ⭐
@@ -1177,24 +1245,31 @@ Estos son los agentes esenciales para el workflow diario del monorepo:
 **Categorías:**
 
 🧪 **Testing (4):**
+
 - `web-app-testing`, `api-app-testing`, `performance-testing`, `security-testing`
 
 ✅ **QA (2):**
+
 - `qa-criteria-validator`, `git-commit-helper`
 
 🎨 **Design (1):**
+
 - `brand-guidelines`
 
 💻 **Development Patterns (2):**
+
 - `tdd-methodology`, `error-handling-patterns`
 
 🛠️ **Technology Specialists (3):**
+
 - `vercel-specialist`, `shadcn-specialist`, `mermaid-diagram-specialist`
 
 🤖 **Utilities & Automation (4):**
+
 - `add-memory`, `pdf-creator-editor`, `auditor-de-datos-json`, `create-new-monorepo-app`, `create-new-monorepo-package`
 
 **Beneficios:**
+
 - ✅ Coverage completo de especialidades del proyecto
 - ✅ **Sistema auto-aprende** con `add-memory` skill
 - ✅ Scaffolding automatizado de apps/packages
@@ -1399,14 +1474,17 @@ Estos son los agentes esenciales para el workflow diario del monorepo:
 #### Códigos de Planning
 
 **Features**: `PF-XXX` (Planning Feature)
+
 - Ejemplo: `PF-001-business-model-system`
 - Formato: `PF-{número}-{feature-name-kebab-case}`
 
 **Refactors**: `PR-XXX` (Planning Refactor)
+
 - Ejemplo: `PR-001-database-optimization`
 - Formato: `PR-{número}-{refactor-name-kebab-case}`
 
 **Incremento**: Número secuencial global (no separado por tipo)
+
 - PF-001, PR-002, PF-003, PR-004, etc.
 
 ---
@@ -1414,12 +1492,15 @@ Estos son los agentes esenciales para el workflow diario del monorepo:
 #### Códigos de Tasks
 
 **Task Principal**: `{PLANNING-CODE}-T-{número}`
+
 - Ejemplo: `PF-002-T-001` (Task 1 del Feature 2)
 
 **SubTask**: `{PLANNING-CODE}-T-{número}-{sub-número}`
+
 - Ejemplo: `PF-002-T-003-002` (Subtask 2 del Task 3 del Feature 2)
 
 **SubSubTask**: `{PLANNING-CODE}-T-{número}-{sub-número}-{sub-sub-número}`
+
 - Ejemplo: `PF-002-T-003-002-001` (SubSubTask 1 del Subtask 2 del Task 3)
 
 ---
@@ -1444,6 +1525,7 @@ Estos son los agentes esenciales para el workflow diario del monorepo:
 4. Commitear registry actualizado
 
 **Estados posibles:**
+
 - `planning` - En planificación (PDR no aprobado)
 - `ready` - Planificado y aprobado, listo para implementar
 - `in-progress` - En implementación
@@ -1628,6 +1710,7 @@ Notas:
 **Regla**: Commands ejecutan acciones. Skills son conocimiento que agents usan.
 
 **Commands:**
+
 - Son invocables directamente por el usuario o Claude
 - Ejecutan una secuencia de pasos
 - Pueden invocar agents
@@ -1635,6 +1718,7 @@ Notas:
 - Ejemplos: `/start-feature-plan`, `/quality-check`, `/commit`
 
 **Skills:**
+
 - Son usadas por agents durante su trabajo
 - No se invocan directamente
 - Proporcionan metodología/conocimiento
@@ -1652,18 +1736,21 @@ Notas:
 **Checklist de Actualización:**
 
 Cuando se agrega/modifica/elimina un **Agent**:
+
 - [ ] Archivo del agent en `.claude/agents/`
 - [ ] `.claude/agents/README.md` (lista + conteo)
 - [ ] `CLAUDE.md` (si es core agent)
 - [ ] Workflows que lo mencionan
 
 Cuando se agrega/modifica/elimina un **Command**:
+
 - [ ] Archivo del command en `.claude/commands/`
 - [ ] `.claude/commands/README.md` (lista + conteo)
 - [ ] `CLAUDE.md` (quick reference)
 - [ ] Workflows que lo usan
 
 Cuando se agrega/modifica/elimina un **Skill**:
+
 - [ ] Archivo del skill en `.claude/skills/`
 - [ ] `.claude/skills/README.md` (lista + conteo)
 - [ ] Agents que lo usan
@@ -1684,6 +1771,7 @@ Cuando se agrega/modifica/elimina un **Skill**:
    - Mantener solo los 10 más recientes inline en CLAUDE.md
 
 2. Learnings archivados son archivos individuales con nombres descriptivos (un .md por learning):
+
    ```
    .claude/docs/learnings/
    ├── fish-shell-for-loop-hangs.md
@@ -1695,6 +1783,7 @@ Cuando se agrega/modifica/elimina un **Skill**:
    ```
 
 3. Cada learning archivado tiene estructura completa:
+
    ```markdown
    # {Descriptive Title}
 
@@ -1720,6 +1809,7 @@ Cuando se agrega/modifica/elimina un **Skill**:
    ```
 
 4. CLAUDE.md linkea a TODOS los learnings archivados:
+
    ```markdown
    ## Recent Learnings
 
@@ -1735,6 +1825,7 @@ Cuando se agrega/modifica/elimina un **Skill**:
    ```
 
 **Beneficios:**
+
 - ✅ Cada learning es fácil de encontrar por nombre descriptivo en kebab-case
 - ✅ No se pierde contexto histórico
 - ✅ CLAUDE.md no crece infinitamente
@@ -1749,7 +1840,7 @@ Cuando se agrega/modifica/elimina un **Skill**:
 
 **Nota**: Esta optimización es principalmente de proceso/documentación, no requiere mockups de UI tradicionales.
 
-### Diagramas Necesarios:
+### Diagramas Necesarios
 
 1. **Decision Tree: Qué Workflow Usar**
    - Visual flowchart para elegir entre Nivel 1/2/3
@@ -1816,6 +1907,7 @@ Estos diagramas se crearán en `.claude/docs/diagrams/` y se referenciarán desd
 **Ninguna**: Esta optimización es interna al proyecto, no requiere librerías externas.
 
 **Herramientas Necesarias:**
+
 - Scripts de validación (bash/node)
 - Mermaid para diagramas
 - Markdownlint para validación de docs
@@ -1940,6 +2032,7 @@ Preguntas que necesitan input del usuario:
 **Descripción**: Los cambios podrían romper planning sessions en progreso o confundir sobre cómo trabajar
 
 **Mitigación**:
+
 1. Implementar en branch separado
 2. Mantener backward compatibility con workflows antiguos
 3. Documentar cambios claramente en CHANGELOG
@@ -1956,6 +2049,7 @@ Preguntas que necesitan input del usuario:
 **Descripción**: Puede ser difícil ajustarse a nuevos nombres/estructura después de usar sistema actual
 
 **Mitigación**:
+
 1. Los cambios simplifican, no complican
 2. Involucrar al usuario en cada decisión (no imponer)
 3. Crear guía de migración clara
@@ -1972,6 +2066,7 @@ Preguntas que necesitan input del usuario:
 **Descripción**: Podríamos crear un sistema más complejo tratando de simplificar
 
 **Mitigación**:
+
 1. Seguir principio KISS estrictamente
 2. Validar cada propuesta: "¿Esto realmente simplifica?"
 3. Priorizar remover sobre agregar
@@ -1988,6 +2083,7 @@ Preguntas que necesitan input del usuario:
 **Descripción**: Sin proceso, los docs volverán a desactualizarse con el tiempo
 
 **Mitigación**:
+
 1. Scripts de validación automática en CI
 2. Checklist obligatorio en BR-4
 3. Recent Learnings limitado a 10 (auto-archive)
@@ -2003,6 +2099,7 @@ Preguntas que necesitan input del usuario:
 **Duración estimada**: 2-4 horas
 
 **Deliverables**:
+
 - [x] PDR.md (este documento)
 - [ ] tech-analysis.md (siguiente)
 - [ ] TODOs.md atomizados (siguiente)
@@ -2015,6 +2112,7 @@ Preguntas que necesitan input del usuario:
 **Objetivo**: Arreglar problemas obvios sin romper nada
 
 **Tareas**:
+
 1. Actualizar READMEs con conteos correctos
 2. Documentar comandos faltantes (format-markdown, sync-planning, rule2hook)
 3. Crear `.claude/docs/INDEX.md`
@@ -2030,6 +2128,7 @@ Preguntas que necesitan input del usuario:
 **Objetivo**: Consolidar agents y commands
 
 **Tareas**:
+
 1. Fusionar agents (architecture-validator, reviewers → tech-lead)
 2. Fusionar commands (review-security + pen-test → security-audit)
 3. Actualizar referencias en todos los docs
@@ -2045,6 +2144,7 @@ Preguntas que necesitan input del usuario:
 **Objetivo**: Implementar niveles de workflow flexibles
 
 **Tareas**:
+
 1. Crear `quick-fix-protocol.md`
 2. Crear `bugfix-workflow.md`
 3. Crear decision tree (mermaid diagrams)
@@ -2060,6 +2160,7 @@ Preguntas que necesitan input del usuario:
 **Objetivo**: Scripts para mantener consistencia
 
 **Tareas**:
+
 1. Script de validación de docs (`validate-docs.sh`)
 2. Script de sync automático
 3. CI integration para validación
@@ -2075,6 +2176,7 @@ Preguntas que necesitan input del usuario:
 **Objetivo**: Docs finales y onboarding
 
 **Tareas**:
+
 1. Finalizar todos los READMEs
 2. Crear diagramas finales
 3. Crear CHANGELOG completo

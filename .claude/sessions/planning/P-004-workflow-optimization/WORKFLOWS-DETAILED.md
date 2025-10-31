@@ -41,6 +41,7 @@ flowchart TD
 | **Tests nuevos** | 0-2 | 5+ | Variable |
 
 **Small Fix incluye:**
+
 - Small bug fixes
 - Small improvements (performance, security, small refactors)
 - Trivial new features
@@ -66,6 +67,7 @@ flowchart TD
 ```
 
 **Proceso**:
+
 1. Leer `.claude/sessions/planning/.code-registry.json`
 2. Obtener `lastPlanningNumber`
 3. Incrementar en 1
@@ -85,6 +87,7 @@ mkdir -p .claude/sessions/planning/features/PF-003-user-authentication
 ```
 
 **Estructura esperada**:
+
 ```
 .claude/sessions/planning/features/PF-003-user-authentication/
 ├── PDR.md (paso 6)
@@ -126,6 +129,7 @@ mkdir -p .claude/sessions/planning/features/PF-003-user-authentication
 **Acción**: Claude analiza qué agents y skills necesitará
 
 **Agents probables para features**:
+
 - `product-functional` (siempre)
 - `product-technical` (siempre)
 - `ux-ui-designer` (si tiene UI)
@@ -135,6 +139,7 @@ mkdir -p .claude/sessions/planning/features/PF-003-user-authentication
 - `react-senior-dev` (si tiene componentes)
 
 **Skills probables**:
+
 - `tdd-methodology` (siempre)
 - `brand-guidelines` (si tiene UI)
 - `error-handling-patterns` (siempre)
@@ -184,6 +189,7 @@ mkdir -p .claude/sessions/planning/features/PF-003-user-authentication
 ```
 
 **Contenido del PDR** (en inglés, chat en español):
+
 - Overview
 - User Stories con Acceptance Criteria
 - User Flows
@@ -222,6 +228,7 @@ mkdir -p .claude/sessions/planning/features/PF-003-user-authentication
 ```
 
 **Contenido del Tech Analysis** (en inglés, chat en español):
+
 - Technical Overview
 - Architecture Design
 - Technology Stack (confirmar/ajustar)
@@ -239,6 +246,7 @@ mkdir -p .claude/sessions/planning/features/PF-003-user-authentication
 **Nota**: Tech analysis se escribe directamente en inglés, solo el chat es en español
 
 **Archivos extras opcionales**: El agent o subagent puede crear folders adicionales dentro de la planificación:
+
 - `mockups/` - UI mockups, wireframes
 - `diagrams/` - Architecture diagrams, flowcharts
 - `notes/` - Additional notes, research
@@ -253,6 +261,7 @@ Todos los archivos creados deben ser linkeados en los lugares correspondientes d
 **Acción**: Pedir review a agents especialistas
 
 **Ejemplo**:
+
 ```bash
 # Si afecta DB
 → Invocar db-drizzle-engineer para revisar database design
@@ -322,6 +331,7 @@ Todos los archivos creados deben ser linkeados en los lugares correspondientes d
 ```
 
 **Estructura de TODOs**:
+
 ```markdown
 # TODOs - PF-003-user-authentication
 
@@ -349,6 +359,7 @@ Todos los archivos creados deben ser linkeados en los lugares correspondientes d
 ```
 
 **Cada task debe**:
+
 - Ser atomic (1-2 horas máx)
 - Tener código único
 - Tener acceptance criteria
@@ -361,6 +372,7 @@ Todos los archivos creados deben ser linkeados en los lugares correspondientes d
 **Acción**: Usuario revisa tasks
 
 **Posibles respuestas**:
+
 - "Ok, perfecto" → Paso 14
 - "Falta XYZ" → Claude agrega y vuelve a presentar
 - "Esta task es muy grande" → Claude la atomiza más
@@ -395,12 +407,14 @@ Status: ready"
 **Acción**: Ejecutar `/sync-planning PF-003`
 
 **Proceso**:
+
 1. Crear parent issue en GitHub
 2. Crear sub-issues por cada task
 3. Actualizar `.code-registry.json` con `issueId`
 4. Guardar mapping en `issues-sync.json`
 
 **Output**:
+
 ```
 ✅ Planning synced to GitHub!
 
@@ -427,6 +441,7 @@ Status: ready"
 ```
 
 **Output**:
+
 ```
 📊 Estado del Planning PF-003:
 - Total tasks: 15
@@ -471,6 +486,7 @@ Install and configure Clerk authentication provider
 **Acción**: Seguir TDD estrictamente
 
 **Loop para cada subtask**:
+
 ```
 RED:
 1. Escribir test que falla (NO SOLO HAPPY PATH)
@@ -498,6 +514,7 @@ VERIFY:
 ```
 
 **Importante**: Tests NO deben ser solo happy path:
+
 - ✅ Test casos normales (happy path)
 - ✅ Test edge cases (límites, valores extremos)
 - ✅ Test error handling (excepciones, errores)
@@ -505,6 +522,7 @@ VERIFY:
 - ✅ Test invalid inputs (tipos incorrectos, valores inválidos)
 
 **Skills usados**:
+
 - `tdd-methodology`
 - `error-handling-patterns`
 - Específicos según código (ej: `vercel-specialist`)
@@ -516,6 +534,7 @@ VERIFY:
 **Acción**: Claude valida que todo está ok
 
 **Checklist**:
+
 - [ ] Todos los tests pasan
 - [ ] `/code-check` sin errores
 - [ ] Acceptance criteria cumplida
@@ -523,6 +542,7 @@ VERIFY:
 - [ ] Sin TODOs o FIXMEs en código
 
 **Output**:
+
 ```
 ✅ Task PF-003-T-001 completada
 
@@ -564,6 +584,7 @@ Opciones:
 **Acción**: Actualizar TODOs.md
 
 **Cambios**:
+
 ```diff
 ### PF-003-T-001: Setup Clerk integration
 - [x] PF-003-T-001-001: Install Clerk dependencies
@@ -581,6 +602,7 @@ Opciones:
 ```
 
 **Actualizar `.code-registry.json`**:
+
 ```json
 {
   "PF-003": {
@@ -649,6 +671,7 @@ Progress: 1/15 tasks"
 **Acción**: Volver al paso 16 hasta completar todas las tasks
 
 **Loop**:
+
 ```
 16. Analizar siguiente task
 17. Presentar informe
@@ -692,7 +715,7 @@ Ejecutar `/quality-check` final antes de merge
 
 ## 🔧 Workflow 2: Refactor (Similar a Feature, con variaciones)
 
-### Diferencias vs Feature Workflow:
+### Diferencias vs Feature Workflow
 
 **Código**: `PR-XXX` en lugar de `PF-XXX`
 
@@ -703,6 +726,7 @@ Ejecutar `/quality-check` final antes de merge
 **Tech Analysis más profundo**: Análisis de código existente, identificación de code smells
 
 **Paso adicional antes de implementación**:
+
 - Análisis de impacto (qué se va a romper)
 - Plan de migración
 - Estrategia de rollback
@@ -715,7 +739,7 @@ Ejecutar `/quality-check` final antes de merge
 
 ## ⚡ Workflow 3: Small Fix/Change (Simplificado - 8 pasos)
 
-### Criterios para usar este workflow:
+### Criterios para usar este workflow
 
 - Cambio trivial o small change
 - < 30 minutos
@@ -724,6 +748,7 @@ Ejecutar `/quality-check` final antes de merge
 - Sin riesgo de regresión
 
 **Small Fix incluye:**
+
 - Small bug fixes
 - Small improvements (performance, security, small refactors)
 - Trivial new features (agregar un campo simple, un botón básico)
@@ -753,6 +778,7 @@ Ejecutar `/quality-check` final antes de merge
 ```
 
 **Tipos de Small Fix:**
+
 - Bug fix: "Fix validation error in form"
 - Small improvement: "Add index to speed up query"
 - Trivial feature: "Add 'copy to clipboard' button"
@@ -767,6 +793,7 @@ Ejecutar `/quality-check` final antes de merge
 **Acción**: Editar archivo(s)
 
 **No necesita**:
+
 - PDR
 - Tech analysis
 - TODOs
@@ -831,6 +858,7 @@ git commit -m "docs: fix typo in README installation section"
 ## 🔄 Switching Between Workflows
 
 **Si un Small Fix crece**:
+
 ```
 Usuario: "Ahora también cambiemos XYZ"
 Claude: "Esto está creciendo más allá de small fix.

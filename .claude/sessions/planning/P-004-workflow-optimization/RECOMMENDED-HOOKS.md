@@ -29,6 +29,7 @@ Este documento contiene las configuraciones de hooks recomendadas para el proyec
 **Trigger:** Después de editar/crear archivos `.md`
 
 **Beneficios:**
+
 - Consistencia en formato de documentación
 - Cumple estándares de markdownlint
 - Evita commits con formato incorrecto
@@ -55,6 +56,7 @@ Este documento contiene las configuraciones de hooks recomendadas para el proyec
 ```
 
 **Notas:**
+
 - Usa `pnpm format:md:claude` que formatea solo archivos en `.claude/`
 - Timeout de 15s para manejar archivos grandes
 - `|| true` previene bloqueo si falla el formato
@@ -70,6 +72,7 @@ Este documento contiene las configuraciones de hooks recomendadas para el proyec
 **Trigger:** Después de editar/crear archivos `.ts` o `.tsx`
 
 **Beneficios:**
+
 - Detecta problemas de estilo inmediatamente
 - Mantiene código consistente
 - Feedback rápido sobre errores comunes
@@ -96,6 +99,7 @@ Este documento contiene las configuraciones de hooks recomendadas para el proyec
 ```
 
 **Notas:**
+
 - Usa Biome como linter (más rápido que ESLint)
 - Solo lintea el archivo modificado (no todo el proyecto)
 - Muestra advertencia si hay problemas de lint
@@ -113,11 +117,13 @@ Este documento contiene las configuraciones de hooks recomendadas para el proyec
 **Decisión del Usuario:** NO implementar este hook
 
 **Razones para no implementar:**
+
 - ❌ Puede ser demasiado verboso
 - ❌ El usuario puede verificar git status manualmente cuando lo necesite
 - ❌ No aporta suficiente valor para el overhead
 
 **Alternativa:**
+
 - Usuario ejecuta `git status` manualmente cuando necesita revisar cambios
 - Usar comando `/commit` que ya muestra los cambios
 
@@ -134,12 +140,14 @@ Este documento contiene las configuraciones de hooks recomendadas para el proyec
 **Decisión del Usuario:** NO implementar este hook
 
 **Razones para no implementar:**
+
 - ❌ MUY LENTO - puede tardar 30+ segundos por cada edit
 - ❌ Interrumpe el flujo de trabajo constantemente
 - ❌ Ejecutar tests después de cada modificación es excesivo
 - ❌ El usuario prefiere ejecutar tests manualmente cuando complete cambios
 
 **Alternativa:**
+
 - Ejecutar `/run-tests` o `pnpm test` manualmente cuando se complete un conjunto de cambios
 - Usar `/quality-check` al final de cada task que incluye tests
 - Confiar en TDD: escribir tests primero, luego implementar
@@ -157,6 +165,7 @@ Este documento contiene las configuraciones de hooks recomendadas para el proyec
 **Decisión del Usuario:** Implementar solo para el package/app modificado (NO proyecto completo)
 
 **Beneficios:**
+
 - ✅ Detecta errores de tipos inmediatamente
 - ✅ Mantiene type safety
 - ✅ Previene commits con errores de compilación
@@ -184,6 +193,7 @@ Este documento contiene las configuraciones de hooks recomendadas para el proyec
 ```
 
 **Notas:**
+
 - ✅ Solo typecheck del package/app modificado
 - ✅ Mucho más rápido que proyecto completo
 - ✅ Timeout reducido a 15s
@@ -204,6 +214,7 @@ Este documento contiene las configuraciones de hooks recomendadas para el proyec
 **Decisión del Usuario:** Modo warning con bypass - detecta secret, no commitea y avisa, si el user le dice que lo haga igual, hace el commit bypaseando ese warning
 
 **Beneficios:**
+
 - ⚠️ Previene leaks de API keys, tokens, passwords
 - ⚠️ Protege seguridad del proyecto
 - ⚠️ Detecta problemas antes del commit
@@ -231,12 +242,14 @@ Este documento contiene las configuraciones de hooks recomendadas para el proyec
 ```
 
 **Comportamiento:**
+
 1. ⚠️ Hook detecta potential secret → Muestra warning
 2. ⚠️ Claude ve el warning → Pregunta al usuario si está seguro
 3. ✅ Usuario dice "sí, proceder" → Claude commitea de todas formas
 4. ❌ Usuario dice "no" → Claude no commitea, usuario revisa
 
 **Notas:**
+
 - ✅ Usa regex simple (no requiere instalar gitleaks)
 - ✅ NO BLOQUEA la operación (exit 0)
 - ✅ Genera warning visible
@@ -244,6 +257,7 @@ Este documento contiene las configuraciones de hooks recomendadas para el proyec
 - ⚠️ Puede tener falsos positivos (pero no bloquea)
 
 **Workflow con Secret Detectado:**
+
 ```
 Claude: ⚠️ WARNING: Detecté un posible secret en el archivo config.ts
         ¿Estás seguro de que quieres commitear este archivo?
@@ -300,12 +314,14 @@ Para activar los hooks recomendados y aprobados, agregar al `.claude/settings.js
 ```
 
 **Hooks INCLUIDOS:**
+
 1. ✅ Auto-formateo de Markdown
 2. ✅ Lint Automático en TypeScript
 3. ✅ TypeCheck SOLO del package modificado (NO proyecto completo)
 4. ⚠️ Secrets detection en modo warning (NO bloquea)
 
 **Hooks NO INCLUIDOS (por decisión del usuario):**
+
 1. ❌ Git Status al terminar (demasiado verboso)
 2. ❌ Warning si hay tests fallando (muy lento)
 
@@ -318,24 +334,28 @@ Para activar los hooks recomendados y aprobados, agregar al `.claude/settings.js
 Activar estos hooks desde el inicio:
 
 **Hooks ESENCIALES (activar siempre):**
+
 1. ✅ Auto-formateo de Markdown
 2. ✅ Lint Automático en TypeScript
 3. ✅ TypeCheck del Package Modificado (NO proyecto completo)
 4. ⚠️ Secrets Detection en modo warning (NO bloquea)
 
 **Hooks NO RECOMENDADOS (NO activar):**
+
 1. ❌ Git Status al Terminar - Demasiado verboso
 2. ❌ Warning Tests Fallando - Muy lento, interrumpe flujo
 
 ### Consideraciones de Performance
 
 **Hooks Rápidos (< 5s):**
+
 - Auto-formateo Markdown
 - Lint TypeScript (archivo individual)
 - Git Status
 - Secrets detection (regex simple)
 
 **Hooks Lentos (> 10s):**
+
 - TypeCheck completo
 - Tests completos
 - Secrets detection (gitleaks)
@@ -347,6 +367,7 @@ Activar estos hooks desde el inicio:
 Los developers pueden tener configuraciones diferentes:
 
 **Developer A (Workflow Rápido):**
+
 ```json
 // ~/.claude/settings.json
 {
@@ -358,6 +379,7 @@ Los developers pueden tener configuraciones diferentes:
 ```
 
 **Developer B (Workflow Riguroso):**
+
 ```json
 // ~/.claude/settings.json - Todos los hooks activados
 ```
@@ -377,6 +399,7 @@ command 2>/dev/null || true
 ### Hook es Muy Lento
 
 **Opciones:**
+
 1. Aumentar timeout
 2. Optimizar comando (por ejemplo, typecheck solo del package)
 3. Desactivar el hook
@@ -384,6 +407,7 @@ command 2>/dev/null || true
 ### Hook No Se Ejecuta
 
 **Verificar:**
+
 1. El comando existe en PATH
 2. Los permisos de ejecución
 3. El matcher coincide con el tool usado
@@ -392,6 +416,7 @@ command 2>/dev/null || true
 ### Falsos Positivos en Secrets Detection
 
 **Solución:**
+
 - Agregar exclusiones para archivos de test
 - Ajustar regex para ser más específico
 - Usar whitelist de patrones aceptables
@@ -412,11 +437,13 @@ command 2>/dev/null || true
 ### Revisar Performance
 
 **Mensual:**
+
 - Revisar logs de hooks lentos
 - Considerar desactivar hooks no útiles
 - Optimizar comandos si es posible
 
 **Quarterly:**
+
 - Evaluar si todos los hooks se usan
 - Actualizar documentación
 - Compartir mejores prácticas con equipo
