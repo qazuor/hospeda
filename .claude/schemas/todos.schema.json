@@ -12,7 +12,8 @@
       "properties": {
         "planningCode": {
           "type": "string",
-          "pattern": "^P(F|R)?\\d{3,4}$"
+          "pattern": "^P(F|R|B)?-\\d{3,4}$",
+          "description": "Planning code with mandatory dash (e.g., P-001, PF-004, PR-002, PB-042)"
         },
         "relatedPDR": {
           "type": "string",
@@ -103,7 +104,7 @@
             "type": "array",
             "items": {
               "type": "string",
-              "pattern": "^PF\\d{3,4}(-\\d+)?(\\.\\d+)?$"
+              "pattern": "^P(F|R|B)\\d{3,4}-\\d+(\\.\\d+)?$"
             },
             "description": "Task codes belonging to this phase"
           },
@@ -126,8 +127,8 @@
         "properties": {
           "code": {
             "type": "string",
-            "pattern": "^PF\\d{3,4}(-\\d+)?(\\.\\d+)?$",
-            "description": "Task code (e.g., PF004-1, PF004-2.1)"
+            "pattern": "^P(F|R|B)\\d{3,4}-\\d+(\\.\\d+)?$",
+            "description": "Task code (e.g., PF001-1, PF004-2.1, PR002-5, PB042-1)"
           },
           "title": {
             "type": "string",
@@ -166,7 +167,7 @@
             "type": "array",
             "items": {
               "type": "string",
-              "pattern": "^PF\\d{3,4}(-\\d+)?(\\.\\d+)?$"
+              "pattern": "^P(F|R|B)\\d{3,4}-\\d+(\\.\\d+)?$"
             },
             "description": "Task codes that must complete before this task"
           },

@@ -12,8 +12,8 @@
       "properties": {
         "code": {
           "type": "string",
-          "pattern": "^P(F|R)?\\d{3,4}$",
-          "description": "Planning code (e.g., PF004, P-004, PR001)"
+          "pattern": "^P(F|R|B)?-\\d{3,4}$",
+          "description": "Planning code with mandatory dash (e.g., P-001, PF-004, PR-002, PB-042)"
         },
         "title": {
           "type": "string",

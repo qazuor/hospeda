@@ -4,17 +4,17 @@
   "title": "Workflow Checkpoint",
   "description": "JSON Schema for workflow checkpoint tracking",
   "type": "object",
-  "required": ["workflow", "planningCode", "currentPhase", "currentStep", "totalSteps", "currentTask"],
+  "required": ["workflow", "planningCode", "currentPhase", "currentStep", "totalSteps", "currentTask", "status"],
   "properties": {
     "workflow": {
       "type": "string",
-      "enum": ["feature", "refactor", "bugfix-small", "quick-fix"],
+      "enum": ["feature", "refactor", "bugfix", "quick-fix"],
       "description": "Type of workflow being executed"
     },
     "planningCode": {
       "type": "string",
-      "pattern": "^P(F|R)?-?\\d{3,4}$",
-      "description": "Planning code (e.g., P-004, PF004)"
+      "pattern": "^P(F|R|B)?-\\d{3,4}$",
+      "description": "Planning code (e.g., P-004, PF-004, PR-002, PB-042)"
     },
     "currentPhase": {
       "type": "integer",
@@ -34,8 +34,8 @@
     },
     "currentTask": {
       "type": "string",
-      "pattern": "^PF\\d{3,4}(-\\d+)?(\\.\\d+)?$",
-      "description": "Current task code being worked on"
+      "pattern": "^P(F|R|B)\\d{3,4}-\\d+(\\.\\d+)?$",
+      "description": "Current task code being worked on (e.g., PF004-1, PR002-3, PB042-2.1)"
     },
     "taskName": {
       "type": "string",
@@ -43,8 +43,13 @@
     },
     "previousTaskCompleted": {
       "type": "string",
-      "pattern": "^PF\\d{3,4}(-\\d+)?(\\.\\d+)?$",
-      "description": "Last completed task code"
+      "pattern": "^P(F|R|B)\\d{3,4}-\\d+(\\.\\d+)?$",
+      "description": "Last completed task code (e.g., PF004-1, PR002-3, PB042-2.1)"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["active", "completed", "paused", "blocked"],
+      "description": "Current status of the workflow"
     },
     "phaseStarted": {
       "type": "string",
