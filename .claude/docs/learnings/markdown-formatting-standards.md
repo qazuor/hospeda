@@ -7,6 +7,7 @@
 ## Problem
 
 Inconsistent markdown formatting causes:
+
 - Failed CI/CD checks (markdownlint errors)
 - Difficult-to-read documentation
 - Merge conflicts in documentation files
@@ -38,9 +39,11 @@ pnpm lint:md
    ```
 
    ❌ WRONG
+
    ```
    const foo = 'bar';
    ```
+
    ```
 
 2. **Use 2-space indentation for lists** - Consistent nested list formatting

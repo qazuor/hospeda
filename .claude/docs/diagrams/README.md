@@ -11,6 +11,7 @@ This directory contains Mermaid diagrams visualizing the Hospeda workflow system
 **Purpose:** Visual guide for selecting the appropriate workflow level
 
 **Shows:**
+
 - Decision criteria for each workflow level
 - Level 1 (Quick Fix): < 30min, 1-2 files, very low risk
 - Level 2 (Atomic Task): 30min-3h, 2-10 files, low-medium risk
@@ -19,12 +20,14 @@ This directory contains Mermaid diagrams visualizing the Hospeda workflow system
 - Color-coded paths (green=quick, orange=atomic, blue=feature)
 
 **Use When:**
+
 - Starting a new task
 - Uncertain which workflow to use
 - Training new team members
 - Documenting workflow selection
 
 **View:**
+
 ```mermaid
 # Paste content from workflow-decision-tree.mmd
 ```
@@ -38,6 +41,7 @@ This directory contains Mermaid diagrams visualizing the Hospeda workflow system
 **Purpose:** Visual organization of the 13 consolidated agents
 
 **Shows:**
+
 - User/Principal Architect at top
 - tech-lead as central coordinator
 - 5 teams:
@@ -50,12 +54,14 @@ This directory contains Mermaid diagrams visualizing the Hospeda workflow system
 - Color-coded by team
 
 **Use When:**
+
 - Understanding agent responsibilities
 - Assigning tasks to agents
 - Documenting team structure
 - Planning agent collaboration
 
 **View:**
+
 ```mermaid
 # Paste content from agent-hierarchy.mmd
 ```
@@ -69,6 +75,7 @@ This directory contains Mermaid diagrams visualizing the Hospeda workflow system
 **Purpose:** Show how commands, agents, and skills interact
 
 **Shows:**
+
 - 3 layers:
   - Commands Layer (16 commands)
   - Agents Layer (13 agents)
@@ -80,12 +87,14 @@ This directory contains Mermaid diagrams visualizing the Hospeda workflow system
 - Skill categories (Testing, Development, Design, Utils)
 
 **Use When:**
+
 - Understanding system architecture
 - Finding which agent uses which skill
 - Documenting tool relationships
 - Planning new tools
 
 **View:**
+
 ```mermaid
 # Paste content from tools-relationship.mmd
 ```
@@ -99,6 +108,7 @@ This directory contains Mermaid diagrams visualizing the Hospeda workflow system
 **Purpose:** Navigate the `.claude/` directory structure
 
 **Shows:**
+
 - Main directories:
   - `agents/` - Agent definitions (13)
   - `commands/` - Command definitions (16)
@@ -111,12 +121,14 @@ This directory contains Mermaid diagrams visualizing the Hospeda workflow system
 - Color-coded by type
 
 **Use When:**
+
 - Finding specific documentation
 - Understanding directory structure
 - Adding new documentation
 - Navigating the system
 
 **View:**
+
 ```mermaid
 # Paste content from documentation-map.mmd
 ```
@@ -143,6 +155,7 @@ See the [Workflow Decision Tree](../diagrams/workflow-decision-tree.mmd) for wor
 ### In GitHub
 
 GitHub automatically renders `.mmd` files:
+
 - Click on diagram file
 - GitHub shows rendered diagram
 - Use for reviews and discussions
@@ -150,6 +163,7 @@ GitHub automatically renders `.mmd` files:
 ### In VSCode
 
 Install Mermaid extension:
+
 1. Install "Mermaid Preview" extension
 2. Open `.mmd` file
 3. Right-click → "Open Preview to the Side"

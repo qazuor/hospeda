@@ -42,6 +42,7 @@ learnings/
 ### Shell & Terminal (1)
 
 **[shell-compatibility-fish.md](shell-compatibility-fish.md)**
+
 - **Category:** Shell / Terminal / DevOps
 - **Problem:** `for` loops hang Fish shell
 - **Solution:** Use `find -exec` or `xargs` alternatives
@@ -51,6 +52,7 @@ learnings/
 ### Monorepo & Build (1)
 
 **[monorepo-command-execution.md](monorepo-command-execution.md)**
+
 - **Category:** Monorepo / PNPM / Development
 - **Problem:** Incorrect command execution in monorepo packages
 - **Solution:** Always use `cd packageName && pnpm run <command>`
@@ -60,6 +62,7 @@ learnings/
 ### Testing (1)
 
 **[test-organization-structure.md](test-organization-structure.md)**
+
 - **Category:** Testing / Project Structure
 - **Problem:** Tests in wrong locations cause import/build issues
 - **Solution:** Use `test/` folder, mirror `src/` structure
@@ -69,6 +72,7 @@ learnings/
 ### Documentation (1)
 
 **[markdown-formatting-standards.md](markdown-formatting-standards.md)**
+
 - **Category:** Documentation / Formatting
 - **Problem:** Inconsistent markdown fails CI/CD checks
 - **Solution:** Run `pnpm format:md` before commits
@@ -78,6 +82,7 @@ learnings/
 ### Planning & Workflow (1)
 
 **[planning-linear-sync-workflow.md](planning-linear-sync-workflow.md)**
+
 - **Category:** Planning / GitHub / Linear / Workflow
 - **Problem:** Manual planning sync loses context
 - **Solution:** Sync after approval, commit before completion
@@ -87,6 +92,7 @@ learnings/
 ### Architecture & Patterns (2)
 
 **[common-architectural-patterns.md](common-architectural-patterns.md)**
+
 - **Category:** Architecture / Best Practices
 - **Problem:** Inconsistent patterns across codebase
 - **Solution:** Always use factories, base classes, RO-RO pattern
@@ -94,6 +100,7 @@ learnings/
 - **Date:** 2024-10-28
 
 **[common-mistakes-to-avoid.md](common-mistakes-to-avoid.md)**
+
 - **Category:** Best Practices / Code Quality
 - **Problem:** Repeated mistakes slow development
 - **Solution:** Never use `any`, default exports, skip tests, etc.
@@ -103,6 +110,7 @@ learnings/
 ### Optimization (1)
 
 **[optimization-tips.md](optimization-tips.md)**
+
 - **Category:** Performance / Best Practices
 - **Problem:** Inefficient development practices
 - **Solution:** Use Context7, dependency mapper, batch changes
@@ -118,22 +126,26 @@ learnings/
 **Latest 10 learnings stay inline in CLAUDE.md** for quick reference.
 
 When adding new learnings:
+
 1. Add to CLAUDE.md "Recent Learnings" section (inline)
 2. Create individual file in `.claude/docs/learnings/`
 3. If > 10 learnings in CLAUDE.md, move oldest to "Archived Learnings" section (keep file)
 
 **Finding learnings:**
+
 - Check CLAUDE.md for latest 10 (quick reference)
 - Check this directory for full archive (detailed information)
 
 ### For Developers
 
 **When encountering errors or discovering patterns:**
+
 1. Document immediately in CLAUDE.md "Recent Learnings"
 2. Create detailed file in this directory
 3. Include problem, solution, impact, related links
 
 **When looking for solutions:**
+
 1. Check CLAUDE.md first (latest 10 learnings)
 2. Search this directory by category
 3. Review related learnings for context

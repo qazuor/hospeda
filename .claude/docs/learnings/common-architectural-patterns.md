@@ -7,6 +7,7 @@
 ## Problem
 
 Inconsistent code patterns across the codebase cause:
+
 - Difficult code reviews
 - Higher cognitive load for developers
 - Harder to onboard new team members

@@ -987,4 +987,3 @@ settings. If a server is unavailable, inform the user and suggest enabling it in
 the tools menu.
 
 **Last Updated:** 2025-10-28 (19/21 servers active)
-

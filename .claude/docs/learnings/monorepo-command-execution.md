@@ -7,6 +7,7 @@
 ## Problem
 
 Running package-specific commands (lint, typecheck, test) incorrectly leads to:
+
 - Commands not finding workspace dependencies
 - Inconsistent environment setup
 - Path resolution errors
