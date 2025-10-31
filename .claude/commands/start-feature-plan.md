@@ -16,7 +16,92 @@ Orchestrates the complete planning phase (Phase 1) by invoking specialized agent
 
 ---
 
+## ⚠️ CRITICAL: Agent Delegation Policy
+
+**🚫 NEVER DO THE WORK YOURSELF**
+
+Before starting ANY planning work, the coordinating agent MUST:
+
+1. **Analyze Requirements**: Understand what the feature needs
+2. **Identify Required Agents**: Determine which specialized agents are needed
+3. **Use Task Tool**: ALWAYS delegate to specialized agents using Task tool
+4. **Never Assume**: NEVER assume you (Claude/coordinating agent) can do it directly
+
+**Required Agents for Planning:**
+
+- **`product-functional`** - MUST create PDR.md (user stories, acceptance criteria)
+- **`ui-ux-designer`** - MAY create mockups/wireframes (if UI-heavy feature)
+- **`product-technical`** - MUST create tech-analysis.md (architecture, DB, APIs)
+- **`product-technical`** - MUST create TODOs.md (task breakdown)
+- **`tech-lead`** - MUST do final review and approval
+
+**Example Agent Selection:**
+
+```text
+Feature: User Authentication System
+
+Required Agents:
+✅ product-functional (PDR with auth requirements)
+✅ ui-ux-designer (Login/signup mockups)
+✅ product-technical (Auth architecture, JWT, DB schema)
+✅ product-technical (Task breakdown)
+✅ tech-lead (Final review)
+
+Starting with Step 1: Initialize Context...
+```
+
+**❌ ANTI-PATTERN - DO NOT DO THIS:**
+
+```text
+"I'll create the PDR myself since I understand the requirements..."
+"Let me write the tech-analysis directly..."
+"I can break down the tasks without the product-technical agent..."
+```
+
+**✅ CORRECT PATTERN:**
+
+```text
+"I will use Task tool to invoke product-functional agent to create PDR.md"
+"I will use Task tool to invoke product-technical agent to create tech-analysis.md"
+"I will use Task tool to invoke product-technical agent to create TODOs.md"
+```
+
+---
+
 ## Execution Flow
+
+### Step 0: Analyze & Delegate
+
+**Duration:** 2-3 minutes
+
+**Objective:** Identify which specialized agents are needed for this feature
+
+**Process:**
+
+1. **Read Feature Request**: Understand what the user wants
+2. **Analyze Complexity**: Assess scope and requirements
+3. **List Required Agents**: Identify which agents will be invoked
+4. **Present to User**: Show which agents will be used
+
+**Output Example:**
+
+```text
+Feature Analysis: Multi-language Support
+
+I will coordinate the following specialized agents for this planning session:
+
+1. 🤖 product-functional - Create PDR with i18n requirements
+2. 🎨 ui-ux-designer - Design language selector and locale-specific layouts
+3. 🔧 product-technical - Design i18n architecture and translation system
+4. 🔧 product-technical - Break down into atomic tasks
+5. 👨‍💼 tech-lead - Final review and approval
+
+Starting planning process...
+```
+
+**⚠️ IMPORTANT:** You (coordinating agent) will NOT create any documentation directly. You will ONLY orchestrate the specialized agents using the Task tool.
+
+---
 
 ### Step 1: Initialize Planning Context
 

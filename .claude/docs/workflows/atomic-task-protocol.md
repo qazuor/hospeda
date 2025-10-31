@@ -467,6 +467,27 @@ Use this workflow for changes that meet **MOST** criteria:
 
 3. **Fix any issues found**
 
+**💡 Consider Using Specialized Agents:**
+
+For complex atomic tasks, consider delegating quality checks to specialized agents:
+
+- **`qa-engineer`** - Comprehensive testing validation (if task has complex test scenarios)
+- **`security-engineer`** - Security review (if task touches auth, data validation, or sensitive operations)
+- **`performance-engineer`** - Performance analysis (if task affects queries, rendering, or data processing)
+
+**When to use agents:**
+- Task involves authentication/authorization
+- Task modifies database queries
+- Task adds API endpoints with validation
+- Task has complex business logic
+- Task affects performance-critical paths
+
+**Example:**
+```text
+This task adds user input validation with sanitization.
+I'll invoke security-engineer agent to review for injection vulnerabilities.
+```
+
 **Validation:**
 
 - [ ] Lint passing
@@ -475,6 +496,7 @@ Use this workflow for changes that meet **MOST** criteria:
 - [ ] Coverage >= 90%
 - [ ] Manual testing successful
 - [ ] No console errors/warnings
+- [ ] Specialized agent review (if needed)
 
 **Output**: All quality checks passing
 
