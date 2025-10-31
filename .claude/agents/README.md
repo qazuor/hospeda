@@ -47,7 +47,8 @@ Agents are organized into the following categories:
 
 This structure reflects a consolidation from 25 agents to 13 agents, absorbing specialized responsibilities into core agents:
 
-### tech-lead absorbed:
+### tech-lead absorbed
+
 - architecture-validator (architectural validation)
 - backend-reviewer (backend code review)
 - frontend-reviewer (frontend code review)
@@ -56,17 +57,21 @@ This structure reflects a consolidation from 25 agents to 13 agents, absorbing s
 - deployment-engineer (deployment strategies)
 - cicd-engineer (CI/CD pipelines)
 
-### qa-engineer absorbed:
+### qa-engineer absorbed
+
 - accessibility-engineer (WCAG compliance)
 
-### tech-writer absorbed:
+### tech-writer absorbed
+
 - dependency-mapper (dependency tracking)
 - changelog-specialist (changelog generation)
 
-### Removed (functionality handled by MCP):
+### Removed (functionality handled by MCP)
+
 - payments-specialist (Mercado Pago MCP server)
 
-### Removed (general expertise):
+### Removed (general expertise)
+
 - prompt-engineer (integrated into general expertise)
 
 ## Usage
