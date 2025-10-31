@@ -161,6 +161,7 @@ After completing a task:
 ```
 
 **Key changes**:
+
 - `currentStep` incremented (15 → 16)
 - `currentTask` updated (PF004-15 → PF004-16)
 - `previousTaskCompleted` set to previous task

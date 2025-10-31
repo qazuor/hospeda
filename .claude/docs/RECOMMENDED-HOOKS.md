@@ -295,6 +295,7 @@ git commit -m "type(scope): description"
 ### Optimize Hook Speed
 
 1. **Stage only necessary files**
+
    ```bash
    # Instead of staging everything
    git add .
@@ -304,12 +305,14 @@ git commit -m "type(scope): description"
    ```
 
 2. **Use partial staging**
+
    ```bash
    # Stage specific hunks
    git add -p
    ```
 
 3. **Disable slow checks in .huskyrc**
+
    ```bash
    # For development, disable TODO sync if not needed
    # (requires modifying pre-commit hook)
@@ -318,12 +321,14 @@ git commit -m "type(scope): description"
 ### When to Skip Hooks
 
 ✅ **Reasonable to skip**:
+
 - Emergency hotfixes
 - WIP commits on feature branch
 - Reverting broken commits
 - Testing commit message formats
 
 ❌ **Not recommended to skip**:
+
 - Commits to main/master
 - Pull request commits
 - Release commits
