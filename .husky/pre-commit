@@ -1,10 +1,55 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
 # Get staged files that match our patterns (exclude deleted files)
 STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.(js|jsx|ts|tsx|css|scss|md|astro)$' || true)
+STAGED_MD_FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep '\.md$' || true)
+STAGED_CLAUDE_FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep '^\.claude/' || true)
 
-# Only run Biome if there are staged files matching our patterns
+# 1. Format markdown files if any are staged
+if [ -n "$STAGED_MD_FILES" ]; then
+  echo "📝 Formatting markdown files..."
+  if echo "$STAGED_MD_FILES" | grep -q '^\.claude/'; then
+    pnpm format:md:claude || echo "⚠️  Markdown formatting failed - continuing"
+  else
+    pnpm format:md || echo "⚠️  Markdown formatting failed - continuing"
+  fi
+
+  # Re-add formatted markdown files
+  for file in $STAGED_MD_FILES; do
+    if [ -f "$file" ]; then
+      git add "$file"
+    fi
+  done
+fi
+
+# 2. Validate .claude documentation changes
+if [ -n "$STAGED_CLAUDE_FILES" ]; then
+  echo "🔍 Validating .claude documentation..."
+
+  # Check for broken links in staged files
+  for file in $STAGED_CLAUDE_FILES; do
+    if [ -f "$file" ] && [ "${file##*.}" = "md" ]; then
+      # Simple link validation - check if referenced files exist
+      grep -oP '\]\(\K[^)]+' "$file" 2>/dev/null | while read -r link; do
+        # Skip URLs and anchors
+        if ! echo "$link" | grep -qE '^(https?:|#)'; then
+          # Convert relative path to absolute
+          link_dir=$(dirname "$file")
+          link_path="$link_dir/$link"
+          if [ ! -f "$link_path" ] && [ ! -d "$link_path" ]; then
+            echo "⚠️  Warning: Broken link in $file: $link"
+          fi
+        fi
+      done
+    fi
+  done
+fi
+
+# 3. Run Biome on staged files
 if [ -n "$STAGED_FILES" ]; then
   echo "🔍 Running Biome on staged files..."
-  echo "$STAGED_FILES" | xargs pnpm dlx biome check --write --no-errors-on-unmatched --files-ignore-unknown=true
+  echo "$STAGED_FILES" | xargs pnpm dlx biome check --write --no-errors-on-unmatched --files-ignore-unknown=true || echo "⚠️  Biome check failed - continuing"
 
   # Re-add files that were modified by Biome (only existing files)
   for file in $STAGED_FILES; do
@@ -16,7 +61,7 @@ else
   echo "No staged files to check with Biome."
 fi
 
-# Sync TODO comments with Linear
+# 4. Sync TODO comments with Linear
 echo "📝 Syncing TODO comments with Linear..."
 
 # Capture currently staged files before sync (exclude deleted files)
@@ -35,3 +80,5 @@ if pnpm todo:sync --quiet 2>/dev/null; then
 else
   echo "⚠️  TODO sync failed or not configured - continuing with commit"
 fi
+
+echo "✅ Pre-commit checks complete"

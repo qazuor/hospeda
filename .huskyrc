@@ -1,0 +1,36 @@
+# Husky Configuration
+# Controls which Git hooks are enabled/disabled
+#
+# Usage:
+#   - Set to "1" to enable a hook
+#   - Set to "0" to disable a hook
+#   - Comment out to use default (enabled)
+#
+# You can also disable all hooks temporarily with:
+#   export HUSKY=0
+#
+# Or skip hooks for a single commit with:
+#   git commit --no-verify
+
+# Pre-commit hook (format, lint, validate docs)
+# Runs: markdown format, .claude validation, Biome, TODO sync
+# Speed: ~5-15s depending on staged files
+HUSKY_PRE_COMMIT=1
+
+# Commit-msg hook (validate conventional commits)
+# Runs: commitlint validation
+# Speed: <1s
+HUSKY_COMMIT_MSG=1
+
+# Post-checkout hook (registry consistency check)
+# Runs: code registry validation, staleness check
+# Speed: <2s
+HUSKY_POST_CHECKOUT=1
+
+# Global hook controls
+# Uncomment to disable all hooks (overrides individual settings)
+# HUSKY=0
+
+# Development mode
+# Uncomment to skip slow operations (keeps fast checks)
+# HUSKY_DEV_MODE=1
