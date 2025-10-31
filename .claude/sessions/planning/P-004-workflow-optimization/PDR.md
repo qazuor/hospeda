@@ -1353,42 +1353,42 @@ Estos son los agentes esenciales para el workflow diario del monorepo:
 
 ## 📚 Start Here
 1. [CLAUDE.md](../../../../CLAUDE.md) - Main instructions for Claude Code
-2. [Quick Start Guide](../../docs/quick-start.md) - Get started in 15 minutes (planned)
-3. [Glossary](../../docs/glossary.md) - Key terms (agent, command, skill, etc.) (planned)
+2. [Quick Start Guide](../../../docs/quick-start.md) - Get started in 15 minutes
+3. [Glossary](../../../docs/glossary.md) - Key terms (agent, command, skill, etc.)
 
 ## 🛠️ Tools
-- [Agents](../agents/README.md) - 12 core agents (eliminados 13)
-- [Commands](../commands/README.md) - 13 commands (3 nuevos de auditoría)
-- [Skills](../skills/README.md) - 4 specialized knowledge modules
+- [Agents](../../../agents/README.md) - 13 core agents (consolidated)
+- [Commands](../../../commands/README.md) - 18 commands (includes audit and meta)
+- [Skills](../../../skills/README.md) - 16 specialized knowledge modules
 
 ## 📐 Standards
-- [Code Standards](./standards/code-standards.md)
-- [Architecture Patterns](./standards/architecture-patterns.md)
-- [Testing Standards](./standards/testing-standards.md)
-- [Documentation Standards](./standards/documentation-standards.md)
+- [Code Standards](../../../docs/standards/code-standards.md)
+- [Architecture Patterns](../../../docs/standards/architecture-patterns.md)
+- [Testing Standards](../../../docs/standards/testing-standards.md)
+- [Documentation Standards](../../../docs/standards/documentation-standards.md)
 
 ## 🔄 Workflows
-- [Phase 1: Planning](./workflows/phase-1-planning.md)
-- [Phase 2: Implementation](./workflows/phase-2-implementation.md)
-- [Phase 3: Validation](./workflows/phase-3-validation.md)
-- [Phase 4: Finalization](./workflows/phase-4-finalization.md)
-- [Quick Fix Protocol](./workflows/quick-fix-protocol.md) ← NUEVO
-- [Bugfix Workflow](./workflows/bugfix-workflow.md) ← NUEVO
-- [Task Atomization](./workflows/task-atomization.md)
-- [Task Completion Protocol](./workflows/task-completion-protocol.md)
+- [Phase 1: Planning](../../../docs/workflows/phase-1-planning.md)
+- [Phase 2: Implementation](../../../docs/workflows/phase-2-implementation.md)
+- [Phase 3: Validation](../../../docs/workflows/phase-3-validation.md)
+- [Phase 4: Finalization](../../../docs/workflows/phase-4-finalization.md)
+- [Quick Fix Protocol](../../../docs/workflows/quick-fix-protocol.md)
+- [Atomic Task Protocol](../../../docs/workflows/atomic-task-protocol.md)
+- [Task Atomization](../../../docs/workflows/task-atomization.md)
+- [Task Completion Protocol](../../../docs/workflows/task-completion-protocol.md)
 
 ## 📋 Templates
-- [PDR Template](./templates/PDR-template.md)
-- [Tech Analysis Template](./templates/tech-analysis-template.md)
-- [TODOs Template](./templates/TODOs-template.md)
+- [PDR Template](../../../docs/templates/PDR-template.md)
+- [Tech Analysis Template](../../../docs/templates/tech-analysis-template.md)
+- [TODOs Template](../../../docs/templates/TODOs-template.md)
 
 ## 🔧 Maintenance
-- [System Maintenance Guide](./maintenance/system-maintenance.md) ← NUEVO
-- [Documentation Sync Process](./maintenance/doc-sync.md) ← NUEVO
-- [Changelog](./CHANGELOG.md) ← NUEVO
+- [System Maintenance Guide](../../../docs/system-maintenance.md)
+- [Documentation Sync Process](../../../docs/doc-sync.md)
+- [Changelog](../../../docs/CHANGELOG.md)
 
 ## 📖 Archives
-- [Learnings Archive](./learnings/) - Historical learnings by month
+- [Learnings Archive](../../../docs/learnings/) - Historical learnings
 ```
 
 **Nuevos Documentos a Crear:**
@@ -1818,9 +1818,9 @@ Cuando se agrega/modifica/elimina un **Skill**:
    ## Archived Learnings
 
    Ver learnings históricos en `.claude/docs/learnings/`:
-   - [Fish Shell: For Loop Hangs](./.claude/docs/learnings/fish-shell-for-loop-hangs.md) - 2025-01-15
-   - [Monorepo: Command Execution](./.claude/docs/learnings/monorepo-command-execution-from-root.md) - 2025-02-03
-   - [Test Organization Standards](./.claude/docs/learnings/test-organization-in-test-folder.md) - 2025-02-20
+   - [Fish Shell: For Loop Hangs](../../../docs/learnings/shell-compatibility-fish.md) - 2025-01-15
+   - [Monorepo: Command Execution](../../../docs/learnings/monorepo-command-execution.md) - 2025-02-03
+   - [Test Organization Standards](../../../docs/learnings/test-organization-structure.md) - 2025-02-20
    ...
    ```
 
