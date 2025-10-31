@@ -7,6 +7,7 @@
 ## Problem
 
 Tests placed incorrectly (e.g., in `src/` alongside source code) cause:
+
 - Import path confusion
 - Build artifacts including test files
 - Difficulty maintaining test/source separation

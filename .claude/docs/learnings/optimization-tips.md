@@ -7,6 +7,7 @@
 ## Problem
 
 Inefficient development practices lead to:
+
 - Wasted time searching for documentation
 - Redundant work analyzing dependencies
 - Slow development cycles
@@ -27,6 +28,7 @@ mcp__context7__get-library-docs("/honojs/hono")
 ```
 
 **Benefits:**
+
 - Always current documentation
 - Saves Claude context tokens
 - Faster than web search
@@ -47,6 +49,7 @@ pnpm run dependency-map
 ```
 
 **Benefits:**
+
 - Automatic security scanning
 - Version conflict detection
 - Dependency tree visualization
@@ -68,6 +71,7 @@ git commit -m "add booking tests"
 ```
 
 **Benefits:**
+
 - Clearer git history
 - Easier code review
 - Atomic changes
@@ -95,6 +99,7 @@ test/
 ```
 
 **Benefits:**
+
 - Easier to find related tests
 - Better feature coverage visibility
 - Simpler test maintenance
@@ -111,6 +116,7 @@ Leverage integrated MCP servers:
 - **Linear**: Project management
 
 **Example workflow:**
+
 ```bash
 # Check database schema
 mcp__neon__describe_branch

@@ -54,6 +54,7 @@ Use this workflow for changes that meet **ALL** criteria:
 **Objective**: Confirm change qualifies for Level 1
 
 **Actions:**
+
 1. Review qualifying criteria above
 2. Estimate time to complete (must be < 30 min)
 3. Count affected files (must be 1-2)
@@ -61,6 +62,7 @@ Use this workflow for changes that meet **ALL** criteria:
 5. Check if tests needed (must be no)
 
 **Decision:**
+
 - ✅ **All criteria met** → Proceed with Quick Fix
 - ❌ **Any criterion not met** → Use Level 2 or higher
 
@@ -73,6 +75,7 @@ Use this workflow for changes that meet **ALL** criteria:
 **Objective**: Implement the trivial change
 
 **Actions:**
+
 1. Open file(s) in editor
 2. Make the change
 3. Save file(s)
@@ -83,6 +86,7 @@ Use this workflow for changes that meet **ALL** criteria:
    - Complex analysis
 
 **Best Practices:**
+
 - Keep change minimal and focused
 - Don't expand scope during implementation
 - If you discover more issues, handle separately
@@ -98,12 +102,14 @@ Use this workflow for changes that meet **ALL** criteria:
 **Actions:**
 
 1. **For code changes:**
+
    ```bash
    pnpm typecheck    # TypeScript validation
    pnpm lint         # Linting check
    ```
 
 2. **For markdown changes:**
+
    ```bash
    pnpm format:md    # Auto-format markdown
    ```
@@ -114,6 +120,7 @@ Use this workflow for changes that meet **ALL** criteria:
    - Verify formatting looks good
 
 **Validation:**
+
 - [ ] TypeCheck passes (if code)
 - [ ] Lint passes (if code)
 - [ ] Markdown formatted (if docs)
@@ -129,6 +136,7 @@ Use this workflow for changes that meet **ALL** criteria:
 **Objective**: Create clean, descriptive commit
 
 **Commit Format:**
+
 ```
 <type>(<scope>): <description>
 
@@ -136,6 +144,7 @@ Use this workflow for changes that meet **ALL** criteria:
 ```
 
 **Common Types for Quick Fixes:**
+
 - `docs` - Documentation changes
 - `style` - Code formatting, whitespace
 - `chore` - Dependency updates, config tweaks
@@ -161,6 +170,7 @@ git commit -m "style: remove unused imports from api routes"
 ```
 
 **Actions:**
+
 ```bash
 # Stage files
 git add <file1> <file2>
@@ -170,6 +180,7 @@ git commit -m "<type>(<scope>): <description>"
 ```
 
 **Validation:**
+
 - [ ] Message follows conventional commits
 - [ ] Type appropriate for change
 - [ ] Description clear and concise
@@ -184,12 +195,14 @@ git commit -m "<type>(<scope>): <description>"
 **Objective**: Share change with team or deploy
 
 **If Working Alone:**
+
 ```bash
 # Push directly to main (if permitted)
 git push origin main
 ```
 
 **If Working with Team:**
+
 ```bash
 # Push to feature branch
 git push origin quick-fix/<description>
@@ -199,6 +212,7 @@ gh pr create --title "fix: <description>" --body "Quick fix for <issue>"
 ```
 
 **PR Template for Quick Fixes:**
+
 ```markdown
 ## Quick Fix
 
@@ -224,6 +238,7 @@ gh pr create --title "fix: <description>" --body "Quick fix for <issue>"
 **Objective**: Close the loop
 
 **Actions:**
+
 - Mark task as complete
 - No retrospective needed
 - No planning docs to update
@@ -270,6 +285,7 @@ Total: **< 30 minutes**
 ### Example 1: Typo Fix in Code Comment
 
 **Change:**
+
 ```typescript
 // Before
 // Retrun the user's bookings
@@ -285,6 +301,7 @@ export function getUserBookings(userId: string) {
 ```
 
 **Workflow:**
+
 1. ✅ Criteria: Typo, 1 file, < 1 min, no tests
 2. 🛠️ Fix: Change "Retrun" → "Return"
 3. ✔️ Validate: No typecheck/lint needed (comment only)
@@ -297,11 +314,13 @@ export function getUserBookings(userId: string) {
 ### Example 2: Markdown Formatting
 
 **Change:**
+
 ```bash
 pnpm format:md
 ```
 
 **Workflow:**
+
 1. ✅ Criteria: Formatting, multiple docs, < 5 min, automated
 2. 🛠️ Fix: Run formatter
 3. ✔️ Validate: Review diff
@@ -314,6 +333,7 @@ pnpm format:md
 ### Example 3: Environment Variable Update
 
 **Change:**
+
 ```env
 # Before
 DATABASE_URL=postgres://localhost:5432/hospeda
@@ -323,6 +343,7 @@ DATABASE_URL=postgres://localhost:5432/hospeda_dev
 ```
 
 **Workflow:**
+
 1. ✅ Criteria: Config, 1 file, < 2 min, no code change
 2. 🛠️ Fix: Update DB name
 3. ✔️ Validate: Visual check
@@ -335,6 +356,7 @@ DATABASE_URL=postgres://localhost:5432/hospeda_dev
 ### Example 4: Import Organization
 
 **Change:**
+
 ```typescript
 // Before
 import { z } from 'zod';
@@ -350,6 +372,7 @@ import { validateBooking } from './validators';
 ```
 
 **Workflow:**
+
 1. ✅ Criteria: Style, 1 file, < 5 min, auto-sorted
 2. 🛠️ Fix: Alphabetize imports
 3. ✔️ Validate: `pnpm typecheck && pnpm lint`

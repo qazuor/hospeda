@@ -7,6 +7,7 @@
 ## Problem
 
 Repeated mistakes slow down development and introduce bugs:
+
 - Type safety violations
 - Skipped tests leading to bugs
 - Pattern violations causing inconsistency

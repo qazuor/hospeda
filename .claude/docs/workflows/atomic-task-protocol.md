@@ -24,6 +24,7 @@ Use this workflow for changes that meet **MOST** criteria:
 ### Qualifying Examples
 
 **Bugfixes:**
+
 - ✅ **Fix validation error** in booking form
 - ✅ **Correct calculation bug** in pricing logic
 - ✅ **Fix race condition** in state updates
@@ -32,6 +33,7 @@ Use this workflow for changes that meet **MOST** criteria:
 - ✅ **Correct data transformation bug**
 
 **Small Features:**
+
 - ✅ **Add search filter** to existing list
 - ✅ **Add sorting option** to table
 - ✅ **Implement pagination** on results
@@ -40,6 +42,7 @@ Use this workflow for changes that meet **MOST** criteria:
 - ✅ **Implement loading state** for async operation
 
 **Small Refactors:**
+
 - ✅ **Extract reusable component** from page
 - ✅ **Consolidate duplicate code** (2-3 files)
 - ✅ **Rename for clarity** (affecting multiple files)
@@ -50,12 +53,14 @@ Use this workflow for changes that meet **MOST** criteria:
 ### Non-Qualifying Examples (Use Different Level)
 
 **Too Small (Use Level 1):**
+
 - ❌ Typo fixes
 - ❌ Formatting only
 - ❌ Documentation updates
 - ❌ Single file changes < 30 min
 
 **Too Large (Use Level 3):**
+
 - ❌ New major features
 - ❌ Database schema changes
 - ❌ API contract changes
@@ -70,6 +75,7 @@ Use this workflow for changes that meet **MOST** criteria:
 **Pattern**: `PB-XXX` (Patch/Bugfix - Number)
 
 **Examples:**
+
 - `PB-001` - First bugfix
 - `PB-042` - 42nd bugfix/small feature
 - `PB-125` - 125th atomic task
@@ -79,6 +85,7 @@ Use this workflow for changes that meet **MOST** criteria:
 **Location**: `.claude/sessions/atomic-tasks/REGISTRY.md`
 
 **Format:**
+
 ```markdown
 # Atomic Tasks Registry
 
@@ -119,22 +126,26 @@ Use this workflow for changes that meet **MOST** criteria:
 **Actions:**
 
 1. **Get next PB code:**
+
    ```bash
    # Check REGISTRY.md for last code
    # Increment by 1
    ```
 
 2. **Create session directory:**
+
    ```bash
    mkdir -p .claude/sessions/atomic-tasks/PB-XXX-task-name
    ```
 
 3. **Register in REGISTRY.md:**
+
    ```markdown
    | PB-XXX | Task title | Type | Not Started | YYYY-MM-DD | @assignee |
    ```
 
 4. **Create checkpoint:**
+
    ```json
    {
      "taskCode": "PB-XXX",
@@ -231,6 +242,7 @@ Use this workflow for changes that meet **MOST** criteria:
 ```
 
 **Actions:**
+
 1. Fill out template
 2. Keep it concise (1-2 pages max)
 3. Focus on implementation details
@@ -258,6 +270,7 @@ Use this workflow for changes that meet **MOST** criteria:
    - Adjust if needed
 
 3. **Commit planning docs:**
+
    ```bash
    git add .claude/sessions/atomic-tasks/PB-XXX/
    git commit -m "docs(PB-XXX): add tech analysis for [task]"
@@ -274,6 +287,7 @@ Use this workflow for changes that meet **MOST** criteria:
 **Actions:**
 
 1. **Write failing tests:**
+
    ```typescript
    // RED: Write test that fails
    describe('BookingValidation', () => {
@@ -289,12 +303,14 @@ Use this workflow for changes that meet **MOST** criteria:
    ```
 
 2. **Run tests - verify they fail:**
+
    ```bash
    pnpm test
    # Should see RED (failing)
    ```
 
 3. **Commit red tests:**
+
    ```bash
    git add test/
    git commit -m "test(PB-XXX): add failing tests for [feature]"
@@ -317,12 +333,14 @@ Use this workflow for changes that meet **MOST** criteria:
    - Commit incrementally
 
 2. **Make tests pass:**
+
    ```bash
    pnpm test
    # Should see GREEN (passing)
    ```
 
 3. **Verify no regressions:**
+
    ```bash
    pnpm test        # All tests
    pnpm typecheck   # TypeScript
@@ -346,6 +364,7 @@ Use this workflow for changes that meet **MOST** criteria:
    - Optimize logic
 
 2. **Keep tests green:**
+
    ```bash
    pnpm test  # After each refactor
    ```
@@ -366,6 +385,7 @@ Use this workflow for changes that meet **MOST** criteria:
 **Actions:**
 
 1. **Code documentation:**
+
    ```typescript
    /**
     * Validates booking dates ensuring check-in is not in the past
@@ -401,6 +421,7 @@ Use this workflow for changes that meet **MOST** criteria:
 **Actions:**
 
 1. **Run coverage:**
+
    ```bash
    pnpm test:coverage
    ```
@@ -413,6 +434,7 @@ Use this workflow for changes that meet **MOST** criteria:
 3. **Add missing tests if needed**
 
 **Validation:**
+
 - [ ] Line coverage >= 90%
 - [ ] Branch coverage >= 85%
 - [ ] All edge cases covered
@@ -429,6 +451,7 @@ Use this workflow for changes that meet **MOST** criteria:
 **Actions:**
 
 1. **Run all checks:**
+
    ```bash
    pnpm lint          # Linting
    pnpm typecheck     # TypeScript
@@ -445,6 +468,7 @@ Use this workflow for changes that meet **MOST** criteria:
 3. **Fix any issues found**
 
 **Validation:**
+
 - [ ] Lint passing
 - [ ] TypeCheck passing
 - [ ] Tests passing
@@ -461,6 +485,7 @@ Use this workflow for changes that meet **MOST** criteria:
 **Objective**: Create clean, descriptive commits
 
 **Commit Message Format:**
+
 ```
 <type>(PB-XXX): <description>
 
@@ -472,6 +497,7 @@ Closes #issue-number
 ```
 
 **Types:**
+
 - `fix` - Bug fixes
 - `feat` - New features
 - `refactor` - Code refactoring
@@ -520,6 +546,7 @@ Closes #458"
 **Actions:**
 
 1. **Update tech-analysis.md:**
+
    ```markdown
    ## Time Estimate
    **Estimated**: 2 hours
@@ -534,12 +561,14 @@ Closes #458"
    ```
 
 2. **Update REGISTRY.md:**
+
    ```markdown
    ## Completed Tasks
    | PB-001 | Fix booking validation | Bug | 2024-02-01 | 2.5h | 4 |
    ```
 
 3. **Update checkpoint:**
+
    ```json
    {
      "taskCode": "PB-001",
@@ -551,6 +580,7 @@ Closes #458"
    ```
 
 4. **Commit registry update:**
+
    ```bash
    git add .claude/sessions/atomic-tasks/
    git commit -m "docs(PB-001): mark task complete"
@@ -615,6 +645,7 @@ Total: **30 minutes - 3 hours**
 Users can book accommodations with check-in dates in the past.
 
 **Tech Analysis:**
+
 ```markdown
 ## Root Cause
 Missing date validation in `validateBooking` function
@@ -628,6 +659,7 @@ Add date validation checking `checkIn >= today`
 ```
 
 **Implementation:**
+
 1. Write test expecting past dates to fail
 2. Add validation: `if (checkIn < today) throw ValidationError`
 3. Refactor for clarity
@@ -646,6 +678,7 @@ Add date validation checking `checkIn >= today`
 Allow users to search accommodations by name/location
 
 **Tech Analysis:**
+
 ```markdown
 ## Approach
 Client-side search with debounce
@@ -663,6 +696,7 @@ Client-side search with debounce
 ```
 
 **Implementation:**
+
 1. Write tests for search functionality
 2. Create SearchInput component
 3. Implement useAccommodationSearch with debounce
@@ -681,6 +715,7 @@ Client-side search with debounce
 BookingList component has duplicate card rendering logic
 
 **Tech Analysis:**
+
 ```markdown
 ## Goal
 Extract reusable BookingCard component
@@ -697,6 +732,7 @@ Extract reusable BookingCard component
 ```
 
 **Implementation:**
+
 1. Write tests for BookingCard
 2. Create BookingCard component
 3. Update BookingList to use BookingCard

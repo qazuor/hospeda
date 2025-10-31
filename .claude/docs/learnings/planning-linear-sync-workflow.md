@@ -7,6 +7,7 @@
 ## Problem
 
 Manual planning synchronization causes:
+
 - Planning sessions not tracked in GitHub
 - Lost context when switching devices
 - No visibility into task progress
