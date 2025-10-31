@@ -35,7 +35,9 @@ Orchestrates the complete planning phase (Phase 1) by invoking specialized agent
   - `TODOs.md` (Task Breakdown)
   - `wireframes/` (UI mockups directory)
 
-### Step 2: Product Requirements Analysis
+---
+
+### Step 2: Product Requirements Analysis (PDR)
 
 **Agent**: `product-functional`
 
@@ -55,7 +57,42 @@ Orchestrates the complete planning phase (Phase 1) by invoking specialized agent
 - Business rules and constraints
 - Success metrics and KPIs
 
-### Step 3: UI/UX Design
+**🔴 MANDATORY USER INTERACTION CHECKPOINT 🔴**
+
+**After PDR Generation:**
+
+1. **Present PDR to user** with clear explanation of all sections
+2. **Iterate with user** on any requested changes
+3. **Refine and improve** based on feedback
+4. **DO NOT proceed to next step** until user explicitly approves
+
+**User Approval Required:**
+
+```text
+PDR Generation Complete!
+
+I've created the Product Design Requirements document with:
+- {n} user stories
+- {n} acceptance criteria
+- Mockups/wireframes
+- Business rules and constraints
+
+Please review the PDR.md file. I'm ready to:
+- Clarify any section
+- Add more details
+- Modify requirements
+- Answer questions
+
+Once you approve this PDR, I'll proceed to technical analysis.
+
+Do you approve this PDR or need changes? (approve/changes needed)
+```
+
+**Wait for User Response** - Do not generate tech-analysis.md until approved
+
+---
+
+### Step 3: UI/UX Design (Optional - during PDR phase)
 
 **Agent**: `ui-ux-designer`
 
@@ -74,11 +111,15 @@ Orchestrates the complete planning phase (Phase 1) by invoking specialized agent
 - Interaction flow diagrams
 - Design system integration notes
 
+**Note:** UI/UX work happens during PDR iteration phase, included in PDR approval
+
+---
+
 ### Step 4: Technical Analysis
 
 **Agent**: `product-technical`
 
-**Process**:
+**Process** (Only after PDR approval):
 
 - Analyze technical requirements
 - Design system architecture
@@ -94,9 +135,45 @@ Orchestrates the complete planning phase (Phase 1) by invoking specialized agent
 - Technology choices justification
 - Risk assessment and mitigation
 
+**🔴 MANDATORY USER INTERACTION CHECKPOINT 🔴**
+
+**After Technical Analysis Generation:**
+
+1. **Present tech-analysis.md to user** with clear explanations
+2. **Discuss technical decisions** and alternatives
+3. **Iterate based on feedback** and concerns
+4. **DO NOT proceed to TODOs** until user explicitly approves
+
+**User Approval Required:**
+
+```text
+Technical Analysis Complete!
+
+I've documented the technical approach:
+- Architecture design
+- Database schema changes
+- API endpoint design
+- Technology stack decisions
+- Risk analysis and mitigations
+
+Please review the tech-analysis.md file. I'm ready to:
+- Explain any technical decision
+- Discuss alternative approaches
+- Refine the architecture
+- Address concerns
+
+Once you approve this technical approach, I'll proceed to task breakdown.
+
+Do you approve this technical analysis or need changes? (approve/changes needed)
+```
+
+**Wait for User Response** - Do not generate TODOs.md until approved
+
+---
+
 ### Step 5: Task Breakdown
 
-**Agent**: `product-technical` (with task breakdown focus)
+**Agent**: `product-technical` (Only after tech-analysis approval)
 
 **Process**:
 
@@ -122,11 +199,27 @@ Orchestrates the complete planning phase (Phase 1) by invoking specialized agent
 - Implementation phases
 - Milestone definitions
 
+**User Review Recommended:**
+
+```text
+Task Breakdown Complete!
+
+I've created {n} atomic tasks:
+- All tasks are 1-2 hours each
+- Dependencies mapped
+- Priorities assigned
+- Estimated total: {n} hours
+
+Would you like to review the task breakdown before we proceed to Phase 2?
+```
+
+---
+
 ### Step 6: Final Planning Review
 
 **Agent**: `tech-lead`
 
-**Process**:
+**Process** (Only after all approvals):
 
 - Review all planning artifacts
 - Validate technical approach
@@ -235,20 +328,54 @@ Re-validation: All tasks now ≤ 2 hours ✅
 
 ## Agent Coordination
 
-### Sequence of Agent Invocations
+### Sequence of Agent Invocations (With User Checkpoints)
 
 1. **`product-functional`**: Requirements analysis and PDR creation
-2. **`ui-ux-designer`**: Interface design and user experience
+   - **→ USER CHECKPOINT**: PDR review and approval required
+   - **🛑 STOP HERE** until user approves
+
+2. **`ui-ux-designer`**: Interface design and user experience (optional, during PDR phase)
+   - Integrated into PDR approval process
+
 3. **`product-technical`**: Technical architecture and analysis
+   - **→ USER CHECKPOINT**: Tech analysis review and approval required
+   - **🛑 STOP HERE** until user approves
+
 4. **`product-technical`**: Task breakdown and planning
+   - User review recommended (optional checkpoint)
+
 5. **`tech-lead`**: Final review and approval
 
 ### Inter-Agent Dependencies
 
-- UI/UX design depends on functional requirements
-- Technical analysis depends on UI requirements
-- Task breakdown depends on technical analysis
+- UI/UX design depends on functional requirements (during PDR phase)
+- **🔴 Technical analysis BLOCKED until PDR approval**
+- **🔴 Task breakdown BLOCKED until tech-analysis approval**
 - Final review depends on all previous outputs
+
+### User Interaction Points
+
+**Critical Interaction Point 1: After PDR**
+
+- Agent presents PDR
+- User reviews and provides feedback
+- Agent iterates on changes
+- User explicitly approves
+- **Only then** proceed to technical analysis
+
+**Critical Interaction Point 2: After Tech Analysis**
+
+- Agent presents tech-analysis.md
+- User reviews technical approach
+- Agent discusses alternatives if needed
+- User explicitly approves
+- **Only then** proceed to task breakdown
+
+**Optional Interaction Point 3: After TODOs**
+
+- Agent presents task breakdown
+- User can review if desired
+- Proceed to Phase 2
 
 ---
 
@@ -305,10 +432,36 @@ Re-validation: All tasks now ≤ 2 hours ✅
 
 ## Post-Command Actions
 
-1. **Review Planning Artifacts**: Validate completeness and clarity
-2. **Stakeholder Sign-off**: Get approval from product and technical leads
-3. **Environment Setup**: Prepare development environment
-4. **Begin Implementation**: Start Phase 2 with first atomic task
+### After PDR Generation (Step 2)
+
+1. **Present PDR to user** with summary of key points
+2. **Wait for user feedback** - do NOT proceed automatically
+3. **Iterate on PDR** based on user requests
+4. **Obtain explicit user approval** before continuing
+5. **Only then generate tech-analysis.md**
+
+### After Tech Analysis Generation (Step 4)
+
+1. **Present tech-analysis.md to user** with architectural explanations
+2. **Wait for user feedback** - do NOT proceed automatically
+3. **Discuss and refine technical approach** based on feedback
+4. **Obtain explicit user approval** before continuing
+5. **Only then generate TODOs.md**
+
+### After TODO Generation (Step 5)
+
+1. **Present task breakdown** with estimates and priorities
+2. **Offer user review** (optional)
+3. **Address any concerns** about task scope or estimates
+4. **Get final approval to proceed to Phase 2**
+5. **Begin implementation**
+
+### Key Principles
+
+- **Never skip user checkpoints**
+- **Always wait for explicit approval** at each gate
+- **Iterate as many times as needed** until user is satisfied
+- **User controls the pace** of planning progression
 
 ---
 
