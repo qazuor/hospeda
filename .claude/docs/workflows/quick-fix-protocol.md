@@ -241,8 +241,24 @@ gh pr create --title "fix: <description>" --body "Quick fix for <issue>"
 
 - Mark task as complete
 - No retrospective needed
-- No planning docs to update
 - No design review needed
+
+**⚠️ If Part of Planning Session:**
+
+If this quick fix is part of a larger feature planning session (rare):
+
+1. **Update TODOs.md** - Mark subtask as `[x]`
+2. **Update .checkpoint.json** - Update progress counter
+3. **Update issues-sync.json** - Sync with Linear if applicable
+
+**Example:**
+```markdown
+- [x] **[10min]** Fix typo in BookingService JSDoc
+  - Completed: 2024-01-15
+  - Actual time: 5min
+```
+
+**Most Quick Fixes:** Standalone changes, no planning docs to update
 
 **Celebration**: 🎉 Quick fix completed!
 

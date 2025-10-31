@@ -111,6 +111,10 @@ Execute git commits then mark task complete:
 # Then mark as completed
 ```
 
+**🔥 CRITICAL: State Update Process**
+
+When marking a task complete, you MUST update ALL state tracking files:
+
 ```typescript
 import { markTaskCompleted } from '@repo/planning-sync';
 
@@ -129,10 +133,19 @@ if (session) {
 
   console.log(`✅ Task marked as completed!`);
   console.log(`📝 Updated: TODOs.md`);
+  console.log(`📄 Updated: .checkpoint.json`);
+  console.log(`📄 Updated: issues-sync.json`);
   console.log(`🔗 Linear: ${result.issueUrl}`);
   console.log(`\n💡 Don't forget to push: git push`);
 }
 ```
+
+**State Files Updated:**
+
+1. **`TODOs.md`** - Mark task with `[x]`, add completion metadata
+2. **`.checkpoint.json`** - Update progress tracking, task status
+3. **`issues-sync.json`** - Sync with Linear, update GitHub issue state
+4. **Linear** - Update issue status via API
 
 **Output to user:**
 
@@ -142,14 +155,18 @@ if (session) {
    • def5678 feat(db): implement User model with CRUD operations
 
 ✅ Task marked as completed!
-   📝 TODOs.md updated
-   🔗 Linear: https://linear.app/hospeda/issue/HOSP-124
+   📝 TODOs.md updated (task marked as [x])
+   📄 .checkpoint.json updated (progress: 12/45 tasks)
+   📄 issues-sync.json updated (synced with Linear)
+   🔗 Linear: https://linear.app/hospeda/issue/HOSP-124 (status: Done)
 
 💡 Next steps:
    1. Review commits: git log -2
    2. Push changes: git push
    3. Continue to next task
 ```
+
+**⚠️ IMPORTANT**: All three files (TODOs.md, .checkpoint.json, issues-sync.json) MUST be updated together to maintain consistency across the system.
 
 ### Step 5: If User Chooses Option 2 (Modify Commits)
 
