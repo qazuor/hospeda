@@ -561,9 +561,13 @@ Closes #458"
 
 ---
 
-### Step 11: Update Registry & Close Task ✅
+### Step 11: Update State & Close Task ✅
 
 **Objective**: Mark task complete and track metrics
+
+**🔥 CRITICAL: Update ALL State Files**
+
+When completing an atomic task, you MUST update all state tracking:
 
 **Actions:**
 
@@ -573,7 +577,7 @@ Closes #458"
    ## Time Estimate
    **Estimated**: 2 hours
    **Actual**: 2.5 hours
-   
+
    ## Completion
    **Status**: ✅ Completed
    **Date**: 2024-02-01
@@ -589,7 +593,7 @@ Closes #458"
    | PB-001 | Fix booking validation | Bug | 2024-02-01 | 2.5h | 4 |
    ```
 
-3. **Update checkpoint:**
+3. **Update .checkpoint.json:**
 
    ```json
    {
@@ -597,18 +601,82 @@ Closes #458"
      "phase": "completed",
      "completed": "2024-02-01T15:30:00Z",
      "timeSpent": "2.5h",
-     "filesChanged": 4
+     "filesChanged": 4,
+     "progress": {
+       "total": 1,
+       "completed": 1,
+       "percentage": 100
+     }
    }
    ```
 
-4. **Commit registry update:**
+4. **If Part of Larger Planning Session:**
 
-   ```bash
-   git add .claude/sessions/atomic-tasks/
-   git commit -m "docs(PB-001): mark task complete"
+   If this atomic task is a subtask of a feature planning session:
+
+   a. **Update TODOs.md** in planning session:
+   ```markdown
+   - [x] **[2h]** PB-001: Fix booking validation
+     - Completed: 2024-02-01
+     - Actual time: 2.5h
+     - Files: 4
    ```
 
-**Output**: Task completed and tracked
+   b. **Update planning .checkpoint.json**:
+   ```json
+   {
+     "tasks": {
+       "PB-001": {
+         "status": "completed",
+         "completed": "2024-02-01T15:30:00Z"
+       }
+     },
+     "progress": {
+       "total": 45,
+       "completed": 13,
+       "percentage": 28.9
+     }
+   }
+   ```
+
+   c. **Update issues-sync.json**:
+   ```json
+   {
+     "issues": {
+       "HOSP-124": {
+         "status": "done",
+         "linearId": "abc-123-def",
+         "lastSync": "2024-02-01T15:30:00Z"
+       }
+     }
+   }
+   ```
+
+5. **Commit state updates:**
+
+   ```bash
+   # For standalone atomic task
+   git add .claude/sessions/atomic-tasks/PB-001/
+   git commit -m "docs(PB-001): mark task complete"
+
+   # If part of planning session
+   git add .claude/sessions/planning/{feature}/TODOs.md
+   git add .claude/sessions/planning/{feature}/.checkpoint.json
+   git add .claude/sessions/planning/{feature}/issues-sync.json
+   git commit -m "docs: update planning state for PB-001 completion"
+   ```
+
+**State Files Checklist:**
+
+- [ ] tech-analysis.md updated (atomic task)
+- [ ] REGISTRY.md updated (atomic task)
+- [ ] .checkpoint.json updated (atomic task)
+- [ ] TODOs.md updated (if part of planning)
+- [ ] Planning .checkpoint.json updated (if part of planning)
+- [ ] issues-sync.json updated (if part of planning)
+- [ ] Changes committed
+
+**Output**: Task completed and all state tracking updated
 
 ---
 

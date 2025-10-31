@@ -654,6 +654,89 @@ All layers properly separated:
    - Document solution
    - Close issue
 
+5. **🔥 Update State Files**
+
+   After fixing and validating each issue:
+
+   a. **Update TODOs.md:**
+   ```markdown
+   | V-001 | HIGH | Missing auth check | ✅ Fixed | @backend |
+   ```
+
+   b. **Update .checkpoint.json:**
+   ```json
+   {
+     "currentPhase": "phase-3-validation",
+     "validationIssues": {
+       "V-001": {
+         "severity": "HIGH",
+         "status": "fixed",
+         "fixed": "2024-01-15T14:30:00Z"
+       }
+     },
+     "progress": {
+       "totalIssues": 3,
+       "fixedIssues": 2,
+       "deferredIssues": 1
+     }
+   }
+   ```
+
+   c. **Commit validation updates:**
+   ```bash
+   git add .claude/sessions/planning/{feature}/TODOs.md
+   git add .claude/sessions/planning/{feature}/.checkpoint.json
+   git commit -m "docs: validation - V-001 fixed (2/3 issues resolved)"
+   ```
+
+---
+
+## Phase Completion
+
+**🔥 CRITICAL: Update State When Phase 3 Completes**
+
+When ALL validation passes and you're ready for Phase 4:
+
+1. **Update .checkpoint.json:**
+
+   ```json
+   {
+     "currentPhase": "phase-4-finalization",
+     "phases": {
+       "phase-3-validation": {
+         "status": "completed",
+         "started": "2024-01-15T12:00:00Z",
+         "completed": "2024-01-15T16:00:00Z",
+         "duration": "4h",
+         "issuesFound": 3,
+         "issuesFixed": 2,
+         "issuesDeferred": 1
+       }
+     }
+   }
+   ```
+
+2. **Update TODOs.md:**
+
+   ```markdown
+   ## Phase 3: Validation ✅
+
+   - Status: Completed
+   - Duration: 4 hours
+   - Issues Found: 3
+   - Issues Fixed: 2
+   - Issues Deferred: 1 (documented in tech debt)
+   - Completed: 2024-01-15 16:00:00
+   ```
+
+3. **Commit phase completion:**
+
+   ```bash
+   git add .claude/sessions/planning/{feature}/.checkpoint.json
+   git add .claude/sessions/planning/{feature}/TODOs.md
+   git commit -m "docs: Phase 3 (Validation) completed - 2/3 issues fixed"
+   ```
+
 ---
 
 ## Summary Checklist

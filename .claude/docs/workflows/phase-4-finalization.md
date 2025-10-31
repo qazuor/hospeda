@@ -781,12 +781,139 @@ Ready to proceed? 🚀
 
 ---
 
+## 🔥 CRITICAL: Final State Update
+
+**Before Closing Phase 4:**
+
+When the feature is fully finalized and ready for deployment, you MUST update all state files one last time:
+
+### 1. Update .checkpoint.json (Mark Feature Complete)
+
+```json
+{
+  "currentPhase": "completed",
+  "status": "feature-complete",
+  "phases": {
+    "phase-1-planning": {
+      "status": "completed",
+      "duration": "6h"
+    },
+    "phase-2-implementation": {
+      "status": "completed",
+      "duration": "32h",
+      "tasksCompleted": 45
+    },
+    "phase-3-validation": {
+      "status": "completed",
+      "duration": "4h",
+      "issuesFound": 3,
+      "issuesFixed": 2
+    },
+    "phase-4-finalization": {
+      "status": "completed",
+      "started": "2024-01-16T08:00:00Z",
+      "completed": "2024-01-16T12:00:00Z",
+      "duration": "4h"
+    }
+  },
+  "summary": {
+    "totalDuration": "46h",
+    "totalTasks": 45,
+    "completedTasks": 45,
+    "deferredIssues": 1,
+    "technicalDebtItems": 2
+  },
+  "completedAt": "2024-01-16T12:00:00Z"
+}
+```
+
+### 2. Update TODOs.md (Mark All Complete)
+
+```markdown
+# Feature: User Authentication System
+
+## Status: ✅ COMPLETED
+
+- Started: 2024-01-10
+- Completed: 2024-01-16
+- Total Duration: 46 hours
+- Tasks Completed: 45/45 (100%)
+
+## Phases
+
+- ✅ Phase 1: Planning (6h)
+- ✅ Phase 2: Implementation (32h)
+- ✅ Phase 3: Validation (4h)
+- ✅ Phase 4: Finalization (4h)
+
+## Summary
+
+All acceptance criteria met. Feature ready for production deployment.
+
+[Keep existing detailed task list below]
+```
+
+### 3. Update issues-sync.json (Final Sync)
+
+```json
+{
+  "sessionId": "P-001-user-auth",
+  "status": "completed",
+  "completedAt": "2024-01-16T12:00:00Z",
+  "issues": {
+    "HOSP-120": { "status": "done" },
+    "HOSP-121": { "status": "done" },
+    "HOSP-122": { "status": "done" }
+    // ... all issues marked as done
+  },
+  "metadata": {
+    "totalIssues": 45,
+    "completedIssues": 45,
+    "lastSync": "2024-01-16T12:00:00Z",
+    "syncStatus": "final-sync-complete"
+  }
+}
+```
+
+### 4. Commit Final State
+
+```bash
+git add .claude/sessions/planning/P-001-user-auth/TODOs.md
+git add .claude/sessions/planning/P-001-user-auth/.checkpoint.json
+git add .claude/sessions/planning/P-001-user-auth/issues-sync.json
+git commit -m "docs: Phase 4 completed - feature ready for deployment
+
+- All 45 tasks completed (100%)
+- Documentation finalized
+- Technical debt documented
+- Ready for production deployment"
+
+git push origin main
+```
+
+### 5. Optional: Sync with Linear
+
+```bash
+pnpm planning:sync .claude/sessions/planning/P-001-user-auth/
+```
+
+This will:
+- Mark all Linear issues as "Done"
+- Update project progress to 100%
+- Add final comment with summary
+
+---
+
 ## Summary
 
 **Phase 4 Checklist:**
 
 - [ ] Documentation complete
 - [ ] Commits prepared (not executed)
+- [ ] 🔥 **TODOs.md updated (marked complete)**
+- [ ] 🔥 **.checkpoint.json updated (marked complete)**
+- [ ] 🔥 **issues-sync.json updated (final sync)**
+- [ ] 🔥 **State changes committed and pushed**
 - [ ] User notified
 - [ ] Clear next steps
 - [ ] All files in proper locations
@@ -796,4 +923,6 @@ Ready to proceed? 🚀
 ---
 
 **Remember: User controls the git history. We prepare, they execute.**
+
+**⚠️ CRITICAL**: State files MUST be updated and committed before considering the feature "complete". This ensures accurate project tracking and team visibility.
 

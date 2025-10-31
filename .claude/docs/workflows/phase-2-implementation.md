@@ -595,40 +595,119 @@ This ensures cross-device sync works correctly.
 
 ### Step 6: Update Progress
 
-**After Completing Task:**
+**🔥 CRITICAL: Update ALL State Files After Completing Each Task**
+
+When you complete ANY task during Phase 2, you MUST immediately update all state tracking files:
+
+**Required State Updates:**
 
 1. **Mark Complete in TODOs.md**
 
    ```markdown
-
    - [x] **[1h]** Create AccommodationModel
      - Completed: 2024-01-15 by @db-engineer
      - Actual time: 1.2h
      - Notes: Added custom findAll override
-
    ```
 
-2. **Update Progress Metrics**
+2. **Update .checkpoint.json**
+
+   ```json
+   {
+     "currentPhase": "phase-2-implementation",
+     "tasks": {
+       "T-001": {
+         "id": "T-001",
+         "title": "Create AccommodationModel",
+         "status": "completed",
+         "started": "2024-01-15T10:00:00Z",
+         "completed": "2024-01-15T11:12:00Z",
+         "estimated": "1h",
+         "actual": "1.2h"
+       }
+     },
+     "progress": {
+       "total": 45,
+       "completed": 12,
+       "inProgress": 2,
+       "notStarted": 31,
+       "percentage": 26.7
+     },
+     "lastUpdated": "2024-01-15T11:12:00Z"
+   }
+   ```
+
+3. **Update issues-sync.json**
+
+   ```json
+   {
+     "sessionId": "P-001-accommodation-system",
+     "issues": {
+       "HOSP-124": {
+         "id": "HOSP-124",
+         "linearId": "abc-123-def-456",
+         "status": "done",
+         "title": "Create AccommodationModel",
+         "lastSync": "2024-01-15T11:12:00Z",
+         "syncStatus": "synced"
+       }
+     },
+     "metadata": {
+       "totalIssues": 45,
+       "completedIssues": 12,
+       "lastSync": "2024-01-15T11:12:00Z"
+     }
+   }
+   ```
+
+4. **Update Progress Summary in TODOs.md**
 
    ```markdown
    ## Progress Summary
 
    - Total: 45 tasks
-   - Completed: 12 (27%)
+   - Completed: 12 (27%) ⬅️ UPDATE THIS
    - In Progress: 2
    - Not Started: 31
 
+   Last Updated: 2024-01-15 11:12:00
    ```
 
-3. **Document Decisions**
+5. **Document Decisions**
 
    ```markdown
    ### YYYY-MM-DD
 
    - Decided to use composite index instead of separate indexes
    - Reason: Better query performance for common use case
-
    ```
+
+6. **Commit State Updates**
+
+   ```bash
+   git add .claude/sessions/planning/{feature}/TODOs.md
+   git add .claude/sessions/planning/{feature}/.checkpoint.json
+   git add .claude/sessions/planning/{feature}/issues-sync.json
+   git commit -m "docs: update progress - T-001 completed (12/45)"
+   ```
+
+**⚠️ CRITICAL RULES:**
+
+- Update state files **IMMEDIATELY** after completing each task
+- **NEVER** batch state updates for multiple tasks
+- **NEVER** skip state updates "to save time"
+- **ALWAYS** commit state changes separately from code changes
+- **ALWAYS** keep the three files in sync (TODOs.md, .checkpoint.json, issues-sync.json)
+
+**Why This Matters:**
+
+- Enables cross-device workflow (switch machines and continue)
+- Provides accurate progress tracking
+- Maintains sync with Linear/GitHub
+- Prevents lost work tracking
+- Allows team visibility
+
+**See Also:** [Task Completion Protocol](./task-completion-protocol.md) for full details
 
 ---
 
