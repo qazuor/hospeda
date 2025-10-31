@@ -6,12 +6,90 @@ This document describes the planning phase workflow for the Hospeda project.
 
 ## Table of Contents
 
-1. [Overview](#overview)
-2. [Goals](#goals)
-3. [Process](#process)
-4. [Deliverables](#deliverables)
-5. [Quality Criteria](#quality-criteria)
-6. [Common Pitfalls](#common-pitfalls)
+1. [Critical Agent Delegation Policy](#critical-agent-delegation-policy)
+2. [Overview](#overview)
+3. [Goals](#goals)
+4. [Process](#process)
+5. [Deliverables](#deliverables)
+6. [Quality Criteria](#quality-criteria)
+7. [Common Pitfalls](#common-pitfalls)
+
+---
+
+## ⚠️ CRITICAL: Agent Delegation Policy
+
+**🚫 THE COORDINATING AGENT MUST NEVER DO THE WORK DIRECTLY**
+
+### Mandatory Rules
+
+1. **ALWAYS Analyze First**: Before starting ANY step, identify which specialized agents are needed
+2. **ALWAYS Use Task Tool**: Delegate ALL work to specialized agents using Task tool
+3. **NEVER Create Documents**: The coordinating agent NEVER creates PDR.md, tech-analysis.md, or TODOs.md
+4. **NEVER Assume Capability**: Never assume you can do the work because "you understand it"
+
+### Required Agent Mapping
+
+| Task | Required Agent | Tool to Use |
+|------|---------------|-------------|
+| Create PDR.md | `product-functional` | Task tool with subagent_type="product-functional" |
+| Create UI mockups | `ui-ux-designer` | Task tool with subagent_type="ui-ux-designer" |
+| Create tech-analysis.md | `product-technical` | Task tool with subagent_type="product-technical" |
+| Create TODOs.md | `product-technical` | Task tool with subagent_type="product-technical" |
+| Final review | `tech-lead` | Task tool with subagent_type="tech-lead" |
+
+### Anti-Patterns to Avoid
+
+❌ **WRONG:**
+```text
+"I'll create the PDR since the requirements are clear..."
+"Let me write the technical analysis directly..."
+"I can break this down into tasks myself..."
+```
+
+✅ **CORRECT:**
+```text
+"Analyzing requirements... I will invoke the following agents:
+1. product-functional for PDR creation
+2. product-technical for tech-analysis
+3. product-technical for task breakdown
+
+Starting with Task tool to invoke product-functional agent..."
+```
+
+### Workflow Start Template
+
+Every Phase 1 planning session MUST start with:
+
+```text
+📋 Feature Planning: [Feature Name]
+
+Step 0: Agent Analysis
+I will coordinate the following specialized agents:
+
+1. 🤖 product-functional
+   - Create PDR with user stories and acceptance criteria
+   - Duration: 1-2 hours
+
+2. 🎨 ui-ux-designer [if UI-heavy]
+   - Create mockups and wireframes
+   - Duration: 30min-1h
+
+3. 🔧 product-technical
+   - Create tech-analysis with architecture design
+   - Duration: 1-2 hours
+
+4. 🔧 product-technical
+   - Create TODOs with atomic task breakdown
+   - Duration: 1-2 hours
+
+5. 👨‍💼 tech-lead
+   - Final review and approval
+   - Duration: 30min
+
+Total estimated time: 4-8 hours (with user interaction)
+
+Proceeding with Step 1: Initialize Context...
+```
 
 ---
 
@@ -22,6 +100,8 @@ This document describes the planning phase workflow for the Hospeda project.
 **Duration:** 2-6 hours (depending on feature complexity)
 
 **Key Principle:** Plan thoroughly before coding. Good planning saves time in implementation.
+
+**Key Principle:** ALWAYS delegate to specialized agents. NEVER do the work directly.
 
 ---
 
@@ -166,6 +246,7 @@ cd .claude/sessions/planning/{feature_name}
    - Continue iterating until user is satisfied
 
 3. **Request Approval:**
+
    ```text
    Are you satisfied with the PDR?
 
@@ -179,6 +260,7 @@ cd .claude/sessions/planning/{feature_name}
    - User must explicitly say "approve" or equivalent
 
 **User Controls Flow:**
+
 - User can request as many iterations as needed
 - User decides when PDR is ready
 - Planning pace controlled by user satisfaction
@@ -192,6 +274,7 @@ cd .claude/sessions/planning/{feature_name}
 **Agent:** `product-technical`
 
 **Prerequisites:**
+
 - ✅ PDR approved by user
 - ✅ Functional requirements clear
 - ✅ UI/UX designs finalized
@@ -259,6 +342,7 @@ cd .claude/sessions/planning/{feature_name}
 **Agent Responsibilities:**
 
 1. **Present Technical Analysis** to user:
+
    ```text
    Technical Analysis Complete!
 
@@ -305,6 +389,7 @@ cd .claude/sessions/planning/{feature_name}
    - Continue until user is satisfied
 
 3. **Request Approval:**
+
    ```text
    Are you satisfied with the technical approach?
 
@@ -318,6 +403,7 @@ cd .claude/sessions/planning/{feature_name}
    - User must explicitly say "approve" or equivalent
 
 **User Controls Flow:**
+
 - User can request technical alternatives
 - User can challenge decisions
 - User decides when technical approach is solid
@@ -331,6 +417,7 @@ cd .claude/sessions/planning/{feature_name}
 **Agent:** `product-technical`
 
 **Prerequisites:**
+
 - ✅ PDR approved by user
 - ✅ Tech analysis approved by user
 - ✅ Architecture decisions finalized
@@ -408,6 +495,7 @@ cd .claude/sessions/planning/{feature_name}
 **Agent Responsibilities:**
 
 1. **Present Task Breakdown** to user:
+
    ```text
    Task Breakdown Complete!
 
