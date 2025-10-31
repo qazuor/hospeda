@@ -2,67 +2,78 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://hospeda.dev/schemas/code-registry.schema.json",
   "title": "Code Registry",
-  "description": "JSON Schema for the code registry (computed from TODOs.md files)",
+  "description": "JSON Schema for the code registry (planning sessions and task codes)",
   "type": "object",
-  "required": ["generatedAt", "totalSessions", "totalTasks", "tasks"],
+  "required": ["version", "generatedAt", "lastPlanningNumber", "registry"],
   "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version of the registry format"
+    },
     "generatedAt": {
       "type": "string",
       "format": "date-time",
-      "description": "Timestamp when the registry was generated"
+      "description": "ISO 8601 timestamp when the registry was generated"
     },
-    "totalSessions": {
+    "lastPlanningNumber": {
       "type": "integer",
-      "minimum": 0,
-      "description": "Total number of planning sessions found"
+      "minimum": 1,
+      "description": "Last used planning number (e.g., 4 for P-004)"
     },
-    "totalTasks": {
-      "type": "integer",
-      "minimum": 0,
-      "description": "Total number of tasks across all sessions"
-    },
-    "tasks": {
+    "registry": {
       "type": "array",
-      "description": "List of all tasks from all planning sessions",
+      "description": "List of all planning sessions",
       "items": {
         "type": "object",
-        "required": ["code", "planningCode", "sessionPath", "title", "status", "estimatedHours"],
+        "required": ["code", "type", "fullCode", "sessionPath", "status"],
         "properties": {
           "code": {
             "type": "string",
-            "pattern": "^PF\\d{3,4}(-\\d+)?(\\.\\d+)?$",
-            "description": "Task code (e.g., PF004-1, PF004-2.1)"
+            "pattern": "^P(F|R|B)?-\\d{3,4}$",
+            "description": "Short planning code (e.g., P-001, PF-004, PR-002, PB-042)"
           },
-          "planningCode": {
+          "type": {
             "type": "string",
-            "pattern": "^P(F|R)?-?\\d{3,4}[^/]*$",
-            "description": "Planning session code (e.g., P-004, P-004-workflow-optimization)"
+            "enum": ["feature", "refactor", "bugfix"],
+            "description": "Type of planning session"
+          },
+          "fullCode": {
+            "type": "string",
+            "pattern": "^P(F|R|B)?-\\d{3,4}[a-z0-9-]*$",
+            "description": "Full planning code with description (e.g., P-004-workflow-optimization)"
           },
           "sessionPath": {
             "type": "string",
             "description": "Relative path to the planning session directory"
           },
-          "title": {
-            "type": "string",
-            "minLength": 1,
-            "description": "Task title/description"
-          },
           "status": {
             "type": "string",
-            "enum": ["pending", "in-progress", "completed", "blocked", "skipped"],
-            "description": "Current status of the task"
+            "enum": ["active", "completed", "archived", "cancelled"],
+            "description": "Current status of the planning session"
           },
-          "estimatedHours": {
-            "type": "number",
-            "minimum": 0.5,
-            "maximum": 4,
-            "description": "Estimated hours to complete (tasks must be atomized: 0.5-4 hours)"
+          "createdAt": {
+            "type": "string",
+            "format": "date",
+            "description": "ISO 8601 date when the session was created (YYYY-MM-DD)"
           },
-          "phase": {
-            "type": "integer",
-            "minimum": 1,
-            "maximum": 4,
-            "description": "Optional workflow phase (1=Planning, 2=Implementation, 3=Validation, 4=Finalization)"
+          "completedAt": {
+            "type": "string",
+            "format": "date",
+            "description": "ISO 8601 date when the session was completed (YYYY-MM-DD)"
+          },
+          "archivedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp when the session was archived"
+          },
+          "tasks": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^P(F|R|B)\\d{3,4}-\\d+(\\.\\d+)?$"
+            },
+            "description": "Array of task codes for this planning session"
           }
         },
         "additionalProperties": false
