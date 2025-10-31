@@ -364,11 +364,40 @@ He analizado el problema y tengo 3 opciones:
 
 ## 9. Archived Learnings
 
-All learnings moved from "Recent Learnings" section are archived here by date.
+All learnings are documented in individual files for detailed reference. The latest 10 remain inline above for quick access.
 
-*No archived learnings yet - this section will be populated as Recent Learnings exceeds 10 items*
+**All Documented Learnings:**
 
-**Future structure:** Individual files in `.claude/docs/learnings/` with links here
+### Shell & Terminal
+
+- [Shell Compatibility - Fish Shell](.claude/docs/learnings/shell-compatibility-fish.md) (2024-10-28)
+
+### Monorepo & Build
+
+- [Monorepo Command Execution](.claude/docs/learnings/monorepo-command-execution.md) (2024-10-28)
+
+### Testing
+
+- [Test Organization and Structure](.claude/docs/learnings/test-organization-structure.md) (2024-10-28)
+
+### Documentation
+
+- [Markdown Formatting Standards](.claude/docs/learnings/markdown-formatting-standards.md) (2024-10-28)
+
+### Planning & Workflow
+
+- [Planning and Linear Sync Workflow](.claude/docs/learnings/planning-linear-sync-workflow.md) (2024-10-28)
+
+### Architecture & Patterns
+
+- [Common Architectural Patterns](.claude/docs/learnings/common-architectural-patterns.md) (2024-10-28)
+- [Common Mistakes to Avoid](.claude/docs/learnings/common-mistakes-to-avoid.md) (2024-10-28)
+
+### Optimization
+
+- [Optimization Tips](.claude/docs/learnings/optimization-tips.md) (2024-10-28)
+
+**Full Archive:** [.claude/docs/learnings/README.md](.claude/docs/learnings/README.md)
 
 ---
 
