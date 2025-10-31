@@ -115,9 +115,9 @@ function parsePlanningCode(dirName: string): { code: string; type: RegistrySessi
 function getCreationDate(sessionPath: string): string | undefined {
   try {
     const stat = statSync(sessionPath);
-    // Format as YYYY-MM-DD
+    // Format as ISO 8601 date-time
     const date = stat.birthtime || stat.mtime;
-    return date.toISOString().split('T')[0];
+    return date.toISOString();
   } catch (error) {
     return undefined;
   }
