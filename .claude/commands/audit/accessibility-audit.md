@@ -985,3 +985,11 @@ This command ensures the application is usable by everyone, including:
 - People using assistive technologies (screen readers, voice control, switch devices)
 
 Accessibility is not just a legal requirement—it's about ensuring equal access for all users and expanding your potential user base by 15-20%.
+
+---
+
+## Changelog
+
+| Version | Date | Changes | Author | Related |
+|---------|------|---------|--------|---------|
+| 1.0.0 | 2024-10-31 | Initial version | @tech-lead | P-004 |
