@@ -65,7 +65,6 @@ REQUIRED_FILES=(
   ".claude/docs/INDEX.md"
   ".claude/docs/quick-start.md"
   ".claude/docs/glossary.md"
-  ".claude/docs/CHANGELOG.md"
   ".claude/agents/README.md"
   ".claude/commands/README.md"
   ".claude/skills/README.md"
@@ -92,8 +91,8 @@ fi
 
 # Count commands (excluding README.md)
 COMMAND_COUNT=$(find .claude/commands -name "*.md" -type f ! -name "README.md" | wc -l)
-echo "   Commands: $COMMAND_COUNT (expected: 18)"
-if [ "$COMMAND_COUNT" -ne 18 ]; then
+echo "   Commands: $COMMAND_COUNT (expected: 16)"
+if [ "$COMMAND_COUNT" -ne 16 ]; then
   warning "Command count mismatch"
 fi
 
@@ -127,8 +126,8 @@ fi
 
 # Count schemas
 SCHEMA_COUNT=$(find .claude/schemas -name "*.schema.json" -type f 2>/dev/null | wc -l)
-echo "   Schemas: $SCHEMA_COUNT (expected: 9)"
-if [ "$SCHEMA_COUNT" -ne 9 ]; then
+echo "   Schemas: $SCHEMA_COUNT (expected: 7)"
+if [ "$SCHEMA_COUNT" -ne 7 ]; then
   warning "Schema count mismatch"
 fi
 
