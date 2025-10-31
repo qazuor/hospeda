@@ -1,5 +1,8 @@
 # CLAUDE.md - Web Application
 
+> **📚 Main Documentation**: For project-wide guidelines, workflows, and standards, see [CLAUDE.md](../../CLAUDE.md) in the project root.
+
+
 This file provides guidance for working with the Hospeda Web application (`apps/web`).
 
 ## Overview

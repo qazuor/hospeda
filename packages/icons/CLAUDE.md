@@ -1,5 +1,8 @@
 # CLAUDE.md - Icons Package
 
+> **📚 Main Documentation**: For project-wide guidelines, workflows, and standards, see [CLAUDE.md](../../CLAUDE.md) in the project root.
+
+
 This file provides guidance for working with the Icons package (`@repo/icons`).
 
 ## Overview
