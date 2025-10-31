@@ -373,13 +373,15 @@ Before finalizing a PDR, verify:
    - Document flows and rules
    - Create/gather mockups
 
-3. **Stakeholder Review**
-   - Present PDR to stakeholders
-   - Gather feedback
+3. **🔴 MANDATORY CHECKPOINT: User Approval**
+   - Present PDR to user with clear summary
+   - Gather feedback and questions
    - Iterate on unclear points
-   - Get approval
+   - Refine based on user requests
+   - **WAIT for explicit user approval**
+   - **DO NOT proceed to step 4** without approval
 
-4. **Handoff to Technical**
+4. **Handoff to Technical (Only After User Approval)**
    - Share PDR with `product-technical` agent
    - Clarify technical questions
    - Validate feasibility
@@ -387,8 +389,8 @@ Before finalizing a PDR, verify:
 
 5. **Final Approval**
    - Ensure all open questions answered
-   - Verify stakeholder sign-off
-   - Mark as ready for implementation planning
+   - Verify user sign-off
+   - Mark as ready for technical analysis
 
 ### Collaboration Points
 
