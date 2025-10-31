@@ -76,10 +76,8 @@ import { pgTable, uuid, varchar, timestamp, integer } from 'drizzle-orm/pg-core'
 import { relations } from 'drizzle-orm';
 
 /**
-
  * Properties table schema
  * Stores information about rental properties
-
  */
 export const properties = pgTable('properties', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -96,10 +94,8 @@ export const properties = pgTable('properties', {
 });
 
 /**
-
  * Properties relations
  * Defines relationships with other tables
-
  */
 export const propertiesRelations = relations(properties, ({ one, many }) => ({
   owner: one(users, {
@@ -111,17 +107,14 @@ export const propertiesRelations = relations(properties, ({ one, many }) => ({
 }));
 
 /**
-
  * Indexes for properties table
-
  */
 export const propertyIndexes = {
   ownerIdx: index('idx_properties_owner').on(properties.ownerId),
   priceIdx: index('idx_properties_price').on(properties.pricePerNight),
   deletedIdx: index('idx_properties_deleted').on(properties.deletedAt),
 };
-
-```text
+```
 
 ### Step 2: Type Exports
 
@@ -129,33 +122,26 @@ export const propertyIndexes = {
 
 ```typescript
 /**
-
  * Type for inserting a new property
  * Generated from Drizzle schema
-
  */
 export type InsertProperty = typeof properties.$inferInsert;
 
 /**
-
  * Type for a property returned from database
  * Generated from Drizzle schema
-
  */
 export type SelectProperty = typeof properties.$inferSelect;
 
 /**
-
  * Type for property with relations loaded
-
  */
 export type PropertyWithRelations = SelectProperty & {
   owner?: SelectUser;
   bookings?: SelectBooking[];
   amenities?: SelectAmenity[];
 };
-
-```text
+```
 
 ### Step 3: Migration Creation
 
@@ -196,8 +182,7 @@ CREATE TRIGGER update_properties_updated_at
 -- DROP INDEX IF EXISTS idx_properties_price;
 -- DROP INDEX IF EXISTS idx_properties_owner;
 -- DROP TABLE IF EXISTS properties;
-
-```text
+```
 
 ### Step 4: Model Implementation
 
@@ -210,14 +195,10 @@ import { properties, type SelectProperty, type InsertProperty } from '../schemas
 import type { Database } from '../client';
 
 /**
-
  * Property model
  * Handles database operations for properties
-
  *
-
  * @extends BaseModel<SelectProperty>
-
  */
 export class PropertyModel extends BaseModel<SelectProperty> {
   constructor(db: Database) {
@@ -225,14 +206,10 @@ export class PropertyModel extends BaseModel<SelectProperty> {
   }
 
   /**
-
    * Find properties by owner ID
-
    *
-
    * @param input - Owner search parameters
    * @returns Array of properties owned by user
-
    */
   async findByOwner(input: {
     ownerId: string;
@@ -253,14 +230,10 @@ export class PropertyModel extends BaseModel<SelectProperty> {
   }
 
   /**
-
    * Find available properties for date range
-
    *
-
    * @param input - Availability search parameters
    * @returns Array of available properties
-
    */
   async findAvailable(input: {
     checkIn: Date;
@@ -298,14 +271,10 @@ export class PropertyModel extends BaseModel<SelectProperty> {
   }
 
   /**
-
    * Load property with all relations
-
    *
-
    * @param id - Property ID
    * @returns Property with owner, bookings, and amenities loaded
-
    */
   async findWithRelations(id: string): Promise<PropertyWithRelations | null> {
     const result = await this.db.query.properties.findFirst({
@@ -323,14 +292,10 @@ export class PropertyModel extends BaseModel<SelectProperty> {
   }
 
   /**
-
    * Soft delete a property
-
    *
-
    * @param id - Property ID to soft delete
    * @returns Deleted property
-
    */
   async softDelete(id: string): Promise<SelectProperty> {
     const [deleted] = await this.db
@@ -346,8 +311,7 @@ export class PropertyModel extends BaseModel<SelectProperty> {
     return deleted;
   }
 }
-
-```text
+```
 
 ### Step 5: Model Tests
 
@@ -576,8 +540,7 @@ describe('PropertyModel', () => {
     });
   });
 });
-
-```text
+```
 
 ---
 
@@ -585,7 +548,7 @@ describe('PropertyModel', () => {
 
 ### Schema Design
 
-#### ✅ GOOD:
+#### Good Example
 
 ```typescript
 // Proper constraints and types
@@ -608,10 +571,9 @@ export const bookings = pgTable('bookings', {
   // Check constraint
   checkDates: check('check_dates', sql`check_out > check_in`),
 }));
+```
 
-```text
-
-#### ❌ BAD:
+#### Bad Example
 
 ```typescript
 // Missing constraints, no cascade, wrong types
@@ -622,23 +584,18 @@ export const bookings = pgTable('bookings', {
   checkOut: varchar('check_out'),
   totalPrice: varchar('total_price'),
 });
-
-```text
+```
 
 ### Model Methods
 
-#### ✅ GOOD:
+#### Good Example
 
 ```typescript
 /**
-
  * Find bookings that conflict with date range
-
  *
-
  * @param input - Property ID and date range
  * @returns Array of conflicting bookings
-
  */
 async findConflictingBookings(input: {
   propertyId: string;
@@ -672,22 +629,20 @@ async findConflictingBookings(input: {
       )
     );
 }
+```
 
-```text
-
-#### ❌ BAD:
+#### Bad Example
 
 ```typescript
 // Unclear method name, missing JSDoc, any type
 async find(id: any) {
   return this.db.select().from(bookings).where(eq(bookings.id, id));
 }
-
-```text
+```
 
 ### Migrations
 
-#### ✅ GOOD:
+#### Good Example
 
 ```sql
 -- Clear description and dependencies
@@ -710,16 +665,14 @@ CREATE INDEX idx_bookings_payment_intent ON bookings(payment_intent_id);
 --   DROP COLUMN paid_at,
 --   DROP COLUMN payment_status,
 --   DROP COLUMN payment_intent_id;
+```
 
-```text
-
-#### ❌ BAD:
+#### Bad Example
 
 ```sql
 -- No description, no rollback
 ALTER TABLE bookings ADD COLUMN stuff VARCHAR(255);
-
-```text
+```
 
 ---
 
@@ -752,8 +705,7 @@ async findAll(): Promise<SelectUser[]> {
     .from(users)
     .where(isNull(users.deletedAt));
 }
-
-```text
+```
 
 ### Pattern 2: Optimistic Locking
 
@@ -788,21 +740,16 @@ async update(id: string, data: UpdateProperty): Promise<SelectProperty> {
 
   return updated;
 }
-
-```text
+```
 
 ### Pattern 3: Pagination
 
 ```typescript
 /**
-
  * Find properties with pagination
-
  *
-
  * @param input - Pagination parameters
  * @returns Paginated results
-
  */
 async findPaginated(input: {
   page: number;
@@ -842,20 +789,15 @@ async findPaginated(input: {
     limit,
   };
 }
-
-```text
+```
 
 ### Pattern 4: Complex Joins
 
 ```typescript
 /**
-
  * Find properties with booking statistics
-
  *
-
  * @returns Properties with booking counts and revenue
-
  */
 async findWithStats(): Promise<Array<SelectProperty & {
   bookingCount: number;
@@ -872,8 +814,7 @@ async findWithStats(): Promise<Array<SelectProperty & {
     .where(isNull(properties.deletedAt))
     .groupBy(properties.id);
 }
-
-```text
+```
 
 ---
 
@@ -881,16 +822,16 @@ async findWithStats(): Promise<Array<SelectProperty & {
 
 ### Unit Tests Coverage
 
-#### Must test:
+#### Must test
 
-- ✅ Create operations with valid data
-- ✅ Create operations with invalid data (constraints)
-- ✅ Read operations (find, findById, custom queries)
-- ✅ Update operations
-- ✅ Delete operations (soft/hard)
-- ✅ Relationship loading
-- ✅ Custom model methods
-- ✅ Edge cases (null, undefined, empty arrays)
+- Create operations with valid data
+- Create operations with invalid data (constraints)
+- Read operations (find, findById, custom queries)
+- Update operations
+- Delete operations (soft/hard)
+- Relationship loading
+- Custom model methods
+- Edge cases (null, undefined, empty arrays)
 
 ### Test Database Setup
 
@@ -934,8 +875,7 @@ export async function cleanupTestDb(db: Database) {
   await adminClient.unsafe(`DROP DATABASE IF EXISTS ${dbName}`);
   await adminClient.end();
 }
-
-```text
+```
 
 ---
 
@@ -1012,16 +952,23 @@ Before considering work complete:
 
 Database work is complete when:
 
-1. ✅ Schema created and documented
-2. ✅ Migration written and tested
-3. ✅ Model extends BaseModel
-4. ✅ All custom methods implemented
-5. ✅ Comprehensive tests written
-6. ✅ 90%+ test coverage
-7. ✅ All tests passing
-8. ✅ Code reviewed and approved
+1. Schema created and documented
+2. Migration written and tested
+3. Model extends BaseModel
+4. All custom methods implemented
+5. Comprehensive tests written
+6. 90%+ test coverage
+7. All tests passing
+8. Code reviewed and approved
 
 ---
 
 **Remember:** You are the foundation of the application. Good database design prevents future problems and enables efficient queries. Take time to get it right!
 
+---
+
+## Changelog
+
+| Version | Date | Changes | Author | Related |
+|---------|------|---------|--------|---------|
+| 1.0.0 | 2025-10-31 | Initial version | @tech-lead | P-004 |
