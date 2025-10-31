@@ -1,0 +1,61 @@
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#3B82F6','primaryTextColor':'#fff','primaryBorderColor':'#2563EB','lineColor':'#6B7280','secondaryColor':'#10B981','tertiaryColor':'#F59E0B'}}}%%
+flowchart TD
+    Root[.claude/]
+    
+    %% Main Sections
+    Root --> Agents[agents/<br/>13 Agent Definitions]
+    Root --> Commands[commands/<br/>16 Commands]
+    Root --> Skills[skills/<br/>16 Skills]
+    Root --> Docs[docs/<br/>Documentation]
+    Root --> Sessions[sessions/<br/>Planning & Tasks]
+    
+    %% Agents Structure
+    Agents --> AgentEng[engineering/<br/>Backend & Frontend]
+    Agents --> AgentQual[quality/<br/>QA & Security]
+    Agents --> AgentSupp[support/<br/>Writer & Debugger]
+    Agents --> AgentLead[leadership/<br/>Tech Lead]
+    Agents --> AgentProd[product/<br/>Product Technical]
+    Agents --> AgentREADME[README.md<br/>Agent Index]
+    
+    %% Commands Structure
+    Commands --> CmdAudit[audit/<br/>Security, Perf, A11y]
+    Commands --> CmdMeta[meta/<br/>Create, Help]
+    Commands --> CmdRoot[Root Commands<br/>Quality, Planning, Dev]
+    Commands --> CmdREADME[README.md<br/>Command Index]
+    
+    %% Skills Structure
+    Skills --> SkillTest[testing/<br/>API, Perf, Security]
+    Skills --> SkillPattern[patterns/<br/>TDD, Errors]
+    Skills --> SkillTech[tech/<br/>Vercel, Shadcn, Mermaid]
+    Skills --> SkillUtil[utils/<br/>Memory, PDF, JSON]
+    Skills --> SkillQA[qa/<br/>Web Testing, Criteria]
+    Skills --> SkillREADME[README.md<br/>Skill Index]
+    
+    %% Docs Structure
+    Docs --> DocsStandards[standards/<br/>Code, Architecture, Testing]
+    Docs --> DocsWorkflows[workflows/<br/>Quick Fix, Atomic Task]
+    Docs --> DocsTemplates[templates/<br/>PDR, Tech Analysis]
+    Docs --> DocsDiagrams[diagrams/<br/>This File + Others]
+    
+    %% Sessions Structure
+    Sessions --> SessionsPlanning[planning/<br/>Feature Plans]
+    Sessions --> SessionsAtomic[atomic-tasks/<br/>PB-XXX Tasks]
+    
+    SessionsPlanning --> P004[P-004/<br/>Workflow Optimization]
+    P004 --> PDR[PDR.md]
+    P004 --> TechAnalysis[tech-analysis.md]
+    P004 --> TODOs[TODOs.md]
+    P004 --> Checkpoint[.checkpoint.json]
+    
+    SessionsAtomic --> Registry[REGISTRY.md]
+    SessionsAtomic --> PB001[PB-001/<br/>Example Task]
+    
+    classDef rootClass fill:#8B5CF6,stroke:#7C3AED,color:#fff,font-weight:bold
+    classDef sectionClass fill:#3B82F6,stroke:#2563EB,color:#fff
+    classDef subClass fill:#10B981,stroke:#059669,color:#fff
+    classDef fileClass fill:#F59E0B,stroke:#D97706,color:#000
+    
+    class Root rootClass
+    class Agents,Commands,Skills,Docs,Sessions sectionClass
+    class AgentEng,AgentQual,AgentSupp,AgentLead,AgentProd,CmdAudit,CmdMeta,CmdRoot,SkillTest,SkillPattern,SkillTech,SkillUtil,SkillQA,DocsStandards,DocsWorkflows,DocsTemplates,DocsDiagrams,SessionsPlanning,SessionsAtomic subClass
+    class AgentREADME,CmdREADME,SkillREADME,P004,PB001,Registry,PDR,TechAnalysis,TODOs,Checkpoint fileClass

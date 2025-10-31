@@ -1,0 +1,54 @@
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#3B82F6','primaryTextColor':'#fff','primaryBorderColor':'#2563EB','lineColor':'#6B7280','secondaryColor':'#10B981','tertiaryColor':'#F59E0B'}}}%%
+flowchart LR
+    %% Commands Layer
+    subgraph Commands ["/commands (16)"]
+        direction TB
+        QualityCmd["/quality-check<br/>/code-check"]
+        PlanningCmd["/start-feature-plan<br/>/start-refactor-plan"]
+        AuditCmd["/security-audit<br/>/performance-audit<br/>/accessibility-audit"]
+        MetaCmd["/create-agent<br/>/create-command<br/>/create-skill<br/>/help"]
+        DevCmd["/add-new-entity<br/>/update-docs<br/>/commit"]
+    end
+    
+    %% Agents Layer
+    subgraph Agents ["Agents (13)"]
+        direction TB
+        LeadAgents[tech-lead<br/>product-technical]
+        BackendAgents[hono-engineer<br/>db-engineer]
+        FrontendAgents[astro-engineer<br/>tanstack-start-engineer<br/>react-senior-dev]
+        QualityAgents[qa-engineer<br/>security-engineer<br/>performance-engineer]
+        SupportAgents[tech-writer<br/>debugger]
+    end
+    
+    %% Skills Layer
+    subgraph Skills ["Skills (16)"]
+        direction TB
+        TestingSkills[Testing & Quality 6:<br/>web-app-testing<br/>api-app-testing<br/>performance-testing<br/>security-testing<br/>tdd-methodology<br/>qa-criteria-validator]
+        DevSkills[Development Tools 5:<br/>git-commit-helper<br/>vercel-specialist<br/>shadcn-specialist<br/>mermaid-diagram-specialist<br/>add-memory]
+        DesignSkills[Design & Patterns 3:<br/>brand-guidelines<br/>error-handling-patterns<br/>markdown-formatter]
+        UtilSkills[Documentation & Utils 2:<br/>pdf-creator-editor<br/>json-data-auditor]
+    end
+    
+    %% Relationships
+    Commands -->|invoke| Agents
+    Agents -->|use| Skills
+    
+    QualityCmd -.->|uses| QualityAgents
+    PlanningCmd -.->|uses| LeadAgents
+    AuditCmd -.->|uses| QualityAgents
+    DevCmd -.->|uses| BackendAgents
+    DevCmd -.->|uses| FrontendAgents
+    
+    LeadAgents -.->|invokes| DevSkills
+    BackendAgents -.->|invokes| TestingSkills
+    FrontendAgents -.->|invokes| DesignSkills
+    QualityAgents -.->|invokes| TestingSkills
+    SupportAgents -.->|invokes| UtilSkills
+    
+    classDef commandClass fill:#8B5CF6,stroke:#7C3AED,color:#fff
+    classDef agentClass fill:#3B82F6,stroke:#2563EB,color:#fff
+    classDef skillClass fill:#10B981,stroke:#059669,color:#fff
+    
+    class Commands,QualityCmd,PlanningCmd,AuditCmd,MetaCmd,DevCmd commandClass
+    class Agents,LeadAgents,BackendAgents,FrontendAgents,QualityAgents,SupportAgents agentClass
+    class Skills,TestingSkills,DevSkills,DesignSkills,UtilSkills skillClass
