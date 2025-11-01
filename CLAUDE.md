@@ -91,7 +91,45 @@ User: "I need to add user authentication"
 
 # Sync planning to GitHub
 pnpm planning:sync <session-path>
+
+# Git worktrees (for parallel PR development)
+./.claude/scripts/worktree-create.sh feature/my-feature
+./.claude/scripts/worktree-cleanup.sh
 ```
+
+### Pull Request Workflow
+
+**🚀 NEW: We now use Pull Requests + Git Worktrees for all development**
+
+**Why Worktrees?**
+
+- ✅ Work on multiple PRs in parallel without context switching
+- ✅ Separate environments per feature (node_modules, build, state)
+- ✅ Easy code comparison between branches
+- ✅ Run multiple dev servers simultaneously
+
+**Quick Start:**
+
+```bash
+# Create worktree for new feature
+./.claude/scripts/worktree-create.sh feature/my-feature
+
+# Work on feature in new directory
+cd ../hospeda-feat-my-feature
+pnpm dev
+
+# Create PR when ready
+gh pr create --title "feat: my feature"
+
+# After PR merged, cleanup
+cd ~/projects/hospeda
+./.claude/scripts/worktree-cleanup.sh
+```
+
+**Essential Guides:**
+
+- **[Git Worktrees Guide](.claude/docs/guides/git-worktrees.md)** - Complete worktree documentation
+- **[PR Workflow Guide](.claude/docs/guides/pr-workflow.md)** - Full PR workflow with worktrees
 
 ---
 
@@ -303,6 +341,24 @@ git add .  # ❌ Would include unrelated files!
 
 **Exception:** User explicitly requests including other files
 
+**PR Workflow:**
+
+- **ALL development** now happens in feature branches via Pull Requests
+- Use Git Worktrees for parallel development (see guides above)
+- Create PR when feature is complete and all checks pass
+- CI/CD will automatically run: tests, lint, Lighthouse, CodeQL, bundle size checks
+- PRs require approval before merge
+- After merge, cleanup worktree and delete branch
+
+**Branch Naming:**
+
+- `feature/*` - New features
+- `fix/*` - Bug fixes
+- `hotfix/*` - Critical production fixes
+- `refactor/*` - Code refactoring
+- `docs/*` - Documentation
+- `chore/*` - Maintenance
+
 **Full standards:** [.claude/docs/standards/](.claude/docs/standards/)
 
 ---
@@ -489,6 +545,11 @@ All learnings are documented in individual files for detailed reference. The lat
 
 - **Decision Tree**: [.claude/docs/workflows/decision-tree.md](.claude/docs/workflows/decision-tree.md)
 - **All Workflows**: [.claude/docs/workflows/README.md](.claude/docs/workflows/README.md)
+
+### 📚 Guides
+
+- **Git Worktrees Guide**: [.claude/docs/guides/git-worktrees.md](.claude/docs/guides/git-worktrees.md)
+- **PR Workflow Guide**: [.claude/docs/guides/pr-workflow.md](.claude/docs/guides/pr-workflow.md)
 
 ### 📐 Standards
 
