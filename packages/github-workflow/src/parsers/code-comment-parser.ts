@@ -20,16 +20,16 @@
  * ```
  */
 
-import { readFile } from 'node:fs/promises';
-import { relative, join } from 'node:path';
-import { glob } from 'glob';
 import { createHash } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
+import { join, relative } from 'node:path';
+import { glob } from 'glob';
 import type {
     CodeComment,
-    CommentType,
-    CommentPriority,
     CodeCommentScanOptions,
     CodeCommentScanResult,
+    CommentPriority,
+    CommentType
 } from './types.js';
 
 /**
@@ -41,7 +41,7 @@ const DEFAULT_INCLUDE_PATTERNS = [
     '**/*.js',
     '**/*.jsx',
     '**/*.mjs',
-    '**/*.cjs',
+    '**/*.cjs'
 ];
 
 /**
@@ -56,13 +56,13 @@ const DEFAULT_EXCLUDE_PATTERNS = [
     '**/coverage/**',
     '**/*.min.js',
     '**/*.bundle.js',
-    '**/.git/**',
+    '**/.git/**'
 ];
 
 /**
  * Regex patterns for detecting comments
  */
-const COMMENT_PATTERNS = {
+const _COMMENT_PATTERNS = {
     // Single-line comments: // TODO: ...
     singleLine: /\/\/\s*(TODO|HACK|DEBUG)\s*(.+)$/gim,
     // Multi-line comments: /* TODO: ... */
@@ -70,7 +70,7 @@ const COMMENT_PATTERNS = {
     multiLineContent: /\s*\*\s*(.+)/g,
     multiLineEnd: /\*\//,
     // JSX comments: {/* TODO: ... */}
-    jsxComment: /\{\s*\/\*\s*(TODO|HACK|DEBUG)\s*(.+?)\*\/\s*\}/gi,
+    jsxComment: /\{\s*\/\*\s*(TODO|HACK|DEBUG)\s*(.+?)\*\/\s*\}/gi
 } as const;
 
 /**
@@ -84,7 +84,7 @@ const METADATA_PATTERNS = {
     // Labels: [label], [@label], [security][performance]
     labels: /\[@?([a-z0-9_-]+)\]/gi,
     // Remove metadata prefix to get clean content
-    cleanContent: /^(?:\([^)]*\)|\[[^\]]*\]|@[a-z0-9_-]+|\s|:)+/gi,
+    cleanContent: /^(?:\([^)]*\)|\[[^\]]*\]|@[a-z0-9_-]+|\s|:)+/gi
 } as const;
 
 /**
@@ -165,18 +165,20 @@ export function extractCommentMetadata(input: {
 
     // Extract priority (preserve case for P1, P2, etc.)
     const priorityMatch = content.match(METADATA_PATTERNS.priority);
-    if (priorityMatch?.[1] && priorityMatch[1].trim()) {
+    if (priorityMatch?.[1]?.trim()) {
         const priorityValue = priorityMatch[1];
         // Preserve uppercase for P1, P2, P3; lowercase for others
-        priority = (priorityValue.match(/^P\d+$/i)
-            ? priorityValue.toUpperCase()
-            : priorityValue.toLowerCase()) as CommentPriority;
+        priority = (
+            priorityValue.match(/^P\d+$/i)
+                ? priorityValue.toUpperCase()
+                : priorityValue.toLowerCase()
+        ) as CommentPriority;
     }
 
     // Extract labels first (to avoid confusion with @username inside [@label])
     const labelMatches = content.matchAll(METADATA_PATTERNS.labels);
     for (const match of labelMatches) {
-        if (match[1] && match[1].trim()) {
+        if (match[1]?.trim()) {
             labels.push(match[1]);
         }
     }
@@ -185,7 +187,7 @@ export function extractCommentMetadata(input: {
     // Remove all bracketed content first for assignee matching
     const contentWithoutBrackets = content.replace(/\[[^\]]*\]/g, '');
     const assigneeMatch = contentWithoutBrackets.match(METADATA_PATTERNS.assignee);
-    if (assigneeMatch?.[1] && assigneeMatch[1].trim()) {
+    if (assigneeMatch?.[1]?.trim()) {
         assignee = assigneeMatch[1];
     }
 
@@ -204,7 +206,7 @@ export function extractCommentMetadata(input: {
         content,
         priority,
         assignee,
-        labels: labels.length > 0 ? labels : undefined,
+        labels: labels.length > 0 ? labels : undefined
     };
 }
 
@@ -280,7 +282,7 @@ export function parseCodeComments(input: {
 
             const metadata = extractCommentMetadata({
                 content: rawContent.trim(),
-                type,
+                type
             });
 
             comments.push({
@@ -292,7 +294,7 @@ export function parseCodeComments(input: {
                 priority: metadata.priority,
                 assignee: metadata.assignee,
                 labels: metadata.labels,
-                metadata: metadata.metadata,
+                metadata: metadata.metadata
             });
             continue;
         }
@@ -309,7 +311,7 @@ export function parseCodeComments(input: {
 
             const metadata = extractCommentMetadata({
                 content: rawContent.trim(),
-                type,
+                type
             });
 
             comments.push({
@@ -321,7 +323,7 @@ export function parseCodeComments(input: {
                 priority: metadata.priority,
                 assignee: metadata.assignee,
                 labels: metadata.labels,
-                metadata: metadata.metadata,
+                metadata: metadata.metadata
             });
             continue;
         }
@@ -356,7 +358,7 @@ export function parseCodeComments(input: {
 
                 const metadata = extractCommentMetadata({
                     content: rawContent,
-                    type,
+                    type
                 });
 
                 comments.push({
@@ -368,7 +370,7 @@ export function parseCodeComments(input: {
                     priority: metadata.priority,
                     assignee: metadata.assignee,
                     labels: metadata.labels,
-                    metadata: metadata.metadata,
+                    metadata: metadata.metadata
                 });
                 continue;
             }
@@ -383,14 +385,14 @@ export function parseCodeComments(input: {
                     if (endContent) {
                         const cleanedContent = endContent.replace(/^\s*\*\s*/, '').trim();
                         if (cleanedContent) {
-                            rawContent += ' ' + cleanedContent;
+                            rawContent += ` ${cleanedContent}`;
                         }
                     }
                     break;
                 }
                 const lineContent = currentLine?.replace(/^\s*\*\s*/, '').trim();
                 if (lineContent) {
-                    rawContent += ' ' + lineContent;
+                    rawContent += ` ${lineContent}`;
                 }
                 j++;
             }
@@ -402,7 +404,7 @@ export function parseCodeComments(input: {
 
             const metadata = extractCommentMetadata({
                 content: rawContent.trim(),
-                type,
+                type
             });
 
             comments.push({
@@ -414,7 +416,7 @@ export function parseCodeComments(input: {
                 priority: metadata.priority,
                 assignee: metadata.assignee,
                 labels: metadata.labels,
-                metadata: metadata.metadata,
+                metadata: metadata.metadata
             });
 
             i = j;
@@ -462,14 +464,14 @@ export async function scanCodeComments(
         include = DEFAULT_INCLUDE_PATTERNS,
         exclude = DEFAULT_EXCLUDE_PATTERNS,
         commentTypes = ['TODO', 'HACK', 'DEBUG'],
-        respectGitignore = true,
+        respectGitignore = true
     } = options;
 
     const allComments: CodeComment[] = [];
     const byType: Record<CommentType, CodeComment[]> = {
         TODO: [],
         HACK: [],
-        DEBUG: [],
+        DEBUG: []
     };
     const byFile: Record<string, CodeComment[]> = {};
 
@@ -480,7 +482,7 @@ export async function scanCodeComments(
             ignore: exclude,
             absolute: false,
             nodir: true,
-            dot: false,
+            dot: false
         });
 
         // Process each file
@@ -493,7 +495,7 @@ export async function scanCodeComments(
                 const comments = parseCodeComments({
                     fileContent,
                     filePath: relativeFilePath,
-                    commentTypes,
+                    commentTypes
                 });
 
                 allComments.push(...comments);
@@ -507,10 +509,7 @@ export async function scanCodeComments(
                 if (comments.length > 0) {
                     byFile[relativeFilePath] = comments;
                 }
-            } catch (error) {
-                // Skip files that can't be read
-                continue;
-            }
+            } catch (_error) {}
         }
 
         return {
@@ -518,9 +517,9 @@ export async function scanCodeComments(
             filesScanned: files.length,
             commentsFound: allComments.length,
             byType,
-            byFile,
+            byFile
         };
-    } catch (error) {
+    } catch (_error) {
         // Return empty result on error
         return {
             comments: [],
@@ -529,9 +528,9 @@ export async function scanCodeComments(
             byType: {
                 TODO: [],
                 HACK: [],
-                DEBUG: [],
+                DEBUG: []
             },
-            byFile: {},
+            byFile: {}
         };
     }
 }

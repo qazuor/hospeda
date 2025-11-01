@@ -33,9 +33,7 @@ export function hackFunction() {
 }
 
 // DEBUG: Remove before production
-export function debugFunction() {
-    console.log('debug info');
-}
+export function debugFunction() {}
 
 /*
  * TODO: Multi-line todo comment
@@ -59,7 +57,7 @@ export class SampleClass {
 }
 
 // This is a TODO in a string, should be ignored in content: "TODO: not a real todo"
-const stringWithTodo = "TODO: this is in a string";
+const _stringWithTodo = 'TODO: this is in a string';
 
 // Multiple TODOs on same line: TODO: first TODO(high): second
 export function multipleTodos() {

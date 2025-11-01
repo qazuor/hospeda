@@ -170,7 +170,7 @@ describe('tracking/edge-cases', () => {
             // Assert - All updates should be reflected
             expect(updated).toBeDefined();
             // Last write wins for each field
-            expect(updated?.modifiedAt).toBeDefined();
+            expect(updated?.updatedAt).toBeDefined();
         });
 
         it('should handle missing optional fields in source', async () => {

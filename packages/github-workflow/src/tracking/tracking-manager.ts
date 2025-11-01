@@ -133,7 +133,7 @@ export class TrackingManager {
                 id: this.generateId(),
                 ...input,
                 createdAt: now,
-                modifiedAt: now
+                updatedAt: now
             };
 
             this.database?.records.push(record);
@@ -173,7 +173,7 @@ export class TrackingManager {
 
         try {
             Object.assign(record, updates, {
-                modifiedAt: new Date().toISOString()
+                updatedAt: new Date().toISOString()
             });
 
             this.updateMetadata();
@@ -201,7 +201,7 @@ export class TrackingManager {
 
         const index = this.database?.records.findIndex((r) => r.id === id);
 
-        if (index === -1) {
+        if (index === -1 || index === undefined) {
             return false;
         }
 
@@ -265,7 +265,7 @@ export class TrackingManager {
      */
     async getRecordsByStatus(status: SyncStatus): Promise<TrackingRecord[]> {
         this.ensureLoaded();
-        return this.database?.records.filter((r) => r.status === status);
+        return this.database?.records.filter((r) => r.status === status) ?? [];
     }
 
     /**
@@ -276,7 +276,17 @@ export class TrackingManager {
      */
     async getRecordsBySession(sessionId: string): Promise<TrackingRecord[]> {
         this.ensureLoaded();
-        return this.database?.records.filter((r) => r.source.sessionId === sessionId);
+        return this.database?.records.filter((r) => r.source.sessionId === sessionId) ?? [];
+    }
+
+    /**
+     * Get all tracking records
+     *
+     * @returns Array of all tracking records
+     */
+    async getRecords(): Promise<TrackingRecord[]> {
+        this.ensureLoaded();
+        return this.database?.records ?? [];
     }
 
     /**
@@ -308,7 +318,7 @@ export class TrackingManager {
         };
         record.lastSyncedAt = now;
         record.syncAttempts += 1;
-        record.modifiedAt = now;
+        record.updatedAt = now;
         record.lastError = undefined;
 
         this.updateMetadata();
@@ -338,7 +348,7 @@ export class TrackingManager {
         record.status = 'failed';
         record.lastError = error;
         record.syncAttempts += 1;
-        record.modifiedAt = new Date().toISOString();
+        record.updatedAt = new Date().toISOString();
 
         this.updateMetadata();
 
@@ -355,13 +365,13 @@ export class TrackingManager {
     async resetPending(): Promise<TrackingRecord[]> {
         this.ensureLoaded();
 
-        const failedRecords = this.database?.records.filter((r) => r.status === 'failed');
+        const failedRecords = this.database?.records.filter((r) => r.status === 'failed') ?? [];
 
         for (const record of failedRecords) {
             record.status = 'pending';
             record.syncAttempts = 0;
             record.lastError = undefined;
-            record.modifiedAt = new Date().toISOString();
+            record.updatedAt = new Date().toISOString();
         }
 
         this.updateMetadata();
@@ -380,7 +390,7 @@ export class TrackingManager {
         this.ensureLoaded();
 
         const stats: TrackingStatistics = {
-            total: this.database?.records.length,
+            total: this.database?.records.length ?? 0,
             byStatus: {
                 pending: 0,
                 synced: 0,
@@ -394,7 +404,7 @@ export class TrackingManager {
             bySession: {}
         };
 
-        for (const record of this.database?.records) {
+        for (const record of this.database?.records ?? []) {
             stats.byStatus[record.status]++;
             stats.byType[record.type]++;
 

@@ -25,7 +25,7 @@ describe('tracking/validation', () => {
                 status: 'pending' as const,
                 syncAttempts: 0,
                 createdAt: '2025-11-01T00:00:00.000Z',
-                modifiedAt: '2025-11-01T00:00:00.000Z'
+                updatedAt: '2025-11-01T00:00:00.000Z'
             };
 
             // Act & Assert
@@ -52,7 +52,7 @@ describe('tracking/validation', () => {
                 lastSyncedAt: '2025-11-01T01:00:00.000Z',
                 syncAttempts: 1,
                 createdAt: '2025-11-01T00:00:00.000Z',
-                modifiedAt: '2025-11-01T01:00:00.000Z'
+                updatedAt: '2025-11-01T01:00:00.000Z'
             };
 
             // Act & Assert
@@ -68,7 +68,7 @@ describe('tracking/validation', () => {
                 status: 'pending',
                 syncAttempts: 0,
                 createdAt: '2025-11-01T00:00:00.000Z',
-                modifiedAt: '2025-11-01T00:00:00.000Z'
+                updatedAt: '2025-11-01T00:00:00.000Z'
             };
 
             // Act & Assert
@@ -84,7 +84,7 @@ describe('tracking/validation', () => {
                 status: 'invalid-status',
                 syncAttempts: 0,
                 createdAt: '2025-11-01T00:00:00.000Z',
-                modifiedAt: '2025-11-01T00:00:00.000Z'
+                updatedAt: '2025-11-01T00:00:00.000Z'
             };
 
             // Act & Assert
@@ -100,7 +100,7 @@ describe('tracking/validation', () => {
                 status: 'pending',
                 syncAttempts: -1,
                 createdAt: '2025-11-01T00:00:00.000Z',
-                modifiedAt: '2025-11-01T00:00:00.000Z'
+                updatedAt: '2025-11-01T00:00:00.000Z'
             };
 
             // Act & Assert
@@ -116,7 +116,7 @@ describe('tracking/validation', () => {
                 status: 'pending',
                 syncAttempts: 0,
                 createdAt: 'invalid-date',
-                modifiedAt: '2025-11-01T00:00:00.000Z'
+                updatedAt: '2025-11-01T00:00:00.000Z'
             };
 
             // Act & Assert
@@ -135,7 +135,7 @@ describe('tracking/validation', () => {
                 status: 'pending',
                 syncAttempts: 0,
                 createdAt: '2025-11-01T00:00:00.000Z',
-                modifiedAt: '2025-11-01T00:00:00.000Z'
+                updatedAt: '2025-11-01T00:00:00.000Z'
             };
 
             // Act & Assert
@@ -156,7 +156,7 @@ describe('tracking/validation', () => {
                         status: 'pending' as const,
                         syncAttempts: 0,
                         createdAt: '2025-11-01T00:00:00.000Z',
-                        modifiedAt: '2025-11-01T00:00:00.000Z'
+                        updatedAt: '2025-11-01T00:00:00.000Z'
                     }
                 ],
                 metadata: {
@@ -269,7 +269,7 @@ describe('tracking/validation', () => {
                 status: 'pending' as const,
                 syncAttempts: 0,
                 createdAt: '2025-11-01T00:00:00.000Z',
-                modifiedAt: '2025-11-01T00:00:00.000Z'
+                updatedAt: '2025-11-01T00:00:00.000Z'
             };
 
             // Act

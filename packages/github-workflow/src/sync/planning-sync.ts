@@ -12,18 +12,10 @@ import { parsePlanningSession } from '../parsers/planning-session.js';
 import { updateTodosWithLinks } from '../parsers/todos-parser.js';
 import type { Task } from '../parsers/types.js';
 import { TrackingManager } from '../tracking/tracking-manager.js';
-import type { TrackingRecord } from '../tracking/types.js';
 import { createTaskSnapshot, detectTaskChanges } from './change-detector.js';
 import { buildIssueBody, buildIssueTitle } from './issue-builder.js';
 import { generateLabelsForTask } from './label-manager.js';
-import type {
-    CreatedIssue,
-    FailedTask,
-    SkippedTask,
-    SyncOptions,
-    SyncResult,
-    UpdatedIssue
-} from './types.js';
+import type { SyncOptions, SyncResult } from './types.js';
 
 /**
  * Default tracking path
@@ -212,8 +204,17 @@ async function processTask(input: {
     result: SyncResult;
     taskToIssueMap: Map<string, number>;
 }): Promise<void> {
-    const { task, session, trackingManager, githubClient, githubConfig, dryRun, updateExisting, result, taskToIssueMap } =
-        input;
+    const {
+        task,
+        session,
+        trackingManager,
+        githubClient,
+        githubConfig,
+        dryRun,
+        updateExisting,
+        result,
+        taskToIssueMap
+    } = input;
 
     // Check if task already synced
     const existingRecord = await trackingManager.findByTaskId(task.id);

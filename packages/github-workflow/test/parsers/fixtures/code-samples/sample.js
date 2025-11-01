@@ -8,12 +8,9 @@ function legacyFunction() {
 }
 
 // HACK: Fix this properly later
-const quickFix = () => {
-    // DEBUG: Log for debugging
-    console.log('quick fix');
-};
+const quickFix = () => {};
 
 module.exports = {
     legacyFunction,
-    quickFix,
+    quickFix
 };

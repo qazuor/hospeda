@@ -1,9 +1,3 @@
-/**
- * Sample React/TSX file with comments
- */
-
-import React from 'react';
-
 // TODO: Add proper type definitions
 export function Component() {
     // HACK: Inline styles until we setup CSS

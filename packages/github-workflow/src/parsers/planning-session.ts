@@ -31,9 +31,7 @@ import type { ParsedPlanningSession } from './types.js';
  * console.log(session.sessionPath); // Original path
  * ```
  */
-export async function parsePlanningSession(
-    sessionPath: string
-): Promise<ParsedPlanningSession> {
+export async function parsePlanningSession(sessionPath: string): Promise<ParsedPlanningSession> {
     const metadata = await parsePDR(sessionPath);
     const tasks = await parseTodos(sessionPath, metadata.planningCode);
 

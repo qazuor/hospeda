@@ -80,7 +80,7 @@ describe('tracking/tracking-manager', () => {
             expect(record.type).toBe('planning-task');
             expect(record.source.sessionId).toBe('P-003');
             expect(record.createdAt).toBeDefined();
-            expect(record.modifiedAt).toBeDefined();
+            expect(record.updatedAt).toBeDefined();
         });
 
         it('should generate unique IDs for multiple records', async () => {
@@ -132,7 +132,7 @@ describe('tracking/tracking-manager', () => {
                 syncAttempts: 0
             };
             const record = await manager.addRecord(input);
-            const originalModifiedAt = record.modifiedAt;
+            const originalModifiedAt = record.updatedAt;
 
             // Small delay to ensure timestamp difference
             await new Promise((resolve) => setTimeout(resolve, 10));
@@ -146,8 +146,8 @@ describe('tracking/tracking-manager', () => {
             // Assert
             expect(updated.status).toBe('synced');
             expect(updated.syncAttempts).toBe(1);
-            expect(updated.modifiedAt).not.toBe(originalModifiedAt);
-            expect(new Date(updated.modifiedAt).getTime()).toBeGreaterThan(
+            expect(updated.updatedAt).not.toBe(originalModifiedAt);
+            expect(new Date(updated.updatedAt).getTime()).toBeGreaterThan(
                 new Date(originalModifiedAt).getTime()
             );
         });

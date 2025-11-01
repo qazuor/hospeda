@@ -88,7 +88,9 @@ describe('issue-builder', () => {
             expect(body).toContain('**Assignee:** @developer1');
             expect(body).toContain('**Summary:** Add user authentication to the platform');
             expect(body).toContain('**Session Path:**');
-            expect(body).toContain('*Auto-generated from planning session by @repo/github-workflow*');
+            expect(body).toContain(
+                '*Auto-generated from planning session by @repo/github-workflow*'
+            );
         });
 
         it('should handle task without optional fields', () => {
