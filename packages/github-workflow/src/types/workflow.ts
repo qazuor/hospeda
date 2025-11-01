@@ -45,9 +45,10 @@ export type TodoItem = {
 };
 
 /**
- * Sync operation result
+ * Sync operation result (legacy type)
+ * @deprecated Use SyncResult from sync/types.ts instead
  */
-export type SyncResult = {
+export type LegacySyncResult = {
     /** Success status */
     success: boolean;
     /** Number of items synced */
