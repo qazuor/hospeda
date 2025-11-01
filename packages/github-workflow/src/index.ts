@@ -13,6 +13,7 @@
 export * from './types/index.ts';
 export * from './core/index.ts';
 export * from './parsers/index.ts';
+export * from './tracking/index.ts';
 export * from './sync/index.ts';
 export * from './enrichment/index.ts';
 export * from './config/index.ts';
