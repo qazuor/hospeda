@@ -898,6 +898,7 @@ pnpm planning:sync .claude/sessions/planning/P-001-user-auth/
 ```
 
 This will:
+
 - Mark all Linear issues as "Done"
 - Update project progress to 100%
 - Add final comment with summary
@@ -925,4 +926,3 @@ This will:
 **Remember: User controls the git history. We prepare, they execute.**
 
 **⚠️ CRITICAL**: State files MUST be updated and committed before considering the feature "complete". This ensures accurate project tracking and team visibility.
-

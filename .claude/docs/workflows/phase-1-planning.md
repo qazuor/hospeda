@@ -40,6 +40,7 @@ This document describes the planning phase workflow for the Hospeda project.
 ### Anti-Patterns to Avoid
 
 ❌ **WRONG:**
+
 ```text
 "I'll create the PDR since the requirements are clear..."
 "Let me write the technical analysis directly..."
@@ -47,6 +48,7 @@ This document describes the planning phase workflow for the Hospeda project.
 ```
 
 ✅ **CORRECT:**
+
 ```text
 "Analyzing requirements... I will invoke the following agents:
 1. product-functional for PDR creation
