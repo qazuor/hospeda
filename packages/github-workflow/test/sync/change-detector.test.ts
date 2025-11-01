@@ -6,8 +6,8 @@
 
 import { describe, expect, it } from 'vitest';
 import type { Task } from '../../src/parsers/types';
-import type { TrackingRecord } from '../../src/tracking/types';
 import { detectTaskChanges } from '../../src/sync/change-detector';
+import type { TrackingRecord } from '../../src/tracking/types';
 
 describe('change-detector', () => {
     describe('detectTaskChanges', () => {

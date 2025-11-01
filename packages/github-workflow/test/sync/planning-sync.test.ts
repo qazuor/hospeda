@@ -29,14 +29,8 @@ describe('planning-sync', () => {
         await fs.mkdir(sessionPath, { recursive: true });
 
         const fixturesPath = path.join(__dirname, 'fixtures', 'mock-planning');
-        await fs.copyFile(
-            path.join(fixturesPath, 'PDR.md'),
-            path.join(sessionPath, 'PDR.md')
-        );
-        await fs.copyFile(
-            path.join(fixturesPath, 'TODOs.md'),
-            path.join(sessionPath, 'TODOs.md')
-        );
+        await fs.copyFile(path.join(fixturesPath, 'PDR.md'), path.join(sessionPath, 'PDR.md'));
+        await fs.copyFile(path.join(fixturesPath, 'TODOs.md'), path.join(sessionPath, 'TODOs.md'));
 
         // Reset mocks
         vi.clearAllMocks();
@@ -280,10 +274,7 @@ describe('planning-sync', () => {
             });
 
             // Assert - Check TODOs.md was updated
-            const todosContent = await fs.readFile(
-                path.join(sessionPath, 'TODOs.md'),
-                'utf-8'
-            );
+            const todosContent = await fs.readFile(path.join(sessionPath, 'TODOs.md'), 'utf-8');
 
             expect(todosContent).toContain('**GitHub:**');
             expect(todosContent).toMatch(/#\d+/); // Contains issue number

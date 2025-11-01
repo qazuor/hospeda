@@ -96,9 +96,7 @@ export function buildIssueBody(input: BuildIssueBodyInput): string {
     sections.push('- **Status:** ' + task.status);
     sections.push('- **Estimate:** ' + (task.estimate || 'Not estimated'));
     sections.push('- **Phase:** ' + (task.phase ? String(task.phase) : 'Not specified'));
-    sections.push(
-        '- **Assignee:** ' + (task.assignee ? `@${task.assignee}` : 'Unassigned') + '\n'
-    );
+    sections.push('- **Assignee:** ' + (task.assignee ? `@${task.assignee}` : 'Unassigned') + '\n');
 
     // Planning session section
     sections.push('### Planning Session');

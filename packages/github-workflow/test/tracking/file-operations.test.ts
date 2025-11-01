@@ -103,7 +103,7 @@ describe('tracking/file-operations', () => {
                         status: 'pending',
                         syncAttempts: 0,
                         createdAt: '2025-11-01T00:00:00.000Z',
-                        modifiedAt: '2025-11-01T00:00:00.000Z'
+                        updatedAt: '2025-11-01T00:00:00.000Z'
                     }
                 ],
                 metadata: {

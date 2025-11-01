@@ -12,22 +12,9 @@ async function main() {
     const sessionPath = '.claude/sessions/planning/P-003-planning-workflow-automation';
 
     const session = await parsePlanningSession(sessionPath);
-
-    // Access metadata
-    console.log('Planning Code:', session.metadata.planningCode);
-    console.log('Feature Name:', session.metadata.featureName);
-    console.log('Summary:', session.metadata.summary);
-
-    // Access tasks
-    console.log('\nTasks:');
     for (const task of session.tasks) {
-        console.log(`- [${task.code}] ${task.title}`);
-        console.log(`  Status: ${task.status}`);
-        console.log(`  Level: ${task.level}`);
-
         if (task.subtasks) {
-            for (const subtask of task.subtasks) {
-                console.log(`  - [${subtask.code}] ${subtask.title}`);
+            for (const _subtask of task.subtasks) {
             }
         }
     }

@@ -4,20 +4,16 @@
  * @module parsers/code-comment-parser.test
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
-import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { describe, expect, it } from 'vitest';
 import {
-    parseCodeComments,
-    scanCodeComments,
     extractCommentMetadata,
     generateCommentId,
+    parseCodeComments,
+    scanCodeComments
 } from '../../src/parsers/code-comment-parser.js';
-import type {
-    CodeComment,
-    CommentType,
-    CodeCommentScanOptions,
-} from '../../src/parsers/types.js';
+import type { CodeCommentScanOptions } from '../../src/parsers/types.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -29,17 +25,17 @@ describe('generateCommentId', () => {
         const id1 = generateCommentId({
             filePath: 'file1.ts',
             lineNumber: 10,
-            type: 'TODO',
+            type: 'TODO'
         });
         const id2 = generateCommentId({
             filePath: 'file1.ts',
             lineNumber: 20,
-            type: 'TODO',
+            type: 'TODO'
         });
         const id3 = generateCommentId({
             filePath: 'file2.ts',
             lineNumber: 10,
-            type: 'TODO',
+            type: 'TODO'
         });
 
         // Assert
@@ -53,12 +49,12 @@ describe('generateCommentId', () => {
         const id1 = generateCommentId({
             filePath: 'file1.ts',
             lineNumber: 10,
-            type: 'TODO',
+            type: 'TODO'
         });
         const id2 = generateCommentId({
             filePath: 'file1.ts',
             lineNumber: 10,
-            type: 'TODO',
+            type: 'TODO'
         });
 
         // Assert
@@ -74,7 +70,7 @@ describe('extractCommentMetadata', () => {
         // Act
         const result = extractCommentMetadata({
             content,
-            type: 'TODO',
+            type: 'TODO'
         });
 
         // Assert
@@ -89,14 +85,14 @@ describe('extractCommentMetadata', () => {
         const testCases = [
             { input: '(high): Fix this bug', expected: 'high' },
             { input: '(P1): Critical issue', expected: 'P1' },
-            { input: '(medium): Refactor code', expected: 'medium' },
+            { input: '(medium): Refactor code', expected: 'medium' }
         ];
 
         for (const { input, expected } of testCases) {
             // Act
             const result = extractCommentMetadata({
                 content: input,
-                type: 'TODO',
+                type: 'TODO'
             });
 
             // Assert
@@ -111,7 +107,7 @@ describe('extractCommentMetadata', () => {
         // Act
         const result = extractCommentMetadata({
             content,
-            type: 'TODO',
+            type: 'TODO'
         });
 
         // Assert
@@ -124,19 +120,19 @@ describe('extractCommentMetadata', () => {
         const testCases = [
             {
                 input: '[refactor]: Improve code structure',
-                expected: ['refactor'],
+                expected: ['refactor']
             },
             {
                 input: '[security][performance]: Optimize query',
-                expected: ['security', 'performance'],
-            },
+                expected: ['security', 'performance']
+            }
         ];
 
         for (const { input, expected } of testCases) {
             // Act
             const result = extractCommentMetadata({
                 content: input,
-                type: 'TODO',
+                type: 'TODO'
             });
 
             // Assert
@@ -151,7 +147,7 @@ describe('extractCommentMetadata', () => {
         // Act
         const result = extractCommentMetadata({
             content,
-            type: 'TODO',
+            type: 'TODO'
         });
 
         // Assert
@@ -169,7 +165,7 @@ describe('extractCommentMetadata', () => {
             // Act
             const result = extractCommentMetadata({
                 content,
-                type: 'TODO',
+                type: 'TODO'
             });
 
             // Assert
@@ -186,7 +182,7 @@ describe('extractCommentMetadata', () => {
         // Act
         const result = extractCommentMetadata({
             content,
-            type: 'TODO',
+            type: 'TODO'
         });
 
         // Assert
@@ -337,7 +333,7 @@ export function Component() {
         const comments = parseCodeComments({
             fileContent,
             filePath,
-            commentTypes: ['TODO', 'HACK'],
+            commentTypes: ['TODO', 'HACK']
         });
 
         // Assert
@@ -350,7 +346,7 @@ describe('scanCodeComments', () => {
     it('should scan directory for code comments', async () => {
         // Arrange
         const options: CodeCommentScanOptions = {
-            baseDir: fixturesDir,
+            baseDir: fixturesDir
         };
 
         // Act
@@ -365,7 +361,7 @@ describe('scanCodeComments', () => {
     it('should group comments by type', async () => {
         // Arrange
         const options: CodeCommentScanOptions = {
-            baseDir: fixturesDir,
+            baseDir: fixturesDir
         };
 
         // Act
@@ -381,7 +377,7 @@ describe('scanCodeComments', () => {
     it('should group comments by file', async () => {
         // Arrange
         const options: CodeCommentScanOptions = {
-            baseDir: fixturesDir,
+            baseDir: fixturesDir
         };
 
         // Act
@@ -399,7 +395,7 @@ describe('scanCodeComments', () => {
         // Arrange
         const options: CodeCommentScanOptions = {
             baseDir: fixturesDir,
-            include: ['**/*.ts'],
+            include: ['**/*.ts']
         };
 
         // Act
@@ -415,7 +411,7 @@ describe('scanCodeComments', () => {
         // Arrange
         const options: CodeCommentScanOptions = {
             baseDir: fixturesDir,
-            exclude: ['**/*.tsx'],
+            exclude: ['**/*.tsx']
         };
 
         // Act
@@ -431,7 +427,7 @@ describe('scanCodeComments', () => {
         // Arrange
         const options: CodeCommentScanOptions = {
             baseDir: fixturesDir,
-            commentTypes: ['TODO'],
+            commentTypes: ['TODO']
         };
 
         // Act
@@ -446,7 +442,7 @@ describe('scanCodeComments', () => {
     it('should handle non-existent directory', async () => {
         // Arrange
         const options: CodeCommentScanOptions = {
-            baseDir: '/non/existent/path',
+            baseDir: '/non/existent/path'
         };
 
         // Act

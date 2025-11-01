@@ -114,10 +114,7 @@ async function trackingExample() {
     console.info('=== Error Handling ===\n');
 
     // Mark as failed
-    const failed = await manager.markAsFailed(
-        codeComment.id,
-        'GitHub API rate limit exceeded'
-    );
+    const failed = await manager.markAsFailed(codeComment.id, 'GitHub API rate limit exceeded');
 
     console.info(`Marked as failed: ${failed.id}`);
     console.info(`  Error: ${failed.lastError}`);
