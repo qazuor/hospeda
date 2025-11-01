@@ -664,6 +664,7 @@ All layers properly separated:
    ```
 
    b. **Update .checkpoint.json:**
+
    ```json
    {
      "currentPhase": "phase-3-validation",
@@ -683,6 +684,7 @@ All layers properly separated:
    ```
 
    c. **Commit validation updates:**
+
    ```bash
    git add .claude/sessions/planning/{feature}/TODOs.md
    git add .claude/sessions/planning/{feature}/.checkpoint.json
@@ -784,4 +786,3 @@ Before proceeding to Phase 4:
 ---
 
 **Remember: Quality is non-negotiable. Fix issues before proceeding.**
-
