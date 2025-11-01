@@ -21,3 +21,19 @@ export {
     type SessionValidationResult,
     type SessionContextResult
 } from './session-context.js';
+
+export {
+    extractPlanningContext,
+    type PlanningContext,
+    type UserStory,
+    type TaskInfo,
+    type ExtractContextOptions,
+    type ExtractContextResult
+} from './context-extractor.js';
+
+export {
+    generateIssueTemplate,
+    type TemplateOptions,
+    type GeneratedTemplate,
+    type GenerateTemplateResult
+} from './template-engine.js';
