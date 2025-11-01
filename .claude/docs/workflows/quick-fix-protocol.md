@@ -180,6 +180,7 @@ git status --short
 **Rule:** ONLY include the file(s) modified for THIS quick fix.
 
 If other files are modified:
+
 - ❌ **DO NOT** use `git add .` or `git add -A`
 - ✅ **ONLY** add the specific quick fix file(s)
 - ⚠️ **WARN** user if unrelated files exist

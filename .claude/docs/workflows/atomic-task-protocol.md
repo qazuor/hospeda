@@ -519,6 +519,7 @@ git status --short
 **Rule:** ONLY include files modified during THIS atomic task.
 
 If `git status` shows unrelated modified files:
+
 - ❌ **DO NOT** include them in this commit
 - ❌ **DO NOT** use `git add .` or `git add -A`
 - ✅ **ONLY** use `git add <specific-file>` for task files
