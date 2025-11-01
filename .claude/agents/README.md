@@ -1,6 +1,6 @@
 # Hospeda Project - AI Agents
 
-This directory contains **13 specialized AI agents** for the Hospeda tourism platform. Each agent is an expert in specific areas and can be invoked during development workflow.
+This directory contains **14 specialized AI agents** for the Hospeda tourism platform. Each agent is an expert in specific areas and can be invoked during development workflow.
 
 ## Agent Organization
 
@@ -37,15 +37,16 @@ Agents are organized into the following categories:
   - **Consolidated from**: accessibility-engineer
 - **[debugger](quality/debugger.md)** - Investigates bugs, diagnoses issues, identifies root causes, and proposes fixes using systematic debugging during Phase 3 and issue resolution
 
-### Specialized (2 agents)
+### Specialized (3 agents)
 
 - **[tech-writer](specialized/tech-writer.md)** - Creates comprehensive documentation for code, APIs, architecture, processes, manages dependency tracking and updates, and generates changelogs following Keep a Changelog format during Phase 4 Finalization and all phases
   - **Consolidated from**: dependency-mapper, changelog-specialist
 - **[i18n-specialist](specialized/i18n-specialist.md)** - Designs and maintains internationalization system, manages translations, and ensures multi-language support during all phases
+- **[enrichment-agent](specialized/enrichment-agent.md)** - Analyzes planning sessions and enriches GitHub issues with relevant planning context, technical decisions, and task relationships during planning sync and issue creation
 
 ## Agent Consolidation
 
-This structure reflects a consolidation from 25 agents to 13 agents, absorbing specialized responsibilities into core agents:
+This structure reflects a consolidation from 25 agents to 14 agents, absorbing specialized responsibilities into core agents:
 
 ### tech-lead absorbed
 
@@ -129,9 +130,10 @@ Each agent file must include:
 │   └── debugger.md
 ├── design/                             # Design & UX (1)
 │   └── ux-ui-designer.md
-└── specialized/                        # Specialized (2)
+└── specialized/                        # Specialized (3)
     ├── tech-writer.md
-    └── i18n-specialist.md
+    ├── i18n-specialist.md
+    └── enrichment-agent.md
 ```
 
 ## Contributing
@@ -162,12 +164,12 @@ When adding new agents:
 
 ## Statistics
 
-- **Total Agents**: 13
+- **Total Agents**: 14
 - **Product & Planning**: 2
 - **Technical Leadership**: 1
 - **Backend Development**: 2
 - **Frontend Development**: 3
 - **Design & UX**: 1
 - **Quality Assurance**: 2
-- **Specialized**: 2
-- **Consolidated from**: 25 agents (12 removed, responsibilities absorbed)
+- **Specialized**: 3
+- **Consolidated from**: 25 agents (11 removed, responsibilities absorbed)
