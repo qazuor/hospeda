@@ -1,7 +1,7 @@
 /**
- * Git hooks and pre-commit/pre-push automation
+ * Git hooks for automated workflow triggers
  *
  * @module hooks
  */
 
-export {};
+export { runPostCommitHook, type PostCommitOptions } from './post-commit.js';

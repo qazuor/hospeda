@@ -24,7 +24,8 @@
         "test": "vitest run --passWithNoTests",
         "test:watch": "vitest",
         "test:file": "vitest run --passWithNoTests",
-        "test:coverage": "vitest run --coverage"
+        "test:coverage": "vitest run --coverage",
+        "hook:post-commit": "tsx src/scripts/post-commit-hook.ts"
     },
     "dependencies": {
         "@octokit/graphql": "^9.0.3",
