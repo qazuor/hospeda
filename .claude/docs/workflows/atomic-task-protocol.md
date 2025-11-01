@@ -476,6 +476,7 @@ For complex atomic tasks, consider delegating quality checks to specialized agen
 - **`performance-engineer`** - Performance analysis (if task affects queries, rendering, or data processing)
 
 **When to use agents:**
+
 - Task involves authentication/authorization
 - Task modifies database queries
 - Task adds API endpoints with validation
@@ -483,6 +484,7 @@ For complex atomic tasks, consider delegating quality checks to specialized agen
 - Task affects performance-critical paths
 
 **Example:**
+
 ```text
 This task adds user input validation with sanitization.
 I'll invoke security-engineer agent to review for injection vulnerabilities.
@@ -505,6 +507,56 @@ I'll invoke security-engineer agent to review for injection vulnerabilities.
 ### Step 10: Commit with Conventional Message 📝
 
 **Objective**: Create clean, descriptive commits
+
+**🔥 CRITICAL: Only Commit Task-Related Files**
+
+Before creating commits, verify which files to include:
+
+```bash
+git status --short
+```
+
+**Rule:** ONLY include files modified during THIS atomic task.
+
+If `git status` shows unrelated modified files:
+- ❌ **DO NOT** include them in this commit
+- ❌ **DO NOT** use `git add .` or `git add -A`
+- ✅ **ONLY** use `git add <specific-file>` for task files
+- ⚠️ **WARN** user about unrelated changes
+
+**Example:**
+
+```bash
+# Atomic Task: PB-001 "Fix booking validation"
+# git status shows:
+M packages/service-core/src/booking.service.ts  ← INCLUDE (this task)
+M packages/service-core/test/booking.test.ts    ← INCLUDE (this task)
+M packages/api/routes/user.ts                   ← EXCLUDE (different task)
+M .env.local                                     ← EXCLUDE (local config)
+
+# CORRECT - Only task files:
+git add packages/service-core/src/booking.service.ts
+git add packages/service-core/test/booking.test.ts
+git commit -m "fix(PB-001): prevent booking with past check-in dates..."
+
+# WRONG - Would include unrelated files:
+git add .  # ❌ Don't do this!
+```
+
+**If unrelated files detected:**
+
+```text
+⚠️ Warning: I found modified files NOT related to PB-001:
+- packages/api/routes/user.ts (different task)
+- .env.local (local configuration)
+
+I will ONLY commit files related to PB-001.
+Unrelated files will remain uncommitted.
+
+Proceeding with PB-001 files only. Continue? (yes/no)
+```
+
+---
 
 **Commit Message Format:**
 
@@ -615,6 +667,7 @@ When completing an atomic task, you MUST update all state tracking:
    If this atomic task is a subtask of a feature planning session:
 
    a. **Update TODOs.md** in planning session:
+
    ```markdown
    - [x] **[2h]** PB-001: Fix booking validation
      - Completed: 2024-02-01
@@ -623,6 +676,7 @@ When completing an atomic task, you MUST update all state tracking:
    ```
 
    b. **Update planning .checkpoint.json**:
+
    ```json
    {
      "tasks": {
@@ -640,6 +694,7 @@ When completing an atomic task, you MUST update all state tracking:
    ```
 
    c. **Update issues-sync.json**:
+
    ```json
    {
      "issues": {

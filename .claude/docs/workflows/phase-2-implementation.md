@@ -512,9 +512,45 @@ When you've completed a task (tests pass, lint clean, code meets standards):
 
    Analyze what files changed during this task.
 
+   **🔥 CRITICAL: Only Commit Task-Related Files**
+
+   **Rule:** ONLY include files that were modified during THIS specific task.
+
+   If `git status` shows unrelated modified files:
+   - ❌ **DO NOT** include them in this commit
+   - ❌ **DO NOT** use `git add .` or `git add -A`
+   - ✅ **ONLY** use `git add <specific-file>` for task files
+   - ⚠️ **WARN** user about unrelated changes
+
+   **Example:**
+   ```bash
+   # Task: "Create User model"
+   # git status shows:
+   M packages/db/src/models/user.model.ts      ← INCLUDE (this task)
+   M packages/db/test/models/user.model.test.ts ← INCLUDE (this task)
+   M packages/api/routes/booking.ts            ← EXCLUDE (different task)
+   M .env.local                                 ← EXCLUDE (local config)
+
+   # Only commit task-related files:
+   git add packages/db/src/models/user.model.ts
+   git add packages/db/test/models/user.model.test.ts
+   ```
+
+   **If unrelated files detected:**
+   ```text
+   ⚠️ Warning: Unrelated modified files detected:
+   - packages/api/routes/booking.ts (not part of current task)
+   - .env.local (local configuration)
+
+   I will ONLY commit files related to the current task.
+   Unrelated files will remain uncommitted for their respective tasks.
+
+   Proceeding with task-related files only. OK? (yes/no)
+   ```
+
 2. **Generate Commit Suggestions**
 
-   Group files into logical commits:
+   Group ONLY task-related files into logical commits:
    - Schema changes
    - Model + tests
    - Service + tests
