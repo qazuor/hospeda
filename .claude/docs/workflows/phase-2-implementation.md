@@ -523,6 +523,7 @@ When you've completed a task (tests pass, lint clean, code meets standards):
    - ⚠️ **WARN** user about unrelated changes
 
    **Example:**
+
    ```bash
    # Task: "Create User model"
    # git status shows:
@@ -537,6 +538,7 @@ When you've completed a task (tests pass, lint clean, code meets standards):
    ```
 
    **If unrelated files detected:**
+
    ```text
    ⚠️ Warning: Unrelated modified files detected:
    - packages/api/routes/booking.ts (not part of current task)
