@@ -4,4 +4,10 @@
  * @module utils
  */
 
-export {};
+export {
+	createVSCodeFileLink,
+	createVSCodeSessionLinks,
+	formatVSCodeLink,
+	type SessionLinks,
+	type VSCodeFileLinkOptions
+} from './vscode-links.js';

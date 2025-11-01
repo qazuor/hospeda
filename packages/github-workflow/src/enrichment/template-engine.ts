@@ -10,6 +10,7 @@
 export type { PlanningContext, UserStory, TaskInfo } from './context-extractor.js';
 
 import type { PlanningContext, TaskInfo } from './context-extractor.js';
+import { createVSCodeSessionLinks } from '../utils/vscode-links.js';
 
 /**
  * Template generation options
@@ -125,6 +126,13 @@ function generateFeatureTemplate(
     );
     sections.push('');
 
+    // VSCode links section (if sessionPath provided)
+    if (sessionPath) {
+        const vscodeLinks = createVSCodeSessionLinks(sessionPath);
+        sections.push(vscodeLinks.formatted);
+        sections.push('');
+    }
+
     // Goals section
     if (context.goals && context.goals.length > 0) {
         sections.push('## Goals');
@@ -211,6 +219,13 @@ function generateTaskTemplate(
         sections.push(`**Estimate**: ${task.estimate}`);
     }
     sections.push('');
+
+    // VSCode links section (if sessionPath provided)
+    if (sessionPath) {
+        const vscodeLinks = createVSCodeSessionLinks(sessionPath);
+        sections.push(vscodeLinks.formatted);
+        sections.push('');
+    }
 
     // Description
     if (task.description) {

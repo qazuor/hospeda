@@ -161,6 +161,71 @@ describe('generateIssueTemplate', () => {
         });
     });
 
+    describe('vscode links integration', () => {
+        it('should include VSCode links when sessionPath is provided for feature', () => {
+            // Arrange & Act
+            const result = generateIssueTemplate({
+                type: 'feature',
+                context: mockContext,
+                sessionPath: '/home/user/project/.claude/sessions/planning/P-001-auth'
+            });
+
+            // Assert
+            expect(result.template?.body).toContain('**Planning Files**');
+            expect(result.template?.body).toContain('vscode://file');
+            expect(result.template?.body).toContain('PDR.md');
+            expect(result.template?.body).toContain('tech-analysis.md');
+            expect(result.template?.body).toContain('TODOs.md');
+        });
+
+        it('should include VSCode links when sessionPath is provided for task', () => {
+            // Arrange & Act
+            const result = generateIssueTemplate({
+                type: 'task',
+                context: mockContext,
+                taskCode: 'T-001-001',
+                sessionPath: '/home/user/project/.claude/sessions/planning/P-001-auth'
+            });
+
+            // Assert
+            expect(result.template?.body).toContain('**Planning Files**');
+            expect(result.template?.body).toContain('vscode://file');
+            expect(result.template?.body).toContain('PDR.md');
+            expect(result.template?.body).toContain('tech-analysis.md');
+            expect(result.template?.body).toContain('TODOs.md');
+        });
+
+        it('should not include VSCode links when sessionPath is not provided', () => {
+            // Arrange & Act
+            const result = generateIssueTemplate({
+                type: 'feature',
+                context: mockContext
+            });
+
+            // Assert
+            expect(result.template?.body).not.toContain('**Planning Files**');
+            expect(result.template?.body).not.toContain('vscode://file');
+        });
+
+        it('should use absolute paths in VSCode links', () => {
+            // Arrange
+            const relativePath = '.claude/sessions/planning/P-001-auth';
+
+            // Act
+            const result = generateIssueTemplate({
+                type: 'feature',
+                context: mockContext,
+                sessionPath: relativePath
+            });
+
+            // Assert
+            // Should convert to absolute path
+            expect(result.template?.body).toContain('vscode://file/');
+            // Should NOT contain relative path markers
+            expect(result.template?.body).not.toContain('vscode://file./');
+        });
+    });
+
     describe('error handling', () => {
         it('should handle missing context fields gracefully', () => {
             // Arrange
