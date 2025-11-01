@@ -30,7 +30,7 @@ export type {
 export type {
     PlanningSession,
     TodoItem,
-    SyncResult,
+    LegacySyncResult,
     EnrichmentResult,
     WorkflowContext
 } from './workflow.ts';
