@@ -41,6 +41,33 @@ export const trackingRecordTypeSchema = z.enum(['planning-task', 'code-comment']
 export const syncStatusSchema = z.enum(['pending', 'synced', 'updated', 'failed']);
 
 /**
+ * Schema for task snapshot (for change detection)
+ */
+export const taskSnapshotSchema = z
+    .object({
+        title: z.string(),
+        description: z.string().optional(),
+        status: z.string(),
+        estimate: z.string().optional(),
+        assignee: z.string().optional()
+    })
+    .optional();
+
+/**
+ * Schema for comment snapshot (for change detection)
+ */
+export const commentSnapshotSchema = z
+    .object({
+        content: z.string(),
+        filePath: z.string(),
+        lineNumber: z.number().int().positive(),
+        priority: z.string().optional(),
+        assignee: z.string().optional(),
+        labels: z.array(z.string()).optional()
+    })
+    .optional();
+
+/**
  * Schema for a complete tracking record
  */
 export const trackingRecordSchema = z.object({
@@ -53,7 +80,9 @@ export const trackingRecordSchema = z.object({
     syncAttempts: z.number().int().nonnegative(),
     lastError: z.string().optional(),
     createdAt: z.string().datetime(),
-    modifiedAt: z.string().datetime()
+    updatedAt: z.string().datetime(),
+    taskSnapshot: taskSnapshotSchema,
+    commentSnapshot: commentSnapshotSchema
 });
 
 /**
@@ -85,7 +114,7 @@ export const trackingDatabaseSchema = z.object({
 export const createTrackingRecordSchema = trackingRecordSchema.omit({
     id: true,
     createdAt: true,
-    modifiedAt: true
+    updatedAt: true
 });
 
 /**

@@ -73,6 +73,40 @@ export type GitHubMapping = {
 };
 
 /**
+ * Snapshot of task state for change detection
+ */
+export type TaskSnapshot = {
+    /** Task title */
+    title: string;
+    /** Task description */
+    description?: string;
+    /** Task status */
+    status: string;
+    /** Task estimate */
+    estimate?: string;
+    /** Task assignee */
+    assignee?: string;
+};
+
+/**
+ * Snapshot of comment state for change detection
+ */
+export type CommentSnapshot = {
+    /** Comment content */
+    content: string;
+    /** File path */
+    filePath: string;
+    /** Line number */
+    lineNumber: number;
+    /** Priority level */
+    priority?: string;
+    /** Assigned user */
+    assignee?: string;
+    /** Labels/tags */
+    labels?: string[];
+};
+
+/**
  * Individual tracking record
  */
 export type TrackingRecord = {
@@ -124,7 +158,17 @@ export type TrackingRecord = {
     /**
      * ISO timestamp of last modification
      */
-    modifiedAt: string;
+    updatedAt: string;
+
+    /**
+     * Snapshot of task state (for planning-task type)
+     */
+    taskSnapshot?: TaskSnapshot;
+
+    /**
+     * Snapshot of comment state (for code-comment type)
+     */
+    commentSnapshot?: CommentSnapshot;
 };
 
 /**
@@ -170,7 +214,7 @@ export type TrackingDatabase = {
 /**
  * Input for creating a new tracking record
  */
-export type CreateTrackingRecordInput = Omit<TrackingRecord, 'id' | 'createdAt' | 'modifiedAt'>;
+export type CreateTrackingRecordInput = Omit<TrackingRecord, 'id' | 'createdAt' | 'updatedAt'>;
 
 /**
  * Statistics result
