@@ -11,6 +11,7 @@ export { syncPlanningToGitHub } from './planning-sync.js';
 export { detectCommentChanges, createCommentSnapshot } from './todo-change-detector.js';
 export { buildTodoIssueBody, buildTodoIssueTitle } from './todo-issue-builder.js';
 export { syncTodosToGitHub } from './todo-sync.js';
+export { detectCompletedTasks } from './completion-detector.js';
 export type {
     SyncOptions,
     SyncResult,
@@ -28,5 +29,12 @@ export type {
     SkippedTodo,
     FailedTodo,
     TodoSyncStatistics,
-    CommentChanges
+    CommentChanges,
+    CompletionDetectorOptions,
+    CompletionResult,
+    DetectedTask,
+    CompletedTask,
+    ClosedIssue,
+    FailedCompletion,
+    CompletionStatistics
 } from './types.js';

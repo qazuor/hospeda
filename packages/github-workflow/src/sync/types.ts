@@ -340,3 +340,125 @@ export type CommentChanges = {
     /** List of changed field names */
     changedFields: string[];
 };
+
+/**
+ * Options for completion detection
+ */
+export type CompletionDetectorOptions = {
+    /** Path to planning session directory */
+    sessionPath: string;
+
+    /** Path to tracking.json file (default: .todoLinear/tracking.json) */
+    trackingPath?: string;
+
+    /** GitHub client configuration */
+    githubConfig: GitHubClientConfig;
+
+    /** Preview changes without closing issues (default: false) */
+    dryRun?: boolean;
+
+    /** Number of recent commits to scan (default: 10) */
+    commitLimit?: number;
+};
+
+/**
+ * Task detected in commit message
+ */
+export type DetectedTask = {
+    /** Task code (e.g., T-003-007, PB-001) */
+    taskCode: string;
+
+    /** Git commit hash */
+    commitHash: string;
+
+    /** Full commit message */
+    commitMessage: string;
+
+    /** Commit timestamp */
+    timestamp: string;
+};
+
+/**
+ * Task marked as completed
+ */
+export type CompletedTask = {
+    /** Task code */
+    taskCode: string;
+
+    /** Task title */
+    taskTitle: string;
+
+    /** Timestamp when marked completed */
+    closedAt: string;
+};
+
+/**
+ * GitHub issue closed
+ */
+export type ClosedIssue = {
+    /** Task code */
+    taskCode: string;
+
+    /** GitHub issue number */
+    issueNumber: number;
+
+    /** Full URL to GitHub issue */
+    issueUrl: string;
+};
+
+/**
+ * Task that failed to complete
+ */
+export type FailedCompletion = {
+    /** Task code */
+    taskCode: string;
+
+    /** Reason for failure */
+    reason: string;
+
+    /** Error details if available */
+    error?: string;
+};
+
+/**
+ * Statistics for completion detection
+ */
+export type CompletionStatistics = {
+    /** Total tasks detected in commits */
+    totalDetected: number;
+
+    /** Number of tasks marked as completed */
+    totalCompleted: number;
+
+    /** Number of issues closed */
+    totalClosed: number;
+
+    /** Number of tasks that failed */
+    totalFailed: number;
+};
+
+/**
+ * Result of completion detection
+ */
+export type CompletionResult = {
+    /** Whether detection was successful overall */
+    success: boolean;
+
+    /** Planning session ID */
+    sessionId: string;
+
+    /** Tasks detected in commits */
+    detected: DetectedTask[];
+
+    /** Tasks marked as completed */
+    completed: CompletedTask[];
+
+    /** Issues closed on GitHub */
+    closed: ClosedIssue[];
+
+    /** Tasks that failed to complete */
+    failed: FailedCompletion[];
+
+    /** Summary statistics */
+    statistics: CompletionStatistics;
+};

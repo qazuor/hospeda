@@ -2,23 +2,23 @@
 
 ## Phase 1 - Setup
 
-- [ ] Setup database
+- [ ] **T-999-001**: Setup database
   > Create database schema
   > **Phase:** 1
   > **Estimate:** 4h
 
-  - [ ] Create migrations
+  - [ ] **T-999-001-1**: Create migrations
     > Add migration files
     > **Estimate:** 2h
 
-- [ ] Setup API
+- [ ] **T-999-002**: Setup API
   > Create API endpoints
   > **Phase:** 1
   > **Estimate:** 6h
 
 ## Phase 2 - Implementation
 
-- [ ] Implement authentication
+- [ ] **T-999-003**: Implement authentication
   > Add JWT authentication
   > **Phase:** 2
   > **Estimate:** 8h
