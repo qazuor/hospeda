@@ -1,0 +1,15 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# post-commit hook - Detect completed tasks from commit messages
+# This hook runs after a successful commit
+
+echo "🔍 Detecting completed tasks..."
+
+# Run completion detection
+# - Only scans the most recent commit (commitLimit=1)
+# - Silent mode to avoid cluttering commit output
+# - Non-blocking (doesn't fail commit if detection fails)
+pnpm --filter=@repo/github-workflow run hook:post-commit || echo "⚠️  Task detection failed (non-blocking)"
+
+echo "✅ Post-commit checks complete"
