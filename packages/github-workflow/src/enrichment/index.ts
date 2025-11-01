@@ -37,3 +37,11 @@ export {
     type GeneratedTemplate,
     type GenerateTemplateResult
 } from './template-engine.js';
+
+export {
+    enrichIssue,
+    isAlreadyEnriched,
+    type IssueEnricherConfig,
+    type EnrichIssueOptions,
+    type IssueEnrichmentResult
+} from './issue-enricher.js';
