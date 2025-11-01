@@ -1,0 +1,15 @@
+{
+  "version": "1.0",
+  "feature": "Planning Workflow Automation",
+  "planningCode": "P-003",
+  "platform": "github",
+  "parentGithubIssueNumber": null,
+  "parentGithubIssueUrl": null,
+  "githubProject": {
+    "id": null,
+    "name": "Hospeda",
+    "url": null
+  },
+  "syncedAt": null,
+  "tasks": []
+}
