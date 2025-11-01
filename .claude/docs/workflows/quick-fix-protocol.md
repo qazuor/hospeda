@@ -169,11 +169,56 @@ git commit -m "chore: update NODE_ENV in .env.example"
 git commit -m "style: remove unused imports from api routes"
 ```
 
+**🔥 CRITICAL: Only Commit Quick Fix Files**
+
+Before committing, verify which files to include:
+
+```bash
+git status --short
+```
+
+**Rule:** ONLY include the file(s) modified for THIS quick fix.
+
+If other files are modified:
+- ❌ **DO NOT** use `git add .` or `git add -A`
+- ✅ **ONLY** add the specific quick fix file(s)
+- ⚠️ **WARN** user if unrelated files exist
+
+**Example:**
+
+```bash
+# Quick Fix: Fix typo in comment
+# git status shows:
+M packages/db/src/booking.model.ts  ← INCLUDE (typo fix)
+M packages/api/routes/user.ts       ← EXCLUDE (different work)
+M .env.local                         ← EXCLUDE (local config)
+
+# CORRECT:
+git add packages/db/src/booking.model.ts
+git commit -m "docs: fix typo in BookingModel comment"
+
+# WRONG:
+git add .  # ❌ Would include unrelated files!
+```
+
+**If unrelated files detected:**
+
+```text
+⚠️ Warning: Other modified files detected:
+- packages/api/routes/user.ts
+- .env.local
+
+I will ONLY commit the quick fix file.
+Continue? (yes/no)
+```
+
+---
+
 **Actions:**
 
 ```bash
-# Stage files
-git add <file1> <file2>
+# Stage ONLY quick fix files (specific paths)
+git add <file-with-quick-fix>
 
 # Commit with message
 git commit -m "<type>(<scope>): <description>"
@@ -252,6 +297,7 @@ If this quick fix is part of a larger feature planning session (rare):
 3. **Update issues-sync.json** - Sync with Linear if applicable
 
 **Example:**
+
 ```markdown
 - [x] **[10min]** Fix typo in BookingService JSDoc
   - Completed: 2024-01-15

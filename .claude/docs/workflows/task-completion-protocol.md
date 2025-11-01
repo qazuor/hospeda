@@ -33,11 +33,60 @@ Analyze the output:
 - `D` = Deleted file
 - `??` = Untracked file
 
+**🔥 CRITICAL: Atomic Commits Rule**
+
+**ONLY include files that were modified during THIS task.**
+
+If `git status` shows OTHER modified files that are NOT related to this task:
+
+- ❌ **DO NOT** include them in the commit
+- ❌ **DO NOT** use `git add .` or `git add -A`
+- ✅ **ONLY** use `git add <specific-file>` for task-related files
+- ⚠️ **WARN** the user about unrelated changes
+
+**Example:**
+
+```bash
+# git status shows:
+M packages/db/src/models/user.model.ts      ← Task related
+M packages/db/test/models/user.model.test.ts ← Task related
+M packages/api/routes/booking.ts            ← NOT related (different task)
+M .env.local                                 ← NOT related (local config)
+
+# CORRECT approach:
+git add packages/db/src/models/user.model.ts
+git add packages/db/test/models/user.model.test.ts
+# Do NOT add booking.ts or .env.local
+
+# WRONG approach:
+git add .  # ❌ This would include unrelated files!
+```
+
+**If unrelated files are present:**
+
+```text
+⚠️ Warning: I see modified files that are NOT part of this task:
+- packages/api/routes/booking.ts
+- .env.local
+
+I will ONLY commit the files related to the current task:
+- packages/db/src/models/user.model.ts
+- packages/db/test/models/user.model.test.ts
+
+The unrelated files will remain uncommitted. You can commit them separately
+when their respective tasks are complete.
+
+Do you want to proceed with committing only the task-related files? (yes/no)
+```
+
+**User can override:** If user explicitly asks to include other files, then do so.
+
 Organize files into logical commits based on:
 
 - Changes that belong together (e.g., model + tests)
 - Separate concerns (e.g., schema vs service vs API)
 - Follow atomic commit principle (one logical change per commit)
+- **ONLY include files modified during this specific task**
 
 ### Step 3: Generate Commit Suggestions
 
