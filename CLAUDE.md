@@ -296,6 +296,7 @@ git add .  # ❌ Would include unrelated files!
 ```
 
 **If unrelated files exist:**
+
 - Inform user about unrelated files
 - Confirm proceeding with ONLY task files
 - User can override if they explicitly request
