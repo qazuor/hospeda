@@ -22,6 +22,7 @@ Commands are organized into subdirectories by category for better organization a
 ├── README.md                     # This file
 ├── start-feature-plan.md         # Planning commands (root level)
 ├── start-refactor-plan.md
+├── sync-planning.md              # Legacy Linear sync (deprecated)
 ├── quality-check.md              # Quality commands (root level)
 ├── code-check.md
 ├── run-tests.md
@@ -30,6 +31,12 @@ Commands are organized into subdirectories by category for better organization a
 ├── five-why.md                   # Analysis commands (root level)
 ├── git/
 │   └── commit.md                 # Git commands
+├── planning/                     # GitHub workflow commands
+│   ├── planning-cleanup.md
+│   ├── sync-planning-github.md
+│   ├── sync-todos-github.md
+│   ├── check-completed-tasks.md
+│   └── cleanup-issues.md
 ├── audit/                        # Comprehensive audit commands
 │   ├── security-audit.md
 │   ├── performance-audit.md
@@ -43,7 +50,7 @@ Commands are organized into subdirectories by category for better organization a
 
 ---
 
-## Planning Commands (2)
+## Planning Commands (6)
 
 ### `/start-feature-plan`
 
@@ -82,6 +89,83 @@ Commands are organized into subdirectories by category for better organization a
 6. Create TODO list with priorities
 
 **Output:** Refactoring plan with step-by-step tasks
+
+---
+
+### `/sync-planning-github`
+
+**Purpose:** Sync planning session to GitHub Issues
+
+**File:** [planning/sync-planning-github.md](./planning/sync-planning-github.md)
+
+**Process:**
+
+1. Identify planning session path
+2. Verify required files (PDR.md, TODOs.md)
+3. Parse planning documents
+4. Create parent issue from PDR
+5. Create sub-issues from TODOs
+6. Update TODOs.md with GitHub issue links
+7. Track in `.github-workflow/tracking.json`
+
+**Output:** Planning session synced to GitHub with trackable issues
+
+---
+
+### `/sync-todos-github`
+
+**Purpose:** Sync code TODO/HACK/DEBUG comments to GitHub Issues
+
+**File:** [planning/sync-todos-github.md](./planning/sync-todos-github.md)
+
+**Process:**
+
+1. Scan codebase for TODO/HACK/DEBUG comments
+2. Parse comment metadata (priority, labels, assignees)
+3. Create/update GitHub issues for each TODO
+4. Add GitHub issue links to code comments
+5. Close issues for removed TODOs
+6. Track in `.github-workflow/tracking.json`
+
+**Output:** Code technical debt visible as GitHub issues
+
+---
+
+### `/check-completed-tasks`
+
+**Purpose:** Detect completed tasks from git commits and close issues
+
+**File:** [planning/check-completed-tasks.md](./planning/check-completed-tasks.md)
+
+**Process:**
+
+1. Parse recent git commit messages
+2. Extract task codes (T-XXX-XXX format)
+3. Verify task completion requirements
+4. Mark tasks as completed in TODOs.md
+5. Close corresponding GitHub issues
+6. Update tracking database
+
+**Output:** Automatic task completion detection and issue closure
+
+---
+
+### `/cleanup-issues`
+
+**Purpose:** Clean up stale, closed, or orphaned GitHub issues
+
+**File:** [planning/cleanup-issues.md](./planning/cleanup-issues.md)
+
+**Process:**
+
+1. Scan for cleanup candidates (closed, stale, orphaned)
+2. Preview cleanup with dry-run
+3. Request user confirmation
+4. Archive issue references
+5. Optionally delete from GitHub
+6. Update tracking database
+
+**Output:** Clean issue tracker with archived references
 
 ---
 

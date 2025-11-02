@@ -1,0 +1,154 @@
+name: Planning Task
+description: Task from a planning session (auto-created by Claude Code)
+title: "[TASK] "
+labels: ["from:claude-code", "type:task"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Planning Task
+
+        This issue was automatically created from a planning session using Claude Code workflow automation.
+
+  - type: input
+    id: task-code
+    attributes:
+      label: Task Code
+      description: The unique task identifier (e.g., T-003-001)
+      placeholder: T-XXX-XXX
+    validations:
+      required: true
+
+  - type: input
+    id: planning-code
+    attributes:
+      label: Planning Session
+      description: The planning session this task belongs to
+      placeholder: P-XXX
+    validations:
+      required: true
+
+  - type: dropdown
+    id: phase
+    attributes:
+      label: Phase
+      description: Implementation phase
+      options:
+        - "1 - Planning"
+        - "2 - Implementation"
+        - "3 - Validation"
+        - "4 - Finalization"
+        - "5 - Integration"
+    validations:
+      required: false
+
+  - type: dropdown
+    id: status
+    attributes:
+      label: Status
+      description: Current task status
+      options:
+        - Pending
+        - In Progress
+        - Completed
+      default: 0
+    validations:
+      required: true
+
+  - type: input
+    id: estimate
+    attributes:
+      label: Estimate
+      description: Estimated hours/points for completion
+      placeholder: "4 hours"
+    validations:
+      required: false
+
+  - type: input
+    id: assignee
+    attributes:
+      label: Assignee
+      description: GitHub username of the assignee
+      placeholder: "@username"
+    validations:
+      required: false
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Detailed task description
+      placeholder: Describe what needs to be done...
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: List of acceptance criteria (one per line)
+      placeholder: |
+        - [ ] Criterion 1
+        - [ ] Criterion 2
+        - [ ] Criterion 3
+    validations:
+      required: false
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies
+      description: Related tasks or issues
+      placeholder: |
+        - Depends on #123
+        - Blocks #456
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Technical Context
+      description: Additional technical context from planning session
+      placeholder: Architecture decisions, patterns to use, constraints, etc.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: Task priority
+      options:
+        - Low
+        - Medium
+        - High
+        - Critical
+      default: 1
+    validations:
+      required: false
+
+  - type: dropdown
+    id: difficulty
+    attributes:
+      label: Difficulty
+      description: Task difficulty
+      options:
+        - Easy
+        - Medium
+        - Hard
+      default: 1
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: requirements
+    attributes:
+      label: Requirements
+      description: Development requirements
+      options:
+        - label: Requires tests (90%+ coverage)
+        - label: Requires documentation
+        - label: Breaking change
+        - label: Database migration needed
+        - label: API changes
