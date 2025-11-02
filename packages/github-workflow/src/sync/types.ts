@@ -462,3 +462,76 @@ export type CompletionResult = {
     /** Summary statistics */
     statistics: CompletionStatistics;
 };
+
+/**
+ * Types of operations that can be queued
+ */
+export type OperationType = 'create-issue' | 'update-issue' | 'close-issue' | 'add-labels' | 'link-issues';
+
+/**
+ * Status of a queued operation
+ */
+export type OperationStatus = 'pending' | 'completed' | 'failed';
+
+/**
+ * Operation queued for offline processing
+ */
+export type QueuedOperation = {
+    /** Unique operation ID */
+    id: string;
+
+    /** Type of operation */
+    type: OperationType;
+
+    /** Operation data (varies by type) */
+    data: unknown;
+
+    /** When operation was created */
+    createdAt: string;
+
+    /** Number of retry attempts */
+    attempts: number;
+
+    /** Current status */
+    status: OperationStatus;
+
+    /** Last error message if any */
+    lastError?: string;
+
+    /** When last attempted */
+    lastAttemptAt?: string;
+
+    /** Session ID for context */
+    sessionId?: string;
+
+    /** Task code for tracking */
+    taskCode?: string;
+};
+
+/**
+ * Queue statistics
+ */
+export type QueueStatistics = {
+    /** Total operations in queue */
+    total: number;
+
+    /** Pending operations */
+    pending: number;
+
+    /** Completed operations */
+    completed: number;
+
+    /** Failed operations */
+    failed: number;
+};
+
+/**
+ * Offline queue options
+ */
+export type OfflineQueueOptions = {
+    /** Maximum retry attempts (default: 5) */
+    maxAttempts?: number;
+
+    /** Auto-save after each operation (default: true) */
+    autoSave?: boolean;
+};

@@ -12,6 +12,9 @@ export { detectCommentChanges, createCommentSnapshot } from './todo-change-detec
 export { buildTodoIssueBody, buildTodoIssueTitle } from './todo-issue-builder.js';
 export { syncTodosToGitHub } from './todo-sync.js';
 export { detectCompletedTasks } from './completion-detector.js';
+export { OfflineQueue } from './offline-queue.js';
+export { OfflineDetector } from './offline-detector.js';
+export { QueueProcessor } from './queue-processor.js';
 export type {
     SyncOptions,
     SyncResult,
@@ -36,5 +39,12 @@ export type {
     CompletedTask,
     ClosedIssue,
     FailedCompletion,
-    CompletionStatistics
+    CompletionStatistics,
+    QueuedOperation,
+    OperationType,
+    OperationStatus,
+    QueueStatistics,
+    OfflineQueueOptions
 } from './types.js';
+export type { OfflineDetectorOptions } from './offline-detector.js';
+export type { QueueProcessorOptions, QueueProcessingResult } from './queue-processor.js';
