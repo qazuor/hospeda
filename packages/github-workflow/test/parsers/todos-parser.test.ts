@@ -103,19 +103,25 @@ describe('TodosParser', () => {
 
         it('should parse sub-subtasks (3 levels)', async () => {
             // Arrange
-            const sessionPath = path.join(FIXTURES_DIR, 'P-003-valid');
+            const sessionPath = path.join(FIXTURES_DIR, 'P-999-simple');
 
             // Act
-            const tasks = await parseTodos(sessionPath, 'P-003');
+            const tasks = await parseTodos(sessionPath, 'P-999');
 
-            // Assert
-            const _parentTask = tasks.find((t) =>
+            // Assert - Find parent task with nested subtasks
+            const parentTask = tasks.find((t) =>
                 t.subtasks?.some((st) => st.subtasks && st.subtasks.length > 0)
             );
 
-            // P-003 has 2-level hierarchy, so this should be undefined
-            // This test validates that 3-level parsing logic would work if needed
-            expect(tasks).toBeDefined();
+            // Verify 3-level hierarchy exists
+            expect(parentTask).toBeDefined();
+            expect(parentTask?.level).toBe(0); // Parent at level 0
+            expect(parentTask?.subtasks?.[0].level).toBe(1); // Subtask at level 1
+            expect(parentTask?.subtasks?.[0].subtasks?.[0].level).toBe(2); // Sub-subtask at level 2
+
+            // Verify level 2 tasks have no subtasks property (max level reached)
+            const subSubtask = parentTask?.subtasks?.[0].subtasks?.[0];
+            expect(subSubtask?.subtasks).toBeUndefined();
         });
 
         it('should generate task codes (T-XXX-YYY)', async () => {
