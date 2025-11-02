@@ -1,0 +1,189 @@
+name: Code HACK
+description: HACK/workaround from codebase (auto-created by Claude Code)
+title: "[HACK] "
+labels: ["from:claude-code", "comment:hack", "technical-debt"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Code HACK
+
+        This issue was automatically created from a HACK comment in the codebase using Claude Code workflow automation.
+
+        **⚠️ HACKs represent technical debt that should be addressed.**
+
+  - type: input
+    id: file-path
+    attributes:
+      label: File Path
+      description: Path to the file containing the HACK
+      placeholder: src/utils/dataProcessor.ts
+    validations:
+      required: true
+
+  - type: input
+    id: line-number
+    attributes:
+      label: Line Number
+      description: Line number where the HACK is located
+      placeholder: "128"
+    validations:
+      required: true
+
+  - type: textarea
+    id: hack-text
+    attributes:
+      label: HACK Text
+      description: The content of the HACK comment
+      placeholder: "HACK: Temporary workaround for API bug"
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: code-context
+    attributes:
+      label: Code Context
+      description: The workaround code
+      placeholder: |
+        ```typescript
+        // HACK: Temporary workaround for API bug - remove when fixed
+        const processedData = data.map(item => {
+          // Force type conversion as API returns wrong type
+          return item as unknown as CorrectType;
+        });
+        ```
+      render: typescript
+    validations:
+      required: false
+
+  - type: dropdown
+    id: hack-type
+    attributes:
+      label: HACK Type
+      description: Type of workaround
+      options:
+        - Temporary workaround
+        - Performance hack
+        - Bug workaround
+        - Legacy compatibility
+        - Third-party library issue
+        - Technical debt
+        - Security workaround
+      default: 0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: Priority for addressing this HACK
+      options:
+        - Low - Can wait
+        - Medium - Should be addressed
+        - High - Should be fixed soon
+        - Critical - Needs immediate attention
+      default: 1
+    validations:
+      required: true
+
+  - type: dropdown
+    id: impact
+    attributes:
+      label: Impact
+      description: Impact if not addressed
+      options:
+        - Low - Minor inconvenience
+        - Medium - May cause issues
+        - High - Will cause problems
+        - Critical - Security/data risk
+      default: 0
+    validations:
+      required: true
+
+  - type: textarea
+    id: reason
+    attributes:
+      label: Reason for HACK
+      description: Why was this workaround needed?
+      placeholder: Explain the root cause or limitation that required this workaround
+    validations:
+      required: true
+
+  - type: textarea
+    id: proper-solution
+    attributes:
+      label: Proper Solution
+      description: What would be the correct way to solve this?
+      placeholder: Describe the ideal implementation without the hack
+    validations:
+      required: false
+
+  - type: textarea
+    id: blockers
+    attributes:
+      label: Blockers
+      description: What's preventing the proper solution?
+      placeholder: |
+        - Waiting for upstream library fix
+        - Requires API changes
+        - Needs architectural refactoring
+    validations:
+      required: false
+
+  - type: input
+    id: assignee
+    attributes:
+      label: Assignee
+      description: GitHub username (if specified in comment)
+      placeholder: "@username"
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: categories
+    attributes:
+      label: Categories
+      description: Affected areas (auto-detected from content)
+      options:
+        - label: Bug workaround
+        - label: Performance issue
+        - label: Security concern
+        - label: Technical debt
+        - label: Third-party dependency
+        - label: Legacy code compatibility
+        - label: API limitation
+
+  - type: textarea
+    id: related-issues
+    attributes:
+      label: Related Issues
+      description: Related issues or dependencies
+      placeholder: |
+        - Blocks #123
+        - Related to upstream issue: link
+        - Depends on #456
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: status
+    attributes:
+      label: Status
+      description: Current status
+      options:
+        - label: Still present in code
+          required: true
+        - label: Actively being worked on
+        - label: Waiting for external fix
+        - label: Requires discussion/planning
+
+  - type: textarea
+    id: testing-notes
+    attributes:
+      label: Testing Notes
+      description: Special testing considerations for this workaround
+      placeholder: What should be tested when removing this hack?
+    validations:
+      required: false

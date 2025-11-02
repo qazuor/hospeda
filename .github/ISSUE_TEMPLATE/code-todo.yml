@@ -1,0 +1,124 @@
+name: Code TODO
+description: TODO comment from codebase (auto-created by Claude Code)
+title: "[TODO] "
+labels: ["from:claude-code", "comment:todo"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Code TODO
+
+        This issue was automatically created from a TODO comment in the codebase using Claude Code workflow automation.
+
+  - type: input
+    id: file-path
+    attributes:
+      label: File Path
+      description: Path to the file containing the TODO
+      placeholder: src/components/Button.tsx
+    validations:
+      required: true
+
+  - type: input
+    id: line-number
+    attributes:
+      label: Line Number
+      description: Line number where the TODO is located
+      placeholder: "42"
+    validations:
+      required: true
+
+  - type: textarea
+    id: todo-text
+    attributes:
+      label: TODO Text
+      description: The content of the TODO comment
+      placeholder: "TODO: Implement error handling"
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: code-context
+    attributes:
+      label: Code Context
+      description: Surrounding code for context
+      placeholder: |
+        ```typescript
+        // TODO: Implement error handling
+        function processData(data: string) {
+          return data.toUpperCase();
+        }
+        ```
+      render: typescript
+    validations:
+      required: false
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: TODO priority (if specified in comment with [HIGH], [MEDIUM], [LOW])
+      options:
+        - Not specified
+        - Low
+        - Medium
+        - High
+        - Critical
+      default: 0
+    validations:
+      required: false
+
+  - type: input
+    id: assignee
+    attributes:
+      label: Assignee
+      description: GitHub username (if specified in comment)
+      placeholder: "@username"
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: todo-type
+    attributes:
+      label: TODO Type
+      description: Type of TODO (auto-detected from content)
+      options:
+        - label: Bug fix
+        - label: Feature implementation
+        - label: Refactoring
+        - label: Performance optimization
+        - label: Security improvement
+        - label: Documentation
+        - label: Testing
+
+  - type: textarea
+    id: suggested-labels
+    attributes:
+      label: Suggested Labels
+      description: Additional labels detected from TODO content
+      placeholder: "bug, security, performance, refactoring, testing, documentation"
+    validations:
+      required: false
+
+  - type: textarea
+    id: related-issues
+    attributes:
+      label: Related Issues
+      description: Related issues or pull requests
+      placeholder: |
+        - Related to #123
+        - Part of #456
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: status
+    attributes:
+      label: Status
+      description: TODO status
+      options:
+        - label: Still present in code
+          required: true
+        - label: Actively being worked on
+        - label: Blocked by other work

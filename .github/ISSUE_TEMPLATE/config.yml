@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 💬 Discussions
+    url: https://github.com/hospeda/main/discussions
+    about: For questions, ideas, and community discussions
+  - name: 📚 Documentation
+    url: https://github.com/hospeda/main/wiki
+    about: Check the documentation and guides
+  - name: 🤖 Claude Code Workflow
+    url: https://github.com/hospeda/main/blob/main/.claude/README.md
+    about: Learn about our automated workflow system
