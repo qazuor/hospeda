@@ -1,81 +1,10 @@
 {
-  "version": "1.0.0",
-  "generatedAt": "2025-10-31T16:15:28.558Z",
-  "lastPlanningNumber": 4,
-  "registry": [
-    {
-      "code": "P-001",
-      "type": "feature",
-      "fullCode": "P-001-business-model-system",
-      "sessionPath": "P-001-business-model-system",
-      "status": "active",
-      "createdAt": "2025-10-29",
-      "tasks": []
-    },
-    {
-      "code": "P-002",
-      "type": "feature",
-      "fullCode": "P-002-documentation-system",
-      "sessionPath": "P-002-documentation-system",
-      "status": "active",
-      "createdAt": "2025-10-30",
-      "tasks": []
-    },
-    {
-      "code": "P-003",
-      "type": "feature",
-      "fullCode": "P-003-planning-workflow-automation",
-      "sessionPath": "P-003-planning-workflow-automation",
-      "status": "active",
-      "createdAt": "2025-10-30",
-      "tasks": []
-    },
-    {
-      "code": "P-004",
-      "type": "feature",
-      "fullCode": "P-004-workflow-optimization",
-      "sessionPath": "P-004-workflow-optimization",
-      "status": "completed",
-      "createdAt": "2025-10-30",
-      "tasks": [
-        "PF004-1",
-        "PF004-2",
-        "PF004-3",
-        "PF004-4",
-        "PF004-5",
-        "PF004-6",
-        "PF004-7",
-        "PF004-8",
-        "PF004-9",
-        "PF004-10",
-        "PF004-11",
-        "PF004-12",
-        "PF004-13",
-        "PF004-14",
-        "PF004-15",
-        "PF004-16",
-        "PF004-17",
-        "PF004-18",
-        "PF004-19",
-        "PF004-20",
-        "PF004-21",
-        "PF004-22",
-        "PF004-23",
-        "PF004-24",
-        "PF004-25",
-        "PF004-26",
-        "PF004-27",
-        "PF004-28",
-        "PF004-29",
-        "PF004-30",
-        "PF004-31",
-        "PF004-32",
-        "PF004-33",
-        "PF004-34",
-        "PF004-35",
-        "PF004-36",
-        "PF004-37"
-      ]
-    }
-  ]
+  "lastPlanningNumber": 5,
+  "plannings": {
+    "P-001": 0,
+    "P-002": 0,
+    "P-003": 420,
+    "P-004": 37,
+    "P-005": 0
+  }
 }
