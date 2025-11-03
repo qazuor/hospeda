@@ -17,7 +17,7 @@ export type SyncOptions = {
     /** GitHub client configuration */
     githubConfig: GitHubClientConfig;
 
-    /** Path to tracking.json file (default: .todoLinear/tracking.json) */
+    /** Path to tracking.json file (default: .github-workflow/tracking.json) */
     trackingPath?: string;
 
     /** Preview changes without creating issues (default: false) */
@@ -171,7 +171,7 @@ export type TodoSyncOptions = {
     /** GitHub client configuration */
     githubConfig: GitHubClientConfig;
 
-    /** Path to tracking.json file (default: .todoLinear/tracking.json) */
+    /** Path to tracking.json file (default: .github-workflow/tracking.json) */
     trackingPath?: string;
 
     /** Preview changes without creating issues (default: false) */
@@ -348,7 +348,7 @@ export type CompletionDetectorOptions = {
     /** Path to planning session directory */
     sessionPath: string;
 
-    /** Path to tracking.json file (default: .todoLinear/tracking.json) */
+    /** Path to tracking.json file (default: .github-workflow/tracking.json) */
     trackingPath?: string;
 
     /** GitHub client configuration */
@@ -466,7 +466,12 @@ export type CompletionResult = {
 /**
  * Types of operations that can be queued
  */
-export type OperationType = 'create-issue' | 'update-issue' | 'close-issue' | 'add-labels' | 'link-issues';
+export type OperationType =
+    | 'create-issue'
+    | 'update-issue'
+    | 'close-issue'
+    | 'add-labels'
+    | 'link-issues';
 
 /**
  * Status of a queued operation

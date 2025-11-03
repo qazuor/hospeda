@@ -79,6 +79,10 @@ yarn-error.log*
 NOTES.txt
 .todo-linear-tracking.json
 mcp-todos.json
+
+# GitHub Workflow package - ignorar todo excepto tracking.json
+.github-workflow/*
+!.github-workflow/tracking.json
 packages/seed/mappings/id-mappings.json
 apps/api/package.prod.json
 docs/dev

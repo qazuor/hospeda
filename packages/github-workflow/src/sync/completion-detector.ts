@@ -19,7 +19,7 @@ import type { CompletionDetectorOptions, CompletionResult, DetectedTask } from '
 /**
  * Default tracking path
  */
-const DEFAULT_TRACKING_PATH = '.todoLinear/tracking.json';
+const DEFAULT_TRACKING_PATH = '.github-workflow/tracking.json';
 
 /**
  * Default number of commits to scan
