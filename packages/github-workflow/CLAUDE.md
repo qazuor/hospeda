@@ -141,7 +141,7 @@ import { generateTodos } from '@repo/github-workflow';
 async function generateTaskList() {
   const todos = await generateTodos({
     sessionPath: '.claude/sessions/planning/P-001-user-auth',
-    outputDir: '.todoLinear',
+    outputDir: '.github-workflow',
   });
 
   console.log(`Generated ${todos.length} TODOs`);
@@ -186,7 +186,7 @@ GITHUB_REPO=main
 
 # Planning paths
 PLANNING_SESSIONS_DIR=.claude/sessions/planning
-TODO_OUTPUT_DIR=.todoLinear
+TODO_OUTPUT_DIR=.github-workflow
 
 # Features
 AUTO_SYNC_ENABLED=true
@@ -212,7 +212,7 @@ export default {
     todosPattern: '**/TODOs.md',
   },
   todos: {
-    outputDir: '.todoLinear',
+    outputDir: '.github-workflow',
     autoSync: true,
   },
   enrichment: {

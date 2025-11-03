@@ -157,7 +157,7 @@ GH_REPO=your-repo
 
 # Optional
 GITHUB_PROJECT_GENERAL=Project Name
-TRACKING_PATH=.todoLinear/tracking.json
+TRACKING_PATH=.github-workflow/tracking.json
 ```
 
 ### Config File

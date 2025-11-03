@@ -20,7 +20,7 @@ import type { SyncOptions, SyncResult } from './types.js';
 /**
  * Default tracking path
  */
-const DEFAULT_TRACKING_PATH = '.todoLinear/tracking.json';
+const DEFAULT_TRACKING_PATH = '.github-workflow/tracking.json';
 
 /**
  * Synchronize planning session to GitHub Issues
