@@ -175,6 +175,16 @@ Master index for all Claude Code workflow system documentation.
 - Issue synchronization
 - Registry updates
 
+**[workflows/edge-cases.md](workflows/edge-cases.md)** - Exception handling and non-standard scenarios
+
+- 20 documented edge cases
+- Resolution strategies for each
+- Communication templates
+- Quick reference guide
+- Covers: unclear requirements, blocking issues, test failures, performance issues, security vulnerabilities, production bugs
+
+**Audience:** All participants, reference when encountering unexpected situations
+
 ---
 
 ## 📊 System Diagrams
@@ -195,8 +205,8 @@ Master index for all Claude Code workflow system documentation.
 **2. Agent Hierarchy**
 
 - **File:** [diagrams/agent-hierarchy.mmd](diagrams/agent-hierarchy.mmd)
-- **Purpose:** Visual organization of the 13 consolidated agents
-- **Shows:** tech-lead as coordinator, 5 teams (Product, Backend, Frontend, Quality, Support)
+- **Purpose:** Visual organization of the 12 specialized agents across 6 categories
+- **Shows:** tech-lead as coordinator, agent teams (Product, Backend, Frontend, Design, Quality, Specialized)
 - **Use when:** Understanding agent responsibilities, assigning tasks
 
 **3. Tools Relationship**
@@ -271,6 +281,50 @@ Master index for all Claude Code workflow system documentation.
 
 **Audience:** During implementation and validation
 
+### Atomic Commits Policy
+
+**[standards/atomic-commits.md](standards/atomic-commits.md)** - Git commit guidelines
+
+**Includes:**
+
+- Atomic commit definition and benefits
+- CRITICAL project policy
+- Workflow by level (Quick Fix, Atomic Task, Feature)
+- Common patterns and anti-patterns
+- Tools and commands
+- Pre-commit checklist
+
+**Audience:** All developers, during all phases
+
+---
+
+## 📖 Examples
+
+### End-to-End Workflow Example
+
+**[examples/end-to-end-workflow.md](examples/end-to-end-workflow.md)** - Complete feature implementation
+
+**Feature:** User Favorites for Accommodations
+
+**Demonstrates:**
+
+- **Phase 1**: Planning (PDR, tech-analysis, task breakdown)
+- **Phase 2**: Implementation (TDD, atomic commits, 13 tasks)
+- **Phase 3**: Validation (E2E tests, quality checks)
+- **Phase 4**: Finalization (docs, CHANGELOG, deployment)
+
+**Includes:**
+
+- Real code examples (schemas, models, services, API, components)
+- TDD workflow (Red → Green → Refactor)
+- Atomic commits (one per task with PB-XXX codes)
+- Performance metrics and results
+- Lessons learned
+
+**Use when:** Learning the complete workflow, onboarding new developers, understanding best practices
+
+**Audience:** All developers, especially those new to the project
+
 ---
 
 ## 🛠️ Tools & Scripts
@@ -309,18 +363,19 @@ pnpm claude:validate
 
 **Directory:** [../agents/](../agents/)
 
-**Organization:** Consolidated agent system with 13 specialized agents
+**Organization:** Specialized agent system with 12 agents organized in 6 categories
 
 **Teams:**
 
-- **Leadership:** tech-lead (Architecture & Coordination)
-- **Product:** product-technical (Technical Analysis)
-- **Backend Team:** hono-engineer (API), db-engineer (Database)
-- **Frontend Team:** astro-engineer (Web), tanstack-engineer (Admin), react-dev (Components)
-- **Quality Team:** qa-engineer (Testing), security-engineer (Security), performance-engineer (Performance)
-- **Support Team:** tech-writer (Documentation), debugger (Issue Resolution)
+- **Product & Planning (2):** product-functional, product-technical
+- **Technical Leadership (1):** tech-lead
+- **Backend Development (3):** hono-engineer, db-drizzle-engineer, node-typescript-engineer
+- **Frontend Development (3):** astro-engineer, react-senior-dev, tanstack-start-engineer
+- **Design & UX (1):** ux-ui-designer
+- **Quality Assurance (2):** qa-engineer, debugger
+- **Specialized (3):** tech-writer, i18n-specialist, enrichment-agent
 
-**Total:** 13 agents (consolidated from 25)
+**Total:** 12 agents
 
 **Visual:** See [diagrams/agent-hierarchy.mmd](diagrams/agent-hierarchy.mmd)
 
@@ -597,11 +652,15 @@ planning/
 | workflows/phase-4-finalization.md | ✅ Current | 2025-10-28 |
 | workflows/task-atomization.md | ✅ Current | 2025-10-28 |
 | workflows/task-completion-protocol.md | ✅ Current | 2025-10-28 |
+| workflows/edge-cases.md | ✅ Current | 2025-11-03 |
 | **Standards** | | |
 | standards/code-standards.md | ✅ Current | 2025-10-28 |
 | standards/architecture-patterns.md | ✅ Current | 2025-10-28 |
 | standards/testing-standards.md | ✅ Current | 2025-10-28 |
+| standards/atomic-commits.md | ✅ Current | 2025-11-03 |
 | standards/documentation-standards.md | ✅ Current | 2025-10-28 |
+| **Examples** | | |
+| examples/end-to-end-workflow.md | ✅ Current | 2025-11-03 |
 | **Diagrams** | | |
 | diagrams/README.md | ✅ Current | 2025-10-31 |
 | diagrams/workflow-decision-tree.mmd | ✅ Current | 2025-10-31 |

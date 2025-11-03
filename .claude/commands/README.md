@@ -22,7 +22,7 @@ Commands are organized into subdirectories by category for better organization a
 ├── README.md                     # This file
 ├── start-feature-plan.md         # Planning commands (root level)
 ├── start-refactor-plan.md
-├── sync-planning.md              # Legacy Linear sync (deprecated)
+├── sync-planning.md              # Sync planning to GitHub (alias to planning/sync-planning-github.md)
 ├── quality-check.md              # Quality commands (root level)
 ├── code-check.md
 ├── run-tests.md
@@ -561,24 +561,6 @@ git commit -m "{type}({scope}): {subject}
 - **Meta**: 4 commands (create agent/command/skill, help)
 - **Git**: 1 command (commit messages)
 - **Analysis**: 1 command (5 Whys root cause)
-
----
-
-## Command Evolution
-
-### Deprecated Commands
-
-The following commands have been deprecated and replaced with enhanced versions:
-
-- **`/review-code`** → Functionality absorbed into `/quality-check`
-- **`/review-security`** → Replaced by `/security-audit` (enhanced)
-- **`/review-performance`** → Replaced by `/performance-audit` (enhanced)
-- **`/pen-test`** → Merged into `/security-audit`
-
-### New Command Categories
-
-- **Audit Commands** (`audit/`): Comprehensive, report-generating audit commands
-- **Meta Commands** (`meta/`): System management and workflow enhancement
 
 ---
 
