@@ -38,7 +38,7 @@ This directory contains Mermaid diagrams visualizing the Hospeda workflow system
 
 **File:** [agent-hierarchy.mmd](./agent-hierarchy.mmd)
 
-**Purpose:** Visual organization of the 13 consolidated agents
+**Purpose:** Visual organization of the 12 specialized agents across 6 categories
 
 **Shows:**
 
