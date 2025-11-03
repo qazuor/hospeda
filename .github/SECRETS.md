@@ -4,7 +4,9 @@ This document describes how to configure the required GitHub secrets for the CI/
 
 ## Required Secrets
 
-The following secrets must be configured in GitHub for the CI/CD pipeline to work correctly:
+The following secrets must be configured in GitHub for the CI/CD pipeline to work correctly.
+
+**✅ Important:** You only need to configure these secrets. The CI workflow automatically maps them to the formats needed by each app (e.g., `VITE_*` for admin, `PUBLIC_*` for web).
 
 ### 1. Database
 
@@ -161,6 +163,7 @@ HOSPEDA_SITE_URL=https://hospeda.com
 **Cause:** One or more required secrets are missing or invalid.
 
 **Solution:**
+
 1. Check that all required secrets are configured in GitHub
 2. Verify the secret names match exactly (case-sensitive)
 3. Check that secret values are valid (e.g., URLs are proper URLs)
@@ -170,6 +173,7 @@ HOSPEDA_SITE_URL=https://hospeda.com
 **Cause:** `CLERK_SECRET_KEY` is missing or invalid.
 
 **Solution:**
+
 1. Ensure `CLERK_SECRET_KEY` is configured in GitHub Secrets
 2. Ensure it has the same value as `HOSPEDA_CLERK_SECRET_KEY`
 
@@ -178,6 +182,7 @@ HOSPEDA_SITE_URL=https://hospeda.com
 **Cause:** Database URL or Clerk keys are missing.
 
 **Solution:**
+
 1. Verify `HOSPEDA_DATABASE_URL` is a valid PostgreSQL connection string
 2. Verify both Clerk keys are configured
 
