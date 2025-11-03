@@ -88,14 +88,11 @@ jobs:
           git add .claude/sessions/planning/P-*
 
           # Create commit
-          git commit -m "chore(planning): archive completed planning sessions
-
-Automated cleanup by planning-cleanup workflow
-
-- Moved completed sessions to archived/YYYY/MM/
-- Generated COMPLETION-REPORT.md for each session
-
-Workflow run: ${{ github.run_id }}"
+          git commit -m "chore(planning): archive completed planning sessions" \
+                     -m "Automated cleanup by planning-cleanup workflow" \
+                     -m "- Moved completed sessions to archived/YYYY/MM/" \
+                     -m "- Generated COMPLETION-REPORT.md for each session" \
+                     -m "Workflow run: ${{ github.run_id }}"
 
       - name: Push changes
         if: steps.check_changes.outputs.changes == 'true' && inputs.dry_run != true
