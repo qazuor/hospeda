@@ -1,0 +1,19 @@
+{
+    "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+    "extends": ["config:base"],
+    "schedule": ["every weekend"],
+    "rangeStrategy": "bump",
+    "semanticCommits": "enabled",
+    "packageRules": [
+        {
+            "matchUpdateTypes": ["minor", "patch"],
+            "automerge": false,
+            "description": "Disable automerge for minor/patch updates - require manual review"
+        }
+    ],
+    "prConcurrentLimit": 5,
+    "prHourlyLimit": 0,
+    "labels": ["dependencies"],
+    "assignees": ["@qazuor"],
+    "reviewers": ["@qazuor"]
+}

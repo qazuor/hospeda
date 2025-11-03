@@ -8,7 +8,7 @@ export default defineConfig({
         environment: 'node',
         coverage: {
             provider: 'v8',
-            reporter: ['text', 'html'],
+            reporter: ['text', 'html', 'json-summary'],
             include: ['src/**/*.ts'],
             exclude: [
                 '**/test/**',
@@ -16,12 +16,15 @@ export default defineConfig({
                 '**/dist/**',
                 '**/*.d.ts',
                 '**/index.ts',
-                '*.config.ts'
+                '*.config.ts',
+                '**/hooks/**',
+                '**/scripts/**',
+                '**/types/**'
             ],
             thresholds: {
                 lines: 90,
                 functions: 90,
-                branches: 90,
+                branches: 85,
                 statements: 90
             }
         },

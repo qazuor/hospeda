@@ -464,7 +464,7 @@ export async function scanCodeComments(
         include = DEFAULT_INCLUDE_PATTERNS,
         exclude = DEFAULT_EXCLUDE_PATTERNS,
         commentTypes = ['TODO', 'HACK', 'DEBUG'],
-        respectGitignore = true
+        respectGitignore: _respectGitignore = true
     } = options;
 
     const allComments: CodeComment[] = [];

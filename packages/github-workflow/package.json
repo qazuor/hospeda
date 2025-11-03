@@ -25,6 +25,7 @@
         "test:watch": "vitest",
         "test:file": "vitest run --passWithNoTests",
         "test:coverage": "vitest run --coverage",
+        "hook:pre-commit": "tsx src/scripts/pre-commit-hook.ts",
         "hook:post-commit": "tsx src/scripts/post-commit-hook.ts"
     },
     "dependencies": {

@@ -1,0 +1,142 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  quality-check:
+    name: Quality Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Type check
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Run tests with coverage
+        run: pnpm test:coverage
+
+      - name: Check coverage threshold
+        run: |
+          echo "📊 Checking coverage threshold..."
+
+          # Find all coverage-summary.json files in the monorepo
+          COVERAGE_FILES=$(find . -name 'coverage-summary.json' -path '*/coverage/*' 2>/dev/null)
+
+          if [ -z "$COVERAGE_FILES" ]; then
+            echo "❌ No coverage files found"
+            exit 1
+          fi
+
+          FAILED=0
+          TOTAL_COVERAGE=0
+          FILE_COUNT=0
+
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📊 Coverage Report by Package"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+          for file in $COVERAGE_FILES; do
+            # Extract package name from path
+            PACKAGE_PATH=$(dirname $(dirname "$file"))
+            PACKAGE_NAME=$(basename "$PACKAGE_PATH")
+
+            # Get coverage percentage
+            COVERAGE=$(jq -r '.total.lines.pct' "$file")
+
+            # Round coverage to 2 decimals
+            COVERAGE_ROUNDED=$(printf "%.2f" "$COVERAGE")
+
+            echo ""
+            echo "📦 Package: $PACKAGE_NAME"
+            echo "   Coverage: $COVERAGE_ROUNDED%"
+
+            # Check if below threshold
+            if (( $(echo "$COVERAGE < 90" | bc -l) )); then
+              echo "   ❌ FAIL: Coverage below 90% threshold"
+              FAILED=1
+            else
+              echo "   ✅ PASS: Coverage meets 90% threshold"
+            fi
+
+            # Accumulate for global average
+            TOTAL_COVERAGE=$(echo "$TOTAL_COVERAGE + $COVERAGE" | bc)
+            FILE_COUNT=$((FILE_COUNT + 1))
+          done
+
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+          # Calculate global average
+          if [ $FILE_COUNT -gt 0 ]; then
+            GLOBAL_COVERAGE=$(echo "scale=2; $TOTAL_COVERAGE / $FILE_COUNT" | bc)
+            echo "🌍 Global Average Coverage: $GLOBAL_COVERAGE%"
+          fi
+
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+
+          if [ $FAILED -eq 1 ]; then
+            echo "❌ Coverage check failed: One or more packages below 90% threshold"
+            exit 1
+          else
+            echo "✅ All packages meet the 90% coverage threshold"
+          fi
+
+      - name: Summary
+        if: always()
+        run: |
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📋 CI Summary"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "✅ All checks passed!"
+            echo ""
+            echo "✓ Type check: PASSED"
+            echo "✓ Lint: PASSED"
+            echo "✓ Tests: PASSED"
+            echo "✓ Coverage: ≥90%"
+          else
+            echo "❌ Some checks failed"
+            echo ""
+            echo "Review the logs above for details"
+          fi
+          echo ""
