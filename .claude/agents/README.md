@@ -1,6 +1,8 @@
 # Hospeda Project - AI Agents
 
-This directory contains **14 specialized AI agents** for the Hospeda tourism platform. Each agent is an expert in specific areas and can be invoked during development workflow.
+This directory contains **12 specialized AI agents** for the Hospeda tourism platform. Each agent is an expert in specific areas and can be invoked during development workflow.
+
+> **Note**: Security and performance audits are handled via specialized skills (security-audit, performance-audit, accessibility-audit) coordinated by tech-lead rather than dedicated agents. This provides lightweight, reusable audit capabilities without full agent overhead.
 
 ## Agent Organization
 
@@ -13,13 +15,13 @@ Agents are organized into the following categories:
 
 ### Technical Leadership (1 agent)
 
-- **[tech-lead](engineering/tech-lead.md)** - Provides architectural oversight, coordinates technical decisions, ensures code quality standards, performs security audits, validates performance, manages CI/CD, and oversees deployments across all phases
-  - **Consolidated from**: architecture-validator, backend-reviewer, frontend-reviewer, security-engineer, performance-engineer, deployment-engineer, cicd-engineer
+- **[tech-lead](engineering/tech-lead.md)** - Provides architectural oversight, coordinates technical decisions, ensures code quality standards, manages CI/CD, and oversees deployments across all phases. Coordinates security and performance audits via specialized skills.
 
-### Backend Development (2 agents)
+### Backend Development (3 agents)
 
 - **[hono-engineer](engineering/hono-engineer.md)** - Designs and implements API routes, middleware, and server-side logic using Hono framework during Phase 2 Implementation
 - **[db-drizzle-engineer](engineering/db-drizzle-engineer.md)** - Designs and implements database schemas, manages migrations, and builds Drizzle models during Phase 2 Implementation
+- **[node-typescript-engineer](engineering/node-typescript-engineer.md)** - Designs and implements generic shared packages (utils, logger, config, etc.) with Node.js and TypeScript best practices during Phase 2 Implementation
 
 ### Frontend Development (3 agents)
 
@@ -34,46 +36,13 @@ Agents are organized into the following categories:
 ### Quality Assurance (2 agents)
 
 - **[qa-engineer](quality/qa-engineer.md)** - Ensures quality through testing, validates acceptance criteria, and verifies features meet standards during Phase 3 Validation
-  - **Consolidated from**: accessibility-engineer
 - **[debugger](quality/debugger.md)** - Investigates bugs, diagnoses issues, identifies root causes, and proposes fixes using systematic debugging during Phase 3 and issue resolution
 
 ### Specialized (3 agents)
 
 - **[tech-writer](specialized/tech-writer.md)** - Creates comprehensive documentation for code, APIs, architecture, processes, manages dependency tracking and updates, and generates changelogs following Keep a Changelog format during Phase 4 Finalization and all phases
-  - **Consolidated from**: dependency-mapper, changelog-specialist
 - **[i18n-specialist](specialized/i18n-specialist.md)** - Designs and maintains internationalization system, manages translations, and ensures multi-language support during all phases
 - **[enrichment-agent](specialized/enrichment-agent.md)** - Analyzes planning sessions and enriches GitHub issues with relevant planning context, technical decisions, and task relationships during planning sync and issue creation
-
-## Agent Consolidation
-
-This structure reflects a consolidation from 25 agents to 14 agents, absorbing specialized responsibilities into core agents:
-
-### tech-lead absorbed
-
-- architecture-validator (architectural validation)
-- backend-reviewer (backend code review)
-- frontend-reviewer (frontend code review)
-- security-engineer (security audits)
-- performance-engineer (performance optimization)
-- deployment-engineer (deployment strategies)
-- cicd-engineer (CI/CD pipelines)
-
-### qa-engineer absorbed
-
-- accessibility-engineer (WCAG compliance)
-
-### tech-writer absorbed
-
-- dependency-mapper (dependency tracking)
-- changelog-specialist (changelog generation)
-
-### Removed (functionality handled by MCP)
-
-- payments-specialist (Mercado Pago MCP server)
-
-### Removed (general expertise)
-
-- prompt-engineer (integrated into general expertise)
 
 ## Usage
 
@@ -164,12 +133,11 @@ When adding new agents:
 
 ## Statistics
 
-- **Total Agents**: 14
+- **Total Agents**: 12
 - **Product & Planning**: 2
 - **Technical Leadership**: 1
-- **Backend Development**: 2
+- **Backend Development**: 3
 - **Frontend Development**: 3
 - **Design & UX**: 1
 - **Quality Assurance**: 2
 - **Specialized**: 3
-- **Consolidated from**: 25 agents (11 removed, responsibilities absorbed)

@@ -225,16 +225,18 @@ hospeda/
 
 ## 5. Tools Quick Reference
 
-### 13 Consolidated Agents
+### 12 Consolidated Agents
 
 | Team | Agents | Purpose |
 |------|--------|---------|
 | **Leadership** | tech-lead | Architecture & coordination |
 | **Product** | product-technical | Technical analysis |
-| **Backend** | hono-engineer, db-engineer | API, database |
+| **Backend** | hono-engineer, db-engineer, node-typescript-engineer | API, database, shared packages |
 | **Frontend** | astro-engineer, tanstack-engineer, react-dev | Web, admin, components |
-| **Quality** | qa-engineer, security-engineer, performance-engineer | Testing, security, performance |
+| **Quality** | qa-engineer | Testing & QA |
 | **Support** | tech-writer, debugger | Documentation, issues |
+
+**Note:** Security and performance audits are handled via specialized skills (security-audit, performance-audit, accessibility-audit) coordinated by tech-lead rather than dedicated agents.
 
 **Full details:** [.claude/agents/README.md](.claude/agents/README.md)
 **Visual:** [.claude/docs/diagrams/agent-hierarchy.mmd](.claude/docs/diagrams/agent-hierarchy.mmd)
@@ -307,39 +309,26 @@ hospeda/
 
 **🔥 CRITICAL: Atomic Commits Policy**
 
-When committing code after completing a task:
+All commits MUST be **atomic** - containing only files modified for ONE specific task.
+
+**Core Rules:**
 
 - **ONLY** commit files modified during THAT specific task
 - **NEVER** use `git add .` or `git add -A`
 - **ALWAYS** use `git add <specific-file>` for task-related files
 - **WARN** user if unrelated modified files are detected
 
-**Example:**
+**Quick Example:**
 
 ```bash
 # Task: "Create User model"
-# git status shows:
-M packages/db/src/models/user.model.ts      ← Task file
-M packages/db/test/models/user.model.test.ts ← Task file
-M packages/api/routes/booking.ts            ← NOT related
-M .env.local                                 ← NOT related
+✅ CORRECT: git add packages/db/src/models/user.model.ts
+✅ CORRECT: git add packages/db/test/models/user.model.test.ts
 
-# CORRECT:
-git add packages/db/src/models/user.model.ts
-git add packages/db/test/models/user.model.test.ts
-# Only task-related files
-
-# WRONG:
-git add .  # ❌ Would include unrelated files!
+❌ WRONG: git add .  # Would include unrelated files!
 ```
 
-**If unrelated files exist:**
-
-- Inform user about unrelated files
-- Confirm proceeding with ONLY task files
-- User can override if they explicitly request
-
-**Exception:** User explicitly requests including other files
+**Full Policy:** See [Atomic Commits Standards](.claude/docs/standards/atomic-commits.md) for complete guidelines, patterns, and examples
 
 **PR Workflow:**
 
