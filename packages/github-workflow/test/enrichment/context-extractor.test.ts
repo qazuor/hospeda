@@ -4,12 +4,9 @@
  * @module test/enrichment/context-extractor
  */
 
-import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
-import {
-    extractPlanningContext,
-    type PlanningContext
-} from '../../src/enrichment/context-extractor.js';
+import { describe, expect, it } from 'vitest';
+import { extractPlanningContext } from '../../src/enrichment/context-extractor.js';
 
 describe('extractPlanningContext', () => {
     const fixturesDir = join(__dirname, '..', 'fixtures', 'P-001-test-session');
@@ -86,7 +83,7 @@ describe('extractPlanningContext', () => {
             expect(result.success).toBe(true);
             const context = result.context!;
             expect(context.acceptanceCriteria).toBeDefined();
-            expect(context.acceptanceCriteria!.length).toBeGreaterThan(0);
+            expect(context.acceptanceCriteria?.length).toBeGreaterThan(0);
             expect(context.acceptanceCriteria?.[0]).toContain('User registration flow');
         });
 
@@ -131,7 +128,7 @@ describe('extractPlanningContext', () => {
             expect(result.success).toBe(true);
             const context = result.context!;
             expect(context.risks).toBeDefined();
-            expect(context.risks!.length).toBeGreaterThan(0);
+            expect(context.risks?.length).toBeGreaterThan(0);
             expect(context.risks?.[0]).toContain('Clerk service downtime');
         });
 
@@ -146,7 +143,7 @@ describe('extractPlanningContext', () => {
             expect(result.success).toBe(true);
             const context = result.context!;
             expect(context.tasks).toBeDefined();
-            expect(context.tasks!.length).toBeGreaterThan(0);
+            expect(context.tasks?.length).toBeGreaterThan(0);
 
             const firstTask = context.tasks?.[0];
             expect(firstTask?.id).toBe('T-001-001');

@@ -7,9 +7,9 @@
  * @module enrichment/context-extractor
  */
 
+import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { existsSync } from 'node:fs';
 import { parsePlanningSession } from '../parsers/planning-session.js';
 import type { Task } from '../parsers/types.js';
 
@@ -299,10 +299,12 @@ function extractAcceptanceCriteria(content: string): string[] {
     const criteria: string[] = [];
 
     let match: RegExpExecArray | null;
-    while ((match = checkboxPattern.exec(criteriaSection)) !== null) {
+    match = checkboxPattern.exec(criteriaSection);
+    while (match !== null) {
         if (match[1]) {
             criteria.push(match[1].trim());
         }
+        match = checkboxPattern.exec(criteriaSection);
     }
 
     return criteria;
@@ -353,10 +355,12 @@ function extractDependencies(content: string): string[] {
     const depPattern = /-\s+\*\*([^:*]+?)(?:\*\*|:)/g;
 
     let depMatch: RegExpExecArray | null;
-    while ((depMatch = depPattern.exec(dependenciesSection)) !== null) {
+    depMatch = depPattern.exec(dependenciesSection);
+    while (depMatch !== null) {
         if (depMatch[1]) {
             deps.push(depMatch[1].trim());
         }
+        depMatch = depPattern.exec(dependenciesSection);
     }
 
     return deps;
@@ -380,10 +384,12 @@ function extractRisks(content: string): string[] {
     const riskPattern = /###\s+Risk:\s+(.+?)(?=\n|$)/gi;
 
     let match: RegExpExecArray | null;
-    while ((match = riskPattern.exec(risksSection)) !== null) {
+    match = riskPattern.exec(risksSection);
+    while (match !== null) {
         if (match[1]) {
             risks.push(match[1].trim());
         }
+        match = riskPattern.exec(risksSection);
     }
 
     return risks;
@@ -409,35 +415,6 @@ function extractSection(content: string, sectionName: string): string | undefine
 }
 
 /**
- * Extract a subsection (###) from within a parent section (##)
- *
- * @param content - Markdown content
- * @param parentSection - Parent section heading name (##)
- * @param subsectionName - Subsection heading name (###)
- * @returns Subsection content or undefined
- */
-function extractSubsection(
-    content: string,
-    parentSection: string,
-    subsectionName: string
-): string | undefined {
-    // First get the parent section
-    const parentContent = extractSection(content, parentSection);
-    if (!parentContent) {
-        return undefined;
-    }
-
-    // Then find the subsection within it
-    const pattern = new RegExp(
-        `###\\s+${subsectionName}\\s*\\n+([\\s\\S]+?)(?=\\n###|\\n##|$)`,
-        'i'
-    );
-
-    const match = parentContent.match(pattern);
-    return match?.[1]?.trim();
-}
-
-/**
  * Extract bullet points from markdown content
  *
  * @param content - Markdown content
@@ -448,10 +425,12 @@ function extractBulletPoints(content: string): string[] {
     const bullets: string[] = [];
 
     let match: RegExpExecArray | null;
-    while ((match = bulletPattern.exec(content)) !== null) {
+    match = bulletPattern.exec(content);
+    while (match !== null) {
         if (match[1]) {
             bullets.push(match[1].trim());
         }
+        match = bulletPattern.exec(content);
     }
 
     return bullets;

@@ -4,4 +4,5 @@
  * @module hooks
  */
 
+export { runPreCommitHook, type PreCommitOptions } from './pre-commit.js';
 export { runPostCommitHook, type PostCommitOptions } from './post-commit.js';

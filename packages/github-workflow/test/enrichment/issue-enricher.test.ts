@@ -4,12 +4,12 @@
  * @module test/enrichment/issue-enricher
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { join } from 'node:path';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+    type IssueEnricherConfig,
     enrichIssue,
-    isAlreadyEnriched,
-    type IssueEnricherConfig
+    isAlreadyEnriched
 } from '../../src/enrichment/issue-enricher.js';
 import type { GitHubIssue } from '../../src/types/github.js';
 

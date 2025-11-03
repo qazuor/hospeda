@@ -46,14 +46,6 @@
         "db:seed": "pnpm --filter @repo/seed seed --reset --required --example",
         "pgadmin:start": "docker-compose up -d pgadmin",
         "pgadmin:stop": "docker-compose stop pgadmin",
-        "todo:setup": "pnpm --filter @repo/tools-todo-linear todo:setup",
-        "todo:sync": "pnpm --filter @repo/tools-todo-linear todo:sync",
-        "todo:sync:verbose": "pnpm --filter @repo/tools-todo-linear todo:sync:verbose",
-        "todo:watch": "pnpm --filter @repo/tools-todo-linear todo:watch",
-        "todo:clean": "pnpm --filter @repo/tools-todo-linear todo:clean",
-        "todo:old:sync": "pnpm --filter @repo/tools-todo-linear-old todo:sync",
-        "planning:sync": "tsx scripts/planning-sync.ts",
-        "planning:complete": "tsx scripts/planning-complete-task.ts",
         "claude:validate:docs": ".claude/scripts/validate-docs.sh",
         "claude:validate:schemas": "tsx .claude/scripts/validate-schemas.ts",
         "claude:sync:registry": ".claude/scripts/sync-registry.sh",
@@ -69,6 +61,7 @@
         "ajv": "^8.17.1",
         "ajv-formats": "^3.0.1",
         "husky": "^9.1.7",
+        "lint-staged": "^15.3.0",
         "markdownlint-cli2": "^0.18.1",
         "tsx": "^4.19.4",
         "turbo": "^2.5.3",
@@ -82,19 +75,16 @@
         "glob": "^11.0.3",
         "zod": "^4.0.8"
     },
-    "workspaces": [
-        "apps/*",
-        "packages/*"
-    ],
+    "workspaces": ["apps/*", "packages/*"],
     "pnpm": {
         "overrides": {
             "react": "19.1.1",
             "react-dom": "19.1.1"
         },
-        "publicHoistPattern": [
-            "react",
-            "react-dom",
-            "*react*"
-        ]
+        "publicHoistPattern": ["react", "react-dom", "*react*"]
+    },
+    "lint-staged": {
+        "*.{ts,tsx}": ["biome check --write --no-errors-on-unmatched"],
+        "*.{json,md}": ["biome format --write"]
     }
 }

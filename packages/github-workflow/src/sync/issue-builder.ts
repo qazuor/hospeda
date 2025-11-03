@@ -81,27 +81,27 @@ export function buildIssueBody(input: BuildIssueBodyInput): string {
     sections.push(`## Task: ${task.title}\n`);
 
     // Overview section
-    sections.push('**Planning Code:** ' + metadata.planningCode);
-    sections.push('**Task Code:** ' + task.code);
-    sections.push('**Feature:** ' + metadata.featureName + '\n');
+    sections.push(`**Planning Code:** ${metadata.planningCode}`);
+    sections.push(`**Task Code:** ${task.code}`);
+    sections.push(`**Feature:** ${metadata.featureName}\n`);
 
     // Description section (if available)
     if (task.description) {
         sections.push('### Description');
-        sections.push(task.description + '\n');
+        sections.push(`${task.description}\n`);
     }
 
     // Details section
     sections.push('### Details');
-    sections.push('- **Status:** ' + task.status);
-    sections.push('- **Estimate:** ' + (task.estimate || 'Not estimated'));
-    sections.push('- **Phase:** ' + (task.phase ? String(task.phase) : 'Not specified'));
-    sections.push('- **Assignee:** ' + (task.assignee ? `@${task.assignee}` : 'Unassigned') + '\n');
+    sections.push(`- **Status:** ${task.status}`);
+    sections.push(`- **Estimate:** ${task.estimate || 'Not estimated'}`);
+    sections.push(`- **Phase:** ${task.phase ? String(task.phase) : 'Not specified'}`);
+    sections.push(`- **Assignee:** ${task.assignee ? `@${task.assignee}` : 'Unassigned'}\n`);
 
     // Planning session section
     sections.push('### Planning Session');
-    sections.push('- **Summary:** ' + metadata.summary);
-    sections.push('- **Session Path:** `' + sessionPath + '`\n');
+    sections.push(`- **Summary:** ${metadata.summary}`);
+    sections.push(`- **Session Path:** \`${sessionPath}\`\n`);
 
     // Footer
     sections.push('---');

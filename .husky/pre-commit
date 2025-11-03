@@ -2,26 +2,11 @@
 . "$(dirname -- "$0")/_/husky.sh"
 
 # Get staged files that match our patterns (exclude deleted files)
-STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.(js|jsx|ts|tsx|css|scss|md|astro)$' || true)
-STAGED_MD_FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep '\.md$' || true)
 STAGED_CLAUDE_FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep '^\.claude/' || true)
 
-# 1. Format markdown files if any are staged
-if [ -n "$STAGED_MD_FILES" ]; then
-  echo "📝 Formatting markdown files..."
-  if echo "$STAGED_MD_FILES" | grep -q '^\.claude/'; then
-    pnpm format:md:claude || echo "⚠️  Markdown formatting failed - continuing"
-  else
-    pnpm format:md || echo "⚠️  Markdown formatting failed - continuing"
-  fi
-
-  # Re-add formatted markdown files
-  for file in $STAGED_MD_FILES; do
-    if [ -f "$file" ]; then
-      git add "$file"
-    fi
-  done
-fi
+# 1. Run lint-staged for formatting and linting (BLOCKING)
+echo "🔍 Running lint-staged..."
+pnpm exec lint-staged
 
 # 2. Validate .claude documentation changes
 if [ -n "$STAGED_CLAUDE_FILES" ]; then
@@ -46,28 +31,13 @@ if [ -n "$STAGED_CLAUDE_FILES" ]; then
   done
 fi
 
-# 3. Run Biome on staged files
-if [ -n "$STAGED_FILES" ]; then
-  echo "🔍 Running Biome on staged files..."
-  echo "$STAGED_FILES" | xargs pnpm dlx biome check --write --no-errors-on-unmatched --files-ignore-unknown=true || echo "⚠️  Biome check failed - continuing"
-
-  # Re-add files that were modified by Biome (only existing files)
-  for file in $STAGED_FILES; do
-    if [ -f "$file" ]; then
-      git add "$file"
-    fi
-  done
-else
-  echo "No staged files to check with Biome."
-fi
-
-# 4. Sync TODO comments with Linear
-echo "📝 Syncing TODO comments with Linear..."
+# 4. Sync TODO comments with GitHub
+echo "📝 Syncing TODO comments with GitHub..."
 
 # Capture currently staged files before sync (exclude deleted files)
 STAGED_FILES_BEFORE=$(git diff --cached --name-only --diff-filter=ACMR)
 
-if pnpm todo:sync --quiet 2>/dev/null; then
+if pnpm --filter=@repo/github-workflow run hook:pre-commit 2>/dev/null; then
   echo "✅ TODO sync completed successfully"
   # Re-add only the files that were originally staged and still exist
   if [ -n "$STAGED_FILES_BEFORE" ]; then

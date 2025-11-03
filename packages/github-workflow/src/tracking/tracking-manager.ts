@@ -103,7 +103,10 @@ export class TrackingManager {
             this.updateMetadata();
 
             // Write to file
-            await writeTrackingFile(this.filePath, this.database!);
+            if (!this.database) {
+                throw new Error('Database not loaded');
+            }
+            await writeTrackingFile(this.filePath, this.database);
 
             logger.info(
                 `Saved tracking database: ${this.filePath} (${this.database?.records.length} records)`

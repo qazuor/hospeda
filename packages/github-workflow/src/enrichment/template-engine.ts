@@ -9,8 +9,8 @@
 
 export type { PlanningContext, UserStory, TaskInfo } from './context-extractor.js';
 
-import type { PlanningContext, TaskInfo } from './context-extractor.js';
 import { createVSCodeSessionLinks } from '../utils/vscode-links.js';
+import type { PlanningContext, TaskInfo } from './context-extractor.js';
 
 /**
  * Template generation options

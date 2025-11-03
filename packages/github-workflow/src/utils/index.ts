@@ -5,9 +5,9 @@
  */
 
 export {
-	createVSCodeFileLink,
-	createVSCodeSessionLinks,
-	formatVSCodeLink,
-	type SessionLinks,
-	type VSCodeFileLinkOptions
+    createVSCodeFileLink,
+    createVSCodeSessionLinks,
+    formatVSCodeLink,
+    type SessionLinks,
+    type VSCodeFileLinkOptions
 } from './vscode-links.js';

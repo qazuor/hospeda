@@ -4,10 +4,10 @@
  * @module test/enrichment/template-engine
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
-    generateIssueTemplate,
-    type PlanningContext
+    type PlanningContext,
+    generateIssueTemplate
 } from '../../src/enrichment/template-engine.js';
 
 describe('generateIssueTemplate', () => {

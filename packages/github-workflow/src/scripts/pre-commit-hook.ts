@@ -1,23 +1,23 @@
 #!/usr/bin/env node
 /**
- * Post-commit hook script
+ * Pre-commit hook script
  *
- * Executable script for detecting completed tasks after commits.
- * Called by .husky/post-commit hook.
+ * Executable script for syncing TODO comments before commits.
+ * Called by .husky/pre-commit hook.
  *
- * @module scripts/post-commit-hook
+ * @module scripts/pre-commit-hook
  */
 
-import { runPostCommitHook } from '../hooks/post-commit.js';
+import { runPreCommitHook } from '../hooks/pre-commit.js';
 
 /**
  * Main execution
  */
 async function main(): Promise<void> {
     try {
-        await runPostCommitHook({
+        await runPreCommitHook({
             projectRoot: process.cwd(),
-            commitLimit: 1, // Only check the most recent commit
+            updateExisting: true, // Update existing issues if comment changed
             dryRun: false,
             silent: true // Silent mode to avoid cluttering git output
         });
@@ -25,7 +25,7 @@ async function main(): Promise<void> {
         process.exit(0);
     } catch (error) {
         // Don't fail the commit even if hook fails
-        console.error('Post-commit hook failed (non-blocking):', (error as Error).message);
+        console.error('Pre-commit hook failed (non-blocking):', (error as Error).message);
         process.exit(0); // Exit with success to not block git
     }
 }

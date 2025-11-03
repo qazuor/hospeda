@@ -13,28 +13,28 @@ import { basename, isAbsolute, resolve } from 'node:path';
  * Options for creating VSCode file link
  */
 export type VSCodeFileLinkOptions = {
-	/** Absolute or relative file path */
-	filePath: string;
-	/** Link text (defaults to filename) */
-	linkText?: string;
-	/** Optional line number (1-indexed) */
-	line?: number;
-	/** Optional column number (1-indexed) */
-	column?: number;
+    /** Absolute or relative file path */
+    filePath: string;
+    /** Link text (defaults to filename) */
+    linkText?: string;
+    /** Optional line number (1-indexed) */
+    line?: number;
+    /** Optional column number (1-indexed) */
+    column?: number;
 };
 
 /**
  * Planning session VSCode links
  */
 export type SessionLinks = {
-	/** Link to PDR.md */
-	pdr: string;
-	/** Link to tech-analysis.md */
-	techAnalysis: string;
-	/** Link to TODOs.md */
-	todos: string;
-	/** Formatted markdown section with all links */
-	formatted: string;
+    /** Link to PDR.md */
+    pdr: string;
+    /** Link to tech-analysis.md */
+    techAnalysis: string;
+    /** Link to TODOs.md */
+    todos: string;
+    /** Formatted markdown section with all links */
+    formatted: string;
 };
 
 /**
@@ -61,35 +61,37 @@ export type SessionLinks = {
  * ```
  */
 export function formatVSCodeLink(filePath: string, line?: number, column?: number): string {
-	// Check if it's a Windows absolute path (e.g., C:\... or D:\...)
-	const isWindowsAbsolute = /^[a-zA-Z]:\\/.test(filePath);
+    // Check if it's a Windows absolute path (e.g., C:\... or D:\...)
+    const isWindowsAbsolute = /^[a-zA-Z]:\\/.test(filePath);
 
-	// Convert to absolute path if relative (and not Windows absolute)
-	let absolutePath: string;
-	if (isAbsolute(filePath) || isWindowsAbsolute) {
-		absolutePath = filePath;
-	} else {
-		absolutePath = resolve(filePath);
-	}
+    // Convert to absolute path if relative (and not Windows absolute)
+    let absolutePath: string;
+    if (isAbsolute(filePath) || isWindowsAbsolute) {
+        absolutePath = filePath;
+    } else {
+        absolutePath = resolve(filePath);
+    }
 
-	// Normalize Windows paths (backslashes to forward slashes)
-	const normalizedPath = absolutePath.replace(/\\/g, '/');
+    // Normalize Windows paths (backslashes to forward slashes)
+    const normalizedPath = absolutePath.replace(/\\/g, '/');
 
-	// Ensure path starts with / for VSCode protocol
-	const pathWithLeadingSlash = normalizedPath.startsWith('/') ? normalizedPath : `/${normalizedPath}`;
+    // Ensure path starts with / for VSCode protocol
+    const pathWithLeadingSlash = normalizedPath.startsWith('/')
+        ? normalizedPath
+        : `/${normalizedPath}`;
 
-	// Build VSCode protocol link
-	let link = `vscode://file${pathWithLeadingSlash}`;
+    // Build VSCode protocol link
+    let link = `vscode://file${pathWithLeadingSlash}`;
 
-	if (line !== undefined) {
-		link += `:${line}`;
+    if (line !== undefined) {
+        link += `:${line}`;
 
-		if (column !== undefined) {
-			link += `:${column}`;
-		}
-	}
+        if (column !== undefined) {
+            link += `:${column}`;
+        }
+    }
 
-	return link;
+    return link;
 }
 
 /**
@@ -117,16 +119,16 @@ export function formatVSCodeLink(filePath: string, line?: number, column?: numbe
  * ```
  */
 export function createVSCodeFileLink(input: VSCodeFileLinkOptions): string {
-	const { filePath, linkText, line, column } = input;
+    const { filePath, linkText, line, column } = input;
 
-	// Use filename as default link text
-	const text = linkText ?? basename(filePath);
+    // Use filename as default link text
+    const text = linkText ?? basename(filePath);
 
-	// Generate VSCode link
-	const vscodeLink = formatVSCodeLink(filePath, line, column);
+    // Generate VSCode link
+    const vscodeLink = formatVSCodeLink(filePath, line, column);
 
-	// Return markdown link
-	return `[${text}](${vscodeLink})`;
+    // Return markdown link
+    return `[${text}](${vscodeLink})`;
 }
 
 /**
@@ -154,31 +156,31 @@ export function createVSCodeFileLink(input: VSCodeFileLinkOptions): string {
  * ```
  */
 export function createVSCodeSessionLinks(sessionPath: string): SessionLinks {
-	// Convert to absolute path
-	const absoluteSessionPath = isAbsolute(sessionPath) ? sessionPath : resolve(sessionPath);
+    // Convert to absolute path
+    const absoluteSessionPath = isAbsolute(sessionPath) ? sessionPath : resolve(sessionPath);
 
-	// Create individual file links
-	const pdrPath = `${absoluteSessionPath}/PDR.md`;
-	const techAnalysisPath = `${absoluteSessionPath}/tech-analysis.md`;
-	const todosPath = `${absoluteSessionPath}/TODOs.md`;
+    // Create individual file links
+    const pdrPath = `${absoluteSessionPath}/PDR.md`;
+    const techAnalysisPath = `${absoluteSessionPath}/tech-analysis.md`;
+    const todosPath = `${absoluteSessionPath}/TODOs.md`;
 
-	const pdr = createVSCodeFileLink({ filePath: pdrPath });
-	const techAnalysis = createVSCodeFileLink({ filePath: techAnalysisPath });
-	const todos = createVSCodeFileLink({ filePath: todosPath });
+    const pdr = createVSCodeFileLink({ filePath: pdrPath });
+    const techAnalysis = createVSCodeFileLink({ filePath: techAnalysisPath });
+    const todos = createVSCodeFileLink({ filePath: todosPath });
 
-	// Create formatted section
-	const formatted = [
-		'**Planning Files**',
-		'',
-		`- PDR: ${pdr}`,
-		`- Technical Analysis: ${techAnalysis}`,
-		`- Tasks: ${todos}`
-	].join('\n');
+    // Create formatted section
+    const formatted = [
+        '**Planning Files**',
+        '',
+        `- PDR: ${pdr}`,
+        `- Technical Analysis: ${techAnalysis}`,
+        `- Tasks: ${todos}`
+    ].join('\n');
 
-	return {
-		pdr,
-		techAnalysis,
-		todos,
-		formatted
-	};
+    return {
+        pdr,
+        techAnalysis,
+        todos,
+        formatted
+    };
 }
