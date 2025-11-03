@@ -68,28 +68,28 @@ workflow_count=$(find .claude/docs/workflows -name "*.md" -type f ! -name "READM
 diagram_count=$(find .claude/docs/diagrams -name "*.mmd" -type f 2>/dev/null | wc -l)
 
 echo "📊 System component counts:"
-echo "   Agents: $agent_count (expected: 13)"
-echo "   Commands: $command_count (expected: 16)"
-echo "   Skills: $skill_count (expected: 16)"
+echo "   Agents: $agent_count (expected: 15)"
+echo "   Commands: $command_count (expected: 23)"
+echo "   Skills: $skill_count (expected: 19)"
 echo "   Learnings: $learning_count (expected: 8)"
-echo "   Workflows: $workflow_count (expected: 9)"
+echo "   Workflows: $workflow_count (expected: 10)"
 echo "   Diagrams: $diagram_count (expected: 4)"
 
 # Validate counts
 ALL_COUNTS_MATCH=true
 
-if [ "$agent_count" -ne 13 ]; then
-  error "Agent count mismatch: found $agent_count, expected 13"
+if [ "$agent_count" -ne 15 ]; then
+  error "Agent count mismatch: found $agent_count, expected 15"
   ALL_COUNTS_MATCH=false
 fi
 
-if [ "$command_count" -ne 16 ]; then
-  error "Command count mismatch: found $command_count, expected 16"
+if [ "$command_count" -ne 23 ]; then
+  error "Command count mismatch: found $command_count, expected 23"
   ALL_COUNTS_MATCH=false
 fi
 
-if [ "$skill_count" -ne 16 ]; then
-  error "Skill count mismatch: found $skill_count, expected 16"
+if [ "$skill_count" -ne 19 ]; then
+  error "Skill count mismatch: found $skill_count, expected 19"
   ALL_COUNTS_MATCH=false
 fi
 
@@ -98,8 +98,8 @@ if [ "$learning_count" -ne 8 ]; then
   ALL_COUNTS_MATCH=false
 fi
 
-if [ "$workflow_count" -ne 9 ]; then
-  warning "Workflow count mismatch: found $workflow_count, expected 9"
+if [ "$workflow_count" -ne 10 ]; then
+  warning "Workflow count mismatch: found $workflow_count, expected 10"
   ALL_COUNTS_MATCH=false
 fi
 
@@ -127,9 +127,9 @@ else
   if ! jq empty "$REGISTRY_FILE" 2>/dev/null; then
     error "Code registry is not valid JSON"
   else
-    TOTAL_SESSIONS=$(jq '.registry | length' "$REGISTRY_FILE")
-    TOTAL_TASKS=$(jq '[.registry[].tasks | length] | add // 0' "$REGISTRY_FILE")
-    GENERATED_AT=$(jq -r '.generatedAt // "unknown"' "$REGISTRY_FILE")
+    TOTAL_SESSIONS=$(jq '.plannings | length // 0' "$REGISTRY_FILE" 2>/dev/null || echo "0")
+    TOTAL_TASKS=$(jq '[.plannings[]] | add // 0' "$REGISTRY_FILE" 2>/dev/null || echo "0")
+    GENERATED_AT=$(jq -r '.generatedAt // "unknown"' "$REGISTRY_FILE" 2>/dev/null || echo "unknown")
 
     echo "   Sessions: $TOTAL_SESSIONS"
     echo "   Tasks: $TOTAL_TASKS"
