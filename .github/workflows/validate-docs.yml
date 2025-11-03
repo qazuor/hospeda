@@ -112,23 +112,23 @@ jobs:
           COMMAND_COUNT=$(find .claude/commands -name "*.md" -type f ! -name "README.md" | wc -l)
           SKILL_COUNT=$(find .claude/skills -name "*.md" -type f ! -name "README.md" | wc -l)
 
-          echo "Agents: $AGENT_COUNT (expected: 13)"
-          echo "Commands: $COMMAND_COUNT (expected: 18)"
-          echo "Skills: $SKILL_COUNT (expected: 16)"
+          echo "Agents: $AGENT_COUNT (expected: 15)"
+          echo "Commands: $COMMAND_COUNT (expected: 23)"
+          echo "Skills: $SKILL_COUNT (expected: 19)"
 
           ERRORS=0
 
-          if [ "$AGENT_COUNT" -ne 13 ]; then
+          if [ "$AGENT_COUNT" -ne 15 ]; then
             echo "❌ Agent count mismatch"
             ERRORS=$((ERRORS + 1))
           fi
 
-          if [ "$COMMAND_COUNT" -ne 18 ]; then
+          if [ "$COMMAND_COUNT" -ne 23 ]; then
             echo "❌ Command count mismatch"
             ERRORS=$((ERRORS + 1))
           fi
 
-          if [ "$SKILL_COUNT" -ne 16 ]; then
+          if [ "$SKILL_COUNT" -ne 19 ]; then
             echo "❌ Skill count mismatch"
             ERRORS=$((ERRORS + 1))
           fi
