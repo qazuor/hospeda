@@ -418,7 +418,7 @@ All layers properly separated:
 - CSRF protection
 - Dependency vulnerabilities
 
-**Agent:** `security-engineer`
+**Coordinated by:** `tech-lead` using `security-audit` skill
 
 **Output:**
 
@@ -464,7 +464,7 @@ All layers properly separated:
 - Memory usage
 - Network requests
 
-**Agent:** `performance-engineer`
+**Coordinated by:** `tech-lead` using `performance-audit` skill
 
 **Output:**
 

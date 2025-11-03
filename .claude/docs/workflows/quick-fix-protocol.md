@@ -295,7 +295,7 @@ If this quick fix is part of a larger feature planning session (rare):
 
 1. **Update TODOs.md** - Mark subtask as `[x]`
 2. **Update .checkpoint.json** - Update progress counter
-3. **Update issues-sync.json** - Sync with Linear if applicable
+3. **Update .github-workflow/tracking.json** - Sync with GitHub if applicable
 
 **Example:**
 

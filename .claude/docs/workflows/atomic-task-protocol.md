@@ -467,27 +467,27 @@ Use this workflow for changes that meet **MOST** criteria:
 
 3. **Fix any issues found**
 
-**💡 Consider Using Specialized Agents:**
+**💡 Consider Using Specialized Agents or Skills:**
 
-For complex atomic tasks, consider delegating quality checks to specialized agents:
+For complex atomic tasks, consider delegating quality checks:
 
-- **`qa-engineer`** - Comprehensive testing validation (if task has complex test scenarios)
-- **`security-engineer`** - Security review (if task touches auth, data validation, or sensitive operations)
-- **`performance-engineer`** - Performance analysis (if task affects queries, rendering, or data processing)
+- **`qa-engineer` agent** - Comprehensive testing validation (if task has complex test scenarios)
+- **`tech-lead` with `security-audit` skill** - Security review (if task touches auth, data validation, or sensitive operations)
+- **`tech-lead` with `performance-audit` skill** - Performance analysis (if task affects queries, rendering, or data processing)
 
-**When to use agents:**
+**When to use specialized checks:**
 
-- Task involves authentication/authorization
-- Task modifies database queries
-- Task adds API endpoints with validation
-- Task has complex business logic
-- Task affects performance-critical paths
+- Task involves authentication/authorization → security-audit skill
+- Task modifies database queries → performance-audit skill
+- Task adds API endpoints with validation → security-audit skill
+- Task has complex business logic → qa-engineer agent
+- Task affects performance-critical paths → performance-audit skill
 
 **Example:**
 
 ```text
 This task adds user input validation with sanitization.
-I'll invoke security-engineer agent to review for injection vulnerabilities.
+I'll coordinate with tech-lead to run security-audit skill for injection vulnerabilities.
 ```
 
 **Validation:**
@@ -694,7 +694,7 @@ When completing an atomic task, you MUST update all state tracking:
    }
    ```
 
-   c. **Update issues-sync.json**:
+   c. **Update .github-workflow/tracking.json**:
 
    ```json
    {
@@ -718,7 +718,7 @@ When completing an atomic task, you MUST update all state tracking:
    # If part of planning session
    git add .claude/sessions/planning/{feature}/TODOs.md
    git add .claude/sessions/planning/{feature}/.checkpoint.json
-   git add .claude/sessions/planning/{feature}/issues-sync.json
+   git add .github-workflow/tracking.json
    git commit -m "docs: update planning state for PB-001 completion"
    ```
 
@@ -729,7 +729,7 @@ When completing an atomic task, you MUST update all state tracking:
 - [ ] .checkpoint.json updated (atomic task)
 - [ ] TODOs.md updated (if part of planning)
 - [ ] Planning .checkpoint.json updated (if part of planning)
-- [ ] issues-sync.json updated (if part of planning)
+- [ ] .github-workflow/tracking.json updated (if part of planning)
 - [ ] Changes committed
 
 **Output**: Task completed and all state tracking updated

@@ -853,7 +853,7 @@ All acceptance criteria met. Feature ready for production deployment.
 [Keep existing detailed task list below]
 ```
 
-### 3. Update issues-sync.json (Final Sync)
+### 3. Update .github-workflow/tracking.json (Final Sync)
 
 ```json
 {
@@ -880,7 +880,7 @@ All acceptance criteria met. Feature ready for production deployment.
 ```bash
 git add .claude/sessions/planning/P-001-user-auth/TODOs.md
 git add .claude/sessions/planning/P-001-user-auth/.checkpoint.json
-git add .claude/sessions/planning/P-001-user-auth/issues-sync.json
+git add .github-workflow/tracking.json
 git commit -m "docs: Phase 4 completed - feature ready for deployment
 
 - All 45 tasks completed (100%)
@@ -891,7 +891,7 @@ git commit -m "docs: Phase 4 completed - feature ready for deployment
 git push origin main
 ```
 
-### 5. Optional: Sync with Linear
+### 5. Optional: Sync with GitHub
 
 ```bash
 pnpm planning:sync .claude/sessions/planning/P-001-user-auth/
@@ -899,7 +899,7 @@ pnpm planning:sync .claude/sessions/planning/P-001-user-auth/
 
 This will:
 
-- Mark all Linear issues as "Done"
+- Mark all GitHub issues as "Done"
 - Update project progress to 100%
 - Add final comment with summary
 
@@ -913,7 +913,7 @@ This will:
 - [ ] Commits prepared (not executed)
 - [ ] 🔥 **TODOs.md updated (marked complete)**
 - [ ] 🔥 **.checkpoint.json updated (marked complete)**
-- [ ] 🔥 **issues-sync.json updated (final sync)**
+- [ ] 🔥 **.github-workflow/tracking.json updated (final sync)**
 - [ ] 🔥 **State changes committed and pushed**
 - [ ] User notified
 - [ ] Clear next steps
