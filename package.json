@@ -51,7 +51,11 @@
         "claude:sync:registry": ".claude/scripts/sync-registry.sh",
         "claude:validate": "pnpm claude:validate:docs && pnpm claude:validate:schemas",
         "telemetry:report": "tsx .claude/scripts/telemetry-report.ts",
-        "health-check": ".claude/scripts/health-check.sh"
+        "health-check": ".claude/scripts/health-check.sh",
+        "planning:sync": "pnpm --filter=@repo/github-workflow tsx src/scripts/planning-sync.ts",
+        "planning:cleanup": "pnpm --filter=@repo/github-workflow tsx src/scripts/planning-cleanup.ts",
+        "planning:cleanup:auto": "pnpm --filter=@repo/github-workflow tsx src/scripts/planning-cleanup.ts --auto",
+        "todos:sync": "pnpm --filter=@repo/github-workflow tsx src/scripts/todos-sync.ts"
     },
     "devDependencies": {
         "@biomejs/biome": "1.9.4",
