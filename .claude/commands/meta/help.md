@@ -366,15 +366,6 @@ Provides architectural oversight, coordinates technical decisions,
 ensures code quality standards, performs security audits, validates
 performance, manages CI/CD, and oversees deployments.
 
-Consolidated Responsibilities:
-- Architectural validation (from architecture-validator)
-- Backend code review (from backend-reviewer)
-- Frontend code review (from frontend-reviewer)
-- Security audits (from security-engineer)
-- Performance optimization (from performance-engineer)
-- Deployment strategies (from deployment-engineer)
-- CI/CD pipelines (from cicd-engineer)
-
 Primary Responsibilities:
 1. Architectural Oversight & Validation
 2. Code Quality Leadership & Review

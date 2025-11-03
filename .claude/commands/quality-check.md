@@ -51,7 +51,7 @@ Step: TypeScript Validation
 File: apps/api/src/routes/accommodations/index.ts:45:12
 Error: Property 'id' does not exist on type 'CreateAccommodationRequest'
 
-=Ñ Fix this error before proceeding with quality check.
+=ï¿½ Fix this error before proceeding with quality check.
 Run /code-check again after fixing.
 ```
 
@@ -96,7 +96,7 @@ Failed Test Details:
    Test: "should return 400 for invalid booking data"
    Error: Expected status 400 but got 500
 
-=Ñ Fix failing tests and achieve 90% coverage before proceeding.
+=ï¿½ Fix failing tests and achieve 90% coverage before proceeding.
 Run /run-tests again after fixing.
 ```
 
@@ -130,18 +130,18 @@ Run /run-tests again after fixing.
 **Output:**
 
 ```text
-=Ë CODE QUALITY REVIEW
+=ï¿½ CODE QUALITY REVIEW
 
 Backend Review (backend-reviewer):
  API Routes: Excellent pattern compliance
  Service Layer: Clean business logic
-  MEDIUM: Missing error handling in BookingController
+ï¿½ MEDIUM: Missing error handling in BookingController
    File: apps/api/src/routes/bookings/index.ts:78
    Fix: Add try-catch around service call
 
 Frontend Review (frontend-reviewer):
  Component Architecture: Well-structured
-  MEDIUM: Performance issue in AccommodationList
+ï¿½ MEDIUM: Performance issue in AccommodationList
    File: apps/web/src/components/accommodation/AccommodationList.tsx:67
    Fix: Memoize filter function with useCallback
 
@@ -159,7 +159,7 @@ Summary: 2 medium issues found (address soon)
 
 **Command**: `/review-security`
 
-**Agent Invoked**: `security-engineer`
+**Coordinated by**: `tech-lead` using `security-audit` skill
 
 **Review Areas:**
 
@@ -181,7 +181,7 @@ Summary: 2 medium issues found (address soon)
 Authentication & Authorization:
  JWT implementation secure
  Role-based access control properly implemented
-  MEDIUM: Consider adding rate limiting to auth endpoints
+ï¿½ MEDIUM: Consider adding rate limiting to auth endpoints
 
 Input Validation:
  Zod schemas used consistently
@@ -200,7 +200,7 @@ Summary: 1 medium security recommendation
 
 **Command**: `/review-performance`
 
-**Agent Invoked**: `performance-engineer`
+**Coordinated by**: `tech-lead` using `performance-audit` skill
 
 **Review Areas:**
 
@@ -216,7 +216,7 @@ Summary: 1 medium security recommendation
 **Output:**
 
 ```text
-¡ PERFORMANCE REVIEW
+ï¿½ PERFORMANCE REVIEW
 
 Backend Performance:
  Database queries optimized
@@ -226,7 +226,7 @@ Backend Performance:
 Frontend Performance:
  Code splitting implemented
  Lazy loading configured
-  MEDIUM: Bundle size could be reduced by 15%
+ï¿½ MEDIUM: Bundle size could be reduced by 15%
    Suggestion: Analyze with bundle analyzer
 
 API Performance:
@@ -266,7 +266,7 @@ Step 5: Performance Review 
   Optimized queries and bundles
   Response times acceptable
 
-=€ Code meets all quality standards!
+=ï¿½ Code meets all quality standards!
 Ready for Phase 4: Finalization
 ```
 
@@ -282,7 +282,7 @@ Step 1: Code Quality L
   File: apps/api/src/routes/bookings/index.ts:45:12
   Error: Property 'id' does not exist
 
-=Ñ PIPELINE STOPPED
+=ï¿½ PIPELINE STOPPED
 
 Fix the above error and run /quality-check again.
 Remaining steps (tests, reviews) were not executed.
@@ -293,7 +293,7 @@ Remaining steps (tests, reviews) were not executed.
 ### Partial Success (All checks pass, but reviews find issues)
 
 ```text
-  QUALITY CHECK - ISSUES TO ADDRESS
+ï¿½ QUALITY CHECK - ISSUES TO ADDRESS
 
 Step 1: Code Quality 
   TypeScript:  Passed
@@ -303,23 +303,23 @@ Step 2: Tests 
   Tests:  247/247 passed
   Coverage:  94.2%
 
-Step 3: Code Review  
+Step 3: Code Review ï¿½
   Backend: 1 medium issue
   Frontend: 1 medium issue
   Architecture:  Passed
 
-Step 4: Security Review  
+Step 4: Security Review ï¿½
   1 medium security recommendation
 
-Step 5: Performance Review  
+Step 5: Performance Review ï¿½
   1 medium optimization opportunity
 
-=Ê Summary:
+=ï¿½ Summary:
   Critical Issues: 0
   Medium Issues: 3
   Low Issues: 1
 
-  Address medium issues before merge.
+ï¿½ Address medium issues before merge.
 Consider addressing low issues during next refactor.
 ```
 
@@ -348,7 +348,7 @@ These checks **REPORT** findings but don't stop:
 
 ## Issue Severity Levels
 
-### Critical (=Ñ Must Fix Before Merge)
+### Critical (=ï¿½ Must Fix Before Merge)
 
 - TypeScript errors
 - Linting violations
@@ -357,7 +357,7 @@ These checks **REPORT** findings but don't stop:
 - Security vulnerabilities
 - Accessibility violations
 
-### Medium (  Should Fix Soon)
+### Medium (ï¿½ Should Fix Soon)
 
 - Performance optimization opportunities
 - Inconsistent pattern usage
