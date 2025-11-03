@@ -30,7 +30,7 @@ This project uses [Husky](https://typicode.github.io/husky/) to manage Git hooks
    - Re-stages fixed files automatically
 
 4. **TODO Sync** (📝)
-   - Syncs TODO comments with Linear issues
+   - Syncs TODO comments with GitHub issues
    - Updates issue tracking automatically
    - Continues even if sync fails
 
@@ -262,11 +262,11 @@ chmod +x .husky/*
 
 **Symptom**: Pre-commit shows "TODO sync failed"
 
-**Cause**: Linear API not configured or network issues
+**Cause**: GitHub API not configured or network issues
 
 **Solution**:
 
-1. Check `.env.local` has `LINEAR_API_KEY`
+1. Check `.env.local` has `GITHUB_TOKEN`
 2. Verify network connection
 3. Hook continues anyway (non-blocking)
 
