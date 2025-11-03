@@ -12,17 +12,16 @@ flowchart TD
     TechLead --> Backend[Backend Team]
     Backend --> Hono[hono-engineer<br/>API Development]
     Backend --> DB[db-engineer<br/>Database & Drizzle]
+    Backend --> NodeTS[node-typescript-engineer<br/>Shared Packages & Utils]
     
     TechLead --> Frontend[Frontend Team]
     Frontend --> Astro[astro-engineer<br/>Public Web App]
     Frontend --> Tanstack[tanstack-start-engineer<br/>Admin Dashboard]
     Frontend --> React[react-senior-dev<br/>React Components]
     
-    %% Quality & Specialized
-    TechLead --> Quality[Quality & Specialized]
+    %% Quality
+    TechLead --> Quality[Quality]
     Quality --> QA[qa-engineer<br/>Testing & QA]
-    Quality --> Security[security-engineer<br/>Security & Compliance]
-    Quality --> Performance[performance-engineer<br/>Performance & Optimization]
     
     %% Support & Documentation
     TechLead --> Support[Support Team]
@@ -38,7 +37,7 @@ flowchart TD
     
     class User,TechLead leaderClass
     class Product productClass
-    class Backend,Hono,DB backendClass
+    class Backend,Hono,DB,NodeTS backendClass
     class Frontend,Astro,Tanstack,React frontendClass
-    class Quality,QA,Security,Performance qualityClass
+    class Quality,QA qualityClass
     class Support,Writer,Debugger supportClass

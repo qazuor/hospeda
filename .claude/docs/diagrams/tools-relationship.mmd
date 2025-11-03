@@ -11,12 +11,12 @@ flowchart LR
     end
     
     %% Agents Layer
-    subgraph Agents ["Agents (13)"]
+    subgraph Agents ["Agents (12)"]
         direction TB
         LeadAgents[tech-lead<br/>product-technical]
-        BackendAgents[hono-engineer<br/>db-engineer]
+        BackendAgents[hono-engineer<br/>db-engineer<br/>node-typescript-engineer]
         FrontendAgents[astro-engineer<br/>tanstack-start-engineer<br/>react-senior-dev]
-        QualityAgents[qa-engineer<br/>security-engineer<br/>performance-engineer]
+        QualityAgents[qa-engineer]
         SupportAgents[tech-writer<br/>debugger]
     end
     
@@ -35,7 +35,7 @@ flowchart LR
     
     QualityCmd -.->|uses| QualityAgents
     PlanningCmd -.->|uses| LeadAgents
-    AuditCmd -.->|uses| QualityAgents
+    AuditCmd -.->|tech-lead coordinates| TestingSkills
     DevCmd -.->|uses| BackendAgents
     DevCmd -.->|uses| FrontendAgents
     
