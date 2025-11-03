@@ -7,6 +7,7 @@
 **Priority**: P1 (High)
 **Owner**: Tech Lead / DevOps
 **Feature Type**: Enhancement
+**Workflow Level**: 3
 
 ---
 
@@ -338,13 +339,13 @@ What we explicitly won't do in this iteration:
   - Then: Script works correctly (uses git root detection)
   - And: Script doesn't assume single project instance
 
-- [ ] **AC-006**: Hybrid worktree-PR strategy implemented
-  - Given: I need to start work on a task
-  - When: I choose workflow level (Quick Fix, Atomic Task, or Feature)
-  - Then: Appropriate PR strategy is documented and scripted
-  - And: Level 1 (Quick Fix) allows direct commits (< 30 min tasks)
-  - And: Level 2 (Atomic Task) uses worktree + PR when ready
-  - And: Level 3 (Feature) uses worktree + draft PR immediately
+- [ ] **AC-006**: Unified worktree-PR workflow implemented
+  - Given: I need to start work on any task (all levels)
+  - When: I initiate development
+  - Then: Workflow creates worktree + branch + PR at the beginning
+  - And: PR is created in draft mode immediately
+  - And: NO exceptions for any workflow level (including Level 1)
+  - And: Level 3 additionally creates GitHub Project for tracking
 
 - [ ] **AC-007**: Migration complete across all files
   - Given: Migration analysis identified 62+ files requiring updates
@@ -442,6 +443,150 @@ If migration causes blocking issues:
 - **P3 Low (11 files)**: Design agents, specialized skills, documentation patterns
 
 See `migration-analysis.md` for complete file list and detailed priority matrix.
+
+---
+
+### US-008: Automated Development Setup
+
+**As a** developer
+**I want to** have a single command that automatically sets up my development environment (worktree + branch + PR + tracking)
+**So that** I can start working immediately without manually creating worktrees, branches, and PRs
+
+**Priority**: P0 (Blocker - core automation)
+
+**Acceptance Criteria**:
+
+- [ ] **AC-001**: Command accepts only planning code as parameter
+  - Given: I have an approved planning session (e.g., P-006)
+  - When: I run `./.claude/scripts/start-development.sh P-006`
+  - Then: Command reads all metadata from planning directory automatically
+  - And: No additional parameters required (title, branch name auto-generated)
+
+- [ ] **AC-002**: Automated branch name generation
+  - Given: Planning has title "GitHub Actions CI/CD Automation"
+  - When: Command executes
+  - Then: Branch name is generated as `feature/P-006-github-actions-ci-cd`
+  - And: Branch name follows convention: `feature/<code>-<slug>`
+
+- [ ] **AC-003**: Worktree + branch creation
+  - Given: Command has valid planning code
+  - When: Command executes
+  - Then: Git worktree is created in `../hospeda-P-006-github-actions-ci-cd`
+  - And: Feature branch is created from main
+  - And: Initial commit links to planning session
+
+- [ ] **AC-004**: Draft PR creation
+  - Given: Branch has been pushed
+  - When: Command creates PR
+  - Then: Draft PR is created with planning metadata
+  - And: PR body includes planning link, checklist, and implementation notes
+  - And: PR title follows conventional commits format
+
+- [ ] **AC-005**: GitHub Project creation (Level 3 only)
+  - Given: Planning has "Workflow Level: 3" in PDR.md
+  - When: Command completes
+  - Then: GitHub Project is created with title "<code>: <title>"
+  - And: PR is linked to project
+  - And: Project is skipped for Workflow Level < 3
+
+- [ ] **AC-006**: Integration with planning workflow
+  - Given: Planning is approved by user
+  - When: Agent executes start-development command
+  - Then: All infrastructure is created automatically
+  - And: Developer can immediately start implementation
+  - And: Workflow proceeds: Plan → Approve → Auto-setup → Implement → Merge
+
+- [ ] **AC-007**: Clear success feedback
+  - Given: Command completes successfully
+  - When: I view terminal output
+  - Then: Summary shows worktree path, branch name, PR URL
+  - And: Next steps are clearly documented
+  - And: Errors (if any) provide actionable guidance
+
+**Dependencies:**
+
+- Planning session must exist in `.claude/sessions/planning/<code>/`
+- PDR.md must have "Workflow Level" metadata
+- GitHub CLI (`gh`) must be installed and authenticated
+- `worktree-create.sh` script must exist
+
+**Estimated Effort:** 4 hours
+
+- Script development: 2h
+- Testing across workflow levels: 1h
+- Documentation: 1h
+
+**Success Metrics:**
+
+- **Metric 1**: Setup time reduction - Target: < 1 minute (vs 5-10 minutes manual)
+  - How measured: Time from command execution to ready state
+- **Metric 2**: Error rate - Target: < 5% (robust error handling)
+  - How measured: Failed vs successful executions
+- **Metric 3**: Adoption rate - Target: 100% of Level 3 workflows use command
+  - How measured: PR creation tracking
+
+**Edge Cases:**
+
+- Planning code doesn't exist → Clear error with suggestion
+- Branch already exists → Error with cleanup instructions
+- GitHub CLI not authenticated → Error with authentication guide
+- Network errors during PR creation → Graceful degradation with manual PR instructions
+- GitHub Project API failures → Warning but continue (manual project creation)
+
+---
+
+### US-009: Planning Session Archival
+
+**As a** developer
+**I want to** automatically archive completed planning sessions after PR merge
+**So that** active planning directory stays organized and historical context is preserved
+
+**Priority**: P1 (High)
+
+**Acceptance Criteria**:
+
+- [ ] **AC-001**: Manual archival command
+  - Given: Planning session work is complete and PR merged
+  - When: I run `./.claude/scripts/archive-planning.sh <planning-code>`
+  - Then: Planning directory is moved to `archive/<code>-completed-<date>`
+  - And: Git history is preserved
+
+- [ ] **AC-002**: Naming convention
+  - Given: Planning P-006 completed on 2025-11-15
+  - When: Archive command runs
+  - Then: Directory renamed to `P-006-completed-2025-11-15`
+  - And: Date format is YYYY-MM-DD
+
+- [ ] **AC-003**: Registry update
+  - Given: Planning is archived
+  - When: Viewing planning registry
+  - Then: Planning status updated to "Archived"
+  - And: Completion date is recorded
+
+- [ ] **AC-004**: Worktree cleanup reminder
+  - Given: Planning is archived
+  - When: Command completes
+  - Then: User is reminded to run `worktree-cleanup.sh`
+  - And: Worktree path is shown for reference
+
+**Dependencies:**
+
+- Planning session exists and is complete
+- PR has been merged
+- Worktree may still exist (cleanup optional)
+
+**Estimated Effort:** 2 hours
+
+- Script development: 1h
+- Testing: 0.5h
+- Documentation: 0.5h
+
+**Success Metrics:**
+
+- **Metric 1**: Archive organization - Target: 100% of completed plannings archived
+  - How measured: Ratio of archived to completed plannings
+- **Metric 2**: No data loss - Target: 100% preservation
+  - How measured: Archived directories contain all original files
 
 ---
 

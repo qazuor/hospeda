@@ -84,49 +84,45 @@ Implement modular GitHub Actions workflows with reusable components, path-based 
 - Workflow documentation must guide PR creation
 - Commands must include PR creation steps
 
-### 2.3 Hybrid PR Strategy (Recommended)
+### 2.3 Unified PR Workflow (Simplified)
 
-Based on analysis in [`worktree-pr-workflow-strategies.md`](./worktree-pr-workflow-strategies.md), we recommend **Option E: Hybrid Approach** that adapts to workflow level:
+Based on analysis in [`worktree-pr-workflow-strategies.md`](./worktree-pr-workflow-strategies.md), we implement a **Unified Workflow** that applies to ALL development work:
 
-**Level 1 (Quick Fix):** No worktree, No PR
+**Universal Workflow:** Worktree + Draft PR immediately
 
-- Time: < 30 min
-- Files: 1-2
-- Risk: Very low
-- Workflow: Direct commit to main (exceptional case)
-
-**Level 2 (Atomic Task):** Worktree → PR when ready
-
-- Time: 30min - 3h
-- Files: 2-10
-- Risk: Low-medium
-- Workflow: Work locally, push + create PR when done
-- CI runs: 1 (minimal cost)
-
-**Level 3 (Feature Planning):** Worktree + Draft PR immediately
-
-- Time: Multi-day
-- Files: 10+
-- Risk: Medium-high
-- Workflow: Create draft PR upfront, push regularly for feedback
-- CI runs: Many (justified for continuous validation)
+- Time: Any (Level 1, 2, and 3)
+- Files: Any (1-100+)
+- Risk: Any level
+- Workflow: Automated setup creates worktree + branch + draft PR at the start
+- CI runs: On every push (consistent validation)
+- **No exceptions:** Even quick fixes go through PR workflow
 
 **Implementation:**
 
 ```bash
-# Level 2: Atomic Task
-./.claude/scripts/worktree-create.sh feature/task-name
+# All development (Level 1, 2, and 3)
+./.claude/scripts/start-development.sh P-006
 
-# Level 3: Feature Planning
-./.claude/scripts/worktree-create.sh feature/big-feature --draft-pr
+# Command automatically:
+# 1. Reads planning metadata (title, workflow level)
+# 2. Creates worktree + branch
+# 3. Creates draft PR immediately
+# 4. Creates GitHub Project (Level 3 only)
+# 5. Returns ready-to-code environment
 ```
+
+**Workflow Level Differences:**
+
+- **Level 1-2**: Draft PR created, NO GitHub Project
+- **Level 3**: Draft PR created, WITH GitHub Project
 
 **Benefits:**
 
-- ✅ Matches existing mental model (workflow levels)
-- ✅ Optimal CI usage (50% cost savings vs always-draft)
-- ✅ Risk-appropriate validation
-- ✅ No wasted overhead on simple tasks
+- ✅ Single workflow to learn (zero confusion)
+- ✅ Consistent enforcement (no exceptions = no bypass temptation)
+- ✅ Always validated through CI (catch issues early)
+- ✅ No contradictions (aligns with blocking commits to main)
+- ✅ Automated setup (< 1 minute to start working)
 
 ### 2.4 Migration Architecture
 
@@ -189,11 +185,11 @@ graph TD
 - **Enforce:** Even for admins
 - **Rationale:** No exceptions = consistent quality
 
-**Decision 3: Worktree Script Enhancement**
+**Decision 3: Automated Development Setup Command**
 
-- **Add:** `--draft-pr` flag for Level 3 workflows
-- **Keep:** Existing simple mode for Level 2
-- **Rationale:** Flexibility for different workflow needs
+- **Create:** `start-development.sh` script that receives only planning-code
+- **Functionality:** Auto-extracts metadata, creates worktree, branch, PR, and GitHub Project (Level 3)
+- **Rationale:** Single unified workflow, zero manual setup, integrated with planning approval
 
 **Decision 4: Agent Instruction Updates**
 
@@ -338,7 +334,8 @@ on:
 
 - [ ] All P0 files updated in migration branch
 - [ ] Test PR created and successfully merged
-- [ ] Worktree creation script works with `--draft-pr`
+- [ ] `start-development.sh` script created and tested
+- [ ] `archive-planning.sh` script created and tested
 - [ ] Pre-commit hook blocks main commits
 - [ ] GitHub CLI authenticated and working
 - [ ] Team notified and trained
@@ -977,124 +974,54 @@ graph LR
 - Clear visualization of workflow state
 - Reduces manual status updates
 
-### 8.5 Integration with Linear
-
-**Current Workflow:**
-
-Hospeda uses Linear for high-level task management and planning sessions are synced via `pnpm planning:sync`.
-
-**GitHub ↔ Linear Integration:**
-
-```mermaid
-graph TB
-    subgraph "Linear (High-Level Planning)"
-        L1[Feature: CI/CD Automation]
-        L1 --> L2[Task: Lighthouse CI]
-        L1 --> L3[Task: Bundle Size Guard]
-        L1 --> L4[Task: CodeQL Security]
-    end
-
-    subgraph "GitHub Projects (Implementation Tracking)"
-        G1[Project: Hospeda CI/CD]
-        G1 --> G2[Issue: PB-002-001]
-        G1 --> G3[Issue: PB-002-002]
-        G1 --> G4[Issue: PB-003-001]
-        G2 --> PR1[PR #50]
-        G3 --> PR2[PR #51]
-        G4 --> PR3[PR #52]
-    end
-
-    L2 -.->|References| G2
-    L2 -.->|References| G3
-    L3 -.->|References| G4
-
-    PR1 -.->|Updates| L2
-    PR2 -.->|Updates| L2
-    PR3 -.->|Updates| L3
-```
-
-**Integration Methods:**
-
-1. **Manual Reference (Current):**
-   - PR title includes Linear task ID: `[HOS-123] PB-002-001: Create Lighthouse CI Workflow`
-   - PR description links Linear task: `Linear Task: https://linear.app/hospeda/issue/HOS-123`
-   - Manual status sync: Update Linear when PR merges
-
-2. **Linear GitHub Integration (Recommended):**
-   - Install Linear GitHub App
-   - Configure bi-directional sync
-   - Linear tasks auto-update when PR status changes
-   - GitHub issues can trigger Linear task creation
-
-3. **Bi-Directional Sync (Advanced):**
-
-   ```yaml
-   # Linear → GitHub
-   - Linear task created → GitHub issue created
-   - Linear task assigned → GitHub issue assigned
-   - Linear status changed → GitHub project column updated
-
-   # GitHub → Linear
-   - PR opened → Linear task status "In Progress"
-   - PR merged → Linear task status "Done"
-   - PR closed without merge → Linear task status "Todo"
-   ```
-
-**Proposed Enhancement:**
-
-Enable Linear's GitHub integration for automatic sync:
-
-1. **Install Integration:**
-   - Go to Linear Settings → Integrations → GitHub
-   - Authorize Hospeda repository
-   - Configure sync rules
-
-2. **Configure Sync Rules:**
-   - Linear task → GitHub issue (on task creation)
-   - GitHub PR merge → Linear task completion
-   - GitHub PR review → Linear task comment
-
-3. **Benefits:**
-   - Reduce manual status updates
-   - Developers work in GitHub, PMs see status in Linear
-   - Single source of truth (Linear for planning, GitHub for implementation)
-
-### 8.6 Workflow with Projects
+### 8.5 Workflow with Projects
 
 **Developer Experience:**
 
 ```bash
-# 1. Pick task from GitHub Project (via web UI)
-# Developer sees "Backlog" column, picks highest priority task
+# 1. Request planning session (e.g., P-006 for CI/CD)
+# Planning is created, PDR + tech-analysis completed
 
-# 2. Create worktree + PR
-./worktree-create.sh feature/lighthouse-ci --draft-pr
-# This creates:
-# - New worktree in ../worktrees/feature/lighthouse-ci/
-# - New branch feature/lighthouse-ci
-# - Draft PR on GitHub (via gh CLI)
-# - Issue automatically linked to PR (via "Closes #123")
+# 2. User approves planning
+# Once approved, agent executes automated setup:
 
-# 3. PR auto-moves to "In Review" (draft mode)
-# Project board automatically reflects PR state
+./start-development.sh P-006
+# This command automatically:
+# - Reads metadata from .claude/sessions/planning/P-006/PDR.md
+# - Extracts title: "GitHub Actions CI/CD Automation"
+# - Generates branch: feature/P-006-github-actions-ci-cd
+# - Creates worktree in ../hospeda-P-006-github-actions-ci-cd
+# - Pushes initial commit linking to planning
+# - Creates draft PR with planning metadata
+# - Creates GitHub Project (Level 3 only)
+# - Returns: worktree path, branch name, PR URL
 
-# 4. Work, commit, push
+# 3. PR created in draft mode
+# Project board automatically shows PR in "In Progress" column
+# (Only for Level 3 workflows)
+
+# 4. Work, commit, push (in worktree)
+cd ../hospeda-P-006-github-actions-ci-cd
 git add .
 git commit -m "feat(ci): add Lighthouse CI workflow"
 git push
 
 # 5. Mark PR ready for review
 gh pr ready
-# → Project auto-moves to "In Review" (ready state)
+# → Project auto-moves to "In Review" (Level 3 only)
 
 # 6. CI runs, reviewers approve
 # → Project auto-moves to "Ready to Merge" (when approved + CI passes)
 
 # 7. Merge PR
 gh pr merge --squash
-# → Project auto-moves to "Done"
+# → Project auto-moves to "Done" (Level 3 only)
 # → Linked issue auto-closes
-# → Linear task auto-updates (if integration enabled)
+
+# 8. Archive planning session
+./archive-planning.sh P-006
+# → Moves planning to archive/<code>-completed-<date>
+# → Reminds to cleanup worktree
 
 # 8. Cleanup worktree
 ./.claude/scripts/worktree-remove.sh feature/lighthouse-ci
@@ -2107,7 +2034,8 @@ With 62+ files requiring updates, incomplete migration would cause:
    - Update atomic-task-protocol workflow
    - Update phase-2 and phase-4 workflows
    - Update task-completion-protocol
-   - Enhance `worktree-create.sh` with `--draft-pr` flag
+   - Create `start-development.sh` command (auto-setup)
+   - Create `archive-planning.sh` command (archival)
 
 2. **Soft Launch** (Week 1)
    - Merge migration PR (enforcement OFF)
@@ -2265,7 +2193,8 @@ With 62+ files requiring updates, incomplete migration would cause:
 - [ ] `phase-2-implementation.md` workflow updated
 - [ ] `phase-4-finalization.md` workflow updated
 - [ ] `task-completion-protocol.md` workflow updated
-- [ ] `worktree-create.sh` enhanced with `--draft-pr`
+- [ ] `start-development.sh` script created (US-008)
+- [ ] `archive-planning.sh` script created (US-009)
 - [ ] Migration tested with trial PRs
 - [ ] Team training conducted
 

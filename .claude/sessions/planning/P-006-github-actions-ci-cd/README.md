@@ -2,121 +2,105 @@
 
 **Session ID:** P-006-github-actions-ci-cd
 **Created:** 2025-11-01
-**Status:** 🟡 In Progress - Phase 1: Planning
+**Status:** 🟡 In Progress - Phase 1: Planning Complete
+**Workflow Level:** 3
 
-## Overview
+---
 
-Implementation of comprehensive CI/CD automation using GitHub Actions to ensure code quality, performance, security, and reliability across the Hospeda monorepo.
+## Quick Start
 
-## Objectives
+### For Implementation
 
-1. **Quality Gates:** Automated checks on every PR (Lighthouse, tests, lint, typecheck)
-2. **Security:** CodeQL static analysis with PR blocking
-3. **Performance:** Bundle size monitoring with regression detection
-4. **Dependencies:** Automated updates with conditional auto-merge (Renovate)
-5. **Health Monitoring:** Scheduled cron jobs for proactive issue detection
+1. **Review Planning:** Read [PDR.md](./PDR.md) for requirements and user stories
+2. **Check Tasks:** See [TODOs.md](./TODOs.md) for implementation breakdown
+3. **Understand Architecture:** Read [tech-analysis.md](./tech-analysis.md) for technical decisions
+4. **Follow Checklist:** Use [migration-checklist.md](./migration-checklist.md) for migration tracking
 
-## Scope
+### After User Approval
 
-### 🔄 EXPANDED SCOPE: Migration to PR-Based Workflow
+```bash
+# Start development automatically
+./start-development.sh P-006
 
-**CRITICAL:** This project includes a comprehensive migration of the entire monorepo from "commit-to-main" workflow to "PR-based + Git Worktrees" workflow.
+# After PR merge
+./archive-planning.sh P-006
+```
 
-**Migration Analysis Required:**
+---
 
-1. **Code Analysis:**
-   - Scripts assuming single project instance
-   - Hardcoded branch names (main/master)
-   - Path assumptions that break with worktrees
-   - Commands that commit directly to main
-   - Git operations that need PR flow
+## 📋 Planning Documents
 
-2. **Workflow Analysis:**
-   - All `.claude/agents/*.md` - Update instructions for PR workflow
-   - All `.claude/commands/*.md` - Adapt for worktrees/PRs
-   - All `.claude/skills/*.md` - Check for direct-commit assumptions
-   - All `.claude/docs/workflows/*.md` - Update for PR requirement
-   - All `.claude/scripts/*.sh` - Verify worktree compatibility
+### Core Documents (Read These)
 
-3. **Documentation Analysis:**
-   - README files (root + apps + packages)
-   - Contributing guidelines
-   - Development setup docs
-   - Deployment documentation
-   - Architecture docs referencing git workflow
+| Document | Purpose | Lines | Status |
+|----------|---------|-------|--------|
+| **[PDR.md](./PDR.md)** | Product requirements, user stories (US-001 to US-009) | ~600 | ✅ Complete |
+| **[tech-analysis.md](./tech-analysis.md)** | Technical architecture, decisions, integration | ~2,300 | ✅ Complete |
+| **[TODOs.md](./TODOs.md)** | Task breakdown, dependencies, estimates | ~1,200 | ✅ Complete |
+| **[migration-checklist.md](./migration-checklist.md)** | 62-file migration tracking by priority | ~350 | ✅ Complete |
 
-4. **Configuration Analysis:**
-   - Git hooks (.husky) - Adapt for multiple worktrees
-   - Package.json scripts - Ensure worktree-safe
-   - CI/CD configs - Already PR-based (validate)
-   - Environment setup - Worktree considerations
+### Analysis Documents (Reference)
 
-5. **Agent Instructions Analysis:**
-   - Remove "commit directly to main" instructions
-   - Add "always work in feature branch" requirements
-   - Update commit protocols to mention PR creation
-   - Add worktree cleanup instructions
+| Document | Purpose | Location |
+|----------|---------|----------|
+| **Workflow Decision** | Final decision on unified PR workflow | [analysis/decision-workflow.md](./analysis/decision-workflow.md) |
+| **Migration Audit** | Detailed analysis of 62 files (2,310 lines) | [analysis/migration-audit-full.md](./analysis/migration-audit-full.md) |
 
-**Deliverables from Migration Analysis:**
+---
 
-- **migration-analysis.md** - Comprehensive audit of all changes needed
-- **Updated PDR.md** - Add US-007: Monorepo Migration to PR Workflow
-- **Updated tech-analysis.md** - Add migration architecture section
-- **Updated TODOs.md** - Add PB-011: Migration tasks (estimated 6-8h)
+## 🎯 Project Overview
 
-### CI/CD Workflows (On PR)
+**Objectives:**
 
-- **Lighthouse CI:** Performance, A11y, SEO, Best Practices audits
-  - Strict mode: Block PR if scores < thresholds
-  - Target: Perf >= 90, A11y >= 95, SEO >= 90, BP >= 90
+1. **CI/CD Automation:** GitHub Actions for quality, security, performance
+2. **Migration (BLOCKER):** Migrate entire monorepo from commit-to-main to PR-based workflow
+3. **Automation:** `start-development.sh` for setup, `archive-planning.sh` for cleanup
 
-- **Bundle Size Guard:** Monitor bundle size with Size Limit + bundlewatch
-  - Alert: >5% increase
-  - Block: >10% increase
-  - Historical tracking
+**Key Decisions:**
 
-- **CodeQL Security:** Static analysis for JS/TS vulnerabilities
-  - Block: Critical + High severity
-  - Warn: Medium severity
-  - Info: Low severity
+- ✅ **Unified Workflow:** ALL levels (1, 2, 3) use worktree + draft PR immediately
+- ✅ **No exceptions:** Even quick fixes go through PR
+- ✅ **Automated setup:** Single command creates everything
+- ✅ **GitHub Projects:** Only for Level 3
 
-- **Renovate:** Automated dependency updates
-  - Auto-merge: patch devDeps + security fixes
-  - Manual review: major updates
-  - Grouping: React, TanStack, Drizzle, etc.
+**Effort Estimate:**
 
-### Cron Jobs (Scheduled)
+- Migration: 58 hours (P0: 16h, P1: 24h, P2: 13h, P3: 5h)
+- CI/CD: 14 hours
+- **Total: 72 hours over 4-5 weeks**
 
-- **Dependencies Health:** Daily (8 AM) - audit, deprecated, outdated
-- **Docs Validation:** Daily (9 AM) - structure, links, schemas
-- **Database Health:** Weekly (Monday 10 AM) - migrations, schema, seed
-- **Bundle Analysis:** Weekly (Friday 6 PM) - composition report
-- **E2E Tests:** Nightly (2 AM) - if staging exists
+---
 
-## Success Criteria
+## 📊 Progress Tracking
 
-- All CI/CD workflows running successfully on PRs
-- No false positives blocking valid PRs
-- Clear, actionable feedback in PR comments
-- Cron jobs reporting to GitHub Issues when issues detected
-- Zero regressions in performance/security/bundle size
-- Dependencies kept up-to-date automatically
+**Phase 1: Planning** ✅ Complete
 
-## Documents
+- [x] PDR created with 9 user stories
+- [x] Technical analysis completed
+- [x] Migration strategy finalized
+- [x] Tasks broken down (96 tasks total)
 
-- [PDR.md](./PDR.md) - Product Design Requirements
-- [tech-analysis.md](./tech-analysis.md) - Technical Analysis
-- [TODOs.md](./TODOs.md) - Task Breakdown
+**Phase 0: Migration Prerequisites** 🔲 Not Started (BLOCKER)
 
-## Timeline
+- [ ] P0: 11 critical files (16h) - Week 0
+- [ ] P1: 22 high-priority files (24h) - Week 1-2
+- [ ] P2: 18 medium-priority files (13h) - Week 3-4
+- [ ] P3: 11 low-priority files (5h) - Ongoing
 
-- **Phase 1 (Planning):** Session creation + PDR + Tech Analysis
-- **Phase 2 (Implementation):** Create workflows + configure tools
-- **Phase 3 (Validation):** Test workflows + verify functionality
-- **Phase 4 (Finalization):** Documentation + launch
+**Phase 2: CI/CD Implementation** 🔲 Not Started
 
-## Related
+- Depends on: Phase 0 completion
+- Duration: 14 hours
 
-- [Git Worktrees Guide](../../docs/guides/git-worktrees.md)
+---
+
+## 🔗 Related Documentation
+
+- [Workflow Decision Tree](../../docs/workflows/decision-tree.md)
 - [PR Workflow Guide](../../docs/guides/pr-workflow.md)
-- [Phase 1 Planning Workflow](../../docs/workflows/phase-1-planning.md)
+- [Git Worktrees Guide](../../docs/guides/git-worktrees.md)
+- [Planning Phase 1](../../docs/workflows/phase-1-planning.md)
+
+---
+
+**Last Updated:** 2025-11-01
