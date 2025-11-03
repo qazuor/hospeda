@@ -50,7 +50,7 @@ export type SubscriptionItemWithPurchase = z.infer<typeof SubscriptionItemWithPu
  * For now, we define a basic structure that can be extended.
  */
 export const SubscriptionItemWithTargetEntitySchema = SubscriptionItemSchema.extend({
-    // TODO [47e95c2d-82a1-4509-8998-587c84ef4c85]: This will be extended once all target entity schemas are implemented
+    // TODO: This will be extended once all target entity schemas are implemented
     // The actual target entity will be resolved based on entityType + linkedEntityId
     targetEntity: z.record(z.string(), z.unknown()).optional()
 });
@@ -71,7 +71,7 @@ export const SubscriptionItemCompleteSchema = SubscriptionItemSchema.extend({
         PurchaseSchema.extend({ _type: z.literal('purchase') })
     ]),
 
-    // TODO [f08ef1dc-75de-4274-b130-2d0336c0c2ba]: Polymorphic target entity once all schemas are implemented
+    // TODO: Polymorphic target entity once all schemas are implemented
     targetEntity: z.record(z.string(), z.unknown()).optional()
 });
 

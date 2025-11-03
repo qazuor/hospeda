@@ -341,7 +341,7 @@ export class PaymentModel extends BaseModel<Payment> {
             return false;
         }
 
-        // TODO [b687ac52-2e54-487d-8d29-cd636e102075]: Check if there are already refunds and calculate remaining refundable amount
+        // TODO: Check if there are already refunds and calculate remaining refundable amount
         return true;
     }
 

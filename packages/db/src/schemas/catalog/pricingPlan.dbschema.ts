@@ -59,7 +59,7 @@ export const pricingPlanRelations = relations(pricingPlans, ({ one, many }) => (
         relationName: 'pricing_plan_deleted_by'
     })
 
-    // TODO [69b6291a-203f-43bd-bb69-dc37828e70a9]: Add benefitListings relation when services schema is implemented
+    // TODO: Add benefitListings relation when services schema is implemented
     // benefitListings: many(benefitListings, {
     //     relationName: 'listing_plan_benefits'
     // })

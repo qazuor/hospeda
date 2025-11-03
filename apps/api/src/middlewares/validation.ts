@@ -214,6 +214,6 @@ export const createValidationMiddleware = (options: ValidationMiddlewareOptions 
 export const validationMiddleware = () => createValidationMiddleware();
 
 export const automaticValidation = createMiddleware(async (_c: Context, next: Next) => {
-    // TODO [677a2c7f-72e7-4f25-8374-21d48dbfe540]: Implement automatic validation when Hono types are better understood
+    // TODO: Implement automatic validation when Hono types are better understood
     await next();
 });

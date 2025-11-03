@@ -159,7 +159,7 @@ export class SubscriptionService {
                 metadata: context.metadata
             });
 
-            // TODO [6ada69ba-a0da-4ba5-b2f8-6f58fe040496]: Create Mercado Pago subscription/preapproval
+            // TODO: Create Mercado Pago subscription/preapproval
             // This would involve creating a preapproval plan with Mercado Pago
             // For now, we'll mark the subscription as active
             const updatedSubscription = await this.subscriptionRepository.update(subscription.id, {
@@ -220,7 +220,7 @@ export class SubscriptionService {
                 throw new Error(`Subscription is already cancelled: ${subscriptionId}`);
             }
 
-            // TODO [0dde12bd-5bb6-4ab7-907a-db7b7776cfda]: Cancel Mercado Pago subscription/preapproval if exists
+            // TODO: Cancel Mercado Pago subscription/preapproval if exists
             // if (subscription.mercadoPagoSubscriptionId) {
             //     await this.mercadoPagoClient.cancelSubscription(subscription.mercadoPagoSubscriptionId);
             // }

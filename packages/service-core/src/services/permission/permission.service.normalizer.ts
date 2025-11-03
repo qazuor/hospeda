@@ -4,7 +4,7 @@
  * This file serves as a placeholder for future permission-related normalization logic.
  */
 
-// TODO [2bb1b883-9c2a-488a-803d-4ae9e6af2bd7]: Add normalizers for PermissionService if/when needed.
+// TODO: Add normalizers for PermissionService if/when needed.
 
 /**
  * Placeholder for future permission normalization functions.

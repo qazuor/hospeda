@@ -701,7 +701,7 @@ export class PostService extends BaseCrudService<
                 .strict(),
             execute: async (_validated: unknown, actor: Actor): Promise<{ success: boolean }> => {
                 this._canComment(actor);
-                // TODO [4897f21b-e8fb-4ce5-84ec-05c54365649f]: Implement comment removal logic
+                // TODO: Implement comment removal logic
                 return { success: false };
             }
         });

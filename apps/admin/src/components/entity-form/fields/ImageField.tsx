@@ -101,14 +101,14 @@ export const ImageField = React.forwardRef<HTMLInputElement, ImageFieldProps>(
 
             // Validate file type
             if (!allowedTypes.includes(file.type)) {
-                // TODO [b1ea2685-67c0-4d9e-8701-7deb3a4928f0]: Show error toast
+                // TODO: Show error toast
                 console.error('Invalid file type');
                 return;
             }
 
             // Validate file size
             if (file.size > maxSize) {
-                // TODO [b56afa66-11b8-4ecd-970a-639a332b98c6]: Show error toast
+                // TODO: Show error toast
                 console.error('File too large');
                 return;
             }
@@ -135,7 +135,7 @@ export const ImageField = React.forwardRef<HTMLInputElement, ImageFieldProps>(
                 onChange?.(imageValue);
             } catch (error) {
                 console.error('Upload failed:', error);
-                // TODO [13a12978-8d16-4a21-aa54-73dd95c04c17]: Show error toast
+                // TODO: Show error toast
             } finally {
                 setIsUploading(false);
             }

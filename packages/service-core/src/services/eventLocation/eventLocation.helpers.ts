@@ -3,7 +3,7 @@
  * Contains utility functions for slug generation, location validation, and other domain-specific operations.
  */
 
-// TODO [44e29b4c-6088-4a1d-bbb7-02fbde73c744]: Implement slug generation or other helpers if required for event locations.
+// TODO: Implement slug generation or other helpers if required for event locations.
 
 /**
  * Placeholder for future helper functions related to event locations.

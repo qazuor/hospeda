@@ -90,7 +90,7 @@ const preProcessAccommodation = async (item: unknown, context: SeedContext) => {
         if (realOwnerId) {
             // We need to get the user data to create the actor
             // For now, we'll use a basic actor structure
-            // TODO [ec47c826-10aa-414c-9218-f838a8cc6374]: Get full user data from database if needed
+            // TODO: Get full user data from database if needed
             context.actor = {
                 id: realOwnerId,
                 role: RoleEnum.SUPER_ADMIN, // Default role, should be updated with actual user role

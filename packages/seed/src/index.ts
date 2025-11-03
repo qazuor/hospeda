@@ -122,7 +122,7 @@ export async function runSeed(options: SeedOptions): Promise<void> {
         }
 
         if (migrate) {
-            // TODO [99c8a074-be72-413a-a605-abaaa3461abb]: Implement migration runner
+            // TODO: Implement migration runner
             // await runMigrations();
             logger.warn(`${STATUS_ICONS.Warning} Migration runner not implemented yet`);
             errorHistory.recordWarning(
