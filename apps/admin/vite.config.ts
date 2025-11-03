@@ -75,6 +75,25 @@ const AdminEnvSchema = z
         path: ['CLERK_SECRET_KEY']
     });
 
+// DEBUG: Log environment variables to diagnose CI issue
+console.log('\n🔍 DEBUG: Environment Variables Check');
+console.log('==========================================');
+console.log('HOSPEDA_CLERK_SECRET_KEY:', {
+    exists: !!process.env.HOSPEDA_CLERK_SECRET_KEY,
+    type: typeof process.env.HOSPEDA_CLERK_SECRET_KEY,
+    length: process.env.HOSPEDA_CLERK_SECRET_KEY?.length || 0,
+    firstChars: process.env.HOSPEDA_CLERK_SECRET_KEY?.substring(0, 7) || 'N/A',
+    trimmed: process.env.HOSPEDA_CLERK_SECRET_KEY?.trim().length || 0
+});
+console.log('CLERK_SECRET_KEY:', {
+    exists: !!process.env.CLERK_SECRET_KEY,
+    type: typeof process.env.CLERK_SECRET_KEY,
+    length: process.env.CLERK_SECRET_KEY?.length || 0,
+    firstChars: process.env.CLERK_SECRET_KEY?.substring(0, 7) || 'N/A',
+    trimmed: process.env.CLERK_SECRET_KEY?.trim().length || 0
+});
+console.log('==========================================\n');
+
 try {
     AdminEnvSchema.parse(process.env);
 } catch (error) {
