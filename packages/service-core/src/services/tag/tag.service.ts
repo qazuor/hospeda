@@ -339,5 +339,5 @@ export class TagService extends BaseCrudRelatedService<
         });
     }
 
-    // TODO [e30852f5-6eeb-43a1-b304-41649ec5b7e1]: Implement permission hooks, lifecycle hooks, and custom methods as needed.
+    // TODO: Implement permission hooks, lifecycle hooks, and custom methods as needed.
 }

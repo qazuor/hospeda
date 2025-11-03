@@ -45,7 +45,7 @@ export class InvoiceModel extends BaseModel<Invoice> {
         }
 
         // For now, generate a simple invoice with base amount
-        // TODO [dc9f225a-7c1a-455e-9928-ef3fec6f53ea]: Get actual pricing from subscription items and pricing plans
+        // TODO: Get actual pricing from subscription items and pricing plans
         const subtotalAmount = 100; // Temporary fixed amount
         const taxAmount = 10; // Temporary fixed tax
         const totalAmount = subtotalAmount + taxAmount;

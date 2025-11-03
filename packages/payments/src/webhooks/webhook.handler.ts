@@ -217,7 +217,7 @@ export class WebhookHandler {
                 'Handling subscription notification'
             );
 
-            // TODO [5dbb37b3-78eb-4de5-b2c6-2fc60eb5d949]: Implement subscription notification handling
+            // TODO: Implement subscription notification handling
             // This would involve fetching the subscription from Mercado Pago
             // and updating our local subscription record
 
@@ -263,7 +263,7 @@ export class WebhookHandler {
 
             // If this is a subscription payment, activate the subscription
             if (payment.type === 'subscription') {
-                // TODO [6818c8fb-4320-4fa1-a3fe-c5de5ed51dc1]: Activate user features based on payment plan
+                // TODO: Activate user features based on payment plan
                 this.logger.info(
                     {
                         paymentId: paymentResult.paymentId,
@@ -276,7 +276,7 @@ export class WebhookHandler {
 
             // If this is a one-time payment, activate the features
             if (payment.type === 'one_time') {
-                // TODO [a1aa5d87-210d-4bc8-8c4d-36c732296419]: Activate user features based on payment plan
+                // TODO: Activate user features based on payment plan
                 this.logger.info(
                     {
                         paymentId: paymentResult.paymentId,
@@ -287,9 +287,9 @@ export class WebhookHandler {
                 );
             }
 
-            // TODO [ca8db3ff-dc2c-4252-807b-6746afa9be5a]: Send confirmation email to user
-            // TODO [cc091b1c-64de-4a4d-93f2-ad3ac2fa2274]: Update user permissions/features
-            // TODO [8392bb53-89d6-452e-8485-69f441a3f1be]: Log analytics event
+            // TODO: Send confirmation email to user
+            // TODO: Update user permissions/features
+            // TODO: Log analytics event
         } catch (error) {
             this.logger.error(
                 {

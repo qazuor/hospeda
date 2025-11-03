@@ -44,7 +44,7 @@ export type PurchaseWithRelations = z.infer<typeof PurchaseWithRelationsSchema>;
  * For now, we define the basic structure.
  */
 export const PurchaseWithItemsSchema = PurchaseSchema.extend({
-    // TODO [23751a8c-f5c7-4c62-adab-7c4b7eacecdb]: Add subscription items once SubscriptionItem schema is implemented
+    // TODO: Add subscription items once SubscriptionItem schema is implemented
     // subscriptionItems: z.array(SubscriptionItemSchema)
     itemsCount: z.number().int().min(0).default(0)
 });
@@ -59,7 +59,7 @@ export type PurchaseWithItems = z.infer<typeof PurchaseWithItemsSchema>;
 export const PurchaseCompleteSchema = PurchaseSchema.extend({
     client: ClientSchema,
     pricingPlan: PricingPlanSchema,
-    // TODO [744c868c-5387-405e-8996-acb47e90fa25]: Add subscription items once SubscriptionItem schema is implemented
+    // TODO: Add subscription items once SubscriptionItem schema is implemented
     // subscriptionItems: z.array(SubscriptionItemSchema)
     itemsCount: z.number().int().min(0).default(0)
 });

@@ -102,7 +102,7 @@ export class ClientModel extends BaseModel<Client> {
         overdueAmount: number;
     }> {
         // For now, return mock data (invoice table doesn't exist yet)
-        // TODO [952d6d53-87a5-47ed-a51d-b01b2fa4dd35]: Implement when invoice tables are available
+        // TODO: Implement when invoice tables are available
         void clientId;
         void tx;
 
@@ -124,7 +124,7 @@ export class ClientModel extends BaseModel<Client> {
         tx?: NodePgDatabase<typeof schema>
     ): Promise<boolean> {
         // For now, return false (subscription table doesn't exist yet)
-        // TODO [744fa45c-f98f-443c-a271-9541ed649d17]: Implement when subscription tables are available
+        // TODO: Implement when subscription tables are available
         void clientId;
         void tx;
 
@@ -139,7 +139,7 @@ export class ClientModel extends BaseModel<Client> {
      * Add user join to query
      */
     withUser(query: unknown): unknown {
-        // TODO [63beffc9-f88e-46f5-a04d-57ae3c350fff]: Implement when subscription tables are available
+        // TODO: Implement when subscription tables are available
         return query;
     }
 
@@ -147,7 +147,7 @@ export class ClientModel extends BaseModel<Client> {
      * Add subscriptions join to query
      */
     withSubscriptions(query: unknown): unknown {
-        // TODO [33cc3a1b-a7d5-4d1d-9016-f52c527f57f2]: Implement when subscription tables are available
+        // TODO: Implement when subscription tables are available
         return query;
     }
 
@@ -155,7 +155,7 @@ export class ClientModel extends BaseModel<Client> {
      * Add access rights join to query
      */
     withAccessRights(query: unknown): unknown {
-        // TODO [0d518782-8da2-4dd7-87c2-28b7a17b34ea]: Implement when subscription tables are available
+        // TODO: Implement when subscription tables are available
         return query;
     }
 }

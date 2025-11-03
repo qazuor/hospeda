@@ -18,7 +18,7 @@ export type { EntityViewSectionProps } from '../EntityViewSection';
 export { LazySectionWrapper } from './LazySectionWrapper';
 export type { LazySectionWrapperProps } from './LazySectionWrapper';
 
-// TODO [3fdd6165-71ae-4a25-a076-1b32ede5afe5]: Add specialized section components
+// TODO: Add specialized section components
 // export { CollapsibleSection } from './CollapsibleSection';
 // export type { CollapsibleSectionProps } from './CollapsibleSection';
 

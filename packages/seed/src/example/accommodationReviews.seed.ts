@@ -51,7 +51,7 @@ const preProcessReview = async (item: unknown, context: SeedContext) => {
         if (realUserId) {
             // We need to get the user data to create the actor
             // For now, we'll use a basic actor structure
-            // TODO [32096ab2-129b-4aab-b6bd-6108405ec0e0]: Get full user data from database if needed
+            // TODO: Get full user data from database if needed
             context.actor = {
                 id: realUserId,
                 role: RoleEnum.SUPER_ADMIN, // Default role, should be updated with actual user role

@@ -15,12 +15,12 @@ export * from './post/index.js';
 export * from './postSponsor/index.js';
 export * from './postSponsorship/index.js';
 export * from './product/index.js';
-// TODO [4fcabfc9-aeb6-4701-b367-e50a9ef4cfba]: Enable once migration from old payment model is complete
+// TODO: Enable once migration from old payment model is complete
 // export * from './pricingPlan/index.js';
 // export * from './pricingTier/index.js';
 export * from './client-access-right/index.js';
 export * from './client/index.js';
-// TODO [8eda6b67-553c-4fed-bdf7-a9d369a33846]: Enable once migration from old payment model is complete
+// TODO: Enable once migration from old payment model is complete
 // export * from './subscription/index.js';
 export * from './purchase/index.js';
 export * from './subscriptionItem/index.js';

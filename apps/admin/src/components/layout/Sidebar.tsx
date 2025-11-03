@@ -45,7 +45,7 @@ export const Sidebar = ({ open, onClose }: SidebarProps) => {
     const { location } = useRouterState();
     const router = useRouter();
     const { t } = useTranslations();
-    // TODO [31d8a319-9624-4a88-bdf9-d19fd9e8ab94]: Replace with real user permissions from Clerk session/ctx
+    // TODO: Replace with real user permissions from Clerk session/ctx
     const userPermissions: PermissionValue[] | undefined = undefined;
     const items = filterMenuByPermissions(menuTree, userPermissions);
 

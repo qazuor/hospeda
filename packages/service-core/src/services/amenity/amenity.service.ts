@@ -126,7 +126,7 @@ export class AmenityService extends BaseCrudRelatedService<
         checkCanRemoveAmenityFromAccommodation(actor);
     }
 
-    // TODO [20997114-5618-4c3b-b0ff-23e52ab5c8c7]: Implement permission hooks, normalizers, and custom methods as needed.
+    // TODO: Implement permission hooks, normalizers, and custom methods as needed.
     // Stubs for custom methods:
     /**
      * Retrieves all accommodations that have a specific amenity.

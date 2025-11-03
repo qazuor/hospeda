@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { ProductSchema } from './product.schema.js';
 
-// TODO [08efb1f9-8a95-4c87-bfe9-a2724b1bb4c5]: These schemas will be imported from their respective packages when implemented
+// TODO: These schemas will be imported from their respective packages when implemented
 // For now, creating minimal schemas to define the structure
 
 // Temporary PricingTier schema until package is implemented
