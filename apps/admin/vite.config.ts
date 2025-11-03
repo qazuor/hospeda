@@ -54,6 +54,7 @@ const AdminEnvSchema = z
             .string()
             .min(1, 'Clerk publishable key is required')
             .optional(),
+        HOSPEDA_CLERK_SECRET_KEY: z.string().min(1, 'Clerk secret key is required').optional(),
         CLERK_SECRET_KEY: z.string().min(1, 'Clerk secret key is required').optional()
     })
     .refine((data) => data.HOSPEDA_API_URL || data.VITE_API_URL, {
@@ -68,8 +69,9 @@ const AdminEnvSchema = z
             path: ['CLERK_PUBLISHABLE_KEY']
         }
     )
-    .refine((data) => data.CLERK_SECRET_KEY, {
-        message: 'CLERK_SECRET_KEY is required for server-side authentication',
+    .refine((data) => data.CLERK_SECRET_KEY || data.HOSPEDA_CLERK_SECRET_KEY, {
+        message:
+            'CLERK_SECRET_KEY is required for server-side authentication (either CLERK_SECRET_KEY or HOSPEDA_CLERK_SECRET_KEY)',
         path: ['CLERK_SECRET_KEY']
     });
 
