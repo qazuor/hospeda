@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { z } from 'zod';
-import { NewEntityInputSchema } from '../dist/index.js';
+import { NewEntityInputSchema } from '../src/index.js';
 
 describe('NewEntityInputSchema Debug', () => {
     test.skip('simple test with minimal schema - SKIPPED: NewEntityInputSchema.omit() fails when schema lacks system fields', () => {
