@@ -1,0 +1,128 @@
+name: Planning Cleanup
+
+on:
+  # Run automatically every Monday at 00:00 UTC
+  schedule:
+    - cron: '0 0 * * 1'
+
+  # Allow manual trigger
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Run in dry-run mode (no changes)'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  cleanup:
+    name: Archive Completed Planning Sessions
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Need full history to detect completed sessions
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run planning cleanup
+        run: |
+          echo "🔍 Scanning for completed planning sessions..."
+
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            echo "Running in DRY RUN mode"
+            pnpm planning:cleanup:auto --dry-run
+          else
+            pnpm planning:cleanup:auto
+          fi
+
+      - name: Check for changes
+        id: check_changes
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "changes=true" >> $GITHUB_OUTPUT
+            echo "✅ Sessions were archived"
+          else
+            echo "changes=false" >> $GITHUB_OUTPUT
+            echo "ℹ️  No completed sessions found"
+          fi
+
+      - name: Commit archived sessions
+        if: steps.check_changes.outputs.changes == 'true' && inputs.dry_run != true
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+          echo "📝 Creating commit for archived sessions..."
+
+          # Add only archived sessions
+          git add .claude/sessions/planning/archived/
+
+          # Remove moved sessions from active directory
+          git add .claude/sessions/planning/P-*
+
+          # Create commit
+          git commit -m "chore(planning): archive completed planning sessions
+
+Automated cleanup by planning-cleanup workflow
+
+- Moved completed sessions to archived/YYYY/MM/
+- Generated COMPLETION-REPORT.md for each session
+
+Workflow run: ${{ github.run_id }}"
+
+      - name: Push changes
+        if: steps.check_changes.outputs.changes == 'true' && inputs.dry_run != true
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
+
+      - name: Summary
+        if: always()
+        run: |
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📋 Planning Cleanup Summary"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+
+          if [ "${{ steps.check_changes.outputs.changes }}" = "true" ]; then
+            if [ "${{ inputs.dry_run }}" = "true" ]; then
+              echo "ℹ️  DRY RUN: Changes detected but not committed"
+            else
+              echo "✅ Sessions archived and committed"
+            fi
+          else
+            echo "ℹ️  No completed sessions found"
+          fi
+
+          echo ""
+          echo "Next scheduled run: Next Monday at 00:00 UTC"
+          echo ""
