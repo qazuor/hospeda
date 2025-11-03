@@ -36,6 +36,11 @@ jobs:
       VITE_API_URL: ${{ secrets.HOSPEDA_API_URL }}
       VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY }}
 
+      # Web app (Astro PUBLIC_ format) - Reutiliza los mismos secrets
+      PUBLIC_API_URL: ${{ secrets.HOSPEDA_API_URL }}
+      PUBLIC_SITE_URL: ${{ secrets.HOSPEDA_SITE_URL }}
+      PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
