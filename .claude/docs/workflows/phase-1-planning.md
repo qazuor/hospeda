@@ -739,16 +739,16 @@ Do you approve this plan?
 
 ---
 
-### Step 9: Sync to Linear (Optional)
+### Step 9: Sync to GitHub (Optional)
 
 **Duration:** 2-5 minutes
 
-**After user approves the plan**, offer to sync with Linear:
+**After user approves the plan**, offer to sync with GitHub:
 
 ```text
 Great! The plan is approved.
 
-Would you like me to sync this planning to Linear?
+Would you like me to sync this planning to GitHub?
 
 This will:
 ✅ Create a parent issue: [Planning] {Feature Name}
@@ -756,14 +756,14 @@ This will:
 ✅ Allow you to track progress from any device
 ✅ Update status automatically as you complete tasks
 
-Sync to Linear? (yes/no)
+Sync to GitHub? (yes/no)
 ```
 
 **If User Says Yes:**
 
 1. Run `/sync-planning` command
 2. Present sync results with URLs
-3. Remind user to commit `issues-sync.json`
+3. Remind user to commit `.github-workflow/tracking.json`
 
 **If User Says No:**
 

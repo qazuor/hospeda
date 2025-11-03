@@ -587,7 +587,7 @@ When you've completed a task (tests pass, lint clean, code meets standards):
 
 4. **Execute Based on Response**
 
-   - **Option 1**: Execute commits → Mark complete in TODOs.md & Linear
+   - **Option 1**: Execute commits → Mark complete in TODOs.md & GitHub
    - **Option 2**: Ask for modifications → Regenerate → Present again
    - **Option 3**: Warn user → Mark complete only if confirmed
 
@@ -600,7 +600,7 @@ When you've completed a task (tests pass, lint clean, code meets standards):
 
    ✅ Task marked as completed!
       📝 TODOs.md updated
-      🔗 Linear: https://linear.app/hospeda/issue/HOSP-124
+      🔗 GitHub: https://github.com/hospeda/main/issues/124
 
    💡 Don't forget to push: git push
    ```
@@ -675,7 +675,7 @@ When you complete ANY task during Phase 2, you MUST immediately update all state
    }
    ```
 
-3. **Update issues-sync.json**
+3. **Update .github-workflow/tracking.json**
 
    ```json
    {
@@ -725,7 +725,7 @@ When you complete ANY task during Phase 2, you MUST immediately update all state
    ```bash
    git add .claude/sessions/planning/{feature}/TODOs.md
    git add .claude/sessions/planning/{feature}/.checkpoint.json
-   git add .claude/sessions/planning/{feature}/issues-sync.json
+   git add .github-workflow/tracking.json
    git commit -m "docs: update progress - T-001 completed (12/45)"
    ```
 
@@ -735,13 +735,13 @@ When you complete ANY task during Phase 2, you MUST immediately update all state
 - **NEVER** batch state updates for multiple tasks
 - **NEVER** skip state updates "to save time"
 - **ALWAYS** commit state changes separately from code changes
-- **ALWAYS** keep the three files in sync (TODOs.md, .checkpoint.json, issues-sync.json)
+- **ALWAYS** keep the three files in sync (TODOs.md, .checkpoint.json, .github-workflow/tracking.json)
 
 **Why This Matters:**
 
 - Enables cross-device workflow (switch machines and continue)
 - Provides accurate progress tracking
-- Maintains sync with Linear/GitHub
+- Maintains sync with GitHub
 - Prevents lost work tracking
 - Allows team visibility
 

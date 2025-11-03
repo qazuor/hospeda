@@ -1,6 +1,6 @@
 # Task Completion Protocol
 
-**Purpose**: Defines how to handle task completion with automatic Linear synchronization.
+**Purpose**: Defines how to handle task completion with automatic GitHub synchronization.
 
 ## When a Task is Completed
 
@@ -175,16 +175,17 @@ if (session) {
     sessionPath,
     taskId,
     {
-      apiKey: process.env.LINEAR_API_KEY!,
-      teamId: process.env.LINEAR_TEAM_ID!,
+      token: process.env.GITHUB_TOKEN!,
+      owner: process.env.GITHUB_OWNER!,
+      repo: process.env.GITHUB_REPO!,
     }
   );
 
   console.log(`✅ Task marked as completed!`);
   console.log(`📝 Updated: TODOs.md`);
   console.log(`📄 Updated: .checkpoint.json`);
-  console.log(`📄 Updated: issues-sync.json`);
-  console.log(`🔗 Linear: ${result.issueUrl}`);
+  console.log(`📄 Updated: .github-workflow/tracking.json`);
+  console.log(`🔗 GitHub: ${result.issueUrl}`);
   console.log(`\n💡 Don't forget to push: git push`);
 }
 ```
@@ -193,8 +194,8 @@ if (session) {
 
 1. **`TODOs.md`** - Mark task with `[x]`, add completion metadata
 2. **`.checkpoint.json`** - Update progress tracking, task status
-3. **`issues-sync.json`** - Sync with Linear, update GitHub issue state
-4. **Linear** - Update issue status via API
+3. **`.github-workflow/tracking.json`** - Sync with GitHub, update issue state
+4. **GitHub** - Update issue status via API
 
 **Output to user:**
 
@@ -206,8 +207,8 @@ if (session) {
 ✅ Task marked as completed!
    📝 TODOs.md updated (task marked as [x])
    📄 .checkpoint.json updated (progress: 12/45 tasks)
-   📄 issues-sync.json updated (synced with Linear)
-   🔗 Linear: https://linear.app/hospeda/issue/HOSP-124 (status: Done)
+   📄 .github-workflow/tracking.json updated (synced with GitHub)
+   🔗 GitHub: https://github.com/hospeda/main/issues/124 (status: Done)
 
 💡 Next steps:
    1. Review commits: git log -2
@@ -215,7 +216,7 @@ if (session) {
    3. Continue to next task
 ```
 
-**⚠️ IMPORTANT**: All three files (TODOs.md, .checkpoint.json, issues-sync.json) MUST be updated together to maintain consistency across the system.
+**⚠️ IMPORTANT**: All three files (TODOs.md, .checkpoint.json, .github-workflow/tracking.json) MUST be updated together to maintain consistency across the system.
 
 ### Step 5: If User Chooses Option 2 (Modify Commits)
 
@@ -244,7 +245,7 @@ Make the requested changes and present updated commit suggestions.
 If you mark the task as complete without committing:
 - Code changes will be lost when switching devices
 - TODOs.md will show task complete but code won't exist
-- Linear will show task done but implementation won't be pushed
+- GitHub will show task done but implementation won't be pushed
 - Team members (or future you) won't see the actual work
 
 This defeats the purpose of cross-device sync.
@@ -254,7 +255,7 @@ Are you sure you want to skip commits? (yes/no)
 
 If user confirms:
 
-- Mark task as completed in TODOs.md and Linear
+- Mark task as completed in TODOs.md and GitHub
 - Remind user to commit manually before pushing
 
 If user reconsiders:
@@ -288,7 +289,7 @@ After completing any task in `TODOs.md`:
 1. Run tests and verify everything passes
 2. **Apply Task Completion Protocol** ⬅️ HERE
    - This includes git commits
-   - This updates TODOs.md and Linear
+   - This updates TODOs.md and GitHub
 3. Move to next task
 ```
 
@@ -375,15 +376,15 @@ What would you prefer?
 
 ## Error Handling
 
-### Linear API Failure
+### GitHub API Failure
 
 ```typescript
 try {
   await markTaskCompleted(sessionPath, taskId, config);
 } catch (error) {
-  console.log(`❌ Failed to sync with Linear: ${error.message}`);
+  console.log(`❌ Failed to sync with GitHub: ${error.message}`);
   console.log(`✅ Task marked as completed in TODOs.md (local only)`);
-  console.log(`💡 Run /sync-planning later to sync with Linear`);
+  console.log(`💡 Run /sync-planning later to sync with GitHub`);
 }
 ```
 
@@ -428,7 +429,7 @@ await TodoWrite({
 
 1. **Always Ask First**: Never mark complete without user confirmation
 2. **Be Specific**: Mention the exact task title in your confirmation
-3. **Show Impact**: Explain what will be updated (local, Linear, or both)
+3. **Show Impact**: Explain what will be updated (local, GitHub, or both)
 4. **Handle Errors Gracefully**: If sync fails, update locally and inform user
 5. **Keep It Simple**: Don't ask for completion if it's obvious the task isn't done
 6. **Batch Smartly**: Offer to batch multiple completions but allow selection
@@ -442,6 +443,6 @@ and tests. All tests pass with 95% coverage.
 
 🎯 Task Completed: "Implement User model extending BaseModel"
 
-Would you like me to mark this as completed in TODOs.md and Linear?
+Would you like me to mark this as completed in TODOs.md and GitHub?
 
 User: Yes
