@@ -106,7 +106,7 @@ For each selected session:
    ├── TODOs.md
    ├── .checkpoint.json
    ├── CHANGELOG.md
-   └── issues-sync.json
+   └── .github-workflow/tracking.json (reference)
    ```
 
 3. **Generate COMPLETION-REPORT.md:**
@@ -266,17 +266,85 @@ mv .claude/sessions/planning/archived/2024/10/P-001-business-model-system \
 
 ## Integration
 
-**Workflow Integration:**
+### Hybrid System (Option 3)
 
-- Run after completing Phase 4 (Finalization)
-- Before starting new planning sessions
-- Monthly cleanup recommended
-- Automated in CI/CD (optional)
+This command implements a **hybrid approach** with three execution modes:
+
+**1. Manual Interactive (Command)**
+
+```bash
+/planning-cleanup
+```
+
+- User selects which sessions to archive
+- Full control over what gets archived
+- Best for: Selective cleanup, reviewing before archiving
+
+**2. Manual Automatic (Script)**
+
+```bash
+pnpm planning:cleanup:auto
+```
+
+- Archives ALL completed sessions automatically
+- No user interaction required
+- Best for: Quick cleanup, scripting
+
+**3. Automated CI/CD (GitHub Actions)**
+
+```yaml
+# Runs automatically every Monday at 00:00 UTC
+# See: .github/workflows/planning-cleanup.yml
+```
+
+- Automatic weekly cleanup
+- Can be triggered manually via GitHub UI
+- Commits archived sessions automatically
+- Best for: Maintenance-free cleanup
+
+### Workflow Integration
+
+**When to run:**
+
+- ✅ After completing Phase 4 (Finalization)
+- ✅ Before starting new planning sessions
+- ✅ Monthly manual cleanup (interactive mode)
+- ✅ Weekly automatic cleanup (CI/CD)
 
 **Commands that use registry:**
 
 - `/start-feature-plan` - checks for code conflicts
 - `/sync-planning` - syncs to GitHub Issues
+
+### CI/CD Automation
+
+**GitHub Actions Workflow:**
+
+```yaml
+# .github/workflows/planning-cleanup.yml
+name: Planning Cleanup
+
+on:
+  schedule:
+    - cron: '0 0 * * 1'  # Every Monday at 00:00 UTC
+  workflow_dispatch:     # Manual trigger
+```
+
+**Features:**
+
+- ✅ Automatic weekly execution
+- ✅ Manual trigger via GitHub UI
+- ✅ Dry-run mode available
+- ✅ Automatic commit and push
+- ✅ Summary in workflow logs
+
+**Trigger manually:**
+
+1. Go to GitHub Actions tab
+2. Select "Planning Cleanup" workflow
+3. Click "Run workflow"
+4. Choose dry-run mode (optional)
+5. Click "Run workflow"
 
 ## Examples
 
@@ -419,4 +487,5 @@ pnpm claude:sync:registry
 
 | Version | Date | Changes | Author | Related |
 |---------|------|---------|--------|---------|
+| 1.1.0 | 2025-11-03 | Added hybrid system (Option 3): Manual interactive + Manual auto + CI/CD automation | @tech-lead | CI/CD integration |
 | 1.0.0 | 2024-10-31 | Initial version with interactive, auto, and dry-run modes | @tech-lead | Cleanup system |
