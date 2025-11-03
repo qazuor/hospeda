@@ -77,9 +77,11 @@ claude mcp add --transport http context7 https://mcp.context7.com/mcp \
 
 ---
 
-### Linear – Task and Issue Tracking
+### Linear – Task and Issue Tracking (Available but not used)
 
-**Purpose:** Manage Linear issues and sync planning sessions
+**Purpose:** Linear MCP server for issue tracking
+
+**Note:** This project uses GitHub for issue tracking and planning sync, not Linear. Linear MCP is available but not actively used.
 
 ```bash
 claude mcp add --transport http linear https://mcp.linear.app/mcp
@@ -91,9 +93,8 @@ claude mcp add --transport http linear https://mcp.linear.app/mcp
 
 **Usage:**
 
-- Create/update issues
-- Sync planning sessions to Linear
-- Query project status
+- Issue tracking and project management
+- Team collaboration
 
 ---
 
