@@ -1,5 +1,13 @@
 # Migration Analysis: Commit-to-Main → PR-Based + Git Worktrees Workflow
 
+> **⚠️ UPDATED STRATEGY (2025-11-01):**
+> After user feedback, workflow has been simplified to **Unified Workflow for ALL levels**.
+>
+> - No Level 1 exception (ALL work goes through PR)
+> - `start-development.sh` command for automated setup
+> - GitHub Projects only for Level 3
+> - See [worktree-pr-workflow-strategies.md](./worktree-pr-workflow-strategies.md) Summary for final decision
+
 ## Executive Summary
 
 ### Current State
