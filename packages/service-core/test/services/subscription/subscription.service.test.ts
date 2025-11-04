@@ -59,6 +59,14 @@ describe('SubscriptionService', () => {
         vi.spyOn(mockModel, 'isActive').mockResolvedValue(true);
         vi.spyOn(mockModel, 'findActive').mockResolvedValue([mockSubscription]);
         vi.spyOn(mockModel, 'findByClient').mockResolvedValue([mockSubscription]);
+        vi.spyOn(mockModel, 'isTrialExpiring').mockResolvedValue(false);
+        vi.spyOn(mockModel, 'calculateNextBilling').mockResolvedValue(new Date());
+        vi.spyOn(mockModel, 'updateStatus').mockResolvedValue(mockSubscription);
+        vi.spyOn(mockModel, 'findExpiring').mockResolvedValue([mockSubscription]);
+        vi.spyOn(mockModel, 'withItems').mockResolvedValue({
+            subscription: mockSubscription,
+            items: []
+        });
 
         // Create service with mocked model
         service = new SubscriptionService({ logger: console }, mockModel);
@@ -372,6 +380,214 @@ describe('SubscriptionService', () => {
 
             expect(result.data).toBeDefined();
             expect(result.data?.count).toBe(1);
+        });
+    });
+
+    describe('checkTrialExpiring', () => {
+        it('should check if trial is expiring', async () => {
+            vi.spyOn(mockModel, 'isTrialExpiring').mockResolvedValue(true);
+
+            const result = await service.checkTrialExpiring(adminActor, mockSubscription.id, 7);
+
+            expect(result.data).toBeDefined();
+            expect(result.data?.isExpiring).toBe(true);
+            expect(mockModel.isTrialExpiring).toHaveBeenCalledWith(mockSubscription.id, 7);
+        });
+
+        it('should return false when trial is not expiring', async () => {
+            vi.spyOn(mockModel, 'isTrialExpiring').mockResolvedValue(false);
+
+            const result = await service.checkTrialExpiring(adminActor, mockSubscription.id, 7);
+
+            expect(result.data).toBeDefined();
+            expect(result.data?.isExpiring).toBe(false);
+        });
+
+        it('should forbid guest to check trial expiring', async () => {
+            const guestActor = createActor({
+                id: '',
+                role: RoleEnum.GUEST,
+                permissions: []
+            });
+
+            const result = await service.checkTrialExpiring(guestActor, mockSubscription.id, 7);
+
+            expect(result.error).toBeDefined();
+            expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+        });
+    });
+
+    describe('getNextBillingDate', () => {
+        it('should calculate next billing date', async () => {
+            const nextBilling = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+            vi.spyOn(mockModel, 'calculateNextBilling').mockResolvedValue(nextBilling);
+
+            const result = await service.getNextBillingDate(adminActor, mockSubscription.id);
+
+            expect(result.data).toBeDefined();
+            expect(result.data?.nextBillingDate).toEqual(nextBilling);
+            expect(mockModel.calculateNextBilling).toHaveBeenCalledWith(mockSubscription.id);
+        });
+
+        it('should return null when no next billing date', async () => {
+            vi.spyOn(mockModel, 'calculateNextBilling').mockResolvedValue(null);
+
+            const result = await service.getNextBillingDate(adminActor, mockSubscription.id);
+
+            expect(result.data).toBeDefined();
+            expect(result.data?.nextBillingDate).toBeNull();
+        });
+
+        it('should forbid guest to get next billing date', async () => {
+            const guestActor = createActor({
+                id: '',
+                role: RoleEnum.GUEST,
+                permissions: []
+            });
+
+            const result = await service.getNextBillingDate(guestActor, mockSubscription.id);
+
+            expect(result.error).toBeDefined();
+            expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+        });
+    });
+
+    describe('updateStatus', () => {
+        it('should update subscription status as admin', async () => {
+            const updatedSubscription = {
+                ...mockSubscription,
+                status: SubscriptionStatusEnum.PAUSED
+            };
+            vi.spyOn(mockModel, 'updateStatus').mockResolvedValue(updatedSubscription);
+
+            const result = await service.updateStatus(
+                adminActor,
+                mockSubscription.id,
+                SubscriptionStatusEnum.PAUSED
+            );
+
+            expect(result.data).toBeDefined();
+            expect(result.data?.status).toBe(SubscriptionStatusEnum.PAUSED);
+            expect(mockModel.updateStatus).toHaveBeenCalledWith(
+                mockSubscription.id,
+                SubscriptionStatusEnum.PAUSED,
+                undefined
+            );
+        });
+
+        it('should throw NOT_FOUND when subscription does not exist', async () => {
+            vi.spyOn(mockModel, 'updateStatus').mockResolvedValue(null);
+
+            const result = await service.updateStatus(
+                adminActor,
+                'non-existent-id',
+                SubscriptionStatusEnum.PAUSED
+            );
+
+            expect(result.error).toBeDefined();
+            expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+        });
+
+        it('should forbid non-admin to update status', async () => {
+            const result = await service.updateStatus(
+                userActor,
+                mockSubscription.id,
+                SubscriptionStatusEnum.PAUSED
+            );
+
+            expect(result.error).toBeDefined();
+            expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+        });
+    });
+
+    describe('findExpiring', () => {
+        it('should find expiring subscriptions', async () => {
+            const expiringSubscription = {
+                ...mockSubscription,
+                endAt: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000)
+            };
+            vi.spyOn(mockModel, 'findExpiring').mockResolvedValue([expiringSubscription]);
+
+            const result = await service.findExpiring(adminActor, 7);
+
+            expect(result.data).toBeDefined();
+            expect(result.data).toHaveLength(1);
+            expect(mockModel.findExpiring).toHaveBeenCalledWith(7);
+        });
+
+        it('should return empty array when no subscriptions expiring', async () => {
+            vi.spyOn(mockModel, 'findExpiring').mockResolvedValue([]);
+
+            const result = await service.findExpiring(adminActor, 7);
+
+            expect(result.data).toBeDefined();
+            expect(result.data).toHaveLength(0);
+        });
+
+        it('should forbid guest to find expiring subscriptions', async () => {
+            const guestActor = createActor({
+                id: '',
+                role: RoleEnum.GUEST,
+                permissions: []
+            });
+
+            const result = await service.findExpiring(guestActor, 7);
+
+            expect(result.error).toBeDefined();
+            expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+        });
+    });
+
+    describe('getWithItems', () => {
+        it('should get subscription with items', async () => {
+            const mockItems = [
+                { id: 'item1', subscriptionId: mockSubscription.id, quantity: 1 },
+                { id: 'item2', subscriptionId: mockSubscription.id, quantity: 2 }
+            ];
+            vi.spyOn(mockModel, 'withItems').mockResolvedValue({
+                subscription: mockSubscription,
+                items: mockItems
+            });
+
+            const result = await service.getWithItems(adminActor, mockSubscription.id);
+
+            expect(result.data).toBeDefined();
+            expect(result.data?.subscription).toBeDefined();
+            expect(result.data?.items).toHaveLength(2);
+            expect(mockModel.withItems).toHaveBeenCalledWith(mockSubscription.id);
+        });
+
+        it('should return null when subscription not found', async () => {
+            vi.spyOn(mockModel, 'withItems').mockResolvedValue(null);
+
+            const result = await service.getWithItems(adminActor, 'non-existent-id');
+
+            expect(result.data).toBeNull();
+        });
+
+        it('should get subscription with empty items array', async () => {
+            vi.spyOn(mockModel, 'withItems').mockResolvedValue({
+                subscription: mockSubscription,
+                items: []
+            });
+
+            const result = await service.getWithItems(adminActor, mockSubscription.id);
+
+            expect(result.data).toBeDefined();
+            expect(result.data?.items).toHaveLength(0);
+        });
+
+        it('should forbid guest to get subscription with items', async () => {
+            const guestActor = createActor({
+                id: '',
+                role: RoleEnum.GUEST,
+                permissions: []
+            });
+
+            const result = await service.getWithItems(guestActor, mockSubscription.id);
+
+            expect(result.error).toBeDefined();
+            expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
         });
     });
 });

@@ -1,10 +1,11 @@
-import { SubscriptionModel } from '@repo/db';
+import { SubscriptionModel, type subscriptionItems } from '@repo/db';
 import type { ClientIdType, ListRelationsConfig } from '@repo/schemas';
 import { PermissionEnum, RoleEnum, ServiceErrorCode, type VisibilityEnum } from '@repo/schemas';
 import {
     type Subscription,
     SubscriptionCreateInputSchema,
     SubscriptionQuerySchema,
+    type SubscriptionStatusEnum,
     SubscriptionUpdateInputSchema
 } from '@repo/schemas/entities/subscription';
 import { z } from 'zod';
@@ -441,6 +442,158 @@ export class SubscriptionService extends BaseCrudService<
                 const subscriptions = await this.model.findActive();
 
                 return subscriptions;
+            }
+        });
+    }
+
+    /**
+     * Checks if a subscription's trial is expiring within the specified threshold.
+     * @param actor - The user or system performing the action.
+     * @param subscriptionId - The subscription ID.
+     * @param daysThreshold - Number of days to check.
+     * @returns ServiceOutput containing boolean indicating if trial is expiring.
+     */
+    public async checkTrialExpiring(
+        actor: Actor,
+        subscriptionId: string,
+        daysThreshold: number
+    ): Promise<ServiceOutput<{ isExpiring: boolean }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'checkTrialExpiring',
+            input: { actor },
+            schema: z.object({}),
+            execute: async (_validatedData, validatedActor) => {
+                // Permission check
+                this._canView(validatedActor, { id: subscriptionId } as Subscription);
+
+                // Execute check
+                const isExpiring = await this.model.isTrialExpiring(subscriptionId, daysThreshold);
+
+                return { isExpiring };
+            }
+        });
+    }
+
+    /**
+     * Calculates the next billing date for a subscription.
+     * @param actor - The user or system performing the action.
+     * @param subscriptionId - The subscription ID.
+     * @returns ServiceOutput containing the next billing date or null.
+     */
+    public async getNextBillingDate(
+        actor: Actor,
+        subscriptionId: string
+    ): Promise<ServiceOutput<{ nextBillingDate: Date | null }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getNextBillingDate',
+            input: { actor },
+            schema: z.object({}),
+            execute: async (_validatedData, validatedActor) => {
+                // Permission check
+                this._canView(validatedActor, { id: subscriptionId } as Subscription);
+
+                // Execute calculation
+                const nextBillingDate = await this.model.calculateNextBilling(subscriptionId);
+
+                return { nextBillingDate };
+            }
+        });
+    }
+
+    /**
+     * Updates the status of a subscription with transition validation.
+     * @param actor - The user or system performing the action.
+     * @param subscriptionId - The subscription ID.
+     * @param newStatus - The new status.
+     * @returns ServiceOutput containing the updated subscription.
+     */
+    public async updateStatus(
+        actor: Actor,
+        subscriptionId: string,
+        newStatus: SubscriptionStatusEnum
+    ): Promise<ServiceOutput<Subscription>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'updateStatus',
+            input: { actor },
+            schema: z.object({}),
+            execute: async (_validatedData, validatedActor) => {
+                // Check permissions (only admin)
+                if (validatedActor.role !== RoleEnum.ADMIN) {
+                    throw new ServiceError(
+                        ServiceErrorCode.FORBIDDEN,
+                        'Permission denied: Only admins can update subscription status'
+                    );
+                }
+
+                // Execute status update (model handles transition validation)
+                const subscription = await this.model.updateStatus(
+                    subscriptionId,
+                    newStatus,
+                    undefined
+                );
+
+                if (!subscription) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Subscription not found');
+                }
+
+                return subscription;
+            }
+        });
+    }
+
+    /**
+     * Finds subscriptions that are expiring within the specified days threshold.
+     * @param actor - The user or system performing the action.
+     * @param daysThreshold - Number of days to look ahead.
+     * @returns ServiceOutput containing array of expiring subscriptions.
+     */
+    public async findExpiring(
+        actor: Actor,
+        daysThreshold: number
+    ): Promise<ServiceOutput<Subscription[]>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'findExpiring',
+            input: { actor },
+            schema: z.object({}),
+            execute: async (_validatedData, validatedActor) => {
+                // Permission check
+                this._canList(validatedActor);
+
+                // Execute query
+                const subscriptions = await this.model.findExpiring(daysThreshold);
+
+                return subscriptions;
+            }
+        });
+    }
+
+    /**
+     * Gets a subscription with its associated items.
+     * @param actor - The user or system performing the action.
+     * @param subscriptionId - The subscription ID.
+     * @returns ServiceOutput containing subscription with items.
+     */
+    public async getWithItems(
+        actor: Actor,
+        subscriptionId: string
+    ): Promise<
+        ServiceOutput<{
+            subscription: Subscription;
+            items: (typeof subscriptionItems.$inferSelect)[];
+        } | null>
+    > {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getWithItems',
+            input: { actor },
+            schema: z.object({}),
+            execute: async (_validatedData, validatedActor) => {
+                // Permission check
+                this._canView(validatedActor, { id: subscriptionId } as Subscription);
+
+                // Execute query
+                const result = await this.model.withItems(subscriptionId);
+
+                return result;
             }
         });
     }
