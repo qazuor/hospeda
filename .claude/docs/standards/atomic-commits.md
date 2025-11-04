@@ -493,8 +493,6 @@ git restore <files-to-exclude>
 - **Task Completion**: [task-completion-protocol.md](../workflows/task-completion-protocol.md)
 - **Quick Fix**: [quick-fix-protocol.md](../workflows/quick-fix-protocol.md)
 - **Atomic Task**: [atomic-task-protocol.md](../workflows/atomic-task-protocol.md)
-- **Git Worktrees**: [git-worktrees.md](../guides/git-worktrees.md)
-- **PR Workflow**: [pr-workflow.md](../guides/pr-workflow.md)
 
 ## Summary
 

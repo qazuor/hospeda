@@ -322,15 +322,13 @@ git commit -m "type(scope): description"
 
 ✅ **Reasonable to skip**:
 
-- Emergency hotfixes
-- WIP commits on feature branch
-- Reverting broken commits
 - Testing commit message formats
+- Reverting broken commits in urgent situations
 
 ❌ **Not recommended to skip**:
 
-- Commits to main/master
-- Pull request commits
+- Regular commits to main
+- Any production commits
 - Release commits
 - Shared branch commits
 

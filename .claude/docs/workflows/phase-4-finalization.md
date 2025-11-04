@@ -750,21 +750,16 @@ Each commit is focused, atomic, and well-documented.
    - Copy and paste each git command
    - Commits will be added to your branch
 
-3. **Push Branch**
+3. **Push to Main**
 
    ```bash
-   git push origin feature/{feature-name}
+   git push origin main
    ```
 
-4. **Create PR**
-   - Open pull request on GitHub
-   - Add description from PDR.md
-   - Request reviews from team
-
-5. **Deploy** (after PR approval)
-   - Merge to main
+4. **Deploy**
    - Automatic deployment via Vercel
    - Monitor for issues
+   - Verify feature in production
 
 ## Questions?
 
