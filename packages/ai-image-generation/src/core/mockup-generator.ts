@@ -13,7 +13,13 @@ import {
     MockupError,
     type MockupGeneratorConfig
 } from '../types';
-import { ErrorHandler, FileSystemManager, MetadataRegistry, sanitizePrompt } from '../utils';
+import {
+    CostTracker,
+    ErrorHandler,
+    FileSystemManager,
+    MetadataRegistry,
+    sanitizePrompt
+} from '../utils';
 
 /**
  * Extended generate parameters with session path
@@ -30,6 +36,7 @@ export class MockupGenerator {
     private readonly replicate: Replicate;
     private readonly fileManager: FileSystemManager;
     private readonly metadataRegistry: MetadataRegistry;
+    private readonly costTracker: CostTracker;
 
     /**
      * Creates a new MockupGenerator instance
@@ -70,6 +77,7 @@ export class MockupGenerator {
 
         this.fileManager = new FileSystemManager();
         this.metadataRegistry = new MetadataRegistry();
+        this.costTracker = new CostTracker();
     }
 
     /**
@@ -144,7 +152,16 @@ export class MockupGenerator {
                 params.sessionPath
             );
 
-            // 8. Return success result
+            // 8. Track usage and costs
+            const usageData = await this.costTracker.incrementUsage(params.sessionPath);
+            const threshold = this.costTracker.checkThreshold(usageData);
+
+            if (threshold.shouldAlert) {
+                // Log warning (don't throw error)
+                console.warn(threshold.message);
+            }
+
+            // 9. Return success result
             const endTime = Date.now();
             return {
                 success: true,
