@@ -11,7 +11,7 @@ Enhancement to enable the UI/UX Designer agent to autonomously generate low-fide
 
 ## Objectives
 
-1. **Autonomous Wireframe Generation:** Enable ui-ux-designer agent to create mockups during planning sessions
+1. **Autonomous Wireframe Generation:** Enable ux-ui-designer agent to create mockups during planning sessions
 2. **Fast Iteration:** Generate wireframes in < 10 seconds
 3. **Cost Efficient:** Stay within free tier (50 images/month) or < $5/month
 4. **Planning Integration:** Save mockups directly in planning session folders
@@ -21,7 +21,7 @@ Enhancement to enable the UI/UX Designer agent to autonomously generate low-fide
 ### In Scope
 
 - Integration with Replicate.com API (SDXL-Lightning model)
-- MCP tool: `generate_wireframe` for ui-ux-designer agent
+- MCP tool: `generate_wireframe` for ux-ui-designer agent
 - Balsamiq-style low-fidelity wireframe generation
 - Automatic save to planning session `/mockups` folder
 - Text-to-wireframe conversion with prompt engineering
@@ -76,6 +76,6 @@ Enhancement to enable the UI/UX Designer agent to autonomously generate low-fide
 
 ## Related
 
-- [UI/UX Designer Agent](../../agents/design/ui-ux-designer.md)
+- [UX/UI Designer Agent](../../agents/design/ux-ui-designer.md)
 - [Phase 1 Planning Workflow](../../docs/workflows/phase-1-planning.md)
 - [PDR Template](../../docs/templates/PDR-template.md)

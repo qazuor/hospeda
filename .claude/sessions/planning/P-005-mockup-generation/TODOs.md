@@ -196,11 +196,11 @@
 
 #### Agent Integration
 
-- [ ] **[PF-005-10]** **[2h]** Extend UI/UX Designer agent with mockup capabilities
+- [ ] **[PF-005-10]** **[2h]** Extend UX/UI Designer agent with mockup capabilities
   - **Dependencies**: PF-005-5, PF-005-6, PF-005-7, PF-005-8, PF-005-9
-  - **Assignee**: @ui-ux-designer
+  - **Assignee**: @ux-ui-designer
   - **Status**: Not Started
-  - **File**: `.claude/agents/specialized/ui-ux-designer.md`
+  - **File**: `.claude/agents/design/ux-ui-designer.md`
   - **Tasks**:
     - Import MockupGenerator in agent context
     - Add mockup generation instructions to agent prompt
@@ -214,7 +214,7 @@
 
 - [ ] **[PF-005-11]** **[1h]** Add mockup references to PDR generation
   - **Dependencies**: PF-005-10
-  - **Assignee**: @ui-ux-designer
+  - **Assignee**: @ux-ui-designer
   - **Status**: Not Started
   - **Tasks**:
     - Generate markdown image syntax for mockups
@@ -306,7 +306,7 @@
 
 - [ ] **[PF-005-16]** **[1h]** Perform manual testing with various prompts
   - **Dependencies**: PF-005-10
-  - **Assignee**: @ui-ux-designer
+  - **Assignee**: @ux-ui-designer
   - **Status**: Not Started
   - **Tasks**:
     - Test login screen mockup
@@ -323,11 +323,11 @@
 
 #### Documentation
 
-- [ ] **[PF-005-17]** **[1h]** Update UI/UX Designer agent documentation
+- [ ] **[PF-005-17]** **[1h]** Update UX/UI Designer agent documentation
   - **Dependencies**: PF-005-10, PF-005-11
   - **Assignee**: @tech-writer
   - **Status**: Not Started
-  - **File**: `.claude/agents/specialized/ui-ux-designer.md`
+  - **File**: `.claude/agents/design/ux-ui-designer.md`
   - **Tasks**:
     - Add mockup generation capability description
     - Document when agent generates mockups
@@ -370,7 +370,7 @@
 
 - [ ] **[PF-005-20]** **[0.5h]** Create example mockup gallery
   - **Dependencies**: PF-005-16
-  - **Assignee**: @ui-ux-designer
+  - **Assignee**: @ux-ui-designer
   - **Status**: Not Started
   - **File**: `.claude/docs/examples/mockup-gallery.md`
   - **Tasks**:
@@ -534,6 +534,30 @@
 - Focus on developer experience and ease of use
 - Quality of output depends on prompt engineering
 - Consider this a "draft mockup" tool, not replacement for professional design
+
+**Commit Policy (CRITICAL)**:
+
+All commits MUST follow the **Atomic Commits Policy**:
+
+- **ONLY** commit files modified for the specific PF-XXX task
+- **NEVER** use `git add .` or `git add -A`
+- **ALWAYS** use `git add <specific-file>` for task-related files
+- Each PF-XXX subtask = One focused commit with `[PF-005-XX]` in message
+- Reference: `.claude/docs/standards/atomic-commits.md`
+
+**Example Commits:**
+
+```bash
+# PF-005-5: MockupGenerator class
+git add .claude/agents/utils/mockup-generator.ts
+git commit -m "feat(agents): implement MockupGenerator class [PF-005-5]"
+
+# PF-005-10: Agent integration
+git add .claude/agents/design/ux-ui-designer.md
+git commit -m "feat(agents): extend UX/UI designer with mockup generation [PF-005-10]"
+```
+
+**Warning**: If `git status` shows unrelated files, commit ONLY task-related files.
 
 **Technical Debt**:
 

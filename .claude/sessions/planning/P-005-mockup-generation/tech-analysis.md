@@ -1,6 +1,6 @@
 # Technical Analysis
 
-## AI-Powered Wireframe Generation for UI/UX Designer Agent
+## AI-Powered Wireframe Generation for UX/UI Designer Agent
 
 **Date**: 2025-10-31
 **Related PDR**: [PDR.md](./PDR.md)
@@ -14,14 +14,14 @@
 
 **Feature Overview:**
 
-We're enhancing the UI/UX Designer agent to autonomously generate **low-fidelity wireframes** (Balsamiq-style mockups) from text descriptions using Replicate.com's FLUX.1 [schnell] model. Generated wireframes will be saved as PNG files in planning session folders (`mockups/` subdirectory) and automatically referenced in PDR documents.
+We're enhancing the UX/UI Designer agent to autonomously generate **low-fidelity wireframes** (Balsamiq-style mockups) from text descriptions using Replicate.com's FLUX.1 [schnell] model. Generated wireframes will be saved as PNG files in planning session folders (`mockups/` subdirectory) and automatically referenced in PDR documents.
 
 **Technical Approach:**
 
 - Integrate Replicate Node.js SDK for API communication
 - Implement Handlebars template system for Balsamiq-style wireframe prompt generation
 - Create file management system for organizing wireframes with metadata
-- Extend UI/UX Designer agent with wireframe generation capabilities
+- Extend UX/UI Designer agent with wireframe generation capabilities
 - Add configuration management for API keys and generation parameters (including model selection)
 
 **Key Decisions:**
@@ -31,7 +31,7 @@ We're enhancing the UI/UX Designer agent to autonomously generate **low-fidelity
 3. **Template System**: Handlebars.js templates for structured, maintainable prompts
 4. **Storage Strategy**: Local file system storage within planning sessions (not cloud/CDN)
 5. **Metadata Tracking**: JSON registry file for each session's wireframes
-6. **Integration Point**: Extend existing UI/UX Designer agent rather than creating new agent
+6. **Integration Point**: Extend existing UX/UI Designer agent rather than creating new agent
 7. **Language**: All wireframe text in Spanish (Argentina) for target market
 
 **Estimated Complexity**: Medium
@@ -46,7 +46,7 @@ We're enhancing the UI/UX Designer agent to autonomously generate **low-fidelity
 
 ```mermaid
 graph TB
-    Agent[UI/UX Designer Agent]
+    Agent[UX/UI Designer Agent]
     WireframeGen[Wireframe Generator]
     AIImagePkg[@repo/ai-image-generation]
     Provider[Replicate Provider]
@@ -103,7 +103,7 @@ graph TB
 
 **Description:**
 
-1. UI/UX Designer agent identifies need for wireframe during planning
+1. UX/UI Designer agent identifies need for wireframe during planning
 2. Calls Wireframe Generator (agent-specific wrapper)
 3. Wireframe Generator uses generic `@repo/ai-image-generation` package
 4. Package loads wireframe-specific templates from agent utils
@@ -1281,7 +1281,7 @@ N/A - This is a backend/agent feature with no user-facing UI. The "frontend" is 
 
 **How Different Apps/Packages Use `@repo/ai-image-generation`:**
 
-**1. Current Use Case: Wireframe Generation (UI/UX Designer Agent)**
+**1. Current Use Case: Wireframe Generation (UX/UI Designer Agent)**
 
 ```typescript
 // .claude/agents/utils/wireframe-generator.ts
@@ -1542,6 +1542,36 @@ const provider = new OpenAIProvider({
 const generator = new ImageGenerator({ provider, ...otherConfig });
 ```
 
+### 8.3 MCP Servers Integration
+
+**Available MCP Servers:**
+
+The Hospeda project has access to several MCP (Model Context Protocol) servers that can be leveraged during development and implementation:
+
+| MCP Server | Purpose | Relevance to P-005 |
+|-----------|---------|-------------------|
+| **Context7** | Fetch up-to-date library documentation | Use for Replicate SDK, Handlebars, Sharp docs |
+| **Neon** | PostgreSQL database operations | Not directly used (no DB changes) |
+| **Git/GitHub** | Version control operations | Standard git workflow, no special integration |
+| **Serena** | Code navigation and semantic tools | Use for codebase exploration during implementation |
+| **Socket** | Dependency security scanning | Verify Replicate SDK and dependencies security |
+
+**Context7 Usage Example:**
+
+```typescript
+// When implementing Replicate provider, use Context7 to get latest SDK docs:
+// 1. Resolve library: "replicate" → Context7 library ID
+// 2. Get documentation: Latest Replicate Node.js SDK API reference
+// 3. Implement based on current best practices
+```
+
+**Integration Notes:**
+
+- **No new MCP servers required** - existing servers are sufficient
+- Context7 is primary tool for staying current with external library APIs
+- Socket for dependency security validation before adding new packages
+- Serena for efficient codebase navigation during implementation
+
 ---
 
 ## 9. Error Handling
@@ -1600,6 +1630,17 @@ logger.error('Mockup generation failed', { error, sessionPath });
 ---
 
 ## 10. Testing Strategy
+
+**Test Organization:**
+
+All tests follow the project's standardized structure:
+
+- **Location**: `test/` folder at package root (NOT `src/__tests__/`)
+- **Structure**: Mirror source folder structure
+  - Source: `src/models/user.model.ts`
+  - Test: `test/models/user.model.test.ts`
+- **Imports**: Use relative imports from `../src/`
+- **Reference**: `.claude/docs/standards/testing-standards.md`
 
 ### 10.1 Package-Level Unit Tests
 
@@ -2063,7 +2104,7 @@ class RateLimiter {
 
 **Phase 2: Documentation (Day 2)**
 
-- Update UI/UX Designer agent docs
+- Update UX/UI Designer agent docs
 - Add environment setup guide
 - Create prompt engineering guidelines
 - Document example mockups
@@ -2130,6 +2171,52 @@ MOCKUP_MAX_COST_PER_MONTH=10
 1. Set `ENABLE_MOCKUP_GENERATION=false` in environment
 2. Agent continues without mockup generation
 3. Manually create mockups if critical
+
+### 13.4 Git & Commit Strategy
+
+**Atomic Commits Policy:**
+
+This feature MUST follow the project's **Atomic Commits Policy** (`.claude/docs/standards/atomic-commits.md`):
+
+**Core Rules:**
+
+- **ONLY** commit files modified for the specific PF-XXX task
+- **NEVER** use `git add .` or `git add -A`
+- **ALWAYS** use `git add <specific-file>` for task-related files
+- Each PF-XXX subtask should have its own focused commit
+
+**Commit Examples:**
+
+```bash
+# PF-005-1: Package structure
+git add packages/ai-image-generation/package.json
+git add packages/ai-image-generation/tsconfig.json
+git commit -m "feat(ai-image): create package structure [PF-005-1]"
+
+# PF-005-10: Replicate provider + tests
+git add packages/ai-image-generation/src/providers/replicate-provider.ts
+git add packages/ai-image-generation/test/providers/replicate-provider.test.ts
+git commit -m "feat(ai-image): implement Replicate provider [PF-005-10]"
+
+# PF-005-37: Agent integration
+git add .claude/agents/design/ux-ui-designer.md
+git add .claude/agents/utils/wireframe-generator.ts
+git commit -m "feat(agents): integrate wireframe generation in UX/UI designer [PF-005-37]"
+```
+
+**Warning System:**
+
+If `git status` shows unrelated modified files, the implementer MUST:
+
+1. Inform about unrelated files detected
+2. Confirm proceeding with ONLY task-related files
+3. Leave unrelated files uncommitted for their respective tasks
+
+**Workflow Integration:**
+
+- Level 3 (Feature Planning): One commit per PF-XXX subtask
+- Include task code in commit message: `[PF-005-XX]`
+- Reference: `.claude/docs/workflows/phase-2-implementation.md`
 
 ---
 
@@ -2206,7 +2293,7 @@ MOCKUP_MAX_COST_PER_MONTH=10
 
 **Agent Integration:**
 
-- [PF-005-37] Integrate WireframeGenerator with UI/UX Designer agent
+- [PF-005-37] Integrate WireframeGenerator with UX/UI Designer agent
 - [PF-005-38] Add wireframe generation to PDR workflow
 - [PF-005-39] Add wireframe reference insertion in PDR documents
 
@@ -2258,7 +2345,7 @@ MOCKUP_MAX_COST_PER_MONTH=10
 
 **Wireframe Documentation:**
 
-- [PF-005-64] Update UI/UX Designer agent documentation
+- [PF-005-64] Update UX/UI Designer agent documentation
 - [PF-005-65] Document wireframe template system
 - [PF-005-66] Create wireframe generation guide
 - [PF-005-67] Add environment setup guide (Replicate API token)
