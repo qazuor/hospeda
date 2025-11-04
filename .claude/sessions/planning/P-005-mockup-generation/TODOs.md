@@ -214,36 +214,41 @@
 
 #### Agent Integration
 
-- [ ] **[PF-005-10]** **[2h]** Extend UX/UI Designer agent with mockup capabilities
+- [x] **[PF-005-10]** **[2h]** Extend UX/UI Designer agent with mockup capabilities
   - **Dependencies**: PF-005-5, PF-005-6, PF-005-7, PF-005-8, PF-005-9
-  - **Assignee**: @ux-ui-designer
-  - **Status**: Not Started
+  - **Assignee**: @tech-lead
+  - **Status**: ✅ Complete
   - **File**: `.claude/agents/design/ux-ui-designer.md`
+  - **Completed**: 2025-11-04
+  - **Commit**: d0c3fa3f
   - **Tasks**:
-    - Import MockupGenerator in agent context
-    - Add mockup generation instructions to agent prompt
-    - Implement decision logic (when to generate mockups)
-    - Add error handling for failed generations
+    - ✅ Import MockupGenerator in agent context
+    - ✅ Add mockup generation instructions to agent prompt
+    - ✅ Implement decision logic (when to generate mockups)
+    - ✅ Add error handling for failed generations
   - **Acceptance Criteria**:
-    - Agent can call MockupGenerator
-    - Agent decides when mockups are helpful
-    - Failed generations don't block planning
-    - Agent explains mockup purpose in PDR
+    - ✅ Agent can call MockupGenerator
+    - ✅ Agent decides when mockups are helpful
+    - ✅ Failed generations don't block planning
+    - ✅ Agent explains mockup purpose in PDR
 
-- [ ] **[PF-005-11]** **[1h]** Add mockup references to PDR generation
+- [x] **[PF-005-11]** **[1h]** Add mockup references to PDR generation
   - **Dependencies**: PF-005-10
-  - **Assignee**: @ux-ui-designer
-  - **Status**: Not Started
+  - **Assignee**: @tech-lead
+  - **Status**: ✅ Complete
+  - **File**: `.claude/docs/templates/PDR-template.md`
+  - **Completed**: 2025-11-04
+  - **Commit**: d0c3fa3f
   - **Tasks**:
-    - Generate markdown image syntax for mockups
-    - Insert references in PDR section 3.2 or 3.3
-    - Add image captions with descriptions
-    - Update PDR template examples
+    - ✅ Generate markdown image syntax for mockups
+    - ✅ Insert references in PDR section 3.2 or 3.3
+    - ✅ Add image captions with descriptions
+    - ✅ Update PDR template examples
   - **Acceptance Criteria**:
-    - Mockups appear in PDR documents
-    - Images render correctly in markdown
-    - Captions explain mockup purpose
-    - Relative paths are correct
+    - ✅ Mockups appear in PDR documents
+    - ✅ Images render correctly in markdown
+    - ✅ Captions explain mockup purpose
+    - ✅ Relative paths are correct
 
 - [ ] **[PF-005-12]** **[1h]** Implement cost tracking and usage monitoring
   - **Dependencies**: PF-005-5
