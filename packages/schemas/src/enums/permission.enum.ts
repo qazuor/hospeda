@@ -4,6 +4,7 @@ export enum PermissionCategoryEnum {
     EVENT = 'EVENT',
     POST = 'POST',
     USER = 'USER',
+    CLIENT = 'CLIENT',
     PUBLIC = 'PUBLIC',
     SYSTEM = 'SYSTEM',
     ACCESS = 'ACCESS'
@@ -190,5 +191,11 @@ export enum PermissionEnum {
     // TAG: Permissions related to tags (categorization, filtering, etc.)
     TAG_CREATE = 'tag.create', // Allows creating a new tag.
     TAG_UPDATE = 'tag.update', // Allows updating a tag.
-    TAG_DELETE = 'tag.delete' // Allows deleting a tag.
+    TAG_DELETE = 'tag.delete', // Allows deleting a tag.
+
+    // CLIENT: Permissions related to client management (billing, subscriptions)
+    CLIENT_CREATE = 'client.create', // Allows creating a new client.
+    CLIENT_UPDATE = 'client.update', // Allows updating a client.
+    CLIENT_DELETE = 'client.delete', // Allows deleting a client.
+    CLIENT_VIEW = 'client.view' // Allows viewing client information.
 }
