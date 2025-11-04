@@ -8,3 +8,4 @@ export { ErrorHandler } from './error-handler';
 export { craftPrompt, sanitizePrompt } from './prompt-engineer';
 export { FileSystemManager } from './file-system-manager';
 export { MetadataRegistry } from './metadata-registry';
+export { CostTracker, type UsageData, type ThresholdResult } from './cost-tracker';
