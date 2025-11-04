@@ -9,3 +9,32 @@
 
 // Export configuration
 export { loadEnvConfig, type EnvConfig } from './config';
+
+// Export core functionality
+export { MockupGenerator } from './core';
+
+// Export utilities
+export {
+    ErrorHandler,
+    craftPrompt,
+    sanitizePrompt,
+    FileSystemManager,
+    MetadataRegistry
+} from './utils';
+
+// Export types
+export {
+    ErrorCode,
+    MockupError,
+    type MockupGeneratorConfig,
+    type GenerateParams,
+    type GenerateResult,
+    type GenerationMetadata,
+    type DeviceType,
+    type StyleType,
+    type Language,
+    type PromptOptions,
+    type SaveMockupOptions,
+    type MockupMetadata,
+    type Registry
+} from './types';
