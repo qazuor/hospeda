@@ -19,7 +19,10 @@ export {
     craftPrompt,
     sanitizePrompt,
     FileSystemManager,
-    MetadataRegistry
+    MetadataRegistry,
+    CostTracker,
+    type UsageData,
+    type ThresholdResult
 } from './utils';
 
 // Export types
