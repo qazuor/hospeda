@@ -56,143 +56,161 @@
 
 #### Setup & Dependencies
 
-- [ ] **[PF-005-1]** **[1h]** Install and configure Replicate SDK
+- [x] **[PF-005-1]** **[1h]** Install and configure Replicate SDK
   - **Dependencies**: None
-  - **Assignee**: @tech-lead
-  - **Status**: Not Started
+  - **Assignee**: @node-typescript-engineer
+  - **Status**: ✅ Complete
+  - **Completed**: 2025-11-04
+  - **Commit**: 918ab65e
   - **Tasks**:
-    - Install `replicate@^0.25.0` package
-    - Verify SDK imports and TypeScript definitions
-    - Test authentication with API token
+    - ✅ Install `replicate@^0.25.0` package
+    - ✅ Verify SDK imports and TypeScript definitions
+    - ✅ Test authentication with API token
   - **Acceptance Criteria**:
-    - Package installed in package.json
-    - Can import Replicate class without errors
-    - API token auth works (test with simple prediction)
+    - ✅ Package installed in package.json
+    - ✅ Can import Replicate class without errors
+    - ✅ API token auth works (test with simple prediction)
 
-- [ ] **[PF-005-2]** **[1h]** Install and configure Sharp for image processing
+- [x] **[PF-005-2]** **[1h]** Install and configure Sharp for image processing
   - **Dependencies**: None
-  - **Assignee**: @tech-lead
-  - **Status**: Not Started
+  - **Assignee**: @node-typescript-engineer
+  - **Status**: ✅ Complete
+  - **Completed**: 2025-11-04
+  - **Commit**: 918ab65e
   - **Tasks**:
-    - Install `sharp@^0.32.0` package
-    - Test image compression functionality
-    - Test image resizing functionality
+    - ✅ Install `sharp@^0.32.0` package
+    - ✅ Test image compression functionality
+    - ✅ Test image resizing functionality
   - **Acceptance Criteria**:
-    - Sharp installed and working
-    - Can compress PNG images
-    - Can resize images to specified dimensions
+    - ✅ Sharp installed and working
+    - ✅ Can compress PNG images
+    - ✅ Can resize images to specified dimensions
 
-- [ ] **[PF-005-3]** **[1h]** Create environment variable configuration
+- [x] **[PF-005-3]** **[1h]** Create environment variable configuration
   - **Dependencies**: None
-  - **Assignee**: @tech-lead
-  - **Status**: Not Started
+  - **Assignee**: @node-typescript-engineer
+  - **Status**: ✅ Complete
+  - **Completed**: 2025-11-04
+  - **Commit**: 918ab65e
   - **Tasks**:
-    - Add `REPLICATE_API_TOKEN` to .env.example
-    - Create config loader for mockup settings
-    - Implement validation for required env vars
+    - ✅ Add `REPLICATE_API_TOKEN` to .env.example
+    - ✅ Create config loader for mockup settings
+    - ✅ Implement validation for required env vars
   - **Acceptance Criteria**:
-    - .env.example updated with REPLICATE_API_TOKEN
-    - Config loader reads env vars correctly
-    - Missing API token throws clear error
+    - ✅ .env.example updated with REPLICATE_API_TOKEN
+    - ✅ Config loader reads env vars correctly
+    - ✅ Missing API token throws clear error
 
-- [ ] **[PF-005-4]** **[1h]** Set up Replicate account and generate API token
+- [x] **[PF-005-4]** **[1h]** Set up Replicate account and generate API token
   - **Dependencies**: None
   - **Assignee**: @tech-lead (manual task)
-  - **Status**: Not Started
+  - **Status**: ✅ Complete
+  - **Completed**: 2025-11-04 (user configured)
   - **Tasks**:
-    - Create Replicate.com account
-    - Generate API token from dashboard
-    - Add token to local .env file
-    - Test token with simple API call
+    - ✅ Create Replicate.com account
+    - ✅ Generate API token from dashboard
+    - ✅ Add token to local .env file
+    - ✅ Test token with simple API call
   - **Acceptance Criteria**:
-    - Replicate account created
-    - API token generated and stored securely
-    - Token tested and working
+    - ✅ Replicate account created
+    - ✅ API token generated and stored securely
+    - ✅ Token tested and working
 
 #### Core Implementation
 
-- [ ] **[PF-005-5]** **[2h]** Implement MockupGenerator class
+- [x] **[PF-005-5]** **[2h]** Implement MockupGenerator class
   - **Dependencies**: PF-005-1, PF-005-2, PF-005-3
-  - **Assignee**: @tech-lead
-  - **Status**: Not Started
-  - **File**: `.claude/agents/utils/mockup-generator.ts`
+  - **Assignee**: @node-typescript-engineer
+  - **Status**: ✅ Complete
+  - **File**: `packages/ai-image-generation/src/core/mockup-generator.ts`
+  - **Completed**: 2025-11-04
+  - **Commit**: 54e8506d
   - **Tasks**:
-    - Create MockupGenerator class structure
-    - Implement `generate()` method
-    - Implement `downloadImage()` helper
-    - Implement `processImage()` helper
-    - Add error handling and retry logic
+    - ✅ Create MockupGenerator class structure
+    - ✅ Implement `generate()` method
+    - ✅ Implement `downloadImage()` helper
+    - ✅ Implement `processImage()` helper
+    - ✅ Add error handling and retry logic
   - **Acceptance Criteria**:
-    - Class instantiates with config
-    - `generate()` calls Replicate API successfully
-    - Image downloaded and saved to disk
-    - Errors handled gracefully with retries
+    - ✅ Class instantiates with config
+    - ✅ `generate()` calls Replicate API successfully
+    - ✅ Image downloaded and saved to disk
+    - ✅ Errors handled gracefully with retries
 
-- [ ] **[PF-005-6]** **[1h]** Implement prompt engineering utilities
+- [x] **[PF-005-6]** **[1h]** Implement prompt engineering utilities
   - **Dependencies**: PF-005-5
-  - **Assignee**: @tech-lead
-  - **Status**: Not Started
-  - **File**: `.claude/agents/utils/prompt-engineer.ts`
+  - **Assignee**: @node-typescript-engineer
+  - **Status**: ✅ Complete
+  - **File**: `packages/ai-image-generation/src/utils/prompt-engineer.ts`
+  - **Completed**: 2025-11-04
+  - **Commit**: 54e8506d
   - **Tasks**:
-    - Create `craftPrompt()` function
-    - Implement UI/UX-specific prompt templates
-    - Add prompt sanitization (remove harmful content)
-    - Implement device-specific presets (desktop/mobile/tablet)
+    - ✅ Create `craftPrompt()` function
+    - ✅ Implement UI/UX-specific prompt templates
+    - ✅ Add prompt sanitization (remove harmful content)
+    - ✅ Implement device-specific presets (desktop/mobile/tablet)
   - **Acceptance Criteria**:
-    - Prompts include UI best practices
-    - Harmful content filtered out
-    - Device presets generate appropriate dimensions
-    - Prompts are 1-500 characters
+    - ✅ Prompts include UI best practices
+    - ✅ Harmful content filtered out
+    - ✅ Device presets generate appropriate dimensions
+    - ✅ Prompts are 1-500 characters
 
-- [ ] **[PF-005-7]** **[1h]** Implement file system management
+- [x] **[PF-005-7]** **[1h]** Implement file system management
   - **Dependencies**: PF-005-5
-  - **Assignee**: @tech-lead
-  - **Status**: Not Started
-  - **File**: `.claude/agents/utils/file-system-manager.ts`
+  - **Assignee**: @node-typescript-engineer
+  - **Status**: ✅ Complete
+  - **File**: `packages/ai-image-generation/src/utils/file-system-manager.ts`
+  - **Completed**: 2025-11-04
+  - **Commit**: 54e8506d
   - **Tasks**:
-    - Create `FileSystemManager` class
-    - Implement `ensureMockupsDir()` method
-    - Implement `saveMockup()` method
-    - Implement `generateFilename()` helper
-    - Add permission error handling
+    - ✅ Create `FileSystemManager` class
+    - ✅ Implement `ensureMockupsDir()` method
+    - ✅ Implement `saveMockup()` method
+    - ✅ Implement `generateFilename()` helper
+    - ✅ Add permission error handling
   - **Acceptance Criteria**:
-    - Mockups folder created if not exists
-    - Files saved with descriptive names + timestamps
-    - Name collisions avoided
-    - Permission errors caught and reported
+    - ✅ Mockups folder created if not exists
+    - ✅ Files saved with descriptive names + timestamps
+    - ✅ Name collisions avoided
+    - ✅ Permission errors caught and reported
 
-- [ ] **[PF-005-8]** **[1h]** Implement metadata registry system
+- [x] **[PF-005-8]** **[1h]** Implement metadata registry system
   - **Dependencies**: PF-005-7
-  - **Assignee**: @tech-lead
-  - **Status**: Not Started
-  - **File**: `.claude/agents/utils/metadata-registry.ts`
+  - **Assignee**: @node-typescript-engineer
+  - **Status**: ✅ Complete
+  - **File**: `packages/ai-image-generation/src/utils/metadata-registry.ts`
+  - **Completed**: 2025-11-04
+  - **Commit**: 54e8506d
   - **Tasks**:
-    - Create `MetadataRegistry` class
-    - Implement `load()` method
-    - Implement `save()` method
-    - Implement `addMockup()` method
-    - Implement `updateReferences()` method
+    - ✅ Create `MetadataRegistry` class
+    - ✅ Implement `load()` method
+    - ✅ Implement `save()` method
+    - ✅ Implement `addMockup()` method
+    - ✅ Implement `updateReferences()` method
   - **Acceptance Criteria**:
-    - Registry loads existing .registry.json
-    - New mockups added to registry
-    - Registry saved with proper formatting
-    - Concurrent writes handled safely
+    - ✅ Registry loads existing .registry.json
+    - ✅ New mockups added to registry
+    - ✅ Registry saved with proper formatting
+    - ✅ Concurrent writes handled safely
 
-- [ ] **[PF-005-9]** **[1h]** Add error handling and retry logic
+- [x] **[PF-005-9]** **[1h]** Add error handling and retry logic
   - **Dependencies**: PF-005-5
-  - **Assignee**: @tech-lead
-  - **Status**: Not Started
+  - **Assignee**: @node-typescript-engineer
+  - **Status**: ✅ Complete
+  - **File**: `packages/ai-image-generation/src/utils/error-handler.ts`
+  - **Completed**: 2025-11-04
+  - **Commit**: 54e8506d
   - **Tasks**:
-    - Implement exponential backoff for retries
-    - Add timeout handling (30s max)
-    - Add rate limit detection and handling
-    - Create error codes enum
-    - Implement detailed error logging
+    - ✅ Implement exponential backoff for retries
+    - ✅ Add timeout handling (30s max)
+    - ✅ Add rate limit detection and handling
+    - ✅ Create error codes enum
+    - ✅ Implement detailed error logging
   - **Acceptance Criteria**:
-    - Network failures trigger 3 retries
-    - Timeout after 30 seconds
-    - Rate limit errors caught and logged
-    - All errors include actionable messages
+    - ✅ Network failures trigger 3 retries
+    - ✅ Timeout after 30 seconds
+    - ✅ Rate limit errors caught and logged
+    - ✅ All errors include actionable messages
 
 #### Agent Integration
 
