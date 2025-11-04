@@ -15,7 +15,7 @@ export const PricingTierCreateInputSchema = z
         pricingPlanId: z.string().uuid('pricingPlanId must be a valid UUID'),
         minQuantity: z.number().int().min(1, 'minQuantity must be at least 1'),
         maxQuantity: z.number().int().positive('maxQuantity must be positive').nullable(),
-        unitPriceMinor: z.bigint().positive('unitPriceMinor must be positive')
+        unitPriceMinor: z.number().int().positive('unitPriceMinor must be positive')
     })
     .refine((data) => data.maxQuantity === null || data.maxQuantity > data.minQuantity, {
         message: 'maxQuantity must be greater than minQuantity when specified',
@@ -36,7 +36,7 @@ export const PricingTierBulkCreateInputSchema = z
                 z.object({
                     minQuantity: z.number().int().min(1),
                     maxQuantity: z.number().int().positive().nullable(),
-                    unitPriceMinor: z.bigint().positive()
+                    unitPriceMinor: z.number().int().positive()
                 })
             )
             .min(1, 'At least one tier is required')
@@ -79,7 +79,7 @@ export const PricingTierUpdateInputSchema = z
             .positive('maxQuantity must be positive')
             .nullable()
             .optional(),
-        unitPriceMinor: z.bigint().positive('unitPriceMinor must be positive').optional(),
+        unitPriceMinor: z.number().int().positive('unitPriceMinor must be positive').optional(),
         lifecycleState: z.nativeEnum(LifecycleStatusEnum).optional()
     })
     .refine(
