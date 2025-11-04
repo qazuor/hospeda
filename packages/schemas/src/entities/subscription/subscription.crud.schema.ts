@@ -14,6 +14,8 @@ export const SubscriptionCreateInputSchema = SubscriptionSchema.omit({
     id: true,
     createdAt: true,
     updatedAt: true,
+    createdById: true,
+    updatedById: true,
     deletedAt: true,
     deletedById: true,
     adminInfo: true,
@@ -21,9 +23,7 @@ export const SubscriptionCreateInputSchema = SubscriptionSchema.omit({
 }).extend({
     // Override with defaults and specific validation
     status: SubscriptionStatusEnumSchema.default(SubscriptionStatusEnum.ACTIVE),
-    startAt: z.coerce.date().default(() => new Date()),
-    createdById: UserIdSchema,
-    updatedById: UserIdSchema
+    startAt: z.coerce.date().default(() => new Date())
 });
 
 export type SubscriptionCreateInput = z.infer<typeof SubscriptionCreateInputSchema>;
@@ -40,15 +40,12 @@ export const SubscriptionUpdateInputSchema = SubscriptionSchema.omit({
     pricingPlanId: true,
     createdAt: true,
     createdById: true,
+    updatedById: true,
     deletedAt: true,
     deletedById: true,
     adminInfo: true,
     lifecycleState: true
-})
-    .partial()
-    .extend({
-        updatedById: UserIdSchema
-    });
+}).partial();
 
 export type SubscriptionUpdateInput = z.infer<typeof SubscriptionUpdateInputSchema>;
 
