@@ -42,7 +42,7 @@ export const PricingTierSchema = z
         maxQuantity: z.number().int().positive('maxQuantity must be positive').nullable(),
 
         /** Unit price in minor currency units (e.g., cents for USD) */
-        unitPriceMinor: z.bigint().positive('unitPriceMinor must be positive')
+        unitPriceMinor: z.number().int().positive('unitPriceMinor must be positive')
     })
     .refine(
         (data: { maxQuantity: number | null; minQuantity: number }) =>

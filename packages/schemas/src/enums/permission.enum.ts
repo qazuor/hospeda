@@ -217,5 +217,11 @@ export enum PermissionEnum {
     PRICING_PLAN_CREATE = 'pricingPlan.create', // Allows creating a new pricing plan.
     PRICING_PLAN_UPDATE = 'pricingPlan.update', // Allows updating a pricing plan.
     PRICING_PLAN_DELETE = 'pricingPlan.delete', // Allows deleting a pricing plan.
-    PRICING_PLAN_VIEW = 'pricingPlan.view' // Allows viewing pricing plan information.
+    PRICING_PLAN_VIEW = 'pricingPlan.view', // Allows viewing pricing plan information.
+
+    // PRICING_TIER: Permissions related to pricing tier management
+    PRICING_TIER_CREATE = 'pricingTier.create', // Allows creating a new pricing tier.
+    PRICING_TIER_UPDATE = 'pricingTier.update', // Allows updating a pricing tier.
+    PRICING_TIER_DELETE = 'pricingTier.delete', // Allows deleting a pricing tier.
+    PRICING_TIER_VIEW = 'pricingTier.view' // Allows viewing pricing tier information.
 }

@@ -25,8 +25,8 @@ export const PricingTierSearchSchema = BaseSearchSchema.extend({
     includesQuantity: z.number().int().min(1).optional(),
 
     // Price range filters (in minor currency units)
-    unitPriceMinorMin: z.bigint().positive().optional(),
-    unitPriceMinorMax: z.bigint().positive().optional(),
+    unitPriceMinorMin: z.number().int().positive().optional(),
+    unitPriceMinorMax: z.number().int().positive().optional(),
 
     // Lifecycle and status filters
     lifecycleState: LifecycleStatusEnumSchema.optional(),
@@ -79,7 +79,7 @@ export const PricingTierItemSchema = z.object({
     pricingPlanId: z.string().uuid(),
     minQuantity: z.number().int().min(1),
     maxQuantity: z.number().int().positive().nullable(),
-    unitPriceMinor: z.bigint(),
+    unitPriceMinor: z.number().int(),
     lifecycleState: LifecycleStatusEnumSchema,
     createdAt: z.date(),
     updatedAt: z.date(),
@@ -105,7 +105,7 @@ export const PricingTierLookupResultSchema = z.object({
     tier: PricingTierItemSchema.nullable(),
     found: z.boolean(),
     quantity: z.number().int(),
-    totalPrice: z.bigint().optional() // quantity * unitPriceMinor
+    totalPrice: z.number().int().optional() // quantity * unitPriceMinor
 });
 
 export type PricingTierLookupResult = z.infer<typeof PricingTierLookupResultSchema>;
