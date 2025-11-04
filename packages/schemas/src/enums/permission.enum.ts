@@ -5,6 +5,7 @@ export enum PermissionCategoryEnum {
     POST = 'POST',
     USER = 'USER',
     CLIENT = 'CLIENT',
+    PRODUCT = 'PRODUCT',
     SUBSCRIPTION = 'SUBSCRIPTION',
     PUBLIC = 'PUBLIC',
     SYSTEM = 'SYSTEM',
@@ -204,5 +205,11 @@ export enum PermissionEnum {
     SUBSCRIPTION_CREATE = 'subscription.create', // Allows creating a new subscription.
     SUBSCRIPTION_UPDATE = 'subscription.update', // Allows updating a subscription.
     SUBSCRIPTION_DELETE = 'subscription.delete', // Allows deleting a subscription.
-    SUBSCRIPTION_VIEW = 'subscription.view' // Allows viewing subscription information.
+    SUBSCRIPTION_VIEW = 'subscription.view', // Allows viewing subscription information.
+
+    // PRODUCT: Permissions related to product management
+    PRODUCT_CREATE = 'product.create', // Allows creating a new product.
+    PRODUCT_UPDATE = 'product.update', // Allows updating a product.
+    PRODUCT_DELETE = 'product.delete', // Allows deleting a product.
+    PRODUCT_VIEW = 'product.view' // Allows viewing product information.
 }
