@@ -211,5 +211,11 @@ export enum PermissionEnum {
     PRODUCT_CREATE = 'product.create', // Allows creating a new product.
     PRODUCT_UPDATE = 'product.update', // Allows updating a product.
     PRODUCT_DELETE = 'product.delete', // Allows deleting a product.
-    PRODUCT_VIEW = 'product.view' // Allows viewing product information.
+    PRODUCT_VIEW = 'product.view', // Allows viewing product information.
+
+    // PRICING_PLAN: Permissions related to pricing plan management
+    PRICING_PLAN_CREATE = 'pricingPlan.create', // Allows creating a new pricing plan.
+    PRICING_PLAN_UPDATE = 'pricingPlan.update', // Allows updating a pricing plan.
+    PRICING_PLAN_DELETE = 'pricingPlan.delete', // Allows deleting a pricing plan.
+    PRICING_PLAN_VIEW = 'pricingPlan.view' // Allows viewing pricing plan information.
 }

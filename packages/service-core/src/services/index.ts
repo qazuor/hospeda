@@ -12,6 +12,7 @@ export * from './feature/feature.service';
 export * from './post/post.service';
 export * from './postSponsor/postSponsor.service';
 export * from './postSponsorship/postSponsorship.service';
+export * from './pricingPlan/pricingPlan.service';
 export * from './product/product.service';
 export * from './subscription/subscription.service';
 export * from './tag/tag.service';
