@@ -5,6 +5,7 @@ export enum PermissionCategoryEnum {
     POST = 'POST',
     USER = 'USER',
     CLIENT = 'CLIENT',
+    SUBSCRIPTION = 'SUBSCRIPTION',
     PUBLIC = 'PUBLIC',
     SYSTEM = 'SYSTEM',
     ACCESS = 'ACCESS'
@@ -197,5 +198,11 @@ export enum PermissionEnum {
     CLIENT_CREATE = 'client.create', // Allows creating a new client.
     CLIENT_UPDATE = 'client.update', // Allows updating a client.
     CLIENT_DELETE = 'client.delete', // Allows deleting a client.
-    CLIENT_VIEW = 'client.view' // Allows viewing client information.
+    CLIENT_VIEW = 'client.view', // Allows viewing client information.
+
+    // SUBSCRIPTION: Permissions related to subscription management
+    SUBSCRIPTION_CREATE = 'subscription.create', // Allows creating a new subscription.
+    SUBSCRIPTION_UPDATE = 'subscription.update', // Allows updating a subscription.
+    SUBSCRIPTION_DELETE = 'subscription.delete', // Allows deleting a subscription.
+    SUBSCRIPTION_VIEW = 'subscription.view' // Allows viewing subscription information.
 }
