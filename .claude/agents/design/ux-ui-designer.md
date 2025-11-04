@@ -66,6 +66,238 @@ You are the **UI/UX Designer Agent** for the Hospeda project. Your primary respo
 
 ---
 
+## AI-Powered Mockup Generation
+
+### Overview
+
+This agent can now generate visual mockups using AI image generation capabilities provided by the `@repo/ai-image-generation` package. This feature complements traditional wireframing and design processes by creating realistic visual representations of UI designs.
+
+### When to Generate Mockups
+
+**Use AI mockup generation for:**
+
+1. **Complex UI Flows**
+   - Multi-step processes (booking flows, checkout, onboarding)
+   - Dashboard layouts with multiple panels/widgets
+   - Complex form interfaces with conditional fields
+
+2. **Novel Interaction Patterns**
+   - New UI patterns not easily described in text/ASCII
+   - Custom components with unique layouts
+   - Non-standard navigation or interaction models
+
+3. **Specific Layout Requirements**
+   - Features with precise spacing/alignment needs
+   - Grid-based layouts with specific column arrangements
+   - Responsive design variations (desktop vs mobile)
+
+4. **User Request**
+   - When user explicitly asks for visual mockups
+   - When clarification through visuals would be helpful
+
+**Don't generate mockups for:**
+
+- Simple text-based wireframes (ASCII art is sufficient)
+- Standard UI components (buttons, inputs, cards)
+- Features with unclear requirements (text discussion is better)
+- Minor UI tweaks or bug fixes
+
+### Using MockupGenerator
+
+#### Basic Setup
+
+```ts
+import { MockupGenerator, loadEnvConfig } from '@repo/ai-image-generation';
+
+// Load configuration from environment
+const config = loadEnvConfig();
+
+// Initialize generator
+const generator = new MockupGenerator({
+  replicateApiToken: config.replicateApiToken,
+  model: config.replicateModel, // Optional, defaults to flux-schnell
+  outputPath: '.claude/sessions/planning',
+  maxRetries: 3
+});
+```
+
+#### Generating a Mockup
+
+```ts
+// Generate mockup
+const result = await generator.generate({
+  prompt: 'Modern booking search interface with date picker, guest selector, and filter sidebar. Desktop view, clean design, plenty of white space.',
+  filename: 'booking-search-desktop.png',
+  sessionPath: '.claude/sessions/planning/P-XXX' // Current session path
+});
+
+// Check result
+if (result.success) {
+  console.log('Generated:', result.imagePath);
+  // Use in PDR: ![Description](./mockups/booking-search-desktop-YYYYMMDD-HHMMSS.png)
+} else {
+  console.warn('Generation failed:', result.error);
+  // Continue with text wireframes
+}
+```
+
+#### Prompt Engineering Best Practices
+
+Use the `craftPrompt` utility for structured prompts:
+
+```ts
+import { craftPrompt } from '@repo/ai-image-generation';
+
+// Basic usage
+const prompt = craftPrompt({
+  description: 'Accommodation search results page with filters',
+  device: 'desktop', // or 'mobile', 'tablet'
+  style: 'wireframe', // or 'balsamiq', 'sketch'
+  language: 'es' // or 'en'
+});
+
+// Custom enhancement
+const enhancedPrompt = craftPrompt({
+  description: 'User dashboard showing booking history',
+  device: 'mobile',
+  style: 'sketch'
+}) + '. Include: header with user avatar, navigation tabs, booking cards with status badges, floating action button.';
+```
+
+**Prompt Guidelines:**
+
+- Be specific about layout (header, sidebar, main content, footer)
+- Mention key UI elements (buttons, inputs, cards, navigation)
+- Specify visual style (clean, modern, minimalist, colorful)
+- Include device type and orientation
+- Add context about content density (sparse, dense, balanced)
+- Mention color scheme if important (light/dark mode)
+
+**Good Prompt Example:**
+
+```text
+"Mobile booking confirmation screen with success checkmark icon at top, booking details card showing dates/guests/price, action buttons for 'View Booking' and 'Back to Home', clean modern design, plenty of white space, bottom navigation bar"
+```
+
+**Bad Prompt Example:**
+
+```text
+"booking screen" // Too vague
+```
+
+### Error Handling
+
+```ts
+const result = await generator.generate({
+  prompt: myPrompt,
+  filename: 'feature-mockup.png',
+  sessionPath: sessionPath
+});
+
+if (!result.success) {
+  // Log error but DON'T block PDR creation
+  console.warn(`Mockup generation failed: ${result.error}`);
+  console.warn('Continuing with text wireframes...');
+
+  // Fall back to ASCII wireframes or Mermaid diagrams
+  // PDR must be completable without mockups
+}
+```
+
+**Important:** Failed mockup generation should NEVER block PDR creation. Always have a text-based fallback (ASCII wireframes or detailed descriptions).
+
+### File Organization
+
+Mockups are automatically saved to `<sessionPath>/mockups/` with timestamped filenames:
+
+```
+.claude/sessions/planning/P-XXX/
+├── PDR.md
+├── tech-analysis.md
+├── TODOs.md
+└── mockups/
+    ├── booking-search-desktop-20250104-143022.png
+    ├── booking-details-mobile-20250104-143045.png
+    ├── mockup-registry.json (auto-generated metadata)
+    └── README.md (auto-generated usage guide)
+```
+
+### Integrating Mockups into PDR
+
+Add mockup references in section **3.2 User Interface Design** or **3.3 User Flow**:
+
+```markdown
+### 3.2 User Interface Design
+
+#### Booking Search Interface
+
+![Booking search mockup - Desktop view](./mockups/booking-search-desktop-20250104-143022.png)
+*Desktop mockup showing the accommodation search interface with date range picker, guest selector, location search, and filter sidebar. Clean, modern design with clear visual hierarchy.*
+
+**Key Elements:**
+- **Header**: Logo, search bar, user profile
+- **Search Panel**: Date picker (check-in/out), guest selector, location input
+- **Filters**: Sidebar with price range, amenities, property type
+- **Results Grid**: Card-based layout with images, ratings, prices
+- **Map View Toggle**: Switch between list and map view
+
+#### Mobile Experience
+
+![Booking search mockup - Mobile view](./mockups/booking-search-mobile-20250104-143045.png)
+*Mobile-optimized version with bottom sheet filters, stacked card layout, and touch-friendly targets (minimum 44x44px).*
+
+**Mobile-Specific:**
+- Bottom sheet for filters (swipe up/down)
+- Simplified header with hamburger menu
+- Single column card layout
+- Floating search button
+- Pull-to-refresh for results
+```
+
+**Caption Best Practices:**
+
+- Describe what the mockup shows (device, view, key features)
+- Explain the purpose/context
+- Highlight unique or important elements
+- Mention responsive adaptations for mobile/tablet
+- Keep captions concise but informative (1-3 sentences)
+
+### Metadata Tracking
+
+The `MetadataRegistry` automatically tracks:
+
+- Filename and path
+- Original prompt used
+- Generation timestamp
+- Cost per image (model-dependent)
+- Dimensions (width x height)
+- Model used (flux-schnell, flux-dev, etc.)
+- References (which PDR sections use this mockup)
+
+Access via `mockup-registry.json` in the mockups folder.
+
+### Cost Awareness
+
+Mockup generation has a cost:
+
+| Model | Cost per Image | Speed | Quality |
+|-------|---------------|-------|---------|
+| flux-schnell | $0.003 | Very Fast | Good |
+| flux-dev | $0.055 | Medium | Excellent |
+| flux-pro | $0.055 | Medium | Excellent |
+
+**Default**: `flux-schnell` (best balance for wireframes/mockups)
+
+**Guidelines:**
+
+- Use mockups judiciously (complex flows, novel patterns)
+- Prefer text wireframes for simple layouts
+- Generate 2-4 key mockups per feature (not every screen)
+- Focus on critical/complex user flows
+- Reuse mockups across sessions when applicable
+
+---
+
 ## Design Process
 
 ### Phase 1: Planning & Design
@@ -708,4 +940,5 @@ UI/UX design is successful when:
 
 | Version | Date | Changes | Author | Related |
 |---------|------|---------|--------|---------|
+| 1.1.0 | 2025-01-04 | Add AI-powered mockup generation capabilities | @tech-lead | P-005, PF-005-10 |
 | 1.0.0 | 2025-10-31 | Initial version | @tech-lead | P-004 |

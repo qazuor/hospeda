@@ -114,12 +114,56 @@ flowchart TD
     C --> E[Result]
     D --> E
     E --> F[End State]
-```text
+```
 
 **Description:**
 {Explain the user flow in detail}
 
-### 3.2 Wireframes
+### 3.2 User Interface Design
+
+<!--
+NOTE: This section can include AI-generated mockups for complex UI flows.
+Use the ux-ui-designer agent's MockupGenerator to create visual mockups when:
+- The UI flow is complex (multi-step processes, dashboards)
+- The interaction pattern is novel or hard to describe in text
+- Specific layout/spacing requirements need visualization
+- User explicitly requests visual mockups
+
+Always include a descriptive caption explaining what the mockup shows.
+Failed mockup generation should NOT block PDR creation - fall back to text wireframes.
+-->
+
+#### {Screen/Feature Name}
+
+<!-- EXAMPLE: AI-Generated Mockup Reference -->
+
+![{Screen name} mockup - Desktop view](./mockups/{feature}-desktop-YYYYMMDD-HHMMSS.png)
+*Desktop mockup showing {brief description of what's in the mockup}. {Key design decisions or highlights}.*
+
+**Key Elements:**
+
+- **{Section 1}**: {Description and purpose}
+- **{Section 2}**: {Description and purpose}
+- **{Section 3}**: {Description and purpose}
+
+**Interaction Flow:**
+
+1. {Step 1 and what happens}
+2. {Step 2 and what happens}
+3. {Step 3 and what happens}
+
+<!-- EXAMPLE: Mobile Variant -->
+
+![{Screen name} mockup - Mobile view](./mockups/{feature}-mobile-YYYYMMDD-HHMMSS.png)
+*Mobile-optimized version with {responsive adaptations}. Touch-friendly targets (minimum 44x44px).*
+
+**Mobile-Specific Adaptations:**
+
+- {Adaptation 1}
+- {Adaptation 2}
+- {Adaptation 3}
+
+<!-- Alternative: Text-based wireframe if mockup not needed -->
 
 #### Desktop View
 
@@ -143,20 +187,53 @@ flowchart TD
   - {Feature 1}
   - {Feature 2}
 
-### 3.3 High-Fidelity Mockups
+### 3.3 Component Specifications
 
-#### Screen 1: {Screen Name}
+<!--
+NOTE: For complex custom components, consider generating a mockup to show:
+- Exact layout and spacing
+- Different states (default, hover, active, disabled, error, loading)
+- Responsive behavior across breakpoints
 
-- **Location**: {Link to mockup}
-- **Description**: {What this screen shows}
+Simple standard components (buttons, inputs) don't need mockups.
+-->
+
+#### {Screen/Component Name}
+
+<!-- EXAMPLE: Component with visual mockup -->
+
+![{Component name} - All states](./mockups/{component}-states-YYYYMMDD-HHMMSS.png)
+*Component mockup showing all interactive states: default, hover, active, disabled, error, and loading.*
+
+- **Location**: {Link to mockup or Figma}
+- **Description**: {What this component does}
+- **States**:
+  - **Default**: {Appearance and behavior}
+  - **Hover**: {Visual feedback}
+  - **Active/Focus**: {Visual feedback}
+  - **Disabled**: {Appearance}
+  - **Error**: {Error indication}
+  - **Loading**: {Loading state}
 - **Interactive Elements**:
   - {Element 1}: {Behavior}
   - {Element 2}: {Behavior}
   - {Element 3}: {Behavior}
 
-#### Screen 2: {Screen Name}
+<!-- Alternative: Text-based specification -->
 
-{Continue with additional screens}
+#### Component 2: {Component Name}
+
+{Continue with additional components/screens}
+
+**Mockup Usage Guidelines:**
+
+- **When to include mockups**: Complex flows, novel patterns, specific layout requirements, user request
+- **When to skip mockups**: Simple layouts, standard components, unclear requirements
+- **Caption format**: `![Description](./mockups/filename-YYYYMMDD-HHMMSS.png)` + italic caption
+- **File location**: `./mockups/` folder in session directory
+- **Naming convention**: `{feature}-{device}-YYYYMMDD-HHMMSS.png`
+- **Cost awareness**: Use judiciously (2-4 key mockups per feature, flux-schnell model default)
+- **Fallback**: Always have text wireframes as backup if generation fails
 
 ### 3.4 UI Components
 
