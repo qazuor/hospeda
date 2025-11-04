@@ -250,22 +250,25 @@
     - ✅ Captions explain mockup purpose
     - ✅ Relative paths are correct
 
-- [ ] **[PF-005-12]** **[1h]** Implement cost tracking and usage monitoring
+- [x] **[PF-005-12]** **[1h]** Implement cost tracking and usage monitoring
   - **Dependencies**: PF-005-5
-  - **Assignee**: @tech-lead
-  - **Status**: Not Started
-  - **File**: `.claude/agents/utils/cost-tracker.ts`
+  - **Assignee**: @node-typescript-engineer
+  - **Status**: ✅ Complete
+  - **File**: `packages/ai-image-generation/src/utils/cost-tracker.ts`
+  - **Completed**: 2025-11-04
+  - **Commit**: d024265d, 7dd56ce2
   - **Tasks**:
-    - Create `CostTracker` class
-    - Track mockup count per month
-    - Calculate total cost
-    - Implement usage alerts (40/50 threshold)
-    - Add monthly reset logic
+    - ✅ Create `CostTracker` class
+    - ✅ Track mockup count per month
+    - ✅ Calculate total cost
+    - ✅ Implement usage alerts (40/50 threshold)
+    - ✅ Add monthly reset logic
   - **Acceptance Criteria**:
-    - Usage tracked accurately
-    - Cost calculated correctly ($0.003/image)
-    - Alert triggered at 40 mockups
-    - Monthly reset on first of month
+    - ✅ Usage tracked accurately
+    - ✅ Cost calculated correctly ($0.003/image)
+    - ✅ Alert triggered at 40 mockups
+    - ✅ Monthly reset on first of month
+  - **Test Coverage**: 97.93% (34 tests passing)
 
 ---
 
