@@ -180,6 +180,60 @@ describe('ProductModel', () => {
             expect(result.quantity).toBe(5);
             expect(result.discount).toBe(0);
         });
+
+        it('should handle quantity of zero gracefully', async () => {
+            const mockPricingPlan = {
+                id: 'plan-1',
+                productId: mockProduct.id,
+                amountMinor: 1000,
+                billingScheme: 'flat_rate',
+                currency: 'USD'
+            };
+
+            const mockDb = {
+                select: vi.fn().mockReturnValue({
+                    from: vi.fn().mockReturnValue({
+                        where: vi.fn().mockResolvedValue([mockPricingPlan])
+                    })
+                })
+            };
+            getDb.mockReturnValue(mockDb);
+
+            const result = await productModel.calculatePricing(mockProduct.id, 0);
+
+            expect(result).toBeDefined();
+            expect(result.basePrice).toBe(1000);
+            expect(result.totalPrice).toBe(0); // 1000 * 0 = 0
+            expect(result.quantity).toBe(0);
+        });
+
+        it('should handle negative quantity (multiplies normally)', async () => {
+            const mockPricingPlan = {
+                id: 'plan-1',
+                productId: mockProduct.id,
+                amountMinor: 1000,
+                billingScheme: 'flat_rate',
+                currency: 'USD'
+            };
+
+            const mockDb = {
+                select: vi.fn().mockReturnValue({
+                    from: vi.fn().mockReturnValue({
+                        where: vi.fn().mockResolvedValue([mockPricingPlan])
+                    })
+                })
+            };
+            getDb.mockReturnValue(mockDb);
+
+            // Note: Currently the model doesn't validate negative quantities
+            // This test documents the current behavior
+            const result = await productModel.calculatePricing(mockProduct.id, -5);
+
+            expect(result).toBeDefined();
+            expect(result.basePrice).toBe(1000);
+            expect(result.totalPrice).toBe(-5000); // 1000 * -5 = -5000
+            expect(result.quantity).toBe(-5);
+        });
     });
 
     describe('isAvailable', () => {
@@ -278,6 +332,64 @@ describe('ProductModel', () => {
 
             expect(result).toHaveLength(1);
             expect(result[0].metadata?.featured).toBe(true);
+        });
+    });
+
+    describe('error handling', () => {
+        it('should handle database errors in findWithPricingPlans', async () => {
+            // Arrange - Mock database to throw error
+            const mockDb = {
+                query: {
+                    products: {
+                        findMany: vi.fn().mockRejectedValue(new Error('Database connection lost'))
+                    }
+                }
+            };
+            getDb.mockReturnValue(mockDb);
+
+            // Act & Assert - Expect error to be thrown
+            await expect(productModel.findWithPricingPlans()).rejects.toThrow(
+                'Database connection lost'
+            );
+        });
+
+        it('should handle calculating pricing when no plans exist', async () => {
+            // Arrange - Mock empty result (no pricing plans found)
+            const mockDb = {
+                select: vi.fn().mockReturnValue({
+                    from: vi.fn().mockReturnValue({
+                        where: vi.fn().mockResolvedValue([]) // No pricing plan found
+                    })
+                })
+            };
+            getDb.mockReturnValue(mockDb);
+
+            // Act - calculatePricing handles this gracefully by returning zeros
+            const result = await productModel.calculatePricing('non-existent-id', 1);
+
+            // Assert - Should return zero values when no plans exist
+            expect(result).toBeDefined();
+            expect(result.basePrice).toBe(0);
+            expect(result.totalPrice).toBe(0);
+            expect(result.quantity).toBe(1);
+            expect(result.discount).toBe(0);
+        });
+
+        it('should handle database errors in getAvailablePlans', async () => {
+            // Arrange - Mock database error
+            const mockDb = {
+                select: vi.fn().mockReturnValue({
+                    from: vi.fn().mockReturnValue({
+                        where: vi.fn().mockRejectedValue(new Error('Query execution failed'))
+                    })
+                })
+            };
+            getDb.mockReturnValue(mockDb);
+
+            // Act & Assert
+            await expect(productModel.getAvailablePlans(mockProduct.id)).rejects.toThrow(
+                'Query execution failed'
+            );
         });
     });
 });
