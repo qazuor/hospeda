@@ -648,7 +648,7 @@ N/A - This is a server-side/agent feature with no browser requirements.
 
 - [x] PDR (this document)
 - [ ] Technical Analysis document
-- [ ] UI/UX Designer agent documentation (.claude/agents/specialized/ui-ux-designer.md)
+- [ ] UX/UI Designer agent documentation (.claude/agents/design/ux-ui-designer.md)
 - [ ] Environment setup guide (add REPLICATE_API_TOKEN)
 - [ ] Prompt engineering guidelines for mockup generation
 - [ ] Example mockup gallery in documentation
@@ -710,7 +710,7 @@ N/A - This is a server-side/agent feature with no browser requirements.
 |------|------|--------|------|----------|
 | Product Owner | @qazuor | Pending | - | - |
 | Tech Lead | @tech-lead | Pending | - | - |
-| UI/UX Designer | @ui-ux-designer | Pending | - | - |
+| UX/UI Designer | @ux-ui-designer | Pending | - | - |
 
 ---
 
@@ -742,6 +742,17 @@ N/A - This is a server-side/agent feature with no browser requirements.
 - This feature enhances but does not replace manual design work
 - Quality of generated mockups depends heavily on prompt engineering
 - Consider this a "design draft" tool, not a production-ready design system
+
+**Commit Policy:**
+
+All commits for this feature MUST follow the **Atomic Commits Policy**:
+
+- **ONLY** commit files modified for the specific task/subtask
+- **NEVER** use `git add .` or `git add -A`
+- **ALWAYS** use `git add <specific-file>` for task-related files
+- Reference: `.claude/docs/standards/atomic-commits.md`
+- Each PF-XXX task should have its own focused commit
+- Example: `git add packages/ai-image-generation/src/providers/replicate-provider.ts`
 
 **Meeting Notes:**
 
