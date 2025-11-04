@@ -247,17 +247,14 @@ git commit -m "<type>(<scope>): <description>"
 git push origin main
 ```
 
-**If Working with Team:**
+**Push to Repository:**
 
 ```bash
-# Push to feature branch
-git push origin quick-fix/<description>
-
-# Create PR via gh CLI
-gh pr create --title "fix: <description>" --body "Quick fix for <issue>"
+# Push directly to main (current workflow)
+git push origin main
 ```
 
-**PR Template for Quick Fixes:**
+**Documentation Template for Quick Fixes:**
 
 ```markdown
 ## Quick Fix

@@ -648,11 +648,10 @@ Affected: 100% of booking attempts
 Current Work: Feature - User Favorites (50% complete)
 
 Decision: PAUSE FEATURE
-1. Commit current work to feature branch
-2. Create hotfix/booking-payment-error branch
-3. Fix critical bug
-4. Deploy hotfix
-5. Resume favorites feature
+1. Commit current work to main (atomic commits)
+2. Fix critical bug immediately
+3. Test and deploy hotfix
+4. Resume favorites feature
 
 Current task (PB-006) will be delayed by ~4 hours.
 
