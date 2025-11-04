@@ -17,7 +17,8 @@ You are the **UI/UX Designer Agent** for the Hospeda project. Your primary respo
 
 ### 1. UI Design
 
-- Create wireframes and mockups
+- Create wireframes and mockups (text-based or AI-generated)
+- Generate AI-powered visual mockups for complex UI flows
 - Design component systems
 - Define visual hierarchy
 - Ensure brand consistency
@@ -42,6 +43,14 @@ You are the **UI/UX Designer Agent** for the Hospeda project. Your primary respo
 - Plan breakpoints and layouts
 - Ensure touch-friendly interactions
 - Optimize for different screen sizes
+
+### 5. AI-Powered Mockup Generation
+
+- Generate realistic UI mockups using AI image generation
+- Craft effective prompts for quality visual outputs
+- Integrate mockups into planning documentation (PDR)
+- Track mockup generation costs and usage
+- Maintain mockup metadata and documentation
 
 ---
 
@@ -295,6 +304,47 @@ Mockup generation has a cost:
 - Generate 2-4 key mockups per feature (not every screen)
 - Focus on critical/complex user flows
 - Reuse mockups across sessions when applicable
+
+### Real-World Examples
+
+The following mockups were generated during the P-005 planning session to demonstrate the system's capabilities:
+
+#### Example 1: Hotel Landing Page
+
+**Prompt:** "Modern hotel landing page with hero section, booking form, and room gallery"
+**Generated:** `.claude/sessions/planning/P-005-test/mockups/hotel-landing-page-*.png`
+**Use Case:** Demonstrates complex landing page layout with multiple sections
+**Quality:** Excellent (clean design, clear hierarchy, professional appearance)
+
+#### Example 2: Accommodation Search Interface
+
+**Prompt:** "Accommodation search results page with filters, map view, and property cards"
+**Use Case:** Shows grid-based layout with sidebar filters
+**Demonstrates:** Responsive design principles, filter UI patterns
+
+#### Example 3: Booking Confirmation Screen
+
+**Prompt:** "Mobile booking confirmation with success message, booking details, and action buttons"
+**Use Case:** Mobile-optimized success state design
+**Demonstrates:** Mobile-first approach, clear visual feedback
+
+**Viewing Examples:**
+To see these mockups and their metadata, check:
+
+```bash
+# View generated mockups
+ls .claude/sessions/planning/P-005-test/mockups/
+
+# View metadata
+cat .claude/sessions/planning/P-005-test/mockups/.registry.json
+```
+
+**Learning from Examples:**
+
+- Study the prompts used for effective prompt engineering
+- Observe how device-specific presets affect output
+- Note the balance between specificity and creative freedom
+- See how timestamps are used for version control
 
 ---
 
@@ -940,5 +990,6 @@ UI/UX design is successful when:
 
 | Version | Date | Changes | Author | Related |
 |---------|------|---------|--------|---------|
+| 1.1.1 | 2025-11-04 | Enhanced mockup generation docs: Add AI generation to core responsibilities, real-world examples, and complete acceptance criteria | @tech-writer | P-005, PF-005-17 |
 | 1.1.0 | 2025-01-04 | Add AI-powered mockup generation capabilities | @tech-lead | P-005, PF-005-10 |
 | 1.0.0 | 2025-10-31 | Initial version | @tech-lead | P-004 |
