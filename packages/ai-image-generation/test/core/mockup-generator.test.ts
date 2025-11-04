@@ -256,6 +256,130 @@ describe('MockupGenerator', () => {
             expect(result.metadata.generationTime).toBeGreaterThan(0);
             expect(result.metadata.timestamp).toBeDefined();
         });
+
+        it('should track usage and costs after successful generation', async () => {
+            // Arrange
+            const generator = new MockupGenerator(config);
+            const sessionPath = path.join(testDir, 'P-008-test');
+
+            // Act
+            await generator.generate({
+                prompt: 'Login screen',
+                filename: 'login.png',
+                sessionPath
+            });
+
+            // Assert - Check that usage tracking file was created
+            const usageFilePath = path.join(sessionPath, '.usage-tracking.json');
+            const usageContent = await fs.readFile(usageFilePath, 'utf-8');
+            const usageData = JSON.parse(usageContent);
+
+            expect(usageData.mockupCount).toBe(1);
+            expect(usageData.totalCost).toBe(0.003);
+            expect(usageData.currentMonth).toMatch(/^\d{4}-\d{2}$/);
+        });
+
+        it('should accumulate usage over multiple generations', async () => {
+            // Arrange
+            const generator = new MockupGenerator(config);
+            const sessionPath = path.join(testDir, 'P-009-test');
+
+            // Act - Generate 3 mockups
+            await generator.generate({
+                prompt: 'Login screen',
+                filename: 'login.png',
+                sessionPath
+            });
+
+            await generator.generate({
+                prompt: 'Dashboard',
+                filename: 'dashboard.png',
+                sessionPath
+            });
+
+            await generator.generate({
+                prompt: 'Settings',
+                filename: 'settings.png',
+                sessionPath
+            });
+
+            // Assert
+            const usageFilePath = path.join(sessionPath, '.usage-tracking.json');
+            const usageContent = await fs.readFile(usageFilePath, 'utf-8');
+            const usageData = JSON.parse(usageContent);
+
+            expect(usageData.mockupCount).toBe(3);
+            expect(usageData.totalCost).toBe(0.009);
+        });
+
+        it('should log warning when threshold is reached', async () => {
+            // Arrange
+            const generator = new MockupGenerator(config);
+            const sessionPath = path.join(testDir, 'P-010-test');
+            const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+            // Pre-populate usage data to be at threshold (40 mockups)
+            const usageData = {
+                currentMonth: new Date().toISOString().slice(0, 7),
+                mockupCount: 39,
+                totalCost: 0.117,
+                lastReset: new Date().toISOString()
+            };
+
+            await fs.mkdir(sessionPath, { recursive: true });
+            const usageFilePath = path.join(sessionPath, '.usage-tracking.json');
+            await fs.writeFile(usageFilePath, JSON.stringify(usageData, null, 2));
+
+            // Act - Generate one more mockup to reach threshold
+            await generator.generate({
+                prompt: 'Login',
+                filename: 'login.png',
+                sessionPath
+            });
+
+            // Assert
+            expect(consoleWarnSpy).toHaveBeenCalledWith(
+                expect.stringContaining('High usage alert: 40/50 mockups')
+            );
+
+            // Cleanup
+            consoleWarnSpy.mockRestore();
+        });
+
+        it('should not log error if cost tracking fails silently', async () => {
+            // Arrange
+            const generator = new MockupGenerator(config);
+            const sessionPath = path.join(testDir, 'P-011-test');
+            const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+            // Mock file system to fail only on usage tracking file
+            const originalWriteFile = fs.writeFile;
+            const writeFileSpy = vi
+                .spyOn(fs, 'writeFile')
+                .mockImplementation(async (filePath, data) => {
+                    if (filePath.toString().includes('.usage-tracking.json')) {
+                        throw new Error('Simulated filesystem error');
+                    }
+                    return originalWriteFile(filePath, data);
+                });
+
+            // Act - Should still generate even if cost tracking fails
+            const result = await generator.generate({
+                prompt: 'Login',
+                filename: 'login.png',
+                sessionPath
+            });
+
+            // Assert - Generation should succeed and error should be logged
+            expect(result.success).toBe(true);
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                expect.stringContaining('Failed to save usage data')
+            );
+
+            // Cleanup
+            writeFileSpy.mockRestore();
+            consoleErrorSpy.mockRestore();
+        });
     });
 
     describe('downloadImage', () => {
