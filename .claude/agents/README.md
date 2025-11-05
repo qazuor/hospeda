@@ -1,6 +1,6 @@
 # Hospeda Project - AI Agents
 
-This directory contains **12 specialized AI agents** for the Hospeda tourism platform. Each agent is an expert in specific areas and can be invoked during development workflow.
+This directory contains **14 specialized AI agents** for the Hospeda tourism platform. Each agent is an expert in specific areas and can be invoked during development workflow.
 
 > **Note**: Security and performance audits are handled via specialized skills (security-audit, performance-audit, accessibility-audit) coordinated by tech-lead rather than dedicated agents. This provides lightweight, reusable audit capabilities without full agent overhead.
 
@@ -29,32 +29,34 @@ Agents are organized into the following categories:
 - **[react-senior-dev](engineering/react-senior-dev.md)** - Builds reusable React 19 components with hooks and state management for Astro and TanStack Start during Phase 2 Implementation
 - **[tanstack-start-engineer](engineering/tanstack-start-engineer.md)** - Implements admin dashboard with TanStack Start, Router, Query, and Form for type-safe development during Phase 2 Implementation
 
-### Design & UX (1 agent)
+### Design & UX (2 agents)
 
 - **[ux-ui-designer](design/ux-ui-designer.md)** - Designs user interfaces, creates user flows, ensures accessibility, and validates design standards during Phase 1 and Phase 3
+- **[content-writer](design/content-writer.md)** - Creates engaging, bilingual (English/Spanish) web content with a friendly yet professional tone for customer-facing pages during content creation phases
 
 ### Quality Assurance (2 agents)
 
 - **[qa-engineer](quality/qa-engineer.md)** - Ensures quality through testing, validates acceptance criteria, and verifies features meet standards during Phase 3 Validation
 - **[debugger](quality/debugger.md)** - Investigates bugs, diagnoses issues, identifies root causes, and proposes fixes using systematic debugging during Phase 3 and issue resolution
 
-### Specialized (3 agents)
+### Specialized (4 agents)
 
 - **[tech-writer](specialized/tech-writer.md)** - Creates comprehensive documentation for code, APIs, architecture, processes, manages dependency tracking and updates, and generates changelogs following Keep a Changelog format during Phase 4 Finalization and all phases
 - **[i18n-specialist](specialized/i18n-specialist.md)** - Designs and maintains internationalization system, manages translations, and ensures multi-language support during all phases
 - **[enrichment-agent](specialized/enrichment-agent.md)** - Analyzes planning sessions and enriches GitHub issues with relevant planning context, technical decisions, and task relationships during planning sync and issue creation
+- **[seo-ai-specialist](specialized/seo-ai-specialist.md)** - Optimizes web presence for traditional search engines and AI-powered search through technical SEO, Core Web Vitals, structured data, and LLM-readiness strategies during all phases
 
 ## Usage
 
 Agents are automatically available to Claude Code. They are invoked using the Task tool during the development workflow:
 
-```
+```text
 Use the Task tool with subagent_type="agent-name"
 ```
 
 **Example invocations:**
 
-```
+```text
 "Invoke the product-functional agent to create the PDR"
 "Use the tech-lead agent to review architectural decisions"
 "Call the db-drizzle-engineer to design the database schema"
@@ -81,7 +83,7 @@ Each agent file must include:
 
 ## Directory Structure
 
-```
+```text
 .claude/agents/
 ├── README.md                           # This file
 ├── product/                            # Product & Planning (2)
@@ -97,12 +99,14 @@ Each agent file must include:
 ├── quality/                            # Quality Assurance (2)
 │   ├── qa-engineer.md
 │   └── debugger.md
-├── design/                             # Design & UX (1)
-│   └── ux-ui-designer.md
-└── specialized/                        # Specialized (3)
+├── design/                             # Design & UX (2)
+│   ├── ux-ui-designer.md
+│   └── content-writer.md
+└── specialized/                        # Specialized (4)
     ├── tech-writer.md
     ├── i18n-specialist.md
-    └── enrichment-agent.md
+    ├── enrichment-agent.md
+    └── seo-ai-specialist.md
 ```
 
 ## Contributing
@@ -133,11 +137,11 @@ When adding new agents:
 
 ## Statistics
 
-- **Total Agents**: 12
+- **Total Agents**: 14
 - **Product & Planning**: 2
 - **Technical Leadership**: 1
 - **Backend Development**: 3
 - **Frontend Development**: 3
-- **Design & UX**: 1
+- **Design & UX**: 2
 - **Quality Assurance**: 2
-- **Specialized**: 3
+- **Specialized**: 4

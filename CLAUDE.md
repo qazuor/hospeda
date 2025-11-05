@@ -187,16 +187,17 @@ hospeda/
 
 ## 5. Tools Quick Reference
 
-### 12 Consolidated Agents
+### 14 Specialized Agents
 
 | Team | Agents | Purpose |
 |------|--------|---------|
 | **Leadership** | tech-lead | Architecture & coordination |
-| **Product** | product-technical | Technical analysis |
+| **Product** | product-functional, product-technical | Requirements & technical analysis |
 | **Backend** | hono-engineer, db-engineer, node-typescript-engineer | API, database, shared packages |
 | **Frontend** | astro-engineer, tanstack-engineer, react-dev | Web, admin, components |
-| **Quality** | qa-engineer | Testing & QA |
-| **Support** | tech-writer, debugger | Documentation, issues |
+| **Design & Content** | ux-ui-designer, content-writer | UI/UX design & web copywriting |
+| **Quality** | qa-engineer, debugger | Testing, QA & debugging |
+| **Specialized** | tech-writer, i18n-specialist, seo-ai-specialist, enrichment-agent | Docs, translations, SEO & planning |
 
 **Note:** Security and performance audits are handled via specialized skills (security-audit, performance-audit, accessibility-audit) coordinated by tech-lead rather than dedicated agents.
 
