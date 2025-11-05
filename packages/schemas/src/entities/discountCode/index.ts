@@ -4,6 +4,7 @@ export * from './discountCodeUsage.schema.js';
 
 // CRUD schemas
 export * from './discountCode.crud.schema.js';
+export * from './discountCodeUsage.crud.schema.js';
 
 // Query schemas
 export * from './discountCode.query.schema.js';
