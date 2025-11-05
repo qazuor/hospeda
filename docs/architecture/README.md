@@ -1,391 +1,371 @@
-# Architecture Overview
+# Architecture
 
-This document provides a high-level overview of the Hospeda platform architecture.
-
-## 🏗️ System Architecture
-
-Hospeda follows a **monorepo architecture** with clear separation of concerns:
-
-```
-hospeda/
-├── apps/                 # Applications
-│   ├── api/             # Hono API server
-│   ├── web/             # Astro + React frontend
-│   └── admin/           # TanStack Start admin panel
-├── packages/            # Shared packages
-│   ├── db/              # Database layer (Drizzle ORM)
-│   ├── schemas/         # Zod validation schemas
-│   ├── types/           # TypeScript type definitions
-│   ├── service-core/    # Business logic services
-│   ├── auth-ui/         # Authentication components
-│   └── config/          # Shared configuration
-└── docs/                # Documentation
-```
-
-## 🏛️ Layered Architecture
-
-The system follows a **layered architecture** pattern:
-
-### 1. Presentation Layer (`apps/`)
-
-- **API Layer**: RESTful API using Hono
-- **Web Application**: User-facing website (Astro + React)
-- **Admin Panel**: Management interface (TanStack Start)
-
-### 2. Service Layer (`packages/service-core/`)
-
-- Business logic and domain services
-- Service-to-service communication
-- Transaction management
-- Permission validation
-
-### 3. Data Access Layer (`packages/db/`)
-
-- Database models and queries
-- Schema definitions
-- Migration management
-- Connection pooling
-
-### 4. Schema Layer (`packages/schemas/`)
-
-- Input validation (Zod)
-- Type generation
-- API contract definitions
-
-## 🔄 Request Flow
-
-```mermaid
-graph TD
-    A[Client Request] --> B[API Route]
-    B --> C[Auth Middleware]
-    C --> D[Validation Middleware]
-    D --> E[Service Layer]
-    E --> F[Permission Check]
-    F --> G[Business Logic]
-    G --> H[Database Model]
-    H --> I[Database]
-    I --> H
-    H --> G
-    G --> E
-    E --> B
-    B --> A
-```
-
-## 🔐 Security Architecture
-
-### Authentication & Authorization
-
-- **Clerk Integration**: Handles user authentication
-- **Actor System**: Context-aware user representation
-- **Role-Based Access Control (RBAC)**: Hierarchical permissions
-- **Permission System**: Granular action-based permissions
-
-### Actor Context Flow
-
-```typescript
-type Actor = {
-    id: string;
-    role: RoleEnum;
-    permissions: PermissionEnum[];
-    clerkUserId: string;
-};
-```
-
-Every request includes an actor context that flows through all layers.
-
-## 📊 Data Architecture
-
-### Database Design
-
-- **PostgreSQL**: Primary database
-- **Drizzle ORM**: Type-safe database access
-- **Schema-First**: Database schema drives type generation
-- **Audit Fields**: Standardized tracking across all entities
-
-### Schema Patterns
-
-```typescript
-// Base patterns used across all entities
-BaseAuditFields: {
-    createdAt: Date,
-    updatedAt: Date,
-    createdById: string,
-    updatedById: string,
-    deletedAt?: Date,
-    deletedById?: string
-}
-
-BaseLifecycleFields: {
-    lifecycleState: LifecycleStatusEnum
-}
-
-BaseModerationFields: {
-    moderationState: ModerationStatusEnum
-}
-
-BaseVisibilityFields: {
-    visibility: VisibilityEnum
-}
-```
-
-## 🛠️ Service Architecture
-
-### Base Service Pattern
-
-All services extend `BaseCrudService` providing:
-
-- Standardized CRUD operations
-- Permission validation
-- Audit logging
-- Error handling
-- Transaction support
-
-```typescript
-class ExampleService extends BaseCrudService<
-    Entity,
-    Model,
-    CreateInput,
-    UpdateInput,
-    SearchInput
-> {
-    // Custom business logic here
-}
-```
-
-### Service Context
-
-Services operate within a context containing:
-
-```typescript
-type ServiceContext = {
-    db: DatabaseConnection;
-    actor: Actor;
-    logger: Logger;
-    cache?: CacheClient;
-};
-```
-
-## 🔀 API Architecture
-
-### Route Factory Pattern
-
-Standardized route creation:
-
-```typescript
-// CRUD routes
-const entityCRUDRoute = createCRUDRoute({
-    service: EntityService,
-    schemas: { create, update },
-    permissions: { create: ['ENTITY_CREATE'] }
-});
-
-// List routes
-const entityListRoute = createListRoute({
-    service: EntityService,
-    schema: EntitySearchSchema
-});
-```
-
-### Middleware Stack
-
-1. **CORS**: Cross-origin request handling
-2. **Rate Limiting**: Request throttling
-3. **Authentication**: Clerk token validation
-4. **Actor Resolution**: User context creation
-5. **Validation**: Request/response validation
-6. **Logging**: Request/response logging
-7. **Error Handling**: Standardized error responses
-
-## 🏷️ Type System Architecture
-
-### Type Flow
-
-```
-Database Schema → Drizzle Types → Zod Schemas → TypeScript Types → API Contracts
-```
-
-### Schema-First Development
-
-1. Define database schema (Drizzle)
-2. Generate TypeScript types
-3. Create Zod validation schemas
-4. Build API routes with type safety
-
-### Package Structure
-
-```typescript
-// Types package - pure TypeScript definitions
-export type User = {
-    id: string;
-    name: string;
-    // ...
-};
-
-// Schemas package - Zod validation + type inference
-export const UserSchema = z.object({
-    id: z.string().uuid(),
-    name: z.string().min(1),
-    // ...
-});
-
-export type User = z.infer<typeof UserSchema>;
-```
-
-## 🧪 Testing Architecture
-
-### Testing Layers
-
-1. **Unit Tests**: Service layer business logic
-2. **Integration Tests**: API endpoint testing
-3. **E2E Tests**: Full application workflows
-
-### Test Factory Pattern
-
-Standardized mock data generation:
-
-```typescript
-// Factory functions for consistent test data
-export const createMockUser = (overrides = {}) => ({
-    ...baseUser,
-    ...overrides
-});
-
-// Builder pattern for complex scenarios
-export class UserFactoryBuilder {
-    with(overrides) { /* ... */ }
-    admin() { /* ... */ }
-    build() { /* ... */ }
-}
-```
-
-## 📦 Package Dependencies
-
-### Dependency Graph
-
-```
-apps/api → service-core → db → schemas
-apps/web → schemas, types
-service-core → types, schemas
-```
-
-### Shared Packages
-
-- **@repo/db**: Database models and migrations
-- **@repo/schemas**: Validation schemas
-- **@repo/types**: Type definitions
-- **@repo/service-core**: Business services
-- **@repo/config**: Environment configuration
-- **@repo/auth-ui**: Authentication components
-
-## 🚀 Deployment Architecture
-
-### Production Stack
-
-- **Application**: Node.js (Hono API)
-- **Database**: PostgreSQL with connection pooling
-- **Cache**: Redis for session and query caching
-- **CDN**: Static asset delivery
-- **Monitoring**: Logging and performance metrics
-
-### Environment Separation
-
-- **Development**: Local database, hot reloading
-- **Staging**: Production-like environment for testing
-- **Production**: Optimized builds, monitoring, backups
-
-## 🔄 Development Workflow
-
-### Code Generation
-
-1. Database schema changes trigger type regeneration
-2. Zod schemas auto-sync with TypeScript types
-3. API documentation updates from schema changes
-
-### Build Process
-
-```bash
-# Type generation
-pnpm db:generate
-
-# Build all packages
-pnpm build
-
-# Test all packages
-pnpm test
-
-# Deploy
-pnpm deploy
-```
-
-## 📈 Scalability Considerations
-
-### Horizontal Scaling
-
-- **Stateless Services**: Services can be replicated
-- **Database Sharding**: Prepared for data partitioning
-- **Cache Layer**: Reduces database load
-- **CDN Integration**: Static asset optimization
-
-### Performance Patterns
-
-- **Pagination**: All list endpoints support pagination
-- **Lazy Loading**: Optional data loading
-- **Query Optimization**: Efficient database queries
-- **Caching Strategy**: Multi-level caching
-
-## 🔍 Monitoring & Observability
-
-### Logging Strategy
-
-- **Structured Logging**: JSON format for parsing
-- **Request Tracing**: End-to-end request tracking
-- **Error Aggregation**: Centralized error collection
-- **Performance Metrics**: Response time monitoring
-
-### Health Checks
-
-- **Database Connectivity**: Connection health
-- **Service Availability**: Endpoint health checks
-- **Resource Utilization**: Memory and CPU monitoring
-
-## 🎯 Design Principles
-
-### Core Principles
-
-1. **Type Safety**: Compile-time error prevention
-2. **Separation of Concerns**: Clear layer boundaries
-3. **Convention over Configuration**: Standardized patterns
-4. **Fail Fast**: Early error detection
-5. **Testability**: Easy unit and integration testing
-
-### Code Quality
-
-- **ESLint + Biome**: Code linting and formatting
-- **TypeScript Strict Mode**: Maximum type safety
-- **100% Test Coverage**: Comprehensive testing
-- **Code Reviews**: Mandatory peer review
-
-## 🔮 Future Architecture
-
-### Planned Enhancements
-
-- **Microservices Migration**: Gradual service extraction
-- **Event-Driven Architecture**: Async communication
-- **GraphQL API**: Alternative query interface
-- **Real-time Features**: WebSocket integration
-- **Mobile API**: Mobile-optimized endpoints
-
-### Technology Roadmap
-
-- **Kubernetes**: Container orchestration
-- **Message Queues**: Async job processing
-- **Search Engine**: Elasticsearch integration
-- **Analytics**: Data warehouse integration
+Welcome to Hospeda's architecture documentation. This section covers the system design, technical decisions, and structural patterns that power the platform.
 
 ---
 
-For detailed implementation guides, see:
+## Quick Navigation
 
-- [Adding Services](../development/adding-services.md)
-- [Development Patterns](../development/patterns.md)
-- [API Catalog](../api/service-catalog.md)
+### Core Architecture
+
+- [Overview](overview.md) - System design and architecture vision
+- [Monorepo Structure](monorepo-structure.md) - Apps, packages, and organization
+- [Data Flow](data-flow.md) - Request lifecycle and processing
+- [Patterns](patterns.md) - Architectural patterns and conventions
+
+### Technical Details
+
+- [Tech Stack](tech-stack.md) - Technology choices and rationale
+- [Layers](layers.md) - Frontend, API, Service, Database layers
+- [Type System](type-system.md) - End-to-end type safety
+
+### Deployment & Operations
+
+- [Deployment Architecture](../deployment/architecture.md) - Infrastructure and hosting
+- [Environments](../deployment/environments.md) - Development, staging, production
+- [Monitoring](../deployment/monitoring.md) - Observability and metrics
+
+---
+
+## Architecture at a Glance
+
+### System Architecture
+
+Hospeda is a modern **monorepo** application with clear separation of concerns:
+
+```mermaid
+graph TB
+    subgraph "Frontend Layer"
+        WEB[Web App<br/>Astro + React]
+        ADMIN[Admin Dashboard<br/>TanStack Start]
+    end
+
+    subgraph "API Layer"
+        API[API Server<br/>Hono]
+    end
+
+    subgraph "Service Layer"
+        SERVICES[Business Logic<br/>@repo/service-core]
+    end
+
+    subgraph "Data Layer"
+        DB[(PostgreSQL<br/>Drizzle ORM)]
+        REDIS[(Redis<br/>Cache)]
+    end
+
+    WEB --> API
+    ADMIN --> API
+    API --> SERVICES
+    SERVICES --> DB
+    SERVICES --> REDIS
+
+    style WEB fill:#4CAF50
+    style ADMIN fill:#2196F3
+    style API fill:#FF9800
+    style SERVICES fill:#9C27B0
+    style DB fill:#F44336
+    style REDIS fill:#E91E63
+```
+
+### Technology Stack
+
+| Layer | Technologies |
+|-------|-------------|
+| **Frontend** | Astro, React 19, Tailwind CSS, Shadcn UI |
+| **API** | Hono, Node.js, Zod |
+| **Services** | TypeScript, Zod validation |
+| **Database** | PostgreSQL, Drizzle ORM |
+| **Cache** | Redis |
+| **Auth** | Clerk |
+| **Payments** | Mercado Pago |
+| **Infrastructure** | Vercel, Neon Cloud, Docker |
+| **Monorepo** | TurboRepo, pnpm workspaces |
+
+---
+
+## Core Principles
+
+### 1. Simplicity First (KISS)
+
+- Avoid over-engineering
+- Prefer boring, proven technology
+- Clear, maintainable code
+
+### 2. Developer Experience
+
+- Fast feedback loops (TDD)
+- Comprehensive tooling
+- Clear conventions
+
+### 3. Type Safety
+
+- End-to-end type safety
+- Database → API → Frontend
+- Compile-time error detection
+
+### 4. Separation of Concerns
+
+Each layer has a single responsibility:
+
+```text
+Database Schema → Model → Service → API Route → Frontend
+```
+
+---
+
+## Learning Path
+
+### For New Developers
+
+**Time:** ~30 minutes
+
+1. Read [Overview](overview.md) (10 min)
+2. Review [Monorepo Structure](monorepo-structure.md) (10 min)
+3. Understand [Data Flow](data-flow.md) (10 min)
+
+**Next Steps:**
+
+- Follow [Adding a New Entity](../guides/adding-new-entity.md) tutorial
+- Study [Patterns](patterns.md) for best practices
+
+### For Experienced Developers
+
+**Time:** ~20 minutes
+
+1. Quick scan [Overview](overview.md)
+2. Deep dive [Patterns](patterns.md)
+3. Review [Tech Stack](tech-stack.md) rationale
+
+**Next Steps:**
+
+- Review app-specific documentation
+- Study [Data Flow](data-flow.md) for request lifecycle
+
+---
+
+## Key Concepts
+
+### Monorepo Organization
+
+```text
+hospeda/
+├── apps/              # Applications (api, web, admin)
+├── packages/          # Shared packages (@repo/*)
+└── docs/              # Documentation
+```
+
+All apps and packages share code through internal `@repo/*` packages.
+
+### Base Patterns
+
+**BaseModel** - All database models:
+
+```typescript
+class UserModel extends BaseModel<typeof userSchema> {
+  // Automatic CRUD + validation
+}
+```
+
+**BaseCrudService** - All business services:
+
+```typescript
+class UserService extends BaseCrudService {
+  // Business logic + CRUD operations
+}
+```
+
+### Type Inference
+
+Types are inferred from Zod schemas:
+
+```typescript
+const userSchema = z.object({
+  email: z.string().email(),
+  name: z.string(),
+});
+
+type User = z.infer<typeof userSchema>;
+```
+
+### Route Factories
+
+API routes use standardized factories:
+
+```typescript
+createCRUDRoute({
+  path: '/users',
+  service: userService,
+  schema: userSchema,
+});
+```
+
+---
+
+## Request Lifecycle
+
+Typical flow through the system:
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant API
+    participant Service
+    participant DB
+
+    Client->>API: POST /api/accommodations
+    API->>API: Validate request (Zod)
+    API->>Service: AccommodationService.create()
+    Service->>Service: Business logic
+    Service->>DB: Drizzle insert
+    DB-->>Service: Created record
+    Service-->>API: Response
+    API-->>Client: JSON response
+```
+
+**Detailed flow:** See [Data Flow](data-flow.md)
+
+---
+
+## Architecture Decisions
+
+### Why Monorepo?
+
+- **Single source of truth** - All code in one place
+- **Shared packages** - No npm publishing needed
+- **Atomic changes** - Update multiple apps together
+- **Better DX** - Unified tooling and scripts
+
+### Why TurboRepo?
+
+- **Fast builds** - Smart caching
+- **Parallel execution** - Run tasks in parallel
+- **Simple configuration** - Easy setup
+- **Great DX** - Excellent developer experience
+
+### Why TypeScript Everywhere?
+
+- **Compile-time errors** - Catch bugs before runtime
+- **Better IDE support** - IntelliSense, refactoring
+- **Self-documenting** - Types as documentation
+- **Safer refactoring** - Confidence in changes
+
+### Why Drizzle over Prisma?
+
+- **SQL-like syntax** - Familiar for SQL developers
+- **Type-safe queries** - Full TypeScript support
+- **Zero runtime deps** - Smaller bundle size
+- **Better performance** - Faster query execution
+
+---
+
+## Documentation Map
+
+### Getting Started
+
+Essential reading for new developers:
+
+1. [Getting Started](../getting-started/README.md) - Setup guide
+2. [Architecture Overview](overview.md) - System design
+3. [First Contribution](../getting-started/first-contribution.md) - Make your first change
+
+### Architecture Deep Dive
+
+Understanding the system:
+
+- [Overview](overview.md) - High-level design
+- [Monorepo Structure](monorepo-structure.md) - Organization
+- [Data Flow](data-flow.md) - Request lifecycle
+- [Patterns](patterns.md) - Code patterns
+- [Tech Stack](tech-stack.md) - Technology decisions
+
+### App-Specific
+
+Each app has detailed documentation:
+
+- [API Documentation](../../apps/api/docs/README.md)
+- [Web Documentation](../../apps/web/docs/README.md)
+- [Admin Documentation](../../apps/admin/docs/README.md)
+
+### Package Documentation
+
+Core packages:
+
+- [@repo/db](../../packages/db/docs/README.md) - Database layer
+- [@repo/service-core](../../packages/service-core/docs/README.md) - Business logic
+- [@repo/schemas](../../packages/schemas/docs/README.md) - Validation
+
+---
+
+## Architecture Diagrams
+
+All diagrams use Mermaid and render on GitHub.
+
+### Available Diagrams
+
+- **System Architecture** - High-level component view ([Overview](overview.md))
+- **Layer Architecture** - Frontend → API → Service → DB ([Overview](overview.md))
+- **Request Flow** - Sequence diagram ([Data Flow](data-flow.md))
+- **Monorepo Structure** - Directory tree ([Monorepo Structure](monorepo-structure.md))
+- **Dependency Graph** - Package dependencies ([Tech Stack](tech-stack.md))
+
+---
+
+## Common Questions
+
+### Why Astro for Web App?
+
+- **Best performance** - Minimal JavaScript shipped
+- **Content-focused** - Perfect for marketing sites
+- **React islands** - Interactive components where needed
+- **SEO-optimized** - Built-in SSR and static generation
+
+### Why TanStack Start for Admin?
+
+- **Type-safe routing** - Router with TypeScript
+- **Built-in data fetching** - TanStack Query integration
+- **Form validation** - TanStack Form
+- **Server-side rendering** - Full SSR support
+
+### Why Hono for API?
+
+- **Ultra-fast** - Faster than Express
+- **Edge-compatible** - Works on edge runtimes
+- **Great TypeScript** - Excellent type support
+- **Minimal overhead** - Small bundle size
+
+### Why Zod for Validation?
+
+- **Runtime + compile-time** - Validates at both levels
+- **Type inference** - Generate TypeScript types
+- **Reusable** - Share schemas across layers
+- **Great DX** - Excellent developer experience
+
+---
+
+## Getting Help
+
+### Understanding Architecture
+
+- **Overview questions**: See [Overview](overview.md)
+- **Code patterns**: Check [Patterns](patterns.md)
+- **Tech choices**: Review [Tech Stack](tech-stack.md)
+
+### Implementation Questions
+
+- **Adding features**: See [Adding a New Entity](../guides/adding-new-entity.md)
+- **App-specific**: Check app documentation
+- **Package-specific**: Check package documentation
+
+### Community
+
+- **Discussions**: [GitHub Discussions](https://github.com/qazuor/hospeda/discussions)
+- **Issues**: [Report bugs](https://github.com/qazuor/hospeda/issues)
+- **Q&A**: [Ask questions](https://github.com/qazuor/hospeda/discussions/categories/q-a)
+
+---
+
+**Ready to dive deeper?** → Start with [Architecture Overview](overview.md)
+
+**Need implementation details?** → See [Patterns](patterns.md)
+
+**Want to understand the monorepo?** → Read [Monorepo Structure](monorepo-structure.md)
