@@ -607,25 +607,25 @@ Complete rewrite of Hospeda monorepo documentation using a hybrid documentation 
   - `packages/service-core/docs/README.md`
   - `packages/service-core/docs/quick-start.md`
 
-### PB-022: @repo/service-core - API Reference
+### PB-022: @repo/service-core - API Reference ✅
 
 - **Description**: Create complete API reference for service-core
 - **Time Estimate**: 4 hours
 - **Dependencies**: PB-021
 - **Deliverables**:
-  - [ ] Create `packages/service-core/docs/api/BaseCrudService.md` (Complete API)
-  - [ ] Create `packages/service-core/docs/api/ServiceOutput.md` (Output types)
-  - [ ] Create `packages/service-core/docs/api/errors.md` (Error handling)
-  - [ ] Document all public methods
-  - [ ] Document all types and interfaces
-  - [ ] Add parameter tables
-  - [ ] Add return type documentation
+  - [x] Create `packages/service-core/docs/api/BaseCrudService.md` (Complete API)
+  - [x] Create `packages/service-core/docs/api/ServiceOutput.md` (Output types)
+  - [x] Create `packages/service-core/docs/api/errors.md` (Error handling)
+  - [x] Document all public methods
+  - [x] Document all types and interfaces
+  - [x] Add parameter tables
+  - [x] Add return type documentation
 - **Acceptance Criteria**:
-  - [ ] All public API documented
-  - [ ] Method signatures accurate
-  - [ ] Parameter types correct
-  - [ ] Return types documented
-  - [ ] Examples for complex methods
+  - [x] All public API documented
+  - [x] Method signatures accurate
+  - [x] Parameter types correct
+  - [x] Return types documented
+  - [x] Examples for complex methods
 - **Related Files**:
   - `packages/service-core/docs/api/BaseCrudService.md`
   - `packages/service-core/docs/api/ServiceOutput.md`
