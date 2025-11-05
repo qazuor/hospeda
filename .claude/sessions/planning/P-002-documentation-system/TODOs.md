@@ -726,25 +726,25 @@ Complete rewrite of Hospeda monorepo documentation using a hybrid documentation 
   - `packages/db/docs/guides/*.md`
   - `packages/db/docs/examples/*.ts`
 
-### PB-027: @repo/schemas - Portal, Quick Start & API Reference
+### PB-027: @repo/schemas - Portal, Quick Start & API Reference ✅
 
 - **Description**: Create schemas package documentation portal and API reference
 - **Time Estimate**: 4 hours
 - **Dependencies**: PB-001
 - **Deliverables**:
-  - [ ] Create `packages/schemas/docs/` folder structure
-  - [ ] Update `packages/schemas/README.md` with quick overview
-  - [ ] Create `packages/schemas/docs/README.md` (Portal)
-  - [ ] Create `packages/schemas/docs/quick-start.md` (Get started in 5 min)
-  - [ ] Create `packages/schemas/docs/api/schema-reference.md` (All schemas)
-  - [ ] Create `packages/schemas/docs/api/type-inference.md` (z.infer usage)
-  - [ ] Create `packages/schemas/docs/api/validators.md` (Custom validators)
+  - [x] Create `packages/schemas/docs/` folder structure
+  - [x] Update `packages/schemas/README.md` with quick overview
+  - [x] Create `packages/schemas/docs/README.md` (Portal) - 797 lines
+  - [x] Create `packages/schemas/docs/quick-start.md` (Get started in 5 min) - 680 lines
+  - [x] Create `packages/schemas/docs/api/schema-reference.md` (All schemas) - 920 lines
+  - [x] Create `packages/schemas/docs/api/type-inference.md` (z.infer usage) - 500 lines
+  - [x] Create `packages/schemas/docs/api/validators.md` (Custom validators) - 510 lines
 - **Acceptance Criteria**:
-  - [ ] Portal matches template
-  - [ ] Quick start works
-  - [ ] All schemas documented
-  - [ ] Type inference explained
-  - [ ] Custom validators documented
+  - [x] Portal matches template
+  - [x] Quick start works
+  - [x] All schemas documented
+  - [x] Type inference explained
+  - [x] Custom validators documented
 - **Related Files**:
   - `packages/schemas/README.md`
   - `packages/schemas/docs/README.md`
