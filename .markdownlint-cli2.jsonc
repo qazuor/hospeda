@@ -28,9 +28,6 @@
     "MD051": false,
     "MD058": true
   },
-  "globs": [
-    "**/*.md"
-  ],
   "ignores": [
     "node_modules/**",
     "**/node_modules/**",
