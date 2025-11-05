@@ -701,27 +701,27 @@ Complete rewrite of Hospeda monorepo documentation using a hybrid documentation 
   - `packages/db/docs/api/query-methods.md`
   - `packages/db/docs/api/relations.md`
 
-### PB-026: @repo/db - Development Guides & Examples
+### PB-026: @repo/db - Development Guides & Examples ✅
 
 - **Description**: Create comprehensive development guides for db package
 - **Time Estimate**: 6 hours
 - **Dependencies**: PB-025
 - **Deliverables**:
-  - [ ] Create `packages/db/docs/guides/creating-models.md` (Step-by-step)
-  - [ ] Create `packages/db/docs/guides/drizzle-schemas.md` (Schema definitions)
-  - [ ] Create `packages/db/docs/guides/migrations.md` (Migration workflow)
-  - [ ] Create `packages/db/docs/guides/relations.md` (Defining relations)
-  - [ ] Create `packages/db/docs/guides/soft-delete.md` (Soft delete patterns)
-  - [ ] Create `packages/db/docs/guides/testing.md` (Testing models)
-  - [ ] Create `packages/db/docs/guides/optimization.md` (Query optimization)
-  - [ ] Create `packages/db/docs/guides/transactions.md` (Transaction handling)
-  - [ ] Create example files (basic-model.ts, with-relations.ts, complex-queries.ts, advanced-patterns.ts)
+  - [x] Create `packages/db/docs/guides/creating-models.md` (Step-by-step)
+  - [x] Create `packages/db/docs/guides/drizzle-schemas.md` (Schema definitions)
+  - [x] Create `packages/db/docs/guides/migrations.md` (Migration workflow)
+  - [x] Create `packages/db/docs/guides/relations.md` (Defining relations)
+  - [x] Create `packages/db/docs/guides/soft-delete.md` (Soft delete patterns)
+  - [x] Create `packages/db/docs/guides/testing.md` (Testing models)
+  - [x] Create `packages/db/docs/guides/optimization.md` (Query optimization)
+  - [x] Create `packages/db/docs/guides/transactions.md` (Transaction handling)
+  - [x] Create example files (basic-model.ts, with-relations.ts, complex-queries.ts, advanced-patterns.ts)
 - **Acceptance Criteria**:
-  - [ ] Creating models tutorial is complete
-  - [ ] Drizzle schemas guide explains syntax
-  - [ ] Migrations workflow documented
-  - [ ] Examples are working TypeScript
-  - [ ] Query optimization has actionable tips
+  - [x] Creating models tutorial is complete
+  - [x] Drizzle schemas guide explains syntax
+  - [x] Migrations workflow documented
+  - [x] Examples are working TypeScript
+  - [x] Query optimization has actionable tips
 - **Related Files**:
   - `packages/db/docs/guides/*.md`
   - `packages/db/docs/examples/*.ts`
