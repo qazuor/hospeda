@@ -1,5 +1,6 @@
 export enum PermissionCategoryEnum {
     ACCOMMODATION = 'ACCOMMODATION',
+    ACCOMMODATION_LISTING = 'ACCOMMODATION_LISTING',
     DESTINATION = 'DESTINATION',
     EVENT = 'EVENT',
     POST = 'POST',
@@ -70,6 +71,15 @@ export enum PermissionEnum {
     ACCOMMODATION_VISIBILITY_CHANGE = 'accommodation.visibility.change', // Allows changing accommodation visibility
     ACCOMMODATION_LIFECYCLE_CHANGE = 'accommodation.lifecycle.change', // Allows changing accommodation lifecycle state
     ACCOMMODATION_MODERATION_CHANGE = 'accommodation.moderation.change', // Allows changing accommodation moderation state
+
+    // ACCOMMODATION_LISTING: Permissions related to accommodation listing management
+    ACCOMMODATION_LISTING_CREATE = 'accommodationListing.create', // Allows creating a new accommodation listing.
+    ACCOMMODATION_LISTING_UPDATE = 'accommodationListing.update', // Allows updating an accommodation listing.
+    ACCOMMODATION_LISTING_DELETE = 'accommodationListing.delete', // Allows deleting an accommodation listing (soft delete).
+    ACCOMMODATION_LISTING_VIEW = 'accommodationListing.view', // Allows viewing accommodation listing information.
+    ACCOMMODATION_LISTING_RESTORE = 'accommodationListing.restore', // Allows restoring a deleted accommodation listing.
+    ACCOMMODATION_LISTING_HARD_DELETE = 'accommodationListing.hardDelete', // Allows permanently deleting an accommodation listing.
+    ACCOMMODATION_LISTING_STATUS_MANAGE = 'accommodationListing.status.manage', // Allows managing accommodation listing status (draft, active, paused, archived).
 
     // Catalog management for amenities/features
     AMENITY_CREATE = 'amenity.create', // Allows creating a new amenity in the catalog.
