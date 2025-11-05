@@ -52,10 +52,13 @@
         "claude:validate": "pnpm claude:validate:docs && pnpm claude:validate:schemas",
         "telemetry:report": "tsx .claude/scripts/telemetry-report.ts",
         "health-check": ".claude/scripts/health-check.sh",
-        "planning:sync": "pnpm --filter=@repo/github-workflow tsx src/scripts/planning-sync.ts",
-        "planning:cleanup": "pnpm --filter=@repo/github-workflow tsx src/scripts/planning-cleanup.ts",
-        "planning:cleanup:auto": "pnpm --filter=@repo/github-workflow tsx src/scripts/planning-cleanup.ts --auto",
-        "todos:sync": "pnpm --filter=@repo/github-workflow tsx src/scripts/todos-sync.ts"
+        "planning:sync": "pnpm exec tsx --env-file=.env.local packages/github-workflow/src/scripts/planning-sync.ts",
+        "planning:cleanup": "pnpm exec tsx --env-file=.env.local packages/github-workflow/src/scripts/planning-cleanup.ts",
+        "planning:cleanup:auto": "pnpm exec tsx --env-file=.env.local packages/github-workflow/src/scripts/planning-cleanup.ts --auto",
+        "todos:sync": "pnpm exec tsx --env-file=.env.local packages/github-workflow/src/scripts/todos-sync.ts",
+        "lint:md:docs": "markdownlint-cli2 \"docs/**/*.md\" \"apps/**/docs/**/*.md\" \"packages/**/docs/**/*.md\"",
+        "docs:check-links": "tsx scripts/check-links.ts",
+        "docs:validate-examples": "tsx scripts/validate-examples.ts"
     },
     "devDependencies": {
         "@biomejs/biome": "1.9.4",
@@ -64,6 +67,7 @@
         "@types/node": "^22.15.3",
         "ajv": "^8.17.1",
         "ajv-formats": "^3.0.1",
+        "dotenv": "^17.2.3",
         "husky": "^9.1.7",
         "lint-staged": "^15.3.0",
         "markdownlint-cli2": "^0.18.1",

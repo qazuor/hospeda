@@ -1,0 +1,97 @@
+name: Documentation CI
+
+on:
+  pull_request:
+    paths:
+      - 'docs/**'
+      - 'apps/**/docs/**'
+      - 'packages/**/docs/**'
+      - '.markdownlint.json'
+      - 'scripts/check-links.ts'
+      - 'scripts/validate-examples.ts'
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/**'
+      - 'apps/**/docs/**'
+      - 'packages/**/docs/**'
+      - '.markdownlint.json'
+      - 'scripts/check-links.ts'
+      - 'scripts/validate-examples.ts'
+
+jobs:
+  lint:
+    name: Lint Documentation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint Markdown files
+        run: pnpm run lint:md:docs
+
+  check-links:
+    name: Check Internal Links
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check internal links
+        run: pnpm run docs:check-links
+
+  validate-examples:
+    name: Validate TypeScript Examples
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate TypeScript code blocks
+        run: pnpm run docs:validate-examples
