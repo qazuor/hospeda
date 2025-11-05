@@ -12,6 +12,7 @@ export * from './eventOrganizer/eventOrganizer.service';
 export * from './feature/feature.service';
 export * from './invoice/invoice.service';
 export * from './invoiceLine/invoiceLine.service';
+export * from './payment/payment.service';
 export * from './permission/permission.service';
 export * from './post/post.service';
 export * from './postSponsor/postSponsor.service';
