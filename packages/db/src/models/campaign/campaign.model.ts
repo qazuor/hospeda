@@ -1,3 +1,4 @@
+import type { Campaign, SearchCampaigns } from '@repo/schemas';
 import { type SQL, and, eq, ilike, or } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { BaseModel } from '../../base/base.model';
@@ -5,15 +6,30 @@ import type * as schema from '../../schemas/index.js';
 import { campaigns } from '../../schemas/marketing/campaign.dbschema';
 import { buildWhereClause } from '../../utils/drizzle-helpers';
 
-// Use inferred type from database schema instead of @repo/schemas
-type Campaign = typeof campaigns.$inferSelect;
-
 export class CampaignModel extends BaseModel<Campaign> {
     protected table = campaigns;
     protected entityName = 'campaign';
 
     protected getTableName(): string {
         return 'campaigns';
+    }
+
+    /**
+     * Search campaigns with comprehensive filtering
+     */
+    async search(
+        params: SearchCampaigns,
+        tx?: NodePgDatabase<typeof schema>
+    ): Promise<{ items: Campaign[]; total: number }> {
+        // For now, delegate to findAll with basic filters
+        // TODO: Implement full search functionality with all SearchCampaigns parameters
+        const { page, pageSize, q, status } = params;
+
+        const filters: Record<string, unknown> = {};
+        if (q) filters.q = q;
+        if (status) filters.status = status;
+
+        return this.findAll(filters, { page, pageSize }, tx);
     }
 
     /**
@@ -57,11 +73,11 @@ export class CampaignModel extends BaseModel<Campaign> {
                 this.count(where, tx)
             ]);
 
-            return { items, total };
+            return { items: items as Campaign[], total };
         }
 
         const items = (await db.select().from(this.table).where(finalWhereClause)) || [];
-        return { items, total: items.length };
+        return { items: items as Campaign[], total: items.length };
     }
 
     /**
@@ -72,7 +88,7 @@ export class CampaignModel extends BaseModel<Campaign> {
 
         const result = await db.select().from(this.table).where(eq(campaigns.clientId, clientId));
 
-        return result;
+        return result as Campaign[];
     }
 
     /**
@@ -83,6 +99,6 @@ export class CampaignModel extends BaseModel<Campaign> {
 
         const result = await db.select().from(this.table).where(eq(campaigns.status, 'ACTIVE'));
 
-        return result;
+        return result as Campaign[];
     }
 }
