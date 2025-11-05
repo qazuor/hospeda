@@ -60,5 +60,6 @@ export const RefundSchema = z.object({
 });
 
 export type RefundType = z.infer<typeof RefundSchema>;
+export type Refund = RefundType; // Alias for consistency
 export type RefundStatus = z.infer<typeof RefundStatusEnumSchema>;
 export type RefundReason = z.infer<typeof RefundReasonEnumSchema>;

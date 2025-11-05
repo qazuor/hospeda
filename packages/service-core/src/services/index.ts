@@ -21,6 +21,7 @@ export * from './pricingPlan/pricingPlan.service';
 export * from './pricingTier/pricingTier.service';
 export * from './product/product.service';
 export * from './purchase/purchase.service';
+export * from './refund/refund.service';
 export * from './subscription/subscription.service';
 export * from './subscriptionItem/subscriptionItem.service';
 export * from './tag/tag.service';
