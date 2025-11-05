@@ -9,6 +9,7 @@ export enum PermissionCategoryEnum {
     SUBSCRIPTION = 'SUBSCRIPTION',
     PROMOTION = 'PROMOTION',
     DISCOUNT_CODE = 'DISCOUNT_CODE',
+    CAMPAIGN = 'CAMPAIGN',
     PUBLIC = 'PUBLIC',
     SYSTEM = 'SYSTEM',
     ACCESS = 'ACCESS'
@@ -250,5 +251,42 @@ export enum PermissionEnum {
     DISCOUNT_CODE_VALIDATE = 'discountCode.validate', // Allows validating if a discount code can be used.
     DISCOUNT_CODE_APPLY = 'discountCode.apply', // Allows applying discount codes to purchases.
     DISCOUNT_CODE_USAGE_VIEW = 'discountCode.usage.view', // Allows viewing discount code usage history.
-    DISCOUNT_CODE_ANALYTICS_VIEW = 'discountCode.analytics.view' // Allows viewing discount code performance analytics.
+    DISCOUNT_CODE_ANALYTICS_VIEW = 'discountCode.analytics.view', // Allows viewing discount code performance analytics.
+
+    // CAMPAIGN: Permissions related to marketing campaign management
+    CAMPAIGN_CREATE = 'campaign.create', // Allows creating a new campaign.
+    CAMPAIGN_UPDATE = 'campaign.update', // Allows updating a campaign.
+    CAMPAIGN_DELETE = 'campaign.delete', // Allows deleting a campaign (soft delete).
+    CAMPAIGN_VIEW = 'campaign.view', // Allows viewing campaign information.
+    CAMPAIGN_RESTORE = 'campaign.restore', // Allows restoring a deleted campaign.
+    CAMPAIGN_HARD_DELETE = 'campaign.hardDelete', // Allows permanently deleting a campaign.
+    CAMPAIGN_SOFT_DELETE_VIEW = 'campaign.softDelete.view', // Allows viewing soft-deleted campaigns.
+    CAMPAIGN_STATUS_MANAGE = 'campaign.status.manage', // Allows managing campaign status (activate, pause, complete, cancel).
+    CAMPAIGN_BUDGET_MANAGE = 'campaign.budget.manage', // Allows managing campaign budget and spending.
+    CAMPAIGN_PERFORMANCE_VIEW = 'campaign.performance.view', // Allows viewing campaign performance metrics.
+    CAMPAIGN_ANALYTICS_VIEW = 'campaign.analytics.view', // Allows viewing campaign analytics and ROI.
+
+    // AD_MEDIA_ASSET: Permissions related to advertising media asset management
+    AD_MEDIA_ASSET_CREATE = 'adMediaAsset.create', // Allows creating a new advertising media asset.
+    AD_MEDIA_ASSET_UPDATE = 'adMediaAsset.update', // Allows updating an advertising media asset.
+    AD_MEDIA_ASSET_DELETE = 'adMediaAsset.delete', // Allows deleting an advertising media asset (soft delete).
+    AD_MEDIA_ASSET_VIEW = 'adMediaAsset.view', // Allows viewing advertising media asset information.
+    AD_MEDIA_ASSET_RESTORE = 'adMediaAsset.restore', // Allows restoring a deleted advertising media asset.
+    AD_MEDIA_ASSET_HARD_DELETE = 'adMediaAsset.hardDelete', // Allows permanently deleting an advertising media asset.
+    AD_MEDIA_ASSET_SOFT_DELETE_VIEW = 'adMediaAsset.softDelete.view', // Allows viewing soft-deleted advertising media assets.
+    AD_MEDIA_ASSET_STATUS_MANAGE = 'adMediaAsset.status.manage', // Allows managing advertising media asset status.
+    AD_MEDIA_ASSET_PERFORMANCE_VIEW = 'adMediaAsset.performance.view', // Allows viewing advertising media asset performance metrics.
+
+    // AD_SLOT: Permissions related to advertising slot management
+    AD_SLOT_CREATE = 'adSlot.create', // Allows creating a new advertising slot.
+    AD_SLOT_UPDATE = 'adSlot.update', // Allows updating an advertising slot.
+    AD_SLOT_DELETE = 'adSlot.delete', // Allows deleting an advertising slot (soft delete).
+    AD_SLOT_VIEW = 'adSlot.view', // Allows viewing advertising slot information.
+    AD_SLOT_RESTORE = 'adSlot.restore', // Allows restoring a deleted advertising slot.
+    AD_SLOT_HARD_DELETE = 'adSlot.hardDelete', // Allows permanently deleting an advertising slot.
+    AD_SLOT_SOFT_DELETE_VIEW = 'adSlot.softDelete.view', // Allows viewing soft-deleted advertising slots.
+    AD_SLOT_STATUS_MANAGE = 'adSlot.status.manage', // Allows managing advertising slot status (activate/deactivate).
+    AD_SLOT_PRICING_MANAGE = 'adSlot.pricing.manage', // Allows managing advertising slot pricing and rates.
+    AD_SLOT_AVAILABILITY_MANAGE = 'adSlot.availability.manage', // Allows managing advertising slot availability and scheduling.
+    AD_SLOT_PERFORMANCE_VIEW = 'adSlot.performance.view' // Allows viewing advertising slot performance metrics.
 }
