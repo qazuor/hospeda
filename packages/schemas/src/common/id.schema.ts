@@ -145,6 +145,9 @@ export type AdSlotIdType = z.infer<typeof AdSlotIdSchema>;
 export const AdMediaAssetIdSchema = BaseIdSchema;
 export type AdMediaAssetIdType = z.infer<typeof AdMediaAssetIdSchema>;
 
+export const AdPricingCatalogIdSchema = BaseIdSchema;
+export type AdPricingCatalogIdType = z.infer<typeof AdPricingCatalogIdSchema>;
+
 // === Professional Services System IDs ===
 export const ProfessionalServiceIdSchema = BaseIdSchema;
 export type ProfessionalServiceIdType = z.infer<typeof ProfessionalServiceIdSchema>;

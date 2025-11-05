@@ -110,6 +110,9 @@ export * from './media-asset-type.schema.js';
 export * from './ad-slot-reservation-status.enum.js';
 export * from './ad-slot-reservation-status.schema.js';
 
+export * from './pricing-model.enum.js';
+export * from './pricing-model.schema.js';
+
 // Etapa 1.5: Enums de Patrocinios y Destacados
 export * from './sponsorship-entity-type.enum.js';
 export * from './sponsorship-entity-type.schema.js';

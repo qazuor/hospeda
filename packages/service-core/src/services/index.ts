@@ -1,5 +1,6 @@
 export * from './accommodation/accommodation.service';
 export * from './accommodationReview/accommodationReview.service';
+export * from './adPricingCatalog/adPricingCatalog.service';
 export * from './amenity/amenity.service';
 export * from './attraction/attraction.service';
 export * from './client/client.service';
