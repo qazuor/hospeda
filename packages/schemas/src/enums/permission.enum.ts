@@ -1,6 +1,7 @@
 export enum PermissionCategoryEnum {
     ACCOMMODATION = 'ACCOMMODATION',
     ACCOMMODATION_LISTING = 'ACCOMMODATION_LISTING',
+    ACCOMMODATION_LISTING_PLAN = 'ACCOMMODATION_LISTING_PLAN',
     DESTINATION = 'DESTINATION',
     EVENT = 'EVENT',
     POST = 'POST',
@@ -80,6 +81,15 @@ export enum PermissionEnum {
     ACCOMMODATION_LISTING_RESTORE = 'accommodationListing.restore', // Allows restoring a deleted accommodation listing.
     ACCOMMODATION_LISTING_HARD_DELETE = 'accommodationListing.hardDelete', // Allows permanently deleting an accommodation listing.
     ACCOMMODATION_LISTING_STATUS_MANAGE = 'accommodationListing.status.manage', // Allows managing accommodation listing status (draft, active, paused, archived).
+
+    // ACCOMMODATION_LISTING_PLAN: Permissions related to accommodation listing plan management
+    ACCOMMODATION_LISTING_PLAN_CREATE = 'accommodationListingPlan.create', // Allows creating a new accommodation listing plan.
+    ACCOMMODATION_LISTING_PLAN_UPDATE = 'accommodationListingPlan.update', // Allows updating an accommodation listing plan.
+    ACCOMMODATION_LISTING_PLAN_DELETE = 'accommodationListingPlan.delete', // Allows deleting an accommodation listing plan (soft delete).
+    ACCOMMODATION_LISTING_PLAN_VIEW = 'accommodationListingPlan.view', // Allows viewing accommodation listing plan information.
+    ACCOMMODATION_LISTING_PLAN_RESTORE = 'accommodationListingPlan.restore', // Allows restoring a deleted accommodation listing plan.
+    ACCOMMODATION_LISTING_PLAN_HARD_DELETE = 'accommodationListingPlan.hardDelete', // Allows permanently deleting an accommodation listing plan.
+    ACCOMMODATION_LISTING_PLAN_STATUS_MANAGE = 'accommodationListingPlan.status.manage', // Allows managing accommodation listing plan status (activate, deactivate).
 
     // Catalog management for amenities/features
     AMENITY_CREATE = 'amenity.create', // Allows creating a new amenity in the catalog.
