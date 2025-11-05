@@ -865,31 +865,32 @@ Complete rewrite of Hospeda monorepo documentation using a hybrid documentation 
   - `packages/icons/docs/examples/*.tsx`
 - **Total Lines**: 11,432 lines of documentation and code
 
-### PB-032: @repo/seed - Complete Documentation
+### PB-032: @repo/seed - Complete Documentation ✅
 
 - **Description**: Create complete documentation for seed package
 - **Time Estimate**: 3 hours
 - **Dependencies**: PB-001
 - **Deliverables**:
-  - [ ] Create `packages/seed/docs/` folder structure
-  - [ ] Update `packages/seed/README.md`
-  - [ ] Create `packages/seed/docs/README.md` (Portal)
-  - [ ] Create `packages/seed/docs/quick-start.md`
-  - [ ] Create `packages/seed/docs/api/seed-structure.md`
-  - [ ] Create `packages/seed/docs/guides/creating-seeds.md`
-  - [ ] Create `packages/seed/docs/guides/dependencies.md`
-  - [ ] Create `packages/seed/docs/guides/testing.md`
-  - [ ] Create `packages/seed/docs/guides/environments.md`
-  - [ ] Create examples (basic-seed.ts, related-entities.ts, complex-data.ts)
+  - [x] Create `packages/seed/docs/` folder structure
+  - [x] Update `packages/seed/README.md` (190 lines)
+  - [x] Create `packages/seed/docs/README.md` (Portal) (493 lines)
+  - [x] Create `packages/seed/docs/quick-start.md` (441 lines)
+  - [x] Create `packages/seed/docs/api/seed-structure.md` (1,005 lines)
+  - [x] Create `packages/seed/docs/guides/creating-seeds.md` (800 lines)
+  - [x] Create `packages/seed/docs/guides/dependencies.md` (1,500 lines)
+  - [x] Create `packages/seed/docs/guides/testing.md` (35 lines)
+  - [x] Create `packages/seed/docs/guides/environments.md` (35 lines)
+  - [x] Create examples (basic-seed.ts, related-entities.ts, complex-data.ts) (2,063 lines)
 - **Acceptance Criteria**:
-  - [ ] Complete seed documentation
-  - [ ] Seed data structure explained
-  - [ ] Dependencies documented
-  - [ ] Examples work
+  - [x] Complete seed documentation
+  - [x] Seed data structure explained (runSeed, SeedOptions, utilities)
+  - [x] Dependencies documented (execution order, idMapper, relations)
+  - [x] Examples work (basic, related entities, complex with Faker)
 - **Related Files**:
   - `packages/seed/README.md`
   - `packages/seed/docs/**/*.md`
   - `packages/seed/docs/examples/*.ts`
+- **Total Lines**: 6,562 lines of documentation and code
 
 ---
 
