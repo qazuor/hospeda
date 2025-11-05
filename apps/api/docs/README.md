@@ -33,10 +33,10 @@ pnpm dev --filter=api
 
 - [Authentication](usage/authentication.md) - How to authenticate with Clerk
 - [Endpoints Reference](usage/endpoints-reference.md) - All available endpoints
-- [Request/Response Format](usage/request-response.md) - Standard formats
+- [Request/Response Format](usage/request-response.md) - Standard formats and pagination
 - [Error Handling](usage/errors.md) - Error codes and handling
 - [Rate Limiting](usage/rate-limiting.md) - Rate limit policies
-- [Pagination](usage/pagination.md) - Paginating list results
+- [OpenAPI Documentation](usage/openapi.md) - Interactive API documentation
 
 ### For API Developers
 
@@ -207,7 +207,7 @@ See [Deployment Guide](development/deployment.md) for deployment procedures.
 
 ## 📞 Need Help?
 
-- 💬 Check the [FAQ](usage/faq.md)
+- 💬 [Usage Guide](usage/README.md) - API consumer documentation
 - 🐛 [Report a Bug](https://github.com/hospeda/issues)
 - 📖 [Troubleshooting Guide](development/debugging.md)
 
