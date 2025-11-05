@@ -9,6 +9,7 @@ export enum PermissionCategoryEnum {
     CLIENT = 'CLIENT',
     PRODUCT = 'PRODUCT',
     SUBSCRIPTION = 'SUBSCRIPTION',
+    SUBSCRIPTION_ITEM = 'SUBSCRIPTION_ITEM',
     PROMOTION = 'PROMOTION',
     DISCOUNT_CODE = 'DISCOUNT_CODE',
     CAMPAIGN = 'CAMPAIGN',
@@ -230,6 +231,15 @@ export enum PermissionEnum {
     SUBSCRIPTION_UPDATE = 'subscription.update', // Allows updating a subscription.
     SUBSCRIPTION_DELETE = 'subscription.delete', // Allows deleting a subscription.
     SUBSCRIPTION_VIEW = 'subscription.view', // Allows viewing subscription information.
+
+    // SUBSCRIPTION_ITEM: Permissions related to subscription item management
+    SUBSCRIPTION_ITEM_CREATE = 'subscriptionItem.create', // Allows creating a new subscription item.
+    SUBSCRIPTION_ITEM_UPDATE = 'subscriptionItem.update', // Allows updating a subscription item.
+    SUBSCRIPTION_ITEM_DELETE = 'subscriptionItem.delete', // Allows deleting a subscription item (soft delete).
+    SUBSCRIPTION_ITEM_VIEW = 'subscriptionItem.view', // Allows viewing subscription item information.
+    SUBSCRIPTION_ITEM_RESTORE = 'subscriptionItem.restore', // Allows restoring a deleted subscription item.
+    SUBSCRIPTION_ITEM_HARD_DELETE = 'subscriptionItem.hardDelete', // Allows permanently deleting a subscription item.
+    SUBSCRIPTION_ITEM_LINK_MANAGE = 'subscriptionItem.link.manage', // Allows managing links between subscriptions/purchases and entities.
 
     // PRODUCT: Permissions related to product management
     PRODUCT_CREATE = 'product.create', // Allows creating a new product.
