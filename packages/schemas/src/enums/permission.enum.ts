@@ -298,5 +298,14 @@ export enum PermissionEnum {
     AD_SLOT_RESERVATION_RESTORE = 'adSlotReservation.restore', // Allows restoring a deleted advertising slot reservation.
     AD_SLOT_RESERVATION_HARD_DELETE = 'adSlotReservation.hardDelete', // Allows permanently deleting an advertising slot reservation.
     AD_SLOT_RESERVATION_SOFT_DELETE_VIEW = 'adSlotReservation.softDelete.view', // Allows viewing soft-deleted advertising slot reservations.
-    AD_SLOT_RESERVATION_STATUS_MANAGE = 'adSlotReservation.status.manage' // Allows managing advertising slot reservation status (activate/pause/cancel/end).
+    AD_SLOT_RESERVATION_STATUS_MANAGE = 'adSlotReservation.status.manage', // Allows managing advertising slot reservation status (activate/pause/cancel/end).
+
+    // SPONSORSHIP: Permissions related to sponsorship management
+    SPONSORSHIP_CREATE = 'sponsorship.create', // Allows creating a new sponsorship.
+    SPONSORSHIP_UPDATE = 'sponsorship.update', // Allows updating a sponsorship.
+    SPONSORSHIP_DELETE = 'sponsorship.delete', // Allows deleting a sponsorship (soft delete).
+    SPONSORSHIP_VIEW = 'sponsorship.view', // Allows viewing sponsorship information.
+    SPONSORSHIP_RESTORE = 'sponsorship.restore', // Allows restoring a deleted sponsorship.
+    SPONSORSHIP_HARD_DELETE = 'sponsorship.hardDelete', // Allows permanently deleting a sponsorship.
+    SPONSORSHIP_STATUS_MANAGE = 'sponsorship.status.manage' // Allows managing sponsorship status (activate, pause, expire, cancel).
 }
