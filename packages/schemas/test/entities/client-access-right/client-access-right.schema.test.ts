@@ -22,8 +22,8 @@ describe('ClientAccessRight Schema', () => {
                 updatedAt: new Date('2024-01-01T00:00:00Z'),
                 createdById: '550e8400-e29b-41d4-a716-446655440003',
                 updatedById: '550e8400-e29b-41d4-a716-446655440003',
-                deletedAt: undefined,
-                deletedById: undefined,
+                deletedAt: null,
+                deletedById: null,
                 adminInfo: null
             };
 
@@ -53,8 +53,8 @@ describe('ClientAccessRight Schema', () => {
                 updatedAt: new Date('2024-01-01T00:00:00Z'),
                 createdById: '550e8400-e29b-41d4-a716-446655440003',
                 updatedById: '550e8400-e29b-41d4-a716-446655440003',
-                deletedAt: undefined,
-                deletedById: undefined,
+                deletedAt: null,
+                deletedById: null,
                 adminInfo: null
             };
 
@@ -83,8 +83,8 @@ describe('ClientAccessRight Schema', () => {
                 updatedAt: new Date('2024-01-01T00:00:00Z'),
                 createdById: '550e8400-e29b-41d4-a716-446655440003',
                 updatedById: '550e8400-e29b-41d4-a716-446655440003',
-                deletedAt: undefined,
-                deletedById: undefined,
+                deletedAt: null,
+                deletedById: null,
                 adminInfo: null
             };
 
@@ -111,8 +111,8 @@ describe('ClientAccessRight Schema', () => {
                 updatedAt: new Date('2024-01-01T00:00:00Z'),
                 createdById: '550e8400-e29b-41d4-a716-446655440003',
                 updatedById: '550e8400-e29b-41d4-a716-446655440003',
-                deletedAt: undefined,
-                deletedById: undefined,
+                deletedAt: null,
+                deletedById: null,
                 adminInfo: {
                     notes: 'Special premium access for enterprise client',
                     favorite: true
