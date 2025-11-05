@@ -23,7 +23,7 @@ Provides comprehensive, context-aware help for the Hospeda project workflow syst
 
 ```bash
 /help [topic] [options]
-```
+```text
 
 ### Topics
 
@@ -51,13 +51,13 @@ Provides comprehensive, context-aware help for the Hospeda project workflow syst
 /help agents --category engineering      # Show engineering agents
 /help workflow --details                 # Detailed workflow guide
 /help quick-start                        # Quick start guide
-```
+```text
 
 ## Help System Structure
 
 ### Main Help Menu
 
-```
+```text
 🎯 Hospeda Project - Help System
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -65,9 +65,9 @@ Welcome to the Hospeda project workflow system!
 
 📚 Available Topics:
 
-  1. commands   - Available slash commands (13 commands)
-  2. agents     - Specialized AI agents (13 agents)
-  3. skills     - Reusable workflows (4 skills)
+  1. commands   - Available slash commands (16 commands)
+  2. agents     - Specialized AI agents (14 agents)
+  3. skills     - Reusable workflows (16 skills)
   4. workflow   - Development workflow phases
   5. quick-start - 15-minute getting started guide
   6. architecture - Project structure overview
@@ -78,11 +78,11 @@ Welcome to the Hospeda project workflow system!
 🆘 Issues: https://github.com/qazuor/hospeda/issues
 
 Select topic (1-7) or press Enter for quick start:
-```
+```text
 
 ### Commands Help
 
-```
+```text
 📜 Available Commands (13)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -117,12 +117,12 @@ Select topic (1-7) or press Enter for quick start:
 
 Use /help commands <name> for detailed information
 Example: /help commands security-audit
-```
+```text
 
 ### Agents Help
 
-```
-🤖 Available Agents (13)
+```text
+🤖 Available Agents (14)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 📦 Product & Planning (2)
@@ -141,24 +141,27 @@ Example: /help commands security-audit
   react-senior-dev     React 19 components and hooks
   tanstack-start-engineer  Admin dashboard with TanStack Start
 
-🎯 Design & UX (1)
+🎨 Design & Content (2)
   ux-ui-designer       UI design and user flows
+  content-writer       Bilingual web copywriting (EN/ES)
 
 ✅ Quality Assurance (2)
   qa-engineer          Testing and acceptance validation
   debugger             Bug investigation and root cause analysis
 
-🔧 Specialized (2)
+🔧 Specialized (4)
   tech-writer          Documentation, dependencies, changelogs
   i18n-specialist      Internationalization and translations
+  enrichment-agent     GitHub issue enrichment
+  seo-ai-specialist    SEO, Core Web Vitals, AI optimization
 
 Use /help agents <name> for detailed information
 Example: /help agents tech-lead
-```
+```text
 
 ### Skills Help
 
-```
+```text
 🎯 Available Skills (4)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -176,11 +179,11 @@ Example: /help agents tech-lead
 
 Use /help skills <name> for detailed information
 Example: /help skills qa-criteria-validator
-```
+```text
 
 ### Workflow Help
 
-```
+```text
 🔄 Development Workflow
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -291,13 +294,13 @@ Steps:
 📄 Deliverables: Documentation + commits
 
 Use /help workflow --details for comprehensive guide
-```
+```text
 
 ## Detailed Help Output
 
 ### Command Details
 
-```
+```text
 Command: /security-audit
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -350,11 +353,11 @@ Related Commands:
 Documentation:
 - .claude/commands/audit/security-audit.md
 - .claude/docs/standards/security-standards.md
-```
+```text
 
 ### Agent Details
 
-```
+```text
 Agent: tech-lead
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -393,7 +396,7 @@ Works With:
 Documentation:
 - .claude/agents/engineering/tech-lead.md
 - CLAUDE.md (Team Organization section)
-```
+```text
 
 ## Search Functionality
 
@@ -401,11 +404,11 @@ Documentation:
 
 ```bash
 /help --search "testing"
-```
+```text
 
 **Output:**
 
-```
+```text
 🔍 Search Results for "testing"
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -424,7 +427,7 @@ Documentation:
   CLAUDE.md (Testing Strategy section)
 
 Use /help <type> <name> for details
-```
+```text
 
 ## Quick Start
 
@@ -432,11 +435,11 @@ Use /help <type> <name> for details
 
 ```bash
 /help quick-start
-```
+```text
 
 **Output:**
 
-```
+```text
 🚀 Quick Start Guide (15 minutes)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -493,17 +496,17 @@ Next Steps:
 ✓ Try creating a simple feature
 
 Ready to start? Use /start-feature-plan
-```
+```text
 
 ## Architecture Overview
 
 ```bash
 /help architecture
-```
+```text
 
 **Output:**
 
-```
+```text
 🏗️ Project Architecture
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -558,17 +561,17 @@ Validation: Zod schemas (types via z.infer)
 Documentation:
 - .claude/docs/standards/architecture-patterns.md
 - .claude/docs/standards/code-standards.md
-```
+```text
 
 ## Glossary
 
 ```bash
 /help glossary
-```
+```text
 
 **Output:**
 
-```
+```text
 📖 Glossary
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -614,13 +617,13 @@ RO-RO Pattern
 
 [View full glossary]
   .claude/docs/glossary.md
-```
+```text
 
 ## Error Messages
 
 When help topic not found:
 
-```
+```text
 ❌ Help Topic Not Found
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -638,7 +641,7 @@ Available topics:
 Try:
   /help                  - Main help menu
   /help --search xyz     - Search all documentation
-```
+```text
 
 ## Integration with Workflow
 

@@ -38,18 +38,19 @@ This directory contains Mermaid diagrams visualizing the Hospeda workflow system
 
 **File:** [agent-hierarchy.mmd](./agent-hierarchy.mmd)
 
-**Purpose:** Visual organization of the 12 specialized agents across 6 categories
+**Purpose:** Visual organization of the 14 specialized agents across 6 categories
 
 **Shows:**
 
 - User/Principal Architect at top
 - tech-lead as central coordinator
-- 5 teams:
-  - Product (product-technical)
-  - Backend Team (hono-engineer, db-engineer)
+- 6 teams:
+  - Product Team (product-functional, product-technical)
+  - Backend Team (hono-engineer, db-engineer, node-typescript-engineer)
   - Frontend Team (astro-engineer, tanstack-start-engineer, react-senior-dev)
-  - Quality & Specialized (qa-engineer, security-engineer, performance-engineer)
-  - Support Team (tech-writer, debugger)
+  - Design & Content (ux-ui-designer, content-writer)
+  - Quality Team (qa-engineer, debugger)
+  - Specialized Team (tech-writer, i18n-specialist, enrichment-agent, seo-ai-specialist)
 - Reporting lines
 - Color-coded by team
 
@@ -78,7 +79,7 @@ This directory contains Mermaid diagrams visualizing the Hospeda workflow system
 
 - 3 layers:
   - Commands Layer (16 commands)
-  - Agents Layer (13 agents)
+  - Agents Layer (14 agents)
   - Skills Layer (16 skills)
 - Flow: Commands → Agents → Skills
 - Relationships between specific tools
@@ -110,7 +111,7 @@ This directory contains Mermaid diagrams visualizing the Hospeda workflow system
 **Shows:**
 
 - Main directories:
-  - `agents/` - Agent definitions (13)
+  - `agents/` - Agent definitions (14)
   - `commands/` - Command definitions (16)
   - `skills/` - Skill definitions (16)
   - `docs/` - Documentation

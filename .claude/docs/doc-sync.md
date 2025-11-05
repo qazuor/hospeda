@@ -23,14 +23,14 @@ This guide explains how to keep documentation synchronized across the system, va
 
 ### Documentation Hierarchy
 
-```
+```text
 .claude/
-├── agents/           # 13 agent definitions
+├── agents/           # 14 agent definitions
 │   ├── engineering/
 │   ├── specialized/
 │   ├── management/
 │   └── README.md
-├── commands/         # 18 command definitions
+├── commands/         # 16 command definitions
 │   ├── audit/
 │   ├── formatting/
 │   ├── git/
@@ -59,7 +59,7 @@ This guide explains how to keep documentation synchronized across the system, va
 ├── schemas/         # JSON schemas (9 files)
 └── sessions/        # Planning sessions
     └── planning/
-```
+```text
 
 ### Master Documents
 
@@ -87,12 +87,12 @@ Verify all file counts match expected values:
 ```bash
 # Run health check
 pnpm health-check
-```
+```text
 
 **Expected counts:**
 
-- Agents: 13
-- Commands: 18
+- Agents: 14
+- Commands: 16
 - Skills: 16
 - Learnings: 8
 - Workflows: 9
@@ -111,7 +111,7 @@ echo "Diagrams: $(find .claude/docs/diagrams -name "*.mmd" | wc -l)"
 
 # Update health-check.sh with correct counts
 vim .claude/scripts/health-check.sh
-```
+```text
 
 ### 2. Link Validation
 
@@ -136,7 +136,7 @@ for file in $(find .claude -name "*.md" -type f); do
     fi
   done
 done
-```
+```text
 
 ### 3. Cross-Reference Validation
 
@@ -151,7 +151,7 @@ grep -n "\[.*\](./" .claude/docs/INDEX.md
 
 # Check workflow references
 grep -rn "\[.*\](./" .claude/docs/workflows/
-```
+```text
 
 ### 4. Schema Validation
 
@@ -166,7 +166,7 @@ find .claude/sessions/planning -name ".checkpoint.json" -exec jq empty {} \;
 
 # Run schema validation script (if exists)
 pnpm claude:validate:schemas
-```
+```text
 
 ---
 
@@ -212,7 +212,7 @@ git commit -m "docs: add new-doc documentation"
 # 7. Push and verify CI
 git push origin main
 # Check: https://github.com/qazuor/hospeda/actions
-```
+```text
 
 ---
 
@@ -223,7 +223,7 @@ git push origin main
 - [ ] Create agent file in `.claude/agents/{category}/`
 - [ ] Update `.claude/agents/README.md`
   - [ ] Add to category list
-  - [ ] Update count (13 → 14)
+  - [ ] Update count (14 → 15)
 - [ ] Update `CLAUDE.md`
   - [ ] Add to Subagents section
   - [ ] Update Quick Reference count
@@ -238,7 +238,7 @@ git push origin main
 - [ ] Create command file in `.claude/commands/{category}/`
 - [ ] Update `.claude/commands/README.md`
   - [ ] Add to category list
-  - [ ] Update count (18 → 19)
+  - [ ] Update count (16 → 17)
 - [ ] Update `CLAUDE.md`
   - [ ] Add to Commands section
   - [ ] Update Quick Reference count
@@ -338,7 +338,7 @@ vim .claude/agents/README.md
 
 # Update health-check.sh expected count
 vim .claude/scripts/health-check.sh
-```
+```text
 
 ### Issue 2: Broken Links
 
@@ -361,7 +361,7 @@ grep -rl "broken-link.md" .claude/ | xargs sed -i 's|broken-link.md|correct-link
 
 # Validate
 pnpm health-check
-```
+```text
 
 ### Issue 3: Markdown Formatting Errors
 
@@ -381,7 +381,7 @@ pnpm format:md:claude
 
 # Manual check specific file
 pnpm markdownlint-cli2 file.md --fix
-```
+```text
 
 ### Issue 4: Out-of-Sync README
 
@@ -402,7 +402,7 @@ done
 
 # Update README manually
 vim .claude/agents/README.md
-```
+```text
 
 ---
 
@@ -501,17 +501,17 @@ grep -r "](./" .claude/docs/ | grep -v "http"
 
 # Check file size
 du -sh .claude/docs/*.md
-```
+```text
 
 ### File Locations
 
-```
+```text
 Documentation sync checklist: .claude/docs/doc-sync.md (this file)
 System maintenance guide: .claude/docs/system-maintenance.md
 Health check script: .claude/scripts/health-check.sh
 Validation workflow: .github/workflows/validate-docs.yml
 Pre-commit hook: .husky/pre-commit
-```
+```text
 
 ---
 

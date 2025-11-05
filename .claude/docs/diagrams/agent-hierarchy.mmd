@@ -1,43 +1,55 @@
 %%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#3B82F6','primaryTextColor':'#fff','primaryBorderColor':'#2563EB','lineColor':'#6B7280','secondaryColor':'#10B981','tertiaryColor':'#F59E0B'}}}%%
 flowchart TD
     User([User/Principal<br/>Architect])
-    
+
     %% Core Coordination
     User --> TechLead[tech-lead<br/>Architecture & Leadership]
-    
+
     %% Planning & Product
-    TechLead --> Product[product-technical<br/>Technical Analysis]
-    
+    TechLead --> Product[Product Team]
+    Product --> ProdFunc[product-functional<br/>PDR & Requirements]
+    Product --> ProdTech[product-technical<br/>Technical Analysis]
+
     %% Engineering Teams
     TechLead --> Backend[Backend Team]
     Backend --> Hono[hono-engineer<br/>API Development]
     Backend --> DB[db-engineer<br/>Database & Drizzle]
     Backend --> NodeTS[node-typescript-engineer<br/>Shared Packages & Utils]
-    
+
     TechLead --> Frontend[Frontend Team]
     Frontend --> Astro[astro-engineer<br/>Public Web App]
     Frontend --> Tanstack[tanstack-start-engineer<br/>Admin Dashboard]
     Frontend --> React[react-senior-dev<br/>React Components]
-    
+
+    %% Design & Content
+    TechLead --> Design[Design & Content]
+    Design --> UX[ux-ui-designer<br/>UI Design & Flows]
+    Design --> Content[content-writer<br/>Web Copywriting EN/ES]
+
     %% Quality
-    TechLead --> Quality[Quality]
+    TechLead --> Quality[Quality Team]
     Quality --> QA[qa-engineer<br/>Testing & QA]
-    
-    %% Support & Documentation
-    TechLead --> Support[Support Team]
+    Quality --> Debug[debugger<br/>Issue Resolution]
+
+    %% Specialized Support
+    TechLead --> Support[Specialized Team]
     Support --> Writer[tech-writer<br/>Documentation]
-    Support --> Debugger[debugger<br/>Issue Resolution]
-    
+    Support --> I18n[i18n-specialist<br/>Internationalization]
+    Support --> Enrich[enrichment-agent<br/>GitHub Enrichment]
+    Support --> SEO[seo-ai-specialist<br/>SEO & AI Optimization]
+
     classDef leaderClass fill:#8B5CF6,stroke:#7C3AED,color:#fff,font-weight:bold
     classDef backendClass fill:#EF4444,stroke:#DC2626,color:#fff
     classDef frontendClass fill:#3B82F6,stroke:#2563EB,color:#fff
     classDef qualityClass fill:#10B981,stroke:#059669,color:#fff
     classDef supportClass fill:#F59E0B,stroke:#D97706,color:#fff
     classDef productClass fill:#EC4899,stroke:#DB2777,color:#fff
-    
+    classDef designClass fill:#A855F7,stroke:#9333EA,color:#fff
+
     class User,TechLead leaderClass
-    class Product productClass
+    class Product,ProdFunc,ProdTech productClass
     class Backend,Hono,DB,NodeTS backendClass
     class Frontend,Astro,Tanstack,React frontendClass
-    class Quality,QA qualityClass
-    class Support,Writer,Debugger supportClass
+    class Quality,QA,Debug qualityClass
+    class Support,Writer,I18n,Enrich,SEO supportClass
+    class Design,UX,Content designClass
