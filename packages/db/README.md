@@ -19,6 +19,18 @@ This package provides a fully-typed, modular, and extensible database layer for 
 
 ---
 
+## Documentation
+
+📚 **[Complete Documentation](./docs/README.md)** - Comprehensive guides, API reference, and examples
+
+**Quick Links**:
+
+- [Quick Start Guide](./docs/quick-start.md) - Get started in 5 minutes
+- [API Reference](./docs/api/BaseModel.md) - Complete API documentation
+- [Development Guides](./docs/guides/README.md) - In-depth tutorials
+
+---
+
 ## Installation
 
 This package is designed for use within the monorepo. It depends on other internal packages (`@repo/schemas`, etc.) and expects a PostgreSQL database.
