@@ -1,35 +1,32 @@
 # @repo/icons
 
-Universal SVG icon components that work seamlessly in both React and Astro without requiring hydration. Built for the Hospeda monorepo with performance and accessibility in mind.
+Universal SVG icon components for the Hospeda platform. Built for performance, accessibility, and seamless integration across React and Astro applications.
 
 ## Features
 
-- 🎨 **Configurable**: Size, color, and className props
-- 🔧 **Type-safe**: Full TypeScript support
-- 🎯 **Consistent**: Standardized icon sizes and API
-- 📦 **Tree-shakeable**: Import only what you need
+- 🎨 **386 Icons**: Comprehensive collection across 12 categories
+- ⚡ **Framework-Agnostic**: Works in React and Astro without hydration
+- 🎯 **Type-Safe**: Full TypeScript support with IconProps interface
+- 📦 **Tree-Shakeable**: Import only what you need
 - ♿ **Accessible**: Built-in aria-label and title support
-- ⚡ **Universal**: Works in React and Astro without hydration
-- 🚀 **Performance**: Pure SVG components, no JavaScript runtime
-- 🎨 **Self-contained**: No external dependencies (no lucide-react)
-- ✨ **Real SVGs**: All icons use authentic Lucide SVG paths
-- 🛠️ **Developer Tools**: Scripts for generating and updating icons
+- 🚀 **Zero Runtime**: Pure SVG components, no JavaScript required
+- 🔧 **Customizable**: Configurable size, color, and className
+- 📏 **Predefined Sizes**: xs, sm, md, lg, xl for consistency
 
 ## Installation
 
-This package is part of the monorepo and should be installed automatically when you run `pnpm install` from the root.
+This package is part of the Hospeda monorepo and is automatically installed when you run `pnpm install` from the project root.
 
-## Usage
+## Quick Start
 
-### Basic Usage (React & Astro)
+### Basic Usage
 
 ```tsx
-// Works identically in both React and Astro
 import { WifiIcon, PoolIcon, RestaurantIcon } from '@repo/icons';
 
-function MyComponent() {
+export function AmenitiesList() {
   return (
-    <div>
+    <div className="flex gap-4">
       <WifiIcon />
       <PoolIcon />
       <RestaurantIcon />
@@ -38,186 +35,149 @@ function MyComponent() {
 }
 ```
 
-### With Custom Props
+### Using Predefined Sizes
 
 ```tsx
-import { WifiIcon, ICON_SIZES } from '@repo/icons';
+import { SearchIcon, ICON_SIZES } from '@repo/icons';
 
-function MyComponent() {
+export function SearchBar() {
   return (
-    <div>
-      {/* Custom size */}
-      <WifiIcon size="lg" />
-      
-      {/* Custom color */}
-      <WifiIcon color="#3B82F6" />
-      
-      {/* Custom className */}
-      <WifiIcon className="text-blue-500 hover:text-blue-600" />
-      
-      {/* Accessibility */}
-      <WifiIcon aria-label="WiFi connection" />
-      
-      {/* All together */}
-      <WifiIcon 
-        size="xl" 
-        color="currentColor"
-        className="transition-colors duration-200"
-        aria-label="WiFi"
-      />
-    </div>
+    <button className="flex items-center gap-2">
+      <SearchIcon size="sm" />
+      <span>Search</span>
+    </button>
   );
 }
 ```
 
-### Astro Usage (No Hydration Required)
+### Custom Styling with Tailwind
 
-```astro
----
-// server-side - runs at build time
-import { WifiIcon, PoolIcon, RestaurantIcon } from '@repo/icons';
----
+```tsx
+import { HeartIcon } from '@repo/icons';
 
-<!-- Static HTML - no JavaScript needed -->
-<div class="amenities">
-  <WifiIcon size="md" className="text-green-500" />
-  <PoolIcon size="md" className="text-blue-500" />
-  <RestaurantIcon size="md" className="text-amber-500" />
-</div>
+export function FavoriteButton() {
+  return (
+    <button>
+      <HeartIcon
+        size="lg"
+        className="text-red-500 hover:text-red-600 transition-colors"
+      />
+    </button>
+  );
+}
 ```
 
-### Available Sizes
+### Accessibility Example
+
+```tsx
+import { CloseIcon } from '@repo/icons';
+
+export function Modal() {
+  return (
+    <button aria-label="Close modal">
+      <CloseIcon aria-label="Close" />
+    </button>
+  );
+}
+```
+
+## 386 Icons Catalog
+
+Our comprehensive icon library includes:
+
+- **Actions** (15 icons): AddIcon, EditIcon, DeleteIcon, SaveIcon, CancelIcon, CopyIcon, ShareIcon, etc.
+- **Admin** (16 icons): DashboardIcon, AnalyticsIcon, UsersManagementIcon, ReportsIcon, etc.
+- **Amenities** (98 icons): WifiIcon, PoolIcon, ParkingIcon, AirConditioningIcon, KitchenIcon, etc.
+- **Attractions** (92 icons): BeachIcon, MuseumIcon, ParkIcon, CathedralIcon, ThermalSpaIcon, etc.
+- **Booking** (16 icons): AvailableIcon, ConfirmedIcon, CheckInIcon, CheckOutIcon, CancelledIcon, etc.
+- **Communication** (7 icons): PhoneIcon, EmailIcon, ChatIcon, WhatsappIcon, etc.
+- **Entities** (13 icons): AccommodationIcon, EventIcon, DestinationIcon, PostIcon, etc.
+- **Features** (70 icons): PetFriendlyIcon, EcologicalIcon, PanoramicViewIcon, SmartHomeIcon, etc.
+- **Navigation** (51 icons): HomeIcon, SearchIcon, MenuIcon, CloseIcon, BackIcon, NextIcon, etc.
+- **Social** (4 icons): FacebookIcon, InstagramIcon, WhatsappIcon, WebIcon
+- **System** (51 icons): UserIcon, SettingsIcon, NotificationIcon, LogoutIcon, etc.
+- **Utilities** (17 icons): CalendarIcon, ClockIcon, LocationIcon, MapIcon, etc.
+
+**Total: 386 icons** organized for easy discovery and usage.
+
+For the complete catalog with visual previews and usage examples, see the [Icons Catalog](./docs/api/icons-catalog.md).
+
+## Documentation
+
+### Getting Started
+
+- [Quick Start Guide](./docs/quick-start.md) - 5-minute tutorial
+- [Documentation Portal](./docs/README.md) - Complete documentation hub
+
+### API Reference
+
+- [Icons Catalog](./docs/api/icons-catalog.md) - Complete list of all 386 icons
+- [Usage Reference](./docs/api/usage-reference.md) - IconProps, ICON_SIZES, and patterns
+
+### Guides
+
+- [Adding Icons](./docs/guides/adding-icons.md) - How to add new icons
+- [Naming Conventions](./docs/guides/naming.md) - Icon naming standards
+- [Optimization](./docs/guides/optimization.md) - Performance best practices
+- [Accessibility](./docs/guides/accessibility.md) - ARIA labels and WCAG compliance
+- [Testing](./docs/guides/testing.md) - Testing icon components
+
+### Examples
+
+- [Basic Usage](./docs/examples/basic-usage.tsx) - Common usage patterns
+- [Custom Sizing](./docs/examples/custom-sizing.tsx) - Size customization
+- [Colors](./docs/examples/colors.tsx) - Color and theming
+- [Accessibility](./docs/examples/accessibility.tsx) - Accessible implementations
+
+## Available Sizes
 
 ```tsx
 import { ICON_SIZES } from '@repo/icons';
 
 // Predefined sizes
 const sizes = {
-  xs: 16,    // Extra small
-  sm: 20,    // Small  
-  md: 24,    // Medium (default)
-  lg: 32,    // Large
-  xl: 48,    // Extra large
-  '2xl': 64  // 2X Large
+  xs: 16,    // Extra small - inline text, small UI elements
+  sm: 20,    // Small - buttons, form inputs
+  md: 24,    // Medium (default) - navigation, standard UI
+  lg: 28,    // Large - featured buttons, headers
+  xl: 32,    // Extra large - hero sections, empty states
 };
 
-// You can also use custom pixel values
+// Use predefined sizes
+<WifiIcon size="md" />
+
+// Or custom pixel values
 <WifiIcon size={28} />
 ```
 
-## Available Icons
+## API Overview
 
-### Entity Icons (10)
-
-- `AccommodationIcon`, `ContentIcon`, `DestinationIcon`, `EventIcon`, `PostIcon`
-- `PermissionIcon`, `PostSponsorIcon`, `PostSponsorshipIcon`, `EventLocationIcon`, `EventOrganizerIcon`
-
-### Admin Icons (7)
-
-- `DashboardIcon`, `AnalyticsIcon`, `ListIcon`, `ViewAllIcon`, `TagIcon`, `TagsIcon`, `SectionIcon`
-
-### Amenity Icons (25)
-
-- `WifiIcon`, `AirConditioningIcon`, `PoolIcon`, `ParkingIcon`, `KitchenIcon`
-- `CoffeeMakerIcon`, `HeatingIcon`, `TvIcon`, `BbqGrillIcon`, `WasherIcon`
-- `SafeIcon`, `BreakfastIcon`, `GymIcon`, `RefrigeratorIcon`, `MicrowaveIcon`
-- `BedLinensIcon`, `TowelsIcon`, `FireplaceIcon`, `JacuzziIcon`, `TerraceIcon`
-- `BalconyIcon`, `ElevatorIcon`, `MiniBarIcon`, `PlaygroundIcon`, `BicyclesIcon`
-
-### Feature Icons (14)
-
-- `RiverFrontIcon`, `PanoramicViewIcon`, `NaturalEnvironmentIcon`, `PetFriendlyIcon`
-- `FamilySuitableIcon`, `SmartHomeIcon`, `EcologicalIcon`, `SpaFrontIcon`
-- `RuralAreaIcon`, `PavedAccessIcon`, `CentralAreaIcon`, `ModernStyleIcon`
-- `RusticStyleIcon`, `RenewableEnergyIcon`
-
-### Attraction Icons (16)
-
-- `AmphitheaterIcon`, `MuseumIcon`, `BeachIcon`, `ParkIcon`, `CasinoIcon`
-- `CathedralIcon`, `ShoppingCenterIcon`, `RestaurantIcon`, `AviariumIcon`
-- `AgriculturalCenterIcon`, `EducationalFarmIcon`, `SportsComplexIcon`
-- `CulturalCenterIcon`, `ThermalSpaIcon`, `NatureReserveIcon`, `WetlandsIcon`
-
-### System Icons (15)
-
-- `HomeIcon`, `AddIcon`, `CreateIcon`, `StarIcon`, `FavoriteIcon`
-- `HamburgerIcon`, `DropdownIcon`, `BreadcrumbsIcon`, `NotificationIcon`
-- `LogoutIcon`, `LightThemeIcon`, `DarkThemeIcon`, `UsersIcon`, `AdminIcon`, `DebugIcon`
-
-**Total: 106+ Icons**
-
-## API Reference
-
-### IconProps
+### IconProps Interface
 
 ```tsx
 interface IconProps {
   /** Icon size - predefined size key or pixel value */
-  size?: keyof typeof ICON_SIZES | number;
-  
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | number;
+
   /** Icon color - any valid CSS color value */
   color?: string;
-  
+
   /** Additional CSS classes */
   className?: string;
-  
+
   /** Accessibility label */
   'aria-label'?: string;
-  
-  /** Additional props passed to the SVG element */
-  [key: string]: any;
+
+  /** Additional SVG props */
+  [key: string]: unknown;
 }
 ```
 
-### ICON_SIZES
+### Default Values
 
-Predefined size constants for consistent icon sizing across the application.
-
-```tsx
-export const ICON_SIZES = {
-  xs: 16,
-  sm: 20,
-  md: 24,
-  lg: 32,
-  xl: 48,
-  '2xl': 64
-} as const;
-```
-
-## Architecture
-
-This package uses **pure SVG components** that render as static HTML. No JavaScript runtime is required, making them perfect for:
-
-- ✅ **Server-side rendering** (Astro, Next.js, etc.)
-- ✅ **Static site generation**
-- ✅ **Performance-critical applications**
-- ✅ **Accessibility-first development**
-
-Each icon is a self-contained JSX component that renders an inline SVG with configurable props. The components work identically in React and Astro environments.
-
-## Migration from Lucide
-
-This package replaces direct `lucide-react` imports. Instead of:
-
-```tsx
-// ❌ Old way
-import { Wifi, Home, User } from 'lucide-react';
-
-<Wifi size={24} />
-<Home className="text-blue-500" />
-<User color="#3B82F6" />
-```
-
-Use:
-
-```tsx
-// ✅ New way
-import { WifiIcon, HomeIcon, UsersIcon } from '@repo/icons';
-
-<WifiIcon size="md" />
-<HomeIcon className="text-blue-500" />
-<UsersIcon color="#3B82F6" />
-```
+- **size**: `'md'` (24px)
+- **color**: `'currentColor'` (inherits parent text color)
+- **className**: `''`
 
 ## Development
 
@@ -239,41 +199,96 @@ pnpm typecheck
 pnpm lint
 ```
 
-### Icon Management Scripts
-
-#### Generate New Icon
+### Formatting
 
 ```bash
-# Generate a new icon with automatic SVG download
-pnpm add:icon <icon-name> [category]
-
-# Examples:
-pnpm add:icon facebook social
-pnpm add:icon calculator system
-pnpm add:icon pool amenities
+pnpm format
 ```
 
-#### Update All SVGs
+## Best Practices
 
-```bash
-# Download and update all icons with real Lucide SVGs
-pnpm update:svgs
+1. **Use Semantic Names**: Import `SearchIcon` not `MagnifyingGlassIcon`
+2. **Leverage Predefined Sizes**: Use size props (`xs`, `sm`, `md`, `lg`, `xl`)
+3. **Respect Color Inheritance**: Default `currentColor` inherits from parent
+4. **Add ARIA Labels**: Provide `aria-label` for icon-only buttons
+5. **Optimize Imports**: Import only needed icons for tree-shaking
+6. **Consistent Sizing**: Use predefined sizes for design system consistency
+7. **Test Accessibility**: Verify screen reader compatibility
+
+## Framework Integration
+
+### React
+
+```tsx
+import { HomeIcon, SearchIcon } from '@repo/icons';
+
+export function Navigation() {
+  return (
+    <nav className="flex gap-4">
+      <HomeIcon size="md" className="text-gray-700" />
+      <SearchIcon size="md" className="text-gray-700" />
+    </nav>
+  );
+}
 ```
 
-### Icon Categories
+### Astro (Server-Side Rendering)
 
-Icons are organized into logical categories:
+```astro
+---
+import { WifiIcon, PoolIcon } from '@repo/icons';
+---
 
-- **`system`**: Core UI icons (home, menu, close, etc.)
-- **`social`**: Social media icons (instagram, whatsapp, etc.)
-- **`communication`**: Contact icons (phone, chat, etc.)
-- **`actions`**: Action icons (copy, help, etc.)
-- **`admin`**: Admin panel icons (dashboard, analytics, etc.)
-- **`amenities`**: Hotel amenities (wifi, pool, parking, etc.)
-- **`features`**: Property features (pet-friendly, ecological, etc.)
-- **`attractions`**: Tourist attractions (museum, beach, etc.)
-- **`entities`**: Business entities (accommodation, event, etc.)
+<!-- Static HTML - no JavaScript needed -->
+<div class="amenities">
+  <WifiIcon size="md" className="text-green-500" />
+  <PoolIcon size="md" className="text-blue-500" />
+</div>
+```
+
+## Architecture
+
+This package uses **pure SVG components** that render as static HTML:
+
+- ✅ **Server-side rendering** (Astro, Next.js)
+- ✅ **Static site generation**
+- ✅ **Zero JavaScript runtime**
+- ✅ **Accessibility-first**
+- ✅ **Tree-shakeable exports**
+
+Each icon is a self-contained JSX component rendering an inline SVG with configurable props. Icons work identically in React and Astro environments.
+
+## Migration from Lucide
+
+Replace direct `lucide-react` imports:
+
+```tsx
+// ❌ Old way
+import { Wifi, Home, User } from 'lucide-react';
+
+<Wifi size={24} />
+<Home className="text-blue-500" />
+<User color="#3B82F6" />
+```
+
+With `@repo/icons`:
+
+```tsx
+// ✅ New way
+import { WifiIcon, HomeIcon, UserIcon } from '@repo/icons';
+
+<WifiIcon size="md" />
+<HomeIcon className="text-blue-500" />
+<UserIcon color="#3B82F6" />
+```
 
 ## License
 
 MIT
+
+## Related Packages
+
+- `@repo/schemas` - Validation schemas
+- `@repo/db` - Database models
+- `@repo/service-core` - Business logic services
+- `@repo/utils` - Shared utilities
