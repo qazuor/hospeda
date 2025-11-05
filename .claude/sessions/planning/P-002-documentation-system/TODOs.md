@@ -751,27 +751,31 @@ Complete rewrite of Hospeda monorepo documentation using a hybrid documentation 
   - `packages/schemas/docs/quick-start.md`
   - `packages/schemas/docs/api/*.md`
 
-### PB-028: @repo/schemas - Development Guides & Examples
+### PB-028: @repo/schemas - Development Guides & Examples ✅
 
 - **Description**: Create development guides and examples for schemas package
 - **Time Estimate**: 4 hours
 - **Dependencies**: PB-027
 - **Deliverables**:
-  - [ ] Create `packages/schemas/docs/guides/creating-schemas.md` (Step-by-step)
-  - [ ] Create `packages/schemas/docs/guides/composition.md` (Schema reusability)
-  - [ ] Create `packages/schemas/docs/guides/validation-patterns.md` (CRUD, search)
-  - [ ] Create `packages/schemas/docs/guides/enums.md` (Enum definitions)
-  - [ ] Create `packages/schemas/docs/guides/testing.md` (Schema testing)
-  - [ ] Create example files (entity-schema.ts, api-schema.ts, form-schema.ts, complex-validation.ts)
+  - [x] Create `packages/schemas/docs/guides/creating-schemas.md` (Step-by-step) - 1,667 lines
+  - [x] Create `packages/schemas/docs/guides/composition.md` (Schema reusability) - 1,162 lines
+  - [x] Create `packages/schemas/docs/guides/validation-patterns.md` (CRUD, search) - 1,222 lines
+  - [x] Create `packages/schemas/docs/guides/enums.md` (Enum definitions) - 983 lines
+  - [x] Create `packages/schemas/docs/guides/testing.md` (Schema testing) - 1,123 lines
+  - [x] Create `packages/schemas/docs/examples/entity-schema.ts` (Product example) - 823 lines
+  - [x] Create `packages/schemas/docs/examples/api-schema.ts` (Hono routes) - 637 lines
+  - [x] Create `packages/schemas/docs/examples/form-schema.ts` (React forms) - 778 lines
+  - [x] Create `packages/schemas/docs/examples/complex-validation.ts` (Business logic) - 820 lines
 - **Acceptance Criteria**:
-  - [ ] Creating schemas tutorial complete
-  - [ ] Composition guide explains patterns
-  - [ ] Validation patterns cover CRUD
-  - [ ] Examples are working TypeScript
-  - [ ] Testing guide covers schema validation
+  - [x] Creating schemas tutorial complete
+  - [x] Composition guide explains patterns
+  - [x] Validation patterns cover CRUD
+  - [x] Examples are working TypeScript
+  - [x] Testing guide covers schema validation
 - **Related Files**:
   - `packages/schemas/docs/guides/*.md`
   - `packages/schemas/docs/examples/*.ts`
+- **Total Lines**: 9,215 lines of documentation and code
 
 ### PB-029: @repo/config - Complete Documentation
 
