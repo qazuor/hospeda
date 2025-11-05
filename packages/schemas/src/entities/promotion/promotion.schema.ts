@@ -44,17 +44,17 @@ export const PromotionSchema = z
             .string()
             .min(1, { message: 'zodError.promotion.description.min' })
             .max(1000, { message: 'zodError.promotion.description.max' })
-            .optional(),
+            .nullable(),
 
         // Optional target conditions
-        targetConditions: z.record(z.string(), z.any()).optional(),
+        targetConditions: z.record(z.string(), z.any()).nullable(),
 
         // Optional usage metrics
         maxTotalUsage: z
             .number()
             .int({ message: 'zodError.promotion.maxTotalUsage.int' })
             .positive({ message: 'zodError.promotion.maxTotalUsage.positive' })
-            .optional(),
+            .nullable(),
 
         currentUsageCount: z
             .number()
@@ -67,7 +67,10 @@ export const PromotionSchema = z
             .boolean({
                 message: 'zodError.promotion.isActive.required'
             })
-            .default(true)
+            .default(true),
+
+        // Admin metadata
+        adminInfo: z.record(z.string(), z.unknown()).nullable()
     })
     // Date validation refinement
     .refine(
