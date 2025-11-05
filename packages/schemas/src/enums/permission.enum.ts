@@ -10,6 +10,7 @@ export enum PermissionCategoryEnum {
     PROMOTION = 'PROMOTION',
     DISCOUNT_CODE = 'DISCOUNT_CODE',
     CAMPAIGN = 'CAMPAIGN',
+    SERVICE_LISTING = 'SERVICE_LISTING',
     PUBLIC = 'PUBLIC',
     SYSTEM = 'SYSTEM',
     ACCESS = 'ACCESS'
@@ -316,5 +317,14 @@ export enum PermissionEnum {
     FEATURED_ACCOMMODATION_VIEW = 'featuredAccommodation.view', // Allows viewing featured accommodation information.
     FEATURED_ACCOMMODATION_RESTORE = 'featuredAccommodation.restore', // Allows restoring a deleted featured accommodation.
     FEATURED_ACCOMMODATION_HARD_DELETE = 'featuredAccommodation.hardDelete', // Allows permanently deleting a featured accommodation.
-    FEATURED_ACCOMMODATION_STATUS_MANAGE = 'featuredAccommodation.status.manage' // Allows managing featured accommodation status and priority.
+    FEATURED_ACCOMMODATION_STATUS_MANAGE = 'featuredAccommodation.status.manage', // Allows managing featured accommodation status and priority.
+
+    // SERVICE_LISTING: Permissions related to service listing management
+    SERVICE_LISTING_CREATE = 'serviceListing.create', // Allows creating a new service listing.
+    SERVICE_LISTING_UPDATE = 'serviceListing.update', // Allows updating a service listing.
+    SERVICE_LISTING_DELETE = 'serviceListing.delete', // Allows deleting a service listing (soft delete).
+    SERVICE_LISTING_VIEW = 'serviceListing.view', // Allows viewing service listing information.
+    SERVICE_LISTING_RESTORE = 'serviceListing.restore', // Allows restoring a deleted service listing.
+    SERVICE_LISTING_HARD_DELETE = 'serviceListing.hardDelete', // Allows permanently deleting a service listing.
+    SERVICE_LISTING_STATUS_MANAGE = 'serviceListing.status.manage' // Allows managing service listing status (draft, pending, active, paused, rejected, expired).
 }

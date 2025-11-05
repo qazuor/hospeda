@@ -136,6 +136,9 @@ export * from './service-order-status.schema.js';
 export * from './listing-status.enum.js';
 export * from './listing-status.schema.js';
 
+export * from './service-listing-status.enum.js';
+export * from './service-listing-status.schema.js';
+
 export * from './notification-type.enum.js';
 export * from './notification-type.schema.js';
 

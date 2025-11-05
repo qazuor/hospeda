@@ -174,3 +174,13 @@ export type AccommodationListingPlanIdType = z.infer<typeof AccommodationListing
 
 export const FeaturedAccommodationIdSchema = BaseIdSchema;
 export type FeaturedAccommodationIdType = z.infer<typeof FeaturedAccommodationIdSchema>;
+
+// === Service Listings System IDs ===
+export const ServiceListingIdSchema = BaseIdSchema;
+export type ServiceListingIdType = z.infer<typeof ServiceListingIdSchema>;
+
+export const ServiceListingPlanIdSchema = BaseIdSchema;
+export type ServiceListingPlanIdType = z.infer<typeof ServiceListingPlanIdSchema>;
+
+export const TouristServiceIdSchema = BaseIdSchema;
+export type TouristServiceIdType = z.infer<typeof TouristServiceIdSchema>;
