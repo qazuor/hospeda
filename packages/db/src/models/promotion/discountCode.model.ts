@@ -35,7 +35,7 @@ export class DiscountCodeModel extends BaseModel<DiscountCode> {
             .where(
                 and(
                     eq(discountCodes.code, code),
-                    eq(discountCodes.isActive, 'true'),
+                    eq(discountCodes.isActive, true),
                     isNull(discountCodes.deletedAt)
                 )
             )
@@ -46,7 +46,7 @@ export class DiscountCodeModel extends BaseModel<DiscountCode> {
         }
 
         const code_rec = discountCode[0];
-        return code_rec.validFrom <= now && code_rec.validTo >= now && code_rec.isActive === 'true';
+        return code_rec.validFrom <= now && code_rec.validTo >= now && code_rec.isActive === true;
     }
 
     /**

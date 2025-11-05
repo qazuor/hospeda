@@ -83,7 +83,40 @@ export const DiscountCodeSchema = z
             })
             .int({ message: 'zodError.discountCode.usedCountGlobal.int' })
             .nonnegative({ message: 'zodError.discountCode.usedCountGlobal.nonnegative' })
-            .default(0)
+            .default(0),
+
+        // Currency and purchase requirements
+        currency: z
+            .string({
+                message: 'zodError.discountCode.currency.required'
+            })
+            .length(3, { message: 'zodError.discountCode.currency.length' })
+            .default('USD'),
+
+        minimumPurchaseAmount: z
+            .number({
+                message: 'zodError.discountCode.minimumPurchaseAmount.required'
+            })
+            .nonnegative({ message: 'zodError.discountCode.minimumPurchaseAmount.nonnegative' })
+            .nullable(),
+
+        minimumPurchaseCurrency: z
+            .string()
+            .length(3, { message: 'zodError.discountCode.minimumPurchaseCurrency.length' })
+            .default('USD'),
+
+        // Status and description
+        isActive: z
+            .boolean({
+                message: 'zodError.discountCode.isActive.required'
+            })
+            .default(true),
+
+        description: z
+            .string()
+            .min(1, { message: 'zodError.discountCode.description.min' })
+            .max(500, { message: 'zodError.discountCode.description.max' })
+            .nullable()
     })
     // Type-specific validation refinement
     .refine(

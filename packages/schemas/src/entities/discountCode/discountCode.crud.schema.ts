@@ -70,6 +70,31 @@ export const CreateDiscountCodeSchema = z
             })
             .int({ message: 'zodError.discountCode.maxRedemptionsPerUser.int' })
             .positive({ message: 'zodError.discountCode.maxRedemptionsPerUser.positive' })
+            .optional(),
+
+        // Currency and purchase requirements
+        currency: z
+            .string()
+            .length(3, { message: 'zodError.discountCode.currency.length' })
+            .default('USD'),
+
+        minimumPurchaseAmount: z
+            .number()
+            .nonnegative({ message: 'zodError.discountCode.minimumPurchaseAmount.nonnegative' })
+            .optional(),
+
+        minimumPurchaseCurrency: z
+            .string()
+            .length(3, { message: 'zodError.discountCode.minimumPurchaseCurrency.length' })
+            .default('USD'),
+
+        // Status and description
+        isActive: z.boolean().default(true),
+
+        description: z
+            .string()
+            .min(1, { message: 'zodError.discountCode.description.min' })
+            .max(500, { message: 'zodError.discountCode.description.max' })
             .optional()
     })
     // Type-specific validation refinement
@@ -120,7 +145,7 @@ export const CreateDiscountCodeSchema = z
 export const UpdateDiscountCodeSchema = z
     .object({
         // Audit fields for updates
-        updatedById: UserIdSchema,
+        updatedById: UserIdSchema.optional(),
 
         // Optional promotion association
         promotionId: PromotionIdSchema.optional(),
@@ -170,6 +195,31 @@ export const UpdateDiscountCodeSchema = z
             .number()
             .int({ message: 'zodError.discountCode.usedCountGlobal.int' })
             .nonnegative({ message: 'zodError.discountCode.usedCountGlobal.nonnegative' })
+            .optional(),
+
+        // Currency and purchase requirements
+        currency: z
+            .string()
+            .length(3, { message: 'zodError.discountCode.currency.length' })
+            .optional(),
+
+        minimumPurchaseAmount: z
+            .number()
+            .nonnegative({ message: 'zodError.discountCode.minimumPurchaseAmount.nonnegative' })
+            .optional(),
+
+        minimumPurchaseCurrency: z
+            .string()
+            .length(3, { message: 'zodError.discountCode.minimumPurchaseCurrency.length' })
+            .optional(),
+
+        // Status and description
+        isActive: z.boolean().optional(),
+
+        description: z
+            .string()
+            .min(1, { message: 'zodError.discountCode.description.min' })
+            .max(500, { message: 'zodError.discountCode.description.max' })
             .optional()
     })
     // Conditional type validation for updates

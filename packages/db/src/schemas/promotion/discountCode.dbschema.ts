@@ -2,6 +2,7 @@ import type { AdminInfoType } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import {
     bigint,
+    boolean,
     decimal,
     integer,
     jsonb,
@@ -51,7 +52,7 @@ export const discountCodes = pgTable('discount_codes', {
     minimumPurchaseCurrency: text('minimum_purchase_currency').default('USD'),
 
     // Discount constraints
-    isActive: text('is_active').notNull().default('true'),
+    isActive: boolean('is_active').notNull().default(true),
     description: text('description'),
 
     // Audit fields
