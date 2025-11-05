@@ -18,6 +18,17 @@ Este paquete contiene todos los esquemas Zod utilizados en Hospeda: entidades de
 - Convenciones: cada exportación de esquema termina con `Schema` y, cuando aplica, existe un tipo exportado asociado derivado con `z.infer<typeof …Schema>`.
 - Uso: importar desde este paquete para validación de formularios, contratos API y utilidades compartidas.
 
+## Documentation
+
+📚 **[Complete Documentation](./docs/README.md)** - Comprehensive guides, API reference, and examples
+
+**Quick Links**:
+
+- [Quick Start Guide](./docs/quick-start.md) - Get started in 5 minutes
+- [Schema Reference](./docs/api/schema-reference.md) - All available schemas
+- [Type Inference Guide](./docs/api/type-inference.md) - Working with z.infer
+- [Custom Validators](./docs/api/validators.md) - Custom refinements and transforms
+
 A continuación, se listan todos los esquemas detectados automáticamente, agrupados por entidad.
 
 ### accommodation
