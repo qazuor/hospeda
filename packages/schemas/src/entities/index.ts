@@ -47,6 +47,7 @@ export * from './notification/index.js';
 // === Professional Services System Entities ===
 export * from './professionalService/index.js';
 export * from './serviceOrder/index.js';
+export * from './serviceListing/index.js';
 
 // === Benefit Listings System Entities ===
 export * from './benefitListing/index.js';
