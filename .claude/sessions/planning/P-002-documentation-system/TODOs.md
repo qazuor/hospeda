@@ -585,23 +585,23 @@ Complete rewrite of Hospeda monorepo documentation using a hybrid documentation 
 
 ## Phase 3: Core Package Docs (Week 3 - 50 hours)
 
-### PB-021: @repo/service-core - Portal & Quick Start
+### PB-021: @repo/service-core - Portal & Quick Start ✅
 
 - **Description**: Create service-core package documentation portal and quick start
 - **Time Estimate**: 2 hours
 - **Dependencies**: PB-001
 - **Deliverables**:
-  - [ ] Create `packages/service-core/docs/` folder structure
-  - [ ] Update `packages/service-core/README.md` with quick overview
-  - [ ] Create `packages/service-core/docs/README.md` (Portal)
-  - [ ] Create `packages/service-core/docs/quick-start.md` (Get started in 5 min)
-  - [ ] Add quick example
-  - [ ] Add navigation structure
+  - [x] Create `packages/service-core/docs/` folder structure
+  - [x] Update `packages/service-core/README.md` with quick overview
+  - [x] Create `packages/service-core/docs/README.md` (Portal)
+  - [x] Create `packages/service-core/docs/quick-start.md` (Get started in 5 min)
+  - [x] Add quick example
+  - [x] Add navigation structure
 - **Acceptance Criteria**:
-  - [ ] Portal matches template
-  - [ ] Quick start enables usage in 5 minutes
-  - [ ] Example is tested and works
-  - [ ] README updated with link to docs
+  - [x] Portal matches template
+  - [x] Quick start enables usage in 5 minutes
+  - [x] Example is tested and works
+  - [x] README updated with link to docs
 - **Related Files**:
   - `packages/service-core/README.md`
   - `packages/service-core/docs/README.md`
