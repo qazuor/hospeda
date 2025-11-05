@@ -7,6 +7,8 @@ export enum PermissionCategoryEnum {
     CLIENT = 'CLIENT',
     PRODUCT = 'PRODUCT',
     SUBSCRIPTION = 'SUBSCRIPTION',
+    PROMOTION = 'PROMOTION',
+    DISCOUNT_CODE = 'DISCOUNT_CODE',
     PUBLIC = 'PUBLIC',
     SYSTEM = 'SYSTEM',
     ACCESS = 'ACCESS'
@@ -223,5 +225,30 @@ export enum PermissionEnum {
     PRICING_TIER_CREATE = 'pricingTier.create', // Allows creating a new pricing tier.
     PRICING_TIER_UPDATE = 'pricingTier.update', // Allows updating a pricing tier.
     PRICING_TIER_DELETE = 'pricingTier.delete', // Allows deleting a pricing tier.
-    PRICING_TIER_VIEW = 'pricingTier.view' // Allows viewing pricing tier information.
+    PRICING_TIER_VIEW = 'pricingTier.view', // Allows viewing pricing tier information.
+
+    // PROMOTION: Permissions related to marketing promotions management
+    PROMOTION_CREATE = 'promotion.create', // Allows creating a new promotion.
+    PROMOTION_UPDATE = 'promotion.update', // Allows updating a promotion.
+    PROMOTION_DELETE = 'promotion.delete', // Allows deleting a promotion.
+    PROMOTION_VIEW = 'promotion.view', // Allows viewing promotion information.
+    PROMOTION_RESTORE = 'promotion.restore', // Allows restoring a deleted promotion.
+    PROMOTION_HARD_DELETE = 'promotion.hardDelete', // Allows permanently deleting a promotion.
+    PROMOTION_SOFT_DELETE_VIEW = 'promotion.softDelete.view', // Allows viewing soft-deleted promotions.
+    PROMOTION_MANAGE_RULES = 'promotion.rules.manage', // Allows managing promotion rules and conditions.
+    PROMOTION_ANALYTICS_VIEW = 'promotion.analytics.view', // Allows viewing promotion performance analytics.
+    PROMOTION_APPLY = 'promotion.apply', // Allows applying promotions to purchases.
+
+    // DISCOUNT_CODE: Permissions related to discount code management
+    DISCOUNT_CODE_CREATE = 'discountCode.create', // Allows creating a new discount code.
+    DISCOUNT_CODE_UPDATE = 'discountCode.update', // Allows updating a discount code.
+    DISCOUNT_CODE_DELETE = 'discountCode.delete', // Allows deleting a discount code (soft delete).
+    DISCOUNT_CODE_VIEW = 'discountCode.view', // Allows viewing discount code information.
+    DISCOUNT_CODE_RESTORE = 'discountCode.restore', // Allows restoring a deleted discount code.
+    DISCOUNT_CODE_HARD_DELETE = 'discountCode.hardDelete', // Allows permanently deleting a discount code.
+    DISCOUNT_CODE_SOFT_DELETE_VIEW = 'discountCode.softDelete.view', // Allows viewing soft-deleted discount codes.
+    DISCOUNT_CODE_VALIDATE = 'discountCode.validate', // Allows validating if a discount code can be used.
+    DISCOUNT_CODE_APPLY = 'discountCode.apply', // Allows applying discount codes to purchases.
+    DISCOUNT_CODE_USAGE_VIEW = 'discountCode.usage.view', // Allows viewing discount code usage history.
+    DISCOUNT_CODE_ANALYTICS_VIEW = 'discountCode.analytics.view' // Allows viewing discount code performance analytics.
 }
