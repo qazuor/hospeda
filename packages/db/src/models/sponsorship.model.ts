@@ -73,8 +73,8 @@ export class SponsorshipModel extends BaseModel<Sponsorship> {
                 updatedAt: result.updatedAt,
                 createdById: result.createdById ?? '',
                 updatedById: result.updatedById ?? '',
-                deletedAt: result.deletedAt ?? undefined,
-                deletedById: result.deletedById ?? undefined
+                deletedAt: result.deletedAt ?? null,
+                deletedById: result.deletedById ?? null
             };
 
             return sponsorship;
@@ -129,8 +129,8 @@ export class SponsorshipModel extends BaseModel<Sponsorship> {
                 updatedAt: result.updatedAt,
                 createdById: result.createdById ?? '',
                 updatedById: result.updatedById ?? '',
-                deletedAt: result.deletedAt ?? undefined,
-                deletedById: result.deletedById ?? undefined
+                deletedAt: result.deletedAt ?? null,
+                deletedById: result.deletedById ?? null
             };
 
             return sponsorship;
