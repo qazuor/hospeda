@@ -288,5 +288,15 @@ export enum PermissionEnum {
     AD_SLOT_STATUS_MANAGE = 'adSlot.status.manage', // Allows managing advertising slot status (activate/deactivate).
     AD_SLOT_PRICING_MANAGE = 'adSlot.pricing.manage', // Allows managing advertising slot pricing and rates.
     AD_SLOT_AVAILABILITY_MANAGE = 'adSlot.availability.manage', // Allows managing advertising slot availability and scheduling.
-    AD_SLOT_PERFORMANCE_VIEW = 'adSlot.performance.view' // Allows viewing advertising slot performance metrics.
+    AD_SLOT_PERFORMANCE_VIEW = 'adSlot.performance.view', // Allows viewing advertising slot performance metrics.
+
+    // AD_SLOT_RESERVATION: Permissions related to advertising slot reservation management
+    AD_SLOT_RESERVATION_CREATE = 'adSlotReservation.create', // Allows creating a new advertising slot reservation.
+    AD_SLOT_RESERVATION_UPDATE = 'adSlotReservation.update', // Allows updating an advertising slot reservation.
+    AD_SLOT_RESERVATION_DELETE = 'adSlotReservation.delete', // Allows deleting an advertising slot reservation (soft delete).
+    AD_SLOT_RESERVATION_VIEW = 'adSlotReservation.view', // Allows viewing advertising slot reservation information.
+    AD_SLOT_RESERVATION_RESTORE = 'adSlotReservation.restore', // Allows restoring a deleted advertising slot reservation.
+    AD_SLOT_RESERVATION_HARD_DELETE = 'adSlotReservation.hardDelete', // Allows permanently deleting an advertising slot reservation.
+    AD_SLOT_RESERVATION_SOFT_DELETE_VIEW = 'adSlotReservation.softDelete.view', // Allows viewing soft-deleted advertising slot reservations.
+    AD_SLOT_RESERVATION_STATUS_MANAGE = 'adSlotReservation.status.manage' // Allows managing advertising slot reservation status (activate/pause/cancel/end).
 }
