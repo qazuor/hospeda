@@ -70,8 +70,10 @@ describe('userBookmark.permissions', () => {
         description: 'Test',
         createdAt: new Date(),
         updatedAt: new Date(),
+        deletedAt: null,
         createdById: userId,
         updatedById: userId,
+        deletedById: null,
         lifecycleState: LifecycleStatusEnum.ACTIVE
     };
     const owner: MockActor = {
