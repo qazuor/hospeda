@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { IdSchema } from '../../common/id.schema.js';
+import { PaginationSchema, SortingSchema } from '../../common/pagination.schema.js';
 import { PriceCurrencyEnumSchema } from '../../enums/index.js';
 
 export const CreditNoteQuerySchema = z
@@ -30,7 +31,10 @@ export const CreditNoteQuerySchema = z
         updatedAtFrom: z.date().optional(),
         updatedAtTo: z.date().optional(),
         deletedAtFrom: z.date().optional(),
-        deletedAtTo: z.date().optional()
+        deletedAtTo: z.date().optional(),
+        // Pagination and sorting
+        ...PaginationSchema.shape,
+        ...SortingSchema.shape
     })
     .refine(
         (data) => {
