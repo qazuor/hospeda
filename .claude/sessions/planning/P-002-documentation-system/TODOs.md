@@ -655,23 +655,23 @@ Complete rewrite of Hospeda monorepo documentation using a hybrid documentation 
   - `packages/service-core/docs/guides/*.md`
   - `packages/service-core/docs/examples/*.ts`
 
-### PB-024: @repo/db - Portal & Quick Start
+### PB-024: @repo/db - Portal & Quick Start ✅
 
 - **Description**: Create db package documentation portal and quick start
 - **Time Estimate**: 2 hours
 - **Dependencies**: PB-001
 - **Deliverables**:
-  - [ ] Create `packages/db/docs/` folder structure
-  - [ ] Update `packages/db/README.md` with quick overview
-  - [ ] Create `packages/db/docs/README.md` (Portal)
-  - [ ] Create `packages/db/docs/quick-start.md` (Get started in 5 min)
-  - [ ] Add quick example
-  - [ ] Add navigation structure
+  - [x] Create `packages/db/docs/` folder structure
+  - [x] Update `packages/db/README.md` with quick overview
+  - [x] Create `packages/db/docs/README.md` (Portal)
+  - [x] Create `packages/db/docs/quick-start.md` (Get started in 5 min)
+  - [x] Add quick example
+  - [x] Add navigation structure
 - **Acceptance Criteria**:
-  - [ ] Portal matches template
-  - [ ] Quick start enables usage in 5 minutes
-  - [ ] Example is tested and works
-  - [ ] README updated with link to docs
+  - [x] Portal matches template
+  - [x] Quick start enables usage in 5 minutes
+  - [x] Example is tested and works
+  - [x] README updated with link to docs
 - **Related Files**:
   - `packages/db/README.md`
   - `packages/db/docs/README.md`
