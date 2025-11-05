@@ -480,70 +480,70 @@ Complete rewrite of Hospeda monorepo documentation using a hybrid documentation 
   - `apps/web/docs/examples/*.astro`
   - `apps/web/docs/examples/*.tsx`
 
-### PB-017: Admin Documentation - Portal & Setup
+### PB-017: Admin Documentation - Portal & Setup ✅
 
 - **Description**: Create Admin app documentation portal and setup guide
 - **Time Estimate**: 3 hours
 - **Dependencies**: PB-008
 - **Deliverables**:
-  - [ ] Create `apps/admin/docs/` folder structure
-  - [ ] Create `apps/admin/docs/README.md` (Portal)
-  - [ ] Create `apps/admin/docs/setup.md` (Local admin setup)
-  - [ ] Create `apps/admin/docs/architecture.md` (TanStack Start architecture)
-  - [ ] Add quick start section
-  - [ ] Add navigation to usage vs development docs
+  - [x] Create `apps/admin/docs/` folder structure
+  - [x] Create `apps/admin/docs/README.md` (Portal)
+  - [x] Create `apps/admin/docs/setup.md` (Local admin setup)
+  - [x] Create `apps/admin/docs/architecture.md` (TanStack Start architecture)
+  - [x] Add quick start section
+  - [x] Add navigation to usage vs development docs
 - **Acceptance Criteria**:
-  - [ ] Portal matches template
-  - [ ] Setup guide is complete and tested
-  - [ ] Architecture explains TanStack Start
-  - [ ] Cross-links work
+  - [x] Portal matches template
+  - [x] Setup guide is complete and tested
+  - [x] Architecture explains TanStack Start
+  - [x] Cross-links work
 - **Related Files**:
   - `apps/admin/docs/README.md`
   - `apps/admin/docs/setup.md`
   - `apps/admin/docs/architecture.md`
 
-### PB-018: Admin Documentation - Usage Guides
+### PB-018: Admin Documentation - Usage Guides ✅
 
 - **Description**: Create usage documentation for admin features
 - **Time Estimate**: 2 hours
 - **Dependencies**: PB-017
 - **Deliverables**:
-  - [ ] Create `apps/admin/docs/usage/README.md`
-  - [ ] Create `apps/admin/docs/usage/dashboard.md` (Dashboard overview)
-  - [ ] Create `apps/admin/docs/usage/user-management.md` (User management features)
-  - [ ] Create `apps/admin/docs/usage/content-management.md` (Content workflows)
-  - [ ] Add screenshots/descriptions
+  - [x] Create `apps/admin/docs/usage/README.md`
+  - [x] Create `apps/admin/docs/usage/dashboard.md` (Dashboard overview)
+  - [x] Create `apps/admin/docs/usage/user-management.md` (User management features)
+  - [x] Create `apps/admin/docs/usage/content-management.md` (Content workflows)
+  - [x] Add screenshots/descriptions
 - **Acceptance Criteria**:
-  - [ ] Dashboard overview explains admin features
-  - [ ] User management guide covers CRUD operations
-  - [ ] Content management explains workflows
-  - [ ] Clear and comprehensive
+  - [x] Dashboard overview explains admin features
+  - [x] User management guide covers CRUD operations
+  - [x] Content management explains workflows
+  - [x] Clear and comprehensive
 - **Related Files**:
   - `apps/admin/docs/usage/README.md`
   - `apps/admin/docs/usage/dashboard.md`
   - `apps/admin/docs/usage/user-management.md`
   - `apps/admin/docs/usage/content-management.md`
 
-### PB-019: Admin Documentation - Development Guides (Part 1)
+### PB-019: Admin Documentation - Development Guides (Part 1) ✅
 
 - **Description**: Create development guides for routing, pages, and forms
 - **Time Estimate**: 4 hours
 - **Dependencies**: PB-017
 - **Deliverables**:
-  - [ ] Create `apps/admin/docs/development/README.md`
-  - [ ] Create `apps/admin/docs/development/routing.md` (TanStack Router)
-  - [ ] Create `apps/admin/docs/development/creating-pages.md` (Tutorial: new admin page)
-  - [ ] Create `apps/admin/docs/development/forms.md` (TanStack Form patterns)
-  - [ ] Create `apps/admin/docs/development/tables.md` (TanStack Table patterns)
-  - [ ] Create `apps/admin/docs/development/queries.md` (TanStack Query)
-  - [ ] Add code examples
+  - [x] Create `apps/admin/docs/development/README.md`
+  - [x] Create `apps/admin/docs/development/routing.md` (TanStack Router)
+  - [x] Create `apps/admin/docs/development/creating-pages.md` (Tutorial: new admin page)
+  - [x] Create `apps/admin/docs/development/forms.md` (TanStack Form patterns)
+  - [x] Create `apps/admin/docs/development/tables.md` (TanStack Table patterns)
+  - [x] Create `apps/admin/docs/development/queries.md` (TanStack Query)
+  - [x] Add code examples
 - **Acceptance Criteria**:
-  - [ ] Routing guide explains TanStack Router
-  - [ ] Creating pages tutorial is complete
-  - [ ] Forms documentation covers TanStack Form
-  - [ ] Tables documentation covers TanStack Table
-  - [ ] Queries guide explains data fetching
-  - [ ] All examples work
+  - [x] Routing guide explains TanStack Router
+  - [x] Creating pages tutorial is complete
+  - [x] Forms documentation covers TanStack Form
+  - [x] Tables documentation covers TanStack Table
+  - [x] Queries guide explains data fetching
+  - [x] All examples work
 - **Related Files**:
   - `apps/admin/docs/development/README.md`
   - `apps/admin/docs/development/routing.md`
