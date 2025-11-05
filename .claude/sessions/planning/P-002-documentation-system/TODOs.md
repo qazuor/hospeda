@@ -677,25 +677,25 @@ Complete rewrite of Hospeda monorepo documentation using a hybrid documentation 
   - `packages/db/docs/README.md`
   - `packages/db/docs/quick-start.md`
 
-### PB-025: @repo/db - API Reference
+### PB-025: @repo/db - API Reference ✅
 
 - **Description**: Create complete API reference for db package
 - **Time Estimate**: 4 hours
 - **Dependencies**: PB-024
 - **Deliverables**:
-  - [ ] Create `packages/db/docs/api/BaseModel.md` (Complete API)
-  - [ ] Create `packages/db/docs/api/query-methods.md` (All query methods)
-  - [ ] Create `packages/db/docs/api/relations.md` (Relations API)
-  - [ ] Document all public methods
-  - [ ] Document all types and interfaces
-  - [ ] Add parameter tables
-  - [ ] Add query examples
+  - [x] Create `packages/db/docs/api/BaseModel.md` (Complete API)
+  - [x] Create `packages/db/docs/api/query-methods.md` (All query methods)
+  - [x] Create `packages/db/docs/api/relations.md` (Relations API)
+  - [x] Document all public methods
+  - [x] Document all types and interfaces
+  - [x] Add parameter tables
+  - [x] Add query examples
 - **Acceptance Criteria**:
-  - [ ] All public API documented
-  - [ ] Method signatures accurate
-  - [ ] Query methods with examples
-  - [ ] Relations API complete
-  - [ ] Type-safe examples
+  - [x] All public API documented
+  - [x] Method signatures accurate
+  - [x] Query methods with examples
+  - [x] Relations API complete
+  - [x] Type-safe examples
 - **Related Files**:
   - `packages/db/docs/api/BaseModel.md`
   - `packages/db/docs/api/query-methods.md`
