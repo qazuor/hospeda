@@ -15,8 +15,8 @@ export const createBaseAuditFields = () => ({
     updatedAt: faker.date.recent(),
     createdById: faker.string.uuid(),
     updatedById: faker.string.uuid(),
-    deletedAt: faker.helpers.maybe(() => faker.date.recent(), { probability: 0.1 }),
-    deletedById: faker.helpers.maybe(() => faker.string.uuid(), { probability: 0.1 })
+    deletedAt: faker.helpers.maybe(() => faker.date.recent(), { probability: 0.1 }) ?? null,
+    deletedById: faker.helpers.maybe(() => faker.string.uuid(), { probability: 0.1 }) ?? null
 });
 
 export const createBaseLifecycleFields = () => ({
@@ -212,8 +212,8 @@ export const createTagFixture = () => ({
     updatedAt: faker.date.recent(),
     createdById: faker.string.uuid(),
     updatedById: faker.string.uuid(),
-    deletedAt: faker.helpers.maybe(() => faker.date.recent(), { probability: 0.1 }),
-    deletedById: faker.helpers.maybe(() => faker.string.uuid(), { probability: 0.1 }),
+    deletedAt: faker.helpers.maybe(() => faker.date.recent(), { probability: 0.1 }) ?? null,
+    deletedById: faker.helpers.maybe(() => faker.string.uuid(), { probability: 0.1 }) ?? null,
     lifecycleState: faker.helpers.arrayElement(['DRAFT', 'ACTIVE', 'ARCHIVED']),
     name: faker.lorem.word().padEnd(2, 'x'), // Ensure minimum 2 characters
     slug: faker.helpers.slugify(faker.lorem.word().padEnd(2, 'x')),
@@ -264,10 +264,13 @@ export const createBaseFaqFields = () => ({
                     updatedAt: faker.date.recent(),
                     createdById: faker.string.uuid(),
                     updatedById: faker.string.uuid(),
-                    deletedAt: faker.helpers.maybe(() => faker.date.recent(), { probability: 0.1 }),
-                    deletedById: faker.helpers.maybe(() => faker.string.uuid(), {
-                        probability: 0.1
-                    }),
+                    deletedAt:
+                        faker.helpers.maybe(() => faker.date.recent(), { probability: 0.1 }) ??
+                        null,
+                    deletedById:
+                        faker.helpers.maybe(() => faker.string.uuid(), {
+                            probability: 0.1
+                        }) ?? null,
 
                     // Base lifecycle fields
                     lifecycleState: faker.helpers.arrayElement(['DRAFT', 'ACTIVE', 'ARCHIVED']),

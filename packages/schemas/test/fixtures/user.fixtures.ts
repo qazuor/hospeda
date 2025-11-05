@@ -78,10 +78,12 @@ export const createUserFixture = (overrides: Partial<UserType> = {}): UserType =
         // Timestamps
         createdAt: new Date('2024-01-01T00:00:00Z'),
         updatedAt: new Date('2024-01-15T10:30:00Z'),
+        deletedAt: null,
 
         // Optional fields
         createdById: '550e8400-e29b-41d4-a716-446655440001' as UserId,
-        updatedById: '550e8400-e29b-41d4-a716-446655440002' as UserId
+        updatedById: '550e8400-e29b-41d4-a716-446655440002' as UserId,
+        deletedById: null
     };
 
     return { ...baseUser, ...overrides };
@@ -105,8 +107,10 @@ export const createMinimalUserFixture = (overrides: Partial<UserType> = {}): Par
         },
         createdAt: new Date('2024-01-01T00:00:00Z'),
         updatedAt: new Date('2024-01-01T00:00:00Z'),
+        deletedAt: null,
         createdById: '550e8400-e29b-41d4-a716-446655440003' as UserId,
-        updatedById: '550e8400-e29b-41d4-a716-446655440004' as UserId
+        updatedById: '550e8400-e29b-41d4-a716-446655440004' as UserId,
+        deletedById: null
     };
 
     return { ...minimalUser, ...overrides };
