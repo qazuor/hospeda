@@ -30,6 +30,7 @@ export * from './product/product.service';
 export * from './promotion/promotion.service';
 export * from './discountCode/discountCode.service';
 export * from './discountCodeUsage/discountCodeUsage.service';
+export * from './featuredAccommodation/featuredAccommodation.service';
 export * from './purchase/purchase.service';
 export * from './refund/refund.service';
 export * from './sponsorship/sponsorship.service';

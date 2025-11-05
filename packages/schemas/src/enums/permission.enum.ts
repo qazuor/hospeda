@@ -307,5 +307,14 @@ export enum PermissionEnum {
     SPONSORSHIP_VIEW = 'sponsorship.view', // Allows viewing sponsorship information.
     SPONSORSHIP_RESTORE = 'sponsorship.restore', // Allows restoring a deleted sponsorship.
     SPONSORSHIP_HARD_DELETE = 'sponsorship.hardDelete', // Allows permanently deleting a sponsorship.
-    SPONSORSHIP_STATUS_MANAGE = 'sponsorship.status.manage' // Allows managing sponsorship status (activate, pause, expire, cancel).
+    SPONSORSHIP_STATUS_MANAGE = 'sponsorship.status.manage', // Allows managing sponsorship status (activate, pause, expire, cancel).
+
+    // FEATURED_ACCOMMODATION: Permissions related to featured accommodation management
+    FEATURED_ACCOMMODATION_CREATE = 'featuredAccommodation.create', // Allows creating a new featured accommodation.
+    FEATURED_ACCOMMODATION_UPDATE = 'featuredAccommodation.update', // Allows updating a featured accommodation.
+    FEATURED_ACCOMMODATION_DELETE = 'featuredAccommodation.delete', // Allows deleting a featured accommodation (soft delete).
+    FEATURED_ACCOMMODATION_VIEW = 'featuredAccommodation.view', // Allows viewing featured accommodation information.
+    FEATURED_ACCOMMODATION_RESTORE = 'featuredAccommodation.restore', // Allows restoring a deleted featured accommodation.
+    FEATURED_ACCOMMODATION_HARD_DELETE = 'featuredAccommodation.hardDelete', // Allows permanently deleting a featured accommodation.
+    FEATURED_ACCOMMODATION_STATUS_MANAGE = 'featuredAccommodation.status.manage' // Allows managing featured accommodation status and priority.
 }
