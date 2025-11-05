@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { IdSchema } from '../../common/id.schema.js';
+import { PaginationSchema } from '../../common/pagination.schema.js';
 import { PriceCurrencyEnumSchema } from '../../enums/index.js';
 import { RefundReasonEnumSchema, RefundStatusEnumSchema } from './refund.schema.js';
 
@@ -31,6 +32,7 @@ export const RefundQuerySchema = z
         deletedAtFrom: z.date().optional(),
         deletedAtTo: z.date().optional()
     })
+    .merge(PaginationSchema)
     .refine(
         (data) => {
             if (data.amountMin && data.amountMax) {
