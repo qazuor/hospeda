@@ -631,26 +631,26 @@ Complete rewrite of Hospeda monorepo documentation using a hybrid documentation 
   - `packages/service-core/docs/api/ServiceOutput.md`
   - `packages/service-core/docs/api/errors.md`
 
-### PB-023: @repo/service-core - Development Guides & Examples
+### PB-023: @repo/service-core - Development Guides & Examples ✅
 
 - **Description**: Create comprehensive development guides for service-core
 - **Time Estimate**: 6 hours
 - **Dependencies**: PB-022
 - **Deliverables**:
-  - [ ] Create `packages/service-core/docs/guides/creating-services.md` (Step-by-step)
-  - [ ] Create `packages/service-core/docs/guides/permissions.md` (Permission system)
-  - [ ] Create `packages/service-core/docs/guides/lifecycle-hooks.md` (All hooks)
-  - [ ] Create `packages/service-core/docs/guides/custom-logic.md` (Business logic patterns)
-  - [ ] Create `packages/service-core/docs/guides/testing.md` (Testing strategies)
-  - [ ] Create `packages/service-core/docs/guides/advanced-patterns.md` (Advanced techniques)
-  - [ ] Create `packages/service-core/docs/guides/performance.md` (Optimization)
-  - [ ] Create example files (basic-service.ts, with-hooks.ts, complex-logic.ts, custom-methods.ts)
+  - [x] Create `packages/service-core/docs/guides/creating-services.md` (Step-by-step)
+  - [x] Create `packages/service-core/docs/guides/permissions.md` (Permission system)
+  - [x] Create `packages/service-core/docs/guides/lifecycle-hooks.md` (All hooks)
+  - [x] Create `packages/service-core/docs/guides/custom-logic.md` (Business logic patterns)
+  - [x] Create `packages/service-core/docs/guides/testing.md` (Testing strategies)
+  - [x] Create `packages/service-core/docs/guides/advanced-patterns.md` (Advanced techniques)
+  - [x] Create `packages/service-core/docs/guides/performance.md` (Optimization)
+  - [x] Create example files (basic-service.ts, with-hooks.ts, complex-logic.ts, custom-methods.ts)
 - **Acceptance Criteria**:
-  - [ ] Creating services tutorial is complete
-  - [ ] Permissions guide explains system
-  - [ ] Lifecycle hooks all documented
-  - [ ] Examples are working TypeScript
-  - [ ] Testing guide covers patterns
+  - [x] Creating services tutorial is complete
+  - [x] Permissions guide explains system
+  - [x] Lifecycle hooks all documented
+  - [x] Examples are working TypeScript
+  - [x] Testing guide covers patterns
 - **Related Files**:
   - `packages/service-core/docs/guides/*.md`
   - `packages/service-core/docs/examples/*.ts`
