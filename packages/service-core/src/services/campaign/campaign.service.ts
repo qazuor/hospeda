@@ -218,6 +218,22 @@ export class CampaignService extends BaseCrudService<
     }
 
     /**
+     * Checks if the actor can manage campaign status (activate, pause, complete, cancel).
+     * Admin or CAMPAIGN_STATUS_MANAGE permission holders can manage status.
+     */
+    protected _canManageStatus(actor: Actor, _entity: Campaign): void {
+        const isAdmin = actor.role === RoleEnum.ADMIN;
+        const hasPermission = actor.permissions.includes(PermissionEnum.CAMPAIGN_STATUS_MANAGE);
+
+        if (!isAdmin && !hasPermission) {
+            throw new ServiceError(
+                ServiceErrorCode.FORBIDDEN,
+                'Permission denied: Only admins or authorized users can manage campaign status'
+            );
+        }
+    }
+
+    /**
      * Executes a search query for campaigns.
      * This method is called by the base search method after permission checks.
      */
@@ -263,7 +279,7 @@ export class CampaignService extends BaseCrudService<
                 }
 
                 // Permission check
-                this._canUpdate(validatedActor, campaign);
+                this._canManageStatus(validatedActor, campaign);
 
                 // Business rule: Only DRAFT or SCHEDULED campaigns can be activated
                 if (
@@ -314,7 +330,7 @@ export class CampaignService extends BaseCrudService<
                 }
 
                 // Permission check
-                this._canUpdate(validatedActor, campaign);
+                this._canManageStatus(validatedActor, campaign);
 
                 // Business rule: Only ACTIVE campaigns can be paused
                 if (campaign.status !== CampaignStatusEnum.ACTIVE) {
@@ -362,7 +378,7 @@ export class CampaignService extends BaseCrudService<
                 }
 
                 // Permission check
-                this._canUpdate(validatedActor, campaign);
+                this._canManageStatus(validatedActor, campaign);
 
                 // Business rule: Only ACTIVE campaigns can be completed
                 if (campaign.status !== CampaignStatusEnum.ACTIVE) {
@@ -410,7 +426,7 @@ export class CampaignService extends BaseCrudService<
                 }
 
                 // Permission check
-                this._canUpdate(validatedActor, campaign);
+                this._canManageStatus(validatedActor, campaign);
 
                 // Business rule: Cannot cancel COMPLETED campaigns
                 if (campaign.status === CampaignStatusEnum.COMPLETED) {
