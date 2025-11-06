@@ -508,7 +508,7 @@ ORDER BY connections DESC;
 
 **Configure these immediately**:
 
-**1. API Down**
+#### 1. API Down
 
 ```yaml
 Alert: API Health Check Failed
@@ -528,7 +528,7 @@ Action: Page on-call engineer
 # Contact: On-call rotation
 ```
 
-**2. High Error Rate**
+#### 2. High Error Rate
 
 ```yaml
 Alert: High Error Rate
@@ -538,7 +538,7 @@ Notification: Critical
 Action: Page on-call engineer
 ```
 
-**3. Database Connection Exhaustion**
+#### 3. Database Connection Exhaustion
 
 ```yaml
 Alert: Database Connections Critical
@@ -550,7 +550,7 @@ Action: Scale database or restart app
 
 ### High Priority Alerts
 
-**4. Elevated Error Rate**
+#### 4. Elevated Error Rate
 
 ```yaml
 Alert: Elevated Error Rate
@@ -560,7 +560,7 @@ Notification: High
 Action: Investigate within 15 minutes
 ```
 
-**5. Slow API Responses**
+#### 5. Slow API Responses
 
 ```yaml
 Alert: Slow API Response Times
@@ -570,7 +570,7 @@ Notification: High
 Action: Investigate performance
 ```
 
-**6. Database Query Performance**
+#### 6. Database Query Performance
 
 ```yaml
 Alert: Slow Database Queries
@@ -582,7 +582,7 @@ Action: Check for missing indexes
 
 ### Medium Priority Alerts
 
-**7. Increased Response Times**
+#### 7. Increased Response Times
 
 ```yaml
 Alert: Response Time Degradation
@@ -592,7 +592,7 @@ Notification: Medium
 Action: Monitor and investigate if persists
 ```
 
-**8. Database Connection Pool High**
+#### 8. Database Connection Pool High
 
 ```yaml
 Alert: Database Connection Pool High
@@ -604,7 +604,7 @@ Action: Monitor for scaling need
 
 ### Low Priority Alerts
 
-**9. Web Vitals Degradation**
+#### 9. Web Vitals Degradation
 
 ```yaml
 Alert: LCP Degraded
