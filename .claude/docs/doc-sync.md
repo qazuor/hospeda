@@ -10,12 +10,16 @@ This guide explains how to keep documentation synchronized across the system, va
 
 ## Table of Contents
 
+<!-- markdownlint-disable MD051 -->
+
 1. [Documentation Structure](#documentation-structure)
 2. [Validation Process](#validation-process)
 3. [Sync Scripts](#sync-scripts)
 4. [Update Checklist](#update-checklist)
 5. [Common Sync Issues](#common-sync-issues)
 6. [Automation](#automation)
+
+<!-- markdownlint-enable MD051 -->
 
 ---
 
