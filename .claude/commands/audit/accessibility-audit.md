@@ -659,8 +659,8 @@ Overall Accessibility Score: 85/100 (Good)
 
 | Guideline | Criterion | Status | Notes |
 |-----------|-----------|--------|-------|
-| 1.4.6 Contrast (Enhanced) | ⚠ Partial | Some components 7:1 |
-| 2.1.3 Keyboard (No Exception) | ✓ Pass | All keyboard accessible |
+| 1.4 Distinguishable | 1.4.6 Contrast (Enhanced) | ⚠ Partial | Some components 7:1 |
+| 2.1 Keyboard Accessible | 2.1.3 Keyboard (No Exception) | ✓ Pass | All keyboard accessible |
 
 ## Component Analysis
 
@@ -749,7 +749,7 @@ Overall Accessibility Score: 85/100 (Good)
 
 **Status**: Good ✓
 
-**All features working as expected**
+All features working as expected.
 
 ## Keyboard Testing Results
 
