@@ -1,5 +1,12 @@
 import type { SubscriptionItemModel } from '@repo/db';
-import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
+import {
+    LifecycleStatusEnum,
+    PermissionEnum,
+    RoleEnum,
+    ServiceErrorCode,
+    SubscriptionItemEntityTypeEnum,
+    SubscriptionItemSourceTypeEnum
+} from '@repo/schemas';
 import type { SubscriptionItem } from '@repo/schemas/entities/subscriptionItem';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SubscriptionItemService } from '../../../src/services/subscriptionItem';
@@ -23,16 +30,16 @@ describe('SubscriptionItemService', () => {
     const mockSubscriptionItem: SubscriptionItem = {
         id: 'sub-item-123',
         sourceId: 'subscription-123',
-        sourceType: 'SUBSCRIPTION',
+        sourceType: SubscriptionItemSourceTypeEnum.SUBSCRIPTION,
         linkedEntityId: 'accommodation-listing-123',
-        entityType: 'ACCOMMODATION_LISTING',
+        entityType: SubscriptionItemEntityTypeEnum.ACCOMMODATION_LISTING,
         createdAt: new Date(),
         updatedAt: new Date(),
         deletedAt: null,
         createdById: 'user-123',
         updatedById: 'user-123',
         deletedById: null,
-        lifecycleState: 'ACTIVE',
+        lifecycleState: LifecycleStatusEnum.ACTIVE,
         adminInfo: null
     };
 
@@ -289,7 +296,7 @@ describe('SubscriptionItemService', () => {
                 const result = await service.validatePolymorphicReference(
                     userActor,
                     'accommodation-listing-123',
-                    'ACCOMMODATION_LISTING'
+                    SubscriptionItemEntityTypeEnum.ACCOMMODATION_LISTING
                 );
 
                 expect(result.data).toBeDefined();
@@ -303,7 +310,7 @@ describe('SubscriptionItemService', () => {
                 const result = await service.validatePolymorphicReference(
                     userActor,
                     'non-existent-123',
-                    'CAMPAIGN'
+                    SubscriptionItemEntityTypeEnum.CAMPAIGN
                 );
 
                 expect(result.data).toBeDefined();
@@ -315,7 +322,7 @@ describe('SubscriptionItemService', () => {
                 const result = await service.validatePolymorphicReference(
                     guestActor,
                     'entity-123',
-                    'SPONSORSHIP'
+                    SubscriptionItemEntityTypeEnum.SPONSORSHIP
                 );
 
                 expect(result.error).toBeDefined();
@@ -327,9 +334,9 @@ describe('SubscriptionItemService', () => {
             it('should generate correct access right format', async () => {
                 const subscriptionItemData = {
                     sourceId: 'subscription-123',
-                    sourceType: 'SUBSCRIPTION',
+                    sourceType: SubscriptionItemSourceTypeEnum.SUBSCRIPTION,
                     linkedEntityId: 'campaign-456',
-                    entityType: 'CAMPAIGN'
+                    entityType: SubscriptionItemEntityTypeEnum.CAMPAIGN
                 };
 
                 const result = await service.generateAccessRights(adminActor, subscriptionItemData);
@@ -344,9 +351,9 @@ describe('SubscriptionItemService', () => {
             it('should deny user without create permission', async () => {
                 const subscriptionItemData = {
                     sourceId: 'subscription-123',
-                    sourceType: 'SUBSCRIPTION',
+                    sourceType: SubscriptionItemSourceTypeEnum.SUBSCRIPTION,
                     linkedEntityId: 'campaign-456',
-                    entityType: 'CAMPAIGN'
+                    entityType: SubscriptionItemEntityTypeEnum.CAMPAIGN
                 };
 
                 const result = await service.generateAccessRights(userActor, subscriptionItemData);
@@ -369,36 +376,38 @@ describe('SubscriptionItemService', () => {
                 const result = await service.linkToEntity(
                     adminActor,
                     'subscription-123',
-                    'SUBSCRIPTION',
+                    SubscriptionItemSourceTypeEnum.SUBSCRIPTION,
                     'accommodation-listing-123',
-                    'ACCOMMODATION_LISTING'
+                    SubscriptionItemEntityTypeEnum.ACCOMMODATION_LISTING
                 );
 
                 expect(result.data).toBeDefined();
                 expect(result.error).toBeUndefined();
-                expect(result.data?.entityType).toBe('ACCOMMODATION_LISTING');
+                expect(result.data?.entityType).toBe(
+                    SubscriptionItemEntityTypeEnum.ACCOMMODATION_LISTING
+                );
             });
 
             it('should link purchase to campaign', async () => {
                 const purchaseItem = {
                     ...mockSubscriptionItem,
-                    sourceType: 'PURCHASE',
-                    entityType: 'CAMPAIGN'
+                    sourceType: SubscriptionItemSourceTypeEnum.PURCHASE,
+                    entityType: SubscriptionItemEntityTypeEnum.CAMPAIGN
                 };
                 vi.spyOn(mockModel, 'linkToEntity').mockResolvedValue(purchaseItem);
 
                 const result = await service.linkToEntity(
                     adminActor,
                     'purchase-123',
-                    'PURCHASE',
+                    SubscriptionItemSourceTypeEnum.PURCHASE,
                     'campaign-123',
-                    'CAMPAIGN'
+                    SubscriptionItemEntityTypeEnum.CAMPAIGN
                 );
 
                 expect(result.data).toBeDefined();
                 expect(result.error).toBeUndefined();
-                expect(result.data?.sourceType).toBe('PURCHASE');
-                expect(result.data?.entityType).toBe('CAMPAIGN');
+                expect(result.data?.sourceType).toBe(SubscriptionItemSourceTypeEnum.PURCHASE);
+                expect(result.data?.entityType).toBe(SubscriptionItemEntityTypeEnum.CAMPAIGN);
             });
 
             it('should fail when model returns null', async () => {
@@ -407,9 +416,9 @@ describe('SubscriptionItemService', () => {
                 const result = await service.linkToEntity(
                     adminActor,
                     'subscription-123',
-                    'SUBSCRIPTION',
+                    SubscriptionItemSourceTypeEnum.SUBSCRIPTION,
                     'entity-123',
-                    'SPONSORSHIP'
+                    SubscriptionItemEntityTypeEnum.SPONSORSHIP
                 );
 
                 expect(result.error).toBeDefined();
@@ -420,9 +429,9 @@ describe('SubscriptionItemService', () => {
                 const result = await service.linkToEntity(
                     userActor,
                     'subscription-123',
-                    'SUBSCRIPTION',
+                    SubscriptionItemSourceTypeEnum.SUBSCRIPTION,
                     'entity-123',
-                    'FEATURED_ACCOMMODATION'
+                    SubscriptionItemEntityTypeEnum.FEATURED_ACCOMMODATION
                 );
 
                 expect(result.error).toBeDefined();
@@ -437,9 +446,9 @@ describe('SubscriptionItemService', () => {
                 const result = await service.unlinkFromEntity(
                     adminActor,
                     'subscription-123',
-                    'SUBSCRIPTION',
+                    SubscriptionItemSourceTypeEnum.SUBSCRIPTION,
                     'accommodation-listing-123',
-                    'ACCOMMODATION_LISTING'
+                    SubscriptionItemEntityTypeEnum.ACCOMMODATION_LISTING
                 );
 
                 expect(result.data).toBeDefined();
@@ -453,9 +462,9 @@ describe('SubscriptionItemService', () => {
                 const result = await service.unlinkFromEntity(
                     adminActor,
                     'subscription-123',
-                    'SUBSCRIPTION',
+                    SubscriptionItemSourceTypeEnum.SUBSCRIPTION,
                     'non-existent-123',
-                    'CAMPAIGN'
+                    SubscriptionItemEntityTypeEnum.CAMPAIGN
                 );
 
                 expect(result.data).toBeDefined();
@@ -467,9 +476,9 @@ describe('SubscriptionItemService', () => {
                 const result = await service.unlinkFromEntity(
                     userActor,
                     'subscription-123',
-                    'SUBSCRIPTION',
+                    SubscriptionItemSourceTypeEnum.SUBSCRIPTION,
                     'entity-123',
-                    'SPONSORSHIP'
+                    SubscriptionItemEntityTypeEnum.SPONSORSHIP
                 );
 
                 expect(result.error).toBeDefined();
@@ -485,10 +494,14 @@ describe('SubscriptionItemService', () => {
                 };
                 vi.spyOn(mockModel, 'findByEntityType').mockResolvedValue(mockResult);
 
-                const result = await service.findByEntityType(userActor, 'ACCOMMODATION_LISTING', {
-                    page: 1,
-                    pageSize: 10
-                });
+                const result = await service.findByEntityType(
+                    userActor,
+                    SubscriptionItemEntityTypeEnum.ACCOMMODATION_LISTING,
+                    {
+                        page: 1,
+                        pageSize: 10
+                    }
+                );
 
                 expect(result.data).toBeDefined();
                 expect(result.error).toBeUndefined();
@@ -497,7 +510,10 @@ describe('SubscriptionItemService', () => {
             });
 
             it('should deny guest access', async () => {
-                const result = await service.findByEntityType(guestActor, 'CAMPAIGN');
+                const result = await service.findByEntityType(
+                    guestActor,
+                    SubscriptionItemEntityTypeEnum.CAMPAIGN
+                );
 
                 expect(result.error).toBeDefined();
                 expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
@@ -524,7 +540,7 @@ describe('SubscriptionItemService', () => {
                 const result = await service.findByLinkedEntity(
                     userActor,
                     'accommodation-listing-123',
-                    'ACCOMMODATION_LISTING'
+                    SubscriptionItemEntityTypeEnum.ACCOMMODATION_LISTING
                 );
 
                 expect(result.data).toBeDefined();
@@ -550,7 +566,7 @@ describe('SubscriptionItemService', () => {
                 const result = await service.findBySource(
                     userActor,
                     'subscription-123',
-                    'SUBSCRIPTION'
+                    SubscriptionItemSourceTypeEnum.SUBSCRIPTION
                 );
 
                 expect(result.data).toBeDefined();
@@ -559,15 +575,22 @@ describe('SubscriptionItemService', () => {
             });
 
             it('should find items by purchase source', async () => {
-                const purchaseItem = { ...mockSubscriptionItem, sourceType: 'PURCHASE' };
+                const purchaseItem = {
+                    ...mockSubscriptionItem,
+                    sourceType: SubscriptionItemSourceTypeEnum.PURCHASE
+                };
                 vi.spyOn(mockModel, 'findBySource').mockResolvedValue([purchaseItem]);
 
-                const result = await service.findBySource(userActor, 'purchase-123', 'PURCHASE');
+                const result = await service.findBySource(
+                    userActor,
+                    'purchase-123',
+                    SubscriptionItemSourceTypeEnum.PURCHASE
+                );
 
                 expect(result.data).toBeDefined();
                 expect(result.error).toBeUndefined();
                 expect(result.data).toHaveLength(1);
-                expect(result.data[0]?.sourceType).toBe('PURCHASE');
+                expect(result.data?.[0]?.sourceType).toBe(SubscriptionItemSourceTypeEnum.PURCHASE);
             });
         });
 
@@ -575,7 +598,7 @@ describe('SubscriptionItemService', () => {
             it('should get linked entity info', async () => {
                 const mockLinkedEntity = {
                     linkedEntityId: 'accommodation-listing-123',
-                    entityType: 'ACCOMMODATION_LISTING'
+                    entityType: SubscriptionItemEntityTypeEnum.ACCOMMODATION_LISTING
                 };
                 vi.spyOn(mockModel, 'getLinkedEntity').mockResolvedValue(mockLinkedEntity);
 
@@ -584,7 +607,9 @@ describe('SubscriptionItemService', () => {
                 expect(result.data).toBeDefined();
                 expect(result.error).toBeUndefined();
                 expect(result.data?.linkedEntityId).toBe('accommodation-listing-123');
-                expect(result.data?.entityType).toBe('ACCOMMODATION_LISTING');
+                expect(result.data?.entityType).toBe(
+                    SubscriptionItemEntityTypeEnum.ACCOMMODATION_LISTING
+                );
             });
 
             it('should return null when item not found', async () => {
@@ -638,7 +663,7 @@ describe('SubscriptionItemService', () => {
                 const result = await service.findAccommodationListings(
                     userActor,
                     'subscription-123',
-                    'SUBSCRIPTION'
+                    SubscriptionItemSourceTypeEnum.SUBSCRIPTION
                 );
 
                 expect(result.data).toBeDefined();
@@ -649,37 +674,45 @@ describe('SubscriptionItemService', () => {
 
         describe('findCampaigns', () => {
             it('should find campaign items', async () => {
-                const campaignItem = { ...mockSubscriptionItem, entityType: 'CAMPAIGN' };
+                const campaignItem = {
+                    ...mockSubscriptionItem,
+                    entityType: SubscriptionItemEntityTypeEnum.CAMPAIGN
+                };
                 vi.spyOn(mockModel, 'findCampaigns').mockResolvedValue([campaignItem]);
 
                 const result = await service.findCampaigns(
                     userActor,
                     'subscription-123',
-                    'SUBSCRIPTION'
+                    SubscriptionItemSourceTypeEnum.SUBSCRIPTION
                 );
 
                 expect(result.data).toBeDefined();
                 expect(result.error).toBeUndefined();
                 expect(result.data).toHaveLength(1);
-                expect(result.data[0]?.entityType).toBe('CAMPAIGN');
+                expect(result.data?.[0]?.entityType).toBe(SubscriptionItemEntityTypeEnum.CAMPAIGN);
             });
         });
 
         describe('findSponsorship', () => {
             it('should find sponsorship items', async () => {
-                const sponsorshipItem = { ...mockSubscriptionItem, entityType: 'SPONSORSHIP' };
+                const sponsorshipItem = {
+                    ...mockSubscriptionItem,
+                    entityType: SubscriptionItemEntityTypeEnum.SPONSORSHIP
+                };
                 vi.spyOn(mockModel, 'findSponsorship').mockResolvedValue([sponsorshipItem]);
 
                 const result = await service.findSponsorship(
                     userActor,
                     'subscription-123',
-                    'SUBSCRIPTION'
+                    SubscriptionItemSourceTypeEnum.SUBSCRIPTION
                 );
 
                 expect(result.data).toBeDefined();
                 expect(result.error).toBeUndefined();
                 expect(result.data).toHaveLength(1);
-                expect(result.data[0]?.entityType).toBe('SPONSORSHIP');
+                expect(result.data?.[0]?.entityType).toBe(
+                    SubscriptionItemEntityTypeEnum.SPONSORSHIP
+                );
             });
         });
 
@@ -687,20 +720,22 @@ describe('SubscriptionItemService', () => {
             it('should find featured accommodation items', async () => {
                 const featuredItem = {
                     ...mockSubscriptionItem,
-                    entityType: 'FEATURED_ACCOMMODATION'
+                    entityType: SubscriptionItemEntityTypeEnum.FEATURED_ACCOMMODATION
                 };
                 vi.spyOn(mockModel, 'findFeaturedAccommodations').mockResolvedValue([featuredItem]);
 
                 const result = await service.findFeaturedAccommodations(
                     userActor,
                     'subscription-123',
-                    'SUBSCRIPTION'
+                    SubscriptionItemSourceTypeEnum.SUBSCRIPTION
                 );
 
                 expect(result.data).toBeDefined();
                 expect(result.error).toBeUndefined();
                 expect(result.data).toHaveLength(1);
-                expect(result.data[0]?.entityType).toBe('FEATURED_ACCOMMODATION');
+                expect(result.data?.[0]?.entityType).toBe(
+                    SubscriptionItemEntityTypeEnum.FEATURED_ACCOMMODATION
+                );
             });
         });
 
@@ -708,20 +743,22 @@ describe('SubscriptionItemService', () => {
             it('should find professional service order items', async () => {
                 const orderItem = {
                     ...mockSubscriptionItem,
-                    entityType: 'PROFESSIONAL_SERVICE_ORDER'
+                    entityType: SubscriptionItemEntityTypeEnum.PROFESSIONAL_SERVICE_ORDER
                 };
                 vi.spyOn(mockModel, 'findProfessionalServiceOrders').mockResolvedValue([orderItem]);
 
                 const result = await service.findProfessionalServiceOrders(
                     userActor,
                     'subscription-123',
-                    'SUBSCRIPTION'
+                    SubscriptionItemSourceTypeEnum.SUBSCRIPTION
                 );
 
                 expect(result.data).toBeDefined();
                 expect(result.error).toBeUndefined();
                 expect(result.data).toHaveLength(1);
-                expect(result.data?.[0]?.entityType).toBe('PROFESSIONAL_SERVICE_ORDER');
+                expect(result.data?.[0]?.entityType).toBe(
+                    SubscriptionItemEntityTypeEnum.PROFESSIONAL_SERVICE_ORDER
+                );
             });
         });
 
@@ -729,20 +766,22 @@ describe('SubscriptionItemService', () => {
             it('should find benefit listing items', async () => {
                 const benefitItem: SubscriptionItem = {
                     ...mockSubscriptionItem,
-                    entityType: 'BENEFIT_LISTING'
+                    entityType: SubscriptionItemEntityTypeEnum.BENEFIT_LISTING
                 };
                 vi.spyOn(mockModel, 'findBenefitListings').mockResolvedValue([benefitItem]);
 
                 const result = await service.findBenefitListings(
                     userActor,
                     'subscription-123',
-                    'SUBSCRIPTION'
+                    SubscriptionItemSourceTypeEnum.SUBSCRIPTION
                 );
 
                 expect(result.data).toBeDefined();
                 expect(result.error).toBeUndefined();
                 expect(result.data).toHaveLength(1);
-                expect(result.data?.[0]?.entityType).toBe('BENEFIT_LISTING');
+                expect(result.data?.[0]?.entityType).toBe(
+                    SubscriptionItemEntityTypeEnum.BENEFIT_LISTING
+                );
             });
         });
 
@@ -750,20 +789,22 @@ describe('SubscriptionItemService', () => {
             it('should find service listing items', async () => {
                 const serviceItem: SubscriptionItem = {
                     ...mockSubscriptionItem,
-                    entityType: 'SERVICE_LISTING'
+                    entityType: SubscriptionItemEntityTypeEnum.SERVICE_LISTING
                 };
                 vi.spyOn(mockModel, 'findServiceListings').mockResolvedValue([serviceItem]);
 
                 const result = await service.findServiceListings(
                     userActor,
                     'subscription-123',
-                    'SUBSCRIPTION'
+                    SubscriptionItemSourceTypeEnum.SUBSCRIPTION
                 );
 
                 expect(result.data).toBeDefined();
                 expect(result.error).toBeUndefined();
                 expect(result.data).toHaveLength(1);
-                expect(result.data?.[0]?.entityType).toBe('SERVICE_LISTING');
+                expect(result.data?.[0]?.entityType).toBe(
+                    SubscriptionItemEntityTypeEnum.SERVICE_LISTING
+                );
             });
         });
     });
