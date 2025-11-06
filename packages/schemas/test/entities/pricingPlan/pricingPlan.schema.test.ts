@@ -23,7 +23,9 @@ describe('PricingPlan Schema', () => {
                 updatedAt: new Date('2024-01-15T10:00:00Z'),
                 createdById: '111e1111-e11b-11d1-a111-111111111111',
                 updatedById: '111e1111-e11b-11d1-a111-111111111111',
-                metadata: { tier: 'basic', features: ['feature1'] }
+                deletedAt: null,
+                deletedById: null,
+                adminInfo: null
             };
 
             const result = PricingPlanSchema.safeParse(validPricingPlan);
@@ -50,7 +52,9 @@ describe('PricingPlan Schema', () => {
                 updatedAt: new Date('2024-01-15T10:00:00Z'),
                 createdById: '111e1111-e11b-11d1-a111-111111111111',
                 updatedById: '111e1111-e11b-11d1-a111-111111111111',
-                metadata: {}
+                deletedAt: null,
+                deletedById: null,
+                adminInfo: null
             };
 
             const result = PricingPlanSchema.safeParse(oneTimePricingPlan);
@@ -140,7 +144,9 @@ describe('PricingPlan Schema', () => {
                 updatedAt: new Date(),
                 createdById: '111e1111-e11b-11d1-a111-111111111111',
                 updatedById: '111e1111-e11b-11d1-a111-111111111111',
-                metadata: {}
+                deletedAt: null,
+                deletedById: null,
+                adminInfo: null
             };
 
             const result = PricingPlanSchema.safeParse(validPlan);
