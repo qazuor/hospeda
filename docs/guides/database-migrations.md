@@ -24,7 +24,7 @@ This guide covers the complete workflow for managing database schema changes usi
 
 **Scenario**: Add a `rating` column to the `accommodations` table.
 
-**Step 1: Modify Schema**
+#### Step 1: Modify Schema
 
 Edit the schema file:
 
@@ -47,7 +47,7 @@ export const accommodationTable = pgTable('accommodations', {
 });
 ```
 
-**Step 2: Generate Migration**
+#### Step 2: Generate Migration
 
 ```bash
 cd packages/db
@@ -64,7 +64,7 @@ Drizzle Kit: Generating migration...
 📁 Location: packages/db/src/migrations/
 ```
 
-**Step 3: Review Generated SQL**
+#### Step 3: Review Generated SQL
 
 ```bash
 # Open the generated migration file
@@ -81,7 +81,7 @@ ALTER TABLE "accommodations"
 ADD COLUMN "rating" NUMERIC(3,2) DEFAULT '0.00';
 ```
 
-**Step 4: Apply Migration**
+#### Step 4: Apply Migration
 
 ```bash
 pnpm db:migrate
@@ -94,7 +94,7 @@ Drizzle Kit: Applying migrations...
 ✔ Migration 0001_add_rating_to_accommodations applied successfully!
 ```
 
-**Step 5: Verify Changes**
+#### Step 5: Verify Changes
 
 ```bash
 # Open Drizzle Studio
@@ -134,7 +134,7 @@ graph TD
 
 ### Step-by-Step Workflow
 
-**1. Identify Schema Change**
+#### 1. Identify Schema Change
 
 Determine what needs to change:
 
@@ -145,7 +145,7 @@ Determine what needs to change:
 - Adding foreign keys
 - Renaming columns/tables
 
-**2. Modify Schema File**
+#### 2. Modify Schema File
 
 Edit the appropriate schema file in `packages/db/src/schemas/`:
 
@@ -167,7 +167,7 @@ export const reviewTable = pgTable('reviews', {
 });
 ```
 
-**3. Generate Migration**
+#### 3. Generate Migration
 
 ```bash
 cd packages/db
@@ -180,7 +180,7 @@ Drizzle Kit will:
 - Generate SQL to apply changes
 - Create a migration file with timestamp
 
-**4. Review Generated SQL**
+#### 4. Review Generated SQL
 
 **IMPORTANT**: Always review the generated SQL before applying!
 
@@ -198,7 +198,7 @@ Check for:
 - Index creation
 - Data preservation
 
-**5. Test Locally**
+#### 5. Test Locally
 
 ```bash
 # Apply migration
@@ -211,7 +211,7 @@ pnpm test
 pnpm db:studio
 ```
 
-**6. Commit and Deploy**
+#### 6. Commit and Deploy
 
 ```bash
 # Add migration files
@@ -312,7 +312,7 @@ ADD COLUMN "phone" VARCHAR(20);
 
 **Solution**: Two-step process
 
-**Step 1: Add column as nullable with default**
+#### Step 1: Add Column as Nullable with Default
 
 ```typescript
 export const accommodationTable = pgTable('accommodations', {
@@ -328,7 +328,7 @@ pnpm db:generate
 pnpm db:migrate
 ```
 
-**Step 2: Populate data and make non-nullable**
+#### Step 2: Populate Data and Make Non-Nullable
 
 After data is populated:
 
@@ -487,7 +487,7 @@ ON UPDATE CASCADE;
 
 **Solution**: Create custom migration
 
-**Step 1: Rename in schema**
+#### Step 1: Rename in Schema
 
 ```typescript
 // Before
@@ -497,13 +497,13 @@ oldName: varchar('old_name', { length: 255 })
 newName: varchar('new_name', { length: 255 })
 ```
 
-**Step 2: Generate migration**
+#### Step 2: Generate Migration
 
 ```bash
 pnpm db:generate
 ```
 
-**Step 3: Edit generated SQL**
+#### Step 3: Edit Generated SQL
 
 Drizzle generates (WRONG):
 
@@ -520,7 +520,7 @@ ALTER TABLE "accommodations"
 RENAME COLUMN "old_name" TO "new_name";
 ```
 
-**Step 4: Apply migration**
+#### Step 4: Apply Migration
 
 ```bash
 pnpm db:migrate
@@ -530,7 +530,7 @@ pnpm db:migrate
 
 **Same issue as columns** - requires custom SQL
 
-**Step 1: Rename in schema**
+#### Step 1: Rename in Schema
 
 ```typescript
 // Before
@@ -540,7 +540,7 @@ export const oldTable = pgTable('old_table', { /* ... */ });
 export const newTable = pgTable('new_table', { /* ... */ });
 ```
 
-**Step 2: Edit generated SQL**
+#### Step 2: Edit Generated SQL
 
 Change from:
 
@@ -735,7 +735,7 @@ pnpm db:migrate
 
 **Scenario**: Add `status` enum to bookings
 
-**Step 1: Create PostgreSQL enum**
+#### Step 1: Create PostgreSQL Enum
 
 ```typescript
 // packages/db/src/schemas/enums.ts
@@ -749,7 +749,7 @@ export const bookingStatusEnum = pgEnum('booking_status', [
 ]);
 ```
 
-**Step 2: Use in table**
+#### Step 2: Use in Table
 
 ```typescript
 // packages/db/src/schemas/booking/table.ts
@@ -872,7 +872,7 @@ Error: Schema file not found
 
 **Solutions**:
 
-**Solution 1: Check database connection**
+#### Solution 1: Check Database Connection
 
 ```bash
 # Test connection
@@ -882,7 +882,7 @@ docker exec -it hospeda_postgres psql -U hospeda_user -d hospeda_dev
 docker compose up -d postgres
 ```
 
-**Solution 2: Verify drizzle.config.ts**
+#### Solution 2: Verify drizzle.config.ts
 
 ```typescript
 // packages/db/drizzle.config.ts
@@ -896,7 +896,7 @@ export default {
 } satisfies Config;
 ```
 
-**Solution 3: Check environment variable**
+#### Solution 3: Check Environment Variable
 
 ```bash
 echo $HOSPEDA_DATABASE_URL
@@ -913,14 +913,14 @@ Error: Migration 0001_xxx already applied
 Error: Duplicate column name
 ```
 
-**Solution 1: Check migration history**
+#### Solution 1: Check Migration History
 
 ```sql
 -- See applied migrations
 SELECT * FROM drizzle_migrations;
 ```
 
-**Solution 2: Reset local database**
+#### Solution 2: Reset Local Database
 
 ```bash
 # ⚠️ WARNING: Deletes all data!
@@ -930,7 +930,7 @@ pnpm db:migrate
 pnpm db:seed
 ```
 
-**Solution 3: Manual fix**
+#### Solution 3: Manual Fix
 
 If duplicate column:
 
@@ -951,21 +951,21 @@ Error: constraint violation
 Error: null value in column "xxx" violates not-null constraint
 ```
 
-**Solution 1: Check existing data**
+#### Solution 1: Check Existing Data
 
 ```sql
 -- Check for null values
 SELECT COUNT(*) FROM accommodations WHERE email IS NULL;
 ```
 
-**Solution 2: Populate nulls before migration**
+#### Solution 2: Populate Nulls Before Migration
 
 ```sql
 -- Add default value first
 UPDATE accommodations SET email = 'noreply@hospeda.com' WHERE email IS NULL;
 ```
 
-**Solution 3: Modify migration**
+#### Solution 3: Modify Migration
 
 ```sql
 -- Instead of adding NOT NULL directly
@@ -976,18 +976,18 @@ ALTER TABLE accommodations ALTER COLUMN email SET NOT NULL;
 
 ### Issue 4: Rollback Needed
 
-**Drizzle doesn't support automatic rollback**
+#### Drizzle Doesn't Support Automatic Rollback
 
 **Manual rollback**:
 
-**Option 1: Restore from backup**
+#### Option 1: Restore from Backup
 
 ```bash
 # Restore database from backup
 docker exec -i hospeda_postgres psql -U hospeda_user hospeda_dev < backup.sql
 ```
 
-**Option 2: Write reverse migration**
+#### Option 2: Write Reverse Migration
 
 ```sql
 -- If migration added column
@@ -1000,7 +1000,7 @@ DROP TABLE reviews;
 DROP INDEX idx_accommodations_city;
 ```
 
-**Option 3: Reset and replay**
+#### Option 3: Reset and Replay
 
 ```bash
 # Last resort: reset and replay all migrations except problematic one
@@ -1034,7 +1034,7 @@ CREATE INDEX CONCURRENTLY idx_accommodations_city ON accommodations(city);
 
 **Note**: Can't use inside transaction, requires separate migration
 
-**Solution 2: Batch updates**
+#### Solution 2: Batch Updates
 
 ```sql
 -- Instead of updating all at once
@@ -1075,7 +1075,7 @@ END $$;
 
 **Example**: Adding required column
 
-**Step 1: Deploy code with optional handling**
+#### Step 1: Deploy Code with Optional Handling
 
 ```typescript
 // Code works with OR without new column
@@ -1091,14 +1091,14 @@ function getAccommodation(id: string) {
 }
 ```
 
-**Step 2: Run migration**
+#### Step 2: Run Migration
 
 ```bash
 # Add column as nullable first
 ALTER TABLE accommodations ADD COLUMN rating NUMERIC(3,2);
 ```
 
-**Step 3: Deploy code requiring column**
+#### Step 3: Deploy Code Requiring Column
 
 ```typescript
 // Now assume column always exists
