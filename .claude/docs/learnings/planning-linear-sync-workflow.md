@@ -67,4 +67,4 @@ Manual planning synchronization causes:
 
 ---
 
-*Last updated: 2024-10-28*
+Last updated: 2024-10-28

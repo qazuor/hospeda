@@ -43,4 +43,4 @@ ls *.md | xargs -I {} echo {}
 
 ---
 
-*Last updated: 2024-10-28*
+Last updated: 2024-10-28

@@ -146,4 +146,4 @@ export type User = z.infer<typeof userSchema>;
 
 ---
 
-*Last updated: 2024-10-28*
+Last updated: 2024-10-28

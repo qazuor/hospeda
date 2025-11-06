@@ -65,4 +65,4 @@ import { UserModel } from './user.model.js';
 
 ---
 
-*Last updated: 2024-10-28*
+Last updated: 2024-10-28

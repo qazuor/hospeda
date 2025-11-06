@@ -61,4 +61,4 @@ pnpm run test        # All packages/apps
 
 ---
 
-*Last updated: 2024-10-28*
+Last updated: 2024-10-28

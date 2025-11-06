@@ -492,4 +492,4 @@ The process of syncing planning sessions to GitHub Issues for tracking.
 
 ---
 
-*Last updated: 2025-10-31*
+Last updated: 2025-10-31
