@@ -1,0 +1,144 @@
+---
+title: Service Layer Architecture
+description: Service layer architecture with BaseCrudService pattern
+author: Tech Team
+date: 2025-11-06
+---
+
+```mermaid
+graph TD
+    %% Base Service
+    BaseService[🎯 BaseCrudService<T><br/>Abstract Base Class]
+
+    %% Base Properties
+    subgraph BaseProperties[Base Properties]
+        Context[🔐 ctx: ServiceContext<br/>- actor: Actor<br/>- requestId: string]
+        Model[🗃️ model: BaseModel<T>]
+        Logger[📝 logger: Logger]
+    end
+
+    %% Base Methods
+    subgraph BaseMethods[Base CRUD Methods]
+        Create[➕ create input<br/>→ ServiceOutput<T>]
+        FindById[🔍 findById id<br/>→ ServiceOutput<T>]
+        FindAll[📋 findAll filters<br/>→ ServiceOutput<T[]>]
+        Update[✏️ update id, data<br/>→ ServiceOutput<T>]
+        SoftDelete[🗑️ softDelete id<br/>→ ServiceOutput<void>]
+        HardDelete[❌ hardDelete id<br/>→ ServiceOutput<void>]
+        Restore[♻️ restore id<br/>→ ServiceOutput<T>]
+    end
+
+    %% Helper Methods
+    subgraph HelperMethods[Helper Methods]
+        RunWithLogging[🔧 runWithLoggingAndValidation<br/>- Validate input Zod<br/>- Log operation<br/>- Handle errors<br/>- Return ServiceOutput]
+        CheckPermissions[🔒 checkPermissions<br/>- Verify actor permissions<br/>- Throw FORBIDDEN]
+    end
+
+    %% Concrete Services
+    AccommodationService[🏠 AccommodationService<br/>extends BaseCrudService]
+    DestinationService[📍 DestinationService<br/>extends BaseCrudService]
+    EventService[🎉 EventService<br/>extends BaseCrudService]
+    PostService[📰 PostService<br/>extends BaseCrudService]
+    UserService[👤 UserService<br/>extends BaseCrudService]
+    ReviewService[⭐ ReviewService<br/>extends BaseCrudService]
+    SubscriptionService[💳 SubscriptionService<br/>extends BaseCrudService]
+    PurchaseService[🛒 PurchaseService<br/>extends BaseCrudService]
+    PricingTierService[💰 PricingTierService<br/>extends BaseCrudService]
+
+    %% Custom Methods Examples
+    subgraph AccommodationCustom[Accommodation Custom Methods]
+        SearchAccommodations[🔍 searchAccommodations<br/>- Full-text search<br/>- Filters: city, price<br/>- Pagination]
+        GetFeatured[⭐ getFeaturedAccommodations<br/>- Filter by featured<br/>- Sort by rating]
+        CheckAvailability[📅 checkAvailability<br/>- Date range check<br/>- Return boolean]
+    end
+
+    subgraph SubscriptionCustom[Subscription Custom Methods]
+        Subscribe[➕ subscribe<br/>- Create subscription<br/>- Process payment<br/>- Activate features]
+        Cancel[❌ cancel<br/>- Cancel subscription<br/>- Update billing<br/>- Deactivate features]
+        Renew[🔄 renew<br/>- Renew subscription<br/>- Charge payment<br/>- Extend period]
+    end
+
+    subgraph PurchaseCustom[Purchase Custom Methods]
+        ProcessPayment[💳 processPayment<br/>- Validate payment<br/>- Create transaction<br/>- Update status]
+        RefundPayment[↩️ refundPayment<br/>- Process refund<br/>- Update transaction<br/>- Notify user]
+    end
+
+    %% Service Context Flow
+    APIRequest[🔌 API Request]
+    CreateContext[🔐 Create ServiceContext<br/>- Extract actor from JWT<br/>- Generate requestId]
+    InstantiateService[⚙️ Instantiate Service<br/>new XxxService ctx]
+    CallMethod[📞 Call Service Method<br/>service.create data]
+
+    %% Internal Flow
+    ValidateInput[✅ Validate Input<br/>Zod Schema]
+    CheckPerms[🔒 Check Permissions<br/>Actor + Resource]
+    CallModel[🗃️ Call Model Method<br/>model.create data]
+    HandleResult[📦 Handle Result<br/>Transform to ServiceOutput]
+    ReturnOutput[📤 Return ServiceOutput<br/>success + data/error]
+
+    %% Service Output
+    subgraph ServiceOutput[ServiceOutput<T>]
+        SuccessPath[✅ Success Path<br/>success: true<br/>data: T]
+        ErrorPath[❌ Error Path<br/>success: false<br/>error: ServiceError]
+    end
+
+    %% Relationships
+    BaseService --> BaseProperties
+    BaseService --> BaseMethods
+    BaseService --> HelperMethods
+
+    BaseService -.->|extends| AccommodationService
+    BaseService -.->|extends| DestinationService
+    BaseService -.->|extends| EventService
+    BaseService -.->|extends| PostService
+    BaseService -.->|extends| UserService
+    BaseService -.->|extends| ReviewService
+    BaseService -.->|extends| SubscriptionService
+    BaseService -.->|extends| PurchaseService
+    BaseService -.->|extends| PricingTierService
+
+    AccommodationService --> AccommodationCustom
+    SubscriptionService --> SubscriptionCustom
+    PurchaseService --> PurchaseCustom
+
+    %% Flow
+    APIRequest --> CreateContext
+    CreateContext --> InstantiateService
+    InstantiateService --> CallMethod
+    CallMethod --> ValidateInput
+    ValidateInput --> CheckPerms
+    CheckPerms --> CallModel
+    CallModel --> HandleResult
+    HandleResult --> ReturnOutput
+    ReturnOutput --> ServiceOutput
+
+    ServiceOutput --> SuccessPath
+    ServiceOutput --> ErrorPath
+
+    %% Error Handling
+    ValidateInput -.->|Invalid| ErrorPath
+    CheckPerms -.->|Forbidden| ErrorPath
+    CallModel -.->|DB Error| ErrorPath
+    HandleResult -.->|Business Logic Error| ErrorPath
+
+    %% Styling
+    classDef base fill:#1e293b,stroke:#0f172a,color:#fff
+    classDef properties fill:#3b82f6,stroke:#1e40af,color:#fff
+    classDef methods fill:#10b981,stroke:#059669,color:#fff
+    classDef helpers fill:#f59e0b,stroke:#d97706,color:#fff
+    classDef concrete fill:#8b5cf6,stroke:#7c3aed,color:#fff
+    classDef custom fill:#ec4899,stroke:#db2777,color:#fff
+    classDef flow fill:#06b6d4,stroke:#0891b2,color:#fff
+    classDef output fill:#22c55e,stroke:#16a34a,color:#fff
+    classDef error fill:#ef4444,stroke:#dc2626,color:#fff
+
+    class BaseService base
+    class Context,Model,Logger properties
+    class Create,FindById,FindAll,Update,SoftDelete,HardDelete,Restore methods
+    class RunWithLogging,CheckPermissions helpers
+    class AccommodationService,DestinationService,EventService,PostService,UserService,ReviewService,SubscriptionService,PurchaseService,PricingTierService concrete
+    class SearchAccommodations,GetFeatured,CheckAvailability,Subscribe,Cancel,Renew,ProcessPayment,RefundPayment custom
+    class APIRequest,CreateContext,InstantiateService,CallMethod,ValidateInput,CheckPerms,CallModel,HandleResult,ReturnOutput flow
+    class SuccessPath output
+    class ErrorPath error
+```

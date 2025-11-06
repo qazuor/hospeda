@@ -1,0 +1,148 @@
+---
+title: CI/CD Pipeline
+description: Continuous Integration and Deployment pipeline for Hospeda
+author: Tech Team
+date: 2025-11-06
+---
+
+```mermaid
+graph LR
+    %% Trigger
+    Trigger([🚀 Git Push])
+
+    %% GitHub Actions - CI Phase
+    subgraph GitHubActions[⚙️ GitHub Actions CI]
+        Checkout[📥 Checkout Code<br/>actions/checkout@v4]
+        SetupNode[🟢 Setup Node.js 20<br/>actions/setup-node@v4]
+        SetupPNPM[📦 Setup PNPM<br/>pnpm/action-setup@v2]
+        Install[📦 Install Dependencies<br/>pnpm install --frozen-lockfile]
+        Lint[🧹 Lint<br/>pnpm lint]
+        TypeCheck[🔍 Type Check<br/>pnpm typecheck]
+        Test[🧪 Run Tests<br/>pnpm test:coverage]
+        Build[🏗️ Build Apps<br/>pnpm build]
+        CIPassed{✅ All Checks<br/>Passed?}
+    end
+
+    %% Failure Path
+    Fail[❌ Pipeline Failed]
+    Notify[📧 Notify Team<br/>GitHub Notification]
+    FixIssues[🔧 Fix Issues]
+
+    %% Success Path - Branch Detection
+    BranchDetect{🌳 Branch?}
+
+    %% Preview Deployment
+    subgraph VercelPreview[🔍 Vercel Preview Deployment]
+        PreviewBuild[🏗️ Build Preview]
+        PreviewMigrate[🔄 Run Migrations<br/>Preview DB]
+        PreviewDeploy[🚀 Deploy to Preview]
+        PreviewURL[🔗 Generate Preview URL]
+        PreviewComment[💬 Comment on PR]
+    end
+
+    %% Production Deployment
+    subgraph VercelProduction[🚀 Vercel Production Deployment]
+        ProdBuild[🏗️ Build Production]
+        ProdMigrate[🔄 Run Migrations<br/>Production DB]
+        ProdDeploy[🚀 Deploy to Production]
+        ProdURL[🔗 Update Production URL]
+        ProdVerify[✅ Verify Deployment]
+    end
+
+    %% Post-Deployment
+    subgraph PostDeployment[📊 Post-Deployment]
+        HealthCheck[🏥 Health Check<br/>/api/health]
+        SmokeTests[🧪 Smoke Tests]
+        Monitoring[📈 Start Monitoring]
+        Logs[📝 Check Logs]
+    end
+
+    %% Deployment Status
+    DeploySuccess{✅ Deploy<br/>Success?}
+    DeployFailed[❌ Deployment Failed]
+    Rollback[↩️ Auto Rollback<br/>Previous Version]
+    Alert[🚨 Alert Team]
+    Done([✨ Complete])
+
+    %% Flow
+    Trigger --> Checkout
+    Checkout --> SetupNode
+    SetupNode --> SetupPNPM
+    SetupPNPM --> Install
+    Install --> Lint
+    Lint --> TypeCheck
+    TypeCheck --> Test
+    Test --> Build
+    Build --> CIPassed
+
+    CIPassed -->|No ✗| Fail
+    Fail --> Notify
+    Notify --> FixIssues
+    FixIssues -.->|Push Again| Trigger
+
+    CIPassed -->|Yes ✓| BranchDetect
+
+    %% Branch Routing
+    BranchDetect -->|PR/Feature| PreviewBuild
+    PreviewBuild --> PreviewMigrate
+    PreviewMigrate --> PreviewDeploy
+    PreviewDeploy --> PreviewURL
+    PreviewURL --> PreviewComment
+    PreviewComment --> DeploySuccess
+
+    BranchDetect -->|Main| ProdBuild
+    ProdBuild --> ProdMigrate
+    ProdMigrate --> ProdDeploy
+    ProdDeploy --> ProdURL
+    ProdURL --> ProdVerify
+    ProdVerify --> DeploySuccess
+
+    %% Post-Deployment Flow
+    DeploySuccess -->|Yes ✓| HealthCheck
+    HealthCheck --> SmokeTests
+    SmokeTests --> Monitoring
+    Monitoring --> Logs
+    Logs --> Done
+
+    DeploySuccess -->|No ✗| DeployFailed
+    DeployFailed --> Rollback
+    Rollback --> Alert
+    Alert --> FixIssues
+
+    %% Pipeline Steps Detail
+    subgraph PipelineSteps[Pipeline Steps Detail]
+        Step1[1️⃣ Code Quality<br/>Lint + TypeCheck]
+        Step2[2️⃣ Testing<br/>Unit + Integration]
+        Step3[3️⃣ Build<br/>Compile TypeScript]
+        Step4[4️⃣ Deploy<br/>Vercel Edge]
+        Step5[5️⃣ Verify<br/>Health Checks]
+    end
+
+    %% Environment Variables
+    subgraph EnvVars[🔐 Environment Variables]
+        DevEnv[Development<br/>.env.local]
+        PreviewEnv[Preview<br/>Vercel Env]
+        ProdEnv[Production<br/>Vercel Env]
+    end
+
+    BranchDetect -.->|Load| EnvVars
+
+    %% Styling
+    classDef trigger fill:#3b82f6,stroke:#1e40af,color:#fff
+    classDef ci fill:#10b981,stroke:#059669,color:#fff
+    classDef preview fill:#f59e0b,stroke:#d97706,color:#fff
+    classDef production fill:#8b5cf6,stroke:#7c3aed,color:#fff
+    classDef postdeploy fill:#06b6d4,stroke:#0891b2,color:#fff
+    classDef failure fill:#ef4444,stroke:#dc2626,color:#fff
+    classDef success fill:#22c55e,stroke:#16a34a,color:#fff
+    classDef decision fill:#6b7280,stroke:#4b5563,color:#fff
+
+    class Trigger trigger
+    class Checkout,SetupNode,SetupPNPM,Install,Lint,TypeCheck,Test,Build ci
+    class PreviewBuild,PreviewMigrate,PreviewDeploy,PreviewURL,PreviewComment preview
+    class ProdBuild,ProdMigrate,ProdDeploy,ProdURL,ProdVerify production
+    class HealthCheck,SmokeTests,Monitoring,Logs postdeploy
+    class Fail,Notify,FixIssues,DeployFailed,Rollback,Alert failure
+    class Done success
+    class CIPassed,BranchDetect,DeploySuccess decision
+```

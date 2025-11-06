@@ -1,0 +1,95 @@
+---
+title: TDD Workflow
+description: Red-Green-Refactor TDD cycle for Hospeda development
+author: Tech Team
+date: 2025-11-06
+---
+
+```mermaid
+graph LR
+    %% Red Phase
+    Start([🎯 Start New Feature])
+    WriteTest[✍️ Write Test<br/>test/feature.test.ts]
+    AAA[📋 AAA Pattern<br/>Arrange<br/>Act<br/>Assert]
+    RunRed[▶️ Run Test]
+    TestFails{❌ Test Fails?}
+
+    %% Green Phase
+    WriteCode[💻 Write Minimal Code<br/>src/feature.ts]
+    RunGreen[▶️ Run Test Again]
+    TestPasses{✅ Test Passes?}
+
+    %% Refactor Phase
+    NeedsRefactor{🤔 Needs<br/>Refactoring?}
+    Refactor[♻️ Refactor Code<br/>- Extract functions<br/>- Remove duplication<br/>- Improve naming]
+    RunRefactor[▶️ Run Test Again]
+    StillPasses{✅ Still Passes?}
+
+    %% Quality Check
+    Coverage{📊 90% Coverage<br/>Achieved?}
+    TypeCheck[🔍 Type Check<br/>pnpm typecheck]
+    Lint[🧹 Lint<br/>pnpm lint]
+    AllGood{✅ All Checks<br/>Pass?}
+
+    %% Commit
+    Commit[💾 Commit Changes<br/>feat: add feature]
+    Push[⬆️ Push to GitHub]
+
+    %% Next Feature
+    MoreFeatures{🔄 More Features?}
+    Done([✨ Done])
+
+    %% Flow
+    Start --> WriteTest
+    WriteTest --> AAA
+    AAA --> RunRed
+    RunRed --> TestFails
+
+    TestFails -->|Yes ✓| WriteCode
+    TestFails -->|No ✗<br/>Test should fail first| WriteTest
+
+    WriteCode --> RunGreen
+    RunGreen --> TestPasses
+
+    TestPasses -->|No ✗<br/>Fix code| WriteCode
+    TestPasses -->|Yes ✓| NeedsRefactor
+
+    NeedsRefactor -->|Yes| Refactor
+    NeedsRefactor -->|No| Coverage
+
+    Refactor --> RunRefactor
+    RunRefactor --> StillPasses
+
+    StillPasses -->|No ✗<br/>Revert refactor| NeedsRefactor
+    StillPasses -->|Yes ✓| Coverage
+
+    Coverage -->|No ✗<br/>Write more tests| WriteTest
+    Coverage -->|Yes ✓| TypeCheck
+
+    TypeCheck --> Lint
+    Lint --> AllGood
+
+    AllGood -->|No ✗<br/>Fix issues| WriteCode
+    AllGood -->|Yes ✓| Commit
+
+    Commit --> Push
+    Push --> MoreFeatures
+
+    MoreFeatures -->|Yes| Start
+    MoreFeatures -->|No| Done
+
+    %% Styling
+    classDef redPhase fill:#ef4444,stroke:#dc2626,color:#fff
+    classDef greenPhase fill:#10b981,stroke:#059669,color:#fff
+    classDef refactorPhase fill:#f59e0b,stroke:#d97706,color:#fff
+    classDef qualityPhase fill:#8b5cf6,stroke:#7c3aed,color:#fff
+    classDef commitPhase fill:#06b6d4,stroke:#0891b2,color:#fff
+    classDef decision fill:#6b7280,stroke:#4b5563,color:#fff
+
+    class WriteTest,AAA,RunRed,TestFails redPhase
+    class WriteCode,RunGreen,TestPasses greenPhase
+    class NeedsRefactor,Refactor,RunRefactor,StillPasses refactorPhase
+    class Coverage,TypeCheck,Lint,AllGood qualityPhase
+    class Commit,Push commitPhase
+    class TestFails,TestPasses,NeedsRefactor,StillPasses,Coverage,AllGood,MoreFeatures decision
+```

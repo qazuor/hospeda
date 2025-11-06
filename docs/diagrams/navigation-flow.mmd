@@ -1,0 +1,126 @@
+---
+title: Navigation Flow
+description: User navigation paths for web and admin applications
+author: Tech Team
+date: 2025-11-06
+---
+
+```mermaid
+graph TD
+    %% Web App Navigation
+    subgraph WebApp[🌐 Web App - Public Site]
+        Home[🏠 Home Page]
+        Browse[🔍 Browse Accommodations]
+        AccDetail[🏡 Accommodation Detail]
+        Book[📅 Book/Contact]
+
+        Destinations[🗺️ Browse Destinations]
+        DestDetail[📍 Destination Detail]
+        DestAccommodations[🏘️ Destination Accommodations]
+
+        Events[🎉 Browse Events]
+        EventDetail[🎊 Event Detail]
+
+        Blog[📰 Blog]
+        PostDetail[📄 Post Detail]
+
+        Search[🔎 Search]
+        Login[🔐 Login/Signup]
+        Profile[👤 User Profile]
+    end
+
+    %% Admin App Navigation
+    subgraph AdminApp[⚙️ Admin App - Dashboard]
+        Dashboard[📊 Dashboard]
+        Analytics[📈 Analytics]
+
+        AccommodationsList[🏘️ Accommodations List]
+        AccommodationCreate[➕ Create Accommodation]
+        AccommodationEdit[✏️ Edit Accommodation]
+        AccommodationView[👁️ View Details]
+        AccommodationPublish[🚀 Publish]
+
+        DestinationsList[📍 Destinations List]
+        DestinationsManage[⚙️ Manage Destinations]
+
+        EventsList[🎉 Events List]
+        EventsManage[⚙️ Manage Events]
+
+        PostsList[📰 Posts List]
+        PostCreate[➕ Create Post]
+        PostEdit[✏️ Edit Post]
+        PostPublish[🚀 Publish Post]
+
+        UsersList[👥 Users List]
+        UsersManage[⚙️ Manage Users]
+
+        SubscriptionsList[💳 Subscriptions List]
+        SubscriptionsManage[⚙️ Manage Subscriptions]
+
+        Settings[⚙️ Settings]
+    end
+
+    %% Web App Flow
+    Home --> Browse
+    Home --> Destinations
+    Home --> Events
+    Home --> Blog
+    Home --> Search
+    Home --> Login
+
+    Browse --> AccDetail
+    AccDetail --> Book
+    Book -->|Auth Gate| Login
+    Login --> Profile
+
+    Destinations --> DestDetail
+    DestDetail --> DestAccommodations
+    DestAccommodations --> AccDetail
+
+    Events --> EventDetail
+
+    Blog --> PostDetail
+
+    Search --> AccDetail
+    Search --> DestDetail
+    Search --> EventDetail
+
+    %% Admin App Flow
+    Dashboard --> Analytics
+    Dashboard --> AccommodationsList
+    Dashboard --> DestinationsList
+    Dashboard --> EventsList
+    Dashboard --> PostsList
+    Dashboard --> UsersList
+    Dashboard --> SubscriptionsList
+    Dashboard --> Settings
+
+    AccommodationsList --> AccommodationCreate
+    AccommodationsList --> AccommodationEdit
+    AccommodationsList --> AccommodationView
+    AccommodationEdit --> AccommodationPublish
+
+    PostsList --> PostCreate
+    PostsList --> PostEdit
+    PostEdit --> PostPublish
+
+    DestinationsList --> DestinationsManage
+    EventsList --> EventsManage
+    UsersList --> UsersManage
+    SubscriptionsList --> SubscriptionsManage
+
+    %% Cross-App Navigation
+    Login -.->|Admin Login| Dashboard
+    AccommodationPublish -.->|Preview| AccDetail
+
+    %% Styling
+    classDef webPage fill:#3b82f6,stroke:#1e40af,color:#fff
+    classDef adminPage fill:#10b981,stroke:#059669,color:#fff
+    classDef authGate fill:#ef4444,stroke:#dc2626,color:#fff
+    classDef action fill:#f59e0b,stroke:#d97706,color:#fff
+
+    class Home,Browse,AccDetail,Destinations,DestDetail,Events,EventDetail,Blog,PostDetail,Search,Profile webPage
+    class Dashboard,Analytics,AccommodationsList,DestinationsList,EventsList,PostsList,UsersList,SubscriptionsList,Settings adminPage
+    class Login,Book authGate
+    class AccommodationCreate,AccommodationEdit,AccommodationPublish,PostCreate,PostEdit,PostPublish,AccommodationView action
+```

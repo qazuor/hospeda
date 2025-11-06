@@ -1,0 +1,95 @@
+---
+title: Deployment Architecture
+description: Complete infrastructure and deployment architecture for Hospeda platform
+author: Tech Team
+date: 2025-11-06
+---
+
+```mermaid
+graph TD
+    %% Users
+    User[👤 User Browser]
+
+    %% Edge & CDN Layer
+    Edge[🌐 Vercel Edge Network]
+    CDN[📦 CDN - Static Assets]
+
+    %% Frontend Applications
+    WebApp[🏠 Web App<br/>Astro SSR/Static<br/>Port: 4321]
+    AdminApp[⚙️ Admin App<br/>TanStack Start SSR<br/>Port: 4322]
+
+    %% API Layer
+    APIApp[🔌 API<br/>Hono on Node.js<br/>Vercel Serverless<br/>Port: 3000]
+
+    %% Database Layer
+    NeonDB[(🗄️ Neon PostgreSQL<br/>Serverless<br/>Connection Pool)]
+
+    %% External Services
+    Clerk[🔐 Clerk<br/>Authentication]
+    MercadoPago[💳 Mercado Pago<br/>Payments]
+    Cloudinary[🖼️ Cloudinary<br/>Image Storage]
+
+    %% Monitoring
+    Analytics[📊 Vercel Analytics]
+    Logs[📝 Vercel Logs]
+
+    %% Environments
+    subgraph Production
+        ProdEdge[Production Edge]
+        ProdAPI[Production API]
+        ProdDB[(Production DB)]
+    end
+
+    subgraph Preview
+        PreviewEdge[Preview Edge]
+        PreviewAPI[Preview API]
+        PreviewDB[(Preview DB)]
+    end
+
+    subgraph Development
+        DevLocal[Local Server]
+        DevDB[(Local PostgreSQL)]
+    end
+
+    %% Flow
+    User -->|HTTPS| Edge
+    Edge -->|Route| WebApp
+    Edge -->|Route| AdminApp
+    Edge -->|Static Assets| CDN
+
+    WebApp -->|API Calls| APIApp
+    AdminApp -->|API Calls| APIApp
+
+    APIApp -->|SQL Queries| NeonDB
+    APIApp -->|Verify JWT| Clerk
+    APIApp -->|Process Payment| MercadoPago
+    APIApp -->|Upload Images| Cloudinary
+
+    APIApp -.->|Metrics| Analytics
+    APIApp -.->|Error Logs| Logs
+    WebApp -.->|Page Views| Analytics
+    AdminApp -.->|Admin Actions| Logs
+
+    %% Environment Separation
+    Edge ---|Main Branch| ProdEdge
+    Edge ---|PR Branches| PreviewEdge
+    APIApp ---|Main Branch| ProdAPI
+    APIApp ---|PR Branches| PreviewAPI
+    NeonDB ---|Production| ProdDB
+    NeonDB ---|Preview| PreviewDB
+
+    %% Styling
+    classDef frontend fill:#3b82f6,stroke:#1e40af,color:#fff
+    classDef backend fill:#10b981,stroke:#059669,color:#fff
+    classDef database fill:#f59e0b,stroke:#d97706,color:#fff
+    classDef external fill:#8b5cf6,stroke:#7c3aed,color:#fff
+    classDef monitoring fill:#ec4899,stroke:#db2777,color:#fff
+    classDef environment fill:#6b7280,stroke:#4b5563,color:#fff
+
+    class WebApp,AdminApp frontend
+    class APIApp backend
+    class NeonDB,ProdDB,PreviewDB,DevDB database
+    class Clerk,MercadoPago,Cloudinary external
+    class Analytics,Logs monitoring
+    class ProdEdge,PreviewEdge,DevLocal,ProdAPI,PreviewAPI environment
+```

@@ -1,0 +1,191 @@
+---
+title: Booking Flow
+description: Complete user flow for booking an accommodation
+author: Tech Team
+date: 2025-11-06
+---
+
+```mermaid
+sequenceDiagram
+    actor User as 👤 User
+    participant Web as 🌐 Web App
+    participant API as 🔌 API
+    participant Auth as 🔐 Clerk Auth
+    participant Service as ⚙️ BookingService
+    participant DB as 🗄️ Database
+    participant MP as 💳 Mercado Pago
+    participant Email as 📧 Email Service
+
+    %% Search Phase
+    Note over User,Web: 1️⃣ Search Phase
+    User->>Web: Enter search criteria<br/>(city, dates, guests)
+    Web->>API: GET /api/v1/accommodations<br/>?city=X&checkIn=Y&checkOut=Z
+    API->>Service: accommodationService.search(filters)
+    Service->>DB: SELECT available accommodations
+    DB-->>Service: Results
+    Service-->>API: ServiceOutput<Accommodation[]>
+    API-->>Web: JSON response
+    Web-->>User: Display results
+
+    %% View Details Phase
+    Note over User,Web: 2️⃣ View Details Phase
+    User->>Web: Click on accommodation
+    Web->>API: GET /api/v1/accommodations/:id
+    API->>Service: accommodationService.findById(id)
+    Service->>DB: SELECT accommodation + amenities + reviews
+    DB-->>Service: Accommodation details
+    Service-->>API: ServiceOutput<Accommodation>
+    API-->>Web: JSON response
+    Web->>API: GET /api/v1/accommodations/:id/availability<br/>?checkIn=Y&checkOut=Z
+    API->>Service: accommodationService.checkAvailability(id, dates)
+    Service->>DB: Check existing bookings
+    DB-->>Service: Availability status
+    Service-->>API: ServiceOutput<boolean>
+    API-->>Web: Available: true/false
+    Web-->>User: Show details + availability + price
+
+    %% Authentication Check
+    Note over User,Web: 3️⃣ Authentication Phase
+    User->>Web: Click "Book Now"
+    Web->>Web: Check authentication
+    alt Not Authenticated
+        Web-->>User: Redirect to /login
+        User->>Auth: Login/Signup
+        Auth-->>User: Return JWT token
+        User->>Web: Return to booking
+    else Already Authenticated
+        Note over User,Web: Continue to booking
+    end
+
+    %% Booking Form Phase
+    Note over User,Web: 4️⃣ Booking Form Phase
+    User->>Web: Fill booking form<br/>(dates, guests, contact info)
+    Web->>Web: Validate form (TanStack Form)
+    Web->>API: GET /api/v1/accommodations/:id/price<br/>?checkIn=Y&checkOut=Z&guests=N
+    API->>Service: pricingService.calculatePrice(params)
+    Service->>DB: Get pricing rules
+    DB-->>Service: Pricing data
+    Service->>Service: Calculate total<br/>(nights × price + fees + taxes)
+    Service-->>API: ServiceOutput<PriceBreakdown>
+    API-->>Web: Price breakdown
+    Web-->>User: Show price breakdown
+
+    %% Booking Creation Phase
+    Note over User,Web: 5️⃣ Booking Creation Phase
+    User->>Web: Click "Confirm Booking"
+    Web->>API: POST /api/v1/bookings<br/>+ JWT token<br/>+ booking data
+    API->>Auth: Verify JWT token
+    Auth-->>API: Valid token + user info
+
+    API->>Service: bookingService.create(data, actor)
+    Service->>Service: Validate input (Zod)
+    Service->>Service: Check permissions
+    Service->>DB: BEGIN TRANSACTION
+
+    Service->>DB: Check availability again (lock row)
+    DB-->>Service: Still available
+
+    alt Accommodation Not Available
+        DB-->>Service: Not available
+        Service->>DB: ROLLBACK
+        Service-->>API: ServiceOutput<Error><br/>NOT_AVAILABLE
+        API-->>Web: 409 Conflict
+        Web-->>User: Error: Not available
+    else Accommodation Available
+        Service->>DB: INSERT INTO bookings<br/>(status: 'pending')
+        DB-->>Service: Booking created
+
+        %% Payment Phase
+        Note over Service,MP: 6️⃣ Payment Phase
+        Service->>MP: Create payment preference<br/>(amount, description, callbacks)
+        MP-->>Service: Payment preference ID + init_point URL
+
+        Service->>DB: UPDATE booking<br/>(payment_id: X, payment_url: Y)
+        DB-->>Service: Updated
+
+        Service->>DB: COMMIT TRANSACTION
+        Service-->>API: ServiceOutput<Booking + payment_url>
+        API-->>Web: 201 Created<br/>+ booking + payment_url
+        Web-->>User: Redirect to Mercado Pago
+    end
+
+    %% Payment Completion Phase
+    Note over User,MP: 7️⃣ Payment Phase
+    User->>MP: Complete payment<br/>(credit card, debit, etc.)
+    MP->>MP: Process payment
+
+    alt Payment Successful
+        MP->>API: POST /api/v1/webhooks/mercadopago<br/>(payment approved)
+        API->>Service: bookingService.confirmPayment(payment_id)
+        Service->>DB: UPDATE booking<br/>(status: 'confirmed', paid_at: NOW())
+        DB-->>Service: Updated
+        Service-->>API: ServiceOutput<void>
+        API-->>MP: 200 OK
+
+        %% Confirmation Phase
+        Note over Service,Email: 8️⃣ Confirmation Phase
+        Service->>Email: Send confirmation email<br/>- Booking details<br/>- Host contact<br/>- Check-in instructions
+        Email-->>User: Confirmation email
+
+        MP-->>User: Redirect to success page
+        User->>Web: Return to /bookings/:id
+        Web->>API: GET /api/v1/bookings/:id
+        API->>Service: bookingService.findById(id, actor)
+        Service->>DB: SELECT booking + accommodation + user
+        DB-->>Service: Booking details
+        Service-->>API: ServiceOutput<Booking>
+        API-->>Web: JSON response
+        Web-->>User: Show confirmation page
+
+    else Payment Failed
+        MP->>API: POST /api/v1/webhooks/mercadopago<br/>(payment rejected)
+        API->>Service: bookingService.failPayment(payment_id)
+        Service->>DB: UPDATE booking<br/>(status: 'payment_failed')
+        DB-->>Service: Updated
+        Service-->>API: ServiceOutput<void>
+        API-->>MP: 200 OK
+
+        MP-->>User: Redirect to failure page
+        User->>Web: Return to /bookings/:id
+        Web-->>User: Show payment failed message<br/>+ retry payment option
+    end
+
+    %% Error Scenarios
+    Note over User,Web: ❌ Error Scenarios
+
+    rect rgb(255, 240, 240)
+        Note over Web,DB: Availability Check Failed
+        Service->>DB: Check availability
+        DB-->>Service: Already booked
+        Service-->>API: NOT_AVAILABLE
+        API-->>Web: 409 Conflict
+        Web-->>User: "Sorry, no longer available"
+    end
+
+    rect rgb(255, 240, 240)
+        Note over Web,Auth: Authentication Failed
+        API->>Auth: Verify JWT
+        Auth-->>API: Invalid token
+        API-->>Web: 401 Unauthorized
+        Web-->>User: Redirect to login
+    end
+
+    rect rgb(255, 240, 240)
+        Note over Service,DB: Database Error
+        Service->>DB: INSERT booking
+        DB-->>Service: Connection error
+        Service-->>API: INTERNAL_ERROR
+        API-->>Web: 500 Internal Server Error
+        Web-->>User: "Something went wrong, please try again"
+    end
+
+    rect rgb(255, 240, 240)
+        Note over Service,MP: Payment Service Error
+        Service->>MP: Create payment
+        MP-->>Service: Service unavailable
+        Service->>DB: ROLLBACK
+        Service-->>API: PAYMENT_SERVICE_ERROR
+        API-->>Web: 503 Service Unavailable
+        Web-->>User: "Payment service unavailable, please try later"
+    end
+```

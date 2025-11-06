@@ -1,0 +1,138 @@
+---
+title: Database Migration Flow
+description: Complete database migration workflow using Drizzle ORM
+author: Tech Team
+date: 2025-11-06
+---
+
+```mermaid
+graph TD
+    %% Development Phase
+    Start([🎯 Start Schema Change])
+    EditSchema[✏️ Edit Schema File<br/>packages/db/src/schemas/]
+    GenerateMigration[🔧 Generate Migration<br/>pnpm db:generate]
+    ReviewSQL[👁️ Review SQL File<br/>drizzle/migrations/]
+
+    %% Decision Points
+    SafeSQL{🤔 SQL Safe?}
+    EditSQL[✏️ Edit Migration<br/>Manually]
+
+    %% Local Testing
+    TestLocal[🧪 Test Locally<br/>pnpm db:migrate]
+    CheckStudio[🔍 Verify in Drizzle Studio<br/>pnpm db:studio]
+    LocalWorks{✅ Works<br/>Correctly?}
+
+    %% Rollback Path
+    Rollback[↩️ Rollback Migration<br/>pnpm db:drop]
+    FixSchema[🔧 Fix Schema]
+
+    %% Version Control
+    CommitFiles[💾 Commit Files<br/>- schema.ts<br/>- migration.sql<br/>- meta.json]
+    PushGitHub[⬆️ Push to GitHub]
+
+    %% CI/CD Phase
+    GitHubActions[⚙️ GitHub Actions<br/>CI Pipeline]
+    RunTests[🧪 Run Tests]
+    CIPasses{✅ CI Passes?}
+    FixTests[🔧 Fix Tests]
+
+    %% Deployment Phase
+    DeployVercel[🚀 Deploy to Vercel]
+    RunMigration[🔄 Run Migration<br/>on Neon DB]
+    MigrationSuccess{✅ Migration<br/>Success?}
+
+    %% Production Verification
+    CheckLogs[📝 Check Vercel Logs]
+    VerifyProd[✅ Verify Production]
+    MonitorErrors[📊 Monitor Errors]
+
+    %% Failure Path
+    MigrationFails[❌ Migration Failed]
+    Emergency[🚨 Emergency Rollback]
+    RestoreBackup[💾 Restore DB Backup]
+    Investigate[🔍 Investigate Issue]
+
+    %% Success Path
+    Success([✨ Migration Complete])
+    UpdateDocs[📄 Update Documentation]
+
+    %% Flow
+    Start --> EditSchema
+    EditSchema --> GenerateMigration
+    GenerateMigration --> ReviewSQL
+    ReviewSQL --> SafeSQL
+
+    SafeSQL -->|No ✗| EditSQL
+    EditSQL --> ReviewSQL
+    SafeSQL -->|Yes ✓| TestLocal
+
+    TestLocal --> CheckStudio
+    CheckStudio --> LocalWorks
+
+    LocalWorks -->|No ✗| Rollback
+    Rollback --> FixSchema
+    FixSchema --> EditSchema
+    LocalWorks -->|Yes ✓| CommitFiles
+
+    CommitFiles --> PushGitHub
+    PushGitHub --> GitHubActions
+    GitHubActions --> RunTests
+    RunTests --> CIPasses
+
+    CIPasses -->|No ✗| FixTests
+    FixTests --> EditSchema
+    CIPasses -->|Yes ✓| DeployVercel
+
+    DeployVercel --> RunMigration
+    RunMigration --> MigrationSuccess
+
+    MigrationSuccess -->|No ✗| MigrationFails
+    MigrationFails --> Emergency
+    Emergency --> RestoreBackup
+    RestoreBackup --> Investigate
+    Investigate --> FixSchema
+
+    MigrationSuccess -->|Yes ✓| CheckLogs
+    CheckLogs --> VerifyProd
+    VerifyProd --> MonitorErrors
+    MonitorErrors --> Success
+    Success --> UpdateDocs
+
+    %% Migration Types
+    subgraph MigrationTypes[Migration Types]
+        AddTable[➕ Add Table]
+        AddColumn[➕ Add Column]
+        AlterColumn[🔄 Alter Column]
+        DropColumn[➖ Drop Column]
+        AddIndex[📊 Add Index]
+        AddConstraint[🔒 Add Constraint]
+    end
+
+    %% Safety Checks
+    subgraph SafetyChecks[Safety Checks]
+        NoDataLoss[✅ No Data Loss]
+        Reversible[↩️ Reversible]
+        BackwardCompat[🔄 Backward Compatible]
+        Performance[⚡ Performance Impact]
+    end
+
+    ReviewSQL -.->|Check| SafetyChecks
+    SafeSQL -.->|Review| MigrationTypes
+
+    %% Styling
+    classDef development fill:#3b82f6,stroke:#1e40af,color:#fff
+    classDef testing fill:#10b981,stroke:#059669,color:#fff
+    classDef cicd fill:#f59e0b,stroke:#d97706,color:#fff
+    classDef deployment fill:#8b5cf6,stroke:#7c3aed,color:#fff
+    classDef failure fill:#ef4444,stroke:#dc2626,color:#fff
+    classDef success fill:#06b6d4,stroke:#0891b2,color:#fff
+    classDef decision fill:#6b7280,stroke:#4b5563,color:#fff
+
+    class EditSchema,GenerateMigration,ReviewSQL,EditSQL development
+    class TestLocal,CheckStudio,LocalWorks,Rollback,FixSchema testing
+    class CommitFiles,PushGitHub,GitHubActions,RunTests,CIPasses,FixTests cicd
+    class DeployVercel,RunMigration,MigrationSuccess,CheckLogs,VerifyProd deployment
+    class MigrationFails,Emergency,RestoreBackup,Investigate failure
+    class Success,UpdateDocs,MonitorErrors success
+    class SafeSQL,LocalWorks,CIPasses,MigrationSuccess decision
+```

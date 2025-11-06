@@ -1,0 +1,130 @@
+---
+title: Error Handling Flow
+description: Error handling and propagation flow across application layers
+author: Tech Team
+date: 2025-11-06
+---
+
+```mermaid
+graph TD
+    %% Frontend Layer
+    User[👤 User Action]
+    FrontendCatch[🎨 Frontend Catches Error]
+    DisplayError[💬 Display User-Friendly Message]
+
+    %% API Layer
+    APIEndpoint[🔌 API Endpoint]
+    APIErrorHandler[🛡️ API Error Handler]
+    MapHTTPStatus[🔢 Map to HTTP Status]
+
+    %% Service Layer
+    ServiceMethod[⚙️ Service Method]
+    ServiceCatch[🎯 Service Catches Error]
+    ServiceOutput[📦 ServiceOutput<br/>success: false<br/>error: ErrorCode]
+
+    %% Model Layer
+    ModelMethod[🗃️ Model Method]
+    ModelCatch[🎯 Model Catches SQL Error]
+    TransformError[🔄 Transform to ModelError]
+
+    %% Database Layer
+    Database[(🗄️ PostgreSQL)]
+    SQLError[❌ SQL Error]
+
+    %% Error Flow
+    User -->|Request| APIEndpoint
+    APIEndpoint -->|Call| ServiceMethod
+    ServiceMethod -->|Call| ModelMethod
+    ModelMethod -->|Query| Database
+    Database -->|Throws| SQLError
+
+    SQLError -->|Caught by| ModelCatch
+    ModelCatch -->|Transform| TransformError
+    TransformError -->|Return| ServiceCatch
+    ServiceCatch -->|Wrap| ServiceOutput
+    ServiceOutput -->|Return| APIErrorHandler
+    APIErrorHandler -->|Map| MapHTTPStatus
+    MapHTTPStatus -->|Response| FrontendCatch
+    FrontendCatch -->|Show| DisplayError
+    DisplayError -->|Feedback| User
+
+    %% Error Types by Layer
+    subgraph DatabaseErrors[Database Layer Errors]
+        DBUnique[Unique Constraint<br/>23505]
+        DBForeignKey[Foreign Key<br/>23503]
+        DBNotNull[Not Null<br/>23502]
+        DBConnection[Connection Error]
+    end
+
+    subgraph ModelErrors[Model Layer Errors]
+        ModelNotFound[NOT_FOUND]
+        ModelDuplicate[DUPLICATE_ENTRY]
+        ModelInvalid[INVALID_DATA]
+    end
+
+    subgraph ServiceErrors[Service Layer Errors]
+        ValidationError[VALIDATION_ERROR]
+        NotFoundError[NOT_FOUND]
+        UnauthorizedError[UNAUTHORIZED]
+        ForbiddenError[FORBIDDEN]
+        BusinessError[BUSINESS_LOGIC_ERROR]
+        InternalError[INTERNAL_ERROR]
+    end
+
+    subgraph HTTPStatus[HTTP Status Codes]
+        Status400[400 Bad Request]
+        Status401[401 Unauthorized]
+        Status403[403 Forbidden]
+        Status404[404 Not Found]
+        Status409[409 Conflict]
+        Status500[500 Internal Server Error]
+    end
+
+    subgraph UserMessages[User-Friendly Messages]
+        Msg400[Invalid input data]
+        Msg401[Please log in]
+        Msg403[Access denied]
+        Msg404[Resource not found]
+        Msg409[Already exists]
+        Msg500[Something went wrong]
+    end
+
+    %% Error Mapping
+    DBUnique -.->|Transform| ModelDuplicate
+    DBForeignKey -.->|Transform| ModelNotFound
+    DBNotNull -.->|Transform| ModelInvalid
+    DBConnection -.->|Transform| InternalError
+
+    ModelNotFound -.->|Wrap| NotFoundError
+    ModelDuplicate -.->|Wrap| ValidationError
+    ModelInvalid -.->|Wrap| ValidationError
+
+    ValidationError -.->|Map| Status400
+    UnauthorizedError -.->|Map| Status401
+    ForbiddenError -.->|Map| Status403
+    NotFoundError -.->|Map| Status404
+    BusinessError -.->|Map| Status409
+    InternalError -.->|Map| Status500
+
+    Status400 -.->|Display| Msg400
+    Status401 -.->|Display| Msg401
+    Status403 -.->|Display| Msg403
+    Status404 -.->|Display| Msg404
+    Status409 -.->|Display| Msg409
+    Status500 -.->|Display| Msg500
+
+    %% Styling
+    classDef frontend fill:#3b82f6,stroke:#1e40af,color:#fff
+    classDef api fill:#10b981,stroke:#059669,color:#fff
+    classDef service fill:#f59e0b,stroke:#d97706,color:#fff
+    classDef model fill:#8b5cf6,stroke:#7c3aed,color:#fff
+    classDef database fill:#ef4444,stroke:#dc2626,color:#fff
+    classDef error fill:#ec4899,stroke:#db2777,color:#fff
+
+    class User,FrontendCatch,DisplayError frontend
+    class APIEndpoint,APIErrorHandler,MapHTTPStatus api
+    class ServiceMethod,ServiceCatch,ServiceOutput service
+    class ModelMethod,ModelCatch,TransformError model
+    class Database,SQLError database
+    class DBUnique,DBForeignKey,DBNotNull,DBConnection,ModelNotFound,ModelDuplicate,ModelInvalid,ValidationError,NotFoundError,UnauthorizedError,ForbiddenError,BusinessError,InternalError error
+```

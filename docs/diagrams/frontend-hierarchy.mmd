@@ -1,0 +1,218 @@
+---
+title: Frontend Component Hierarchy
+description: Frontend component architecture for Web and Admin apps
+author: Tech Team
+date: 2025-11-06
+---
+
+```mermaid
+graph TD
+    %% Web App (Astro)
+    subgraph WebApp[🌐 Web App - Astro + React Islands]
+        WebLayout[📐 Layout.astro<br/>SSR Wrapper]
+
+        subgraph WebHeader[Header]
+            Logo[🏠 Logo]
+            Nav[🧭 Navigation<br/>- Home<br/>- Destinations<br/>- Events<br/>- Blog]
+            Search[🔍 Search Bar<br/>React Island]
+            AuthButtons[🔐 Auth Buttons<br/>React Island<br/>- Login<br/>- Signup<br/>- Profile]
+        end
+
+        subgraph WebMain[Main Content]
+            PageComponent[📄 Page Component<br/>index.astro<br/>SSR/Static]
+
+            subgraph ReactIslands[⚛️ React Islands - Interactive]
+                AccommodationCard[🏠 AccommodationCard.tsx<br/>TanStack Query]
+                BookingForm[📅 BookingForm.tsx<br/>TanStack Form + Query]
+                ReviewList[⭐ ReviewList.tsx<br/>TanStack Query]
+                ImageGallery[🖼️ ImageGallery.tsx<br/>Client-side]
+                FilterPanel[🔧 FilterPanel.tsx<br/>Client state]
+            end
+        end
+
+        subgraph WebFooter[Footer]
+            FooterLinks[🔗 Links<br/>- About<br/>- Contact<br/>- Terms]
+            Social[📱 Social Media]
+            Newsletter[📧 Newsletter<br/>React Island]
+        end
+    end
+
+    %% Admin App (TanStack Start)
+    subgraph AdminApp[⚙️ Admin App - TanStack Start]
+        RootLayout[📐 RootLayout.tsx<br/>SSR Root]
+
+        subgraph AdminSidebar[Sidebar Navigation]
+            Dashboard[📊 Dashboard]
+            AccommodationsNav[🏠 Accommodations]
+            DestinationsNav[📍 Destinations]
+            EventsNav[🎉 Events]
+            PostsNav[📰 Posts]
+            UsersNav[👥 Users]
+            SubscriptionsNav[💳 Subscriptions]
+            SettingsNav[⚙️ Settings]
+        end
+
+        subgraph AdminMain[Main Content Area]
+            RouteComponent[📄 Route Component<br/>routes/xxx.tsx]
+
+            subgraph AdminComponents[Admin Components]
+                DataTable[📊 DataTable.tsx<br/>TanStack Table + Query]
+                CreateForm[➕ CreateForm.tsx<br/>TanStack Form]
+                EditForm[✏️ EditForm.tsx<br/>TanStack Form]
+                DeleteDialog[🗑️ DeleteDialog.tsx<br/>Modal]
+                DetailView[👁️ DetailView.tsx<br/>Read-only]
+            end
+        end
+
+        subgraph AdminToasts[Toast Notifications]
+            SuccessToast[✅ Success]
+            ErrorToast[❌ Error]
+            InfoToast[ℹ️ Info]
+        end
+    end
+
+    %% Shared UI Components (@repo/ui)
+    subgraph SharedUI[🎨 Shared UI Components - @repo/ui]
+        subgraph Forms[Form Components]
+            Button[🔘 Button]
+            Input[📝 Input]
+            Select[📋 Select]
+            Textarea[📄 Textarea]
+            Checkbox[☑️ Checkbox]
+            Radio[🔘 Radio]
+        end
+
+        subgraph Layout[Layout Components]
+            Card[🃏 Card]
+            Dialog[💬 Dialog]
+            Sheet[📜 Sheet]
+            Tabs[📑 Tabs]
+            Accordion[📂 Accordion]
+        end
+
+        subgraph DataDisplay[Data Display]
+            Table[📊 Table]
+            Badge[🏷️ Badge]
+            Avatar[👤 Avatar]
+            Skeleton[⏳ Skeleton]
+        end
+
+        subgraph Feedback[Feedback]
+            Toast[🔔 Toast]
+            Alert[⚠️ Alert]
+            Progress[📈 Progress]
+            Spinner[⏳ Spinner]
+        end
+    end
+
+    %% Relationships - Web App
+    WebLayout --> WebHeader
+    WebLayout --> WebMain
+    WebLayout --> WebFooter
+
+    WebHeader --> Logo
+    WebHeader --> Nav
+    WebHeader --> Search
+    WebHeader --> AuthButtons
+
+    WebMain --> PageComponent
+    PageComponent --> ReactIslands
+
+    ReactIslands --> AccommodationCard
+    ReactIslands --> BookingForm
+    ReactIslands --> ReviewList
+    ReactIslands --> ImageGallery
+    ReactIslands --> FilterPanel
+
+    WebFooter --> FooterLinks
+    WebFooter --> Social
+    WebFooter --> Newsletter
+
+    %% Relationships - Admin App
+    RootLayout --> AdminSidebar
+    RootLayout --> AdminMain
+    RootLayout --> AdminToasts
+
+    AdminSidebar --> Dashboard
+    AdminSidebar --> AccommodationsNav
+    AdminSidebar --> DestinationsNav
+    AdminSidebar --> EventsNav
+    AdminSidebar --> PostsNav
+    AdminSidebar --> UsersNav
+    AdminSidebar --> SubscriptionsNav
+    AdminSidebar --> SettingsNav
+
+    AdminMain --> RouteComponent
+    RouteComponent --> AdminComponents
+
+    AdminComponents --> DataTable
+    AdminComponents --> CreateForm
+    AdminComponents --> EditForm
+    AdminComponents --> DeleteDialog
+    AdminComponents --> DetailView
+
+    AdminToasts --> SuccessToast
+    AdminToasts --> ErrorToast
+    AdminToasts --> InfoToast
+
+    %% Shared UI Usage
+    AccommodationCard -.->|uses| Card
+    AccommodationCard -.->|uses| Button
+    AccommodationCard -.->|uses| Badge
+
+    BookingForm -.->|uses| Input
+    BookingForm -.->|uses| Select
+    BookingForm -.->|uses| Button
+
+    ReviewList -.->|uses| Card
+    ReviewList -.->|uses| Avatar
+
+    FilterPanel -.->|uses| Checkbox
+    FilterPanel -.->|uses| Select
+
+    DataTable -.->|uses| Table
+    DataTable -.->|uses| Button
+    DataTable -.->|uses| Badge
+
+    CreateForm -.->|uses| Input
+    CreateForm -.->|uses| Textarea
+    CreateForm -.->|uses| Select
+    CreateForm -.->|uses| Button
+
+    EditForm -.->|uses| Input
+    EditForm -.->|uses| Textarea
+    EditForm -.->|uses| Button
+
+    DeleteDialog -.->|uses| Dialog
+    DeleteDialog -.->|uses| Button
+
+    SuccessToast -.->|uses| Toast
+    ErrorToast -.->|uses| Toast
+
+    %% State Management
+    subgraph StateManagement[State Management]
+        TanStackQuery[🔄 TanStack Query<br/>- Server state<br/>- Caching<br/>- Refetching]
+        TanStackForm[📝 TanStack Form<br/>- Form state<br/>- Validation<br/>- Submission]
+        ClientState[💾 Client State<br/>- React useState<br/>- Local storage]
+    end
+
+    AccommodationCard -.->|uses| TanStackQuery
+    BookingForm -.->|uses| TanStackForm
+    BookingForm -.->|uses| TanStackQuery
+    DataTable -.->|uses| TanStackQuery
+    CreateForm -.->|uses| TanStackForm
+    FilterPanel -.->|uses| ClientState
+
+    %% Styling
+    classDef webApp fill:#3b82f6,stroke:#1e40af,color:#fff
+    classDef adminApp fill:#10b981,stroke:#059669,color:#fff
+    classDef sharedUI fill:#f59e0b,stroke:#d97706,color:#fff
+    classDef reactIsland fill:#8b5cf6,stroke:#7c3aed,color:#fff
+    classDef state fill:#ec4899,stroke:#db2777,color:#fff
+    classDef layout fill:#06b6d4,stroke:#0891b2,color:#fff
+
+    class WebLayout,WebHeader,WebMain,WebFooter,Logo,Nav,Search,AuthButtons,PageComponent,FooterLinks,Social,Newsletter webApp
+    class RootLayout,AdminSidebar,AdminMain,AdminToasts,Dashboard,AccommodationsNav,DestinationsNav,EventsNav,PostsNav,UsersNav,SubscriptionsNav,SettingsNav,RouteComponent,SuccessToast,ErrorToast,InfoToast adminApp
+    class Button,Input,Select,Textarea,Checkbox,Radio,Card,Dialog,Sheet,Tabs,Accordion,Table,Badge,Avatar,Skeleton,Toast,Alert,Progress,Spinner sharedUI
+    class AccommodationCard,BookingForm,ReviewList,ImageGallery,FilterPanel,DataTable,CreateForm,EditForm,DeleteDialog,DetailView reactIsland
+    class TanStackQuery,TanStackForm,ClientState state

@@ -1,0 +1,169 @@
+---
+title: Monorepo Structure
+description: Visual representation of Hospeda monorepo folder structure
+author: Tech Team
+date: 2025-11-06
+---
+
+```mermaid
+graph TD
+    %% Root
+    Root[📁 hospeda/]
+
+    %% Apps
+    Apps[📁 apps/]
+    API[📱 api/<br/>Hono Backend<br/>Port: 3000]
+    Web[🌐 web/<br/>Astro + React<br/>Port: 4321]
+    Admin[⚙️ admin/<br/>TanStack Start<br/>Port: 4322]
+
+    %% Packages
+    Packages[📦 packages/]
+
+    %% Core Packages
+    DB[🗄️ db/<br/>Drizzle ORM<br/>Models + Schemas]
+    ServiceCore[⚙️ service-core/<br/>Business Logic<br/>Services]
+    Schemas[📋 schemas/<br/>Zod Validation<br/>Type Inference]
+
+    %% Utility Packages
+    Utils[🔧 utils/<br/>Shared Utilities]
+    Logger[📝 logger/<br/>Winston Logger]
+    Config[⚙️ config/<br/>Environment Config]
+
+    %% UI Packages
+    UI[🎨 ui/<br/>Shadcn Components]
+    AuthUI[🔐 auth-ui/<br/>Auth Components]
+    Icons[🎯 icons/<br/>Lucide Icons]
+    I18n[🌍 i18n/<br/>Internationalization]
+
+    %% Feature Packages
+    Payments[💳 payments/<br/>Mercado Pago]
+    Seed[🌱 seed/<br/>Database Seeding]
+
+    %% Config Packages
+    TailwindConfig[🎨 tailwind-config/<br/>Tailwind Setup]
+    TSConfig[📘 typescript-config/<br/>TS Configs]
+    BiomeConfig[🧹 biome-config/<br/>Linting Config]
+    GitHubWorkflow[⚙️ github-workflow/<br/>CI/CD Templates]
+
+    %% Documentation
+    Docs[📚 docs/<br/>Documentation]
+    DocsArchitecture[📐 architecture/]
+    DocsDiagrams[📊 diagrams/]
+    DocsGuides[📖 guides/]
+
+    %% Claude System
+    Claude[🤖 .claude/<br/>AI Agent System]
+    ClaudeSessions[📂 sessions/<br/>Planning Sessions]
+    ClaudeAgents[🤖 agents/<br/>Specialized Agents]
+    ClaudeCommands[⚡ commands/<br/>Quick Commands]
+    ClaudeSkills[🎯 skills/<br/>Reusable Skills]
+    ClaudeDocs[📚 docs/<br/>Agent Docs]
+
+    %% Infrastructure
+    Drizzle[🗄️ drizzle/<br/>Migrations + Meta]
+    Node[📦 node_modules/]
+    Config2[⚙️ Configuration Files]
+
+    %% Root Structure
+    Root --> Apps
+    Root --> Packages
+    Root --> Docs
+    Root --> Claude
+    Root --> Drizzle
+    Root --> Node
+    Root --> Config2
+
+    %% Apps Structure
+    Apps --> API
+    Apps --> Web
+    Apps --> Admin
+
+    %% Packages Structure - Core
+    Packages --> DB
+    Packages --> ServiceCore
+    Packages --> Schemas
+
+    %% Packages Structure - Utilities
+    Packages --> Utils
+    Packages --> Logger
+    Packages --> Config
+
+    %% Packages Structure - UI
+    Packages --> UI
+    Packages --> AuthUI
+    Packages --> Icons
+    Packages --> I18n
+
+    %% Packages Structure - Features
+    Packages --> Payments
+    Packages --> Seed
+
+    %% Packages Structure - Config
+    Packages --> TailwindConfig
+    Packages --> TSConfig
+    Packages --> BiomeConfig
+    Packages --> GitHubWorkflow
+
+    %% Docs Structure
+    Docs --> DocsArchitecture
+    Docs --> DocsDiagrams
+    Docs --> DocsGuides
+
+    %% Claude Structure
+    Claude --> ClaudeSessions
+    Claude --> ClaudeAgents
+    Claude --> ClaudeCommands
+    Claude --> ClaudeSkills
+    Claude --> ClaudeDocs
+
+    %% Config Files
+    Config2 --> ConfigFiles[package.json<br/>pnpm-workspace.yaml<br/>turbo.json<br/>tsconfig.json<br/>.env.local<br/>.gitignore]
+
+    %% Dependencies
+    API -.->|imports| DB
+    API -.->|imports| ServiceCore
+    API -.->|imports| Schemas
+    API -.->|imports| Logger
+    API -.->|imports| Config
+
+    Web -.->|imports| UI
+    Web -.->|imports| AuthUI
+    Web -.->|imports| Icons
+    Web -.->|imports| I18n
+    Web -.->|imports| Utils
+
+    Admin -.->|imports| UI
+    Admin -.->|imports| ServiceCore
+    Admin -.->|imports| Schemas
+    Admin -.->|imports| Logger
+
+    ServiceCore -.->|imports| DB
+    ServiceCore -.->|imports| Schemas
+    ServiceCore -.->|imports| Logger
+
+    DB -.->|imports| Config
+    DB -.->|imports| Logger
+
+    %% Styling
+    classDef root fill:#1e293b,stroke:#0f172a,color:#fff
+    classDef apps fill:#3b82f6,stroke:#1e40af,color:#fff
+    classDef corePackages fill:#10b981,stroke:#059669,color:#fff
+    classDef utilPackages fill:#f59e0b,stroke:#d97706,color:#fff
+    classDef uiPackages fill:#8b5cf6,stroke:#7c3aed,color:#fff
+    classDef featurePackages fill:#ec4899,stroke:#db2777,color:#fff
+    classDef configPackages fill:#6b7280,stroke:#4b5563,color:#fff
+    classDef docs fill:#06b6d4,stroke:#0891b2,color:#fff
+    classDef claude fill:#22c55e,stroke:#16a34a,color:#fff
+    classDef infra fill:#ef4444,stroke:#dc2626,color:#fff
+
+    class Root,Config2,ConfigFiles root
+    class Apps,API,Web,Admin apps
+    class Packages,DB,ServiceCore,Schemas corePackages
+    class Utils,Logger,Config utilPackages
+    class UI,AuthUI,Icons,I18n uiPackages
+    class Payments,Seed featurePackages
+    class TailwindConfig,TSConfig,BiomeConfig,GitHubWorkflow configPackages
+    class Docs,DocsArchitecture,DocsDiagrams,DocsGuides docs
+    class Claude,ClaudeSessions,ClaudeAgents,ClaudeCommands,ClaudeSkills,ClaudeDocs claude
+    class Drizzle,Node infra
+```
