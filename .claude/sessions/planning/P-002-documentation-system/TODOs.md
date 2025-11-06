@@ -1147,26 +1147,24 @@ Complete rewrite of Hospeda monorepo documentation using a hybrid documentation 
 
 ## Phase 5: Polish & Remaining (Week 5 - 30 hours)
 
-### PB-042: Other Packages - Basic Documentation (Batch 1)
+### PB-042: Other Packages - Basic Documentation (Batch 1) ✅ COMPLETED
 
 - **Description**: Create basic documentation for utility packages
 - **Time Estimate**: 3 hours
 - **Dependencies**: PB-001
 - **Deliverables**:
-  - [ ] Update `packages/utils/README.md` (Overview, API list, usage)
-  - [ ] Create `packages/utils/docs/usage-guide.md` (if needed)
-  - [ ] Update `packages/auth-ui/README.md` (Components, props, usage)
-  - [ ] Create `packages/auth-ui/docs/usage-guide.md` (if needed)
-  - [ ] Update `packages/i18n/README.md` (Overview, adding translations, usage)
-  - [ ] Create `packages/i18n/docs/usage-guide.md` (if needed)
+  - [x] Update `packages/utils/README.md` (Overview, API list, usage) - 584 lines
+  - [x] Update `packages/auth-ui/README.md` (Components, props, usage) - 645 lines
+  - [x] Update `packages/i18n/README.md` (Overview, adding translations, usage) - 717 lines
 - **Acceptance Criteria**:
-  - [ ] Each README has purpose, install, basic usage
-  - [ ] Minimal but complete
-  - [ ] Examples work
+  - [x] Each README has purpose, install, basic usage
+  - [x] Minimal but complete
+  - [x] Examples work
 - **Related Files**:
   - `packages/utils/README.md`
   - `packages/auth-ui/README.md`
   - `packages/i18n/README.md`
+- **Total Lines**: ~1,946 lines
 
 ### PB-043: Other Packages - Basic Documentation (Batch 2)
 
