@@ -51,8 +51,7 @@ describe('SubscriptionUpdateInputSchema', () => {
     it('should validate a valid update input', () => {
         const validUpdate = {
             status: SubscriptionStatusEnum.CANCELLED,
-            endAt: new Date('2024-12-31'),
-            updatedById: '550e8400-e29b-41d4-a716-446655440003'
+            endAt: new Date('2024-12-31')
         };
 
         const result = SubscriptionUpdateInputSchema.safeParse(validUpdate);
@@ -61,21 +60,11 @@ describe('SubscriptionUpdateInputSchema', () => {
 
     it('should allow partial updates', () => {
         const partialUpdate = {
-            status: SubscriptionStatusEnum.PAUSED,
-            updatedById: '550e8400-e29b-41d4-a716-446655440003'
+            status: SubscriptionStatusEnum.PAUSED
         };
 
         const result = SubscriptionUpdateInputSchema.safeParse(partialUpdate);
         expect(result.success).toBe(true);
-    });
-
-    it('should require updatedById', () => {
-        const invalidUpdate = {
-            status: SubscriptionStatusEnum.CANCELLED
-        };
-
-        const result = SubscriptionUpdateInputSchema.safeParse(invalidUpdate);
-        expect(result.success).toBe(false);
     });
 });
 

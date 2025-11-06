@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
 import { SubscriptionStatusEnum } from '../../enums/subscription-status.enum.js';
 import { SubscriptionSchema } from './subscription.schema.js';
 
@@ -12,11 +13,13 @@ describe('SubscriptionSchema', () => {
             startAt: new Date('2024-01-01T00:00:00Z'),
             endAt: new Date('2024-12-31T23:59:59Z'),
             trialEndsAt: new Date('2024-01-07T23:59:59Z'),
+            lifecycleState: LifecycleStatusEnum.ACTIVE,
             createdAt: new Date(),
             updatedAt: new Date(),
             createdById: '550e8400-e29b-41d4-a716-446655440003',
             updatedById: '550e8400-e29b-41d4-a716-446655440003',
-            // deletedAt and deletedById not included - should be optional
+            deletedAt: null,
+            deletedById: null,
             adminInfo: { notes: 'Test subscription' }
         };
 
@@ -48,10 +51,14 @@ describe('SubscriptionSchema', () => {
             startAt: new Date('2024-01-01T00:00:00Z'),
             endAt: new Date('2024-01-07T23:59:59Z'),
             trialEndsAt: new Date('2024-01-15T23:59:59Z'), // After end date
+            lifecycleState: LifecycleStatusEnum.ACTIVE,
             createdAt: new Date(),
             updatedAt: new Date(),
             createdById: '550e8400-e29b-41d4-a716-446655440003',
-            updatedById: '550e8400-e29b-41d4-a716-446655440003'
+            updatedById: '550e8400-e29b-41d4-a716-446655440003',
+            deletedAt: null,
+            deletedById: null,
+            adminInfo: null
         };
 
         const result = SubscriptionSchema.safeParse(subscriptionWithInvalidTrial);
@@ -67,11 +74,13 @@ describe('SubscriptionSchema', () => {
             startAt: new Date('2024-01-01T00:00:00Z'),
             endAt: null,
             trialEndsAt: null,
+            lifecycleState: LifecycleStatusEnum.ACTIVE,
             createdAt: new Date(),
             updatedAt: new Date(),
             createdById: '550e8400-e29b-41d4-a716-446655440003',
             updatedById: '550e8400-e29b-41d4-a716-446655440003',
-            // deletedAt and deletedById should be optional
+            deletedAt: null,
+            deletedById: null,
             adminInfo: null
         };
 
