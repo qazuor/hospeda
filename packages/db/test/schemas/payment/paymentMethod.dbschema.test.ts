@@ -25,14 +25,31 @@ describe('PAYMENT_METHOD Database Schema', () => {
         });
 
         it('should have expected columns for payment method', () => {
+            // Core fields
             expect(paymentMethods).toHaveProperty('id');
             expect(paymentMethods).toHaveProperty('clientId');
-            expect(paymentMethods).toHaveProperty('provider');
-            expect(paymentMethods).toHaveProperty('token');
-            expect(paymentMethods).toHaveProperty('brand');
-            expect(paymentMethods).toHaveProperty('last4');
-            expect(paymentMethods).toHaveProperty('expiresAt');
-            expect(paymentMethods).toHaveProperty('defaultMethod');
+            expect(paymentMethods).toHaveProperty('type');
+            expect(paymentMethods).toHaveProperty('displayName');
+            expect(paymentMethods).toHaveProperty('isDefault');
+            expect(paymentMethods).toHaveProperty('isActive');
+
+            // Card fields
+            expect(paymentMethods).toHaveProperty('cardLast4');
+            expect(paymentMethods).toHaveProperty('cardBrand');
+            expect(paymentMethods).toHaveProperty('cardExpiryMonth');
+            expect(paymentMethods).toHaveProperty('cardExpiryYear');
+
+            // Bank fields
+            expect(paymentMethods).toHaveProperty('bankName');
+            expect(paymentMethods).toHaveProperty('accountLast4');
+            expect(paymentMethods).toHaveProperty('accountType');
+
+            // Provider fields
+            expect(paymentMethods).toHaveProperty('providerPaymentMethodId');
+            expect(paymentMethods).toHaveProperty('providerCustomerId');
+            expect(paymentMethods).toHaveProperty('metadata');
+
+            // Audit fields
             expect(paymentMethods).toHaveProperty('createdAt');
             expect(paymentMethods).toHaveProperty('updatedAt');
             expect(paymentMethods).toHaveProperty('createdById');
