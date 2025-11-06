@@ -212,6 +212,27 @@ export class PricingPlanService extends BaseCrudService<
         }
     }
 
+    /**
+     * Checks if the actor can update visibility of a pricing plan.
+     * Only ADMIN can update visibility.
+     * @param actor - The user or system performing the action.
+     * @param _entity - The pricing plan entity.
+     * @param _newVisibility - The new visibility value.
+     * @throws {ServiceError} If the permission check fails.
+     */
+    protected _canUpdateVisibility(
+        actor: Actor,
+        _entity: PricingPlan,
+        _newVisibility: unknown
+    ): void {
+        if (!actor || !actor.id || actor.role !== RoleEnum.ADMIN) {
+            throw new ServiceError(
+                ServiceErrorCode.FORBIDDEN,
+                'Permission denied: Only admins can update pricing plan visibility'
+            );
+        }
+    }
+
     // ============================================================================
     // SEARCH & COUNT IMPLEMENTATION
     // ============================================================================
@@ -225,7 +246,10 @@ export class PricingPlanService extends BaseCrudService<
      */
     protected async _executeSearch(params: Record<string, unknown>, _actor: Actor) {
         const { page = 1, pageSize = 10, ...filterParams } = params;
-        return this.model.findAll(filterParams, { page, pageSize });
+        return this.model.findAll(filterParams, {
+            page: page as number,
+            pageSize: pageSize as number
+        });
     }
 
     /**

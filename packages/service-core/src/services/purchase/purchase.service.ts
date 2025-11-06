@@ -204,6 +204,23 @@ export class PurchaseService extends BaseCrudService<
         }
     }
 
+    /**
+     * Checks if the actor can update visibility of a purchase.
+     * Only ADMIN can update visibility.
+     * @param actor - The user or system performing the action.
+     * @param _entity - The purchase entity.
+     * @param _newVisibility - The new visibility value.
+     * @throws {ServiceError} If the permission check fails.
+     */
+    protected _canUpdateVisibility(actor: Actor, _entity: Purchase, _newVisibility: unknown): void {
+        if (!actor || !actor.id || actor.role !== RoleEnum.ADMIN) {
+            throw new ServiceError(
+                ServiceErrorCode.FORBIDDEN,
+                'Permission denied: Only admins can update purchase visibility'
+            );
+        }
+    }
+
     // ============================================================================
     // SEARCH & COUNT IMPLEMENTATION
     // ============================================================================
@@ -217,7 +234,10 @@ export class PurchaseService extends BaseCrudService<
      */
     protected async _executeSearch(params: Record<string, unknown>, _actor: Actor) {
         const { page = 1, pageSize = 10, ...filterParams } = params;
-        return this.model.findAll(filterParams, { page, pageSize });
+        return this.model.findAll(filterParams, {
+            page: page as number,
+            pageSize: pageSize as number
+        });
     }
 
     /**
