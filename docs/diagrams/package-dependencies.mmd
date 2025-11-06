@@ -1,0 +1,185 @@
+%% Package Dependencies - Monorepo Dependency Graph
+%% This diagram shows the dependency relationships between all packages and apps
+%% Organized in layers from top (apps) to bottom (external dependencies)
+
+graph TD
+    %% Apps Layer (Top)
+    subgraph AppsLayer["🚀 Apps Layer"]
+        direction LR
+        Web[web<br/>Astro + React<br/>Public Frontend]
+        Admin[admin<br/>TanStack Start<br/>Admin Dashboard]
+        API[api<br/>Hono<br/>Backend API]
+    end
+
+    %% Service Layer
+    subgraph ServiceLayer["⚙️ Service Layer"]
+        ServiceCore[service-core<br/>Business Logic<br/>Services & Orchestration]
+    end
+
+    %% Data Layer
+    subgraph DataLayer["🗄️ Data Layer"]
+        direction LR
+        DB[db<br/>Drizzle ORM<br/>Models & Migrations]
+        Schemas[schemas<br/>Zod Schemas<br/>Validation & Types]
+    end
+
+    %% Utility Layer
+    subgraph UtilityLayer["🔧 Utility Layer"]
+        direction LR
+        Utils[utils<br/>Shared Utilities<br/>Helpers & Functions]
+        Logger[logger<br/>Logging System<br/>Pino Logger]
+        Config[config<br/>Configuration<br/>Environment & Settings]
+        I18n[i18n<br/>Internationalization<br/>Translations]
+    end
+
+    %% UI Layer
+    subgraph UILayer["🎨 UI Layer"]
+        direction LR
+        UI[ui<br/>Shadcn Components<br/>Shared UI Library]
+        Icons[icons<br/>Icon Library<br/>Lucide Icons]
+        AuthUI[auth-ui<br/>Auth Components<br/>Clerk Integration]
+        TailwindConfig[tailwind-config<br/>Tailwind Configuration<br/>Shared Styles]
+    end
+
+    %% Configuration Layer
+    subgraph ConfigLayer["⚙️ Configuration Layer"]
+        direction LR
+        TSConfig[typescript-config<br/>TypeScript Config<br/>Shared tsconfig]
+        BiomeConfig[biome-config<br/>Biome Config<br/>Linting & Formatting]
+    end
+
+    %% External Integration Layer
+    subgraph ExternalLayer["🔌 External Integration Layer"]
+        direction LR
+        Payments[payments<br/>Payment Integration<br/>Mercado Pago]
+        Seed[seed<br/>Database Seeding<br/>Test Data]
+        GHWorkflow[github-workflow<br/>GitHub Actions<br/>CI/CD Config]
+    end
+
+    %% App Dependencies
+
+    %% Web App Dependencies
+    Web --> UI
+    Web --> Icons
+    Web --> AuthUI
+    Web --> Schemas
+    Web --> Utils
+    Web --> I18n
+    Web --> TailwindConfig
+    Web --> TSConfig
+    Web --> BiomeConfig
+
+    %% Admin App Dependencies
+    Admin --> UI
+    Admin --> Icons
+    Admin --> AuthUI
+    Admin --> Schemas
+    Admin --> Utils
+    Admin --> I18n
+    Admin --> ServiceCore
+    Admin --> TailwindConfig
+    Admin --> TSConfig
+    Admin --> BiomeConfig
+
+    %% API App Dependencies
+    API --> ServiceCore
+    API --> Schemas
+    API --> Logger
+    API --> Config
+    API --> Payments
+    API --> TSConfig
+    API --> BiomeConfig
+
+    %% Service Layer Dependencies
+    ServiceCore --> DB
+    ServiceCore --> Schemas
+    ServiceCore --> Logger
+    ServiceCore --> Utils
+    ServiceCore --> TSConfig
+
+    %% Data Layer Dependencies
+    DB --> Schemas
+    DB --> Logger
+    DB --> Utils
+    DB --> TSConfig
+
+    Schemas --> TSConfig
+
+    %% Utility Layer Dependencies
+    Logger --> Config
+    Logger --> TSConfig
+
+    Config --> TSConfig
+
+    Utils --> TSConfig
+
+    I18n --> TSConfig
+
+    %% UI Layer Dependencies
+    UI --> TailwindConfig
+    UI --> TSConfig
+    UI --> BiomeConfig
+
+    Icons --> TSConfig
+
+    AuthUI --> UI
+    AuthUI --> Icons
+    AuthUI --> TailwindConfig
+    AuthUI --> TSConfig
+
+    %% External Layer Dependencies
+    Payments --> Config
+    Payments --> Logger
+    Payments --> TSConfig
+
+    Seed --> DB
+    Seed --> TSConfig
+
+    %% Styling
+    classDef appsStyle fill:#FF6B6B,stroke:#C92A2A,stroke-width:3px,color:#FFF
+    classDef serviceStyle fill:#4ECDC4,stroke:#0E9F95,stroke-width:2px,color:#000
+    classDef dataStyle fill:#45B7D1,stroke:#2196F3,stroke-width:2px,color:#000
+    classDef utilityStyle fill:#96CEB4,stroke:#5AAB61,stroke-width:2px,color:#000
+    classDef uiStyle fill:#FFEAA7,stroke:#FDCB6E,stroke-width:2px,color:#000
+    classDef configStyle fill:#DFE6E9,stroke:#B2BEC3,stroke-width:2px,color:#000
+    classDef externalStyle fill:#FAB1A0,stroke:#E17055,stroke-width:2px,color:#000
+
+    %% Apply Styles
+    class Web,Admin,API appsStyle
+    class ServiceCore serviceStyle
+    class DB,Schemas dataStyle
+    class Utils,Logger,Config,I18n utilityStyle
+    class UI,Icons,AuthUI,TailwindConfig uiStyle
+    class TSConfig,BiomeConfig configStyle
+    class Payments,Seed,GHWorkflow externalStyle
+
+    %% Layer Styling
+    style AppsLayer fill:#FFE5E5,stroke:#FF6B6B,stroke-width:2px
+    style ServiceLayer fill:#E5F7F6,stroke:#4ECDC4,stroke-width:2px
+    style DataLayer fill:#E3F2FD,stroke:#45B7D1,stroke-width:2px
+    style UtilityLayer fill:#E8F5E9,stroke:#96CEB4,stroke-width:2px
+    style UILayer fill:#FFF9E6,stroke:#FFEAA7,stroke-width:2px
+    style ConfigLayer fill:#F5F6F7,stroke:#DFE6E9,stroke-width:2px
+    style ExternalLayer fill:#FFEEE9,stroke:#FAB1A0,stroke-width:2px
+
+    %% Legend
+    subgraph Legend["📖 Legend"]
+        direction LR
+        L1[Apps: Entry points]
+        L2[Service: Business logic]
+        L3[Data: Database & validation]
+        L4[Utility: Cross-cutting concerns]
+        L5[UI: Visual components]
+        L6[Config: Build configuration]
+        L7[External: Third-party integrations]
+    end
+
+    class L1 appsStyle
+    class L2 serviceStyle
+    class L3 dataStyle
+    class L4 utilityStyle
+    class L5 uiStyle
+    class L6 configStyle
+    class L7 externalStyle
+
+    style Legend fill:#FFFFFF,stroke:#000000,stroke-width:1px

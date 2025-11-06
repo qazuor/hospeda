@@ -1,0 +1,199 @@
+%% Request Flow - Complete Request Lifecycle from User to Database
+%% This sequence diagram shows the full journey of a request through all layers
+%% Includes both success path and error handling scenarios
+
+sequenceDiagram
+    actor User
+    participant Frontend as Frontend (React)
+    participant TanStack as TanStack Query
+    participant API as API (Hono)
+    participant Middleware as Middleware Layer
+    participant Service as Service Layer
+    participant Model as Model Layer
+    participant DB as Database (PostgreSQL)
+
+    %% Success Path - Normal Request Flow
+    Note over User,DB: 🟢 Success Path - List Accommodations
+
+    User->>Frontend: Click "Search Accommodations"
+    activate Frontend
+
+    Frontend->>TanStack: useQuery(['accommodations', filters])
+    activate TanStack
+
+    TanStack->>TanStack: Check cache
+    alt Cache Hit
+        TanStack-->>Frontend: Return cached data
+        Frontend-->>User: Display results (instant)
+    else Cache Miss or Stale
+        TanStack->>API: GET /api/v1/accommodations?city=Concepción
+        activate API
+
+        API->>Middleware: Request enters middleware chain
+        activate Middleware
+
+        Middleware->>Middleware: CORS validation
+        Middleware->>Middleware: Rate limiting check
+        Middleware->>Middleware: Request logging
+        Middleware->>Middleware: Query params validation (Zod)
+
+        alt Validation Success
+            Middleware->>API: Validated request
+            deactivate Middleware
+
+            API->>Service: accommodationService.search({ city: 'Concepción' })
+            activate Service
+
+            Service->>Service: Create actor context (public/guest)
+            Service->>Service: Apply business rules
+            Service->>Service: Build query filters
+
+            Service->>Model: accommodationModel.findAll({ city: 'Concepción' })
+            activate Model
+
+            Model->>Model: Build Drizzle query
+            Model->>Model: Apply filters & pagination
+            Model->>DB: SELECT * FROM accommodations WHERE city = 'Concepción' LIMIT 20
+            activate DB
+
+            DB-->>Model: Return rows
+            deactivate DB
+
+            Model->>Model: Transform to entities
+            Model-->>Service: Accommodation[]
+            deactivate Model
+
+            Service->>Service: Apply post-processing
+            Service->>Service: Build ServiceOutput
+            Service-->>API: ServiceOutput<Accommodation[]>
+            deactivate Service
+
+            API->>API: Format JSON response
+            API-->>TanStack: { success: true, data: [...], pagination: {...} }
+            deactivate API
+
+            TanStack->>TanStack: Cache response
+            TanStack-->>Frontend: Accommodations data
+            deactivate TanStack
+
+            Frontend->>Frontend: Render AccommodationList component
+            Frontend-->>User: Display accommodation cards
+            deactivate Frontend
+
+        else Validation Error
+            Middleware-->>API: ValidationError
+            deactivate Middleware
+            API-->>TanStack: 400 Bad Request
+            deactivate API
+            TanStack-->>Frontend: Error object
+            Frontend-->>User: Show validation error message
+            deactivate TanStack
+            deactivate Frontend
+        end
+    end
+
+    %% Error Path - Business Logic Error
+    Note over User,DB: 🔴 Error Path - Business Logic Error
+
+    User->>Frontend: Submit booking form
+    activate Frontend
+
+    Frontend->>TanStack: useMutation(createBooking)
+    activate TanStack
+
+    TanStack->>API: POST /api/v1/bookings + JWT token
+    activate API
+
+    API->>Middleware: Authenticate request
+    activate Middleware
+
+    Middleware->>Middleware: Verify Clerk JWT token
+    Middleware->>Middleware: Extract actor (userId, role)
+    Middleware->>Middleware: Validate request body (Zod)
+
+    Middleware->>API: Authenticated actor context
+    deactivate Middleware
+
+    API->>Service: bookingService.create(data, actor)
+    activate Service
+
+    Service->>Service: Check availability
+    Service->>Model: Check if dates are available
+    activate Model
+
+    Model->>DB: SELECT * FROM bookings WHERE overlaps...
+    activate DB
+    DB-->>Model: Existing bookings
+    deactivate DB
+
+    Model-->>Service: Availability result
+    deactivate Model
+
+    alt Accommodation Not Available
+        Service->>Service: Business rule validation failed
+        Service-->>API: ServiceOutput (success: false, error: 'NOT_AVAILABLE')
+        deactivate Service
+
+        API->>API: Format error response
+        API-->>TanStack: 409 Conflict
+        deactivate API
+
+        TanStack-->>Frontend: Error: Dates not available
+        deactivate TanStack
+
+        Frontend->>Frontend: Display error toast
+        Frontend-->>User: "These dates are not available"
+        deactivate Frontend
+    end
+
+    %% Error Path - Database Error
+    Note over User,DB: 🔴 Error Path - Database Error
+
+    User->>Frontend: Update profile
+    activate Frontend
+
+    Frontend->>TanStack: useMutation(updateProfile)
+    activate TanStack
+
+    TanStack->>API: PATCH /api/v1/users/:id + JWT
+    activate API
+
+    API->>Middleware: Process request
+    activate Middleware
+    Middleware->>API: Validated & authenticated
+    deactivate Middleware
+
+    API->>Service: userService.update(id, data, actor)
+    activate Service
+
+    Service->>Model: userModel.update(id, data)
+    activate Model
+
+    Model->>DB: UPDATE users SET ... WHERE id = ?
+    activate DB
+
+    DB-->>Model: Database connection error
+    deactivate DB
+
+    Model-->>Service: Throw DatabaseError
+    deactivate Model
+
+    Service->>Service: Catch error
+    Service->>Service: Log error with context
+    Service-->>API: ServiceOutput (success: false, error: 'DATABASE_ERROR')
+    deactivate Service
+
+    API->>API: Format error response
+    API->>API: Log to Sentry
+    API-->>TanStack: 500 Internal Server Error
+    deactivate API
+
+    TanStack-->>Frontend: Error object
+    deactivate TanStack
+
+    Frontend->>Frontend: Show generic error message
+    Frontend-->>User: "Something went wrong. Please try again."
+    deactivate Frontend
+
+    %% Summary Box
+    Note over User,DB: ✅ Key Points:<br/>1. All requests go through validation<br/>2. Services handle business logic<br/>3. Models handle data access<br/>4. Errors are caught at every layer<br/>5. Frontend caches successful responses

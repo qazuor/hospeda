@@ -1,0 +1,266 @@
+%% Authentication Flow - Complete Clerk Authentication Sequence
+%% This diagram shows three authentication scenarios:
+%% A. Sign Up Flow - New user registration
+%% B. Sign In Flow - Existing user login
+%% C. Protected Route - Authenticated request
+
+sequenceDiagram
+    actor User
+    participant Web as Frontend (Web/Admin)
+    participant ClerkUI as Clerk SDK
+    participant ClerkAPI as Clerk Backend
+    participant API as Hospeda API
+    participant DB as Database
+
+    %% ========================================
+    %% SCENARIO A: SIGN UP FLOW
+    %% ========================================
+    Note over User,DB: 🆕 Scenario A: Sign Up Flow
+
+    User->>Web: Navigate to /auth/signup
+    activate Web
+
+    Web->>ClerkUI: Render <SignUp />
+    activate ClerkUI
+
+    ClerkUI-->>User: Display signup form
+    deactivate ClerkUI
+
+    User->>ClerkUI: Fill form (email, password, name)
+    activate ClerkUI
+
+    ClerkUI->>ClerkUI: Validate input (client-side)
+
+    ClerkUI->>ClerkAPI: POST /v1/sign_ups
+    activate ClerkAPI
+
+    ClerkAPI->>ClerkAPI: Validate credentials
+    ClerkAPI->>ClerkAPI: Hash password
+    ClerkAPI->>ClerkAPI: Create Clerk account
+    ClerkAPI->>ClerkAPI: Generate session token
+
+    ClerkAPI-->>ClerkUI: Session created (clerkId, JWT)
+    deactivate ClerkAPI
+
+    ClerkUI->>ClerkUI: Store session in cookie
+    ClerkUI->>Web: Trigger redirect to /auth/signup-callback
+    deactivate ClerkUI
+
+    Web->>Web: Extract clerkId from session
+    Web->>API: POST /api/v1/public/auth/signup<br/>{clerkId, email, firstName, lastName}
+    activate API
+
+    API->>API: Validate request body (Zod)
+    API->>DB: INSERT INTO users (clerk_id, email, first_name, last_name)
+    activate DB
+
+    alt User Created Successfully
+        DB-->>API: User record created
+        deactivate DB
+
+        API-->>Web: { success: true, user: {...} }
+        deactivate API
+
+        Web->>Web: Store user data in state
+        Web->>Web: Redirect to /dashboard
+        Web-->>User: Show dashboard (authenticated)
+        deactivate Web
+
+    else Database Error
+        DB-->>API: Error (constraint violation, etc.)
+        deactivate DB
+
+        API->>API: Log error
+        API-->>Web: { success: false, error: 'USER_CREATION_FAILED' }
+        deactivate API
+
+        Web->>ClerkAPI: Sign out user (cleanup)
+        Web-->>User: Show error message
+        deactivate Web
+    end
+
+    %% ========================================
+    %% SCENARIO B: SIGN IN FLOW
+    %% ========================================
+    Note over User,DB: 🔐 Scenario B: Sign In Flow
+
+    User->>Web: Navigate to /auth/signin
+    activate Web
+
+    Web->>ClerkUI: Render <SignIn />
+    activate ClerkUI
+
+    ClerkUI-->>User: Display signin form
+    deactivate ClerkUI
+
+    User->>ClerkUI: Enter credentials (email, password)
+    activate ClerkUI
+
+    ClerkUI->>ClerkAPI: POST /v1/sessions
+    activate ClerkAPI
+
+    ClerkAPI->>ClerkAPI: Validate credentials
+    ClerkAPI->>ClerkAPI: Verify password hash
+
+    alt Valid Credentials
+        ClerkAPI->>ClerkAPI: Generate session token (JWT)
+        ClerkAPI-->>ClerkUI: Session created (JWT)
+        deactivate ClerkAPI
+
+        ClerkUI->>ClerkUI: Store session in cookie
+        ClerkUI->>Web: Trigger redirect to /auth/signin-callback
+        deactivate ClerkUI
+
+        Web->>Web: Extract clerkId from session
+        Web->>API: POST /api/v1/public/auth/signin<br/>{clerkId}
+        activate API
+
+        API->>DB: SELECT * FROM users WHERE clerk_id = ?
+        activate DB
+
+        alt User Exists
+            DB-->>API: User record found
+            deactivate DB
+
+            API->>API: Update last_login timestamp
+            API-->>Web: { success: true, user: {...} }
+            deactivate API
+
+            Web->>Web: Store user data in state
+            Web->>Web: Redirect to /dashboard
+            Web-->>User: Show dashboard (authenticated)
+            deactivate Web
+
+        else User Not Found
+            DB-->>API: No user found
+            deactivate DB
+
+            API->>DB: INSERT INTO users (clerk_id, ...)
+            activate DB
+            DB-->>API: User created
+            deactivate DB
+
+            API-->>Web: { success: true, user: {...} }
+            deactivate API
+
+            Web->>Web: Redirect to /onboarding
+            Web-->>User: Show onboarding flow
+            deactivate Web
+        end
+
+    else Invalid Credentials
+        ClerkAPI-->>ClerkUI: Authentication failed
+        deactivate ClerkAPI
+
+        ClerkUI-->>User: Show error message
+        deactivate ClerkUI
+        deactivate Web
+    end
+
+    %% ========================================
+    %% SCENARIO C: PROTECTED ROUTE
+    %% ========================================
+    Note over User,DB: 🛡️ Scenario C: Protected Route Access
+
+    User->>Web: Navigate to /accommodations/create
+    activate Web
+
+    Web->>ClerkUI: useAuth() - Check session
+    activate ClerkUI
+
+    alt Session Exists
+        ClerkUI->>ClerkUI: Validate session token
+        ClerkUI-->>Web: { isSignedIn: true, userId: 'clerk_user_123' }
+        deactivate ClerkUI
+
+        Web->>Web: Render protected page
+        Web-->>User: Display accommodation creation form
+        deactivate Web
+
+        User->>Web: Submit form (create accommodation)
+        activate Web
+
+        Web->>ClerkUI: getToken() - Get JWT
+        activate ClerkUI
+        ClerkUI-->>Web: JWT token
+        deactivate ClerkUI
+
+        Web->>API: POST /api/v1/accommodations<br/>Authorization: Bearer {JWT}
+        activate API
+
+        API->>API: Extract Authorization header
+        API->>ClerkAPI: Verify JWT signature
+        activate ClerkAPI
+
+        alt Valid JWT
+            ClerkAPI->>ClerkAPI: Validate token signature
+            ClerkAPI->>ClerkAPI: Check expiration
+            ClerkAPI-->>API: Token valid { userId: 'clerk_user_123' }
+            deactivate ClerkAPI
+
+            API->>DB: SELECT * FROM users WHERE clerk_id = 'clerk_user_123'
+            activate DB
+            DB-->>API: User record (id, role, permissions)
+            deactivate DB
+
+            API->>API: Create actor context<br/>{ id: 'uuid', role: 'OWNER', ... }
+            API->>API: Check permissions (createAccommodation)
+
+            alt Has Permission
+                API->>API: Create accommodation (service layer)
+                API->>DB: INSERT INTO accommodations (...)
+                activate DB
+                DB-->>API: Accommodation created
+                deactivate DB
+
+                API-->>Web: { success: true, data: {...} }
+                deactivate API
+
+                Web-->>User: Show success message + redirect
+                deactivate Web
+
+            else No Permission
+                API-->>Web: 403 Forbidden
+                deactivate API
+
+                Web-->>User: "You don't have permission"
+                deactivate Web
+            end
+
+        else Invalid JWT
+            ClerkAPI-->>API: Token invalid/expired
+            deactivate ClerkAPI
+
+            API-->>Web: 401 Unauthorized
+            deactivate API
+
+            Web->>ClerkAPI: Attempt token refresh
+            activate ClerkAPI
+
+            alt Refresh Success
+                ClerkAPI-->>Web: New JWT
+                deactivate ClerkAPI
+                Web->>API: Retry request with new token
+                Note over Web,API: Repeat authentication flow
+
+            else Refresh Failed
+                ClerkAPI-->>Web: Refresh failed
+                deactivate ClerkAPI
+                Web->>Web: Clear session
+                Web->>Web: Redirect to /auth/signin
+                Web-->>User: "Session expired, please sign in"
+                deactivate Web
+            end
+        end
+
+    else No Session
+        ClerkUI-->>Web: { isSignedIn: false }
+        deactivate ClerkUI
+
+        Web->>Web: Redirect to /auth/signin?redirect=/accommodations/create
+        Web-->>User: Show signin form
+        deactivate Web
+    end
+
+    %% Summary
+    Note over User,DB: ✅ Key Points:<br/>1. Clerk manages authentication state<br/>2. JWT tokens authorize API requests<br/>3. Actor context derived from Clerk user<br/>4. Permissions checked on every request<br/>5. Token refresh handled automatically

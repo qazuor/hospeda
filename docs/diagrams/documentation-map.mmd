@@ -1,0 +1,239 @@
+%% Documentation Map - Visual Overview of All Hospeda Documentation
+%% This diagram shows the complete documentation structure organized by sections
+%% Color coding: Guides=green, Reference=blue, Operations=orange, Development=purple, Security=red
+
+graph TD
+    %% Root Entry Point
+    Index[docs/index.md<br/>Main Documentation Portal]
+
+    %% Major Sections
+    GettingStarted[Getting Started]
+    Development[Development]
+    Guides[Guides]
+    Architecture[Architecture]
+    Testing[Testing]
+    Security[Security]
+    Performance[Performance]
+    Deployment[Deployment]
+    Runbooks[Runbooks]
+    Contributing[Contributing]
+    ClaudeCode[Claude Code]
+    Resources[Resources]
+    Diagrams[Diagrams]
+
+    %% Getting Started Section
+    Prerequisites[prerequisites.md<br/>System Requirements]
+    Installation[installation.md<br/>Setup Instructions]
+    DevEnv[development-environment.md<br/>IDE Configuration]
+    FirstContribution[first-contribution.md<br/>First Steps]
+
+    %% Development Section
+    CodeStandards[code-standards.md<br/>TypeScript Standards]
+    GitWorkflow[git-workflow.md<br/>Branch & Commit Policy]
+    PRProcess[pull-request-process.md<br/>PR Guidelines]
+    CodeReview[code-review-guidelines.md<br/>Review Checklist]
+
+    %% Guides Section
+    AddingEntity[adding-new-entity.md<br/>End-to-End Tutorial]
+    TDDWorkflow[tdd-workflow.md<br/>Test-Driven Development]
+    ErrorHandling[error-handling.md<br/>Error Patterns]
+    Authentication[authentication.md<br/>Clerk Integration]
+    Debugging[debugging.md<br/>Debug Techniques]
+    DBMigrations[database-migrations.md<br/>Migration Workflow]
+    I18n[internationalization.md<br/>i18n Setup]
+
+    %% Architecture Section
+    ArchOverview[overview.md<br/>System Design]
+    MonorepoStructure[monorepo-structure.md<br/>Apps & Packages]
+    DataFlow[data-flow.md<br/>Request Lifecycle]
+    Patterns[patterns.md<br/>Architectural Patterns]
+    TechStack[tech-stack.md<br/>Technology Decisions]
+
+    %% Testing Section
+    TestStrategy[strategy.md<br/>Testing Philosophy]
+    TestUnit[unit-testing.md<br/>Unit Tests]
+    TestIntegration[integration-testing.md<br/>Integration Tests]
+    TestE2E[e2e-testing.md<br/>End-to-End Tests]
+
+    %% Security Section
+    SecurityOverview[overview.md<br/>Security Posture]
+    OWASP[owasp-top-10.md<br/>Prevention Strategies]
+    AuthSecurity[authentication-security.md<br/>Auth Best Practices]
+
+    %% Performance Section
+    PerfOverview[overview.md<br/>Performance Philosophy]
+    DBOptimization[database-optimization.md<br/>Query Optimization]
+    Caching[caching.md<br/>Cache Strategies]
+
+    %% Deployment Section
+    DeployOverview[overview.md<br/>Infrastructure]
+    CICD[ci-cd.md<br/>Automated Workflows]
+    APIDeployment[api-deployment.md<br/>Fly.io Setup]
+
+    %% Runbooks Section
+    RunbooksIndex[README.md<br/>Operations Guide]
+    ProductionBugs[production-bugs.md<br/>Investigating Issues]
+    Rollback[rollback.md<br/>Rollback Procedures]
+    Monitoring[monitoring.md<br/>Monitoring & Alerts]
+
+    %% Contributing Section
+    ContributingIndex[README.md<br/>How to Contribute]
+
+    %% Claude Code Section
+    ClaudeIndex[README.md<br/>AI-Assisted Development]
+    ClaudeIntro[introduction.md<br/>What is Claude Code?]
+    ClaudeSetup[setup.md<br/>Setup for Hospeda]
+    ClaudeBestPractices[best-practices.md<br/>AI Best Practices]
+    ClaudeWorkflows[workflows.md<br/>Project Workflows]
+
+    %% Resources Section
+    FAQ[faq.md<br/>Common Questions]
+    Troubleshooting[troubleshooting.md<br/>Problem Solutions]
+    Glossary[glossary.md<br/>Terminology]
+
+    %% Diagrams Section
+    DocMap[documentation-map.mmd<br/>This Diagram]
+    RequestFlow[request-flow.mmd<br/>Request Lifecycle]
+    EntityER[entity-relationships.mmd<br/>Database ERD]
+    PackageDeps[package-dependencies.mmd<br/>Dependency Graph]
+    AuthFlow[authentication-flow.mmd<br/>Auth Sequence]
+
+    %% Component Documentation
+    APIAppDocs[apps/api/docs/README.md<br/>API Documentation]
+    WebAppDocs[apps/web/docs/README.md<br/>Web Documentation]
+    AdminAppDocs[apps/admin/docs/README.md<br/>Admin Documentation]
+
+    ServiceCoreDocs[packages/service-core/docs/README.md<br/>Business Logic]
+    DBDocs[packages/db/docs/README.md<br/>Database & ORM]
+    SchemasDocs[packages/schemas/docs/README.md<br/>Validation Schemas]
+    ConfigDocs[packages/config/docs/README.md<br/>Configuration]
+    LoggerDocs[packages/logger/docs/README.md<br/>Logging System]
+
+    %% Connections - Root to Sections
+    Index --> GettingStarted
+    Index --> Development
+    Index --> Guides
+    Index --> Architecture
+    Index --> Testing
+    Index --> Security
+    Index --> Performance
+    Index --> Deployment
+    Index --> Runbooks
+    Index --> Contributing
+    Index --> ClaudeCode
+    Index --> Resources
+    Index --> Diagrams
+
+    %% Getting Started Connections
+    GettingStarted --> Prerequisites
+    GettingStarted --> Installation
+    GettingStarted --> DevEnv
+    GettingStarted --> FirstContribution
+
+    %% Development Connections
+    Development --> CodeStandards
+    Development --> GitWorkflow
+    Development --> PRProcess
+    Development --> CodeReview
+
+    %% Guides Connections
+    Guides --> AddingEntity
+    Guides --> TDDWorkflow
+    Guides --> ErrorHandling
+    Guides --> Authentication
+    Guides --> Debugging
+    Guides --> DBMigrations
+    Guides --> I18n
+
+    %% Architecture Connections
+    Architecture --> ArchOverview
+    Architecture --> MonorepoStructure
+    Architecture --> DataFlow
+    Architecture --> Patterns
+    Architecture --> TechStack
+
+    %% Testing Connections
+    Testing --> TestStrategy
+    Testing --> TestUnit
+    Testing --> TestIntegration
+    Testing --> TestE2E
+
+    %% Security Connections
+    Security --> SecurityOverview
+    Security --> OWASP
+    Security --> AuthSecurity
+
+    %% Performance Connections
+    Performance --> PerfOverview
+    Performance --> DBOptimization
+    Performance --> Caching
+
+    %% Deployment Connections
+    Deployment --> DeployOverview
+    Deployment --> CICD
+    Deployment --> APIDeployment
+
+    %% Runbooks Connections
+    Runbooks --> RunbooksIndex
+    Runbooks --> ProductionBugs
+    Runbooks --> Rollback
+    Runbooks --> Monitoring
+
+    %% Contributing Connections
+    Contributing --> ContributingIndex
+
+    %% Claude Code Connections
+    ClaudeCode --> ClaudeIndex
+    ClaudeCode --> ClaudeIntro
+    ClaudeCode --> ClaudeSetup
+    ClaudeCode --> ClaudeBestPractices
+    ClaudeCode --> ClaudeWorkflows
+
+    %% Resources Connections
+    Resources --> FAQ
+    Resources --> Troubleshooting
+    Resources --> Glossary
+
+    %% Diagrams Connections
+    Diagrams --> DocMap
+    Diagrams --> RequestFlow
+    Diagrams --> EntityER
+    Diagrams --> PackageDeps
+    Diagrams --> AuthFlow
+
+    %% Component Docs Connections (from Index)
+    Index -.->|Apps| APIAppDocs
+    Index -.->|Apps| WebAppDocs
+    Index -.->|Apps| AdminAppDocs
+    Index -.->|Packages| ServiceCoreDocs
+    Index -.->|Packages| DBDocs
+    Index -.->|Packages| SchemasDocs
+    Index -.->|Packages| ConfigDocs
+    Index -.->|Packages| LoggerDocs
+
+    %% Cross-References (Important Links)
+    FirstContribution -.-> AddingEntity
+    AddingEntity -.-> TDDWorkflow
+    TDDWorkflow -.-> TestStrategy
+    Authentication -.-> AuthSecurity
+    DataFlow -.-> RequestFlow
+    MonorepoStructure -.-> PackageDeps
+    ArchOverview -.-> EntityER
+
+    %% Styling
+    classDef guides fill:#90EE90,stroke:#228B22,stroke-width:2px,color:#000
+    classDef reference fill:#87CEEB,stroke:#4682B4,stroke-width:2px,color:#000
+    classDef operations fill:#FFB347,stroke:#FF8C00,stroke-width:2px,color:#000
+    classDef development fill:#DDA0DD,stroke:#9370DB,stroke-width:2px,color:#000
+    classDef security fill:#FFB6C1,stroke:#DC143C,stroke-width:2px,color:#000
+    classDef diagrams fill:#F0E68C,stroke:#DAA520,stroke-width:2px,color:#000
+    classDef root fill:#FFD700,stroke:#B8860B,stroke-width:3px,color:#000
+
+    %% Apply Styles
+    class Index root
+    class AddingEntity,TDDWorkflow,ErrorHandling,Authentication,Debugging,DBMigrations,I18n guides
+    class ArchOverview,MonorepoStructure,DataFlow,Patterns,TechStack,ServiceCoreDocs,DBDocs,SchemasDocs reference
+    class RunbooksIndex,ProductionBugs,Rollback,Monitoring,DeployOverview,CICD,APIDeployment operations
+    class CodeStandards,GitWorkflow,PRProcess,CodeReview,Prerequisites,Installation,DevEnv,FirstContribution development
+    class SecurityOverview,OWASP,AuthSecurity security
+    class DocMap,RequestFlow,EntityER,PackageDeps,AuthFlow diagrams

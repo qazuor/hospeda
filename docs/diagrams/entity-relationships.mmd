@@ -1,0 +1,262 @@
+%% Entity Relationship Diagram - Hospeda Database Schema
+%% This ERD shows all database entities and their relationships
+%% Cardinality notation: ||--o{ (one-to-many), }o--o{ (many-to-many), }o--|| (many-to-one)
+
+erDiagram
+    %% Core Entities
+    User {
+        uuid id PK "Primary key"
+        string email UK "Unique email"
+        string firstName "First name"
+        string lastName "Last name"
+        string clerkId UK "Clerk authentication ID"
+        enum role "USER, OWNER, ADMIN"
+        string avatar "Avatar URL"
+        string phone "Phone number"
+        boolean emailVerified "Email verification status"
+        timestamp createdAt "Creation timestamp"
+        timestamp updatedAt "Last update timestamp"
+        timestamp deletedAt "Soft delete timestamp (nullable)"
+    }
+
+    Destination {
+        uuid id PK "Primary key"
+        string name "Destination name"
+        string slug UK "URL-friendly identifier"
+        string description "Detailed description"
+        string province "Province/state"
+        string country "Country (default: Argentina)"
+        decimal latitude "GPS latitude"
+        decimal longitude "GPS longitude"
+        string coverImage "Cover image URL"
+        int accommodationsCount "Cached count"
+        int eventsCount "Cached count"
+        timestamp createdAt "Creation timestamp"
+        timestamp updatedAt "Last update timestamp"
+    }
+
+    Accommodation {
+        uuid id PK "Primary key"
+        uuid ownerId FK "Owner user ID"
+        uuid destinationId FK "Destination ID"
+        string name "Accommodation name"
+        string slug UK "URL-friendly identifier"
+        text description "Detailed description"
+        enum type "HOTEL, HOSTEL, APARTMENT, etc."
+        string address "Street address"
+        string city "City name"
+        decimal latitude "GPS latitude"
+        decimal longitude "GPS longitude"
+        decimal pricePerNight "Base price per night"
+        int maxGuests "Maximum capacity"
+        int bedrooms "Number of bedrooms"
+        int bathrooms "Number of bathrooms"
+        decimal rating "Average rating (0-5)"
+        int reviewCount "Total reviews"
+        boolean active "Active/inactive status"
+        boolean featured "Featured listing"
+        string coverImage "Main image URL"
+        json images "Array of image URLs"
+        timestamp createdAt "Creation timestamp"
+        timestamp updatedAt "Last update timestamp"
+        timestamp deletedAt "Soft delete timestamp (nullable)"
+    }
+
+    Event {
+        uuid id PK "Primary key"
+        uuid destinationId FK "Destination ID"
+        uuid createdById FK "Creator user ID"
+        string title "Event title"
+        string slug UK "URL-friendly identifier"
+        text description "Event description"
+        enum type "FESTIVAL, CONCERT, SPORTS, etc."
+        datetime startDate "Event start date"
+        datetime endDate "Event end date (nullable)"
+        string venue "Event venue"
+        string address "Venue address"
+        decimal latitude "GPS latitude (nullable)"
+        decimal longitude "GPS longitude (nullable)"
+        string coverImage "Cover image URL"
+        json images "Array of image URLs"
+        boolean featured "Featured event"
+        timestamp createdAt "Creation timestamp"
+        timestamp updatedAt "Last update timestamp"
+    }
+
+    Post {
+        uuid id PK "Primary key"
+        uuid authorId FK "Author user ID"
+        uuid destinationId FK "Related destination (nullable)"
+        string title "Post title"
+        string slug UK "URL-friendly identifier"
+        text content "Post content (markdown)"
+        text excerpt "Short excerpt"
+        enum status "DRAFT, PUBLISHED, ARCHIVED"
+        string coverImage "Cover image URL"
+        datetime publishedAt "Publication date (nullable)"
+        int viewCount "View counter"
+        timestamp createdAt "Creation timestamp"
+        timestamp updatedAt "Last update timestamp"
+    }
+
+    Review {
+        uuid id PK "Primary key"
+        uuid userId FK "Reviewer user ID"
+        uuid accommodationId FK "Accommodation ID"
+        int rating "Rating (1-5)"
+        text comment "Review text"
+        text response "Owner response (nullable)"
+        datetime responseDate "Response date (nullable)"
+        boolean verified "Verified booking review"
+        boolean helpful "Marked as helpful"
+        timestamp createdAt "Creation timestamp"
+        timestamp updatedAt "Last update timestamp"
+    }
+
+    Amenity {
+        uuid id PK "Primary key"
+        string name "Amenity name"
+        string icon "Icon identifier"
+        enum category "BASIC, FACILITIES, SERVICES, etc."
+        timestamp createdAt "Creation timestamp"
+    }
+
+    Tag {
+        uuid id PK "Primary key"
+        string name "Tag name"
+        string slug UK "URL-friendly identifier"
+        timestamp createdAt "Creation timestamp"
+    }
+
+    Category {
+        uuid id PK "Primary key"
+        string name "Category name"
+        string slug UK "URL-friendly identifier"
+        string description "Category description (nullable)"
+        timestamp createdAt "Creation timestamp"
+    }
+
+    Subscription {
+        uuid id PK "Primary key"
+        uuid userId FK "Subscriber user ID"
+        uuid pricingTierId FK "Pricing tier ID"
+        enum status "ACTIVE, CANCELED, EXPIRED, PAUSED"
+        datetime currentPeriodStart "Current billing period start"
+        datetime currentPeriodEnd "Current billing period end"
+        datetime canceledAt "Cancellation date (nullable)"
+        boolean autoRenew "Auto-renewal enabled"
+        timestamp createdAt "Creation timestamp"
+        timestamp updatedAt "Last update timestamp"
+    }
+
+    SubscriptionItem {
+        uuid id PK "Primary key"
+        uuid subscriptionId FK "Parent subscription ID"
+        uuid pricingTierId FK "Pricing tier ID"
+        int quantity "Item quantity"
+        decimal unitPrice "Price per unit"
+        timestamp createdAt "Creation timestamp"
+        timestamp updatedAt "Last update timestamp"
+    }
+
+    PricingTier {
+        uuid id PK "Primary key"
+        string name "Tier name (e.g., Basic, Pro)"
+        string slug UK "URL-friendly identifier"
+        text description "Tier description"
+        decimal price "Monthly price"
+        enum billingPeriod "MONTHLY, YEARLY"
+        json features "Array of features"
+        int maxListings "Max accommodation listings"
+        boolean active "Active/inactive"
+        int sortOrder "Display order"
+        timestamp createdAt "Creation timestamp"
+        timestamp updatedAt "Last update timestamp"
+    }
+
+    Purchase {
+        uuid id PK "Primary key"
+        uuid userId FK "Buyer user ID"
+        uuid subscriptionId FK "Related subscription (nullable)"
+        decimal amount "Purchase amount"
+        string currency "Currency code (default: ARS)"
+        enum status "PENDING, COMPLETED, FAILED, REFUNDED"
+        string paymentMethod "Payment method used"
+        string transactionId "External transaction ID (nullable)"
+        json metadata "Additional purchase data"
+        timestamp createdAt "Creation timestamp"
+        timestamp updatedAt "Last update timestamp"
+    }
+
+    %% Junction Tables (Many-to-Many)
+    AccommodationAmenity {
+        uuid accommodationId FK "Accommodation ID"
+        uuid amenityId FK "Amenity ID"
+    }
+
+    PostTag {
+        uuid postId FK "Post ID"
+        uuid tagId FK "Tag ID"
+    }
+
+    PostCategory {
+        uuid postId FK "Post ID"
+        uuid categoryId FK "Category ID"
+    }
+
+    %% Relationships
+
+    %% User Relationships
+    User ||--o{ Accommodation : "owns"
+    User ||--o{ Post : "writes"
+    User ||--o{ Review : "creates"
+    User ||--o{ Event : "creates"
+    User ||--o{ Subscription : "subscribes"
+    User ||--o{ Purchase : "makes"
+
+    %% Destination Relationships
+    Destination ||--o{ Accommodation : "contains"
+    Destination ||--o{ Event : "hosts"
+    Destination ||--o{ Post : "relates_to"
+
+    %% Accommodation Relationships
+    Accommodation ||--o{ Review : "receives"
+    Accommodation }o--o{ Amenity : "has"
+    Accommodation ||--|| Destination : "located_in"
+
+    %% Post Relationships
+    Post }o--o{ Tag : "tagged_with"
+    Post }o--o{ Category : "categorized_as"
+    Post }o--|| User : "authored_by"
+    Post }o--o| Destination : "relates_to"
+
+    %% Event Relationships
+    Event }o--|| Destination : "happens_in"
+    Event }o--|| User : "created_by"
+
+    %% Review Relationships
+    Review }o--|| User : "written_by"
+    Review }o--|| Accommodation : "reviews"
+
+    %% Subscription Relationships
+    Subscription }o--|| User : "belongs_to"
+    Subscription }o--|| PricingTier : "uses"
+    Subscription ||--o{ SubscriptionItem : "contains"
+
+    %% SubscriptionItem Relationships
+    SubscriptionItem }o--|| Subscription : "part_of"
+    SubscriptionItem }o--|| PricingTier : "references"
+
+    %% Purchase Relationships
+    Purchase }o--|| User : "made_by"
+    Purchase }o--o| Subscription : "related_to"
+
+    %% Junction Table Relationships
+    AccommodationAmenity }o--|| Accommodation : "links"
+    AccommodationAmenity }o--|| Amenity : "links"
+
+    PostTag }o--|| Post : "links"
+    PostTag }o--|| Tag : "links"
+
+    PostCategory }o--|| Post : "links"
+    PostCategory }o--|| Category : "links"
