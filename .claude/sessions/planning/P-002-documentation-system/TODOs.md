@@ -1352,24 +1352,35 @@ Complete rewrite of Hospeda monorepo documentation using a hybrid documentation 
 - **Related Files**:
   - `/docs/diagrams/*.mmd`
 
-### PB-050: Examples Repository
+### PB-050: Examples Repository ✅
+
+**Status**: COMPLETED (2025-11-06)
+**Completion**: 19 example files created (6,612 lines total)
+**Commit**: fef47abd
 
 - **Description**: Create comprehensive examples repository
 - **Time Estimate**: 3 hours
 - **Dependencies**: PB-001
 - **Deliverables**:
-  - [ ] Create `/docs/examples/README.md` (Index of all examples)
-  - [ ] Create `/docs/examples/basic-crud/` (Simple CRUD example)
-  - [ ] Create `/docs/examples/advanced-service/` (Complex service example)
-  - [ ] Create `/docs/examples/custom-validation/` (Custom validators)
-  - [ ] Create `/docs/examples/testing-patterns/` (Test examples)
-  - [ ] Ensure all examples are working code
-  - [ ] Add README in each example folder
+  - [x] Create `/docs/examples/README.md` (Index of all examples) - 513 lines
+  - [x] Create `/docs/examples/basic-crud/` (Simple CRUD example) - 2,287 lines
+    - README.md (310 lines), schema.ts (269 lines), model.ts (222 lines)
+    - service.ts (391 lines), route.ts (346 lines), test.ts (439 lines)
+  - [x] Create `/docs/examples/advanced-service/` (Complex service example) - 928 lines
+    - README.md (7 lines), service.ts (459 lines), service.test.ts (462 lines)
+  - [x] Create `/docs/examples/custom-validation/` (Custom validators) - 1,376 lines
+    - README.md (7 lines), validators.ts (405 lines)
+    - schemas.ts (406 lines), validators.test.ts (558 lines)
+  - [x] Create `/docs/examples/testing-patterns/` (Test examples) - 1,818 lines
+    - README.md (7 lines), unit.test.ts (438 lines)
+    - integration.test.ts (431 lines), mocking.test.ts (463 lines), fixtures.ts (479 lines)
+  - [x] Ensure all examples are working code
+  - [x] Add README in each example folder
 - **Acceptance Criteria**:
-  - [ ] All examples work
-  - [ ] Examples extracted from real code when possible
-  - [ ] Each example has README
-  - [ ] Index makes examples discoverable
+  - [x] All examples work
+  - [x] Examples extracted from real code when possible
+  - [x] Each example has README
+  - [x] Index makes examples discoverable
 - **Related Files**:
   - `/docs/examples/README.md`
   - `/docs/examples/*/`
