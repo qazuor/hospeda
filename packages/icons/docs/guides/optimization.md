@@ -35,7 +35,7 @@ Comprehensive guide for optimizing icon components for performance and bundle si
 
 ### Real-World Impact
 
-**Example: 100 icons in application**
+#### Example: 100 Icons in Application
 
 ```
 Unoptimized:
@@ -728,7 +728,7 @@ import { SearchIcon } from '@repo/icons';
 
 ### Enabling Tree-Shaking
 
-**1. Named Exports (Required)**
+#### 1. Named Exports (Required)
 
 ```typescript
 // ✅ Good - Tree-shakeable
@@ -742,7 +742,7 @@ export default {
 };
 ```
 
-**2. ES Modules (Required)**
+#### 2. ES Modules (Required)
 
 ```json
 // package.json
@@ -757,7 +757,7 @@ export default {
 }
 ```
 
-**3. Side-Effect Free**
+#### 3. Side-Effect Free
 
 ```json
 // package.json
@@ -799,7 +799,7 @@ Import 1 icon → Bundle contains 1 icon
 Bundle size: ~2 KB
 ```
 
-**Savings: 99% reduction**
+#### Savings: 99% Reduction
 
 ---
 
@@ -807,7 +807,7 @@ Bundle size: ~2 KB
 
 ### Measuring Impact
 
-**Tool: Bundlephobia**
+#### Tool: Bundlephobia
 
 Check icon package size:
 
@@ -1415,7 +1415,7 @@ function IconPerformanceTest() {
 
 **Optimization Process:**
 
-**Phase 1: SVG Cleanup**
+#### Phase 1: SVG Cleanup
 
 - Removed all xmlns attributes
 - Removed static dimensions
@@ -1424,7 +1424,7 @@ function IconPerformanceTest() {
 
 **Results:** 95 KB → 72 KB (24% reduction)
 
-**Phase 2: Path Simplification**
+#### Phase 2: Path Simplification
 
 - Reduced decimal precision (2 places max)
 - Combined sequential paths
@@ -1433,7 +1433,7 @@ function IconPerformanceTest() {
 
 **Results:** 72 KB → 52 KB (28% reduction)
 
-**Phase 3: Enable Tree-Shaking**
+#### Phase 3: Enable Tree-Shaking
 
 - Changed to named exports
 - Added sideEffects: false
@@ -1441,7 +1441,7 @@ function IconPerformanceTest() {
 
 **Results:** Per-icon bundles: ~0.5 KB each
 
-**Phase 4: Performance Tuning**
+#### Phase 4: Performance Tuning
 
 - Added memoization for complex icons
 - Implemented currentColor consistently
@@ -1515,4 +1515,4 @@ function IconPerformanceTest() {
 
 ---
 
-*Last updated: 2025-01-05*
+###### Last Updated: 2025-01-05
