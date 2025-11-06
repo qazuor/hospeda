@@ -586,7 +586,7 @@ Create a new API endpoint for booking cancellation:
 
 Agents can work together on complex tasks:
 
-**Example: New Feature Workflow**
+#### Example: New Feature Workflow
 
 ```text
 1. product-functional → Creates PDR
@@ -1001,35 +1001,35 @@ Commands are predefined workflows that automate common development tasks. They c
 
 ### Use Claude Code For
 
-**✅ Code Generation**
+#### ✅ Code Generation
 
 - New features (scaffolding)
 - Boilerplate code
 - Test generation
 - Documentation
 
-**✅ Refactoring**
+#### ✅ Refactoring
 
 - Pattern extraction
 - Code organization
 - Type improvements
 - Performance optimization
 
-**✅ Problem Solving**
+#### ✅ Problem Solving
 
 - Debugging
 - Understanding errors
 - Finding solutions
 - Learning concepts
 
-**✅ Documentation**
+#### ✅ Documentation
 
 - JSDoc comments
 - API documentation
 - Architecture docs
 - User guides
 
-**✅ Planning**
+#### ✅ Planning
 
 - Feature breakdown
 - Task atomization
@@ -1038,25 +1038,25 @@ Commands are predefined workflows that automate common development tasks. They c
 
 ### Use Traditional Coding For
 
-**🔧 Complex Business Logic**
+#### 🔧 Complex Business Logic
 
 - Domain-specific algorithms
 - Nuanced requirements
 - Proprietary processes
 
-**🔧 Creative Solutions**
+#### 🔧 Creative Solutions
 
 - Novel approaches
 - Experimental features
 - Unique patterns
 
-**🔧 Sensitive Code**
+#### 🔧 Sensitive Code
 
 - Security-critical code
 - Financial calculations
 - Regulatory compliance
 
-**🔧 Fine-Tuning**
+#### 🔧 Fine-Tuning
 
 - Performance optimization
 - Edge case handling
@@ -1124,26 +1124,26 @@ Claude Code has a token budget (typically 200,000 tokens) that limits how much c
 
 ### What Claude Code Cannot Do
 
-**❌ Replace Human Judgment**
+#### ❌ Replace Human Judgment
 
 - Cannot make business decisions
 - Cannot determine user preferences
 - Cannot evaluate aesthetic quality
 - Cannot assess organizational needs
 
-**❌ Handle All Edge Cases**
+#### ❌ Handle All Edge Cases
 
 - May miss domain-specific edge cases
 - Cannot predict all user behaviors
 - May not consider regulatory requirements
 
-**❌ Ensure Correctness**
+#### ❌ Ensure Correctness
 
 - Generated code must be reviewed
 - Tests must be validated
 - Business logic must be verified
 
-**❌ Deploy or Run Code**
+#### ❌ Deploy or Run Code
 
 - Cannot execute code
 - Cannot deploy to servers
