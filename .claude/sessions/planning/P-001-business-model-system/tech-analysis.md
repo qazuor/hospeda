@@ -548,24 +548,24 @@ export const clientAccessRightIndexes = {
 
 ### 4.3 Complete Entity List (35 Tables)
 
-**Group 1: Identity & Clients (2)**
+#### Group 1: Identity & Clients (2)
 
 1. CLIENT
 2. CLIENT_ACCESS_RIGHT
 
-**Group 2: Catalog & Pricing (3)**
+#### Group 2: Catalog & Pricing (3)
 
 3. PRODUCT
 4. PRICING_PLAN
 5. PRICING_TIER
 
-**Group 3: Subscriptions & Purchases (3)**
+#### Group 3: Subscriptions & Purchases (3)
 
 6. SUBSCRIPTION
 7. PURCHASE
 8. SUBSCRIPTION_ITEM
 
-**Group 4: Billing & Payments (7)**
+#### Group 4: Billing & Payments (7)
 
 9. INVOICE
 10. INVOICE_LINE
@@ -575,47 +575,47 @@ export const clientAccessRightIndexes = {
 14. PAYMENT_METHOD
 15. AD_PRICING_CATALOG
 
-**Group 5: Promotions & Discounts (3)**
+#### Group 5: Promotions & Discounts (3)
 
 16. PROMOTION
 17. DISCOUNT_CODE
 18. DISCOUNT_CODE_USAGE
 
-**Group 6: Campaigns & Advertising (4)**
+#### Group 6: Campaigns & Advertising (4)
 
 19. CAMPAIGN
 20. AD_MEDIA_ASSET
 21. AD_SLOT
 22. AD_SLOT_RESERVATION
 
-**Group 7: Sponsorships & Featured (2)**
+#### Group 7: Sponsorships & Featured (2)
 
 23. SPONSORSHIP
 24. FEATURED_ACCOMMODATION
 
-**Group 8: Professional Services (2)**
+#### Group 8: Professional Services (2)
 
 25. PROFESSIONAL_SERVICE_TYPE
 26. PROFESSIONAL_SERVICE_ORDER
 
-**Group 9: Accommodation Listings (2)**
+#### Group 9: Accommodation Listings (2)
 
 27. ACCOMMODATION_LISTING_PLAN
 28. ACCOMMODATION_LISTING
 
-**Group 10: Benefit Listings (3)**
+#### Group 10: Benefit Listings (3)
 
 29. BENEFIT_PARTNER
 30. BENEFIT_LISTING_PLAN
 31. BENEFIT_LISTING
 
-**Group 11: Service Listings (3)**
+#### Group 11: Service Listings (3)
 
 32. TOURIST_SERVICE
 33. SERVICE_LISTING_PLAN
 34. SERVICE_LISTING
 
-**Group 12: Notifications (1)**
+#### Group 12: Notifications (1)
 
 35. NOTIFICATION
 
@@ -901,43 +901,43 @@ interface SubscriptionItem {
 
 ### 6.2 Seven Target Entity Types
 
-**1. SPONSORSHIP**
+#### 1. SPONSORSHIP
 
 - **Purpose:** Sponsor specific content (POST or EVENT)
 - **Example:** "Bronze Sponsor" badge on popular blog post
 - **Access granted:** Display sponsor logo/name on target content
 
-**2. CAMPAIGN**
+#### 2. CAMPAIGN
 
 - **Purpose:** Run advertising campaign with media assets
 - **Example:** Banner ads across homepage for 30 days
 - **Access granted:** Ad slot reservations, media asset uploads
 
-**3. FEATURED_ACCOMMODATION**
+#### 3. FEATURED_ACCOMMODATION
 
 - **Purpose:** Feature accommodation in prominent locations
 - **Example:** Display property in "Featured" carousel on homepage
 - **Access granted:** Featured placement in specified location (HOME/DESTINATION/SEARCH)
 
-**4. PROFESSIONAL_SERVICE_ORDER**
+#### 4. PROFESSIONAL_SERVICE_ORDER
 
 - **Purpose:** Purchase one-time professional service
 - **Example:** Professional photography session for property
 - **Access granted:** Service delivery, deliverable access
 
-**5. ACCOMMODATION_LISTING**
+#### 5. ACCOMMODATION_LISTING
 
 - **Purpose:** List accommodation on platform
 - **Example:** Basic/Premium/Enterprise listing plan
 - **Access granted:** Listing visibility, feature set per plan
 
-**6. BENEFIT_LISTING**
+#### 6. BENEFIT_LISTING
 
 - **Purpose:** List benefit partner offers for guests
 - **Example:** "10% off at Local Restaurant"
 - **Access granted:** Benefit display, redemption tracking
 
-**7. SERVICE_LISTING**
+#### 7. SERVICE_LISTING
 
 - **Purpose:** List tourist services (tours, bike rentals)
 - **Example:** "City Tour Package" listing
@@ -1158,7 +1158,7 @@ export class ClientService extends BaseCrudService<
 - **Orchestration:** Coordinate multiple models for complex operations
 - **Transactions:** Manage database transactions for atomic operations
 
-**Example: SubscriptionService with complex logic**
+#### Example: SubscriptionService with Complex Logic
 
 ```typescript
 // packages/service-core/src/services/subscription/subscription.service.ts
@@ -1384,7 +1384,7 @@ PUT    /api/{entities}/batch     - Batch update (optional)
 DELETE /api/{entities}/batch     - Batch delete (optional)
 ```
 
-**Example: Client endpoints**
+#### Example: Client Endpoints
 
 ```typescript
 // apps/api/src/routes/clients/index.ts
@@ -1678,13 +1678,13 @@ export default app;
 
 ### 9.1 What Exists (Stage 1-4.7 Complete)
 
-**✅ Stage 1: Enums (Complete)**
+#### ✅ Stage 1: Enums (Complete)
 
 - 26 enum TypeScript definitions
 - 26 corresponding Zod schemas
 - All exported from `@repo/schemas/enums`
 
-**✅ Stage 2: Database (Complete)**
+#### ✅ Stage 2: Database (Complete)
 
 - 35 table definitions using Drizzle
 - All indexes created
@@ -1692,14 +1692,14 @@ export default app;
 - Migrations generated and applied
 - Database fully operational
 
-**✅ Stage 3: Zod Schemas (Complete)**
+#### ✅ Stage 3: Zod Schemas (Complete)
 
 - 210 Zod validation schemas (35 entities × 6 types each)
 - All schemas exported from `@repo/schemas`
 - Type inference working correctly
 - HTTP coercion schemas for API layer
 
-**✅ Stage 4.1-4.7: Models (24/35 Complete - 69%)**
+#### ✅ Stage 4.1-4.7: Models (24/35 Complete - 69%)
 
 Completed models:
 
@@ -1730,7 +1730,7 @@ Completed models:
 
 ### 9.2 What Needs Completion
 
-**⏳ Stage 4.8: Models - Professional Services (2 entities)**
+#### ⏳ Stage 4.8: Models - Professional Services (2 Entities)
 
 Remaining:
 
@@ -1739,7 +1739,7 @@ Remaining:
 
 Estimated: 6-8 hours
 
-**⏳ Stage 4.9: Models - All Listings (8 entities)**
+#### ⏳ Stage 4.9: Models - All Listings (8 Entities)
 
 Remaining:
 
@@ -1754,7 +1754,7 @@ Remaining:
 
 Estimated: 12-15 hours
 
-**⏳ Stage 4.10: Models - Notification (1 entity)**
+#### ⏳ Stage 4.10: Models - Notification (1 Entity)
 
 Remaining:
 
@@ -1762,25 +1762,25 @@ Remaining:
 
 Estimated: 3-4 hours
 
-**⏳ Stage 5: Services Layer (35 services)**
+#### ⏳ Stage 5: Services Layer (35 Services)
 
 Not started. All 35 services need to be implemented.
 
 Estimated: 50-70 hours
 
-**⏳ Stage 6: API Routes (35 endpoint groups)**
+#### ⏳ Stage 6: API Routes (35 Endpoint Groups)
 
 Not started. All API routes need to be created.
 
 Estimated: 35-50 hours
 
-**⏳ Stage 7: Integration Tests**
+#### ⏳ Stage 7: Integration Tests
 
 Not started. E2E flows need validation.
 
 Estimated: 15-25 hours
 
-**Total remaining: ~130 hours**
+#### Total Remaining: ~130 Hours
 
 ### 9.3 What Needs Validation/Fixing
 
@@ -1918,11 +1918,11 @@ pnpm run test
 
 ### 10.4 Stage 5: Services Layer (50-70 hours)
 
-**All 35 services need implementation**
+#### All 35 Services Need Implementation
 
-**Approach: Implement in groups (same as models)**
+#### Approach: Implement in Groups (Same As Models)
 
-**Group 1: Core Services (16h)**
+#### Group 1: Core Services (16h)
 
 - ClientService (4h)
 - ClientAccessRightService (4h)
@@ -1930,13 +1930,13 @@ pnpm run test
 - PricingPlanService (3h)
 - PricingTierService (3h)
 
-**Group 2: Subscription Services (18h)**
+#### Group 2: Subscription Services (18h)
 
 - SubscriptionService (8h) - Most complex, orchestrates multiple services
 - PurchaseService (4h)
 - SubscriptionItemService (6h) - Polymorphic complexity
 
-**Group 3: Billing Services (20h)**
+#### Group 3: Billing Services (20h)
 
 - InvoiceService (6h) - Invoice generation logic
 - InvoiceLineService (2h)
@@ -1946,7 +1946,7 @@ pnpm run test
 - PaymentMethodService (3h)
 - AdPricingCatalogService (2h)
 
-**Group 4-12: Remaining Services (16h)**
+#### Group 4-12: Remaining Services (16h)
 
 - Promotions (6h)
 - Advertising (8h)
@@ -1955,7 +1955,7 @@ pnpm run test
 - Listings (12h)
 - Notification (4h)
 
-**Total: ~60 hours estimated**
+#### Total: ~60 Hours Estimated
 
 **Dependencies:** All models must be complete first
 
@@ -1963,7 +1963,7 @@ pnpm run test
 
 ### 10.5 Stage 6: API Routes (35-50 hours)
 
-**Pattern: Use factory functions for standard CRUD, custom routes for complex operations**
+#### Pattern: Use Factory Functions for Standard CRUD, Custom Routes for Complex Operations
 
 **Approach:**
 
@@ -1999,7 +1999,7 @@ pnpm run test
    - Standard CRUD using factories
    - Minimal custom logic
 
-**Total: ~44 hours estimated**
+#### Total: ~44 Hours Estimated
 
 **Dependencies:** Services must be complete
 
@@ -2051,7 +2051,7 @@ pnpm run test
    - Verify access rights generation
    - Test concurrent access prevention
 
-**Total: ~24 hours estimated**
+#### Total: ~24 Hours Estimated
 
 **Dependencies:** All API routes must be complete
 
