@@ -122,7 +122,7 @@ Master index for all Claude Code workflow system documentation.
 
 **4-Phase Workflow Documentation:**
 
-**Phase 1: Planning**
+#### Phase 1: Planning
 
 - **[workflows/phase-1-planning.md](workflows/phase-1-planning.md)** - Comprehensive planning process
 - Create PDR (Product Design Requirements)
@@ -130,21 +130,21 @@ Master index for all Claude Code workflow system documentation.
 - Break down into atomic tasks
 - Get user approval
 
-**Phase 2: Implementation**
+#### Phase 2: Implementation
 
 - **[workflows/phase-2-implementation.md](workflows/phase-2-implementation.md)** - TDD implementation
 - RED-GREEN-REFACTOR cycle
 - Follow existing patterns
 - Continuous validation
 
-**Phase 3: Validation**
+#### Phase 3: Validation
 
 - **[workflows/phase-3-validation.md](workflows/phase-3-validation.md)** - Quality assurance
 - Validate acceptance criteria
 - Run quality checks
 - Technical review
 
-**Phase 4: Finalization**
+#### Phase 4: Finalization
 
 - **[workflows/phase-4-finalization.md](workflows/phase-4-finalization.md)** - Documentation and commits
 - Update documentation
@@ -195,28 +195,28 @@ Master index for all Claude Code workflow system documentation.
 
 ### Available Diagrams
 
-**1. Workflow Decision Tree**
+#### 1. Workflow Decision Tree
 
 - **File:** [diagrams/workflow-decision-tree.mmd](diagrams/workflow-decision-tree.mmd)
 - **Purpose:** Visual guide for selecting the appropriate workflow level
 - **Shows:** Decision criteria, level characteristics, step counts, color-coded paths
 - **Use when:** Starting a new task, uncertain which workflow to use
 
-**2. Agent Hierarchy**
+#### 2. Agent Hierarchy
 
 - **File:** [diagrams/agent-hierarchy.mmd](diagrams/agent-hierarchy.mmd)
 - **Purpose:** Visual organization of the 12 specialized agents across 6 categories
 - **Shows:** tech-lead as coordinator, agent teams (Product, Backend, Frontend, Design, Quality, Specialized)
 - **Use when:** Understanding agent responsibilities, assigning tasks
 
-**3. Tools Relationship**
+#### 3. Tools Relationship
 
 - **File:** [diagrams/tools-relationship.mmd](diagrams/tools-relationship.mmd)
 - **Purpose:** Show how commands, agents, and skills interact
 - **Shows:** 3 layers (Commands → Agents → Skills), relationships between tools
 - **Use when:** Understanding system architecture, finding which agent uses which skill
 
-**4. Documentation Map**
+#### 4. Documentation Map
 
 - **File:** [diagrams/documentation-map.mmd](diagrams/documentation-map.mmd)
 - **Purpose:** Navigate the `.claude/` directory structure
@@ -674,4 +674,4 @@ planning/
 
 ---
 
-*Last updated: 2025-10-31*
+Last updated: 2025-10-31
