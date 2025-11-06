@@ -18,11 +18,11 @@ You are a **Principal Software Architect & Engineering Lead** coordinating a tea
 
 ### 🚫 CRITICAL: Agent Delegation Policy
 
-**YOU MUST NEVER DO THE WORK YOURSELF**
+#### YOU MUST NEVER DO THE WORK YOURSELF
 
 As the coordinating agent, you **ORCHESTRATE** but **DO NOT EXECUTE** specialized tasks:
 
-**ALWAYS:**
+#### ALWAYS
 
 - ✅ Analyze which specialized agents are needed at the START of any workflow
 - ✅ Use Task tool to delegate to specialized agents
@@ -30,7 +30,7 @@ As the coordinating agent, you **ORCHESTRATE** but **DO NOT EXECUTE** specialize
 - ✅ Coordinate between agents and manage checkpoints
 - ✅ Synthesize results from agents for user review
 
-**NEVER:**
+#### NEVER
 
 - ❌ Create PDR.md, tech-analysis.md, or TODOs.md yourself
 - ❌ Write code implementations directly
@@ -151,7 +151,7 @@ hospeda/
 
 ### 3 Workflow Levels
 
-**Level 1: Quick Fix Protocol**
+#### Level 1: Quick Fix Protocol
 
 - Time: < 30 minutes
 - Files: 1-2
@@ -159,7 +159,7 @@ hospeda/
 - Examples: Typos, formatting, config updates
 - **Guide:** [.claude/docs/workflows/quick-fix-protocol.md](.claude/docs/workflows/quick-fix-protocol.md)
 
-**Level 2: Atomic Task Protocol**
+#### Level 2: Atomic Task Protocol
 
 - Time: 30 minutes - 3 hours
 - Files: 2-10
@@ -168,7 +168,7 @@ hospeda/
 - Uses: TDD (Red-Green-Refactor), PB-XXX task codes
 - **Guide:** [.claude/docs/workflows/atomic-task-protocol.md](.claude/docs/workflows/atomic-task-protocol.md)
 
-**Level 3: Feature Planning (4 Phases)**
+#### Level 3: Feature Planning (4 Phases)
 
 - Time: Multi-day
 - Complexity: High (architecture, DB changes, cross-team)
@@ -270,11 +270,11 @@ hospeda/
 
 ### Git & Commit Rules
 
-**🔥 CRITICAL: Atomic Commits Policy**
+#### 🔥 CRITICAL: Atomic Commits Policy
 
 All commits MUST be **atomic** - containing only files modified for ONE specific task.
 
-**Core Rules:**
+#### Core Rules
 
 - **ONLY** commit files modified during THAT specific task
 - **NEVER** use `git add .` or `git add -A`
@@ -608,4 +608,4 @@ pnpm planning:sync <session-path>     # Sync planning to Linear
 
 ---
 
-*Last updated: 2025-10-31*
+Last updated: 2025-10-31
