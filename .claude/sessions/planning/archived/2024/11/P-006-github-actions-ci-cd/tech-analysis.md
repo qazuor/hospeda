@@ -173,25 +173,25 @@ graph TD
 
 ### 2.5 Technical Decisions
 
-**Decision 1: Git Hook Strategy**
+#### Decision 1: Git Hook Strategy
 
 - **Choice:** Pre-commit hook with BLOCKING error (exit 1)
 - **Alternatives:** Warning only (too weak), post-commit (too late)
 - **Rationale:** Only pre-commit can prevent bad commits before they happen
 
-**Decision 2: Branch Protection Configuration**
+#### Decision 2: Branch Protection Configuration
 
 - **Require:** 1 approval, status checks pass, linear history
 - **Enforce:** Even for admins
 - **Rationale:** No exceptions = consistent quality
 
-**Decision 3: Automated Development Setup Command**
+#### Decision 3: Automated Development Setup Command
 
 - **Create:** `start-development.sh` script that receives only planning-code
 - **Functionality:** Auto-extracts metadata, creates worktree, branch, PR, and GitHub Project (Level 3)
 - **Rationale:** Single unified workflow, zero manual setup, integrated with planning approval
 
-**Decision 4: Agent Instruction Updates**
+#### Decision 4: Agent Instruction Updates
 
 - **Strategy:** Update in priority order (P0 → P1 → P2)
 - **Validation:** Test each agent after update
@@ -276,7 +276,7 @@ on:
 
 ### 2.8 Risk Assessment - Migration Specific
 
-**Risk 1: Developer Resistance to Workflow Change**
+#### Risk 1: Developer Resistance to Workflow Change
 
 - **Probability:** Medium
 - **Impact:** High (could block all work)
@@ -287,7 +287,7 @@ on:
   - Support channel monitored
 - **Contingency:** Emergency rollback plan (disable protection + revert hook)
 
-**Risk 2: Scripts Failing in Worktree Environments**
+#### Risk 2: Scripts Failing in Worktree Environments
 
 - **Probability:** Low
 - **Impact:** Medium (scripts error, developers confused)
@@ -297,7 +297,7 @@ on:
   - Update planning scripts to work from any location
 - **Contingency:** Provide workarounds in docs, fix scripts quickly
 
-**Risk 3: Git Hooks Not Working Correctly**
+#### Risk 3: Git Hooks Not Working Correctly
 
 - **Probability:** Low
 - **Impact:** High (enforcement broken)
@@ -307,7 +307,7 @@ on:
   - Add pre-push hook as secondary check
 - **Contingency:** Fix hook, re-educate developers
 
-**Risk 4: Branch Protection Too Restrictive**
+#### Risk 4: Branch Protection Too Restrictive
 
 - **Probability:** Medium
 - **Impact:** Medium (legitimate work blocked)
@@ -317,7 +317,7 @@ on:
   - Monitor false positives
 - **Contingency:** Adjust protection rules, add exceptions
 
-**Risk 5: Incomplete Migration Causing Confusion**
+#### Risk 5: Incomplete Migration Causing Confusion
 
 - **Probability:** High if not systematic
 - **Impact:** Medium (mixed messages, errors)
@@ -551,7 +551,7 @@ on:
 
 Some workflows run on **both** PRs and scheduled intervals for comprehensive coverage.
 
-**Example: CodeQL Security Scan**
+#### Example: CodeQL Security Scan
 
 ```yaml
 on:
@@ -1603,7 +1603,7 @@ Workflows require these permissions:
 
 ### 12.2 Validation Approach
 
-**Phase 1: Individual Workflow Validation**
+#### Phase 1: Individual Workflow Validation
 
 1. Create test PR with specific changes
 2. Manually trigger workflow via workflow_dispatch
@@ -1611,14 +1611,14 @@ Workflows require these permissions:
 4. Verify PR comments/status checks as expected
 5. Document any issues or edge cases
 
-**Phase 2: Integration Validation**
+#### Phase 2: Integration Validation
 
 1. Test multiple workflows on same PR
 2. Verify workflows don't conflict
 3. Verify aggregate status checks
 4. Test with concurrent PRs
 
-**Phase 3: Cron Job Validation**
+#### Phase 3: Cron Job Validation
 
 1. Manually trigger cron jobs
 2. Verify issue creation
@@ -2068,7 +2068,7 @@ With 62+ files requiring updates, incomplete migration would cause:
 **Duration**: 5-6 hours (3h setup + 3h GitHub Projects)
 **Prerequisites:** Migration Phase 0 P0 items complete (minimum)
 
-**PB-001: Foundation & Configuration (2-3h)**
+#### PB-001: Foundation & Configuration (2-3h)
 
 1. Add size-limit and bundlewatch dependencies
 2. Create `.lighthouserc.json` configuration
@@ -2076,7 +2076,7 @@ With 62+ files requiring updates, incomplete migration would cause:
 4. Create reusable workflow templates
 5. Add path filter helper functions
 
-**PB-007: GitHub Projects Setup (2-3h, P1)**
+#### PB-007: GitHub Projects Setup (2-3h, P1)
 
 1. Create GitHub Project board with Kanban structure
 2. Configure automation rules for PR lifecycle
