@@ -60,14 +60,14 @@ Use Level 1 for:
 
 #### Task: Fix typo in error message
 
-**1. Identify Issue**
+#### 1. Identify Issue
 
 ```typescript
 // packages/service-core/src/services/booking/booking.service.ts
 throw new Error('Accomodation not available'); // Typo: "Accomodation"
 ```
 
-**2. Make Fix**
+#### 2. Make Fix
 
 ```text
 Prompt to Claude:
@@ -75,7 +75,7 @@ Prompt to Claude:
 line 45. Change 'Accomodation' to 'Accommodation'"
 ```
 
-**3. Verify**
+#### 3. Verify
 
 ```bash
 # Quick check
@@ -86,7 +86,7 @@ grep -r "Accomodation" packages/service-core/src/
 /code-check
 ```
 
-**4. Commit**
+#### 4. Commit
 
 ```bash
 /commit
@@ -163,7 +163,7 @@ graph TD
 
 #### Task PB-042: Add endpoint to cancel booking
 
-**1. Understand Requirements**
+#### 1. Understand Requirements
 
 ```text
 Requirements:
@@ -176,7 +176,7 @@ Requirements:
 - Return 200 with updated booking
 ```
 
-**2. RED: Write Failing Test**
+#### 2. RED: Write Failing Test
 
 ```text
 Prompt to Claude:
@@ -273,7 +273,7 @@ cd apps/api && pnpm test cancel
 # ❌ All tests fail (endpoint doesn't exist yet)
 ```
 
-**3. GREEN: Implement Code**
+#### 3. GREEN: Implement Code
 
 ```text
 Prompt to Claude:
@@ -418,7 +418,7 @@ cd apps/api && pnpm test cancel
 # ✅ All tests pass
 ```
 
-**4. REFACTOR: Improve Code**
+#### 4. REFACTOR: Improve Code
 
 ```text
 Prompt to Claude:
@@ -490,7 +490,7 @@ cd apps/api && pnpm test cancel
 # ✅ All tests still pass after refactoring
 ```
 
-**5. Run Quality Checks**
+#### 5. Run Quality Checks
 
 ```bash
 /quality-check
@@ -505,7 +505,7 @@ cd apps/api && pnpm test cancel
 # All checks passed!
 ```
 
-**6. Commit Changes**
+#### 6. Commit Changes
 
 ```bash
 /commit
@@ -601,13 +601,13 @@ graph LR
 
 #### Phase 1: Process
 
-**Step 1: Initiate Planning**
+#### Step 1: Initiate Planning
 
 ```bash
 /start-feature-plan
 ```
 
-**Step 2: Describe Feature**
+#### Step 2: Describe Feature
 
 ```text
 Claude: "Describe the feature you want to plan"
@@ -632,7 +632,7 @@ Scope:
 - Future: Usage-based billing, team plans"
 ```
 
-**Step 3: Review PDR**
+#### Step 3: Review PDR
 
 ```text
 Claude invokes product-functional agent, generates PDR:
@@ -668,7 +668,7 @@ Enable hosts to subscribe to premium features with tiered pricing.
 
 You: "Approved! Continue with mockups"
 
-**Step 4: Review Mockups**
+#### Step 4: Review Mockups
 
 ```text
 Claude invokes ux-ui-designer agent, generates mockups:
@@ -688,7 +688,7 @@ Claude: [Updates mockups]
 You: "Perfect! Continue with technical analysis"
 ```
 
-**Step 5: Review Technical Analysis**
+#### Step 5: Review Technical Analysis
 
 ```text
 Claude invokes product-technical agent, generates tech-analysis.md:
@@ -743,7 +743,7 @@ Phase 4: Testing + Docs (PB-116 to PB-120)
 
 You: "Approved! Generate task breakdown"
 
-**Step 6: Review TODOs**
+#### Step 6: Review TODOs
 
 ```text
 Claude generates TODOs.md with atomized tasks:
@@ -857,7 +857,7 @@ Create SubscriptionModel in packages/db/src/models/subscription.model.ts
 
 #### Phase 3: Process
 
-**Step 1: QA Validation**
+#### Step 1: QA Validation
 
 ```text
 Task: Invoke qa-engineer agent to validate subscription system:
@@ -870,7 +870,7 @@ Task: Invoke qa-engineer agent to validate subscription system:
 6. Validate acceptance criteria from PDR
 ```
 
-**Step 2: Code Review**
+#### Step 2: Code Review
 
 ```text
 Request code review from Claude:
@@ -884,7 +884,7 @@ Request code review from Claude:
 6. Documentation completeness"
 ```
 
-**Step 3: Testing**
+#### Step 3: Testing
 
 ```bash
 # Run all tests
@@ -899,7 +899,7 @@ pnpm test:coverage
 # Verify 90%+ coverage
 ```
 
-**Step 4: Manual Testing**
+#### Step 4: Manual Testing
 
 ```bash
 # Start development environment
@@ -931,7 +931,7 @@ pnpm dev
 
 #### Phase 4: Process
 
-**Step 1: Update Documentation**
+#### Step 1: Update Documentation
 
 ```bash
 /update-docs
@@ -944,7 +944,7 @@ pnpm dev
 5. Inline JSDoc comments
 ```
 
-**Step 2: Generate Commits**
+#### Step 2: Generate Commits
 
 ```bash
 /commit
@@ -954,7 +954,7 @@ pnpm dev
 # Verify conventional commit format
 ```
 
-**Step 3: Create PR**
+#### Step 3: Create PR
 
 ```bash
 # Push branch
@@ -968,7 +968,7 @@ git push origin feature/subscription-system
 - Screenshots/demos
 ```
 
-**Step 4: Sync to Linear**
+#### Step 4: Sync to Linear
 
 ```bash
 # Sync planning to Linear
@@ -978,7 +978,7 @@ pnpm planning:sync .claude/sessions/planning/P-00X-subscription-system/
 /sync-planning-github
 ```
 
-**Step 5: Deployment**
+#### Step 5: Deployment
 
 ```bash
 # Merge to main
