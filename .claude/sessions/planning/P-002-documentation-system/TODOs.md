@@ -1088,29 +1088,34 @@ Complete rewrite of Hospeda monorepo documentation using a hybrid documentation 
   - `/docs/claude-code/resources.md`
 - **Total Lines**: ~6,531 lines
 
-### PB-040: Runbooks Documentation
+### PB-040: Runbooks Documentation ✅ COMPLETED
 
 - **Description**: Create operational runbooks
 - **Time Estimate**: 5 hours
 - **Dependencies**: PB-001
 - **Deliverables**:
-  - [ ] Create `/docs/runbooks/README.md` (Index)
-  - [ ] Create `/docs/runbooks/production-bugs.md` (Investigating issues)
-  - [ ] Create `/docs/runbooks/rollback.md` (Rolling back deployments)
-  - [ ] Create `/docs/runbooks/backup-recovery.md` (Database backup & restore)
-  - [ ] Create `/docs/runbooks/scaling.md` (Scaling API under load)
-  - [ ] Create `/docs/runbooks/monitoring.md` (Monitoring & alerting)
-  - [ ] Add step-by-step procedures
-  - [ ] Add troubleshooting sections
+  - [x] Create `/docs/runbooks/README.md` (Index) - 760 lines
+  - [x] Create `/docs/runbooks/production-bugs.md` (Investigating issues) - 1,515 lines
+  - [x] Create `/docs/runbooks/rollback.md` (Rolling back deployments) - 1,189 lines
+  - [x] Create `/docs/runbooks/backup-recovery.md` (Database backup & restore) - 1,206 lines
+  - [x] Create `/docs/runbooks/scaling.md` (Scaling API under load) - 1,079 lines
+  - [x] Create `/docs/runbooks/monitoring.md` (Monitoring & alerting) - 1,164 lines
+  - [x] Add step-by-step procedures
+  - [x] Add troubleshooting sections
 - **Acceptance Criteria**:
-  - [ ] All runbooks follow template
-  - [ ] Step-by-step procedures clear
-  - [ ] Troubleshooting comprehensive
-  - [ ] Rollback procedures safe
-  - [ ] Monitoring tools documented
+  - [x] All runbooks follow template
+  - [x] Step-by-step procedures clear
+  - [x] Troubleshooting comprehensive
+  - [x] Rollback procedures safe
+  - [x] Monitoring tools documented
 - **Related Files**:
   - `/docs/runbooks/README.md`
-  - `/docs/runbooks/*.md`
+  - `/docs/runbooks/production-bugs.md`
+  - `/docs/runbooks/rollback.md`
+  - `/docs/runbooks/backup-recovery.md`
+  - `/docs/runbooks/scaling.md`
+  - `/docs/runbooks/monitoring.md`
+- **Total Lines**: ~6,913 lines
 
 ### PB-041: Contributing Documentation
 
