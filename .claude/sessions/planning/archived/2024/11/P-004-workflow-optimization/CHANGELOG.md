@@ -217,7 +217,7 @@ Complete restructuring and consolidation of the Claude Code workflow system for 
 
 **3-Level Workflow Hierarchy (clarified):**
 
-**Level 1: Quick Fix Protocol**
+#### Level 1: Quick Fix Protocol
 
 - Time: < 30 minutes (was "< 1 hour")
 - Files: 1-2
@@ -225,7 +225,7 @@ Complete restructuring and consolidation of the Claude Code workflow system for 
 - Examples: Typos, formatting, config updates
 - Process: Edit → Quick Validation → Commit
 
-**Level 2: Atomic Task / Bugfix-Small Protocol**
+#### Level 2: Atomic Task / Bugfix-Small Protocol
 
 - Time: 30 minutes - 3 hours
 - Files: 2-10
@@ -234,7 +234,7 @@ Complete restructuring and consolidation of the Claude Code workflow system for 
 - Examples: Bugfixes, small features, new endpoints
 - Process: Simplified Planning → TDD Implementation → Quality Check → Commit
 
-**Level 3: Large Feature Planning (4 Phases)**
+#### Level 3: Large Feature Planning (4 Phases)
 
 - Time: Multi-day
 - Files: 10+
@@ -471,19 +471,19 @@ If you previously used:
 
 ### From Pre-P-004 to P-004 v1.0.0
 
-**Step 1: Review Changes**
+#### Step 1: Review Changes
 
 1. Read this CHANGELOG.md completely
 2. Review quick-start.md for new system overview
 3. Check decision-tree.md for workflow selection
 
-**Step 2: Update References**
+#### Step 2: Update References
 
 1. Replace security/performance/accessibility auditor calls with new commands
 2. Update skill invocations for testing (api-app-testing, web-app-testing)
 3. Update documentation links if embedding in custom docs
 
-**Step 3: Validate System**
+#### Step 3: Validate System
 
 ```bash
 # Run all validation scripts
@@ -496,13 +496,13 @@ pnpm claude:validate
 ./.claude/scripts/health-check.sh
 ```
 
-**Step 4: Test Workflows**
+#### Step 4: Test Workflows
 
 1. Try Level 1 workflow with a quick fix
 2. Try Level 2 workflow with a small task
 3. Review Level 3 workflow phases (no need to execute yet)
 
-**Step 5: Configure Hooks (Optional)**
+#### Step 5: Configure Hooks (Optional)
 
 1. Review RECOMMENDED-HOOKS.md
 2. Decide which hooks to enable
