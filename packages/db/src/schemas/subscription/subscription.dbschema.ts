@@ -3,7 +3,7 @@ import { relations } from 'drizzle-orm';
 import { jsonb, pgTable, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { pricingPlans } from '../catalog/pricingPlan.dbschema';
 import { clients } from '../client/client.dbschema';
-import { SubscriptionStatusPgEnum } from '../enums.dbschema.js';
+import { LifecycleStatusPgEnum, SubscriptionStatusPgEnum } from '../enums.dbschema.js';
 import { users } from '../user/user.dbschema';
 import { subscriptionItems } from './subscriptionItem.dbschema';
 
@@ -25,6 +25,9 @@ export const subscriptions = pgTable('subscriptions', {
     startAt: timestamp('start_at', { withTimezone: true }),
     endAt: timestamp('end_at', { withTimezone: true }),
     trialEndsAt: timestamp('trial_ends_at', { withTimezone: true }),
+
+    // Lifecycle state
+    lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
 
     // Audit fields
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),

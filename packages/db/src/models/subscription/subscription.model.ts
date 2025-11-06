@@ -1,3 +1,4 @@
+import type { Subscription } from '@repo/schemas';
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import { and, eq, gte, lte } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
@@ -6,8 +7,6 @@ import { pricingPlans } from '../../schemas/catalog/pricingPlan.dbschema';
 import type * as schema from '../../schemas/index.js';
 import { subscriptions } from '../../schemas/subscription/subscription.dbschema';
 import { subscriptionItems } from '../../schemas/subscription/subscriptionItem.dbschema';
-
-type Subscription = typeof subscriptions.$inferSelect;
 
 export class SubscriptionModel extends BaseModel<Subscription> {
     protected table = subscriptions;
@@ -252,7 +251,10 @@ export class SubscriptionModel extends BaseModel<Subscription> {
     async findByClient(clientId: string): Promise<Subscription[]> {
         const db = this.getClient();
 
-        return await db.select().from(subscriptions).where(eq(subscriptions.clientId, clientId));
+        return (await db
+            .select()
+            .from(subscriptions)
+            .where(eq(subscriptions.clientId, clientId))) as Subscription[];
     }
 
     async withItems(subscriptionId: string): Promise<{
