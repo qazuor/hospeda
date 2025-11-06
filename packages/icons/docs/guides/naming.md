@@ -25,7 +25,7 @@ Comprehensive guide for naming icon components in the `@repo/icons` package.
 
 ### Core Principles
 
-**1. Clarity Over Brevity**
+#### 1. Clarity Over Brevity
 
 ```typescript
 // ✅ Good - Clear and descriptive
@@ -37,7 +37,7 @@ ACIcon
 WCAIcon
 ```
 
-**2. Consistency Across Package**
+#### 2. Consistency Across Package
 
 ```typescript
 // ✅ Good - Consistent "Icon" suffix
@@ -51,7 +51,7 @@ FilterComponent
 SortSVG
 ```
 
-**3. Semantic Meaning**
+#### 3. Semantic Meaning
 
 ```typescript
 // ✅ Good - Describes purpose/meaning
@@ -63,7 +63,7 @@ PlusIcon         // Visual: plus symbol
 GreenCheckIcon   // Visual + color
 ```
 
-**4. Domain-Specific Terms**
+#### 4. Domain-Specific Terms
 
 ```typescript
 // ✅ Good - Uses Hospeda business terms
@@ -132,7 +132,7 @@ CompletedPaymentIcon
 
 ### Naming Rules
 
-**1. Always PascalCase**
+#### 1. Always PascalCase
 
 ```typescript
 // ✅ Correct
@@ -146,7 +146,7 @@ search-icon     // kebab-case
 SEARCHICON      // SCREAMING_SNAKE_CASE
 ```
 
-**2. Always End with "Icon"**
+#### 2. Always End with "Icon"
 
 ```typescript
 // ✅ Correct
@@ -160,7 +160,7 @@ EditComponent   // Wrong suffix
 DeleteSVG       // Wrong suffix
 ```
 
-**3. Start with Letter (Not Number)**
+#### 3. Start with Letter (Not Number)
 
 ```typescript
 // ✅ Correct
@@ -172,7 +172,7 @@ NinetyDegreeIcon
 90DegreeIcon    // Starts with number
 ```
 
-**4. No Special Characters**
+#### 4. No Special Characters
 
 ```typescript
 // ✅ Correct
@@ -610,7 +610,7 @@ WillDeleteIcon
 
 ### Singular vs Plural
 
-**General rule: Use singular**
+#### General Rule: Use Singular
 
 ```typescript
 // ✅ Singular
@@ -649,7 +649,7 @@ GuestUserIcon
 
 ### Compound Patterns
 
-**1. Action + Object**
+#### 1. Action + Object
 
 ```typescript
 AddUserIcon
@@ -659,7 +659,7 @@ CreateBookingIcon
 UpdateSettingsIcon
 ```
 
-**2. State + Object**
+#### 2. State + Object
 
 ```typescript
 ActiveUserIcon
@@ -669,7 +669,7 @@ VerifiedAccountIcon
 ExpiredTokenIcon
 ```
 
-**3. Location + Object**
+#### 3. Location + Object
 
 ```typescript
 IndoorPoolIcon
@@ -678,7 +678,7 @@ PrivateBathroomIcon
 SharedKitchenIcon
 ```
 
-**4. Type + Object**
+#### 4. Type + Object
 
 ```typescript
 CreditCardIcon
@@ -1231,7 +1231,7 @@ Starting point: Need to name an icon
 
 ### Quick Decision Examples
 
-**Example 1: Adding/Creating Items**
+#### Example 1: Adding/Creating Items
 
 ```
 Need: Icon for adding new booking
@@ -1243,7 +1243,7 @@ Need: Icon for adding new booking
     └─ Result: AddBookingIcon ✅
 ```
 
-**Example 2: Amenity/Feature**
+#### Example 2: Amenity/Feature
 
 ```
 Need: Icon for air conditioning
@@ -1255,7 +1255,7 @@ Need: Icon for air conditioning
     └─ Result: AirConditioningIcon ✅
 ```
 
-**Example 3: Status Indicator**
+#### Example 3: Status Indicator
 
 ```
 Need: Icon showing booking is confirmed
@@ -1273,40 +1273,40 @@ Need: Icon showing booking is confirmed
 
 ### Summary of Best Practices
 
-**1. Follow category conventions**
+#### 1. Follow Category Conventions
 
 - Each category has specific patterns
 - Consistency within category is critical
 
-**2. Prefer semantic over descriptive**
+#### 2. Prefer Semantic Over Descriptive
 
 - Meaning over appearance
 - Business context over visual
 
-**3. Use full words, not abbreviations**
+#### 3. Use Full Words, Not Abbreviations
 
 - Exception: Universal terms (WiFi, API)
 - Clarity over brevity
 
-**4. Keep it simple**
+#### 4. Keep It Simple
 
 - One purpose per icon
 - Avoid over-specification
 - Let props handle variations
 
-**5. Be consistent**
+#### 5. Be Consistent
 
 - Match existing patterns
 - Use consistent verb tense
 - Maintain singular/plural rules
 
-**6. Document special cases**
+#### 6. Document Special Cases
 
 - Brand names
 - Numbers
 - Compounds
 
-**7. Plan for refactoring**
+#### 7. Plan for Refactoring
 
 - Deprecation path
 - Migration guides
@@ -1358,4 +1358,4 @@ Need: Icon showing booking is confirmed
 
 ---
 
-*Last updated: 2025-01-05*
+###### Last Updated: 2025-01-05
