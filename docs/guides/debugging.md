@@ -288,7 +288,7 @@ Params: ["Concepción del Uruguay"]
 
 **Common Query Issues**:
 
-**Issue 1: Query returns null unexpectedly**
+#### Issue 1: Query Returns Null Unexpectedly
 
 ```typescript
 // ❌ Problem: findOne returns null
@@ -296,7 +296,7 @@ const accommodation = await accommodationModel.findOne({ city: 'Concepción' });
 console.log(accommodation); // null
 ```
 
-**Debug**:
+#### Debug
 
 1. Check exact value in database (case-sensitive!)
 2. Check for extra whitespace
@@ -307,21 +307,21 @@ console.log(accommodation); // null
 SELECT city, length(city) FROM accommodations LIMIT 5;
 ```
 
-**Issue 2: Type mismatch error**
+#### Issue 2: Type Mismatch Error
 
 ```typescript
 // ❌ Error: Type 'string' is not assignable to type 'UUID'
 const accommodation = await accommodationModel.findById('123');
 ```
 
-**Solution**: Use valid UUID format
+#### Solution: Use Valid UUID Format
 
 ```typescript
 // ✅ Correct
 const accommodation = await accommodationModel.findById('550e8400-e29b-41d4-a716-446655440000');
 ```
 
-**Issue 3: Relation not loading**
+#### Issue 3: Relation Not Loading
 
 ```typescript
 // ❌ Problem: reviews is undefined
@@ -329,7 +329,7 @@ const accommodation = await accommodationModel.findById('acc-123');
 console.log(accommodation.reviews); // undefined
 ```
 
-**Solution**: Use `findWithRelations`
+#### Solution: Use `findWithRelations`
 
 ```typescript
 // ✅ Correct
@@ -342,7 +342,7 @@ console.log(accommodation.reviews); // Array of reviews
 
 #### Slow Query Debugging
 
-**Step 1: Identify slow query**
+#### Step 1: Identify Slow Query
 
 Add timing logs:
 
@@ -353,21 +353,21 @@ console.timeEnd('query-accommodations');
 // Output: query-accommodations: 1542ms
 ```
 
-**Step 2: Analyze query plan**
+#### Step 2: Analyze Query Plan
 
 ```sql
 EXPLAIN ANALYZE
 SELECT * FROM accommodations WHERE city = 'Buenos Aires';
 ```
 
-**Step 3: Check for missing index**
+#### Step 3: Check for Missing Index
 
 ```sql
 -- If you see "Seq Scan" on large table, add index
 CREATE INDEX idx_accommodations_city ON accommodations(city);
 ```
 
-**Step 4: Verify improvement**
+#### Step 4: Verify Improvement
 
 ```typescript
 console.time('query-accommodations');
@@ -378,7 +378,7 @@ console.timeEnd('query-accommodations');
 
 #### Connection Issues
 
-**Error: "Connection terminated unexpectedly"**
+#### Error: Connection Terminated Unexpectedly
 
 ```typescript
 // Check connection
@@ -418,7 +418,7 @@ Services contain business logic and orchestrate models.
 
 **Common Service Issues**:
 
-**Issue 1: Validation error**
+#### Issue 1: Validation Error
 
 ```typescript
 // Error: Validation failed
@@ -428,7 +428,7 @@ const result = await accommodationService.create({
 });
 ```
 
-**Debug**:
+#### Debug
 
 1. Check Zod schema requirements
 2. Log input data before validation
@@ -444,7 +444,7 @@ try {
 }
 ```
 
-**Issue 2: Service returns error result**
+#### Issue 2: Service Returns Error Result
 
 ```typescript
 const result = await accommodationService.create(data);
@@ -455,7 +455,7 @@ if (!result.success) {
 }
 ```
 
-**Debug**:
+#### Debug
 
 ```typescript
 // Add detailed logging in service
@@ -475,7 +475,7 @@ export class AccommodationService extends BaseCrudService {
 }
 ```
 
-**Issue 3: Transaction rollback**
+#### Issue 3: Transaction Rollback
 
 ```typescript
 // Error: Transaction was rolled back
@@ -485,7 +485,7 @@ await db.transaction(async (trx) => {
 });
 ```
 
-**Debug**:
+#### Debug
 
 ```typescript
 // Add try-catch to see where error occurs
@@ -520,9 +520,9 @@ app.use('*', logger());
 
 **Common API Issues**:
 
-**Issue 1: 500 Internal Server Error**
+#### Issue 1: 500 Internal Server Error
 
-**Debug**:
+#### Debug
 
 ```bash
 # Check API logs
@@ -554,7 +554,7 @@ app.onError((err, c) => {
 });
 ```
 
-**Issue 2: 400 Bad Request (Validation Error)**
+#### Issue 2: 400 Bad Request (Validation Error)
 
 ```bash
 # Test endpoint with curl
@@ -578,7 +578,7 @@ curl -X POST http://localhost:3000/api/accommodations \
 }
 ```
 
-**Debug**: Check request body matches schema
+#### Debug: Check Request Body Matches Schema
 
 ```typescript
 import { createAccommodationSchema } from '@repo/schemas';
@@ -592,9 +592,9 @@ if (!result.success) {
 }
 ```
 
-**Issue 3: 401 Unauthorized**
+#### Issue 3: 401 Unauthorized
 
-**Debug authentication**:
+#### Debug Authentication
 
 ```typescript
 // Check if auth middleware is extracting user
@@ -621,14 +621,14 @@ curl http://localhost:3000/api/profile \
   -H "Authorization: Bearer $TOKEN"
 ```
 
-**Issue 4: CORS Error**
+#### Issue 4: CORS Error
 
 ```text
 Access to fetch at 'http://localhost:3000/api/accommodations' from origin
 'http://localhost:4321' has been blocked by CORS policy
 ```
 
-**Solution**: Configure CORS middleware
+#### Solution: Configure CORS Middleware
 
 ```typescript
 // apps/api/src/index.ts
@@ -642,9 +642,9 @@ app.use('*', cors({
 
 ### Debugging React Components
 
-**Issue 1: Component not rendering**
+#### Issue 1: Component Not Rendering
 
-**Debug**:
+#### Debug
 
 ```tsx
 export function AccommodationCard({ accommodation }: Props) {
@@ -664,9 +664,9 @@ export function AccommodationCard({ accommodation }: Props) {
 }
 ```
 
-**Issue 2: Props not passing correctly**
+#### Issue 2: Props Not Passing Correctly
 
-**Debug parent component**:
+#### Debug Parent Component
 
 ```tsx
 export function AccommodationList() {
@@ -685,9 +685,9 @@ export function AccommodationList() {
 }
 ```
 
-**Issue 3: useEffect not triggering**
+#### Issue 3: useEffect Not Triggering
 
-**Debug**:
+#### Debug
 
 ```tsx
 useEffect(() => {
@@ -712,9 +712,9 @@ useEffect(() => {
 }, [city]);
 ```
 
-**Issue 4: State not updating**
+#### Issue 4: State Not Updating
 
-**Debug**:
+#### Debug
 
 ```tsx
 const [count, setCount] = useState(0);
@@ -750,9 +750,9 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 
 **Common Issues**:
 
-**Issue 1: Query not fetching**
+#### Issue 1: Query Not Fetching
 
-**Debug**:
+#### Debug
 
 ```typescript
 const { data, isLoading, error } = useQuery({
@@ -764,9 +764,9 @@ const { data, isLoading, error } = useQuery({
 console.log('Query state:', { data, isLoading, error });
 ```
 
-**Issue 2: Query not refetching**
+#### Issue 2: Query Not Refetching
 
-**Debug stale time**:
+#### Debug Stale Time
 
 ```typescript
 const { data } = useQuery({
@@ -780,9 +780,9 @@ const { refetch } = useQuery(...);
 refetch();
 ```
 
-**Issue 3: Mutation not updating cache**
+#### Issue 3: Mutation Not Updating Cache
 
-**Debug**:
+#### Debug
 
 ```typescript
 const mutation = useMutation({
@@ -801,9 +801,9 @@ const mutation = useMutation({
 
 ### Debugging Authentication
 
-**Issue 1: User not authenticated**
+#### Issue 1: User Not Authenticated
 
-**Debug**:
+#### Debug
 
 ```tsx
 import { useUser } from '@clerk/clerk-react';
@@ -825,9 +825,9 @@ export function Profile() {
 }
 ```
 
-**Issue 2: JWT token not sent**
+#### Issue 2: JWT Token Not Sent
 
-**Debug API request**:
+#### Debug API Request
 
 ```typescript
 // Check if Authorization header is included
@@ -843,9 +843,9 @@ fetch('http://localhost:3000/api/bookings', {
   .then((data) => console.log('Response data:', data));
 ```
 
-**Issue 3: Clerk environment mismatch**
+#### Issue 3: Clerk Environment Mismatch
 
-**Debug**:
+#### Debug
 
 ```bash
 # Check environment variables
@@ -878,7 +878,7 @@ pnpm test --reporter=verbose
 
 **Common Test Issues**:
 
-**Issue 1: Test timeout**
+#### Issue 1: Test Timeout
 
 ```typescript
 // ❌ Test times out
@@ -888,7 +888,7 @@ it('should fetch accommodations', async () => {
 });
 ```
 
-**Solution**: Increase timeout or fix slow operation
+#### Solution: Increase Timeout or Fix Slow Operation
 
 ```typescript
 // ✅ Increase timeout
@@ -898,9 +898,9 @@ it('should fetch accommodations', async () => {
 }, 10000); // 10 second timeout
 ```
 
-**Issue 2: Mock not working**
+#### Issue 2: Mock Not Working
 
-**Debug**:
+#### Debug
 
 ```typescript
 import { vi } from 'vitest';
@@ -918,9 +918,9 @@ it('should call mock function', () => {
 });
 ```
 
-**Issue 3: Database test pollution**
+#### Issue 3: Database Test Pollution
 
-**Solution**: Reset database between tests
+#### Solution: Reset Database Between Tests
 
 ```typescript
 import { beforeEach } from 'vitest';
@@ -975,7 +975,7 @@ TypeError: Cannot read property 'name' of undefined
 
 **Solutions**:
 
-**Solution 1: Check for null/undefined**
+#### Solution 1: Check for Null/Undefined
 
 ```typescript
 // ❌ Bad
@@ -992,7 +992,7 @@ function getAccommodationName(accommodation) {
 }
 ```
 
-**Solution 2: Use optional chaining**
+#### Solution 2: Use Optional Chaining
 
 ```typescript
 // ❌ Bad
@@ -1002,7 +1002,7 @@ const city = accommodation.address.city;
 const city = accommodation?.address?.city ?? 'Unknown';
 ```
 
-**Solution 3: Await async functions**
+#### Solution 3: Await Async Functions
 
 ```typescript
 // ❌ Bad
@@ -1014,7 +1014,7 @@ const accommodation = await accommodationModel.findById(id);
 console.log(accommodation.name);
 ```
 
-**Solution 4: Use nullish coalescing**
+#### Solution 4: Use Nullish Coalescing
 
 ```typescript
 // ❌ Bad
@@ -1034,7 +1034,7 @@ Type 'string | undefined' is not assignable to type 'string'
 
 **Solutions**:
 
-**Solution 1: Type guard**
+#### Solution 1: Type Guard
 
 ```typescript
 function processAccommodation(id: string | undefined) {
@@ -1047,14 +1047,14 @@ function processAccommodation(id: string | undefined) {
 }
 ```
 
-**Solution 2: Non-null assertion** (use sparingly!)
+#### Solution 2: Non-Null Assertion (Use Sparingly!)
 
 ```typescript
 // Only if you're 100% sure value exists
 const id = accommodationId!;
 ```
 
-**Solution 3: Type narrowing**
+#### Solution 3: Type Narrowing
 
 ```typescript
 type Accommodation = {
@@ -1128,7 +1128,7 @@ Error: role "hospeda_user" does not exist
 
 **Solutions**:
 
-**Solution 1: Check database is running**
+#### Solution 1: Check Database Is Running
 
 ```bash
 # Check Docker containers
@@ -1138,7 +1138,7 @@ docker ps | grep postgres
 docker compose up -d postgres
 ```
 
-**Solution 2: Verify connection string**
+#### Solution 2: Verify Connection String
 
 ```bash
 # Check environment variable
@@ -1148,7 +1148,7 @@ echo $HOSPEDA_DATABASE_URL
 # postgresql://user:password@host:port/database
 ```
 
-**Solution 3: Test connection**
+#### Solution 3: Test Connection
 
 ```bash
 # Test connection with psql
@@ -1158,7 +1158,7 @@ docker exec -it hospeda_postgres psql -U hospeda_user -d hospeda_dev
 # hospeda_dev=#
 ```
 
-**Solution 4: Reset database**
+#### Solution 4: Reset Database
 
 ```bash
 # Stop containers
@@ -1185,7 +1185,7 @@ Error: JWT token invalid
 
 **Solutions**:
 
-**Solution 1: Check Clerk configuration**
+#### Solution 1: Check Clerk Configuration
 
 ```bash
 # Verify environment variables are set
@@ -1195,14 +1195,14 @@ echo $NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 # Should not be empty
 ```
 
-**Solution 2: Check Clerk Dashboard**
+#### Solution 2: Check Clerk Dashboard
 
 1. Go to [Clerk Dashboard](https://dashboard.clerk.com)
 2. Verify application is correct environment (dev/prod)
 3. Check API keys match your `.env.local`
 4. Verify allowed origins include your app URL
 
-**Solution 3: Clear session and re-login**
+#### Solution 3: Clear Session and Re-Login
 
 ```typescript
 // In your app
@@ -1219,7 +1219,7 @@ function DebugAuth() {
 }
 ```
 
-**Solution 4: Check JWT in API**
+#### Solution 4: Check JWT in API
 
 ```typescript
 // apps/api/src/middleware/auth.ts
@@ -1293,7 +1293,7 @@ Step 3: Success 550e8400-e29b-41d4-a716-446655440000
 
 ### Using Debugger Breakpoints
 
-**Pattern 1: Pause before error**
+#### Pattern 1: Pause Before Error
 
 ```typescript
 async function processBooking(data) {
@@ -1307,7 +1307,7 @@ async function processBooking(data) {
 }
 ```
 
-**Pattern 2: Conditional debugging**
+#### Pattern 2: Conditional Debugging
 
 ```typescript
 async function processBooking(data) {
@@ -1392,43 +1392,43 @@ Params: ["Concepción del Uruguay"]
 
 ### Step-by-Step Troubleshooting Workflow
 
-**Step 1: Reproduce the issue**
+#### Step 1: Reproduce the Issue
 
 - Can you consistently reproduce it?
 - What are the exact steps?
 - Does it happen in all environments?
 
-**Step 2: Read the error message**
+#### Step 2: Read the Error Message
 
 - What is the error type?
 - What line number?
 - What is the stack trace?
 
-**Step 3: Isolate the problem**
+#### Step 3: Isolate the Problem
 
 - Remove complexity
 - Test in isolation
 - Use minimal reproduction
 
-**Step 4: Form a hypothesis**
+#### Step 4: Form a Hypothesis
 
 - What do you think is causing it?
 - Why do you think that?
 - How can you test your hypothesis?
 
-**Step 5: Test your hypothesis**
+#### Step 5: Test Your Hypothesis
 
 - Add logging
 - Add breakpoints
 - Test edge cases
 
-**Step 6: Fix and verify**
+#### Step 6: Fix and Verify
 
 - Implement fix
 - Test fix works
 - Verify no regressions
 
-**Step 7: Document the solution**
+#### Step 7: Document the Solution
 
 - Update this guide if pattern is common
 - Add comment in code if non-obvious
@@ -1581,5 +1581,6 @@ const result = await accommodationService.create({
 
 ---
 
-**Last Updated**: 2025-11-06
+###### Last Updated: 2025-11-06
+
 **Maintained By**: Tech Writer Agent
