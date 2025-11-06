@@ -6,6 +6,8 @@ This document describes the planning phase workflow for the Hospeda project.
 
 ## Table of Contents
 
+<!-- markdownlint-disable MD051 -->
+
 1. [Critical Agent Delegation Policy](#critical-agent-delegation-policy)
 2. [Overview](#overview)
 3. [Goals](#goals)
@@ -14,13 +16,15 @@ This document describes the planning phase workflow for the Hospeda project.
 6. [Quality Criteria](#quality-criteria)
 7. [Common Pitfalls](#common-pitfalls)
 
+<!-- markdownlint-enable MD051 -->
+
 ---
 
 ## ⚠️ CRITICAL: Agent Delegation Policy
 
-**🚫 THE COORDINATING AGENT MUST NEVER DO THE WORK DIRECTLY**
+### 🚫 THE COORDINATING AGENT MUST NEVER DO THE WORK DIRECTLY
 
-### Mandatory Rules
+#### Mandatory Rules
 
 1. **ALWAYS Analyze First**: Before starting ANY step, identify which specialized agents are needed
 2. **ALWAYS Use Task Tool**: Delegate ALL work to specialized agents using Task tool
@@ -339,7 +343,7 @@ cd .claude/sessions/planning/{feature_name}
 
 ### 🔴 CHECKPOINT 2: Technical Analysis Review & Approval
 
-**⚠️ MANDATORY USER INTERACTION - DO NOT SKIP**
+#### ⚠️ MANDATORY USER INTERACTION - DO NOT SKIP
 
 **Agent Responsibilities:**
 
@@ -492,7 +496,7 @@ cd .claude/sessions/planning/{feature_name}
 
 ### ⚪ OPTIONAL CHECKPOINT 3: Task Breakdown Review
 
-**Optional User Interaction (Recommended)**
+#### Optional User Interaction (Recommended)
 
 **Agent Responsibilities:**
 

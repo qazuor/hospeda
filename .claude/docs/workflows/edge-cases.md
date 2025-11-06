@@ -4,11 +4,15 @@ This document covers non-standard scenarios, exceptions, and edge cases that may
 
 ## Table of Contents
 
+<!-- markdownlint-disable MD051 -->
+
 - [During Planning](#during-planning)
 - [During Implementation](#during-implementation)
 - [During Validation](#during-validation)
 - [During Finalization](#during-finalization)
 - [Cross-Phase Issues](#cross-phase-issues)
+
+<!-- markdownlint-enable MD051 -->
 
 ---
 
@@ -849,4 +853,4 @@ Both approaches are valid. Your preference?
 
 ---
 
-*Last updated: 2025-11-03*
+Last updated: 2025-11-03

@@ -6,11 +6,15 @@ This document describes the finalization phase workflow for the Hospeda project.
 
 ## Table of Contents
 
+<!-- markdownlint-disable MD051 -->
+
 1. [Overview](#overview)
 2. [Goals](#goals)
 3. [Documentation Process](#documentation-process)
 4. [Commit Preparation](#commit-preparation)
 5. [Final Checklist](#final-checklist)
+
+<!-- markdownlint-enable MD051 -->
 
 ---
 

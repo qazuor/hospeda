@@ -6,12 +6,16 @@ This document defines how to break down features into atomic tasks for the Hospe
 
 ## Table of Contents
 
+<!-- markdownlint-disable MD051 -->
+
 1. [Overview](#overview)
 2. [Atomization Framework](#atomization-framework)
 3. [Task Sizing Guidelines](#task-sizing-guidelines)
 4. [Estimation Process](#estimation-process)
 5. [Dependency Management](#dependency-management)
 6. [Examples](#examples)
+
+<!-- markdownlint-enable MD051 -->
 
 ---
 

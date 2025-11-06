@@ -6,6 +6,8 @@ This document describes the implementation phase workflow for the Hospeda projec
 
 ## Table of Contents
 
+<!-- markdownlint-disable MD051 -->
+
 1. [Overview](#overview)
 2. [Goals](#goals)
 3. [TDD Workflow](#tdd-workflow)
@@ -13,6 +15,8 @@ This document describes the implementation phase workflow for the Hospeda projec
 5. [Code Quality](#code-quality)
 6. [Progress Tracking](#progress-tracking)
 7. [Common Issues](#common-issues)
+
+<!-- markdownlint-enable MD051 -->
 
 ---
 
@@ -633,7 +637,7 @@ This ensures cross-device sync works correctly.
 
 ### Step 6: Update Progress
 
-**🔥 CRITICAL: Update ALL State Files After Completing Each Task**
+#### 🔥 CRITICAL: Update ALL State Files After Completing Each Task
 
 When you complete ANY task during Phase 2, you MUST immediately update all state tracking files:
 

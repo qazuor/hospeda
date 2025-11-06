@@ -6,12 +6,16 @@ This document describes the validation phase workflow for the Hospeda project.
 
 ## Table of Contents
 
+<!-- markdownlint-disable MD051 -->
+
 1. [Overview](#overview)
 2. [Goals](#goals)
 3. [Validation Process](#validation-process)
 4. [Quality Checks](#quality-checks)
 5. [Review Process](#review-process)
 6. [Issue Resolution](#issue-resolution)
+
+<!-- markdownlint-enable MD051 -->
 
 ---
 
@@ -695,7 +699,7 @@ All layers properly separated:
 
 ## Phase Completion
 
-**🔥 CRITICAL: Update State When Phase 3 Completes**
+### 🔥 CRITICAL: Update State When Phase 3 Completes
 
 When ALL validation passes and you're ready for Phase 4:
 
