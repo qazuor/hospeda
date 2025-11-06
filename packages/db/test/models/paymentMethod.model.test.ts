@@ -254,27 +254,28 @@ describe('PaymentMethodModel', () => {
 
     describe('checkExpiration', () => {
         it('should return not expired for valid payment method', async () => {
-            const futureDate = new Date();
-            futureDate.setFullYear(futureDate.getFullYear() + 1);
+            const futureYear = new Date().getFullYear() + 1;
 
             mockDb.query.paymentMethods.findFirst.mockResolvedValue({
                 id: 'pm-1',
-                expiresAt: futureDate
+                cardExpiryMonth: 12,
+                cardExpiryYear: futureYear
             });
 
             const result = await model.checkExpiration('pm-1');
 
             expect(result.expired).toBe(false);
-            expect(result.expiresAt).toBeDefined();
+            expect(result.expiryMonth).toBe(12);
+            expect(result.expiryYear).toBe(futureYear);
         });
 
         it('should return expired for past expiry date', async () => {
-            const pastDate = new Date();
-            pastDate.setFullYear(pastDate.getFullYear() - 1);
+            const pastYear = new Date().getFullYear() - 1;
 
             mockDb.query.paymentMethods.findFirst.mockResolvedValue({
                 id: 'pm-1',
-                expiresAt: pastDate
+                cardExpiryMonth: 12,
+                cardExpiryYear: pastYear
             });
 
             const result = await model.checkExpiration('pm-1');
@@ -285,7 +286,8 @@ describe('PaymentMethodModel', () => {
         it('should handle payment method without expiry date', async () => {
             mockDb.query.paymentMethods.findFirst.mockResolvedValue({
                 id: 'pm-1',
-                expiresAt: null
+                cardExpiryMonth: null,
+                cardExpiryYear: null
             });
 
             const result = await model.checkExpiration('pm-1');
@@ -352,8 +354,8 @@ describe('PaymentMethodModel', () => {
     describe('findByClient', () => {
         it('should find all payment methods for client', async () => {
             const mockPaymentMethods = [
-                { id: 'pm-1', clientId: 'client-1', defaultMethod: true },
-                { id: 'pm-2', clientId: 'client-1', defaultMethod: false }
+                { id: 'pm-1', clientId: 'client-1', isDefault: true },
+                { id: 'pm-2', clientId: 'client-1', isDefault: false }
             ];
 
             mockDb.query.paymentMethods.findMany.mockResolvedValue(mockPaymentMethods);
@@ -361,7 +363,7 @@ describe('PaymentMethodModel', () => {
             const result = await model.findByClient('client-1');
 
             expect(result).toHaveLength(2);
-            expect(result[0]?.defaultMethod).toBe(true);
+            expect(result[0]?.isDefault).toBe(true);
         });
 
         it('should return empty array if no payment methods', async () => {
@@ -378,7 +380,7 @@ describe('PaymentMethodModel', () => {
             const mockDefault = {
                 id: 'pm-1',
                 clientId: 'client-1',
-                defaultMethod: true
+                isDefault: true
             };
 
             mockDb.query.paymentMethods.findFirst.mockResolvedValue(mockDefault);
@@ -387,7 +389,7 @@ describe('PaymentMethodModel', () => {
 
             expect(result).toBeDefined();
             expect(result?.id).toBe('pm-1');
-            expect(result?.defaultMethod).toBe(true);
+            expect(result?.isDefault).toBe(true);
         });
 
         it('should return null if no default method', async () => {
@@ -402,8 +404,8 @@ describe('PaymentMethodModel', () => {
     describe('findExpired', () => {
         it('should find expired payment methods', async () => {
             const mockExpired = [
-                { id: 'pm-1', expiresAt: new Date('2020-01-01') },
-                { id: 'pm-2', expiresAt: new Date('2019-12-31') }
+                { id: 'pm-1', cardExpiryMonth: 1, cardExpiryYear: 2020 },
+                { id: 'pm-2', cardExpiryMonth: 12, cardExpiryYear: 2019 }
             ];
 
             mockDb.query.paymentMethods.findMany.mockResolvedValue(mockExpired);
@@ -427,16 +429,16 @@ describe('PaymentMethodModel', () => {
             const mockCreated = {
                 id: 'pm-1',
                 clientId: 'client-1',
-                token: 'tok_test',
-                brand: 'visa',
-                last4: '0366'
+                providerPaymentMethodId: 'tok_test',
+                cardBrand: 'visa',
+                cardLast4: '0366'
             };
 
             vi.spyOn(model, 'create').mockResolvedValue(mockCreated as any);
 
             const result = await model.createWithCard({
                 clientId: 'client-1',
-                provider: 'stripe',
+                type: 'credit_card',
                 cardNumber: '4532015112830366',
                 expiryMonth: 12,
                 expiryYear: 2025,
@@ -451,7 +453,7 @@ describe('PaymentMethodModel', () => {
         it('should fail with invalid card', async () => {
             const result = await model.createWithCard({
                 clientId: 'client-1',
-                provider: 'stripe',
+                type: 'credit_card',
                 cardNumber: '1234567890123456', // Invalid
                 expiryMonth: 12,
                 expiryYear: 2025,
@@ -471,7 +473,7 @@ describe('PaymentMethodModel', () => {
 
             const result = await model.createWithCard({
                 clientId: 'client-1',
-                provider: 'stripe',
+                type: 'credit_card',
                 cardNumber: '4532015112830366',
                 expiryMonth: 12,
                 expiryYear: 2025,
@@ -489,7 +491,7 @@ describe('PaymentMethodModel', () => {
 
             const result = await model.createWithCard({
                 clientId: 'client-1',
-                provider: 'stripe',
+                type: 'credit_card',
                 cardNumber: '4532015112830366',
                 expiryMonth: 12,
                 expiryYear: 2025,
@@ -507,7 +509,7 @@ describe('PaymentMethodModel', () => {
             const mockPaymentMethod = {
                 id: 'pm-1',
                 clientId: 'client-1',
-                defaultMethod: false
+                isDefault: false
             };
 
             mockDb.query.paymentMethods.findFirst.mockResolvedValue(mockPaymentMethod);
@@ -523,7 +525,7 @@ describe('PaymentMethodModel', () => {
             const mockDefault = {
                 id: 'pm-1',
                 clientId: 'client-1',
-                defaultMethod: true
+                isDefault: true
             };
             const mockOtherMethods = [{ id: 'pm-2', clientId: 'client-1' }];
 
@@ -563,7 +565,8 @@ describe('PaymentMethodModel', () => {
         it('should update expiry date successfully', async () => {
             const mockUpdated = {
                 id: 'pm-1',
-                expiresAt: new Date(2025, 11, 31) // Dec 31, 2025
+                cardExpiryMonth: 12,
+                cardExpiryYear: 2025
             };
 
             // Mock needs to return proper chain and iterable result

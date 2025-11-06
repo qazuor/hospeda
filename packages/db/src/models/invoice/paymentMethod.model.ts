@@ -1,12 +1,12 @@
+import type { PaymentMethod } from '@repo/schemas';
 import { and, eq, isNull } from 'drizzle-orm';
 import { BaseModel } from '../../base/base.model';
 import { getDb } from '../../client';
 import { paymentMethods } from '../../schemas/payment/paymentMethod.dbschema';
 
 /**
- * Payment Method entity type from database schema
+ * Create Payment Method type from database schema
  */
-export type PaymentMethod = typeof paymentMethods.$inferSelect;
 export type CreatePaymentMethod = typeof paymentMethods.$inferInsert;
 
 /**
@@ -104,7 +104,7 @@ export class PaymentMethodModel extends BaseModel<PaymentMethod> {
      */
     async checkExpiration(
         paymentMethodId: string
-    ): Promise<{ expired: boolean; expiresAt?: Date }> {
+    ): Promise<{ expired: boolean; expiryMonth?: number; expiryYear?: number }> {
         const db = getDb();
 
         try {
@@ -112,16 +112,23 @@ export class PaymentMethodModel extends BaseModel<PaymentMethod> {
                 where: and(eq(paymentMethods.id, paymentMethodId), isNull(paymentMethods.deletedAt))
             });
 
-            if (!paymentMethod || !paymentMethod.expiresAt) {
+            if (!paymentMethod || !paymentMethod.cardExpiryMonth || !paymentMethod.cardExpiryYear) {
                 return { expired: false };
             }
 
             const now = new Date();
-            const expired = paymentMethod.expiresAt <= now;
+            const currentYear = now.getFullYear();
+            const currentMonth = now.getMonth() + 1;
+
+            const expired =
+                paymentMethod.cardExpiryYear < currentYear ||
+                (paymentMethod.cardExpiryYear === currentYear &&
+                    paymentMethod.cardExpiryMonth < currentMonth);
 
             return {
                 expired,
-                expiresAt: paymentMethod.expiresAt
+                expiryMonth: paymentMethod.cardExpiryMonth,
+                expiryYear: paymentMethod.cardExpiryYear
             };
         } catch {
             return { expired: false };
@@ -150,7 +157,7 @@ export class PaymentMethodModel extends BaseModel<PaymentMethod> {
                 await tx
                     .update(paymentMethods)
                     .set({
-                        defaultMethod: false,
+                        isDefault: false,
                         updatedAt: new Date()
                     })
                     .where(
@@ -164,7 +171,7 @@ export class PaymentMethodModel extends BaseModel<PaymentMethod> {
                 await tx
                     .update(paymentMethods)
                     .set({
-                        defaultMethod: true,
+                        isDefault: true,
                         updatedAt: new Date()
                     })
                     .where(eq(paymentMethods.id, paymentMethodId));
@@ -187,7 +194,7 @@ export class PaymentMethodModel extends BaseModel<PaymentMethod> {
 
         return db.query.paymentMethods.findMany({
             where: and(eq(paymentMethods.clientId, clientId), isNull(paymentMethods.deletedAt)),
-            orderBy: (table, { desc }) => [desc(table.defaultMethod), desc(table.createdAt)]
+            orderBy: (table, { desc }) => [desc(table.isDefault), desc(table.createdAt)]
         });
     }
 
@@ -200,7 +207,7 @@ export class PaymentMethodModel extends BaseModel<PaymentMethod> {
         const defaultMethod = await db.query.paymentMethods.findFirst({
             where: and(
                 eq(paymentMethods.clientId, clientId),
-                eq(paymentMethods.defaultMethod, true),
+                eq(paymentMethods.isDefault, true),
                 isNull(paymentMethods.deletedAt)
             )
         });
@@ -215,15 +222,22 @@ export class PaymentMethodModel extends BaseModel<PaymentMethod> {
         const db = getDb();
 
         const now = new Date();
+        const currentYear = now.getFullYear();
+        const currentMonth = now.getMonth() + 1;
 
-        return db.query.paymentMethods.findMany({
-            where: and(
-                isNull(paymentMethods.deletedAt),
-                // Note: This would need to be adjusted based on your exact schema
-                // Assuming expiresAt is the field name
-                eq(paymentMethods.expiresAt, now) // This is a mock - real implementation would use gte/lte
-            )
+        // Get all active payment methods with expiry dates
+        const allMethods = await db.query.paymentMethods.findMany({
+            where: isNull(paymentMethods.deletedAt)
         });
+
+        // Filter expired ones (needs to be done in memory for now)
+        return allMethods.filter((method) => {
+            if (!method.cardExpiryMonth || !method.cardExpiryYear) return false;
+            return (
+                method.cardExpiryYear < currentYear ||
+                (method.cardExpiryYear === currentYear && method.cardExpiryMonth < currentMonth)
+            );
+        }) as PaymentMethod[];
     }
 
     /**
@@ -231,12 +245,13 @@ export class PaymentMethodModel extends BaseModel<PaymentMethod> {
      */
     async createWithCard(data: {
         clientId: string;
-        provider: string;
+        type: string;
         cardNumber: string;
         expiryMonth: number;
         expiryYear: number;
         cvv: string;
         holderName: string;
+        displayName?: string;
         setAsDefault?: boolean;
     }): Promise<{ success: boolean; paymentMethod?: PaymentMethod; error?: string }> {
         try {
@@ -256,20 +271,19 @@ export class PaymentMethodModel extends BaseModel<PaymentMethod> {
                 };
             }
 
-            // Create expiry date
-            const expiresAt = new Date(data.expiryYear, data.expiryMonth - 1, 1);
-            // Set to last day of month
-            expiresAt.setMonth(expiresAt.getMonth() + 1, 0);
-
             // Create payment method
             const paymentMethodData: CreatePaymentMethod = {
                 clientId: data.clientId,
-                provider: data.provider,
-                token: tokenResult.token || '',
-                brand: tokenResult.brand,
-                last4: tokenResult.last4,
-                expiresAt,
-                defaultMethod: data.setAsDefault || false
+                type: data.type,
+                displayName:
+                    data.displayName || `${tokenResult.brand || 'Card'} ****${tokenResult.last4}`,
+                isDefault: data.setAsDefault || false,
+                isActive: true,
+                cardBrand: tokenResult.brand,
+                cardLast4: tokenResult.last4,
+                cardExpiryMonth: data.expiryMonth,
+                cardExpiryYear: data.expiryYear,
+                providerPaymentMethodId: tokenResult.token
             };
 
             const paymentMethod = await this.create(paymentMethodData);
@@ -311,7 +325,7 @@ export class PaymentMethodModel extends BaseModel<PaymentMethod> {
             await this.softDelete({ id: paymentMethodId });
 
             // If it was default, set another one as default
-            if (paymentMethod.defaultMethod) {
+            if (paymentMethod.isDefault) {
                 const otherMethods = await this.findByClient(paymentMethod.clientId);
                 if (otherMethods.length > 0 && otherMethods[0]) {
                     await this.setAsDefault(otherMethods[0].id);
@@ -338,13 +352,11 @@ export class PaymentMethodModel extends BaseModel<PaymentMethod> {
         const db = getDb();
 
         try {
-            const expiresAt = new Date(expiryYear, expiryMonth - 1, 1);
-            expiresAt.setMonth(expiresAt.getMonth() + 1, 0);
-
             const [updated] = await db
                 .update(paymentMethods)
                 .set({
-                    expiresAt,
+                    cardExpiryMonth: expiryMonth,
+                    cardExpiryYear: expiryYear,
                     updatedAt: new Date()
                 })
                 .where(
