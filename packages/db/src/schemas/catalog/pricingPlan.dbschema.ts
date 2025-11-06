@@ -1,7 +1,11 @@
 import type { AdminInfoType } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
-import { bigint, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
-import { BillingIntervalPgEnum, BillingSchemePgEnum } from '../enums.dbschema.js';
+import { bigint, boolean, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+    BillingIntervalPgEnum,
+    BillingSchemePgEnum,
+    LifecycleStatusPgEnum
+} from '../enums.dbschema.js';
 import { users } from '../user/user.dbschema.js';
 import { pricingTiers } from './pricingTier.dbschema.js';
 import { products } from './product.dbschema.js';
@@ -15,6 +19,13 @@ export const pricingPlans = pgTable('pricing_plans', {
     interval: BillingIntervalPgEnum('interval'), // Only required if billingScheme is RECURRING
     amountMinor: bigint('amount_minor', { mode: 'number' }).notNull(),
     currency: text('currency').notNull(),
+
+    // Lifecycle state
+    lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
+
+    // Status fields
+    isActive: boolean('is_active').notNull().default(true),
+    isDeleted: boolean('is_deleted').notNull().default(false),
 
     // Audit fields
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
