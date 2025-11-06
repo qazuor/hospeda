@@ -1065,7 +1065,7 @@ function OptimizedTable({ data }: { data: Product[] }) {
 
 ### Do's
 
-**✅ Memoize columns and data**
+#### ✅ Memoize columns and data
 
 ```tsx
 // ✅ Good - prevents unnecessary re-renders
@@ -1073,7 +1073,7 @@ const columns = useMemo(() => [...], []);
 const data = useMemo(() => [...], [dependency]);
 ```
 
-**✅ Use server-side features for large datasets**
+#### ✅ Use server-side features for large datasets
 
 ```tsx
 // ✅ Good - better performance
@@ -1086,7 +1086,7 @@ const table = useReactTable({
 });
 ```
 
-**✅ Provide loading and empty states**
+#### ✅ Provide loading and empty states
 
 ```tsx
 // ✅ Good - better UX
@@ -1094,7 +1094,7 @@ if (isLoading) return <Spinner />;
 if (data.length === 0) return <EmptyState />;
 ```
 
-**✅ Use type-safe column definitions**
+#### ✅ Use type-safe column definitions
 
 ```tsx
 // ✅ Good - type safety
@@ -1105,7 +1105,7 @@ const columns: ColumnDef<Product>[] = [
 
 ### Don'ts
 
-**❌ Don't define columns inside component**
+#### ❌ Don't define columns inside component
 
 ```tsx
 // ❌ Bad - creates new columns on every render
@@ -1113,7 +1113,7 @@ function MyTable() {
   const columns = [{ accessorKey: 'name' }];
 ```
 
-**❌ Don't forget row keys**
+#### ❌ Don't forget row keys
 
 ```tsx
 // ❌ Bad - will cause issues
@@ -1123,7 +1123,7 @@ function MyTable() {
 {rows.map((row) => <tr key={row.id}>{/* ... */}</tr>)}
 ```
 
-**❌ Don't use client-side features for large datasets**
+#### ❌ Don't use client-side features for large datasets
 
 ```tsx
 // ❌ Bad - performance issues with 10,000+ rows
