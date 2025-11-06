@@ -24,7 +24,7 @@ This guide covers adding and managing translations for the Hospeda platform. The
 
 **Scenario**: Add a translation for the homepage hero section.
 
-**Step 1: Identify Namespace**
+#### Step 1: Identify Namespace
 
 Choose appropriate namespace based on content:
 
@@ -36,7 +36,7 @@ Choose appropriate namespace based on content:
 
 **For homepage content, use `home` namespace**
 
-**Step 2: Add to Translation File**
+#### Step 2: Add to Translation File
 
 Edit `packages/i18n/src/locales/es/home.json`:
 
@@ -50,7 +50,7 @@ Edit `packages/i18n/src/locales/es/home.json`:
 }
 ```
 
-**Step 3: Use in Component**
+#### Step 3: Use in Component
 
 ```tsx
 // apps/web/src/components/Hero.tsx
@@ -137,7 +137,7 @@ export const locales = ['es'] as const;
 
 ### Step-by-Step Process
 
-**1. Identify the Right Namespace**
+#### 1. Identify the Right Namespace
 
 | Content Type | Namespace | Example Keys |
 |-------------|-----------|--------------|
@@ -151,14 +151,14 @@ export const locales = ['es'] as const;
 | Form fields | `fields` | `fields.email`, `fields.password` |
 | Admin dashboard | `admin-dashboard` | `admin-dashboard.stats.total` |
 
-**2. Edit Translation File**
+#### 2. Edit Translation File
 
 ```bash
 # Open appropriate namespace file
 vim packages/i18n/src/locales/es/common.json
 ```
 
-**3. Add Translation Keys**
+#### 3. Add Translation Keys
 
 Use nested structure with dot notation:
 
@@ -186,7 +186,7 @@ Use nested structure with dot notation:
 }
 ```
 
-**4. Restart Dev Server**
+#### 4. Restart Dev Server
 
 ```bash
 # Translation changes require server restart
@@ -567,7 +567,7 @@ export function FormattedPrice({ amount }: { amount: number }) {
 
 **Scenario**: Add Portuguese (pt) support
 
-**Step 1: Add Locale to Configuration**
+#### Step 1: Add Locale to Configuration
 
 Edit `packages/i18n/src/config.ts`:
 
@@ -579,13 +579,13 @@ export const locales = ['es'] as const;
 export const locales = ['es', 'pt'] as const;
 ```
 
-**Step 2: Create Locale Directory**
+#### Step 2: Create Locale Directory
 
 ```bash
 mkdir -p packages/i18n/src/locales/pt
 ```
 
-**Step 3: Copy and Translate Files**
+#### Step 3: Copy and Translate Files
 
 ```bash
 # Copy all Spanish files as templates
@@ -593,7 +593,7 @@ cd packages/i18n/src/locales
 cp -r es/* pt/
 ```
 
-**Step 4: Translate Each File**
+#### Step 4: Translate Each File
 
 Edit each file in `locales/pt/`:
 
@@ -611,7 +611,7 @@ Edit each file in `locales/pt/`:
 }
 ```
 
-**Step 5: Import Translations**
+#### Step 5: Import Translations
 
 Edit `packages/i18n/src/config.ts`:
 
@@ -638,7 +638,7 @@ const rawTranslations = {
 };
 ```
 
-**Step 6: Test New Locale**
+#### Step 6: Test New Locale
 
 ```tsx
 // Test component
@@ -656,7 +656,7 @@ export function TestLocale() {
 }
 ```
 
-**Step 7: Add Language Switcher**
+#### Step 7: Add Language Switcher
 
 ```tsx
 import { useTranslations } from '@repo/i18n';
@@ -676,7 +676,7 @@ export function LanguageSwitcher() {
 }
 ```
 
-**Step 8: Test in Both Apps**
+#### Step 8: Test in Both Apps
 
 ```bash
 # Web app
@@ -957,14 +957,14 @@ new Intl.NumberFormat(locale, {
 
 **Solutions**:
 
-**Solution 1: Check key exists**
+#### Solution 1: Check Key Exists
 
 ```bash
 # Search for key in translation files
 grep -r "welcome" packages/i18n/src/locales/es/
 ```
 
-**Solution 2: Verify spelling**
+#### Solution 2: Verify Spelling
 
 ```tsx
 // Wrong
@@ -974,7 +974,7 @@ t('common.buttons.saev'); // Typo
 t('common.buttons.save');
 ```
 
-**Solution 3: Restart dev server**
+#### Solution 3: Restart Dev Server
 
 ```bash
 # Kill server (Ctrl+C)
@@ -994,7 +994,7 @@ pnpm dev
 
 **Solutions**:
 
-**Solution 1: Pass parameters**
+#### Solution 1: Pass Parameters
 
 ```tsx
 // Wrong
@@ -1004,7 +1004,7 @@ t('common.welcome'); // Shows "Bienvenido, {name}!"
 t('common.welcome', { name: 'María' }); // Shows "Bienvenido, María!"
 ```
 
-**Solution 2: Match parameter names**
+#### Solution 2: Match Parameter Names
 
 ```json
 {
@@ -1032,7 +1032,7 @@ t('greeting', { userName: 'John' });
 
 **Solutions**:
 
-**Solution 1: Implement locale switching**
+#### Solution 1: Implement Locale Switching
 
 ```tsx
 import { create } from 'zustand';
@@ -1056,7 +1056,7 @@ export const useLocaleStore = create<LocaleStore>()(
 );
 ```
 
-**Solution 2: Force re-render**
+#### Solution 2: Force Re-render
 
 ```tsx
 import { useLocaleStore } from './store';
@@ -1083,7 +1083,7 @@ cd packages/i18n
 pnpm generate-types
 ```
 
-**Solution 2: Use string type**
+#### Solution 2: Use String Type
 
 ```typescript
 // If strict typing not set up
