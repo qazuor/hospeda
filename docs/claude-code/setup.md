@@ -178,7 +178,7 @@ npm install -g @anthropic-ai/cli
 anthropic init claude-code
 ```
 
-**Option C: From Source (Development)**
+#### Option C: From Source (Development)
 
 ```bash
 # Clone repository
