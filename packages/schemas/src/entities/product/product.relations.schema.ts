@@ -1,42 +1,7 @@
 import { z } from 'zod';
+import { PricingPlanSchema } from '../pricingPlan/pricingPlan.schema.js';
+import { PricingTierSchema } from '../pricingTier/pricingTier.schema.js';
 import { ProductSchema } from './product.schema.js';
-
-// TODO: These schemas will be imported from their respective packages when implemented
-// For now, creating minimal schemas to define the structure
-
-// Temporary PricingTier schema until package is implemented
-export const PricingTierSchema = z.object({
-    id: z.string().uuid(),
-    name: z.string(),
-    pricingPlanId: z.string().uuid(),
-    currency: z.string().length(3), // ISO 4217
-    price: z.number().positive(),
-    billingCycle: z.enum(['MONTHLY', 'QUARTERLY', 'YEARLY', 'ONE_TIME']),
-    isDefault: z.boolean(),
-    lifecycleState: z.enum(['ACTIVE', 'INACTIVE', 'ARCHIVED']),
-    createdAt: z.date(),
-    updatedAt: z.date(),
-    createdById: z.string(),
-    updatedById: z.string(),
-    isActive: z.boolean(),
-    isDeleted: z.boolean()
-});
-
-// Temporary PricingPlan schema until package is implemented
-export const PricingPlanSchema = z.object({
-    id: z.string().uuid(),
-    name: z.string(),
-    productId: z.string().uuid(),
-    description: z.string().optional(),
-    isDefault: z.boolean(),
-    lifecycleState: z.enum(['ACTIVE', 'INACTIVE', 'ARCHIVED']),
-    createdAt: z.date(),
-    updatedAt: z.date(),
-    createdById: z.string(),
-    updatedById: z.string(),
-    isActive: z.boolean(),
-    isDeleted: z.boolean()
-});
 
 // PricingPlan with nested PricingTiers
 export const PricingPlanWithTiersSchema = PricingPlanSchema.extend({
@@ -80,9 +45,11 @@ export const ProductRelationsListSchema = z.object({
     hasPrevPage: z.boolean()
 });
 
-// Type exports
-export type PricingTier = z.infer<typeof PricingTierSchema>;
-export type PricingPlan = z.infer<typeof PricingPlanSchema>;
+// Re-export types from their source packages (to maintain backward compatibility)
+export type { PricingPlan } from '../pricingPlan/pricingPlan.schema.js';
+export type { PricingTier } from '../pricingTier/pricingTier.schema.js';
+
+// Type exports for product-specific relation schemas
 export type PricingPlanWithTiers = z.infer<typeof PricingPlanWithTiersSchema>;
 export type ProductWithPricingPlans = z.infer<typeof ProductWithPricingPlansSchema>;
 export type ProductRelations = z.infer<typeof ProductRelationsSchema>;

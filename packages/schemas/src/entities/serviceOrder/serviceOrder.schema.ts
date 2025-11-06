@@ -2,12 +2,12 @@ import { z } from 'zod';
 import { BaseAuditFields } from '../../common/audit.schema.js';
 import {
     ClientIdSchema,
-    PricingPlanIdSchema,
     ProfessionalServiceIdSchema,
     ServiceOrderIdSchema
 } from '../../common/id.schema.js';
 import { ServiceOrderStatusSchema } from '../../enums/index.js';
 import { ServiceOrderStatusEnum } from '../../enums/service-order-status.enum.js';
+import { PricingPlanIdSchema } from '../pricingPlan/pricingPlan.schema.js';
 
 /**
  * Service Order Schema

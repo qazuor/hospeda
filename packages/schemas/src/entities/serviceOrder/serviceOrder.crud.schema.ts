@@ -1,11 +1,8 @@
 import { z } from 'zod';
-import {
-    ClientIdSchema,
-    PricingPlanIdSchema,
-    ProfessionalServiceIdSchema
-} from '../../common/id.schema.js';
+import { ClientIdSchema, ProfessionalServiceIdSchema } from '../../common/id.schema.js';
 import { ServiceOrderStatusSchema } from '../../enums/index.js';
 import { ServiceOrderStatusEnum } from '../../enums/service-order-status.enum.js';
+import { PricingPlanIdSchema } from '../pricingPlan/pricingPlan.schema.js';
 import { ServiceOrderSchema } from './serviceOrder.schema.js';
 
 /**

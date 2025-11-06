@@ -1,6 +1,7 @@
 import { z } from 'zod';
-import { ClientIdSchema, PricingPlanIdSchema } from '../../common/id.schema.js';
+import { ClientIdSchema } from '../../common/id.schema.js';
 import { SubscriptionStatusEnumSchema } from '../../enums/subscription-status.schema.js';
+import { PricingPlanIdSchema } from '../pricingPlan/pricingPlan.schema.js';
 
 /**
  * Subscription Query Schema

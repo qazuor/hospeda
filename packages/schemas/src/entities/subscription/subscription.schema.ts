@@ -1,13 +1,10 @@
 import { z } from 'zod';
 import { BaseAdminFields } from '../../common/admin.schema.js';
 import { BaseAuditFields } from '../../common/audit.schema.js';
-import {
-    ClientIdSchema,
-    PricingPlanIdSchema,
-    SubscriptionIdSchema
-} from '../../common/id.schema.js';
+import { ClientIdSchema, SubscriptionIdSchema } from '../../common/id.schema.js';
 import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
 import { SubscriptionStatusEnumSchema } from '../../enums/subscription-status.schema.js';
+import { PricingPlanIdSchema } from '../pricingPlan/pricingPlan.schema.js';
 
 /**
  * Subscription Schema - Business Model Entity

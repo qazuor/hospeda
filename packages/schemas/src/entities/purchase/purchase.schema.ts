@@ -1,8 +1,9 @@
 import { z } from 'zod';
 import { BaseAdminFields } from '../../common/admin.schema.js';
 import { BaseAuditFields } from '../../common/audit.schema.js';
-import { ClientIdSchema, PricingPlanIdSchema, PurchaseIdSchema } from '../../common/id.schema.js';
+import { ClientIdSchema, PurchaseIdSchema } from '../../common/id.schema.js';
 import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
+import { PricingPlanIdSchema } from '../pricingPlan/pricingPlan.schema.js';
 
 /**
  * Purchase Schema - Business Model Entity

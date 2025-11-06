@@ -91,11 +91,13 @@ export type ClientAccessRightIdType = z.infer<typeof ClientAccessRightIdSchema>;
 export const ProductIdSchema = BaseIdSchema;
 export type ProductIdType = z.infer<typeof ProductIdSchema>;
 
-export const PricingPlanIdSchema = BaseIdSchema;
-export type PricingPlanIdType = z.infer<typeof PricingPlanIdSchema>;
+// NOTE: PricingPlanIdSchema and PricingTierIdSchema are now defined in their respective entity files
+// with custom error messages. Import from @repo/schemas/entities/pricingPlan or pricingTier instead.
+// export const PricingPlanIdSchema = BaseIdSchema;
+// export type PricingPlanIdType = z.infer<typeof PricingPlanIdSchema>;
 
-export const PricingTierIdSchema = BaseIdSchema;
-export type PricingTierIdType = z.infer<typeof PricingTierIdSchema>;
+// export const PricingTierIdSchema = BaseIdSchema;
+// export type PricingTierIdType = z.infer<typeof PricingTierIdSchema>;
 
 export const PurchaseIdSchema = BaseIdSchema;
 export type PurchaseIdType = z.infer<typeof PurchaseIdSchema>;

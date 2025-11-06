@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { ClientIdSchema, PricingPlanIdSchema } from '../../common/id.schema.js';
+import { ClientIdSchema } from '../../common/id.schema.js';
+import { PricingPlanIdSchema } from '../pricingPlan/pricingPlan.schema.js';
 
 /**
  * Purchase Query Schema

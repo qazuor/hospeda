@@ -15,9 +15,8 @@ export * from './post/index.js';
 export * from './postSponsor/index.js';
 export * from './postSponsorship/index.js';
 export * from './product/index.js';
-// TODO: Enable once migration from old payment model is complete
-// export * from './pricingPlan/index.js';
-// export * from './pricingTier/index.js';
+export * from './pricingPlan/index.js';
+export * from './pricingTier/index.js';
 export * from './client-access-right/index.js';
 export * from './client/index.js';
 // TODO: Enable once migration from old payment model is complete
@@ -59,4 +58,6 @@ export * from './featuredAccommodation/index.js';
 
 // === Advertising System Entities ===
 export * from './adMediaAsset/index.js';
+export * from './adPricingCatalog/index.js';
 export * from './adSlot/index.js';
+export * from './adSlotReservation/index.js';
