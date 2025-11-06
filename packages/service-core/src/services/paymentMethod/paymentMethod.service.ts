@@ -2,11 +2,11 @@ import type { PaymentMethod, PaymentMethodModel } from '@repo/db';
 import {
     CreatePaymentMethodSchema,
     type ListRelationsConfig,
+    PaymentMethodQuerySchema,
     PermissionEnum,
     RoleEnum,
     ServiceErrorCode,
-    UpdatePaymentMethodSchema,
-    PaymentMethodQuerySchema
+    UpdatePaymentMethodSchema
 } from '@repo/schemas';
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
@@ -348,7 +348,7 @@ export class PaymentMethodService extends BaseCrudService<
     public async checkExpiration(
         actor: Actor,
         paymentMethodId: string
-    ): Promise<ServiceOutput<{ expired: boolean; expiresAt?: Date }>> {
+    ): Promise<ServiceOutput<{ expired: boolean; expiryMonth?: number; expiryYear?: number }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'checkExpiration',
             input: { actor },
@@ -484,7 +484,7 @@ export class PaymentMethodService extends BaseCrudService<
      * - Card must be validated before tokenization
      * - Token is securely generated (mock - use real provider in production)
      * - Can optionally set as default
-     * - Expiry date is calculated from card expiry
+     * - Expiry date is stored as month/year fields
      *
      * @param actor - Current user context
      * @param data - Card data and creation options
@@ -494,12 +494,13 @@ export class PaymentMethodService extends BaseCrudService<
         actor: Actor,
         data: {
             clientId: string;
-            provider: string;
+            type: string;
             cardNumber: string;
             expiryMonth: number;
             expiryYear: number;
             cvv: string;
             holderName: string;
+            displayName?: string;
             setAsDefault?: boolean;
         }
     ): Promise<
