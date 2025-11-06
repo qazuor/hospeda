@@ -14,7 +14,9 @@ describe('PaymentMethodSchema', () => {
         createdAt: new Date('2024-01-01T00:00:00Z'),
         updatedAt: new Date('2024-01-01T00:00:00Z'),
         createdById: 'f47ac10b-58cc-4372-a567-0e02b2c3d481',
-        updatedById: 'f47ac10b-58cc-4372-a567-0e02b2c3d482'
+        updatedById: 'f47ac10b-58cc-4372-a567-0e02b2c3d482',
+        deletedAt: null,
+        deletedById: null
     };
 
     describe('Valid payment method validation', () => {
@@ -33,7 +35,9 @@ describe('PaymentMethodSchema', () => {
                 createdAt: validPaymentMethodData.createdAt,
                 updatedAt: validPaymentMethodData.updatedAt,
                 createdById: validPaymentMethodData.createdById,
-                updatedById: validPaymentMethodData.updatedById
+                updatedById: validPaymentMethodData.updatedById,
+                deletedAt: null,
+                deletedById: null
             };
 
             expect(() => PaymentMethodSchema.parse(minimalPaymentMethod)).not.toThrow();
