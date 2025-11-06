@@ -25,7 +25,7 @@ Before adding a new icon, evaluate its necessity:
 
 ### Evaluation Checklist
 
-**1. Check Existing Catalog**
+#### 1. Check Existing Catalog
 
 Search the [Icons Catalog](../icons-catalog.md) to see if a similar icon already exists:
 
@@ -34,14 +34,14 @@ Search the [Icons Catalog](../icons-catalog.md) to see if a similar icon already
 grep -i "search term" packages/icons/docs/icons-catalog.md
 ```
 
-**2. Business Justification**
+#### 2. Business Justification
 
 - Is this icon used in multiple places?
 - Does it represent a core business concept?
 - Is it part of the brand identity?
 - Will other features need this icon?
 
-**3. Consistency Check**
+#### 3. Consistency Check
 
 - Does it match the existing visual style?
 - Does it fit into an existing category?
@@ -618,7 +618,7 @@ export function BedIcon({
 
 ### Template Sections Explained
 
-**1. Import Types**
+#### 1. Import Types
 
 ```typescript
 import type { IconProps } from '../types';
@@ -626,7 +626,7 @@ import type { IconProps } from '../types';
 
 Always import `IconProps` for consistent prop typing.
 
-**2. JSDoc Comments**
+#### 2. JSDoc Comments
 
 ```typescript
 /**
@@ -640,7 +640,7 @@ Always import `IconProps` for consistent prop typing.
 
 Provides IntelliSense documentation and examples.
 
-**3. Function Signature**
+#### 3. Function Signature
 
 ```typescript
 export function [IconName]({
@@ -655,7 +655,7 @@ export function [IconName]({
 - Type with IconProps
 - Return JSX.Element
 
-**4. SVG Element**
+#### 4. SVG Element
 
 ```typescript
 <svg
@@ -673,7 +673,7 @@ export function [IconName]({
 >
 ```
 
-**5. SVG Paths**
+#### 5. SVG Paths
 
 ```typescript
 <path d="M2 4v16" />
@@ -1857,4 +1857,4 @@ Adding a new icon:
 
 ---
 
-*Last updated: 2025-01-05*
+###### Last Updated: 2025-01-05
