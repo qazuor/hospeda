@@ -402,13 +402,13 @@ const relatedEvents = relatedResult.success
    pnpm dev
    ```
 
-2. **Test pages**:
+1. **Test pages**:
    - Visit `/eventos/test-slug`
    - Check all event details display correctly
    - Test booking button interaction
    - Verify related events appear
 
-3. **Test responsive**:
+1. **Test responsive**:
    - Test on mobile viewport (DevTools)
    - Test on tablet viewport
    - Test on desktop

@@ -99,7 +99,7 @@ The **CI Workflow** is the primary quality gate for all code changes. It ensures
 - All tests pass with required coverage (90% minimum)
 - No regressions are introduced
 
-**This workflow must pass before any PR can be merged to main.**
+#### This workflow must pass before any PR can be merged to main
 
 ### Triggers
 
@@ -160,7 +160,7 @@ graph TB
    - `@repo/payments` - Payment processing
    - `@repo/auth-ui` - Authentication UI components
 
-2. **Applications**:
+1. **Applications**:
    - `api` - Hono backend API
    - `web` - Astro + React frontend
    - `admin` - TanStack Start admin dashboard
@@ -227,6 +227,7 @@ Argument of type 'unknown' is not assignable to parameter of type 'string'.
 **Common Type Errors:**
 
 1. **Missing Types**:
+
    ```typescript
    // ❌ Bad
    function process(data) { ... }
@@ -235,7 +236,8 @@ Argument of type 'unknown' is not assignable to parameter of type 'string'.
    function process(data: ProcessInput) { ... }
    ```
 
-2. **Incorrect Inference**:
+1. **Incorrect Inference**:
+
    ```typescript
    // ❌ Bad - any type
    const schema = z.object({});
@@ -245,7 +247,8 @@ Argument of type 'unknown' is not assignable to parameter of type 'string'.
    type Schema = z.infer<typeof schema>;
    ```
 
-3. **Import Errors**:
+1. **Import Errors**:
+
    ```typescript
    // ❌ Bad - relative import across packages
    import { User } from '../../../db/models';
@@ -425,55 +428,67 @@ The CI workflow requires the following secrets to be configured in GitHub:
 
 ### Troubleshooting Common Failures
 
-#### Build Failures
+#### Troubleshooting Common Build Failures
 
 **Symptom**: `pnpm build` fails with compilation errors
 
 **Common Causes:**
 
 1. **TypeScript Errors**:
+
    ```bash
    Error: src/models/user.ts(15,3): error TS2322
    ```
+
    **Solution**: Fix TypeScript errors locally first (`pnpm typecheck`)
 
-2. **Missing Dependencies**:
+1. **Missing Dependencies**:
+
    ```bash
    Error: Cannot find module '@repo/schemas'
    ```
+
    **Solution**: Ensure dependencies are declared in `package.json`
 
-3. **Build Order Issues**:
+1. **Build Order Issues**:
+
    ```bash
    Error: Package @repo/db not built
    ```
+
    **Solution**: TurboRepo should handle this; check `turbo.json` dependencies
 
-#### Test Failures
+#### Troubleshooting Common Test Failures
 
 **Symptom**: Tests fail or coverage is below 90%
 
 **Common Causes:**
 
 1. **Failing Tests**:
+
    ```bash
    ✗ should create booking (245ms)
    Expected: 201
    Received: 400
    ```
+
    **Solution**: Run tests locally (`pnpm test`), fix failing tests
 
-2. **Coverage Below Threshold**:
+1. **Coverage Below Threshold**:
+
    ```bash
    ERROR: Coverage for statements (89.45%) does not meet threshold (90%)
    ```
+
    **Solution**: Add tests for uncovered code paths
 
-3. **Flaky Tests**:
+1. **Flaky Tests**:
+
    ```bash
    ✗ should handle concurrent requests
    Timeout of 5000ms exceeded
    ```
+
    **Solution**: Increase timeout, fix race conditions, use proper test isolation
 
 #### Lint Failures
@@ -483,21 +498,27 @@ The CI workflow requires the following secrets to be configured in GitHub:
 **Common Causes:**
 
 1. **Unused Variables**:
+
    ```bash
    error: 'userId' is defined but never used
    ```
+
    **Solution**: Remove unused variables or prefix with `_` if intentional
 
-2. **Formatting Issues**:
+1. **Formatting Issues**:
+
    ```bash
    error: Delete `␍` (prettier/prettier)
    ```
+
    **Solution**: Run `pnpm lint:fix` to auto-format
 
-3. **Import Order**:
+1. **Import Order**:
+
    ```bash
    error: Import order is incorrect
    ```
+
    **Solution**: Run `pnpm lint:fix` to auto-sort imports
 
 #### Environment Issues
@@ -507,15 +528,19 @@ The CI workflow requires the following secrets to be configured in GitHub:
 **Common Causes:**
 
 1. **Missing Secrets**:
+
    ```bash
    Error: HOSPEDA_DATABASE_URL is not defined
    ```
+
    **Solution**: Ensure all required secrets are configured in GitHub
 
-2. **Database Connection**:
+1. **Database Connection**:
+
    ```bash
    Error: connect ECONNREFUSED 127.0.0.1:5432
    ```
+
    **Solution**: CI uses in-memory database; ensure tests don't require real DB
 
 ### Local Pre-flight Checks
@@ -548,7 +573,7 @@ The **Documentation CI Workflow** ensures that all project documentation maintai
 - Code examples in documentation compile and run
 - Documentation follows style guidelines
 
-**This workflow runs only when documentation files change.**
+#### This workflow runs only when documentation files change
 
 ### Triggers
 
@@ -614,22 +639,22 @@ graph TB
    - No duplicate headings at same level
    - No trailing punctuation in headings
 
-2. **Code Blocks**:
+1. **Code Blocks**:
    - All code blocks have language specified
    - Proper fencing (```)
    - No unclosed code blocks
 
-3. **Lists**:
+1. **Lists**:
    - Consistent indentation (2 spaces)
    - Proper marker style (-, *, 1.)
    - Blank lines around lists
 
-4. **Links**:
+1. **Links**:
    - Valid link syntax
    - No empty links
    - Proper relative/absolute paths
 
-5. **Formatting**:
+1. **Formatting**:
    - Blank lines around headings
    - Blank lines around code blocks
    - Blank lines around tables
@@ -703,21 +728,24 @@ Found 2 broken links
 **Common Issues:**
 
 1. **Case Sensitivity**:
+
    ```markdown
    ❌ [Link](./Environment-Setup.md)  # File is environment-setup.md
    ✓ [Link](./environment-setup.md)
    ```
 
-2. **Wrong Path**:
+1. **Wrong Path**:
+
    ```markdown
    ❌ [Link](../deployment/vercel.md)  # Should be ./vercel.md
    ✓ [Link](./vercel.md)
    ```
 
-3. **Missing Anchor**:
+1. **Missing Anchor**:
+
    ```markdown
-   ❌ [Section](#non-existent-section)
-   ✓ [Section](#existing-section)
+   ❌ Section
+   ✓ Section
    ```
 
 ### TypeScript Example Validation
@@ -806,16 +834,19 @@ MD040/fenced-code-language: Code block should have language specified
 ```markdown
 ❌ Bad:
 ```
+
 const x = 123;
+
 ```
 
 ✓ Good:
 ```typescript
 const x = 123;
 ```
+
 ```
 
-#### Link Check Failures
+#### Heading Link Check Failures
 
 **Issue**: Broken internal links
 
@@ -1033,17 +1064,17 @@ Schema validation failed
    - Exactly 23 commands
    - Exactly 19 skills
 
-2. **Cross-references**:
+1. **Cross-references**:
    - All agent references in docs exist
    - All command references in docs exist
    - All skill references in docs exist
 
-3. **Completeness**:
+1. **Completeness**:
    - All agents have descriptions
    - All commands have examples
    - All skills have use cases
 
-4. **Consistency**:
+1. **Consistency**:
    - Agent names match file names
    - Command names match file names
    - Skill names match file names
@@ -1174,7 +1205,7 @@ File count validation failed
 
 **Solution**: Update references to match actual file names
 
-#### Link Check Failures
+#### Troubleshooting Link Check Failures
 
 **Issue**: Broken links to moved files
 
@@ -1197,7 +1228,7 @@ The **Planning Cleanup Workflow** automatically archives completed planning sess
 - Maintains planning directory hygiene
 - Runs on a weekly schedule
 
-**This workflow helps prevent planning session clutter.**
+#### This workflow helps prevent planning session clutter
 
 ### Triggers
 
@@ -1368,16 +1399,19 @@ Sessions archived in January 2024.
 **If sessions are archived** (and not dry-run):
 
 1. **Stage Changes**:
+
    ```bash
    git add .claude/sessions/planning/
    ```
 
-2. **Commit**:
+1. **Commit**:
+
    ```bash
    git commit -m "chore(planning): archive completed sessions"
    ```
 
-3. **Push**:
+1. **Push**:
+
    ```bash
    git push origin main
    ```
@@ -1484,7 +1518,7 @@ The **Refresh Search Index Workflow** maintains database search performance by r
 - Can be triggered manually for immediate refresh
 - Ensures search results reflect latest data
 
-**This workflow is critical for search performance.**
+#### This workflow is critical for search performance
 
 ### Triggers
 
@@ -1531,25 +1565,31 @@ graph TB
 **What Gets Refreshed**:
 
 1. **Accommodation Search View**:
+
    ```sql
    REFRESH MATERIALIZED VIEW CONCURRENTLY accommodation_search_view;
    ```
+
    - Full-text search vectors (title, description, amenities)
    - Pre-computed search rankings
    - Location-based search data
 
-2. **Booking Search View**:
+1. **Booking Search View**:
+
    ```sql
    REFRESH MATERIALIZED VIEW CONCURRENTLY booking_search_view;
    ```
+
    - Booking status aggregations
    - Date range indexes
    - User-booking relationships
 
-3. **Review Search View**:
+1. **Review Search View**:
+
    ```sql
    REFRESH MATERIALIZED VIEW CONCURRENTLY review_search_view;
    ```
+
    - Review full-text search
    - Rating aggregations
    - Sentiment analysis data
@@ -1632,26 +1672,30 @@ DATABASE_URL=postgresql://user:pass@host:5432/database
 **Process**:
 
 1. **Connect to Database**:
+
    ```typescript
    const client = new Client({ connectionString: process.env.DATABASE_URL });
    await client.connect();
    ```
 
-2. **Refresh Each View**:
+1. **Refresh Each View**:
+
    ```typescript
    await client.query('REFRESH MATERIALIZED VIEW CONCURRENTLY accommodation_search_view');
    await client.query('REFRESH MATERIALIZED VIEW CONCURRENTLY booking_search_view');
    await client.query('REFRESH MATERIALIZED VIEW CONCURRENTLY review_search_view');
    ```
 
-3. **Log Results**:
+1. **Log Results**:
+
    ```typescript
    console.log('✓ Refreshed accommodation_search_view');
    console.log('✓ Refreshed booking_search_view');
    console.log('✓ Refreshed review_search_view');
    ```
 
-4. **Disconnect**:
+1. **Disconnect**:
+
    ```typescript
    await client.end();
    ```
@@ -1710,6 +1754,7 @@ ERROR: permission denied for relation accommodation_search_view
 **Solutions**:
 
 1. **Database user permissions**: Grant REFRESH permission
+
    ```sql
    GRANT ALL ON accommodation_search_view TO app_user;
    ```
@@ -2102,13 +2147,14 @@ pnpm ci
 
 ### Common CI Failures
 
-#### Build Failures
+#### Common CI Build Failures
 
 **Symptom**: Build step fails in CI but works locally
 
 **Common Causes**:
 
 1. **Cached node_modules**:
+
    ```bash
    # CI Solution: Uses fresh install
    pnpm install --frozen-lockfile
@@ -2118,13 +2164,15 @@ pnpm ci
    pnpm install
    ```
 
-2. **Platform-specific dependencies**:
+1. **Platform-specific dependencies**:
+
    ```bash
    # Issue: Native dependencies fail on Linux CI
    # Solution: Check package.json for platform-specific deps
    ```
 
-3. **Missing environment variables**:
+1. **Missing environment variables**:
+
    ```bash
    # Issue: Build script expects env var
    # Solution: Add to GitHub secrets or workflow env
@@ -2153,14 +2201,14 @@ ERROR: Coverage for statements (89.45%) does not meet threshold (90%)
    });
    ```
 
-2. **Remove Dead Code**:
+1. **Remove Dead Code**:
 
    ```typescript
    // If code is unreachable, remove it
    // Don't keep code just to have it
    ```
 
-3. **Exclude Non-testable Code** (rare):
+1. **Exclude Non-testable Code** (rare):
 
    ```typescript
    /* istanbul ignore next */
@@ -2178,13 +2226,14 @@ pnpm test:coverage
 open coverage/index.html
 ```
 
-#### Build Failures
+#### View HTML Build Failures
 
 **Symptom**: TypeScript compilation errors in CI
 
 **Common Causes**:
 
 1. **Type errors**:
+
    ```typescript
    // Issue: Type mismatch
    const id: number = "123";  // Error
@@ -2193,14 +2242,16 @@ open coverage/index.html
    const id: number = 123;
    ```
 
-2. **Missing type definitions**:
+1. **Missing type definitions**:
+
    ```bash
    # Issue: Cannot find module '@types/node'
    # Solution: Install type definitions
    pnpm add -D @types/node
    ```
 
-3. **Import errors**:
+1. **Import errors**:
+
    ```typescript
    // Issue: Module not found
    import { User } from './user';  // File is user.model.ts
@@ -2209,13 +2260,14 @@ open coverage/index.html
    import { User } from './user.model';
    ```
 
-#### Test Failures
+#### View HTML Test Failures
 
 **Symptom**: Tests pass locally but fail in CI
 
 **Common Causes**:
 
 1. **Timezone differences**:
+
    ```typescript
    // Issue: Date comparison fails in different timezone
    expect(date).toBe('2024-01-15');
@@ -2224,7 +2276,8 @@ open coverage/index.html
    expect(date.toISOString()).toBe('2024-01-15T00:00:00.000Z');
    ```
 
-2. **Race conditions**:
+1. **Race conditions**:
+
    ```typescript
    // Issue: Async operations race
    await Promise.all([operation1(), operation2()]);
@@ -2234,7 +2287,8 @@ open coverage/index.html
    await operation2();
    ```
 
-3. **Database state**:
+1. **Database state**:
+
    ```typescript
    // Issue: Tests depend on specific DB state
    // Solution: Use beforeEach to reset state
@@ -2244,28 +2298,31 @@ open coverage/index.html
    });
    ```
 
-#### Link Check Failures
+#### View HTML Link Check Failures
 
 **Symptom**: Documentation link checks fail
 
 **Common Causes**:
 
 1. **Case sensitivity**:
+
    ```markdown
    ❌ [Link](./Environment-Setup.md)
    ✓ [Link](./environment-setup.md)
    ```
 
-2. **Moved files**:
+1. **Moved files**:
+
    ```markdown
    ❌ [Link](./old-location/file.md)
    ✓ [Link](./new-location/file.md)
    ```
 
-3. **Broken anchors**:
+1. **Broken anchors**:
+
    ```markdown
-   ❌ [Section](#non-existent)
-   ✓ [Section](#existing-section)
+   ❌ Section
+   ✓ Section
    ```
 
 **Solution**: Run link checker locally:
@@ -2281,21 +2338,27 @@ pnpm docs:check-links
 **Common Causes**:
 
 1. **Branch protection**:
+
    ```
    Error: Protected branch update failed
    ```
+
    **Solution**: Ensure workflow has proper permissions
 
-2. **Secret access**:
+1. **Secret access**:
+
    ```
    Error: Secret HOSPEDA_DATABASE_URL not found
    ```
+
    **Solution**: Verify secret is configured correctly
 
-3. **File permissions**:
+1. **File permissions**:
+
    ```
    Error: EACCES: permission denied
    ```
+
    **Solution**: Check file permissions in repository
 
 ### Debug Strategies
@@ -2355,18 +2418,21 @@ pnpm docs:check-links
 **Steps to reproduce locally**:
 
 1. **Check environment**:
+
    ```bash
    node --version   # Should match CI (20.x)
    pnpm --version   # Should match CI (9.x)
    ```
 
-2. **Clean install**:
+1. **Clean install**:
+
    ```bash
    rm -rf node_modules pnpm-lock.yaml
    pnpm install --frozen-lockfile
    ```
 
-3. **Run CI commands**:
+1. **Run CI commands**:
+
    ```bash
    pnpm build
    pnpm typecheck
@@ -2374,7 +2440,7 @@ pnpm docs:check-links
    pnpm test:coverage
    ```
 
-4. **Compare outputs**: Look for differences between local and CI
+1. **Compare outputs**: Look for differences between local and CI
 
 #### Debugging Tips
 
@@ -2603,13 +2669,14 @@ Run manually to test before enabling automatic triggers.
    - Describe purpose, triggers, jobs
    - Add troubleshooting section
 
-2. **Workflow summary table** (in Overview section):
+1. **Workflow summary table** (in Overview section):
    - Add row with workflow details
 
-3. **README.md** (`docs/deployment/README.md`):
+1. **README.md** (`docs/deployment/README.md`):
    - Add workflow to deployment overview
 
-4. **Workflow file comments**:
+1. **Workflow file comments**:
+
    ```yaml
    # This workflow validates X
    # Runs on: push to main, PRs
@@ -2652,42 +2719,46 @@ git commit -m "feat(db): add User model with CRUD operations"
 **Standard PR Process**:
 
 1. **Create Feature Branch**:
+
    ```bash
    git checkout -b feature/add-booking-system
    ```
 
-2. **Make Changes** (atomic commits):
+1. **Make Changes** (atomic commits):
+
    ```bash
    git add specific-files
    git commit -m "feat(service): add booking service"
    ```
 
-3. **Run Local Checks**:
+1. **Run Local Checks**:
+
    ```bash
    pnpm ci  # Runs build, typecheck, lint, test
    ```
 
-4. **Push Branch**:
+1. **Push Branch**:
+
    ```bash
    git push origin feature/add-booking-system
    ```
 
-5. **Open Pull Request**:
+1. **Open Pull Request**:
    - Use PR template
    - Link related issues
    - Request reviewers
 
-6. **Wait for CI**:
+1. **Wait for CI**:
    - All checks must pass
    - Coverage must be ≥90%
    - No lint/type errors
 
-7. **Address Review Comments**:
+1. **Address Review Comments**:
    - Make changes
    - Commit and push
    - CI re-runs automatically
 
-8. **Merge**:
+1. **Merge**:
    - Squash and merge (preferred)
    - Or merge commit (for multi-commit features)
    - Delete branch after merge
@@ -2723,7 +2794,7 @@ git commit -m "feat(db): add User model with CRUD operations"
 
 ### Code Review Process
 
-**All code requires review before merge**
+#### All code requires review before merge
 
 **Reviewer Checklist**:
 

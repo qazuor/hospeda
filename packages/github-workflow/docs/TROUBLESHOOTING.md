@@ -76,15 +76,15 @@ console.log('Config loaded from:', config.filepath);
    .github-workflowrc.json
    ```
 
-2. **Check location** - Must be in project root
+1. **Check location** - Must be in project root
 
-3. **Verify syntax** - TypeScript files must compile:
+1. **Verify syntax** - TypeScript files must compile:
 
    ```bash
    npx tsc --noEmit .github-workflow.config.ts
    ```
 
-4. **Try JSON format** - Simpler, less prone to errors:
+1. **Try JSON format** - Simpler, less prone to errors:
 
    ```json
    {
@@ -168,15 +168,15 @@ curl -H "Authorization: Bearer $GITHUB_TOKEN" \
    - Delete old token
    - Create new token with `repo` scope
 
-2. **Check token expiration**
+1. **Check token expiration**
    - Personal Access Tokens can expire
    - Set expiration to "No expiration" or create new token
 
-3. **Verify token scope**
+1. **Verify token scope**
    - Token MUST have `repo` scope
    - Optionally `workflow` scope for GitHub Actions
 
-4. **Update .env.local**
+1. **Update .env.local**
 
    ```bash
    # Replace with new token
@@ -217,12 +217,12 @@ curl -H "Authorization: Bearer $GITHUB_TOKEN" \
    - Go to repository Settings → Collaborators
    - Ensure your account has write access
 
-2. **Check organization permissions**
+1. **Check organization permissions**
    - If repo is in organization
    - Organization may restrict token access
    - Admin must enable token access
 
-3. **Verify token scope**
+1. **Verify token scope**
    - Must have `repo` scope (full control)
    - Not just `public_repo`
 
@@ -253,7 +253,7 @@ ls -la .claude/sessions/planning/P-001-feature/
    const sessionPath = join(process.cwd(), '.claude/sessions/planning/P-001');
    ```
 
-2. **Check required files**
+1. **Check required files**
 
    ```bash
    # All three files must exist
@@ -262,7 +262,7 @@ ls -la .claude/sessions/planning/P-001-feature/
    touch .claude/sessions/planning/P-001/TODOs.md
    ```
 
-3. **Verify file permissions**
+1. **Verify file permissions**
 
    ```bash
    chmod 644 .claude/sessions/planning/P-001/*.md
@@ -290,7 +290,7 @@ try {
    - Must use standard task format
    - Each task must have code: `### T-XXX-XXX:`
 
-2. **Validate structure**
+1. **Validate structure**
 
    ```markdown
    ### T-001-001: Task title
@@ -304,7 +304,7 @@ try {
    Task description here.
    ```
 
-3. **Check for special characters**
+1. **Check for special characters**
    - Avoid unescaped characters in titles
    - Use standard markdown syntax
 
@@ -334,7 +334,7 @@ console.log('Failed:', result.failed);
    dryRun: false
    ```
 
-2. **Review failed tasks**
+1. **Review failed tasks**
 
    ```typescript
    result.failed.forEach(task => {
@@ -342,11 +342,11 @@ console.log('Failed:', result.failed);
    });
    ```
 
-3. **Verify GitHub permissions**
+1. **Verify GitHub permissions**
    - Token must have `repo` write access
    - Check organization settings
 
-4. **Check rate limiting**
+1. **Check rate limiting**
    - May need to add delays between requests
 
 ## Git Hooks Issues
@@ -374,7 +374,7 @@ ls -la .husky/
    npx husky install
    ```
 
-2. **Make hooks executable**
+1. **Make hooks executable**
 
    ```bash
    chmod +x .husky/pre-commit
@@ -382,7 +382,7 @@ ls -la .husky/
    chmod +x .husky/commit-msg
    ```
 
-3. **Verify hook content**
+1. **Verify hook content**
 
    ```bash
    cat .husky/pre-commit
@@ -393,7 +393,7 @@ ls -la .husky/
    # pnpm run pre-commit-checks
    ```
 
-4. **Test hook manually**
+1. **Test hook manually**
 
    ```bash
    ./.husky/pre-commit
@@ -401,7 +401,7 @@ ls -la .husky/
    # Should run linting, type checking, etc.
    ```
 
-5. **Check Husky installation**
+1. **Check Husky installation**
 
    ```bash
    # Reinstall
@@ -427,13 +427,13 @@ ls -la .husky/
    # Fix issues before committing
    ```
 
-2. **Skip hook temporarily** (use sparingly!)
+1. **Skip hook temporarily** (use sparingly!)
 
    ```bash
    git commit --no-verify -m "message"
    ```
 
-3. **Disable specific check**
+1. **Disable specific check**
 
    ```typescript
    // .github-workflow.config.ts
@@ -458,13 +458,13 @@ ls -la .husky/
    commitLimit: 1
    ```
 
-2. **Use silent mode**
+1. **Use silent mode**
 
    ```typescript
    silent: true  // Reduces logging overhead
    ```
 
-3. **Disable if not needed**
+1. **Disable if not needed**
 
    ```typescript
    hooks: {
@@ -489,12 +489,12 @@ ls -la .husky/
    const client = new GitHubClient(config);
    ```
 
-2. **Reduce API calls**
+1. **Reduce API calls**
    - Check for existing issues first
    - Use batch operations
    - Add delays between requests
 
-3. **Optimize parsing**
+1. **Optimize parsing**
    - Use smaller planning sessions
    - Split large sessions
 
@@ -513,13 +513,13 @@ ls -la .husky/
    }
    ```
 
-2. **Clear caches**
+1. **Clear caches**
 
    ```bash
    rm -rf node_modules/.cache
    ```
 
-3. **Increase Node memory**
+1. **Increase Node memory**
 
    ```bash
    NODE_OPTIONS=--max-old-space-size=4096 pnpm run sync
@@ -593,12 +593,12 @@ If none of these solutions work:
    DEBUG=github-workflow:* pnpm run sync
    ```
 
-2. **Create minimal reproduction**
+1. **Create minimal reproduction**
    - Isolate the issue
    - Create small test case
    - Share relevant code
 
-3. **Create issue**
+1. **Create issue**
    - Go to repository issues
    - Use issue template
    - Include:
@@ -607,7 +607,7 @@ If none of these solutions work:
      - Steps to reproduce
      - Environment info
 
-4. **Contact team**
+1. **Contact team**
    - Hospeda Development Team
    - Slack: #github-workflow
 

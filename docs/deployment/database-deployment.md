@@ -13,8 +13,8 @@
 4. [Database Schema Management](#database-schema-management)
 5. [Branching Strategy](#branching-strategy)
 6. [Migrations](#migrations)
-7. [Backup & Recovery](#backup--recovery)
-8. [Performance & Scaling](#performance--scaling)
+7. Backup & Recovery
+8. Performance & Scaling
 9. [Security](#security)
 10. [Monitoring](#monitoring)
 11. [Troubleshooting](#troubleshooting)
@@ -38,21 +38,25 @@
 ### Serverless Benefits
 
 **Auto-Scaling**:
+
 - Compute scales automatically based on load
 - Scales to zero during inactivity (saves costs)
 - Instant scale-up on traffic spikes
 
 **Branching**:
+
 - Create database branches for features/testing
 - Isolated data for each branch
 - Merge branches like Git
 
 **Cost Efficiency**:
+
 - Pay only for what you use
 - No idle compute costs
 - Automatic storage optimization
 
 **Developer Experience**:
+
 - Instant database provisioning
 - No infrastructure management
 - Built-in backups and monitoring
@@ -66,6 +70,7 @@ The Hospeda project uses Neon for:
 - **Production**: Main branch for production database
 
 **Tech Stack**:
+
 - **ORM**: Drizzle ORM
 - **Migration Tool**: Drizzle Kit
 - **Connection**: PostgreSQL driver (node-postgres)
@@ -101,6 +106,7 @@ Before setup, ensure you have:
 #### Choose Plan
 
 **Free Tier**:
+
 - 10 GB storage
 - 1 project
 - Multiple branches
@@ -108,6 +114,7 @@ Before setup, ensure you have:
 - **Good for**: Development, testing, small projects
 
 **Pro Tier** ($19/month):
+
 - 50 GB included storage
 - Unlimited projects
 - Unlimited branches
@@ -182,6 +189,7 @@ postgresql://hospeda_user:abc123xyz@ep-cool-sky-12345.us-east-1.aws.neon.tech/ho
 ```
 
 **Components**:
+
 - **User**: Database user (e.g., `hospeda_user`)
 - **Password**: Auto-generated password
 - **Host**: Neon endpoint (e.g., `ep-cool-sky-12345.us-east-1.aws.neon.tech`)
@@ -275,27 +283,27 @@ psql "postgresql://user:pass@host/db?sslmode=require"
 
 ### Create Neon Project
 
-#### Using Dashboard
+#### Create Neon Using Dashboard
 
 1. **Go to Dashboard**:
    - Visit [console.neon.tech](https://console.neon.tech)
    - Click "New Project"
 
-2. **Configure Project**:
+1. **Configure Project**:
    - **Name**: `hospeda-production`
    - **Region**: `US East (N. Virginia)` (or closest to users)
    - **PostgreSQL Version**: `15` (latest stable)
    - **Compute Size**: Auto (starts at 0.25 vCPU)
 
-3. **Create Project**:
+1. **Create Project**:
    - Click "Create Project"
    - Wait ~30 seconds for provisioning
 
-4. **Save Credentials**:
+1. **Save Credentials**:
    - Copy connection string immediately
    - Save to password manager
 
-#### Using CLI
+#### Create Neon Using CLI
 
 ```bash
 neonctl projects create \
@@ -316,7 +324,7 @@ Connection string: postgresql://...
 
 Neon creates a default database (`neondb`), but we'll create a custom one.
 
-#### Using Dashboard
+#### Create Database Using Dashboard
 
 1. Go to project dashboard
 2. Click "Databases" tab
@@ -324,7 +332,7 @@ Neon creates a default database (`neondb`), but we'll create a custom one.
 4. Enter name: `hospeda_db`
 5. Click "Create"
 
-#### Using CLI
+#### Create Database Using CLI
 
 ```bash
 neonctl databases create \
@@ -427,6 +435,7 @@ postgresql://user:pass@host/db?sslmode=require&pgbouncer=true
 ```
 
 **Benefits**:
+
 - Reduced connection overhead
 - Better performance for serverless functions
 - Handles connection spikes
@@ -434,6 +443,7 @@ postgresql://user:pass@host/db?sslmode=require&pgbouncer=true
 **Pooling Modes**:
 
 Neon uses **transaction mode**:
+
 - Each transaction gets a connection
 - Connection released after transaction
 - Best for serverless/stateless apps
@@ -586,6 +596,7 @@ pnpm db:push
 3. Applies changes directly (no migration file)
 
 **⚠️ WARNING**:
+
 - **Only use in development**
 - Skips migration history
 - Can cause data loss
@@ -666,6 +677,7 @@ Think of database branches like Git branches:
 - **Preview Branches**: Databases for PR deployments
 
 **Benefits**:
+
 - Isolated testing environment
 - No risk to production data
 - Fast branch creation (seconds)
@@ -678,6 +690,7 @@ Think of database branches like Git branches:
 **Purpose**: Production database
 
 **Characteristics**:
+
 - Created with project
 - Always exists
 - Connected to production app
@@ -694,6 +707,7 @@ postgresql://user:pass@ep-cool-sky-12345.us-east-1.aws.neon.tech/hospeda_db
 **Purpose**: Local development and testing
 
 **Characteristics**:
+
 - Created from main branch
 - Independent data
 - Can be reset/recreated
@@ -725,6 +739,7 @@ HOSPEDA_DATABASE_URL=postgresql://user:pass@ep-dev-branch-12345.../hospeda_db
 **Purpose**: Database for pull request previews
 
 **Characteristics**:
+
 - Created automatically for each PR
 - Isolated test data
 - Deleted when PR closes
@@ -774,7 +789,7 @@ jobs:
 git checkout -b feature/add-amenities
 ```
 
-2. **Create Database Branch**:
+1. **Create Database Branch**:
 
 ```bash
 neonctl branches create \
@@ -782,20 +797,20 @@ neonctl branches create \
   --parent main
 ```
 
-3. **Get Connection String**:
+1. **Get Connection String**:
 
 ```bash
 neonctl connection-string feature-add-amenities
 # Copy output
 ```
 
-4. **Update .env.local**:
+1. **Update .env.local**:
 
 ```bash
 HOSPEDA_DATABASE_URL=postgresql://user:pass@ep-feature-add-amenities.../hospeda_db
 ```
 
-5. **Make Schema Changes**:
+1. **Make Schema Changes**:
 
 ```typescript
 // packages/db/src/schemas/accommodations.schema.ts
@@ -805,27 +820,27 @@ export const accommodations = pgTable('accommodations', {
 });
 ```
 
-6. **Push Schema**:
+1. **Push Schema**:
 
 ```bash
 pnpm db:push  # Direct push to feature branch
 ```
 
-7. **Test Application**:
+1. **Test Application**:
 
 ```bash
 pnpm dev
 # Test new amenities feature
 ```
 
-8. **Generate Migration** (when satisfied):
+1. **Generate Migration** (when satisfied):
 
 ```bash
 pnpm db:generate
 # Creates migration file
 ```
 
-9. **Commit & Push**:
+1. **Commit & Push**:
 
 ```bash
 git add .
@@ -1106,11 +1121,11 @@ export HOSPEDA_DATABASE_URL=postgresql://...dev-branch.../hospeda_db
 pnpm db:migrate
 ```
 
-2. **Test on Preview Branch** (for PRs):
+1. **Test on Preview Branch** (for PRs):
 
 Create preview branch, run migration, test in preview environment.
 
-3. **Dry Run** (manual):
+1. **Dry Run** (manual):
 
 ```bash
 # Generate migration but don't apply
@@ -1173,11 +1188,13 @@ jobs:
 Neon provides automatic backups (point-in-time recovery).
 
 **Free Tier**:
+
 - **Retention**: 7 days
 - **Frequency**: Continuous (every change tracked)
 - **Recovery Point**: Any point in last 7 days
 
 **Pro Tier**:
+
 - **Retention**: 7-30 days (configurable)
 - **Frequency**: Continuous
 - **Recovery Point**: Any point within retention period
@@ -1196,7 +1213,7 @@ Neon uses Write-Ahead Log (WAL) for continuous backup:
 
 Restore database to a specific point in time.
 
-#### Using Dashboard
+#### Point-in-Time Recovery Using Dashboard
 
 1. Go to Neon project
 2. Click "Backups" or "Branches"
@@ -1209,7 +1226,7 @@ Restore database to a specific point in time.
 
 **Result**: New database branch created at that point in time.
 
-#### Using CLI
+#### Point-in-Time Recovery Using CLI
 
 ```bash
 # Restore to specific timestamp
@@ -1312,7 +1329,7 @@ psql "$HOSPEDA_DATABASE_URL" -c "SELECT * FROM drizzle_migrations ORDER BY creat
 # Note timestamp before bad migration
 ```
 
-2. **Create Recovery Branch**:
+1. **Create Recovery Branch**:
 
 ```bash
 neonctl branches create \
@@ -1321,7 +1338,7 @@ neonctl branches create \
   --timestamp "2024-01-15T10:30:00Z"
 ```
 
-3. **Verify Data**:
+1. **Verify Data**:
 
 ```bash
 # Get connection string
@@ -1331,7 +1348,7 @@ RECOVERY_URL=$(neonctl connection-string recovery)
 psql "$RECOVERY_URL" -c "SELECT COUNT(*) FROM accommodations;"
 ```
 
-4. **Promote Recovery Branch** (if good):
+1. **Promote Recovery Branch** (if good):
 
 ```bash
 # Option A: Rename branches (swap main and recovery)
@@ -1342,7 +1359,7 @@ neonctl branches rename recovery main
 pg_dump "$RECOVERY_URL" | psql "$MAIN_URL"
 ```
 
-5. **Update Applications**:
+1. **Update Applications**:
 
 If using connection string with branch name, update environment variables.
 
@@ -1358,13 +1375,13 @@ If using connection string with branch name, update environment variables.
 neonctl branches create --name restore-from-backup
 ```
 
-2. **Get Connection String**:
+1. **Get Connection String**:
 
 ```bash
 RESTORE_URL=$(neonctl connection-string restore-from-backup)
 ```
 
-3. **Restore Backup**:
+1. **Restore Backup**:
 
 ```bash
 # From uncompressed SQL
@@ -1374,13 +1391,13 @@ psql "$RESTORE_URL" < backups/db-backup-20240115.sql
 gunzip -c backups/db-backup-20240115.sql.gz | psql "$RESTORE_URL"
 ```
 
-4. **Verify Data**:
+1. **Verify Data**:
 
 ```bash
 psql "$RESTORE_URL" -c "SELECT COUNT(*) FROM accommodations;"
 ```
 
-5. **Promote to Main** (if good):
+1. **Promote to Main** (if good):
 
 ```bash
 # Promote restore-from-backup to main
@@ -1422,6 +1439,7 @@ Neon automatically scales compute based on load.
 4. **Scale to Zero**: Pauses compute when idle (after 5 minutes)
 
 **Benefits**:
+
 - Pay only for active usage
 - No manual intervention
 - Instant scaling (no downtime)
@@ -1466,6 +1484,7 @@ postgresql://user:pass@host/db?sslmode=require&pgbouncer=true
 ```
 
 **Benefits**:
+
 - Reuses database connections
 - Reduces connection overhead
 - Handles connection spikes
@@ -1474,6 +1493,7 @@ postgresql://user:pass@host/db?sslmode=require&pgbouncer=true
 **Pooling Mode**:
 
 Neon uses **transaction mode**:
+
 - Connection released after each transaction
 - Multiple clients share connections
 - Ideal for stateless applications
@@ -1732,7 +1752,7 @@ Regularly rotate database passwords.
 openssl rand -base64 32
 ```
 
-2. **Update Neon**:
+1. **Update Neon**:
 
 ```bash
 psql "$HOSPEDA_DATABASE_URL"
@@ -1743,15 +1763,16 @@ ALTER ROLE hospeda_user WITH PASSWORD 'new_password_here';
 \q
 ```
 
-3. **Update Connection Strings**:
+1. **Update Connection Strings**:
 
 Update everywhere:
+
 - `.env.local` (local development)
 - Vercel environment variables
 - GitHub Actions secrets
 - CI/CD pipelines
 
-4. **Redeploy Applications**:
+1. **Redeploy Applications**:
 
 ```bash
 # Redeploy to pick up new connection string
@@ -1767,6 +1788,7 @@ vercel --prod
 **Automated Rotation** (advanced):
 
 Use secret management services:
+
 - AWS Secrets Manager
 - HashiCorp Vault
 - Doppler
@@ -1796,6 +1818,7 @@ Track database access and changes (Pro tier feature).
 3. Export logs (CSV)
 
 **Use Cases**:
+
 - Security investigations
 - Compliance audits
 - Debugging access issues
@@ -1818,12 +1841,14 @@ Primary monitoring interface.
 **Available Metrics**:
 
 **Overview**:
+
 - Active connections
 - CPU usage
 - Storage usage
 - Query count
 
 **Detailed Metrics**:
+
 - Query performance (slowest queries)
 - Connection history
 - Auto-scaling events
@@ -1855,7 +1880,7 @@ Identify and optimize slow queries.
 CREATE INDEX ON accommodations(city);
 ```
 
-2. **Rewrite Query**:
+1. **Rewrite Query**:
 
 ```typescript
 // ❌ Slow: N+1 query
@@ -1871,7 +1896,7 @@ const accommodationsWithReviews = await db
   .leftJoin(reviewsTable, eq(accommodationsTable.id, reviewsTable.accommodationId));
 ```
 
-3. **Cache Results**:
+1. **Cache Results**:
 
 ```typescript
 // Cache expensive queries
@@ -1979,18 +2004,18 @@ echo $HOSPEDA_DATABASE_URL
 # Check host, port, user, password
 ```
 
-2. **Test Network**:
+1. **Test Network**:
 
 ```bash
 ping ep-cool-sky-12345.us-east-1.aws.neon.tech
 # Should respond
 ```
 
-3. **Check Firewall**:
+1. **Check Firewall**:
 
 Ensure outbound connections to port 5432 are allowed.
 
-4. **Try with psql**:
+1. **Try with psql**:
 
 ```bash
 psql "$HOSPEDA_DATABASE_URL"
@@ -2018,7 +2043,7 @@ Add `pgbouncer=true` to connection string:
 postgresql://user:pass@host/db?sslmode=require&pgbouncer=true
 ```
 
-2. **Close Idle Connections**:
+1. **Close Idle Connections**:
 
 ```bash
 psql "$HOSPEDA_DATABASE_URL" -c "
@@ -2029,7 +2054,7 @@ WHERE state = 'idle'
 "
 ```
 
-3. **Reduce App Pool Size**:
+1. **Reduce App Pool Size**:
 
 ```typescript
 // packages/db/src/connection.ts
@@ -2039,7 +2064,7 @@ const pool = new Pool({
 });
 ```
 
-4. **Upgrade Plan**:
+1. **Upgrade Plan**:
 
 Free tier: 100 connections → Pro tier: 1000 connections
 
@@ -2063,7 +2088,7 @@ Error: Migration 0003_add_amenities has already been applied
 psql "$HOSPEDA_DATABASE_URL" -c "SELECT * FROM drizzle_migrations;"
 ```
 
-2. **Remove Duplicate**:
+1. **Remove Duplicate**:
 
 ```bash
 psql "$HOSPEDA_DATABASE_URL" -c "
@@ -2073,7 +2098,7 @@ WHERE name = '0003_add_amenities'
 "
 ```
 
-3. **Re-run Migration**:
+1. **Re-run Migration**:
 
 ```bash
 pnpm db:migrate
@@ -2098,7 +2123,7 @@ psql "$HOSPEDA_DATABASE_URL" -c "\d accommodations"
 # See current columns
 ```
 
-2. **Skip Failed Migration** (if column exists):
+1. **Skip Failed Migration** (if column exists):
 
 ```bash
 # Manually mark migration as applied
@@ -2108,7 +2133,7 @@ VALUES ('0003_add_amenities', 'hash_here', NOW());
 "
 ```
 
-3. **Or Drop Column and Re-run**:
+1. **Or Drop Column and Re-run**:
 
 ```bash
 psql "$HOSPEDA_DATABASE_URL" -c "ALTER TABLE accommodations DROP COLUMN amenities;"
@@ -2127,7 +2152,7 @@ pnpm db:migrate
 
 Go to Neon Dashboard → Monitoring → Query Performance
 
-2. **Analyze Query**:
+1. **Analyze Query**:
 
 ```bash
 psql "$HOSPEDA_DATABASE_URL"
@@ -2149,14 +2174,14 @@ export const accommodations = pgTable('accommodations', {
 }));
 ```
 
-2. **Generate and Apply Migration**:
+1. **Generate and Apply Migration**:
 
 ```bash
 pnpm db:generate
 pnpm db:migrate
 ```
 
-3. **Verify Improvement**:
+1. **Verify Improvement**:
 
 ```bash
 EXPLAIN ANALYZE SELECT * FROM accommodations WHERE city = 'Concepción';
@@ -2179,11 +2204,11 @@ ERROR: could not extend file "base/16384/16385": No space left on device
 
 Go to Neon Dashboard → Overview → Storage
 
-2. **Upgrade Plan**:
+1. **Upgrade Plan**:
 
 Free tier: 10 GB → Pro tier: 50+ GB
 
-3. **Clean Up Data** (temporary):
+1. **Clean Up Data** (temporary):
 
 ```bash
 # Delete old records
@@ -2372,6 +2397,7 @@ pnpm db:reset
 3. **Seed data**: `pnpm seed`
 
 **⚠️ WARNING**:
+
 - **Only use in development**
 - Deletes all data
 - Cannot be undone
@@ -2532,12 +2558,12 @@ This guide covered deploying and managing the Neon PostgreSQL database:
    - Use `db:push` for rapid prototyping
    - Generate migrations when feature is stable
 
-2. **Staging**:
+1. **Staging**:
    - Create preview branches for PRs
    - Run migrations in CI/CD
    - Test migrations before production
 
-3. **Production**:
+1. **Production**:
    - Disable scale to zero
    - Enable connection pooling
    - Set up monitoring and alerts

@@ -1,6 +1,6 @@
 # @repo/schemas Documentation
 
-**Centralized Zod validation schemas for the Hospeda platform**
+#### Centralized Zod validation schemas for the Hospeda platform
 
 This package provides type-safe validation schemas for all entities, API requests/responses, and business logic validation across the Hospeda monorepo. Built with Zod, it ensures consistent validation and automatic type inference throughout the entire application stack.
 

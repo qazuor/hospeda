@@ -82,11 +82,13 @@ All business methods implemented with proper structure:
 **Signature:** `generateFromRefund(actor, refundId, reason?): Promise<ServiceOutput<CreditNote | null>>`
 
 **Business Rules:**
+
 - Refund must exist
 - Associated payment and invoice must exist
 - Credit note amount equals refund amount
 
 **Tests:**
+
 - ✅ Success case
 - ✅ Null when refund not found
 - ✅ Permission denied
@@ -97,11 +99,13 @@ All business methods implemented with proper structure:
 **Signature:** `applyToInvoice(actor, creditNoteId): Promise<ServiceOutput<{success, appliedAmount?, error?}>>`
 
 **Business Rules:**
+
 - Credit note must exist and not be applied
 - Invoice must exist
 - Credit amount reduces invoice total
 
 **Tests:**
+
 - ✅ Success case
 - ✅ Credit note not found
 - ✅ Permission denied
@@ -112,10 +116,12 @@ All business methods implemented with proper structure:
 **Signature:** `calculateBalance(actor, creditNoteId): Promise<ServiceOutput<number>>`
 
 **Business Rules:**
+
 - Returns full amount if not yet applied
 - Returns 0 if credit note doesn't exist
 
 **Tests:**
+
 - ✅ Success case
 - ✅ Returns 0 when not found
 - ✅ Permission denied
@@ -125,6 +131,7 @@ All business methods implemented with proper structure:
 **Signature:** `findByInvoice(actor, invoiceId): Promise<ServiceOutput<CreditNote[]>>`
 
 **Tests:**
+
 - ✅ Success case
 - ✅ Empty array when none found
 - ✅ Permission denied
@@ -134,6 +141,7 @@ All business methods implemented with proper structure:
 **Signature:** `getTotalCreditForInvoice(actor, invoiceId): Promise<ServiceOutput<number>>`
 
 **Tests:**
+
 - ✅ Success case
 - ✅ Returns 0 when no credits
 - ✅ Permission denied
@@ -143,6 +151,7 @@ All business methods implemented with proper structure:
 **Signature:** `findByDateRange(actor, startDate, endDate): Promise<ServiceOutput<CreditNote[]>>`
 
 **Tests:**
+
 - ✅ Success case
 - ✅ Empty array when none in range
 - ✅ Permission denied
@@ -152,6 +161,7 @@ All business methods implemented with proper structure:
 **Signature:** `getCreditNotesSummary(actor, startDate?, endDate?): Promise<ServiceOutput<{totalAmount, count, averageAmount}>>`
 
 **Tests:**
+
 - ✅ Success case
 - ✅ With date filters
 - ✅ Zero values when none exist
@@ -162,11 +172,13 @@ All business methods implemented with proper structure:
 **Signature:** `validateCreditAmount(actor, invoiceId, amount): Promise<ServiceOutput<{valid, reason?, maxAllowed?}>>`
 
 **Business Rules:**
+
 - Amount must be positive
 - Amount cannot exceed invoice balance
 - Invoice must exist
 
 **Tests:**
+
 - ✅ Success case
 - ✅ Negative amount error
 - ✅ Exceeds balance error
@@ -178,11 +190,13 @@ All business methods implemented with proper structure:
 **Signature:** `createWithValidation(actor, data): Promise<ServiceOutput<{success, creditNote?, error?}>>`
 
 **Business Rules:**
+
 - Validates amount against invoice balance
 - Ensures invoice exists
 - Validates currency matches invoice
 
 **Tests:**
+
 - ✅ Success case
 - ✅ Validation failure
 - ✅ Permission denied
@@ -193,11 +207,13 @@ All business methods implemented with proper structure:
 **Signature:** `cancel(actor, creditNoteId, reason?): Promise<ServiceOutput<CreditNote | null>>`
 
 **Business Rules:**
+
 - Can only cancel unapplied credit notes
 - Sets deletedAt timestamp
 - Stores cancellation reason
 
 **Tests:**
+
 - ✅ Success case with reason
 - ✅ Success case without reason
 - ✅ Returns null when not found
@@ -210,6 +226,7 @@ All business methods implemented with proper structure:
 ### ServiceOutput Pattern ✅
 
 All methods use correct ServiceOutput return type:
+
 ```typescript
 type ServiceOutput<T> =
   | { data: T; error?: never }
@@ -221,6 +238,7 @@ type ServiceOutput<T> =
 ### runWithLoggingAndValidation ✅
 
 All business methods wrapped correctly:
+
 ```typescript
 return this.runWithLoggingAndValidation({
     methodName: 'methodName',
@@ -235,6 +253,7 @@ return this.runWithLoggingAndValidation({
 ### Permission Checks ✅
 
 All business methods call appropriate `_can*` hook:
+
 - Create methods → `_canCreate()`
 - Update methods → `_canUpdate()`
 - Delete methods → `_canSoftDelete()`
@@ -244,6 +263,7 @@ All business methods call appropriate `_can*` hook:
 ### JSDoc Documentation ✅
 
 All methods have comprehensive JSDoc:
+
 - Method description
 - Business rules section
 - Parameter descriptions
@@ -256,6 +276,7 @@ All methods follow Receive Object / Return Object pattern
 ### Import Types ✅
 
 Proper use of `import type` for type-only imports:
+
 ```typescript
 import type { CreditNote, CreditNoteModel } from '@repo/db';
 ```
@@ -267,11 +288,13 @@ import type { CreditNote, CreditNoteModel } from '@repo/db';
 ### Test Coverage: 37 tests ✅
 
 **Structure:**
+
 - 10 business method test groups
 - Each method has 3-5 tests minimum
 - Success, error, and permission cases covered
 
 **Test Pattern:**
+
 ```typescript
 describe('methodName', () => {
     it('should [success case]', async () => { ... });
@@ -325,6 +348,7 @@ No TypeScript errors related to creditNote service
 ### CreditNoteQuerySchema Enhanced ✅
 
 Added pagination and sorting support:
+
 ```typescript
 ...PaginationSchema.shape,  // page, pageSize
 ...SortingSchema.shape       // sortBy, sortOrder
@@ -415,6 +439,7 @@ These are **intentional** and match the model's business method signatures.
 ✅ **TASK-212 COMPLETED SUCCESSFULLY**
 
 The CreditNoteService has been implemented following the exact pattern from InvoiceService with:
+
 - All 10 business methods from the model
 - All 11 permission hooks
 - 37 comprehensive tests (100% pass rate)

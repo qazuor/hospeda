@@ -137,20 +137,23 @@ curl -f https://api.hospeda.com/health
 **Check in order**:
 
 1. **Database** (most common bottleneck)
+
    ```bash
    # Check connection count (via Neon Console)
    # Monitoring → Connections
    # Critical: > 90% of max
    ```
 
-2. **Backend** (CPU/memory)
+1. **Backend** (CPU/memory)
+
    ```bash
    # Check via platform dashboard (Fly.io)
    # Metrics → CPU/Memory
    # Critical: > 85%
    ```
 
-3. **Frontend** (CDN, edge)
+1. **Frontend** (CDN, edge)
+
    ```bash
    # Check Vercel Analytics
    # Should auto-scale, rarely bottleneck
@@ -162,7 +165,7 @@ curl -f https://api.hospeda.com/health
 
 - [Database Emergency Scaling](#database-emergency-scaling)
 - [Backend Emergency Scaling](#backend-emergency-scaling)
-- [Frontend Emergency Scaling](#frontend-emergency-scaling)
+- Frontend Emergency Scaling
 
 ### Step 4: Communicate
 
@@ -214,7 +217,7 @@ Vercel provides automatic scaling, but configuration and optimization are import
 - Static assets cached at edge
 - Serverless functions scale automatically
 
-**No manual intervention usually needed**
+#### No manual intervention usually needed
 
 ### Optimization for High Traffic
 
@@ -457,7 +460,7 @@ fly logs --app hospeda-api
 
 **Via Neon Console**:
 
-1. Go to https://console.neon.tech
+1. Go to <https://console.neon.tech>
 2. Select Hospeda project
 3. Go to **Monitoring** tab
 
@@ -498,7 +501,7 @@ LIMIT 10;
 
 **If**: High connection count (> 70% of max)
 
-**Neon has built-in connection pooling (PgBouncer)**
+#### Neon has built-in connection pooling (PgBouncer)
 
 **Verify configuration**:
 
@@ -1005,16 +1008,16 @@ export const options = {
    - Verify bottleneck identification
    - Check all metrics
 
-2. **Database bottleneck**
+1. **Database bottleneck**
    - Slow queries (missing indexes)
    - Connection pool exhaustion
    - Scale database, not just backend
 
-3. **External dependency**
+1. **External dependency**
    - Third-party API slow (Clerk, Mercado Pago)
    - Check external service status
 
-4. **Code-level bottleneck**
+1. **Code-level bottleneck**
    - Inefficient algorithm
    - Memory leak
    - Requires code optimization
@@ -1028,11 +1031,11 @@ export const options = {
    - Configure connection pooling
    - Upgrade database tier
 
-2. **State consistency issues**
+1. **State consistency issues**
    - Multiple instances, no shared state
    - Use database or Redis for session storage
 
-3. **Cost spike**
+1. **Cost spike**
    - Over-scaled
    - De-scale unnecessary components
 

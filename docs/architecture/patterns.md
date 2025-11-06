@@ -19,7 +19,7 @@ Hospeda follows consistent patterns across all layers to ensure:
 
 ### 1. Schema-First Design
 
-**All types and validation come from Zod schemas.**
+#### All types and validation come from Zod schemas
 
 ```mermaid
 graph LR
@@ -490,7 +490,7 @@ await createAccommodation({
 
 ### 5. Route Factories
 
-**Use factories to create standardized routes.**
+#### Use factories to create standardized routes
 
 **File**: `apps/api/src/factories/crud-route.factory.ts`
 
@@ -677,7 +677,7 @@ import {
 
 ### 7. Named Exports Only
 
-**Never use default exports.**
+#### Never use default exports
 
 **❌ Don't**:
 
@@ -713,7 +713,7 @@ import { AccommodationModel } from '@repo/db';
 
 ### 8. Actor-Based Authorization
 
-**Use actor system for permissions.**
+#### Use actor system for permissions
 
 **Actors**:
 
@@ -800,7 +800,7 @@ if (result.success) {
 
 ### 10. Audit Fields Pattern
 
-**All tables include standard audit fields.**
+#### All tables include standard audit fields
 
 ```typescript
 export const baseAuditFields = {

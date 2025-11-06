@@ -43,7 +43,7 @@ Schema composition is the practice of building complex schemas from simpler, reu
 
 Adds or overrides fields in an existing schema.
 
-#### Syntax
+#### extend() Syntax
 
 ```typescript
 const ExtendedSchema = BaseSchema.extend({
@@ -142,7 +142,7 @@ const HostelSchema = BaseAccommodationSchema.extend({
 
 Combines two schemas, with conflicts resolved by the second schema.
 
-#### Syntax
+#### merge() Syntax
 
 ```typescript
 const MergedSchema = SchemaA.merge(SchemaB);
@@ -267,7 +267,7 @@ const CompleteAccommodationSchema = BaseInfoSchema
 
 Selects specific fields from a schema.
 
-#### Syntax
+#### pick() Syntax
 
 ```typescript
 const PickedSchema = BaseSchema.pick({
@@ -371,7 +371,7 @@ const PrivateUserProfileSchema = UserSchema.pick({
 
 Removes specific fields from a schema.
 
-#### Syntax
+#### omit() Syntax
 
 ```typescript
 const OmittedSchema = BaseSchema.omit({
@@ -440,7 +440,7 @@ const SafeUserSchema = UserWithPasswordSchema.omit({
 
 Makes all fields optional.
 
-#### Syntax
+#### partial() Syntax
 
 ```typescript
 const PartialSchema = BaseSchema.partial();
@@ -493,7 +493,7 @@ type PartiallyOptional = z.infer<typeof PartiallyOptionalSchema>;
 
 Makes all fields required (removes optionality).
 
-#### Syntax
+#### required() Syntax
 
 ```typescript
 const RequiredSchema = BaseSchema.required();

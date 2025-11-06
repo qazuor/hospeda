@@ -18,7 +18,7 @@ Complete API documentation for the `BaseCrudService` class, the foundation of al
   - [Lifecycle Hooks](#lifecycle-hooks)
   - [Core Logic Methods](#core-logic-methods)
 - [Properties](#properties)
-- [Type Parameters](#type-parameters)
+- Type Parameters
 
 ## Overview
 
@@ -1330,37 +1330,37 @@ Executed after entities are listed.
 
 ---
 
-#### _beforeSearch / _afterSearch
+#### _beforeSearch /_afterSearch
 
 Similar to list hooks but for search operations.
 
 ---
 
-#### _beforeSoftDelete / _afterSoftDelete
+#### _beforeSoftDelete /_afterSoftDelete
 
 Executed before/after soft delete operations.
 
 ---
 
-#### _beforeHardDelete / _afterHardDelete
+#### _beforeHardDelete /_afterHardDelete
 
 Executed before/after hard delete operations.
 
 ---
 
-#### _beforeRestore / _afterRestore
+#### _beforeRestore /_afterRestore
 
 Executed before/after restore operations.
 
 ---
 
-#### _beforeCount / _afterCount
+#### _beforeCount /_afterCount
 
 Executed before/after count operations.
 
 ---
 
-#### _beforeUpdateVisibility / _afterUpdateVisibility
+#### _beforeUpdateVisibility /_afterUpdateVisibility
 
 Executed before/after visibility update.
 
@@ -1377,7 +1377,7 @@ protected abstract _executeSearch(
 ): Promise<PaginatedListOutput<TEntity>>
 ```
 
-**Must be implemented by concrete services.**
+#### Core Logic Must be implemented by concrete services
 
 Executes the actual database search query with filters, sorting, and pagination.
 
@@ -1411,7 +1411,7 @@ protected abstract _executeCount(
 ): Promise<{ count: number }>
 ```
 
-**Must be implemented by concrete services.**
+#### Core Logic Must be implemented by concrete services
 
 Executes the actual count query based on search filters.
 
@@ -1440,7 +1440,7 @@ protected async _executeCount(
 protected abstract getDefaultListRelations(): ListRelationsConfig
 ```
 
-**Must be implemented by concrete services.**
+#### Core Logic Must be implemented by concrete services
 
 Defines which relations should be included by default when listing entities.
 

@@ -599,7 +599,7 @@ graph LR
 3. **tech-analysis.md** (Technical analysis)
 4. **TODOs.md** (Task breakdown)
 
-#### Process
+#### Phase 1: Process
 
 **Step 1: Initiate Planning**
 
@@ -795,7 +795,7 @@ You: "Perfect! Let's start implementation"
 
 **Goal**: Implement all tasks using TDD with specialized agents
 
-#### Process
+#### Phase 2: Process
 
 **For Each Task:**
 
@@ -815,7 +815,7 @@ Task: PB-102 - Create SubscriptionModel
 
 1. Read task requirements from TODOs.md
 
-2. Invoke agent:
+1. Invoke agent:
 "Task: Invoke db-drizzle-engineer agent to implement PB-102:
 
 Create SubscriptionModel in packages/db/src/models/subscription.model.ts
@@ -826,18 +826,18 @@ Create SubscriptionModel in packages/db/src/models/subscription.model.ts
 - Follow pattern from AccommodationModel
 - Ensure 90%+ coverage"
 
-3. Agent uses TDD:
+1. Agent uses TDD:
    RED: Writes failing tests
    GREEN: Implements SubscriptionModel
    REFACTOR: Improves code quality
 
-4. Run quality checks:
+1. Run quality checks:
    /quality-check
 
-5. Mark complete in TODOs.md:
+1. Mark complete in TODOs.md:
    - [x] PB-102: Create SubscriptionModel ✅
 
-6. Commit:
+1. Commit:
    /commit
    git commit -m "feat(db): add SubscriptionModel with user queries"
 ```
@@ -855,7 +855,7 @@ Create SubscriptionModel in packages/db/src/models/subscription.model.ts
 
 **Goal**: Comprehensive QA and quality validation
 
-#### Process
+#### Phase 3: Process
 
 **Step 1: QA Validation**
 
@@ -929,7 +929,7 @@ pnpm dev
 
 **Goal**: Documentation, commits, and deployment
 
-#### Process
+#### Phase 4: Process
 
 **Step 1: Update Documentation**
 
@@ -1210,7 +1210,7 @@ Options:
    Pros: Flexible schema, single table
    Cons: Less type safety, harder to query
 
-2. Separate table (type-safe but more complex)
+1. Separate table (type-safe but more complex)
    Pros: Type safety, easier validation
    Cons: More tables, more joins
 

@@ -67,7 +67,7 @@ if (result.data) {
 
 ## Type Definitions
 
-### ServiceOutput<T>
+### ServiceOutput`<T>`
 
 Main result type that all service methods return.
 
@@ -177,7 +177,7 @@ export enum ServiceErrorCode {
 
 See [Error Handling Guide](./errors.md) for detailed documentation on each error code.
 
-### ServiceInput<T>
+### ServiceInput`<T>`
 
 Type for service method inputs that include an actor.
 

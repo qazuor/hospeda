@@ -4,7 +4,7 @@
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue.svg)
 
-**Type-safe database layer for the Hospeda monorepo**
+#### Type-safe database layer for the Hospeda monorepo
 
 This package provides a fully-typed, modular, and extensible database layer built on **Drizzle ORM** and **PostgreSQL**. It implements the repository pattern with a powerful `BaseModel` abstraction that handles CRUD operations, soft deletes, relations, transactions, and more.
 
@@ -39,7 +39,7 @@ This package provides a fully-typed, modular, and extensible database layer buil
 5. [Guides](#guides)
 6. [Examples](#examples)
 7. [Testing](#testing)
-8. [Migration & Deployment](#migration--deployment)
+8. Migration & Deployment
 9. [Troubleshooting](#troubleshooting)
 
 ---
@@ -358,7 +358,7 @@ export class ProductModel extends BaseModel<Product> {
 
 ## API Reference
 
-### BaseModel<T>
+### BaseModel`<T>`
 
 | Method | Description | Link |
 |--------|-------------|------|

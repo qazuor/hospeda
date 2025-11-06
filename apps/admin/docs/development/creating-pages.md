@@ -1323,13 +1323,13 @@ Now that you've built a complete CRUD feature:
    - [Tables](./tables.md) - Table features (sorting, filtering)
    - [Queries](./queries.md) - Advanced data fetching
 
-2. **Add more features:**
+1. **Add more features:**
    - Filters and advanced search
    - Sorting and pagination
    - Image uploads
    - Bulk operations
 
-3. **Improve UX:**
+1. **Improve UX:**
    - Loading skeletons
    - Optimistic updates
    - Toast notifications

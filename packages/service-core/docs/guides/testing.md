@@ -491,6 +491,7 @@ async function createPublishedArticle() {
 - All custom methods tested
 
 Run coverage:
+
 ```bash
 pnpm test:coverage
 ```
@@ -498,5 +499,6 @@ pnpm test:coverage
 ---
 
 **See Also:**
+
 - [Examples](../examples/) - Working test examples
 - [Testing Standards](../../../../.claude/docs/standards/testing-standards.md)

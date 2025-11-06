@@ -159,7 +159,7 @@ Rollback frontend applications (web, admin) deployed on Vercel.
 
 ### Step 1: Access Vercel Dashboard
 
-1. Navigate to https://vercel.com/[team]
+1. Navigate to <https://vercel.com/[team>]
 2. Select project (e.g., `hospeda-web` or `hospeda-admin`)
 3. Go to **Deployments** tab
 
@@ -245,7 +245,7 @@ curl https://hospeda.com 2>&1 | grep -i error
 
 **In browser**:
 
-1. Navigate to production URL (https://hospeda.com or https://admin.hospeda.com)
+1. Navigate to production URL (<https://hospeda.com> or <https://admin.hospeda.com>)
 2. **Hard refresh** (Ctrl+Shift+R or Cmd+Shift+R) to bypass cache
 3. Verify critical functionality works
 4. Check browser console for errors
@@ -646,7 +646,7 @@ pnpm dev
 
 **Via Neon Console**:
 
-1. Go to https://console.neon.tech
+1. Go to <https://console.neon.tech>
 2. Select project
 3. Go to **Backups** tab
 4. Click **"Create Backup"**
@@ -1107,21 +1107,22 @@ git push
 **If issue persists after rollback**:
 
 1. **Verify correct version deployed**
+
    ```bash
    # Check current version
    curl https://api.hospeda.com/health | jq '.version'
    ```
 
-2. **Check if issue is elsewhere**
+1. **Check if issue is elsewhere**
    - External service down? (Clerk, Mercado Pago)
    - Database issue unrelated to deployment?
    - Network/DNS issue?
 
-3. **Review rollback target**
+1. **Review rollback target**
    - Was rollback target actually working?
    - Go back further in version history
 
-4. **Check for data issues**
+1. **Check for data issues**
    - Data state may be incompatible
    - May need data fix in addition to code rollback
 
@@ -1130,17 +1131,18 @@ git push
 **If backend rollback causes database errors**:
 
 1. **Identify incompatibility**
+
    ```bash
    # Check error logs
    fly logs --app hospeda-api | grep -i "database\|query"
    ```
 
-2. **Options**:
+1. **Options**:
    - Rollback database migration too
    - Roll forward backend
    - Create compatibility shim (temporary)
 
-3. **Temporary fix**:
+1. **Temporary fix**:
    - Add try/catch for missing fields
    - Use feature flags to disable new features
    - Deploy hotfix
@@ -1150,20 +1152,22 @@ git push
 **If unsure which version to rollback to**:
 
 1. **Check deployment history**
+
    ```bash
    gh api repos/:owner/hospeda/deployments --jq '.[:20]'
    ```
 
-2. **Check git history**
+1. **Check git history**
+
    ```bash
    git log --oneline --since="1.week.ago"
    ```
 
-3. **Ask team**
+1. **Ask team**
    - When was last known good state?
    - What changed recently?
 
-4. **Test multiple versions**
+1. **Test multiple versions**
    - Deploy to staging
    - Test each candidate
    - Promote working version

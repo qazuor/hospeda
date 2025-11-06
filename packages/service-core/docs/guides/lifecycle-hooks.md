@@ -77,6 +77,7 @@ update(actor, id, data)
 **Purpose:** Transform or validate data before database insertion
 
 **Signature:**
+
 ```typescript
 protected async _beforeCreate(
   data: z.infer<TCreateSchema>,
@@ -85,6 +86,7 @@ protected async _beforeCreate(
 ```
 
 **When to Use:**
+
 - Generate slugs from titles
 - Hash passwords
 - Set default values
@@ -92,6 +94,7 @@ protected async _beforeCreate(
 - Add timestamps
 
 **Example:**
+
 ```typescript
 protected async _beforeCreate(
   data: ArticleCreateInput,
@@ -113,6 +116,7 @@ protected async _beforeCreate(
 **Purpose:** Perform side effects after entity is created
 
 **Signature:**
+
 ```typescript
 protected async _afterCreate(
   entity: TEntity,
@@ -121,6 +125,7 @@ protected async _afterCreate(
 ```
 
 **When to Use:**
+
 - Send notifications
 - Create audit logs
 - Trigger webhooks
@@ -129,6 +134,7 @@ protected async _afterCreate(
 - Create related entities
 
 **Example:**
+
 ```typescript
 protected async _afterCreate(
   entity: Article,
@@ -167,6 +173,7 @@ protected async _afterCreate(
 **Purpose:** Transform or validate update data
 
 **Signature:**
+
 ```typescript
 protected async _beforeUpdate(
   data: z.infer<TUpdateSchema>,
@@ -175,12 +182,14 @@ protected async _beforeUpdate(
 ```
 
 **When to Use:**
+
 - Update related fields when one field changes
 - Validate business rules
 - Transform data
 - Set audit fields
 
 **Example:**
+
 ```typescript
 protected async _beforeUpdate(
   data: ArticleUpdateInput,
@@ -211,6 +220,7 @@ protected async _beforeUpdate(
 **Purpose:** Perform side effects after update
 
 **Signature:**
+
 ```typescript
 protected async _afterUpdate(
   entity: TEntity,
@@ -219,6 +229,7 @@ protected async _afterUpdate(
 ```
 
 **When to Use:**
+
 - Clear caches
 - Send notifications
 - Update search index
@@ -226,6 +237,7 @@ protected async _afterUpdate(
 - Sync with external systems
 
 **Example:**
+
 ```typescript
 protected async _afterUpdate(
   entity: Article,
@@ -257,6 +269,7 @@ protected async _afterUpdate(
 **Purpose:** Perform pre-delete checks or cleanup
 
 **Signature:**
+
 ```typescript
 protected async _beforeSoftDelete(
   id: string,
@@ -265,11 +278,13 @@ protected async _beforeSoftDelete(
 ```
 
 **When to Use:**
+
 - Check for dependent resources
 - Create backup
 - Validate deletion is allowed
 
 **Example:**
+
 ```typescript
 protected async _beforeSoftDelete(
   id: string,
@@ -297,6 +312,7 @@ protected async _beforeSoftDelete(
 **Purpose:** Cleanup after soft delete
 
 **Signature:**
+
 ```typescript
 protected async _afterSoftDelete(
   result: { count: number },
@@ -305,11 +321,13 @@ protected async _afterSoftDelete(
 ```
 
 **When to Use:**
+
 - Remove from caches
 - Update counters
 - Notify stakeholders
 
 **Example:**
+
 ```typescript
 protected async _afterSoftDelete(
   result: { count: number },
@@ -331,7 +349,7 @@ protected async _afterSoftDelete(
 }
 ```
 
-#### _beforeHardDelete / _afterHardDelete
+#### _beforeHardDelete /_afterHardDelete
 
 Similar to soft delete hooks but for permanent deletion:
 
@@ -367,7 +385,7 @@ protected async _afterHardDelete(
 
 ### Restore Hooks
 
-#### _beforeRestore / _afterRestore
+#### _beforeRestore /_afterRestore
 
 Handle restoration of soft-deleted entities:
 
@@ -416,6 +434,7 @@ protected async _afterRestore(
 **Purpose:** Modify query parameters before fetching
 
 **Signature:**
+
 ```typescript
 protected async _beforeGetByField(
   field: string,
@@ -425,11 +444,13 @@ protected async _beforeGetByField(
 ```
 
 **When to Use:**
+
 - Transform query values
 - Add query conditions
 - Validate field access
 
 **Example:**
+
 ```typescript
 protected async _beforeGetByField(
   field: string,
@@ -450,6 +471,7 @@ protected async _beforeGetByField(
 **Purpose:** Transform or enrich entity after fetching
 
 **Signature:**
+
 ```typescript
 protected async _afterGetByField(
   entity: TEntity | null,
@@ -458,11 +480,13 @@ protected async _afterGetByField(
 ```
 
 **When to Use:**
+
 - Enrich with related data
 - Transform fields
 - Track views
 
 **Example:**
+
 ```typescript
 protected async _afterGetByField(
   entity: Article | null,
@@ -491,6 +515,7 @@ protected async _afterGetByField(
 **Purpose:** Modify list parameters before querying
 
 **Signature:**
+
 ```typescript
 protected async _beforeList(
   options: { page?: number; pageSize?: number; relations?: ListRelationsConfig },
@@ -499,11 +524,13 @@ protected async _beforeList(
 ```
 
 **When to Use:**
+
 - Add filters based on actor
 - Limit page size
 - Modify relations
 
 **Example:**
+
 ```typescript
 protected async _beforeList(
   options: ListOptions,
@@ -529,6 +556,7 @@ protected async _beforeList(
 **Purpose:** Transform or filter results after listing
 
 **Signature:**
+
 ```typescript
 protected async _afterList(
   result: PaginatedListOutput<TEntity>,
@@ -537,11 +565,13 @@ protected async _afterList(
 ```
 
 **When to Use:**
+
 - Filter results by permission
 - Enrich entities
 - Add computed fields
 
 **Example:**
+
 ```typescript
 protected async _afterList(
   result: PaginatedListOutput<Article>,
@@ -564,7 +594,7 @@ protected async _afterList(
 
 ### Search Hooks
 
-#### _beforeSearch / _afterSearch
+#### _beforeSearch /_afterSearch
 
 Similar to list hooks but for search operations:
 
@@ -605,7 +635,7 @@ protected async _afterSearch(
 
 ### Count Hooks
 
-#### _beforeCount / _afterCount
+#### _beforeCount /_afterCount
 
 ```typescript
 protected async _beforeCount(
@@ -634,7 +664,7 @@ protected async _afterCount(
 
 ### Visibility Hooks
 
-#### _beforeUpdateVisibility / _afterUpdateVisibility
+#### _beforeUpdateVisibility /_afterUpdateVisibility
 
 ```typescript
 protected async _beforeUpdateVisibility(
@@ -1006,6 +1036,7 @@ describe('Article Lifecycle Hooks', () => {
 ---
 
 **Next Steps:**
+
 - **[Custom Logic Guide](./custom-logic.md)** - Advanced business methods
 - **[Testing Guide](./testing.md)** - Comprehensive testing
 - **[Examples](../examples/)** - Working code examples

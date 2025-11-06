@@ -1,6 +1,6 @@
 # Type Inference Guide - @repo/schemas
 
-**Master type inference with z.infer for complete type safety**
+#### Master type inference with z.infer for complete type safety
 
 This guide explains how to use Zod's `z.infer` utility to automatically derive TypeScript types from validation schemas. Understanding type inference is essential for getting the most out of the `@repo/schemas` package.
 

@@ -713,7 +713,7 @@ it('should calculate discount', () => {
 
 ### AAA Best Practices
 
-#### DO ✅
+#### AAA Best DO ✅
 
 ```typescript
 // Clear separation
@@ -742,7 +742,7 @@ it('should create user', async () => {
 });
 ```
 
-#### DON'T ❌
+#### AAA Best DON'T ❌
 
 ```typescript
 // Mixing phases

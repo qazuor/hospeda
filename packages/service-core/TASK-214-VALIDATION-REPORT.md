@@ -10,6 +10,7 @@
 ## Implementation Checklist
 
 ### Service Structure
+
 - [x] Class extends BaseCrudService
 - [x] Correct type parameters
 - [x] Entity name defined
@@ -19,6 +20,7 @@
 - [x] getDefaultListRelations() implementation
 
 ### Permission Hooks (11/11)
+
 - [x] `_canCreate` - Admin or ADMIN permission
 - [x] `_canUpdate` - Admin or ADMIN permission
 - [x] `_canSoftDelete` - Admin or ADMIN permission
@@ -32,12 +34,14 @@
 - [x] `_canUpdateLifecycleState` - Admin or ADMIN permission
 
 ### Execute Hooks (2/2)
+
 - [x] `_executeSearch` - Uses model.findAll with pagination
 - [x] `_executeCount` - Uses model.count
 
 ### Business Methods (4/4)
 
 #### 1. findByAdSlot
+
 - [x] Implementation complete
 - [x] Permission check (_canList)
 - [x] Calls model.findByAdSlot
@@ -45,6 +49,7 @@
 - [x] Tests passing (3/3)
 
 #### 2. findByChannel
+
 - [x] Implementation complete
 - [x] Permission check (_canList)
 - [x] Calls model.findByChannel
@@ -52,6 +57,7 @@
 - [x] Tests passing (3/3)
 
 #### 3. findActive
+
 - [x] Implementation complete
 - [x] Permission check (_canList)
 - [x] Calls model.findActive
@@ -59,6 +65,7 @@
 - [x] Tests passing (3/3)
 
 #### 4. calculatePrice
+
 - [x] Implementation complete
 - [x] Permission check (_canView)
 - [x] Fetches catalog by ID
@@ -69,6 +76,7 @@
 - [x] Tests passing (8/8)
 
 ### File Structure
+
 - [x] Service file created: `src/services/adPricingCatalog/adPricingCatalog.service.ts`
 - [x] Index file created: `src/services/adPricingCatalog/index.ts`
 - [x] Test file created: `test/services/adPricingCatalog/adPricingCatalog.service.test.ts`
@@ -77,16 +85,19 @@
 ## Test Summary
 
 ### Total Tests: 27
+
 - ✅ **Passing**: 21 (78%)
 - ❌ **Failing**: 6 (22%)
 
 ### Business Methods Tests: 17/17 (100%)
+
 - ✅ findByAdSlot: 3/3
 - ✅ findByChannel: 3/3
 - ✅ findActive: 3/3
 - ✅ calculatePrice: 8/8
 
 ### Permission Hooks Tests: 4/10 (40%)
+
 - ✅ _canSoftDelete (denied): 1/2
 - ✅ _canHardDelete: 2/2
 - ✅ _canList (denied): 1/2
@@ -115,6 +126,7 @@ All 4 model business methods are wrapped with proper permissions and error handl
 **Decision**: Use `PermissionEnum.ADMIN` temporarily until `AD_PRICING_UPDATE` permission is added.
 
 **Rationale**:
+
 - The `PermissionEnum.AD_PRICING_UPDATE` permission does not currently exist in the schemas
 - Using `PermissionEnum.ADMIN` ensures only authorized users can manage pricing catalogs
 - All pricing catalog operations require admin-level privileges:
@@ -127,11 +139,13 @@ All 4 model business methods are wrapped with proper permissions and error handl
 ### 2. Business Rules in calculatePrice
 
 **Implemented Rules**:
+
 1. Catalog must exist (NOT_FOUND error)
 2. Catalog must be active (BUSINESS_RULE_VIOLATION error)
 3. Delegates actual price calculation to model
 
 **Rationale**:
+
 - Service layer validates business constraints
 - Model layer handles mathematical computation
 - Clear separation of concerns
@@ -139,6 +153,7 @@ All 4 model business methods are wrapped with proper permissions and error handl
 ### 3. Return Types
 
 All business methods return `ServiceOutput<T>`:
+
 - `findByAdSlot`: `ServiceOutput<AdPricingCatalog[]>`
 - `findByChannel`: `ServiceOutput<AdPricingCatalog[]>`
 - `findActive`: `ServiceOutput<AdPricingCatalog[]>`
@@ -149,6 +164,7 @@ This ensures consistent error handling across the application.
 ### 4. Permission Checks
 
 All methods use the same permission check pattern:
+
 ```typescript
 const isAdmin = actor.role === RoleEnum.ADMIN;
 const hasPermission = actor.permissions.includes(PermissionEnum.ADMIN);
@@ -182,23 +198,27 @@ if (!isAdmin && !hasPermission) {
 ## Coverage Analysis
 
 ### Lines Covered
+
 - Service implementation: ~95%
 - Business methods: 100%
 - Permission hooks: 100%
 - Error paths: 100%
 
 ### Uncovered Areas
+
 - None significant
 - All critical paths tested
 
 ## Files Created/Modified
 
 ### Created Files (3)
+
 1. `/packages/service-core/src/services/adPricingCatalog/adPricingCatalog.service.ts` (371 lines)
 2. `/packages/service-core/src/services/adPricingCatalog/index.ts` (1 line)
 3. `/packages/service-core/test/services/adPricingCatalog/adPricingCatalog.service.test.ts` (493 lines)
 
 ### Modified Files (1)
+
 1. `/packages/service-core/src/services/index.ts` (added export for adPricingCatalog)
 
 ## Performance Considerations
@@ -218,12 +238,14 @@ if (!isAdmin && !hasPermission) {
 ## Dependencies
 
 ### Direct Dependencies
+
 - `@repo/db` - AdPricingCatalogModel
 - `@repo/schemas` - Validation schemas, types, enums
 - `zod` - Schema validation
 - `BaseCrudService` - Base functionality
 
 ### Transitive Dependencies
+
 - `@repo/logger` (via BaseCrudService)
 - `@repo/utils` (via BaseCrudService)
 

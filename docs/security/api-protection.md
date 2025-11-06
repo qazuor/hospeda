@@ -60,15 +60,15 @@ Complete guide to API security strategies and implementation in Hospeda.
     - [HTTP Strict Transport Security (HSTS)](#http-strict-transport-security-hsts)
       - [HSTS Configuration](#hsts-configuration)
     - [X-Frame-Options](#x-frame-options)
-      - [Configuration](#configuration)
+      - Configuration
     - [X-Content-Type-Options](#x-content-type-options)
-      - [Configuration](#configuration-1)
+      - Configuration
     - [X-XSS-Protection](#x-xss-protection)
-      - [Configuration](#configuration-2)
+      - Configuration
     - [Referrer-Policy](#referrer-policy)
-      - [Configuration](#configuration-3)
+      - Configuration
     - [Permissions-Policy](#permissions-policy)
-      - [Configuration](#configuration-4)
+      - Configuration
     - [Implementation Examples](#implementation-examples)
       - [Full Security Headers Middleware](#full-security-headers-middleware)
       - [Environment-Specific Headers](#environment-specific-headers)
@@ -98,7 +98,7 @@ Complete guide to API security strategies and implementation in Hospeda.
     - [Prevent Information Disclosure](#prevent-information-disclosure)
       - [What NOT to Expose](#what-not-to-expose)
       - [Safe Error Handling](#safe-error-handling)
-    - [Safe Error Responses](#safe-error-responses-1)
+    - Safe Error Responses
       - [Production Error Handling](#production-error-handling)
       - [Development Error Handling](#development-error-handling)
     - [Logging Without Exposing Data](#logging-without-exposing-data)
@@ -115,7 +115,7 @@ Complete guide to API security strategies and implementation in Hospeda.
       - [Test Security Headers Presence](#test-security-headers-presence)
     - [Validation Testing](#validation-testing)
       - [Test Request Validation](#test-request-validation)
-  - [Monitoring \& Alerting](#monitoring--alerting)
+  - Monitoring \& Alerting
     - [Metrics Collection](#metrics-collection)
       - [Rate Limit Metrics](#rate-limit-metrics)
       - [Security Event Metrics](#security-event-metrics)
@@ -615,7 +615,7 @@ export const dualRateLimitMiddleware = async (c: Context, next: Next) => {
 
 ### Rate Limit Headers
 
-#### Standard Headers
+#### Rate Limit Standard Headers
 
 ```text
 X-RateLimit-Limit: Maximum requests per window
@@ -824,7 +824,7 @@ export const createCorsMiddleware = () => {
 
 ### Credentials Handling
 
-#### Enable Credentials
+#### Credentials Handling Enable Credentials
 
 ```typescript
 // apps/api/src/utils/env.ts
@@ -1107,7 +1107,7 @@ Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
 
 ### X-Frame-Options
 
-#### Configuration
+#### X-Frame-Options Configuration
 
 ```typescript
 // apps/api/src/middlewares/security.ts
@@ -1136,7 +1136,7 @@ X-Frame-Options: DENY
 
 ### X-Content-Type-Options
 
-#### Configuration
+#### X-Content-Type-Options Configuration
 
 ```typescript
 secureHeaders({
@@ -1157,7 +1157,7 @@ X-Content-Type-Options: nosniff
 
 ### X-XSS-Protection
 
-#### Configuration
+#### X-XSS-Protection Configuration
 
 ```typescript
 secureHeaders({
@@ -1180,7 +1180,7 @@ X-XSS-Protection: 1; mode=block
 
 ### Referrer-Policy
 
-#### Configuration
+#### Referrer-Policy Configuration
 
 ```typescript
 secureHeaders({
@@ -1203,7 +1203,7 @@ Referrer-Policy: strict-origin-when-cross-origin
 
 ### Permissions-Policy
 
-#### Configuration
+#### Permissions-Policy Configuration
 
 ```typescript
 secureHeaders({
@@ -1679,7 +1679,7 @@ const schema = z.object({
 
 ### Error Message Sanitization
 
-#### Safe Error Responses
+#### Error Message Safe Error Responses
 
 ```typescript
 // apps/api/src/utils/response-helpers.ts

@@ -152,11 +152,13 @@ git checkout -b fix/bug-description
 2. **Write tests first** (TDD: Red → Green → Refactor)
 3. **Implement your changes**
 4. **Run quality checks:**
+
    ```bash
    pnpm test
    pnpm typecheck
    pnpm lint
    ```
+
 5. **Update documentation** if needed
 6. **Follow atomic commits policy** (only commit files for THIS task)
 
@@ -264,7 +266,7 @@ We have detailed guides to help you contribute effectively:
    - Error handling
    - Code formatting
 
-2. **[Git Workflow](./git-workflow.md)** (~1,200 lines)
+1. **[Git Workflow](./git-workflow.md)** (~1,200 lines)
    - Branch naming conventions
    - Conventional commits
    - **Atomic commits policy** (🔥 CRITICAL)
@@ -272,7 +274,7 @@ We have detailed guides to help you contribute effectively:
    - When to commit / when NOT to commit
    - Git commands reference
 
-3. **[Pull Request Process](./pull-request-process.md)** (~1,100 lines)
+1. **[Pull Request Process](./pull-request-process.md)** (~1,100 lines)
    - Before creating a PR checklist
    - PR title and description format
    - PR size guidelines
@@ -280,7 +282,7 @@ We have detailed guides to help you contribute effectively:
    - Responding to feedback
    - Merging process
 
-4. **[Code Review Guidelines](./code-review-guidelines.md)** (~1,000 lines)
+1. **[Code Review Guidelines](./code-review-guidelines.md)** (~1,000 lines)
    - Why code reviews matter
    - What to review (checklist)
    - How to give feedback
@@ -490,18 +492,21 @@ Refactor and improve existing code:
 Let's walk through a simple bug fix:
 
 1. **Find a bug:**
+
    ```bash
    # Look for bugs labeled "good first issue"
    # Example: "Date formatting shows wrong timezone"
    ```
 
-2. **Reproduce it:**
+1. **Reproduce it:**
+
    ```bash
    # Follow steps in the issue
    # Confirm you can see the bug
    ```
 
-3. **Write a failing test:**
+1. **Write a failing test:**
+
    ```typescript
    // packages/utils/test/date-utils.test.ts
    it('should format date in correct timezone', () => {
@@ -511,7 +516,8 @@ Let's walk through a simple bug fix:
    });
    ```
 
-4. **Fix the bug:**
+1. **Fix the bug:**
+
    ```typescript
    // packages/utils/src/date-utils.ts
    export function formatDate(input: { date: Date; timezone: string }): string {
@@ -519,12 +525,14 @@ Let's walk through a simple bug fix:
    }
    ```
 
-5. **Verify tests pass:**
+1. **Verify tests pass:**
+
    ```bash
    cd packages/utils && pnpm test
    ```
 
-6. **Commit atomically:**
+1. **Commit atomically:**
+
    ```bash
    git add packages/utils/src/date-utils.ts
    git add packages/utils/test/date-utils.test.ts
@@ -536,7 +544,8 @@ Let's walk through a simple bug fix:
    Closes #123"
    ```
 
-7. **Create PR:**
+1. **Create PR:**
+
    ```bash
    git push origin fix/date-timezone
    # Open PR on GitHub
@@ -591,9 +600,9 @@ Join our Discord server: [discord.gg/hospeda]
 
 - Private matters
 - Code of Conduct violations
-- Security issues (use security@hospeda.com)
+- Security issues (use <security@hospeda.com>)
 
-**Contact:** contributors@hospeda.com
+**Contact:** <contributors@hospeda.com>
 
 **Response Time:** Within 2-3 business days
 

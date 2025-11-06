@@ -6,7 +6,7 @@
 - [Threat Model](#threat-model)
 - [Security Architecture](#security-architecture)
 - [Security Controls](#security-controls)
-- [Authentication & Authorization](#authentication--authorization)
+- Authentication & Authorization
 - [Data Protection](#data-protection)
 - [Security Monitoring](#security-monitoring)
 
@@ -19,24 +19,28 @@
 Hospeda implements a **multi-layered security approach** where each layer provides independent protection. If one layer is compromised, others continue to provide security:
 
 **Layer 1: Network Security**
+
 - Cloudflare CDN with DDoS protection
 - Web Application Firewall (WAF)
 - HTTPS/TLS 1.3 encryption
 - Rate limiting at edge
 
 **Layer 2: Application Security**
+
 - Authentication (Clerk JWT validation)
 - Authorization (RBAC + permissions)
 - Input validation (Zod schemas)
 - Output encoding (XSS prevention)
 
 **Layer 3: Data Security**
+
 - Database SSL connections
 - Parameterized queries (Drizzle ORM)
 - Data encryption at rest
 - Secure secret management
 
 **Layer 4: Infrastructure Security**
+
 - Serverless security (Vercel, Fly.io)
 - Environment isolation
 - Automated security updates
@@ -47,12 +51,14 @@ Hospeda implements a **multi-layered security approach** where each layer provid
 Every user, service, and system component has **only the minimum permissions required** to perform its function:
 
 **User Access:**
+
 - Anonymous: Read-only public data (accommodation listings)
 - Guest: Create bookings, manage own data
 - Host: Manage own accommodations, view own bookings
 - Admin: Full system access (limited to authorized personnel)
 
 **Service Access:**
+
 - API services: Limited database permissions
 - Database connections: Read/write only to assigned schemas
 - Third-party integrations: Scoped API keys
@@ -93,6 +99,7 @@ export class AccommodationService extends BaseCrudService {
 All systems are configured with **security-first settings** out of the box:
 
 **HTTP Security Headers:**
+
 ```typescript
 // Automatically applied to all responses
 app.use('*', secureHeaders({
@@ -120,6 +127,7 @@ app.use('*', secureHeaders({
 ```
 
 **CORS Configuration:**
+
 ```typescript
 // Whitelist only authorized origins
 app.use('*', cors({
@@ -141,6 +149,7 @@ app.use('*', cors({
 ```
 
 **Rate Limiting:**
+
 ```typescript
 // Different limits for different endpoint types
 import { rateLimiter } from 'hono-rate-limiter';
@@ -173,6 +182,7 @@ app.use('/api/auth/*', rateLimiter({
 Hospeda follows a **"never trust, always verify"** approach:
 
 **Every Request is Authenticated:**
+
 ```typescript
 // Authentication middleware verifies JWT on every protected route
 export const requireAuth = createMiddleware(async (c, next) => {
@@ -200,6 +210,7 @@ export const requireAuth = createMiddleware(async (c, next) => {
 ```
 
 **Every Action is Authorized:**
+
 ```typescript
 // Permission checks at multiple layers
 export const requirePermission = (permission: Permission) => {
@@ -230,6 +241,7 @@ app.delete(
 ```
 
 **All Data is Validated:**
+
 ```typescript
 // Input validation on every endpoint
 import { zValidator } from '@hono/zod-validator';
@@ -262,20 +274,20 @@ app.post(
    - Authentication credentials (managed by Clerk)
    - Session tokens and refresh tokens
 
-2. **Financial Data**
+1. **Financial Data**
    - Payment information (tokenized via Mercado Pago)
    - Transaction history
    - Booking prices and fees
    - Payout information (for hosts)
 
-3. **Business Data**
+1. **Business Data**
    - Accommodation listings and details
    - Booking records and reservations
    - Reviews and ratings
    - Availability calendars
    - Pricing strategies
 
-4. **System Assets**
+1. **System Assets**
    - API keys and secrets
    - Database credentials
    - OAuth tokens
@@ -285,26 +297,31 @@ app.post(
 ### Threat Actors
 
 **External Attackers:**
+
 - **Motivation**: Financial gain, data theft, reputation damage
 - **Capabilities**: Automated scanning, exploit tools, social engineering
 - **Targets**: Payment processing, user accounts, business data
 
 **Automated Bots:**
+
 - **Motivation**: Scraping data, resource abuse, spam
 - **Capabilities**: High-volume requests, credential stuffing, inventory hoarding
 - **Targets**: Public listings, search endpoints, booking system
 
 **Malicious Users:**
+
 - **Motivation**: Fraud, service abuse, competitive intelligence
 - **Capabilities**: Account access, API knowledge, business logic exploitation
 - **Targets**: Booking system, payment flows, review manipulation
 
 **Insider Threats:**
+
 - **Motivation**: Varies (financial, revenge, curiosity)
 - **Capabilities**: System access, internal knowledge, privilege abuse
 - **Targets**: User data, financial records, system configurations
 
 **Supply Chain Attackers:**
+
 - **Motivation**: Widespread compromise, data exfiltration
 - **Capabilities**: Package poisoning, dependency exploitation
 - **Targets**: npm packages, third-party services, build pipeline
@@ -319,13 +336,13 @@ app.post(
    - **Impact**: Data breach, data manipulation, authentication bypass
    - **Mitigation**: Parameterized queries (Drizzle ORM), input validation
 
-2. **Cross-Site Scripting (XSS)**
+1. **Cross-Site Scripting (XSS)**
    - **Vector**: Malicious JavaScript in user content
    - **Target**: Web pages viewed by other users
    - **Impact**: Session hijacking, credential theft, malware distribution
    - **Mitigation**: Output encoding, CSP headers, React auto-escaping
 
-3. **Server-Side Request Forgery (SSRF)**
+1. **Server-Side Request Forgery (SSRF)**
    - **Vector**: Attacker-controlled URLs
    - **Target**: Internal services, cloud metadata endpoints
    - **Impact**: Internal network access, credential theft
@@ -339,13 +356,13 @@ app.post(
    - **Impact**: Account takeover
    - **Mitigation**: Rate limiting, MFA (Clerk), breach detection
 
-2. **Session Hijacking**
+1. **Session Hijacking**
    - **Vector**: Stolen session tokens
    - **Target**: Authenticated sessions
    - **Impact**: Unauthorized access
    - **Mitigation**: Secure cookies, short expiration, token rotation
 
-3. **Privilege Escalation**
+1. **Privilege Escalation**
    - **Vector**: Authorization logic flaws
    - **Target**: Role/permission checks
    - **Impact**: Unauthorized actions
@@ -359,13 +376,13 @@ app.post(
    - **Impact**: Information disclosure
    - **Mitigation**: Response filtering, generic error messages
 
-2. **Insecure Direct Object References (IDOR)**
+1. **Insecure Direct Object References (IDOR)**
    - **Vector**: Predictable IDs, missing authorization
    - **Target**: Resource endpoints
    - **Impact**: Unauthorized data access
    - **Mitigation**: UUIDs, ownership validation
 
-3. **Information Leakage**
+1. **Information Leakage**
    - **Vector**: Logs, error messages, debug info
    - **Target**: Application logs, stack traces
    - **Impact**: System reconnaissance
@@ -379,7 +396,7 @@ app.post(
    - **Impact**: Service unavailability
    - **Mitigation**: Rate limiting, request size limits, caching
 
-2. **Application-Level DoS**
+1. **Application-Level DoS**
    - **Vector**: Expensive operations
    - **Target**: Complex queries, file processing
    - **Impact**: Performance degradation
@@ -401,6 +418,7 @@ app.post(
 | Dependency Vulnerability | High | Varies | High | P1 |
 
 **Priority Levels:**
+
 - **P1 (Critical)**: Immediate action required
 - **P2 (High)**: Address within current sprint
 - **P3 (Medium)**: Address within quarter
@@ -490,6 +508,7 @@ graph TB
 ### Network Security
 
 **TLS/HTTPS Configuration:**
+
 ```typescript
 // Enforced via Vercel/Fly.io platform
 // Automatic HTTPS redirect
@@ -498,11 +517,13 @@ graph TB
 ```
 
 **DNS Security:**
+
 - DNSSEC enabled
 - Cloudflare DNS with DDoS protection
 - CAA records restrict certificate issuance
 
 **CDN Security:**
+
 - Cloudflare Pro plan
 - WAF with OWASP Core Rule Set
 - DDoS protection (Layer 3/4/7)
@@ -512,6 +533,7 @@ graph TB
 ### Application Security
 
 **Security Headers:**
+
 ```typescript
 // Implemented in API middleware
 export const securityHeaders = {
@@ -551,6 +573,7 @@ export const securityHeaders = {
 ```
 
 **CORS Configuration:**
+
 ```typescript
 // Strict origin validation
 const ALLOWED_ORIGINS = [
@@ -578,6 +601,7 @@ export const corsConfig = {
 ```
 
 **Rate Limiting:**
+
 ```typescript
 // Tiered rate limiting strategy
 import { RateLimiterMemory } from 'rate-limiter-flexible';
@@ -614,6 +638,7 @@ const loginLimiter = new RateLimiterMemory({
 ### Database Security
 
 **Connection Security:**
+
 ```typescript
 // SSL/TLS required for all connections
 import { neon, neonConfig } from '@neondatabase/serverless';
@@ -628,6 +653,7 @@ export const db = drizzle(neon(process.env.DATABASE_URL!, {
 ```
 
 **Query Security:**
+
 ```typescript
 // Drizzle ORM prevents SQL injection via parameterized queries
 // Example: Safe query
@@ -641,6 +667,7 @@ const user = await db
 ```
 
 **Access Control:**
+
 - Database user has minimal permissions (no DDL in production)
 - Read-only replicas for analytics queries
 - Connection pooling limits concurrent connections
@@ -649,6 +676,7 @@ const user = await db
 ### Infrastructure Security
 
 **Vercel Security (Web + Admin):**
+
 - Automatic HTTPS with TLS 1.3
 - DDoS protection
 - Serverless functions (isolated execution)
@@ -657,6 +685,7 @@ const user = await db
 - WAF integration
 
 **Fly.io Security (API):**
+
 - Private networking (WireGuard)
 - Isolated VMs per deployment
 - Automatic SSL certificates
@@ -665,6 +694,7 @@ const user = await db
 - Firewall rules
 
 **Secrets Management:**
+
 ```bash
 # GitHub Secrets (CI/CD)
 CLERK_SECRET_KEY
@@ -694,6 +724,7 @@ Controls that **prevent** security incidents from occurring:
 #### Authentication Controls
 
 **JWT Token Validation:**
+
 ```typescript
 import { verifyToken } from '@clerk/backend';
 
@@ -714,6 +745,7 @@ export const authenticateRequest = async (token: string) => {
 ```
 
 **Session Security:**
+
 - HttpOnly cookies (prevent XSS access)
 - Secure flag (HTTPS only)
 - SameSite=Strict (CSRF protection)
@@ -723,6 +755,7 @@ export const authenticateRequest = async (token: string) => {
 #### Authorization Controls
 
 **Role-Based Access Control (RBAC):**
+
 ```typescript
 // User roles
 export enum UserRole {
@@ -757,6 +790,7 @@ export const hasPermission = (
 ```
 
 **Resource Ownership Validation:**
+
 ```typescript
 export class AccommodationService {
   async update(input: UpdateAccommodationInput): Promise<Result<Accommodation>> {
@@ -780,6 +814,7 @@ export class AccommodationService {
 #### Input Validation Controls
 
 **Zod Schema Validation:**
+
 ```typescript
 import { z } from 'zod';
 
@@ -819,6 +854,7 @@ export const createAccommodationSchema = z.object({
 ```
 
 **Sanitization:**
+
 ```typescript
 import DOMPurify from 'isomorphic-dompurify';
 
@@ -833,6 +869,7 @@ export const sanitizeHTML = (input: string): string => {
 #### Output Encoding Controls
 
 **XSS Prevention:**
+
 ```typescript
 // React automatically escapes output
 const AccommodationTitle = ({ title }: { title: string }) => {
@@ -859,6 +896,7 @@ Controls that **detect** security incidents when they occur:
 #### Logging
 
 **Structured Security Logging:**
+
 ```typescript
 import { logger } from '@repo/logger';
 
@@ -897,6 +935,7 @@ logger.info('PII accessed', {
 ```
 
 **What NOT to Log:**
+
 - Passwords or authentication credentials
 - Session tokens or API keys
 - Credit card numbers or payment details
@@ -906,6 +945,7 @@ logger.info('PII accessed', {
 #### Monitoring & Alerting
 
 **Key Security Metrics:**
+
 ```typescript
 // Track authentication failures
 const authFailureRate = new Metric('auth.failure_rate');
@@ -933,6 +973,7 @@ if (rateLimitHits.total() > 1000) {
 ```
 
 **Anomaly Detection:**
+
 - Unusual login locations
 - Off-hours admin access
 - Bulk data exports
@@ -946,6 +987,7 @@ Controls that **correct** or recover from security incidents:
 #### Incident Response
 
 **Automated Response:**
+
 ```typescript
 // Auto-block IPs with excessive failed logins
 if (authFailures.get(ip) > 10) {
@@ -968,12 +1010,14 @@ if (requestRate.get(userId) > threshold) {
 #### Backup & Recovery
 
 **Database Backups:**
+
 - Automated daily backups (Neon)
 - Point-in-time recovery (7 days)
 - Encrypted backup storage
 - Regular restore testing
 
 **Disaster Recovery:**
+
 ```typescript
 // Infrastructure as Code (IaC)
 // Quick redeployment from Git
@@ -989,6 +1033,7 @@ if (requestRate.get(userId) > threshold) {
 #### Patch Management
 
 **Dependency Updates:**
+
 ```bash
 # Automated security updates (Dependabot)
 # Weekly dependency audit
@@ -1006,6 +1051,7 @@ pnpm audit
 ### Clerk Integration
 
 Hospeda uses **Clerk** for authentication, providing:
+
 - OAuth providers (Google, GitHub, etc.)
 - Email/password authentication
 - Magic link authentication
@@ -1265,6 +1311,7 @@ app.put(
 ### Session Management
 
 **Session Security:**
+
 - Sessions stored in Clerk (server-side)
 - Short-lived JWT tokens (1 hour)
 - Refresh tokens for seamless renewal
@@ -1273,6 +1320,7 @@ app.put(
 - SameSite=Strict prevents CSRF
 
 **Session Lifecycle:**
+
 ```typescript
 // Login creates session
 const session = await clerkClient.sessions.createSession({
@@ -1297,22 +1345,26 @@ await clerkClient.users.revokeAllSessions(userId);
 ### Data Classification
 
 **Public Data:**
+
 - Accommodation titles and descriptions
 - Public reviews and ratings
 - Accommodation locations (city level)
 
 **Internal Data:**
+
 - User roles and permissions
 - Booking statistics
 - System configurations
 
 **Confidential Data:**
+
 - User PII (names, emails, phone numbers)
 - Precise accommodation addresses
 - Booking details
 - Review author identity (if anonymous)
 
 **Restricted Data:**
+
 - Authentication credentials (managed by Clerk)
 - Payment information (tokenized via Mercado Pago)
 - API keys and secrets
@@ -1321,18 +1373,21 @@ await clerkClient.users.revokeAllSessions(userId);
 ### Encryption
 
 **Data in Transit:**
+
 - TLS 1.3 for all connections
 - HTTPS enforced (automatic redirect)
 - Certificate pinning (where applicable)
 - Secure WebSocket (wss://)
 
 **Data at Rest:**
+
 - Database encryption (Neon platform)
 - Encrypted backups
 - Encrypted environment variables (Vercel, Fly.io)
 - Encrypted secret storage (GitHub Secrets)
 
 **Application-Level Encryption:**
+
 ```typescript
 // Sensitive data encryption (if needed)
 import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
@@ -1371,16 +1426,19 @@ export const decrypt = (encrypted: string): string => {
 ### PII Handling
 
 **Minimization:**
+
 - Collect only necessary PII
 - Use Clerk for authentication (they manage credentials)
 - Avoid storing payment details (use Mercado Pago tokens)
 
 **Access Controls:**
+
 - PII access logged
 - Limited to authorized personnel
 - Admin audit logs
 
 **Anonymization:**
+
 ```typescript
 // Anonymize for analytics
 export const anonymizeUser = (user: User) => ({
@@ -1401,6 +1459,7 @@ logger.info('Booking created', {
 ### Data Retention
 
 **Retention Policies:**
+
 - Active users: Retained indefinitely
 - Deleted accounts: PII removed after 30 days
 - Booking records: Retained for 7 years (tax compliance)
@@ -1408,6 +1467,7 @@ logger.info('Booking created', {
 - Error logs: Retained for 90 days
 
 **Automated Deletion:**
+
 ```typescript
 // Scheduled job: delete old data
 export const cleanupOldData = async () => {
@@ -1435,6 +1495,7 @@ export const cleanupOldData = async () => {
 ### Logging Strategy
 
 **What to Log:**
+
 - Authentication events (login, logout, failures)
 - Authorization events (access grants, denials)
 - Data access (especially PII)
@@ -1444,6 +1505,7 @@ export const cleanupOldData = async () => {
 - Performance metrics
 
 **Structured Logging:**
+
 ```typescript
 import { logger } from '@repo/logger';
 
@@ -1465,6 +1527,7 @@ logger.info(`User ${user.id} logged in via Google from ${clientIp}`);
 ### Security Metrics
 
 **Key Metrics:**
+
 - Failed authentication attempts (per IP, per user)
 - Authorization denials (per user, per resource)
 - Rate limit hits (per endpoint, per user)
@@ -1475,6 +1538,7 @@ logger.info(`User ${user.id} logged in via Google from ${clientIp}`);
 ### Alerting
 
 **Alert Thresholds:**
+
 ```typescript
 // High-priority alerts
 - >10 failed logins from same IP in 1 minute

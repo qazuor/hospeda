@@ -1000,7 +1000,7 @@ await clerkClient.users.updateUserMetadata(userId, {
 });
 ```
 
-3. Configure Clerk to include role in session:
+1. Configure Clerk to include role in session:
 
 ```json
 // Clerk Dashboard → Sessions → Customize session token

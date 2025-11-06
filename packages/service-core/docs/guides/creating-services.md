@@ -12,7 +12,7 @@ A comprehensive tutorial on creating services from scratch in the Hospeda servic
   - [Step 3: Create Service Class](#step-3-create-service-class)
   - [Step 4: Implement Permission Hooks](#step-4-implement-permission-hooks)
   - [Step 5: Implement Core Logic Methods](#step-5-implement-core-logic-methods)
-  - [Step 6: Add Custom Methods](#step-6-add-custom-methods)
+  - Step 6: Add Custom Methods
   - [Step 7: Write Tests](#step-7-write-tests)
 - [Complete Working Example](#complete-working-example)
 - [Common Mistakes](#common-mistakes)

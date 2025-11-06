@@ -22,6 +22,7 @@
 Access control enforces policy such that users cannot act outside of their intended permissions. Failures typically lead to unauthorized information disclosure, modification, or destruction of data, or performing a business function outside the user's limits.
 
 **Common Weaknesses:**
+
 - Bypassing access control checks by modifying URLs, internal state, or HTML
 - Permitting viewing or editing someone else's account by providing its unique identifier (IDOR)
 - Accessing API with missing access controls for POST, PUT, and DELETE
@@ -415,6 +416,7 @@ MERCADO_PAGO_ACCESS_TOKEN=
 #### 5. Password Handling
 
 **Delegated to Clerk:**
+
 - Passwords never stored in our database
 - Clerk uses bcrypt with high cost factor
 - Password breach detection
@@ -423,6 +425,7 @@ MERCADO_PAGO_ACCESS_TOKEN=
 #### 6. Payment Data
 
 **Tokenization via Mercado Pago:**
+
 ```typescript
 // NEVER store credit card details
 // Use Mercado Pago tokenization
@@ -483,12 +486,14 @@ export const decrypt = (ciphertext: string): string => {
 #### TLS Configuration
 
 **Vercel (Web & Admin):**
+
 - Automatic HTTPS with TLS 1.3
 - Perfect Forward Secrecy (PFS)
 - Strong cipher suites only
 - HSTS preload enabled
 
 **Fly.io (API):**
+
 ```toml
 # fly.toml
 [http_service]
@@ -1001,6 +1006,7 @@ describe('Injection - Command Injection', () => {
 Insecure design represents missing or ineffective security controls in the design phase. It's about security by design - thinking about threats before implementation.
 
 **Key Concepts:**
+
 - Threat modeling
 - Secure design patterns
 - Security requirements
@@ -1030,6 +1036,7 @@ Insecure design represents missing or ineffective security controls in the desig
 #### 2. Security by Design Principles
 
 **Fail Securely:**
+
 ```typescript
 // If permission check fails, deny access (don't continue)
 const canUpdate = await checkPermission(user, 'accommodation:update', resourceId);
@@ -1043,6 +1050,7 @@ if (!canUpdate) {
 ```
 
 **Complete Mediation:**
+
 ```typescript
 // Check permissions on EVERY request, not just once
 app.use('/api/*', requireAuth); // All API routes require auth
@@ -1061,6 +1069,7 @@ export class AccommodationService {
 ```
 
 **Defense in Depth:**
+
 ```typescript
 // Multiple layers of validation
 // 1. Client-side validation (UX, not security)
@@ -1083,6 +1092,7 @@ if (input.pricePerNight < 10) {
 ```
 
 **Least Privilege:**
+
 ```typescript
 // Database user has minimal permissions
 // - No DDL (CREATE, ALTER, DROP)
@@ -1098,6 +1108,7 @@ if (input.pricePerNight < 10) {
 #### 3. Secure Architecture Patterns
 
 **Layered Architecture:**
+
 ```
 Client (Web/Admin)
     ↓
@@ -1113,6 +1124,7 @@ Database (PostgreSQL)
 ```
 
 **Separation of Concerns:**
+
 ```typescript
 // ✅ GOOD: Clear separation
 // Route: HTTP handling only
@@ -1160,6 +1172,7 @@ app.get('/api/public/accommodations', publicRoute, async (c) => {
 ```
 
 **Secure cookie settings:**
+
 ```typescript
 const SECURE_COOKIE_DEFAULTS = {
   httpOnly: true,
@@ -1806,6 +1819,7 @@ updates:
 ```
 
 **GitHub Security Alerts:**
+
 - Enabled for all repositories
 - Email notifications to team
 - Automatic pull requests for fixes
@@ -1875,17 +1889,17 @@ jobs:
    - Dependabot creates PR
    - Team notified via email/Slack
 
-2. **Assess Impact**
+1. **Assess Impact**
    - Review changelog
    - Check breaking changes
    - Identify affected areas
 
-3. **Test Update**
+1. **Test Update**
    - Run test suite
    - Manual testing if needed
    - Check for breaking changes
 
-4. **Deploy**
+1. **Deploy**
    - Merge PR
    - Deploy to staging
    - Deploy to production
@@ -1911,12 +1925,14 @@ jobs:
 ```
 
 **Avoid Risky Packages:**
+
 - Packages with no recent updates (>1 year)
 - Packages with single maintainer
 - Packages with low download count
 - Packages with security history
 
 **Use Trusted Sources:**
+
 - Official packages from npm
 - Verified organizations
 - Well-maintained open source
@@ -2055,6 +2071,7 @@ describe('Vulnerable Components - Recency', () => {
 Authentication and session management vulnerabilities allow attackers to compromise passwords, keys, or session tokens, or to exploit implementation flaws to assume other users' identities.
 
 **Common Issues:**
+
 - Weak passwords
 - Credential stuffing
 - Missing or ineffective MFA
@@ -2069,6 +2086,7 @@ Authentication and session management vulnerabilities allow attackers to comprom
 **Delegated Authentication:**
 
 Hospeda uses Clerk for all authentication, providing:
+
 - Secure password hashing (bcrypt)
 - Breach detection (HaveIBeenPwned integration)
 - Multi-factor authentication (TOTP, SMS)
@@ -2077,6 +2095,7 @@ Hospeda uses Clerk for all authentication, providing:
 - Session management
 
 **Why Clerk?**
+
 - Battle-tested authentication
 - Automatic security updates
 - Compliance (SOC 2, GDPR)
@@ -2201,6 +2220,7 @@ app.use('/api/auth/*', rateLimiter({
 ```
 
 **Account Lockout (Clerk):**
+
 - Automatic after repeated failed login attempts
 - Temporary lockout (increases with subsequent failures)
 - Email notification to user
@@ -2225,6 +2245,7 @@ if (user.publicMetadata.role === 'admin' && !hasMFA) {
 ```
 
 **MFA Enforcement:**
+
 - Optional for regular users
 - Required for admin users
 - TOTP (Google Authenticator, Authy)
@@ -2234,6 +2255,7 @@ if (user.publicMetadata.role === 'admin' && !hasMFA) {
 #### 6. Password Policies
 
 **Handled by Clerk:**
+
 - Minimum 8 characters
 - Complexity requirements (uppercase, lowercase, numbers)
 - Password breach detection (HaveIBeenPwned)
@@ -2241,6 +2263,7 @@ if (user.publicMetadata.role === 'admin' && !hasMFA) {
 - Regular password expiration (optional)
 
 **We don't store passwords:**
+
 ```typescript
 // ✅ CORRECT: Delegated to Clerk
 // No password field in our User table
@@ -2734,6 +2757,7 @@ describe('Software Integrity - Code Signing', () => {
 Insufficient logging and monitoring, coupled with missing or ineffective integration with incident response, allows attackers to further attack systems, maintain persistence, pivot to more systems, and tamper, extract, or destroy data.
 
 **Common Issues:**
+
 - Auditable events not logged
 - Warnings and errors generate no logs
 - Logs only stored locally
@@ -3217,6 +3241,7 @@ SSRF flaws occur when a web application fetches a remote resource without valida
 - External services (to bypass firewalls)
 
 **Common Vectors:**
+
 - Image upload with URL
 - Webhook callbacks
 - PDF generation from URL

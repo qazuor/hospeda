@@ -21,9 +21,9 @@ Create a BookingService in packages/service-core/src/services/booking/ that:
    - cancel(): Checks cancellation policy, processes refund, updates status
    - checkAvailability(): Queries overlapping bookings for date range
 
-3. Include comprehensive tests in test/services/booking/
-4. Follow existing patterns from AccommodationService
-5. Ensure 90%+ test coverage
+1. Include comprehensive tests in test/services/booking/
+2. Follow existing patterns from AccommodationService
+3. Ensure 90%+ test coverage
 ```
 
 #### ❌ DON'T: Be Vague
@@ -53,16 +53,18 @@ but the database schema expects Date objects. How should I handle this conversio
 
 Current code:
 ```typescript
-async create(data: CreateBookingInput): Promise<Result<Booking>> {
+async create(data: CreateBookingInput): Promise<Result`<Booking>`> {
   const result = await db.insert(bookings).values(data).returning();
   return Ok(result[0]);
 }
 ```
 
 Context:
+
 - API receives ISO 8601 strings
 - Drizzle schema uses timestamp columns
 - Other models use parseDate() utility
+
 ```
 
 #### ❌ DON'T: Omit Context
@@ -138,7 +140,7 @@ and loading spinner when it loads
 - **RO-RO pattern**: Receive Object, Return Object
 - **BaseCrudService**: Base class for services
 - **BaseModel**: Base class for models
-- **Result<T>**: Ok/Err wrapper type
+- **Result`<T>`**: Ok/Err wrapper type
 - **ServiceContext**: Context with actor and logger
 - **Atomic commits**: Single-purpose commits
 
@@ -160,6 +162,7 @@ if (booking.checkIn >= checkIn && booking.checkOut <= checkOut)
 But it should detect ANY overlap, not just bookings completely within the range.
 
 Please fix the overlap detection logic.
+
 ```
 
 #### ❌ DON'T: Be Imprecise
@@ -264,13 +267,13 @@ subscription feature with:
    - As a host, I want to try premium for 14 days free
    - As an admin, I want to track subscription revenue
 
-2. Acceptance Criteria:
+1. Acceptance Criteria:
    - Support monthly/yearly billing
    - Include 14-day trial period
    - Accept credit cards via Mercado Pago
    - Send email on subscription changes
 
-3. Scope:
+1. Scope:
    - Initial release: Basic subscription only
    - Future: Usage-based billing, multiple tiers
 ```
@@ -285,24 +288,24 @@ Task: Invoke product-functional agent to create a PDR for subscriptions
 
 Always review and validate agent work.
 
-#### Review Checklist
+#### Reviewing Agent Review Checklist
 
 1. **Correctness**
    - Does it meet requirements?
    - Are there logical errors?
    - Does it handle edge cases?
 
-2. **Consistency**
+1. **Consistency**
    - Follows project patterns?
    - Matches existing code style?
    - Uses correct terminology?
 
-3. **Completeness**
+1. **Completeness**
    - All requirements addressed?
    - Tests included?
    - Documentation added?
 
-4. **Quality**
+1. **Quality**
    - Type-safe?
    - Proper error handling?
    - Performance considerations?
@@ -532,17 +535,17 @@ Output:
    - Number of queries: 5 (N+1 detected)
    - Bundle size: 350KB (acceptable)
 
-2. Bottlenecks Identified
+1. Bottlenecks Identified
    - Missing index on accommodations.city
    - Separate queries for images (N+1)
    - No query result caching
 
-3. Optimization Suggestions
+1. Optimization Suggestions
    - Add index: CREATE INDEX idx_accommodations_city ON accommodations(city)
    - Use JOIN for images instead of separate queries
    - Implement Redis caching for search results (5min TTL)
 
-4. Expected Improvements
+1. Expected Improvements
    - Query time: 245ms → ~50ms (80% faster)
    - Queries: 5 → 2 (60% reduction)
 ```
@@ -553,7 +556,7 @@ Output:
 
 Never blindly accept generated code.
 
-#### Review Checklist
+#### Always Review Review Checklist
 
 **1. Correctness**
 
@@ -650,6 +653,7 @@ const result = accommodations.reduce((acc, curr) => ({
 ```
 
 Can you explain what this does and why we're using reduce here?"
+
 ```
 
 #### ✅ DO: Request Simplification
@@ -671,14 +675,14 @@ Always test generated code.
    pnpm test path/to/test.test.ts
    ```
 
-2. **Check Coverage**
+1. **Check Coverage**
 
    ```bash
    pnpm test:coverage
    # Ensure 90%+ coverage
    ```
 
-3. **Manual Testing**
+1. **Manual Testing**
 
    ```bash
    # Start dev server
@@ -687,7 +691,7 @@ Always test generated code.
    # Test in browser/Postman
    ```
 
-4. **Edge Cases**
+1. **Edge Cases**
 
    ```typescript
    // Test:
@@ -698,7 +702,7 @@ Always test generated code.
    - Concurrent operations
    ```
 
-5. **Integration Testing**
+1. **Integration Testing**
 
    ```typescript
    // Test with:
@@ -806,6 +810,7 @@ cd packages/service-core && pnpm test booking
 [Review test results]
 
 "Tests pass! Coverage is 92%."
+
 ```
 
 #### ❌ DON'T: Defer Testing
@@ -1112,13 +1117,13 @@ Suggested commits:
 1. feat(schemas): add booking validation schema
    Files: packages/schemas/src/booking.schema.ts
 
-2. feat(db): add booking schema and model
+1. feat(db): add booking schema and model
    Files:
    - packages/db/src/schemas/booking.schema.ts
    - packages/db/src/models/booking.model.ts
    - packages/db/test/models/booking.model.test.ts
 
-3. feat(service): add BookingService with business logic
+1. feat(service): add BookingService with business logic
    Files:
    - packages/service-core/src/services/booking/booking.service.ts
    - packages/service-core/test/services/booking/booking.service.test.ts

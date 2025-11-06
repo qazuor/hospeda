@@ -1,1661 +1,1234 @@
 {
-    "comments": [
-        {
-            "linearId": "6c97a93d-b065-4ae6-acc9-5bbd73cd04b8",
-            "type": "todo",
-            "filePath": "apps/admin/src/components/entity-form/EntityFormSection.tsx",
-            "line": 89,
-            "title": "Implement predicate evaluation",
-            "createdAt": "2025-10-04T12:53:35.395Z",
-            "updatedAt": "2025-10-04T12:53:35.395Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "faaaadca-60a3-4158-8c86-8463bb3d8c83",
-            "type": "todo",
-            "filePath": "apps/admin/src/components/entity-form/EntityFormSection.tsx",
-            "line": 105,
-            "title": "Check field visibility conditions",
-            "createdAt": "2025-10-04T12:53:36.161Z",
-            "updatedAt": "2025-10-04T12:53:36.161Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "3de5ec95-ae42-4dff-9971-3828f61dedbc",
-            "type": "todo",
-            "filePath": "apps/admin/src/components/entity-form/EntityFormSection.tsx",
-            "line": 300,
-            "title": "Implement tabs layout for nested sections",
-            "createdAt": "2025-10-04T12:53:37.813Z",
-            "updatedAt": "2025-10-04T12:53:37.813Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "cea7840b-3662-441c-8475-5d0ee64d7eef",
-            "type": "todo",
-            "filePath": "apps/admin/src/components/entity-form/EntityViewSection.tsx",
-            "line": 112,
-            "title": "Implement predicate evaluation",
-            "createdAt": "2025-10-04T12:53:39.988Z",
-            "updatedAt": "2025-10-04T12:53:39.988Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "e698dab4-c559-4fb8-8c7b-ceeda9e4784a",
-            "type": "todo",
-            "filePath": "apps/admin/src/components/entity-form/EntityViewSection.tsx",
-            "line": 153,
-            "title": "Check field visibility conditions",
-            "createdAt": "2025-10-04T12:53:40.711Z",
-            "updatedAt": "2025-10-04T12:53:40.711Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "0d0d9329-071e-4f70-81c6-65f97d423d56",
-            "type": "todo",
-            "filePath": "apps/admin/src/components/entity-form/EntityViewSection.tsx",
-            "line": 427,
-            "title": "Implement tabs layout for nested sections",
-            "createdAt": "2025-10-04T12:53:41.768Z",
-            "updatedAt": "2025-10-04T13:07:09.045Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "fb28368b-af46-45ee-924f-19bef2a7506a",
-            "type": "todo",
-            "filePath": "apps/admin/src/components/entity-form/fields/GalleryField.tsx",
-            "line": 157,
-            "title": "Show error toast",
-            "createdAt": "2025-10-04T12:53:42.669Z",
-            "updatedAt": "2025-10-04T13:07:13.351Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "b1ea2685-67c0-4d9e-8701-7deb3a4928f0",
-            "type": "todo",
-            "filePath": "apps/admin/src/components/entity-form/fields/ImageField.tsx",
-            "line": 104,
-            "title": "Show error toast",
-            "createdAt": "2025-10-04T12:53:43.712Z",
-            "updatedAt": "2025-10-04T13:07:16.569Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "b56afa66-11b8-4ecd-970a-639a332b98c6",
-            "type": "todo",
-            "filePath": "apps/admin/src/components/entity-form/fields/ImageField.tsx",
-            "line": 111,
-            "title": "Show error toast",
-            "createdAt": "2025-10-04T12:53:45.253Z",
-            "updatedAt": "2025-10-04T13:07:17.444Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "13a12978-8d16-4a21-aa54-73dd95c04c17",
-            "type": "todo",
-            "filePath": "apps/admin/src/components/entity-form/fields/ImageField.tsx",
-            "line": 138,
-            "title": "Show error toast",
-            "createdAt": "2025-10-04T12:53:46.056Z",
-            "updatedAt": "2025-10-04T13:07:18.205Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "51d5850a-9cb5-42dd-b3a4-d7ad8ff6999c",
-            "type": "todo",
-            "filePath": "apps/admin/src/components/entity-form/fields/entity-selects/index.ts",
-            "line": 15,
-            "title": "Add more entity select fields as needed:",
-            "createdAt": "2025-10-04T12:53:46.780Z",
-            "updatedAt": "2025-10-04T13:27:30.834Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "21e7df8b-3b77-415e-aa20-6914694dd65c",
-            "type": "todo",
-            "filePath": "apps/admin/src/components/entity-form/fields/index.ts",
-            "line": 45,
-            "title": "Implement additional field types",
-            "createdAt": "2025-10-04T12:53:47.483Z",
-            "updatedAt": "2025-10-04T13:27:34.045Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "d221ffe6-a144-4856-8d93-e8ccde6a7926",
-            "type": "todo",
-            "filePath": "apps/admin/src/components/entity-form/hooks/useEntityForm.ts",
-            "line": 68,
-            "title": "Check section visibility conditions (visibleIf)",
-            "createdAt": "2025-10-04T12:53:48.185Z",
-            "updatedAt": "2025-10-04T13:27:35.134Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "baebcb94-92d5-4999-827f-1fb92c5d7b27",
-            "type": "todo",
-            "filePath": "apps/admin/src/components/entity-form/hooks/useEntityForm.ts",
-            "line": 84,
-            "title": "Check section editability conditions (editableIf)",
-            "createdAt": "2025-10-04T12:53:50.167Z",
-            "updatedAt": "2025-10-04T13:27:36.095Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "dafa0b0f-379f-4f9e-b559-57ea0ed73b95",
-            "type": "todo",
-            "filePath": "apps/admin/src/components/entity-form/layouts/index.ts",
-            "line": 20,
-            "title": "Implement additional layout types",
-            "createdAt": "2025-10-04T12:53:51.172Z",
-            "updatedAt": "2025-10-04T13:27:37.214Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "f8850fd6-95da-4db1-9793-77c08f2f9343",
-            "type": "todo",
-            "filePath": "apps/admin/src/components/entity-form/navigation/index.ts",
-            "line": 16,
-            "title": "Add more navigation components",
-            "createdAt": "2025-10-04T12:53:51.979Z",
-            "updatedAt": "2025-10-04T15:26:11.183Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "924bf9e6-7bcb-4f02-ae33-03010717a67f",
-            "type": "todo",
-            "filePath": "apps/admin/src/components/entity-form/providers/EntityFormProvider.tsx",
-            "line": 59,
-            "title": "Handle save errors properly",
-            "createdAt": "2025-10-04T12:53:52.757Z",
-            "updatedAt": "2025-10-04T15:26:14.053Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "81240ca6-3393-4132-a11c-a10d05b82c4a",
-            "type": "todo",
-            "filePath": "apps/admin/src/components/entity-form/providers/EntityFormProvider.tsx",
-            "line": 150,
-            "title": "Implement Zod schema validation for more complex rules",
-            "createdAt": "2025-10-04T12:53:53.560Z",
-            "updatedAt": "2025-10-04T15:26:15.682Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "cc06df04-da27-4561-b6a9-2af7e6b09c87",
-            "type": "todo",
-            "filePath": "apps/admin/src/components/entity-form/providers/EntityFormProvider.tsx",
-            "line": 198,
-            "title": "Handle save errors properly",
-            "createdAt": "2025-10-04T12:53:54.413Z",
-            "updatedAt": "2025-10-04T15:26:16.408Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "c2aab78d-ac12-4654-9188-08e5b85f8c76",
-            "type": "todo",
-            "filePath": "apps/admin/src/components/entity-form/providers/EntityFormProvider.tsx",
-            "line": 220,
-            "title": "Implement field validation using Zod schemas",
-            "createdAt": "2025-10-04T12:53:56.138Z",
-            "updatedAt": "2025-10-04T15:26:17.135Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "3fdd6165-71ae-4a25-a076-1b32ede5afe5",
-            "type": "todo",
-            "filePath": "apps/admin/src/components/entity-form/sections/index.ts",
-            "line": 21,
-            "title": "Add specialized section components",
-            "createdAt": "2025-10-04T12:53:56.920Z",
-            "updatedAt": "2025-10-04T15:26:21.810Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "ea2a89d2-3f13-4e41-9c83-6c418936d59b",
-            "type": "todo",
-            "filePath": "apps/admin/src/components/entity-form/views/index.ts",
-            "line": 34,
-            "title": "Implement additional view field types",
-            "createdAt": "2025-10-04T12:53:57.711Z",
-            "updatedAt": "2025-10-04T15:26:22.678Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "41b0ad1e-a61e-4423-ae76-0926776a0486",
-            "type": "todo",
-            "filePath": "apps/admin/src/components/entity-list/EntityListPage.tsx",
-            "line": 343,
-            "title": "Add pagination controls to improve performance",
-            "createdAt": "2025-10-04T12:53:58.643Z",
-            "updatedAt": "2025-10-04T15:26:27.038Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "2ea96e97-d954-423e-baaf-26f4835b07fd",
-            "type": "todo",
-            "filePath": "apps/admin/src/components/entity-list/EntityListPage.tsx",
-            "line": 345,
-            "title": "Implement user authentication for admin access",
-            "createdAt": "2025-10-04T12:54:00.248Z",
-            "updatedAt": "2025-10-07T03:23:06.175Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "caee4e95-8862-4d21-8cb5-99a86bf67d70",
-            "type": "todo",
-            "filePath": "apps/admin/src/components/entity-list/EntityListPage.tsx",
-            "line": 346,
-            "title": "Add data export functionality for reports",
-            "createdAt": "2025-10-04T12:54:02.322Z",
-            "updatedAt": "2025-10-04T15:26:31.507Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "9517e749-bda9-48bc-8c96-ae8addb39943",
-            "type": "todo",
-            "filePath": "apps/admin/src/components/entity-list/EntityListPage.tsx",
-            "line": 347,
-            "title": "Implement enhanced role-based permissions",
-            "createdAt": "2025-10-04T12:54:03.205Z",
-            "updatedAt": "2025-10-07T03:10:04.489Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "67842650-9d50-4721-9ddc-33557b8aa3bc",
-            "type": "debug",
-            "filePath": "apps/admin/src/components/entity-pages/EntityPageBase.tsx",
-            "line": 90,
-            "title": "Log all form values",
-            "createdAt": "2025-10-04T12:54:04.772Z",
-            "updatedAt": "2025-10-07T03:10:11.663Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "9c3b8e60-e7c9-4084-bb59-91d54c4ddac6",
-            "type": "debug",
-            "filePath": "apps/admin/src/components/entity-pages/EntityPageBase.tsx",
-            "line": 107,
-            "title": "Log filtered values being sent to API",
-            "createdAt": "2025-10-04T12:54:05.487Z",
-            "updatedAt": "2025-10-04T15:26:34.908Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "d1c8ea8b-5793-4805-85eb-8e803d6ca0f1",
-            "type": "todo",
-            "filePath": "apps/admin/src/components/entity-view/hooks/useEntityView.ts",
-            "line": 87,
-            "title": "Check section visibility conditions (visibleIf)",
-            "createdAt": "2025-10-04T12:54:06.210Z",
-            "updatedAt": "2025-10-07T03:10:13.871Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "31d8a319-9624-4a88-bdf9-d19fd9e8ab94",
-            "type": "todo",
-            "filePath": "apps/admin/src/components/layout/Sidebar.tsx",
-            "line": 48,
-            "title": "Replace with real user permissions from Clerk session/ctx",
-            "createdAt": "2025-10-04T12:54:07.238Z",
-            "updatedAt": "2025-10-07T03:10:15.760Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "ca3a2e81-660c-47ac-93b3-d6c92aa09d18",
-            "type": "todo",
-            "filePath": "apps/admin/src/features/accommodations/config/sections/amenities.consolidated.ts",
-            "line": 15,
-            "title": "Opciones para las categorías de amenities (para uso futuro)",
-            "createdAt": "2025-10-04T12:54:08.363Z",
-            "updatedAt": "2025-10-04T15:26:39.661Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "d80cb99a-5051-48c3-8497-7b3123cb6b9e",
-            "type": "todo",
-            "filePath": "apps/admin/src/features/accommodations/config/sections/gallery.consolidated.ts",
-            "line": 15,
-            "title": "Opciones para el tipo de imagen (para uso futuro)",
-            "createdAt": "2025-10-04T12:54:09.180Z",
-            "updatedAt": "2025-10-07T03:23:07.185Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "15e59edc-ab20-4f08-be41-aabef538894f",
-            "type": "todo",
-            "filePath": "apps/admin/src/features/accommodations/config/sections/gallery.consolidated.ts",
-            "line": 29,
-            "title": "Opciones para el tipo de video (para uso futuro)",
-            "createdAt": "2025-10-04T12:54:09.876Z",
-            "updatedAt": "2025-10-04T15:26:43.591Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "51754d18-af8c-4c60-be83-0fc12c41c34e",
-            "type": "todo",
-            "filePath": "apps/admin/src/lib/error-boundaries/GlobalErrorBoundary.tsx",
-            "line": 32,
-            "title": "Implement error reporting to support system",
-            "createdAt": "2025-10-04T12:54:13.218Z",
-            "updatedAt": "2025-10-04T15:26:51.930Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "ecbb2199-4d7d-48f8-94a9-c8e01c637112",
-            "type": "todo",
-            "filePath": "apps/admin/src/lib/menu.ts",
-            "line": 55,
-            "title": "Wire icons in Sidebar to keep this file headless (no JSX icons here)",
-            "createdAt": "2025-10-04T12:54:16.731Z",
-            "updatedAt": "2025-10-04T12:54:16.731Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "4374e05d-a5a2-4787-afcc-c39f54d41138",
-            "type": "hack",
-            "filePath": "apps/admin/src/routes/_authed/access/users/index.tsx",
-            "line": 7,
-            "title": "Prevent TypeScript error for TanStack Router auto-generated import",
-            "createdAt": "2025-10-04T12:54:20.299Z",
-            "updatedAt": "2025-10-04T12:54:20.299Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "398f8071-59d9-4f13-b1e9-9e3c30f24492",
-            "type": "hack",
-            "filePath": "apps/admin/src/routes/_authed/accommodations/index.tsx",
-            "line": 10,
-            "title": "Prevent TypeScript error for TanStack Router auto-generated import",
-            "createdAt": "2025-10-04T12:54:21.118Z",
-            "updatedAt": "2025-10-04T12:54:21.118Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "928e7372-2a89-41f2-9692-8d512b70b780",
-            "type": "hack",
-            "filePath": "apps/admin/src/routes/_authed/content/accommodation-amenities.tsx",
-            "line": 10,
-            "title": "Prevent TypeScript error for TanStack Router auto-generated import",
-            "createdAt": "2025-10-04T12:54:21.845Z",
-            "updatedAt": "2025-10-04T12:54:21.845Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "b9c240f9-1c05-4fce-9df9-a784444f5220",
-            "type": "hack",
-            "filePath": "apps/admin/src/routes/_authed/content/accommodation-features.tsx",
-            "line": 7,
-            "title": "Prevent TypeScript error for TanStack Router auto-generated import",
-            "createdAt": "2025-10-04T12:54:22.623Z",
-            "updatedAt": "2025-10-04T12:54:22.623Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "f2535635-5073-4a8b-9e51-2f330a7e232f",
-            "type": "hack",
-            "filePath": "apps/admin/src/routes/_authed/content/destination-attractions.tsx",
-            "line": 10,
-            "title": "Prevent TypeScript error for TanStack Router auto-generated import",
-            "createdAt": "2025-10-04T12:54:25.896Z",
-            "updatedAt": "2025-10-04T12:54:25.897Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "0247d1ed-0a93-48cb-bd99-fdd4cfa8875e",
-            "type": "hack",
-            "filePath": "apps/admin/src/routes/_authed/destinations/index.tsx",
-            "line": 10,
-            "title": "Prevent TypeScript error for TanStack Router auto-generated import",
-            "createdAt": "2025-10-04T12:54:26.971Z",
-            "updatedAt": "2025-10-04T12:54:26.971Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "fbb95cd5-286b-4c4a-8546-aa05d58a7429",
-            "type": "hack",
-            "filePath": "apps/admin/src/routes/_authed/events/index.tsx",
-            "line": 7,
-            "title": "Prevent TypeScript error for TanStack Router auto-generated import",
-            "createdAt": "2025-10-04T12:54:28.015Z",
-            "updatedAt": "2025-10-04T12:54:28.015Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "042ef506-f452-4773-abf5-f29cf778e898",
-            "type": "hack",
-            "filePath": "apps/admin/src/routes/_authed/events/locations.tsx",
-            "line": 7,
-            "title": "Prevent TypeScript error for TanStack Router auto-generated import",
-            "createdAt": "2025-10-04T12:54:28.744Z",
-            "updatedAt": "2025-10-04T12:54:28.744Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "2f7efed6-831f-489d-b525-f1b881cfe7d5",
-            "type": "hack",
-            "filePath": "apps/admin/src/routes/_authed/events/organizers.tsx",
-            "line": 7,
-            "title": "Prevent TypeScript error for TanStack Router auto-generated import",
-            "createdAt": "2025-10-04T12:54:29.487Z",
-            "updatedAt": "2025-10-04T12:54:29.487Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "159549bf-a1f1-417d-9136-a0da1a87fb88",
-            "type": "hack",
-            "filePath": "apps/admin/src/routes/_authed/posts/index.tsx",
-            "line": 7,
-            "title": "Prevent TypeScript error for TanStack Router auto-generated import",
-            "createdAt": "2025-10-04T12:54:30.349Z",
-            "updatedAt": "2025-10-04T13:28:03.615Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "6b6dbcbe-9c2b-404e-a53c-39f93137de02",
-            "type": "hack",
-            "filePath": "apps/admin/src/routes/_authed/sponsors.tsx",
-            "line": 4,
-            "title": "Prevent TypeScript error for TanStack Router auto-generated import",
-            "createdAt": "2025-10-04T12:54:31.181Z",
-            "updatedAt": "2025-10-04T13:28:04.524Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "677a2c7f-72e7-4f25-8374-21d48dbfe540",
-            "type": "todo",
-            "filePath": "apps/api/src/middlewares/validation.ts",
-            "line": 217,
-            "title": "Implement automatic validation when Hono types are better understood",
-            "createdAt": "2025-10-04T12:54:33.128Z",
-            "updatedAt": "2025-10-04T13:28:09.618Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "347d6794-6683-4ac1-8b6c-8e80ea565739",
-            "type": "todo",
-            "filePath": "apps/api/src/routes/destination/getAccommodations.ts",
-            "line": 20,
-            "title": "Add a dedicated response schema if needed.",
-            "createdAt": "2025-10-04T12:54:41.588Z",
-            "updatedAt": "2025-10-07T03:23:12.602Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "43674f95-d006-4cf4-8d4a-70c83e1be04e",
-            "type": "todo",
-            "filePath": "apps/api/src/routes/user/update.ts",
-            "line": 50,
-            "title": "Improve this by storing Clerk ID mapping or adding a method to get Clerk ID by user ID",
-            "createdAt": "2025-10-04T12:54:43.965Z",
-            "updatedAt": "2025-10-07T21:47:24.111Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "d9b701f6-5687-4a0e-b994-d045026536ad",
-            "type": "debug",
-            "filePath": "apps/api/test/integration/accommodation/get-stats.test.ts",
-            "line": 48,
-            "title": "schemaValidation.error.issues contains validation details",
-            "createdAt": "2025-10-04T12:54:44.788Z",
-            "updatedAt": "2025-10-07T03:23:19.323Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "2130b0ce-f7b5-471a-a474-177b2fba8574",
-            "type": "todo",
-            "filePath": "apps/web/src/data/user.ts",
-            "line": 5,
-            "title": "Temporary implementation until we move createPublicUser to @repo/schemas",
-            "createdAt": "2025-10-04T12:54:46.305Z",
-            "updatedAt": "2025-10-04T15:27:06.952Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "4b866013-2275-403f-bf5c-3115da246f2d",
-            "type": "todo",
-            "filePath": "apps/web/src/pages/api/bookmarks.ts",
-            "line": 15,
-            "title": "Get user ID from Clerk session",
-            "createdAt": "2025-10-04T12:54:47.194Z",
-            "updatedAt": "2025-10-08T17:45:09.907Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "45dfe67e-94f2-4b69-b8ff-8ea5e8276c39",
-            "type": "todo",
-            "filePath": "apps/web/src/pages/api/bookmarks.ts",
-            "line": 16,
-            "title": "Call the bookmark service",
-            "createdAt": "2025-10-04T12:54:47.937Z",
-            "updatedAt": "2025-10-08T17:45:12.390Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "b9b79df1-7025-4d33-8ed1-0925b61291fe",
-            "type": "todo",
-            "filePath": "packages/db/src/models/accommodation/accommodation.model.ts",
-            "line": 275,
-            "title": "rating needs to be handled separately as it's not part of the main accommodation entity",
-            "createdAt": "2025-10-04T12:54:50.133Z",
-            "updatedAt": "2025-10-21T18:05:06.368Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "ed21b803-92bd-4ead-afbe-b6cefc2e0d3f",
-            "type": "todo",
-            "filePath": "packages/db/test/models/base.model.test.ts",
-            "line": 301,
-            "title": "Investigate why this test fails despite the mock being logically correct.",
-            "createdAt": "2025-10-04T12:54:51.461Z",
-            "updatedAt": "2025-10-21T18:05:11.233Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "ad182c09-33c4-4534-9157-46f47e2aa5c9",
-            "type": "todo",
-            "filePath": "packages/logger/src/logger.ts",
-            "line": 105,
-            "title": "Implement file logging if save is enabled",
-            "createdAt": "2025-10-04T12:54:53.829Z",
-            "updatedAt": "2025-10-04T13:40:33.832Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "081f3ad4-37ee-4e54-8f13-422ee0c86884",
-            "type": "todo",
-            "filePath": "packages/payments/src/clients/mercado-pago.client.ts",
-            "line": 307,
-            "title": "Implement proper signature validation based on Mercado Pago documentation",
-            "createdAt": "2025-10-04T12:54:54.522Z",
-            "updatedAt": "2025-10-04T13:40:37.607Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "6ada69ba-a0da-4ba5-b2f8-6f58fe040496",
-            "type": "todo",
-            "filePath": "packages/payments/src/services/subscription.service.ts",
-            "line": 162,
-            "title": "Create Mercado Pago subscription/preapproval",
-            "createdAt": "2025-10-04T12:54:55.246Z",
-            "updatedAt": "2025-10-04T13:40:38.326Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "0dde12bd-5bb6-4ab7-907a-db7b7776cfda",
-            "type": "todo",
-            "filePath": "packages/payments/src/services/subscription.service.ts",
-            "line": 223,
-            "title": "Cancel Mercado Pago subscription/preapproval if exists",
-            "createdAt": "2025-10-04T12:54:55.981Z",
-            "updatedAt": "2025-10-07T03:23:23.111Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "5dbb37b3-78eb-4de5-b2c6-2fc60eb5d949",
-            "type": "todo",
-            "filePath": "packages/payments/src/webhooks/webhook.handler.ts",
-            "line": 220,
-            "title": "Implement subscription notification handling",
-            "createdAt": "2025-10-04T12:54:56.820Z",
-            "updatedAt": "2025-10-04T15:27:18.271Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "6818c8fb-4320-4fa1-a3fe-c5de5ed51dc1",
-            "type": "todo",
-            "filePath": "packages/payments/src/webhooks/webhook.handler.ts",
-            "line": 266,
-            "title": "Activate user features based on payment plan",
-            "createdAt": "2025-10-04T12:54:57.899Z",
-            "updatedAt": "2025-10-07T03:24:26.189Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "a1aa5d87-210d-4bc8-8c4d-36c732296419",
-            "type": "todo",
-            "filePath": "packages/payments/src/webhooks/webhook.handler.ts",
-            "line": 279,
-            "title": "Activate user features based on payment plan",
-            "createdAt": "2025-10-04T12:54:58.698Z",
-            "updatedAt": "2025-10-07T03:10:48.772Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "ca8db3ff-dc2c-4252-807b-6746afa9be5a",
-            "type": "todo",
-            "filePath": "packages/payments/src/webhooks/webhook.handler.ts",
-            "line": 290,
-            "title": "Send confirmation email to user",
-            "createdAt": "2025-10-04T12:55:00.731Z",
-            "updatedAt": "2025-10-04T15:27:25.680Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "cc091b1c-64de-4a4d-93f2-ad3ac2fa2274",
-            "type": "todo",
-            "filePath": "packages/payments/src/webhooks/webhook.handler.ts",
-            "line": 291,
-            "title": "Update user permissions/features",
-            "createdAt": "2025-10-04T12:55:03.397Z",
-            "updatedAt": "2025-10-07T03:24:26.993Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "8392bb53-89d6-452e-8485-69f441a3f1be",
-            "type": "todo",
-            "filePath": "packages/payments/src/webhooks/webhook.handler.ts",
-            "line": 292,
-            "title": "Log analytics event",
-            "createdAt": "2025-10-04T12:55:04.449Z",
-            "updatedAt": "2025-10-07T13:22:46.845Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "a470d56d-569c-4acb-8551-c4c7c1469157",
-            "type": "todo",
-            "filePath": "packages/schemas/src/templates/entity-template.schema.ts",
-            "line": 42,
-            "title": "Replace with actual entity fields",
-            "createdAt": "2025-10-04T12:55:07.210Z",
-            "updatedAt": "2025-10-04T13:51:22.622Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "ddb202f5-ae03-4cf0-83f7-47b904c8a817",
-            "type": "todo",
-            "filePath": "packages/schemas/src/templates/entity-template.schema.ts",
-            "line": 80,
-            "title": "Add more entity-specific search filters here",
-            "createdAt": "2025-10-04T12:55:08.333Z",
-            "updatedAt": "2025-10-04T13:51:25.475Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "32096ab2-129b-4aab-b6bd-6108405ec0e0",
-            "type": "todo",
-            "filePath": "packages/seed/src/example/accommodationReviews.seed.ts",
-            "line": 54,
-            "title": "Get full user data from database if needed",
-            "createdAt": "2025-10-04T12:55:10.045Z",
-            "updatedAt": "2025-10-04T13:51:28.698Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "ec47c826-10aa-414c-9218-f838a8cc6374",
-            "type": "todo",
-            "filePath": "packages/seed/src/example/accommodations.seed.ts",
-            "line": 93,
-            "title": "Get full user data from database if needed",
-            "createdAt": "2025-10-04T12:55:10.924Z",
-            "updatedAt": "2025-10-04T13:51:29.443Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "cdd6d0e5-ac69-4156-8046-b87442b26de0",
-            "type": "hack",
-            "filePath": "packages/seed/src/example/bookmarks.seed.ts",
-            "line": 18,
-            "title": "to dont modify all jsons",
-            "createdAt": "2025-10-04T12:55:11.640Z",
-            "updatedAt": "2025-10-04T13:51:31.352Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "15a41456-62d4-4540-8692-08fcb7cd670e",
-            "type": "todo",
-            "filePath": "packages/seed/src/example/bookmarks.seed.ts",
-            "line": 77,
-            "title": "Get full user data from database if needed",
-            "createdAt": "2025-10-04T12:55:12.426Z",
-            "updatedAt": "2025-10-04T13:56:28.980Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "d8c3882b-5b5b-4d7b-bd80-4223a8b9b2ac",
-            "type": "todo",
-            "filePath": "packages/seed/src/example/destinationReviews.seed.ts",
-            "line": 54,
-            "title": "Get full user data from database if needed",
-            "createdAt": "2025-10-04T12:55:13.123Z",
-            "updatedAt": "2025-10-04T13:56:29.715Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "6d7fb639-acfa-4df9-b523-aae4bbb09803",
-            "type": "todo",
-            "filePath": "packages/seed/src/example/events.seed.ts",
-            "line": 75,
-            "title": "Get full user data from database if needed",
-            "createdAt": "2025-10-04T12:55:13.829Z",
-            "updatedAt": "2025-10-04T13:56:33.424Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "1037646b-6ed0-40af-bcee-1250964246dc",
-            "type": "todo",
-            "filePath": "packages/seed/src/example/posts.seed.ts",
-            "line": 124,
-            "title": "Get full user data from database if needed",
-            "createdAt": "2025-10-04T12:55:14.661Z",
-            "updatedAt": "2025-10-04T13:56:37.885Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "99c8a074-be72-413a-a605-abaaa3461abb",
-            "type": "todo",
-            "filePath": "packages/seed/src/index.ts",
-            "line": 125,
-            "title": "Implement migration runner",
-            "createdAt": "2025-10-04T12:55:15.550Z",
-            "updatedAt": "2025-10-04T13:56:39.369Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "8f132e79-5d5d-4e91-aa5c-e106fa4fbb47",
-            "type": "todo",
-            "filePath": "packages/service-core/src/services/accommodationReview/accommodationReview.service.ts",
-            "line": 107,
-            "title": "Implement search logic using Drizzle ORM",
-            "createdAt": "2025-10-04T12:55:17.404Z",
-            "updatedAt": "2025-10-21T18:05:15.043Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "be8ece92-9ccb-4ddf-afaf-c6071c719a92",
-            "type": "todo",
-            "filePath": "packages/service-core/src/services/accommodationReview/accommodationReview.service.ts",
-            "line": 115,
-            "title": "Implement count logic using Drizzle ORM",
-            "createdAt": "2025-10-04T12:55:18.602Z",
-            "updatedAt": "2025-10-21T18:05:16.118Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "6ccc0022-6182-4355-bd1a-ef78eaa47010",
-            "type": "todo",
-            "filePath": "packages/service-core/src/services/accommodationReview/accommodationReview.service.ts",
-            "line": 145,
-            "title": "Optimize to get the accommodationId of the deleted review",
-            "createdAt": "2025-10-04T12:55:19.334Z",
-            "updatedAt": "2025-10-21T18:05:19.697Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "e67209f8-e728-4960-8a81-fc4b5d3680a2",
-            "type": "todo",
-            "filePath": "packages/service-core/src/services/amenity/amenity.helpers.ts",
-            "line": 5,
-            "title": "Implement helper functions for AmenityService",
-            "createdAt": "2025-10-04T12:55:20.063Z",
-            "updatedAt": "2025-10-04T13:56:47.766Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "fb887ada-1420-498e-93b6-8edb7f247e5a",
-            "type": "todo",
-            "filePath": "packages/service-core/src/services/amenity/amenity.normalizers.ts",
-            "line": 5,
-            "title": "Implement normalizer functions for AmenityService",
-            "createdAt": "2025-10-04T12:55:21.843Z",
-            "updatedAt": "2025-10-04T13:29:01.803Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "20997114-5618-4c3b-b0ff-23e52ab5c8c7",
-            "type": "todo",
-            "filePath": "packages/service-core/src/services/amenity/amenity.service.ts",
-            "line": 129,
-            "title": "Implement permission hooks, normalizers, and custom methods as needed.",
-            "createdAt": "2025-10-04T12:55:22.597Z",
-            "updatedAt": "2025-10-21T18:06:20.104Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "967b01ad-6efe-4bee-aba0-e439e158ebb7",
-            "type": "todo",
-            "filePath": "packages/service-core/src/services/attraction/attraction.permissions.ts",
-            "line": 14,
-            "title": "Add visibility logic if attractions have visibility, else use permissions only",
-            "createdAt": "2025-10-04T12:55:23.390Z",
-            "updatedAt": "2025-10-04T13:29:05.692Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "78cd7b62-eac0-4e24-ab04-f53e60474f00",
-            "type": "todo",
-            "filePath": "packages/service-core/src/services/destinationReview/destinationReview.helpers.ts",
-            "line": 1,
-            "title": "Add destinationReview-specific helpers if needed.",
-            "createdAt": "2025-10-04T12:55:24.099Z",
-            "updatedAt": "2025-10-04T13:29:10.055Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "1c0a050e-06df-4237-bd1e-a3bb2561f161",
-            "type": "todo",
-            "filePath": "packages/service-core/src/services/destinationReview/destinationReview.service.ts",
-            "line": 97,
-            "title": "Implement search logic using Drizzle ORM",
-            "createdAt": "2025-10-04T12:55:24.796Z",
-            "updatedAt": "2025-10-21T18:05:21.395Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "d17db392-32f5-4ef4-8382-51dfeb2ea9e4",
-            "type": "todo",
-            "filePath": "packages/service-core/src/services/destinationReview/destinationReview.service.ts",
-            "line": 105,
-            "title": "Implement count logic using Drizzle ORM",
-            "createdAt": "2025-10-04T12:55:25.492Z",
-            "updatedAt": "2025-10-21T18:06:23.791Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "4f8cb558-6df6-4095-bc09-bcd871673c75",
-            "type": "todo",
-            "filePath": "packages/service-core/src/services/destinationReview/destinationReview.service.ts",
-            "line": 132,
-            "title": "Implement logic to update stats after delete if needed",
-            "createdAt": "2025-10-04T12:55:27.177Z",
-            "updatedAt": "2025-10-21T18:05:24.672Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "a514d65e-bcba-4166-b3e0-fda489441142",
-            "type": "todo",
-            "filePath": "packages/service-core/src/services/event/event.permissions.ts",
-            "line": 6,
-            "title": "Implement permission checks for create, update, delete, restore, view, etc.",
-            "createdAt": "2025-10-04T12:55:27.896Z",
-            "updatedAt": "2025-10-04T14:29:23.573Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "129f2c92-a4b0-4d75-88c1-784ef48d6b1a",
-            "type": "todo",
-            "filePath": "packages/service-core/src/services/event/event.service.ts",
-            "line": 149,
-            "title": "Implement visibility update permission logic if needed",
-            "createdAt": "2025-10-04T12:55:28.624Z",
-            "updatedAt": "2025-10-21T18:06:26.290Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "44e29b4c-6088-4a1d-bbb7-02fbde73c744",
-            "type": "todo",
-            "filePath": "packages/service-core/src/services/eventLocation/eventLocation.helpers.ts",
-            "line": 6,
-            "title": "Implement slug generation or other helpers if required for event locations.",
-            "createdAt": "2025-10-04T12:55:29.323Z",
-            "updatedAt": "2025-10-04T14:29:25.012Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "99bba423-6266-41ee-ac36-b5488d2f2446",
-            "type": "todo",
-            "filePath": "packages/service-core/src/services/eventOrganizer/eventOrganizer.helpers.ts",
-            "line": 6,
-            "title": "Implement slug generation or other helpers if required for event organizers.",
-            "createdAt": "2025-10-04T12:55:30.005Z",
-            "updatedAt": "2025-10-04T14:29:28.586Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "74a2c0b1-7e1a-4663-ac24-0aae01b9f079",
-            "type": "todo",
-            "filePath": "packages/service-core/src/services/eventOrganizer/eventOrganizer.service.ts",
-            "line": 81,
-            "title": "Implement fine-grained view permissions if needed",
-            "createdAt": "2025-10-04T12:55:31.131Z",
-            "updatedAt": "2025-10-21T18:08:48.288Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "fafc85ef-f637-4f33-9f34-bb0d186a6649",
-            "type": "todo",
-            "filePath": "packages/service-core/src/services/eventOrganizer/eventOrganizer.service.ts",
-            "line": 85,
-            "title": "Implement list permissions if needed",
-            "createdAt": "2025-10-04T12:55:32.728Z",
-            "updatedAt": "2025-10-21T18:05:27.905Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "3e22743d-e742-4dba-9ef6-1264778d3234",
-            "type": "todo",
-            "filePath": "packages/service-core/src/services/eventOrganizer/eventOrganizer.service.ts",
-            "line": 89,
-            "title": "Implement search permissions if needed",
-            "createdAt": "2025-10-04T12:55:33.531Z",
-            "updatedAt": "2025-10-21T18:08:50.668Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "a0412059-0a6b-4b8d-9aa0-d511813a9d1f",
-            "type": "todo",
-            "filePath": "packages/service-core/src/services/eventOrganizer/eventOrganizer.service.ts",
-            "line": 93,
-            "title": "Implement count permissions if needed",
-            "createdAt": "2025-10-04T12:55:34.240Z",
-            "updatedAt": "2025-10-21T18:08:51.376Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "f363c84e-aa3a-49c8-be3d-49465b951f17",
-            "type": "todo",
-            "filePath": "packages/service-core/src/services/eventOrganizer/eventOrganizer.service.ts",
-            "line": 101,
-            "title": "Implement visibility update permissions if needed",
-            "createdAt": "2025-10-04T12:55:35.021Z",
-            "updatedAt": "2025-10-21T18:05:30.534Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "2bb1b883-9c2a-488a-803d-4ae9e6af2bd7",
-            "type": "todo",
-            "filePath": "packages/service-core/src/services/permission/permission.service.normalizer.ts",
-            "line": 7,
-            "title": "Add normalizers for PermissionService if/when needed.",
-            "createdAt": "2025-10-04T12:55:35.756Z",
-            "updatedAt": "2025-10-04T12:55:35.756Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "4897f21b-e8fb-4ce5-84ec-05c54365649f",
-            "type": "todo",
-            "filePath": "packages/service-core/src/services/post/post.service.ts",
-            "line": 704,
-            "title": "Implement comment removal logic",
-            "createdAt": "2025-10-04T12:55:38.949Z",
-            "updatedAt": "2025-10-22T02:28:54.522Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "dbcf6289-a6d1-466f-bf3b-d8fe09f78259",
-            "type": "todo",
-            "filePath": "packages/service-core/src/services/postSponsor/postSponsor.helpers.ts",
-            "line": 14,
-            "title": "Implement slug generation logic",
-            "createdAt": "2025-10-04T12:55:39.889Z",
-            "updatedAt": "2025-10-04T12:55:39.889Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "7adfb12d-6950-4fab-aed5-84c5cf5caa17",
-            "type": "todo",
-            "filePath": "packages/service-core/src/services/postSponsor/postSponsor.helpers.ts",
-            "line": 29,
-            "title": "Implement contact validation logic",
-            "createdAt": "2025-10-04T12:55:40.627Z",
-            "updatedAt": "2025-10-04T12:55:40.627Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "52195538-9399-41b3-a39a-8165a65d112e",
-            "type": "todo",
-            "filePath": "packages/service-core/src/services/postSponsor/postSponsor.helpers.ts",
-            "line": 49,
-            "title": "Implement social media normalization logic",
-            "createdAt": "2025-10-04T12:55:41.368Z",
-            "updatedAt": "2025-10-04T14:29:33.962Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "e4d95888-6f14-4a07-ba03-007cf260e2eb",
-            "type": "todo",
-            "filePath": "packages/service-core/src/services/postSponsorship/postSponsorship.helpers.ts",
-            "line": 14,
-            "title": "Implement uniqueness check using model",
-            "createdAt": "2025-10-04T12:55:43.385Z",
-            "updatedAt": "2025-10-04T13:51:54.651Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "27c6f09b-f23b-49ca-9d9b-860b4b4b4034",
-            "type": "todo",
-            "filePath": "packages/service-core/src/services/postSponsorship/postSponsorship.normalizers.ts",
-            "line": 19,
-            "title": "normalize paid, dates if needed",
-            "createdAt": "2025-10-04T12:55:44.076Z",
-            "updatedAt": "2025-10-04T13:51:58.540Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "75517b9a-78f1-43e7-80f9-c9be4ad28d2a",
-            "type": "todo",
-            "filePath": "packages/service-core/src/services/postSponsorship/postSponsorship.normalizers.ts",
-            "line": 37,
-            "title": "normalize paid, dates if needed",
-            "createdAt": "2025-10-04T12:55:45.790Z",
-            "updatedAt": "2025-10-04T13:51:59.857Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "75f0bcbd-c7bf-445d-85fc-d850ba3f6357",
-            "type": "todo",
-            "filePath": "packages/service-core/src/services/postSponsorship/postSponsorship.service.ts",
-            "line": 86,
-            "title": "Implement visibility update permissions if needed",
-            "createdAt": "2025-10-04T12:55:46.498Z",
-            "updatedAt": "2025-10-22T02:28:57.105Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "e30852f5-6eeb-43a1-b304-41649ec5b7e1",
-            "type": "todo",
-            "filePath": "packages/service-core/src/services/tag/tag.service.ts",
-            "line": 342,
-            "title": "Implement permission hooks, lifecycle hooks, and custom methods as needed.",
-            "createdAt": "2025-10-04T12:55:47.902Z",
-            "updatedAt": "2025-10-21T18:06:35.000Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "9c6be2f7-0222-48da-8720-29a963022db8",
-            "type": "todo",
-            "filePath": "packages/service-core/src/services/user/user.service.ts",
-            "line": 348,
-            "title": "Implement soft delete permission logic if needed",
-            "createdAt": "2025-10-04T12:55:48.688Z",
-            "updatedAt": "2025-10-22T02:28:58.525Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "054aee66-64a9-4fa1-a2b3-12c8de136817",
-            "type": "todo",
-            "filePath": "packages/service-core/src/services/user/user.service.ts",
-            "line": 361,
-            "title": "Implement hard delete permission logic if needed",
-            "createdAt": "2025-10-04T12:55:50.578Z",
-            "updatedAt": "2025-10-22T02:28:59.236Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "52d85ec2-ceaa-4a8f-822c-4beab0aa65f0",
-            "type": "todo",
-            "filePath": "packages/service-core/src/services/user/user.service.ts",
-            "line": 374,
-            "title": "Adjust logic if public view is allowed",
-            "createdAt": "2025-10-04T12:55:51.511Z",
-            "updatedAt": "2025-10-22T02:29:05.184Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "2e05093b-26ee-45d7-8dc1-f48c4bd78f13",
-            "type": "todo",
-            "filePath": "packages/service-core/src/services/user/user.service.ts",
-            "line": 387,
-            "title": "Implement visibility update permission logic if needed",
-            "createdAt": "2025-10-04T12:55:52.216Z",
-            "updatedAt": "2025-10-22T02:29:06.987Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "9957f1a4-3fa3-43da-825d-ab526d556fae",
-            "type": "todo",
-            "filePath": "packages/service-core/src/services/userBookmark/userBookmark.permissions.ts",
-            "line": 14,
-            "title": "Allow admin access if policy requires",
-            "createdAt": "2025-10-04T12:55:52.976Z",
-            "updatedAt": "2025-10-04T15:27:43.431Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "52e26a56-15c3-4454-9585-d4fb56f3eea5",
-            "type": "todo",
-            "filePath": "packages/service-core/test/services/amenity/amenity.helpers.test.ts",
-            "line": 8,
-            "title": "Test logic",
-            "createdAt": "2025-10-04T12:55:53.812Z",
-            "updatedAt": "2025-10-04T15:27:44.138Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "92f2c064-32cb-408a-a7b6-bf216499747c",
-            "type": "todo",
-            "filePath": "packages/service-core/test/services/amenity/amenity.normalizers.test.ts",
-            "line": 8,
-            "title": "Test logic",
-            "createdAt": "2025-10-04T12:55:54.501Z",
-            "updatedAt": "2025-10-04T14:29:45.188Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "010c5439-06c0-41aa-bb42-e0d4cd76e859",
-            "type": "todo",
-            "filePath": "packages/service-core/test/services/destination/getAccommodations.test.ts",
-            "line": 154,
-            "title": "If permission helper is mockable, add: expect(permissionHelpers.checkCanView).toHaveBeenCalledWith(input.actor, destination);",
-            "createdAt": "2025-10-04T12:55:55.203Z",
-            "updatedAt": "2025-10-07T03:10:57.847Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "83d1c0d0-3d49-488e-93af-3ec3ce6d6501",
-            "type": "todo",
-            "filePath": "packages/service-core/test/services/destination/getStats.test.ts",
-            "line": 131,
-            "title": "If permission helper is mockable, add: expect(permissionHelpers.checkCanView).toHaveBeenCalledWith(input.actor, destination);",
-            "createdAt": "2025-10-04T12:55:56.471Z",
-            "updatedAt": "2025-10-04T14:29:47.434Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "58db9346-15a4-4753-8b5f-2b09883d5cba",
-            "type": "todo",
-            "filePath": "packages/service-core/test/services/destination/getSummary.test.ts",
-            "line": 151,
-            "title": "If permission helper is mockable, add: expect(permissionHelpers.checkCanView).toHaveBeenCalledWith(input.actor, destination);",
-            "createdAt": "2025-10-04T12:55:57.617Z",
-            "updatedAt": "2025-10-04T15:27:48.288Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "96ec6f25-86ea-4410-9581-3e45095aa652",
-            "type": "todo",
-            "filePath": "packages/service-core/test/services/feature/feature.helpers.test.ts",
-            "line": 1,
-            "title": "Implement tests for all helpers in feature.helpers.ts, including slug generation and utility functions.",
-            "createdAt": "2025-10-04T12:55:58.460Z",
-            "updatedAt": "2025-10-04T14:29:49.674Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "36f9ceba-6e8b-4512-acbf-2a304b845cd6",
-            "type": "todo",
-            "filePath": "packages/service-core/test/services/feature/feature.permissions.test.ts",
-            "line": 1,
-            "title": "Implement tests for all permission check functions in feature.permissions.ts, covering all permission and error scenarios.",
-            "createdAt": "2025-10-04T12:55:59.353Z",
-            "updatedAt": "2025-10-07T03:24:35.331Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "6950f0a6-8d6d-443e-b612-56a1fb392934",
-            "type": "todo",
-            "filePath": "packages/service-core/test/services/user/user.helper.test.ts",
-            "line": 1,
-            "title": "Move all permission-related tests to user.permissions.test.ts. Move normalizer tests to user.normalizers.test.ts. Keep only non-permission, non-normalizer helpers here.",
-            "createdAt": "2025-10-04T12:56:00.041Z",
-            "updatedAt": "2025-10-04T14:29:53.840Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "66432d02-1576-4797-8cfe-9462af448b51",
-            "type": "todo",
-            "filePath": "packages/service-core/test/services/user/user.helper.test.ts",
-            "line": 3,
-            "title": "Add generateUserSlug tests here, moved from generateSlug.test.ts. Keep only non-permission, non-normalizer helpers.",
-            "createdAt": "2025-10-04T12:56:01.073Z",
-            "updatedAt": "2025-10-04T15:27:53.107Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "25316e6c-47a8-400c-a874-5f92a699f8a9",
-            "type": "todo",
-            "filePath": "packages/service-core/test/services/userBookmark/getByName.test.ts",
-            "line": 4,
-            "title": "UserBookmarkService does not implement getByName. If implemented, add tests here.",
-            "createdAt": "2025-10-04T12:56:03.612Z",
-            "updatedAt": "2025-10-04T12:56:03.612Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "866dddf3-c039-4a7d-89b9-74686ff8efce",
-            "type": "todo",
-            "filePath": "packages/service-core/test/services/userBookmark/getBySlug.test.ts",
-            "line": 4,
-            "title": "UserBookmarkService does not implement getBySlug method. If implemented, add tests here.",
-            "createdAt": "2025-10-04T12:56:04.481Z",
-            "updatedAt": "2025-10-04T12:56:04.481Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "69b6291a-203f-43bd-bb69-dc37828e70a9",
-            "type": "todo",
-            "filePath": "packages/db/src/schemas/catalog/pricingPlan.dbschema.ts",
-            "line": 62,
-            "title": "Add benefitListings relation when services schema is implemented",
-            "createdAt": "2025-10-23T22:05:20.876Z",
-            "updatedAt": "2025-10-23T22:05:20.877Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "4fcabfc9-aeb6-4701-b367-e50a9ef4cfba",
-            "type": "todo",
-            "filePath": "packages/schemas/src/entities/index.ts",
-            "line": 18,
-            "title": "Enable once migration from old payment model is complete",
-            "createdAt": "2025-10-25T12:33:58.011Z",
-            "updatedAt": "2025-10-25T12:33:58.011Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "8eda6b67-553c-4fed-bdf7-a9d369a33846",
-            "type": "todo",
-            "filePath": "packages/schemas/src/entities/index.ts",
-            "line": 23,
-            "title": "Enable once migration from old payment model is complete",
-            "createdAt": "2025-10-25T12:33:58.723Z",
-            "updatedAt": "2025-10-29T00:12:45.048Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "08efb1f9-8a95-4c87-bfe9-a2724b1bb4c5",
-            "type": "todo",
-            "filePath": "packages/schemas/src/entities/product/product.relations.schema.ts",
-            "line": 4,
-            "title": "These schemas will be imported from their respective packages when implemented",
-            "createdAt": "2025-10-25T12:34:01.278Z",
-            "updatedAt": "2025-10-25T12:34:01.278Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "23751a8c-f5c7-4c62-adab-7c4b7eacecdb",
-            "type": "todo",
-            "filePath": "packages/schemas/src/entities/purchase/purchase.relations.schema.ts",
-            "line": 47,
-            "title": "Add subscription items once SubscriptionItem schema is implemented",
-            "createdAt": "2025-10-25T12:34:05.552Z",
-            "updatedAt": "2025-10-25T12:34:05.552Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "744c868c-5387-405e-8996-acb47e90fa25",
-            "type": "todo",
-            "filePath": "packages/schemas/src/entities/purchase/purchase.relations.schema.ts",
-            "line": 62,
-            "title": "Add subscription items once SubscriptionItem schema is implemented",
-            "createdAt": "2025-10-25T12:34:08.728Z",
-            "updatedAt": "2025-10-25T12:34:08.728Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "04c4270d-d0a9-496a-9142-7237e8159fca",
-            "type": "todo",
-            "filePath": "packages/schemas/src/entities/subscription/subscription.relations.schema.ts",
-            "line": 47,
-            "title": "Add subscription items once SubscriptionItem schema is implemented",
-            "createdAt": "2025-10-25T12:34:10.870Z",
-            "updatedAt": "2025-10-25T12:34:10.870Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "ca06120a-c832-4106-aca9-a25eb7caa3a2",
-            "type": "todo",
-            "filePath": "packages/schemas/src/entities/subscription/subscription.relations.schema.ts",
-            "line": 62,
-            "title": "Add subscription items once SubscriptionItem schema is implemented",
-            "createdAt": "2025-10-25T12:34:11.632Z",
-            "updatedAt": "2025-10-25T12:35:14.342Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "47e95c2d-82a1-4509-8998-587c84ef4c85",
-            "type": "todo",
-            "filePath": "packages/schemas/src/entities/subscriptionItem/subscriptionItem.relations.schema.ts",
-            "line": 53,
-            "title": "This will be extended once all target entity schemas are implemented",
-            "createdAt": "2025-10-25T12:34:12.694Z",
-            "updatedAt": "2025-10-25T12:35:17.981Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "f08ef1dc-75de-4274-b130-2d0336c0c2ba",
-            "type": "todo",
-            "filePath": "packages/schemas/src/entities/subscriptionItem/subscriptionItem.relations.schema.ts",
-            "line": 74,
-            "title": "Polymorphic target entity once all schemas are implemented",
-            "createdAt": "2025-10-25T12:34:13.483Z",
-            "updatedAt": "2025-10-25T12:35:21.139Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "952d6d53-87a5-47ed-a51d-b01b2fa4dd35",
-            "type": "todo",
-            "filePath": "packages/db/src/models/client/client.model.ts",
-            "line": 105,
-            "title": "Implement when invoice tables are available",
-            "createdAt": "2025-10-29T00:12:12.591Z",
-            "updatedAt": "2025-10-29T00:12:12.592Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "744fa45c-f98f-443c-a271-9541ed649d17",
-            "type": "todo",
-            "filePath": "packages/db/src/models/client/client.model.ts",
-            "line": 127,
-            "title": "Implement when subscription tables are available",
-            "createdAt": "2025-10-29T00:12:17.814Z",
-            "updatedAt": "2025-10-29T00:12:17.814Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "63beffc9-f88e-46f5-a04d-57ae3c350fff",
-            "type": "todo",
-            "filePath": "packages/db/src/models/client/client.model.ts",
-            "line": 142,
-            "title": "Implement when subscription tables are available",
-            "createdAt": "2025-10-29T00:12:20.021Z",
-            "updatedAt": "2025-10-29T00:12:20.021Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "33cc3a1b-a7d5-4d1d-9016-f52c527f57f2",
-            "type": "todo",
-            "filePath": "packages/db/src/models/client/client.model.ts",
-            "line": 150,
-            "title": "Implement when subscription tables are available",
-            "createdAt": "2025-10-29T00:12:27.462Z",
-            "updatedAt": "2025-10-29T00:12:27.462Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "0d518782-8da2-4dd7-87c2-28b7a17b34ea",
-            "type": "todo",
-            "filePath": "packages/db/src/models/client/client.model.ts",
-            "line": 158,
-            "title": "Implement when subscription tables are available",
-            "createdAt": "2025-10-29T00:12:31.854Z",
-            "updatedAt": "2025-10-29T00:12:31.854Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "dc9f225a-7c1a-455e-9928-ef3fec6f53ea",
-            "type": "todo",
-            "filePath": "packages/db/src/models/invoice/invoice.model.ts",
-            "line": 48,
-            "title": "Get actual pricing from subscription items and pricing plans",
-            "createdAt": "2025-10-29T00:12:32.861Z",
-            "updatedAt": "2025-10-29T00:12:32.861Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        },
-        {
-            "linearId": "b687ac52-2e54-487d-8d29-cd636e102075",
-            "type": "todo",
-            "filePath": "packages/db/src/models/invoice/payment.model.ts",
-            "line": 344,
-            "title": "Check if there are already refunds and calculate remaining refundable amount",
-            "createdAt": "2025-10-29T00:12:36.983Z",
-            "updatedAt": "2025-10-29T00:12:36.983Z",
-            "isOrphan": false,
-            "aiState": "COMPLETED",
-            "aiRetryCount": 0
-        }
-    ],
-    "lastSync": "2025-11-02T00:21:35.664Z"
+  "version": "1.0.0",
+  "records": [
+    {
+      "id": "track-950797dd-c7c5-4eec-97dd-9229a7b30b5c",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-615"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-04T23:59:55.999Z",
+      "updatedAt": "2025-11-04T23:59:55.999Z",
+      "taskSnapshot": {
+        "title": "PB-001: Infrastructure Setup",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1002,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1002",
+        "createdAt": "2025-11-04T23:59:55.999Z",
+        "updatedAt": "2025-11-04T23:59:55.999Z"
+      },
+      "lastSyncedAt": "2025-11-04T23:59:55.999Z"
+    },
+    {
+      "id": "track-ce24a6d3-036c-4e18-baf2-8b328f796496",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-616"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-04T23:59:56.740Z",
+      "updatedAt": "2025-11-04T23:59:56.741Z",
+      "taskSnapshot": {
+        "title": "PB-002: Main Portal",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1003,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1003",
+        "createdAt": "2025-11-04T23:59:56.741Z",
+        "updatedAt": "2025-11-04T23:59:56.741Z"
+      },
+      "lastSyncedAt": "2025-11-04T23:59:56.741Z"
+    },
+    {
+      "id": "track-808082cf-766b-41bc-8720-45f460f3a30d",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-617"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-04T23:59:57.182Z",
+      "updatedAt": "2025-11-04T23:59:57.182Z",
+      "taskSnapshot": {
+        "title": "PB-003: Getting Started (Prerequisites & Installation)",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1004,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1004",
+        "createdAt": "2025-11-04T23:59:57.182Z",
+        "updatedAt": "2025-11-04T23:59:57.182Z"
+      },
+      "lastSyncedAt": "2025-11-04T23:59:57.182Z"
+    },
+    {
+      "id": "track-58df1b29-6d8b-4f0c-94da-fbaed22a8105",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-618"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-04T23:59:57.658Z",
+      "updatedAt": "2025-11-04T23:59:57.658Z",
+      "taskSnapshot": {
+        "title": "PB-004: Getting Started (Dev Environment & First Contribution)",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1005,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1005",
+        "createdAt": "2025-11-04T23:59:57.658Z",
+        "updatedAt": "2025-11-04T23:59:57.658Z"
+      },
+      "lastSyncedAt": "2025-11-04T23:59:57.658Z"
+    },
+    {
+      "id": "track-2ebdd8d3-76ff-4c26-8452-dc0e416d7577",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-619"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-04T23:59:58.085Z",
+      "updatedAt": "2025-11-04T23:59:58.085Z",
+      "taskSnapshot": {
+        "title": "PB-005: Architecture (Overview & Monorepo)",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1006,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1006",
+        "createdAt": "2025-11-04T23:59:58.085Z",
+        "updatedAt": "2025-11-04T23:59:58.085Z"
+      },
+      "lastSyncedAt": "2025-11-04T23:59:58.085Z"
+    },
+    {
+      "id": "track-7418e607-b094-4af8-852d-feb7173f5821",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-620"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-04T23:59:58.512Z",
+      "updatedAt": "2025-11-04T23:59:58.512Z",
+      "taskSnapshot": {
+        "title": "PB-006: Architecture (Data Flow & Patterns)",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1007,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1007",
+        "createdAt": "2025-11-04T23:59:58.512Z",
+        "updatedAt": "2025-11-04T23:59:58.512Z"
+      },
+      "lastSyncedAt": "2025-11-04T23:59:58.512Z"
+    },
+    {
+      "id": "track-db653e6a-d401-4de5-9eaf-3bc430a6731b",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-621"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-04T23:59:58.992Z",
+      "updatedAt": "2025-11-04T23:59:58.992Z",
+      "taskSnapshot": {
+        "title": "PB-007: End-to-End Tutorial",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1008,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1008",
+        "createdAt": "2025-11-04T23:59:58.992Z",
+        "updatedAt": "2025-11-04T23:59:58.992Z"
+      },
+      "lastSyncedAt": "2025-11-04T23:59:58.992Z"
+    },
+    {
+      "id": "track-df5f21a6-0762-4fa7-87c5-277da3904c3a",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-622"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-04T23:59:59.612Z",
+      "updatedAt": "2025-11-04T23:59:59.612Z",
+      "taskSnapshot": {
+        "title": "PB-008: App Quick Entry Points",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1009,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1009",
+        "createdAt": "2025-11-04T23:59:59.612Z",
+        "updatedAt": "2025-11-04T23:59:59.612Z"
+      },
+      "lastSyncedAt": "2025-11-04T23:59:59.612Z"
+    },
+    {
+      "id": "track-676ad91c-2419-4e58-bcc0-5c7a91de4cf7",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-623"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-04T23:59:59.996Z",
+      "updatedAt": "2025-11-04T23:59:59.996Z",
+      "taskSnapshot": {
+        "title": "PB-009: API Portal & Setup",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1010,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1010",
+        "createdAt": "2025-11-04T23:59:59.996Z",
+        "updatedAt": "2025-11-04T23:59:59.996Z"
+      },
+      "lastSyncedAt": "2025-11-04T23:59:59.996Z"
+    },
+    {
+      "id": "track-96c0c9c1-e649-484b-aa0d-eeb9470143ef",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-624"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-05T00:00:00.401Z",
+      "updatedAt": "2025-11-05T00:00:00.401Z",
+      "taskSnapshot": {
+        "title": "PB-010: API Usage Guides",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1011,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1011",
+        "createdAt": "2025-11-05T00:00:00.401Z",
+        "updatedAt": "2025-11-05T00:00:00.401Z"
+      },
+      "lastSyncedAt": "2025-11-05T00:00:00.401Z"
+    },
+    {
+      "id": "track-c321d8c0-5c6d-46dc-9add-450b5a881c8d",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-625"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-05T00:00:00.956Z",
+      "updatedAt": "2025-11-05T00:00:00.956Z",
+      "taskSnapshot": {
+        "title": "PB-011: API Dev Guides (Part 1)",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1012,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1012",
+        "createdAt": "2025-11-05T00:00:00.956Z",
+        "updatedAt": "2025-11-05T00:00:00.956Z"
+      },
+      "lastSyncedAt": "2025-11-05T00:00:00.956Z"
+    },
+    {
+      "id": "track-958a7584-5991-4e47-a091-20e5e3fcc4d3",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-626"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-05T00:00:01.404Z",
+      "updatedAt": "2025-11-05T00:00:01.404Z",
+      "taskSnapshot": {
+        "title": "PB-012: API Dev Guides (Part 2) & Examples",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1013,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1013",
+        "createdAt": "2025-11-05T00:00:01.404Z",
+        "updatedAt": "2025-11-05T00:00:01.404Z"
+      },
+      "lastSyncedAt": "2025-11-05T00:00:01.404Z"
+    },
+    {
+      "id": "track-d3eb814c-f8f1-46ac-8ddf-26a756fcee91",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-627"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-05T00:00:01.866Z",
+      "updatedAt": "2025-11-05T00:00:01.866Z",
+      "taskSnapshot": {
+        "title": "PB-013: Web Portal & Setup",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1014,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1014",
+        "createdAt": "2025-11-05T00:00:01.866Z",
+        "updatedAt": "2025-11-05T00:00:01.866Z"
+      },
+      "lastSyncedAt": "2025-11-05T00:00:01.866Z"
+    },
+    {
+      "id": "track-3111824e-897c-4ae5-bef7-7e262b249e43",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-628"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-05T00:00:02.697Z",
+      "updatedAt": "2025-11-05T00:00:02.697Z",
+      "taskSnapshot": {
+        "title": "PB-014: Web Usage Guides",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1015,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1015",
+        "createdAt": "2025-11-05T00:00:02.697Z",
+        "updatedAt": "2025-11-05T00:00:02.697Z"
+      },
+      "lastSyncedAt": "2025-11-05T00:00:02.697Z"
+    },
+    {
+      "id": "track-c1b57cb6-d5b1-41d8-af23-852b8a9b3272",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-629"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-05T00:00:03.329Z",
+      "updatedAt": "2025-11-05T00:00:03.329Z",
+      "taskSnapshot": {
+        "title": "PB-015: Web Dev Guides (Part 1)",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1016,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1016",
+        "createdAt": "2025-11-05T00:00:03.329Z",
+        "updatedAt": "2025-11-05T00:00:03.329Z"
+      },
+      "lastSyncedAt": "2025-11-05T00:00:03.329Z"
+    },
+    {
+      "id": "track-205167d0-d386-494a-aade-307da1853ce4",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-630"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-05T00:00:03.873Z",
+      "updatedAt": "2025-11-05T00:00:03.873Z",
+      "taskSnapshot": {
+        "title": "PB-016: Web Dev Guides (Part 2) & Examples",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1017,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1017",
+        "createdAt": "2025-11-05T00:00:03.873Z",
+        "updatedAt": "2025-11-05T00:00:03.873Z"
+      },
+      "lastSyncedAt": "2025-11-05T00:00:03.873Z"
+    },
+    {
+      "id": "track-5b0d921a-ea27-45ea-8f81-48fa7bce53d8",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-631"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-05T00:00:04.313Z",
+      "updatedAt": "2025-11-05T00:00:04.313Z",
+      "taskSnapshot": {
+        "title": "PB-017: Admin Portal & Setup",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1018,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1018",
+        "createdAt": "2025-11-05T00:00:04.313Z",
+        "updatedAt": "2025-11-05T00:00:04.313Z"
+      },
+      "lastSyncedAt": "2025-11-05T00:00:04.313Z"
+    },
+    {
+      "id": "track-02b939bc-0d11-458e-9575-eb1a3b10dd35",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-632"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-05T00:00:04.835Z",
+      "updatedAt": "2025-11-05T00:00:04.835Z",
+      "taskSnapshot": {
+        "title": "PB-018: Admin Usage Guides",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1019,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1019",
+        "createdAt": "2025-11-05T00:00:04.835Z",
+        "updatedAt": "2025-11-05T00:00:04.835Z"
+      },
+      "lastSyncedAt": "2025-11-05T00:00:04.835Z"
+    },
+    {
+      "id": "track-c6d3c289-b1c8-4074-86be-b3b12b17041f",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-633"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-05T00:00:05.911Z",
+      "updatedAt": "2025-11-05T00:00:05.911Z",
+      "taskSnapshot": {
+        "title": "PB-019: Admin Dev Guides (Part 1)",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1020,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1020",
+        "createdAt": "2025-11-05T00:00:05.911Z",
+        "updatedAt": "2025-11-05T00:00:05.911Z"
+      },
+      "lastSyncedAt": "2025-11-05T00:00:05.911Z"
+    },
+    {
+      "id": "track-72e03eda-7d71-4ad0-85c1-114fea4da02b",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-634"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-05T00:00:06.365Z",
+      "updatedAt": "2025-11-05T00:00:06.365Z",
+      "taskSnapshot": {
+        "title": "PB-020: Admin Dev Guides (Part 2) & Examples",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1021,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1021",
+        "createdAt": "2025-11-05T00:00:06.365Z",
+        "updatedAt": "2025-11-05T00:00:06.365Z"
+      },
+      "lastSyncedAt": "2025-11-05T00:00:06.365Z"
+    },
+    {
+      "id": "track-a33d76e1-824c-443d-8b7c-253aa3605ba8",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-635"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-05T00:00:06.828Z",
+      "updatedAt": "2025-11-05T00:00:06.828Z",
+      "taskSnapshot": {
+        "title": "PB-021: service-core Portal & Quick Start",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1022,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1022",
+        "createdAt": "2025-11-05T00:00:06.828Z",
+        "updatedAt": "2025-11-05T00:00:06.828Z"
+      },
+      "lastSyncedAt": "2025-11-05T00:00:06.828Z"
+    },
+    {
+      "id": "track-191fd157-1a15-4391-8a1f-39ff12870958",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-636"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-05T00:00:07.264Z",
+      "updatedAt": "2025-11-05T00:00:07.264Z",
+      "taskSnapshot": {
+        "title": "PB-022: service-core API Reference",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1023,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1023",
+        "createdAt": "2025-11-05T00:00:07.264Z",
+        "updatedAt": "2025-11-05T00:00:07.264Z"
+      },
+      "lastSyncedAt": "2025-11-05T00:00:07.264Z"
+    },
+    {
+      "id": "track-ca5b9911-dd2f-4323-bee3-7a18b70fa7b7",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-637"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-05T00:00:08.347Z",
+      "updatedAt": "2025-11-05T00:00:08.347Z",
+      "taskSnapshot": {
+        "title": "PB-023: service-core Dev Guides & Examples",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1024,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1024",
+        "createdAt": "2025-11-05T00:00:08.347Z",
+        "updatedAt": "2025-11-05T00:00:08.347Z"
+      },
+      "lastSyncedAt": "2025-11-05T00:00:08.347Z"
+    },
+    {
+      "id": "track-2c0266f4-845c-4818-a5ef-985f6b00769f",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-638"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-05T00:00:08.786Z",
+      "updatedAt": "2025-11-05T00:00:08.786Z",
+      "taskSnapshot": {
+        "title": "PB-024: db Portal & Quick Start",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1025,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1025",
+        "createdAt": "2025-11-05T00:00:08.786Z",
+        "updatedAt": "2025-11-05T00:00:08.786Z"
+      },
+      "lastSyncedAt": "2025-11-05T00:00:08.786Z"
+    },
+    {
+      "id": "track-9ae40e4b-b149-45ca-9b93-073543d84e2c",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-639"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-05T00:00:09.272Z",
+      "updatedAt": "2025-11-05T00:00:09.272Z",
+      "taskSnapshot": {
+        "title": "PB-025: db API Reference",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1026,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1026",
+        "createdAt": "2025-11-05T00:00:09.272Z",
+        "updatedAt": "2025-11-05T00:00:09.272Z"
+      },
+      "lastSyncedAt": "2025-11-05T00:00:09.272Z"
+    },
+    {
+      "id": "track-9d8f3dad-b22e-4c03-80ff-93f3da78b6ac",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-640"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-05T00:00:09.725Z",
+      "updatedAt": "2025-11-05T00:00:09.725Z",
+      "taskSnapshot": {
+        "title": "PB-026: db Dev Guides & Examples",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1027,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1027",
+        "createdAt": "2025-11-05T00:00:09.725Z",
+        "updatedAt": "2025-11-05T00:00:09.725Z"
+      },
+      "lastSyncedAt": "2025-11-05T00:00:09.725Z"
+    },
+    {
+      "id": "track-6421b994-46ba-4630-936d-e29aada5c944",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-641"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-05T00:00:10.472Z",
+      "updatedAt": "2025-11-05T00:00:10.472Z",
+      "taskSnapshot": {
+        "title": "PB-027: schemas Portal & API Reference",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1028,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1028",
+        "createdAt": "2025-11-05T00:00:10.472Z",
+        "updatedAt": "2025-11-05T00:00:10.472Z"
+      },
+      "lastSyncedAt": "2025-11-05T00:00:10.472Z"
+    },
+    {
+      "id": "track-3f6fb249-fb3a-40c2-89d1-e21aa8377abc",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-642"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-05T00:00:10.972Z",
+      "updatedAt": "2025-11-05T00:00:10.972Z",
+      "taskSnapshot": {
+        "title": "PB-028: schemas Dev Guides & Examples",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1029,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1029",
+        "createdAt": "2025-11-05T00:00:10.972Z",
+        "updatedAt": "2025-11-05T00:00:10.972Z"
+      },
+      "lastSyncedAt": "2025-11-05T00:00:10.972Z"
+    },
+    {
+      "id": "track-3adc76d9-592f-4d16-9e13-8e0e27520cb6",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-643"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-05T00:00:11.375Z",
+      "updatedAt": "2025-11-05T00:00:11.375Z",
+      "taskSnapshot": {
+        "title": "PB-029: config Complete Documentation",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1030,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1030",
+        "createdAt": "2025-11-05T00:00:11.375Z",
+        "updatedAt": "2025-11-05T00:00:11.375Z"
+      },
+      "lastSyncedAt": "2025-11-05T00:00:11.375Z"
+    },
+    {
+      "id": "track-19ab2498-c356-4f60-bb33-b0f2940af7e6",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-644"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-05T00:00:11.816Z",
+      "updatedAt": "2025-11-05T00:00:11.816Z",
+      "taskSnapshot": {
+        "title": "PB-030: logger Complete Documentation",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1031,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1031",
+        "createdAt": "2025-11-05T00:00:11.816Z",
+        "updatedAt": "2025-11-05T00:00:11.816Z"
+      },
+      "lastSyncedAt": "2025-11-05T00:00:11.816Z"
+    },
+    {
+      "id": "track-977cf271-b6f0-4358-9dec-89ddd4f7c8a6",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-645"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-05T00:00:12.269Z",
+      "updatedAt": "2025-11-05T00:00:12.269Z",
+      "taskSnapshot": {
+        "title": "PB-031: icons Complete Documentation",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1032,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1032",
+        "createdAt": "2025-11-05T00:00:12.269Z",
+        "updatedAt": "2025-11-05T00:00:12.269Z"
+      },
+      "lastSyncedAt": "2025-11-05T00:00:12.269Z"
+    },
+    {
+      "id": "track-d104c8c5-37d4-4c9a-aaf1-ea45c823ff08",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-646"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-05T00:00:12.986Z",
+      "updatedAt": "2025-11-05T00:00:12.986Z",
+      "taskSnapshot": {
+        "title": "PB-032: seed Complete Documentation",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1033,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1033",
+        "createdAt": "2025-11-05T00:00:12.986Z",
+        "updatedAt": "2025-11-05T00:00:12.986Z"
+      },
+      "lastSyncedAt": "2025-11-05T00:00:12.986Z"
+    },
+    {
+      "id": "track-5405e95c-03a6-46ec-b1e9-8dcae4769fc4",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-647"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-05T00:00:13.727Z",
+      "updatedAt": "2025-11-05T00:00:13.727Z",
+      "taskSnapshot": {
+        "title": "PB-033: Deployment (Overview & Environments)",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1034,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1034",
+        "createdAt": "2025-11-05T00:00:13.727Z",
+        "updatedAt": "2025-11-05T00:00:13.727Z"
+      },
+      "lastSyncedAt": "2025-11-05T00:00:13.727Z"
+    },
+    {
+      "id": "track-c3c74164-71bf-4160-a9d0-a2aeb2d73c39",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-648"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-05T00:00:14.328Z",
+      "updatedAt": "2025-11-05T00:00:14.328Z",
+      "taskSnapshot": {
+        "title": "PB-034: Deployment (Apps & Database)",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1035,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1035",
+        "createdAt": "2025-11-05T00:00:14.328Z",
+        "updatedAt": "2025-11-05T00:00:14.328Z"
+      },
+      "lastSyncedAt": "2025-11-05T00:00:14.328Z"
+    },
+    {
+      "id": "track-33e83c00-9170-4a28-9961-fb4e85c16c2f",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-649"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-05T00:00:14.774Z",
+      "updatedAt": "2025-11-05T00:00:14.774Z",
+      "taskSnapshot": {
+        "title": "PB-035: Deployment (CI/CD)",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1036,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1036",
+        "createdAt": "2025-11-05T00:00:14.774Z",
+        "updatedAt": "2025-11-05T00:00:14.774Z"
+      },
+      "lastSyncedAt": "2025-11-05T00:00:14.774Z"
+    },
+    {
+      "id": "track-e0f75899-8b0f-4315-8e20-197bf41bbc91",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-650"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-05T00:00:15.230Z",
+      "updatedAt": "2025-11-05T00:00:15.230Z",
+      "taskSnapshot": {
+        "title": "PB-036: Security Documentation",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1037,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1037",
+        "createdAt": "2025-11-05T00:00:15.230Z",
+        "updatedAt": "2025-11-05T00:00:15.230Z"
+      },
+      "lastSyncedAt": "2025-11-05T00:00:15.230Z"
+    },
+    {
+      "id": "track-7b72dd62-03a9-46c9-a378-dfd1bfae076a",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-651"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-05T00:00:15.649Z",
+      "updatedAt": "2025-11-05T00:00:15.649Z",
+      "taskSnapshot": {
+        "title": "PB-037: Performance Documentation",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1038,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1038",
+        "createdAt": "2025-11-05T00:00:15.649Z",
+        "updatedAt": "2025-11-05T00:00:15.649Z"
+      },
+      "lastSyncedAt": "2025-11-05T00:00:15.649Z"
+    },
+    {
+      "id": "track-0224cc8e-111e-44b8-94d6-6fb272fc9a03",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-652"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-05T00:00:16.106Z",
+      "updatedAt": "2025-11-05T00:00:16.106Z",
+      "taskSnapshot": {
+        "title": "PB-038: Testing Documentation",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1039,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1039",
+        "createdAt": "2025-11-05T00:00:16.106Z",
+        "updatedAt": "2025-11-05T00:00:16.106Z"
+      },
+      "lastSyncedAt": "2025-11-05T00:00:16.106Z"
+    },
+    {
+      "id": "track-221ca3f5-341f-46f2-8e22-1098fba14bd1",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-653"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-05T00:00:16.670Z",
+      "updatedAt": "2025-11-05T00:00:16.670Z",
+      "taskSnapshot": {
+        "title": "PB-039: Claude Code Documentation",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1040,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1040",
+        "createdAt": "2025-11-05T00:00:16.670Z",
+        "updatedAt": "2025-11-05T00:00:16.670Z"
+      },
+      "lastSyncedAt": "2025-11-05T00:00:16.670Z"
+    },
+    {
+      "id": "track-fa14de1a-49aa-4dec-ada6-82e0b9aa3787",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-654"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-05T00:00:17.125Z",
+      "updatedAt": "2025-11-05T00:00:17.125Z",
+      "taskSnapshot": {
+        "title": "PB-040: Runbooks Documentation",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1041,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1041",
+        "createdAt": "2025-11-05T00:00:17.125Z",
+        "updatedAt": "2025-11-05T00:00:17.125Z"
+      },
+      "lastSyncedAt": "2025-11-05T00:00:17.125Z"
+    },
+    {
+      "id": "track-0fc14fe1-71ae-4c82-b24d-a1fde04a3081",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-655"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-05T00:00:17.698Z",
+      "updatedAt": "2025-11-05T00:00:17.698Z",
+      "taskSnapshot": {
+        "title": "PB-041: Contributing Documentation",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1042,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1042",
+        "createdAt": "2025-11-05T00:00:17.698Z",
+        "updatedAt": "2025-11-05T00:00:17.698Z"
+      },
+      "lastSyncedAt": "2025-11-05T00:00:17.698Z"
+    },
+    {
+      "id": "track-7f29b8ac-13f5-43d9-aa0c-d7520c251abd",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-656"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-05T00:00:18.304Z",
+      "updatedAt": "2025-11-05T00:00:18.304Z",
+      "taskSnapshot": {
+        "title": "PB-042: Other Packages (Batch 1)",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1043,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1043",
+        "createdAt": "2025-11-05T00:00:18.304Z",
+        "updatedAt": "2025-11-05T00:00:18.304Z"
+      },
+      "lastSyncedAt": "2025-11-05T00:00:18.304Z"
+    },
+    {
+      "id": "track-2f8fab0e-54cc-404b-b47b-ea6d589b9b1f",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-657"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-05T00:00:18.763Z",
+      "updatedAt": "2025-11-05T00:00:18.763Z",
+      "taskSnapshot": {
+        "title": "PB-043: Other Packages (Batch 2)",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1044,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1044",
+        "createdAt": "2025-11-05T00:00:18.763Z",
+        "updatedAt": "2025-11-05T00:00:18.763Z"
+      },
+      "lastSyncedAt": "2025-11-05T00:00:18.763Z"
+    },
+    {
+      "id": "track-fc402327-4e22-438e-a6e6-56402e3dd008",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-658"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-05T00:00:19.199Z",
+      "updatedAt": "2025-11-05T00:00:19.199Z",
+      "taskSnapshot": {
+        "title": "PB-044: Other Packages (Remaining)",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1045,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1045",
+        "createdAt": "2025-11-05T00:00:19.199Z",
+        "updatedAt": "2025-11-05T00:00:19.199Z"
+      },
+      "lastSyncedAt": "2025-11-05T00:00:19.199Z"
+    },
+    {
+      "id": "track-3919f955-50a7-4da7-9ce5-daf4ee68ec07",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-659"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-05T00:00:19.647Z",
+      "updatedAt": "2025-11-05T00:00:19.647Z",
+      "taskSnapshot": {
+        "title": "PB-045: Cross-cutting Guides (Batch 1)",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1046,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1046",
+        "createdAt": "2025-11-05T00:00:19.647Z",
+        "updatedAt": "2025-11-05T00:00:19.647Z"
+      },
+      "lastSyncedAt": "2025-11-05T00:00:19.647Z"
+    },
+    {
+      "id": "track-993d1acf-65ad-4f71-931d-1b11c7bfafdc",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-660"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-05T00:00:20.045Z",
+      "updatedAt": "2025-11-05T00:00:20.045Z",
+      "taskSnapshot": {
+        "title": "PB-046: Cross-cutting Guides (Batch 2)",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1047,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1047",
+        "createdAt": "2025-11-05T00:00:20.045Z",
+        "updatedAt": "2025-11-05T00:00:20.045Z"
+      },
+      "lastSyncedAt": "2025-11-05T00:00:20.045Z"
+    },
+    {
+      "id": "track-f7eb2a07-8c40-470f-bbe2-c66b2538df32",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-661"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-05T00:00:20.565Z",
+      "updatedAt": "2025-11-05T00:00:20.565Z",
+      "taskSnapshot": {
+        "title": "PB-047: Resources Documentation",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1048,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1048",
+        "createdAt": "2025-11-05T00:00:20.565Z",
+        "updatedAt": "2025-11-05T00:00:20.565Z"
+      },
+      "lastSyncedAt": "2025-11-05T00:00:20.565Z"
+    },
+    {
+      "id": "track-03322487-1870-4e69-8ec9-ac96787e1829",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-662"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-05T00:00:21.001Z",
+      "updatedAt": "2025-11-05T00:00:21.001Z",
+      "taskSnapshot": {
+        "title": "PB-048: Mermaid Diagrams (Batch 1)",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1049,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1049",
+        "createdAt": "2025-11-05T00:00:21.001Z",
+        "updatedAt": "2025-11-05T00:00:21.001Z"
+      },
+      "lastSyncedAt": "2025-11-05T00:00:21.001Z"
+    },
+    {
+      "id": "track-5ce2f01e-d9b1-4118-8cd8-b4d6a0a296bf",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-663"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-05T00:00:21.625Z",
+      "updatedAt": "2025-11-05T00:00:21.625Z",
+      "taskSnapshot": {
+        "title": "PB-049: Mermaid Diagrams (Batch 2)",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1050,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1050",
+        "createdAt": "2025-11-05T00:00:21.625Z",
+        "updatedAt": "2025-11-05T00:00:21.625Z"
+      },
+      "lastSyncedAt": "2025-11-05T00:00:21.625Z"
+    },
+    {
+      "id": "track-1bb676d2-4ad9-4ac6-b16b-1de1d70235f2",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-664"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-05T00:00:22.052Z",
+      "updatedAt": "2025-11-05T00:00:22.052Z",
+      "taskSnapshot": {
+        "title": "PB-050: Examples Repository",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1051,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1051",
+        "createdAt": "2025-11-05T00:00:22.052Z",
+        "updatedAt": "2025-11-05T00:00:22.052Z"
+      },
+      "lastSyncedAt": "2025-11-05T00:00:22.052Z"
+    },
+    {
+      "id": "track-af90f5c4-cabc-43ba-bf04-af870afaec3e",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-665"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-05T00:00:22.503Z",
+      "updatedAt": "2025-11-05T00:00:22.503Z",
+      "taskSnapshot": {
+        "title": "PB-051: Final Review & Quality Check",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1052,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1052",
+        "createdAt": "2025-11-05T00:00:22.503Z",
+        "updatedAt": "2025-11-05T00:00:22.503Z"
+      },
+      "lastSyncedAt": "2025-11-05T00:00:22.503Z"
+    },
+    {
+      "id": "track-a7faffb5-584b-4e50-97b8-e5e591060a86",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-666"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-05T00:00:23.002Z",
+      "updatedAt": "2025-11-05T00:00:23.003Z",
+      "taskSnapshot": {
+        "title": "PB-052: User Testing & Iteration",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1053,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1053",
+        "createdAt": "2025-11-05T00:00:23.003Z",
+        "updatedAt": "2025-11-05T00:00:23.003Z"
+      },
+      "lastSyncedAt": "2025-11-05T00:00:23.003Z"
+    },
+    {
+      "id": "track-164d99e9-7992-4c5e-bbf5-4b8dce625eb0",
+      "type": "planning-task",
+      "source": {
+        "sessionId": "P-002",
+        "taskId": "task-667"
+      },
+      "status": "synced",
+      "syncAttempts": 1,
+      "createdAt": "2025-11-05T00:00:23.491Z",
+      "updatedAt": "2025-11-05T00:00:23.491Z",
+      "taskSnapshot": {
+        "title": "PB-053: Documentation Completion & Celebration",
+        "status": "pending"
+      },
+      "github": {
+        "issueNumber": 1054,
+        "issueUrl": "https://github.com/qazuor/hospeda/issues/1054",
+        "createdAt": "2025-11-05T00:00:23.491Z",
+        "updatedAt": "2025-11-05T00:00:23.491Z"
+      },
+      "lastSyncedAt": "2025-11-05T00:00:23.491Z"
+    }
+  ],
+  "metadata": {
+    "lastSync": "2025-11-05T00:00:23.494Z",
+    "totalRecords": 53,
+    "byStatus": {
+      "pending": 0,
+      "synced": 53,
+      "updated": 0,
+      "failed": 0
+    }
+  }
 }

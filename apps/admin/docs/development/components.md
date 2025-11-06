@@ -63,7 +63,7 @@ export function MyComponent() {
 
 ### Form Components
 
-**Button**
+#### Button
 
 ```tsx
 import { Button } from '@/components/ui/button';
@@ -89,7 +89,7 @@ import { Button } from '@/components/ui/button';
 - `destructive` - Danger/delete actions
 - `link` - Link-styled button
 
-**Input**
+#### Input
 
 ```tsx
 import { Input } from '@/components/ui/input';
@@ -115,7 +115,7 @@ import { Label } from '@/components/ui/label';
 <p className="text-red-600 text-sm">This field is required</p>
 ```
 
-**Textarea**
+#### Textarea
 
 ```tsx
 import { Textarea } from '@/components/ui/textarea';
@@ -128,7 +128,7 @@ import { Textarea } from '@/components/ui/textarea';
 />
 ```
 
-**Select**
+#### Select
 
 ```tsx
 import {
@@ -151,7 +151,7 @@ import {
 </Select>
 ```
 
-**Checkbox**
+#### Checkbox
 
 ```tsx
 import { Checkbox } from '@/components/ui/checkbox';
@@ -167,7 +167,7 @@ import { Label } from '@/components/ui/label';
 </div>
 ```
 
-**Radio Group**
+#### Radio Group
 
 ```tsx
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -185,7 +185,7 @@ import { Label } from '@/components/ui/label';
 </RadioGroup>
 ```
 
-**Switch**
+#### Switch
 
 ```tsx
 import { Switch } from '@/components/ui/switch';
@@ -203,7 +203,7 @@ import { Label } from '@/components/ui/label';
 
 ### Data Display
 
-**Card**
+#### Card
 
 ```tsx
 import {
@@ -229,7 +229,7 @@ import {
 </Card>
 ```
 
-**Badge**
+#### Badge
 
 ```tsx
 import { Badge } from '@/components/ui/badge';
@@ -240,7 +240,7 @@ import { Badge } from '@/components/ui/badge';
 <Badge variant="outline">Draft</Badge>
 ```
 
-**Avatar**
+#### Avatar
 
 ```tsx
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -251,7 +251,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 </Avatar>
 ```
 
-**Table**
+#### Table
 
 ```tsx
 import {
@@ -285,7 +285,7 @@ import {
 
 ### Feedback
 
-**Alert**
+#### Alert
 
 ```tsx
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -310,7 +310,7 @@ import { AlertCircle, CheckCircle2, Info } from 'lucide-react';
 </Alert>
 ```
 
-**Toast**
+#### Toast
 
 ```tsx
 import { useToast } from '@/hooks/use-toast';
@@ -358,7 +358,7 @@ toast({
 });
 ```
 
-**Dialog**
+#### Dialog
 
 ```tsx
 import {
@@ -395,7 +395,7 @@ import {
 </Dialog>
 ```
 
-**Dropdown Menu**
+#### Dropdown Menu
 
 ```tsx
 import {
@@ -433,7 +433,7 @@ import { MoreHorizontal } from 'lucide-react';
 </DropdownMenu>
 ```
 
-**Popover**
+#### Popover
 
 ```tsx
 import {
@@ -459,7 +459,7 @@ import {
 
 ### Navigation
 
-**Tabs**
+#### Tabs
 
 ```tsx
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -482,7 +482,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 </Tabs>
 ```
 
-**Breadcrumb**
+#### Breadcrumb
 
 ```tsx
 import {
@@ -513,7 +513,7 @@ import {
 </Breadcrumb>
 ```
 
-**Pagination**
+#### Pagination
 
 ```tsx
 import {

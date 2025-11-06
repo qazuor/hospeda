@@ -28,7 +28,7 @@ This document provides comprehensive documentation of all available schemas, org
 
 User entity represents platform users (guests, hosts, admins, moderators).
 
-#### Base Schema
+#### User Base Schema
 
 ```typescript
 import { UserSchema, type User } from '@repo/schemas';
@@ -55,13 +55,14 @@ import { UserSchema, type User } from '@repo/schemas';
 | `deletedAt` | `Date` | No | Soft delete timestamp | Nullable |
 
 **Base fields included:**
+
 - `BaseAuditFields`: `createdAt`, `updatedAt`, `deletedAt`, `createdBy`, `updatedBy`
 - `BaseLifecycleFields`: `lifecycleState`, `publishedAt`, `archivedAt`
 - `BaseContactFields`: `email`, `phone`
 - `FullLocationFields`: Address and coordinates
 - `SocialNetworkFields`: Social media links
 
-#### CRUD Schemas
+#### User CRUD Schemas
 
 **Create:**
 
@@ -101,7 +102,7 @@ const deleteData: UserDeleteInput = {
 };
 ```
 
-#### Query Schemas
+#### User Query Schemas
 
 **Search:**
 
@@ -148,7 +149,7 @@ import {
 
 Accommodation entity represents lodging places (hotels, apartments, hostels, etc.).
 
-#### Base Schema
+#### Accommodation Base Schema
 
 ```typescript
 import { AccommodationSchema, type Accommodation } from '@repo/schemas';
@@ -188,15 +189,16 @@ import { AccommodationSchema, type Accommodation } from '@repo/schemas';
 | `isFeatured` | `boolean` | Yes | Featured status | Default false |
 
 **Additional nested schemas:**
+
 - `AccommodationPriceSchema`: Detailed pricing with fees and discounts
 - `AccommodationFaqSchema`: FAQ entries
 - `AccommodationIaDataSchema`: AI-generated data
 
-#### CRUD Schemas
+#### Accommodation CRUD Schemas
 
 Similar pattern to User (create omits system fields, update is partial).
 
-#### Query Schemas
+#### Accommodation Query Schemas
 
 **Search with Filters:**
 
@@ -229,7 +231,7 @@ const searchParams: AccommodationSearchInput = {
 
 Destination entity represents cities/regions featured on the platform.
 
-#### Base Schema
+#### Destination Base Schema
 
 ```typescript
 import { DestinationSchema, type Destination } from '@repo/schemas';
@@ -245,7 +247,7 @@ import { DestinationSchema, type Destination } from '@repo/schemas';
 - `isFeatured`, `isPopular`
 - Images, videos, and media
 
-#### Query Schemas
+#### Destination Query Schemas
 
 **Popular Destinations:**
 
@@ -263,7 +265,7 @@ const popularParams = {
 
 Post entity represents blog posts and articles about destinations and tourism.
 
-#### Base Schema
+#### Post Base Schema
 
 ```typescript
 import { PostSchema, type Post } from '@repo/schemas';
@@ -300,7 +302,7 @@ import { PostSchema, type Post } from '@repo/schemas';
 
 Event entity represents tourism events (festivals, concerts, exhibitions, etc.).
 
-#### Base Schema
+#### Event Base Schema
 
 ```typescript
 import { EventSchema, type Event } from '@repo/schemas';
@@ -337,7 +339,7 @@ import { EventSchema, type Event } from '@repo/schemas';
 
 Product entity represents sellable items (listings, ads, premium features).
 
-#### Base Schema
+#### Product Base Schema
 
 ```typescript
 import { ProductSchema, type Product } from '@repo/schemas';
@@ -363,7 +365,7 @@ import { ProductSchema, type Product } from '@repo/schemas';
 
 Subscription entity tracks user subscriptions to products.
 
-#### Base Schema
+#### Subscription Base Schema
 
 ```typescript
 import { SubscriptionSchema, type Subscription } from '@repo/schemas';
@@ -389,7 +391,7 @@ draft → active → [paused/cancelled] → expired
 
 Payment entity tracks all financial transactions.
 
-#### Base Schema
+#### Payment Base Schema
 
 ```typescript
 import { PaymentSchema, type Payment } from '@repo/schemas';
@@ -434,7 +436,7 @@ Similar structure for destination reviews.
 
 Booking entity tracks accommodation reservations.
 
-#### Base Schema
+#### Booking Base Schema
 
 ```typescript
 import { BookingSchema, type Booking } from '@repo/schemas';

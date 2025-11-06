@@ -682,18 +682,18 @@ const ProdConfigSchema = z.object({
    - Click "Settings"
    - Click "Environment Variables"
 
-2. **Add Variables:**
+1. **Add Variables:**
    - Key: `DATABASE_URL`
    - Value: `postgresql://...`
    - Environment: Production, Preview, Development
    - Click "Save"
 
-3. **Sensitive Variables:**
+1. **Sensitive Variables:**
    - Check "Sensitive" for secrets
    - Values hidden after saving
    - Not shown in build logs
 
-4. **Redeploy:**
+1. **Redeploy:**
    - Required for changes to take effect
    - Deployments → ... → Redeploy
 

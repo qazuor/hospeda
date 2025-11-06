@@ -5,15 +5,19 @@ Guide to environment-specific seeding strategies for development, testing, stagi
 ## Environment Types
 
 ### Development
+
 Full seeds with realistic test data for local development.
 
 ### Testing
+
 Minimal seeds for fast test execution.
 
 ### Staging
+
 Production-like data for final validation.
 
 ### Production
+
 Required data only, no example seeds.
 
 ## Environment-Specific Commands

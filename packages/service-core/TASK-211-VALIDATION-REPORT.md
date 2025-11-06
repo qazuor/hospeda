@@ -63,24 +63,29 @@ All 11 permission hooks implemented using `PermissionEnum.CLIENT_UPDATE`:
 All 12 business methods from RefundModel implemented:
 
 #### Refund Processing
+
 1. ✅ `processRefund(actor, paymentId, amount, reason?)` - Process refund for payment
 2. ✅ `findByPayment(actor, paymentId)` - Find refunds by payment
 
 #### Calculations
+
 3. ✅ `calculateRefundable(actor, paymentId)` - Calculate refundable amount
 4. ✅ `getTotalRefundedForPayment(actor, paymentId)` - Get total refunded
 
 #### Validation
+
 5. ✅ `canRefund(actor, paymentId, amount?)` - Check if refund allowed
 6. ✅ `validateRefundAmount(actor, paymentId, amount)` - Validate refund amount
 7. ✅ `checkRefundPolicy(actor, paymentId)` - Check refund policy
 
 #### Queries
+
 8. ✅ `withPayment(actor, id)` - Get refund with payment data
 9. ✅ `findByDateRange(actor, startDate, endDate)` - Find refunds in date range
 10. ✅ `getRefundStats(actor, paymentId)` - Get refund statistics
 
 #### Actions
+
 11. ✅ `reverseRefund(actor, id, reason?)` - Reverse/cancel refund
 
 **Note:** `getAmountFromMinor()` is a synchronous utility method in the model, not implemented as a service method (as requested).
@@ -90,12 +95,14 @@ All 12 business methods from RefundModel implemented:
 **Total Tests:** 35 (11 methods × 3 tests each minimum)
 
 Each business method has comprehensive tests:
+
 - ✅ Success case test
 - ✅ Null/not found test
 - ✅ Permission denied test
 - ✅ Additional edge case tests where appropriate
 
 **Test Groups:**
+
 - `processRefund`: 3 tests
 - `findByPayment`: 3 tests
 - `calculateRefundable`: 3 tests
@@ -154,6 +161,7 @@ Checked 452 files in 94ms. No fixes applied.
 ## Business Rules Documented
 
 Each business method includes comprehensive JSDoc with:
+
 - Method description
 - Business rules explained
 - Parameter documentation
@@ -260,12 +268,14 @@ export const RefundQuerySchema = z
 ## Files Summary
 
 ### Created Files (4)
+
 1. `packages/service-core/src/services/refund/refund.service.ts` (620 lines)
 2. `packages/service-core/src/services/refund/index.ts` (1 line)
 3. `packages/service-core/test/services/refund/refund.service.test.ts` (679 lines)
 4. `packages/service-core/TASK-211-VALIDATION-REPORT.md` (this file)
 
 ### Modified Files (3)
+
 1. `packages/service-core/src/services/index.ts` (added export)
 2. `packages/schemas/src/entities/refund/refund.schema.ts` (added Refund type alias)
 3. `packages/schemas/src/entities/refund/query.schema.ts` (added pagination)
@@ -304,6 +314,7 @@ export const RefundQuerySchema = z
 ✅ **TASK-211 COMPLETED SUCCESSFULLY**
 
 RefundService has been implemented with:
+
 - All 12 business methods from RefundModel
 - All 11 required permission hooks
 - 35 comprehensive tests (ALL PASSING)

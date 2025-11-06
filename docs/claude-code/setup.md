@@ -38,7 +38,7 @@ npm install -g pnpm@8.15.6
 pnpm --version
 ```
 
-#### Git
+#### Verify installation Git
 
 ```bash
 # Check version
@@ -91,7 +91,7 @@ pnpm db:start
 
 #### Anthropic API Access
 
-1. Sign up at https://console.anthropic.com/
+1. Sign up at <https://console.anthropic.com/>
 2. Generate API key
 3. Save for later configuration
 
@@ -104,9 +104,9 @@ pnpm db:start
 
 #### IDE with TypeScript Support
 
-- **VS Code** (recommended): https://code.visualstudio.com/
-- **Cursor**: https://cursor.sh/
-- **WebStorm**: https://www.jetbrains.com/webstorm/
+- **VS Code** (recommended): <https://code.visualstudio.com/>
+- **Cursor**: <https://cursor.sh/>
+- **WebStorm**: <https://www.jetbrains.com/webstorm/>
 
 #### Recommended VS Code Extensions
 
@@ -399,7 +399,7 @@ ANTHROPIC_API_KEY="your-api-key-here"
 
 **Obtain Clerk Keys:**
 
-1. Sign up at https://clerk.com/
+1. Sign up at <https://clerk.com/>
 2. Create new application
 3. Copy API keys from dashboard
 
@@ -906,14 +906,14 @@ claude-code: command not found
    npm list -g @anthropic-ai/claude-code
    ```
 
-2. Check PATH:
+1. Check PATH:
 
    ```bash
    echo $PATH
    npm config get prefix
    ```
 
-3. Reinstall:
+1. Reinstall:
 
    ```bash
    npm uninstall -g @anthropic-ai/claude-code
@@ -936,11 +936,11 @@ Error: Invalid API key
    echo $ANTHROPIC_API_KEY
    ```
 
-2. Check key format (should start with `sk-ant-`)
+1. Check key format (should start with `sk-ant-`)
 
-3. Regenerate key at https://console.anthropic.com/
+1. Regenerate key at <https://console.anthropic.com/>
 
-4. Update environment:
+1. Update environment:
 
    ```bash
    export ANTHROPIC_API_KEY="sk-ant-..."
@@ -963,20 +963,20 @@ Error: MCP server 'context7' connection failed
    npm list -g @context7/mcp-server
    ```
 
-2. Reinstall server:
+1. Reinstall server:
 
    ```bash
    npm install -g @context7/mcp-server
    ```
 
-3. Reconfigure:
+1. Reconfigure:
 
    ```bash
    claude-code config remove-mcp context7
    claude-code config add-mcp context7
    ```
 
-4. Test connection:
+1. Test connection:
 
    ```bash
    claude-code mcp test context7
@@ -1002,19 +1002,19 @@ Error: Could not connect to database
    sudo systemctl status postgresql
    ```
 
-2. Verify connection string:
+1. Verify connection string:
 
    ```bash
    echo $DATABASE_URL
    ```
 
-3. Test connection:
+1. Test connection:
 
    ```bash
    psql $DATABASE_URL -c "SELECT 1;"
    ```
 
-4. Restart database:
+1. Restart database:
 
    ```bash
    # Docker:
@@ -1040,13 +1040,13 @@ Error: Agent 'hono-engineer' not found
    ls -la .claude/agents/
    ```
 
-2. Check current directory:
+1. Check current directory:
 
    ```bash
    pwd  # Should be in hospeda project root
    ```
 
-3. Reload Claude Code:
+1. Reload Claude Code:
 
    ```bash
    # Exit and restart
@@ -1073,7 +1073,7 @@ Error: EACCES: permission denied
    source ~/.bashrc
    ```
 
-2. Reinstall without sudo:
+1. Reinstall without sudo:
 
    ```bash
    npm install -g @anthropic-ai/claude-code
@@ -1096,14 +1096,14 @@ Error: Token budget exceeded
    claude-code
    ```
 
-2. Be more specific:
+1. Be more specific:
 
    ```text
    # Instead of "show all files"
    "show packages/db/src/models/accommodation.model.ts"
    ```
 
-3. Use memory for persistent context:
+1. Use memory for persistent context:
 
    ```text
    /add-memory "Hospeda uses RO-RO pattern for all functions"
@@ -1178,7 +1178,7 @@ Add to `.vscode/keybindings.json`:
 
 Cursor has built-in Claude integration:
 
-1. Install Cursor from https://cursor.sh/
+1. Install Cursor from <https://cursor.sh/>
 2. Open Hospeda project
 3. Configure Claude API key in settings
 4. Enable "Claude Code" mode

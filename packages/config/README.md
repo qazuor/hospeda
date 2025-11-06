@@ -255,7 +255,7 @@ All environment variables used in Hospeda:
 ### API
 
 - `VITE_API_PORT` - API server port (default: 3000)
-- `VITE_API_HOST` - API host URL (default: http://localhost)
+- `VITE_API_HOST` - API host URL (default: <http://localhost>)
 - `API_CORS_ALLOWED_ORIGINS` - Comma-separated allowed origins
 
 ### Database

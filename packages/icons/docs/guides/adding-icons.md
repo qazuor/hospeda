@@ -436,11 +436,12 @@ function RoomFeatures() {
   return (
     <div className="flex items-center gap-2">
       <BedIcon size={20} className="text-blue-600" />
-      <span>2 Bedrooms</span>
+      `<span>`2 Bedrooms</span>
     </div>
   );
 }
 ```
+
 ```
 
 ---
@@ -450,6 +451,7 @@ function RoomFeatures() {
 ### Directory Organization
 
 ```
+
 packages/icons/src/
 ├── actions/           # User action icons
 │   ├── index.ts
@@ -491,6 +493,7 @@ packages/icons/src/
 │   └── LoaderIcon.tsx
 ├── types.ts           # Shared TypeScript types
 └── index.ts           # Main export file
+
 ```
 
 ### Naming Conventions
@@ -908,14 +911,14 @@ For simple icons, manual optimization is often fastest and most precise.
    - Navigation element → navigation
    - State/status → status
 
-2. **What is its primary purpose?**
+1. **What is its primary purpose?**
    - Perform action → actions
    - Display feature → amenities
    - Represent entity → entities
    - Navigate app → navigation
    - Show status → status
 
-3. **Where is it primarily used?**
+1. **Where is it primarily used?**
    - Forms/buttons → actions
    - Feature lists → amenities
    - Cards/headers → entities
@@ -1239,7 +1242,7 @@ function RoomFeatures() {
   return (
     <div className="flex items-center gap-2">
       <BedIcon size={20} className="text-blue-600" />
-      <span>2 Bedrooms</span>
+      `<span>`2 Bedrooms</span>
     </div>
   );
 }
@@ -1254,6 +1257,7 @@ function RoomFeatures() {
 {/* Semantic */}
 <BedIcon aria-label="Bedroom count" />
 ```
+
 ```
 
 ### Changelog Update
@@ -1294,7 +1298,7 @@ Export settings:
 - Remove: "id" attribute
 ```
 
-#### Step 2: Create Component File
+#### Adding HospedaLogoIcon Step 2: Create Component File
 
 ```bash
 # Decide category: ui (general brand UI element)
@@ -1556,6 +1560,7 @@ function Footer() {
   role="img"
 />
 ```
+
 ```
 
 #### Step 8: Verify in Application

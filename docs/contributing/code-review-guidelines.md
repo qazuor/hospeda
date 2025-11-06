@@ -199,12 +199,14 @@ return price - (price * (discountPercent / 100));
 ```
 
 Or update function signature to clarify:
+
 ```typescript
 function calculateDiscount(price: number, discountRate: number): number {
   // discountRate is decimal (0.20 for 20%)
   return price - (price * discountRate);
 }
 ```
+
 ```
 
 ### 2. Testing
@@ -244,6 +246,7 @@ it('should throw ValidationError when check-out is before check-in', async () =>
   ).rejects.toThrow(ValidationError);
 });
 ```
+
 ```
 
 ### 3. Code Quality
@@ -276,10 +279,11 @@ function createBooking(
   checkIn: string,
   checkOut: string,
   guests: number
-): Promise<Booking>
+): Promise`<Booking>`
 ```
 
 Should be:
+
 ```typescript
 function createBooking(input: {
   userId: string;
@@ -287,13 +291,15 @@ function createBooking(input: {
   checkIn: string;
   checkOut: string;
   guests: number;
-}): Promise<Booking>
+}): Promise`<Booking>`
 ```
 
 Benefits:
+
 - Named parameters (self-documenting)
 - Order independent
 - Easy to add optional parameters
+
 ```
 
 ### 4. Performance
@@ -322,6 +328,7 @@ for (const user of users) {
 ```
 
 Better approach:
+
 ```typescript
 const users = await userModel.findAll();
 const userIds = users.map(u => u.id);
@@ -336,6 +343,7 @@ users.forEach(user => {
 ```
 
 Or use a join:
+
 ```typescript
 const users = await db
   .select()
@@ -343,6 +351,7 @@ const users = await db
   .leftJoin(bookingsTable, eq(usersTable.id, bookingsTable.userId));
 // 1 query total
 ```
+
 ```
 
 ### 5. Security
@@ -369,11 +378,13 @@ const users = await db.execute(query);
 ```
 
 An attacker could input:
+
 ```
 email = "'; DROP TABLE users; --"
 ```
 
 Use parameterized queries:
+
 ```typescript
 const users = await db
   .select()
@@ -382,6 +393,7 @@ const users = await db
 ```
 
 Drizzle automatically escapes parameters.
+
 ```
 
 ### 6. Documentation
@@ -431,6 +443,7 @@ export function calculateDynamicPrice(input: {
   // Implementation
 }
 ```
+
 ```
 
 ### 7. Naming
@@ -457,6 +470,7 @@ const flag = check(result);
 ```
 
 Suggested:
+
 ```typescript
 const userProfile = await fetchUserProfile(userId);
 const validationResult = validateUserProfile(userProfile);
@@ -464,6 +478,7 @@ const isProfileComplete = checkProfileCompleteness(validationResult);
 ```
 
 More specific names make code self-documenting.
+
 ```
 
 ### 8. Error Handling
@@ -494,6 +509,7 @@ try {
 Should either:
 
 1. Log and re-throw (if critical):
+
 ```typescript
 try {
   await sendEmail(user.email, 'Welcome');
@@ -503,7 +519,8 @@ try {
 }
 ```
 
-2. Log and continue (if non-critical):
+1. Log and continue (if non-critical):
+
 ```typescript
 try {
   await sendEmail(user.email, 'Welcome');
@@ -514,6 +531,7 @@ try {
 ```
 
 Never silently ignore errors.
+
 ```
 
 ### 9. Edge Cases
@@ -544,6 +562,7 @@ Edge case: What if `numbers` is empty?
 `sum / 0 = Infinity`
 
 Suggested:
+
 ```typescript
 function calculateAverage(numbers: number[]): number {
   if (numbers.length === 0) {
@@ -556,6 +575,7 @@ function calculateAverage(numbers: number[]): number {
 ```
 
 Or return `null`:
+
 ```typescript
 function calculateAverage(numbers: number[]): number | null {
   if (numbers.length === 0) {
@@ -566,6 +586,7 @@ function calculateAverage(numbers: number[]): number | null {
   return sum / numbers.length;
 }
 ```
+
 ```
 
 ### 10. Type Safety
@@ -592,6 +613,7 @@ Problem: What if `fetchUser` returns `null`?
 Type assertion bypasses type checking.
 
 Better:
+
 ```typescript
 const user = await fetchUser(userId);
 if (!user) {
@@ -601,10 +623,12 @@ if (!user) {
 ```
 
 Or if API returns unknown data:
+
 ```typescript
 const rawData = await fetchUser(userId);
 const user = userSchema.parse(rawData); // Validates and types
 ```
+
 ```
 
 ## Review Checklist
@@ -728,6 +752,7 @@ const query = `SELECT * FROM users WHERE email = '${email}'`;
 ```
 
 **MUST**: This is vulnerable to SQL injection.
+
 ```
 
 ### Explain WHY
@@ -786,9 +811,11 @@ const query = `SELECT * FROM users WHERE email = '${email}'`;
    ```
 
    Benefits:
-   - Each function has single responsibility
-   - Easier to test
-   - More reusable"
+
+- Each function has single responsibility
+- Easier to test
+- More reusable"
+
 ```
 
 ### Praise Good Work
@@ -864,6 +891,7 @@ function processData(data: unknown): string {
 ```
 
 See: [Code Standards - No Any](./code-standards.md#no-any-type)
+
 ```
 
 ```markdown
@@ -875,11 +903,13 @@ export default class UserService { }
 ```
 
 Should be:
+
 ```typescript
 export class UserService { }
 ```
 
 See: [Code Standards - Named Exports](./code-standards.md#named-exports-only)
+
 ```
 
 ```markdown
@@ -891,10 +921,12 @@ if (age < 18) { ... }
 ```
 
 Better:
+
 ```typescript
 const MINIMUM_AGE = 18;
 if (age < MINIMUM_AGE) { ... }
 ```
+
 ```
 
 ### Testing
@@ -923,6 +955,7 @@ describe('calculateDiscount', () => {
   });
 });
 ```
+
 ```
 
 ```markdown
@@ -934,14 +967,17 @@ it('should work', () => { ... });
 ```
 
 Better:
+
 ```typescript
 it('should return 404 when user does not exist', () => { ... });
 ```
 
 Test names should describe:
+
 - What is being tested
 - Under what conditions
 - What the expected outcome is
+
 ```
 
 ### Performance
@@ -964,7 +1000,7 @@ Suggested:
 async function getBookings(input: {
   page?: number;
   pageSize?: number;
-}): Promise<PaginatedResult<Booking>> {
+}): Promise<PaginatedResult`<Booking>`> {
   const page = input.page ?? 1;
   const pageSize = input.pageSize ?? 20;
 
@@ -989,6 +1025,7 @@ async function getBookings(input: {
   };
 }
 ```
+
 ```
 
 ### Security
@@ -1008,6 +1045,7 @@ const createBookingSchema = z.object({
 
 const input = createBookingSchema.parse(req.body);
 ```
+
 ```
 
 ```markdown
@@ -1019,15 +1057,18 @@ logger.info('User login', { email, password });
 ```
 
 Remove `password` from logs:
+
 ```typescript
 logger.info('User login', { email });
 ```
 
 Never log:
+
 - Passwords
 - Credit card numbers
 - API keys
 - Personal data (unless necessary)
+
 ```
 
 ### Documentation
@@ -1049,10 +1090,11 @@ Example:
  * @throws {ValidationError} If dates or availability invalid
  * @throws {PaymentError} If payment processing fails
  */
-export async function createBooking(input: CreateBookingInput): Promise<Booking> {
+export async function createBooking(input: CreateBookingInput): Promise`<Booking>` {
   // Implementation
 }
 ```
+
 ```
 
 ## Handling Disagreements

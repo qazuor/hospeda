@@ -989,14 +989,17 @@ import { PlusIcon } from '@repo/icons';
 ```
 
 **After:**
+
 ```tsx
 import { AddIcon } from '@repo/icons';
 <AddIcon />
 ```
 
 **Migration timeline:**
+
 - v2.0.0: PlusIcon deprecated
 - v3.0.0: PlusIcon removed
+
 ```
 
 **5. Migrate Codebase:**

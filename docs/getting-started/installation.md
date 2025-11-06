@@ -219,9 +219,9 @@ If using local PostgreSQL instead of Docker:
    createdb hospeda_dev
    ```
 
-2. Update `.env.local` with your connection string
+1. Update `.env.local` with your connection string
 
-3. Run migrations and seeds:
+1. Run migrations and seeds:
 
    ```bash
    pnpm db:migrate
@@ -652,7 +652,7 @@ Add server connection:
    DATABASE_URL="postgresql://user:pass@ep-xxx.neon.tech/dbname"
    ```
 
-5. Run migrations:
+1. Run migrations:
 
    ```bash
    pnpm db:migrate

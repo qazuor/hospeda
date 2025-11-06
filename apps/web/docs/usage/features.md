@@ -84,41 +84,41 @@ Comprehensive guide to all Hospeda platform features.
    - Fullscreen view
    - Zoom functionality
 
-2. **Property Information**
+1. **Property Information**
    - Name and type
    - Address and map
    - Description
    - Property features
    - House rules
 
-3. **Amenities**
+1. **Amenities**
    - Complete amenity list
    - Icons for visual reference
    - Categorized (rooms, general, services)
 
-4. **Pricing**
+1. **Pricing**
    - Price per night
    - Additional fees
    - Cancellation policy
    - Payment methods
 
-5. **Reviews**
+1. **Reviews**
    - Overall rating
    - Review list
    - Rating breakdown
    - Sort by date/rating
 
-6. **Location Map**
+1. **Location Map**
    - Interactive map
    - Nearby attractions
    - Distance to landmarks
 
-7. **Availability Calendar**
+1. **Availability Calendar**
    - Available dates
    - Booked dates
    - Price calendar
 
-8. **Booking Section**
+1. **Booking Section**
    - Date selection
    - Guest count
    - Price calculation
@@ -160,34 +160,34 @@ Comprehensive guide to all Hospeda platform features.
    - Location
    - Share buttons
 
-2. **Overview**
+1. **Overview**
    - Complete description
    - Best time to visit
    - Getting there
    - Duration recommendation
 
-3. **Attractions**
+1. **Attractions**
    - List of main attractions
    - Photos and descriptions
    - Opening hours
    - Entrance fees
 
-4. **Gallery**
+1. **Gallery**
    - Photo collection
    - Video content (if available)
    - 360° virtual tours
 
-5. **Accommodations**
+1. **Accommodations**
    - Nearby accommodations
    - Distance from destination
    - Quick booking
 
-6. **Events**
+1. **Events**
    - Upcoming events
    - Event calendar
    - Festival dates
 
-7. **Map**
+1. **Map**
    - Interactive map
    - Points of interest
    - Routes and directions
@@ -228,25 +228,25 @@ Comprehensive guide to all Hospeda platform features.
    - Date, time, duration
    - Location
 
-2. **Description**
+1. **Description**
    - Detailed information
    - Program/schedule
    - Speakers/performers
    - Target audience
 
-3. **Tickets**
+1. **Tickets**
    - Ticket types
    - Prices
    - Availability
    - Purchase button
 
-4. **Location**
+1. **Location**
    - Venue details
    - Address
    - Interactive map
    - Directions
 
-5. **Organizer**
+1. **Organizer**
    - Organizer information
    - Contact details
    - Social media links
@@ -288,19 +288,19 @@ Comprehensive guide to all Hospeda platform features.
    - Author and date
    - Share buttons
 
-2. **Content**
+1. **Content**
    - Full article text
    - Images and media
    - Formatting (headings, lists, quotes)
    - Related links
 
-3. **Metadata**
+1. **Metadata**
    - Tags
    - Category
    - Publication date
    - Last updated
 
-4. **Related Articles**
+1. **Related Articles**
    - Similar content
    - Same category
    - Same author
@@ -340,12 +340,12 @@ Comprehensive guide to all Hospeda platform features.
    - Phone (optional)
    - Profile photo
 
-2. **Preferences**
+1. **Preferences**
    - Language preference
    - Email notifications
    - Newsletter subscription
 
-3. **Account Settings**
+1. **Account Settings**
    - Change password
    - Two-factor authentication
    - Delete account

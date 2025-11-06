@@ -8,9 +8,9 @@
 - [Infrastructure Components](#infrastructure-components)
 - [Deployment Flow](#deployment-flow)
 - [Environment Strategy](#environment-strategy)
-- [Monitoring & Observability](#monitoring--observability)
+- Monitoring & Observability
 - [Security Considerations](#security-considerations)
-- [Scalability & Performance](#scalability--performance)
+- Scalability & Performance
 - [Disaster Recovery](#disaster-recovery)
 - [Cost Optimization](#cost-optimization)
 
@@ -267,7 +267,7 @@ graph TB
 
 **Purpose**: Host frontend applications (Web and Admin)
 
-#### Features Used
+#### Vercel Platform Features Used
 
 - **Serverless Functions**: API routes for lightweight operations
 - **Edge Functions**: Low-latency API endpoints at the edge
@@ -277,7 +277,7 @@ graph TB
 - **Analytics**: Performance and usage metrics
 - **Environment Variables**: Secure configuration management
 
-#### Configuration
+#### Vercel Platform Configuration
 
 ```json
 {
@@ -299,7 +299,7 @@ graph TB
 
 **Purpose**: Host API server with global distribution
 
-#### Features Used
+#### Fly.io Platform Features Used
 
 - **Application Hosting**: Run Node.js API server
 - **Auto-Scaling**: Scale instances based on load
@@ -359,7 +359,7 @@ app = "hospeda-api"
 
 **Purpose**: Serverless PostgreSQL database
 
-#### Features Used
+#### Neon Database Features Used
 
 - **Serverless Architecture**: Automatic scaling
 - **Connection Pooling**: Built-in Pgbouncer
@@ -368,7 +368,7 @@ app = "hospeda-api"
 - **Point-in-Time Recovery**: Restore to any point in time
 - **Query Insights**: Performance monitoring
 
-#### Configuration
+#### Neon Database Configuration
 
 ```typescript
 // Database connection
@@ -727,17 +727,17 @@ HOSPEDA_DATABASE_URL=<production-database-url>
    - Staging: Dedicated staging database
    - Production: Production database
 
-2. **Separate Authentication**
+1. **Separate Authentication**
    - Development: Development Clerk application
    - Staging: Staging Clerk application
    - Production: Production Clerk application
 
-3. **Separate Payment Accounts**
+1. **Separate Payment Accounts**
    - Development: Sandbox credentials
    - Staging: Sandbox credentials
    - Production: Production credentials
 
-4. **Separate API Keys**
+1. **Separate API Keys**
    - Each environment has unique API keys
    - No sharing of keys between environments
    - Separate Cloudinary accounts or folders

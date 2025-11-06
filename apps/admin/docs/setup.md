@@ -126,7 +126,7 @@ git --version
 
 ### Repository Setup
 
-#### Clone Repository
+#### Repository Setup Clone Repository
 
 ```bash
 # Clone the repository
@@ -538,13 +538,13 @@ PORT=3001 pnpm dev
    sudo systemctl status postgresql
    ```
 
-2. **Check DATABASE_URL**:
+1. **Check DATABASE_URL**:
 
    ```bash
    cat .env | grep DATABASE_URL
    ```
 
-3. **Test connection**:
+1. **Test connection**:
 
    ```bash
    psql $DATABASE_URL
@@ -561,13 +561,13 @@ PORT=3001 pnpm dev
    - Development: `pk_test_...`
    - Production: `pk_live_...`
 
-2. **Check environment variable**:
+1. **Check environment variable**:
 
    ```bash
    cat apps/admin/.env | grep CLERK
    ```
 
-3. **Verify in Clerk Dashboard**:
+1. **Verify in Clerk Dashboard**:
 
    - Go to API Keys section
    - Copy **Publishable Key** (not Secret Key)

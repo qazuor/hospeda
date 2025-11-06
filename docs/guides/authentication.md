@@ -20,9 +20,9 @@ Deep dive into Clerk authentication integration in the Hospeda platform.
 - [Security Best Practices](#security-best-practices)
 - [Multi-Tenancy](#multi-tenancy)
 - [SSO Integration](#sso-integration)
-- [Common Issues](#common-issues)
-- [Migration Guide](#migration-guide)
-- [Advanced Topics](#advanced-topics)
+- Common Issues
+- Migration Guide
+- Advanced Topics
 
 ## Introduction
 
@@ -347,7 +347,7 @@ if (signUp.status === 'complete') {
 
 Complete email/password sign-in form with OAuth options.
 
-#### Basic Usage
+#### SignInForm Basic Usage
 
 ```tsx
 import { SignInForm } from '@repo/auth-ui';
@@ -366,7 +366,7 @@ export function LoginPage() {
 }
 ```
 
-#### Props
+#### SignInForm Props
 
 ```typescript
 type SignInFormProps = {
@@ -387,7 +387,7 @@ type SignInFormProps = {
 };
 ```
 
-#### Features
+#### SignInForm Features
 
 - Email and password fields
 - Form validation
@@ -398,7 +398,7 @@ type SignInFormProps = {
 - Database sync on success
 - Automatic redirect
 
-#### Implementation Example
+#### SignInForm Implementation Example
 
 ```tsx
 import { SignInForm } from '@repo/auth-ui';
@@ -447,7 +447,7 @@ export function LoginPage() {
 
 User registration form with validation.
 
-#### Basic Usage
+#### SignUpForm Basic Usage
 
 ```tsx
 import { SignUpForm } from '@repo/auth-ui';
@@ -466,7 +466,7 @@ export function RegisterPage() {
 }
 ```
 
-#### Props
+#### SignUpForm Props
 
 ```typescript
 type SignUpFormProps = {
@@ -484,7 +484,7 @@ type SignUpFormProps = {
 };
 ```
 
-#### Features
+#### SignUpForm Features
 
 - Email, password, name fields
 - Password strength indicator
@@ -494,7 +494,7 @@ type SignUpFormProps = {
 - Database user creation
 - Welcome email (optional)
 
-#### Implementation Example
+#### SignUpForm Implementation Example
 
 ```tsx
 import { SignUpForm } from '@repo/auth-ui';
@@ -536,7 +536,7 @@ export function RegisterPage() {
 
 Full dropdown menu with user options.
 
-#### Basic Usage
+#### UserMenu Basic Usage
 
 ```tsx
 import { UserMenu } from '@repo/auth-ui';
@@ -553,7 +553,7 @@ export function AppHeader() {
 }
 ```
 
-#### Features
+#### UserMenu Features
 
 - User avatar (from Clerk)
 - User name display
@@ -564,7 +564,7 @@ export function AppHeader() {
 - Smooth animations
 - Keyboard accessible
 
-#### Implementation Example
+#### UserMenu Implementation Example
 
 ```tsx
 import { UserMenu } from '@repo/auth-ui';
@@ -598,7 +598,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
 Minimal user menu (name and avatar only).
 
-#### Basic Usage
+#### SimpleUserMenu Basic Usage
 
 ```tsx
 import { SimpleUserMenu } from '@repo/auth-ui';
@@ -617,7 +617,7 @@ export function Navbar() {
 
 Customizable sign-out button.
 
-#### Basic Usage
+#### SignOutButton Basic Usage
 
 ```tsx
 import { SignOutButton } from '@repo/auth-ui';
@@ -673,7 +673,7 @@ graph LR
 
 Syncs existing Clerk user to database on sign-in.
 
-#### Request
+#### Sign-In Sync Request
 
 ```typescript
 type SignInSyncRequest = {
@@ -687,7 +687,7 @@ type SignInSyncRequest = {
 }
 ```
 
-#### Response
+#### Sign-In Sync Response
 
 ```typescript
 type SignInSyncResponse = {
@@ -715,7 +715,7 @@ type SignInSyncResponse = {
 }
 ```
 
-#### Implementation
+#### Sign-In Sync Implementation
 
 ```typescript
 // apps/api/src/routes/auth.ts
@@ -763,7 +763,7 @@ export default app;
 
 Creates database user record on sign-up.
 
-#### Request
+#### Sign-Up Sync Request
 
 ```typescript
 type SignUpSyncRequest = {
@@ -783,7 +783,7 @@ type SignUpSyncRequest = {
 }
 ```
 
-#### Response
+#### Sign-Up Sync Response
 
 ```json
 {
@@ -798,7 +798,7 @@ type SignUpSyncRequest = {
 }
 ```
 
-#### Implementation
+#### Sign-Up Sync Implementation
 
 ```typescript
 app.post('/api/v1/public/auth/signup', async (c) => {
@@ -840,7 +840,7 @@ app.post('/api/v1/public/auth/signup', async (c) => {
 
 Cleans up server-side session data.
 
-#### Implementation
+#### Sign-Out Sync Implementation
 
 ```typescript
 app.post('/api/v1/public/auth/signout', async (c) => {

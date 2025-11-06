@@ -307,7 +307,7 @@ Task: Invoke tech-writer agent
 7. Update documentation
 ```
 
-#### Fixing a Bug
+#### Common Workflow Fixing a Bug
 
 ```text
 1. Write failing test (Red)
@@ -405,17 +405,17 @@ For complex features requiring multiple components:
    - Review generated PDR, mockups, tech-analysis
    - Approve task breakdown
 
-2. **Implementation Phase**
+1. **Implementation Phase**
    - Work through TODOs in order
    - Use TDD for each component
    - Run `/quality-check` frequently
 
-3. **Validation Phase**
+1. **Validation Phase**
    - Run `/run-tests` for full coverage
    - Request code review
    - Address feedback
 
-4. **Finalization Phase**
+1. **Finalization Phase**
    - Update documentation with `/update-docs`
    - Generate commits with `/commit`
    - Push and create PR
@@ -430,19 +430,19 @@ For bug fixes (typically Level 2 workflow):
    - Create a failing test that demonstrates the issue
    - Run test to confirm it fails (Red)
 
-2. **Fix the Bug**
+1. **Fix the Bug**
    - Implement the fix
    - Run test to confirm it passes (Green)
 
-3. **Refactor**
+1. **Refactor**
    - Clean up code if needed
    - Ensure no regressions
 
-4. **Quality Check**
+1. **Quality Check**
    - Run `/quality-check`
    - Run `/run-tests`
 
-5. **Commit**
+1. **Commit**
    - Run `/commit` to generate message
    - Push changes
 
@@ -456,16 +456,16 @@ For improving test coverage:
    - Run `/run-tests` with coverage
    - Review coverage report
 
-2. **Write Tests**
+1. **Write Tests**
    - Invoke qa-engineer agent for guidance
    - Follow AAA pattern (Arrange, Act, Assert)
    - Use TDD methodology skill
 
-3. **Verify Coverage**
+1. **Verify Coverage**
    - Run `/run-tests` again
    - Ensure 90%+ coverage
 
-4. **Commit**
+1. **Commit**
    - Run `/commit`
    - Use "test:" prefix for conventional commits
 
@@ -479,19 +479,19 @@ For improving code quality:
    - Run `/start-refactor-plan` for large refactors
    - Define scope and goals
 
-2. **Ensure Test Coverage**
+1. **Ensure Test Coverage**
    - Write tests if missing
    - Run `/run-tests` to establish baseline
 
-3. **Refactor**
+1. **Refactor**
    - Make incremental changes
    - Run tests after each change
 
-4. **Quality Check**
+1. **Quality Check**
    - Run `/quality-check`
    - Run `/audit:performance-audit` if performance-related
 
-5. **Commit**
+1. **Commit**
    - Run `/commit` with "refactor:" prefix
 
 **Learn more**: [Workflows - Refactoring](./workflows.md#refactoring-code)
@@ -564,18 +564,18 @@ If you encounter issues not covered here:
    - Check [CLAUDE.md](../../CLAUDE.md) for project guidance
    - Search [.claude/docs/](../../.claude/docs/) for relevant guides
 
-2. **Run Help Command**
+1. **Run Help Command**
 
    ```bash
    /meta:help
    ```
 
-3. **Ask Claude Code**
+1. **Ask Claude Code**
    - Describe your issue clearly
    - Provide error messages
    - Include relevant context
 
-4. **Team Support**
+1. **Team Support**
    - Consult team members
    - Check internal documentation
    - Review similar past issues

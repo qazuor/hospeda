@@ -41,7 +41,7 @@ Runbooks are operational documentation that provide:
    - Rollback decision tree
    - Post-incident procedures
 
-2. **[Rollback Procedures](./rollback.md)** (~1,200 lines)
+1. **[Rollback Procedures](./rollback.md)** (~1,200 lines)
    - Rolling back deployments safely
    - Frontend rollback (Vercel)
    - Backend rollback (Fly.io/similar)
@@ -49,7 +49,7 @@ Runbooks are operational documentation that provide:
    - Rollback decision criteria
    - Post-rollback verification
 
-3. **[Backup & Recovery](./backup-recovery.md)** (~1,300 lines)
+1. **[Backup & Recovery](./backup-recovery.md)** (~1,300 lines)
    - Database backup procedures
    - Point-in-time recovery (Neon)
    - Local backup/restore (Docker PostgreSQL)
@@ -59,7 +59,7 @@ Runbooks are operational documentation that provide:
 
 ### Scaling & Performance
 
-4. **[Scaling Procedures](./scaling.md)** (~1,100 lines)
+1. **[Scaling Procedures](./scaling.md)** (~1,100 lines)
    - Handling load increases
    - Scaling triggers and thresholds
    - Frontend scaling (Vercel)
@@ -68,7 +68,7 @@ Runbooks are operational documentation that provide:
    - Load testing procedures
    - Cost optimization
 
-5. **[Monitoring & Alerting](./monitoring.md)** (~1,200 lines)
+1. **[Monitoring & Alerting](./monitoring.md)** (~1,200 lines)
    - Monitoring setup and configuration
    - Key metrics to track
    - Alert configuration
@@ -241,6 +241,7 @@ External Support:
 #### Deployment & Infrastructure
 
 - **Vercel CLI**: Frontend deployment management
+
   ```bash
   # Install
   pnpm add -g vercel
@@ -256,6 +257,7 @@ External Support:
   ```
 
 - **Fly CLI**: Backend deployment management
+
   ```bash
   # Install
   curl -L https://fly.io/install.sh | sh
@@ -271,6 +273,7 @@ External Support:
   ```
 
 - **GitHub CLI**: Repository and Actions management
+
   ```bash
   # Install
   brew install gh  # macOS
@@ -289,6 +292,7 @@ External Support:
 #### Database Tools
 
 - **psql**: PostgreSQL command-line client
+
   ```bash
   # Connect to production (read-only replica recommended)
   psql $DATABASE_URL_REPLICA
@@ -301,10 +305,11 @@ External Support:
   ```
 
 - **pgAdmin**: Web-based database management
-  - Local: http://localhost:5050
+  - Local: <http://localhost:5050>
   - Production: Use Neon Console web UI
 
 - **Drizzle Studio**: Schema visualization
+
   ```bash
   cd packages/db
   pnpm db:studio
@@ -314,20 +319,21 @@ External Support:
 #### Monitoring & Logs
 
 - **Vercel Dashboard**: Frontend monitoring
-  - URL: https://vercel.com/[team]/[project]
+  - URL: <https://vercel.com/[team]/[project>]
   - Logs, analytics, deployments
 
 - **Neon Console**: Database monitoring
-  - URL: https://console.neon.tech
+  - URL: <https://console.neon.tech>
   - Query performance, connections, branches
 
 - **GitHub Actions**: CI/CD monitoring
-  - URL: https://github.com/[org]/hospeda/actions
+  - URL: <https://github.com/[org]/hospeda/actions>
   - Build logs, test results
 
 #### Development Tools
 
 - **Docker**: Local infrastructure
+
   ```bash
   # Start services
   docker compose up -d
@@ -340,6 +346,7 @@ External Support:
   ```
 
 - **PNPM**: Package management
+
   ```bash
   # Install dependencies
   pnpm install
@@ -451,9 +458,11 @@ Follow-up: [Link to post-mortem or issue]
 2. **Document Change**: Add note in changelog section
 3. **Review**: Get review from team member
 4. **Commit**: Use conventional commit format
+
    ```bash
    docs(runbooks): update [runbook-name] with [change]
    ```
+
 5. **Communicate**: Announce changes in team channel
 
 ### Runbook Changelog

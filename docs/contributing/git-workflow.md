@@ -286,7 +286,7 @@ Refs #125
 
 ### Rule: ONLY Commit Files for THAT Specific Task
 
-**Each commit must contain ONLY the files modified for ONE specific task.**
+#### Each commit must contain ONLY the files modified for ONE specific task
 
 ### Why Atomic Commits?
 

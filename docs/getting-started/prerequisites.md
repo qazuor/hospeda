@@ -34,9 +34,9 @@ Node.js is required for running the development server, build tools, and package
 node --version  # Should be ≥18.0.0
 ```
 
-#### Install Node.js
+#### 1. Node.js Install Node.js
 
-##### macOS
+##### 1. Node.js macOS
 
 ```bash
 brew install node@20
@@ -124,7 +124,7 @@ docker --version         # Should be ≥20.10
 docker compose version   # Should be ≥2.0
 ```
 
-#### Install Docker
+#### 3. Docker Install Docker
 
 ##### macOS (Docker)
 
@@ -255,7 +255,7 @@ sudo apt-get install git
 
 Download from [git-scm.com](https://git-scm.com/download/win)
 
-#### Configure Git
+#### 5. Git Configure Git
 
 ```bash
 git config --global user.name "Your Name"

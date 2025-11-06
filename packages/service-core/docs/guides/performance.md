@@ -7,6 +7,7 @@ Performance best practices and optimization techniques for services.
 ### N+1 Query Problem
 
 **Problem:**
+
 ```typescript
 // ❌ BAD: N+1 queries
 const articles = await this.model.findAll({ status: 'published' });
@@ -18,6 +19,7 @@ for (const article of articles) {
 ```
 
 **Solution:**
+
 ```typescript
 // ✅ GOOD: Use relations or batch loading
 const articles = await this.model.findAllWithRelations(
@@ -45,6 +47,7 @@ protected getDefaultListRelations(): ListRelationsConfig {
 ### Pagination Strategies
 
 **Offset-based (simple but slow for large datasets):**
+
 ```typescript
 const result = await this.model.findAll({}, {
   page: 10,
@@ -54,6 +57,7 @@ const result = await this.model.findAll({}, {
 ```
 
 **Cursor-based (efficient for large datasets):**
+
 ```typescript
 const result = await this.model.findWithCursor({
   cursor: lastId,
@@ -89,6 +93,7 @@ protected async _executeSearch(params: SearchInput, actor: Actor) {
 ### Caching Strategies
 
 **1. Cache Single Entities:**
+
 ```typescript
 public async getById(actor: Actor, id: string): Promise<ServiceOutput<Article | null>> {
   const cacheKey = `article:${id}`;
@@ -113,6 +118,7 @@ public async getById(actor: Actor, id: string): Promise<ServiceOutput<Article | 
 ```
 
 **2. Cache List Results:**
+
 ```typescript
 public async list(actor: Actor, options: ListOptions): Promise<ServiceOutput<PaginatedList<Article>>> {
   const cacheKey = `article:list:${JSON.stringify(options)}`;
@@ -131,6 +137,7 @@ public async list(actor: Actor, options: ListOptions): Promise<ServiceOutput<Pag
 ```
 
 **3. Cache Invalidation:**
+
 ```typescript
 protected async _afterUpdate(entity: Article, actor: Actor): Promise<Article> {
   // Invalidate specific entity
@@ -407,6 +414,7 @@ describe('ArticleService Performance', () => {
 ```
 
 Run benchmarks:
+
 ```bash
 pnpm vitest bench
 ```
@@ -414,5 +422,6 @@ pnpm vitest bench
 ---
 
 **See Also:**
+
 - [Advanced Patterns](./advanced-patterns.md) - Optimization patterns
 - [Testing Guide](./testing.md) - Performance testing

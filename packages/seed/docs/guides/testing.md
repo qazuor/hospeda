@@ -5,12 +5,15 @@ Complete guide to testing seed scripts. Learn unit testing, integration testing,
 ## Testing Approaches
 
 ### Unit Tests
+
 Test individual seed functions in isolation.
 
 ### Integration Tests
+
 Test complete seed flow with database.
 
 ### Validation Tests
+
 Verify seed data integrity and relationships.
 
 ## Unit Testing

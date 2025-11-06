@@ -6,7 +6,7 @@ Curated collection of official documentation and learning resources for all tech
 
 - [Official Documentation](#official-documentation)
 - [Learning Resources](#learning-resources)
-- [Tools & Utilities](#tools--utilities)
+- Tools & Utilities
 - [Community](#community)
 - [Reference](#reference)
 
@@ -16,7 +16,7 @@ Curated collection of official documentation and learning resources for all tech
 
 ### Core Technologies
 
-#### Astro
+#### Core Technologies Astro
 
 - **URL**: <https://docs.astro.build/>
 - **Description**: Official Astro documentation covering islands architecture, SSR/SSG, and React integration.
@@ -28,7 +28,7 @@ Curated collection of official documentation and learning resources for all tech
 - **Description**: Official React 19 documentation with hooks, components, and server components.
 - **Relevance**: Used in both Astro islands (web) and TanStack Start (admin) for interactive UI components.
 
-#### Hono
+#### Core Technologies Hono
 
 - **URL**: <https://hono.dev/>
 - **Description**: Fast, lightweight web framework for the edge with TypeScript support.
@@ -114,7 +114,7 @@ Curated collection of official documentation and learning resources for all tech
 - [Refinements](https://zod.dev/?id=refine)
 - [Type Inference](https://zod.dev/?id=type-inference)
 
-#### TypeScript
+#### Validation & TypeScript
 
 - **URL**: <https://www.typescriptlang.org/docs/>
 - **Description**: Official TypeScript documentation and handbook.
@@ -424,7 +424,7 @@ http POST localhost:3000/api/accommodations \
 
 ### Discord Servers
 
-#### Astro
+#### Discord Servers Astro
 
 - **Invite**: <https://astro.build/chat>
 - **Description**: Official Astro Discord community.
@@ -436,7 +436,7 @@ http POST localhost:3000/api/accommodations \
 - **Description**: Official TanStack (Query, Router, Form, Start) community.
 - **Use for**: TanStack library questions and updates.
 
-#### Hono
+#### Discord Servers Hono
 
 - **Invite**: <https://discord.gg/KMh2eNSdxV>
 - **Description**: Official Hono framework community.

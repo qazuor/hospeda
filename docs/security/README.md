@@ -26,6 +26,7 @@ Our security program aims to:
 Hospeda's threat model addresses:
 
 **Assets to Protect:**
+
 - User personal information (names, emails, phone numbers)
 - Authentication credentials and session tokens
 - Booking and reservation data
@@ -34,12 +35,14 @@ Hospeda's threat model addresses:
 - System configurations and secrets
 
 **Threat Actors:**
+
 - External attackers (unauthorized access attempts)
 - Automated bots (scraping, abuse)
 - Malicious users (fraudulent bookings)
 - Insider threats (compromised accounts)
 
 **Attack Vectors:**
+
 - Injection attacks (SQL, XSS, SSRF)
 - Broken authentication/authorization
 - Sensitive data exposure
@@ -48,6 +51,7 @@ Hospeda's threat model addresses:
 - CSRF attacks
 
 **Risk Level:**
+
 - **Critical**: Payment fraud, data breaches, unauthorized access
 - **High**: Account takeover, privilege escalation
 - **Medium**: Information disclosure, denial of service
@@ -111,21 +115,25 @@ graph TB
 ### External Resources
 
 **OWASP Resources:**
+
 - [OWASP Top 10 2021](https://owasp.org/Top10/)
 - [OWASP Cheat Sheet Series](https://cheatsheetseries.owasp.org/)
 - [OWASP API Security Top 10](https://owasp.org/www-project-api-security/)
 
 **Security Standards:**
+
 - [NIST Cybersecurity Framework](https://www.nist.gov/cyberframework)
 - [CWE Top 25](https://cwe.mitre.org/top25/)
 - [SANS Security Checklist](https://www.sans.org/security-resources/)
 
 **Tools Documentation:**
+
 - [Clerk Security Best Practices](https://clerk.com/docs/security)
 - [Vercel Security](https://vercel.com/docs/security)
 - [Hono Security Middleware](https://hono.dev/middleware/built-in/secure-headers)
 
 **Compliance Resources:**
+
 - [GDPR Official Text](https://gdpr-info.eu/)
 - [Argentina Data Protection Law](https://www.argentina.gob.ar/aaip)
 
@@ -372,12 +380,14 @@ graph TB
 Hospeda takes security seriously. If you discover a security vulnerability, please help us protect our users by disclosing it responsibly.
 
 **We appreciate:**
+
 - Private disclosure before public announcement
 - Detailed vulnerability reports
 - Proof-of-concept (non-destructive)
 - Suggestions for remediation
 
 **We commit to:**
+
 - Acknowledge receipt within 48 hours
 - Provide regular updates on remediation progress
 - Credit security researchers (if desired)
@@ -385,7 +395,7 @@ Hospeda takes security seriously. If you discover a security vulnerability, plea
 
 ### How to Report
 
-**Email**: security@hospeda.com (PGP key available)
+**Email**: <security@hospeda.com> (PGP key available)
 
 **What to Include:**
 
@@ -394,23 +404,23 @@ Hospeda takes security seriously. If you discover a security vulnerability, plea
    - Affected component/endpoint
    - Potential impact
 
-2. **Steps to Reproduce**
+1. **Steps to Reproduce**
    - Detailed reproduction steps
    - Required preconditions
    - Expected vs. actual behavior
 
-3. **Proof of Concept**
+1. **Proof of Concept**
    - Non-destructive demonstration
    - Screenshots/videos if applicable
    - Sample payloads (sanitized)
 
-4. **Impact Assessment**
+1. **Impact Assessment**
    - Confidentiality impact
    - Integrity impact
    - Availability impact
    - Affected users/data
 
-5. **Suggested Fix** (optional)
+1. **Suggested Fix** (optional)
    - Remediation recommendations
    - Code patches if available
 
@@ -427,25 +437,29 @@ Hospeda takes security seriously. If you discover a security vulnerability, plea
 
 ### Severity Levels
 
-**Critical (CVSS 9.0-10.0)**
+#### Critical (CVSS 9.0-10.0)
+
 - Remote code execution
 - SQL injection with data access
 - Authentication bypass
 - Payment system vulnerabilities
 
-**High (CVSS 7.0-8.9)**
+#### High (CVSS 7.0-8.9)
+
 - Privilege escalation
 - Sensitive data exposure
 - Cross-site scripting (XSS)
 - Significant authorization flaws
 
-**Medium (CVSS 4.0-6.9)**
+#### Medium (CVSS 4.0-6.9)
+
 - Information disclosure
 - CSRF vulnerabilities
 - Limited privilege escalation
 - Denial of service
 
-**Low (CVSS 0.1-3.9)**
+#### Low (CVSS 0.1-3.9)
+
 - Minor information leakage
 - Best practice violations
 - Low-impact misconfigurations
@@ -459,6 +473,7 @@ We're evaluating a bug bounty program to reward security researchers. Check back
 ### Out of Scope
 
 Please **do not** report:
+
 - Denial of service attacks
 - Social engineering attacks
 - Physical security issues
@@ -468,8 +483,8 @@ Please **do not** report:
 
 ### Contact Information
 
-- **Security Email**: security@hospeda.com
-- **General Contact**: support@hospeda.com
+- **Security Email**: <security@hospeda.com>
+- **General Contact**: <support@hospeda.com>
 - **Emergency**: Use security email with "[URGENT]" prefix
 
 ---
@@ -487,32 +502,32 @@ Hospeda is committed to compliance with the General Data Protection Regulation (
    - User consent mechanisms
    - Transparent data practices
 
-2. **Purpose Limitation**
+1. **Purpose Limitation**
    - Data collected for specific purposes
    - No secondary use without consent
    - Clear retention policies
 
-3. **Data Minimization**
+1. **Data Minimization**
    - Only necessary data collected
    - Regular data cleanup
    - Anonymization where possible
 
-4. **Accuracy**
+1. **Accuracy**
    - User profile updates
    - Data correction mechanisms
    - Regular data validation
 
-5. **Storage Limitation**
+1. **Storage Limitation**
    - Defined retention periods
    - Automated data deletion
    - Backup retention policies
 
-6. **Integrity and Confidentiality**
+1. **Integrity and Confidentiality**
    - Encryption in transit and at rest
    - Access controls
    - Security monitoring
 
-7. **Accountability**
+1. **Accountability**
    - Data processing records
    - Security documentation
    - Regular audits
@@ -533,7 +548,7 @@ Hospeda supports the following GDPR rights:
 
 - **Data Controller**: Hospeda
 - **Data Processors**: Clerk (authentication), Mercado Pago (payments), Neon (database hosting)
-- **Data Protection Officer**: dpo@hospeda.com
+- **Data Protection Officer**: <dpo@hospeda.com>
 - **Data Processing Agreements**: In place with all processors
 
 ### Privacy Policy
@@ -541,6 +556,7 @@ Hospeda supports the following GDPR rights:
 **Location**: [Privacy Policy](../legal/privacy-policy.md)
 
 **Key Points:**
+
 - What data we collect
 - How we use data
 - Who we share data with
@@ -555,6 +571,7 @@ Hospeda supports the following GDPR rights:
 **Location**: [Terms of Service](../legal/terms-of-service.md)
 
 **Key Points:**
+
 - User responsibilities
 - Acceptable use policy
 - Prohibited activities
@@ -567,6 +584,7 @@ Hospeda supports the following GDPR rights:
 **Location**: [Cookie Policy](../legal/cookie-policy.md)
 
 **Key Points:**
+
 - Types of cookies used
 - Purpose of each cookie
 - How to manage cookies
@@ -578,11 +596,13 @@ Hospeda supports the following GDPR rights:
 **Status**: Completed for core functionality
 
 **High-Risk Processing Activities:**
+
 - Payment processing (Mercado Pago)
 - User profiling (booking preferences)
 - Geolocation data (accommodation search)
 
 **Mitigations:**
+
 - Third-party payment processor (PCI DSS compliant)
 - Limited profiling scope
 - User consent for location access
@@ -592,21 +612,23 @@ Hospeda supports the following GDPR rights:
 ### Compliance Resources
 
 **Internal Documents:**
+
 - [Data Protection Policy](./data-protection-policy.md)
 - [Data Retention Schedule](./data-retention.md)
 - [Data Breach Response Plan](./data-breach-response.md)
 - [User Data Request Procedures](./user-data-requests.md)
 
 **External Regulations:**
+
 - [GDPR Official Text](https://gdpr-info.eu/)
 - [Argentina PDPL](https://www.argentina.gob.ar/aaip/datospersonales/ley)
 - [PCI DSS (Mercado Pago)](https://www.mercadopago.com.ar/developers/es/docs/security/pci)
 
 ### Compliance Contact
 
-- **Data Protection Officer**: dpo@hospeda.com
-- **Legal Team**: legal@hospeda.com
-- **Privacy Inquiries**: privacy@hospeda.com
+- **Data Protection Officer**: <dpo@hospeda.com>
+- **Legal Team**: <legal@hospeda.com>
+- **Privacy Inquiries**: <privacy@hospeda.com>
 
 ---
 
@@ -614,13 +636,14 @@ Hospeda supports the following GDPR rights:
 
 ### Internal Resources
 
-- **Security Team**: security@hospeda.com
-- **Development Team**: dev@hospeda.com
-- **DevOps Team**: devops@hospeda.com
+- **Security Team**: <security@hospeda.com>
+- **Development Team**: <dev@hospeda.com>
+- **DevOps Team**: <devops@hospeda.com>
 
 ### Training and Onboarding
 
 New team members should:
+
 1. Read this security documentation
 2. Complete security awareness training
 3. Review code security guidelines
@@ -630,10 +653,11 @@ New team members should:
 ### Questions or Concerns
 
 If you have questions about:
-- **Security practices**: security@hospeda.com
-- **Compliance**: legal@hospeda.com
-- **Technical implementation**: dev@hospeda.com
-- **Infrastructure**: devops@hospeda.com
+
+- **Security practices**: <security@hospeda.com>
+- **Compliance**: <legal@hospeda.com>
+- **Technical implementation**: <dev@hospeda.com>
+- **Infrastructure**: <devops@hospeda.com>
 
 ---
 

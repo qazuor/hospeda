@@ -213,7 +213,7 @@ export function initWebVitals() {
 
 **Via Vercel Dashboard**:
 
-1. Go to https://vercel.com/[team]/hospeda-web
+1. Go to <https://vercel.com/[team]/hospeda-web>
 2. Click **"Analytics"** tab
 3. View Web Vitals data
 
@@ -387,7 +387,7 @@ curl https://api.hospeda.com/metrics | jq
 
 **Via Neon Console**:
 
-1. Go to https://console.neon.tech
+1. Go to <https://console.neon.tech>
 2. Select Hospeda project
 3. Go to **Monitoring** tab
 
@@ -1067,11 +1067,11 @@ fly logs --app hospeda-api | grep "userId.*user-123"
    - Increase from 0.5% to 1% if normal fluctuation
    - Lengthen time window (5 min → 10 min)
 
-2. **Add filters**
+1. **Add filters**
    - Ignore expected errors (404s for crawlers)
    - Ignore low-impact endpoints
 
-3. **Use anomaly detection**
+1. **Use anomaly detection**
    - Alert on deviation from normal, not absolute threshold
 
 ### Missing Important Issues
@@ -1084,10 +1084,10 @@ fly logs --app hospeda-api | grep "userId.*user-123"
    - Monitor all critical paths
    - Add synthetic monitoring (automated tests)
 
-2. **Lower thresholds** (carefully)
+1. **Lower thresholds** (carefully)
    - May increase false positives
 
-3. **Add more alert types**
+1. **Add more alert types**
    - Error type based (not just rate)
    - Business metric based (bookings/hour)
 
@@ -1102,7 +1102,7 @@ fly logs --app hospeda-api | grep "userId.*user-123"
    - Developer deep-dive (detailed)
    - On-call quick view (critical only)
 
-2. **Use hierarchy**
+1. **Use hierarchy**
    - Start with summary
    - Drill down for details
 

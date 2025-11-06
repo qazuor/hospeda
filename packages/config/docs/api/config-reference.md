@@ -426,8 +426,8 @@ console.log(config.VITE_API_HOST); // "http://localhost"
 | Variable | Type | Default | Description |
 |----------|------|---------|-------------|
 | `VITE_API_PORT` | number | 3000 | API server port |
-| `VITE_API_HOST` | string | "http://localhost" | API host URL |
-| `API_CORS_ALLOWED_ORIGINS` | string | "http://localhost:4321" | Comma-separated allowed origins |
+| `VITE_API_HOST` | string | "<http://localhost>" | API host URL |
+| `API_CORS_ALLOWED_ORIGINS` | string | "<http://localhost:4321>" | Comma-separated allowed origins |
 
 ---
 

@@ -246,7 +246,7 @@ export const checkAuth = createServerFn({ method: 'GET' })
    - Select repository
    - Set production branch (usually `main`)
 
-2. Push code:
+1. Push code:
 
 ```bash
 git add .
@@ -254,7 +254,7 @@ git commit -m "feat: add new feature"
 git push origin main
 ```
 
-3. Vercel automatically:
+1. Vercel automatically:
    - Detects push
    - Runs build
    - Deploys to production
@@ -378,8 +378,8 @@ Name: admin
 Value: cname.vercel-dns.com
 ```
 
-4. Wait for DNS propagation (5-30 minutes)
-5. Vercel automatically provisions SSL
+1. Wait for DNS propagation (5-30 minutes)
+2. Vercel automatically provisions SSL
 
 **Via CLI:**
 
@@ -649,7 +649,7 @@ cd apps/admin
 pnpm build
 ```
 
-3. Common causes:
+1. Common causes:
    - TypeScript errors
    - Missing dependencies
    - Environment variables not set

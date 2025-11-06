@@ -373,11 +373,12 @@ Implements authentication requirements from #45
 ## Additional Context
 
 Used Clerk for authentication as decided in ADR-003. Middleware validates JWT on each request to protected routes.
+
 ```
 
 ## PR Size Guidelines
 
-**Keep PRs small for faster reviews and easier understanding.**
+#### Keep PRs small for faster reviews and easier understanding.
 
 ### Size Categories
 
@@ -688,7 +689,7 @@ After addressing all feedback:
 
 ### Merge Strategy
 
-**Squash and Merge (Preferred)**
+#### Squash and Merge (Preferred)
 
 ```text
 All commits in PR → Single commit on main
@@ -700,7 +701,7 @@ All commits in PR → Single commit on main
 - One commit per feature/fix
 - Easy to revert if needed
 
-**Merge Commit (For Large Features)**
+#### Merge Commit (For Large Features)
 
 ```text
 All commits preserved + merge commit
@@ -712,7 +713,7 @@ All commits preserved + merge commit
 - Multiple logical changes in PR
 - Collaborators want credit for individual commits
 
-**Rebase and Merge (Rare)**
+#### Rebase and Merge (Rare)
 
 ```text
 All commits added to base without merge commit
@@ -839,7 +840,7 @@ You've successfully contributed to Hospeda!
 
 ## Draft PRs
 
-**Use draft PRs for work in progress.**
+#### Use draft PRs for work in progress
 
 ### When to Use Draft PRs
 

@@ -102,7 +102,7 @@ __root.tsx              → Wraps entire app
 
 ### Basic Dynamic Routes
 
-Use `$` prefix for dynamic segments:
+Use `Use  prefix for dynamic segments:
 
 ```tsx
 // src/routes/users/$userId.tsx
@@ -155,7 +155,7 @@ function ReviewDetail() {
 
 ### Catch-All Routes
 
-Use `$` alone for catch-all segments:
+Use `Use  alone for catch-all segments:
 
 ```tsx
 // src/routes/docs/$.tsx

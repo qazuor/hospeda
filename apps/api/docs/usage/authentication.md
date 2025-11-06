@@ -380,7 +380,7 @@ const response = await fetch('https://api.hospeda.com/api/v1/users/123', {
    }
    ```
 
-2. **Verify token is not null:**
+1. **Verify token is not null:**
 
    ```typescript
    const token = await getToken()
@@ -390,7 +390,7 @@ const response = await fetch('https://api.hospeda.com/api/v1/users/123', {
    }
    ```
 
-3. **Check user is signed in:**
+1. **Check user is signed in:**
 
    ```typescript
    const { isSignedIn, getToken } = useAuth()

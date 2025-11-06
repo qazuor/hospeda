@@ -93,7 +93,7 @@ Neon provides automated daily backups with no configuration required.
 
 **Verification**:
 
-1. Go to https://console.neon.tech
+1. Go to <https://console.neon.tech>
 2. Select Hospeda project
 3. Navigate to **Backups** tab
 4. Verify recent backups listed
@@ -123,7 +123,7 @@ Neon provides automated daily backups with no configuration required.
 
 **Step 1**: Access Neon Console
 
-1. Navigate to https://console.neon.tech
+1. Navigate to <https://console.neon.tech>
 2. Select Hospeda project
 3. Go to **Backups** tab
 
@@ -131,11 +131,13 @@ Neon provides automated daily backups with no configuration required.
 
 1. Click **"Create Backup"** button
 2. Add descriptive name:
+
    ```text
    Pre-migration: [Migration Name]
    Date: 2024-11-06
    Reason: [Brief reason]
    ```
+
 3. Click **"Create"**
 
 **Step 3**: Verify Backup
@@ -180,7 +182,7 @@ Neon supports point-in-time recovery using Write-Ahead Logs (WAL).
 - More precise than daily backup
 - Useful for recent data corruption
 
-**Procedure** (see [Point-in-Time Recovery](#point-in-time-recovery-pitr-1) section)
+**Procedure** (see Point-in-Time Recovery section)
 
 ### Backup Verification
 
@@ -686,7 +688,7 @@ pnpm dev
 
 **Step 8**: Test application
 
-1. Open http://localhost:4321 (web)
+1. Open <http://localhost:4321> (web)
 2. Test critical functionality
 3. Verify data displays correctly
 
@@ -1104,7 +1106,7 @@ Estimated records lost:
 
 **Solutions**:
 
-1. Check Neon service status: https://neonstatus.com
+1. Check Neon service status: <https://neonstatus.com>
 2. Verify project not suspended
 3. Check storage quota
 4. Contact Neon support

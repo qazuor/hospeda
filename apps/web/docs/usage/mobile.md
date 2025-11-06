@@ -164,22 +164,22 @@ All interactive elements are optimized for touch:
    - Search bar
    - CTA button
 
-2. **Quick Search**
+1. **Quick Search**
    - Large tap targets
    - Auto-complete
    - Voice search (if supported)
 
-3. **Featured Cards**
+1. **Featured Cards**
    - Horizontal scroll
    - Swipe to navigate
    - "View All" button
 
-4. **Content Blocks**
+1. **Content Blocks**
    - Stacked vertically
    - Full-width images
    - Touch-friendly links
 
-5. **Footer**
+1. **Footer**
    - Collapsed sections
    - Tap to expand
    - Contact info

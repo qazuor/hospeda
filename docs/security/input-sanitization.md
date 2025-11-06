@@ -46,7 +46,7 @@ Complete guide to input validation and sanitization patterns in Hospeda.
       - [Dynamic Filters](#dynamic-filters)
     - [Never Concatenate SQL](#never-concatenate-sql)
       - [Unsafe Examples](#unsafe-examples)
-      - [Safe Alternatives](#safe-alternatives)
+      - Safe Alternatives
     - [Query Examples](#query-examples)
       - [Simple SELECT](#simple-select)
       - [WHERE with Parameters](#where-with-parameters)
@@ -64,7 +64,7 @@ Complete guide to input validation and sanitization patterns in Hospeda.
       - [Safe HTML Rendering](#safe-html-rendering)
     - [Dangerous HTML Patterns](#dangerous-html-patterns)
       - [What to Avoid](#what-to-avoid)
-      - [Safe Alternatives](#safe-alternatives-1)
+      - Safe Alternatives
     - [CSP Implementation](#csp-implementation)
       - [Content Security Policy](#content-security-policy)
       - [CSP Configuration](#csp-configuration)
@@ -78,7 +78,7 @@ Complete guide to input validation and sanitization patterns in Hospeda.
     - [File Type Validation](#file-type-validation)
       - [MIME Type Checking](#mime-type-checking)
       - [File Extension Validation](#file-extension-validation)
-    - [MIME Type Checking](#mime-type-checking-1)
+    - MIME Type Checking
       - [Magic Number Validation](#magic-number-validation)
     - [File Size Limits](#file-size-limits)
       - [Implementation](#implementation)
@@ -107,7 +107,7 @@ Complete guide to input validation and sanitization patterns in Hospeda.
     - [Redirect Validation](#redirect-validation)
       - [Safe Redirect](#safe-redirect)
       - [Open Redirect Prevention](#open-redirect-prevention)
-    - [Code Examples](#code-examples-1)
+    - Code Examples
       - [URL Validation Schema](#url-validation-schema)
       - [External Link Component](#external-link-component)
   - [String Sanitization](#string-sanitization)
@@ -752,7 +752,7 @@ const query = `DELETE FROM users WHERE id = ${userId}`;
 await db.execute(sql`SELECT * FROM users WHERE name = '${userInput}'`);
 ```
 
-#### Safe Alternatives
+#### Never Concatenate Safe Alternatives
 
 ```typescript
 // ✅ SAFE - Use Drizzle query builder
@@ -1014,7 +1014,7 @@ new Function(userInput)();
 <div onclick={userInput}>
 ```
 
-#### Safe Alternatives
+#### Dangerous HTML Safe Alternatives
 
 ```typescript
 // ✅ SAFE alternatives:
@@ -1223,7 +1223,7 @@ export function UnsafeDescription({ description }: Props) {
 
 ### File Type Validation
 
-#### MIME Type Checking
+#### File Type MIME Type Checking
 
 ```typescript
 // apps/api/src/utils/file-validation.ts

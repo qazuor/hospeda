@@ -13,7 +13,7 @@ Complete step-by-step guide for adding a new entity to the Hospeda platform, fro
 - [Step 4: Create the Service](#step-4-create-the-service)
 - [Step 5: Create API Routes](#step-5-create-api-routes)
 - [Step 6: Testing](#step-6-testing)
-- [Common Issues & Solutions](#common-issues--solutions)
+- Common Issues & Solutions
 - [Next Steps](#next-steps)
 
 ## Overview
@@ -42,12 +42,12 @@ Before starting, ensure you have:
    - Database running locally
    - Project dependencies installed
 
-2. **Understanding of Core Concepts**
+1. **Understanding of Core Concepts**
    - [Architecture Overview](../architecture/overview.md)
    - [Data Flow](../architecture/data-flow.md)
    - [Architectural Patterns](../architecture/patterns.md)
 
-3. **Familiarity With**
+1. **Familiarity With**
    - TypeScript
    - Zod (validation)
    - Drizzle ORM

@@ -107,7 +107,7 @@ const foo = 'bar'
 
 ```markdown
 <!-- Bad -->
-[See Database](#database-setup)
+See Database
 ## Database Configuration
 
 <!-- Good -->

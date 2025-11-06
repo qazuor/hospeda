@@ -8,7 +8,7 @@ Hospeda's approach to performance is guided by four core principles:
 
 ### 1. User-First Optimization
 
-**Focus on perceived performance over technical metrics.**
+#### Focus on perceived performance over technical metrics
 
 - Prioritize what users experience (loading states, interactivity)
 - Optimize critical rendering path (above-the-fold content)
@@ -30,7 +30,7 @@ Hospeda's approach to performance is guided by four core principles:
 
 ### 3. Proactive Performance Management
 
-**Build performance into the development process from day one.**
+#### Build performance into the development process from day one
 
 - Set performance budgets for bundle size and timing
 - Run automated Lighthouse audits in CI/CD
@@ -41,7 +41,7 @@ Hospeda's approach to performance is guided by four core principles:
 
 ### 4. Continuous Improvement
 
-**Performance is not a one-time effort but an ongoing practice.**
+#### Performance is not a one-time effort but an ongoing practice
 
 - Regular performance audits (weekly automated, quarterly manual)
 - Monitor performance trends over time
@@ -101,7 +101,7 @@ All pages must meet these minimum scores:
 | **Vendor JS** | < 120KB | 150KB | React, TanStack libraries |
 | **Total Initial** | < 400KB | 500KB | Complete dashboard initial load |
 
-#### Time Budget
+#### Frontend Performance Time Budget
 
 **Web App**:
 

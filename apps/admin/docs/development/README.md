@@ -171,9 +171,9 @@ This section provides **comprehensive development guides** for engineers buildin
 
 | Task | Steps | Guides |
 |------|-------|--------|
-| Add new CRUD page | 1. Create route file<br>2. Add loader<br>3. Create form<br>4. Add table<br>5. Wire mutations | [Creating Pages](./creating-pages.md)<br>[Forms](./forms.md)<br>[Tables](./tables.md) |
-| Add dashboard widget | 1. Create component<br>2. Add query<br>3. Handle loading/error<br>4. Add to dashboard | [Queries](./queries.md)<br>[Components](./components.md) |
-| Create protected admin page | 1. Create route<br>2. Add beforeLoad<br>3. Check permissions<br>4. Handle unauthorized | [Protected Routes](./protected-routes.md)<br>[Authentication](./authentication.md) |
+| Add new CRUD page | 1. Create route file`<br>`2. Add loader`<br>`3. Create form`<br>`4. Add table`<br>`5. Wire mutations | [Creating Pages](./creating-pages.md)`<br>`[Forms](./forms.md)`<br>`[Tables](./tables.md) |
+| Add dashboard widget | 1. Create component`<br>`2. Add query`<br>`3. Handle loading/error`<br>`4. Add to dashboard | [Queries](./queries.md)`<br>`[Components](./components.md) |
+| Create protected admin page | 1. Create route`<br>`2. Add beforeLoad`<br>`3. Check permissions`<br>`4. Handle unauthorized | [Protected Routes](./protected-routes.md)`<br>`[Authentication](./authentication.md) |
 
 ### Working with Data
 
@@ -313,7 +313,7 @@ src/routes/accommodations/
 - **Client State**: Use React state or Context (UI state)
 - Never mix the two
 
-#### Type Safety
+#### Key Concepts Type Safety
 
 - End-to-end type safety from database to UI
 - Infer types from Zod schemas

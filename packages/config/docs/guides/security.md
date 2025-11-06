@@ -98,17 +98,17 @@ const connection = createConnection({
    - Create new API key/password
    - Test in staging environment
 
-2. **Update Production:**
+1. **Update Production:**
    - Update environment variables
    - Deploy new version
    - Verify functionality
 
-3. **Revoke Old Secret:**
+1. **Revoke Old Secret:**
    - Wait for deployment to complete
    - Revoke/delete old secret
    - Monitor for errors
 
-4. **Document:**
+1. **Document:**
    - Log rotation in security log
    - Update documentation if needed
 

@@ -796,7 +796,7 @@ nano .env.local  # Edit with your values
 
 **Storage**: Platform environment variables
 
-#### Vercel (Web/Admin)
+#### Staging Secrets Vercel (Web/Admin)
 
 ```bash
 # Set environment variable for staging
@@ -806,7 +806,7 @@ vercel env add HOSPEDA_DATABASE_URL staging
 # Project Settings → Environment Variables → Add
 ```
 
-#### Fly.io (API)
+#### Project Settings Fly.io (API)
 
 ```bash
 # Set secret for API
@@ -820,7 +820,7 @@ fly secrets list -a hospeda-api-staging
 
 **Storage**: Platform environment variables (encrypted)
 
-#### Vercel (Web/Admin)
+#### Production Secrets Vercel (Web/Admin)
 
 ```bash
 # Set production environment variable
@@ -829,7 +829,7 @@ vercel env add HOSPEDA_DATABASE_URL production
 # Use Vercel dashboard for sensitive values
 ```
 
-#### Fly.io (API)
+#### Use Vercel Fly.io (API)
 
 ```bash
 # Set production secret
@@ -965,12 +965,12 @@ app.listen(3001);
    - Use `.env.example` as template (no actual values)
    - Use platform secret storage for staging/production
 
-2. **Principle of Least Privilege**
+1. **Principle of Least Privilege**
    - Grant minimum necessary permissions
    - Use separate credentials per environment
    - Rotate secrets regularly
 
-3. **Audit Secret Access**
+1. **Audit Secret Access**
    - Log secret changes
    - Monitor unauthorized access
    - Review access permissions regularly
@@ -982,12 +982,12 @@ app.listen(3001);
    - Use consistent naming (SCREAMING_SNAKE_CASE)
    - Group by category (API, AUTH, DATABASE, etc.)
 
-2. **Documentation**
+1. **Documentation**
    - Document all variables in `.env.example`
    - Include format and example values
    - Note which variables are required vs optional
 
-3. **Validation**
+1. **Validation**
    - Validate all environment variables at startup
    - Use Zod schemas for type safety
    - Fail fast on missing/invalid variables
@@ -999,12 +999,12 @@ app.listen(3001);
    - Never use production credentials locally
    - Use mock services when possible
 
-2. **Environment Parity**
+1. **Environment Parity**
    - Keep staging as close to production as possible
    - Use same configuration structure across environments
    - Test with production-like data in staging
 
-3. **Hot Reload**
+1. **Hot Reload**
    - Restart development server after changing `.env.local`
    - Use `dotenv-cli` for environment variable injection
    - Validate changes before committing
@@ -1016,12 +1016,12 @@ app.listen(3001);
    - Check for deprecated variables
    - Validate variable formats
 
-2. **Post-Deployment**
+1. **Post-Deployment**
    - Verify application starts successfully
    - Check logs for configuration warnings
    - Test external service connections
 
-3. **Rollback Plan**
+1. **Rollback Plan**
    - Keep previous variable values documented
    - Have rollback procedure for credential changes
    - Test rollback in staging first

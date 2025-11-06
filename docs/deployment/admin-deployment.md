@@ -13,9 +13,9 @@
 4. [Build Configuration](#build-configuration)
 5. [Environment Variables](#environment-variables)
 6. [Deployment Process](#deployment-process)
-7. [Authentication & Security](#authentication--security)
-8. [Performance & Optimization](#performance--optimization)
-9. [Monitoring & Logs](#monitoring--logs)
+7. Authentication & Security
+8. Performance & Optimization
+9. Monitoring & Logs
 10. [Troubleshooting](#troubleshooting)
 11. [Rollback Procedures](#rollback-procedures)
 
@@ -51,21 +51,25 @@ The admin dashboard is deployed to **Vercel** with:
 TanStack Start is a full-stack React framework that provides:
 
 **Server-Side Rendering (SSR)**:
+
 - Initial page load rendered on server
 - Fast Time to First Byte (TTFB)
 - SEO-friendly (though admin is private)
 
 **File-Based Routing**:
+
 - Routes defined in `src/routes/` directory
 - Automatic code splitting per route
 - Type-safe navigation
 
 **Server Functions**:
+
 - Server-side data fetching
 - API integration
 - Server-side validation
 
 **Build Output**:
+
 - Generates `.output/` directory
 - Server entry: `.output/server/index.mjs`
 - Static assets: `.output/public/`
@@ -144,7 +148,7 @@ Ensure Vercel has access to the Hospeda repository:
 
 ### 3. Admin-Specific Requirements
 
-#### Node.js Version
+#### 3. Admin-Specific Node.js Version
 
 The admin app requires Node.js **20.10.0 or higher**.
 
@@ -174,6 +178,7 @@ The admin app is part of a TurboRepo monorepo:
 - **Package Manager**: PNPM with workspaces
 
 Vercel must be configured to:
+
 - Use PNPM as package manager
 - Set root directory to `apps/admin`
 - Include workspace dependencies
@@ -206,6 +211,7 @@ apps/admin/.output/
 4. Get publishable key
 
 **Required for Deployment**:
+
 - `VITE_CLERK_PUBLISHABLE_KEY`
 
 #### Backend API
@@ -218,6 +224,7 @@ apps/admin/.output/
 4. Admin endpoints protected with Clerk
 
 **Required for Deployment**:
+
 - `VITE_API_URL` (e.g., `https://api.hospeda.com`)
 
 ---
@@ -232,11 +239,11 @@ apps/admin/.output/
    - Go to [vercel.com/new](https://vercel.com/new)
    - Or click "Add New" → "Project" from dashboard
 
-2. **Select Repository**:
+1. **Select Repository**:
    - Find `hospeda/hospeda` repository
    - Click "Import"
 
-3. **Configure Project**:
+1. **Configure Project**:
    - **Project Name**: `hospeda-admin`
    - **Framework Preset**: Select "Other" (TanStack Start not in presets)
    - **Root Directory**: `apps/admin`
@@ -244,16 +251,16 @@ apps/admin/.output/
    - **Output Directory**: `.output`
    - **Install Command**: `pnpm install`
 
-4. **Environment Variables**:
+1. **Environment Variables**:
    - Add all required variables (see [Environment Variables](#environment-variables))
    - Use "Production" environment for now
 
-5. **Deploy**:
+1. **Deploy**:
    - Click "Deploy"
    - Wait for first deployment (~3-5 minutes)
    - Verify deployment success
 
-#### Using Vercel CLI
+#### Import Project Using Vercel CLI
 
 **Navigate to Admin Directory**:
 
@@ -357,6 +364,7 @@ This runs the build script defined in `apps/admin/package.json`:
 ```
 
 TanStack Start (via Vinxi) generates:
+
 - `.output/server/` - Server-side code
 - `.output/public/` - Static assets
 
@@ -404,8 +412,8 @@ Value: cname.vercel-dns.com
 TTL: Auto
 ```
 
-3. Wait for DNS propagation (~5-60 minutes)
-4. Verify in Vercel dashboard (should show "Valid Configuration")
+1. Wait for DNS propagation (~5-60 minutes)
+2. Verify in Vercel dashboard (should show "Valid Configuration")
 
 #### SSL Certificate
 
@@ -525,6 +533,7 @@ TanStack Start requires Node.js 18+, but we use **20.10.0** for best compatibili
 ```
 
 **Vercel Detection**:
+
 - Reads `engines.node` from package.json
 - Falls back to `.nvmrc`
 - Defaults to latest LTS if neither present
@@ -617,11 +626,13 @@ export const Route = {
 Vercel caches build artifacts to speed up deployments:
 
 **Cached**:
+
 - `node_modules/` (if package.json unchanged)
 - `.next/cache/` (framework cache)
 - Build outputs (for rollback)
 
 **Cache Duration**:
+
 - Dependencies: Until package.json changes
 - Build cache: 7 days
 
@@ -763,13 +774,15 @@ export const apiClient = hc<AppType>(import.meta.env.VITE_API_URL);
 
 Vercel supports three environment types:
 
-#### Production
+#### Production vs Production
 
 **When Used**:
+
 - Deployments from `main` branch
 - Custom domain deployments
 
 **Variables**:
+
 - Use production API URL
 - Use production Clerk keys
 - Enable analytics
@@ -782,13 +795,15 @@ VITE_API_URL=https://api.hospeda.com
 VITE_CLERK_PUBLISHABLE_KEY=pk_live_...
 ```
 
-#### Preview
+#### Production vs Preview
 
 **When Used**:
+
 - Pull request deployments
 - Branch deployments (non-main)
 
 **Variables**:
+
 - Use preview/staging API URL
 - Use test Clerk keys
 - Enable debug features
@@ -801,12 +816,14 @@ VITE_API_URL=https://api-preview.hospeda.com
 VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
 ```
 
-#### Development
+#### Production vs Development
 
 **When Used**:
+
 - Local development with `vercel dev`
 
 **Variables**:
+
 - Use localhost API
 - Use test Clerk keys
 - Enable all debug features
@@ -903,6 +920,7 @@ if (!env.VITE_CLERK_PUBLISHABLE_KEY) {
 ### Security Best Practices
 
 **DO**:
+
 - ✅ Use `VITE_` prefix for client-exposed variables
 - ✅ Use Vercel Secrets for sensitive values
 - ✅ Set different values for Production/Preview
@@ -910,6 +928,7 @@ if (!env.VITE_CLERK_PUBLISHABLE_KEY) {
 - ✅ Document required variables in README
 
 **DON'T**:
+
 - ❌ Commit `.env` files with secrets
 - ❌ Expose server-side secrets to client (no `VITE_` prefix)
 - ❌ Use production keys in preview deployments
@@ -990,6 +1009,7 @@ Vercel will:
 #### Production Deployments
 
 **When**:
+
 - Push to `main` branch
 - Merge pull request to `main`
 
@@ -1014,6 +1034,7 @@ Vercel sends deployment status:
 #### Preview Deployments
 
 **When**:
+
 - Pull request opened
 - Code pushed to PR branch
 
@@ -1044,7 +1065,7 @@ Vercel bot comments on PR:
 
 ### Manual Deployments
 
-#### Using Vercel CLI
+#### Manual Deployments Using Vercel CLI
 
 **Deploy from Local**:
 
@@ -1073,7 +1094,7 @@ git checkout feature/new-dashboard
 vercel
 ```
 
-#### Using Dashboard
+#### Manual Deployments Using Dashboard
 
 1. Go to Deployments tab
 2. Click "Deploy"
@@ -1171,7 +1192,7 @@ curl -X POST https://api.vercel.com/v1/integrations/deploy/...
 
 ### Clerk Integration
 
-#### Overview
+#### Clerk Integration Overview
 
 Clerk provides authentication for the admin dashboard:
 
@@ -1771,11 +1792,11 @@ packages:
   - 'packages/*'
 ```
 
-2. Enable "Include source files outside root directory" in Vercel:
+1. Enable "Include source files outside root directory" in Vercel:
    - Project Settings → General → Root Directory
    - Toggle ON
 
-3. Rebuild:
+1. Rebuild:
 
 ```bash
 vercel --force
@@ -1801,7 +1822,7 @@ pnpm exec depcheck
 pnpm remove unused-package
 ```
 
-2. **Enable Caching**:
+1. **Enable Caching**:
 
 Already enabled by default. Clear cache and retry:
 
@@ -1809,7 +1830,7 @@ Already enabled by default. Clear cache and retry:
 vercel --force
 ```
 
-3. **Upgrade Vercel Plan**: If consistently hitting limits
+1. **Upgrade Vercel Plan**: If consistently hitting limits
 
 ### VITE\_ Variable Issues
 
@@ -1829,7 +1850,7 @@ TypeError: Cannot read property 'VITE_API_URL' of undefined
 
 Go to Project Settings → Environment Variables
 
-2. **Check Prefix**:
+1. **Check Prefix**:
 
 Must be `VITE_` prefix for client-side access:
 
@@ -1841,7 +1862,7 @@ API_URL=https://api.hospeda.com
 VITE_API_URL=https://api.hospeda.com
 ```
 
-3. **Redeploy**:
+1. **Redeploy**:
 
 After adding/changing variables:
 
@@ -1884,7 +1905,7 @@ Error: No routes matched location "/admin/dashboard"
 src/routes/admin/dashboard.tsx
 ```
 
-2. **Check Route Path**:
+1. **Check Route Path**:
 
 ```typescript
 // src/routes/admin/dashboard.tsx
@@ -1893,7 +1914,7 @@ export const Route = createRoute({
 });
 ```
 
-3. **Regenerate Routes** (if using route generation):
+1. **Regenerate Routes** (if using route generation):
 
 ```bash
 pnpm dev
@@ -1945,7 +1966,7 @@ vercel env add VITE_CLERK_PUBLISHABLE_KEY production
 # Paste: pk_live_...
 ```
 
-2. Redeploy
+1. Redeploy
 
 #### Error: "Redirect loop after sign in"
 
@@ -1969,7 +1990,7 @@ Configure in Clerk Dashboard:
 
 Vercel keeps previous deployments active, allowing instant rollback.
 
-#### Using Dashboard
+#### Instant Rollback Using Dashboard
 
 1. Go to Deployments tab
 2. Find last working deployment

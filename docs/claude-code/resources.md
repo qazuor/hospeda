@@ -8,7 +8,7 @@ This page provides links to official documentation, learning resources, and refe
 
 ### Anthropic Documentation
 
-#### Claude Code
+#### Anthropic Documentation Claude Code
 
 - **[Claude Code Official Docs](https://docs.anthropic.com/claude-code)** - Complete documentation for Claude Code CLI
 - **[Getting Started Guide](https://docs.anthropic.com/claude-code/getting-started)** - Installation and setup
@@ -175,7 +175,7 @@ This page provides links to official documentation, learning resources, and refe
 - Repository management
 - Workflow automation
 
-#### PostgreSQL
+#### Official MCP PostgreSQL
 
 - **[PostgreSQL MCP Server](https://github.com/modelcontextprotocol/servers/tree/main/src/postgres)** - Database operations
 - **[PostgreSQL Docs](https://www.postgresql.org/docs/)** - Official PostgreSQL documentation
@@ -206,7 +206,7 @@ This page provides links to official documentation, learning resources, and refe
 - **[Docker MCP Server](https://github.com/modelcontextprotocol/servers/tree/main/src/docker)** - Container management
 - **[Docker Docs](https://docs.docker.com/)** - Official Docker documentation
 
-#### Vercel
+#### Optional MCP Vercel
 
 - **[Vercel Documentation](https://vercel.com/docs)** - Deployment platform
 - **[Vercel API](https://vercel.com/docs/rest-api)** - API reference
@@ -297,7 +297,7 @@ This page provides links to official documentation, learning resources, and refe
 2. [Middleware Guide](https://hono.dev/guides/middleware) - Using middleware
 3. [Best Practices](https://hono.dev/guides/best-practices) - Production tips
 
-#### Drizzle ORM
+#### Backend Technologies Drizzle ORM
 
 - **[Drizzle Docs](https://orm.drizzle.team/)** - Type-safe ORM
 - **[Quick Start](https://orm.drizzle.team/docs/quick-start)** - Getting started
@@ -330,7 +330,7 @@ This page provides links to official documentation, learning resources, and refe
 
 ### Database
 
-#### PostgreSQL
+#### Database PostgreSQL
 
 - **[PostgreSQL Docs](https://www.postgresql.org/docs/)** - Official documentation
 - **[Tutorial](https://www.postgresql.org/docs/current/tutorial.html)** - PostgreSQL tutorial
@@ -377,7 +377,7 @@ This page provides links to official documentation, learning resources, and refe
 
 ### Deployment
 
-#### Vercel
+#### Deployment Vercel
 
 - **[Vercel Docs](https://vercel.com/docs)** - Deployment platform
 - **[Deployments](https://vercel.com/docs/deployments/overview)** - Deploy apps
@@ -419,21 +419,21 @@ This page provides links to official documentation, learning resources, and refe
 
 ### For AI-Assisted Development
 
-**Beginner Level**
+#### Beginner Level
 
 1. [Prompt Engineering Guide](https://docs.anthropic.com/claude/docs/prompt-engineering)
 2. [Best Practices](./best-practices.md) - Effective prompting
 3. Practice with simple tasks (Level 1)
 4. Learn agent invocation
 
-**Intermediate Level**
+#### Intermediate Level
 
 1. Master Level 2 workflows
 2. Learn TDD with Claude Code
 3. Practice code review
 4. Learn refactoring patterns
 
-**Advanced Level**
+#### Advanced Level
 
 1. Master Level 3 workflows (all 4 phases)
 2. Coordinate multiple agents
@@ -463,7 +463,7 @@ This page provides links to official documentation, learning resources, and refe
 3. [Validation](https://hono.dev/guides/validation)
 4. [Hospeda API](../../apps/api/) - Study our implementation
 
-#### Drizzle ORM
+#### For Specific Drizzle ORM
 
 1. [Drizzle Quick Start](https://orm.drizzle.team/docs/quick-start)
 2. [Schema Definition](https://orm.drizzle.team/docs/schemas)

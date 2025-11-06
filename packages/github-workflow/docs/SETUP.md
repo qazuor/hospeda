@@ -270,7 +270,7 @@ If you want AI-powered issue enrichment:
 1. **Install Claude Code** (if not already)
    - Follow [Claude Code setup guide](https://docs.claude.com/code)
 
-2. **Configure Agent**
+1. **Configure Agent**
 
    In your `.claude/agents/enrichment-agent.md`:
 
@@ -292,7 +292,7 @@ If you want AI-powered issue enrichment:
    This agent is automatically invoked during issue enrichment.
    ```
 
-3. **Test Integration**
+1. **Test Integration**
 
    ```bash
    # Enrich a test issue
@@ -391,7 +391,7 @@ For VSCode links to work:
    }
    ```
 
-2. **Test VSCode links**
+1. **Test VSCode links**
 
    Click a link in format: `vscode://file//path/to/file:42`
 

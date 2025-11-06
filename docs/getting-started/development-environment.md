@@ -193,7 +193,7 @@ git commit --no-verify
    pnpm dev
    ```
 
-2. In VSCode:
+1. In VSCode:
    - Open `apps/api/src/index.ts`
    - Press `F5` or click "Run and Debug"
    - Select "Node: Attach"
@@ -210,9 +210,9 @@ git commit --no-verify
    pnpm dev
    ```
 
-2. Open browser DevTools (`F12`)
-3. Use Sources tab for debugging
-4. Set breakpoints in browser
+1. Open browser DevTools (`F12`)
+2. Use Sources tab for debugging
+3. Set breakpoints in browser
 
 **TanStack Start (Admin):**
 
@@ -223,8 +223,8 @@ git commit --no-verify
    pnpm dev
    ```
 
-2. Use browser DevTools for client-side
-3. Use VSCode for server-side (SSR) debugging
+1. Use browser DevTools for client-side
+2. Use VSCode for server-side (SSR) debugging
 
 #### Debug Tests
 

@@ -168,6 +168,7 @@ const guestActor: Actor = {
 Permissions follow the `ACTION:RESOURCE` or `RESOURCE_ACTION` format:
 
 **Pattern 1: Colon Notation**
+
 ```
 action:resource
 create:article
@@ -176,6 +177,7 @@ delete:article
 ```
 
 **Pattern 2: Underscore Notation (Preferred)**
+
 ```
 RESOURCE_ACTION
 ARTICLE_CREATE
@@ -184,10 +186,12 @@ ARTICLE_DELETE
 ```
 
 **Modifiers:**
+
 - `_ANY`: Permission applies to all resources (not just owned)
 - `_OWN`: Explicit ownership restriction
 
 **Examples:**
+
 ```typescript
 ARTICLE_UPDATE      // Update own articles
 ARTICLE_UPDATE_ANY  // Update any article (including others')
@@ -206,10 +210,12 @@ Every service must implement 9 abstract permission hooks.
 **When Called:** Before entity creation, after input validation
 
 **Parameters:**
+
 - `actor: Actor` - User performing the action
 - `data: z.infer<TCreateSchema>` - Validated creation data
 
 **Signature:**
+
 ```typescript
 protected abstract _canCreate(
   actor: Actor,
@@ -218,6 +224,7 @@ protected abstract _canCreate(
 ```
 
 **Example:**
+
 ```typescript
 protected _canCreate(actor: Actor, data: unknown): void {
   // Check authentication
@@ -254,10 +261,12 @@ protected _canCreate(actor: Actor, data: unknown): void {
 **When Called:** After entity is fetched, before update is applied
 
 **Parameters:**
+
 - `actor: Actor` - User performing the action
 - `entity: TEntity` - The entity being updated
 
 **Signature:**
+
 ```typescript
 protected abstract _canUpdate(
   actor: Actor,
@@ -266,6 +275,7 @@ protected abstract _canUpdate(
 ```
 
 **Example:**
+
 ```typescript
 protected _canUpdate(actor: Actor, entity: Article): void {
   if (!actor || !actor.id) {
@@ -293,10 +303,12 @@ protected _canUpdate(actor: Actor, entity: Article): void {
 **When Called:** After entity is fetched, before soft delete
 
 **Parameters:**
+
 - `actor: Actor` - User performing the action
 - `entity: TEntity` - The entity being deleted
 
 **Signature:**
+
 ```typescript
 protected abstract _canSoftDelete(
   actor: Actor,
@@ -305,6 +317,7 @@ protected abstract _canSoftDelete(
 ```
 
 **Example:**
+
 ```typescript
 protected _canSoftDelete(actor: Actor, entity: Article): void {
   if (!actor || !actor.id) {
@@ -330,10 +343,12 @@ protected _canSoftDelete(actor: Actor, entity: Article): void {
 **When Called:** After entity is fetched, before permanent deletion
 
 **Parameters:**
+
 - `actor: Actor` - User performing the action
 - `entity: TEntity` - The entity being permanently deleted
 
 **Signature:**
+
 ```typescript
 protected abstract _canHardDelete(
   actor: Actor,
@@ -342,6 +357,7 @@ protected abstract _canHardDelete(
 ```
 
 **Example:**
+
 ```typescript
 protected _canHardDelete(actor: Actor, entity: Article): void {
   // Only super admins can permanently delete
@@ -361,10 +377,12 @@ protected _canHardDelete(actor: Actor, entity: Article): void {
 **When Called:** After entity is fetched, before restoration
 
 **Parameters:**
+
 - `actor: Actor` - User performing the action
 - `entity: TEntity` - The entity being restored
 
 **Signature:**
+
 ```typescript
 protected abstract _canRestore(
   actor: Actor,
@@ -373,6 +391,7 @@ protected abstract _canRestore(
 ```
 
 **Example:**
+
 ```typescript
 protected _canRestore(actor: Actor, entity: Article): void {
   // Only admins can restore deleted content
@@ -392,10 +411,12 @@ protected _canRestore(actor: Actor, entity: Article): void {
 **When Called:** After entity is fetched, before returning to caller
 
 **Parameters:**
+
 - `actor: Actor` - User performing the action
 - `entity: TEntity` - The entity being viewed
 
 **Signature:**
+
 ```typescript
 protected abstract _canView(
   actor: Actor,
@@ -404,6 +425,7 @@ protected abstract _canView(
 ```
 
 **Example:**
+
 ```typescript
 protected _canView(actor: Actor, entity: Article): void {
   // Published articles are public
@@ -439,14 +461,17 @@ protected _canView(actor: Actor, entity: Article): void {
 **When Called:** Before querying database for list
 
 **Parameters:**
+
 - `actor: Actor` - User performing the action
 
 **Signature:**
+
 ```typescript
 protected abstract _canList(actor: Actor): Promise<void> | void
 ```
 
 **Example:**
+
 ```typescript
 protected _canList(actor: Actor): void {
   // Public operation - anyone can list (filtering happens elsewhere)
@@ -467,14 +492,17 @@ protected _canList(actor: Actor): void {
 **When Called:** Before executing search query
 
 **Parameters:**
+
 - `actor: Actor` - User performing the action
 
 **Signature:**
+
 ```typescript
 protected abstract _canSearch(actor: Actor): Promise<void> | void
 ```
 
 **Example:**
+
 ```typescript
 protected _canSearch(actor: Actor): void {
   // Public search allowed
@@ -489,14 +517,17 @@ protected _canSearch(actor: Actor): void {
 **When Called:** Before executing count query
 
 **Parameters:**
+
 - `actor: Actor` - User performing the action
 
 **Signature:**
+
 ```typescript
 protected abstract _canCount(actor: Actor): Promise<void> | void
 ```
 
 **Example:**
+
 ```typescript
 protected _canCount(actor: Actor): void {
   // Public operation
@@ -998,6 +1029,7 @@ if (!entity || entity.createdById !== actor.id) {
 ### 5. Test All Permission Paths
 
 Test matrix for each hook:
+
 - ✅ Authorized user succeeds
 - ✅ Unauthorized user fails
 - ✅ Guest fails (if applicable)
@@ -1041,6 +1073,7 @@ if (actor.permissions.includes(PermissionEnum.ARTICLE_UPDATE)) { }
 ---
 
 **Next Steps:**
+
 - **[Lifecycle Hooks Guide](./lifecycle-hooks.md)** - Before/after operation hooks
 - **[Custom Logic Guide](./custom-logic.md)** - Advanced business methods
 - **[Testing Guide](./testing.md)** - Comprehensive testing

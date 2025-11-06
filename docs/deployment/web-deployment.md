@@ -18,8 +18,8 @@ Complete guide for deploying the Hospeda Astro web application to Vercel.
 5. [Environment Variables](#environment-variables)
 6. [Deployment Process](#deployment-process)
 7. [Custom Domains](#custom-domains)
-8. [Performance & Optimization](#performance--optimization)
-9. [Monitoring & Logs](#monitoring--logs)
+8. Performance & Optimization
+9. Monitoring & Logs
 10. [Troubleshooting](#troubleshooting)
 11. [Rollback Procedures](#rollback-procedures)
 
@@ -178,7 +178,7 @@ Production Live ✓
 
 **Sign Up**:
 
-- Visit https://vercel.com/signup
+- Visit <https://vercel.com/signup>
 - Options:
   - **GitHub OAuth** (recommended)
   - GitLab
@@ -375,7 +375,7 @@ cd /path/to/hospeda/apps/web
 
 **Steps**:
 
-1. **Go to Vercel Dashboard**: https://vercel.com/new
+1. **Go to Vercel Dashboard**: <https://vercel.com/new>
 2. **Import Git Repository**: Click "Import Project"
 3. **Select Repository**: Choose `your-org/hospeda` from GitHub
 4. **Configure Project**:
@@ -445,7 +445,7 @@ hospeda-web
 
 #### Vercel Dashboard Configuration
 
-**Navigate to**: https://vercel.com/your-account/hospeda-web/settings/general
+**Navigate to**: <https://vercel.com/your-account/hospeda-web/settings/general>
 
 **Build & Development Settings**:
 
@@ -608,7 +608,7 @@ hospeda-web
 - **HTML pages**: No cache (always fresh)
 - **API responses**: Configurable per endpoint
 
-#### Redirects
+#### Step 2: Redirects
 
 ```json
 {
@@ -751,7 +751,7 @@ adapter: vercel({
 
 - **Metrics**: LCP, FID, CLS, TTFB, FCP
 - **Real user data**: Actual user experience
-- **Dashboard**: https://vercel.com/your-account/hospeda-web/analytics
+- **Dashboard**: <https://vercel.com/your-account/hospeda-web/analytics>
 
 **speedInsights**: Real User Monitoring (RUM)
 
@@ -763,9 +763,9 @@ adapter: vercel({
 
 **For monorepos**, Vercel needs to know the project root.
 
-#### Via Vercel Dashboard
+#### Step 4: Via Vercel Dashboard
 
-1. Go to: https://vercel.com/your-account/hospeda-web/settings/general
+1. Go to: <https://vercel.com/your-account/hospeda-web/settings/general>
 2. Scroll to: **Root Directory**
 3. Set: `apps/web`
 4. Click: **Save**
@@ -961,7 +961,7 @@ import { debounce } from 'lodash-es';
 
 **Result**: Smaller bundle size.
 
-#### Code Splitting
+#### Build Optimizations Code Splitting
 
 **Astro automatically code-splits** by page:
 
@@ -1069,7 +1069,7 @@ DATABASE_URL="postgresql://user:password@host.region.neon.tech/hospeda?sslmode=r
 
 **Steps**:
 
-1. Go to: https://vercel.com/your-account/hospeda-web/settings/environment-variables
+1. Go to: <https://vercel.com/your-account/hospeda-web/settings/environment-variables>
 2. Click: **Add New**
 3. Enter:
    - **Key**: `PUBLIC_CLERK_PUBLISHABLE_KEY`
@@ -1578,7 +1578,7 @@ const enableNewFeature = import.meta.env.PUBLIC_ENABLE_NEW_FEATURE === 'true';
 
 **Steps**:
 
-1. **Go to Vercel Dashboard**: https://vercel.com/your-account/hospeda-web/settings/domains
+1. **Go to Vercel Dashboard**: <https://vercel.com/your-account/hospeda-web/settings/domains>
 2. **Click**: "Add Domain"
 3. **Enter domain**: `hospeda.com`
 4. **Click**: "Add"
@@ -1942,7 +1942,7 @@ adapter: vercel({
 - **TTFB** (Time to First Byte): Server response time
 - **FCP** (First Contentful Paint): Perceived loading
 
-**Dashboard**: https://vercel.com/your-account/hospeda-web/analytics
+**Dashboard**: <https://vercel.com/your-account/hospeda-web/analytics>
 
 #### Vercel Speed Insights
 
@@ -1961,7 +1961,7 @@ adapter: vercel({
 - Device/browser breakdown
 - Geographic breakdown
 
-**Dashboard**: https://vercel.com/your-account/hospeda-web/speed-insights
+**Dashboard**: <https://vercel.com/your-account/hospeda-web/speed-insights>
 
 ---
 
@@ -1969,11 +1969,11 @@ adapter: vercel({
 
 ### View Deployment Logs
 
-#### Via Vercel Dashboard
+#### View Deployment Via Vercel Dashboard
 
 **Steps**:
 
-1. Go to: https://vercel.com/your-account/hospeda-web
+1. Go to: <https://vercel.com/your-account/hospeda-web>
 2. Click on deployment
 3. View **Build Logs** and **Function Logs**
 
@@ -2068,7 +2068,7 @@ console.log(JSON.stringify({
 
 #### Vercel Analytics
 
-**Navigate to**: https://vercel.com/your-account/hospeda-web/analytics
+**Navigate to**: <https://vercel.com/your-account/hospeda-web/analytics>
 
 **Metrics**:
 
@@ -2082,7 +2082,7 @@ console.log(JSON.stringify({
 
 #### Web Vitals
 
-**Navigate to**: https://vercel.com/your-account/hospeda-web/analytics/web-vitals
+**Navigate to**: <https://vercel.com/your-account/hospeda-web/analytics/web-vitals>
 
 **Core Web Vitals**:
 
@@ -2104,7 +2104,7 @@ console.log(JSON.stringify({
 
 **Built-in error tracking** for serverless functions.
 
-**Dashboard**: https://vercel.com/your-account/hospeda-web/errors
+**Dashboard**: <https://vercel.com/your-account/hospeda-web/errors>
 
 **Captured errors**:
 
@@ -2329,7 +2329,7 @@ const apiUrl = import.meta.env.PUBLIC_API_URL; // undefined
 
 **1. Check Vercel dashboard**:
 
-- Go to: https://vercel.com/your-account/hospeda-web/settings/environment-variables
+- Go to: <https://vercel.com/your-account/hospeda-web/settings/environment-variables>
 - Verify variable exists
 - Check correct environments selected
 
@@ -2500,7 +2500,7 @@ Access-Control-Allow-Origin: https://hospeda.com
 
 **Via Vercel Dashboard**:
 
-1. Go to: https://vercel.com/your-account/hospeda-web
+1. Go to: <https://vercel.com/your-account/hospeda-web>
 2. Click **Deployments** tab
 
 **Output**:
@@ -2531,7 +2531,7 @@ vercel ls hospeda-web
 
 **Via Vercel Dashboard**:
 
-1. Go to: https://vercel.com/your-account/hospeda-web/deployments
+1. Go to: <https://vercel.com/your-account/hospeda-web/deployments>
 2. Find previous working deployment
 3. Click **⋯** (three dots)
 4. Click **Promote to Production**
@@ -2625,7 +2625,7 @@ curl https://hospeda-web-ghi789.vercel.app/accommodations/abc123
 **During Rollback**:
 
 - [ ] Promote previous deployment
-- [ ] Verify rollback successful (visit https://hospeda.com)
+- [ ] Verify rollback successful (visit <https://hospeda.com>)
 - [ ] Monitor error rates (Sentry, Vercel dashboard)
 - [ ] Test critical user flows
 
@@ -2666,15 +2666,15 @@ You've completed the Vercel deployment guide for the Hospeda web application!
 
 **Resources**:
 
-- Vercel Docs: https://vercel.com/docs
-- Astro Docs: https://docs.astro.build
-- Vercel + Astro Guide: https://vercel.com/docs/frameworks/astro
+- Vercel Docs: <https://vercel.com/docs>
+- Astro Docs: <https://docs.astro.build>
+- Vercel + Astro Guide: <https://vercel.com/docs/frameworks/astro>
 - Hospeda Web Source: `/apps/web`
 
 **Support**:
 
-- Vercel Support: https://vercel.com/support
-- Vercel Community: https://github.com/vercel/vercel/discussions
+- Vercel Support: <https://vercel.com/support>
+- Vercel Community: <https://github.com/vercel/vercel/discussions>
 - Internal: #hospeda-devops Slack channel
 
 ---

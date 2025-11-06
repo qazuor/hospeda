@@ -181,7 +181,7 @@ function processValue(value: unknown): string {
 
 ### Rule: Type Annotations Required
 
-**All function parameters and return types must have explicit type annotations.**
+#### All function parameters and return types must have explicit type annotations
 
 ### ✅ DO
 
@@ -246,7 +246,7 @@ export const createUserSchema = z.object({
 
 ### Rule: No Default Exports
 
-**Always use named exports. Never use default exports.**
+#### Always use named exports. Never use default exports
 
 ### ✅ DO
 
@@ -303,7 +303,7 @@ import { UserModel, AccommodationModel } from '@repo/db/models';
 
 ### Rule: Receive Object / Return Object
 
-**Functions with 3 or more parameters MUST use the RO-RO pattern.**
+#### Functions with 3 or more parameters MUST use the RO-RO pattern
 
 RO-RO means:
 
@@ -973,7 +973,7 @@ export function calculateDynamicPrice(input: DynamicPricingInput): number {
 
 ### Rule: Never Swallow Errors
 
-**Always handle errors appropriately. Never catch and ignore.**
+#### Always handle errors appropriately. Never catch and ignore
 
 ### ✅ DO
 

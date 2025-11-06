@@ -4,7 +4,7 @@ Complete guide to authentication and authorization implementation in Hospeda usi
 
 ## Table of Contents
 
-- [Authentication & Authorization](#authentication--authorization)
+- Authentication & Authorization
   - [Table of Contents](#table-of-contents)
   - [Overview](#overview)
     - [Authentication vs Authorization](#authentication-vs-authorization)
@@ -1414,12 +1414,12 @@ export const updateAccommodationRoute = createOpenApiRoute({
    ✅ TOTP (Authenticator apps)
    ✅ Backup codes
 
-4. MFA Policy:
+1. MFA Policy:
    ○ Optional (user choice)
    ● Required for admins
    ○ Required for all users
 
-5. SMS Provider (Twilio):
+1. SMS Provider (Twilio):
    Account SID: [from Twilio]
    Auth Token: [from Twilio]
    Phone Number: [from Twilio]

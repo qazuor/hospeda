@@ -141,14 +141,14 @@ vercel list --limit 10
 
 **Vercel Dashboard**:
 
-1. Go to https://vercel.com/[team]/[project]
+1. Go to <https://vercel.com/[team]/[project>]
 2. Check **Logs** tab for errors
 3. Check **Analytics** for traffic patterns
 4. Note any error spikes or anomalies
 
 **Neon Console**:
 
-1. Go to https://console.neon.tech
+1. Go to <https://console.neon.tech>
 2. Select project
 3. Check **Monitoring** tab
 4. Look for:
@@ -158,7 +158,7 @@ vercel list --limit 10
 
 **GitHub Actions**:
 
-1. Go to https://github.com/[org]/hospeda/actions
+1. Go to <https://github.com/[org]/hospeda/actions>
 2. Check recent workflow runs
 3. Look for failed deployments or tests
 
@@ -602,15 +602,16 @@ curl -s -H "Accept-Encoding: gzip" https://api.hospeda.com/api/accommodations \
 For slow endpoint:
 
 1. Add timing logs
+
    ```typescript
    console.time('db-query');
    const result = await db.select().from(accommodations);
    console.timeEnd('db-query');
    ```
 
-2. Run locally and analyze
-3. Identify slow operations
-4. Optimize (add indexes, cache, reduce queries)
+1. Run locally and analyze
+2. Identify slow operations
+3. Optimize (add indexes, cache, reduce queries)
 
 ### Auth Issue Investigation
 
@@ -625,7 +626,7 @@ For slow endpoint:
 
 **Step 1**: Check Clerk status
 
-1. Go to https://status.clerk.com
+1. Go to <https://status.clerk.com>
 2. Verify no ongoing incidents
 
 **Step 2**: Check Clerk configuration
@@ -944,7 +945,7 @@ We apologize for the inconvenience.
 
 In Mercado Pago dashboard:
 
-- Webhook URL correct (https://api.hospeda.com/api/webhooks/mercado-pago)
+- Webhook URL correct (<https://api.hospeda.com/api/webhooks/mercado-pago>)
 - Webhook events subscribed (payment, refund)
 - Webhook secret configured
 

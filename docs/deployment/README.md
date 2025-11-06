@@ -304,13 +304,13 @@ graph LR
    - Debug logging
    - Local or development database
 
-2. **Staging** (`staging`)
+1. **Staging** (`staging`)
    - Pre-production testing
    - Production-like configuration
    - Staging database (separate from prod)
    - Full monitoring enabled
 
-3. **Production** (`production`)
+1. **Production** (`production`)
    - Live production environment
    - Optimized builds
    - Production database
@@ -427,10 +427,10 @@ curl https://admin.hospeda.com/api/health
 
 ### Service Status
 
-- **Vercel**: https://www.vercel-status.com/
-- **Fly.io**: https://status.flyio.net/
-- **Neon**: https://neonstatus.com/
-- **Clerk**: https://status.clerk.com/
+- **Vercel**: <https://www.vercel-status.com/>
+- **Fly.io**: <https://status.flyio.net/>
+- **Neon**: <https://neonstatus.com/>
+- **Clerk**: <https://status.clerk.com/>
 
 ### Monitoring Dashboards
 
@@ -513,12 +513,12 @@ Hospeda uses GitHub Actions for automated deployment:
    - Linting
    - Code coverage
 
-2. **Staging Deployment**
+1. **Staging Deployment**
    - Deploy to staging on merge to `develop`
    - Run integration tests
    - Notify team
 
-3. **Production Deployment**
+1. **Production Deployment**
    - Deploy to production on merge to `main`
    - Run smoke tests
    - Monitor error rates

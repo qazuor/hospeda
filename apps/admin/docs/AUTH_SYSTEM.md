@@ -305,11 +305,11 @@ const { user, isLoading } = useAuthContext();
    - Normal behavior when no cached session
    - Should resolve within 100-200ms
 
-2. **Session expires frequently**
+1. **Session expires frequently**
    - Check system clock
    - Verify TTL configuration (5 minutes default)
 
-3. **Permission checks not working**
+1. **Permission checks not working**
    - Ensure user has refreshed session
    - Check backend permission assignment
 

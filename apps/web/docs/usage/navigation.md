@@ -69,28 +69,28 @@ The platform is organized into four main sections:
    - Search bar
    - Call-to-action buttons
 
-2. **Featured Accommodations**
+1. **Featured Accommodations**
    - Carousel of highlighted properties
    - "View All" button
    - Quick filters
 
-3. **Popular Destinations**
+1. **Popular Destinations**
    - Grid of destination cards
    - "Explore More" link
 
-4. **Upcoming Events**
+1. **Upcoming Events**
    - Event list or calendar preview
    - "See All Events" button
 
-5. **Latest Blog Posts**
+1. **Latest Blog Posts**
    - Article cards
    - "Read More" links
 
-6. **Newsletter Signup**
+1. **Newsletter Signup**
    - Email subscription form
    - Benefits description
 
-7. **Footer**
+1. **Footer**
    - Site navigation
    - Contact information
    - Social media links
@@ -108,19 +108,19 @@ The platform is organized into four main sections:
    - Keyword search
    - Quick filters
 
-2. **Filters Sidebar** (Left, Desktop only)
+1. **Filters Sidebar** (Left, Desktop only)
    - Location
    - Price range
    - Property type
    - Amenities
    - Rating
 
-3. **Results Grid** (Main area)
+1. **Results Grid** (Main area)
    - Accommodation cards
    - Sort dropdown
    - View toggle (grid/list/map)
 
-4. **Pagination** (Bottom)
+1. **Pagination** (Bottom)
    - Page numbers
    - Previous/Next buttons
 
@@ -159,13 +159,13 @@ The platform is organized into four main sections:
    - Featured destination
    - CTA button
 
-2. **Category Tabs**
+1. **Category Tabs**
    - Nature
    - Culture
    - Adventure
    - Food & Wine
 
-3. **Destination Grid**
+1. **Destination Grid**
    - Cards with images
    - Brief descriptions
    - "Learn More" links
@@ -238,18 +238,18 @@ The platform is organized into four main sections:
    - Hero image
    - Excerpt
 
-2. **Category Filter**
+1. **Category Filter**
    - Travel Tips
    - Local News
    - Guides
    - Reviews
 
-3. **Article Grid**
+1. **Article Grid**
    - Post cards
    - Images and excerpts
    - Read time estimate
 
-4. **Sidebar** (Desktop)
+1. **Sidebar** (Desktop)
    - Popular posts
    - Categories
    - Tags

@@ -599,13 +599,13 @@ export const MyEnum = z.enum([
 ]);
 ```
 
-2. **Infer the TypeScript type**
+1. **Infer the TypeScript type**
 
 ```typescript
 export type MyEnumType = z.infer<typeof MyEnum>;
 ```
 
-3. **Add JSDoc documentation**
+1. **Add JSDoc documentation**
 
 ```typescript
 /**
@@ -624,7 +624,7 @@ export const MyEnum = z.enum([
 ]);
 ```
 
-4. **Add to barrel exports**
+1. **Add to barrel exports**
 
 ```typescript
 // enums/index.ts

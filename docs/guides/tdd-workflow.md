@@ -525,7 +525,7 @@ describe('AccommodationService', () => {
 });
 ```
 
-#### Run Test (Fails)
+#### Iteration 1: Run Test (Fails)
 
 ```bash
 pnpm test -- calculateAverageRating
@@ -558,7 +558,7 @@ async calculateAverageRating(
 }
 ```
 
-#### Run Test (Passes)
+#### Iteration 1: Run Test (Passes)
 
 ```bash
 pnpm test -- calculateAverageRating
@@ -573,7 +573,7 @@ pnpm test -- calculateAverageRating
 
 ### Iteration 2: Edge Case - No Reviews
 
-#### RED: Write Test
+#### Iteration 2: RED: Write Test
 
 ```typescript
 it('should return 0 when no reviews exist', async () => {
@@ -589,13 +589,13 @@ it('should return 0 when no reviews exist', async () => {
 });
 ```
 
-#### Run Test (Passes)
+#### Iteration 2: Run Test (Passes)
 
 Already passes! Our implementation handles this.
 
 ### Iteration 3: Edge Case - Deleted Reviews
 
-#### RED: Write Test
+#### Iteration 3: RED: Write Test
 
 ```typescript
 it('should ignore deleted reviews', async () => {
@@ -618,7 +618,7 @@ it('should ignore deleted reviews', async () => {
 });
 ```
 
-#### Run Test (Fails)
+#### Iteration 3: Run Test (Fails)
 
 ```text
 ❌ Expected: 5.0
@@ -651,7 +651,7 @@ async calculateAverageRating(
 }
 ```
 
-#### Run Test (Passes)
+#### Iteration 3: Run Test (Passes)
 
 ```text
 ✅ All tests pass
@@ -659,7 +659,7 @@ async calculateAverageRating(
 
 ### Iteration 4: Update Accommodation
 
-#### RED: Write Test
+#### Iteration 4: RED: Write Test
 
 ```typescript
 it('should update accommodation rating', async () => {
@@ -677,7 +677,7 @@ it('should update accommodation rating', async () => {
 });
 ```
 
-#### Run Test (Fails)
+#### Iteration 4: Run Test (Fails)
 
 ```text
 ❌ Expected: 4.5
@@ -716,7 +716,7 @@ async calculateAverageRating(
 }
 ```
 
-#### Run Test (Passes)
+#### Iteration 4: Run Test (Passes)
 
 ```text
 ✅ All tests pass
@@ -1459,12 +1459,12 @@ pnpm test:watch
    - Follow RED-GREEN-REFACTOR cycle
    - Achieve 100% coverage
 
-2. **Exercise 2:** Refactor existing code with tests
+1. **Exercise 2:** Refactor existing code with tests
    - Find a complex method
    - Write tests for current behavior
    - Refactor while keeping tests green
 
-3. **Exercise 3:** Fix a bug using TDD
+1. **Exercise 3:** Fix a bug using TDD
    - Write a failing test that reproduces the bug
    - Fix the bug to make test pass
    - Ensure no regressions

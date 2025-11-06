@@ -559,4 +559,3 @@ Simple standard components (buttons, inputs) don't need mockups.
 **Status**: This PDR is {Draft/In Review/Approved/In Progress/Completed}
 **Next Actions**: {What needs to happen next}
 **Owner**: {Who is responsible for next steps}
-

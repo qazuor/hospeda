@@ -16,8 +16,8 @@ Complete guide for deploying the Hospeda Hono API to Fly.io.
 3. [Initial Setup](#initial-setup)
 4. [Deployment Process](#deployment-process)
 5. [Environment Variables](#environment-variables)
-6. [Scaling & Performance](#scaling--performance)
-7. [Monitoring & Logs](#monitoring--logs)
+6. Scaling & Performance
+7. Monitoring & Logs
 8. [Troubleshooting](#troubleshooting)
 9. [Rollback Procedures](#rollback-procedures)
 10. [Advanced Topics](#advanced-topics)
@@ -492,7 +492,7 @@ hospeda/
 └── packages/            ← Shared packages
 ```
 
-#### Environment Variables
+#### Metrics endpoint Environment Variables
 
 ```toml
 [env]
@@ -523,7 +523,7 @@ hospeda/
   hard_limit = 250  # Max 250 concurrent requests per machine
 ```
 
-#### Health Checks
+#### Metrics endpoint Health Checks
 
 ```toml
 [[http_service.checks]]
@@ -665,7 +665,7 @@ CMD ["node", "apps/api/dist/index.js"]
 
 **Dockerfile Breakdown**:
 
-#### Stage 1: Base
+#### Run application Stage 1: Base
 
 ```dockerfile
 FROM node:20-alpine AS base
@@ -676,7 +676,7 @@ RUN npm install -g pnpm@8.15.6
 - **Node.js 20 LTS**: Long-term support
 - **pnpm**: Package manager for monorepo
 
-#### Stage 2: Dependencies
+#### Run application Stage 2: Dependencies
 
 ```dockerfile
 FROM base AS deps
@@ -690,7 +690,7 @@ RUN pnpm install --frozen-lockfile
 - **Install all dependencies**: Including dev dependencies for build
 - **Frozen lockfile**: Ensure reproducible builds
 
-#### Stage 3: Build
+#### Run application Stage 3: Build
 
 ```dockerfile
 FROM base AS builder
@@ -703,7 +703,7 @@ RUN pnpm --filter=api build
 - **Copy source code**: All apps and packages
 - **Build API**: Creates `apps/api/dist/index.js`
 
-#### Stage 4: Production
+#### Run application Stage 4: Production
 
 ```dockerfile
 FROM node:20-alpine AS runner
@@ -834,7 +834,7 @@ flyctl status --app hospeda-api
 flyctl scale vm shared-cpu-1x --memory 512 --app hospeda-api
 ```
 
-#### Scale Machine Count
+#### Step 5: Scale Machine Count
 
 **Add more machines** (horizontal scaling):
 
@@ -1352,7 +1352,7 @@ jobs:
 **Setup**:
 
 1. Go to GitHub repository → Settings → Secrets → Actions
-2. Add secret: `FLY_API_TOKEN` = (your Fly.io token from https://fly.io/user/personal_access_tokens)
+2. Add secret: `FLY_API_TOKEN` = (your Fly.io token from <https://fly.io/user/personal_access_tokens>)
 
 **Trigger**: Automatically deploys on push to `main` branch when API files change.
 
@@ -1381,7 +1381,7 @@ Add smoke tests after deployment:
 
 ### Deployment Strategies
 
-#### Blue-Green Deployment
+#### Deployment Strategies Blue-Green Deployment
 
 **Concept**: Run two versions (blue = old, green = new), switch traffic.
 
@@ -1735,7 +1735,7 @@ curl https://hospeda-api.fly.dev/health
 
 **Concept**: Add more VMs to handle increased traffic.
 
-#### Scale Machine Count
+#### Horizontal Scaling Scale Machine Count
 
 **Add machines**:
 
@@ -2229,7 +2229,7 @@ logger.error({ error: err, context: 'payment' }, 'Payment failed');
 flyctl dashboard --app hospeda-api
 ```
 
-**Or visit**: https://fly.io/apps/hospeda-api/metrics
+**Or visit**: <https://fly.io/apps/hospeda-api/metrics>
 
 **Available Metrics**:
 
@@ -2368,7 +2368,7 @@ flyctl checks list --app hospeda-api
 - Deployment failures
 - SSL certificate expiration
 
-**Configure**: https://fly.io/apps/hospeda-api/monitoring
+**Configure**: <https://fly.io/apps/hospeda-api/monitoring>
 
 #### Sentry Integration
 
@@ -2407,7 +2407,7 @@ app.onError((err, c) => {
 });
 ```
 
-**Alerts**: Configure in Sentry dashboard (https://sentry.io/organizations/hospeda/projects/)
+**Alerts**: Configure in Sentry dashboard (<https://sentry.io/organizations/hospeda/projects/>)
 
 #### Slack Notifications
 
@@ -3178,14 +3178,14 @@ You've completed the Fly.io deployment guide for the Hospeda API!
 
 **Resources**:
 
-- Fly.io Docs: https://fly.io/docs
-- Hono Docs: https://hono.dev
+- Fly.io Docs: <https://fly.io/docs>
+- Hono Docs: <https://hono.dev>
 - Hospeda API Source: `/apps/api`
 
 **Support**:
 
-- Fly.io Community: https://community.fly.io
-- Fly.io Support: support@fly.io
+- Fly.io Community: <https://community.fly.io>
+- Fly.io Support: <support@fly.io>
 - Internal: #hospeda-devops Slack channel
 
 ---

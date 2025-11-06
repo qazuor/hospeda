@@ -9,8 +9,8 @@
   - [🎯 Architecture Overview](#-architecture-overview)
     - [**Tech Stack**](#tech-stack)
     - [**Core Principles**](#core-principles)
-  - [🏗️ Project Structure](#️-project-structure)
-  - [⚙️ Setup \& Configuration](#️-setup--configuration)
+  - 🏗️ Project Structure
+  - ⚙️ Setup \& Configuration
     - [**Environment Variables**](#environment-variables)
     - [**Key Configuration**](#key-configuration)
   - [🔧 Middleware System](#-middleware-system)
@@ -19,9 +19,9 @@
       - [**Security Headers**](#security-headers)
       - [**Rate Limiting**](#rate-limiting)
       - [**Metrics Collection**](#metrics-collection)
-  - [🛣️ Route Factories](#️-route-factories)
+  - 🛣️ Route Factories
     - [**Modern Route Creation System**](#modern-route-creation-system)
-  - [🔐 Authentication \& Authorization](#-authentication--authorization)
+  - 🔐 Authentication \& Authorization
     - [**Actor System**](#actor-system)
   - [📊 Response Format](#-response-format)
     - [**Standardized API Responses**](#standardized-api-responses)
@@ -29,7 +29,7 @@
     - [**Zod-Powered Validation**](#zod-powered-validation)
   - [🔄 Error Handling](#-error-handling)
     - [**Comprehensive Error Management**](#comprehensive-error-management)
-  - [📊 Metrics \& Monitoring](#-metrics--monitoring)
+  - 📊 Metrics \& Monitoring
     - [**Advanced Metrics System**](#advanced-metrics-system)
   - [🧪 Testing Strategy](#-testing-strategy)
     - [**Comprehensive Test Coverage**](#comprehensive-test-coverage)

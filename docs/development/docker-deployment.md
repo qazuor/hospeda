@@ -54,7 +54,7 @@ flyctl version
 flyctl auth login
 ```
 
-#### Variables de Entorno
+#### Login (necesario Variables de Entorno
 
 Asegúrate de tener configuradas las variables necesarias en tu entorno de Fly.io.
 

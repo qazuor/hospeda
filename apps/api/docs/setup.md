@@ -331,7 +331,7 @@ If port 3001 is already in use:
    netstat -ano | findstr :3001
    ```
 
-2. Kill the process or change `API_PORT` in `.env`
+1. Kill the process or change `API_PORT` in `.env`
 
 ### Database Connection Errors
 

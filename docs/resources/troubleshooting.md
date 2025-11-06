@@ -17,13 +17,13 @@ Systematic diagnosis and solutions for common problems in the Hospeda project.
 
 ### PNPM Installation Fails
 
-#### Symptoms
+#### PNPM Installation Symptoms
 
 - `pnpm install` command hangs or fails
 - Error messages about network timeouts
 - Missing packages after installation
 
-#### Diagnosis
+#### PNPM Installation Diagnosis
 
 ```bash
 # Check PNPM version
@@ -36,7 +36,7 @@ node --version  # Should be 20.10.0 or higher
 pnpm ping registry
 ```
 
-#### Solution
+#### Test network Solution
 
 ```bash
 # 1. Update PNPM to latest version
@@ -55,7 +55,7 @@ pnpm install
 pnpm install --verbose
 ```
 
-#### Prevention
+#### 5. If Prevention
 
 - Keep PNPM updated
 - Use a stable internet connection
@@ -66,13 +66,13 @@ pnpm install --verbose
 
 ### Node Version Mismatch
 
-#### Symptoms
+#### Node Version Symptoms
 
 - Errors about unsupported Node version
 - Syntax errors in node_modules
 - Build failures with "unexpected token" errors
 
-#### Diagnosis
+#### Node Version Diagnosis
 
 ```bash
 # Check current Node version
@@ -82,7 +82,7 @@ node --version
 cat .nvmrc  # Or package.json engines field
 ```
 
-#### Solution
+#### Check required Solution
 
 ```bash
 # Option 1: Use nvm (recommended)
@@ -100,7 +100,7 @@ rm -rf node_modules
 pnpm install
 ```
 
-#### Prevention
+#### Reinstall dependencies Prevention
 
 - Use nvm or fnm to manage Node versions
 - Set up `.nvmrc` file (already present in project)
@@ -111,13 +111,13 @@ pnpm install
 
 ### Dependency Conflicts
 
-#### Symptoms
+#### Dependency Conflicts Symptoms
 
 - PNPM reports dependency conflicts
 - Packages fail to install
 - Different versions of same package in tree
 
-#### Diagnosis
+#### Dependency Conflicts Diagnosis
 
 ```bash
 # Check for duplicate packages
@@ -130,7 +130,7 @@ pnpm why <package-name>
 pnpm install --verbose
 ```
 
-#### Solution
+#### Check for Solution
 
 ```bash
 # 1. Update all dependencies to latest compatible versions
@@ -154,7 +154,7 @@ pnpm install
 pnpm audit
 ```
 
-#### Prevention
+#### 4. If Prevention
 
 - Keep dependencies up to date regularly
 - Use exact versions for critical packages
@@ -165,13 +165,13 @@ pnpm audit
 
 ### Husky Hooks Not Working
 
-#### Symptoms
+#### Husky Hooks Symptoms
 
 - Pre-commit hooks don't run
 - Commits go through without linting
 - Git hooks show "permission denied"
 
-#### Diagnosis
+#### Husky Hooks Diagnosis
 
 ```bash
 # Check if Husky is installed
@@ -184,7 +184,7 @@ ls -la .husky/pre-commit
 ./.husky/pre-commit
 ```
 
-#### Solution
+#### Test hook Solution
 
 ```bash
 # 1. Reinstall Husky
@@ -206,7 +206,7 @@ git commit -m "test" --no-verify=false
 git config core.hooksPath
 ```
 
-#### Prevention
+#### 5. If Prevention
 
 - Run `npx husky install` after cloning repository
 - Include hook setup in onboarding documentation
@@ -219,13 +219,13 @@ git config core.hooksPath
 
 ### Cannot Connect to Database
 
-#### Symptoms
+#### Cannot Connect Symptoms
 
 - Error: "Connection refused"
 - Error: "ECONNREFUSED 127.0.0.1:5432"
 - Timeouts when accessing database
 
-#### Diagnosis
+#### Cannot Connect Diagnosis
 
 ```bash
 # Check if PostgreSQL is running
@@ -242,7 +242,7 @@ psql $DATABASE_URL
 lsof -i :5432
 ```
 
-#### Solution
+#### Check port Solution
 
 ```bash
 # If using Docker:
@@ -273,7 +273,7 @@ DATABASE_URL=postgresql://user:password@localhost:5432/hospeda_dev
 pnpm db:migrate
 ```
 
-#### Prevention
+#### 4. Test Prevention
 
 - Use Docker for consistent local environment
 - Document database setup steps
@@ -284,13 +284,13 @@ pnpm db:migrate
 
 ### Migration Fails
 
-#### Symptoms
+#### Migration Fails Symptoms
 
 - `pnpm db:migrate` fails with SQL errors
 - Foreign key constraint violations
 - Column already exists errors
 
-#### Diagnosis
+#### Migration Fails Diagnosis
 
 ```bash
 # Check current migration status
@@ -304,7 +304,7 @@ cat packages/db/migrations/[latest-migration]/migration.sql
 psql $DATABASE_URL -c "\d accommodations"
 ```
 
-#### Solution
+#### Check database Solution
 
 ```bash
 # Option 1: Fix the migration
@@ -334,7 +334,7 @@ ALTER TABLE accommodations ADD COLUMN IF NOT EXISTS new_column TEXT;
 INSERT INTO drizzle.__migrations (hash, created_at) VALUES ('hash', NOW());
 ```
 
-#### Prevention
+#### 3. Update Prevention
 
 - Test migrations in development first
 - Review generated SQL before applying
@@ -346,13 +346,13 @@ INSERT INTO drizzle.__migrations (hash, created_at) VALUES ('hash', NOW());
 
 ### Data Not Appearing in Queries
 
-#### Symptoms
+#### Data Not Symptoms
 
 - Queries return empty results
 - Data exists in database but not in app
 - Inconsistent data between Drizzle Studio and queries
 
-#### Diagnosis
+#### Data Not Diagnosis
 
 ```bash
 # Check data in Drizzle Studio
@@ -369,7 +369,7 @@ DEBUG=drizzle:* pnpm dev
 SELECT * FROM accommodations WHERE deleted_at IS NOT NULL;
 ```
 
-#### Solution
+#### Check for Solution
 
 ```typescript
 // 1. Check for soft-delete filtering
@@ -402,7 +402,7 @@ const results = await db.query.accommodations.findMany({
 });
 ```
 
-#### Prevention
+#### Check for Prevention
 
 - Always log queries during development
 - Test queries in Drizzle Studio first
@@ -414,13 +414,13 @@ const results = await db.query.accommodations.findMany({
 
 ### Foreign Key Constraint Errors
 
-#### Symptoms
+#### Foreign Key Symptoms
 
 - Error: "violates foreign key constraint"
 - Cannot insert/update/delete records
 - Database rollback errors
 
-#### Diagnosis
+#### Foreign Key Diagnosis
 
 ```bash
 # Check foreign key constraints
@@ -438,7 +438,7 @@ FROM pg_constraint
 WHERE contype = 'f' AND conrelid = 'accommodations'::regclass;
 ```
 
-#### Solution
+#### Check constraint Solution
 
 ```typescript
 // 1. Ensure referenced record exists
@@ -472,7 +472,7 @@ await db.delete(accommodations)
   .where(sql`owner_id NOT IN (SELECT id FROM users)`);
 ```
 
-#### Prevention
+#### Check constraint Prevention
 
 - Always validate foreign keys exist before insert
 - Use transactions for related inserts
@@ -486,13 +486,13 @@ await db.delete(accommodations)
 
 ### TypeScript Errors During Build
 
-#### Symptoms
+#### TypeScript Errors Symptoms
 
 - `pnpm build` fails with type errors
 - Errors about missing types or undefined properties
 - "Cannot find module" errors
 
-#### Diagnosis
+#### TypeScript Errors Diagnosis
 
 ```bash
 # Run typecheck to see all errors
@@ -508,7 +508,7 @@ cat tsconfig.json
 pnpm list @types/*
 ```
 
-#### Solution
+#### Check for Solution
 
 ```bash
 # 1. Build dependencies first
@@ -532,7 +532,7 @@ pnpm add -D @types/node @types/react
 # Cmd/Ctrl + Shift + P → "TypeScript: Restart TS Server"
 ```
 
-#### Prevention
+#### Cmd/Ctrl + Prevention
 
 - Run `pnpm typecheck` before committing
 - Build packages in dependency order
@@ -544,13 +544,13 @@ pnpm add -D @types/node @types/react
 
 ### Biome Linting Errors
 
-#### Symptoms
+#### Biome Linting Symptoms
 
 - `pnpm lint` fails
 - Formatting inconsistencies
 - Import order violations
 
-#### Diagnosis
+#### Biome Linting Diagnosis
 
 ```bash
 # Check linting errors
@@ -563,7 +563,7 @@ pnpm lint --write
 cd packages/db && pnpm run lint
 ```
 
-#### Solution
+#### Check specific Solution
 
 ```bash
 # 1. Auto-fix most issues
@@ -582,7 +582,7 @@ pnpm lint --write
 git config core.autocrlf input
 ```
 
-#### Prevention
+#### 5. Ensure Prevention
 
 - Set up Biome in VS Code for auto-format on save
 - Run lint before committing
@@ -594,13 +594,13 @@ git config core.autocrlf input
 
 ### Missing Environment Variables
 
-#### Symptoms
+#### Missing Environment Symptoms
 
 - Build fails with "undefined environment variable"
 - Runtime errors about missing config
 - Authentication fails
 
-#### Diagnosis
+#### Missing Environment Diagnosis
 
 ```bash
 # Check .env.local exists
@@ -616,7 +616,7 @@ node -e "console.log(process.env.DATABASE_URL)"
 diff .env.example .env.local
 ```
 
-#### Solution
+#### Compare .env.example Solution
 
 ```bash
 # 1. Copy example file
@@ -638,7 +638,7 @@ require('dotenv').config({ path: '.env.local' });
 # Project → Settings → Environment Variables
 ```
 
-#### Prevention
+#### Project → Prevention
 
 - Keep `.env.example` updated with all required variables
 - Document where to get each value
@@ -652,13 +652,13 @@ require('dotenv').config({ path: '.env.local' });
 
 ### API Returns 500 Error
 
-#### Symptoms
+#### API Returns Symptoms
 
 - Server responds with 500 Internal Server Error
 - Generic error message in response
 - No specific error details
 
-#### Diagnosis
+#### API Returns Diagnosis
 
 ```bash
 # Check server logs
@@ -676,7 +676,7 @@ curl -X POST http://localhost:3000/api/accommodations \
   -d '{"invalid": "data"}'
 ```
 
-#### Solution
+#### Check request Solution
 
 ```typescript
 // 1. Add proper error handling in routes
@@ -723,7 +723,7 @@ logger.error('Failed to create accommodation', {
 });
 ```
 
-#### Prevention
+#### Check request Prevention
 
 - Add comprehensive error handling to all routes
 - Use global error handlers
@@ -735,13 +735,13 @@ logger.error('Failed to create accommodation', {
 
 ### Frontend Shows Blank Page
 
-#### Symptoms
+#### Frontend Shows Symptoms
 
 - White screen in browser
 - No errors in terminal
 - React app doesn't render
 
-#### Diagnosis
+#### Frontend Shows Diagnosis
 
 ```bash
 # Check browser console for errors
@@ -757,7 +757,7 @@ pnpm build
 curl http://localhost:4321
 ```
 
-#### Solution
+#### Check server Solution
 
 ```tsx
 // 1. Add error boundary
@@ -789,7 +789,7 @@ export function MyComponent() { ... }
 // Hard refresh: Cmd/Ctrl + Shift + R
 ```
 
-#### Prevention
+#### Check server Prevention
 
 - Use error boundaries in React apps
 - Test in different browsers
@@ -801,13 +801,13 @@ export function MyComponent() { ... }
 
 ### Authentication Not Working
 
-#### Symptoms
+#### Authentication Not Symptoms
 
 - Login fails silently
 - User redirected to login repeatedly
 - "Unauthorized" errors on protected routes
 
-#### Diagnosis
+#### Authentication Not Diagnosis
 
 ```bash
 # Check Clerk keys in .env.local
@@ -823,7 +823,7 @@ curl https://api.clerk.com/v1/health
 # Copy token from request headers and decode at jwt.io
 ```
 
-#### Solution
+#### Copy token Solution
 
 ```typescript
 // 1. Verify Clerk configuration
@@ -862,7 +862,7 @@ try {
 // Visit dashboard.clerk.com
 ```
 
-#### Prevention
+#### Copy token Prevention
 
 - Test authentication flow regularly
 - Monitor Clerk dashboard for errors
@@ -874,13 +874,13 @@ try {
 
 ### CORS Errors
 
-#### Symptoms
+#### CORS Errors Symptoms
 
 - Browser console shows "CORS policy" error
 - Requests fail from frontend to API
 - Preflight OPTIONS requests fail
 
-#### Diagnosis
+#### CORS Errors Diagnosis
 
 ```bash
 # Check browser console
@@ -895,7 +895,7 @@ curl -H "Origin: http://localhost:4321" \
      -X OPTIONS http://localhost:3000/api/accommodations
 ```
 
-#### Solution
+#### Check CORS Solution
 
 ```typescript
 // 1. Add CORS middleware to API
@@ -924,7 +924,7 @@ fetch('http://localhost:3000/api/accommodations', {
 app.options('*', (c) => c.text('', 204));
 ```
 
-#### Prevention
+#### Check CORS Prevention
 
 - Configure CORS in API from the start
 - Use environment variables for allowed origins
@@ -938,13 +938,13 @@ app.options('*', (c) => c.text('', 204));
 
 ### Tests Fail Locally
 
-#### Symptoms
+#### Tests Fail Symptoms
 
 - `pnpm test` shows failing tests
 - Tests that passed before now fail
 - Intermittent test failures
 
-#### Diagnosis
+#### Tests Fail Diagnosis
 
 ```bash
 # Run tests with verbose output
@@ -961,7 +961,7 @@ pnpm db:fresh
 pnpm test
 ```
 
-#### Solution
+#### Check for Solution
 
 ```typescript
 // 1. Reset database before each test
@@ -1004,7 +1004,7 @@ afterAll(async () => {
 });
 ```
 
-#### Prevention
+#### Check for Prevention
 
 - Write independent, isolated tests
 - Use unique test data
@@ -1016,13 +1016,13 @@ afterAll(async () => {
 
 ### Tests Pass Locally but Fail in CI
 
-#### Symptoms
+#### Tests Pass Symptoms
 
 - Local tests pass
 - GitHub Actions shows test failures
 - Different behavior in CI environment
 
-#### Diagnosis
+#### Tests Pass Diagnosis
 
 ```bash
 # Check CI logs in GitHub Actions
@@ -1039,7 +1039,7 @@ CI=true pnpm test
 pnpm test --sequence --no-coverage
 ```
 
-#### Solution
+#### Check for Solution
 
 ```bash
 # 1. Ensure consistent Node version
@@ -1073,7 +1073,7 @@ it.skip('flaky test', () => { ... });
 // Fix and re-enable later
 ```
 
-#### Prevention
+#### 5. Disable Prevention
 
 - Test in CI-like environment locally
 - Use Docker for consistent environments
@@ -1085,13 +1085,13 @@ it.skip('flaky test', () => { ... });
 
 ### Coverage Below 90%
 
-#### Symptoms
+#### Coverage Below Symptoms
 
 - `pnpm test:coverage` shows < 90%
 - CI fails on coverage check
 - Uncovered lines in reports
 
-#### Diagnosis
+#### Coverage Below Diagnosis
 
 ```bash
 # Run coverage report
@@ -1104,7 +1104,7 @@ open coverage/index.html
 pnpm test:coverage --reporter=text -- accommodation.service.test.ts
 ```
 
-#### Solution
+#### Check specific Solution
 
 ```typescript
 // 1. Add tests for uncovered branches
@@ -1147,7 +1147,7 @@ vi.mock('optional-dependency', () => {
 });
 ```
 
-#### Prevention
+#### Check specific Prevention
 
 - Write tests as you write code (TDD)
 - Review coverage reports regularly
@@ -1161,13 +1161,13 @@ vi.mock('optional-dependency', () => {
 
 ### Hot Reload Not Working
 
-#### Symptoms
+#### Hot Reload Symptoms
 
 - Changes not reflected in browser
 - Need to restart server for changes to apply
 - File watching not working
 
-#### Diagnosis
+#### Hot Reload Diagnosis
 
 ```bash
 # Check if dev server is running
@@ -1180,7 +1180,7 @@ cat /proc/sys/fs/inotify/max_user_watches
 # Check for syntax errors preventing reload
 ```
 
-#### Solution
+#### Check for Solution
 
 ```bash
 # 1. Restart dev server
@@ -1204,7 +1204,7 @@ pnpm lint
 # Cmd/Ctrl + Shift + R
 ```
 
-#### Prevention
+#### Cmd/Ctrl + Prevention
 
 - Keep file watcher limits high enough
 - Close unused files/projects
@@ -1216,13 +1216,13 @@ pnpm lint
 
 ### Changes Not Reflecting
 
-#### Symptoms
+#### Changes Not Symptoms
 
 - Code changes don't appear
 - Old code still running
 - Cache issues
 
-#### Diagnosis
+#### Changes Not Diagnosis
 
 ```bash
 # Check if files are saved
@@ -1235,7 +1235,7 @@ ls -la dist/
 grep -r "import.*MyComponent" apps/
 ```
 
-#### Solution
+#### Verify correct Solution
 
 ```bash
 # 1. Hard refresh browser
@@ -1260,7 +1260,7 @@ import { MyComponent } from '@components/MyComponent';
 // DevTools → Network → Disable cache
 ```
 
-#### Prevention
+#### 5. Check Prevention
 
 - Save files before testing
 - Use browser dev mode (disable cache)
@@ -1272,13 +1272,13 @@ import { MyComponent } from '@components/MyComponent';
 
 ### Port Already in Use
 
-#### Symptoms
+#### Port Already Symptoms
 
 - Error: "EADDRINUSE: address already in use :3000"
 - Cannot start dev server
 - Port conflict
 
-#### Diagnosis
+#### Port Already Diagnosis
 
 ```bash
 # Find process using the port
@@ -1292,7 +1292,7 @@ netstat -ano | findstr :3000
 ps aux | grep node
 ```
 
-#### Solution
+#### Check all Solution
 
 ```bash
 # Option 1: Kill the process using the port
@@ -1315,7 +1315,7 @@ killall node
 # Sometimes processes don't release ports properly
 ```
 
-#### Prevention
+#### Sometimes processes Prevention
 
 - Stop dev servers properly (Ctrl+C)
 - Use different ports for different projects
@@ -1327,13 +1327,13 @@ killall node
 
 ### File Watcher Issues
 
-#### Symptoms
+#### File Watcher Symptoms
 
 - Changes detected but not applied
 - Too many open files error
 - File system watchers exhausted
 
-#### Diagnosis
+#### File Watcher Diagnosis
 
 ```bash
 # Check current limit (Linux)
@@ -1346,7 +1346,7 @@ find . -type f | wc -l
 dmesg | grep inotify
 ```
 
-#### Solution
+#### Check for Solution
 
 ```bash
 # Increase watcher limit (Linux)
@@ -1379,7 +1379,7 @@ export default {
 };
 ```
 
-#### Prevention
+#### Exclude large Prevention
 
 - Keep projects in separate directories
 - Exclude large directories from watching

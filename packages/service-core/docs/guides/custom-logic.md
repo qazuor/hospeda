@@ -17,6 +17,7 @@ Guide for implementing custom business methods in services.
 Add custom methods when you need operations beyond standard CRUD:
 
 **✅ Add Custom Method For:**
+
 - Status transitions (draft → published)
 - Complex calculations (pricing, ratings)
 - Aggregations (stats, summaries)
@@ -25,6 +26,7 @@ Add custom methods when you need operations beyond standard CRUD:
 - External API integrations (payment, email)
 
 **❌ Use Lifecycle Hooks Instead:**
+
 - Logic that runs on every create/update
 - Automatic field generation
 - Standard validation
@@ -677,12 +679,14 @@ public async customMethod(actor: Actor, id: string): Promise<ServiceOutput<Resul
 ## Complete Examples
 
 See:
+
 - [custom-methods.ts](../examples/custom-methods.ts) - Various custom method patterns
 - [complex-logic.ts](../examples/complex-logic.ts) - Complex business logic
 
 ---
 
 **Next Steps:**
+
 - **[Testing Guide](./testing.md)** - Test custom methods
 - **[Advanced Patterns](./advanced-patterns.md)** - Advanced techniques
 - **[Examples](../examples/)** - Working code

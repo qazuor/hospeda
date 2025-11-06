@@ -225,14 +225,14 @@ For any remaining endpoints, follow this pattern:
    createSimpleRoute({ method, path, handler, options })
    ```
 
-2. **List Endpoints** (with pagination):
+1. **List Endpoints** (with pagination):
 
    ```typescript
    // Replace manual pagination with:
    createListRoute({ requestQuery, handler })
    ```
 
-3. **CRUD Endpoints** (get, post, put, delete):
+1. **CRUD Endpoints** (get, post, put, delete):
 
    ```typescript
    // Replace manual validation with:

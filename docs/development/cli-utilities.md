@@ -368,7 +368,7 @@ runSeed(options);
 
 ```bash
 # 1. Setup inicial
-git clone <repo>
+git clone `<repo>`
 cd hospeda
 pnpm install
 

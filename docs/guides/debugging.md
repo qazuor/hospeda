@@ -201,7 +201,7 @@ cd packages/db
 pnpm db:studio
 ```
 
-Opens in browser: http://localhost:4983
+Opens in browser: <http://localhost:4983>
 
 Features:
 
