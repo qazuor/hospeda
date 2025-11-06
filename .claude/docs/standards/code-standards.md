@@ -6,6 +6,8 @@ This document defines the coding standards for the Hospeda project. All code mus
 
 ## Table of Contents
 
+<!-- markdownlint-disable MD051 -->
+
 1. [Language Policy](#language-policy)
 2. [TypeScript Rules](#typescript-rules)
 3. [RO-RO Pattern](#ro-ro-pattern)
@@ -18,6 +20,8 @@ This document defines the coding standards for the Hospeda project. All code mus
 10. [Validation](#validation)
 11. [Async/Await](#asyncawait)
 12. [Code Formatting](#code-formatting)
+
+<!-- markdownlint-enable MD051 -->
 
 ---
 

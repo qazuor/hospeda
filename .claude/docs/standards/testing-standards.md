@@ -6,6 +6,8 @@ This document defines the testing standards and practices for the Hospeda projec
 
 ## Table of Contents
 
+<!-- markdownlint-disable MD051 -->
+
 1. [Testing Philosophy](#testing-philosophy)
 2. [TDD Workflow](#tdd-workflow)
 3. [Test Types](#test-types)
@@ -18,6 +20,8 @@ This document defines the testing standards and practices for the Hospeda projec
 10. [API Testing](#api-testing)
 11. [Frontend Testing](#frontend-testing)
 12. [Common Pitfalls](#common-pitfalls)
+
+<!-- markdownlint-enable MD051 -->
 
 ---
 

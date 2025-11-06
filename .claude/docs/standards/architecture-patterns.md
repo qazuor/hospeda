@@ -6,6 +6,8 @@ This document defines the architectural patterns and design principles used in t
 
 ## Table of Contents
 
+<!-- markdownlint-disable MD051 -->
+
 1. [Layer Architecture](#layer-architecture)
 2. [Entity Creation Flow](#entity-creation-flow)
 3. [Base Classes & Patterns](#base-classes--patterns)
@@ -16,6 +18,8 @@ This document defines the architectural patterns and design principles used in t
 8. [Authentication & Authorization](#authentication--authorization)
 9. [Error Handling](#error-handling)
 10. [Validation Flow](#validation-flow)
+
+<!-- markdownlint-enable MD051 -->
 
 ---
 

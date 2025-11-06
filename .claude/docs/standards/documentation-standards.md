@@ -6,6 +6,8 @@ This document defines the documentation standards for the Hospeda project.
 
 ## Table of Contents
 
+<!-- markdownlint-disable MD051 -->
+
 1. [Documentation Philosophy](#documentation-philosophy)
 2. [JSDoc Standards](#jsdoc-standards)
 3. [API Documentation](#api-documentation)
@@ -16,6 +18,8 @@ This document defines the documentation standards for the Hospeda project.
 8. [Diagrams](#diagrams)
 9. [Changelog](#changelog)
 10. [Documentation Structure](#documentation-structure)
+
+<!-- markdownlint-enable MD051 -->
 
 ---
 
