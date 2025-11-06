@@ -347,7 +347,7 @@ Ubuntu/Debian systems include these sounds:
 
 ### Hook Not Executing
 
-**Solution 1: Check Permissions**
+#### Solution 1: Check Permissions
 
 ```bash
 # Verify executable
@@ -359,7 +359,7 @@ ls -l .claude/hooks/on-notification.sh
 chmod +x .claude/hooks/on-notification.sh
 ```
 
-**Solution 2: Verify jq Installation**
+#### Solution 2: Verify jq Installation
 
 ```bash
 which jq
@@ -369,7 +369,7 @@ which jq
 sudo apt install jq
 ```
 
-**Solution 3: Test Hook Manually**
+#### Solution 3: Test Hook Manually
 
 ```bash
 echo '{"message":"Test notification"}' | .claude/hooks/on-notification.sh
@@ -401,11 +401,11 @@ ps aux | grep knotify
 
 ### No Audio
 
-**Solution 1: Check System Volume**
+#### Solution 1: Check System Volume
 
 Ensure system volume is not muted.
 
-**Solution 2: Test Audio**
+#### Solution 2: Test Audio
 
 ```bash
 # Test with paplay
@@ -415,7 +415,7 @@ paplay /usr/share/sounds/freedesktop/stereo/bell.oga
 speaker-test -t sine -f 1000 -l 1
 ```
 
-**Solution 3: Use Alternative Audio**
+#### Solution 3: Use Alternative Audio
 
 ```bash
 # Instead of beep, use paplay
@@ -426,7 +426,7 @@ paplay /usr/share/sounds/freedesktop/stereo/complete.oga
 
 The `beep` command requires special permissions.
 
-**Solution: Use paplay instead**
+#### Solution: Use paplay instead
 
 ```bash
 # Replace beep with
