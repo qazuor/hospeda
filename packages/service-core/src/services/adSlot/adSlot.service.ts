@@ -326,6 +326,22 @@ export class AdSlotService extends BaseCrudService<
         }
     }
 
+    /**
+     * Checks if the actor can manage ad slot status (activate, deactivate).
+     * Admin or AD_SLOT_STATUS_MANAGE permission holders can manage status.
+     */
+    protected _canManageStatus(actor: Actor, _entity: AdSlot): void {
+        const isAdmin = actor.role === RoleEnum.ADMIN;
+        const hasPermission = actor.permissions.includes(PermissionEnum.AD_SLOT_STATUS_MANAGE);
+
+        if (!isAdmin && !hasPermission) {
+            throw new ServiceError(
+                ServiceErrorCode.FORBIDDEN,
+                'Permission denied: Only admins or authorized users can manage ad slot status'
+            );
+        }
+    }
+
     // ============================================================================
     // Search and Count Methods
     // ============================================================================
@@ -505,7 +521,7 @@ export class AdSlotService extends BaseCrudService<
         isActive: boolean,
         _reason: string
     ): Promise<ServiceOutput<AdSlot>> {
-        // Check update permission
+        // Check status management permission
         try {
             const current = await this.model.findById(slotId);
             if (!current) {
@@ -513,7 +529,7 @@ export class AdSlotService extends BaseCrudService<
                     error: new ServiceError(ServiceErrorCode.NOT_FOUND, 'Ad slot not found')
                 };
             }
-            this._canUpdate(actor, current);
+            this._canManageStatus(actor, current);
         } catch (error) {
             if (error instanceof ServiceError) {
                 return { error };
