@@ -1250,26 +1250,27 @@ Complete rewrite of Hospeda monorepo documentation using a hybrid documentation 
   - `docs/guides/authentication.md` (1,856 lines) - Clerk integration deep dive
 - **Total Documentation**: **5,884 lines** of cross-cutting guides created
 
-### PB-046: Cross-cutting Guides (Batch 2)
+### ✅ PB-046: Cross-cutting Guides (Batch 2) - COMPLETED
 
 - **Description**: Create additional cross-cutting guides
 - **Time Estimate**: 3 hours
 - **Dependencies**: PB-007
 - **Deliverables**:
-  - [ ] Create `/docs/guides/debugging.md` (Debugging techniques)
-  - [ ] Create `/docs/guides/database-migrations.md` (Migration workflow)
-  - [ ] Create `/docs/guides/internationalization.md` (Adding languages)
-  - [ ] Add troubleshooting sections
-  - [ ] Add code examples
+  - [x] Create `/docs/guides/debugging.md` (Debugging techniques) - **1,585 lines**
+  - [x] Create `/docs/guides/database-migrations.md` (Migration workflow) - **1,277 lines**
+  - [x] Create `/docs/guides/internationalization.md` (Adding languages) - **1,162 lines**
+  - [x] Add troubleshooting sections - **Dedicated sections in all guides**
+  - [x] Add code examples - **Real Hospeda patterns included**
 - **Acceptance Criteria**:
-  - [ ] Debugging guide covers common scenarios
-  - [ ] Migration workflow complete
-  - [ ] i18n guide explains process
-  - [ ] Examples work
+  - [x] Debugging guide covers common scenarios - **VS Code, Chrome DevTools, all layers**
+  - [x] Migration workflow complete - **Full Drizzle workflow with zero-downtime**
+  - [x] i18n guide explains process - **Complete translation management**
+  - [x] Examples work - **Real code from Hospeda codebase**
 - **Related Files**:
-  - `/docs/guides/debugging.md`
-  - `/docs/guides/database-migrations.md`
-  - `/docs/guides/internationalization.md`
+  - `docs/guides/debugging.md` (1,585 lines) - Development debugging techniques
+  - `docs/guides/database-migrations.md` (1,277 lines) - Drizzle migration workflow
+  - `docs/guides/internationalization.md` (1,162 lines) - Translation management
+- **Total Documentation**: **4,024 lines** of cross-cutting guides created
 
 ### PB-047: Resources Documentation
 
