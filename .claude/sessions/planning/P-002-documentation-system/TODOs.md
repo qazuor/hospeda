@@ -947,24 +947,26 @@ Complete rewrite of Hospeda monorepo documentation using a hybrid documentation 
   - `/docs/deployment/database-deployment.md`
 - **Total Lines**: ~10,633 lines
 
-### PB-035: Deployment Documentation - CI/CD
+### PB-035: Deployment Documentation - CI/CD ✅
 
 - **Description**: Create CI/CD documentation
 - **Time Estimate**: 3 hours
 - **Dependencies**: PB-033
+- **Status**: COMPLETED
 - **Deliverables**:
-  - [ ] Create `/docs/deployment/ci-cd.md` (GitHub Actions workflows)
-  - [ ] Document all workflows
-  - [ ] Add workflow diagrams
-  - [ ] Document secrets and environment variables
-  - [ ] Add troubleshooting for CI failures
+  - [x] Create `/docs/deployment/ci-cd.md` (GitHub Actions workflows) - 2,804 lines
+  - [x] Document all workflows (CI, Docs CI, Validation, Planning Cleanup, Search Refresh)
+  - [x] Add workflow diagrams (Mermaid)
+  - [x] Document secrets and environment variables
+  - [x] Add troubleshooting for CI failures
 - **Acceptance Criteria**:
-  - [ ] All GitHub Actions workflows documented
-  - [ ] Secrets management explained
-  - [ ] Troubleshooting covers common issues
-  - [ ] Workflow diagrams clear
+  - [x] All GitHub Actions workflows documented
+  - [x] Secrets management explained
+  - [x] Troubleshooting covers common issues
+  - [x] Workflow diagrams clear
 - **Related Files**:
   - `/docs/deployment/ci-cd.md`
+- **Total Lines**: ~2,804 lines
 
 ### PB-036: Security Documentation
 
