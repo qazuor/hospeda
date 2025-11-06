@@ -2,6 +2,8 @@
 
 ## Table of Contents
 
+<!-- markdownlint-disable MD051 -->
+
 - [A01:2021 - Broken Access Control](#a012021-broken-access-control)
 - [A02:2021 - Cryptographic Failures](#a022021-cryptographic-failures)
 - [A03:2021 - Injection](#a032021-injection)
@@ -12,6 +14,8 @@
 - [A08:2021 - Software and Data Integrity Failures](#a082021-software-and-data-integrity-failures)
 - [A09:2021 - Security Logging and Monitoring Failures](#a092021-security-logging-and-monitoring-failures)
 - [A10:2021 - Server-Side Request Forgery (SSRF)](#a102021-server-side-request-forgery-ssrf)
+
+<!-- markdownlint-enable MD051 -->
 
 ---
 
@@ -1024,7 +1028,7 @@ Insecure design represents missing or ineffective security controls in the desig
 - Assess risk (likelihood × impact)
 - Design mitigations
 
-**Example: Booking System Threat Model**
+#### Example: Booking System Threat Model
 
 | Asset | Threat | Mitigation |
 |-------|--------|------------|
@@ -3555,7 +3559,7 @@ export const safeFetch = async (url: string): Promise<Response> => {
 
 ### Prevention Strategies
 
-**1. Never Trust User-Supplied URLs**
+#### 1. Never Trust User-Supplied URLs
 
 ```typescript
 // ❌ UNSAFE: Direct fetch
@@ -3566,7 +3570,7 @@ const validated = safeUrlSchema.parse(userSuppliedUrl);
 const response = await safeFetch(validated);
 ```
 
-**2. Use Allowlists, Not Blocklists**
+#### 2. Use Allowlists, Not Blocklists
 
 ```typescript
 // ❌ BLOCKLIST: Can be bypassed
@@ -3582,7 +3586,7 @@ if (allowlist.includes(hostname)) {
 }
 ```
 
-**3. Disable URL Redirects**
+#### 3. Disable URL Redirects
 
 ```typescript
 // Prevent redirect-based SSRF
