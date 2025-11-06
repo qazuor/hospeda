@@ -826,7 +826,7 @@ function RootComponent() {
 
 ### Do's
 
-**✅ Use consistent query keys**
+#### ✅ Use consistent query keys
 
 ```tsx
 // ✅ Good - hierarchical and consistent
@@ -835,7 +835,7 @@ function RootComponent() {
 ['products', id, 'reviews'] // Product reviews
 ```
 
-**✅ Invalidate after mutations**
+#### ✅ Invalidate after mutations
 
 ```tsx
 // ✅ Good - keep data in sync
@@ -847,7 +847,7 @@ const mutation = useMutation({
 });
 ```
 
-**✅ Handle loading and error states**
+#### ✅ Handle loading and error states
 
 ```tsx
 // ✅ Good - user feedback
@@ -855,7 +855,7 @@ if (isLoading) return <Spinner />;
 if (error) return <ErrorMessage error={error} />;
 ```
 
-**✅ Use appropriate staleTime**
+#### ✅ Use appropriate staleTime
 
 ```tsx
 // ✅ Good - reduce unnecessary refetches
@@ -868,7 +868,7 @@ useQuery({
 
 ### Don'ts
 
-**❌ Don't use inconsistent query keys**
+#### ❌ Don't use inconsistent query keys
 
 ```tsx
 // ❌ Bad - inconsistent structure
@@ -876,7 +876,7 @@ useQuery({
 ['product', id] // Should be 'products'
 ```
 
-**❌ Don't forget to handle errors**
+#### ❌ Don't forget to handle errors
 
 ```tsx
 // ❌ Bad - no error handling
@@ -889,7 +889,7 @@ const { data } = useQuery({
 return <div>{data.map(...)}</div>;
 ```
 
-**❌ Don't mutate query data directly**
+#### ❌ Don't mutate query data directly
 
 ```tsx
 // ❌ Bad - doesn't trigger re-render
