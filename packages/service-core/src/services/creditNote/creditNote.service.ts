@@ -1,7 +1,7 @@
 import type { CreditNote, CreditNoteModel } from '@repo/db';
 import {
-    CreditNoteQuerySchema,
     CreateCreditNoteSchema,
+    CreditNoteQuerySchema,
     type ListRelationsConfig,
     PermissionEnum,
     RoleEnum,
@@ -56,175 +56,178 @@ export class CreditNoteService extends BaseCrudService<
 
     /**
      * Checks if the actor can create a credit note.
-     * Only ADMIN and users with CLIENT_UPDATE permission can create.
+     * Only ADMIN and users with CREDIT_NOTE_CREATE permission can create.
      */
     protected _canCreate(actor: Actor, _data: unknown): void {
         if (
             !actor ||
             !actor.id ||
             (actor.role !== RoleEnum.ADMIN &&
-                !actor.permissions.includes(PermissionEnum.CLIENT_UPDATE))
+                !actor.permissions.includes(PermissionEnum.CREDIT_NOTE_CREATE))
         ) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Only admins or users with CLIENT_UPDATE can create credit notes'
+                'Permission denied: Insufficient permissions to create credit notes'
             );
         }
     }
 
     /**
      * Checks if the actor can update a credit note.
-     * Admin or CLIENT_UPDATE permission holders can update.
+     * Admin or CREDIT_NOTE_UPDATE permission holders can update.
      */
     protected _canUpdate(actor: Actor, _entity: CreditNote): void {
         const isAdmin = actor.role === RoleEnum.ADMIN;
-        const hasPermission = actor.permissions.includes(PermissionEnum.CLIENT_UPDATE);
+        const hasPermission = actor.permissions.includes(PermissionEnum.CREDIT_NOTE_UPDATE);
 
         if (!isAdmin && !hasPermission) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Only admins or authorized users can update credit notes'
+                'Permission denied: Insufficient permissions to update credit notes'
             );
         }
     }
 
     /**
      * Checks if the actor can soft delete a credit note.
-     * Admin or CLIENT_UPDATE permission holders can soft delete.
+     * Admin or CREDIT_NOTE_DELETE permission holders can soft delete.
      */
     protected _canSoftDelete(actor: Actor, _entity: CreditNote): void {
         const isAdmin = actor.role === RoleEnum.ADMIN;
-        const hasPermission = actor.permissions.includes(PermissionEnum.CLIENT_UPDATE);
+        const hasPermission = actor.permissions.includes(PermissionEnum.CREDIT_NOTE_DELETE);
 
         if (!isAdmin && !hasPermission) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Only admins or authorized users can delete credit notes'
+                'Permission denied: Insufficient permissions to delete credit notes'
             );
         }
     }
 
     /**
      * Checks if the actor can hard delete a credit note.
-     * Only ADMIN can hard delete.
+     * Only ADMIN or CREDIT_NOTE_HARD_DELETE permission holders can hard delete.
      */
     protected _canHardDelete(actor: Actor, _entity: CreditNote): void {
-        if (actor.role !== RoleEnum.ADMIN) {
+        const isAdmin = actor.role === RoleEnum.ADMIN;
+        const hasPermission = actor.permissions.includes(PermissionEnum.CREDIT_NOTE_HARD_DELETE);
+
+        if (!isAdmin && !hasPermission) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Only admins can permanently delete credit notes'
+                'Permission denied: Insufficient permissions to permanently delete credit notes'
             );
         }
     }
 
     /**
      * Checks if the actor can view a credit note.
-     * Admin or CLIENT_UPDATE permission holders can view.
+     * Admin or CREDIT_NOTE_VIEW permission holders can view.
      */
     protected _canView(actor: Actor, _entity: CreditNote): void {
         const isAdmin = actor.role === RoleEnum.ADMIN;
-        const hasPermission = actor.permissions.includes(PermissionEnum.CLIENT_UPDATE);
+        const hasPermission = actor.permissions.includes(PermissionEnum.CREDIT_NOTE_VIEW);
 
         if (!isAdmin && !hasPermission) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Only admins or authorized users can view credit notes'
+                'Permission denied: Insufficient permissions to view credit notes'
             );
         }
     }
 
     /**
      * Checks if the actor can list credit notes.
-     * Admin or CLIENT_UPDATE permission holders can list.
+     * Admin or CREDIT_NOTE_VIEW permission holders can list.
      */
     protected _canList(actor: Actor): void {
         const isAdmin = actor.role === RoleEnum.ADMIN;
-        const hasPermission = actor.permissions.includes(PermissionEnum.CLIENT_UPDATE);
+        const hasPermission = actor.permissions.includes(PermissionEnum.CREDIT_NOTE_VIEW);
 
         if (!isAdmin && !hasPermission) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Only admins or authorized users can list credit notes'
+                'Permission denied: Insufficient permissions to list credit notes'
             );
         }
     }
 
     /**
      * Checks if the actor can restore a credit note.
-     * Admin or CLIENT_UPDATE permission holders can restore.
+     * Admin or CREDIT_NOTE_RESTORE permission holders can restore.
      */
     protected _canRestore(actor: Actor, _entity: CreditNote): void {
         const isAdmin = actor.role === RoleEnum.ADMIN;
-        const hasPermission = actor.permissions.includes(PermissionEnum.CLIENT_UPDATE);
+        const hasPermission = actor.permissions.includes(PermissionEnum.CREDIT_NOTE_RESTORE);
 
         if (!isAdmin && !hasPermission) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Only admins or authorized users can restore credit notes'
+                'Permission denied: Insufficient permissions to restore credit notes'
             );
         }
     }
 
     /**
      * Checks if the actor can search credit notes.
-     * Admin or CLIENT_UPDATE permission holders can search.
+     * Admin or CREDIT_NOTE_VIEW permission holders can search.
      */
     protected _canSearch(actor: Actor): void {
         const isAdmin = actor.role === RoleEnum.ADMIN;
-        const hasPermission = actor.permissions.includes(PermissionEnum.CLIENT_UPDATE);
+        const hasPermission = actor.permissions.includes(PermissionEnum.CREDIT_NOTE_VIEW);
 
         if (!isAdmin && !hasPermission) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Only admins or authorized users can search credit notes'
+                'Permission denied: Insufficient permissions to search credit notes'
             );
         }
     }
 
     /**
      * Checks if the actor can count credit notes.
-     * Admin or CLIENT_UPDATE permission holders can count.
+     * Admin or CREDIT_NOTE_VIEW permission holders can count.
      */
     protected _canCount(actor: Actor): void {
         const isAdmin = actor.role === RoleEnum.ADMIN;
-        const hasPermission = actor.permissions.includes(PermissionEnum.CLIENT_UPDATE);
+        const hasPermission = actor.permissions.includes(PermissionEnum.CREDIT_NOTE_VIEW);
 
         if (!isAdmin && !hasPermission) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Only admins or authorized users can count credit notes'
+                'Permission denied: Insufficient permissions to count credit notes'
             );
         }
     }
 
     /**
      * Checks if the actor can update visibility of a credit note.
-     * Admin or CLIENT_UPDATE permission holders can update visibility.
+     * Admin or CREDIT_NOTE_UPDATE permission holders can update visibility.
      */
     protected _canUpdateVisibility(actor: Actor, _entity: CreditNote): void {
         const isAdmin = actor.role === RoleEnum.ADMIN;
-        const hasPermission = actor.permissions.includes(PermissionEnum.CLIENT_UPDATE);
+        const hasPermission = actor.permissions.includes(PermissionEnum.CREDIT_NOTE_UPDATE);
 
         if (!isAdmin && !hasPermission) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Only admins or authorized users can update visibility of credit notes'
+                'Permission denied: Insufficient permissions to update visibility of credit notes'
             );
         }
     }
 
     /**
      * Checks if the actor can update lifecycle state of a credit note.
-     * Admin or CLIENT_UPDATE permission holders can update lifecycle state.
+     * Admin or CREDIT_NOTE_UPDATE permission holders can update lifecycle state.
      */
     protected _canUpdateLifecycleState(actor: Actor, _entity: CreditNote): void {
         const isAdmin = actor.role === RoleEnum.ADMIN;
-        const hasPermission = actor.permissions.includes(PermissionEnum.CLIENT_UPDATE);
+        const hasPermission = actor.permissions.includes(PermissionEnum.CREDIT_NOTE_UPDATE);
 
         if (!isAdmin && !hasPermission) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Only admins or authorized users can update lifecycle state of credit notes'
+                'Permission denied: Insufficient permissions to update lifecycle state of credit notes'
             );
         }
     }
@@ -445,11 +448,13 @@ export class CreditNoteService extends BaseCrudService<
         actor: Actor,
         startDate?: Date,
         endDate?: Date
-    ): Promise<ServiceOutput<{
-        totalAmount: number;
-        count: number;
-        averageAmount: number;
-    }>> {
+    ): Promise<
+        ServiceOutput<{
+            totalAmount: number;
+            count: number;
+            averageAmount: number;
+        }>
+    > {
         return this.runWithLoggingAndValidation({
             methodName: 'getCreditNotesSummary',
             input: { actor },
