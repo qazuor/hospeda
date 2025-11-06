@@ -478,7 +478,7 @@ Closes PB-123"
 
 ### Step-by-Step Process
 
-**1. Complete a Discrete Unit of Work**
+#### 1. Complete a Discrete Unit of Work
 
 Focus on ONE task at a time:
 
@@ -487,7 +487,7 @@ Focus on ONE task at a time:
 - Refactor ONE component
 - Add tests for ONE module
 
-**2. Run Tests**
+#### 2. Run Tests
 
 ```bash
 # Run tests for changed packages
@@ -498,7 +498,7 @@ cd packages/service-core && pnpm test
 pnpm test
 ```
 
-**3. Run Quality Checks**
+#### 3. Run Quality Checks
 
 ```bash
 # Type checking
@@ -511,7 +511,7 @@ pnpm lint
 pnpm lint --fix
 ```
 
-**4. Review Changes**
+#### 4. Review Changes
 
 ```bash
 # See all modified files
@@ -524,7 +524,7 @@ git diff
 git diff packages/db/src/models/user.model.ts
 ```
 
-**5. Stage ONLY Task-Related Files**
+#### 5. Stage ONLY Task-Related Files
 
 ```bash
 # Stage specific files
@@ -536,7 +536,7 @@ git status
 git diff --cached
 ```
 
-**6. Write Commit Message**
+#### 6. Write Commit Message
 
 ```bash
 # Commit with message
@@ -549,7 +549,7 @@ git commit -m "feat(db): add User model with authentication
 Closes PB-123"
 ```
 
-**7. Push to Remote**
+#### 7. Push to Remote
 
 ```bash
 git push origin main
@@ -1024,4 +1024,4 @@ Before committing, verify:
 
 ---
 
-*Last updated: 2025-01-15*
+###### Last Updated: 2025-01-15
