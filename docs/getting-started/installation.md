@@ -652,7 +652,7 @@ Add server connection:
    DATABASE_URL="postgresql://user:pass@ep-xxx.neon.tech/dbname"
    ```
 
-1. Run migrations:
+5. Run migrations:
 
    ```bash
    pnpm db:migrate

@@ -629,8 +629,6 @@ const rawData = await fetchUser(userId);
 const user = userSchema.parse(rawData); // Validates and types
 ```
 
-```
-
 ## Review Checklist
 
 **Copy this checklist for each review:**
@@ -1093,8 +1091,6 @@ Example:
 export async function createBooking(input: CreateBookingInput): Promise`<Booking>` {
   // Implementation
 }
-```
-
 ```
 
 ## Handling Disagreements

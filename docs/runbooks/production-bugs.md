@@ -610,8 +610,8 @@ For slow endpoint:
    ```
 
 1. Run locally and analyze
-2. Identify slow operations
-3. Optimize (add indexes, cache, reduce queries)
+1. Identify slow operations
+1. Optimize (add indexes, cache, reduce queries)
 
 ### Auth Issue Investigation
 

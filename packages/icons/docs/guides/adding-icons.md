@@ -442,8 +442,6 @@ function RoomFeatures() {
 }
 ```
 
-```
-
 ---
 
 ## File Structure

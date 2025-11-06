@@ -25,7 +25,7 @@
     "MD036": true,
     "MD040": false,
     "MD041": false,
-    "MD051": false,
+    "MD051": true,
     "MD058": true
   },
   "ignores": [

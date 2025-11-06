@@ -615,7 +615,7 @@ export const dualRateLimitMiddleware = async (c: Context, next: Next) => {
 
 ### Rate Limit Headers
 
-#### Rate Limit Standard Headers
+#### Standard Headers
 
 ```text
 X-RateLimit-Limit: Maximum requests per window
@@ -824,7 +824,7 @@ export const createCorsMiddleware = () => {
 
 ### Credentials Handling
 
-#### Credentials Handling Enable Credentials
+#### Enable Credentials
 
 ```typescript
 // apps/api/src/utils/env.ts

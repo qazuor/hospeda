@@ -374,8 +374,6 @@ Implements authentication requirements from #45
 
 Used Clerk for authentication as decided in ADR-003. Middleware validates JWT on each request to protected routes.
 
-```
-
 ## PR Size Guidelines
 
 #### Keep PRs small for faster reviews and easier understanding.
@@ -840,9 +838,9 @@ You've successfully contributed to Hospeda!
 
 ## Draft PRs
 
-#### Use draft PRs for work in progress
+### Use draft PRs for work in progress
 
-### When to Use Draft PRs
+#### When to Use Draft PRs
 
 - Want early feedback on approach
 - Exploring implementation options

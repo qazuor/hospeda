@@ -211,8 +211,8 @@ git commit --no-verify
    ```
 
 1. Open browser DevTools (`F12`)
-2. Use Sources tab for debugging
-3. Set breakpoints in browser
+1. Use Sources tab for debugging
+1. Set breakpoints in browser
 
 **TanStack Start (Admin):**
 
@@ -224,7 +224,7 @@ git commit --no-verify
    ```
 
 1. Use browser DevTools for client-side
-2. Use VSCode for server-side (SSR) debugging
+1. Use VSCode for server-side (SSR) debugging
 
 #### Debug Tests
 

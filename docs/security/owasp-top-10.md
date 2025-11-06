@@ -2,16 +2,16 @@
 
 ## Table of Contents
 
-- [A01:2021 - Broken Access Control](#a012021---broken-access-control)
-- [A02:2021 - Cryptographic Failures](#a022021---cryptographic-failures)
-- [A03:2021 - Injection](#a032021---injection)
-- [A04:2021 - Insecure Design](#a042021---insecure-design)
-- [A05:2021 - Security Misconfiguration](#a052021---security-misconfiguration)
-- [A06:2021 - Vulnerable and Outdated Components](#a062021---vulnerable-and-outdated-components)
-- [A07:2021 - Identification and Authentication Failures](#a072021---identification-and-authentication-failures)
-- [A08:2021 - Software and Data Integrity Failures](#a082021---software-and-data-integrity-failures)
-- [A09:2021 - Security Logging and Monitoring Failures](#a092021---security-logging-and-monitoring-failures)
-- [A10:2021 - Server-Side Request Forgery (SSRF)](#a102021---server-side-request-forgery-ssrf)
+- [A01:2021 - Broken Access Control](#a012021-broken-access-control)
+- [A02:2021 - Cryptographic Failures](#a022021-cryptographic-failures)
+- [A03:2021 - Injection](#a032021-injection)
+- [A04:2021 - Insecure Design](#a042021-insecure-design)
+- [A05:2021 - Security Misconfiguration](#a052021-security-misconfiguration)
+- [A06:2021 - Vulnerable and Outdated Components](#a062021-vulnerable-and-outdated-components)
+- [A07:2021 - Identification and Authentication Failures](#a072021-identification-and-authentication-failures)
+- [A08:2021 - Software and Data Integrity Failures](#a082021-software-and-data-integrity-failures)
+- [A09:2021 - Security Logging and Monitoring Failures](#a092021-security-logging-and-monitoring-failures)
+- [A10:2021 - Server-Side Request Forgery (SSRF)](#a102021-server-side-request-forgery-ssrf)
 
 ---
 
