@@ -145,141 +145,137 @@ describe('SubscriptionItemService', () => {
     describe('Permission Hooks', () => {
         describe('_canCreate', () => {
             it('should allow admin to create', () => {
-                expect(() => service._canCreate(adminActor, {})).not.toThrow();
+                expect(() => checkCanCreate(adminActor, {})).not.toThrow();
             });
 
             it('should allow user with SUBSCRIPTION_ITEM_CREATE permission', () => {
-                expect(() => service._canCreate(userWithCreatePermissionActor, {})).not.toThrow();
+                expect(() => checkCanCreate(userWithCreatePermissionActor, {})).not.toThrow();
             });
 
             it('should deny user without permission', () => {
-                expect(() => service._canCreate(userActor, {})).toThrow();
+                expect(() => checkCanCreate(userActor, {})).toThrow();
             });
 
             it('should deny guest', () => {
-                expect(() => service._canCreate(guestActor, {})).toThrow();
+                expect(() => checkCanCreate(guestActor, {})).toThrow();
             });
         });
 
         describe('_canUpdate', () => {
             it('should allow admin to update', () => {
-                expect(() => service._canUpdate(adminActor, mockSubscriptionItem)).not.toThrow();
+                expect(() => checkCanUpdate(adminActor, mockSubscriptionItem)).not.toThrow();
             });
 
             it('should allow user with SUBSCRIPTION_ITEM_UPDATE permission', () => {
                 expect(() =>
-                    service._canUpdate(userWithUpdatePermissionActor, mockSubscriptionItem)
+                    checkCanUpdate(userWithUpdatePermissionActor, mockSubscriptionItem)
                 ).not.toThrow();
             });
 
             it('should deny user without permission', () => {
-                expect(() => service._canUpdate(userActor, mockSubscriptionItem)).toThrow();
+                expect(() => checkCanUpdate(userActor, mockSubscriptionItem)).toThrow();
             });
         });
 
         describe('_canSoftDelete', () => {
             it('should allow admin to soft delete', () => {
-                expect(() =>
-                    service._canSoftDelete(adminActor, mockSubscriptionItem)
-                ).not.toThrow();
+                expect(() => checkCanSoftDelete(adminActor, mockSubscriptionItem)).not.toThrow();
             });
 
             it('should allow user with SUBSCRIPTION_ITEM_DELETE permission', () => {
                 expect(() =>
-                    service._canSoftDelete(userWithDeletePermissionActor, mockSubscriptionItem)
+                    checkCanSoftDelete(userWithDeletePermissionActor, mockSubscriptionItem)
                 ).not.toThrow();
             });
 
             it('should deny user without permission', () => {
-                expect(() => service._canSoftDelete(userActor, mockSubscriptionItem)).toThrow();
+                expect(() => checkCanSoftDelete(userActor, mockSubscriptionItem)).toThrow();
             });
         });
 
         describe('_canHardDelete', () => {
             it('should allow super admin to hard delete', () => {
                 expect(() =>
-                    service._canHardDelete(superAdminActor, mockSubscriptionItem)
+                    checkCanHardDelete(superAdminActor, mockSubscriptionItem)
                 ).not.toThrow();
             });
 
             it('should deny admin from hard delete', () => {
-                expect(() => service._canHardDelete(adminActor, mockSubscriptionItem)).toThrow();
+                expect(() => checkCanHardDelete(adminActor, mockSubscriptionItem)).toThrow();
             });
 
             it('should deny user from hard delete', () => {
-                expect(() => service._canHardDelete(userActor, mockSubscriptionItem)).toThrow();
+                expect(() => checkCanHardDelete(userActor, mockSubscriptionItem)).toThrow();
             });
         });
 
         describe('_canRestore', () => {
             it('should allow admin to restore', () => {
-                expect(() => service._canRestore(adminActor, mockSubscriptionItem)).not.toThrow();
+                expect(() => checkCanRestore(adminActor, mockSubscriptionItem)).not.toThrow();
             });
 
             it('should allow super admin to restore', () => {
-                expect(() =>
-                    service._canRestore(superAdminActor, mockSubscriptionItem)
-                ).not.toThrow();
+                expect(() => checkCanRestore(superAdminActor, mockSubscriptionItem)).not.toThrow();
             });
 
             it('should deny user from restore', () => {
-                expect(() => service._canRestore(userActor, mockSubscriptionItem)).toThrow();
+                expect(() => checkCanRestore(userActor, mockSubscriptionItem)).toThrow();
             });
         });
 
         describe('_canView', () => {
             it('should allow authenticated user to view', () => {
-                expect(() => service._canView(userActor, mockSubscriptionItem)).not.toThrow();
+                expect(() => checkCanView(userActor, mockSubscriptionItem)).not.toThrow();
             });
 
             it('should allow admin to view', () => {
-                expect(() => service._canView(adminActor, mockSubscriptionItem)).not.toThrow();
+                expect(() => checkCanView(adminActor, mockSubscriptionItem)).not.toThrow();
             });
 
             it('should deny guest from viewing', () => {
-                expect(() => service._canView(guestActor, mockSubscriptionItem)).toThrow();
+                expect(() => checkCanView(guestActor, mockSubscriptionItem)).toThrow();
             });
         });
 
         describe('_canList', () => {
             it('should allow authenticated user to list', () => {
-                expect(() => service._canList(userActor)).not.toThrow();
+                expect(() => checkCanList(userActor)).not.toThrow();
             });
 
             it('should allow admin to list', () => {
-                expect(() => service._canList(adminActor)).not.toThrow();
+                expect(() => checkCanList(adminActor)).not.toThrow();
             });
 
             it('should deny guest from listing', () => {
-                expect(() => service._canList(guestActor)).toThrow();
+                expect(() => checkCanList(guestActor)).toThrow();
             });
         });
 
         describe('_canSearch', () => {
             it('should allow authenticated user to search', () => {
-                expect(() => service._canSearch(userActor)).not.toThrow();
+                expect(() => checkCanSearch(userActor)).not.toThrow();
             });
 
             it('should allow admin to search', () => {
-                expect(() => service._canSearch(adminActor)).not.toThrow();
+                expect(() => checkCanSearch(adminActor)).not.toThrow();
             });
 
             it('should deny guest from searching', () => {
-                expect(() => service._canSearch(guestActor)).toThrow();
+                expect(() => checkCanSearch(guestActor)).toThrow();
             });
         });
 
         describe('_canCount', () => {
             it('should allow authenticated user to count', () => {
-                expect(() => service._canCount(userActor)).not.toThrow();
+                expect(() => checkCanCount(userActor)).not.toThrow();
             });
 
             it('should allow admin to count', () => {
-                expect(() => service._canCount(adminActor)).not.toThrow();
+                expect(() => checkCanCount(adminActor)).not.toThrow();
             });
 
             it('should deny guest from counting', () => {
-                expect(() => service._canCount(guestActor)).toThrow();
+                expect(() => checkCanCount(guestActor)).toThrow();
             });
         });
     });
@@ -625,8 +621,9 @@ describe('SubscriptionItemService', () => {
         describe('withLinkedEntity', () => {
             it('should get item with linked entity details', async () => {
                 const mockWithEntity = {
-                    subscriptionItem: mockSubscriptionItem,
-                    linkedEntity: { id: 'accommodation-listing-123', name: 'Test Accommodation' }
+                    item: mockSubscriptionItem,
+                    linkedEntityId: 'accommodation-listing-123',
+                    entityType: 'AccommodationListing'
                 };
                 vi.spyOn(mockModel, 'withLinkedEntity').mockResolvedValue(mockWithEntity);
 
@@ -634,8 +631,9 @@ describe('SubscriptionItemService', () => {
 
                 expect(result.data).toBeDefined();
                 expect(result.error).toBeUndefined();
-                expect(result.data?.subscriptionItem.id).toBe('sub-item-123');
-                expect(result.data?.linkedEntity).toBeDefined();
+                expect(result.data?.item.id).toBe('sub-item-123');
+                expect(result.data?.linkedEntityId).toBe('accommodation-listing-123');
+                expect(result.data?.entityType).toBe('AccommodationListing');
             });
 
             it('should return null when not found', async () => {
