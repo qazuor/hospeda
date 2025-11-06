@@ -169,7 +169,7 @@ git commit -m "chore: update NODE_ENV in .env.example"
 git commit -m "style: remove unused imports from api routes"
 ```
 
-**🔥 CRITICAL: Only Commit Quick Fix Files**
+#### 🔥 CRITICAL: Only Commit Quick Fix Files
 
 Before committing, verify which files to include:
 

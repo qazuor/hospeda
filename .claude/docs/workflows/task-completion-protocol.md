@@ -33,7 +33,7 @@ Analyze the output:
 - `D` = Deleted file
 - `??` = Untracked file
 
-**🔥 CRITICAL: Atomic Commits Rule**
+#### 🔥 CRITICAL: Atomic Commits Rule
 
 **ONLY include files that were modified during THIS task.**
 
@@ -160,7 +160,7 @@ Execute git commits then mark task complete:
 # Then mark as completed
 ```
 
-**🔥 CRITICAL: State Update Process**
+#### 🔥 CRITICAL: State Update Process
 
 When marking a task complete, you MUST update ALL state tracking files:
 
