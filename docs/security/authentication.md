@@ -181,7 +181,7 @@ graph TB
 
 ### Account Configuration
 
-**1. Create Clerk Account**
+#### 1. Create Clerk Account
 
 Visit [clerk.com](https://clerk.com) and sign up:
 
@@ -190,14 +190,14 @@ Visit [clerk.com](https://clerk.com) and sign up:
 https://dashboard.clerk.com
 ```
 
-**2. Create Application**
+#### 2. Create Application
 
 ```text
 Application Name: Hospeda
 Application Type: Standard
 ```
 
-**3. Enable Features**
+#### 3. Enable Features
 
 In Dashboard → Settings:
 
@@ -208,7 +208,7 @@ In Dashboard → Settings:
 
 ### Application Setup
 
-**1. Configure Domains**
+#### 1. Configure Domains
 
 ```text
 Development:
@@ -222,7 +222,7 @@ Production:
   - https://admin.hospeda.com
 ```
 
-**2. Set Allowed Origins**
+#### 2. Set Allowed Origins
 
 Dashboard → Settings → CORS:
 
@@ -235,7 +235,7 @@ https://admin.hospeda.com
 https://api.hospeda.com
 ```
 
-**3. Configure Session Settings**
+#### 3. Configure Session Settings
 
 Dashboard → Sessions:
 
@@ -247,7 +247,7 @@ Multi-session: Enabled
 
 ### Social Providers
 
-**1. Enable Google OAuth**
+#### 1. Enable Google OAuth
 
 Dashboard → Authentication → Social Connections → Google:
 
@@ -257,7 +257,7 @@ Client ID: [from Google Cloud Console]
 Client Secret: [from Google Cloud Console]
 ```
 
-**2. Enable GitHub OAuth**
+#### 2. Enable GitHub OAuth
 
 Dashboard → Authentication → Social Connections → GitHub:
 
@@ -1128,7 +1128,7 @@ export const createAccommodationRoute = createOpenApiRoute({
 
 #### API Route Protection
 
-**Option 1: Factory Options (Recommended)**
+#### Option 1: Factory Options (Recommended)
 
 ```typescript
 // apps/api/src/routes/accommodation/list.ts
@@ -1166,7 +1166,7 @@ export const myAccommodationsRoute = createListRoute({
 });
 ```
 
-**Option 2: Manual Check**
+#### Option 2: Manual Check
 
 ```typescript
 // apps/api/src/routes/accommodation/delete.ts
@@ -2445,7 +2445,7 @@ export const clerkAuth = () => {
 
 ### From Custom Auth to Clerk
 
-**Step 1: Install Clerk SDKs**
+#### Step 1: Install Clerk SDKs
 
 ```bash
 # API
@@ -2461,11 +2461,11 @@ cd apps/admin
 pnpm add @clerk/tanstack-react-start
 ```
 
-**Step 2: Configure Environment Variables**
+#### Step 2: Configure Environment Variables
 
 See [Environment Variables](#environment-variables) section.
 
-**Step 3: Add Clerk Middleware**
+#### Step 3: Add Clerk Middleware
 
 ```typescript
 // apps/api/src/app.ts
@@ -2477,7 +2477,7 @@ app.use('*', clerkAuth());
 app.use('*', actorMiddleware);
 ```
 
-**Step 4: Migrate User Data**
+#### Step 4: Migrate User Data
 
 ```typescript
 // Migration script: scripts/migrate-users-to-clerk.ts
@@ -2513,7 +2513,7 @@ async function migrateUsers() {
 }
 ```
 
-**Step 5: Update Frontend Components**
+#### Step 5: Update Frontend Components
 
 ```tsx
 // Before (custom auth)
@@ -2531,7 +2531,7 @@ function Component() {
 }
 ```
 
-**Step 6: Test Thoroughly**
+#### Step 6: Test Thoroughly
 
 1. Test sign up flow
 2. Test sign in flow
@@ -2540,7 +2540,7 @@ function Component() {
 5. Test webhooks
 6. Test session management
 
-**Step 7: Deploy**
+#### Step 7: Deploy
 
 1. Update environment variables in production
 2. Deploy API changes
