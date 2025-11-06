@@ -404,7 +404,7 @@ Used Clerk for authentication as decided in ADR-003. Middleware validates JWT on
 
 **Split large features into smaller PRs:**
 
-**Example: User Authentication Feature**
+#### Example: User Authentication Feature
 
 Instead of one large PR (1000+ lines):
 
@@ -610,13 +610,13 @@ git push
 
 ### How to Respond
 
-**1. Acknowledge Feedback**
+#### 1. Acknowledge Feedback
 
 ```markdown
 Thanks for the review! I'll address these points.
 ```
 
-**2. Make Changes**
+#### 2. Make Changes
 
 ```bash
 # Make requested changes
@@ -630,7 +630,7 @@ git commit -m "refactor: extract helper function per review"
 git push origin feature/my-feature
 ```
 
-**3. Respond to Comments**
+#### 3. Respond to Comments
 
 **If you made the change**:
 
@@ -656,7 +656,7 @@ Could you clarify what you mean by "extract to helper"?
 Do you want a separate file or just a function in the same file?
 ```
 
-**4. Re-request Review**
+#### 4. Re-request Review
 
 After addressing all feedback:
 
@@ -724,14 +724,14 @@ All commits added to base without merge commit
 
 ### Merging Process
 
-**Option 1: GitHub UI (Recommended)**
+#### Option 1: GitHub UI (Recommended)
 
 1. Click "Squash and merge" button
 2. Edit commit message if needed
 3. Confirm merge
 4. Delete branch
 
-**Option 2: Command Line**
+#### Option 2: Command Line
 
 ```bash
 # Update main
@@ -946,4 +946,4 @@ After merging:
 
 ---
 
-*Last updated: 2025-01-15*
+###### Last Updated: 2025-01-15
