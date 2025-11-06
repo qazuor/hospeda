@@ -228,7 +228,7 @@ sequenceDiagram
 
 ### Sign-In Flow Details
 
-**1. User Enters Credentials**
+#### 1. User Enters Credentials
 
 ```tsx
 // Frontend component
@@ -244,7 +244,7 @@ const handleSignIn = async (email: string, password: string) => {
 };
 ```
 
-**2. Clerk Validates Credentials**
+#### 2. Clerk Validates Credentials
 
 Clerk handles:
 
@@ -253,7 +253,7 @@ Clerk handles:
 - Account status checks
 - MFA if enabled
 
-**3. Session Token Generated**
+#### 3. Session Token Generated
 
 Clerk returns:
 
@@ -261,7 +261,7 @@ Clerk returns:
 - User metadata
 - Session ID
 
-**4. Database Sync**
+#### 4. Database Sync
 
 Frontend calls sync endpoint:
 
@@ -276,7 +276,7 @@ const response = await fetch('/api/v1/public/auth/signin', {
 const { userId, role, permissions } = await response.json();
 ```
 
-**5. User Redirected**
+#### 5. User Redirected
 
 ```tsx
 if (signIn.status === 'complete') {
@@ -287,7 +287,7 @@ if (signIn.status === 'complete') {
 
 ### Sign-Up Flow Details
 
-**1. User Submits Registration**
+#### 1. User Submits Registration
 
 ```tsx
 const { signUp } = useSignUp();
@@ -300,7 +300,7 @@ await signUp.create({
 });
 ```
 
-**2. Clerk Creates Account**
+#### 2. Clerk Creates Account
 
 Clerk:
 
@@ -308,7 +308,7 @@ Clerk:
 - Sends verification email (if enabled)
 - Generates session token
 
-**3. Email Verification (Optional)**
+#### 3. Email Verification (Optional)
 
 ```tsx
 // User enters verification code
@@ -317,7 +317,7 @@ await signUp.attemptEmailAddressVerification({
 });
 ```
 
-**4. Database User Creation**
+#### 4. Database User Creation
 
 ```typescript
 // API endpoint creates database record
@@ -332,7 +332,7 @@ const response = await fetch('/api/v1/public/auth/signup', {
 });
 ```
 
-**5. Onboarding**
+#### 5. Onboarding
 
 ```tsx
 if (signUp.status === 'complete') {
@@ -669,7 +669,7 @@ graph LR
 
 ### Sign-In Sync Endpoint
 
-**POST /api/v1/public/auth/signin**
+#### POST /api/v1/public/auth/signin
 
 Syncs existing Clerk user to database on sign-in.
 
@@ -759,7 +759,7 @@ export default app;
 
 ### Sign-Up Sync Endpoint
 
-**POST /api/v1/public/auth/signup**
+#### POST /api/v1/public/auth/signup
 
 Creates database user record on sign-up.
 
@@ -836,7 +836,7 @@ app.post('/api/v1/public/auth/signup', async (c) => {
 
 ### Sign-Out Sync Endpoint
 
-**POST /api/v1/public/auth/signout**
+#### POST /api/v1/public/auth/signout
 
 Cleans up server-side session data.
 
@@ -1466,7 +1466,7 @@ Clerk sends webhook notifications for user events.
 
 ### Setting Up Webhooks
 
-**1. Create Endpoint**
+#### 1. Create Endpoint
 
 ```typescript
 // apps/api/src/routes/webhooks/clerk.ts
@@ -1515,7 +1515,7 @@ app.post('/api/webhooks/clerk', async (c) => {
 export default app;
 ```
 
-**2. Configure in Clerk Dashboard**
+#### 2. Configure in Clerk Dashboard
 
 1. Go to **Webhooks** section
 2. Click **Add Endpoint**
@@ -1523,7 +1523,7 @@ export default app;
 4. Select events to subscribe to
 5. Copy **Signing Secret** to environment variables
 
-**3. Add Webhook Secret**
+#### 3. Add Webhook Secret
 
 ```bash
 # .env
