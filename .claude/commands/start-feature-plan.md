@@ -142,7 +142,7 @@ Starting planning process...
 - Business rules and constraints
 - Success metrics and KPIs
 
-**🔴 MANDATORY USER INTERACTION CHECKPOINT 🔴**
+#### 🔴 MANDATORY USER INTERACTION CHECKPOINT 🔴
 
 **After PDR Generation:**
 
@@ -220,7 +220,7 @@ Do you approve this PDR or need changes? (approve/changes needed)
 - Technology choices justification
 - Risk assessment and mitigation
 
-**🔴 MANDATORY USER INTERACTION CHECKPOINT 🔴**
+#### 🔴 MANDATORY USER INTERACTION CHECKPOINT 🔴
 
 **After Technical Analysis Generation:**
 

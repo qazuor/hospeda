@@ -270,7 +270,7 @@ mv .claude/sessions/planning/archived/2024/10/P-001-business-model-system \
 
 This command implements a **hybrid approach** with three execution modes:
 
-**1. Manual Interactive (Command)**
+#### 1. Manual Interactive (Command)
 
 ```bash
 /planning-cleanup
@@ -280,7 +280,7 @@ This command implements a **hybrid approach** with three execution modes:
 - Full control over what gets archived
 - Best for: Selective cleanup, reviewing before archiving
 
-**2. Manual Automatic (Script)**
+#### 2. Manual Automatic (Script)
 
 ```bash
 pnpm planning:cleanup:auto
@@ -290,7 +290,7 @@ pnpm planning:cleanup:auto
 - No user interaction required
 - Best for: Quick cleanup, scripting
 
-**3. Automated CI/CD (GitHub Actions)**
+#### 3. Automated CI/CD (GitHub Actions)
 
 ```yaml
 # Runs automatically every Monday at 00:00 UTC

@@ -436,6 +436,8 @@ Updates:
 
 ## Command Templates
 
+<!-- markdownlint-disable MD024 -->
+
 ### Workflow Command Template
 
 ```markdown
@@ -651,6 +653,8 @@ description: {description}
 
 ```
 
+<!-- markdownlint-enable MD024 -->
+
 ## Validation Rules
 
 ### Command Name
@@ -746,13 +750,13 @@ description: {description}
 - Multiple audit areas
 - Detailed reporting
 
-## Related Commands
+## Related Meta-Commands
 
 - `/create-agent` - Create new agent
 - `/create-skill` - Create new skill
 - `/help` - Get system help
 
-## Notes
+## Command Design Notes
 
 - **Command Naming**: Use verb-noun pattern (e.g., `deploy-preview`, `run-tests`)
 - **Option Naming**: Use full words, avoid abbreviations
