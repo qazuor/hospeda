@@ -1,11 +1,5 @@
 import type { PaymentModel } from '@repo/db';
-import {
-    type Payment,
-    PaymentProviderEnum,
-    PaymentStatusEnum,
-    PermissionEnum,
-    RoleEnum
-} from '@repo/schemas';
+import { type Payment, PaymentStatusEnum, PermissionEnum, RoleEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PaymentService } from '../../../src/services/payment/payment.service.js';
 import type { Actor } from '../../../src/types/index.js';
@@ -19,20 +13,32 @@ describe('PaymentService', () => {
     // Mock data
     const mockPayment: Payment = {
         id: '00000000-0000-0000-0000-000000000001',
-        invoiceId: '00000000-0000-0000-0000-000000000002',
-        amount: '100.00',
+        userId: '00000000-0000-0000-0000-000000000002',
+        paymentPlanId: '00000000-0000-0000-0000-000000000003',
+        type: 'one_time' as const,
+        amount: 100.0,
         currency: 'USD',
-        provider: PaymentProviderEnum.MERCADO_PAGO,
+        paymentMethod: 'credit_card',
         status: PaymentStatusEnum.PENDING,
-        providerPaymentId: 'mp-12345',
-        paidAt: undefined,
-        metadata: undefined,
+        mercadoPagoPaymentId: 'mp-12345',
+        mercadoPagoPreferenceId: null,
+        externalReference: null,
+        description: null,
+        metadata: null,
+        processedAt: null,
+        expiresAt: null,
+        failureReason: null,
+        mercadoPagoResponse: null,
+        lifecycleState: 'active',
+        isActive: true,
+        isDeleted: false,
+        adminInfo: null,
         createdAt: new Date('2025-01-01'),
         updatedAt: new Date('2025-01-01'),
+        deletedAt: null,
         createdById: '',
         updatedById: '',
-        deletedAt: undefined,
-        deletedById: undefined
+        deletedById: null
     };
 
     beforeEach(() => {
@@ -52,11 +58,9 @@ describe('PaymentService', () => {
         };
 
         mockModel = {
-            processWithProvider: vi.fn(),
-            handleWebhook: vi.fn(),
-            syncStatus: vi.fn(),
-            findByInvoice: vi.fn(),
-            findByProvider: vi.fn(),
+            handleMercadoPagoWebhook: vi.fn(),
+            findByUser: vi.fn(),
+            findByPricingPlan: vi.fn(),
             findPending: vi.fn(),
             markApproved: vi.fn(),
             markRejected: vi.fn(),
@@ -64,8 +68,8 @@ describe('PaymentService', () => {
             isSuccessful: vi.fn(),
             isPending: vi.fn(),
             canBeRefunded: vi.fn(),
-            getTotalSuccessfulForInvoice: vi.fn(),
-            withInvoice: vi.fn(),
+            getTotalSuccessfulForUser: vi.fn(),
+            withRelations: vi.fn(),
             cancel: vi.fn()
         } as unknown as PaymentModel;
 
@@ -73,110 +77,51 @@ describe('PaymentService', () => {
     });
 
     // =========================================================================
-    // processWithProvider
+    // handleMercadoPagoWebhook
     // =========================================================================
 
-    describe('processWithProvider', () => {
-        it('should process payment with provider', async () => {
-            const data = {
-                invoiceId: '00000000-0000-0000-0000-000000000002',
-                amount: 100,
-                currency: 'USD',
-                provider: PaymentProviderEnum.MERCADO_PAGO,
-                providerPaymentId: 'mp-12345'
-            };
-
-            vi.mocked(mockModel.processWithProvider).mockResolvedValue(mockPayment);
-
-            const result = await service.processWithProvider(mockActor, data);
-
-            expect(result.data).toEqual(mockPayment);
-            expect(result.error).toBeUndefined();
-            expect(mockModel.processWithProvider).toHaveBeenCalledWith(data);
-        });
-
-        it('should return null when invoice not found', async () => {
-            const data = {
-                invoiceId: 'nonexistent',
-                amount: 100,
-                currency: 'USD',
-                provider: PaymentProviderEnum.MERCADO_PAGO
-            };
-
-            vi.mocked(mockModel.processWithProvider).mockRejectedValue(
-                new Error('INVOICE_NOT_FOUND')
-            );
-
-            const result = await service.processWithProvider(mockActor, data);
-
-            expect(result.error).toBeDefined();
-            expect(result.error?.code).toBe('NOT_FOUND');
-        });
-
-        it('should deny access without permission', async () => {
-            const actorWithoutPermission: Actor = {
-                ...mockActor,
-                role: RoleEnum.USER,
-                permissions: []
-            };
-
-            const serviceWithoutPermission = new PaymentService(ctx, mockModel);
-
-            const result = await serviceWithoutPermission.processWithProvider(
-                actorWithoutPermission,
-                {
-                    invoiceId: 'invoice-id',
-                    amount: 100,
-                    currency: 'USD',
-                    provider: PaymentProviderEnum.MERCADO_PAGO
-                }
-            );
-
-            expect(result.error).toBeDefined();
-            expect(result.error?.message.toLowerCase()).toContain('permission');
-        });
-    });
-
-    // =========================================================================
-    // handleWebhook
-    // =========================================================================
-
-    describe('handleWebhook', () => {
-        it('should handle webhook from payment provider', async () => {
-            const providerPaymentId = 'mp-12345';
+    describe('handleMercadoPagoWebhook', () => {
+        it('should handle webhook from Mercado Pago', async () => {
+            const mercadoPagoPaymentId = 'mp-12345';
             const newStatus = PaymentStatusEnum.APPROVED;
             const webhookData = { status: 'approved', payment_id: 'mp-12345' };
 
             const approvedPayment: Payment = {
                 ...mockPayment,
                 status: PaymentStatusEnum.APPROVED,
-                paidAt: new Date('2025-01-15')
+                processedAt: new Date('2025-01-15')
             };
 
-            vi.mocked(mockModel.handleWebhook).mockResolvedValue(approvedPayment);
+            vi.mocked(mockModel.handleMercadoPagoWebhook).mockResolvedValue(approvedPayment);
 
-            const result = await service.handleWebhook(
+            const result = await service.handleMercadoPagoWebhook(
                 mockActor,
-                providerPaymentId,
+                mercadoPagoPaymentId,
                 newStatus,
                 webhookData
             );
 
             expect(result.data).toEqual(approvedPayment);
-            expect(mockModel.handleWebhook).toHaveBeenCalledWith(
-                providerPaymentId,
+            expect(mockModel.handleMercadoPagoWebhook).toHaveBeenCalledWith(
+                mercadoPagoPaymentId,
                 newStatus,
                 webhookData
             );
         });
 
         it('should return error when payment not found', async () => {
-            const providerPaymentId = 'nonexistent';
+            const mercadoPagoPaymentId = 'nonexistent';
             const newStatus = PaymentStatusEnum.APPROVED;
 
-            vi.mocked(mockModel.handleWebhook).mockRejectedValue(new Error('PAYMENT_NOT_FOUND'));
+            vi.mocked(mockModel.handleMercadoPagoWebhook).mockRejectedValue(
+                new Error('PAYMENT_NOT_FOUND')
+            );
 
-            const result = await service.handleWebhook(mockActor, providerPaymentId, newStatus);
+            const result = await service.handleMercadoPagoWebhook(
+                mockActor,
+                mercadoPagoPaymentId,
+                newStatus
+            );
 
             expect(result.error).toBeDefined();
             expect(result.error?.code).toBe('NOT_FOUND');
@@ -191,7 +136,7 @@ describe('PaymentService', () => {
 
             const serviceWithoutPermission = new PaymentService(ctx, mockModel);
 
-            const result = await serviceWithoutPermission.handleWebhook(
+            const result = await serviceWithoutPermission.handleMercadoPagoWebhook(
                 actorWithoutPermission,
                 'mp-12345',
                 PaymentStatusEnum.APPROVED
@@ -203,74 +148,28 @@ describe('PaymentService', () => {
     });
 
     // =========================================================================
-    // syncStatus
+    // findByUser
     // =========================================================================
 
-    describe('syncStatus', () => {
-        it('should sync payment status with provider', async () => {
-            const paymentId = '00000000-0000-0000-0000-000000000001';
-
-            vi.mocked(mockModel.syncStatus).mockResolvedValue(mockPayment);
-
-            const result = await service.syncStatus(mockActor, paymentId);
-
-            expect(result.data).toEqual(mockPayment);
-            expect(mockModel.syncStatus).toHaveBeenCalledWith(paymentId);
-        });
-
-        it('should return null when payment not found', async () => {
-            const paymentId = 'nonexistent';
-
-            vi.mocked(mockModel.syncStatus).mockResolvedValue(null);
-
-            const result = await service.syncStatus(mockActor, paymentId);
-
-            expect(result.data).toBeNull();
-            expect(result.error).toBeUndefined();
-        });
-
-        it('should deny access without permission', async () => {
-            const actorWithoutPermission: Actor = {
-                ...mockActor,
-                role: RoleEnum.USER,
-                permissions: []
-            };
-
-            const serviceWithoutPermission = new PaymentService(ctx, mockModel);
-
-            const result = await serviceWithoutPermission.syncStatus(
-                actorWithoutPermission,
-                'payment-id'
-            );
-
-            expect(result.error).toBeDefined();
-            expect(result.error?.message.toLowerCase()).toContain('permission');
-        });
-    });
-
-    // =========================================================================
-    // findByInvoice
-    // =========================================================================
-
-    describe('findByInvoice', () => {
-        it('should find payments by invoice', async () => {
-            const invoiceId = '00000000-0000-0000-0000-000000000002';
+    describe('findByUser', () => {
+        it('should find payments by user', async () => {
+            const userId = '00000000-0000-0000-0000-000000000002';
             const mockPayments: Payment[] = [mockPayment];
 
-            vi.mocked(mockModel.findByInvoice).mockResolvedValue(mockPayments);
+            vi.mocked(mockModel.findByUser).mockResolvedValue(mockPayments);
 
-            const result = await service.findByInvoice(mockActor, invoiceId);
+            const result = await service.findByUser(mockActor, userId);
 
             expect(result.data).toEqual(mockPayments);
-            expect(mockModel.findByInvoice).toHaveBeenCalledWith(invoiceId);
+            expect(mockModel.findByUser).toHaveBeenCalledWith(userId);
         });
 
         it('should return empty array when no payments found', async () => {
-            const invoiceId = '00000000-0000-0000-0000-000000000002';
+            const userId = '00000000-0000-0000-0000-000000000002';
 
-            vi.mocked(mockModel.findByInvoice).mockResolvedValue([]);
+            vi.mocked(mockModel.findByUser).mockResolvedValue([]);
 
-            const result = await service.findByInvoice(mockActor, invoiceId);
+            const result = await service.findByUser(mockActor, userId);
 
             expect(result.data).toEqual([]);
         });
@@ -284,9 +183,9 @@ describe('PaymentService', () => {
 
             const serviceWithoutPermission = new PaymentService(ctx, mockModel);
 
-            const result = await serviceWithoutPermission.findByInvoice(
+            const result = await serviceWithoutPermission.findByUser(
                 actorWithoutPermission,
-                'invoice-id'
+                'user-id'
             );
 
             expect(result.error).toBeDefined();
@@ -295,28 +194,28 @@ describe('PaymentService', () => {
     });
 
     // =========================================================================
-    // findByProvider
+    // findByPricingPlan
     // =========================================================================
 
-    describe('findByProvider', () => {
-        it('should find payments by provider', async () => {
-            const provider = PaymentProviderEnum.MERCADO_PAGO;
+    describe('findByPricingPlan', () => {
+        it('should find payments by pricing plan', async () => {
+            const planId = '00000000-0000-0000-0000-000000000003';
             const mockPayments: Payment[] = [mockPayment];
 
-            vi.mocked(mockModel.findByProvider).mockResolvedValue(mockPayments);
+            vi.mocked(mockModel.findByPricingPlan).mockResolvedValue(mockPayments);
 
-            const result = await service.findByProvider(mockActor, provider);
+            const result = await service.findByPricingPlan(mockActor, planId);
 
             expect(result.data).toEqual(mockPayments);
-            expect(mockModel.findByProvider).toHaveBeenCalledWith(provider);
+            expect(mockModel.findByPricingPlan).toHaveBeenCalledWith(planId);
         });
 
         it('should return empty array when no payments found', async () => {
-            const provider = PaymentProviderEnum.STRIPE;
+            const planId = '00000000-0000-0000-0000-000000000003';
 
-            vi.mocked(mockModel.findByProvider).mockResolvedValue([]);
+            vi.mocked(mockModel.findByPricingPlan).mockResolvedValue([]);
 
-            const result = await service.findByProvider(mockActor, provider);
+            const result = await service.findByPricingPlan(mockActor, planId);
 
             expect(result.data).toEqual([]);
         });
@@ -330,9 +229,9 @@ describe('PaymentService', () => {
 
             const serviceWithoutPermission = new PaymentService(ctx, mockModel);
 
-            const result = await serviceWithoutPermission.findByProvider(
+            const result = await serviceWithoutPermission.findByPricingPlan(
                 actorWithoutPermission,
-                PaymentProviderEnum.MERCADO_PAGO
+                'plan-id'
             );
 
             expect(result.error).toBeDefined();
@@ -734,28 +633,28 @@ describe('PaymentService', () => {
     });
 
     // =========================================================================
-    // getTotalSuccessfulForInvoice
+    // getTotalSuccessfulForUser
     // =========================================================================
 
-    describe('getTotalSuccessfulForInvoice', () => {
-        it('should get total successful payments for invoice', async () => {
-            const invoiceId = '00000000-0000-0000-0000-000000000002';
+    describe('getTotalSuccessfulForUser', () => {
+        it('should get total successful payments for user', async () => {
+            const userId = '00000000-0000-0000-0000-000000000002';
             const total = 250.5;
 
-            vi.mocked(mockModel.getTotalSuccessfulForInvoice).mockResolvedValue(total);
+            vi.mocked(mockModel.getTotalSuccessfulForUser).mockResolvedValue(total);
 
-            const result = await service.getTotalSuccessfulForInvoice(mockActor, invoiceId);
+            const result = await service.getTotalSuccessfulForUser(mockActor, userId);
 
             expect(result.data).toBe(total);
-            expect(mockModel.getTotalSuccessfulForInvoice).toHaveBeenCalledWith(invoiceId);
+            expect(mockModel.getTotalSuccessfulForUser).toHaveBeenCalledWith(userId);
         });
 
         it('should return 0 when no successful payments', async () => {
-            const invoiceId = '00000000-0000-0000-0000-000000000002';
+            const userId = '00000000-0000-0000-0000-000000000002';
 
-            vi.mocked(mockModel.getTotalSuccessfulForInvoice).mockResolvedValue(0);
+            vi.mocked(mockModel.getTotalSuccessfulForUser).mockResolvedValue(0);
 
-            const result = await service.getTotalSuccessfulForInvoice(mockActor, invoiceId);
+            const result = await service.getTotalSuccessfulForUser(mockActor, userId);
 
             expect(result.data).toBe(0);
         });
@@ -769,9 +668,9 @@ describe('PaymentService', () => {
 
             const serviceWithoutPermission = new PaymentService(ctx, mockModel);
 
-            const result = await serviceWithoutPermission.getTotalSuccessfulForInvoice(
+            const result = await serviceWithoutPermission.getTotalSuccessfulForUser(
                 actorWithoutPermission,
-                'invoice-id'
+                'user-id'
             );
 
             expect(result.error).toBeDefined();
@@ -780,36 +679,40 @@ describe('PaymentService', () => {
     });
 
     // =========================================================================
-    // withInvoice
+    // withRelations
     // =========================================================================
 
-    describe('withInvoice', () => {
-        it('should get payment with invoice data', async () => {
+    describe('withRelations', () => {
+        it('should get payment with relations data', async () => {
             const paymentId = '00000000-0000-0000-0000-000000000001';
-            const mockPaymentWithInvoice = {
+            const mockPaymentWithRelations = {
                 ...mockPayment,
-                invoice: {
+                user: {
                     id: '00000000-0000-0000-0000-000000000002',
-                    invoiceNumber: 'INV-2025-000001',
-                    total: 121,
-                    status: 'OPEN'
+                    email: 'user@example.com',
+                    username: 'testuser'
+                },
+                pricingPlan: {
+                    id: '00000000-0000-0000-0000-000000000003',
+                    name: 'Premium Plan',
+                    price: 100.0
                 }
             };
 
-            vi.mocked(mockModel.withInvoice).mockResolvedValue(mockPaymentWithInvoice as any);
+            vi.mocked(mockModel.withRelations).mockResolvedValue(mockPaymentWithRelations as any);
 
-            const result = await service.withInvoice(mockActor, paymentId);
+            const result = await service.withRelations(mockActor, paymentId);
 
-            expect(result.data).toEqual(mockPaymentWithInvoice);
-            expect(mockModel.withInvoice).toHaveBeenCalledWith(paymentId);
+            expect(result.data).toEqual(mockPaymentWithRelations);
+            expect(mockModel.withRelations).toHaveBeenCalledWith(paymentId);
         });
 
         it('should return null when payment not found', async () => {
             const paymentId = 'nonexistent';
 
-            vi.mocked(mockModel.withInvoice).mockResolvedValue(null);
+            vi.mocked(mockModel.withRelations).mockResolvedValue(null);
 
-            const result = await service.withInvoice(mockActor, paymentId);
+            const result = await service.withRelations(mockActor, paymentId);
 
             expect(result.data).toBeNull();
         });
@@ -823,7 +726,7 @@ describe('PaymentService', () => {
 
             const serviceWithoutPermission = new PaymentService(ctx, mockModel);
 
-            const result = await serviceWithoutPermission.withInvoice(
+            const result = await serviceWithoutPermission.withRelations(
                 actorWithoutPermission,
                 'payment-id'
             );

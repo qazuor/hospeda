@@ -123,6 +123,7 @@ export type PaymentUpdateHttp = z.infer<typeof PaymentUpdateHttpSchema>;
  */
 
 import {
+    LifecycleStatusEnum,
     PaymentMethodEnumSchema,
     PaymentStatusEnumSchema,
     PaymentTypeEnumSchema,
@@ -167,11 +168,24 @@ export function httpToDomainPaymentCreate(
         paymentPlanId: httpData.planId,
         type: PaymentTypeEnumSchema.enum.SUBSCRIPTION, // Default type
         status: PaymentStatusEnumSchema.enum.PENDING, // Default status
-        paymentMethod: PaymentMethodEnumSchema.optional().parse(httpData.paymentMethod),
+        paymentMethod: httpData.paymentMethod
+            ? PaymentMethodEnumSchema.parse(httpData.paymentMethod)
+            : null,
         amount: httpData.amount,
         currency: PriceCurrencyEnumSchema.parse(httpData.currency),
-        description: httpData.description,
-        metadata: httpData.metadata
+        description: httpData.description || null,
+        metadata: httpData.metadata || null,
+        mercadoPagoPaymentId: null,
+        mercadoPagoPreferenceId: null,
+        externalReference: null,
+        processedAt: null,
+        expiresAt: null,
+        failureReason: null,
+        mercadoPagoResponse: null,
+        lifecycleState: LifecycleStatusEnum.ACTIVE,
+        isActive: true,
+        isDeleted: false,
+        adminInfo: null
     };
 }
 
@@ -183,8 +197,8 @@ export function httpToDomainPaymentUpdate(
 ): z.infer<typeof PaymentUpdateInputSchema> {
     return {
         status: httpData.status ? PaymentStatusEnumSchema.parse(httpData.status) : undefined,
-        mercadoPagoPaymentId: httpData.mpPaymentId,
-        failureReason: httpData.failureReason,
-        metadata: httpData.metadata
+        mercadoPagoPaymentId: httpData.mpPaymentId || undefined,
+        failureReason: httpData.failureReason || undefined,
+        metadata: httpData.metadata || undefined
     };
 }

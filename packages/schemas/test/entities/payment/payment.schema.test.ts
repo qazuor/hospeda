@@ -378,12 +378,16 @@ describe('PaymentSchema', () => {
             expect(typeof result.id).toBe('string');
             expect(typeof result.amount).toBe('number');
             expect(typeof result.currency).toBe('string');
-            expect(typeof result.paymentMethod).toBe('string');
             expect(typeof result.status).toBe('string');
             expect(typeof result.type).toBe('string');
             expect(typeof result.userId).toBe('string');
             expect(result.createdAt).toBeInstanceOf(Date);
             expect(result.updatedAt).toBeInstanceOf(Date);
+
+            // Nullable fields type checks
+            if (result.paymentMethod !== null) {
+                expect(typeof result.paymentMethod).toBe('string');
+            }
 
             // Optional fields type checks
             if (result.description) {

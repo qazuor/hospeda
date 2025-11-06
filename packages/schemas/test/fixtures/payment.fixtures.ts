@@ -6,7 +6,12 @@ import type {
     PaymentTypeEnum,
     SubscriptionStatusEnum
 } from '../../src/enums/index.js';
-import { createBaseAuditFields, createBaseIdFields } from './common.fixtures.js';
+import {
+    createBaseAdminFields,
+    createBaseAuditFields,
+    createBaseIdFields,
+    createBaseLifecycleFields
+} from './common.fixtures.js';
 
 /**
  * Payment fixtures for testing
@@ -18,27 +23,65 @@ import { createBaseAuditFields, createBaseIdFields } from './common.fixtures.js'
 const createPaymentEntityFields = () => ({
     amount: faker.number.float({ min: 1, max: 10000, fractionDigits: 2 }),
     currency: faker.helpers.arrayElement(['USD', 'ARS']),
-    paymentMethod: faker.helpers.arrayElement([
-        'credit_card',
-        'debit_card',
-        'bank_transfer',
-        'ticket',
-        'account_money'
-    ] as PaymentMethodEnum[]),
+    paymentMethod:
+        faker.helpers.maybe(
+            () =>
+                faker.helpers.arrayElement([
+                    'credit_card',
+                    'debit_card',
+                    'bank_transfer',
+                    'ticket',
+                    'account_money'
+                ] as PaymentMethodEnum[]),
+            { probability: 0.7 }
+        ) || null,
     status: faker.helpers.arrayElement(['pending', 'approved', 'rejected'] as PaymentStatusEnum[]),
     type: faker.helpers.arrayElement(['one_time', 'subscription'] as PaymentTypeEnum[]),
-    description: faker.helpers.maybe(() => faker.lorem.sentence(), { probability: 0.7 }),
-    externalReference: faker.helpers.maybe(() => faker.string.alphanumeric(20), {
-        probability: 0.8
-    }),
+    description: faker.helpers.maybe(() => faker.lorem.sentence(), { probability: 0.7 }) || null,
+    externalReference:
+        faker.helpers.maybe(() => faker.string.alphanumeric(20), {
+            probability: 0.8
+        }) || null,
+    mercadoPagoPaymentId:
+        faker.helpers.maybe(() => faker.string.alphanumeric(20), {
+            probability: 0.5
+        }) || null,
+    mercadoPagoPreferenceId:
+        faker.helpers.maybe(() => faker.string.alphanumeric(20), {
+            probability: 0.5
+        }) || null,
+    processedAt: faker.helpers.maybe(() => faker.date.recent(), { probability: 0.5 }) || null,
+    expiresAt: faker.helpers.maybe(() => faker.date.future(), { probability: 0.3 }) || null,
+    failureReason: faker.helpers.maybe(() => faker.lorem.sentence(), { probability: 0.2 }) || null,
+    metadata:
+        faker.helpers.maybe(
+            () => ({
+                gateway: 'mercadopago',
+                transactionId: faker.string.alphanumeric(30)
+            }),
+            { probability: 0.6 }
+        ) || null,
+    mercadoPagoResponse:
+        faker.helpers.maybe(
+            () => ({
+                id: faker.number.int({ min: 1000000, max: 9999999 }),
+                status: 'approved',
+                payment_method_id: 'visa'
+            }),
+            { probability: 0.5 }
+        ) || null,
     userId: faker.string.uuid(),
-    paymentPlanId: faker.string.uuid()
+    paymentPlanId: faker.helpers.maybe(() => faker.string.uuid(), { probability: 0.8 }) || null
 });
 
 export const createValidPayment = () => ({
     ...createBaseIdFields(),
     ...createBaseAuditFields(),
-    ...createPaymentEntityFields()
+    ...createPaymentEntityFields(),
+    ...createBaseLifecycleFields(),
+    isActive: faker.datatype.boolean(),
+    isDeleted: false,
+    ...createBaseAdminFields()
 });
 
 export const createMinimalPayment = () => ({
@@ -50,10 +93,25 @@ export const createMinimalPayment = () => ({
     type: 'one_time' as PaymentTypeEnum,
     userId: faker.string.uuid(),
     paymentPlanId: faker.string.uuid(),
+    description: null,
+    externalReference: null,
+    mercadoPagoPaymentId: null,
+    mercadoPagoPreferenceId: null,
+    processedAt: null,
+    expiresAt: null,
+    failureReason: null,
+    metadata: null,
+    mercadoPagoResponse: null,
     createdAt: faker.date.past(),
     updatedAt: faker.date.recent(),
     createdById: faker.string.uuid(),
-    updatedById: faker.string.uuid()
+    updatedById: faker.string.uuid(),
+    deletedAt: null,
+    deletedById: null,
+    lifecycleState: 'ACTIVE',
+    isActive: true,
+    isDeleted: false,
+    adminInfo: null
 });
 
 export const createComplexPayment = () => ({
@@ -106,7 +164,9 @@ export const createMinimalPaymentPlan = () => ({
     createdAt: faker.date.past(),
     updatedAt: faker.date.recent(),
     createdById: faker.string.uuid(),
-    updatedById: faker.string.uuid()
+    updatedById: faker.string.uuid(),
+    deletedAt: null,
+    deletedById: null
 });
 
 /**
@@ -146,7 +206,9 @@ export const createMinimalSubscription = () => ({
     createdAt: faker.date.past(),
     updatedAt: faker.date.recent(),
     createdById: faker.string.uuid(),
-    updatedById: faker.string.uuid()
+    updatedById: faker.string.uuid(),
+    deletedAt: null,
+    deletedById: null
 });
 
 export const createPaymentEdgeCases = () => [

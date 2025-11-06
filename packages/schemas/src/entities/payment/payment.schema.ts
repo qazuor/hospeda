@@ -1,12 +1,15 @@
 import { z } from 'zod';
+import { BaseAdminFields } from '../../common/admin.schema.js';
 import { BaseAuditFields } from '../../common/audit.schema.js';
 import { PaymentIdSchema, PaymentPlanIdSchema, UserIdSchema } from '../../common/id.schema.js';
+import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
 import {
     PaymentMethodEnumSchema,
     PaymentStatusEnumSchema,
     PaymentTypeEnumSchema,
     PriceCurrencyEnumSchema
 } from '../../enums/index.js';
+import { numericField } from '../../utils/index.js';
 
 /**
  * Payment Schema - Main Entity Schema
@@ -21,17 +24,17 @@ export const PaymentSchema = z.object({
 
     // Payment-specific core fields
     userId: UserIdSchema,
-    paymentPlanId: PaymentPlanIdSchema,
+    paymentPlanId: PaymentPlanIdSchema.nullable(),
     type: PaymentTypeEnumSchema,
     status: PaymentStatusEnumSchema,
-    paymentMethod: PaymentMethodEnumSchema.optional(),
+    paymentMethod: PaymentMethodEnumSchema.nullable(),
 
     // Amount and currency
-    amount: z
-        .number({
-            message: 'zodError.payment.amount.required'
-        })
-        .positive({ message: 'zodError.payment.amount.positive' }),
+    amount: numericField(
+        z
+            .number({ message: 'zodError.payment.amount.required' })
+            .positive({ message: 'zodError.payment.amount.positive' })
+    ),
 
     currency: PriceCurrencyEnumSchema,
 
@@ -41,14 +44,14 @@ export const PaymentSchema = z.object({
             message: 'zodError.payment.mercadoPagoPaymentId.required'
         })
         .min(1, { message: 'zodError.payment.mercadoPagoPaymentId.min' })
-        .optional(),
+        .nullable(),
 
     mercadoPagoPreferenceId: z
         .string({
             message: 'zodError.payment.mercadoPagoPreferenceId.required'
         })
         .min(1, { message: 'zodError.payment.mercadoPagoPreferenceId.min' })
-        .optional(),
+        .nullable(),
 
     // External reference and description
     externalReference: z
@@ -57,7 +60,7 @@ export const PaymentSchema = z.object({
         })
         .min(1, { message: 'zodError.payment.externalReference.min' })
         .max(100, { message: 'zodError.payment.externalReference.max' })
-        .optional(),
+        .nullable(),
 
     description: z
         .string({
@@ -65,23 +68,23 @@ export const PaymentSchema = z.object({
         })
         .min(1, { message: 'zodError.payment.description.min' })
         .max(500, { message: 'zodError.payment.description.max' })
-        .optional(),
+        .nullable(),
 
     // Metadata and additional info
-    metadata: z.record(z.string(), z.unknown()).optional(),
+    metadata: z.record(z.string(), z.unknown()).nullable(),
 
     // Important dates
     processedAt: z
         .date({
             message: 'zodError.payment.processedAt.invalid'
         })
-        .optional(),
+        .nullable(),
 
     expiresAt: z
         .date({
             message: 'zodError.payment.expiresAt.invalid'
         })
-        .optional(),
+        .nullable(),
 
     // Failure handling
     failureReason: z
@@ -90,10 +93,20 @@ export const PaymentSchema = z.object({
         })
         .min(1, { message: 'zodError.payment.failureReason.min' })
         .max(1000, { message: 'zodError.payment.failureReason.max' })
-        .optional(),
+        .nullable(),
 
     // Raw Mercado Pago response
-    mercadoPagoResponse: z.record(z.string(), z.unknown()).optional()
+    mercadoPagoResponse: z.record(z.string(), z.unknown()).nullable(),
+
+    // Lifecycle fields
+    ...BaseLifecycleFields,
+
+    // Status fields
+    isActive: z.boolean().default(true),
+    isDeleted: z.boolean().default(false),
+
+    // Admin fields
+    ...BaseAdminFields
 });
 
 /**

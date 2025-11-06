@@ -1,9 +1,8 @@
 import type { PaymentModel } from '@repo/db';
-import type { payments } from '@repo/db';
 import {
     type ListRelationsConfig,
+    type Payment,
     PaymentCreateInputSchema,
-    type PaymentProviderEnum,
     PaymentSearchSchema,
     type PaymentStatusEnum,
     PermissionEnum,
@@ -11,9 +10,6 @@ import {
     ServiceErrorCode,
     UpdatePaymentSchema
 } from '@repo/schemas';
-
-// Use the DB schema inferred type for Payment
-type Payment = typeof payments.$inferSelect;
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, ServiceContext, ServiceOutput } from '../../types';
@@ -264,46 +260,7 @@ export class PaymentService extends BaseCrudService<
     // =========================================================================
 
     /**
-     * Process payment with provider
-     *
-     * Creates a new payment record and initiates processing with the payment provider.
-     *
-     * @param actor - Current user context
-     * @param data - Payment processing data
-     * @returns Service output with newly created payment
-     */
-    public async processWithProvider(
-        actor: Actor,
-        data: {
-            invoiceId: string;
-            amount: number;
-            currency?: string;
-            provider: PaymentProviderEnum;
-            providerPaymentId?: string;
-        }
-    ): Promise<ServiceOutput<Payment | null>> {
-        return this.runWithLoggingAndValidation({
-            methodName: 'processWithProvider',
-            input: { actor },
-            schema: z.object({}),
-            execute: async (_validatedData, validatedActor) => {
-                this._canCreate(validatedActor, data);
-
-                try {
-                    const payment = await this.model.processWithProvider(data);
-                    return payment;
-                } catch (error) {
-                    if (error instanceof Error && error.message === 'INVOICE_NOT_FOUND') {
-                        throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Invoice not found');
-                    }
-                    throw error;
-                }
-            }
-        });
-    }
-
-    /**
-     * Handle webhook from payment provider
+     * Handle webhook from Mercado Pago
      *
      * Processes webhook notifications from payment providers to update payment status.
      *
@@ -313,22 +270,25 @@ export class PaymentService extends BaseCrudService<
      * @param webhookData - Optional webhook payload data
      * @returns Service output with updated payment
      */
-    public async handleWebhook(
+    /**
+     * Handle Mercado Pago webhook notification
+     */
+    public async handleMercadoPagoWebhook(
         actor: Actor,
-        providerPaymentId: string,
+        mercadoPagoPaymentId: string,
         newStatus: PaymentStatusEnum,
         webhookData?: Record<string, unknown>
     ): Promise<ServiceOutput<Payment | null>> {
         return this.runWithLoggingAndValidation({
-            methodName: 'handleWebhook',
+            methodName: 'handleMercadoPagoWebhook',
             input: { actor },
             schema: z.object({}),
             execute: async (_validatedData, validatedActor) => {
                 this._canUpdate(validatedActor, {} as Payment);
 
                 try {
-                    const payment = await this.model.handleWebhook(
-                        providerPaymentId,
+                    const payment = await this.model.handleMercadoPagoWebhook(
+                        mercadoPagoPaymentId,
                         newStatus,
                         webhookData
                     );
@@ -343,76 +303,50 @@ export class PaymentService extends BaseCrudService<
         });
     }
 
-    /**
-     * Sync payment status with provider
-     *
-     * Synchronizes payment status by querying the payment provider's API.
-     *
-     * @param actor - Current user context
-     * @param paymentId - Payment ID
-     * @returns Service output with updated payment
-     */
-    public async syncStatus(
-        actor: Actor,
-        paymentId: string
-    ): Promise<ServiceOutput<Payment | null>> {
-        return this.runWithLoggingAndValidation({
-            methodName: 'syncStatus',
-            input: { actor },
-            schema: z.object({}),
-            execute: async (_validatedData, validatedActor) => {
-                this._canView(validatedActor, {} as Payment);
-
-                const payment = await this.model.syncStatus(paymentId);
-                return payment;
-            }
-        });
-    }
-
     // =========================================================================
     // Business Methods - Payment Queries
     // =========================================================================
 
     /**
-     * Find payments by invoice
+     * Find payments by user
      *
      * @param actor - Current user context
-     * @param invoiceId - Invoice ID
-     * @returns Service output with payments for the invoice
+     * @param userId - User ID
+     * @returns Service output with payments for the user
      */
-    public async findByInvoice(actor: Actor, invoiceId: string): Promise<ServiceOutput<Payment[]>> {
+    public async findByUser(actor: Actor, userId: string): Promise<ServiceOutput<Payment[]>> {
         return this.runWithLoggingAndValidation({
-            methodName: 'findByInvoice',
+            methodName: 'findByUser',
             input: { actor },
             schema: z.object({}),
             execute: async (_validatedData, validatedActor) => {
                 this._canList(validatedActor);
 
-                const payments = await this.model.findByInvoice(invoiceId);
+                const payments = await this.model.findByUser(userId);
                 return payments;
             }
         });
     }
 
     /**
-     * Find payments by provider
+     * Find payments by pricing plan
      *
      * @param actor - Current user context
-     * @param provider - Payment provider
-     * @returns Service output with payments from the provider
+     * @param planId - Pricing plan ID
+     * @returns Service output with payments for the pricing plan
      */
-    public async findByProvider(
+    public async findByPricingPlan(
         actor: Actor,
-        provider: PaymentProviderEnum
+        planId: string
     ): Promise<ServiceOutput<Payment[]>> {
         return this.runWithLoggingAndValidation({
-            methodName: 'findByProvider',
+            methodName: 'findByPricingPlan',
             input: { actor },
             schema: z.object({}),
             execute: async (_validatedData, validatedActor) => {
                 this._canList(validatedActor);
 
-                const payments = await this.model.findByProvider(provider);
+                const payments = await this.model.findByPricingPlan(planId);
                 return payments;
             }
         });
@@ -622,26 +556,26 @@ export class PaymentService extends BaseCrudService<
     // =========================================================================
 
     /**
-     * Get total successful payments for invoice
+     * Get total successful payments for user
      *
-     * Calculates the sum of all successful payments (excluding REJECTED and CANCELLED) for an invoice.
+     * Calculates the sum of all successful payments (APPROVED and AUTHORIZED) for a user.
      *
      * @param actor - Current user context
-     * @param invoiceId - Invoice ID
+     * @param userId - User ID
      * @returns Service output with total amount
      */
-    public async getTotalSuccessfulForInvoice(
+    public async getTotalSuccessfulForUser(
         actor: Actor,
-        invoiceId: string
+        userId: string
     ): Promise<ServiceOutput<number>> {
         return this.runWithLoggingAndValidation({
-            methodName: 'getTotalSuccessfulForInvoice',
+            methodName: 'getTotalSuccessfulForUser',
             input: { actor },
             schema: z.object({}),
             execute: async (_validatedData, validatedActor) => {
                 this._canView(validatedActor, {} as Payment);
 
-                const total = await this.model.getTotalSuccessfulForInvoice(invoiceId);
+                const total = await this.model.getTotalSuccessfulForUser(userId);
                 return total;
             }
         });
@@ -652,27 +586,27 @@ export class PaymentService extends BaseCrudService<
     // =========================================================================
 
     /**
-     * Get payment with invoice data
+     * Get payment with relations
      *
-     * Retrieves payment along with related invoice information.
+     * Retrieves payment along with related user and pricing plan information.
      *
      * @param actor - Current user context
      * @param paymentId - Payment ID
-     * @returns Service output with payment and invoice data
+     * @returns Service output with payment and related data
      */
-    public async withInvoice(
+    public async withRelations(
         actor: Actor,
         paymentId: string
-    ): Promise<ServiceOutput<Awaited<ReturnType<PaymentModel['withInvoice']>>>> {
+    ): Promise<ServiceOutput<Awaited<ReturnType<PaymentModel['withRelations']>>>> {
         return this.runWithLoggingAndValidation({
-            methodName: 'withInvoice',
+            methodName: 'withRelations',
             input: { actor },
             schema: z.object({}),
             execute: async (_validatedData, validatedActor) => {
                 this._canView(validatedActor, {} as Payment);
 
-                const paymentWithInvoice = await this.model.withInvoice(paymentId);
-                return paymentWithInvoice;
+                const paymentWithRelations = await this.model.withRelations(paymentId);
+                return paymentWithRelations;
             }
         });
     }

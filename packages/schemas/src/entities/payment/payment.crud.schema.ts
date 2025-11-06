@@ -545,3 +545,13 @@ export type SubscriptionChangePlanOutput = z.infer<typeof SubscriptionChangePlan
 
 export type PaymentBulkOperationInput = z.infer<typeof PaymentBulkOperationInputSchema>;
 export type PaymentBulkOperationOutput = z.infer<typeof PaymentBulkOperationOutputSchema>;
+
+// ============================================================================
+// Compatibility Aliases (for service naming conventions)
+// ============================================================================
+
+/**
+ * Alias for PaymentUpdateInputSchema to match service naming convention
+ * @deprecated Use PaymentUpdateInputSchema instead
+ */
+export const UpdatePaymentSchema = PaymentUpdateInputSchema;

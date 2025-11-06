@@ -1,12 +1,12 @@
-import { type PaymentProviderEnum, PaymentStatusEnum } from '@repo/schemas';
+import type { Payment, PaymentTypeEnum } from '@repo/schemas';
+import { PaymentStatusEnum } from '@repo/schemas';
 import { and, desc, eq, ne } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { BaseModel } from '../../base/base.model';
+import { pricingPlans } from '../../schemas/catalog/pricingPlan.dbschema';
 import type * as schema from '../../schemas/index.js';
-import { invoices } from '../../schemas/payment/invoice.dbschema';
 import { payments } from '../../schemas/payment/payment.dbschema';
-
-type Payment = typeof payments.$inferSelect;
+import { users } from '../../schemas/user/user.dbschema';
 
 export class PaymentModel extends BaseModel<Payment> {
     protected table = payments;
@@ -17,65 +17,110 @@ export class PaymentModel extends BaseModel<Payment> {
     }
 
     /**
-     * Process payment with provider
+     * Transform DB result to Payment type (converts amount from string to number)
      */
-    async processWithProvider(
+    private transformToPayment(dbResult: typeof payments.$inferSelect): Payment {
+        return {
+            ...dbResult,
+            amount: Number.parseFloat(dbResult.amount)
+        } as Payment;
+    }
+
+    /**
+     * Transform array of DB results to Payment array
+     */
+    private transformToPayments(dbResults: (typeof payments.$inferSelect)[]): Payment[] {
+        return dbResults.map((result) => this.transformToPayment(result));
+    }
+
+    /**
+     * Create payment for user and plan
+     */
+    async createPayment(
         data: {
-            invoiceId: string;
+            userId: string;
+            paymentPlanId: string | null;
+            type: PaymentTypeEnum;
             amount: number;
             currency?: string;
-            provider: PaymentProviderEnum;
-            providerPaymentId?: string;
+            paymentMethod?: string;
+            mercadoPagoPaymentId?: string;
+            description?: string;
         },
         tx?: NodePgDatabase<typeof schema>
     ): Promise<Payment | null> {
         const db = this.getClient(tx);
 
-        const { invoiceId, amount, currency = 'USD', provider, providerPaymentId } = data;
+        const {
+            userId,
+            paymentPlanId,
+            type,
+            amount,
+            currency = 'USD',
+            paymentMethod,
+            mercadoPagoPaymentId,
+            description
+        } = data;
 
-        // Validate invoice exists
-        const invoice = await db
-            .select({ id: invoices.id })
-            .from(invoices)
-            .where(eq(invoices.id, invoiceId))
+        // Validate user exists
+        const user = await db
+            .select({ id: users.id })
+            .from(users)
+            .where(eq(users.id, userId))
             .limit(1);
 
-        if (!invoice[0]) {
-            throw new Error('INVOICE_NOT_FOUND');
+        if (!user[0]) {
+            throw new Error('USER_NOT_FOUND');
+        }
+
+        // Validate plan exists if provided
+        if (paymentPlanId) {
+            const plan = await db
+                .select({ id: pricingPlans.id })
+                .from(pricingPlans)
+                .where(eq(pricingPlans.id, paymentPlanId))
+                .limit(1);
+
+            if (!plan[0]) {
+                throw new Error('PRICING_PLAN_NOT_FOUND');
+            }
         }
 
         // Create payment record
         const result = await db
             .insert(payments)
             .values({
-                invoiceId,
+                userId,
+                paymentPlanId,
+                type,
                 amount: amount.toString(),
                 currency,
-                provider,
+                paymentMethod,
                 status: PaymentStatusEnum.PENDING,
-                providerPaymentId
+                mercadoPagoPaymentId,
+                description
             })
             .returning();
 
-        return (result[0] as Payment) || null;
+        return result[0] ? this.transformToPayment(result[0]) : null;
     }
 
     /**
-     * Handle webhook from payment provider
+     * Handle webhook from Mercado Pago
      */
-    async handleWebhook(
-        providerPaymentId: string,
+    async handleMercadoPagoWebhook(
+        mercadoPagoPaymentId: string,
         newStatus: PaymentStatusEnum,
-        _webhookData?: Record<string, unknown>,
+        webhookData?: Record<string, unknown>,
         tx?: NodePgDatabase<typeof schema>
     ): Promise<Payment | null> {
         const db = this.getClient(tx);
 
-        // Find payment by provider ID
+        // Find payment by Mercado Pago ID
         const payment = await db
             .select()
             .from(payments)
-            .where(eq(payments.providerPaymentId, providerPaymentId))
+            .where(eq(payments.mercadoPagoPaymentId, mercadoPagoPaymentId))
             .limit(1);
 
         if (!payment[0]) {
@@ -83,17 +128,16 @@ export class PaymentModel extends BaseModel<Payment> {
         }
 
         // Update payment status
-        const updateData: Partial<Payment> = {
+        const updateData: Record<string, unknown> = {
             status: newStatus,
-            updatedAt: new Date()
+            updatedAt: new Date(),
+            mercadoPagoResponse: webhookData || payment[0].mercadoPagoResponse
         };
 
-        // Set paidAt if payment is approved
+        // Set processedAt if payment is approved
         if (newStatus === PaymentStatusEnum.APPROVED) {
-            updateData.paidAt = new Date();
+            updateData.processedAt = new Date();
         }
-
-        // Note: Webhook data would be stored in a separate audit table in production
 
         const result = await db
             .update(payments)
@@ -101,51 +145,30 @@ export class PaymentModel extends BaseModel<Payment> {
             .where(eq(payments.id, payment[0].id))
             .returning();
 
-        return (result[0] as Payment) || null;
+        return result[0] ? this.transformToPayment(result[0]) : null;
     }
 
     /**
-     * Sync payment status with provider
+     * Find payments by user
      */
-    async syncStatus(id: string, tx?: NodePgDatabase<typeof schema>): Promise<Payment | null> {
-        const db = this.getClient(tx);
-
-        // In a real implementation, this would call the payment provider API
-        // For now, we'll just update the timestamp
-        const updateData: Partial<Payment> = {
-            updatedAt: new Date()
-        };
-
-        const result = await db
-            .update(payments)
-            .set(updateData)
-            .where(eq(payments.id, id))
-            .returning();
-
-        return (result[0] as Payment) || null;
-    }
-
-    /**
-     * Find payments by invoice
-     */
-    async findByInvoice(invoiceId: string, tx?: NodePgDatabase<typeof schema>): Promise<Payment[]> {
+    async findByUser(userId: string, tx?: NodePgDatabase<typeof schema>): Promise<Payment[]> {
         const db = this.getClient(tx);
 
         const result = await db
             .select()
             .from(payments)
-            .where(eq(payments.invoiceId, invoiceId))
+            .where(eq(payments.userId, userId))
             .orderBy(desc(payments.createdAt))
             .limit(100);
 
-        return result as Payment[];
+        return this.transformToPayments(result);
     }
 
     /**
-     * Find payments by provider
+     * Find payments by pricing plan
      */
-    async findByProvider(
-        provider: PaymentProviderEnum,
+    async findByPricingPlan(
+        planId: string,
         tx?: NodePgDatabase<typeof schema>
     ): Promise<Payment[]> {
         const db = this.getClient(tx);
@@ -153,11 +176,11 @@ export class PaymentModel extends BaseModel<Payment> {
         const result = await db
             .select()
             .from(payments)
-            .where(eq(payments.provider, provider))
+            .where(eq(payments.paymentPlanId, planId))
             .orderBy(desc(payments.createdAt))
             .limit(100);
 
-        return result as Payment[];
+        return this.transformToPayments(result);
     }
 
     /**
@@ -173,7 +196,7 @@ export class PaymentModel extends BaseModel<Payment> {
             .orderBy(desc(payments.createdAt))
             .limit(100);
 
-        return result as Payment[];
+        return this.transformToPayments(result);
     }
 
     /**
@@ -181,7 +204,7 @@ export class PaymentModel extends BaseModel<Payment> {
      */
     async markApproved(
         id: string,
-        paidAt?: Date,
+        processedAt?: Date,
         tx?: NodePgDatabase<typeof schema>
     ): Promise<Payment | null> {
         const db = this.getClient(tx);
@@ -190,13 +213,13 @@ export class PaymentModel extends BaseModel<Payment> {
             .update(payments)
             .set({
                 status: PaymentStatusEnum.APPROVED,
-                paidAt: paidAt || new Date(),
+                processedAt: processedAt || new Date(),
                 updatedAt: new Date()
             })
             .where(eq(payments.id, id))
             .returning();
 
-        return (result[0] as Payment) || null;
+        return result[0] ? this.transformToPayment(result[0]) : null;
     }
 
     /**
@@ -204,17 +227,16 @@ export class PaymentModel extends BaseModel<Payment> {
      */
     async markRejected(
         id: string,
-        _reason?: string,
+        reason?: string,
         tx?: NodePgDatabase<typeof schema>
     ): Promise<Payment | null> {
         const db = this.getClient(tx);
 
-        const updateData: Partial<Payment> = {
+        const updateData: Record<string, unknown> = {
             status: PaymentStatusEnum.REJECTED,
+            failureReason: reason,
             updatedAt: new Date()
         };
-
-        // Note: In production, rejection reason would be stored in audit table
 
         const result = await db
             .update(payments)
@@ -222,7 +244,7 @@ export class PaymentModel extends BaseModel<Payment> {
             .where(eq(payments.id, id))
             .returning();
 
-        return (result[0] as Payment) || null;
+        return result[0] ? this.transformToPayment(result[0]) : null;
     }
 
     /**
@@ -230,7 +252,7 @@ export class PaymentModel extends BaseModel<Payment> {
      */
     async retryPayment(
         id: string,
-        newProviderPaymentId?: string,
+        newMercadoPagoPaymentId?: string,
         tx?: NodePgDatabase<typeof schema>
     ): Promise<Payment | null> {
         const db = this.getClient(tx);
@@ -254,13 +276,14 @@ export class PaymentModel extends BaseModel<Payment> {
             throw new Error('PAYMENT_CANNOT_BE_RETRIED');
         }
 
-        const updateData: Partial<Payment> = {
+        const updateData: Record<string, unknown> = {
             status: PaymentStatusEnum.PENDING,
+            failureReason: null,
             updatedAt: new Date()
         };
 
-        if (newProviderPaymentId) {
-            updateData.providerPaymentId = newProviderPaymentId;
+        if (newMercadoPagoPaymentId) {
+            updateData.mercadoPagoPaymentId = newMercadoPagoPaymentId;
         }
 
         const result = await db
@@ -269,7 +292,7 @@ export class PaymentModel extends BaseModel<Payment> {
             .where(eq(payments.id, id))
             .returning();
 
-        return (result[0] as Payment) || null;
+        return result[0] ? this.transformToPayment(result[0]) : null;
     }
 
     /**
@@ -346,10 +369,10 @@ export class PaymentModel extends BaseModel<Payment> {
     }
 
     /**
-     * Get total successful payments for invoice
+     * Get total successful payments for user
      */
-    async getTotalSuccessfulForInvoice(
-        invoiceId: string,
+    async getTotalSuccessfulForUser(
+        userId: string,
         tx?: NodePgDatabase<typeof schema>
     ): Promise<number> {
         const db = this.getClient(tx);
@@ -357,32 +380,40 @@ export class PaymentModel extends BaseModel<Payment> {
         const successfulPayments = await db
             .select()
             .from(payments)
-            .where(
-                and(
-                    eq(payments.invoiceId, invoiceId),
-                    ne(payments.status, PaymentStatusEnum.REJECTED),
-                    ne(payments.status, PaymentStatusEnum.CANCELLED)
-                )
-            );
+            .where(and(eq(payments.userId, userId), ne(payments.isDeleted, true)));
 
-        return successfulPayments.reduce((total, payment) => {
-            return total + Number(payment.amount);
-        }, 0);
+        // Filter by approved/authorized status and sum amounts
+        return successfulPayments
+            .filter(
+                (p) =>
+                    p.status === PaymentStatusEnum.APPROVED ||
+                    p.status === PaymentStatusEnum.AUTHORIZED
+            )
+            .reduce((total, payment) => {
+                return total + Number(payment.amount);
+            }, 0);
     }
 
     /**
-     * Get payment with invoice data
+     * Get payment with user and plan data
      */
-    async withInvoice(
+    async withRelations(
         id: string,
         tx?: NodePgDatabase<typeof schema>
-    ): Promise<(Payment & { invoice: typeof invoices.$inferSelect }) | null> {
+    ): Promise<
+        | (Payment & {
+              user: typeof users.$inferSelect;
+              pricingPlan: typeof pricingPlans.$inferSelect | null;
+          })
+        | null
+    > {
         const db = this.getClient(tx);
 
         const result = await db
             .select()
             .from(payments)
-            .innerJoin(invoices, eq(payments.invoiceId, invoices.id))
+            .innerJoin(users, eq(payments.userId, users.id))
+            .leftJoin(pricingPlans, eq(payments.paymentPlanId, pricingPlans.id))
             .where(eq(payments.id, id))
             .limit(1);
 
@@ -391,9 +422,13 @@ export class PaymentModel extends BaseModel<Payment> {
         }
 
         return {
-            ...result[0].payments,
-            invoice: result[0].invoices
-        } as Payment & { invoice: typeof invoices.$inferSelect };
+            ...this.transformToPayment(result[0].payments),
+            user: result[0].users,
+            pricingPlan: result[0].pricing_plans || null
+        } as Payment & {
+            user: typeof users.$inferSelect;
+            pricingPlan: typeof pricingPlans.$inferSelect | null;
+        };
     }
 
     /**
@@ -401,17 +436,16 @@ export class PaymentModel extends BaseModel<Payment> {
      */
     async cancel(
         id: string,
-        _reason?: string,
+        reason?: string,
         tx?: NodePgDatabase<typeof schema>
     ): Promise<Payment | null> {
         const db = this.getClient(tx);
 
-        const updateData: Partial<Payment> = {
+        const updateData: Record<string, unknown> = {
             status: PaymentStatusEnum.CANCELLED,
+            failureReason: reason,
             updatedAt: new Date()
         };
-
-        // Note: In production, cancellation reason would be stored in audit table
 
         const result = await db
             .update(payments)
@@ -419,6 +453,6 @@ export class PaymentModel extends BaseModel<Payment> {
             .where(eq(payments.id, id))
             .returning();
 
-        return (result[0] as Payment) || null;
+        return result[0] ? this.transformToPayment(result[0]) : null;
     }
 }
