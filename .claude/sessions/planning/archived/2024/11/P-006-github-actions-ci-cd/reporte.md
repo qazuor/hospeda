@@ -532,7 +532,7 @@ Issue labeled "blocked" → Move to "Blocked"
 
 ### Triple Capa de Protección
 
-**1. Pre-commit Hook (Local)**
+#### 1. Pre-commit Hook (Local)
 
 ```bash
 # Intento de commit en main:
@@ -549,7 +549,7 @@ Suggested workflow:
    git commit --no-verify
 ```
 
-**2. GitHub Branch Protection (Remote)**
+#### 2. GitHub Branch Protection (Remote)
 
 ```yaml
 main branch settings:
@@ -568,7 +568,7 @@ main branch settings:
 - No direct push: ✅ (even admins)
 ```
 
-**3. CI Quality Gates (Automated)**
+#### 3. CI Quality Gates (Automated)
 
 ```yaml
 Every PR must pass:
@@ -654,7 +654,7 @@ Output:
 
 ### María Implementa "Payment Integration"
 
-**Lunes 9 AM - Planning Aprobado**
+#### Lunes 9 AM - Planning Aprobado
 
 ```bash
 # María recibe notificación: P-008 aprobado
@@ -672,7 +672,7 @@ cd ../hospeda-P-008-payment-integration
 code .  # Abre VSCode
 ```
 
-**Lunes 10 AM - Primera Task**
+#### Lunes 10 AM - Primera Task
 
 ```bash
 # Task: PB-008-001: Add Mercado Pago SDK
@@ -691,7 +691,7 @@ git push
 # María ve PR comment con detalles
 ```
 
-**Lunes 2 PM - Segunda Task**
+#### Lunes 2 PM - Segunda Task
 
 ```bash
 # Task: PB-008-002: Create payment service
@@ -708,7 +708,7 @@ git push
 # ✅ Build: successful ✅
 ```
 
-**Martes 10 AM - Feature Completa**
+#### Martes 10 AM - Feature Completa
 
 ```bash
 # María completa todas las tasks
@@ -724,7 +724,7 @@ gh pr ready  # Marca PR como ready
 # - Mueve de "In Progress" → "In Review"
 ```
 
-**Martes 3 PM - Code Review**
+#### Martes 3 PM - Code Review
 
 ```bash
 # Senior Dev revisa:
@@ -741,7 +741,7 @@ git push
 # GitHub Projects: "In Review" → "Ready to Merge"
 ```
 
-**Miércoles 9 AM - Merge & Deploy**
+#### Miércoles 9 AM - Merge & Deploy
 
 ```bash
 # María mergea:
