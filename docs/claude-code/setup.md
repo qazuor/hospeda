@@ -57,7 +57,7 @@ brew install git
 
 #### PostgreSQL 15+ (or Docker)
 
-**Option A: Local PostgreSQL**
+#### Option A: Local PostgreSQL
 
 ```bash
 # Ubuntu/Debian:
@@ -73,7 +73,7 @@ brew install postgresql@15
 psql --version
 ```
 
-**Option B: Docker (Recommended)**
+#### Option B: Docker (Recommended)
 
 ```bash
 # Check Docker installation
@@ -159,7 +159,7 @@ Done in Xs
 
 **Note**: Claude Code is currently in beta. Installation method may vary.
 
-**Option A: NPM Global Install (Recommended)**
+#### Option A: NPM Global Install (Recommended)
 
 ```bash
 npm install -g @anthropic-ai/claude-code
@@ -168,7 +168,7 @@ npm install -g @anthropic-ai/claude-code
 claude-code --version
 ```
 
-**Option B: Via Anthropic CLI**
+#### Option B: Via Anthropic CLI
 
 ```bash
 # Install Anthropic CLI
@@ -197,7 +197,7 @@ claude-code --version
 
 ### Step 4: Configure Anthropic API Key
 
-**Option A: Environment Variable**
+#### Option A: Environment Variable
 
 ```bash
 # Add to ~/.bashrc, ~/.zshrc, or ~/.profile
@@ -207,7 +207,7 @@ export ANTHROPIC_API_KEY="your-api-key-here"
 source ~/.bashrc  # or ~/.zshrc
 ```
 
-**Option B: Config File**
+#### Option B: Config File
 
 ```bash
 # Create config directory
@@ -224,7 +224,7 @@ EOF
 chmod 600 ~/.config/claude-code/config.json
 ```
 
-**Option C: During First Run**
+#### Option C: During First Run
 
 ```bash
 # Start Claude Code
