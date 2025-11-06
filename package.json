@@ -94,6 +94,6 @@
     "lint-staged": {
         "*.{ts,tsx}": ["biome check --write --no-errors-on-unmatched"],
         "*.json": ["biome format --write"],
-        "*.md": ["markdownlint-cli2 --config .markdownlint.json --fix"]
+        "*.md": ["markdownlint-cli2 --config .markdownlint-cli2.jsonc --fix"]
     }
 }
