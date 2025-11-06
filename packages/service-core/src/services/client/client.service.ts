@@ -61,12 +61,10 @@ export class ClientService extends BaseCrudService<
      * @throws {ServiceError} If the permission check fails.
      */
     protected _canCreate(actor: Actor, _data: unknown): void {
-        if (
-            !actor ||
-            !actor.id ||
-            (actor.role !== RoleEnum.ADMIN &&
-                !actor.permissions.includes(PermissionEnum.CLIENT_CREATE))
-        ) {
+        const isAdmin = actor.role === RoleEnum.ADMIN;
+        const hasPermission = actor.permissions.includes(PermissionEnum.CLIENT_CREATE);
+
+        if (!isAdmin && !hasPermission) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
                 'Permission denied: Only admins or users with CLIENT_CREATE can create clients'
@@ -96,114 +94,130 @@ export class ClientService extends BaseCrudService<
 
     /**
      * Checks if the actor can soft-delete a client.
-     * Only ADMIN and users with CLIENT_DELETE permission can soft-delete clients.
+     * Admin or CLIENT_DELETE permission holders can soft-delete.
      * @param actor - The user or system performing the action.
      * @param _entity - The client entity to be soft-deleted.
      * @throws {ServiceError} If the permission check fails.
      */
     protected _canSoftDelete(actor: Actor, _entity: Client): void {
-        if (
-            !actor ||
-            !actor.id ||
-            (actor.role !== RoleEnum.ADMIN &&
-                !actor.permissions.includes(PermissionEnum.CLIENT_DELETE))
-        ) {
+        const isAdmin = actor.role === RoleEnum.ADMIN;
+        const hasPermission = actor.permissions.includes(PermissionEnum.CLIENT_DELETE);
+
+        if (!isAdmin && !hasPermission) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Only admins can delete clients'
+                'Permission denied: Only admins or authorized users can delete clients'
             );
         }
     }
 
     /**
      * Checks if the actor can hard-delete a client.
-     * Only SUPER_ADMIN can hard-delete.
+     * Admin or CLIENT_HARD_DELETE permission holders can hard-delete.
      * @param actor - The user or system performing the action.
      * @param _entity - The client entity to be hard-deleted.
      * @throws {ServiceError} If the permission check fails.
      */
     protected _canHardDelete(actor: Actor, _entity: Client): void {
-        if (!actor || !actor.id || actor.role !== RoleEnum.SUPER_ADMIN) {
+        const isAdmin = actor.role === RoleEnum.ADMIN;
+        const hasPermission = actor.permissions.includes(PermissionEnum.CLIENT_HARD_DELETE);
+
+        if (!isAdmin && !hasPermission) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Only super admins can permanently delete clients'
+                'Permission denied: Only admins or authorized users can permanently delete clients'
             );
         }
     }
 
     /**
      * Checks if the actor can restore a client.
-     * Only ADMIN can restore.
+     * Admin or CLIENT_RESTORE permission holders can restore.
      * @param actor - The user or system performing the action.
      * @param _entity - The client entity to be restored.
      * @throws {ServiceError} If the permission check fails.
      */
     protected _canRestore(actor: Actor, _entity: Client): void {
-        if (!actor || !actor.id || actor.role !== RoleEnum.ADMIN) {
+        const isAdmin = actor.role === RoleEnum.ADMIN;
+        const hasPermission = actor.permissions.includes(PermissionEnum.CLIENT_RESTORE);
+
+        if (!isAdmin && !hasPermission) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Only admins can restore clients'
+                'Permission denied: Only admins or authorized users can restore clients'
             );
         }
     }
 
     /**
      * Checks if the actor can view a client.
-     * Authenticated users can view clients.
+     * Admin or CLIENT_VIEW permission holders can view.
      * @param actor - The user or system performing the action.
      * @param _entity - The client entity to be viewed.
      * @throws {ServiceError} If the permission check fails.
      */
     protected _canView(actor: Actor, _entity: Client): void {
-        if (!actor || !actor.id || actor.role === RoleEnum.GUEST) {
+        const isAdmin = actor.role === RoleEnum.ADMIN;
+        const hasPermission = actor.permissions.includes(PermissionEnum.CLIENT_VIEW);
+
+        if (!isAdmin && !hasPermission) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Authentication required to view clients'
+                'Permission denied: Only admins or authorized users can view clients'
             );
         }
     }
 
     /**
      * Checks if the actor can list clients.
-     * Any authenticated user can list clients.
+     * Admin or CLIENT_VIEW permission holders can list.
      * @param actor - The user or system performing the action.
      * @throws {ServiceError} If the permission check fails.
      */
     protected _canList(actor: Actor): void {
-        if (!actor || !actor.id || actor.role === RoleEnum.GUEST) {
+        const isAdmin = actor.role === RoleEnum.ADMIN;
+        const hasPermission = actor.permissions.includes(PermissionEnum.CLIENT_VIEW);
+
+        if (!isAdmin && !hasPermission) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Authentication required to list clients'
+                'Permission denied: Only admins or authorized users can list clients'
             );
         }
     }
 
     /**
      * Checks if the actor can search clients.
-     * Any authenticated user can search.
+     * Admin or CLIENT_VIEW permission holders can search.
      * @param actor - The user or system performing the action.
      * @throws {ServiceError} If the permission check fails.
      */
     protected _canSearch(actor: Actor): void {
-        if (!actor || !actor.id || actor.role === RoleEnum.GUEST) {
+        const isAdmin = actor.role === RoleEnum.ADMIN;
+        const hasPermission = actor.permissions.includes(PermissionEnum.CLIENT_VIEW);
+
+        if (!isAdmin && !hasPermission) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Authentication required to search clients'
+                'Permission denied: Only admins or authorized users can search clients'
             );
         }
     }
 
     /**
      * Checks if the actor can count clients.
-     * Any authenticated user can count.
+     * Admin or CLIENT_VIEW permission holders can count.
      * @param actor - The user or system performing the action.
      * @throws {ServiceError} If the permission check fails.
      */
     protected _canCount(actor: Actor): void {
-        if (!actor || !actor.id || actor.role === RoleEnum.GUEST) {
+        const isAdmin = actor.role === RoleEnum.ADMIN;
+        const hasPermission = actor.permissions.includes(PermissionEnum.CLIENT_VIEW);
+
+        if (!isAdmin && !hasPermission) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Authentication required to count clients'
+                'Permission denied: Only admins or authorized users can count clients'
             );
         }
     }
@@ -221,7 +235,9 @@ export class ClientService extends BaseCrudService<
         _entity: Client,
         _newVisibility: VisibilityEnum
     ): void {
-        if (!actor || !actor.id || actor.role !== RoleEnum.ADMIN) {
+        const isAdmin = actor.role === RoleEnum.ADMIN;
+
+        if (!isAdmin) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
                 'Permission denied: Only admins can update client visibility'
