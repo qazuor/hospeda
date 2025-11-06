@@ -1281,7 +1281,7 @@ N/A - This is a backend/agent feature with no user-facing UI. The "frontend" is 
 
 **How Different Apps/Packages Use `@repo/ai-image-generation`:**
 
-**1. Current Use Case: Wireframe Generation (UX/UI Designer Agent)**
+#### 1. Current Use Case: Wireframe Generation (UX/UI Designer Agent)
 
 ```typescript
 // .claude/agents/utils/wireframe-generator.ts
@@ -1319,7 +1319,7 @@ export class WireframeGenerator {
 }
 ```
 
-**2. Future Use Case: Product Illustrations (Marketing)**
+#### 2. Future Use Case: Product Illustrations (Marketing)
 
 ```typescript
 // apps/web/src/utils/product-image-generator.ts
@@ -1359,7 +1359,7 @@ export class ProductImageGenerator {
 }
 ```
 
-**3. Future Use Case: Social Media Graphics (Marketing Automation)**
+#### 3. Future Use Case: Social Media Graphics (Marketing Automation)
 
 ```typescript
 // packages/marketing/src/social-graphics-generator.ts
@@ -1401,7 +1401,7 @@ export class SocialGraphicsGenerator {
 }
 ```
 
-**4. Future Use Case: Icon Generation (Design System)**
+#### 4. Future Use Case: Icon Generation (Design System)
 
 ```typescript
 // packages/icons/src/icon-generator.ts
@@ -1450,7 +1450,7 @@ export class IconGenerator {
 
 ### 8.2 External Integrations (AI Providers)
 
-**Current Provider: Replicate API**
+#### Current Provider: Replicate API
 
 The `ReplicateProvider` class implements the `AIImageProvider` interface:
 
@@ -2095,28 +2095,28 @@ class RateLimiter {
 
 ### 13.1 Rollout Strategy
 
-**Phase 1: Local Testing (Day 1)**
+#### Phase 1: Local Testing (Day 1)
 
 - Set up Replicate account
 - Generate API token
 - Test locally with 5-10 mockups
 - Verify quality and cost
 
-**Phase 2: Documentation (Day 2)**
+#### Phase 2: Documentation (Day 2)
 
 - Update UX/UI Designer agent docs
 - Add environment setup guide
 - Create prompt engineering guidelines
 - Document example mockups
 
-**Phase 3: Beta Usage (Day 2-3)**
+#### Phase 3: Beta Usage (Day 2-3)
 
 - Use in 1-2 real planning sessions
 - Gather feedback on quality
 - Monitor costs and performance
 - Iterate on prompts if needed
 
-**Phase 4: General Availability (Day 3)**
+#### Phase 4: General Availability (Day 3)
 
 - Enable for all planning sessions
 - Add to quick-start guide
