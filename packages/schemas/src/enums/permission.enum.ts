@@ -2,10 +2,29 @@ export enum PermissionCategoryEnum {
     ACCOMMODATION = 'ACCOMMODATION',
     ACCOMMODATION_LISTING = 'ACCOMMODATION_LISTING',
     ACCOMMODATION_LISTING_PLAN = 'ACCOMMODATION_LISTING_PLAN',
+    ACCOMMODATION_REVIEW = 'ACCOMMODATION_REVIEW',
+    AD_PRICING_CATALOG = 'AD_PRICING_CATALOG',
+    ATTRACTION = 'ATTRACTION',
+    CLIENT_ACCESS_RIGHT = 'CLIENT_ACCESS_RIGHT',
+    CREDIT_NOTE = 'CREDIT_NOTE',
     DESTINATION = 'DESTINATION',
+    DESTINATION_REVIEW = 'DESTINATION_REVIEW',
+    DISCOUNT_CODE_USAGE = 'DISCOUNT_CODE_USAGE',
     EVENT = 'EVENT',
+    EVENT_LOCATION = 'EVENT_LOCATION',
+    EVENT_ORGANIZER = 'EVENT_ORGANIZER',
+    INVOICE = 'INVOICE',
+    INVOICE_LINE = 'INVOICE_LINE',
+    PAYMENT = 'PAYMENT',
+    PAYMENT_METHOD = 'PAYMENT_METHOD',
+    PERMISSION = 'PERMISSION',
     POST = 'POST',
+    POST_SPONSOR = 'POST_SPONSOR',
+    POST_SPONSORSHIP = 'POST_SPONSORSHIP',
+    PURCHASE = 'PURCHASE',
+    REFUND = 'REFUND',
     USER = 'USER',
+    USER_BOOKMARK = 'USER_BOOKMARK',
     CLIENT = 'CLIENT',
     PRODUCT = 'PRODUCT',
     SUBSCRIPTION = 'SUBSCRIPTION',
@@ -223,8 +242,10 @@ export enum PermissionEnum {
     // CLIENT: Permissions related to client management (billing, subscriptions)
     CLIENT_CREATE = 'client.create', // Allows creating a new client.
     CLIENT_UPDATE = 'client.update', // Allows updating a client.
-    CLIENT_DELETE = 'client.delete', // Allows deleting a client.
+    CLIENT_DELETE = 'client.delete', // Allows deleting a client (soft delete).
     CLIENT_VIEW = 'client.view', // Allows viewing client information.
+    CLIENT_RESTORE = 'client.restore', // Allows restoring a deleted client.
+    CLIENT_HARD_DELETE = 'client.hardDelete', // Allows permanently deleting a client.
 
     // SUBSCRIPTION: Permissions related to subscription management
     SUBSCRIPTION_CREATE = 'subscription.create', // Allows creating a new subscription.
@@ -356,5 +377,176 @@ export enum PermissionEnum {
     SERVICE_LISTING_VIEW = 'serviceListing.view', // Allows viewing service listing information.
     SERVICE_LISTING_RESTORE = 'serviceListing.restore', // Allows restoring a deleted service listing.
     SERVICE_LISTING_HARD_DELETE = 'serviceListing.hardDelete', // Allows permanently deleting a service listing.
-    SERVICE_LISTING_STATUS_MANAGE = 'serviceListing.status.manage' // Allows managing service listing status (draft, pending, active, paused, rejected, expired).
+    SERVICE_LISTING_STATUS_MANAGE = 'serviceListing.status.manage', // Allows managing service listing status (draft, pending, active, paused, rejected, expired).
+
+    // ACCOMMODATION_REVIEW: Permissions related to accommodation review management (additional)
+    ACCOMMODATION_REVIEW_DELETE = 'accommodationReview.delete', // Allows deleting an accommodation review (soft delete).
+    ACCOMMODATION_REVIEW_VIEW = 'accommodationReview.view', // Allows viewing accommodation review information.
+    ACCOMMODATION_REVIEW_RESTORE = 'accommodationReview.restore', // Allows restoring a deleted accommodation review.
+    ACCOMMODATION_REVIEW_HARD_DELETE = 'accommodationReview.hardDelete', // Allows permanently deleting an accommodation review.
+    ACCOMMODATION_REVIEW_REPORT = 'accommodationReview.report', // Allows reporting inappropriate reviews.
+
+    // AD_PRICING_CATALOG: Permissions related to ad pricing catalog management
+    AD_PRICING_CATALOG_CREATE = 'adPricingCatalog.create', // Allows creating a new ad pricing catalog.
+    AD_PRICING_CATALOG_UPDATE = 'adPricingCatalog.update', // Allows updating an ad pricing catalog.
+    AD_PRICING_CATALOG_DELETE = 'adPricingCatalog.delete', // Allows deleting an ad pricing catalog (soft delete).
+    AD_PRICING_CATALOG_VIEW = 'adPricingCatalog.view', // Allows viewing ad pricing catalog information.
+    AD_PRICING_CATALOG_RESTORE = 'adPricingCatalog.restore', // Allows restoring a deleted ad pricing catalog.
+    AD_PRICING_CATALOG_HARD_DELETE = 'adPricingCatalog.hardDelete', // Allows permanently deleting an ad pricing catalog.
+    AD_PRICING_CATALOG_CALCULATE_PRICE = 'adPricingCatalog.calculatePrice', // Allows calculating prices based on catalog rules.
+
+    // ATTRACTION: Permissions related to attraction catalog management
+    ATTRACTION_CREATE = 'attraction.create', // Allows creating a new attraction.
+    ATTRACTION_UPDATE = 'attraction.update', // Allows updating an attraction.
+    ATTRACTION_DELETE = 'attraction.delete', // Allows deleting an attraction (soft delete).
+    ATTRACTION_VIEW = 'attraction.view', // Allows viewing attraction information.
+    ATTRACTION_RESTORE = 'attraction.restore', // Allows restoring a deleted attraction.
+    ATTRACTION_HARD_DELETE = 'attraction.hardDelete', // Allows permanently deleting an attraction.
+
+    // CLIENT_ACCESS_RIGHT: Permissions related to client access rights management
+    CLIENT_ACCESS_RIGHT_CREATE = 'clientAccessRight.create', // Allows creating a new client access right.
+    CLIENT_ACCESS_RIGHT_UPDATE = 'clientAccessRight.update', // Allows updating a client access right.
+    CLIENT_ACCESS_RIGHT_DELETE = 'clientAccessRight.delete', // Allows deleting a client access right (soft delete).
+    CLIENT_ACCESS_RIGHT_VIEW = 'clientAccessRight.view', // Allows viewing client access right information.
+    CLIENT_ACCESS_RIGHT_RESTORE = 'clientAccessRight.restore', // Allows restoring a deleted client access right.
+    CLIENT_ACCESS_RIGHT_HARD_DELETE = 'clientAccessRight.hardDelete', // Allows permanently deleting a client access right.
+    CLIENT_ACCESS_RIGHT_GRANT = 'clientAccessRight.grant', // Allows granting access rights to clients.
+    CLIENT_ACCESS_RIGHT_REVOKE = 'clientAccessRight.revoke', // Allows revoking access rights from clients.
+
+    // CREDIT_NOTE: Permissions related to credit note management
+    CREDIT_NOTE_CREATE = 'creditNote.create', // Allows creating a new credit note.
+    CREDIT_NOTE_UPDATE = 'creditNote.update', // Allows updating a credit note.
+    CREDIT_NOTE_DELETE = 'creditNote.delete', // Allows deleting a credit note (soft delete).
+    CREDIT_NOTE_VIEW = 'creditNote.view', // Allows viewing credit note information.
+    CREDIT_NOTE_RESTORE = 'creditNote.restore', // Allows restoring a deleted credit note.
+    CREDIT_NOTE_HARD_DELETE = 'creditNote.hardDelete', // Allows permanently deleting a credit note.
+    CREDIT_NOTE_ISSUE = 'creditNote.issue', // Allows issuing a credit note.
+    CREDIT_NOTE_APPLY = 'creditNote.apply', // Allows applying a credit note to an invoice.
+    CREDIT_NOTE_VOID = 'creditNote.void', // Allows voiding a credit note.
+
+    // DESTINATION_REVIEW: Permissions related to destination review management (additional)
+    DESTINATION_REVIEW_DELETE = 'destinationReview.delete', // Allows deleting a destination review (soft delete).
+    DESTINATION_REVIEW_VIEW = 'destinationReview.view', // Allows viewing destination review information.
+    DESTINATION_REVIEW_RESTORE = 'destinationReview.restore', // Allows restoring a deleted destination review.
+    DESTINATION_REVIEW_HARD_DELETE = 'destinationReview.hardDelete', // Allows permanently deleting a destination review.
+    DESTINATION_REVIEW_REPORT = 'destinationReview.report', // Allows reporting inappropriate reviews.
+
+    // DISCOUNT_CODE_USAGE: Permissions related to discount code usage tracking (additional)
+    // Note: DISCOUNT_CODE_USAGE_VIEW already exists in DISCOUNT_CODE section
+    DISCOUNT_CODE_USAGE_CREATE = 'discountCodeUsage.create', // Allows creating a new discount code usage record.
+    DISCOUNT_CODE_USAGE_UPDATE = 'discountCodeUsage.update', // Allows updating a discount code usage record.
+    DISCOUNT_CODE_USAGE_DELETE = 'discountCodeUsage.delete', // Allows deleting a discount code usage record (soft delete).
+    DISCOUNT_CODE_USAGE_RESTORE = 'discountCodeUsage.restore', // Allows restoring a deleted discount code usage record.
+    DISCOUNT_CODE_USAGE_HARD_DELETE = 'discountCodeUsage.hardDelete', // Allows permanently deleting a discount code usage record.
+
+    // EVENT_LOCATION: Permissions related to event location catalog management (additional)
+    // Note: EVENT_LOCATION_UPDATE already exists in EVENT section
+    EVENT_LOCATION_CREATE = 'eventLocation.create', // Allows creating a new event location.
+    EVENT_LOCATION_DELETE = 'eventLocation.delete', // Allows deleting an event location (soft delete).
+    EVENT_LOCATION_VIEW = 'eventLocation.view', // Allows viewing event location information.
+    EVENT_LOCATION_RESTORE = 'eventLocation.restore', // Allows restoring a deleted event location.
+    EVENT_LOCATION_HARD_DELETE = 'eventLocation.hardDelete', // Allows permanently deleting an event location.
+
+    // EVENT_ORGANIZER: Permissions related to event organizer catalog management
+    EVENT_ORGANIZER_CREATE = 'eventOrganizer.create', // Allows creating a new event organizer.
+    EVENT_ORGANIZER_UPDATE = 'eventOrganizer.update', // Allows updating an event organizer.
+    EVENT_ORGANIZER_DELETE = 'eventOrganizer.delete', // Allows deleting an event organizer (soft delete).
+    EVENT_ORGANIZER_VIEW = 'eventOrganizer.view', // Allows viewing event organizer information.
+    EVENT_ORGANIZER_RESTORE = 'eventOrganizer.restore', // Allows restoring a deleted event organizer.
+    EVENT_ORGANIZER_HARD_DELETE = 'eventOrganizer.hardDelete', // Allows permanently deleting an event organizer.
+
+    // INVOICE: Permissions related to invoice management
+    INVOICE_CREATE = 'invoice.create', // Allows creating a new invoice.
+    INVOICE_UPDATE = 'invoice.update', // Allows updating an invoice.
+    INVOICE_DELETE = 'invoice.delete', // Allows deleting an invoice (soft delete).
+    INVOICE_VIEW = 'invoice.view', // Allows viewing invoice information.
+    INVOICE_RESTORE = 'invoice.restore', // Allows restoring a deleted invoice.
+    INVOICE_HARD_DELETE = 'invoice.hardDelete', // Allows permanently deleting an invoice.
+    INVOICE_GENERATE = 'invoice.generate', // Allows generating invoices.
+    INVOICE_SEND = 'invoice.send', // Allows sending invoices to clients.
+    INVOICE_VOID = 'invoice.void', // Allows voiding an invoice.
+    INVOICE_MARK_PAID = 'invoice.markPaid', // Allows marking an invoice as paid.
+
+    // INVOICE_LINE: Permissions related to invoice line item management
+    INVOICE_LINE_CREATE = 'invoiceLine.create', // Allows creating a new invoice line item.
+    INVOICE_LINE_UPDATE = 'invoiceLine.update', // Allows updating an invoice line item.
+    INVOICE_LINE_DELETE = 'invoiceLine.delete', // Allows deleting an invoice line item (soft delete).
+    INVOICE_LINE_VIEW = 'invoiceLine.view', // Allows viewing invoice line item information.
+    INVOICE_LINE_RESTORE = 'invoiceLine.restore', // Allows restoring a deleted invoice line item.
+    INVOICE_LINE_HARD_DELETE = 'invoiceLine.hardDelete', // Allows permanently deleting an invoice line item.
+
+    // PAYMENT: Permissions related to payment processing
+    PAYMENT_CREATE = 'payment.create', // Allows creating a new payment record.
+    PAYMENT_UPDATE = 'payment.update', // Allows updating a payment record.
+    PAYMENT_DELETE = 'payment.delete', // Allows deleting a payment record (soft delete).
+    PAYMENT_VIEW = 'payment.view', // Allows viewing payment information.
+    PAYMENT_RESTORE = 'payment.restore', // Allows restoring a deleted payment record.
+    PAYMENT_HARD_DELETE = 'payment.hardDelete', // Allows permanently deleting a payment record.
+    PAYMENT_PROCESS = 'payment.process', // Allows processing payments.
+    PAYMENT_REFUND = 'payment.refund', // Allows processing payment refunds.
+    PAYMENT_CANCEL = 'payment.cancel', // Allows canceling payments.
+
+    // PAYMENT_METHOD: Permissions related to payment method management
+    PAYMENT_METHOD_CREATE = 'paymentMethod.create', // Allows creating a new payment method.
+    PAYMENT_METHOD_UPDATE = 'paymentMethod.update', // Allows updating a payment method.
+    PAYMENT_METHOD_DELETE = 'paymentMethod.delete', // Allows deleting a payment method (soft delete).
+    PAYMENT_METHOD_VIEW = 'paymentMethod.view', // Allows viewing payment method information.
+    PAYMENT_METHOD_RESTORE = 'paymentMethod.restore', // Allows restoring a deleted payment method.
+    PAYMENT_METHOD_HARD_DELETE = 'paymentMethod.hardDelete', // Allows permanently deleting a payment method.
+
+    // PERMISSION: Permissions related to permission system management
+    PERMISSION_CREATE = 'permission.create', // Allows creating a new permission.
+    PERMISSION_UPDATE = 'permission.update', // Allows updating a permission.
+    PERMISSION_DELETE = 'permission.delete', // Allows deleting a permission (soft delete).
+    PERMISSION_VIEW = 'permission.view', // Allows viewing permission information.
+    PERMISSION_RESTORE = 'permission.restore', // Allows restoring a deleted permission.
+    PERMISSION_HARD_DELETE = 'permission.hardDelete', // Allows permanently deleting a permission.
+    PERMISSION_ASSIGN = 'permission.assign', // Allows assigning permissions to roles/users.
+    PERMISSION_REVOKE = 'permission.revoke', // Allows revoking permissions from roles/users.
+
+    // POST_SPONSOR: Permissions related to post sponsor catalog management
+    POST_SPONSOR_CREATE = 'postSponsor.create', // Allows creating a new post sponsor.
+    POST_SPONSOR_UPDATE = 'postSponsor.update', // Allows updating a post sponsor.
+    POST_SPONSOR_DELETE = 'postSponsor.delete', // Allows deleting a post sponsor (soft delete).
+    POST_SPONSOR_VIEW = 'postSponsor.view', // Allows viewing post sponsor information.
+    POST_SPONSOR_RESTORE = 'postSponsor.restore', // Allows restoring a deleted post sponsor.
+    POST_SPONSOR_HARD_DELETE = 'postSponsor.hardDelete', // Allows permanently deleting a post sponsor.
+
+    // POST_SPONSORSHIP: Permissions related to post sponsorship contract management
+    POST_SPONSORSHIP_CREATE = 'postSponsorship.create', // Allows creating a new post sponsorship contract.
+    POST_SPONSORSHIP_UPDATE = 'postSponsorship.update', // Allows updating a post sponsorship contract.
+    POST_SPONSORSHIP_DELETE = 'postSponsorship.delete', // Allows deleting a post sponsorship contract (soft delete).
+    POST_SPONSORSHIP_VIEW = 'postSponsorship.view', // Allows viewing post sponsorship contract information.
+    POST_SPONSORSHIP_RESTORE = 'postSponsorship.restore', // Allows restoring a deleted post sponsorship contract.
+    POST_SPONSORSHIP_HARD_DELETE = 'postSponsorship.hardDelete', // Allows permanently deleting a post sponsorship contract.
+    POST_SPONSORSHIP_STATUS_MANAGE = 'postSponsorship.status.manage', // Allows managing post sponsorship status (activate, pause, expire, cancel).
+
+    // PURCHASE: Permissions related to purchase management
+    PURCHASE_CREATE = 'purchase.create', // Allows creating a new purchase.
+    PURCHASE_UPDATE = 'purchase.update', // Allows updating a purchase.
+    PURCHASE_DELETE = 'purchase.delete', // Allows deleting a purchase (soft delete).
+    PURCHASE_VIEW = 'purchase.view', // Allows viewing purchase information.
+    PURCHASE_RESTORE = 'purchase.restore', // Allows restoring a deleted purchase.
+    PURCHASE_HARD_DELETE = 'purchase.hardDelete', // Allows permanently deleting a purchase.
+    PURCHASE_PROCESS = 'purchase.process', // Allows processing purchases.
+    PURCHASE_CANCEL = 'purchase.cancel', // Allows canceling purchases.
+
+    // REFUND: Permissions related to refund management
+    REFUND_CREATE = 'refund.create', // Allows creating a new refund.
+    REFUND_UPDATE = 'refund.update', // Allows updating a refund.
+    REFUND_DELETE = 'refund.delete', // Allows deleting a refund (soft delete).
+    REFUND_VIEW = 'refund.view', // Allows viewing refund information.
+    REFUND_RESTORE = 'refund.restore', // Allows restoring a deleted refund.
+    REFUND_HARD_DELETE = 'refund.hardDelete', // Allows permanently deleting a refund.
+    REFUND_PROCESS = 'refund.process', // Allows processing refunds.
+    REFUND_APPROVE = 'refund.approve', // Allows approving refund requests.
+    REFUND_REJECT = 'refund.reject', // Allows rejecting refund requests.
+
+    // USER_BOOKMARK: Permissions related to user bookmark management
+    USER_BOOKMARK_CREATE = 'userBookmark.create', // Allows creating a new user bookmark.
+    USER_BOOKMARK_UPDATE = 'userBookmark.update', // Allows updating a user bookmark.
+    USER_BOOKMARK_DELETE = 'userBookmark.delete', // Allows deleting a user bookmark (soft delete).
+    USER_BOOKMARK_VIEW = 'userBookmark.view', // Allows viewing user bookmark information.
+    USER_BOOKMARK_RESTORE = 'userBookmark.restore', // Allows restoring a deleted user bookmark.
+    USER_BOOKMARK_HARD_DELETE = 'userBookmark.hardDelete' // Allows permanently deleting a user bookmark.
 }
