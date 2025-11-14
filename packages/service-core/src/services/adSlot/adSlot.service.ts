@@ -7,8 +7,9 @@
  * @module AdSlotService
  */
 
-import type { AdSlot, AdSlotModel } from '@repo/db';
+import type { AdSlotModel } from '@repo/db';
 import {
+    type AdSlot,
     AdSlotSearchSchema,
     CreateAdSlotSchema,
     type ListRelationsConfig,
@@ -358,7 +359,10 @@ export class AdSlotService extends BaseCrudService<
     protected async _executeSearch(
         params: z.infer<typeof AdSlotSearchSchema>
     ): Promise<{ items: AdSlot[]; total: number }> {
-        return this.model.search(params);
+        // Note: AdSlotSearchSchema redefines 'page' as enum for filtering (conflicts with pagination)
+        // Use params.pageSize for pagination, params.page is the placement page filter
+        const { pageSize, ...filterParams } = params;
+        return this.model.findAll(filterParams, { page: 1, pageSize: pageSize || 10 });
     }
 
     /**
@@ -463,8 +467,8 @@ export class AdSlotService extends BaseCrudService<
      */
     async findAvailableSlots(
         actor: Actor,
-        startDate: Date,
-        endDate: Date
+        _startDate: Date,
+        _endDate: Date
     ): Promise<ServiceOutput<AdSlot[]>> {
         // Check view permission
         try {
@@ -476,7 +480,7 @@ export class AdSlotService extends BaseCrudService<
             throw error;
         }
 
-        const slots = await this.model.findAvailableSlots(startDate, endDate);
+        const slots = await this.model.getAvailableSlots();
         return { data: slots };
     }
 

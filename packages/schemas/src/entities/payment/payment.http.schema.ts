@@ -175,6 +175,7 @@ export function httpToDomainPaymentCreate(
         currency: PriceCurrencyEnumSchema.parse(httpData.currency),
         description: httpData.description || null,
         metadata: httpData.metadata || null,
+        invoiceId: null,
         mercadoPagoPaymentId: null,
         mercadoPagoPreferenceId: null,
         externalReference: null,

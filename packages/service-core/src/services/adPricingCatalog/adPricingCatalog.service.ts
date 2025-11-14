@@ -377,7 +377,7 @@ export class AdPricingCatalogService extends BaseCrudService<
                 // Business rule: Catalog must be active
                 if (!catalog.isActive) {
                     throw new ServiceError(
-                        ServiceErrorCode.BUSINESS_RULE_VIOLATION,
+                        ServiceErrorCode.VALIDATION_ERROR,
                         'Pricing catalog is not active'
                     );
                 }
