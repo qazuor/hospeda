@@ -1,7 +1,9 @@
-import type { PaymentMethod, PaymentMethodModel } from '@repo/db';
+import type { PaymentMethodModel } from '@repo/db';
 import {
     CreatePaymentMethodSchema,
     type ListRelationsConfig,
+    type PaymentMethod,
+    type PaymentMethodEnum,
     PaymentMethodQuerySchema,
     PermissionEnum,
     RoleEnum,
@@ -494,7 +496,7 @@ export class PaymentMethodService extends BaseCrudService<
         actor: Actor,
         data: {
             clientId: string;
-            type: string;
+            type: PaymentMethodEnum;
             cardNumber: string;
             expiryMonth: number;
             expiryYear: number;

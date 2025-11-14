@@ -3,16 +3,25 @@ import {
     CreatePromotionSchema,
     ListPromotionsSchema,
     type ListRelationsConfig,
-    PermissionEnum,
     type Promotion,
-    RoleEnum,
-    ServiceErrorCode,
     UpdatePromotionSchema
 } from '@repo/schemas';
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service.js';
 import type { Actor, ServiceContext, ServiceOutput } from '../../types/index.js';
-import { ServiceError } from '../../types/index.js';
+import {
+    checkCanCount,
+    checkCanCreate,
+    checkCanHardDelete,
+    checkCanList,
+    checkCanRestore,
+    checkCanSearch,
+    checkCanSoftDelete,
+    checkCanUpdate,
+    checkCanUpdateLifecycleState,
+    checkCanUpdateVisibility,
+    checkCanView
+} from './promotion.permissions.js';
 
 /**
  * Service for managing promotions. Implements business logic, permissions, and hooks for Promotion entities.
@@ -60,17 +69,7 @@ export class PromotionService extends BaseCrudService<
      * Only ADMIN and users with PROMOTION_CREATE permission can create.
      */
     protected _canCreate(actor: Actor, _data: unknown): void {
-        if (
-            !actor ||
-            !actor.id ||
-            (actor.role !== RoleEnum.ADMIN &&
-                !actor.permissions.includes(PermissionEnum.PROMOTION_CREATE))
-        ) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Only admins or authorized users can create promotions'
-            );
-        }
+        checkCanCreate(actor, _data);
     }
 
     /**
@@ -78,15 +77,15 @@ export class PromotionService extends BaseCrudService<
      * Admin or PROMOTION_UPDATE permission holders can update.
      */
     protected _canUpdate(actor: Actor, _entity: Promotion): void {
-        const isAdmin = actor.role === RoleEnum.ADMIN;
-        const hasPermission = actor.permissions.includes(PermissionEnum.PROMOTION_UPDATE);
+        checkCanUpdate(actor, _entity);
+    }
 
-        if (!isAdmin && !hasPermission) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Only admins or authorized users can update promotions'
-            );
-        }
+    /**
+     * Checks if the actor can update visibility of a promotion.
+     * Admin or PROMOTION_UPDATE permission holders can update visibility.
+     */
+    protected _canUpdateVisibility(actor: Actor, entity: Promotion): void {
+        checkCanUpdateVisibility(actor, entity);
     }
 
     /**
@@ -94,15 +93,7 @@ export class PromotionService extends BaseCrudService<
      * Admin or PROMOTION_DELETE permission holders can soft delete.
      */
     protected _canSoftDelete(actor: Actor, _entity: Promotion): void {
-        const isAdmin = actor.role === RoleEnum.ADMIN;
-        const hasPermission = actor.permissions.includes(PermissionEnum.PROMOTION_DELETE);
-
-        if (!isAdmin && !hasPermission) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Only admins or authorized users can delete promotions'
-            );
-        }
+        checkCanSoftDelete(actor, _entity);
     }
 
     /**
@@ -110,12 +101,7 @@ export class PromotionService extends BaseCrudService<
      * Only ADMIN can hard delete.
      */
     protected _canHardDelete(actor: Actor, _entity: Promotion): void {
-        if (actor.role !== RoleEnum.ADMIN) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Only admins can permanently delete promotions'
-            );
-        }
+        checkCanHardDelete(actor, _entity);
     }
 
     /**
@@ -123,15 +109,7 @@ export class PromotionService extends BaseCrudService<
      * Admin or PROMOTION_VIEW permission holders can view.
      */
     protected _canView(actor: Actor, _entity: Promotion): void {
-        const isAdmin = actor.role === RoleEnum.ADMIN;
-        const hasPermission = actor.permissions.includes(PermissionEnum.PROMOTION_VIEW);
-
-        if (!isAdmin && !hasPermission) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Only admins or authorized users can view promotions'
-            );
-        }
+        checkCanView(actor, _entity);
     }
 
     /**
@@ -139,15 +117,7 @@ export class PromotionService extends BaseCrudService<
      * Admin or PROMOTION_VIEW permission holders can list.
      */
     protected _canList(actor: Actor): void {
-        const isAdmin = actor.role === RoleEnum.ADMIN;
-        const hasPermission = actor.permissions.includes(PermissionEnum.PROMOTION_VIEW);
-
-        if (!isAdmin && !hasPermission) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Only admins or authorized users can list promotions'
-            );
-        }
+        checkCanList(actor);
     }
 
     /**
@@ -155,15 +125,7 @@ export class PromotionService extends BaseCrudService<
      * Admin or PROMOTION_RESTORE permission holders can restore.
      */
     protected _canRestore(actor: Actor, _entity: Promotion): void {
-        const isAdmin = actor.role === RoleEnum.ADMIN;
-        const hasPermission = actor.permissions.includes(PermissionEnum.PROMOTION_RESTORE);
-
-        if (!isAdmin && !hasPermission) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Only admins or authorized users can restore promotions'
-            );
-        }
+        checkCanRestore(actor, _entity);
     }
 
     /**
@@ -171,15 +133,7 @@ export class PromotionService extends BaseCrudService<
      * Admin or PROMOTION_VIEW permission holders can search.
      */
     protected _canSearch(actor: Actor): void {
-        const isAdmin = actor.role === RoleEnum.ADMIN;
-        const hasPermission = actor.permissions.includes(PermissionEnum.PROMOTION_VIEW);
-
-        if (!isAdmin && !hasPermission) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Only admins or authorized users can search promotions'
-            );
-        }
+        checkCanSearch(actor);
     }
 
     /**
@@ -187,31 +141,7 @@ export class PromotionService extends BaseCrudService<
      * Admin or PROMOTION_VIEW permission holders can count.
      */
     protected _canCount(actor: Actor): void {
-        const isAdmin = actor.role === RoleEnum.ADMIN;
-        const hasPermission = actor.permissions.includes(PermissionEnum.PROMOTION_VIEW);
-
-        if (!isAdmin && !hasPermission) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Only admins or authorized users can count promotions'
-            );
-        }
-    }
-
-    /**
-     * Checks if the actor can update visibility of a promotion.
-     * Admin or PROMOTION_UPDATE permission holders can update visibility.
-     */
-    protected _canUpdateVisibility(actor: Actor, _entity: Promotion): void {
-        const isAdmin = actor.role === RoleEnum.ADMIN;
-        const hasPermission = actor.permissions.includes(PermissionEnum.PROMOTION_UPDATE);
-
-        if (!isAdmin && !hasPermission) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Only admins or authorized users can update visibility of promotions'
-            );
-        }
+        checkCanCount(actor);
     }
 
     /**
@@ -219,15 +149,7 @@ export class PromotionService extends BaseCrudService<
      * Admin or PROMOTION_UPDATE permission holders can update lifecycle state.
      */
     protected _canUpdateLifecycleState(actor: Actor, _entity: Promotion): void {
-        const isAdmin = actor.role === RoleEnum.ADMIN;
-        const hasPermission = actor.permissions.includes(PermissionEnum.PROMOTION_UPDATE);
-
-        if (!isAdmin && !hasPermission) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Only admins or authorized users can update lifecycle state of promotions'
-            );
-        }
+        checkCanUpdateLifecycleState(actor, _entity);
     }
 
     /**

@@ -1,7 +1,7 @@
 import type { InvoiceLineModel } from '@repo/db';
-import type { invoiceLines } from '@repo/db';
 import {
     CreateInvoiceLineSchema,
+    type InvoiceLine,
     InvoiceLineSearchSchema,
     type ListRelationsConfig,
     PermissionEnum,
@@ -9,9 +9,6 @@ import {
     ServiceErrorCode,
     UpdateInvoiceLineSchema
 } from '@repo/schemas';
-
-// Use the DB schema inferred type for InvoiceLine
-type InvoiceLine = typeof invoiceLines.$inferSelect;
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, ServiceContext, ServiceOutput } from '../../types';

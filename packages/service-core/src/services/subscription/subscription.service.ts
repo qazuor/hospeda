@@ -1,11 +1,10 @@
 import { SubscriptionModel, type subscriptionItems } from '@repo/db';
-import type { ClientIdType, ListRelationsConfig } from '@repo/schemas';
+import type { ClientIdType, ListRelationsConfig, SubscriptionStatusEnum } from '@repo/schemas';
 import { PermissionEnum, RoleEnum, ServiceErrorCode, type VisibilityEnum } from '@repo/schemas';
 import {
     type Subscription,
     SubscriptionCreateInputSchema,
     SubscriptionQuerySchema,
-    type SubscriptionStatusEnum,
     SubscriptionUpdateInputSchema
 } from '@repo/schemas/entities/subscription';
 import { z } from 'zod';
@@ -241,7 +240,10 @@ export class SubscriptionService extends BaseCrudService<
      */
     protected async _executeSearch(params: Record<string, unknown>, _actor: Actor) {
         const { page = 1, pageSize = 10, ...filterParams } = params;
-        return this.model.findAll(filterParams, { page, pageSize });
+        return this.model.findAll(filterParams, {
+            page: page as number,
+            pageSize: pageSize as number
+        });
     }
 
     /**

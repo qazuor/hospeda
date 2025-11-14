@@ -1,4 +1,4 @@
-import type { DiscountCodeModel } from '@repo/db';
+import { DiscountCodeModel } from '@repo/db';
 import {
     CreateDiscountCodeSchema,
     type DiscountCode,
@@ -7,8 +7,7 @@ import {
     PermissionEnum,
     RoleEnum,
     ServiceErrorCode,
-    UpdateDiscountCodeSchema,
-    type VisibilityEnum
+    UpdateDiscountCodeSchema
 } from '@repo/schemas';
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service.js';
@@ -42,7 +41,7 @@ export class DiscountCodeService extends BaseCrudService<
      */
     constructor(ctx: ServiceContext, model?: DiscountCodeModel) {
         super(ctx, DiscountCodeService.ENTITY_NAME);
-        this.model = model ?? ({} as DiscountCodeModel);
+        this.model = model ?? new DiscountCodeModel();
     }
 
     /**
@@ -82,6 +81,23 @@ export class DiscountCodeService extends BaseCrudService<
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
                 'Permission denied: Only admins or authorized users can update discount codes'
+            );
+        }
+    }
+
+    /**
+     * Permission check for updating visibility of discount codes
+     */
+    protected _canUpdateVisibility(actor: Actor, _entity: DiscountCode): void {
+        if (
+            !actor ||
+            !actor.id ||
+            (actor.role !== RoleEnum.ADMIN &&
+                !actor.permissions.includes(PermissionEnum.DISCOUNT_CODE_UPDATE))
+        ) {
+            throw new ServiceError(
+                ServiceErrorCode.FORBIDDEN,
+                'Permission denied: Only admins or authorized users can update discount code visibility'
             );
         }
     }
@@ -203,20 +219,6 @@ export class DiscountCodeService extends BaseCrudService<
                 'Permission denied: Only admins or authorized users can count discount codes'
             );
         }
-    }
-
-    /**
-     * Permission check for updating visibility (not applicable for discount codes)
-     */
-    protected _canUpdateVisibility(
-        _actor: Actor,
-        _entity: DiscountCode,
-        _newVisibility: VisibilityEnum
-    ): void {
-        throw new ServiceError(
-            ServiceErrorCode.NOT_IMPLEMENTED,
-            'Visibility updates are not applicable for discount codes'
-        );
     }
 
     /**
@@ -430,7 +432,7 @@ export class DiscountCodeService extends BaseCrudService<
         actor: Actor,
         codeId: string,
         _userId: string
-    ): Promise<ServiceOutput<DiscountCode>> {
+    ): Promise<ServiceOutput<DiscountCode | null>> {
         return this.runWithLoggingAndValidation({
             methodName: 'incrementUsage',
             input: { actor },
@@ -444,7 +446,7 @@ export class DiscountCodeService extends BaseCrudService<
                 }
 
                 // Increment global usage counter
-                const updatedCode = await this.model.update(codeId, {
+                const updatedCode = await this.model.updateById(codeId, {
                     usedCountGlobal: code.usedCountGlobal + 1,
                     updatedById: validatedActor.id
                 });

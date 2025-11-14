@@ -1,4 +1,4 @@
-import type { Sponsorship, SponsorshipModel } from '@repo/db';
+import type { SponsorshipModel } from '@repo/db';
 import {
     CreateSponsorshipSchema,
     type ListRelationsConfig,
@@ -6,6 +6,7 @@ import {
     RoleEnum,
     SearchSponsorshipsSchema,
     ServiceErrorCode,
+    type Sponsorship,
     SponsorshipEntityTypeEnum,
     UpdateSponsorshipSchema
 } from '@repo/schemas';
@@ -89,6 +90,23 @@ export class SponsorshipService extends BaseCrudService<
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
                 'Permission denied: Only admins or authorized users can update sponsorships'
+            );
+        }
+    }
+
+    /**
+     * Check if actor can update visibility of sponsorships
+     */
+    protected _canUpdateVisibility(actor: Actor, _entity: Sponsorship): void {
+        if (
+            !actor ||
+            !actor.id ||
+            (actor.role !== RoleEnum.ADMIN &&
+                !actor.permissions.includes(PermissionEnum.SPONSORSHIP_UPDATE))
+        ) {
+            throw new ServiceError(
+                ServiceErrorCode.FORBIDDEN,
+                'Permission denied: Only admins or authorized users can update sponsorship visibility'
             );
         }
     }
@@ -195,21 +213,6 @@ export class SponsorshipService extends BaseCrudService<
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
                 'Permission denied: Only admins or authorized users can count sponsorships'
-            );
-        }
-    }
-
-    /**
-     * Check if actor can update visibility of sponsorships
-     */
-    protected _canUpdateVisibility(actor: Actor, _entity: Sponsorship): void {
-        const isAdmin = actor.role === RoleEnum.ADMIN;
-        const hasPermission = actor.permissions.includes(PermissionEnum.SPONSORSHIP_UPDATE);
-
-        if (!isAdmin && !hasPermission) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Only admins or authorized users can update sponsorship visibility'
             );
         }
     }

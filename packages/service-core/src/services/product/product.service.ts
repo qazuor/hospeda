@@ -1,6 +1,6 @@
 import { type PricingPlan, ProductModel, type ProductWithPlans } from '@repo/db';
 import type { ListRelationsConfig, ProductTypeEnum } from '@repo/schemas';
-import { PermissionEnum, RoleEnum, ServiceErrorCode, type VisibilityEnum } from '@repo/schemas';
+import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import type { Product } from '@repo/schemas/entities/product';
 import {
     ProductCreateInputSchema,
@@ -88,6 +88,25 @@ export class ProductService extends BaseCrudService<
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
                 'Permission denied: Only admins or authorized users can update products'
+            );
+        }
+    }
+
+    /**
+     * Checks if the actor can update visibility of a product.
+     * Admin or PRODUCT_UPDATE permission holders can update visibility.
+     * @param actor - The user or system performing the action.
+     * @param entity - The product entity to update visibility.
+     * @throws {ServiceError} If the permission check fails.
+     */
+    protected _canUpdateVisibility(actor: Actor, _entity: Product): void {
+        const isAdmin = actor.role === RoleEnum.ADMIN;
+        const hasPermission = actor.permissions.includes(PermissionEnum.PRODUCT_UPDATE);
+
+        if (!isAdmin && !hasPermission) {
+            throw new ServiceError(
+                ServiceErrorCode.FORBIDDEN,
+                'Permission denied: Only admins or authorized users can update product visibility'
             );
         }
     }
@@ -206,27 +225,6 @@ export class ProductService extends BaseCrudService<
         }
     }
 
-    /**
-     * Checks if the actor can update the visibility of a product.
-     * Only ADMIN can update visibility.
-     * @param actor - The user or system performing the action.
-     * @param _entity - The product entity to be updated.
-     * @param _newVisibility - The new visibility state.
-     * @throws {ServiceError} If the permission check fails.
-     */
-    protected _canUpdateVisibility(
-        actor: Actor,
-        _entity: Product,
-        _newVisibility: VisibilityEnum
-    ): void {
-        if (!actor || !actor.id || actor.role !== RoleEnum.ADMIN) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Only admins can update product visibility'
-            );
-        }
-    }
-
     // ============================================================================
     // SEARCH & COUNT IMPLEMENTATION
     // ============================================================================
@@ -240,7 +238,10 @@ export class ProductService extends BaseCrudService<
      */
     protected async _executeSearch(params: Record<string, unknown>, _actor: Actor) {
         const { page = 1, pageSize = 10, ...filterParams } = params;
-        return this.model.findAll(filterParams, { page, pageSize });
+        return this.model.findAll(filterParams, {
+            page: page as number,
+            pageSize: pageSize as number
+        });
     }
 
     /**

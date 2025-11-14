@@ -11,6 +11,7 @@ import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
+import { checkCanUpdateVisibility } from './subscriptionItem.permissions.js';
 
 /**
  * Service for managing subscription items. Implements business logic, permissions, and hooks for SubscriptionItem entities.
@@ -91,6 +92,16 @@ export class SubscriptionItemService extends BaseCrudService<
                 'Permission denied: Only admins or authorized users can update subscription items'
             );
         }
+    }
+
+    /**
+     * Checks if the actor can update visibility of subscription items.
+     * @param actor - The user or system performing the action.
+     * @param entity - The subscription item entity.
+     * @throws {ServiceError} If the permission check fails.
+     */
+    protected _canUpdateVisibility(actor: Actor, entity: SubscriptionItem): void {
+        checkCanUpdateVisibility(actor, entity);
     }
 
     /**
@@ -218,7 +229,10 @@ export class SubscriptionItemService extends BaseCrudService<
      */
     protected async _executeSearch(params: Record<string, unknown>, _actor: Actor) {
         const { page = 1, pageSize = 10, ...filterParams } = params;
-        return this.model.findAll(filterParams, { page, pageSize });
+        return this.model.findAll(filterParams, {
+            page: page as number,
+            pageSize: pageSize as number
+        });
     }
 
     /**
@@ -520,8 +534,9 @@ export class SubscriptionItemService extends BaseCrudService<
         id: string
     ): Promise<
         ServiceOutput<{
-            subscriptionItem: SubscriptionItem;
-            linkedEntity: Record<string, unknown>;
+            item: SubscriptionItem;
+            linkedEntityId: string;
+            entityType: string;
         } | null>
     > {
         return this.runWithLoggingAndValidation({

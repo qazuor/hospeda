@@ -2,16 +2,31 @@ import type { FeaturedAccommodationModel } from '@repo/db';
 import {
     FeaturedAccommodationCreateInputSchema,
     FeaturedAccommodationListQuerySchema,
-    FeaturedAccommodationPatchInputSchema,
-    PermissionEnum,
-    RoleEnum,
-    ServiceErrorCode
+    FeaturedAccommodationPatchInputSchema
 } from '@repo/schemas';
-import type { FeaturedAccommodation, FeaturedTypeEnum } from '@repo/schemas';
+import type { FeaturedAccommodation, FeaturedTypeEnum, ListRelationsConfig } from '@repo/schemas';
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service.js';
-import type { Actor, ServiceContext, ServiceOutput } from '../../types/index.js';
-import { ServiceError } from '../../types/index.js';
+import type {
+    Actor,
+    PaginatedListOutput,
+    ServiceContext,
+    ServiceOutput
+} from '../../types/index.js';
+import {
+    checkCanCount,
+    checkCanCreate,
+    checkCanHardDelete,
+    checkCanList,
+    checkCanManagePriority,
+    checkCanManageStatus,
+    checkCanRestore,
+    checkCanSearch,
+    checkCanSoftDelete,
+    checkCanUpdate,
+    checkCanUpdateVisibility,
+    checkCanView
+} from './featuredAccommodation.permissions.js';
 
 /**
  * Service for managing featured accommodations.
@@ -51,187 +66,113 @@ export class FeaturedAccommodationService extends BaseCrudService<
      * Check if actor can create featured accommodations
      */
     protected _canCreate(actor: Actor, _data: unknown): void {
-        if (
-            !actor ||
-            !actor.id ||
-            (actor.role !== RoleEnum.ADMIN &&
-                !actor.permissions.includes(PermissionEnum.FEATURED_ACCOMMODATION_CREATE))
-        ) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Only admins or authorized users can create featured accommodations'
-            );
-        }
+        checkCanCreate(actor, _data);
     }
 
     /**
      * Check if actor can update featured accommodations
      */
-    protected _canUpdate(actor: Actor, _id: string, _data: unknown): void {
-        if (
-            !actor ||
-            !actor.id ||
-            (actor.role !== RoleEnum.ADMIN &&
-                !actor.permissions.includes(PermissionEnum.FEATURED_ACCOMMODATION_UPDATE))
-        ) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Only admins or authorized users can update featured accommodations'
-            );
-        }
+    protected _canUpdate(actor: Actor, entity: FeaturedAccommodation): void {
+        checkCanUpdate(actor, entity);
+    }
+
+    /**
+     * Check if actor can update visibility of featured accommodations
+     */
+    protected _canUpdateVisibility(actor: Actor, entity: FeaturedAccommodation): void {
+        checkCanUpdateVisibility(actor, entity);
     }
 
     /**
      * Check if actor can soft delete featured accommodations
      */
-    protected _canSoftDelete(actor: Actor, _id: string): void {
-        if (
-            !actor ||
-            !actor.id ||
-            (actor.role !== RoleEnum.ADMIN &&
-                !actor.permissions.includes(PermissionEnum.FEATURED_ACCOMMODATION_DELETE))
-        ) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Only admins or authorized users can delete featured accommodations'
-            );
-        }
+    protected _canSoftDelete(actor: Actor, entity: FeaturedAccommodation): void {
+        checkCanSoftDelete(actor, entity);
     }
 
     /**
      * Check if actor can hard delete featured accommodations
      */
-    protected _canHardDelete(actor: Actor, _id: string): void {
-        if (
-            !actor ||
-            !actor.id ||
-            (actor.role !== RoleEnum.ADMIN &&
-                !actor.permissions.includes(PermissionEnum.FEATURED_ACCOMMODATION_HARD_DELETE))
-        ) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Only admins or authorized users can permanently delete featured accommodations'
-            );
-        }
+    protected _canHardDelete(actor: Actor, entity: FeaturedAccommodation): void {
+        checkCanHardDelete(actor, entity);
     }
 
     /**
      * Check if actor can restore featured accommodations
      */
-    protected _canRestore(actor: Actor, _id: string): void {
-        if (
-            !actor ||
-            !actor.id ||
-            (actor.role !== RoleEnum.ADMIN &&
-                !actor.permissions.includes(PermissionEnum.FEATURED_ACCOMMODATION_RESTORE))
-        ) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Only admins or authorized users can restore featured accommodations'
-            );
-        }
+    protected _canRestore(actor: Actor, entity: FeaturedAccommodation): void {
+        checkCanRestore(actor, entity);
     }
 
     /**
      * Check if actor can view featured accommodations
      */
-    protected _canView(actor: Actor, _id: string): void {
-        if (
-            !actor ||
-            !actor.id ||
-            (actor.role !== RoleEnum.ADMIN &&
-                !actor.permissions.includes(PermissionEnum.FEATURED_ACCOMMODATION_VIEW))
-        ) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Only admins or authorized users can view featured accommodations'
-            );
-        }
+    protected _canView(actor: Actor, entity: FeaturedAccommodation): void {
+        checkCanView(actor, entity);
     }
 
     /**
      * Check if actor can list featured accommodations
      */
     protected _canList(actor: Actor): void {
-        if (
-            !actor ||
-            !actor.id ||
-            (actor.role !== RoleEnum.ADMIN &&
-                !actor.permissions.includes(PermissionEnum.FEATURED_ACCOMMODATION_VIEW))
-        ) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Only admins or authorized users can list featured accommodations'
-            );
-        }
+        checkCanList(actor);
     }
 
     /**
      * Check if actor can search featured accommodations
      */
-    protected _canSearch(actor: Actor, _filters: unknown): void {
-        if (
-            !actor ||
-            !actor.id ||
-            (actor.role !== RoleEnum.ADMIN &&
-                !actor.permissions.includes(PermissionEnum.FEATURED_ACCOMMODATION_VIEW))
-        ) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Only admins or authorized users can search featured accommodations'
-            );
-        }
+    protected _canSearch(actor: Actor): void {
+        checkCanSearch(actor);
     }
 
     /**
      * Check if actor can count featured accommodations
      */
-    protected _canCount(actor: Actor, _filters: unknown): void {
-        if (
-            !actor ||
-            !actor.id ||
-            (actor.role !== RoleEnum.ADMIN &&
-                !actor.permissions.includes(PermissionEnum.FEATURED_ACCOMMODATION_VIEW))
-        ) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Only admins or authorized users can count featured accommodations'
-            );
-        }
+    protected _canCount(actor: Actor): void {
+        checkCanCount(actor);
     }
 
     /**
      * Check if actor can manage featured accommodation status
      */
     protected _canManageStatus(actor: Actor, _id: string): void {
-        if (
-            !actor ||
-            !actor.id ||
-            (actor.role !== RoleEnum.ADMIN &&
-                !actor.permissions.includes(PermissionEnum.FEATURED_ACCOMMODATION_STATUS_MANAGE))
-        ) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Only admins or authorized users can manage featured accommodation status'
-            );
-        }
+        checkCanManageStatus(actor, _id);
     }
 
     /**
      * Check if actor can manage featured accommodation priority
      */
     protected _canManagePriority(actor: Actor, _id: string): void {
-        if (
-            !actor ||
-            !actor.id ||
-            (actor.role !== RoleEnum.ADMIN &&
-                !actor.permissions.includes(PermissionEnum.FEATURED_ACCOMMODATION_STATUS_MANAGE))
-        ) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Only admins or authorized users can manage priority'
-            );
-        }
+        checkCanManagePriority(actor, _id);
+    }
+
+    // ============================================================================
+    // SEARCH & COUNT METHODS (optional implementations)
+    // ============================================================================
+
+    /**
+     * Execute search for featured accommodations
+     * @returns Paginated list of featured accommodations
+     */
+    protected async _executeSearch(
+        _params: z.infer<typeof FeaturedAccommodationListQuerySchema>,
+        _actor: Actor
+    ): Promise<PaginatedListOutput<FeaturedAccommodation>> {
+        return {
+            items: [],
+            total: 0
+        };
+    }
+
+    /**
+     * Execute count for featured accommodations
+     * @returns Count of featured accommodations
+     */
+    protected async _executeCount(
+        _params: z.infer<typeof FeaturedAccommodationListQuerySchema>,
+        _actor: Actor
+    ): Promise<{ count: number }> {
+        return { count: 0 };
     }
 
     // ============================================================================
@@ -395,7 +336,7 @@ export class FeaturedAccommodationService extends BaseCrudService<
             input: { actor },
             schema: z.object({}),
             execute: async (_validatedData, validatedActor) => {
-                this._canView(validatedActor, featuredId);
+                this._canView(validatedActor, { id: featuredId } as FeaturedAccommodation);
                 const active = await this.model.isActive(featuredId);
                 return active;
             }
@@ -411,7 +352,7 @@ export class FeaturedAccommodationService extends BaseCrudService<
             input: { actor },
             schema: z.object({}),
             execute: async (_validatedData, validatedActor) => {
-                this._canView(validatedActor, featuredId);
+                this._canView(validatedActor, { id: featuredId } as FeaturedAccommodation);
                 const visibility = await this.model.calculateVisibility(featuredId);
                 return visibility;
             }
@@ -432,7 +373,7 @@ export class FeaturedAccommodationService extends BaseCrudService<
             input: { actor },
             schema: z.object({}),
             execute: async (_validatedData, validatedActor) => {
-                this._canView(validatedActor, featuredId);
+                this._canView(validatedActor, { id: featuredId } as FeaturedAccommodation);
                 const stats = await this.model.getPlacementStats(featuredId);
                 return stats;
             }
@@ -448,7 +389,7 @@ export class FeaturedAccommodationService extends BaseCrudService<
             input: { actor },
             schema: z.object({}),
             execute: async (_validatedData, validatedActor) => {
-                this._canView(validatedActor, featuredId);
+                this._canView(validatedActor, { id: featuredId } as FeaturedAccommodation);
                 const priority = await this.model.getPriority(featuredId);
                 return priority;
             }
@@ -506,7 +447,7 @@ export class FeaturedAccommodationService extends BaseCrudService<
             input: { actor },
             schema: z.object({}),
             execute: async (_validatedData, validatedActor) => {
-                this._canView(validatedActor, featuredId);
+                this._canView(validatedActor, { id: featuredId } as FeaturedAccommodation);
                 const withAccommodation = await this.model.withAccommodation(featuredId);
                 return withAccommodation;
             }

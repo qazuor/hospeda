@@ -2,13 +2,12 @@ import type { PaymentModel } from '@repo/db';
 import {
     type ListRelationsConfig,
     type Payment,
-    PaymentCreateInputSchema,
+    PaymentSchema,
     PaymentSearchSchema,
     type PaymentStatusEnum,
     PermissionEnum,
     RoleEnum,
-    ServiceErrorCode,
-    UpdatePaymentSchema
+    ServiceErrorCode
 } from '@repo/schemas';
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
@@ -23,16 +22,16 @@ import { ServiceError } from '../../types';
 export class PaymentService extends BaseCrudService<
     Payment,
     PaymentModel,
-    typeof PaymentCreateInputSchema,
-    typeof UpdatePaymentSchema,
+    typeof PaymentSchema,
+    typeof PaymentSchema,
     typeof PaymentSearchSchema
 > {
     static readonly ENTITY_NAME = 'payment';
     protected readonly entityName = PaymentService.ENTITY_NAME;
     public readonly model: PaymentModel;
 
-    public readonly createSchema = PaymentCreateInputSchema;
-    public readonly updateSchema = UpdatePaymentSchema;
+    public readonly createSchema = PaymentSchema;
+    public readonly updateSchema = PaymentSchema;
     public readonly searchSchema = PaymentSearchSchema;
 
     /**

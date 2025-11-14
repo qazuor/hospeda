@@ -1,4 +1,5 @@
 import type { ServiceListingModel } from '@repo/db';
+import type { ListRelationsConfig, ServiceListing } from '@repo/schemas';
 import {
     PermissionEnum,
     RoleEnum,
@@ -7,10 +8,32 @@ import {
     ServiceListingListQuerySchema,
     ServiceListingPatchInputSchema
 } from '@repo/schemas';
-import type { ServiceListing } from '@repo/schemas';
+import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service.js';
-import type { Actor, ServiceContext, ServiceOutput } from '../../types/index.js';
+import type {
+    Actor,
+    PaginatedListOutput,
+    ServiceContext,
+    ServiceOutput
+} from '../../types/index.js';
 import { ServiceError } from '../../types/index.js';
+import {
+    checkCanActivate,
+    checkCanCount,
+    checkCanCreate,
+    checkCanDeactivate,
+    checkCanDelete,
+    checkCanHardDelete,
+    checkCanList,
+    checkCanPatch,
+    checkCanPublish,
+    checkCanRestore,
+    checkCanSearch,
+    checkCanSoftDelete,
+    checkCanUpdate,
+    checkCanUpdateVisibility,
+    checkCanView
+} from './serviceListing.permissions.js';
 
 /**
  * Service for managing service listings.
@@ -50,187 +73,129 @@ export class ServiceListingService extends BaseCrudService<
      * Check if actor can create service listings
      */
     protected _canCreate(actor: Actor, _data: unknown): void {
-        if (
-            !actor ||
-            !actor.id ||
-            (actor.role !== RoleEnum.ADMIN &&
-                !actor.permissions.includes(PermissionEnum.SERVICE_LISTING_CREATE))
-        ) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Insufficient permissions to create service listings'
-            );
-        }
+        checkCanCreate(actor, _data);
     }
 
     /**
      * Check if actor can update service listings
      */
-    protected _canUpdate(actor: Actor, _id: string, _data: unknown): void {
-        if (
-            !actor ||
-            !actor.id ||
-            (actor.role !== RoleEnum.ADMIN &&
-                !actor.permissions.includes(PermissionEnum.SERVICE_LISTING_UPDATE))
-        ) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Insufficient permissions to update service listings'
-            );
-        }
+    protected _canUpdate(actor: Actor, _entity: ServiceListing): void {
+        checkCanUpdate(actor, _entity);
     }
 
     /**
      * Check if actor can patch service listings
      */
     protected _canPatch(actor: Actor, _entity: ServiceListing, _data: unknown): void {
-        if (
-            !actor ||
-            !actor.id ||
-            (actor.role !== RoleEnum.ADMIN &&
-                !actor.permissions.includes(PermissionEnum.SERVICE_LISTING_UPDATE))
-        ) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Insufficient permissions to patch service listings'
-            );
-        }
+        checkCanPatch(actor, _entity, _data);
+    }
+
+    /**
+     * Check if actor can update visibility of service listings
+     */
+    protected _canUpdateVisibility(actor: Actor, entity: ServiceListing): void {
+        checkCanUpdateVisibility(actor, entity);
     }
 
     /**
      * Check if actor can soft delete service listings
      */
     protected _canDelete(actor: Actor, _entity: ServiceListing): void {
-        if (
-            !actor ||
-            !actor.id ||
-            (actor.role !== RoleEnum.ADMIN &&
-                !actor.permissions.includes(PermissionEnum.SERVICE_LISTING_DELETE))
-        ) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Insufficient permissions to delete service listings'
-            );
-        }
+        checkCanDelete(actor, _entity);
     }
 
     /**
      * Check if actor can hard delete service listings
      */
     protected _canHardDelete(actor: Actor, _entity: ServiceListing): void {
-        if (
-            !actor ||
-            !actor.id ||
-            (actor.role !== RoleEnum.ADMIN &&
-                !actor.permissions.includes(PermissionEnum.SERVICE_LISTING_HARD_DELETE))
-        ) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Insufficient permissions to permanently delete service listings'
-            );
-        }
+        checkCanHardDelete(actor, _entity);
     }
 
     /**
      * Check if actor can restore service listings
      */
     protected _canRestore(actor: Actor, _entity: ServiceListing): void {
-        if (
-            !actor ||
-            !actor.id ||
-            (actor.role !== RoleEnum.ADMIN &&
-                !actor.permissions.includes(PermissionEnum.SERVICE_LISTING_RESTORE))
-        ) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Insufficient permissions to restore service listings'
-            );
-        }
+        checkCanRestore(actor, _entity);
     }
 
     /**
      * Check if actor can view service listings
      */
     protected _canView(actor: Actor, _entity: ServiceListing): void {
-        if (
-            !actor ||
-            !actor.id ||
-            (actor.role !== RoleEnum.ADMIN &&
-                !actor.permissions.includes(PermissionEnum.SERVICE_LISTING_VIEW))
-        ) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Insufficient permissions to view service listings'
-            );
-        }
+        checkCanView(actor, _entity);
     }
 
     /**
      * Check if actor can list service listings
      */
-    protected _canList(actor: Actor, _filters: unknown): void {
-        if (
-            !actor ||
-            !actor.id ||
-            (actor.role !== RoleEnum.ADMIN &&
-                !actor.permissions.includes(PermissionEnum.SERVICE_LISTING_VIEW))
-        ) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Insufficient permissions to list service listings'
-            );
-        }
+    protected _canList(actor: Actor): void {
+        checkCanList(actor);
     }
 
     /**
      * Check if actor can activate service listings
      */
     protected _canActivate(actor: Actor, _entity: ServiceListing): void {
-        if (
-            !actor ||
-            !actor.id ||
-            (actor.role !== RoleEnum.ADMIN &&
-                !actor.permissions.includes(PermissionEnum.SERVICE_LISTING_STATUS_MANAGE))
-        ) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Insufficient permissions to activate service listings'
-            );
-        }
+        checkCanActivate(actor, _entity);
     }
 
     /**
      * Check if actor can deactivate service listings
      */
     protected _canDeactivate(actor: Actor, _entity: ServiceListing): void {
-        if (
-            !actor ||
-            !actor.id ||
-            (actor.role !== RoleEnum.ADMIN &&
-                !actor.permissions.includes(PermissionEnum.SERVICE_LISTING_STATUS_MANAGE))
-        ) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Insufficient permissions to deactivate service listings'
-            );
-        }
+        checkCanDeactivate(actor, _entity);
     }
 
     /**
      * Check if actor can publish service listings
      */
     protected _canPublish(actor: Actor, _entity: ServiceListing): void {
-        if (
-            !actor ||
-            !actor.id ||
-            (actor.role !== RoleEnum.ADMIN &&
-                !actor.permissions.includes(PermissionEnum.SERVICE_LISTING_STATUS_MANAGE))
-        ) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Insufficient permissions to publish service listings'
-            );
-        }
+        checkCanPublish(actor, _entity);
+    }
+
+    /**
+     * Check if actor can soft delete service listings
+     */
+    protected _canSoftDelete(actor: Actor, _entity: ServiceListing): void {
+        checkCanSoftDelete(actor, _entity);
+    }
+
+    /**
+     * Check if actor can search service listings
+     */
+    protected _canSearch(actor: Actor): void {
+        checkCanSearch(actor);
+    }
+
+    /**
+     * Check if actor can count service listings
+     */
+    protected _canCount(actor: Actor): void {
+        checkCanCount(actor);
+    }
+
+    /**
+     * Execute search for service listings
+     */
+    protected async _executeSearch(
+        _params: z.infer<typeof ServiceListingListQuerySchema>,
+        _actor: Actor
+    ): Promise<PaginatedListOutput<ServiceListing>> {
+        // For now, delegate to list method until search is implemented
+        return {
+            items: [],
+            total: 0
+        };
+    }
+
+    /**
+     * Execute count for service listings
+     */
+    protected async _executeCount(
+        _params: z.infer<typeof ServiceListingListQuerySchema>,
+        _actor: Actor
+    ): Promise<{ count: number }> {
+        return { count: 0 };
     }
 
     // ============================================================================
@@ -255,39 +220,16 @@ export class ServiceListingService extends BaseCrudService<
         actor: Actor;
         listingId: string;
     }): Promise<ServiceOutput<ServiceListing>> {
-        try {
-            // Permission check (will throw if not allowed)
-            this._canActivate(input.actor, {} as ServiceListing);
-
-            // Call model method to activate
-            const result = await this.model.activate(input.listingId);
-
-            return {
-                success: true,
-                data: result
-            };
-        } catch (error) {
-            if (error instanceof ServiceError) {
-                return {
-                    success: false,
-                    error: {
-                        code: error.code,
-                        message: error.message
-                    }
-                };
+        return this.runWithLoggingAndValidation({
+            methodName: 'activate',
+            input: { actor: input.actor },
+            schema: z.object({}),
+            execute: async (_, validatedActor) => {
+                this._canActivate(validatedActor, {} as ServiceListing);
+                const result = await this.model.activate(input.listingId);
+                return result;
             }
-
-            return {
-                success: false,
-                error: {
-                    code: ServiceErrorCode.INTERNAL_ERROR,
-                    message:
-                        error instanceof Error
-                            ? error.message
-                            : 'Failed to activate service listing'
-                }
-            };
-        }
+        });
     }
 
     /**
@@ -308,39 +250,16 @@ export class ServiceListingService extends BaseCrudService<
         actor: Actor;
         listingId: string;
     }): Promise<ServiceOutput<ServiceListing>> {
-        try {
-            // Permission check (will throw if not allowed)
-            this._canDeactivate(input.actor, {} as ServiceListing);
-
-            // Call model method to deactivate
-            const result = await this.model.deactivate(input.listingId);
-
-            return {
-                success: true,
-                data: result
-            };
-        } catch (error) {
-            if (error instanceof ServiceError) {
-                return {
-                    success: false,
-                    error: {
-                        code: error.code,
-                        message: error.message
-                    }
-                };
+        return this.runWithLoggingAndValidation({
+            methodName: 'deactivate',
+            input: { actor: input.actor },
+            schema: z.object({}),
+            execute: async (_, validatedActor) => {
+                this._canDeactivate(validatedActor, {} as ServiceListing);
+                const result = await this.model.deactivate(input.listingId);
+                return result;
             }
-
-            return {
-                success: false,
-                error: {
-                    code: ServiceErrorCode.INTERNAL_ERROR,
-                    message:
-                        error instanceof Error
-                            ? error.message
-                            : 'Failed to deactivate service listing'
-                }
-            };
-        }
+        });
     }
 
     /**
@@ -361,37 +280,16 @@ export class ServiceListingService extends BaseCrudService<
         actor: Actor;
         listingId: string;
     }): Promise<ServiceOutput<ServiceListing>> {
-        try {
-            // Permission check (will throw if not allowed)
-            this._canPublish(input.actor, {} as ServiceListing);
-
-            // Call model method to publish
-            const result = await this.model.publish(input.listingId);
-
-            return {
-                success: true,
-                data: result
-            };
-        } catch (error) {
-            if (error instanceof ServiceError) {
-                return {
-                    success: false,
-                    error: {
-                        code: error.code,
-                        message: error.message
-                    }
-                };
+        return this.runWithLoggingAndValidation({
+            methodName: 'publish',
+            input: { actor: input.actor },
+            schema: z.object({}),
+            execute: async (_, validatedActor) => {
+                this._canPublish(validatedActor, {} as ServiceListing);
+                const result = await this.model.publish(input.listingId);
+                return result;
             }
-
-            return {
-                success: false,
-                error: {
-                    code: ServiceErrorCode.INTERNAL_ERROR,
-                    message:
-                        error instanceof Error ? error.message : 'Failed to publish service listing'
-                }
-            };
-        }
+        });
     }
 
     /**
@@ -412,46 +310,29 @@ export class ServiceListingService extends BaseCrudService<
         actor: Actor;
         listingId: string;
     }): Promise<ServiceOutput<ServiceListing>> {
-        try {
-            // Permission check (will throw if not allowed - using STATUS_MANAGE permission)
-            if (
-                !input.actor ||
-                !input.actor.id ||
-                (input.actor.role !== RoleEnum.ADMIN &&
-                    !input.actor.permissions.includes(PermissionEnum.SERVICE_LISTING_STATUS_MANAGE))
-            ) {
-                throw new ServiceError(
-                    ServiceErrorCode.FORBIDDEN,
-                    'Permission denied: Insufficient permissions to pause service listings'
-                );
-            }
-
-            // Call model method to pause
-            const result = await this.model.pause(input.listingId);
-
-            return {
-                success: true,
-                data: result
-            };
-        } catch (error) {
-            if (error instanceof ServiceError) {
-                return {
-                    success: false,
-                    error: {
-                        code: error.code,
-                        message: error.message
-                    }
-                };
-            }
-
-            return {
-                success: false,
-                error: {
-                    code: ServiceErrorCode.INTERNAL_ERROR,
-                    message:
-                        error instanceof Error ? error.message : 'Failed to pause service listing'
+        return this.runWithLoggingAndValidation({
+            methodName: 'pause',
+            input: { actor: input.actor },
+            schema: z.object({}),
+            execute: async (_, validatedActor) => {
+                // Permission check (using STATUS_MANAGE permission)
+                if (
+                    !validatedActor ||
+                    !validatedActor.id ||
+                    (validatedActor.role !== RoleEnum.ADMIN &&
+                        !validatedActor.permissions.includes(
+                            PermissionEnum.SERVICE_LISTING_STATUS_MANAGE
+                        ))
+                ) {
+                    throw new ServiceError(
+                        ServiceErrorCode.FORBIDDEN,
+                        'Permission denied: Insufficient permissions to pause service listings'
+                    );
                 }
-            };
-        }
+
+                const result = await this.model.pause(input.listingId);
+                return result;
+            }
+        });
     }
 }

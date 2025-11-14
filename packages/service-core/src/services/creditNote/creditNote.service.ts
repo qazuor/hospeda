@@ -1,6 +1,7 @@
-import type { CreditNote, CreditNoteModel } from '@repo/db';
+import type { CreditNoteModel } from '@repo/db';
 import {
     CreateCreditNoteSchema,
+    type CreditNote,
     CreditNoteQuerySchema,
     type ListRelationsConfig,
     PermissionEnum,

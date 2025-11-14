@@ -299,10 +299,7 @@ export class RefundService extends BaseCrudService<
      * @param paymentId - Payment ID
      * @returns Service output with refunds for the payment
      */
-    public async findByPayment(
-        actor: Actor,
-        paymentId: string
-    ): Promise<ServiceOutput<Refund[]>> {
+    public async findByPayment(actor: Actor, paymentId: string): Promise<ServiceOutput<Refund[]>> {
         return this.runWithLoggingAndValidation({
             methodName: 'findByPayment',
             input: { actor },

@@ -104,6 +104,7 @@ export abstract class BaseCrudService<
      * Checks if the actor has permission to create an entity with the given data.
      * This hook is the first step in the `create` method's execution pipeline.
      * It should throw a `ServiceError` with a `FORBIDDEN` code if permission is denied.
+     *
      * @param actor The user or system performing the action.
      * @param data The validated input data for the new entity.
      * @throws {ServiceError} If the permission check fails.
@@ -114,6 +115,7 @@ export abstract class BaseCrudService<
      * Checks if the actor has permission to update a given entity.
      * This hook is called after the entity is fetched but before any update is applied.
      * It should throw a `ServiceError` with a `FORBIDDEN` code if permission is denied.
+     *
      * @param actor The user or system performing the action.
      * @param entity The entity that is about to be updated.
      * @throws {ServiceError} If the permission check fails.
@@ -124,6 +126,7 @@ export abstract class BaseCrudService<
      * Checks if the actor has permission to soft-delete an entity.
      * This hook is called after the entity is fetched but before it is marked as deleted.
      * It should throw a `ServiceError` with a `FORBIDDEN` code if permission is denied.
+     *
      * @param actor The user or system performing the action.
      * @param entity The entity that is about to be soft-deleted.
      * @throws {ServiceError} If the permission check fails.
@@ -135,6 +138,7 @@ export abstract class BaseCrudService<
      * This is a sensitive operation and should be protected accordingly.
      * This hook is called after the entity is fetched but before it is hard-deleted.
      * It should throw a `ServiceError` with a `FORBIDDEN` code if permission is denied.
+     *
      * @param actor The user or system performing the action.
      * @param entity The entity that is about to be hard-deleted.
      * @throws {ServiceError} If the permission check fails.
@@ -145,6 +149,7 @@ export abstract class BaseCrudService<
      * Checks if the actor has permission to restore a soft-deleted entity.
      * This hook is called after the entity is fetched but before it is restored.
      * It should throw a `ServiceError` with a `FORBIDDEN` code if permission is denied.
+     *
      * @param actor The user or system performing the action.
      * @param entity The entity that is about to be restored.
      * @throws {ServiceError} If the permission check fails.
@@ -156,6 +161,7 @@ export abstract class BaseCrudService<
      * This hook is called after an entity is fetched from the database, allowing for
      * checks based on entity properties (e.g., ownership, visibility).
      * It should throw a `ServiceError` with a `FORBIDDEN` code if permission is denied.
+     *
      * @param actor The user or system performing the action.
      * @param entity The entity that has been fetched.
      * @throws {ServiceError} If the permission check fails.
@@ -167,6 +173,7 @@ export abstract class BaseCrudService<
      * This hook is called before any database query is made for a list operation.
      * It typically checks for general permissions (e.g., `CAN_LIST_USERS`).
      * It should throw a `ServiceError` with a `FORBIDDEN` code if permission is denied.
+     *
      * @param actor The user or system performing the action.
      * @throws {ServiceError} If the permission check fails.
      */
@@ -176,6 +183,7 @@ export abstract class BaseCrudService<
      * Checks if the actor has permission to search for entities.
      * This hook is called before any database query is made for a search operation.
      * It should throw a `ServiceError` with a `FORBIDDEN` code if permission is denied.
+     *
      * @param actor The user or system performing the action.
      * @throws {ServiceError} If the permission check fails.
      */
@@ -185,6 +193,7 @@ export abstract class BaseCrudService<
      * Checks if the actor has permission to count entities.
      * This hook is called before any database query is made for a count operation.
      * It should throw a `ServiceError` with a `FORBIDDEN` code if permission is denied.
+     *
      * @param actor The user or system performing the action.
      * @throws {ServiceError} If the permission check fails.
      */
@@ -194,6 +203,7 @@ export abstract class BaseCrudService<
      * Checks if an actor can update the visibility of a specific entity.
      * This hook is called after the entity is fetched, allowing for fine-grained control.
      * It should throw a `ServiceError` with a `FORBIDDEN` code if permission is denied.
+     *
      * @param actor The user or system performing the action.
      * @param entity The entity being updated.
      * @param newVisibility The new visibility state being applied.

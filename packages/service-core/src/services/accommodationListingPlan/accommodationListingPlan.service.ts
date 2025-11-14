@@ -4,13 +4,34 @@ import {
     AccommodationListingPlanCreateInputSchema,
     AccommodationListingPlanListQuerySchema,
     AccommodationListingPlanPatchInputSchema,
-    PermissionEnum,
-    RoleEnum,
+    type ListRelationsConfig,
     ServiceErrorCode
 } from '@repo/schemas';
+import type { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service.js';
-import type { Actor, ServiceContext, ServiceOutput } from '../../types/index.js';
+import type {
+    Actor,
+    PaginatedListOutput,
+    ServiceContext,
+    ServiceOutput
+} from '../../types/index.js';
 import { ServiceError } from '../../types/index.js';
+import {
+    checkCanActivate,
+    checkCanArchive,
+    checkCanCount,
+    checkCanCreate,
+    checkCanDeactivate,
+    checkCanHardDelete,
+    checkCanList,
+    checkCanPatch,
+    checkCanRestore,
+    checkCanSearch,
+    checkCanSoftDelete,
+    checkCanUpdate,
+    checkCanUpdateVisibility,
+    checkCanView
+} from './accommodationListingPlan.permissions.js';
 
 /**
  * Service for managing accommodation listing plans.
@@ -50,193 +71,134 @@ export class AccommodationListingPlanService extends BaseCrudService<
      * Check if actor can create accommodation listing plans
      */
     protected _canCreate(actor: Actor, _data: unknown): void {
-        if (
-            !actor ||
-            !actor.id ||
-            (actor.role !== RoleEnum.ADMIN &&
-                !actor.permissions.includes(PermissionEnum.ACCOMMODATION_LISTING_PLAN_CREATE))
-        ) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Insufficient permissions to create accommodation listing plans'
-            );
-        }
+        checkCanCreate(actor, _data);
     }
 
     /**
      * Check if actor can update accommodation listing plans
      */
-    protected _canUpdate(actor: Actor, _id: string, _data: unknown): void {
-        if (
-            !actor ||
-            !actor.id ||
-            (actor.role !== RoleEnum.ADMIN &&
-                !actor.permissions.includes(PermissionEnum.ACCOMMODATION_LISTING_PLAN_UPDATE))
-        ) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Insufficient permissions to update accommodation listing plans'
-            );
-        }
+    protected _canUpdate(actor: Actor, entity: AccommodationListingPlan): void {
+        checkCanUpdate(actor, entity);
     }
 
     /**
      * Check if actor can patch accommodation listing plans
      */
     protected _canPatch(actor: Actor, _entity: AccommodationListingPlan, _data: unknown): void {
-        if (
-            !actor ||
-            !actor.id ||
-            (actor.role !== RoleEnum.ADMIN &&
-                !actor.permissions.includes(PermissionEnum.ACCOMMODATION_LISTING_PLAN_UPDATE))
-        ) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Insufficient permissions to patch accommodation listing plans'
-            );
-        }
+        checkCanPatch(actor, _entity, _data);
+    }
+
+    /**
+     * Check if actor can update visibility of accommodation listing plans
+     */
+    protected _canUpdateVisibility(actor: Actor, entity: AccommodationListingPlan): void {
+        checkCanUpdateVisibility(actor, entity);
     }
 
     /**
      * Check if actor can soft delete accommodation listing plans
      */
     protected _canDelete(actor: Actor, _entity: AccommodationListingPlan): void {
-        if (
-            !actor ||
-            !actor.id ||
-            (actor.role !== RoleEnum.ADMIN &&
-                !actor.permissions.includes(PermissionEnum.ACCOMMODATION_LISTING_PLAN_DELETE))
-        ) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Insufficient permissions to delete accommodation listing plans'
-            );
-        }
+        checkCanSoftDelete(actor, _entity);
     }
 
     /**
      * Check if actor can hard delete accommodation listing plans
      */
     protected _canHardDelete(actor: Actor, _entity: AccommodationListingPlan): void {
-        if (
-            !actor ||
-            !actor.id ||
-            (actor.role !== RoleEnum.ADMIN &&
-                !actor.permissions.includes(PermissionEnum.ACCOMMODATION_LISTING_PLAN_HARD_DELETE))
-        ) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Insufficient permissions to permanently delete accommodation listing plans'
-            );
-        }
+        checkCanHardDelete(actor, _entity);
     }
 
     /**
      * Check if actor can restore accommodation listing plans
      */
     protected _canRestore(actor: Actor, _entity: AccommodationListingPlan): void {
-        if (
-            !actor ||
-            !actor.id ||
-            (actor.role !== RoleEnum.ADMIN &&
-                !actor.permissions.includes(PermissionEnum.ACCOMMODATION_LISTING_PLAN_RESTORE))
-        ) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Insufficient permissions to restore accommodation listing plans'
-            );
-        }
+        checkCanRestore(actor, _entity);
     }
 
     /**
      * Check if actor can view accommodation listing plans
      */
     protected _canView(actor: Actor, _entity: AccommodationListingPlan): void {
-        if (
-            !actor ||
-            !actor.id ||
-            (actor.role !== RoleEnum.ADMIN &&
-                !actor.permissions.includes(PermissionEnum.ACCOMMODATION_LISTING_PLAN_VIEW))
-        ) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Insufficient permissions to view accommodation listing plans'
-            );
-        }
+        checkCanView(actor, _entity);
     }
 
     /**
      * Check if actor can list accommodation listing plans
      */
-    protected _canList(actor: Actor, _filters: unknown): void {
-        if (
-            !actor ||
-            !actor.id ||
-            (actor.role !== RoleEnum.ADMIN &&
-                !actor.permissions.includes(PermissionEnum.ACCOMMODATION_LISTING_PLAN_VIEW))
-        ) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Insufficient permissions to list accommodation listing plans'
-            );
-        }
+    protected _canList(actor: Actor): void {
+        checkCanList(actor);
     }
 
     /**
      * Check if actor can activate accommodation listing plans
      */
     protected _canActivate(actor: Actor, _entity: AccommodationListingPlan): void {
-        if (
-            !actor ||
-            !actor.id ||
-            (actor.role !== RoleEnum.ADMIN &&
-                !actor.permissions.includes(
-                    PermissionEnum.ACCOMMODATION_LISTING_PLAN_STATUS_MANAGE
-                ))
-        ) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Insufficient permissions to activate accommodation listing plans'
-            );
-        }
+        checkCanActivate(actor, _entity);
     }
 
     /**
      * Check if actor can deactivate accommodation listing plans
      */
     protected _canDeactivate(actor: Actor, _entity: AccommodationListingPlan): void {
-        if (
-            !actor ||
-            !actor.id ||
-            (actor.role !== RoleEnum.ADMIN &&
-                !actor.permissions.includes(
-                    PermissionEnum.ACCOMMODATION_LISTING_PLAN_STATUS_MANAGE
-                ))
-        ) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Insufficient permissions to deactivate accommodation listing plans'
-            );
-        }
+        checkCanDeactivate(actor, _entity);
     }
 
     /**
      * Check if actor can archive accommodation listing plans
      */
     protected _canArchive(actor: Actor, _entity: AccommodationListingPlan): void {
-        if (
-            !actor ||
-            !actor.id ||
-            (actor.role !== RoleEnum.ADMIN &&
-                !actor.permissions.includes(
-                    PermissionEnum.ACCOMMODATION_LISTING_PLAN_STATUS_MANAGE
-                ))
-        ) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Insufficient permissions to archive accommodation listing plans'
-            );
-        }
+        checkCanArchive(actor, _entity);
+    }
+
+    /**
+     * Check if actor can soft delete accommodation listing plans
+     */
+    protected _canSoftDelete(actor: Actor, _entity: AccommodationListingPlan): void {
+        checkCanSoftDelete(actor, _entity);
+    }
+
+    /**
+     * Check if actor can search accommodation listing plans
+     */
+    protected _canSearch(actor: Actor): void {
+        checkCanSearch(actor);
+    }
+
+    /**
+     * Check if actor can count accommodation listing plans
+     */
+    protected _canCount(actor: Actor): void {
+        checkCanCount(actor);
+    }
+
+    // ============================================================================
+    // SEARCH & COUNT METHODS (optional implementations)
+    // ============================================================================
+
+    /**
+     * Execute search for accommodation listing plans
+     * @returns Paginated list of accommodation listing plans
+     */
+    protected async _executeSearch(
+        _params: z.infer<typeof AccommodationListingPlanListQuerySchema>,
+        _actor: Actor
+    ): Promise<PaginatedListOutput<AccommodationListingPlan>> {
+        return {
+            items: [],
+            total: 0
+        };
+    }
+
+    /**
+     * Execute count for accommodation listing plans
+     * @returns Count of accommodation listing plans
+     */
+    protected async _executeCount(
+        _params: z.infer<typeof AccommodationListingPlanListQuerySchema>,
+        _actor: Actor
+    ): Promise<{ count: number }> {
+        return { count: 0 };
     }
 
     // ============================================================================
@@ -269,13 +231,11 @@ export class AccommodationListingPlanService extends BaseCrudService<
             const result = await this.model.activate(input.planId);
 
             return {
-                success: true,
                 data: result
             };
         } catch (error) {
             if (error instanceof ServiceError) {
                 return {
-                    success: false,
                     error: {
                         code: error.code,
                         message: error.message
@@ -284,7 +244,6 @@ export class AccommodationListingPlanService extends BaseCrudService<
             }
 
             return {
-                success: false,
                 error: {
                     code: ServiceErrorCode.INTERNAL_ERROR,
                     message:
@@ -322,13 +281,11 @@ export class AccommodationListingPlanService extends BaseCrudService<
             const result = await this.model.deactivate(input.planId);
 
             return {
-                success: true,
                 data: result
             };
         } catch (error) {
             if (error instanceof ServiceError) {
                 return {
-                    success: false,
                     error: {
                         code: error.code,
                         message: error.message
@@ -337,7 +294,6 @@ export class AccommodationListingPlanService extends BaseCrudService<
             }
 
             return {
-                success: false,
                 error: {
                     code: ServiceErrorCode.INTERNAL_ERROR,
                     message:

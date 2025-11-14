@@ -24,7 +24,11 @@ import { BaseService } from '../../base/base.service';
 import type { Actor, ServiceContext, ServiceLogger, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { serviceLogger } from '../../utils';
-import { canManagePermissions } from './permission.service.permission';
+import {
+    canAssignPermissions,
+    canRevokePermissions,
+    canViewPermissions
+} from './permission.service.permission';
 // import * as normalizers from './permission.service.normalizer'; // Uncomment if/when normalizers are needed
 
 /**
@@ -70,10 +74,10 @@ export class PermissionService extends BaseService {
             input: { actor, ...input },
             schema: RolePermissionManagementInputSchema,
             execute: async ({ role, permission }, actor) => {
-                if (!canManagePermissions(actor)) {
+                if (!canAssignPermissions(actor)) {
                     throw new ServiceError(
                         ServiceErrorCode.FORBIDDEN,
-                        'You do not have permission to manage permissions.'
+                        'You do not have permission to assign permissions.'
                     );
                 }
                 const exists = await this.rolePermissionModel.findOne({ role, permission });
@@ -99,10 +103,10 @@ export class PermissionService extends BaseService {
             input: { actor, ...input },
             schema: RolePermissionManagementInputSchema,
             execute: async ({ role, permission }, actor) => {
-                if (!canManagePermissions(actor)) {
+                if (!canRevokePermissions(actor)) {
                     throw new ServiceError(
                         ServiceErrorCode.FORBIDDEN,
-                        'You do not have permission to manage permissions.'
+                        'You do not have permission to revoke permissions.'
                     );
                 }
                 const exists = await this.rolePermissionModel.findOne({ role, permission });
@@ -128,10 +132,10 @@ export class PermissionService extends BaseService {
             input: { actor, ...input },
             schema: UserPermissionManagementInputSchema,
             execute: async ({ userId, permission }, actor) => {
-                if (!canManagePermissions(actor)) {
+                if (!canAssignPermissions(actor)) {
                     throw new ServiceError(
                         ServiceErrorCode.FORBIDDEN,
-                        'You do not have permission to manage permissions.'
+                        'You do not have permission to assign permissions.'
                     );
                 }
                 const user = userId as UserIdType;
@@ -158,10 +162,10 @@ export class PermissionService extends BaseService {
             input: { actor, ...input },
             schema: UserPermissionManagementInputSchema,
             execute: async ({ userId, permission }, actor) => {
-                if (!canManagePermissions(actor)) {
+                if (!canRevokePermissions(actor)) {
                     throw new ServiceError(
                         ServiceErrorCode.FORBIDDEN,
-                        'You do not have permission to manage permissions.'
+                        'You do not have permission to revoke permissions.'
                     );
                 }
                 const user = userId as UserIdType;
@@ -188,10 +192,10 @@ export class PermissionService extends BaseService {
             input: { actor, ...input },
             schema: PermissionsByRoleInputSchema,
             execute: async ({ role }, actor) => {
-                if (!canManagePermissions(actor)) {
+                if (!canViewPermissions(actor)) {
                     throw new ServiceError(
                         ServiceErrorCode.FORBIDDEN,
-                        'You do not have permission to manage permissions.'
+                        'You do not have permission to view permissions.'
                     );
                 }
                 const { items } = await this.rolePermissionModel.findAll({ role });
@@ -216,10 +220,10 @@ export class PermissionService extends BaseService {
             input: { actor, ...input },
             schema: PermissionsByUserInputSchema,
             execute: async ({ userId }, actor) => {
-                if (!canManagePermissions(actor)) {
+                if (!canViewPermissions(actor)) {
                     throw new ServiceError(
                         ServiceErrorCode.FORBIDDEN,
-                        'You do not have permission to manage permissions.'
+                        'You do not have permission to view permissions.'
                     );
                 }
                 const user = userId as UserIdType;
@@ -245,10 +249,10 @@ export class PermissionService extends BaseService {
             input: { actor, ...input },
             schema: RolesByPermissionInputSchema,
             execute: async ({ permission }, actor) => {
-                if (!canManagePermissions(actor)) {
+                if (!canViewPermissions(actor)) {
                     throw new ServiceError(
                         ServiceErrorCode.FORBIDDEN,
-                        'You do not have permission to manage permissions.'
+                        'You do not have permission to view permissions.'
                     );
                 }
                 const { items } = await this.rolePermissionModel.findAll({ permission });
@@ -273,10 +277,10 @@ export class PermissionService extends BaseService {
             input: { actor, ...input },
             schema: UsersByPermissionInputSchema,
             execute: async ({ permission }, actor) => {
-                if (!canManagePermissions(actor)) {
+                if (!canViewPermissions(actor)) {
                     throw new ServiceError(
                         ServiceErrorCode.FORBIDDEN,
-                        'You do not have permission to manage permissions.'
+                        'You do not have permission to view permissions.'
                     );
                 }
                 const { items } = await this.userPermissionModel.findAll({ permission });

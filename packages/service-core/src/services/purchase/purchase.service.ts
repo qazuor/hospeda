@@ -1,6 +1,6 @@
 import { PurchaseModel } from '@repo/db';
 import type { ListRelationsConfig } from '@repo/schemas';
-import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
+import { PermissionEnum, type PriceCurrencyEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import type { Purchase } from '@repo/schemas/entities/purchase';
 import {
     PurchaseCreateInputSchema,
@@ -88,6 +88,25 @@ export class PurchaseService extends BaseCrudService<
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
                 'Permission denied: Only admins or authorized users can update purchases'
+            );
+        }
+    }
+
+    /**
+     * Checks if the actor can update visibility of a purchase.
+     * Admin or PURCHASE_UPDATE permission holders can update visibility.
+     * @param actor - The user or system performing the action.
+     * @param entity - The purchase entity to update visibility.
+     * @throws {ServiceError} If the permission check fails.
+     */
+    protected _canUpdateVisibility(actor: Actor, _entity: Purchase): void {
+        const isAdmin = actor.role === RoleEnum.ADMIN;
+        const hasPermission = actor.permissions.includes(PermissionEnum.PURCHASE_UPDATE);
+
+        if (!isAdmin && !hasPermission) {
+            throw new ServiceError(
+                ServiceErrorCode.FORBIDDEN,
+                'Permission denied: Only admins or authorized users can update purchase visibility'
             );
         }
     }
@@ -200,23 +219,6 @@ export class PurchaseService extends BaseCrudService<
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
                 'Permission denied: Authentication required to count purchases'
-            );
-        }
-    }
-
-    /**
-     * Checks if the actor can update visibility of a purchase.
-     * Only ADMIN can update visibility.
-     * @param actor - The user or system performing the action.
-     * @param _entity - The purchase entity.
-     * @param _newVisibility - The new visibility value.
-     * @throws {ServiceError} If the permission check fails.
-     */
-    protected _canUpdateVisibility(actor: Actor, _entity: Purchase, _newVisibility: unknown): void {
-        if (!actor || !actor.id || actor.role !== RoleEnum.ADMIN) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Only admins can update purchase visibility'
             );
         }
     }
@@ -352,6 +354,11 @@ export class PurchaseService extends BaseCrudService<
         purchaseData: {
             clientId: string;
             pricingPlanId: string;
+            amount: number;
+            currency: PriceCurrencyEnum;
+            quantity?: number;
+            paymentId?: string;
+            discountCodeId?: string;
             purchasedAt?: Date;
         }
     ): Promise<ServiceOutput<Purchase>> {

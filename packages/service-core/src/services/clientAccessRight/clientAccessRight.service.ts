@@ -91,6 +91,22 @@ export class ClientAccessRightService extends BaseCrudService<
     }
 
     /**
+     * Checks if the actor can update visibility of a client access right.
+     * Admin or ACCESS_PERMISSIONS_MANAGE permission holders can update visibility.
+     */
+    protected _canUpdateVisibility(actor: Actor, _entity: ClientAccessRight): void {
+        const isAdmin = actor.role === RoleEnum.ADMIN;
+        const hasPermission = actor.permissions.includes(PermissionEnum.ACCESS_PERMISSIONS_MANAGE);
+
+        if (!isAdmin && !hasPermission) {
+            throw new ServiceError(
+                ServiceErrorCode.FORBIDDEN,
+                'Permission denied: Only admins or authorized users can update access right visibility'
+            );
+        }
+    }
+
+    /**
      * Checks if the actor can soft delete a client access right.
      * Admin or ACCESS_PERMISSIONS_MANAGE permission holders can soft delete.
      */
@@ -195,22 +211,6 @@ export class ClientAccessRightService extends BaseCrudService<
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
                 'Permission denied: Only admins or authorized users can count access rights'
-            );
-        }
-    }
-
-    /**
-     * Checks if the actor can update visibility of a client access right.
-     * Admin or ACCESS_PERMISSIONS_MANAGE permission holders can update visibility.
-     */
-    protected _canUpdateVisibility(actor: Actor, _entity: ClientAccessRight): void {
-        const isAdmin = actor.role === RoleEnum.ADMIN;
-        const hasPermission = actor.permissions.includes(PermissionEnum.ACCESS_PERMISSIONS_MANAGE);
-
-        if (!isAdmin && !hasPermission) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Only admins or authorized users can update visibility of access rights'
             );
         }
     }
