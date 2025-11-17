@@ -1,13 +1,20 @@
 import type { AdSlotReservationModel } from '@repo/db';
 import type { AdSlotReservation, ListRelationsConfig } from '@repo/schemas';
 import {
+    type AdSlotReservationStatusEnum,
     CreateAdSlotReservationSchema,
     SearchAdSlotReservationSchema,
+    ServiceErrorCode,
     UpdateAdSlotReservationSchema
 } from '@repo/schemas';
 import type { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service.js';
-import type { Actor, PaginatedListOutput, ServiceContext } from '../../types/index.js';
+import type {
+    Actor,
+    PaginatedListOutput,
+    ServiceContext,
+    ServiceOutput
+} from '../../types/index.js';
 import {
     checkCanCount,
     checkCanCreate,
@@ -163,5 +170,113 @@ export class AdSlotReservationService extends BaseCrudService<
         _actor: Actor
     ): Promise<{ count: number }> {
         return { count: 0 };
+    }
+
+    // ============================================================================
+    // BUSINESS METHODS
+    // ============================================================================
+
+    /**
+     * Find all reservations for a specific campaign
+     */
+    async findByCampaign(
+        actor: Actor,
+        campaignId: string
+    ): Promise<ServiceOutput<AdSlotReservation[]>> {
+        this._canView(actor, {} as AdSlotReservation);
+        const reservations = await this.model.findByCampaign(campaignId);
+        return { data: reservations };
+    }
+
+    /**
+     * Find all reservations for a specific ad slot
+     */
+    async findByAdSlot(
+        actor: Actor,
+        adSlotId: string
+    ): Promise<ServiceOutput<AdSlotReservation[]>> {
+        this._canView(actor, {} as AdSlotReservation);
+        const reservations = await this.model.findByAdSlot(adSlotId);
+        return { data: reservations };
+    }
+
+    /**
+     * Find all reservations with a specific status
+     */
+    async findByStatus(
+        actor: Actor,
+        status: AdSlotReservationStatusEnum
+    ): Promise<ServiceOutput<AdSlotReservation[]>> {
+        this._canView(actor, {} as AdSlotReservation);
+        const reservations = await this.model.findByStatus(status);
+        return { data: reservations };
+    }
+
+    /**
+     * Activate a reservation
+     */
+    async activate(actor: Actor, reservationId: string): Promise<ServiceOutput<AdSlotReservation>> {
+        const reservation = await this.model.findById(reservationId);
+        if (!reservation) {
+            return {
+                error: { code: ServiceErrorCode.NOT_FOUND, message: 'Reservation not found' }
+            };
+        }
+
+        this._canUpdate(actor, reservation);
+
+        const updated = await this.model.activate(reservationId);
+        return { data: updated };
+    }
+
+    /**
+     * Pause a reservation
+     */
+    async pause(actor: Actor, reservationId: string): Promise<ServiceOutput<AdSlotReservation>> {
+        const reservation = await this.model.findById(reservationId);
+        if (!reservation) {
+            return {
+                error: { code: ServiceErrorCode.NOT_FOUND, message: 'Reservation not found' }
+            };
+        }
+
+        this._canUpdate(actor, reservation);
+
+        const updated = await this.model.pause(reservationId);
+        return { data: updated };
+    }
+
+    /**
+     * Cancel a reservation
+     */
+    async cancel(actor: Actor, reservationId: string): Promise<ServiceOutput<AdSlotReservation>> {
+        const reservation = await this.model.findById(reservationId);
+        if (!reservation) {
+            return {
+                error: { code: ServiceErrorCode.NOT_FOUND, message: 'Reservation not found' }
+            };
+        }
+
+        this._canUpdate(actor, reservation);
+
+        const updated = await this.model.cancel(reservationId);
+        return { data: updated };
+    }
+
+    /**
+     * End a reservation
+     */
+    async end(actor: Actor, reservationId: string): Promise<ServiceOutput<AdSlotReservation>> {
+        const reservation = await this.model.findById(reservationId);
+        if (!reservation) {
+            return {
+                error: { code: ServiceErrorCode.NOT_FOUND, message: 'Reservation not found' }
+            };
+        }
+
+        this._canUpdate(actor, reservation);
+
+        const updated = await this.model.end(reservationId);
+        return { data: updated };
     }
 }

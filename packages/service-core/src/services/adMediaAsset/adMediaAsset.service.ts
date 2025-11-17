@@ -2,12 +2,20 @@ import type { AdMediaAssetModel } from '@repo/db';
 import type { AdMediaAsset, ListRelationsConfig } from '@repo/schemas';
 import {
     CreateAdMediaAssetSchema,
+    type MediaAssetTypeEnum,
     SearchAdMediaAssetSchema,
+    ServiceErrorCode,
     UpdateAdMediaAssetSchema
 } from '@repo/schemas';
 import type { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service.js';
-import type { Actor, PaginatedListOutput, ServiceContext } from '../../types/index.js';
+import {
+    type Actor,
+    type PaginatedListOutput,
+    type ServiceContext,
+    ServiceError,
+    type ServiceOutput
+} from '../../types/index.js';
 import {
     checkCanCount,
     checkCanCreate,
@@ -163,5 +171,177 @@ export class AdMediaAssetService extends BaseCrudService<
         _actor: Actor
     ): Promise<{ count: number }> {
         return { count: 0 };
+    }
+
+    // ============================================================================
+    // BUSINESS METHODS
+    // ============================================================================
+
+    /**
+     * Find all assets for a specific campaign
+     */
+    async findByCampaign(actor: Actor, campaignId: string): Promise<ServiceOutput<AdMediaAsset[]>> {
+        try {
+            this._canView(actor, {} as AdMediaAsset);
+            const assets = await this.model.findByCampaign(campaignId);
+            return { data: assets };
+        } catch (error) {
+            if (error instanceof ServiceError) {
+                return { error: { code: error.code, message: error.message } };
+            }
+            return {
+                error: {
+                    code: ServiceErrorCode.INTERNAL_ERROR,
+                    message: 'Failed to find assets by campaign'
+                }
+            };
+        }
+    }
+
+    /**
+     * Find all assets of a specific type
+     */
+    async findByType(
+        actor: Actor,
+        type: MediaAssetTypeEnum
+    ): Promise<ServiceOutput<AdMediaAsset[]>> {
+        try {
+            this._canView(actor, {} as AdMediaAsset);
+            const assets = await this.model.findByType(type);
+            return { data: assets };
+        } catch (error) {
+            if (error instanceof ServiceError) {
+                return { error: { code: error.code, message: error.message } };
+            }
+            return {
+                error: {
+                    code: ServiceErrorCode.INTERNAL_ERROR,
+                    message: 'Failed to find assets by type'
+                }
+            };
+        }
+    }
+
+    /**
+     * Get assets filtered by format
+     */
+    async getAssetsByFormat(actor: Actor, format: string): Promise<ServiceOutput<AdMediaAsset[]>> {
+        try {
+            this._canView(actor, {} as AdMediaAsset);
+            const assets = await this.model.getAssetsByFormat(format);
+            return { data: assets };
+        } catch (error) {
+            if (error instanceof ServiceError) {
+                return { error: { code: error.code, message: error.message } };
+            }
+            return {
+                error: {
+                    code: ServiceErrorCode.INTERNAL_ERROR,
+                    message: 'Failed to get assets by format'
+                }
+            };
+        }
+    }
+
+    /**
+     * Update asset status
+     */
+    async updateStatus(
+        actor: Actor,
+        assetId: string,
+        status:
+            | 'draft'
+            | 'processing'
+            | 'approved'
+            | 'active'
+            | 'inactive'
+            | 'archived'
+            | 'rejected'
+    ): Promise<ServiceOutput<AdMediaAsset>> {
+        const asset = await this.model.findById(assetId);
+        if (!asset) {
+            return { error: { code: ServiceErrorCode.NOT_FOUND, message: 'Asset not found' } };
+        }
+
+        this._canUpdate(actor, asset);
+
+        const validStatuses = [
+            'draft',
+            'processing',
+            'approved',
+            'active',
+            'inactive',
+            'archived',
+            'rejected'
+        ];
+        if (!validStatuses.includes(status)) {
+            return {
+                error: {
+                    code: ServiceErrorCode.VALIDATION_ERROR,
+                    message: 'Invalid status value'
+                }
+            };
+        }
+
+        const updated = await this.model.update({ id: assetId }, { status });
+        if (!updated) {
+            return {
+                error: { code: ServiceErrorCode.INTERNAL_ERROR, message: 'Failed to update asset' }
+            };
+        }
+        return { data: updated };
+    }
+
+    /**
+     * Update performance metrics
+     */
+    async updatePerformance(
+        actor: Actor,
+        assetId: string,
+        metrics: {
+            totalViews: number;
+            totalClicks: number;
+            averageViewDuration: number;
+            engagementRate: number;
+            conversionRate: number;
+            performanceScore: number;
+            lastUsed?: Date;
+        }
+    ): Promise<ServiceOutput<AdMediaAsset>> {
+        const asset = await this.model.findById(assetId);
+        if (!asset) {
+            return { error: { code: ServiceErrorCode.NOT_FOUND, message: 'Asset not found' } };
+        }
+
+        this._canUpdate(actor, asset);
+
+        const updated = await this.model.update({ id: assetId }, { performance: metrics });
+        if (!updated) {
+            return {
+                error: { code: ServiceErrorCode.INTERNAL_ERROR, message: 'Failed to update asset' }
+            };
+        }
+        return { data: updated };
+    }
+
+    /**
+     * Mark asset as active
+     */
+    async markAsActive(actor: Actor, assetId: string): Promise<ServiceOutput<AdMediaAsset>> {
+        return this.updateStatus(actor, assetId, 'active');
+    }
+
+    /**
+     * Mark asset as inactive
+     */
+    async markAsInactive(actor: Actor, assetId: string): Promise<ServiceOutput<AdMediaAsset>> {
+        return this.updateStatus(actor, assetId, 'inactive');
+    }
+
+    /**
+     * Archive an asset
+     */
+    async archive(actor: Actor, assetId: string): Promise<ServiceOutput<AdMediaAsset>> {
+        return this.updateStatus(actor, assetId, 'archived');
     }
 }
