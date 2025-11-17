@@ -6,7 +6,8 @@ import {
     ServiceErrorCode,
     ServiceListingCreateInputSchema,
     ServiceListingListQuerySchema,
-    ServiceListingPatchInputSchema
+    ServiceListingPatchInputSchema,
+    type VisibilityEnum
 } from '@repo/schemas';
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service.js';
@@ -93,8 +94,12 @@ export class ServiceListingService extends BaseCrudService<
     /**
      * Check if actor can update visibility of service listings
      */
-    protected _canUpdateVisibility(actor: Actor, entity: ServiceListing): void {
-        checkCanUpdateVisibility(actor, entity);
+    protected _canUpdateVisibility(
+        actor: Actor,
+        entity: ServiceListing,
+        newVisibility: VisibilityEnum
+    ): void {
+        checkCanUpdateVisibility(actor, entity, newVisibility);
     }
 
     /**
