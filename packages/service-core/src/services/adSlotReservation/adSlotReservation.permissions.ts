@@ -206,3 +206,20 @@ export function checkCanCount(actor: Actor): void {
         );
     }
 }
+
+/**
+ * Checks if an actor has permission to manage status of ad slot reservations.
+ * @throws {ServiceError} If the permission check fails.
+ */
+export function checkCanManageStatus(actor: Actor, _entity: AdSlotReservation): void {
+    if (
+        !actor ||
+        !actor.id ||
+        !actor.permissions.includes(PermissionEnum.AD_SLOT_RESERVATION_STATUS_MANAGE)
+    ) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied: Insufficient permissions to manage ad slot reservation status'
+        );
+    }
+}
