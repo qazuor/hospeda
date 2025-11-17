@@ -1,6 +1,6 @@
 import type { AdminInfoType } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
-import { bigint, boolean, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { boolean, jsonb, numeric, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import {
     BillingIntervalPgEnum,
     BillingSchemePgEnum,
@@ -17,7 +17,7 @@ export const pricingPlans = pgTable('pricing_plans', {
         .notNull(),
     billingScheme: BillingSchemePgEnum('billing_scheme').notNull(),
     interval: BillingIntervalPgEnum('interval'), // Only required if billingScheme is RECURRING
-    amountMinor: bigint('amount_minor', { mode: 'number' }).notNull(),
+    amount: numeric('amount', { precision: 10, scale: 2 }).notNull().$type<number>(),
     currency: text('currency').notNull(),
 
     // Lifecycle state

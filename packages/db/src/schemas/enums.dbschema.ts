@@ -4,6 +4,7 @@ import {
     AdSlotReservationStatusEnum,
     AmenitiesTypeEnum,
     AuthProviderEnum,
+    BenefitCategoryEnum,
     BillingCycleEnum,
     BillingIntervalEnum,
     BillingSchemeEnum,
@@ -28,15 +29,21 @@ import {
     PaymentMethodEnum,
     PaymentProviderEnum,
     PaymentStatusEnum,
+    PaymentTypeEnum,
     PermissionCategoryEnum,
     PermissionEnum,
     PostCategoryEnum,
     PreferredContactEnum,
     PriceCurrencyEnum,
+    PricingModelEnum,
     ProductTypeEnum,
     ProfessionalServiceCategoryEnum,
+    PurchaseStatusEnum,
     RecurrenceTypeEnum,
+    RefundReasonEnum,
+    RefundStatusEnum,
     RoleEnum,
+    ServiceListingStatusEnum,
     ServiceOrderStatusEnum,
     SponsorshipEntityTypeEnum,
     SponsorshipStatusEnum,
@@ -44,6 +51,7 @@ import {
     SubscriptionItemSourceTypeEnum,
     SubscriptionStatusEnum,
     TagColorEnum,
+    TouristServiceCategoryEnum,
     VisibilityEnum
 } from '@repo/schemas';
 import { pgEnum } from 'drizzle-orm/pg-core';
@@ -69,6 +77,8 @@ export const PreferredContactPgEnum = pgEnum(
 );
 
 export const PriceCurrencyPgEnum = pgEnum('price_currency_enum', enumToTuple(PriceCurrencyEnum));
+
+export const PricingModelPgEnum = pgEnum('pricing_model_enum', enumToTuple(PricingModelEnum));
 
 export const ProductTypePgEnum = pgEnum('product_type_enum', enumToTuple(ProductTypeEnum));
 
@@ -101,9 +111,19 @@ export const ModerationStatusPgEnum = pgEnum(
 
 export const TagColorPgEnum = pgEnum('tag_color_enum', enumToTuple(TagColorEnum));
 
+export const TouristServiceCategoryPgEnum = pgEnum(
+    'tourist_service_category_enum',
+    enumToTuple(TouristServiceCategoryEnum)
+);
+
 export const VisibilityPgEnum = pgEnum('visibility_enum', enumToTuple(VisibilityEnum));
 
 export const AuthProviderPgEnum = pgEnum('auth_provider_enum', enumToTuple(AuthProviderEnum));
+
+export const BenefitCategoryPgEnum = pgEnum(
+    'benefit_category_enum',
+    enumToTuple(BenefitCategoryEnum)
+);
 
 export const BillingCyclePgEnum = pgEnum('billing_cycle_enum', enumToTuple(BillingCycleEnum));
 
@@ -127,6 +147,14 @@ export const PaymentProviderPgEnum = pgEnum(
 );
 
 export const PaymentStatusPgEnum = pgEnum('payment_status_enum', enumToTuple(PaymentStatusEnum));
+
+export const PaymentTypePgEnum = pgEnum('payment_type_enum', enumToTuple(PaymentTypeEnum));
+
+export const PurchaseStatusPgEnum = pgEnum('purchase_status_enum', enumToTuple(PurchaseStatusEnum));
+
+export const RefundReasonPgEnum = pgEnum('refund_reason_enum', enumToTuple(RefundReasonEnum));
+
+export const RefundStatusPgEnum = pgEnum('refund_status_enum', enumToTuple(RefundStatusEnum));
 
 export const SubscriptionStatusPgEnum = pgEnum(
     'subscription_status_enum',
@@ -182,6 +210,11 @@ export const ProfessionalServiceCategoryPgEnum = pgEnum(
 export const ServiceOrderStatusPgEnum = pgEnum(
     'service_order_status_enum',
     enumToTuple(ServiceOrderStatusEnum)
+);
+
+export const ServiceListingStatusPgEnum = pgEnum(
+    'service_listing_status_enum',
+    enumToTuple(ServiceListingStatusEnum)
 );
 
 export const ListingStatusPgEnum = pgEnum('listing_status_enum', enumToTuple(ListingStatusEnum));

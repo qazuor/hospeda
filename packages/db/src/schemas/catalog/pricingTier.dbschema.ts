@@ -1,6 +1,8 @@
 import type { AdminInfoType } from '@repo/schemas';
+import { LifecycleStatusEnum } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import { bigint, integer, jsonb, pgTable, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { LifecycleStatusPgEnum } from '../enums.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
 import { pricingPlans } from './pricingPlan.dbschema.ts';
 
@@ -12,6 +14,11 @@ export const pricingTiers = pgTable('pricing_tiers', {
     minQuantity: integer('min_quantity').notNull(),
     maxQuantity: integer('max_quantity'), // null for unlimited
     unitPriceMinor: bigint('unit_price_minor', { mode: 'number' }).notNull(),
+
+    // Lifecycle state (aligned with Zod schema)
+    lifecycleState: LifecycleStatusPgEnum('lifecycle_state')
+        .notNull()
+        .default(LifecycleStatusEnum.ACTIVE),
 
     // Audit fields
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
