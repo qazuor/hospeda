@@ -1,13 +1,10 @@
-import type { BillingIntervalEnum } from '@repo/schemas';
+import type { BillingIntervalEnum, PricingPlan } from '@repo/schemas';
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { BaseModel } from '../../base/base.model';
 import { pricingPlans } from '../../schemas/catalog/pricingPlan.dbschema';
 import { pricingTiers } from '../../schemas/catalog/pricingTier.dbschema';
 import type * as schema from '../../schemas/index.js';
-
-// Infer PricingPlan type from the database schema
-type PricingPlan = typeof pricingPlans.$inferSelect;
 
 export interface PricingCalculationResult {
     total: number;
@@ -63,8 +60,8 @@ export class PricingPlanModel extends BaseModel<PricingPlan> {
             throw new Error(`Pricing plan not found: ${planId}`);
         }
 
-        const plan = planResult[0] as PricingPlan;
-        const total = plan.amountMinor * quantity;
+        const plan = planResult[0] as unknown as PricingPlan;
+        const total = Number(plan.amount) * quantity;
 
         return {
             total,
@@ -144,7 +141,7 @@ export class PricingPlanModel extends BaseModel<PricingPlan> {
             .from(this.table)
             .where(and(eq(pricingPlans.productId, productId), isNull(pricingPlans.deletedAt)));
 
-        return result as PricingPlan[];
+        return result as unknown as PricingPlan[];
     }
 
     /**
@@ -167,7 +164,7 @@ export class PricingPlanModel extends BaseModel<PricingPlan> {
                 )
             );
 
-        return result as PricingPlan[];
+        return result as unknown as PricingPlan[];
     }
 
     /**
@@ -181,7 +178,7 @@ export class PricingPlanModel extends BaseModel<PricingPlan> {
             .from(this.table)
             .where(and(eq(pricingPlans.billingScheme, 'ONE_TIME'), isNull(pricingPlans.deletedAt)));
 
-        return result as PricingPlan[];
+        return result as unknown as PricingPlan[];
     }
 
     /**
@@ -196,7 +193,7 @@ export class PricingPlanModel extends BaseModel<PricingPlan> {
             }
         });
 
-        return result as PricingPlanWithTiers[];
+        return result as unknown as PricingPlanWithTiers[];
     }
 
     /**

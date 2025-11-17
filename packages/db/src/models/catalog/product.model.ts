@@ -11,7 +11,7 @@ export interface PricingPlan {
     productId: string;
     billingScheme: string;
     interval: string | null;
-    amountMinor: number;
+    amount: number;
     currency: string;
     createdAt: Date;
     updatedAt: Date;
@@ -22,7 +22,7 @@ export interface ProductWithPlans extends Product {
     pricingPlans: PricingPlan[];
 }
 
-export interface PricingCalculationResult {
+export interface ProductPricingCalculationResult {
     basePrice: number;
     totalPrice: number;
     discount: number;
@@ -66,12 +66,7 @@ export class ProductModel extends BaseModel<Product> {
         const result = await db
             .select()
             .from(this.table)
-            .where(
-                and(
-                    isNull(products.deletedAt),
-                    sql`COALESCE(${products.metadata}->>'isActive', 'true')::boolean = true`
-                )
-            );
+            .where(and(isNull(products.deletedAt), eq(products.isActive, true)));
 
         return result as Product[];
     }
@@ -118,7 +113,7 @@ export class ProductModel extends BaseModel<Product> {
         productId: string,
         quantity: number,
         tx?: NodePgDatabase<typeof schema>
-    ): Promise<PricingCalculationResult> {
+    ): Promise<ProductPricingCalculationResult> {
         // For now, return a basic calculation (will be enhanced when pricing logic is implemented)
         const plans = await this.getAvailablePlans(productId, tx);
 
@@ -142,7 +137,7 @@ export class ProductModel extends BaseModel<Product> {
             };
         }
 
-        const basePrice = basePlan.amountMinor;
+        const basePrice = basePlan.amount;
         const totalPrice = basePrice * quantity;
 
         return {
@@ -166,7 +161,7 @@ export class ProductModel extends BaseModel<Product> {
                 and(
                     eq(products.id, productId),
                     isNull(products.deletedAt),
-                    sql`COALESCE(${products.metadata}->>'isDeleted', 'false')::boolean = false`
+                    eq(products.isDeleted, false)
                 )
             );
 

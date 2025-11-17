@@ -1,12 +1,10 @@
+import type { PricingTier } from '@repo/schemas';
 import { and, asc, eq, isNull, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { BaseModel } from '../../base/base.model';
 import { pricingPlans } from '../../schemas/catalog/pricingPlan.dbschema';
 import { pricingTiers } from '../../schemas/catalog/pricingTier.dbschema';
 import type * as schema from '../../schemas/index.js';
-
-// Infer PricingTier type from the database schema
-type PricingTier = typeof pricingTiers.$inferSelect;
 
 export interface TierPriceCalculation {
     totalPrice: number;
@@ -239,7 +237,7 @@ export class PricingTierModel extends BaseModel<PricingTier> {
             return null;
         }
 
-        const baseTotalPrice = basePlan.amountMinor * quantity;
+        const baseTotalPrice = basePlan.amount * quantity;
 
         // Get tier price
         const tierCalculation = await this.calculatePrice(pricingPlanId, quantity, tx);
