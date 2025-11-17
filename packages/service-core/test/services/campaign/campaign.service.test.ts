@@ -1,6 +1,18 @@
 import type { CampaignModel } from '@repo/db';
-import { type Campaign, CampaignStatusEnum, PermissionEnum, RoleEnum } from '@repo/schemas';
+import {
+    type Campaign,
+    CampaignChannelEnum,
+    CampaignStatusEnum,
+    PermissionEnum,
+    RoleEnum
+} from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+    checkCanCreate,
+    checkCanSoftDelete,
+    checkCanUpdate,
+    checkCanView
+} from '../../../src/services/campaign/campaign.permissions.js';
 import { CampaignService } from '../../../src/services/campaign/campaign.service.js';
 import type { Actor } from '../../../src/types/index.js';
 
@@ -16,8 +28,7 @@ describe('CampaignService', () => {
         name: 'Summer Campaign 2024',
         description: 'Summer promotional campaign for tourism services',
         status: CampaignStatusEnum.DRAFT,
-        clientId: '00000000-0000-0000-0000-000000000010',
-        channels: ['EMAIL', 'SOCIAL_MEDIA'],
+        channels: [CampaignChannelEnum.WEB, CampaignChannelEnum.SOCIAL],
         targetAudience: {
             countries: ['AR'],
             cities: ['Concepción del Uruguay'],
@@ -105,7 +116,7 @@ describe('CampaignService', () => {
 
     describe('Permission Hooks', () => {
         it('should allow ADMIN to create campaign', () => {
-            expect(() => service._canCreate(mockActor, {})).not.toThrow();
+            expect(() => checkCanCreate(mockActor, {})).not.toThrow();
         });
 
         it('should allow user with CAMPAIGN_CREATE permission to create campaign', () => {
@@ -115,7 +126,7 @@ describe('CampaignService', () => {
                 permissions: [PermissionEnum.CAMPAIGN_CREATE]
             };
 
-            expect(() => service._canCreate(actorWithPermission, {})).not.toThrow();
+            expect(() => checkCanCreate(actorWithPermission, {})).not.toThrow();
         });
 
         it('should deny creation without permission', () => {
@@ -125,11 +136,11 @@ describe('CampaignService', () => {
                 permissions: []
             };
 
-            expect(() => service._canCreate(actorWithoutPermission, {})).toThrow();
+            expect(() => checkCanCreate(actorWithoutPermission, {})).toThrow();
         });
 
         it('should allow ADMIN to update campaign', () => {
-            expect(() => service._canUpdate(mockActor, mockCampaign)).not.toThrow();
+            expect(() => checkCanUpdate(mockActor, mockCampaign)).not.toThrow();
         });
 
         it('should allow user with CAMPAIGN_UPDATE permission to update campaign', () => {
@@ -139,7 +150,7 @@ describe('CampaignService', () => {
                 permissions: [PermissionEnum.CAMPAIGN_UPDATE]
             };
 
-            expect(() => service._canUpdate(actorWithPermission, mockCampaign)).not.toThrow();
+            expect(() => checkCanUpdate(actorWithPermission, mockCampaign)).not.toThrow();
         });
 
         it('should deny update without permission', () => {
@@ -149,11 +160,11 @@ describe('CampaignService', () => {
                 permissions: []
             };
 
-            expect(() => service._canUpdate(actorWithoutPermission, mockCampaign)).toThrow();
+            expect(() => checkCanUpdate(actorWithoutPermission, mockCampaign)).toThrow();
         });
 
         it('should allow ADMIN to soft delete campaign', () => {
-            expect(() => service._canSoftDelete(mockActor, mockCampaign)).not.toThrow();
+            expect(() => checkCanSoftDelete(mockActor, mockCampaign)).not.toThrow();
         });
 
         it('should allow user with CAMPAIGN_DELETE permission to soft delete campaign', () => {
@@ -163,7 +174,7 @@ describe('CampaignService', () => {
                 permissions: [PermissionEnum.CAMPAIGN_DELETE]
             };
 
-            expect(() => service._canSoftDelete(actorWithPermission, mockCampaign)).not.toThrow();
+            expect(() => checkCanSoftDelete(actorWithPermission, mockCampaign)).not.toThrow();
         });
 
         it('should deny soft delete without permission', () => {
@@ -173,11 +184,11 @@ describe('CampaignService', () => {
                 permissions: []
             };
 
-            expect(() => service._canSoftDelete(actorWithoutPermission, mockCampaign)).toThrow();
+            expect(() => checkCanSoftDelete(actorWithoutPermission, mockCampaign)).toThrow();
         });
 
         it('should allow viewing campaigns with CAMPAIGN_VIEW permission', () => {
-            expect(() => service._canView(mockActor, mockCampaign)).not.toThrow();
+            expect(() => checkCanView(mockActor, mockCampaign)).not.toThrow();
         });
 
         it('should deny viewing without permission', () => {
@@ -187,7 +198,7 @@ describe('CampaignService', () => {
                 permissions: []
             };
 
-            expect(() => service._canView(actorWithoutPermission, mockCampaign)).toThrow();
+            expect(() => checkCanView(actorWithoutPermission, mockCampaign)).toThrow();
         });
     });
 
@@ -301,7 +312,11 @@ describe('CampaignService', () => {
                 budget: { ...mockCampaign.budget, ...updatedBudget }
             });
 
-            const result = await service.updateBudget(mockActor, mockCampaign.id, updatedBudget);
+            const result = await service.updateBudget(
+                mockActor,
+                mockCampaign.id,
+                updatedBudget.totalBudget
+            );
 
             expect(result.data).toBeDefined();
             expect(result.error).toBeUndefined();
@@ -312,12 +327,17 @@ describe('CampaignService', () => {
         });
 
         it('should not allow daily budget to exceed total budget', async () => {
-            vi.spyOn(service.model, 'findById').mockResolvedValueOnce(mockCampaign);
+            // Campaign with dailyBudget > newBudget to trigger validation
+            const campaignWithHighDailyBudget = {
+                ...mockCampaign,
+                budget: {
+                    ...mockCampaign.budget,
+                    dailyBudget: 1500 // Higher than the new totalBudget of 1000
+                }
+            };
+            vi.spyOn(service.model, 'findById').mockResolvedValueOnce(campaignWithHighDailyBudget);
 
-            const result = await service.updateBudget(mockActor, mockCampaign.id, {
-                totalBudget: 1000,
-                dailyBudget: 2000
-            });
+            const result = await service.updateBudget(mockActor, mockCampaign.id, 1000);
 
             expect(result.error).toBeDefined();
             expect(result.data).toBeUndefined();
@@ -370,10 +390,14 @@ describe('CampaignService', () => {
             vi.spyOn(service.model, 'update').mockResolvedValueOnce({
                 ...mockCampaign,
                 performance: {
-                    ...mockCampaign.performance,
-                    ...performanceUpdate,
+                    impressions: 1000,
+                    clicks: 50,
+                    conversions: 10,
                     clickThroughRate: 0.05,
-                    conversionRate: 0.2
+                    conversionRate: 0.2,
+                    costPerClick: 0,
+                    costPerConversion: 0,
+                    returnOnAdSpend: 0
                 }
             });
 
@@ -396,8 +420,13 @@ describe('CampaignService', () => {
                 ...mockCampaign,
                 budget: { ...mockCampaign.budget, spentAmount: 1000 },
                 performance: {
-                    ...mockCampaign.performance,
+                    impressions: 1000,
+                    clicks: 50,
                     conversions: 20,
+                    clickThroughRate: 0.05,
+                    conversionRate: 0.4,
+                    costPerClick: 20,
+                    costPerConversion: 50,
                     returnOnAdSpend: 3.5
                 }
             };
@@ -419,19 +448,6 @@ describe('CampaignService', () => {
     // =========================================================================
 
     describe('Filtering Methods', () => {
-        it('should find campaigns by client ID', async () => {
-            vi.spyOn(mockModel, 'findByClient').mockResolvedValueOnce([mockCampaign]);
-
-            const result = await service.findByClient(mockActor, mockCampaign.clientId);
-
-            expect(result.data).toBeDefined();
-            expect(result.error).toBeUndefined();
-            if (result.data) {
-                expect(result.data).toHaveLength(1);
-                expect(result.data[0].clientId).toBe(mockCampaign.clientId);
-            }
-        });
-
         it('should find active campaigns', async () => {
             const activeCampaign = { ...mockCampaign, status: CampaignStatusEnum.ACTIVE };
             vi.spyOn(mockModel, 'findActive').mockResolvedValueOnce([activeCampaign]);
@@ -440,8 +456,9 @@ describe('CampaignService', () => {
 
             expect(result.data).toBeDefined();
             expect(result.error).toBeUndefined();
-            if (result.data) {
-                expect(result.data).toHaveLength(1);
+            if (!result.data) throw new Error('Expected data to be defined');
+            expect(result.data).toHaveLength(1);
+            if (result.data[0]) {
                 expect(result.data[0].status).toBe(CampaignStatusEnum.ACTIVE);
             }
         });
@@ -457,8 +474,9 @@ describe('CampaignService', () => {
 
             expect(result.data).toBeDefined();
             expect(result.error).toBeUndefined();
-            if (result.data) {
-                expect(result.data).toHaveLength(1);
+            if (!result.data) throw new Error('Expected data to be defined');
+            expect(result.data).toHaveLength(1);
+            if (result.data[0]) {
                 expect(result.data[0].status).toBe(CampaignStatusEnum.SCHEDULED);
             }
         });
@@ -474,8 +492,9 @@ describe('CampaignService', () => {
 
             expect(result.data).toBeDefined();
             expect(result.error).toBeUndefined();
-            if (result.data) {
-                expect(result.data).toHaveLength(1);
+            if (!result.data) throw new Error('Expected data to be defined');
+            expect(result.data).toHaveLength(1);
+            if (result.data[0]) {
                 expect(result.data[0].status).toBe(CampaignStatusEnum.COMPLETED);
             }
         });

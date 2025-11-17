@@ -7,9 +7,22 @@ import {
     SponsorshipStatusEnum
 } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+    checkCanCount,
+    checkCanCreate,
+    checkCanHardDelete,
+    checkCanList,
+    checkCanManageStatus,
+    checkCanRestore,
+    checkCanSearch,
+    checkCanSoftDelete,
+    checkCanUpdate,
+    checkCanUpdateVisibility,
+    checkCanView
+} from '../../../src/services/sponsorship/sponsorship.permissions.js';
 import { SponsorshipService } from '../../../src/services/sponsorship/sponsorship.service';
-import type { Actor } from '../../../src/types/actor';
-import type { ServiceContext } from '../../../src/types/service-context';
+import type { Actor } from '../../../src/types/index.js';
+import type { ServiceContext } from '../../../src/types/index.js';
 
 describe('SponsorshipService', () => {
     let service: SponsorshipService;
@@ -45,8 +58,8 @@ describe('SponsorshipService', () => {
         toDate: new Date('2025-01-31'),
         status: SponsorshipStatusEnum.ACTIVE,
         priority: 50,
-        budgetAmount: 1000,
-        spentAmount: 0,
+        budgetAmount: 10.0,
+        spentAmount: 0.0,
         impressionCount: 0,
         clickCount: 0,
         createdAt: new Date(),
@@ -99,7 +112,7 @@ describe('SponsorshipService', () => {
     describe('Permission Hooks', () => {
         describe('_canCreate', () => {
             it('should allow admin to create', () => {
-                expect(() => service._canCreate(validAdminActor, {})).not.toThrow();
+                expect(() => checkCanCreate(validAdminActor, {})).not.toThrow();
             });
 
             it('should allow user with CREATE permission', () => {
@@ -109,17 +122,17 @@ describe('SponsorshipService', () => {
                     permissions: [PermissionEnum.SPONSORSHIP_CREATE]
                 };
 
-                expect(() => service._canCreate(actorWithPermission, {})).not.toThrow();
+                expect(() => checkCanCreate(actorWithPermission, {})).not.toThrow();
             });
 
             it('should deny user without CREATE permission', () => {
-                expect(() => service._canCreate(validUserActor, {})).toThrow();
+                expect(() => checkCanCreate(validUserActor, {})).toThrow();
             });
         });
 
         describe('_canUpdate', () => {
             it('should allow admin to update', () => {
-                expect(() => service._canUpdate(validAdminActor, mockSponsorship)).not.toThrow();
+                expect(() => checkCanUpdate(validAdminActor, mockSponsorship)).not.toThrow();
             });
 
             it('should allow user with UPDATE permission', () => {
@@ -129,21 +142,17 @@ describe('SponsorshipService', () => {
                     permissions: [PermissionEnum.SPONSORSHIP_UPDATE]
                 };
 
-                expect(() =>
-                    service._canUpdate(actorWithPermission, mockSponsorship)
-                ).not.toThrow();
+                expect(() => checkCanUpdate(actorWithPermission, mockSponsorship)).not.toThrow();
             });
 
             it('should deny user without UPDATE permission', () => {
-                expect(() => service._canUpdate(validUserActor, mockSponsorship)).toThrow();
+                expect(() => checkCanUpdate(validUserActor, mockSponsorship)).toThrow();
             });
         });
 
         describe('_canSoftDelete', () => {
             it('should allow admin to soft delete', () => {
-                expect(() =>
-                    service._canSoftDelete(validAdminActor, mockSponsorship)
-                ).not.toThrow();
+                expect(() => checkCanSoftDelete(validAdminActor, mockSponsorship)).not.toThrow();
             });
 
             it('should allow user with DELETE permission', () => {
@@ -154,22 +163,22 @@ describe('SponsorshipService', () => {
                 };
 
                 expect(() =>
-                    service._canSoftDelete(actorWithPermission, mockSponsorship)
+                    checkCanSoftDelete(actorWithPermission, mockSponsorship)
                 ).not.toThrow();
             });
 
             it('should deny user without DELETE permission', () => {
-                expect(() => service._canSoftDelete(validUserActor, mockSponsorship)).toThrow();
+                expect(() => checkCanSoftDelete(validUserActor, mockSponsorship)).toThrow();
             });
         });
 
         describe('_canView', () => {
             it('should allow admin to view', () => {
-                expect(() => service._canView(validAdminActor, mockSponsorship)).not.toThrow();
+                expect(() => checkCanView(validAdminActor, mockSponsorship)).not.toThrow();
             });
 
             it('should allow user with VIEW permission', () => {
-                expect(() => service._canView(validUserActor, mockSponsorship)).not.toThrow();
+                expect(() => checkCanView(validUserActor, mockSponsorship)).not.toThrow();
             });
 
             it('should deny user without VIEW permission', () => {
@@ -179,15 +188,13 @@ describe('SponsorshipService', () => {
                     permissions: []
                 };
 
-                expect(() => service._canView(actorWithoutPermission, mockSponsorship)).toThrow();
+                expect(() => checkCanView(actorWithoutPermission, mockSponsorship)).toThrow();
             });
         });
 
         describe('_canHardDelete', () => {
             it('should allow admin to hard delete', () => {
-                expect(() =>
-                    service._canHardDelete(validAdminActor, mockSponsorship)
-                ).not.toThrow();
+                expect(() => checkCanHardDelete(validAdminActor, mockSponsorship)).not.toThrow();
             });
 
             it('should deny regular user even with HARD_DELETE permission', () => {
@@ -197,9 +204,7 @@ describe('SponsorshipService', () => {
                     permissions: [PermissionEnum.SPONSORSHIP_HARD_DELETE]
                 };
 
-                expect(() =>
-                    service._canHardDelete(actorWithPermission, mockSponsorship)
-                ).toThrow();
+                expect(() => checkCanHardDelete(actorWithPermission, mockSponsorship)).toThrow();
             });
         });
 
@@ -207,9 +212,7 @@ describe('SponsorshipService', () => {
             const deletedSponsorship = { ...mockSponsorship, deletedAt: new Date() };
 
             it('should allow admin to restore', () => {
-                expect(() =>
-                    service._canRestore(validAdminActor, deletedSponsorship)
-                ).not.toThrow();
+                expect(() => checkCanRestore(validAdminActor, deletedSponsorship)).not.toThrow();
             });
 
             it('should allow user with RESTORE permission', () => {
@@ -220,49 +223,49 @@ describe('SponsorshipService', () => {
                 };
 
                 expect(() =>
-                    service._canRestore(actorWithPermission, deletedSponsorship)
+                    checkCanRestore(actorWithPermission, deletedSponsorship)
                 ).not.toThrow();
             });
 
             it('should deny user without RESTORE permission', () => {
-                expect(() => service._canRestore(validUserActor, deletedSponsorship)).toThrow();
+                expect(() => checkCanRestore(validUserActor, deletedSponsorship)).toThrow();
             });
         });
 
         describe('_canList', () => {
             it('should allow admin to list', () => {
-                expect(() => service._canList(validAdminActor)).not.toThrow();
+                expect(() => checkCanList(validAdminActor)).not.toThrow();
             });
 
             it('should allow user with VIEW permission', () => {
-                expect(() => service._canList(validUserActor)).not.toThrow();
+                expect(() => checkCanList(validUserActor)).not.toThrow();
             });
         });
 
         describe('_canSearch', () => {
             it('should allow admin to search', () => {
-                expect(() => service._canSearch(validAdminActor)).not.toThrow();
+                expect(() => checkCanSearch(validAdminActor)).not.toThrow();
             });
 
             it('should allow user with VIEW permission', () => {
-                expect(() => service._canSearch(validUserActor)).not.toThrow();
+                expect(() => checkCanSearch(validUserActor)).not.toThrow();
             });
         });
 
         describe('_canCount', () => {
             it('should allow admin to count', () => {
-                expect(() => service._canCount(validAdminActor)).not.toThrow();
+                expect(() => checkCanCount(validAdminActor)).not.toThrow();
             });
 
             it('should allow user with VIEW permission', () => {
-                expect(() => service._canCount(validUserActor)).not.toThrow();
+                expect(() => checkCanCount(validUserActor)).not.toThrow();
             });
         });
 
         describe('_canUpdateVisibility', () => {
             it('should allow admin to update visibility', () => {
                 expect(() =>
-                    service._canUpdateVisibility(validAdminActor, mockSponsorship)
+                    checkCanUpdateVisibility(validAdminActor, mockSponsorship)
                 ).not.toThrow();
             });
 
@@ -274,16 +277,14 @@ describe('SponsorshipService', () => {
                 };
 
                 expect(() =>
-                    service._canUpdateVisibility(actorWithPermission, mockSponsorship)
+                    checkCanUpdateVisibility(actorWithPermission, mockSponsorship)
                 ).not.toThrow();
             });
         });
 
         describe('_canManageStatus', () => {
             it('should allow admin to manage status', () => {
-                expect(() =>
-                    service._canManageStatus(validAdminActor, mockSponsorship)
-                ).not.toThrow();
+                expect(() => checkCanManageStatus(validAdminActor, mockSponsorship)).not.toThrow();
             });
 
             it('should allow user with STATUS_MANAGE permission', () => {
@@ -294,12 +295,12 @@ describe('SponsorshipService', () => {
                 };
 
                 expect(() =>
-                    service._canManageStatus(actorWithPermission, mockSponsorship)
+                    checkCanManageStatus(actorWithPermission, mockSponsorship)
                 ).not.toThrow();
             });
 
             it('should deny user without STATUS_MANAGE permission', () => {
-                expect(() => service._canManageStatus(validUserActor, mockSponsorship)).toThrow();
+                expect(() => checkCanManageStatus(validUserActor, mockSponsorship)).toThrow();
             });
         });
     });
