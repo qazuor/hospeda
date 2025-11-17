@@ -1,6 +1,6 @@
 import type { AdminInfoType } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
-import { decimal, integer, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { jsonb, numeric, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { pricingPlans } from '../catalog/pricingPlan.dbschema.js';
 import { subscriptionItems } from '../subscription/subscriptionItem.dbschema.js';
 import { users } from '../user/user.dbschema.js';
@@ -24,26 +24,30 @@ export const invoiceLines = pgTable('invoice_lines', {
         onDelete: 'restrict'
     }),
 
-    // Line item details
+    // Line item details (aligned with Zod schema)
     description: text('description').notNull(),
-    quantity: integer('quantity').notNull().default(1),
-
-    // Line-level pricing
-    unitPrice: decimal('unit_price', { precision: 10, scale: 2 }).notNull(),
-    lineAmount: decimal('line_amount', { precision: 10, scale: 2 }).notNull(),
-
-    // Tax information
-    taxRate: decimal('tax_rate', { precision: 5, scale: 4 }).default('0.0000'),
-    taxAmount: decimal('tax_amount', { precision: 10, scale: 2 }).notNull().default('0.00'),
-
-    // Discount information
-    discountRate: decimal('discount_rate', { precision: 5, scale: 4 }).default('0.0000'),
-    discountAmount: decimal('discount_amount', { precision: 10, scale: 2 })
+    quantity: numeric('quantity', { precision: 10, scale: 2 })
         .notNull()
-        .default('0.00'),
+        .default('1')
+        .$type<number>(),
 
-    // Total line amount after tax and discount
-    totalAmount: decimal('total_amount', { precision: 10, scale: 2 }).notNull(),
+    // Line-level pricing (aligned with Zod schema)
+    unitPrice: numeric('unit_price', { precision: 10, scale: 2 }).notNull().$type<number>(),
+    total: numeric('total', { precision: 10, scale: 2 }).notNull().$type<number>(),
+
+    // Optional reference to product (aligned with Zod schema)
+    productReference: text('product_reference'),
+
+    // Tax information (aligned with Zod schema - optional fields)
+    taxRate: numeric('tax_rate', { precision: 5, scale: 4 }).$type<number>(),
+    taxAmount: numeric('tax_amount', { precision: 10, scale: 2 }).$type<number>(),
+
+    // Discount information (aligned with Zod schema)
+    discountRate: numeric('discount_rate', { precision: 5, scale: 4 }).$type<number>(),
+    discountAmount: numeric('discount_amount', { precision: 10, scale: 2 }).$type<number>(),
+
+    // Additional notes (aligned with Zod schema)
+    notes: text('notes'),
 
     // Billing period (for subscription items)
     periodStart: timestamp('period_start', { withTimezone: true }),

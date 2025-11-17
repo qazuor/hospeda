@@ -10,6 +10,7 @@ import {
     PriceCurrencyPgEnum
 } from '../enums.dbschema.js';
 import { users } from '../user/user.dbschema.js';
+import { invoices } from './invoice.dbschema.js';
 
 export const payments = pgTable('payments', {
     id: uuid('id').primaryKey().defaultRandom(),
@@ -23,13 +24,17 @@ export const payments = pgTable('payments', {
         onDelete: 'set null'
     }),
 
+    invoiceId: uuid('invoice_id').references(() => invoices.id, {
+        onDelete: 'set null'
+    }),
+
     // Payment type and status
     type: PaymentTypePgEnum('type').notNull(),
     status: PaymentStatusPgEnum('status').notNull(),
     paymentMethod: PaymentMethodPgEnum('payment_method'),
 
     // Amount information
-    amount: numeric('amount', { precision: 10, scale: 2 }).notNull(),
+    amount: numeric('amount', { precision: 10, scale: 2 }).notNull().$type<number>(),
     currency: PriceCurrencyPgEnum('currency').notNull(),
 
     // Mercado Pago integration
@@ -85,6 +90,13 @@ export const paymentRelations = relations(payments, ({ one }) => ({
         fields: [payments.paymentPlanId],
         references: [pricingPlans.id],
         relationName: 'payment_pricing_plan'
+    }),
+
+    // Invoice relationship
+    invoice: one(invoices, {
+        fields: [payments.invoiceId],
+        references: [invoices.id],
+        relationName: 'payment_invoice'
     }),
 
     // Audit relations

@@ -1,4 +1,5 @@
 import type { AdminInfoType } from '@repo/schemas';
+import type { PaymentMethodEnum } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import { boolean, integer, jsonb, pgTable, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 import { clients } from '../client/client.dbschema';
@@ -14,7 +15,7 @@ export const paymentMethods = pgTable('payment_methods', {
         .references(() => clients.id, { onDelete: 'cascade' }),
 
     // Payment method type
-    type: PaymentMethodPgEnum('type').notNull(),
+    type: PaymentMethodPgEnum('type').notNull().$type<PaymentMethodEnum>(),
 
     // Display information
     displayName: varchar('display_name', { length: 100 }).notNull(),
@@ -32,7 +33,7 @@ export const paymentMethods = pgTable('payment_methods', {
     // Bank Account specific fields (optional)
     bankName: varchar('bank_name', { length: 100 }),
     accountLast4: varchar('account_last_4', { length: 4 }),
-    accountType: varchar('account_type', { length: 20 }), // 'CHECKING' or 'SAVINGS'
+    accountType: varchar('account_type', { length: 20 }).$type<'CHECKING' | 'SAVINGS'>(), // 'CHECKING' or 'SAVINGS'
 
     // Provider integration fields
     providerPaymentMethodId: varchar('provider_payment_method_id', { length: 100 }),

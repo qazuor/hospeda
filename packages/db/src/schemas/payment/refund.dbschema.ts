@@ -1,6 +1,8 @@
 import type { AdminInfoType } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
-import { bigint, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { jsonb, numeric, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { clients } from '../client/client.dbschema';
+import { RefundReasonPgEnum, RefundStatusPgEnum } from '../enums.dbschema';
 import { users } from '../user/user.dbschema';
 import { payments } from './payment.dbschema';
 
@@ -11,10 +13,22 @@ export const refunds = pgTable('refunds', {
     paymentId: uuid('payment_id')
         .notNull()
         .references(() => payments.id, { onDelete: 'cascade' }),
+    clientId: uuid('client_id')
+        .notNull()
+        .references(() => clients.id, { onDelete: 'restrict' }),
 
     // Refund info
-    amountMinor: bigint('amount_minor', { mode: 'number' }).notNull(), // Amount in minor currency units (cents)
-    reason: text('reason'), // Reason for refund
+    refundNumber: text('refund_number').notNull().unique(),
+    amount: numeric('amount', { precision: 10, scale: 2 }).notNull().$type<number>(),
+    currency: text('currency').notNull().default('USD'),
+    reason: RefundReasonPgEnum('reason'),
+    description: text('description'),
+    status: RefundStatusPgEnum('status').notNull(),
+    processedAt: timestamp('processed_at', { withTimezone: true }),
+    processedById: uuid('processed_by_id').references(() => users.id, { onDelete: 'set null' }),
+    providerRefundId: text('provider_refund_id'),
+    providerResponse: jsonb('provider_response'),
+    failureReason: text('failure_reason'),
     refundedAt: timestamp('refunded_at', { withTimezone: true }),
 
     // Audit fields
@@ -38,8 +52,18 @@ export const refundRelations = relations(refunds, ({ one }) => ({
         references: [payments.id],
         relationName: 'refunds_from_payment'
     }),
+    client: one(clients, {
+        fields: [refunds.clientId],
+        references: [clients.id],
+        relationName: 'refunds_from_client'
+    }),
 
     // Audit relations
+    processedBy: one(users, {
+        fields: [refunds.processedById],
+        references: [users.id],
+        relationName: 'refund_processed_by'
+    }),
     createdBy: one(users, {
         fields: [refunds.createdById],
         references: [users.id],

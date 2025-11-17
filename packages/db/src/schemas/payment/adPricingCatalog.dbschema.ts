@@ -1,8 +1,8 @@
 import type { AdminInfoType } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
-import { decimal, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { jsonb, numeric, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { adSlots } from '../campaign/adSlot.dbschema.js';
-import { CampaignChannelPgEnum } from '../enums.dbschema.js';
+import { CampaignChannelPgEnum, PricingModelPgEnum } from '../enums.dbschema.js';
 import { users } from '../user/user.dbschema.js';
 
 /**
@@ -21,24 +21,28 @@ export const adPricingCatalog = pgTable('ad_pricing_catalog', {
     channel: CampaignChannelPgEnum('channel').notNull(),
 
     // Pricing structure
-    basePrice: decimal('base_price', { precision: 10, scale: 2 }).notNull(),
+    basePrice: numeric('base_price', { precision: 10, scale: 2 }).notNull().$type<number>(),
     currency: text('currency').notNull().default('USD'),
 
     // Pricing model
-    pricingModel: text('pricing_model').notNull().default('CPM'), // CPM, CPC, FLAT, etc.
+    pricingModel: PricingModelPgEnum('pricing_model').notNull().default('CPM'),
 
     // Time-based pricing
-    dailyRate: decimal('daily_rate', { precision: 10, scale: 2 }),
-    weeklyRate: decimal('weekly_rate', { precision: 10, scale: 2 }),
-    monthlyRate: decimal('monthly_rate', { precision: 10, scale: 2 }),
+    dailyRate: numeric('daily_rate', { precision: 10, scale: 2 }).$type<number>(),
+    weeklyRate: numeric('weekly_rate', { precision: 10, scale: 2 }).$type<number>(),
+    monthlyRate: numeric('monthly_rate', { precision: 10, scale: 2 }).$type<number>(),
 
     // Premium multipliers
-    weekendMultiplier: decimal('weekend_multiplier', { precision: 3, scale: 2 }).default('1.00'),
-    holidayMultiplier: decimal('holiday_multiplier', { precision: 3, scale: 2 }).default('1.00'),
+    weekendMultiplier: numeric('weekend_multiplier', { precision: 3, scale: 2 })
+        .default('1.00')
+        .$type<number>(),
+    holidayMultiplier: numeric('holiday_multiplier', { precision: 3, scale: 2 })
+        .default('1.00')
+        .$type<number>(),
 
     // Minimum and maximum constraints
-    minimumBudget: decimal('minimum_budget', { precision: 10, scale: 2 }),
-    maximumBudget: decimal('maximum_budget', { precision: 10, scale: 2 }),
+    minimumBudget: numeric('minimum_budget', { precision: 10, scale: 2 }).$type<number>(),
+    maximumBudget: numeric('maximum_budget', { precision: 10, scale: 2 }).$type<number>(),
 
     // Availability and scheduling
     availableFrom: timestamp('available_from', { withTimezone: true }),

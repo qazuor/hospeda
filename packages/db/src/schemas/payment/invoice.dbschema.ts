@@ -1,7 +1,7 @@
 import type { AdminInfoType } from '@repo/schemas';
 import { InvoiceStatusEnum } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
-import { decimal, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { jsonb, numeric, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { clients } from '../client/client.dbschema.js';
 import { InvoiceStatusPgEnum } from '../enums.dbschema.js';
 import { users } from '../user/user.dbschema.js';
@@ -20,27 +20,25 @@ export const invoices = pgTable('invoices', {
     // Status
     status: InvoiceStatusPgEnum('status').notNull().default(InvoiceStatusEnum.OPEN),
 
-    // Amount and currency fields
-    subtotalAmount: decimal('subtotal_amount', { precision: 10, scale: 2 }).notNull(),
-    taxAmount: decimal('tax_amount', { precision: 10, scale: 2 }).notNull().default('0.00'),
-    totalAmount: decimal('total_amount', { precision: 10, scale: 2 }).notNull(),
+    // Amount and currency fields (aligned with Zod schema)
+    subtotal: numeric('subtotal', { precision: 10, scale: 2 }).notNull().$type<number>(),
+    taxes: numeric('taxes', { precision: 10, scale: 2 }).notNull().default('0.00').$type<number>(),
+    total: numeric('total', { precision: 10, scale: 2 }).notNull().$type<number>(),
 
-    // Currency and exchange rate support
+    // Currency
     currency: text('currency').notNull().default('USD'),
-    exchangeRate: decimal('exchange_rate', { precision: 10, scale: 4 }).default('1.0000'),
-    baseCurrency: text('base_currency').notNull().default('USD'),
 
-    // Invoice dates
-    issuedAt: timestamp('issued_at', { withTimezone: true }).notNull(),
-    dueAt: timestamp('due_at', { withTimezone: true }),
+    // Invoice dates (aligned with Zod schema)
+    issueDate: timestamp('issue_date', { withTimezone: true }).notNull(),
+    dueDate: timestamp('due_date', { withTimezone: true }).notNull(),
     paidAt: timestamp('paid_at', { withTimezone: true }),
-    voidedAt: timestamp('voided_at', { withTimezone: true }),
 
-    // Billing information
-    billingAddress: jsonb('billing_address'),
+    // Optional text fields (aligned with Zod schema)
+    description: text('description'),
+    paymentTerms: text('payment_terms'),
+    notes: text('notes'),
 
     // Invoice metadata
-    notes: text('notes'),
     metadata: jsonb('metadata'),
 
     // Audit fields

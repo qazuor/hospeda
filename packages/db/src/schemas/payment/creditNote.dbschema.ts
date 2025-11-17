@@ -1,6 +1,6 @@
 import type { AdminInfoType } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
-import { decimal, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { jsonb, numeric, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { users } from '../user/user.dbschema';
 import { invoices } from './invoice.dbschema';
 
@@ -13,7 +13,7 @@ export const creditNotes = pgTable('credit_notes', {
         .references(() => invoices.id, { onDelete: 'cascade' }),
 
     // Credit note info
-    amount: decimal('amount', { precision: 10, scale: 2 }).notNull(),
+    amount: numeric('amount', { precision: 10, scale: 2 }).notNull().$type<number>(),
     currency: text('currency').notNull().default('USD'),
     reason: text('reason'), // Reason for credit note
     issuedAt: timestamp('issued_at', { withTimezone: true }),
