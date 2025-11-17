@@ -3,9 +3,9 @@ import { relations } from 'drizzle-orm';
 import {
     bigint,
     boolean,
-    decimal,
     integer,
     jsonb,
+    numeric,
     pgTable,
     text,
     timestamp,
@@ -32,7 +32,7 @@ export const discountCodes = pgTable('discount_codes', {
 
     // Discount type and amounts
     discountType: DiscountTypePgEnum('discount_type').notNull(),
-    percentOff: decimal('percent_off', { precision: 5, scale: 2 }), // null if fixed amount
+    percentOff: numeric('percent_off', { precision: 5, scale: 2 }).$type<number>(), // null if fixed amount
     amountOffMinor: bigint('amount_off_minor', { mode: 'number' }), // null if percentage, in minor currency units (cents)
 
     // Validity period
@@ -48,7 +48,10 @@ export const discountCodes = pgTable('discount_codes', {
     currency: text('currency').default('USD'),
 
     // Minimum purchase requirements
-    minimumPurchaseAmount: decimal('minimum_purchase_amount', { precision: 10, scale: 2 }),
+    minimumPurchaseAmount: numeric('minimum_purchase_amount', {
+        precision: 10,
+        scale: 2
+    }).$type<number>(),
     minimumPurchaseCurrency: text('minimum_purchase_currency').default('USD'),
 
     // Discount constraints
