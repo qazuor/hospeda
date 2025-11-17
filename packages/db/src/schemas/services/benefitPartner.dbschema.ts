@@ -2,6 +2,7 @@ import type { AdminInfoType } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import { jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { clients } from '../client/client.dbschema';
+import { BenefitCategoryPgEnum } from '../enums.dbschema';
 import { users } from '../user/user.dbschema';
 import { benefitListings } from './benefitListing.dbschema';
 
@@ -15,7 +16,7 @@ export const benefitPartners = pgTable('benefit_partners', {
 
     // Partner information
     name: text('name').notNull(),
-    category: text('category').notNull(), // e.g., 'restaurant', 'spa', 'tour', 'transport'
+    category: BenefitCategoryPgEnum('category').notNull(),
     description: text('description'),
     contactInfo: text('contact_info'),
 

@@ -22,6 +22,9 @@ export * from './billing-interval.schema.js';
 export * from './billing-scheme.enum.js';
 export * from './billing-scheme.schema.js';
 
+export * from './benefit-category.enum.js';
+export * from './benefit-category.schema.js';
+
 export * from './client-type.enum.js';
 export * from './client-type.schema.js';
 
@@ -64,6 +67,15 @@ export * from './payment-status.schema.js';
 export * from './payment-type.enum.js';
 export * from './payment-type.schema.js';
 
+export * from './purchase-status.enum.js';
+export * from './purchase-status.schema.js';
+
+export * from './refund-reason.enum.js';
+export * from './refund-reason.schema.js';
+
+export * from './refund-status.enum.js';
+export * from './refund-status.schema.js';
+
 export * from './permission.enum.js';
 export * from './permission.schema.js';
 
@@ -91,8 +103,14 @@ export * from './subscription-item-entity-type.schema.js';
 export * from './subscription-item-source-type.enum.js';
 export * from './subscription-item-source-type.schema.js';
 
+export * from './support-level.enum.js';
+export * from './support-level.schema.js';
+
 export * from './tag-color.enum.js';
 export * from './tag-color.schema.js';
+
+export * from './tourist-service-category.enum.js';
+export * from './tourist-service-category.schema.js';
 
 export * from './visibility.enum.js';
 export * from './visibility.schema.js';
