@@ -22,7 +22,7 @@ export class PaymentModel extends BaseModel<Payment> {
     private transformToPayment(dbResult: typeof payments.$inferSelect): Payment {
         return {
             ...dbResult,
-            amount: Number.parseFloat(dbResult.amount)
+            amount: dbResult.amount
         } as Payment;
     }
 
@@ -93,7 +93,7 @@ export class PaymentModel extends BaseModel<Payment> {
                 userId,
                 paymentPlanId,
                 type,
-                amount: amount.toString(),
+                amount,
                 currency,
                 paymentMethod,
                 status: PaymentStatusEnum.PENDING,

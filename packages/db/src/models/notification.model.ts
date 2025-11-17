@@ -1,5 +1,5 @@
+import type { Notification } from '@repo/schemas';
 import { BaseModel } from '../base/base.model';
-import type { Notification } from '../schemas/notification/notification.dbschema';
 import { notifications } from '../schemas/notification/notification.dbschema';
 import { logError, logQuery } from '../utils/logger';
 

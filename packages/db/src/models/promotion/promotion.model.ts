@@ -1,11 +1,10 @@
+import type { Promotion } from '@repo/schemas';
 import { and, desc, eq, gte, isNull, lte, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { BaseModel } from '../../base/base.model';
 import type * as schema from '../../schemas/index.js';
 import { discountCodes } from '../../schemas/promotion/discountCode.dbschema';
 import { promotions } from '../../schemas/promotion/promotion.dbschema';
-
-type Promotion = typeof promotions.$inferSelect;
 
 export class PromotionModel extends BaseModel<Promotion> {
     protected table = promotions;

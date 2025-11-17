@@ -1,4 +1,5 @@
 import type { Purchase } from '@repo/schemas';
+import { type PriceCurrencyEnum, PurchaseStatusEnum } from '@repo/schemas';
 import { and, desc, eq, isNull } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { BaseModel } from '../../base/base.model';
@@ -54,7 +55,7 @@ export class PurchaseModel extends BaseModel<Purchase> {
 
         const result = await db
             .select({
-                amountMinor: pricingPlans.amountMinor
+                amount: pricingPlans.amount
             })
             .from(pricingPlans)
             .where(eq(pricingPlans.id, pricingPlanId))
@@ -63,7 +64,8 @@ export class PurchaseModel extends BaseModel<Purchase> {
         if (result.length === 0 || !result[0]) return null;
 
         // Simple calculation - can be extended with tiers, discounts, taxes, etc.
-        return result[0].amountMinor * quantity;
+        const baseAmount = result[0].amount;
+        return baseAmount * quantity;
     }
 
     /**
@@ -77,6 +79,11 @@ export class PurchaseModel extends BaseModel<Purchase> {
         purchaseData: {
             clientId: string;
             pricingPlanId: string;
+            amount: number;
+            currency: PriceCurrencyEnum;
+            quantity?: number;
+            paymentId?: string;
+            discountCodeId?: string;
             purchasedAt?: Date;
         },
         tx?: NodePgDatabase<typeof schema>
@@ -89,6 +96,12 @@ export class PurchaseModel extends BaseModel<Purchase> {
             .values({
                 clientId: purchaseData.clientId,
                 pricingPlanId: purchaseData.pricingPlanId,
+                amount: purchaseData.amount,
+                currency: purchaseData.currency,
+                status: PurchaseStatusEnum.PENDING,
+                quantity: purchaseData.quantity || 1,
+                paymentId: purchaseData.paymentId || null,
+                discountCodeId: purchaseData.discountCodeId || null,
                 purchasedAt: purchaseData.purchasedAt || now,
                 createdAt: now,
                 updatedAt: now
@@ -103,7 +116,7 @@ export class PurchaseModel extends BaseModel<Purchase> {
      */
     async processPayment(
         id: string,
-        _paymentData?: {
+        paymentData?: {
             paymentId?: string;
             paymentMethod?: string;
         },
@@ -112,13 +125,12 @@ export class PurchaseModel extends BaseModel<Purchase> {
         const db = this.getClient(tx);
         const now = new Date();
 
-        // For now, we just update the updated timestamp
-        // In a real implementation, this might update payment status fields
         const result = await db
             .update(purchases)
             .set({
+                status: PurchaseStatusEnum.COMPLETED,
+                paymentId: paymentData?.paymentId || null,
                 updatedAt: now
-                // Could add: paymentId, paymentStatus, etc.
             })
             .where(eq(purchases.id, id))
             .returning();
@@ -136,8 +148,8 @@ export class PurchaseModel extends BaseModel<Purchase> {
         const result = await db
             .update(purchases)
             .set({
+                status: PurchaseStatusEnum.COMPLETED,
                 updatedAt: now
-                // In a full implementation, might set completedAt or status
             })
             .where(eq(purchases.id, id))
             .returning();
@@ -197,7 +209,7 @@ export class PurchaseModel extends BaseModel<Purchase> {
         purchase: Purchase;
         pricingPlan: {
             id: string;
-            amountMinor: number;
+            amount: number;
             currency: string;
             billingScheme: string;
         };
@@ -209,7 +221,7 @@ export class PurchaseModel extends BaseModel<Purchase> {
                 purchase: purchases,
                 pricingPlan: {
                     id: pricingPlans.id,
-                    amountMinor: pricingPlans.amountMinor,
+                    amount: pricingPlans.amount,
                     currency: pricingPlans.currency,
                     billingScheme: pricingPlans.billingScheme
                 }

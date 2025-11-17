@@ -1,8 +1,7 @@
-import type { MediaAssetTypeEnum } from '@repo/schemas';
+import type { AdMediaAsset, MediaAssetTypeEnum } from '@repo/schemas';
 import { isNull } from 'drizzle-orm';
 import { BaseModel } from '../base/base.model';
 import { getDb } from '../client';
-import type { AdMediaAsset } from '../schemas/campaign/adMediaAsset.dbschema';
 import { adMediaAssets } from '../schemas/campaign/adMediaAsset.dbschema';
 import { logError, logQuery } from '../utils/logger';
 
@@ -94,7 +93,7 @@ export class AdMediaAssetModel extends BaseModel<AdMediaAsset> {
             });
 
             logQuery(this.entityName, 'getAssetsByFormat', { format }, filtered);
-            return filtered as AdMediaAsset[];
+            return filtered as unknown as AdMediaAsset[];
         } catch (error) {
             logError(this.entityName, 'getAssetsByFormat', { format }, error as Error);
             throw error;

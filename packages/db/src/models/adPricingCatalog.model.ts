@@ -1,10 +1,7 @@
-import type { CampaignChannelEnum } from '@repo/schemas';
+import type { AdPricingCatalog, CampaignChannelEnum } from '@repo/schemas';
 import { BaseModel } from '../base/base.model';
 import { adPricingCatalog } from '../schemas/payment/adPricingCatalog.dbschema';
 import { logError, logQuery } from '../utils/logger';
-
-// Infer type from Drizzle schema
-type AdPricingCatalog = typeof adPricingCatalog.$inferSelect;
 
 /**
  * Ad Pricing Catalog Model
@@ -127,19 +124,17 @@ export class AdPricingCatalogModel extends BaseModel<AdPricingCatalog> {
                 throw new Error(`Pricing catalog not found: ${params.catalogId}`);
             }
 
-            // Parse base price from string
-            let basePrice = Number.parseFloat(catalog.basePrice);
+            // Get base price (already a number from Zod transformation)
+            let basePrice = catalog.basePrice;
 
             // Apply weekend multiplier
             if (params.isWeekend && catalog.weekendMultiplier) {
-                const weekendMultiplier = Number.parseFloat(catalog.weekendMultiplier);
-                basePrice *= weekendMultiplier;
+                basePrice *= catalog.weekendMultiplier;
             }
 
             // Apply holiday multiplier
             if (params.isHoliday && catalog.holidayMultiplier) {
-                const holidayMultiplier = Number.parseFloat(catalog.holidayMultiplier);
-                basePrice *= holidayMultiplier;
+                basePrice *= catalog.holidayMultiplier;
             }
 
             // Calculate based on pricing model

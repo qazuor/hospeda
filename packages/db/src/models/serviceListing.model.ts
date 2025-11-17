@@ -1,5 +1,5 @@
+import type { ServiceListing } from '@repo/schemas';
 import { BaseModel } from '../base/base.model';
-import type { ServiceListing } from '../schemas/serviceListing/serviceListing.dbschema';
 import { serviceListings } from '../schemas/serviceListing/serviceListing.dbschema';
 import { logError, logQuery } from '../utils/logger';
 

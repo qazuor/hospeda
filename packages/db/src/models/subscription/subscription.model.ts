@@ -28,7 +28,7 @@ export class SubscriptionModel extends BaseModel<Subscription> {
             .update(subscriptions)
             .set({
                 status: SubscriptionStatusEnum.ACTIVE,
-                startAt: startAt || now,
+                startDate: startAt || now,
                 updatedAt: now
             })
             .where(eq(subscriptions.id, id))
@@ -50,7 +50,7 @@ export class SubscriptionModel extends BaseModel<Subscription> {
             .update(subscriptions)
             .set({
                 status: SubscriptionStatusEnum.CANCELLED,
-                endAt: cancelAt || now,
+                endDate: cancelAt || now,
                 updatedAt: now
             })
             .where(eq(subscriptions.id, id))
@@ -70,7 +70,7 @@ export class SubscriptionModel extends BaseModel<Subscription> {
         const result = await db
             .update(subscriptions)
             .set({
-                endAt: newEndAt,
+                endDate: newEndAt,
                 updatedAt: now
             })
             .where(eq(subscriptions.id, id))
@@ -87,18 +87,18 @@ export class SubscriptionModel extends BaseModel<Subscription> {
         const now = new Date();
         return (
             subscription.status === SubscriptionStatusEnum.ACTIVE &&
-            (!subscription.endAt || subscription.endAt > now)
+            (!subscription.endDate || subscription.endDate > now)
         );
     }
 
     async isTrialExpiring(id: string, daysThreshold: number): Promise<boolean> {
         const subscription = await this.findById(id);
-        if (!subscription || !subscription.trialEndsAt) return false;
+        if (!subscription || !subscription.trialEndDate) return false;
 
         const now = new Date();
         const threshold = new Date(now.getTime() + daysThreshold * 24 * 60 * 60 * 1000);
 
-        return subscription.trialEndsAt <= threshold && subscription.trialEndsAt > now;
+        return subscription.trialEndDate <= threshold && subscription.trialEndDate > now;
     }
 
     async calculateNextBilling(id: string): Promise<Date | null> {
@@ -121,7 +121,7 @@ export class SubscriptionModel extends BaseModel<Subscription> {
             result.length === 0 ||
             !result[0] ||
             !result[0].pricingPlan?.billingInterval ||
-            !result[0].subscription.startAt
+            !result[0].subscription.startDate
         ) {
             return null;
         }
@@ -130,11 +130,11 @@ export class SubscriptionModel extends BaseModel<Subscription> {
         const { subscription, pricingPlan } = firstResult;
 
         // Additional type safety check
-        if (!pricingPlan || !subscription.startAt) {
+        if (!pricingPlan || !subscription.startDate) {
             return null;
         }
 
-        const startDate = new Date(subscription.startAt);
+        const startDate = new Date(subscription.startDate);
 
         // Use UTC methods to avoid timezone issues
         const startYear = startDate.getUTCFullYear();
@@ -226,7 +226,7 @@ export class SubscriptionModel extends BaseModel<Subscription> {
             .where(
                 and(
                     eq(subscriptions.status, SubscriptionStatusEnum.ACTIVE),
-                    gte(subscriptions.endAt, now)
+                    gte(subscriptions.endDate, now)
                 )
             );
     }
@@ -242,8 +242,8 @@ export class SubscriptionModel extends BaseModel<Subscription> {
             .where(
                 and(
                     eq(subscriptions.status, SubscriptionStatusEnum.ACTIVE),
-                    lte(subscriptions.endAt, threshold),
-                    gte(subscriptions.endAt, now)
+                    lte(subscriptions.endDate, threshold),
+                    gte(subscriptions.endDate, now)
                 )
             );
     }

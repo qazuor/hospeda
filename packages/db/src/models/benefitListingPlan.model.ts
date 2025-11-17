@@ -1,5 +1,5 @@
+import type { BenefitListingPlan } from '@repo/schemas';
 import { BaseModel } from '../base/base.model';
-import type { BenefitListingPlan } from '../schemas/services/benefitListingPlan.dbschema';
 import { benefitListingPlans } from '../schemas/services/benefitListingPlan.dbschema';
 
 /**

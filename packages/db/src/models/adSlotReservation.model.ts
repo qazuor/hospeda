@@ -1,6 +1,6 @@
+import type { AdSlotReservation } from '@repo/schemas';
 import { AdSlotReservationStatusEnum } from '@repo/schemas';
 import { BaseModel } from '../base/base.model';
-import type { AdSlotReservation } from '../schemas/campaign/adSlotReservation.dbschema';
 import { adSlotReservations } from '../schemas/campaign/adSlotReservation.dbschema';
 import { logError, logQuery } from '../utils/logger';
 

@@ -1,3 +1,4 @@
+import type { CreditNote } from '@repo/schemas';
 import { and, count, eq, gte, isNull, lte, sum } from 'drizzle-orm';
 import { BaseModel } from '../../base/base.model';
 import { getDb } from '../../client';
@@ -7,9 +8,8 @@ import { payments } from '../../schemas/payment/payment.dbschema';
 import { refunds } from '../../schemas/payment/refund.dbschema';
 
 /**
- * Credit Note entity type from database schema
+ * Credit Note create input type from database schema
  */
-export type CreditNote = typeof creditNotes.$inferSelect;
 export type CreateCreditNote = typeof creditNotes.$inferInsert;
 
 /**
@@ -48,6 +48,11 @@ export class CreditNoteModel extends BaseModel<CreditNote> {
                 return null;
             }
 
+            // Check if payment has an invoice
+            if (!payment.invoiceId) {
+                return null;
+            }
+
             // Get invoice
             const invoice = await db.query.invoices.findFirst({
                 where: eq(invoices.id, payment.invoiceId)
@@ -60,7 +65,7 @@ export class CreditNoteModel extends BaseModel<CreditNote> {
             // Create credit note
             const creditNoteData: CreateCreditNote = {
                 invoiceId: invoice.id,
-                amount: (refund.amountMinor / 100).toString(),
+                amount: refund.amount,
                 currency: payment.currency,
                 reason: reason || `Credit note generated from refund ${refundId}`,
                 issuedAt: new Date()
@@ -101,8 +106,8 @@ export class CreditNoteModel extends BaseModel<CreditNote> {
                 return { success: false, error: 'Associated invoice not found' };
             }
 
-            const creditAmount = Number.parseFloat(creditNote.amount);
-            const currentInvoiceAmount = Number.parseFloat(invoice.totalAmount);
+            const creditAmount = creditNote.amount;
+            const currentInvoiceAmount = invoice.total;
 
             // Calculate new invoice amount
             const newInvoiceAmount = Math.max(0, currentInvoiceAmount - creditAmount);
@@ -112,7 +117,7 @@ export class CreditNoteModel extends BaseModel<CreditNote> {
             await db
                 .update(invoices)
                 .set({
-                    totalAmount: newInvoiceAmount.toString(),
+                    total: newInvoiceAmount,
                     updatedAt: new Date()
                 })
                 .where(eq(invoices.id, creditNote.invoiceId));
@@ -144,7 +149,7 @@ export class CreditNoteModel extends BaseModel<CreditNote> {
                 return 0;
             }
 
-            return Number.parseFloat(creditNote.amount);
+            return creditNote.amount;
         } catch {
             return 0;
         }
@@ -274,7 +279,7 @@ export class CreditNoteModel extends BaseModel<CreditNote> {
                 return { valid: false, reason: 'INVOICE_NOT_FOUND' };
             }
 
-            const invoiceAmount = Number.parseFloat(invoice.totalAmount);
+            const invoiceAmount = invoice.total;
             const existingCredits = await this.getTotalCreditForInvoice(invoiceId);
             const maxAllowed = invoiceAmount - existingCredits;
 
@@ -314,7 +319,7 @@ export class CreditNoteModel extends BaseModel<CreditNote> {
             // Create credit note
             const creditNoteData: CreateCreditNote = {
                 invoiceId: data.invoiceId,
-                amount: data.amount.toString(),
+                amount: data.amount,
                 currency: data.currency,
                 reason: data.reason,
                 issuedAt: new Date()

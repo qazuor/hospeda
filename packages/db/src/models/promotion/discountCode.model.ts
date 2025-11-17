@@ -1,3 +1,4 @@
+import type { DiscountCode } from '@repo/schemas';
 import { DiscountTypeEnum } from '@repo/schemas';
 import { and, desc, eq, isNull, like, sql, sum } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
@@ -5,8 +6,6 @@ import { BaseModel } from '../../base/base.model';
 import type * as schema from '../../schemas/index.js';
 import { discountCodes } from '../../schemas/promotion/discountCode.dbschema';
 import { discountCodeUsages } from '../../schemas/promotion/discountCodeUsage.dbschema';
-
-type DiscountCode = typeof discountCodes.$inferSelect;
 
 export class DiscountCodeModel extends BaseModel<DiscountCode> {
     protected table = discountCodes;

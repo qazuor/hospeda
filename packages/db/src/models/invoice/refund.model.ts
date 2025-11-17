@@ -1,12 +1,11 @@
-import { PaymentStatusEnum } from '@repo/schemas';
+import type { Refund } from '@repo/schemas';
+import { PaymentStatusEnum, type PriceCurrencyEnum, RefundStatusEnum } from '@repo/schemas';
 import { and, desc, eq, gte, isNull, lte, sum } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { BaseModel } from '../../base/base.model';
 import type * as schema from '../../schemas/index.js';
 import { payments } from '../../schemas/payment/payment.dbschema';
 import { refunds } from '../../schemas/payment/refund.dbschema';
-
-type Refund = typeof refunds.$inferSelect;
 
 export class RefundModel extends BaseModel<Refund> {
     protected table = refunds;
@@ -21,8 +20,12 @@ export class RefundModel extends BaseModel<Refund> {
      */
     async processRefund(
         paymentId: string,
+        clientId: string,
+        refundNumber: string,
         amount: number,
-        reason?: string,
+        currency: PriceCurrencyEnum,
+        reason: string,
+        status: RefundStatusEnum = RefundStatusEnum.PENDING,
         tx?: NodePgDatabase<typeof schema>
     ): Promise<Refund | null> {
         const db = this.getClient(tx);
@@ -65,21 +68,22 @@ export class RefundModel extends BaseModel<Refund> {
             throw new Error('REFUND_AMOUNT_EXCEEDS_REMAINING');
         }
 
-        // Convert amount to minor units (cents)
-        const amountMinor = Math.round(amount * 100);
-
-        // Create refund record
+        // Create refund record (amount is stored as numeric, no conversion needed)
         const result = await db
             .insert(refunds)
             .values({
                 paymentId,
-                amountMinor,
+                clientId,
+                refundNumber,
+                amount,
+                currency,
                 reason,
+                status,
                 refundedAt: new Date()
             })
             .returning();
 
-        return (result[0] as Refund) || null;
+        return (result[0] as unknown as Refund) || null;
     }
 
     /**
@@ -95,7 +99,7 @@ export class RefundModel extends BaseModel<Refund> {
             .orderBy(desc(refunds.createdAt))
             .limit(100);
 
-        return result as Refund[];
+        return result as unknown as Refund[];
     }
 
     /**
@@ -134,12 +138,11 @@ export class RefundModel extends BaseModel<Refund> {
         const db = this.getClient(tx);
 
         const result = await db
-            .select({ totalMinor: sum(refunds.amountMinor) })
+            .select({ total: sum(refunds.amount) })
             .from(refunds)
             .where(eq(refunds.paymentId, paymentId));
 
-        const totalMinor = Number(result[0]?.totalMinor) || 0;
-        return totalMinor / 100; // Convert from minor units to major units
+        return Number(result[0]?.total) || 0;
     }
 
     /**
@@ -269,14 +272,7 @@ export class RefundModel extends BaseModel<Refund> {
         return {
             ...result[0].refunds,
             payment: result[0].payments
-        } as Refund & { payment: typeof payments.$inferSelect };
-    }
-
-    /**
-     * Get refund amount in major currency units
-     */
-    getAmountFromMinor(refund: Refund): number {
-        return refund.amountMinor / 100;
+        } as unknown as Refund & { payment: typeof payments.$inferSelect };
     }
 
     /**
@@ -302,7 +298,7 @@ export class RefundModel extends BaseModel<Refund> {
             .orderBy(desc(refunds.refundedAt))
             .limit(1000);
 
-        return result as Refund[];
+        return result as unknown as Refund[];
     }
 
     /**
@@ -355,6 +351,6 @@ export class RefundModel extends BaseModel<Refund> {
             .where(eq(refunds.id, id))
             .returning();
 
-        return (result[0] as Refund) || null;
+        return (result[0] as unknown as Refund) || null;
     }
 }

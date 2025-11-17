@@ -1,4 +1,5 @@
 import type { PaymentMethod } from '@repo/schemas';
+import type { PaymentMethodEnum } from '@repo/schemas/enums';
 import { and, eq, isNull } from 'drizzle-orm';
 import { BaseModel } from '../../base/base.model';
 import { getDb } from '../../client';
@@ -245,7 +246,7 @@ export class PaymentMethodModel extends BaseModel<PaymentMethod> {
      */
     async createWithCard(data: {
         clientId: string;
-        type: string;
+        type: PaymentMethodEnum;
         cardNumber: string;
         expiryMonth: number;
         expiryYear: number;

@@ -1,11 +1,10 @@
+import type { InvoiceLine } from '@repo/schemas';
 import { eq } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { BaseModel } from '../../base/base.model';
 import type * as schema from '../../schemas/index.js';
 import { invoices } from '../../schemas/payment/invoice.dbschema';
 import { invoiceLines } from '../../schemas/payment/invoiceLine.dbschema';
-
-type InvoiceLine = typeof invoiceLines.$inferSelect;
 
 export class InvoiceLineModel extends BaseModel<InvoiceLine> {
     protected table = invoiceLines;
@@ -42,19 +41,19 @@ export class InvoiceLineModel extends BaseModel<InvoiceLine> {
 
         const { quantity, unitPrice, taxRate, discountRate, discountAmount } = line[0];
 
-        // Calculate line amount (quantity * unit price)
-        const lineAmount = quantity * Number(unitPrice);
+        // Calculate line amount (quantity * unit price) - values already numbers from Zod
+        const lineAmount = quantity * unitPrice;
 
         // Apply discount (either rate or fixed amount)
         let discountedAmount = lineAmount;
-        if (discountRate && Number(discountRate) > 0) {
-            discountedAmount = lineAmount * (1 - Number(discountRate));
-        } else if (discountAmount && Number(discountAmount) > 0) {
-            discountedAmount = lineAmount - Number(discountAmount);
+        if (discountRate && discountRate > 0) {
+            discountedAmount = lineAmount * (1 - discountRate);
+        } else if (discountAmount && discountAmount > 0) {
+            discountedAmount = lineAmount - discountAmount;
         }
 
         // Calculate tax on discounted amount
-        const taxAmount = discountedAmount * Number(taxRate || 0);
+        const taxAmount = discountedAmount * (taxRate || 0);
 
         // Total amount including tax
         const totalAmount = discountedAmount + taxAmount;
@@ -82,21 +81,20 @@ export class InvoiceLineModel extends BaseModel<InvoiceLine> {
         };
 
         if (discountRate !== undefined) {
-            updateData.discountRate = discountRate.toString();
-            updateData.discountAmount = '0.00'; // Reset fixed discount when using rate
+            updateData.discountRate = discountRate;
+            updateData.discountAmount = 0; // Reset fixed discount when using rate
         }
 
         if (discountAmount !== undefined) {
-            updateData.discountAmount = discountAmount.toString();
-            updateData.discountRate = '0.0000'; // Reset rate when using fixed amount
+            updateData.discountAmount = discountAmount;
+            updateData.discountRate = 0; // Reset rate when using fixed amount
         }
 
         // Recalculate totals
         const calculations = await this.calculateLineTotal(id, tx);
         if (calculations) {
-            updateData.lineAmount = calculations.lineAmount.toString();
-            updateData.taxAmount = calculations.taxAmount.toString();
-            updateData.totalAmount = calculations.totalAmount.toString();
+            updateData.taxAmount = calculations.taxAmount;
+            updateData.total = calculations.totalAmount;
         }
 
         const result = await db
@@ -153,10 +151,9 @@ export class InvoiceLineModel extends BaseModel<InvoiceLine> {
         const result = await db
             .update(invoiceLines)
             .set({
-                taxRate: taxRate.toString(),
-                lineAmount: discountedAmount.toString(),
-                taxAmount: taxAmount.toString(),
-                totalAmount: totalAmount.toString(),
+                taxRate: taxRate,
+                taxAmount: taxAmount,
+                total: totalAmount,
                 updatedAt: new Date()
             })
             .where(eq(invoiceLines.id, id))
@@ -252,9 +249,8 @@ export class InvoiceLineModel extends BaseModel<InvoiceLine> {
             .update(invoiceLines)
             .set({
                 quantity,
-                lineAmount: discountedAmount.toString(),
-                taxAmount: taxAmountCalc.toString(),
-                totalAmount: totalAmount.toString(),
+                taxAmount: taxAmountCalc,
+                total: totalAmount,
                 updatedAt: new Date()
             })
             .where(eq(invoiceLines.id, id))
@@ -321,13 +317,12 @@ export class InvoiceLineModel extends BaseModel<InvoiceLine> {
                 invoiceId,
                 description,
                 quantity,
-                unitPrice: unitPrice.toString(),
-                lineAmount: discountedAmount.toString(),
-                taxRate: taxRate.toString(),
-                taxAmount: taxAmountCalc.toString(),
-                discountRate: discountRate.toString(),
-                discountAmount: discountAmount.toString(),
-                totalAmount: totalAmount.toString(),
+                unitPrice: unitPrice,
+                taxRate: taxRate,
+                taxAmount: taxAmountCalc,
+                discountRate: discountRate,
+                discountAmount: discountAmount,
+                total: totalAmount,
                 pricingPlanId,
                 subscriptionItemId,
                 periodStart,

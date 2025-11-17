@@ -1,3 +1,4 @@
+import type { Invoice } from '@repo/schemas';
 import { InvoiceStatusEnum } from '@repo/schemas';
 import { and, desc, eq, isNotNull, like, lte, ne, sum } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
@@ -7,8 +8,6 @@ import { invoices } from '../../schemas/payment/invoice.dbschema';
 import { invoiceLines } from '../../schemas/payment/invoiceLine.dbschema';
 import { payments } from '../../schemas/payment/payment.dbschema';
 import { subscriptions } from '../../schemas/subscription/subscription.dbschema';
-
-type Invoice = typeof invoices.$inferSelect;
 
 export class InvoiceModel extends BaseModel<Invoice> {
     protected table = invoices;
@@ -60,12 +59,12 @@ export class InvoiceModel extends BaseModel<Invoice> {
                 clientId: subscription[0].clientId,
                 invoiceNumber,
                 status: InvoiceStatusEnum.OPEN,
-                subtotalAmount: subtotalAmount.toString(),
-                taxAmount: taxAmount.toString(),
-                totalAmount: totalAmount.toString(),
+                subtotal: subtotalAmount,
+                taxes: taxAmount,
+                total: totalAmount,
                 currency: 'USD',
-                issuedAt: new Date(),
-                dueAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+                issueDate: new Date(),
+                dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
                 metadata: {
                     subscriptionId,
                     billingPeriodStart: billingPeriodStart.toISOString(),
@@ -90,7 +89,7 @@ export class InvoiceModel extends BaseModel<Invoice> {
             .select({
                 subtotal: sum(invoiceLines.unitPrice),
                 tax: sum(invoiceLines.taxAmount),
-                total: sum(invoiceLines.totalAmount)
+                total: sum(invoiceLines.total)
             })
             .from(invoiceLines)
             .where(eq(invoiceLines.invoiceId, invoiceId));
@@ -180,7 +179,7 @@ export class InvoiceModel extends BaseModel<Invoice> {
         const invoice = await db
             .select({
                 status: invoices.status,
-                totalAmount: invoices.totalAmount
+                total: invoices.total
             })
             .from(invoices)
             .where(eq(invoices.id, id))
@@ -191,7 +190,7 @@ export class InvoiceModel extends BaseModel<Invoice> {
         }
 
         const amountPaid = await this.getAmountPaid(id, tx);
-        const totalAmount = Number(invoice[0].totalAmount);
+        const totalAmount = Number(invoice[0].total);
         const balance = totalAmount - amountPaid;
 
         return {
@@ -214,11 +213,11 @@ export class InvoiceModel extends BaseModel<Invoice> {
             .where(
                 and(
                     eq(invoices.status, InvoiceStatusEnum.OPEN),
-                    lte(invoices.dueAt, now),
-                    isNotNull(invoices.dueAt)
+                    lte(invoices.dueDate, now),
+                    isNotNull(invoices.dueDate)
                 )
             )
-            .orderBy(desc(invoices.dueAt))
+            .orderBy(desc(invoices.dueDate))
             .limit(100);
 
         return result as Invoice[];
@@ -301,7 +300,7 @@ export class InvoiceModel extends BaseModel<Invoice> {
         const db = this.getClient(tx);
 
         const invoice = await db
-            .select({ totalAmount: invoices.totalAmount })
+            .select({ total: invoices.total })
             .from(invoices)
             .where(eq(invoices.id, id))
             .limit(1);
@@ -310,7 +309,7 @@ export class InvoiceModel extends BaseModel<Invoice> {
             return 0;
         }
 
-        return Number(invoice[0].totalAmount) || 0;
+        return Number(invoice[0].total) || 0;
     }
 
     /**

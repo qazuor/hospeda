@@ -1,5 +1,5 @@
+import type { TouristService } from '@repo/schemas';
 import { BaseModel } from '../base/base.model';
-import type { TouristService } from '../schemas/serviceListing/touristService.dbschema';
 import { touristServices } from '../schemas/serviceListing/touristService.dbschema';
 import { logError, logQuery } from '../utils/logger';
 

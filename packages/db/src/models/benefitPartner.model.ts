@@ -1,5 +1,5 @@
+import type { BenefitPartner } from '@repo/schemas';
 import { BaseModel } from '../base/base.model';
-import type { BenefitPartner } from '../schemas/services/benefitPartner.dbschema';
 import { benefitPartners } from '../schemas/services/benefitPartner.dbschema';
 import { logError, logQuery } from '../utils/logger';
 
