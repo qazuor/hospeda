@@ -8,11 +8,12 @@
  */
 
 import type { AdSlotModel } from '@repo/db';
-import type { AdSlot } from '@repo/db';
+import type { AdSlot } from '@repo/schemas';
 import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AdSlotService } from '../../../src/services/adSlot/adSlot.service.js';
 import type { Actor, ServiceContext } from '../../../src/types/index.js';
+import { createMockAdSlot } from '../../factories/adSlotFactory.js';
 
 describe('AdSlotService', () => {
     let service: AdSlotService;
@@ -30,45 +31,11 @@ describe('AdSlotService', () => {
         ]
     };
 
-    const mockAdSlot: AdSlot = {
+    const mockAdSlot: AdSlot = createMockAdSlot({
         id: 'slot-123',
-        name: 'Homepage Banner',
-        description: 'Main banner slot on homepage',
-        placement: {
-            page: 'homepage',
-            position: 'header',
-            priority: 1
-        },
-        format: {
-            width: 970,
-            height: 250,
-            allowedFormats: ['banner', 'leaderboard'],
-            isResponsive: true
-        },
-        targeting: {
-            blockedCountries: [],
-            allowedDevices: ['desktop', 'mobile', 'tablet'],
-            allowedContentTypes: ['general'],
-            requiresAuthentication: false,
-            allowedUserTypes: ['all']
-        },
-        pricing: {
-            model: 'cpm',
-            basePrice: 10,
-            currency: 'USD',
-            premiumMultiplier: 1,
-            seasonalAdjustments: []
-        },
-        availability: {
-            isActive: true,
-            timeSlots: [],
-            maxReservationsPerDay: 10,
-            blackoutDates: []
-        },
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        deletedAt: null
-    };
+        name: 'Test Homepage Header',
+        description: 'Test ad slot for homepage header position'
+    });
 
     beforeEach(() => {
         ctx = {
@@ -89,7 +56,7 @@ describe('AdSlotService', () => {
             findByPlacement: vi.fn(),
             findByFormat: vi.fn(),
             findByPricingModel: vi.fn(),
-            findAvailableSlots: vi.fn(),
+            getAvailableSlots: vi.fn(),
             findByPerformance: vi.fn(),
             getTopPerformingSlots: vi.fn()
         } as unknown as AdSlotModel;
@@ -406,12 +373,12 @@ describe('AdSlotService', () => {
                 const slots = [mockAdSlot];
                 const startDate = new Date('2025-01-01');
                 const endDate = new Date('2025-01-31');
-                vi.mocked(mockModel.findAvailableSlots).mockResolvedValue(slots);
+                vi.mocked(mockModel.getAvailableSlots).mockResolvedValue(slots);
 
                 const result = await service.findAvailableSlots(mockActor, startDate, endDate);
 
                 expect(result.data).toEqual(slots);
-                expect(mockModel.findAvailableSlots).toHaveBeenCalledWith(startDate, endDate);
+                expect(mockModel.getAvailableSlots).toHaveBeenCalledWith();
             });
         });
 
@@ -569,7 +536,10 @@ describe('AdSlotService', () => {
             it('should return false if slot is inactive', async () => {
                 const inactiveSlot = {
                     ...mockAdSlot,
-                    availability: { ...mockAdSlot.availability, isActive: false }
+                    availability: {
+                        ...mockAdSlot.availability,
+                        isActive: false
+                    }
                 };
                 vi.mocked(mockModel.findById).mockResolvedValue(inactiveSlot);
 

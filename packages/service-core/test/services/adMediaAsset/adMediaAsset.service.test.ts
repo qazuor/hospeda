@@ -10,6 +10,12 @@
 import type { AdMediaAssetModel } from '@repo/db';
 import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+    checkCanCreate,
+    checkCanSoftDelete,
+    checkCanUpdate,
+    checkCanView
+} from '../../../src/services/adMediaAsset/adMediaAsset.permissions.js';
 import { AdMediaAssetService } from '../../../src/services/adMediaAsset/adMediaAsset.service.js';
 import type { Actor, ServiceContext } from '../../../src/types/index.js';
 
@@ -22,7 +28,12 @@ describe('AdMediaAssetService', () => {
     const adminActor: Actor = {
         id: 'admin-123',
         role: RoleEnum.ADMIN,
-        permissions: []
+        permissions: [
+            PermissionEnum.AD_MEDIA_ASSET_CREATE,
+            PermissionEnum.AD_MEDIA_ASSET_UPDATE,
+            PermissionEnum.AD_MEDIA_ASSET_DELETE,
+            PermissionEnum.AD_MEDIA_ASSET_VIEW
+        ]
     };
 
     const userWithPermissions: Actor = {
@@ -90,61 +101,55 @@ describe('AdMediaAssetService', () => {
 
     describe('Permission Hooks', () => {
         it('should allow ADMIN to create', () => {
-            expect(() => service._canCreate(adminActor, {})).not.toThrow();
+            expect(() => checkCanCreate(adminActor, {})).not.toThrow();
         });
 
         it('should allow user with AD_MEDIA_ASSET_CREATE permission', () => {
-            expect(() => service._canCreate(userWithPermissions, {})).not.toThrow();
+            expect(() => checkCanCreate(userWithPermissions, {})).not.toThrow();
         });
 
         it('should deny user without AD_MEDIA_ASSET_CREATE permission', () => {
-            expect(() => service._canCreate(userWithoutPermissions, {})).toThrow();
+            expect(() => checkCanCreate(userWithoutPermissions, {})).toThrow();
         });
 
         it('should allow ADMIN to update', () => {
-            expect(() => service._canUpdate(adminActor, validAssetData as any)).not.toThrow();
+            expect(() => checkCanUpdate(adminActor, validAssetData as any)).not.toThrow();
         });
 
         it('should allow user with AD_MEDIA_ASSET_UPDATE permission', () => {
-            expect(() =>
-                service._canUpdate(userWithPermissions, validAssetData as any)
-            ).not.toThrow();
+            expect(() => checkCanUpdate(userWithPermissions, validAssetData as any)).not.toThrow();
         });
 
         it('should deny user without AD_MEDIA_ASSET_UPDATE permission', () => {
-            expect(() =>
-                service._canUpdate(userWithoutPermissions, validAssetData as any)
-            ).toThrow();
+            expect(() => checkCanUpdate(userWithoutPermissions, validAssetData as any)).toThrow();
         });
 
         it('should allow ADMIN to soft delete', () => {
-            expect(() => service._canSoftDelete(adminActor, validAssetData as any)).not.toThrow();
+            expect(() => checkCanSoftDelete(adminActor, validAssetData as any)).not.toThrow();
         });
 
         it('should allow user with AD_MEDIA_ASSET_DELETE permission', () => {
             expect(() =>
-                service._canSoftDelete(userWithPermissions, validAssetData as any)
+                checkCanSoftDelete(userWithPermissions, validAssetData as any)
             ).not.toThrow();
         });
 
         it('should deny user without AD_MEDIA_ASSET_DELETE permission', () => {
             expect(() =>
-                service._canSoftDelete(userWithoutPermissions, validAssetData as any)
+                checkCanSoftDelete(userWithoutPermissions, validAssetData as any)
             ).toThrow();
         });
 
         it('should allow ADMIN to view', () => {
-            expect(() => service._canView(adminActor, validAssetData as any)).not.toThrow();
+            expect(() => checkCanView(adminActor, validAssetData as any)).not.toThrow();
         });
 
         it('should allow user with AD_MEDIA_ASSET_VIEW permission', () => {
-            expect(() =>
-                service._canView(userWithPermissions, validAssetData as any)
-            ).not.toThrow();
+            expect(() => checkCanView(userWithPermissions, validAssetData as any)).not.toThrow();
         });
 
         it('should deny user without AD_MEDIA_ASSET_VIEW permission', () => {
-            expect(() => service._canView(userWithoutPermissions, validAssetData as any)).toThrow();
+            expect(() => checkCanView(userWithoutPermissions, validAssetData as any)).toThrow();
         });
     });
 
@@ -239,10 +244,10 @@ describe('AdMediaAssetService', () => {
     describe('Business Logic Methods', () => {
         describe('updateStatus', () => {
             it('should update asset status', async () => {
-                const mockAsset = { ...validAssetData, id: 'asset-1' } as any;
+                const mockAsset = { ...validAssetData, id: 'asset-1', status: 'active' } as any;
                 const updatedAsset = {
                     ...mockAsset,
-                    specs: { ...validAssetData.specs, status: 'inactive' }
+                    status: 'inactive'
                 } as any;
 
                 vi.mocked(mockModel.findById).mockResolvedValue(mockAsset);
@@ -254,8 +259,7 @@ describe('AdMediaAssetService', () => {
                 expect(result.error).toBeUndefined();
                 expect(mockModel.update).toHaveBeenCalled();
                 if (result.data) {
-                    const specs = result.data.specs as { status?: string };
-                    expect(specs?.status).toBe('inactive');
+                    expect(result.data.status).toBe('inactive');
                 }
             });
 
@@ -263,7 +267,11 @@ describe('AdMediaAssetService', () => {
                 const mockAsset = { ...validAssetData, id: 'asset-1' } as any;
                 vi.mocked(mockModel.findById).mockResolvedValue(mockAsset);
 
-                const result = await service.updateStatus(adminActor, 'asset-1', 'invalid-status');
+                const result = await service.updateStatus(
+                    adminActor,
+                    'asset-1',
+                    'invalid-status' as any
+                );
 
                 expect(result.error).toBeDefined();
                 expect(result.data).toBeUndefined();
@@ -288,14 +296,16 @@ describe('AdMediaAssetService', () => {
                 const mockAsset = { ...validAssetData, id: 'asset-1' } as any;
                 const updatedAsset = {
                     ...mockAsset,
-                    specs: {
-                        ...validAssetData.specs,
-                        performance: {
-                            totalViews: 1000,
-                            totalClicks: 50,
-                            averageViewDuration: 30,
-                            engagementRate: 0.05
-                        }
+                    performance: {
+                        totalViews: 1000,
+                        totalClicks: 50,
+                        averageViewDuration: 30,
+                        engagementRate: 0.05,
+                        conversionRate: 0,
+                        costPerClick: 0,
+                        costPerConversion: 0,
+                        returnOnAdSpend: 0,
+                        performanceScore: 5
                     }
                 } as any;
 
@@ -305,7 +315,10 @@ describe('AdMediaAssetService', () => {
                 const metrics = {
                     totalViews: 1000,
                     totalClicks: 50,
-                    averageViewDuration: 30
+                    averageViewDuration: 30,
+                    engagementRate: 0.05,
+                    conversionRate: 0.02,
+                    performanceScore: 7
                 };
 
                 const result = await service.updatePerformance(adminActor, 'asset-1', metrics);
@@ -314,23 +327,20 @@ describe('AdMediaAssetService', () => {
                 expect(result.error).toBeUndefined();
                 expect(mockModel.update).toHaveBeenCalled();
                 if (result.data) {
-                    const specs = result.data.specs as {
-                        performance?: {
-                            totalViews?: number;
-                            totalClicks?: number;
-                            averageViewDuration?: number;
-                            engagementRate?: number;
-                        };
-                    };
-                    expect(specs?.performance?.totalViews).toBe(1000);
-                    expect(specs?.performance?.totalClicks).toBe(50);
-                    expect(specs?.performance?.engagementRate).toBe(0.05);
+                    expect(result.data.performance?.totalViews).toBe(1000);
+                    expect(result.data.performance?.totalClicks).toBe(50);
+                    expect(result.data.performance?.engagementRate).toBe(0.05);
                 }
             });
 
             it('should require update permission', async () => {
                 const result = await service.updatePerformance(userWithoutPermissions, 'asset-1', {
-                    totalViews: 1000
+                    totalViews: 1000,
+                    totalClicks: 0,
+                    averageViewDuration: 0,
+                    engagementRate: 0,
+                    conversionRate: 0,
+                    performanceScore: 5
                 });
 
                 expect(result.error).toBeDefined();
@@ -342,11 +352,11 @@ describe('AdMediaAssetService', () => {
                 const mockAsset = {
                     ...validAssetData,
                     id: 'asset-1',
-                    specs: { ...validAssetData.specs, status: 'draft' }
+                    status: 'draft'
                 } as any;
                 const updatedAsset = {
                     ...mockAsset,
-                    specs: { ...validAssetData.specs, status: 'active' }
+                    status: 'active'
                 } as any;
 
                 vi.mocked(mockModel.findById).mockResolvedValue(mockAsset);
@@ -356,8 +366,7 @@ describe('AdMediaAssetService', () => {
 
                 expect(result.data).toBeDefined();
                 if (result.data) {
-                    const specs = result.data.specs as { status?: string };
-                    expect(specs?.status).toBe('active');
+                    expect(result.data.status).toBe('active');
                 }
             });
         });
@@ -367,7 +376,7 @@ describe('AdMediaAssetService', () => {
                 const mockAsset = { ...validAssetData, id: 'asset-1' } as any;
                 const updatedAsset = {
                     ...mockAsset,
-                    specs: { ...validAssetData.specs, status: 'inactive' }
+                    status: 'inactive'
                 } as any;
 
                 vi.mocked(mockModel.findById).mockResolvedValue(mockAsset);
@@ -377,8 +386,7 @@ describe('AdMediaAssetService', () => {
 
                 expect(result.data).toBeDefined();
                 if (result.data) {
-                    const specs = result.data.specs as { status?: string };
-                    expect(specs?.status).toBe('inactive');
+                    expect(result.data.status).toBe('inactive');
                 }
             });
         });
@@ -388,7 +396,7 @@ describe('AdMediaAssetService', () => {
                 const mockAsset = { ...validAssetData, id: 'asset-1' } as any;
                 const updatedAsset = {
                     ...mockAsset,
-                    specs: { ...validAssetData.specs, status: 'archived' }
+                    status: 'archived'
                 } as any;
 
                 vi.mocked(mockModel.findById).mockResolvedValue(mockAsset);
@@ -398,8 +406,7 @@ describe('AdMediaAssetService', () => {
 
                 expect(result.data).toBeDefined();
                 if (result.data) {
-                    const specs = result.data.specs as { status?: string };
-                    expect(specs?.status).toBe('archived');
+                    expect(result.data.status).toBe('archived');
                 }
             });
         });

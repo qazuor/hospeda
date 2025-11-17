@@ -6,9 +6,22 @@ import {
     ServiceErrorCode
 } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+    checkCanCount,
+    checkCanCreate,
+    checkCanHardDelete,
+    checkCanList,
+    checkCanManageStatus,
+    checkCanRestore,
+    checkCanSearch,
+    checkCanSoftDelete,
+    checkCanUpdate,
+    checkCanUpdateVisibility,
+    checkCanView
+} from '../../../src/services/adSlotReservation/adSlotReservation.permissions.js';
 import { AdSlotReservationService } from '../../../src/services/adSlotReservation/adSlotReservation.service';
-import type { Actor } from '../../../src/types/actor';
-import type { ServiceContext } from '../../../src/types/service-context';
+import type { Actor } from '../../../src/types/index.js';
+import type { ServiceContext } from '../../../src/types/index.js';
 
 describe('AdSlotReservationService', () => {
     let service: AdSlotReservationService;
@@ -85,7 +98,7 @@ describe('AdSlotReservationService', () => {
     describe('Permission Hooks', () => {
         describe('_canCreate', () => {
             it('should allow admin to create', () => {
-                expect(() => service._canCreate(validAdminActor)).not.toThrow();
+                expect(() => checkCanCreate(validAdminActor, {})).not.toThrow();
             });
 
             it('should allow user with CREATE permission', () => {
@@ -95,17 +108,17 @@ describe('AdSlotReservationService', () => {
                     permissions: [PermissionEnum.AD_SLOT_RESERVATION_CREATE]
                 };
 
-                expect(() => service._canCreate(actorWithPermission)).not.toThrow();
+                expect(() => checkCanCreate(actorWithPermission, {})).not.toThrow();
             });
 
             it('should deny user without CREATE permission', () => {
-                expect(() => service._canCreate(validUserActor)).toThrow();
+                expect(() => checkCanCreate(validUserActor, {})).toThrow();
             });
         });
 
         describe('_canUpdate', () => {
             it('should allow admin to update', () => {
-                expect(() => service._canUpdate(validAdminActor, mockReservation)).not.toThrow();
+                expect(() => checkCanUpdate(validAdminActor, mockReservation)).not.toThrow();
             });
 
             it('should allow user with UPDATE permission', () => {
@@ -115,21 +128,17 @@ describe('AdSlotReservationService', () => {
                     permissions: [PermissionEnum.AD_SLOT_RESERVATION_UPDATE]
                 };
 
-                expect(() =>
-                    service._canUpdate(actorWithPermission, mockReservation)
-                ).not.toThrow();
+                expect(() => checkCanUpdate(actorWithPermission, mockReservation)).not.toThrow();
             });
 
             it('should deny user without UPDATE permission', () => {
-                expect(() => service._canUpdate(validUserActor, mockReservation)).toThrow();
+                expect(() => checkCanUpdate(validUserActor, mockReservation)).toThrow();
             });
         });
 
         describe('_canSoftDelete', () => {
             it('should allow admin to soft delete', () => {
-                expect(() =>
-                    service._canSoftDelete(validAdminActor, mockReservation)
-                ).not.toThrow();
+                expect(() => checkCanSoftDelete(validAdminActor, mockReservation)).not.toThrow();
             });
 
             it('should allow user with DELETE permission', () => {
@@ -140,22 +149,22 @@ describe('AdSlotReservationService', () => {
                 };
 
                 expect(() =>
-                    service._canSoftDelete(actorWithPermission, mockReservation)
+                    checkCanSoftDelete(actorWithPermission, mockReservation)
                 ).not.toThrow();
             });
 
             it('should deny user without DELETE permission', () => {
-                expect(() => service._canSoftDelete(validUserActor, mockReservation)).toThrow();
+                expect(() => checkCanSoftDelete(validUserActor, mockReservation)).toThrow();
             });
         });
 
         describe('_canView', () => {
             it('should allow admin to view', () => {
-                expect(() => service._canView(validAdminActor, mockReservation)).not.toThrow();
+                expect(() => checkCanView(validAdminActor, mockReservation)).not.toThrow();
             });
 
             it('should allow user with VIEW permission', () => {
-                expect(() => service._canView(validUserActor, mockReservation)).not.toThrow();
+                expect(() => checkCanView(validUserActor, mockReservation)).not.toThrow();
             });
 
             it('should deny user without VIEW permission', () => {
@@ -165,15 +174,13 @@ describe('AdSlotReservationService', () => {
                     permissions: []
                 };
 
-                expect(() => service._canView(actorWithoutPermission, mockReservation)).toThrow();
+                expect(() => checkCanView(actorWithoutPermission, mockReservation)).toThrow();
             });
         });
 
         describe('_canHardDelete', () => {
             it('should allow admin to hard delete', () => {
-                expect(() =>
-                    service._canHardDelete(validAdminActor, mockReservation)
-                ).not.toThrow();
+                expect(() => checkCanHardDelete(validAdminActor, mockReservation)).not.toThrow();
             });
 
             it('should deny regular user even with HARD_DELETE permission', () => {
@@ -183,9 +190,7 @@ describe('AdSlotReservationService', () => {
                     permissions: [PermissionEnum.AD_SLOT_RESERVATION_HARD_DELETE]
                 };
 
-                expect(() =>
-                    service._canHardDelete(actorWithPermission, mockReservation)
-                ).toThrow();
+                expect(() => checkCanHardDelete(actorWithPermission, mockReservation)).toThrow();
             });
         });
 
@@ -193,9 +198,7 @@ describe('AdSlotReservationService', () => {
             const deletedReservation = { ...mockReservation, deletedAt: new Date() };
 
             it('should allow admin to restore', () => {
-                expect(() =>
-                    service._canRestore(validAdminActor, deletedReservation)
-                ).not.toThrow();
+                expect(() => checkCanRestore(validAdminActor, deletedReservation)).not.toThrow();
             });
 
             it('should allow user with RESTORE permission', () => {
@@ -206,49 +209,49 @@ describe('AdSlotReservationService', () => {
                 };
 
                 expect(() =>
-                    service._canRestore(actorWithPermission, deletedReservation)
+                    checkCanRestore(actorWithPermission, deletedReservation)
                 ).not.toThrow();
             });
 
             it('should deny user without RESTORE permission', () => {
-                expect(() => service._canRestore(validUserActor, deletedReservation)).toThrow();
+                expect(() => checkCanRestore(validUserActor, deletedReservation)).toThrow();
             });
         });
 
         describe('_canList', () => {
             it('should allow admin to list', () => {
-                expect(() => service._canList(validAdminActor)).not.toThrow();
+                expect(() => checkCanList(validAdminActor)).not.toThrow();
             });
 
             it('should allow user with VIEW permission', () => {
-                expect(() => service._canList(validUserActor)).not.toThrow();
+                expect(() => checkCanList(validUserActor)).not.toThrow();
             });
         });
 
         describe('_canSearch', () => {
             it('should allow admin to search', () => {
-                expect(() => service._canSearch(validAdminActor)).not.toThrow();
+                expect(() => checkCanSearch(validAdminActor)).not.toThrow();
             });
 
             it('should allow user with VIEW permission', () => {
-                expect(() => service._canSearch(validUserActor)).not.toThrow();
+                expect(() => checkCanSearch(validUserActor)).not.toThrow();
             });
         });
 
         describe('_canCount', () => {
             it('should allow admin to count', () => {
-                expect(() => service._canCount(validAdminActor)).not.toThrow();
+                expect(() => checkCanCount(validAdminActor)).not.toThrow();
             });
 
             it('should allow user with VIEW permission', () => {
-                expect(() => service._canCount(validUserActor)).not.toThrow();
+                expect(() => checkCanCount(validUserActor)).not.toThrow();
             });
         });
 
         describe('_canUpdateVisibility', () => {
             it('should allow admin to update visibility', () => {
                 expect(() =>
-                    service._canUpdateVisibility(validAdminActor, mockReservation)
+                    checkCanUpdateVisibility(validAdminActor, mockReservation)
                 ).not.toThrow();
             });
 
@@ -260,16 +263,14 @@ describe('AdSlotReservationService', () => {
                 };
 
                 expect(() =>
-                    service._canUpdateVisibility(actorWithPermission, mockReservation)
+                    checkCanUpdateVisibility(actorWithPermission, mockReservation)
                 ).not.toThrow();
             });
         });
 
         describe('_canManageStatus', () => {
             it('should allow admin to manage status', () => {
-                expect(() =>
-                    service._canManageStatus(validAdminActor, mockReservation)
-                ).not.toThrow();
+                expect(() => checkCanManageStatus(validAdminActor, mockReservation)).not.toThrow();
             });
 
             it('should allow user with STATUS_MANAGE permission', () => {
@@ -280,12 +281,12 @@ describe('AdSlotReservationService', () => {
                 };
 
                 expect(() =>
-                    service._canManageStatus(actorWithPermission, mockReservation)
+                    checkCanManageStatus(actorWithPermission, mockReservation)
                 ).not.toThrow();
             });
 
             it('should deny user without STATUS_MANAGE permission', () => {
-                expect(() => service._canManageStatus(validUserActor, mockReservation)).toThrow();
+                expect(() => checkCanManageStatus(validUserActor, mockReservation)).toThrow();
             });
         });
     });
