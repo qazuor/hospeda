@@ -59,7 +59,10 @@ export const accommodations: ReturnType<typeof pgTable> = pgTable(
         visibility: VisibilityPgEnum('visibility').notNull().default('PUBLIC'),
         lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
         reviewsCount: integer('reviews_count').notNull().default(0),
-        averageRating: numeric('average_rating', { precision: 3, scale: 2 }).notNull().default('0'),
+        averageRating: numeric('average_rating', { precision: 3, scale: 2 })
+            .notNull()
+            .default('0')
+            .$type<number>(),
         seo: jsonb('seo').$type<Seo>(),
         adminInfo: jsonb('admin_info').$type<AdminInfoType>(),
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),

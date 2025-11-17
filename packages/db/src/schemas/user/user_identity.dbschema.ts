@@ -1,5 +1,6 @@
 import { relations } from 'drizzle-orm';
 import { jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import { AuthProviderPgEnum } from '../enums.dbschema';
 import { users } from './user.dbschema.ts';
 
 export const userAuthIdentities: ReturnType<typeof pgTable> = pgTable(
@@ -9,7 +10,7 @@ export const userAuthIdentities: ReturnType<typeof pgTable> = pgTable(
         userId: uuid('user_id')
             .notNull()
             .references(() => users.id, { onDelete: 'cascade' }),
-        provider: text('provider').notNull(),
+        provider: AuthProviderPgEnum('provider').notNull(),
         providerUserId: text('provider_user_id').notNull(),
         email: text('email'),
         username: text('username'),

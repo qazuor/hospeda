@@ -17,7 +17,7 @@ export const accommodationListingPlans = pgTable('accommodation_listing_plans', 
     description: text('description'),
 
     // Pricing
-    price: numeric('price', { precision: 10, scale: 2 }).notNull(),
+    price: numeric('price', { precision: 10, scale: 2 }).notNull().$type<number>(),
 
     // Plan limits and features (JSONB for flexibility)
     limits: jsonb('limits').$type<{
@@ -35,7 +35,7 @@ export const accommodationListingPlans = pgTable('accommodation_listing_plans', 
     // Plan status
     isActive: boolean('is_active').notNull().default(true),
     isTrialAvailable: boolean('is_trial_available').notNull().default(false),
-    trialDays: numeric('trial_days', { precision: 3, scale: 0 }).default('0'),
+    trialDays: numeric('trial_days', { precision: 3, scale: 0 }).default('0').$type<number>(),
 
     // Administrative metadata
     adminInfo: jsonb('admin_info').$type<AdminInfoType>(),

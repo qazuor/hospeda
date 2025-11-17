@@ -1,6 +1,6 @@
 import type { AdminInfoType } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
-import { jsonb, pgTable, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { integer, jsonb, numeric, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { clients } from '../client/client.dbschema';
 import { SponsorshipEntityTypePgEnum, SponsorshipStatusPgEnum } from '../enums.dbschema.js';
 import { events } from '../event/event.dbschema';
@@ -23,6 +23,21 @@ export const sponsorships = pgTable('sponsorships', {
     fromDate: timestamp('from_date', { withTimezone: true }),
     toDate: timestamp('to_date', { withTimezone: true }),
     status: SponsorshipStatusPgEnum('status').notNull(),
+
+    // Optional details
+    description: text('description'),
+    priority: integer('priority').notNull().default(50),
+
+    // Budget and cost tracking
+    budgetAmount: numeric('budget_amount', { precision: 10, scale: 2 }).$type<number>(),
+    spentAmount: numeric('spent_amount', { precision: 10, scale: 2 })
+        .notNull()
+        .default('0')
+        .$type<number>(),
+
+    // Performance metrics
+    impressionCount: integer('impression_count').notNull().default(0),
+    clickCount: integer('click_count').notNull().default(0),
 
     // Audit fields
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
