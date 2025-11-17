@@ -1,24 +1,23 @@
-import type { PricingPlan, PricingPlanIdType } from '@repo/schemas';
+import { LifecycleStatusEnum, type PricingPlan, type PricingPlanId } from '@repo/schemas';
 import { BillingIntervalEnum, BillingSchemeEnum } from '@repo/schemas';
 import { getMockId } from './utilsFactory';
 
 export function createMockPricingPlan(overrides?: Partial<PricingPlan>): PricingPlan {
     const defaults: PricingPlan = {
-        id: getMockId('pricingPlan', 'pp1') as PricingPlanIdType,
+        id: getMockId('pricingPlan', 'pp1') as PricingPlanId,
         productId: getMockId('product') as string,
         billingScheme: BillingSchemeEnum.RECURRING,
         interval: BillingIntervalEnum.MONTH,
-        amountMinor: 10000, // $100.00
+        amount: 100, // $100.00
         currency: 'ARS',
-        metadata: {},
-        lifecycleState: 'ACTIVE',
+        lifecycleState: LifecycleStatusEnum.ACTIVE,
         adminInfo: null,
         isActive: true,
         isDeleted: false,
         createdAt: new Date(),
         updatedAt: new Date(),
-        createdById: getMockId('user') as string,
-        updatedById: getMockId('user') as string,
+        createdById: getMockId('user') as string | null,
+        updatedById: getMockId('user') as string | null,
         deletedAt: null,
         deletedById: null
     };
@@ -32,8 +31,8 @@ export function createMockPricingPlans(
     return Array.from({ length: count }, (_, i) =>
         createMockPricingPlan({
             ...overrides,
-            id: getMockId('pricingPlan', `pp${i + 1}`) as PricingPlanIdType,
-            amountMinor: 10000 * (i + 1)
+            id: getMockId('pricingPlan', `pp${i + 1}`) as PricingPlanId,
+            amount: 100 * (i + 1)
         })
     );
 }

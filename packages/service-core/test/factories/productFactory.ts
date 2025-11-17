@@ -1,4 +1,4 @@
-import type { Product, ProductIdType } from '@repo/schemas';
+import { LifecycleStatusEnum, type Product, type ProductIdType } from '@repo/schemas';
 import { ProductTypeEnum } from '@repo/schemas';
 import { getMockId } from './utilsFactory';
 
@@ -12,7 +12,7 @@ export function createMockProduct(overrides?: Partial<Product>): Product {
         type: ProductTypeEnum.LISTING_PLAN,
         description: 'A test product for listing plans',
         metadata: {},
-        lifecycleState: 'published',
+        lifecycleState: LifecycleStatusEnum.ACTIVE,
         adminInfo: null,
         isActive: true,
         isDeleted: false,
@@ -20,8 +20,8 @@ export function createMockProduct(overrides?: Partial<Product>): Product {
         // Base audit fields
         createdAt: new Date(),
         updatedAt: new Date(),
-        createdById: getMockId('user') as string,
-        updatedById: getMockId('user') as string,
+        createdById: getMockId('user') as string | null,
+        updatedById: getMockId('user') as string | null,
         deletedAt: null,
         deletedById: null
     };

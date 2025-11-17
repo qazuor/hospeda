@@ -24,7 +24,13 @@ export type IdTypes =
     | 'tag'
     | 'feature'
     | 'faq'
-    | 'iaData';
+    | 'iaData'
+    | 'client'
+    | 'pricingPlan'
+    | 'product'
+    | 'subscription'
+    | 'pricingTier'
+    | 'adSlot';
 
 function generateValidUuidFromLabel(label: string): string {
     const hash = crypto.createHash('md5').update(label).digest('hex');

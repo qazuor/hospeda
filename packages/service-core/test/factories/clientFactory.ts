@@ -1,4 +1,9 @@
-import type { Client, ClientIdType, UserIdType } from '@repo/schemas';
+import {
+    type Client,
+    type ClientIdType,
+    LifecycleStatusEnum,
+    type UserIdType
+} from '@repo/schemas';
 import { getMockId } from './utilsFactory';
 
 /**
@@ -10,24 +15,14 @@ export function createMockClient(overrides?: Partial<Client>): Client {
         name: 'Test Client',
         billingEmail: 'billing@testclient.com',
         userId: getMockId('user', 'u1') as UserIdType,
-        taxId: null,
-        address: null,
-        phone: null,
-        billingAddress: null,
-        paymentMethodId: null,
-        defaultCurrency: 'ARS',
-        billingCycle: 'MONTHLY',
-        autoRenew: true,
-        isActive: true,
-        notes: null,
-        metadata: null,
+        lifecycleState: LifecycleStatusEnum.ACTIVE,
         adminInfo: null,
 
         // Base audit fields
         createdAt: new Date(),
         updatedAt: new Date(),
-        createdById: getMockId('user') as string,
-        updatedById: getMockId('user') as string,
+        createdById: getMockId('user') as string | null,
+        updatedById: getMockId('user') as string | null,
         deletedAt: null,
         deletedById: null
     };

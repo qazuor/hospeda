@@ -1,8 +1,9 @@
-import type {
-    ClientIdType,
-    PricingPlanIdType,
-    Subscription,
-    SubscriptionIdType
+import {
+    type ClientIdType,
+    LifecycleStatusEnum,
+    type PricingPlanId,
+    type Subscription,
+    type SubscriptionIdType
 } from '@repo/schemas';
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import { getMockId } from './utilsFactory';
@@ -12,26 +13,26 @@ import { getMockId } from './utilsFactory';
  */
 export function createMockSubscription(overrides?: Partial<Subscription>): Subscription {
     const now = new Date();
-    const startAt = new Date();
-    const endAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
+    const startDate = new Date();
+    const endDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
 
     const defaults: Subscription = {
         id: getMockId('subscription', 's1') as SubscriptionIdType,
         clientId: getMockId('client', 'c1') as ClientIdType,
-        pricingPlanId: getMockId('pricingPlan', 'pp1') as PricingPlanIdType,
+        pricingPlanId: getMockId('pricingPlan', 'pp1') as PricingPlanId,
         status: SubscriptionStatusEnum.ACTIVE,
-        startAt,
-        endAt,
-        trialEndsAt: null,
+        startDate,
+        endDate,
+        trialEndDate: null,
 
         // Lifecycle state
-        lifecycleState: 'published',
+        lifecycleState: LifecycleStatusEnum.ACTIVE,
 
         // Base audit fields
         createdAt: now,
         updatedAt: now,
-        createdById: getMockId('user') as string,
-        updatedById: getMockId('user') as string,
+        createdById: getMockId('user') as string | null,
+        updatedById: getMockId('user') as string | null,
         deletedAt: null,
         deletedById: null,
 
