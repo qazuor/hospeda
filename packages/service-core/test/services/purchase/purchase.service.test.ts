@@ -1,9 +1,28 @@
 import type { PurchaseModel } from '@repo/db';
-import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
+import {
+    LifecycleStatusEnum,
+    PermissionEnum,
+    PriceCurrencyEnum,
+    PurchaseStatusEnum,
+    RoleEnum,
+    ServiceErrorCode
+} from '@repo/schemas';
 import type { Purchase } from '@repo/schemas/entities/purchase';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+    checkCanCount,
+    checkCanCreate,
+    checkCanHardDelete,
+    checkCanList,
+    checkCanRestore,
+    checkCanSearch,
+    checkCanSoftDelete,
+    checkCanUpdate,
+    checkCanView
+} from '../../../src/services/purchase/purchase.permissions.js';
 import { PurchaseService } from '../../../src/services/purchase/purchase.service';
 import type { Actor, ServiceContext } from '../../../src/types';
+import { createMockLogger } from '../../utils/mockLogger.js';
 
 describe('PurchaseService', () => {
     let service: PurchaseService;
@@ -16,7 +35,15 @@ describe('PurchaseService', () => {
         id: 'purchase-123',
         clientId: 'client-123',
         pricingPlanId: 'plan-123',
+        amount: 1000.0,
+        currency: PriceCurrencyEnum.USD,
+        status: PurchaseStatusEnum.COMPLETED,
+        quantity: 1,
+        paymentId: null,
+        discountCodeId: null,
         purchasedAt: new Date('2024-01-15'),
+        lifecycleState: LifecycleStatusEnum.ACTIVE,
+        adminInfo: null,
         createdAt: new Date('2024-01-15'),
         updatedAt: new Date('2024-01-15'),
         deletedAt: null,
@@ -27,12 +54,7 @@ describe('PurchaseService', () => {
 
     beforeEach(() => {
         const ctx: ServiceContext = {
-            logger: {
-                info: vi.fn(),
-                error: vi.fn(),
-                warn: vi.fn(),
-                debug: vi.fn()
-            }
+            logger: createMockLogger()
         };
 
         mockModel = {
@@ -65,7 +87,11 @@ describe('PurchaseService', () => {
                 PermissionEnum.PURCHASE_CREATE,
                 PermissionEnum.PURCHASE_UPDATE,
                 PermissionEnum.PURCHASE_DELETE,
-                PermissionEnum.PURCHASE_VIEW
+                PermissionEnum.PURCHASE_VIEW,
+                PermissionEnum.PURCHASE_RESTORE,
+                PermissionEnum.PURCHASE_HARD_DELETE,
+                PermissionEnum.PURCHASE_PROCESS,
+                PermissionEnum.PURCHASE_CANCEL
             ]
         };
 
@@ -89,7 +115,7 @@ describe('PurchaseService', () => {
     describe('Permission Hooks', () => {
         describe('_canCreate', () => {
             it('should allow admin to create purchase', () => {
-                expect(() => service._canCreate(adminActor, {})).not.toThrow();
+                expect(() => checkCanCreate(adminActor, {})).not.toThrow();
             });
 
             it('should allow user with PURCHASE_CREATE permission', () => {
@@ -97,21 +123,21 @@ describe('PurchaseService', () => {
                     ...userActor,
                     permissions: [PermissionEnum.PURCHASE_CREATE]
                 };
-                expect(() => service._canCreate(actorWithPermission, {})).not.toThrow();
+                expect(() => checkCanCreate(actorWithPermission, {})).not.toThrow();
             });
 
             it('should deny user without permission', () => {
-                expect(() => service._canCreate(userActor, {})).toThrow('Permission denied');
+                expect(() => checkCanCreate(userActor, {})).toThrow('Permission denied');
             });
 
             it('should deny guest', () => {
-                expect(() => service._canCreate(guestActor, {})).toThrow('Permission denied');
+                expect(() => checkCanCreate(guestActor, {})).toThrow('Permission denied');
             });
         });
 
         describe('_canUpdate', () => {
             it('should allow admin to update purchase', () => {
-                expect(() => service._canUpdate(adminActor, mockPurchase)).not.toThrow();
+                expect(() => checkCanUpdate(adminActor, mockPurchase)).not.toThrow();
             });
 
             it('should allow user with PURCHASE_UPDATE permission', () => {
@@ -119,19 +145,17 @@ describe('PurchaseService', () => {
                     ...userActor,
                     permissions: [PermissionEnum.PURCHASE_UPDATE]
                 };
-                expect(() => service._canUpdate(actorWithPermission, mockPurchase)).not.toThrow();
+                expect(() => checkCanUpdate(actorWithPermission, mockPurchase)).not.toThrow();
             });
 
             it('should deny user without permission', () => {
-                expect(() => service._canUpdate(userActor, mockPurchase)).toThrow(
-                    'Permission denied'
-                );
+                expect(() => checkCanUpdate(userActor, mockPurchase)).toThrow('Permission denied');
             });
         });
 
         describe('_canSoftDelete', () => {
             it('should allow admin to soft delete purchase', () => {
-                expect(() => service._canSoftDelete(adminActor, mockPurchase)).not.toThrow();
+                expect(() => checkCanSoftDelete(adminActor, mockPurchase)).not.toThrow();
             });
 
             it('should allow user with PURCHASE_DELETE permission', () => {
@@ -139,13 +163,11 @@ describe('PurchaseService', () => {
                     ...userActor,
                     permissions: [PermissionEnum.PURCHASE_DELETE]
                 };
-                expect(() =>
-                    service._canSoftDelete(actorWithPermission, mockPurchase)
-                ).not.toThrow();
+                expect(() => checkCanSoftDelete(actorWithPermission, mockPurchase)).not.toThrow();
             });
 
             it('should deny user without permission', () => {
-                expect(() => service._canSoftDelete(userActor, mockPurchase)).toThrow(
+                expect(() => checkCanSoftDelete(userActor, mockPurchase)).toThrow(
                     'Permission denied'
                 );
             });
@@ -154,11 +176,11 @@ describe('PurchaseService', () => {
         describe('_canHardDelete', () => {
             it('should allow super admin to hard delete purchase', () => {
                 const superAdminActor = { ...adminActor, role: RoleEnum.SUPER_ADMIN };
-                expect(() => service._canHardDelete(superAdminActor, mockPurchase)).not.toThrow();
+                expect(() => checkCanHardDelete(superAdminActor, mockPurchase)).not.toThrow();
             });
 
             it('should deny regular admin', () => {
-                expect(() => service._canHardDelete(adminActor, mockPurchase)).toThrow(
+                expect(() => checkCanHardDelete(adminActor, mockPurchase)).toThrow(
                     'Permission denied'
                 );
             });
@@ -166,60 +188,56 @@ describe('PurchaseService', () => {
 
         describe('_canRestore', () => {
             it('should allow admin to restore purchase', () => {
-                expect(() => service._canRestore(adminActor, mockPurchase)).not.toThrow();
+                expect(() => checkCanRestore(adminActor, mockPurchase)).not.toThrow();
             });
 
             it('should allow super admin to restore purchase', () => {
                 const superAdminActor = { ...adminActor, role: RoleEnum.SUPER_ADMIN };
-                expect(() => service._canRestore(superAdminActor, mockPurchase)).not.toThrow();
+                expect(() => checkCanRestore(superAdminActor, mockPurchase)).not.toThrow();
             });
 
             it('should deny regular user', () => {
-                expect(() => service._canRestore(userActor, mockPurchase)).toThrow(
-                    'Permission denied'
-                );
+                expect(() => checkCanRestore(userActor, mockPurchase)).toThrow('Permission denied');
             });
         });
 
         describe('_canView', () => {
             it('should allow authenticated user to view purchase', () => {
-                expect(() => service._canView(userActor, mockPurchase)).not.toThrow();
+                expect(() => checkCanView(userActor, mockPurchase)).not.toThrow();
             });
 
             it('should deny guest', () => {
-                expect(() => service._canView(guestActor, mockPurchase)).toThrow(
-                    'Permission denied'
-                );
+                expect(() => checkCanView(guestActor, mockPurchase)).toThrow('Permission denied');
             });
         });
 
         describe('_canList', () => {
             it('should allow authenticated user to list purchases', () => {
-                expect(() => service._canList(userActor)).not.toThrow();
+                expect(() => checkCanList(userActor)).not.toThrow();
             });
 
             it('should deny guest', () => {
-                expect(() => service._canList(guestActor)).toThrow('Permission denied');
+                expect(() => checkCanList(guestActor)).toThrow('Permission denied');
             });
         });
 
         describe('_canSearch', () => {
             it('should allow authenticated user to search purchases', () => {
-                expect(() => service._canSearch(userActor)).not.toThrow();
+                expect(() => checkCanSearch(userActor)).not.toThrow();
             });
 
             it('should deny guest', () => {
-                expect(() => service._canSearch(guestActor)).toThrow('Permission denied');
+                expect(() => checkCanSearch(guestActor)).toThrow('Permission denied');
             });
         });
 
         describe('_canCount', () => {
             it('should allow authenticated user to count purchases', () => {
-                expect(() => service._canCount(userActor)).not.toThrow();
+                expect(() => checkCanCount(userActor)).not.toThrow();
             });
 
             it('should deny guest', () => {
-                expect(() => service._canCount(guestActor)).toThrow('Permission denied');
+                expect(() => checkCanCount(guestActor)).toThrow('Permission denied');
             });
         });
     });
@@ -244,8 +262,8 @@ describe('PurchaseService', () => {
 
                 expect(result.data).toBeDefined();
                 expect(result.error).toBeUndefined();
-                expect(result.data.items).toHaveLength(1);
-                expect(result.data.total).toBe(1);
+                expect(result.data!.items).toHaveLength(1);
+                expect(result.data!.total).toBe(1);
                 expect(mockModel.findByClient).toHaveBeenCalledWith(
                     'client-123',
                     { page: 1, pageSize: 10 },
@@ -260,8 +278,8 @@ describe('PurchaseService', () => {
 
                 expect(result.data).toBeDefined();
                 expect(result.error).toBeUndefined();
-                expect(result.data.items).toHaveLength(0);
-                expect(result.data.total).toBe(0);
+                expect(result.data!.items).toHaveLength(0);
+                expect(result.data!.total).toBe(0);
             });
 
             it('should deny guest access', async () => {
@@ -288,8 +306,8 @@ describe('PurchaseService', () => {
                 expect(result.data).toBeDefined();
                 expect(result.error).toBeUndefined();
                 if (result.data) {
-                    expect(result.data.items).toHaveLength(1);
-                    expect(result.data.total).toBe(1);
+                    expect(result.data!.items).toHaveLength(1);
+                    expect(result.data!.total).toBe(1);
                 }
             });
 
@@ -301,7 +319,7 @@ describe('PurchaseService', () => {
                 expect(result.data).toBeDefined();
                 expect(result.error).toBeUndefined();
                 if (result.data) {
-                    expect(result.data.items).toHaveLength(0);
+                    expect(result.data!.items).toHaveLength(0);
                 }
             });
 
@@ -310,7 +328,7 @@ describe('PurchaseService', () => {
 
                 expect(result.error).toBeDefined();
                 if (result.error) {
-                    expect(result.error.code).toBe(ServiceErrorCode.FORBIDDEN);
+                    expect(result.error!.code).toBe(ServiceErrorCode.FORBIDDEN);
                 }
             });
         });
@@ -324,7 +342,7 @@ describe('PurchaseService', () => {
                 expect(result.data).toBeDefined();
                 expect(result.error).toBeUndefined();
                 if (result.data) {
-                    expect(result.data.total).toBe(1500);
+                    expect(result.data!.total).toBe(1500);
                 }
                 expect(mockModel.calculateTotal).toHaveBeenCalledWith('plan-123', 2, undefined);
             });
@@ -337,7 +355,7 @@ describe('PurchaseService', () => {
                 expect(result.data).toBeDefined();
                 expect(result.error).toBeUndefined();
                 if (result.data) {
-                    expect(result.data.total).toBeNull();
+                    expect(result.data!.total).toBeNull();
                 }
             });
 
@@ -346,7 +364,7 @@ describe('PurchaseService', () => {
 
                 expect(result.error).toBeDefined();
                 if (result.error) {
-                    expect(result.error.code).toBe(ServiceErrorCode.FORBIDDEN);
+                    expect(result.error!.code).toBe(ServiceErrorCode.FORBIDDEN);
                 }
             });
         });
@@ -358,6 +376,8 @@ describe('PurchaseService', () => {
                 const purchaseData = {
                     clientId: 'client-123',
                     pricingPlanId: 'plan-123',
+                    amount: 1000.0,
+                    currency: PriceCurrencyEnum.USD,
                     purchasedAt: new Date('2024-01-15')
                 };
 
@@ -366,7 +386,7 @@ describe('PurchaseService', () => {
                 expect(result.data).toBeDefined();
                 expect(result.error).toBeUndefined();
                 if (result.data) {
-                    expect(result.data.id).toBe('purchase-123');
+                    expect(result.data!.id).toBe('purchase-123');
                 }
                 expect(mockModel.createFromCart).toHaveBeenCalledWith(purchaseData, undefined);
             });
@@ -376,29 +396,33 @@ describe('PurchaseService', () => {
 
                 const purchaseData = {
                     clientId: 'client-123',
-                    pricingPlanId: 'plan-123'
+                    pricingPlanId: 'plan-123',
+                    amount: 1000.0,
+                    currency: PriceCurrencyEnum.USD
                 };
 
                 const result = await service.createFromCart(adminActor, purchaseData);
 
                 expect(result.error).toBeDefined();
                 if (result.error) {
-                    expect(result.error.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
-                    expect(result.error.message).toContain('Failed to create purchase from cart');
+                    expect(result.error!.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
+                    expect(result.error!.message).toContain('Failed to create purchase from cart');
                 }
             });
 
             it('should deny user without permission', async () => {
                 const purchaseData = {
                     clientId: 'client-123',
-                    pricingPlanId: 'plan-123'
+                    pricingPlanId: 'plan-123',
+                    amount: 1000.0,
+                    currency: PriceCurrencyEnum.USD
                 };
 
                 const result = await service.createFromCart(userActor, purchaseData);
 
                 expect(result.error).toBeDefined();
                 if (result.error) {
-                    expect(result.error.code).toBe(ServiceErrorCode.FORBIDDEN);
+                    expect(result.error!.code).toBe(ServiceErrorCode.FORBIDDEN);
                 }
             });
         });
@@ -421,7 +445,7 @@ describe('PurchaseService', () => {
                 expect(result.data).toBeDefined();
                 expect(result.error).toBeUndefined();
                 if (result.data) {
-                    expect(result.data.id).toBe('purchase-123');
+                    expect(result.data!.id).toBe('purchase-123');
                 }
                 expect(mockModel.processPayment).toHaveBeenCalledWith(
                     'purchase-123',
@@ -437,7 +461,7 @@ describe('PurchaseService', () => {
 
                 expect(result.error).toBeDefined();
                 if (result.error) {
-                    expect(result.error.code).toBe(ServiceErrorCode.NOT_FOUND);
+                    expect(result.error!.code).toBe(ServiceErrorCode.NOT_FOUND);
                 }
             });
 
@@ -446,8 +470,8 @@ describe('PurchaseService', () => {
 
                 expect(result.error).toBeDefined();
                 if (result.error) {
-                    expect(result.error.code).toBe(ServiceErrorCode.FORBIDDEN);
-                    expect(result.error.message).toContain('Only admins can process payments');
+                    expect(result.error!.code).toBe(ServiceErrorCode.FORBIDDEN);
+                    expect(result.error!.message).toContain('Only admins can process payments');
                 }
             });
         });
@@ -461,7 +485,7 @@ describe('PurchaseService', () => {
                 expect(result.data).toBeDefined();
                 expect(result.error).toBeUndefined();
                 if (result.data) {
-                    expect(result.data.id).toBe('purchase-123');
+                    expect(result.data!.id).toBe('purchase-123');
                 }
                 expect(mockModel.markComplete).toHaveBeenCalledWith('purchase-123', undefined);
             });
@@ -473,7 +497,7 @@ describe('PurchaseService', () => {
 
                 expect(result.error).toBeDefined();
                 if (result.error) {
-                    expect(result.error.code).toBe(ServiceErrorCode.NOT_FOUND);
+                    expect(result.error!.code).toBe(ServiceErrorCode.NOT_FOUND);
                 }
             });
 
@@ -482,8 +506,8 @@ describe('PurchaseService', () => {
 
                 expect(result.error).toBeDefined();
                 if (result.error) {
-                    expect(result.error.code).toBe(ServiceErrorCode.FORBIDDEN);
-                    expect(result.error.message).toContain(
+                    expect(result.error!.code).toBe(ServiceErrorCode.FORBIDDEN);
+                    expect(result.error!.message).toContain(
                         'Only admins can mark purchases as complete'
                     );
                 }
@@ -529,7 +553,7 @@ describe('PurchaseService', () => {
 
                 expect(result.error).toBeDefined();
                 if (result.error) {
-                    expect(result.error.code).toBe(ServiceErrorCode.FORBIDDEN);
+                    expect(result.error!.code).toBe(ServiceErrorCode.FORBIDDEN);
                 }
             });
         });
@@ -540,9 +564,9 @@ describe('PurchaseService', () => {
                     purchase: mockPurchase,
                     pricingPlan: {
                         id: 'plan-123',
-                        amountMinor: 10000,
+                        amount: 100.0,
                         currency: 'USD',
-                        billingScheme: 'monthly'
+                        billingScheme: 'one_time'
                     }
                 };
                 vi.spyOn(mockModel, 'withPlan').mockResolvedValue(mockResult);
@@ -553,7 +577,7 @@ describe('PurchaseService', () => {
                 expect(result.error).toBeUndefined();
                 if (result.data) {
                     expect(result.data?.purchase.id).toBe('purchase-123');
-                    expect(result.data?.pricingPlan.amountMinor).toBe(10000);
+                    expect(result.data?.pricingPlan.amount).toBe(100.0);
                 }
             });
 
@@ -574,7 +598,7 @@ describe('PurchaseService', () => {
 
                 expect(result.error).toBeDefined();
                 if (result.error) {
-                    expect(result.error.code).toBe(ServiceErrorCode.FORBIDDEN);
+                    expect(result.error!.code).toBe(ServiceErrorCode.FORBIDDEN);
                 }
             });
         });
@@ -587,10 +611,10 @@ describe('PurchaseService', () => {
 
                 expect(result.data).toBeDefined();
                 expect(result.error).toBeUndefined();
-                if (result.data) {
-                    expect(result.data).toHaveLength(1);
-                    expect(result.data[0].id).toBe('purchase-123');
-                }
+                if (!result.data) throw new Error('Expected data to be defined');
+                expect(result.data).toHaveLength(1);
+                if (!result.data[0]) throw new Error('Expected first item to be defined');
+                expect(result.data[0].id).toBe('purchase-123');
                 expect(mockModel.getRecentPurchases).toHaveBeenCalledWith(
                     'client-123',
                     5,
@@ -615,7 +639,7 @@ describe('PurchaseService', () => {
 
                 expect(result.error).toBeDefined();
                 if (result.error) {
-                    expect(result.error.code).toBe(ServiceErrorCode.FORBIDDEN);
+                    expect(result.error!.code).toBe(ServiceErrorCode.FORBIDDEN);
                 }
             });
         });
@@ -638,11 +662,11 @@ describe('PurchaseService', () => {
 
                 expect(result.data).toBeDefined();
                 expect(result.error).toBeUndefined();
-                if (result.data) {
-                    expect(result.data?.purchase.id).toBe('purchase-123');
-                    expect(result.data?.items).toHaveLength(1);
-                    expect(result.data?.items[0].entityType).toBe('accommodation');
-                }
+                if (!result.data) throw new Error('Expected data to be defined');
+                expect(result.data.purchase.id).toBe('purchase-123');
+                expect(result.data.items).toHaveLength(1);
+                if (!result.data.items[0]) throw new Error('Expected first item to be defined');
+                expect(result.data.items[0].entityType).toBe('accommodation');
             });
 
             it('should return null when purchase not found', async () => {
@@ -678,7 +702,7 @@ describe('PurchaseService', () => {
 
                 expect(result.error).toBeDefined();
                 if (result.error) {
-                    expect(result.error.code).toBe(ServiceErrorCode.FORBIDDEN);
+                    expect(result.error!.code).toBe(ServiceErrorCode.FORBIDDEN);
                 }
             });
         });

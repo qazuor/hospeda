@@ -1,8 +1,14 @@
 import type { DiscountCodeModel } from '@repo/db';
-import { DiscountTypeEnum, PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
-import type { Actor, DiscountCode } from '@repo/types';
+import {
+    type DiscountCode,
+    DiscountTypeEnum,
+    PermissionEnum,
+    RoleEnum,
+    ServiceErrorCode
+} from '@repo/schemas';
 import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DiscountCodeService } from '../../../src/services/discountCode/discountCode.service';
+import type { Actor } from '../../../src/types/index.js';
 import { createMockBaseModel } from '../../factories/baseServiceFactory';
 import { createLoggerMock } from '../../utils/modelMockFactory';
 
@@ -51,7 +57,10 @@ describe('DiscountCodeService', () => {
                 discountType: DiscountTypeEnum.PERCENTAGE,
                 percentOff: 25,
                 validFrom: new Date('2025-06-01'),
-                validTo: new Date('2025-08-31')
+                validTo: new Date('2025-08-31'),
+                currency: 'USD',
+                minimumPurchaseCurrency: 'USD',
+                isActive: true
             };
 
             const mockCreatedCode: DiscountCode = {
@@ -94,7 +103,10 @@ describe('DiscountCodeService', () => {
                 discountType: DiscountTypeEnum.FIXED_AMOUNT,
                 amountOffMinor: 5000, // $50.00 in minor units
                 validFrom: new Date('2025-01-01'),
-                validTo: new Date('2025-12-31')
+                validTo: new Date('2025-12-31'),
+                currency: 'USD',
+                minimumPurchaseCurrency: 'USD',
+                isActive: true
             };
 
             const mockCreatedCode: DiscountCode = {
@@ -132,7 +144,7 @@ describe('DiscountCodeService', () => {
         it('should fail when actor has no permission', async () => {
             const unauthorizedActor: Actor = {
                 id: '00000000-0000-4000-8000-000000000999',
-                role: RoleEnum.CLIENT,
+                role: RoleEnum.USER,
                 permissions: []
             };
 
@@ -147,7 +159,10 @@ describe('DiscountCodeService', () => {
                 discountType: DiscountTypeEnum.PERCENTAGE,
                 percentOff: 10,
                 validFrom: new Date(),
-                validTo: new Date(Date.now() + 86400000)
+                validTo: new Date(Date.now() + 86400000),
+                currency: 'USD',
+                minimumPurchaseCurrency: 'USD',
+                isActive: true
             };
 
             const result = await unauthorizedService.create(unauthorizedActor, createData);
@@ -342,7 +357,9 @@ describe('DiscountCodeService', () => {
             const searchParams = {
                 discountType: DiscountTypeEnum.PERCENTAGE,
                 page: 1,
-                pageSize: 10
+                pageSize: 10,
+                sortBy: 'createdAt' as const,
+                includeDeleted: false
             };
 
             const mockCodes: DiscountCode[] = [
@@ -380,8 +397,11 @@ describe('DiscountCodeService', () => {
             const result = await service.search(mockActor, searchParams);
 
             expect(result.data).toBeDefined();
-            expect(result.data?.items).toHaveLength(1);
-            expect(result.data?.items[0].code).toBe('CODE1');
+            if (!result.data) throw new Error('Expected data to be defined');
+            expect(result.data.items).toHaveLength(1);
+            if (result.data.items[0]) {
+                expect(result.data.items[0].code).toBe('CODE1');
+            }
             expect(result.error).toBeUndefined();
         });
     });
