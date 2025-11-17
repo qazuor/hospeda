@@ -2,8 +2,21 @@ import type { ServiceListingModel } from '@repo/db';
 import { PermissionEnum, RoleEnum, ServiceListingStatusEnum } from '@repo/schemas';
 import type { ServiceListing } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+    checkCanActivate,
+    checkCanCreate,
+    checkCanDeactivate,
+    checkCanDelete,
+    checkCanHardDelete,
+    checkCanList,
+    checkCanPatch,
+    checkCanPublish,
+    checkCanRestore,
+    checkCanUpdate,
+    checkCanView
+} from '../../../src/services/serviceListing/serviceListing.permissions.js';
 import { ServiceListingService } from '../../../src/services/serviceListing/serviceListing.service.js';
-import type { Actor, ServiceContext } from '../../../src/types/service-context.js';
+import type { Actor, ServiceContext } from '../../../src/types/index.js';
 
 describe('ServiceListingService', () => {
     let service: ServiceListingService;
@@ -79,8 +92,8 @@ describe('ServiceListingService', () => {
         trialEndDate: null,
         publishedAt: null,
         expiresAt: null,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
         deletedAt: null,
         createdById: 'admin-123',
         updatedById: null,
@@ -122,15 +135,15 @@ describe('ServiceListingService', () => {
     describe('Permission Hooks', () => {
         describe('_canCreate', () => {
             it('should allow admin to create', () => {
-                expect(() => service._canCreate(validAdminActor, {})).not.toThrow();
+                expect(() => checkCanCreate(validAdminActor, {})).not.toThrow();
             });
 
             it('should allow user with CREATE permission', () => {
-                expect(() => service._canCreate(validUserWithPermissions, {})).not.toThrow();
+                expect(() => checkCanCreate(validUserWithPermissions, {})).not.toThrow();
             });
 
             it('should deny user without CREATE permission', () => {
-                expect(() => service._canCreate(validUserWithoutPermissions, {})).toThrow(
+                expect(() => checkCanCreate(validUserWithoutPermissions, {})).toThrow(
                     'Insufficient permissions'
                 );
             });
@@ -138,58 +151,54 @@ describe('ServiceListingService', () => {
 
         describe('_canUpdate', () => {
             it('should allow admin to update', () => {
-                expect(() =>
-                    service._canUpdate(validAdminActor, mockServiceListing, {})
-                ).not.toThrow();
+                expect(() => checkCanUpdate(validAdminActor, mockServiceListing)).not.toThrow();
             });
 
             it('should allow user with UPDATE permission', () => {
                 expect(() =>
-                    service._canUpdate(validUserWithPermissions, mockServiceListing, {})
+                    checkCanUpdate(validUserWithPermissions, mockServiceListing)
                 ).not.toThrow();
             });
 
             it('should deny user without UPDATE permission', () => {
                 expect(() =>
-                    service._canUpdate(validUserWithoutPermissions, mockServiceListing, {})
+                    checkCanUpdate(validUserWithoutPermissions, mockServiceListing)
                 ).toThrow('Insufficient permissions');
             });
         });
 
         describe('_canPatch', () => {
             it('should allow admin to patch', () => {
-                expect(() =>
-                    service._canPatch(validAdminActor, mockServiceListing, {})
-                ).not.toThrow();
+                expect(() => checkCanPatch(validAdminActor, mockServiceListing, {})).not.toThrow();
             });
 
             it('should allow user with UPDATE permission', () => {
                 expect(() =>
-                    service._canPatch(validUserWithPermissions, mockServiceListing, {})
+                    checkCanPatch(validUserWithPermissions, mockServiceListing, {})
                 ).not.toThrow();
             });
 
             it('should deny user without UPDATE permission', () => {
                 expect(() =>
-                    service._canPatch(validUserWithoutPermissions, mockServiceListing, {})
+                    checkCanPatch(validUserWithoutPermissions, mockServiceListing, {})
                 ).toThrow('Insufficient permissions');
             });
         });
 
         describe('_canDelete', () => {
             it('should allow admin to delete', () => {
-                expect(() => service._canDelete(validAdminActor, mockServiceListing)).not.toThrow();
+                expect(() => checkCanDelete(validAdminActor, mockServiceListing)).not.toThrow();
             });
 
             it('should allow user with DELETE permission', () => {
                 expect(() =>
-                    service._canDelete(validUserWithPermissions, mockServiceListing)
+                    checkCanDelete(validUserWithPermissions, mockServiceListing)
                 ).not.toThrow();
             });
 
             it('should deny user without DELETE permission', () => {
                 expect(() =>
-                    service._canDelete(validUserWithoutPermissions, mockServiceListing)
+                    checkCanDelete(validUserWithoutPermissions, mockServiceListing)
                 ).toThrow('Insufficient permissions');
             });
         });
@@ -197,76 +206,74 @@ describe('ServiceListingService', () => {
         describe('_canRestore', () => {
             const deletedListing: ServiceListing = {
                 ...mockServiceListing,
-                deletedAt: new Date().toISOString(),
+                deletedAt: new Date(),
                 deletedById: 'admin-123'
             };
 
             it('should allow admin to restore', () => {
-                expect(() => service._canRestore(validAdminActor, deletedListing)).not.toThrow();
+                expect(() => checkCanRestore(validAdminActor, deletedListing)).not.toThrow();
             });
 
             it('should allow user with RESTORE permission', () => {
                 expect(() =>
-                    service._canRestore(validUserWithPermissions, deletedListing)
+                    checkCanRestore(validUserWithPermissions, deletedListing)
                 ).not.toThrow();
             });
 
             it('should deny user without RESTORE permission', () => {
-                expect(() =>
-                    service._canRestore(validUserWithoutPermissions, deletedListing)
-                ).toThrow('Insufficient permissions');
+                expect(() => checkCanRestore(validUserWithoutPermissions, deletedListing)).toThrow(
+                    'Insufficient permissions'
+                );
             });
         });
 
         describe('_canHardDelete', () => {
             it('should allow admin to hard delete', () => {
-                expect(() =>
-                    service._canHardDelete(validAdminActor, mockServiceListing)
-                ).not.toThrow();
+                expect(() => checkCanHardDelete(validAdminActor, mockServiceListing)).not.toThrow();
             });
 
             it('should allow user with HARD_DELETE permission', () => {
                 expect(() =>
-                    service._canHardDelete(validUserWithPermissions, mockServiceListing)
+                    checkCanHardDelete(validUserWithPermissions, mockServiceListing)
                 ).not.toThrow();
             });
 
             it('should deny user without HARD_DELETE permission', () => {
                 expect(() =>
-                    service._canHardDelete(validUserWithoutPermissions, mockServiceListing)
+                    checkCanHardDelete(validUserWithoutPermissions, mockServiceListing)
                 ).toThrow('Insufficient permissions');
             });
         });
 
         describe('_canView', () => {
             it('should allow admin to view', () => {
-                expect(() => service._canView(validAdminActor, mockServiceListing)).not.toThrow();
+                expect(() => checkCanView(validAdminActor, mockServiceListing)).not.toThrow();
             });
 
             it('should allow user with VIEW permission', () => {
                 expect(() =>
-                    service._canView(validUserWithPermissions, mockServiceListing)
+                    checkCanView(validUserWithPermissions, mockServiceListing)
                 ).not.toThrow();
             });
 
             it('should deny user without VIEW permission', () => {
-                expect(() =>
-                    service._canView(validUserWithoutPermissions, mockServiceListing)
-                ).toThrow('Insufficient permissions');
+                expect(() => checkCanView(validUserWithoutPermissions, mockServiceListing)).toThrow(
+                    'Insufficient permissions'
+                );
             });
         });
 
         describe('_canList', () => {
             it('should allow admin to list', () => {
-                expect(() => service._canList(validAdminActor, {})).not.toThrow();
+                expect(() => checkCanList(validAdminActor)).not.toThrow();
             });
 
             it('should allow user with VIEW permission', () => {
-                expect(() => service._canList(validUserWithPermissions, {})).not.toThrow();
+                expect(() => checkCanList(validUserWithPermissions)).not.toThrow();
             });
 
             it('should deny user without VIEW permission', () => {
-                expect(() => service._canList(validUserWithoutPermissions, {})).toThrow(
+                expect(() => checkCanList(validUserWithoutPermissions)).toThrow(
                     'Insufficient permissions'
                 );
             });
@@ -274,20 +281,18 @@ describe('ServiceListingService', () => {
 
         describe('_canActivate', () => {
             it('should allow admin to activate', () => {
-                expect(() =>
-                    service._canActivate(validAdminActor, mockServiceListing)
-                ).not.toThrow();
+                expect(() => checkCanActivate(validAdminActor, mockServiceListing)).not.toThrow();
             });
 
             it('should allow user with STATUS_MANAGE permission', () => {
                 expect(() =>
-                    service._canActivate(validUserWithPermissions, mockServiceListing)
+                    checkCanActivate(validUserWithPermissions, mockServiceListing)
                 ).not.toThrow();
             });
 
             it('should deny user without STATUS_MANAGE permission', () => {
                 expect(() =>
-                    service._canActivate(validUserWithoutPermissions, mockServiceListing)
+                    checkCanActivate(validUserWithoutPermissions, mockServiceListing)
                 ).toThrow('Insufficient permissions');
             });
         });
@@ -300,38 +305,36 @@ describe('ServiceListingService', () => {
             };
 
             it('should allow admin to deactivate', () => {
-                expect(() => service._canDeactivate(validAdminActor, activeListing)).not.toThrow();
+                expect(() => checkCanDeactivate(validAdminActor, activeListing)).not.toThrow();
             });
 
             it('should allow user with STATUS_MANAGE permission', () => {
                 expect(() =>
-                    service._canDeactivate(validUserWithPermissions, activeListing)
+                    checkCanDeactivate(validUserWithPermissions, activeListing)
                 ).not.toThrow();
             });
 
             it('should deny user without STATUS_MANAGE permission', () => {
                 expect(() =>
-                    service._canDeactivate(validUserWithoutPermissions, activeListing)
+                    checkCanDeactivate(validUserWithoutPermissions, activeListing)
                 ).toThrow('Insufficient permissions');
             });
         });
 
         describe('_canPublish', () => {
             it('should allow admin to publish', () => {
-                expect(() =>
-                    service._canPublish(validAdminActor, mockServiceListing)
-                ).not.toThrow();
+                expect(() => checkCanPublish(validAdminActor, mockServiceListing)).not.toThrow();
             });
 
             it('should allow user with STATUS_MANAGE permission', () => {
                 expect(() =>
-                    service._canPublish(validUserWithPermissions, mockServiceListing)
+                    checkCanPublish(validUserWithPermissions, mockServiceListing)
                 ).not.toThrow();
             });
 
             it('should deny user without STATUS_MANAGE permission', () => {
                 expect(() =>
-                    service._canPublish(validUserWithoutPermissions, mockServiceListing)
+                    checkCanPublish(validUserWithoutPermissions, mockServiceListing)
                 ).toThrow('Insufficient permissions');
             });
         });
@@ -356,11 +359,10 @@ describe('ServiceListingService', () => {
                     listingId: mockServiceListing.id
                 });
 
-                expect(result.success).toBe(true);
-                if (result.success) {
-                    expect(result.data.isActive).toBe(true);
-                    expect(result.data.status).toBe(ServiceListingStatusEnum.ACTIVE);
-                }
+                expect(result.data).toBeDefined();
+                expect(result.error).toBeUndefined();
+                expect(result.data!.isActive).toBe(true);
+                expect(result.data!.status).toBe(ServiceListingStatusEnum.ACTIVE);
                 expect(mockModel.activate).toHaveBeenCalledWith(mockServiceListing.id);
             });
 
@@ -370,10 +372,9 @@ describe('ServiceListingService', () => {
                     listingId: mockServiceListing.id
                 });
 
-                expect(result.success).toBe(false);
-                if (!result.success) {
-                    expect(result.error.message).toContain('Insufficient permissions');
-                }
+                expect(result.error).toBeDefined();
+                expect(result.data).toBeUndefined();
+                expect(result.error!.message).toContain('Insufficient permissions');
                 expect(mockModel.activate).not.toHaveBeenCalled();
             });
 
@@ -387,10 +388,9 @@ describe('ServiceListingService', () => {
                     listingId: 'non-existent-id'
                 });
 
-                expect(result.success).toBe(false);
-                if (!result.success) {
-                    expect(result.error.message).toContain('Service listing not found');
-                }
+                expect(result.error).toBeDefined();
+                expect(result.data).toBeUndefined();
+                expect(result.error!.message).toContain('Service listing not found');
             });
 
             it('should handle database errors gracefully', async () => {
@@ -403,10 +403,9 @@ describe('ServiceListingService', () => {
                     listingId: mockServiceListing.id
                 });
 
-                expect(result.success).toBe(false);
-                if (!result.success) {
-                    expect(result.error.message).toContain('Database connection failed');
-                }
+                expect(result.error).toBeDefined();
+                expect(result.data).toBeUndefined();
+                expect(result.error!.message).toContain('Database connection failed');
             });
 
             it('should allow user with STATUS_MANAGE permission to activate', async () => {
@@ -422,7 +421,8 @@ describe('ServiceListingService', () => {
                     listingId: mockServiceListing.id
                 });
 
-                expect(result.success).toBe(true);
+                expect(result.data).toBeDefined();
+                expect(result.error).toBeUndefined();
                 expect(mockModel.activate).toHaveBeenCalledWith(mockServiceListing.id);
             });
         });
@@ -446,10 +446,9 @@ describe('ServiceListingService', () => {
                     listingId: activeListing.id
                 });
 
-                expect(result.success).toBe(true);
-                if (result.success) {
-                    expect(result.data.isActive).toBe(false);
-                }
+                expect(result.data).toBeDefined();
+                expect(result.error).toBeUndefined();
+                expect(result.data!.isActive).toBe(false);
                 expect(mockModel.deactivate).toHaveBeenCalledWith(activeListing.id);
             });
 
@@ -459,10 +458,9 @@ describe('ServiceListingService', () => {
                     listingId: activeListing.id
                 });
 
-                expect(result.success).toBe(false);
-                if (!result.success) {
-                    expect(result.error.message).toContain('Insufficient permissions');
-                }
+                expect(result.error).toBeDefined();
+                expect(result.data).toBeUndefined();
+                expect(result.error!.message).toContain('Insufficient permissions');
                 expect(mockModel.deactivate).not.toHaveBeenCalled();
             });
 
@@ -476,10 +474,9 @@ describe('ServiceListingService', () => {
                     listingId: 'non-existent-id'
                 });
 
-                expect(result.success).toBe(false);
-                if (!result.success) {
-                    expect(result.error.message).toContain('Service listing not found');
-                }
+                expect(result.error).toBeDefined();
+                expect(result.data).toBeUndefined();
+                expect(result.error!.message).toContain('Service listing not found');
             });
 
             it('should handle database errors gracefully', async () => {
@@ -492,10 +489,9 @@ describe('ServiceListingService', () => {
                     listingId: activeListing.id
                 });
 
-                expect(result.success).toBe(false);
-                if (!result.success) {
-                    expect(result.error.message).toContain('Database connection failed');
-                }
+                expect(result.error).toBeDefined();
+                expect(result.data).toBeUndefined();
+                expect(result.error!.message).toContain('Database connection failed');
             });
 
             it('should allow user with STATUS_MANAGE permission to deactivate', async () => {
@@ -510,7 +506,8 @@ describe('ServiceListingService', () => {
                     listingId: activeListing.id
                 });
 
-                expect(result.success).toBe(true);
+                expect(result.data).toBeDefined();
+                expect(result.error).toBeUndefined();
                 expect(mockModel.deactivate).toHaveBeenCalledWith(activeListing.id);
             });
         });
@@ -521,7 +518,7 @@ describe('ServiceListingService', () => {
                     ...mockServiceListing,
                     status: ServiceListingStatusEnum.ACTIVE,
                     isActive: true,
-                    publishedAt: new Date().toISOString()
+                    publishedAt: new Date()
                 };
                 vi.mocked(mockModel.publish).mockResolvedValue(publishedListing);
 
@@ -530,12 +527,11 @@ describe('ServiceListingService', () => {
                     listingId: mockServiceListing.id
                 });
 
-                expect(result.success).toBe(true);
-                if (result.success) {
-                    expect(result.data.status).toBe(ServiceListingStatusEnum.ACTIVE);
-                    expect(result.data.isActive).toBe(true);
-                    expect(result.data.publishedAt).toBeDefined();
-                }
+                expect(result.data).toBeDefined();
+                expect(result.error).toBeUndefined();
+                expect(result.data!.status).toBe(ServiceListingStatusEnum.ACTIVE);
+                expect(result.data!.isActive).toBe(true);
+                expect(result.data!.publishedAt).toBeDefined();
                 expect(mockModel.publish).toHaveBeenCalledWith(mockServiceListing.id);
             });
 
@@ -545,10 +541,9 @@ describe('ServiceListingService', () => {
                     listingId: mockServiceListing.id
                 });
 
-                expect(result.success).toBe(false);
-                if (!result.success) {
-                    expect(result.error.message).toContain('Insufficient permissions');
-                }
+                expect(result.error).toBeDefined();
+                expect(result.data).toBeUndefined();
+                expect(result.error!.message).toContain('Insufficient permissions');
                 expect(mockModel.publish).not.toHaveBeenCalled();
             });
 
@@ -562,10 +557,9 @@ describe('ServiceListingService', () => {
                     listingId: 'non-existent-id'
                 });
 
-                expect(result.success).toBe(false);
-                if (!result.success) {
-                    expect(result.error.message).toContain('Service listing not found');
-                }
+                expect(result.error).toBeDefined();
+                expect(result.data).toBeUndefined();
+                expect(result.error!.message).toContain('Service listing not found');
             });
 
             it('should handle database errors gracefully', async () => {
@@ -578,10 +572,9 @@ describe('ServiceListingService', () => {
                     listingId: mockServiceListing.id
                 });
 
-                expect(result.success).toBe(false);
-                if (!result.success) {
-                    expect(result.error.message).toContain('Database connection failed');
-                }
+                expect(result.error).toBeDefined();
+                expect(result.data).toBeUndefined();
+                expect(result.error!.message).toContain('Database connection failed');
             });
 
             it('should allow user with STATUS_MANAGE permission to publish', async () => {
@@ -589,7 +582,7 @@ describe('ServiceListingService', () => {
                     ...mockServiceListing,
                     status: ServiceListingStatusEnum.ACTIVE,
                     isActive: true,
-                    publishedAt: new Date().toISOString()
+                    publishedAt: new Date()
                 };
                 vi.mocked(mockModel.publish).mockResolvedValue(publishedListing);
 
@@ -598,7 +591,8 @@ describe('ServiceListingService', () => {
                     listingId: mockServiceListing.id
                 });
 
-                expect(result.success).toBe(true);
+                expect(result.data).toBeDefined();
+                expect(result.error).toBeUndefined();
                 expect(mockModel.publish).toHaveBeenCalledWith(mockServiceListing.id);
             });
         });
@@ -623,11 +617,10 @@ describe('ServiceListingService', () => {
                     listingId: activeListing.id
                 });
 
-                expect(result.success).toBe(true);
-                if (result.success) {
-                    expect(result.data.status).toBe(ServiceListingStatusEnum.PAUSED);
-                    expect(result.data.isActive).toBe(false);
-                }
+                expect(result.data).toBeDefined();
+                expect(result.error).toBeUndefined();
+                expect(result.data!.status).toBe(ServiceListingStatusEnum.PAUSED);
+                expect(result.data!.isActive).toBe(false);
                 expect(mockModel.pause).toHaveBeenCalledWith(activeListing.id);
             });
 
@@ -637,10 +630,9 @@ describe('ServiceListingService', () => {
                     listingId: activeListing.id
                 });
 
-                expect(result.success).toBe(false);
-                if (!result.success) {
-                    expect(result.error.message).toContain('Insufficient permissions');
-                }
+                expect(result.error).toBeDefined();
+                expect(result.data).toBeUndefined();
+                expect(result.error!.message).toContain('Insufficient permissions');
                 expect(mockModel.pause).not.toHaveBeenCalled();
             });
 
@@ -654,10 +646,9 @@ describe('ServiceListingService', () => {
                     listingId: 'non-existent-id'
                 });
 
-                expect(result.success).toBe(false);
-                if (!result.success) {
-                    expect(result.error.message).toContain('Service listing not found');
-                }
+                expect(result.error).toBeDefined();
+                expect(result.data).toBeUndefined();
+                expect(result.error!.message).toContain('Service listing not found');
             });
 
             it('should handle database errors gracefully', async () => {
@@ -670,10 +661,9 @@ describe('ServiceListingService', () => {
                     listingId: activeListing.id
                 });
 
-                expect(result.success).toBe(false);
-                if (!result.success) {
-                    expect(result.error.message).toContain('Database connection failed');
-                }
+                expect(result.error).toBeDefined();
+                expect(result.data).toBeUndefined();
+                expect(result.error!.message).toContain('Database connection failed');
             });
 
             it('should allow user with STATUS_MANAGE permission to pause', async () => {
@@ -689,7 +679,8 @@ describe('ServiceListingService', () => {
                     listingId: activeListing.id
                 });
 
-                expect(result.success).toBe(true);
+                expect(result.data).toBeDefined();
+                expect(result.error).toBeUndefined();
                 expect(mockModel.pause).toHaveBeenCalledWith(activeListing.id);
             });
         });
