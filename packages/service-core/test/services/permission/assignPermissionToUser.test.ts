@@ -29,7 +29,7 @@ describe('PermissionService.assignPermissionToUser', () => {
                 userPermissionModel: userPermissionModelMock as unknown as RUserPermissionModel
             }
         );
-        actor = createActor({ permissions: [PermissionEnum.USER_UPDATE_ROLES] });
+        actor = createActor({ permissions: [PermissionEnum.PERMISSION_ASSIGN] });
         vi.clearAllMocks();
     });
 

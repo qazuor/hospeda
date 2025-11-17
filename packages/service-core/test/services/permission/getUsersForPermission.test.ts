@@ -28,7 +28,7 @@ describe('PermissionService.getUsersForPermission', () => {
                 userPermissionModel: userPermissionModelMock as unknown as RUserPermissionModel
             }
         );
-        actor = createActor({ permissions: [PermissionEnum.USER_UPDATE_ROLES] });
+        actor = createActor({ permissions: [PermissionEnum.PERMISSION_VIEW] });
         vi.clearAllMocks();
     });
 
