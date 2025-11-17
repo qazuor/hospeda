@@ -6,6 +6,7 @@ import {
     PaymentTypeEnumSchema,
     PriceCurrencyEnumSchema
 } from '../../enums/index.js';
+import { numericField } from '../../utils/index.js';
 
 /**
  * Payment Plan Schema - Main Entity Schema
@@ -49,21 +50,24 @@ export const PaymentPlanSchema = z.object({
     billingCycle: BillingCycleEnumSchema.optional(),
 
     // Pricing
-    price: z
-        .number({
-            message: 'zodError.paymentPlan.price.required'
-        })
-        .min(0, { message: 'zodError.paymentPlan.price.min' }),
+    price: numericField(
+        z
+            .number({
+                message: 'zodError.paymentPlan.price.required'
+            })
+            .min(0, { message: 'zodError.paymentPlan.price.min' })
+    ),
 
     currency: PriceCurrencyEnumSchema,
 
-    discountPercentage: z
-        .number({
-            message: 'zodError.paymentPlan.discountPercentage.required'
-        })
-        .min(0, { message: 'zodError.paymentPlan.discountPercentage.min' })
-        .max(100, { message: 'zodError.paymentPlan.discountPercentage.max' })
-        .optional(),
+    discountPercentage: numericField(
+        z
+            .number({
+                message: 'zodError.paymentPlan.discountPercentage.required'
+            })
+            .min(0, { message: 'zodError.paymentPlan.discountPercentage.min' })
+            .max(100, { message: 'zodError.paymentPlan.discountPercentage.max' })
+    ).optional(),
 
     // Features and configuration
     features: z

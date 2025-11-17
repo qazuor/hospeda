@@ -1,7 +1,12 @@
 import { z } from 'zod';
 import { BaseAdminFields } from '../../common/admin.schema.js';
 import { BaseAuditFields } from '../../common/audit.schema.js';
-import { PaymentIdSchema, PaymentPlanIdSchema, UserIdSchema } from '../../common/id.schema.js';
+import {
+    InvoiceIdSchema,
+    PaymentIdSchema,
+    PaymentPlanIdSchema,
+    UserIdSchema
+} from '../../common/id.schema.js';
 import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
 import {
     PaymentMethodEnumSchema,
@@ -25,6 +30,7 @@ export const PaymentSchema = z.object({
     // Payment-specific core fields
     userId: UserIdSchema,
     paymentPlanId: PaymentPlanIdSchema.nullable(),
+    invoiceId: InvoiceIdSchema.nullable(),
     type: PaymentTypeEnumSchema,
     status: PaymentStatusEnumSchema,
     paymentMethod: PaymentMethodEnumSchema.nullable(),

@@ -1,7 +1,10 @@
 import { z } from 'zod';
 import { IdSchema } from '../../common/id.schema.js';
-import { PriceCurrencyEnumSchema } from '../../enums/index.js';
-import { RefundReasonEnumSchema, RefundStatusEnumSchema } from './refund.schema.js';
+import {
+    PriceCurrencyEnumSchema,
+    RefundReasonEnumSchema,
+    RefundStatusEnumSchema
+} from '../../enums/index.js';
 
 // Helper schemas for HTTP string conversion
 const HTTPNumberSchema = z.union([

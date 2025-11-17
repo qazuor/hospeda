@@ -25,20 +25,20 @@ export const SubscriptionSchema = z
         status: SubscriptionStatusEnumSchema,
 
         // Date fields for subscription lifecycle
-        startAt: z.date({
-            message: 'zodError.subscription.startAt.required'
+        startDate: z.date({
+            message: 'zodError.subscription.startDate.required'
         }),
 
-        endAt: z
+        endDate: z
             .date({
-                message: 'zodError.subscription.endAt.invalid'
+                message: 'zodError.subscription.endDate.invalid'
             })
             .nullable()
             .optional(),
 
-        trialEndsAt: z
+        trialEndDate: z
             .date({
-                message: 'zodError.subscription.trialEndsAt.invalid'
+                message: 'zodError.subscription.trialEndDate.invalid'
             })
             .nullable()
             .optional(),
@@ -50,27 +50,27 @@ export const SubscriptionSchema = z
     .refine(
         (data) => {
             // Validate that trial end date is before subscription end date when both are present
-            if (data.trialEndsAt && data.endAt) {
-                return data.trialEndsAt <= data.endAt;
+            if (data.trialEndDate && data.endDate) {
+                return data.trialEndDate <= data.endDate;
             }
             return true;
         },
         {
-            message: 'zodError.subscription.trialEndsAt.mustBeBeforeEndDate',
-            path: ['trialEndsAt']
+            message: 'zodError.subscription.trialEndDate.mustBeBeforeEndDate',
+            path: ['trialEndDate']
         }
     )
     .refine(
         (data) => {
             // Validate that start date is before end date when end date is present
-            if (data.endAt) {
-                return data.startAt <= data.endAt;
+            if (data.endDate) {
+                return data.startDate <= data.endDate;
             }
             return true;
         },
         {
-            message: 'zodError.subscription.startAt.mustBeBeforeEndDate',
-            path: ['startAt']
+            message: 'zodError.subscription.startDate.mustBeBeforeEndDate',
+            path: ['startDate']
         }
     );
 

@@ -1,11 +1,12 @@
 import { z } from 'zod';
 import { IdSchema } from '../../common/id.schema.js';
+import { numericField } from '../../utils/index.js';
 
 // Simplified relation schemas to avoid circular dependencies
 export const CreditNoteInvoiceRelationSchema = z.object({
     id: IdSchema,
     invoiceNumber: z.string(),
-    totalAmount: z.number(),
+    totalAmount: numericField(z.number()),
     status: z.string()
 });
 
@@ -21,7 +22,7 @@ export const CreditNoteWithRelationsSchema = z.object({
     invoiceId: IdSchema,
     clientId: IdSchema,
     creditNoteNumber: z.string(),
-    amount: z.number(),
+    amount: numericField(z.number()),
     currency: z.string(),
     reason: z.string(),
     description: z.string().optional(),

@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { BaseAuditFields } from '../../common/audit.schema.js';
 import { ClientIdSchema, InvoiceIdSchema } from '../../common/id.schema.js';
 import { InvoiceStatusEnumSchema, PriceCurrencyEnumSchema } from '../../enums/index.js';
+import { numericField } from '../../utils/index.js';
 
 /**
  * Invoice Schema - Main Entity Schema
@@ -29,23 +30,23 @@ export const InvoiceSchema = z.object({
     status: InvoiceStatusEnumSchema,
 
     // Amount fields
-    subtotal: z
-        .number({
-            message: 'zodError.invoice.subtotal.required'
-        })
-        .nonnegative({ message: 'zodError.invoice.subtotal.nonnegative' }),
+    subtotal: numericField(
+        z
+            .number({ message: 'zodError.invoice.subtotal.required' })
+            .nonnegative({ message: 'zodError.invoice.subtotal.nonnegative' })
+    ),
 
-    taxes: z
-        .number({
-            message: 'zodError.invoice.taxes.required'
-        })
-        .nonnegative({ message: 'zodError.invoice.taxes.nonnegative' }),
+    taxes: numericField(
+        z
+            .number({ message: 'zodError.invoice.taxes.required' })
+            .nonnegative({ message: 'zodError.invoice.taxes.nonnegative' })
+    ),
 
-    total: z
-        .number({
-            message: 'zodError.invoice.total.required'
-        })
-        .nonnegative({ message: 'zodError.invoice.total.nonnegative' }),
+    total: numericField(
+        z
+            .number({ message: 'zodError.invoice.total.required' })
+            .nonnegative({ message: 'zodError.invoice.total.nonnegative' })
+    ),
 
     // Currency
     currency: PriceCurrencyEnumSchema,

@@ -46,7 +46,7 @@ export const PricingPlanMinimalSchema = PricingPlanSchema.pick({
     id: true,
     billingScheme: true,
     interval: true,
-    amountMinor: true,
+    amount: true,
     currency: true,
     lifecycleState: true
 }).refine(

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { PaymentPlanSchema } from './payment-plan.schema.js';
 import { PaymentSchema } from './payment.schema.js';
-import { SubscriptionSchema } from './subscription.schema.js';
+import { PaymentSubscriptionSchema } from './subscription.schema.js';
 
 /**
  * Payment Relations Schemas
@@ -119,8 +119,8 @@ export const PaymentWithPlanSchema = PaymentSchema.extend({
  * Payment with subscription information
  * Includes subscription context and history
  */
-export const PaymentWithSubscriptionSchema = PaymentSchema.extend({
-    subscription: SubscriptionSchema.optional(),
+export const PaymentWithPaymentSubscriptionSchema = PaymentSchema.extend({
+    subscription: PaymentSubscriptionSchema.optional(),
     subscriptionHistory: z
         .array(
             z.object({
@@ -223,7 +223,7 @@ export const PaymentWithTransactionSchema = PaymentSchema.extend({
 export const PaymentPlanWithSubscriptionsSchema = PaymentPlanSchema.extend({
     subscriptions: z
         .array(
-            SubscriptionSchema.pick({
+            PaymentSubscriptionSchema.pick({
                 id: true,
                 userId: true,
                 status: true,
@@ -321,7 +321,7 @@ export const PaymentPlanWithUsageSchema = PaymentPlanSchema.extend({
  * Subscription with payments
  * Includes payment history and billing information
  */
-export const SubscriptionWithPaymentsSchema = SubscriptionSchema.extend({
+export const SubscriptionWithPaymentsSchema = PaymentSubscriptionSchema.extend({
     payments: z
         .array(
             PaymentSchema.pick({
@@ -361,7 +361,7 @@ export const SubscriptionWithPaymentsSchema = SubscriptionSchema.extend({
  * Subscription with user and accommodations
  * Includes user context and accommodation usage
  */
-export const SubscriptionWithUserSchema = SubscriptionSchema.extend({
+export const SubscriptionWithUserSchema = PaymentSubscriptionSchema.extend({
     user: UserSummarySchema.optional(),
     accommodations: z.array(AccommodationSummarySchema).optional(),
     accommodationStats: z
@@ -387,7 +387,7 @@ export const SubscriptionWithUserSchema = SubscriptionSchema.extend({
  * Subscription with trial information
  * Includes trial history and conversion data
  */
-export const SubscriptionWithTrialSchema = SubscriptionSchema.extend({
+export const SubscriptionWithTrialSchema = PaymentSubscriptionSchema.extend({
     trialInfo: z
         .object({
             hadTrial: z.boolean(),
@@ -447,7 +447,7 @@ export const PaymentWithFullRelationsSchema = PaymentSchema.extend({
         .optional(),
 
     // Subscription information
-    subscription: SubscriptionSchema.optional(),
+    subscription: PaymentSubscriptionSchema.optional(),
     relatedPayments: z
         .array(
             PaymentSchema.pick({
@@ -491,7 +491,7 @@ export const PaymentPlanWithFullRelationsSchema = PaymentPlanSchema.extend({
     // Subscription data
     subscriptions: z
         .array(
-            SubscriptionSchema.pick({
+            PaymentSubscriptionSchema.pick({
                 id: true,
                 userId: true,
                 status: true,
@@ -539,7 +539,7 @@ export const PaymentPlanWithFullRelationsSchema = PaymentPlanSchema.extend({
  * Subscription with all relations
  * Includes all possible related data
  */
-export const SubscriptionWithFullRelationsSchema = SubscriptionSchema.extend({
+export const SubscriptionWithFullRelationsSchema = PaymentSubscriptionSchema.extend({
     // User information
     user: UserSummarySchema.optional(),
     accommodations: z.array(AccommodationSummarySchema).optional(),
@@ -674,7 +674,7 @@ export const PaymentAnalyticsOutputSchema = z.object({
 
 export type PaymentWithUser = z.infer<typeof PaymentWithUserSchema>;
 export type PaymentWithPlan = z.infer<typeof PaymentWithPlanSchema>;
-export type PaymentWithSubscription = z.infer<typeof PaymentWithSubscriptionSchema>;
+export type PaymentWithSubscription = z.infer<typeof PaymentWithPaymentSubscriptionSchema>;
 export type PaymentWithRefunds = z.infer<typeof PaymentWithRefundsSchema>;
 export type PaymentWithTransaction = z.infer<typeof PaymentWithTransactionSchema>;
 export type PaymentPlanWithSubscriptions = z.infer<typeof PaymentPlanWithSubscriptionsSchema>;

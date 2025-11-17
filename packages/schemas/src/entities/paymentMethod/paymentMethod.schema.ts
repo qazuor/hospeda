@@ -41,20 +41,23 @@ export const PaymentMethodSchema = z.object({
     cardLast4: z
         .string()
         .regex(/^\d{4}$/, { message: 'zodError.paymentMethod.cardLast4.format' })
-        .optional(),
+        .optional()
+        .nullable(),
 
     cardBrand: z
         .string()
         .min(1, { message: 'zodError.paymentMethod.cardBrand.min' })
         .max(20, { message: 'zodError.paymentMethod.cardBrand.max' })
-        .optional(),
+        .optional()
+        .nullable(),
 
     cardExpiryMonth: z
         .number()
         .int()
         .min(1, { message: 'zodError.paymentMethod.cardExpiryMonth.min' })
         .max(12, { message: 'zodError.paymentMethod.cardExpiryMonth.max' })
-        .optional(),
+        .optional()
+        .nullable(),
 
     cardExpiryYear: z
         .number()
@@ -63,41 +66,47 @@ export const PaymentMethodSchema = z.object({
         .max(new Date().getFullYear() + 20, {
             message: 'zodError.paymentMethod.cardExpiryYear.max'
         })
-        .optional(),
+        .optional()
+        .nullable(),
 
     // Bank Account specific fields (optional)
     bankName: z
         .string()
         .min(1, { message: 'zodError.paymentMethod.bankName.min' })
         .max(100, { message: 'zodError.paymentMethod.bankName.max' })
-        .optional(),
+        .optional()
+        .nullable(),
 
     accountLast4: z
         .string()
         .regex(/^\d{4}$/, { message: 'zodError.paymentMethod.accountLast4.format' })
-        .optional(),
+        .optional()
+        .nullable(),
 
     accountType: z
         .enum(['CHECKING', 'SAVINGS'], {
             message: 'zodError.paymentMethod.accountType.invalid'
         })
-        .optional(),
+        .optional()
+        .nullable(),
 
     // Provider integration fields
     providerPaymentMethodId: z
         .string()
         .min(1, { message: 'zodError.paymentMethod.providerPaymentMethodId.min' })
         .max(100, { message: 'zodError.paymentMethod.providerPaymentMethodId.max' })
-        .optional(),
+        .optional()
+        .nullable(),
 
     providerCustomerId: z
         .string()
         .min(1, { message: 'zodError.paymentMethod.providerCustomerId.min' })
         .max(100, { message: 'zodError.paymentMethod.providerCustomerId.max' })
-        .optional(),
+        .optional()
+        .nullable(),
 
     // Metadata
-    metadata: z.record(z.string(), z.unknown()).optional()
+    metadata: z.record(z.string(), z.unknown()).optional().nullable()
 });
 
 /**

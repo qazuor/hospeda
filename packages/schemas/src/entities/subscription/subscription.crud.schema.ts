@@ -23,7 +23,7 @@ export const SubscriptionCreateInputSchema = SubscriptionSchema.omit({
 }).extend({
     // Override with defaults and specific validation
     status: SubscriptionStatusEnumSchema.default(SubscriptionStatusEnum.ACTIVE),
-    startAt: z.coerce.date().default(() => new Date())
+    startDate: z.coerce.date().default(() => new Date())
 });
 
 export type SubscriptionCreateInput = z.infer<typeof SubscriptionCreateInputSchema>;

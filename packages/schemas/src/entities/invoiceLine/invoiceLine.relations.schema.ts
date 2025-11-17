@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { numericField } from '../../utils/index.js';
 import { InvoiceLineSchema } from './invoiceLine.schema.js';
 
 // Simplified relation schemas to avoid circular dependencies
@@ -7,9 +8,9 @@ const InvoiceRelationSchema = z.object({
     clientId: z.string().uuid(),
     invoiceNumber: z.string().min(1).max(100),
     status: z.string(),
-    subtotal: z.number().nonnegative(),
-    taxes: z.number().nonnegative(),
-    total: z.number().nonnegative(),
+    subtotal: numericField(z.number().nonnegative()),
+    taxes: numericField(z.number().nonnegative()),
+    total: numericField(z.number().nonnegative()),
     currency: z.string(),
     issueDate: z.date(),
     dueDate: z.date(),
@@ -22,7 +23,7 @@ const ProductRelationSchema = z.object({
     name: z.string().min(1).max(200),
     reference: z.string().optional(),
     description: z.string().optional(),
-    unitPrice: z.number().nonnegative(),
+    unitPrice: numericField(z.number().nonnegative()),
     createdAt: z.date(),
     updatedAt: z.date()
 });

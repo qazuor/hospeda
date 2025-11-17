@@ -6,7 +6,7 @@ import {
 } from '../../common/id.schema.js';
 import { PaymentPlanSchema } from './payment-plan.schema.js';
 import { PaymentSchema } from './payment.schema.js';
-import { SubscriptionSchema } from './subscription.schema.js';
+import { PaymentSubscriptionSchema } from './subscription.schema.js';
 
 /**
  * Payment CRUD Schemas
@@ -285,7 +285,7 @@ export const PaymentPlanDeactivateOutputSchema = PaymentPlanSchema;
  * Schema for creating a new subscription
  * Omits auto-generated fields like id and audit fields
  */
-export const SubscriptionCreateInputSchema = SubscriptionSchema.omit({
+export const SubscriptionCreateInputSchema = PaymentSubscriptionSchema.omit({
     id: true,
     createdAt: true,
     updatedAt: true,
@@ -299,13 +299,13 @@ export const SubscriptionCreateInputSchema = SubscriptionSchema.omit({
  * Schema for subscription creation response
  * Returns the complete subscription object
  */
-export const SubscriptionCreateOutputSchema = SubscriptionSchema;
+export const SubscriptionCreateOutputSchema = PaymentSubscriptionSchema;
 
 /**
  * Schema for updating a subscription (PUT - complete replacement)
  * Omits auto-generated fields and makes all fields partial
  */
-export const SubscriptionUpdateInputSchema = SubscriptionSchema.omit({
+export const SubscriptionUpdateInputSchema = PaymentSubscriptionSchema.omit({
     id: true,
     createdAt: true,
     updatedAt: true,
@@ -325,7 +325,7 @@ export const SubscriptionPatchInputSchema = SubscriptionUpdateInputSchema;
  * Schema for subscription update response
  * Returns the complete updated subscription object
  */
-export const SubscriptionUpdateOutputSchema = SubscriptionSchema;
+export const SubscriptionUpdateOutputSchema = PaymentSubscriptionSchema;
 
 /**
  * Schema for subscription cancellation input
@@ -363,7 +363,7 @@ export const SubscriptionCancelOutputSchema = z.object({
             message: 'zodError.subscription.cancel.success.required'
         })
         .default(true),
-    subscription: SubscriptionSchema,
+    subscription: PaymentSubscriptionSchema,
     cancellationDetails: z.object({
         cancelledAt: z.date(),
         effectiveDate: z.date(),
@@ -402,7 +402,7 @@ export const SubscriptionReactivateOutputSchema = z.object({
             message: 'zodError.subscription.reactivate.success.required'
         })
         .default(true),
-    subscription: SubscriptionSchema,
+    subscription: PaymentSubscriptionSchema,
     reactivationDetails: z.object({
         reactivatedAt: z.date(),
         effectiveDate: z.date(),
@@ -441,7 +441,7 @@ export const SubscriptionChangePlanOutputSchema = z.object({
             message: 'zodError.subscription.changePlan.success.required'
         })
         .default(true),
-    subscription: SubscriptionSchema,
+    subscription: PaymentSubscriptionSchema,
     planChangeDetails: z.object({
         changedAt: z.date(),
         effectiveDate: z.date(),

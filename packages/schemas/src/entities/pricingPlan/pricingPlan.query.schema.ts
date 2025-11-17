@@ -3,6 +3,7 @@ import { ProductIdSchema } from '../../common/id.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
 import { BillingIntervalEnumSchema } from '../../enums/billing-interval.schema.js';
 import { BillingSchemeEnumSchema } from '../../enums/billing-scheme.schema.js';
+import { numericField } from '../../utils/index.js';
 import { PricingPlanIdSchema } from './pricingPlan.schema.js';
 
 // ============================================================================
@@ -27,8 +28,8 @@ export const PricingPlanSearchSchema = BaseSearchSchema.extend({
         .optional(),
 
     // Amount range filters
-    amountMinorMin: z.number().int().min(0).optional(),
-    amountMinorMax: z.number().int().min(0).optional(),
+    amountMin: numericField(z.number().min(0)).optional(),
+    amountMax: numericField(z.number().min(0)).optional(),
 
     // Status filters
     isActive: z.boolean().optional(),
@@ -56,7 +57,7 @@ export const PricingPlanItemSchema = z.object({
     productId: ProductIdSchema,
     billingScheme: BillingSchemeEnumSchema,
     interval: BillingIntervalEnumSchema.optional(),
-    amountMinor: z.number().int(),
+    amount: numericField(z.number()),
     currency: z.string(),
     isActive: z.boolean(),
     isDeleted: z.boolean(),
@@ -100,7 +101,7 @@ export const PricingPlanSummarySchema = z.object({
     productId: ProductIdSchema,
     billingScheme: BillingSchemeEnumSchema,
     interval: BillingIntervalEnumSchema.optional(),
-    amountMinor: z.number().int(),
+    amount: numericField(z.number()),
     currency: z.string(),
     isActive: z.boolean()
 });

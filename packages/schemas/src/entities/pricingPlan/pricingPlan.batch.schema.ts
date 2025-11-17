@@ -32,7 +32,7 @@ const PricingPlanBatchUpdateItemSchema = z
         productId: z.string().uuid().optional(),
         billingScheme: z.nativeEnum(BillingSchemeEnum).optional(),
         interval: z.nativeEnum(BillingIntervalEnum).optional(),
-        amountMinor: z.number().int().min(0).optional(),
+        amount: z.number().min(0).optional(),
         currency: z.string().length(3).optional(),
         description: z.string().optional(),
         metadata: z.record(z.string(), z.any()).optional(),

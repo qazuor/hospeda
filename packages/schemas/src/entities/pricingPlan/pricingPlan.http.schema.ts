@@ -27,8 +27,8 @@ export const HttpPricingPlanSearchSchema = PricingPlanSearchSchema.extend({
     pageSize: z.coerce.number().int().positive().max(100).default(10),
 
     // Coerce amount range parameters
-    amountMinorMin: z.coerce.number().int().min(0).optional(),
-    amountMinorMax: z.coerce.number().int().min(0).optional(),
+    amountMin: z.coerce.number().min(0).optional(),
+    amountMax: z.coerce.number().min(0).optional(),
 
     // Coerce boolean parameters with custom logic
     isActive: booleanCoercion.optional(),
@@ -50,7 +50,7 @@ export const PricingPlanCreateHttpSchema = z.object({
     productId: z.string().uuid(),
     billingScheme: z.string(),
     interval: z.string().optional(),
-    amountMinor: z.coerce.number().int().min(0),
+    amount: z.coerce.number().min(0),
     currency: z
         .string()
         .length(3)
@@ -68,7 +68,7 @@ export const PricingPlanUpdateHttpSchema = z.object({
     productId: z.string().uuid().optional(),
     billingScheme: z.string().optional(),
     interval: z.string().optional(),
-    amountMinor: z.coerce.number().int().min(0).optional(),
+    amount: z.coerce.number().min(0).optional(),
     currency: z
         .string()
         .length(3)
@@ -118,7 +118,7 @@ export function httpToDomainPricingPlanCreate(
         productId: httpData.productId,
         billingScheme: httpData.billingScheme as BillingSchemeEnum,
         interval: httpData.interval as BillingIntervalEnum | undefined,
-        amountMinor: httpData.amountMinor,
+        amount: httpData.amount,
         currency: httpData.currency,
         metadata,
         lifecycleState: (httpData.lifecycleState as 'DRAFT' | 'ACTIVE' | 'ARCHIVED') || 'ACTIVE'
@@ -149,7 +149,7 @@ export function httpToDomainPricingPlanUpdate(
         ...(httpData.interval !== undefined && {
             interval: httpData.interval as BillingIntervalEnum
         }),
-        ...(httpData.amountMinor !== undefined && { amountMinor: httpData.amountMinor }),
+        ...(httpData.amount !== undefined && { amount: httpData.amount }),
         ...(httpData.currency && { currency: httpData.currency }),
         ...(metadata !== undefined && { metadata }),
         ...(httpData.lifecycleState && {

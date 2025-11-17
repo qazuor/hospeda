@@ -8,7 +8,7 @@ import { BaseSearchSchema, PaginationResultSchema } from '../../common/paginatio
 import { type OpenApiSchemaMetadata, applyOpenApiMetadata } from '../../utils/openapi.utils.js';
 import { PaymentPlanSchema } from './payment-plan.schema.js';
 import { PaymentSchema } from './payment.schema.js';
-import { SubscriptionSchema } from './subscription.schema.js';
+import { PaymentSubscriptionSchema } from './subscription.schema.js';
 
 /**
  * Payment Query Schemas
@@ -459,7 +459,7 @@ export const PaymentPlanSearchResultItemSchema = PaymentPlanListItemSchema.exten
 /**
  * Subscription list item schema - contains essential fields for list display
  */
-export const SubscriptionListItemSchema = SubscriptionSchema.pick({
+export const SubscriptionListItemSchema = PaymentSubscriptionSchema.pick({
     id: true,
     userId: true,
     planId: true,
@@ -554,7 +554,7 @@ export const PaymentPlanSummarySchema = PaymentPlanSchema.pick({
 /**
  * Subscription summary schema for quick display
  */
-export const SubscriptionSummarySchema = SubscriptionSchema.pick({
+export const SubscriptionSummarySchema = PaymentSubscriptionSchema.pick({
     id: true,
     userId: true,
     planId: true,

@@ -1,12 +1,13 @@
 import { z } from 'zod';
 import { IdSchema } from '../../common/id.schema.js';
 import { PriceCurrencyEnumSchema } from '../../enums/index.js';
+import { numericField } from '../../utils/index.js';
 
 export const CreateCreditNoteSchema = z.object({
     invoiceId: IdSchema,
     clientId: IdSchema,
     creditNoteNumber: z.string().min(1).max(100),
-    amount: z.number().positive(),
+    amount: numericField(z.number().positive()),
     currency: PriceCurrencyEnumSchema,
     reason: z.string().min(1).max(500),
     description: z.string().max(1000).optional(),

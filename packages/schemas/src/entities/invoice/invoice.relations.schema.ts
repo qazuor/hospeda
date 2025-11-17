@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { numericField } from '../../utils/index.js';
 import { InvoiceSchema } from './invoice.schema.js';
 
 // Import related schemas for relations
@@ -18,9 +19,9 @@ const InvoiceLineRelationSchema = z.object({
     id: z.string().uuid(),
     invoiceId: z.string().uuid(),
     description: z.string().min(1).max(500),
-    quantity: z.number().positive(),
-    unitPrice: z.number().nonnegative(),
-    total: z.number().nonnegative(),
+    quantity: numericField(z.number().positive()),
+    unitPrice: numericField(z.number().nonnegative()),
+    total: numericField(z.number().nonnegative()),
     createdAt: z.date(),
     updatedAt: z.date(),
     createdById: z.string().uuid(),
@@ -30,7 +31,7 @@ const InvoiceLineRelationSchema = z.object({
 const PaymentRelationSchema = z.object({
     id: z.string().uuid(),
     invoiceId: z.string().uuid().optional(),
-    amount: z.number().positive(),
+    amount: numericField(z.number().positive()),
     currency: z.string(),
     status: z.string(),
     method: z.string(),

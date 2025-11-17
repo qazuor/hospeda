@@ -1,8 +1,11 @@
 import { z } from 'zod';
 import { IdSchema } from '../../common/id.schema.js';
 import { PaginationSchema } from '../../common/pagination.schema.js';
-import { PriceCurrencyEnumSchema } from '../../enums/index.js';
-import { RefundReasonEnumSchema, RefundStatusEnumSchema } from './refund.schema.js';
+import {
+    PriceCurrencyEnumSchema,
+    RefundReasonEnumSchema,
+    RefundStatusEnumSchema
+} from '../../enums/index.js';
 
 export const RefundQuerySchema = z
     .object({

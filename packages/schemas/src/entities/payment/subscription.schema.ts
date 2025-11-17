@@ -6,14 +6,16 @@ import {
     PriceCurrencyEnumSchema,
     SubscriptionStatusEnumSchema
 } from '../../enums/index.js';
+import { numericField } from '../../utils/index.js';
 
 /**
- * Subscription Schema - Main Entity Schema
+ * Payment Subscription Schema - Payment Integration Schema
  *
- * This schema defines the complete structure of a Subscription entity
- * representing a subscription to a payment plan in the system.
+ * This schema defines the structure of a Subscription entity
+ * specific to payment processing and Mercado Pago integration.
+ * @deprecated Use the main SubscriptionSchema from entities/subscription instead
  */
-export const SubscriptionSchema = z.object({
+export const PaymentSubscriptionSchema = z.object({
     // Base fields
     id: SubscriptionIdSchema,
     ...BaseAuditFields,
@@ -25,11 +27,13 @@ export const SubscriptionSchema = z.object({
     billingCycle: BillingCycleEnumSchema,
 
     // Amount and currency
-    amount: z
-        .number({
-            message: 'zodError.subscription.amount.required'
-        })
-        .positive({ message: 'zodError.subscription.amount.positive' }),
+    amount: numericField(
+        z
+            .number({
+                message: 'zodError.subscription.amount.required'
+            })
+            .positive({ message: 'zodError.subscription.amount.positive' })
+    ),
 
     currency: PriceCurrencyEnumSchema,
 
@@ -113,6 +117,7 @@ export const SubscriptionSchema = z.object({
 });
 
 /**
- * Type export for the main Subscription entity
+ * Type export for the payment-specific Subscription entity
+ * @deprecated Use the main Subscription type from entities/subscription instead
  */
-export type Subscription = z.infer<typeof SubscriptionSchema>;
+export type PaymentSubscription = z.infer<typeof PaymentSubscriptionSchema>;

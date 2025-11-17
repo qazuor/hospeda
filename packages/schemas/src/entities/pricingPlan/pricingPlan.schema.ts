@@ -6,6 +6,7 @@ import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
 import { BillingIntervalEnumSchema } from '../../enums/billing-interval.schema.js';
 import { BillingSchemeEnum } from '../../enums/billing-scheme.enum.js';
 import { BillingSchemeEnumSchema } from '../../enums/billing-scheme.schema.js';
+import { numericField } from '../../utils/index.js';
 
 /**
  * PricingPlan ID schema for UUID validation
@@ -26,10 +27,11 @@ export const PricingPlanSchema = z
         productId: ProductIdSchema,
         billingScheme: BillingSchemeEnumSchema,
         interval: BillingIntervalEnumSchema.optional(),
-        amountMinor: z
-            .number()
-            .int({ message: 'zodError.pricingPlan.amountMinor.integer' })
-            .min(0, { message: 'zodError.pricingPlan.amountMinor.positive' }),
+        amount: numericField(
+            z
+                .number({ message: 'zodError.pricingPlan.amount.required' })
+                .nonnegative({ message: 'zodError.pricingPlan.amount.nonnegative' })
+        ),
         currency: z
             .string()
             .length(3, { message: 'zodError.pricingPlan.currency.length' })
