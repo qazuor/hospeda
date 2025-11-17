@@ -1,9 +1,20 @@
 import type { CampaignModel } from '@repo/db';
 import type { Campaign, ListRelationsConfig } from '@repo/schemas';
-import { CreateCampaignSchema, SearchCampaignsSchema, UpdateCampaignSchema } from '@repo/schemas';
+import {
+    CampaignStatusEnum,
+    CreateCampaignSchema,
+    SearchCampaignsSchema,
+    ServiceErrorCode,
+    UpdateCampaignSchema
+} from '@repo/schemas';
 import type { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service.js';
-import type { Actor, PaginatedListOutput, ServiceContext } from '../../types/index.js';
+import type {
+    Actor,
+    PaginatedListOutput,
+    ServiceContext,
+    ServiceOutput
+} from '../../types/index.js';
 import {
     checkCanCount,
     checkCanCreate,
@@ -159,5 +170,323 @@ export class CampaignService extends BaseCrudService<
         _actor: Actor
     ): Promise<{ count: number }> {
         return { count: 0 };
+    }
+
+    // ============================================================================
+    // BUSINESS METHODS
+    // ============================================================================
+
+    /**
+     * Activate a campaign
+     */
+    async activate(actor: Actor, campaignId: string): Promise<ServiceOutput<Campaign>> {
+        const campaign = await this.model.findById(campaignId);
+        if (!campaign) {
+            return { error: { code: ServiceErrorCode.NOT_FOUND, message: 'Campaign not found' } };
+        }
+
+        this._canUpdate(actor, campaign);
+
+        // Business rule: Cannot activate an already active campaign
+        if (campaign.status === CampaignStatusEnum.ACTIVE) {
+            return {
+                error: {
+                    code: ServiceErrorCode.VALIDATION_ERROR,
+                    message: 'Campaign is already active'
+                }
+            };
+        }
+
+        const updated = await this.model.update(
+            { id: campaignId },
+            { status: CampaignStatusEnum.ACTIVE }
+        );
+        if (!updated) {
+            return {
+                error: {
+                    code: ServiceErrorCode.INTERNAL_ERROR,
+                    message: 'Failed to update campaign'
+                }
+            };
+        }
+        return { data: updated };
+    }
+
+    /**
+     * Pause a campaign
+     */
+    async pause(actor: Actor, campaignId: string): Promise<ServiceOutput<Campaign>> {
+        const campaign = await this.model.findById(campaignId);
+        if (!campaign) {
+            return { error: { code: ServiceErrorCode.NOT_FOUND, message: 'Campaign not found' } };
+        }
+
+        this._canUpdate(actor, campaign);
+
+        // Business rule: Can only pause an active campaign
+        if (campaign.status !== CampaignStatusEnum.ACTIVE) {
+            return {
+                error: {
+                    code: ServiceErrorCode.VALIDATION_ERROR,
+                    message: 'Campaign is not active'
+                }
+            };
+        }
+
+        const updated = await this.model.update(
+            { id: campaignId },
+            { status: CampaignStatusEnum.PAUSED }
+        );
+        if (!updated) {
+            return {
+                error: {
+                    code: ServiceErrorCode.INTERNAL_ERROR,
+                    message: 'Failed to update campaign'
+                }
+            };
+        }
+        return { data: updated };
+    }
+
+    /**
+     * Complete a campaign
+     */
+    async complete(actor: Actor, campaignId: string): Promise<ServiceOutput<Campaign>> {
+        const campaign = await this.model.findById(campaignId);
+        if (!campaign) {
+            return { error: { code: ServiceErrorCode.NOT_FOUND, message: 'Campaign not found' } };
+        }
+
+        this._canUpdate(actor, campaign);
+
+        const updated = await this.model.update(
+            { id: campaignId },
+            { status: CampaignStatusEnum.COMPLETED }
+        );
+        if (!updated) {
+            return {
+                error: {
+                    code: ServiceErrorCode.INTERNAL_ERROR,
+                    message: 'Failed to update campaign'
+                }
+            };
+        }
+        return { data: updated };
+    }
+
+    /**
+     * Cancel a campaign
+     */
+    async cancel(actor: Actor, campaignId: string): Promise<ServiceOutput<Campaign>> {
+        const campaign = await this.model.findById(campaignId);
+        if (!campaign) {
+            return { error: { code: ServiceErrorCode.NOT_FOUND, message: 'Campaign not found' } };
+        }
+
+        this._canUpdate(actor, campaign);
+
+        const updated = await this.model.update(
+            { id: campaignId },
+            { status: CampaignStatusEnum.CANCELLED }
+        );
+        if (!updated) {
+            return {
+                error: {
+                    code: ServiceErrorCode.INTERNAL_ERROR,
+                    message: 'Failed to update campaign'
+                }
+            };
+        }
+        return { data: updated };
+    }
+
+    /**
+     * Update campaign budget
+     */
+    async updateBudget(
+        actor: Actor,
+        campaignId: string,
+        newBudget: number
+    ): Promise<ServiceOutput<Campaign>> {
+        const campaign = await this.model.findById(campaignId);
+        if (!campaign) {
+            return { error: { code: ServiceErrorCode.NOT_FOUND, message: 'Campaign not found' } };
+        }
+
+        this._canUpdate(actor, campaign);
+
+        // Business rule: Daily budget cannot exceed total budget
+        if (campaign.budget.dailyBudget !== undefined && campaign.budget.dailyBudget > newBudget) {
+            return {
+                error: {
+                    code: ServiceErrorCode.VALIDATION_ERROR,
+                    message: 'Daily budget cannot exceed total budget'
+                }
+            };
+        }
+
+        const updated = await this.model.update(
+            { id: campaignId },
+            {
+                budget: {
+                    ...campaign.budget,
+                    totalBudget: newBudget
+                }
+            }
+        );
+        if (!updated) {
+            return {
+                error: {
+                    code: ServiceErrorCode.INTERNAL_ERROR,
+                    message: 'Failed to update campaign'
+                }
+            };
+        }
+        return { data: updated };
+    }
+
+    /**
+     * Record spending for a campaign
+     */
+    async recordSpend(
+        actor: Actor,
+        campaignId: string,
+        amount: number
+    ): Promise<ServiceOutput<Campaign>> {
+        const campaign = await this.model.findById(campaignId);
+        if (!campaign) {
+            return { error: { code: ServiceErrorCode.NOT_FOUND, message: 'Campaign not found' } };
+        }
+
+        this._canUpdate(actor, campaign);
+
+        const currentSpend = campaign.budget.spentAmount;
+        const newSpend = currentSpend + amount;
+
+        // Business rule: Spend cannot exceed total budget
+        if (newSpend > campaign.budget.totalBudget) {
+            return {
+                error: {
+                    code: ServiceErrorCode.VALIDATION_ERROR,
+                    message: 'Spend exceeds total budget'
+                }
+            };
+        }
+
+        const updated = await this.model.update(
+            { id: campaignId },
+            {
+                budget: {
+                    ...campaign.budget,
+                    spentAmount: newSpend
+                }
+            }
+        );
+        if (!updated) {
+            return {
+                error: {
+                    code: ServiceErrorCode.INTERNAL_ERROR,
+                    message: 'Failed to update campaign'
+                }
+            };
+        }
+        return { data: updated };
+    }
+
+    /**
+     * Update performance metrics
+     */
+    async updatePerformance(
+        actor: Actor,
+        campaignId: string,
+        metrics: Record<string, unknown>
+    ): Promise<ServiceOutput<Campaign>> {
+        const campaign = await this.model.findById(campaignId);
+        if (!campaign) {
+            return { error: { code: ServiceErrorCode.NOT_FOUND, message: 'Campaign not found' } };
+        }
+
+        this._canUpdate(actor, campaign);
+
+        const updated = await this.model.update(
+            { id: campaignId },
+            {
+                performance: {
+                    impressions: (metrics.impressions as number) ?? 0,
+                    clicks: (metrics.clicks as number) ?? 0,
+                    conversions: (metrics.conversions as number) ?? 0,
+                    clickThroughRate: (metrics.clickThroughRate as number) ?? 0,
+                    conversionRate: (metrics.conversionRate as number) ?? 0,
+                    costPerClick: (metrics.costPerClick as number) ?? 0,
+                    costPerConversion: (metrics.costPerConversion as number) ?? 0,
+                    returnOnAdSpend: (metrics.returnOnAdSpend as number) ?? 0
+                }
+            }
+        );
+        if (!updated) {
+            return {
+                error: {
+                    code: ServiceErrorCode.INTERNAL_ERROR,
+                    message: 'Failed to update campaign'
+                }
+            };
+        }
+        return { data: updated };
+    }
+
+    /**
+     * Get performance ROI for a campaign
+     */
+    async getPerformanceROI(
+        actor: Actor,
+        campaignId: string
+    ): Promise<ServiceOutput<{ roi: number; conversions: number }>> {
+        const campaign = await this.model.findById(campaignId);
+        if (!campaign) {
+            return { error: { code: ServiceErrorCode.NOT_FOUND, message: 'Campaign not found' } };
+        }
+
+        this._canView(actor, campaign);
+
+        const conversions = campaign.performance?.conversions ?? 0;
+        const roi = campaign.performance?.returnOnAdSpend ?? 0;
+
+        return { data: { roi, conversions } };
+    }
+
+    /**
+     * Find campaigns by client
+     */
+    async findByClient(actor: Actor, clientId: string): Promise<ServiceOutput<Campaign[]>> {
+        this._canView(actor, {} as Campaign);
+        const campaigns = await this.model.findByClient(clientId);
+        return { data: campaigns };
+    }
+
+    /**
+     * Find active campaigns
+     */
+    async findActive(actor: Actor): Promise<ServiceOutput<Campaign[]>> {
+        this._canView(actor, {} as Campaign);
+        const campaigns = await this.model.findActive();
+        return { data: campaigns };
+    }
+
+    /**
+     * Find scheduled campaigns
+     */
+    async findScheduled(actor: Actor): Promise<ServiceOutput<Campaign[]>> {
+        this._canView(actor, {} as Campaign);
+        const result = await this.model.findAll({ status: CampaignStatusEnum.SCHEDULED });
+        return { data: result.items || [] };
+    }
+
+    /**
+     * Find completed campaigns
+     */
+    async findCompleted(actor: Actor): Promise<ServiceOutput<Campaign[]>> {
+        this._canView(actor, {} as Campaign);
+        const result = await this.model.findAll({ status: CampaignStatusEnum.COMPLETED });
+        return { data: result.items || [] };
     }
 }

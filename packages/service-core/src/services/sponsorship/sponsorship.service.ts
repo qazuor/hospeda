@@ -2,9 +2,9 @@ import type { SponsorshipModel } from '@repo/db';
 import {
     CreateSponsorshipSchema,
     type ListRelationsConfig,
+    ListSponsorshipsSchema,
     PermissionEnum,
     RoleEnum,
-    SearchSponsorshipsSchema,
     ServiceErrorCode,
     type Sponsorship,
     SponsorshipEntityTypeEnum,
@@ -12,7 +12,12 @@ import {
 } from '@repo/schemas';
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service.js';
-import type { Actor, ServiceContext, ServiceOutput } from '../../types/index.js';
+import type {
+    Actor,
+    PaginatedListOutput,
+    ServiceContext,
+    ServiceOutput
+} from '../../types/index.js';
 import { ServiceError } from '../../types/index.js';
 
 /**
@@ -29,7 +34,7 @@ export class SponsorshipService extends BaseCrudService<
     SponsorshipModel,
     typeof CreateSponsorshipSchema,
     typeof UpdateSponsorshipSchema,
-    typeof SearchSponsorshipsSchema
+    typeof ListSponsorshipsSchema
 > {
     static readonly ENTITY_NAME = 'sponsorship';
     protected readonly entityName = SponsorshipService.ENTITY_NAME;
@@ -37,7 +42,7 @@ export class SponsorshipService extends BaseCrudService<
 
     public readonly createSchema = CreateSponsorshipSchema;
     public readonly updateSchema = UpdateSponsorshipSchema;
-    public readonly searchSchema = SearchSponsorshipsSchema;
+    public readonly searchSchema = ListSponsorshipsSchema;
 
     /**
      * Initializes a new instance of the SponsorshipService.
@@ -242,20 +247,25 @@ export class SponsorshipService extends BaseCrudService<
      * Execute search with filters
      */
     protected async _executeSearch(
-        filters: z.infer<typeof SearchSponsorshipsSchema>,
-        _relations?: ListRelationsConfig
-    ): Promise<Sponsorship[]> {
-        const { items } = await this.model.findAll(filters as Record<string, unknown>);
-        return items;
+        params: z.infer<typeof ListSponsorshipsSchema>,
+        _actor: Actor
+    ): Promise<PaginatedListOutput<Sponsorship>> {
+        const { items, total } = await this.model.findAll(params as Record<string, unknown>);
+        return {
+            items,
+            total
+        };
     }
 
     /**
      * Execute count with filters
      */
     protected async _executeCount(
-        filters: z.infer<typeof SearchSponsorshipsSchema>
-    ): Promise<number> {
-        return await this.model.count(filters as Record<string, unknown>);
+        params: z.infer<typeof ListSponsorshipsSchema>,
+        _actor: Actor
+    ): Promise<{ count: number }> {
+        const count = await this.model.count(params as Record<string, unknown>);
+        return { count };
     }
 
     // ============================================================================
