@@ -1,6 +1,17 @@
 import type { PromotionModel } from '@repo/db';
 import { PermissionEnum, type Promotion, RoleEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+    checkCanCount,
+    checkCanCreate,
+    checkCanHardDelete,
+    checkCanList,
+    checkCanRestore,
+    checkCanSearch,
+    checkCanSoftDelete,
+    checkCanUpdate,
+    checkCanView
+} from '../../../src/services/promotion/promotion.permissions.js';
 import { PromotionService } from '../../../src/services/promotion/promotion.service.js';
 import type { Actor } from '../../../src/types/index.js';
 
@@ -74,7 +85,7 @@ describe('PromotionService', () => {
 
     describe('Permission Hooks', () => {
         it('should allow ADMIN to create promotion', () => {
-            expect(() => service._canCreate(mockActor, {})).not.toThrow();
+            expect(() => checkCanCreate(mockActor, {})).not.toThrow();
         });
 
         it('should allow user with PROMOTION_CREATE permission to create promotion', () => {
@@ -84,7 +95,7 @@ describe('PromotionService', () => {
                 permissions: [PermissionEnum.PROMOTION_CREATE]
             };
 
-            expect(() => service._canCreate(actorWithPermission, {})).not.toThrow();
+            expect(() => checkCanCreate(actorWithPermission, {})).not.toThrow();
         });
 
         it('should deny creation without permission', () => {
@@ -94,11 +105,11 @@ describe('PromotionService', () => {
                 permissions: []
             };
 
-            expect(() => service._canCreate(actorWithoutPermission, {})).toThrow();
+            expect(() => checkCanCreate(actorWithoutPermission, {})).toThrow();
         });
 
         it('should allow ADMIN to update promotion', () => {
-            expect(() => service._canUpdate(mockActor, mockPromotion)).not.toThrow();
+            expect(() => checkCanUpdate(mockActor, mockPromotion)).not.toThrow();
         });
 
         it('should deny update without permission', () => {
@@ -108,11 +119,11 @@ describe('PromotionService', () => {
                 permissions: []
             };
 
-            expect(() => service._canUpdate(actorWithoutPermission, mockPromotion)).toThrow();
+            expect(() => checkCanUpdate(actorWithoutPermission, mockPromotion)).toThrow();
         });
 
         it('should allow ADMIN to soft delete promotion', () => {
-            expect(() => service._canSoftDelete(mockActor, mockPromotion)).not.toThrow();
+            expect(() => checkCanSoftDelete(mockActor, mockPromotion)).not.toThrow();
         });
 
         it('should deny soft delete without permission', () => {
@@ -122,11 +133,11 @@ describe('PromotionService', () => {
                 permissions: []
             };
 
-            expect(() => service._canSoftDelete(actorWithoutPermission, mockPromotion)).toThrow();
+            expect(() => checkCanSoftDelete(actorWithoutPermission, mockPromotion)).toThrow();
         });
 
         it('should allow only ADMIN to hard delete promotion', () => {
-            expect(() => service._canHardDelete(mockActor, mockPromotion)).not.toThrow();
+            expect(() => checkCanHardDelete(mockActor, mockPromotion)).not.toThrow();
         });
 
         it('should deny hard delete for non-admin', () => {
@@ -136,11 +147,11 @@ describe('PromotionService', () => {
                 permissions: [PermissionEnum.PROMOTION_HARD_DELETE]
             };
 
-            expect(() => service._canHardDelete(actorWithPermission, mockPromotion)).toThrow();
+            expect(() => checkCanHardDelete(actorWithPermission, mockPromotion)).toThrow();
         });
 
         it('should allow ADMIN to view promotion', () => {
-            expect(() => service._canView(mockActor, mockPromotion)).not.toThrow();
+            expect(() => checkCanView(mockActor, mockPromotion)).not.toThrow();
         });
 
         it('should deny view without permission', () => {
@@ -150,11 +161,11 @@ describe('PromotionService', () => {
                 permissions: []
             };
 
-            expect(() => service._canView(actorWithoutPermission, mockPromotion)).toThrow();
+            expect(() => checkCanView(actorWithoutPermission, mockPromotion)).toThrow();
         });
 
         it('should allow ADMIN to list promotions', () => {
-            expect(() => service._canList(mockActor)).not.toThrow();
+            expect(() => checkCanList(mockActor)).not.toThrow();
         });
 
         it('should deny list without permission', () => {
@@ -164,11 +175,11 @@ describe('PromotionService', () => {
                 permissions: []
             };
 
-            expect(() => service._canList(actorWithoutPermission)).toThrow();
+            expect(() => checkCanList(actorWithoutPermission)).toThrow();
         });
 
         it('should allow ADMIN to restore promotion', () => {
-            expect(() => service._canRestore(mockActor, mockPromotion)).not.toThrow();
+            expect(() => checkCanRestore(mockActor, mockPromotion)).not.toThrow();
         });
 
         it('should deny restore without permission', () => {
@@ -178,11 +189,11 @@ describe('PromotionService', () => {
                 permissions: []
             };
 
-            expect(() => service._canRestore(actorWithoutPermission, mockPromotion)).toThrow();
+            expect(() => checkCanRestore(actorWithoutPermission, mockPromotion)).toThrow();
         });
 
         it('should allow ADMIN to search promotions', () => {
-            expect(() => service._canSearch(mockActor)).not.toThrow();
+            expect(() => checkCanSearch(mockActor)).not.toThrow();
         });
 
         it('should deny search without permission', () => {
@@ -192,11 +203,11 @@ describe('PromotionService', () => {
                 permissions: []
             };
 
-            expect(() => service._canSearch(actorWithoutPermission)).toThrow();
+            expect(() => checkCanSearch(actorWithoutPermission)).toThrow();
         });
 
         it('should allow ADMIN to count promotions', () => {
-            expect(() => service._canCount(mockActor)).not.toThrow();
+            expect(() => checkCanCount(mockActor)).not.toThrow();
         });
 
         it('should deny count without permission', () => {
@@ -206,7 +217,7 @@ describe('PromotionService', () => {
                 permissions: []
             };
 
-            expect(() => service._canCount(actorWithoutPermission)).toThrow();
+            expect(() => checkCanCount(actorWithoutPermission)).toThrow();
         });
     });
 

@@ -1,14 +1,19 @@
 import type { ClientAccessRightModel } from '@repo/db';
-import { AccessRightScopeEnum, type ClientAccessRight } from '@repo/schemas';
+import {
+    AccessRightScopeEnum,
+    type ClientAccessRight,
+    PermissionEnum,
+    RoleEnum
+} from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ClientAccessRightService } from '../../../src/services/clientAccessRight/clientAccessRight.service.js';
-import type { Actor } from '../../../src/types/service-context.js';
+import type { Actor } from '../../../src/types/index.js';
 
 describe('ClientAccessRightService', () => {
     let service: ClientAccessRightService;
     let mockModel: ClientAccessRightModel;
     let mockActor: Actor;
-    let ctx: import('../../../src/types/service-context.js').ServiceContext;
+    let ctx: import('../../../src/types/index.js').ServiceContext;
 
     // Mock data
     const mockClientAccessRight: ClientAccessRight = {
@@ -38,12 +43,12 @@ describe('ClientAccessRightService', () => {
                 warn: vi.fn(),
                 debug: vi.fn()
             }
-        } as unknown as import('../../../src/types/service-context.js').ServiceContext;
+        } as unknown as import('../../../src/types/index.js').ServiceContext;
 
         mockActor = {
             id: '00000000-0000-0000-0000-000000000100',
-            role: 'ADMIN',
-            permissions: ['ACCESS_PERMISSIONS_MANAGE']
+            role: RoleEnum.ADMIN,
+            permissions: [PermissionEnum.ACCESS_PERMISSIONS_MANAGE]
         };
 
         mockModel = {
@@ -94,7 +99,7 @@ describe('ClientAccessRightService', () => {
         it('should deny access without permission', async () => {
             const actorWithoutPermission: Actor = {
                 ...mockActor,
-                role: 'USER',
+                role: RoleEnum.USER,
                 permissions: []
             };
 
@@ -102,7 +107,7 @@ describe('ClientAccessRightService', () => {
 
             const result = await serviceWithoutPermission.findByScope(
                 actorWithoutPermission,
-                'GLOBAL'
+                AccessRightScopeEnum.GLOBAL
             );
 
             expect(result.error).toBeDefined();
@@ -141,7 +146,7 @@ describe('ClientAccessRightService', () => {
         it('should deny access without permission', async () => {
             const actorWithoutPermission: Actor = {
                 ...mockActor,
-                role: 'USER',
+                role: RoleEnum.USER,
                 permissions: []
             };
 
@@ -185,7 +190,7 @@ describe('ClientAccessRightService', () => {
         it('should deny access without permission', async () => {
             const actorWithoutPermission: Actor = {
                 ...mockActor,
-                role: 'USER',
+                role: RoleEnum.USER,
                 permissions: []
             };
 
@@ -285,7 +290,7 @@ describe('ClientAccessRightService', () => {
         it('should deny access without permission', async () => {
             const actorWithoutPermission: Actor = {
                 ...mockActor,
-                role: 'USER',
+                role: RoleEnum.USER,
                 permissions: []
             };
 
@@ -335,7 +340,7 @@ describe('ClientAccessRightService', () => {
         it('should deny access without permission', async () => {
             const actorWithoutPermission: Actor = {
                 ...mockActor,
-                role: 'USER',
+                role: RoleEnum.USER,
                 permissions: []
             };
 
@@ -379,7 +384,7 @@ describe('ClientAccessRightService', () => {
         it('should deny access without permission', async () => {
             const actorWithoutPermission: Actor = {
                 ...mockActor,
-                role: 'USER',
+                role: RoleEnum.USER,
                 permissions: []
             };
 
@@ -535,7 +540,7 @@ describe('ClientAccessRightService', () => {
         it('should deny access without permission', async () => {
             const actorWithoutPermission: Actor = {
                 ...mockActor,
-                role: 'USER',
+                role: RoleEnum.USER,
                 permissions: []
             };
 
@@ -591,7 +596,7 @@ describe('ClientAccessRightService', () => {
             const input = {
                 clientId: '00000000-0000-0000-0000-000000000002',
                 feature: 'NONEXISTENT_FEATURE',
-                scope: 'GLOBAL' as AccessRightScopeEnum
+                scope: AccessRightScopeEnum.GLOBAL
             };
 
             vi.mocked(mockModel.revokeAccess).mockResolvedValue(false);
@@ -606,7 +611,7 @@ describe('ClientAccessRightService', () => {
             const input = {
                 clientId: '00000000-0000-0000-0000-000000000002',
                 feature: 'GLOBAL_FEATURE',
-                scope: 'GLOBAL' as AccessRightScopeEnum
+                scope: AccessRightScopeEnum.GLOBAL
             };
 
             vi.mocked(mockModel.revokeAccess).mockResolvedValue(true);
@@ -625,7 +630,7 @@ describe('ClientAccessRightService', () => {
         it('should deny access without permission', async () => {
             const actorWithoutPermission: Actor = {
                 ...mockActor,
-                role: 'USER',
+                role: RoleEnum.USER,
                 permissions: []
             };
 
@@ -680,7 +685,7 @@ describe('ClientAccessRightService', () => {
             const input = {
                 clientId: '00000000-0000-0000-0000-000000000002',
                 feature: 'NEW_FEATURE',
-                scope: 'GLOBAL' as AccessRightScopeEnum
+                scope: AccessRightScopeEnum.GLOBAL
             };
 
             vi.mocked(mockModel.findConflicts).mockResolvedValue([]);
@@ -694,7 +699,7 @@ describe('ClientAccessRightService', () => {
         it('should deny access without permission', async () => {
             const actorWithoutPermission: Actor = {
                 ...mockActor,
-                role: 'USER',
+                role: RoleEnum.USER,
                 permissions: []
             };
 
@@ -748,7 +753,7 @@ describe('ClientAccessRightService', () => {
             const mockRight2: ClientAccessRight = {
                 ...mockClientAccessRight,
                 id: 'right-2',
-                scope: 'GLOBAL'
+                scope: AccessRightScopeEnum.GLOBAL
             };
 
             vi.mocked(mockModel.findConflicts).mockResolvedValue([]);
@@ -799,7 +804,7 @@ describe('ClientAccessRightService', () => {
         it('should deny access without permission', async () => {
             const actorWithoutPermission: Actor = {
                 ...mockActor,
-                role: 'USER',
+                role: RoleEnum.USER,
                 permissions: []
             };
 
@@ -841,7 +846,7 @@ describe('ClientAccessRightService', () => {
                 {
                     clientId: '00000000-0000-0000-0000-000000000005',
                     feature: 'PREMIUM_PLACEMENT',
-                    scope: 'GLOBAL' as AccessRightScopeEnum
+                    scope: AccessRightScopeEnum.GLOBAL
                 }
             ];
 
@@ -864,7 +869,7 @@ describe('ClientAccessRightService', () => {
                 {
                     clientId: '00000000-0000-0000-0000-000000000005',
                     feature: 'NONEXISTENT_FEATURE',
-                    scope: 'GLOBAL' as AccessRightScopeEnum
+                    scope: AccessRightScopeEnum.GLOBAL
                 }
             ];
 
@@ -882,7 +887,7 @@ describe('ClientAccessRightService', () => {
         it('should deny access without permission', async () => {
             const actorWithoutPermission: Actor = {
                 ...mockActor,
-                role: 'USER',
+                role: RoleEnum.USER,
                 permissions: []
             };
 
@@ -892,7 +897,7 @@ describe('ClientAccessRightService', () => {
                 {
                     clientId: '00000000-0000-0000-0000-000000000002',
                     feature: 'FEATURED_LISTING',
-                    scope: 'GLOBAL' as AccessRightScopeEnum
+                    scope: AccessRightScopeEnum.GLOBAL
                 }
             ];
 

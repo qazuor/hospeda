@@ -1,5 +1,14 @@
 import type { PaymentModel } from '@repo/db';
-import { type Payment, PaymentStatusEnum, PermissionEnum, RoleEnum } from '@repo/schemas';
+import {
+    LifecycleStatusEnum,
+    type Payment,
+    PaymentMethodEnum,
+    PaymentStatusEnum,
+    PaymentTypeEnum,
+    PermissionEnum,
+    PriceCurrencyEnum,
+    RoleEnum
+} from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PaymentService } from '../../../src/services/payment/payment.service.js';
 import type { Actor } from '../../../src/types/index.js';
@@ -15,10 +24,11 @@ describe('PaymentService', () => {
         id: '00000000-0000-0000-0000-000000000001',
         userId: '00000000-0000-0000-0000-000000000002',
         paymentPlanId: '00000000-0000-0000-0000-000000000003',
-        type: 'one_time' as const,
+        invoiceId: null,
+        type: PaymentTypeEnum.ONE_TIME,
         amount: 100.0,
-        currency: 'USD',
-        paymentMethod: 'credit_card',
+        currency: PriceCurrencyEnum.USD,
+        paymentMethod: PaymentMethodEnum.CREDIT_CARD,
         status: PaymentStatusEnum.PENDING,
         mercadoPagoPaymentId: 'mp-12345',
         mercadoPagoPreferenceId: null,
@@ -29,7 +39,7 @@ describe('PaymentService', () => {
         expiresAt: null,
         failureReason: null,
         mercadoPagoResponse: null,
-        lifecycleState: 'active',
+        lifecycleState: LifecycleStatusEnum.ACTIVE,
         isActive: true,
         isDeleted: false,
         adminInfo: null,
@@ -54,7 +64,17 @@ describe('PaymentService', () => {
         mockActor = {
             id: '00000000-0000-0000-0000-000000000100',
             role: RoleEnum.ADMIN,
-            permissions: [PermissionEnum.CLIENT_UPDATE]
+            permissions: [
+                PermissionEnum.PAYMENT_CREATE,
+                PermissionEnum.PAYMENT_UPDATE,
+                PermissionEnum.PAYMENT_DELETE,
+                PermissionEnum.PAYMENT_VIEW,
+                PermissionEnum.PAYMENT_RESTORE,
+                PermissionEnum.PAYMENT_HARD_DELETE,
+                PermissionEnum.PAYMENT_PROCESS,
+                PermissionEnum.PAYMENT_REFUND,
+                PermissionEnum.PAYMENT_CANCEL
+            ]
         };
 
         mockModel = {
@@ -290,8 +310,7 @@ describe('PaymentService', () => {
 
             const approvedPayment: Payment = {
                 ...mockPayment,
-                status: PaymentStatusEnum.APPROVED,
-                paidAt
+                status: PaymentStatusEnum.APPROVED
             };
 
             vi.mocked(mockModel.markApproved).mockResolvedValue(approvedPayment);
@@ -307,8 +326,7 @@ describe('PaymentService', () => {
 
             const approvedPayment: Payment = {
                 ...mockPayment,
-                status: PaymentStatusEnum.APPROVED,
-                paidAt: new Date()
+                status: PaymentStatusEnum.APPROVED
             };
 
             vi.mocked(mockModel.markApproved).mockResolvedValue(approvedPayment);
@@ -426,8 +444,7 @@ describe('PaymentService', () => {
 
             const retriedPayment: Payment = {
                 ...mockPayment,
-                status: PaymentStatusEnum.PENDING,
-                providerPaymentId: newProviderPaymentId
+                status: PaymentStatusEnum.PENDING
             };
 
             vi.mocked(mockModel.retryPayment).mockResolvedValue(retriedPayment);

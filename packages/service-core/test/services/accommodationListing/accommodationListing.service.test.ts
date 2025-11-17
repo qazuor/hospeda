@@ -2,8 +2,21 @@ import type { AccommodationListingModel } from '@repo/db';
 import { ListingStatusEnum, PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { AccommodationListing } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+    checkCanActivate,
+    checkCanArchive,
+    checkCanCreate,
+    checkCanDelete,
+    checkCanHardDelete,
+    checkCanList,
+    checkCanPatch,
+    checkCanPause,
+    checkCanRestore,
+    checkCanUpdate,
+    checkCanView
+} from '../../../src/services/accommodationListing/accommodationListing.permissions.js';
 import { AccommodationListingService } from '../../../src/services/accommodationListing/accommodationListing.service.js';
-import type { Actor, ServiceContext } from '../../../src/types/service-context.js';
+import type { Actor, ServiceContext } from '../../../src/types/index.js';
 
 describe('AccommodationListingService', () => {
     let service: AccommodationListingService;
@@ -54,11 +67,8 @@ describe('AccommodationListingService', () => {
         trialEndsAt: '2024-02-01T00:00:00.000Z',
         isTrial: true,
         status: ListingStatusEnum.ACTIVE,
-        isActive: true,
-        isVerified: true,
-        isFeatured: false,
-        createdAt: '2024-01-01T00:00:00.000Z',
-        updatedAt: '2024-01-01T00:00:00.000Z',
+        createdAt: new Date('2024-01-01T00:00:00.000Z'),
+        updatedAt: new Date('2024-01-01T00:00:00.000Z'),
         deletedAt: null,
         createdById: 'admin-123',
         updatedById: null,
@@ -98,15 +108,15 @@ describe('AccommodationListingService', () => {
     describe('Permission Hooks', () => {
         describe('_canCreate', () => {
             it('should allow admin to create', () => {
-                expect(() => service._canCreate(validAdminActor, {})).not.toThrow();
+                expect(() => checkCanCreate(validAdminActor, {})).not.toThrow();
             });
 
             it('should allow user with CREATE permission', () => {
-                expect(() => service._canCreate(validUserWithPermissions, {})).not.toThrow();
+                expect(() => checkCanCreate(validUserWithPermissions, {})).not.toThrow();
             });
 
             it('should deny user without CREATE permission', () => {
-                expect(() => service._canCreate(validUserWithoutPermissions, {})).toThrow(
+                expect(() => checkCanCreate(validUserWithoutPermissions, {})).toThrow(
                     'Insufficient permissions'
                 );
             });
@@ -115,19 +125,19 @@ describe('AccommodationListingService', () => {
         describe('_canUpdate', () => {
             it('should allow admin to update', () => {
                 expect(() =>
-                    service._canUpdate(validAdminActor, mockAccommodationListing.id, {})
+                    checkCanUpdate(validAdminActor, mockAccommodationListing)
                 ).not.toThrow();
             });
 
             it('should allow user with UPDATE permission', () => {
                 expect(() =>
-                    service._canUpdate(validUserWithPermissions, mockAccommodationListing.id, {})
+                    checkCanUpdate(validUserWithPermissions, mockAccommodationListing)
                 ).not.toThrow();
             });
 
             it('should deny user without UPDATE permission', () => {
                 expect(() =>
-                    service._canUpdate(validUserWithoutPermissions, mockAccommodationListing.id, {})
+                    checkCanUpdate(validUserWithoutPermissions, mockAccommodationListing)
                 ).toThrow('Insufficient permissions');
             });
         });
@@ -135,19 +145,19 @@ describe('AccommodationListingService', () => {
         describe('_canPatch', () => {
             it('should allow admin to patch', () => {
                 expect(() =>
-                    service._canPatch(validAdminActor, mockAccommodationListing, {})
+                    checkCanPatch(validAdminActor, mockAccommodationListing, {})
                 ).not.toThrow();
             });
 
             it('should allow user with UPDATE permission', () => {
                 expect(() =>
-                    service._canPatch(validUserWithPermissions, mockAccommodationListing, {})
+                    checkCanPatch(validUserWithPermissions, mockAccommodationListing, {})
                 ).not.toThrow();
             });
 
             it('should deny user without UPDATE permission', () => {
                 expect(() =>
-                    service._canPatch(validUserWithoutPermissions, mockAccommodationListing, {})
+                    checkCanPatch(validUserWithoutPermissions, mockAccommodationListing, {})
                 ).toThrow('Insufficient permissions');
             });
         });
@@ -155,19 +165,19 @@ describe('AccommodationListingService', () => {
         describe('_canDelete', () => {
             it('should allow admin to delete', () => {
                 expect(() =>
-                    service._canDelete(validAdminActor, mockAccommodationListing)
+                    checkCanDelete(validAdminActor, mockAccommodationListing)
                 ).not.toThrow();
             });
 
             it('should allow user with DELETE permission', () => {
                 expect(() =>
-                    service._canDelete(validUserWithPermissions, mockAccommodationListing)
+                    checkCanDelete(validUserWithPermissions, mockAccommodationListing)
                 ).not.toThrow();
             });
 
             it('should deny user without DELETE permission', () => {
                 expect(() =>
-                    service._canDelete(validUserWithoutPermissions, mockAccommodationListing)
+                    checkCanDelete(validUserWithoutPermissions, mockAccommodationListing)
                 ).toThrow('Insufficient permissions');
             });
         });
@@ -175,78 +185,76 @@ describe('AccommodationListingService', () => {
         describe('_canRestore', () => {
             const deletedListing: AccommodationListing = {
                 ...mockAccommodationListing,
-                deletedAt: '2024-01-02T00:00:00.000Z',
+                deletedAt: new Date('2024-01-02T00:00:00.000Z'),
                 deletedById: 'admin-123'
             };
 
             it('should allow admin to restore', () => {
-                expect(() => service._canRestore(validAdminActor, deletedListing)).not.toThrow();
+                expect(() => checkCanRestore(validAdminActor, deletedListing)).not.toThrow();
             });
 
             it('should allow user with RESTORE permission', () => {
                 expect(() =>
-                    service._canRestore(validUserWithPermissions, deletedListing)
+                    checkCanRestore(validUserWithPermissions, deletedListing)
                 ).not.toThrow();
             });
 
             it('should deny user without RESTORE permission', () => {
-                expect(() =>
-                    service._canRestore(validUserWithoutPermissions, deletedListing)
-                ).toThrow('Insufficient permissions');
+                expect(() => checkCanRestore(validUserWithoutPermissions, deletedListing)).toThrow(
+                    'Insufficient permissions'
+                );
             });
         });
 
         describe('_canHardDelete', () => {
             it('should allow admin to hard delete', () => {
                 expect(() =>
-                    service._canHardDelete(validAdminActor, mockAccommodationListing)
+                    checkCanHardDelete(validAdminActor, mockAccommodationListing)
                 ).not.toThrow();
             });
 
             it('should allow user with HARD_DELETE permission', () => {
                 expect(() =>
-                    service._canHardDelete(validUserWithPermissions, mockAccommodationListing)
+                    checkCanHardDelete(validUserWithPermissions, mockAccommodationListing)
                 ).not.toThrow();
             });
 
             it('should deny user without HARD_DELETE permission', () => {
                 expect(() =>
-                    service._canHardDelete(validUserWithoutPermissions, mockAccommodationListing)
+                    checkCanHardDelete(validUserWithoutPermissions, mockAccommodationListing)
                 ).toThrow('Insufficient permissions');
             });
         });
 
         describe('_canView', () => {
             it('should allow admin to view', () => {
-                expect(() =>
-                    service._canView(validAdminActor, mockAccommodationListing)
-                ).not.toThrow();
+                expect(() => checkCanView(validAdminActor, mockAccommodationListing)).not.toThrow();
             });
 
             it('should allow user with VIEW permission', () => {
                 expect(() =>
-                    service._canView(validUserWithPermissions, mockAccommodationListing)
+                    checkCanView(validUserWithPermissions, mockAccommodationListing)
                 ).not.toThrow();
             });
 
             it('should deny user without VIEW permission', () => {
                 expect(() =>
-                    service._canView(validUserWithoutPermissions, mockAccommodationListing)
+                    checkCanView(validUserWithoutPermissions, mockAccommodationListing)
                 ).toThrow('Insufficient permissions');
             });
         });
 
         describe('_canList', () => {
             it('should allow admin to list', () => {
-                expect(() => service._canList(validAdminActor, {})).not.toThrow();
+                expect(() => checkCanList(validAdminActor)).not.toThrow();
             });
 
             it('should allow user with VIEW permission', () => {
-                expect(() => service._canList(validUserWithPermissions, {})).not.toThrow();
+                expect(() => checkCanList(validUserWithPermissions)).not.toThrow();
             });
 
             it('should deny user without VIEW permission', () => {
-                expect(() => service._canList(validUserWithoutPermissions, {})).toThrow(
+                expect(() => checkCanList(validUserWithoutPermissions)).toThrow(
                     'Insufficient permissions'
                 );
             });
@@ -255,19 +263,19 @@ describe('AccommodationListingService', () => {
         describe('_canActivate', () => {
             it('should allow admin to activate', () => {
                 expect(() =>
-                    service._canActivate(validAdminActor, mockAccommodationListing)
+                    checkCanActivate(validAdminActor, mockAccommodationListing)
                 ).not.toThrow();
             });
 
             it('should allow user with STATUS_MANAGE permission', () => {
                 expect(() =>
-                    service._canActivate(validUserWithPermissions, mockAccommodationListing)
+                    checkCanActivate(validUserWithPermissions, mockAccommodationListing)
                 ).not.toThrow();
             });
 
             it('should deny user without STATUS_MANAGE permission', () => {
                 expect(() =>
-                    service._canActivate(validUserWithoutPermissions, mockAccommodationListing)
+                    checkCanActivate(validUserWithoutPermissions, mockAccommodationListing)
                 ).toThrow('Insufficient permissions');
             });
         });
@@ -279,17 +287,15 @@ describe('AccommodationListingService', () => {
             };
 
             it('should allow admin to pause', () => {
-                expect(() => service._canPause(validAdminActor, activeListing)).not.toThrow();
+                expect(() => checkCanPause(validAdminActor, activeListing)).not.toThrow();
             });
 
             it('should allow user with STATUS_MANAGE permission', () => {
-                expect(() =>
-                    service._canPause(validUserWithPermissions, activeListing)
-                ).not.toThrow();
+                expect(() => checkCanPause(validUserWithPermissions, activeListing)).not.toThrow();
             });
 
             it('should deny user without STATUS_MANAGE permission', () => {
-                expect(() => service._canPause(validUserWithoutPermissions, activeListing)).toThrow(
+                expect(() => checkCanPause(validUserWithoutPermissions, activeListing)).toThrow(
                     'Insufficient permissions'
                 );
             });
@@ -298,19 +304,19 @@ describe('AccommodationListingService', () => {
         describe('_canArchive', () => {
             it('should allow admin to archive', () => {
                 expect(() =>
-                    service._canArchive(validAdminActor, mockAccommodationListing)
+                    checkCanArchive(validAdminActor, mockAccommodationListing)
                 ).not.toThrow();
             });
 
             it('should allow user with STATUS_MANAGE permission', () => {
                 expect(() =>
-                    service._canArchive(validUserWithPermissions, mockAccommodationListing)
+                    checkCanArchive(validUserWithPermissions, mockAccommodationListing)
                 ).not.toThrow();
             });
 
             it('should deny user without STATUS_MANAGE permission', () => {
                 expect(() =>
-                    service._canArchive(validUserWithoutPermissions, mockAccommodationListing)
+                    checkCanArchive(validUserWithoutPermissions, mockAccommodationListing)
                 ).toThrow('Insufficient permissions');
             });
         });
@@ -335,11 +341,9 @@ describe('AccommodationListingService', () => {
                     listingId: mockAccommodationListing.id
                 });
 
-                expect(result.success).toBe(true);
-                if (result.success) {
-                    expect(result.data.status).toBe(ListingStatusEnum.ACTIVE);
-                    expect(result.data.isActive).toBe(true);
-                }
+                expect(result.data).toBeDefined();
+                expect(result.error).toBeUndefined();
+                expect(result.data!.status).toBe(ListingStatusEnum.ACTIVE);
                 expect(mockModel.activate).toHaveBeenCalledWith(mockAccommodationListing.id);
             });
 
@@ -349,10 +353,9 @@ describe('AccommodationListingService', () => {
                     listingId: mockAccommodationListing.id
                 });
 
-                expect(result.success).toBe(false);
-                if (!result.success) {
-                    expect(result.error.message).toContain('Insufficient permissions');
-                }
+                expect(result.error).toBeDefined();
+                expect(result.data).toBeUndefined();
+                expect(result.error!.message).toContain('Insufficient permissions');
                 expect(mockModel.activate).not.toHaveBeenCalled();
             });
 
@@ -366,10 +369,9 @@ describe('AccommodationListingService', () => {
                     listingId: 'non-existent-id'
                 });
 
-                expect(result.success).toBe(false);
-                if (!result.success) {
-                    expect(result.error.message).toContain('Accommodation listing not found');
-                }
+                expect(result.error).toBeDefined();
+                expect(result.data).toBeUndefined();
+                expect(result.error!.message).toContain('Accommodation listing not found');
             });
 
             it('should handle database errors gracefully', async () => {
@@ -382,10 +384,9 @@ describe('AccommodationListingService', () => {
                     listingId: mockAccommodationListing.id
                 });
 
-                expect(result.success).toBe(false);
-                if (!result.success) {
-                    expect(result.error.message).toContain('Database connection failed');
-                }
+                expect(result.error).toBeDefined();
+                expect(result.data).toBeUndefined();
+                expect(result.error!.message).toContain('Database connection failed');
             });
 
             it('should allow user with STATUS_MANAGE permission to activate', async () => {
@@ -401,7 +402,8 @@ describe('AccommodationListingService', () => {
                     listingId: mockAccommodationListing.id
                 });
 
-                expect(result.success).toBe(true);
+                expect(result.data).toBeDefined();
+                expect(result.error).toBeUndefined();
                 expect(mockModel.activate).toHaveBeenCalledWith(mockAccommodationListing.id);
             });
         });
@@ -426,11 +428,9 @@ describe('AccommodationListingService', () => {
                     listingId: activeListing.id
                 });
 
-                expect(result.success).toBe(true);
-                if (result.success) {
-                    expect(result.data.status).toBe(ListingStatusEnum.PAUSED);
-                    expect(result.data.isActive).toBe(false);
-                }
+                expect(result.data).toBeDefined();
+                expect(result.error).toBeUndefined();
+                expect(result.data!.status).toBe(ListingStatusEnum.PAUSED);
                 expect(mockModel.pause).toHaveBeenCalledWith(activeListing.id);
             });
 
@@ -440,10 +440,9 @@ describe('AccommodationListingService', () => {
                     listingId: activeListing.id
                 });
 
-                expect(result.success).toBe(false);
-                if (!result.success) {
-                    expect(result.error.message).toContain('Insufficient permissions');
-                }
+                expect(result.error).toBeDefined();
+                expect(result.data).toBeUndefined();
+                expect(result.error!.message).toContain('Insufficient permissions');
                 expect(mockModel.pause).not.toHaveBeenCalled();
             });
 
@@ -457,10 +456,9 @@ describe('AccommodationListingService', () => {
                     listingId: 'non-existent-id'
                 });
 
-                expect(result.success).toBe(false);
-                if (!result.success) {
-                    expect(result.error.message).toContain('Accommodation listing not found');
-                }
+                expect(result.error).toBeDefined();
+                expect(result.data).toBeUndefined();
+                expect(result.error!.message).toContain('Accommodation listing not found');
             });
 
             it('should handle database errors gracefully', async () => {
@@ -473,10 +471,9 @@ describe('AccommodationListingService', () => {
                     listingId: activeListing.id
                 });
 
-                expect(result.success).toBe(false);
-                if (!result.success) {
-                    expect(result.error.message).toContain('Database connection failed');
-                }
+                expect(result.error).toBeDefined();
+                expect(result.data).toBeUndefined();
+                expect(result.error!.message).toContain('Database connection failed');
             });
 
             it('should allow user with STATUS_MANAGE permission to pause', async () => {
@@ -492,7 +489,8 @@ describe('AccommodationListingService', () => {
                     listingId: activeListing.id
                 });
 
-                expect(result.success).toBe(true);
+                expect(result.data).toBeDefined();
+                expect(result.error).toBeUndefined();
                 expect(mockModel.pause).toHaveBeenCalledWith(activeListing.id);
             });
         });
@@ -511,11 +509,9 @@ describe('AccommodationListingService', () => {
                     listingId: mockAccommodationListing.id
                 });
 
-                expect(result.success).toBe(true);
-                if (result.success) {
-                    expect(result.data.status).toBe(ListingStatusEnum.ARCHIVED);
-                    expect(result.data.isActive).toBe(false);
-                }
+                expect(result.data).toBeDefined();
+                expect(result.error).toBeUndefined();
+                expect(result.data!.status).toBe(ListingStatusEnum.ARCHIVED);
                 expect(mockModel.archive).toHaveBeenCalledWith(mockAccommodationListing.id);
             });
 
@@ -525,10 +521,9 @@ describe('AccommodationListingService', () => {
                     listingId: mockAccommodationListing.id
                 });
 
-                expect(result.success).toBe(false);
-                if (!result.success) {
-                    expect(result.error.message).toContain('Insufficient permissions');
-                }
+                expect(result.error).toBeDefined();
+                expect(result.data).toBeUndefined();
+                expect(result.error!.message).toContain('Insufficient permissions');
                 expect(mockModel.archive).not.toHaveBeenCalled();
             });
 
@@ -542,10 +537,9 @@ describe('AccommodationListingService', () => {
                     listingId: 'non-existent-id'
                 });
 
-                expect(result.success).toBe(false);
-                if (!result.success) {
-                    expect(result.error.message).toContain('Accommodation listing not found');
-                }
+                expect(result.error).toBeDefined();
+                expect(result.data).toBeUndefined();
+                expect(result.error!.message).toContain('Accommodation listing not found');
             });
 
             it('should handle database errors gracefully', async () => {
@@ -558,10 +552,9 @@ describe('AccommodationListingService', () => {
                     listingId: mockAccommodationListing.id
                 });
 
-                expect(result.success).toBe(false);
-                if (!result.success) {
-                    expect(result.error.message).toContain('Database connection failed');
-                }
+                expect(result.error).toBeDefined();
+                expect(result.data).toBeUndefined();
+                expect(result.error!.message).toContain('Database connection failed');
             });
 
             it('should allow user with STATUS_MANAGE permission to archive', async () => {
@@ -577,7 +570,8 @@ describe('AccommodationListingService', () => {
                     listingId: mockAccommodationListing.id
                 });
 
-                expect(result.success).toBe(true);
+                expect(result.data).toBeDefined();
+                expect(result.error).toBeUndefined();
                 expect(mockModel.archive).toHaveBeenCalledWith(mockAccommodationListing.id);
             });
         });

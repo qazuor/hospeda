@@ -6,6 +6,7 @@ import { SubscriptionService } from '../../../src/services/subscription/subscrip
 import { createActor } from '../../factories/actorFactory';
 import { createMockSubscription } from '../../factories/subscriptionFactory';
 import { getMockId } from '../../factories/utilsFactory';
+import { createMockLogger } from '../../utils/mockLogger';
 
 describe('SubscriptionService', () => {
     let service: SubscriptionService;
@@ -69,7 +70,7 @@ describe('SubscriptionService', () => {
         });
 
         // Create service with mocked model
-        service = new SubscriptionService({ logger: console }, mockModel);
+        service = new SubscriptionService({ logger: createMockLogger() }, mockModel);
     });
 
     describe('Constructor', () => {
@@ -89,8 +90,8 @@ describe('SubscriptionService', () => {
                 clientId: getMockId('client', 'c2') as ClientIdType,
                 pricingPlanId: getMockId('pricingPlan', 'pp1'),
                 status: SubscriptionStatusEnum.ACTIVE,
-                startAt: new Date(),
-                endAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+                startDate: new Date(),
+                endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
             };
 
             const result = await service.create(adminActor, createData);
@@ -105,7 +106,7 @@ describe('SubscriptionService', () => {
                 clientId: getMockId('client', 'c2') as ClientIdType,
                 pricingPlanId: getMockId('pricingPlan', 'pp1'),
                 status: SubscriptionStatusEnum.ACTIVE,
-                startAt: new Date()
+                startDate: new Date()
             };
 
             const result = await service.create(userActor, createData);
@@ -210,8 +211,9 @@ describe('SubscriptionService', () => {
             const result = await service.findByClient(adminActor, clientId);
 
             expect(result.data).toBeDefined();
+            if (!result.data) throw new Error('Expected data to be defined');
             expect(result.data).toHaveLength(1);
-            expect(result.data?.[0].clientId).toBe(clientId);
+            expect(result.data[0]!.clientId).toBe(clientId);
         });
 
         it('should return empty array if no subscriptions found for client', async () => {
@@ -350,7 +352,10 @@ describe('SubscriptionService', () => {
             const searchParams = {
                 status: SubscriptionStatusEnum.ACTIVE,
                 page: 1,
-                pageSize: 10
+                pageSize: 10,
+                sortBy: 'createdAt' as const,
+                sortOrder: 'desc' as const,
+                includeDeleted: false
             };
 
             const result = await service.search(adminActor, searchParams);
@@ -366,7 +371,12 @@ describe('SubscriptionService', () => {
             });
 
             const result = await service.search(adminActor, {
-                status: SubscriptionStatusEnum.CANCELLED
+                status: SubscriptionStatusEnum.CANCELLED,
+                page: 1,
+                pageSize: 10,
+                sortBy: 'createdAt' as const,
+                sortOrder: 'desc' as const,
+                includeDeleted: false
             });
 
             expect(result.data).toBeDefined();
@@ -376,7 +386,13 @@ describe('SubscriptionService', () => {
 
     describe('count', () => {
         it('should count subscriptions matching criteria', async () => {
-            const result = await service.count(adminActor, {});
+            const result = await service.count(adminActor, {
+                page: 1,
+                pageSize: 10,
+                sortBy: 'createdAt' as const,
+                sortOrder: 'desc' as const,
+                includeDeleted: false
+            });
 
             expect(result.data).toBeDefined();
             expect(result.data?.count).toBe(1);
@@ -541,8 +557,34 @@ describe('SubscriptionService', () => {
     describe('getWithItems', () => {
         it('should get subscription with items', async () => {
             const mockItems = [
-                { id: 'item1', subscriptionId: mockSubscription.id, quantity: 1 },
-                { id: 'item2', subscriptionId: mockSubscription.id, quantity: 2 }
+                {
+                    id: 'item1',
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    deletedAt: null,
+                    createdById: null,
+                    updatedById: null,
+                    deletedById: null,
+                    adminInfo: null,
+                    sourceType: 'subscription',
+                    entityType: 'product',
+                    sourceId: mockSubscription.id,
+                    linkedEntityId: 'product-1'
+                },
+                {
+                    id: 'item2',
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    deletedAt: null,
+                    createdById: null,
+                    updatedById: null,
+                    deletedById: null,
+                    adminInfo: null,
+                    sourceType: 'subscription',
+                    entityType: 'product',
+                    sourceId: mockSubscription.id,
+                    linkedEntityId: 'product-2'
+                }
             ];
             vi.spyOn(mockModel, 'withItems').mockResolvedValue({
                 subscription: mockSubscription,

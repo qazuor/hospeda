@@ -1,9 +1,5 @@
-import type { CreditNote, CreditNoteModel } from '@repo/db';
-import {
-    PermissionEnum,
-    PriceCurrencyEnum,
-    RoleEnum
-} from '@repo/schemas';
+import type { CreditNoteModel } from '@repo/db';
+import { type CreditNote, PermissionEnum, PriceCurrencyEnum, RoleEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CreditNoteService } from '../../../src/services/creditNote/creditNote.service.js';
 import type { Actor } from '../../../src/types/index.js';
@@ -18,7 +14,7 @@ describe('CreditNoteService', () => {
     const mockCreditNote: CreditNote = {
         id: '00000000-0000-0000-0000-000000000001',
         invoiceId: '00000000-0000-0000-0000-000000000002',
-        amount: '100.00',
+        amount: 100.0,
         currency: PriceCurrencyEnum.USD,
         reason: 'Customer refund',
         issuedAt: new Date('2025-01-15'),
@@ -439,9 +435,8 @@ describe('CreditNoteService', () => {
 
             const serviceWithoutPermission = new CreditNoteService(ctx, mockModel);
 
-            const result = await serviceWithoutPermission.getCreditNotesSummary(
-                actorWithoutPermission
-            );
+            const result =
+                await serviceWithoutPermission.getCreditNotesSummary(actorWithoutPermission);
 
             expect(result.error).toBeDefined();
             expect(result.error?.message.toLowerCase()).toContain('permission');

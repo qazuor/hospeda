@@ -6,6 +6,7 @@ import { ProductService } from '../../../src/services/product/product.service';
 import { createActor } from '../../factories/actorFactory';
 import { createMockProduct } from '../../factories/productFactory';
 import { getMockId } from '../../factories/utilsFactory';
+import { createMockLogger } from '../../utils/mockLogger';
 
 describe('ProductService', () => {
     let service: ProductService;
@@ -71,7 +72,7 @@ describe('ProductService', () => {
         ]);
 
         // Create service with mocked model
-        service = new ProductService({ logger: console }, mockModel);
+        service = new ProductService({ logger: createMockLogger() }, mockModel);
     });
 
     describe('Constructor', () => {
@@ -90,7 +91,8 @@ describe('ProductService', () => {
             const createData = {
                 name: 'New Product',
                 type: ProductTypeEnum.CAMPAIGN,
-                metadata: { category: 'digital' }
+                metadata: { category: 'digital' },
+                lifecycleState: 'ACTIVE' as const
             };
 
             const result = await service.create(adminActor, createData);
@@ -103,7 +105,9 @@ describe('ProductService', () => {
         it('should throw ServiceError if actor lacks permission', async () => {
             const createData = {
                 name: 'New Product',
-                type: ProductTypeEnum.FEATURED
+                type: ProductTypeEnum.FEATURED,
+                metadata: {},
+                lifecycleState: 'ACTIVE' as const
             };
 
             const result = await service.create(userActor, createData);
@@ -307,11 +311,19 @@ describe('ProductService', () => {
                     productId: mockProduct.id,
                     billingScheme: 'tiered',
                     interval: 'monthly',
-                    amountMinor: 10000,
+                    amount: 100,
                     currency: 'ARS',
                     createdAt: new Date(),
-                    updatedAt: new Date()
-                }
+                    updatedAt: new Date(),
+                    deletedAt: null,
+                    createdById: null,
+                    updatedById: null,
+                    deletedById: null,
+                    adminInfo: null,
+                    lifecycleState: 'ACTIVE',
+                    isActive: true,
+                    isDeleted: false
+                } as any
             ];
 
             vi.spyOn(mockModel, 'getAvailablePlans').mockResolvedValue(mockPlans);
@@ -407,7 +419,9 @@ describe('ProductService', () => {
             });
 
             const result = await service.search(adminActor, {
-                type: ProductTypeEnum.PROF_SERVICE
+                type: ProductTypeEnum.PROF_SERVICE,
+                page: 1,
+                pageSize: 10
             });
 
             expect(result.data).toBeDefined();
@@ -417,7 +431,10 @@ describe('ProductService', () => {
 
     describe('count', () => {
         it('should count products matching criteria', async () => {
-            const result = await service.count(adminActor, {});
+            const result = await service.count(adminActor, {
+                page: 1,
+                pageSize: 10
+            });
 
             expect(result.data).toBeDefined();
             expect(result.data?.count).toBe(1);
@@ -425,7 +442,9 @@ describe('ProductService', () => {
 
         it('should count with type filter', async () => {
             const result = await service.count(adminActor, {
-                type: ProductTypeEnum.CAMPAIGN
+                type: ProductTypeEnum.CAMPAIGN,
+                page: 1,
+                pageSize: 10
             });
 
             expect(result.data).toBeDefined();

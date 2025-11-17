@@ -10,6 +10,17 @@ import {
 import type { SubscriptionItem } from '@repo/schemas/entities/subscriptionItem';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SubscriptionItemService } from '../../../src/services/subscriptionItem';
+import {
+    checkCanCount,
+    checkCanCreate,
+    checkCanHardDelete,
+    checkCanList,
+    checkCanRestore,
+    checkCanSearch,
+    checkCanSoftDelete,
+    checkCanUpdate,
+    checkCanView
+} from '../../../src/services/subscriptionItem/subscriptionItem.permissions.js';
 import type { Actor, ServiceContext } from '../../../src/types';
 
 describe('SubscriptionItemService', () => {
@@ -339,8 +350,10 @@ describe('SubscriptionItemService', () => {
 
                 expect(result.data).toBeDefined();
                 expect(result.error).toBeUndefined();
+                // Access right format: sourceType:sourceId:entityType:entityId
+                // Enum values are lowercase, so the format is: subscription:subscription-123:campaign:campaign-456
                 expect(result.data?.accessRight).toBe(
-                    'SUBSCRIPTION:subscription-123:CAMPAIGN:campaign-456'
+                    'subscription:subscription-123:campaign:campaign-456'
                 );
             });
 

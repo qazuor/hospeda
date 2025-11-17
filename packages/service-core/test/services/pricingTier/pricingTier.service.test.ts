@@ -1,11 +1,5 @@
 import { PricingTierModel } from '@repo/db';
-import type {
-    OverlapCheckResult,
-    RangeValidationResult,
-    SavingsCalculation,
-    TierPriceCalculation,
-    TierStructureValidation
-} from '@repo/db';
+import type { OverlapCheckResult, RangeValidationResult } from '@repo/db';
 import { RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import type { PricingTier } from '@repo/schemas/entities/pricingTier';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -37,30 +31,25 @@ describe('PricingTierService', () => {
         vi.spyOn(mockModel, 'findOne').mockResolvedValue(mockPricingTier);
         vi.spyOn(mockModel, 'findAll').mockResolvedValue({
             items: [mockPricingTier],
-            totalCount: 1,
-            page: 1,
-            pageSize: 10,
-            totalPages: 1
+            total: 1
         });
         vi.spyOn(mockModel, 'findAllWithRelations').mockResolvedValue({
             items: [mockPricingTier],
-            totalCount: 1,
-            page: 1,
-            pageSize: 10,
-            totalPages: 1
+            total: 1
         });
-        vi.spyOn(mockModel, 'softDelete').mockResolvedValue(undefined);
-        vi.spyOn(mockModel, 'hardDelete').mockResolvedValue(undefined);
-        vi.spyOn(mockModel, 'restore').mockResolvedValue(mockPricingTier);
+        vi.spyOn(mockModel, 'softDelete').mockResolvedValue(1);
+        vi.spyOn(mockModel, 'hardDelete').mockResolvedValue(1);
+        vi.spyOn(mockModel, 'restore').mockResolvedValue(1);
         vi.spyOn(mockModel, 'count').mockResolvedValue(10);
 
         // Mock custom model methods
         vi.spyOn(mockModel, 'findApplicableTier').mockResolvedValue(mockPricingTier);
         vi.spyOn(mockModel, 'calculatePrice').mockResolvedValue({
-            tierPrice: 5000,
+            totalPrice: 5000,
+            unitPrice: 1000,
             quantity: 5,
             tier: mockPricingTier
-        } as unknown as TierPriceCalculation);
+        });
         vi.spyOn(mockModel, 'validateRanges').mockResolvedValue({
             isValid: true,
             errors: []
@@ -71,20 +60,23 @@ describe('PricingTierService', () => {
         } as OverlapCheckResult);
         vi.spyOn(mockModel, 'getTierForQuantity').mockResolvedValue(mockPricingTier);
         vi.spyOn(mockModel, 'calculateSavings').mockResolvedValue({
-            savings: 500,
-            percentageSaved: 10,
-            comparisonTier: mockPricingTier
-        } as unknown as SavingsCalculation);
+            baseTotalPrice: 6000,
+            tierTotalPrice: 5500,
+            savingsAmount: 500,
+            savingsPercentage: 10,
+            quantity: 5
+        });
         vi.spyOn(mockModel, 'findByPlan').mockResolvedValue([mockPricingTier]);
         vi.spyOn(mockModel, 'validateTierStructure').mockResolvedValue({
             isValid: true,
-            errors: [],
-            warnings: []
-        } as TierStructureValidation);
+            hasProperCoverage: true,
+            hasOverlaps: false,
+            errors: []
+        });
         vi.spyOn(mockModel, 'getOptimalTier').mockResolvedValue(mockPricingTier);
 
         // Create service with mocked model
-        service = new PricingTierService({ logger: console }, mockModel);
+        service = new PricingTierService({ logger: console as any }, mockModel);
     });
 
     afterEach(() => {
@@ -101,7 +93,7 @@ describe('PricingTierService', () => {
         });
 
         it('should initialize with new model if not provided', () => {
-            const newService = new PricingTierService({ logger: console });
+            const newService = new PricingTierService({ logger: console as any });
             expect(newService.model).toBeInstanceOf(PricingTierModel);
         });
     });
@@ -202,7 +194,7 @@ describe('PricingTierService', () => {
             expect(result.error).toBeUndefined();
             expect(result.data).toBeDefined();
             expect(result.data?.items).toHaveLength(1);
-            expect(result.data?.totalCount).toBe(1);
+            expect(result.data?.total).toBe(1);
         });
 
         it('should allow any authenticated user to list pricing tiers', async () => {
@@ -312,7 +304,7 @@ describe('PricingTierService', () => {
 
             expect(result.error).toBeUndefined();
             expect(result.data).toBeDefined();
-            expect(result.data?.tierPrice).toBe(5000);
+            expect(result.data?.totalPrice).toBe(5000);
             expect(result.data?.quantity).toBe(5);
             expect(mockModel.calculatePrice).toHaveBeenCalledWith(mockPricingTier.id, 5, undefined);
         });
@@ -358,13 +350,14 @@ describe('PricingTierService', () => {
         });
 
         it('should detect overlaps', async () => {
+            const tier2 = createMockPricingTier({ id: 'pt2' as any });
             vi.spyOn(mockModel, 'checkOverlaps').mockResolvedValueOnce({
                 hasOverlaps: true,
                 overlaps: [
                     {
-                        tier1: mockPricingTier,
-                        tier2: createMockPricingTier({ id: 'pt2' as any }),
-                        overlapRange: { min: 5, max: 10 }
+                        tier1: mockPricingTier.id,
+                        tier2: tier2.id,
+                        overlapRange: '5-10'
                     }
                 ]
             });
@@ -403,37 +396,41 @@ describe('PricingTierService', () => {
     });
 
     describe('calculateSavings', () => {
-        it('should calculate savings between tiers', async () => {
-            const tier2Id = 'tier2-uuid';
+        it('should calculate savings for a pricing plan', async () => {
             const result = await service.calculateSavings(
                 adminActor,
-                mockPricingTier.id,
-                tier2Id,
+                mockPricingTier.pricingPlanId,
                 10
             );
 
             expect(result.error).toBeUndefined();
             expect(result.data).toBeDefined();
-            expect(result.data?.savings).toBe(500);
-            expect(result.data?.percentageSaved).toBe(10);
+            expect(result.data?.savingsAmount).toBe(500);
+            expect(result.data?.savingsPercentage).toBe(10);
+            expect(mockModel.calculateSavings).toHaveBeenCalledWith(
+                mockPricingTier.pricingPlanId,
+                10,
+                undefined
+            );
         });
 
         it('should handle no savings scenario', async () => {
             vi.spyOn(mockModel, 'calculateSavings').mockResolvedValueOnce({
-                savings: 0,
-                percentageSaved: 0,
-                comparisonTier: mockPricingTier
-            } as unknown as SavingsCalculation);
+                baseTotalPrice: 5000,
+                tierTotalPrice: 5000,
+                savingsAmount: 0,
+                savingsPercentage: 0,
+                quantity: 5
+            });
 
             const result = await service.calculateSavings(
                 adminActor,
-                mockPricingTier.id,
-                'tier2-uuid',
+                mockPricingTier.pricingPlanId,
                 5
             );
 
-            expect(result.data?.savings).toBe(0);
-            expect(result.data?.percentageSaved).toBe(0);
+            expect(result.data?.savingsAmount).toBe(0);
+            expect(result.data?.savingsPercentage).toBe(0);
         });
     });
 
@@ -470,14 +467,16 @@ describe('PricingTierService', () => {
             expect(result.data).toBeDefined();
             expect(result.data?.isValid).toBe(true);
             expect(result.data?.errors).toHaveLength(0);
-            expect(result.data?.warnings).toHaveLength(0);
+            expect(result.data?.hasProperCoverage).toBe(true);
+            expect(result.data?.hasOverlaps).toBe(false);
         });
 
-        it('should return validation errors and warnings', async () => {
+        it('should return validation errors', async () => {
             vi.spyOn(mockModel, 'validateTierStructure').mockResolvedValueOnce({
                 isValid: false,
-                errors: ['Gap in coverage'],
-                warnings: ['Consider adding more tiers']
+                hasProperCoverage: false,
+                hasOverlaps: true,
+                errors: ['Gap in coverage', 'Overlapping ranges detected']
             });
 
             const result = await service.validateTierStructure(
@@ -486,8 +485,9 @@ describe('PricingTierService', () => {
             );
 
             expect(result.data?.isValid).toBe(false);
-            expect(result.data?.errors).toHaveLength(1);
-            expect(result.data?.warnings).toHaveLength(1);
+            expect(result.data?.errors).toHaveLength(2);
+            expect(result.data?.hasProperCoverage).toBe(false);
+            expect(result.data?.hasOverlaps).toBe(true);
         });
     });
 
@@ -529,9 +529,9 @@ describe('PricingTierService', () => {
     describe('search', () => {
         it('should search pricing tiers with filters', async () => {
             const filters = {
-                pricingPlanId: mockPricingTier.pricingPlanId,
                 page: 1,
-                pageSize: 10
+                pageSize: 10,
+                pricingPlanId: mockPricingTier.pricingPlanId
             };
 
             const result = await service.search(adminActor, filters);
@@ -544,24 +544,23 @@ describe('PricingTierService', () => {
         it('should handle empty search results', async () => {
             vi.spyOn(mockModel, 'findAll').mockResolvedValueOnce({
                 items: [],
-                totalCount: 0,
-                page: 1,
-                pageSize: 10,
-                totalPages: 0
+                total: 0
             });
 
             const result = await service.search(adminActor, {
+                page: 1,
+                pageSize: 10,
                 pricingPlanId: '00000000-0000-0000-0000-000000000000'
             });
 
             expect(result.data?.items).toHaveLength(0);
-            expect(result.data?.totalCount).toBe(0);
+            expect(result.data?.total).toBe(0);
         });
     });
 
     describe('count', () => {
         it('should count pricing tiers matching criteria', async () => {
-            const result = await service.count(adminActor, {});
+            const result = await service.count(adminActor, { page: 1, pageSize: 10 });
 
             expect(result.error).toBeUndefined();
             expect(result.data).toBeDefined();
@@ -572,6 +571,8 @@ describe('PricingTierService', () => {
             vi.spyOn(mockModel, 'count').mockResolvedValueOnce(5);
 
             const result = await service.count(adminActor, {
+                page: 1,
+                pageSize: 10,
                 pricingPlanId: mockPricingTier.pricingPlanId
             });
 

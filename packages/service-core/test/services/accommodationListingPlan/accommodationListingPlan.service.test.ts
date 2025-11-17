@@ -6,6 +6,19 @@ import {
     ServiceErrorCode
 } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+    checkCanActivate,
+    checkCanArchive,
+    checkCanCreate,
+    checkCanDeactivate,
+    checkCanHardDelete,
+    checkCanList,
+    checkCanPatch,
+    checkCanRestore,
+    checkCanSoftDelete,
+    checkCanUpdate,
+    checkCanView
+} from '../../../src/services/accommodationListingPlan/accommodationListingPlan.permissions.js';
 import { AccommodationListingPlanService } from '../../../src/services/accommodationListingPlan/accommodationListingPlan.service.js';
 import type { Actor, ServiceContext } from '../../../src/types/index.js';
 
@@ -32,11 +45,8 @@ const mockAccommodationListingPlan: AccommodationListingPlan = {
         maxListings: 10,
         maxPhotos: 50
     },
-    isActive: true,
-    isVerified: true,
-    isFeatured: false,
-    createdAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: '2024-01-01T00:00:00.000Z',
+    createdAt: new Date('2024-01-01T00:00:00.000Z'),
+    updatedAt: new Date('2024-01-01T00:00:00.000Z'),
     deletedAt: null,
     createdById: 'admin-123',
     updatedById: null,
@@ -68,11 +78,7 @@ describe('AccommodationListingPlanService', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        mockContext = {
-            userId: 'admin-123',
-            role: RoleEnum.ADMIN,
-            permissions: []
-        };
+        mockContext = {} as unknown as ServiceContext;
         service = new AccommodationListingPlanService(mockContext, mockModel);
     });
 
@@ -83,15 +89,15 @@ describe('AccommodationListingPlanService', () => {
     describe('Permission Hooks', () => {
         describe('_canCreate', () => {
             it('should allow admin to create', () => {
-                expect(() => service._canCreate(adminActor, {})).not.toThrow();
+                expect(() => checkCanCreate(adminActor, {})).not.toThrow();
             });
 
             it('should allow user with CREATE permission', () => {
-                expect(() => service._canCreate(userWithPermission, {})).not.toThrow();
+                expect(() => checkCanCreate(userWithPermission, {})).not.toThrow();
             });
 
             it('should deny user without CREATE permission', () => {
-                expect(() => service._canCreate(userWithoutPermission, {})).toThrow(
+                expect(() => checkCanCreate(userWithoutPermission, {})).toThrow(
                     'Permission denied: Insufficient permissions to create accommodation listing plans'
                 );
             });
@@ -99,7 +105,9 @@ describe('AccommodationListingPlanService', () => {
 
         describe('_canUpdate', () => {
             it('should allow admin to update', () => {
-                expect(() => service._canUpdate(adminActor, 'plan-123', {})).not.toThrow();
+                expect(() =>
+                    checkCanUpdate(adminActor, mockAccommodationListingPlan)
+                ).not.toThrow();
             });
 
             it('should allow user with UPDATE permission', () => {
@@ -107,11 +115,13 @@ describe('AccommodationListingPlanService', () => {
                     ...userWithPermission,
                     permissions: [PermissionEnum.ACCOMMODATION_LISTING_PLAN_UPDATE]
                 };
-                expect(() => service._canUpdate(actor, 'plan-123', {})).not.toThrow();
+                expect(() => checkCanUpdate(actor, mockAccommodationListingPlan)).not.toThrow();
             });
 
             it('should deny user without UPDATE permission', () => {
-                expect(() => service._canUpdate(userWithoutPermission, 'plan-123', {})).toThrow(
+                expect(() =>
+                    checkCanUpdate(userWithoutPermission, mockAccommodationListingPlan)
+                ).toThrow(
                     'Permission denied: Insufficient permissions to update accommodation listing plans'
                 );
             });
@@ -120,7 +130,7 @@ describe('AccommodationListingPlanService', () => {
         describe('_canPatch', () => {
             it('should allow admin to patch', () => {
                 expect(() =>
-                    service._canPatch(adminActor, mockAccommodationListingPlan, {})
+                    checkCanPatch(adminActor, mockAccommodationListingPlan, {})
                 ).not.toThrow();
             });
 
@@ -129,14 +139,12 @@ describe('AccommodationListingPlanService', () => {
                     ...userWithPermission,
                     permissions: [PermissionEnum.ACCOMMODATION_LISTING_PLAN_UPDATE]
                 };
-                expect(() =>
-                    service._canPatch(actor, mockAccommodationListingPlan, {})
-                ).not.toThrow();
+                expect(() => checkCanPatch(actor, mockAccommodationListingPlan, {})).not.toThrow();
             });
 
             it('should deny user without UPDATE permission', () => {
                 expect(() =>
-                    service._canPatch(userWithoutPermission, mockAccommodationListingPlan, {})
+                    checkCanPatch(userWithoutPermission, mockAccommodationListingPlan, {})
                 ).toThrow(
                     'Permission denied: Insufficient permissions to patch accommodation listing plans'
                 );
@@ -146,7 +154,7 @@ describe('AccommodationListingPlanService', () => {
         describe('_canDelete', () => {
             it('should allow admin to delete', () => {
                 expect(() =>
-                    service._canDelete(adminActor, mockAccommodationListingPlan)
+                    checkCanSoftDelete(adminActor, mockAccommodationListingPlan)
                 ).not.toThrow();
             });
 
@@ -155,14 +163,14 @@ describe('AccommodationListingPlanService', () => {
                     ...userWithPermission,
                     permissions: [PermissionEnum.ACCOMMODATION_LISTING_PLAN_DELETE]
                 };
-                expect(() => service._canDelete(actor, mockAccommodationListingPlan)).not.toThrow();
+                expect(() => checkCanSoftDelete(actor, mockAccommodationListingPlan)).not.toThrow();
             });
 
             it('should deny user without DELETE permission', () => {
                 expect(() =>
-                    service._canDelete(userWithoutPermission, mockAccommodationListingPlan)
+                    checkCanSoftDelete(userWithoutPermission, mockAccommodationListingPlan)
                 ).toThrow(
-                    'Permission denied: Insufficient permissions to delete accommodation listing plans'
+                    'Permission denied: Insufficient permissions to soft delete accommodation listing plans'
                 );
             });
         });
@@ -170,7 +178,7 @@ describe('AccommodationListingPlanService', () => {
         describe('_canHardDelete', () => {
             it('should allow admin to hard delete', () => {
                 expect(() =>
-                    service._canHardDelete(adminActor, mockAccommodationListingPlan)
+                    checkCanHardDelete(adminActor, mockAccommodationListingPlan)
                 ).not.toThrow();
             });
 
@@ -179,14 +187,12 @@ describe('AccommodationListingPlanService', () => {
                     ...userWithPermission,
                     permissions: [PermissionEnum.ACCOMMODATION_LISTING_PLAN_HARD_DELETE]
                 };
-                expect(() =>
-                    service._canHardDelete(actor, mockAccommodationListingPlan)
-                ).not.toThrow();
+                expect(() => checkCanHardDelete(actor, mockAccommodationListingPlan)).not.toThrow();
             });
 
             it('should deny user without HARD_DELETE permission', () => {
                 expect(() =>
-                    service._canHardDelete(userWithoutPermission, mockAccommodationListingPlan)
+                    checkCanHardDelete(userWithoutPermission, mockAccommodationListingPlan)
                 ).toThrow(
                     'Permission denied: Insufficient permissions to permanently delete accommodation listing plans'
                 );
@@ -196,7 +202,7 @@ describe('AccommodationListingPlanService', () => {
         describe('_canRestore', () => {
             it('should allow admin to restore', () => {
                 expect(() =>
-                    service._canRestore(adminActor, mockAccommodationListingPlan)
+                    checkCanRestore(adminActor, mockAccommodationListingPlan)
                 ).not.toThrow();
             });
 
@@ -205,14 +211,12 @@ describe('AccommodationListingPlanService', () => {
                     ...userWithPermission,
                     permissions: [PermissionEnum.ACCOMMODATION_LISTING_PLAN_RESTORE]
                 };
-                expect(() =>
-                    service._canRestore(actor, mockAccommodationListingPlan)
-                ).not.toThrow();
+                expect(() => checkCanRestore(actor, mockAccommodationListingPlan)).not.toThrow();
             });
 
             it('should deny user without RESTORE permission', () => {
                 expect(() =>
-                    service._canRestore(userWithoutPermission, mockAccommodationListingPlan)
+                    checkCanRestore(userWithoutPermission, mockAccommodationListingPlan)
                 ).toThrow(
                     'Permission denied: Insufficient permissions to restore accommodation listing plans'
                 );
@@ -221,9 +225,7 @@ describe('AccommodationListingPlanService', () => {
 
         describe('_canView', () => {
             it('should allow admin to view', () => {
-                expect(() =>
-                    service._canView(adminActor, mockAccommodationListingPlan)
-                ).not.toThrow();
+                expect(() => checkCanView(adminActor, mockAccommodationListingPlan)).not.toThrow();
             });
 
             it('should allow user with VIEW permission', () => {
@@ -231,12 +233,12 @@ describe('AccommodationListingPlanService', () => {
                     ...userWithPermission,
                     permissions: [PermissionEnum.ACCOMMODATION_LISTING_PLAN_VIEW]
                 };
-                expect(() => service._canView(actor, mockAccommodationListingPlan)).not.toThrow();
+                expect(() => checkCanView(actor, mockAccommodationListingPlan)).not.toThrow();
             });
 
             it('should deny user without VIEW permission', () => {
                 expect(() =>
-                    service._canView(userWithoutPermission, mockAccommodationListingPlan)
+                    checkCanView(userWithoutPermission, mockAccommodationListingPlan)
                 ).toThrow(
                     'Permission denied: Insufficient permissions to view accommodation listing plans'
                 );
@@ -245,7 +247,7 @@ describe('AccommodationListingPlanService', () => {
 
         describe('_canList', () => {
             it('should allow admin to list', () => {
-                expect(() => service._canList(adminActor, {})).not.toThrow();
+                expect(() => checkCanList(adminActor)).not.toThrow();
             });
 
             it('should allow user with VIEW permission', () => {
@@ -253,11 +255,11 @@ describe('AccommodationListingPlanService', () => {
                     ...userWithPermission,
                     permissions: [PermissionEnum.ACCOMMODATION_LISTING_PLAN_VIEW]
                 };
-                expect(() => service._canList(actor, {})).not.toThrow();
+                expect(() => checkCanList(actor)).not.toThrow();
             });
 
             it('should deny user without VIEW permission', () => {
-                expect(() => service._canList(userWithoutPermission, {})).toThrow(
+                expect(() => checkCanList(userWithoutPermission)).toThrow(
                     'Permission denied: Insufficient permissions to list accommodation listing plans'
                 );
             });
@@ -266,7 +268,7 @@ describe('AccommodationListingPlanService', () => {
         describe('_canActivate', () => {
             it('should allow admin to activate', () => {
                 expect(() =>
-                    service._canActivate(adminActor, mockAccommodationListingPlan)
+                    checkCanActivate(adminActor, mockAccommodationListingPlan)
                 ).not.toThrow();
             });
 
@@ -275,14 +277,12 @@ describe('AccommodationListingPlanService', () => {
                     ...userWithPermission,
                     permissions: [PermissionEnum.ACCOMMODATION_LISTING_PLAN_STATUS_MANAGE]
                 };
-                expect(() =>
-                    service._canActivate(actor, mockAccommodationListingPlan)
-                ).not.toThrow();
+                expect(() => checkCanActivate(actor, mockAccommodationListingPlan)).not.toThrow();
             });
 
             it('should deny user without STATUS_MANAGE permission', () => {
                 expect(() =>
-                    service._canActivate(userWithoutPermission, mockAccommodationListingPlan)
+                    checkCanActivate(userWithoutPermission, mockAccommodationListingPlan)
                 ).toThrow(
                     'Permission denied: Insufficient permissions to activate accommodation listing plans'
                 );
@@ -292,7 +292,7 @@ describe('AccommodationListingPlanService', () => {
         describe('_canDeactivate', () => {
             it('should allow admin to deactivate', () => {
                 expect(() =>
-                    service._canDeactivate(adminActor, mockAccommodationListingPlan)
+                    checkCanDeactivate(adminActor, mockAccommodationListingPlan)
                 ).not.toThrow();
             });
 
@@ -301,14 +301,12 @@ describe('AccommodationListingPlanService', () => {
                     ...userWithPermission,
                     permissions: [PermissionEnum.ACCOMMODATION_LISTING_PLAN_STATUS_MANAGE]
                 };
-                expect(() =>
-                    service._canDeactivate(actor, mockAccommodationListingPlan)
-                ).not.toThrow();
+                expect(() => checkCanDeactivate(actor, mockAccommodationListingPlan)).not.toThrow();
             });
 
             it('should deny user without STATUS_MANAGE permission', () => {
                 expect(() =>
-                    service._canDeactivate(userWithoutPermission, mockAccommodationListingPlan)
+                    checkCanDeactivate(userWithoutPermission, mockAccommodationListingPlan)
                 ).toThrow(
                     'Permission denied: Insufficient permissions to deactivate accommodation listing plans'
                 );
@@ -318,7 +316,7 @@ describe('AccommodationListingPlanService', () => {
         describe('_canArchive', () => {
             it('should allow admin to archive', () => {
                 expect(() =>
-                    service._canArchive(adminActor, mockAccommodationListingPlan)
+                    checkCanArchive(adminActor, mockAccommodationListingPlan)
                 ).not.toThrow();
             });
 
@@ -327,14 +325,12 @@ describe('AccommodationListingPlanService', () => {
                     ...userWithPermission,
                     permissions: [PermissionEnum.ACCOMMODATION_LISTING_PLAN_STATUS_MANAGE]
                 };
-                expect(() =>
-                    service._canArchive(actor, mockAccommodationListingPlan)
-                ).not.toThrow();
+                expect(() => checkCanArchive(actor, mockAccommodationListingPlan)).not.toThrow();
             });
 
             it('should deny user without STATUS_MANAGE permission', () => {
                 expect(() =>
-                    service._canArchive(userWithoutPermission, mockAccommodationListingPlan)
+                    checkCanArchive(userWithoutPermission, mockAccommodationListingPlan)
                 ).toThrow(
                     'Permission denied: Insufficient permissions to archive accommodation listing plans'
                 );
@@ -350,8 +346,7 @@ describe('AccommodationListingPlanService', () => {
         describe('activate', () => {
             it('should activate a plan successfully', async () => {
                 vi.mocked(mockModel.activate).mockResolvedValue({
-                    ...mockAccommodationListingPlan,
-                    isActive: true
+                    ...mockAccommodationListingPlan
                 });
 
                 const result = await service.activate({
@@ -359,10 +354,7 @@ describe('AccommodationListingPlanService', () => {
                     planId: 'plan-123'
                 });
 
-                expect(result.success).toBe(true);
-                if (result.success) {
-                    expect(result.data.isActive).toBe(true);
-                }
+                expect(result.data).toBeDefined();
                 expect(mockModel.activate).toHaveBeenCalledWith('plan-123');
             });
 
@@ -372,13 +364,12 @@ describe('AccommodationListingPlanService', () => {
                     planId: 'plan-123'
                 });
 
-                expect(result.success).toBe(false);
-                if (!result.success) {
-                    expect(result.error.code).toBe(ServiceErrorCode.FORBIDDEN);
-                    expect(result.error.message).toContain(
-                        'Permission denied: Insufficient permissions to activate accommodation listing plans'
-                    );
-                }
+                expect(result.error).toBeDefined();
+                expect(result.data).toBeUndefined();
+                expect(result.error!.code).toBe(ServiceErrorCode.FORBIDDEN);
+                expect(result.error!.message).toContain(
+                    'Permission denied: Insufficient permissions to activate accommodation listing plans'
+                );
             });
 
             it('should handle non-existent plan', async () => {
@@ -391,10 +382,9 @@ describe('AccommodationListingPlanService', () => {
                     planId: 'non-existent'
                 });
 
-                expect(result.success).toBe(false);
-                if (!result.success) {
-                    expect(result.error.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
-                }
+                expect(result.error).toBeDefined();
+                expect(result.data).toBeUndefined();
+                expect(result.error!.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
             });
 
             it('should handle database errors', async () => {
@@ -407,10 +397,9 @@ describe('AccommodationListingPlanService', () => {
                     planId: 'plan-123'
                 });
 
-                expect(result.success).toBe(false);
-                if (!result.success) {
-                    expect(result.error.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
-                }
+                expect(result.error).toBeDefined();
+                expect(result.data).toBeUndefined();
+                expect(result.error!.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
             });
 
             it('should allow user with STATUS_MANAGE permission', async () => {
@@ -420,8 +409,7 @@ describe('AccommodationListingPlanService', () => {
                 };
 
                 vi.mocked(mockModel.activate).mockResolvedValue({
-                    ...mockAccommodationListingPlan,
-                    isActive: true
+                    ...mockAccommodationListingPlan
                 });
 
                 const result = await service.activate({
@@ -429,15 +417,15 @@ describe('AccommodationListingPlanService', () => {
                     planId: 'plan-123'
                 });
 
-                expect(result.success).toBe(true);
+                expect(result.data).toBeDefined();
+                expect(result.error).toBeUndefined();
             });
         });
 
         describe('deactivate', () => {
             it('should deactivate a plan successfully', async () => {
                 vi.mocked(mockModel.deactivate).mockResolvedValue({
-                    ...mockAccommodationListingPlan,
-                    isActive: false
+                    ...mockAccommodationListingPlan
                 });
 
                 const result = await service.deactivate({
@@ -445,10 +433,7 @@ describe('AccommodationListingPlanService', () => {
                     planId: 'plan-123'
                 });
 
-                expect(result.success).toBe(true);
-                if (result.success) {
-                    expect(result.data.isActive).toBe(false);
-                }
+                expect(result.data).toBeDefined();
                 expect(mockModel.deactivate).toHaveBeenCalledWith('plan-123');
             });
 
@@ -458,13 +443,12 @@ describe('AccommodationListingPlanService', () => {
                     planId: 'plan-123'
                 });
 
-                expect(result.success).toBe(false);
-                if (!result.success) {
-                    expect(result.error.code).toBe(ServiceErrorCode.FORBIDDEN);
-                    expect(result.error.message).toContain(
-                        'Permission denied: Insufficient permissions to deactivate accommodation listing plans'
-                    );
-                }
+                expect(result.error).toBeDefined();
+                expect(result.data).toBeUndefined();
+                expect(result.error!.code).toBe(ServiceErrorCode.FORBIDDEN);
+                expect(result.error!.message).toContain(
+                    'Permission denied: Insufficient permissions to deactivate accommodation listing plans'
+                );
             });
 
             it('should handle non-existent plan', async () => {
@@ -477,10 +461,9 @@ describe('AccommodationListingPlanService', () => {
                     planId: 'non-existent'
                 });
 
-                expect(result.success).toBe(false);
-                if (!result.success) {
-                    expect(result.error.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
-                }
+                expect(result.error).toBeDefined();
+                expect(result.data).toBeUndefined();
+                expect(result.error!.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
             });
 
             it('should handle database errors', async () => {
@@ -493,10 +476,9 @@ describe('AccommodationListingPlanService', () => {
                     planId: 'plan-123'
                 });
 
-                expect(result.success).toBe(false);
-                if (!result.success) {
-                    expect(result.error.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
-                }
+                expect(result.error).toBeDefined();
+                expect(result.data).toBeUndefined();
+                expect(result.error!.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
             });
 
             it('should allow user with STATUS_MANAGE permission', async () => {
@@ -506,8 +488,7 @@ describe('AccommodationListingPlanService', () => {
                 };
 
                 vi.mocked(mockModel.deactivate).mockResolvedValue({
-                    ...mockAccommodationListingPlan,
-                    isActive: false
+                    ...mockAccommodationListingPlan
                 });
 
                 const result = await service.deactivate({
@@ -515,7 +496,8 @@ describe('AccommodationListingPlanService', () => {
                     planId: 'plan-123'
                 });
 
-                expect(result.success).toBe(true);
+                expect(result.data).toBeDefined();
+                expect(result.error).toBeUndefined();
             });
         });
     });

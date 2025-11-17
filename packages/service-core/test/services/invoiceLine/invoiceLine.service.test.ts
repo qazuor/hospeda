@@ -4,25 +4,21 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { InvoiceLineService } from '../../../src/services/invoiceLine/invoiceLine.service.js';
 import type { Actor } from '../../../src/types/index.js';
 
-// Use DB schema types for invoice line
+// Use schema types for invoice line
 type InvoiceLine = {
     id: string;
     invoiceId: string;
     description: string;
     quantity: number;
-    unitPrice: string;
-    lineAmount: string;
-    taxRate: string;
-    taxAmount: string;
-    discountRate: string;
-    discountAmount: string;
-    totalAmount: string;
-    pricingPlanId: string | null;
-    subscriptionItemId: string | null;
-    periodStart: Date | null;
-    periodEnd: Date | null;
-    metadata: unknown;
-    adminInfo: unknown;
+    unitPrice: number;
+    total: number;
+    productReference?: string;
+    taxAmount?: number;
+    taxRate?: number;
+    discountRate?: number;
+    discountAmount?: number;
+    notes?: string;
+    metadata?: Record<string, unknown>;
     createdAt: Date;
     updatedAt: Date;
     createdById: string | null;
@@ -43,19 +39,15 @@ describe('InvoiceLineService', () => {
         invoiceId: '00000000-0000-0000-0000-000000000002',
         description: 'Monthly subscription fee',
         quantity: 1,
-        unitPrice: '100.00',
-        lineAmount: '100.00',
-        taxRate: '0.21',
-        taxAmount: '21.00',
-        discountRate: '0.00',
-        discountAmount: '0.00',
-        totalAmount: '121.00',
-        pricingPlanId: '00000000-0000-0000-0000-000000000003',
-        subscriptionItemId: '00000000-0000-0000-0000-000000000004',
-        periodStart: new Date('2025-01-01'),
-        periodEnd: new Date('2025-01-31'),
-        metadata: null,
-        adminInfo: null,
+        unitPrice: 100.0,
+        total: 121.0,
+        taxRate: 0.21,
+        taxAmount: 21.0,
+        discountRate: 0.0,
+        discountAmount: 0.0,
+        productReference: 'PROD-001',
+        notes: 'Test invoice line',
+        metadata: { test: 'data' },
         createdAt: new Date('2025-01-01'),
         updatedAt: new Date('2025-01-01'),
         createdById: null,
@@ -158,9 +150,8 @@ describe('InvoiceLineService', () => {
 
             const discountedLine: InvoiceLine = {
                 ...mockInvoiceLine,
-                discountRate: '0.1',
-                lineAmount: '90.00',
-                totalAmount: '108.90'
+                discountRate: 0.1,
+                total: 108.9
             };
 
             vi.mocked(mockModel.applyDiscounts).mockResolvedValue(discountedLine);
@@ -181,9 +172,8 @@ describe('InvoiceLineService', () => {
 
             const discountedLine: InvoiceLine = {
                 ...mockInvoiceLine,
-                discountAmount: '10.00',
-                lineAmount: '90.00',
-                totalAmount: '108.90'
+                discountAmount: 10.0,
+                total: 108.9
             };
 
             vi.mocked(mockModel.applyDiscounts).mockResolvedValue(discountedLine);
@@ -244,9 +234,9 @@ describe('InvoiceLineService', () => {
 
             const taxedLine: InvoiceLine = {
                 ...mockInvoiceLine,
-                taxRate: '0.21',
-                taxAmount: '21.00',
-                totalAmount: '121.00'
+                taxRate: 0.21,
+                taxAmount: 21.0,
+                total: 121.0
             };
 
             vi.mocked(mockModel.calculateTax).mockResolvedValue(taxedLine);
@@ -391,9 +381,8 @@ describe('InvoiceLineService', () => {
             const updatedLine: InvoiceLine = {
                 ...mockInvoiceLine,
                 quantity: 2,
-                lineAmount: '200.00',
-                taxAmount: '42.00',
-                totalAmount: '242.00'
+                taxAmount: 42.0,
+                total: 242.0
             };
 
             vi.mocked(mockModel.updateQuantity).mockResolvedValue(updatedLine);
@@ -520,31 +509,27 @@ describe('InvoiceLineService', () => {
                     invoiceNumber: 'INV-2025-000001',
                     clientId: '00000000-0000-0000-0000-000000000005',
                     status: 'OPEN' as const,
-                    subtotal: '100.00',
-                    taxes: '21.00',
-                    total: '121.00',
+                    subtotal: 100.0,
+                    taxes: 21.0,
+                    total: 121.0,
                     currency: PriceCurrencyEnum.USD,
                     issueDate: new Date('2025-01-01'),
                     dueDate: new Date('2025-01-31'),
                     description: 'Monthly subscription',
                     paymentTerms: 'Net 30',
-                    notes: null,
-                    paidAt: null,
-                    metadata: null,
+                    notes: 'Test notes',
+                    paidAt: undefined,
+                    metadata: { invoiceType: 'monthly' },
                     createdAt: new Date('2025-01-01'),
                     updatedAt: new Date('2025-01-01'),
-                    createdById: '',
-                    updatedById: '',
+                    createdById: null,
+                    updatedById: null,
                     deletedAt: null,
                     deletedById: null
                 }
             };
 
-            vi.mocked(mockModel.withInvoice).mockResolvedValue(
-                mockLineWithInvoice as Parameters<typeof mockModel.withInvoice>[0] extends string
-                    ? Awaited<ReturnType<typeof mockModel.withInvoice>>
-                    : never
-            );
+            vi.mocked(mockModel.withInvoice).mockResolvedValue(mockLineWithInvoice as never);
 
             const result = await service.withInvoice(mockActor, invoiceLineId);
 
@@ -591,6 +576,8 @@ describe('InvoiceLineService', () => {
                 { id: '00000000-0000-0000-0000-000000000001', quantity: 2 },
                 { id: '00000000-0000-0000-0000-000000000002', quantity: 3 }
             ];
+
+            if (!updates[0] || !updates[1]) throw new Error('Expected updates to be defined');
 
             const updatedLines: InvoiceLine[] = [
                 { ...mockInvoiceLine, id: updates[0].id, quantity: updates[0].quantity },

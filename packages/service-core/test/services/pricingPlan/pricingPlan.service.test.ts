@@ -5,13 +5,20 @@ import type {
     QuantityValidationResult,
     UsageStats
 } from '@repo/db';
-import { BillingIntervalEnum, BillingSchemeEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
+import {
+    BillingIntervalEnum,
+    BillingSchemeEnum,
+    LifecycleStatusEnum,
+    RoleEnum,
+    ServiceErrorCode
+} from '@repo/schemas';
 import type { PricingPlan } from '@repo/schemas/entities/pricingPlan';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PricingPlanService } from '../../../src/services/pricingPlan/pricingPlan.service';
 import type { Actor } from '../../../src/types';
 import { createActor } from '../../factories/actorFactory';
 import { createMockPricingPlan } from '../../factories/pricingPlanFactory';
+import { createMockLogger } from '../../utils/mockLogger';
 
 describe('PricingPlanService', () => {
     let service: PricingPlanService;
@@ -36,21 +43,15 @@ describe('PricingPlanService', () => {
         vi.spyOn(mockModel, 'findOne').mockResolvedValue(mockPricingPlan);
         vi.spyOn(mockModel, 'findAll').mockResolvedValue({
             items: [mockPricingPlan],
-            totalCount: 1,
-            page: 1,
-            pageSize: 10,
-            totalPages: 1
+            total: 1
         });
         vi.spyOn(mockModel, 'findAllWithRelations').mockResolvedValue({
             items: [mockPricingPlan],
-            totalCount: 1,
-            page: 1,
-            pageSize: 10,
-            totalPages: 1
+            total: 1
         });
-        vi.spyOn(mockModel, 'softDelete').mockResolvedValue(undefined);
-        vi.spyOn(mockModel, 'hardDelete').mockResolvedValue(undefined);
-        vi.spyOn(mockModel, 'restore').mockResolvedValue(mockPricingPlan);
+        vi.spyOn(mockModel, 'softDelete').mockResolvedValue(1);
+        vi.spyOn(mockModel, 'hardDelete').mockResolvedValue(1);
+        vi.spyOn(mockModel, 'restore').mockResolvedValue(1);
         vi.spyOn(mockModel, 'count').mockResolvedValue(10);
 
         // Mock custom model methods
@@ -83,7 +84,7 @@ describe('PricingPlanService', () => {
         } as UsageStats);
 
         // Create service with mocked model
-        service = new PricingPlanService({ logger: console }, mockModel);
+        service = new PricingPlanService({ logger: createMockLogger() }, mockModel);
     });
 
     afterEach(() => {
@@ -100,7 +101,7 @@ describe('PricingPlanService', () => {
         });
 
         it('should initialize with new model if not provided', () => {
-            const newService = new PricingPlanService({ logger: console });
+            const newService = new PricingPlanService({ logger: createMockLogger() });
             expect(newService.model).toBeInstanceOf(PricingPlanModel);
         });
     });
@@ -115,8 +116,10 @@ describe('PricingPlanService', () => {
                 productId: mockPricingPlan.productId,
                 billingScheme: BillingSchemeEnum.RECURRING,
                 interval: BillingIntervalEnum.MONTH,
-                amountMinor: 10000,
-                currency: 'ARS'
+                amount: 10000,
+                currency: 'ARS',
+                metadata: {},
+                lifecycleState: LifecycleStatusEnum.ACTIVE as 'DRAFT' | 'ACTIVE' | 'ARCHIVED'
             };
 
             const result = await service.create(adminActor, data);
@@ -137,8 +140,10 @@ describe('PricingPlanService', () => {
             const data = {
                 productId: mockPricingPlan.productId,
                 billingScheme: BillingSchemeEnum.ONE_TIME,
-                amountMinor: 5000,
-                currency: 'ARS'
+                amount: 10000,
+                currency: 'ARS',
+                metadata: {},
+                lifecycleState: LifecycleStatusEnum.ACTIVE as 'DRAFT' | 'ACTIVE' | 'ARCHIVED'
             };
 
             const result = await service.create(userActor, data);
@@ -151,7 +156,7 @@ describe('PricingPlanService', () => {
 
     describe('update', () => {
         it('should update pricing plan with valid data', async () => {
-            const updateData = { amountMinor: 15000 };
+            const updateData = { amount: 15000 };
 
             const result = await service.update(adminActor, mockPricingPlan.id, updateData);
 
@@ -167,9 +172,7 @@ describe('PricingPlanService', () => {
         });
 
         it('should forbid non-admin without permission to update', async () => {
-            const result = await service.update(userActor, mockPricingPlan.id, {
-                amountMinor: 15000
-            });
+            const result = await service.update(userActor, mockPricingPlan.id, {});
 
             expect(result.error).toBeDefined();
             expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
@@ -202,7 +205,7 @@ describe('PricingPlanService', () => {
             expect(result.error).toBeUndefined();
             expect(result.data).toBeDefined();
             expect(result.data?.items).toHaveLength(1);
-            expect(result.data?.totalCount).toBe(1);
+            expect(result.data?.total).toBe(1);
         });
 
         it('should allow any authenticated user to list pricing plans', async () => {
@@ -450,9 +453,9 @@ describe('PricingPlanService', () => {
     describe('search', () => {
         it('should search pricing plans with filters', async () => {
             const filters = {
-                billingScheme: BillingSchemeEnum.RECURRING,
                 page: 1,
-                pageSize: 10
+                pageSize: 10,
+                billingScheme: BillingSchemeEnum.RECURRING
             };
 
             const result = await service.search(adminActor, filters);
@@ -465,24 +468,23 @@ describe('PricingPlanService', () => {
         it('should handle empty search results', async () => {
             vi.spyOn(mockModel, 'findAll').mockResolvedValueOnce({
                 items: [],
-                totalCount: 0,
-                page: 1,
-                pageSize: 10,
-                totalPages: 0
+                total: 0
             });
 
             const result = await service.search(adminActor, {
+                page: 1,
+                pageSize: 10,
                 billingScheme: BillingSchemeEnum.ONE_TIME
             });
 
             expect(result.data?.items).toHaveLength(0);
-            expect(result.data?.totalCount).toBe(0);
+            expect(result.data?.total).toBe(0);
         });
     });
 
     describe('count', () => {
         it('should count pricing plans matching criteria', async () => {
-            const result = await service.count(adminActor, {});
+            const result = await service.count(adminActor, { page: 1, pageSize: 10 });
 
             expect(result.error).toBeUndefined();
             expect(result.data).toBeDefined();
@@ -493,6 +495,8 @@ describe('PricingPlanService', () => {
             vi.spyOn(mockModel, 'count').mockResolvedValueOnce(5);
 
             const result = await service.count(adminActor, {
+                page: 1,
+                pageSize: 10,
                 interval: BillingIntervalEnum.MONTH
             });
 

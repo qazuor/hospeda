@@ -3,6 +3,7 @@ import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DiscountCodeUsageService } from '../../../src/services/discountCodeUsage/discountCodeUsage.service.js';
 import type { Actor, ServiceContext } from '../../../src/types/index.js';
+import { createMockLogger } from '../../utils/mockLogger.js';
 
 // Mock data
 const mockUsageRecord = {
@@ -33,12 +34,7 @@ describe('DiscountCodeUsageService', () => {
 
     beforeEach(() => {
         ctx = {
-            logger: {
-                info: vi.fn(),
-                error: vi.fn(),
-                warn: vi.fn(),
-                debug: vi.fn()
-            }
+            logger: createMockLogger()
         };
 
         // Mock model methods
@@ -236,8 +232,11 @@ describe('DiscountCodeUsageService', () => {
             );
 
             expect(result.data).toBeDefined();
+            if (!result.data) throw new Error('Expected data to be defined');
             expect(result.data).toHaveLength(2);
-            expect(result.data?.[0].date).toBe('2024-03-01');
+            if (result.data[0]) {
+                expect(result.data[0].date).toBe('2024-03-01');
+            }
             expect(result.error).toBeUndefined();
         });
 
@@ -275,8 +274,11 @@ describe('DiscountCodeUsageService', () => {
             const result = await service.getPopularCodes(mockActor);
 
             expect(result.data).toBeDefined();
+            if (!result.data) throw new Error('Expected data to be defined');
             expect(result.data).toHaveLength(1);
-            expect(result.data?.[0].code).toBe('POPULAR10');
+            if (result.data[0]) {
+                expect(result.data[0].code).toBe('POPULAR10');
+            }
             expect(result.error).toBeUndefined();
         });
 
@@ -433,8 +435,11 @@ describe('DiscountCodeUsageService', () => {
             const result = await service.findWithCodeDetails(mockActor);
 
             expect(result.data).toBeDefined();
-            expect(result.data?.items).toHaveLength(1);
-            expect(result.data?.items[0].discountCode.code).toBe('SAVE20');
+            if (!result.data) throw new Error('Expected data to be defined');
+            expect(result.data.items).toHaveLength(1);
+            if (result.data.items[0]) {
+                expect(result.data.items[0].discountCode.code).toBe('SAVE20');
+            }
             expect(result.error).toBeUndefined();
         });
 

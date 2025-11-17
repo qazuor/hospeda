@@ -1,11 +1,12 @@
 import { ClientModel } from '@repo/db';
 import type { ClientIdType, UserIdType } from '@repo/schemas';
-import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
+import { LifecycleStatusEnum, PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ClientService } from '../../../src/services/client/client.service';
 import { createActor } from '../../factories/actorFactory';
 import { createMockClient } from '../../factories/clientFactory';
 import { getMockId } from '../../factories/utilsFactory';
+import { createMockLogger } from '../../utils/mockLogger';
 
 describe('ClientService', () => {
     let service: ClientService;
@@ -54,7 +55,7 @@ describe('ClientService', () => {
         vi.spyOn(mockModel, 'count').mockResolvedValue(1);
 
         // Create service with mocked model
-        service = new ClientService({ logger: console }, mockModel);
+        service = new ClientService({ logger: createMockLogger() }, mockModel);
     });
 
     describe('Constructor', () => {
@@ -74,6 +75,7 @@ describe('ClientService', () => {
                 name: 'New Client',
                 billingEmail: 'new@client.com',
                 userId: getMockId('user', 'u2') as UserIdType,
+                lifecycleState: LifecycleStatusEnum.ACTIVE,
                 defaultCurrency: 'ARS' as const,
                 billingCycle: 'MONTHLY' as const,
                 autoRenew: true,
@@ -92,6 +94,7 @@ describe('ClientService', () => {
                 name: 'New Client',
                 billingEmail: 'new@client.com',
                 userId: getMockId('user', 'u2') as UserIdType,
+                lifecycleState: LifecycleStatusEnum.ACTIVE,
                 defaultCurrency: 'ARS' as const,
                 billingCycle: 'MONTHLY' as const,
                 autoRenew: true,
@@ -340,7 +343,9 @@ describe('ClientService', () => {
             });
 
             const result = await service.search(adminActor, {
-                name: 'NonExistent'
+                name: 'NonExistent',
+                page: 1,
+                pageSize: 10
             });
 
             expect(result.data).toBeDefined();
@@ -350,7 +355,10 @@ describe('ClientService', () => {
 
     describe('count', () => {
         it('should count clients matching criteria', async () => {
-            const result = await service.count(adminActor, {});
+            const result = await service.count(adminActor, {
+                page: 1,
+                pageSize: 10
+            });
 
             expect(result.data).toBeDefined();
             expect(result.data?.count).toBe(1);

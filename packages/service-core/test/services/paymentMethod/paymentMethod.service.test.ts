@@ -1,10 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PaymentMethodModel } from '@repo/db';
 import {
+    PaymentMethodEnum,
     PermissionEnum,
     RoleEnum,
     type UpdatePaymentMethod
 } from '@repo/schemas';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PaymentMethodService } from '../../../src/services/paymentMethod/paymentMethod.service';
 import type { Actor, ServiceContext } from '../../../src/types';
 
@@ -54,7 +55,6 @@ const mockPaymentMethod: any = {
 
 const mockActor: Actor = {
     id: '00000000-0000-0000-0000-000000000003',
-    email: 'test@example.com',
     role: RoleEnum.ADMIN,
     permissions: [PermissionEnum.CLIENT_UPDATE]
 };
@@ -83,7 +83,6 @@ describe('PaymentMethodService', () => {
     describe('Permission Hooks', () => {
         const unauthorizedActor: Actor = {
             id: 'user-id',
-            email: 'user@example.com',
             role: RoleEnum.USER,
             permissions: []
         };
@@ -292,9 +291,7 @@ describe('PaymentMethodService', () => {
                     cvv: '123'
                 };
 
-                mockPaymentMethodModel.validateCard = vi
-                    .fn()
-                    .mockResolvedValue({ valid: true });
+                mockPaymentMethodModel.validateCard = vi.fn().mockResolvedValue({ valid: true });
 
                 const result = await service.validateCard(mockActor, cardData);
 
@@ -348,7 +345,6 @@ describe('PaymentMethodService', () => {
             it('should deny unauthorized user', async () => {
                 const unauthorizedActor: Actor = {
                     id: 'user-id',
-                    email: 'user@example.com',
                     role: RoleEnum.USER,
                     permissions: []
                 };
@@ -418,7 +414,6 @@ describe('PaymentMethodService', () => {
             it('should deny unauthorized user', async () => {
                 const unauthorizedActor: Actor = {
                     id: 'user-id',
-                    email: 'user@example.com',
                     role: RoleEnum.USER,
                     permissions: []
                 };
@@ -442,29 +437,30 @@ describe('PaymentMethodService', () => {
             it('should return expired status for expired card', async () => {
                 const expiredPaymentMethod = {
                     ...mockPaymentMethod,
-                    expiresAt: new Date('2020-12-31')
+                    cardExpiryMonth: 12,
+                    cardExpiryYear: 2020
                 };
 
                 mockPaymentMethodModel.checkExpiration = vi.fn().mockResolvedValue({
                     expired: true,
-                    expiresAt: expiredPaymentMethod.expiresAt
+                    expiryMonth: 12,
+                    expiryYear: 2020
                 });
 
-                const result = await service.checkExpiration(
-                    mockActor,
-                    expiredPaymentMethod.id
-                );
+                const result = await service.checkExpiration(mockActor, expiredPaymentMethod.id);
 
                 expect(result.error).toBeUndefined();
                 expect(result.data).toBeDefined();
                 expect(result.data?.expired).toBe(true);
-                expect(result.data?.expiresAt).toBeDefined();
+                expect(result.data?.expiryMonth).toBeDefined();
+                expect(result.data?.expiryYear).toBeDefined();
             });
 
             it('should return not expired for valid card', async () => {
                 mockPaymentMethodModel.checkExpiration = vi.fn().mockResolvedValue({
                     expired: false,
-                    expiresAt: mockPaymentMethod.expiresAt
+                    expiryMonth: mockPaymentMethod.cardExpiryMonth,
+                    expiryYear: mockPaymentMethod.cardExpiryYear
                 });
 
                 const result = await service.checkExpiration(mockActor, mockPaymentMethod.id);
@@ -477,7 +473,6 @@ describe('PaymentMethodService', () => {
             it('should deny unauthorized user', async () => {
                 const unauthorizedActor: Actor = {
                     id: 'user-id',
-                    email: 'user@example.com',
                     role: RoleEnum.USER,
                     permissions: []
                 };
@@ -522,7 +517,6 @@ describe('PaymentMethodService', () => {
             it('should deny unauthorized user', async () => {
                 const unauthorizedActor: Actor = {
                     id: 'user-id',
-                    email: 'user@example.com',
                     role: RoleEnum.USER,
                     permissions: []
                 };
@@ -540,10 +534,7 @@ describe('PaymentMethodService', () => {
 
                 mockPaymentMethodModel.findByClient = vi.fn().mockResolvedValue(clientMethods);
 
-                const result = await service.findByClient(
-                    mockActor,
-                    mockPaymentMethod.clientId
-                );
+                const result = await service.findByClient(mockActor, mockPaymentMethod.clientId);
 
                 expect(result.error).toBeUndefined();
                 expect(result.data).toBeDefined();
@@ -564,7 +555,6 @@ describe('PaymentMethodService', () => {
             it('should deny unauthorized user', async () => {
                 const unauthorizedActor: Actor = {
                     id: 'user-id',
-                    email: 'user@example.com',
                     role: RoleEnum.USER,
                     permissions: []
                 };
@@ -581,7 +571,7 @@ describe('PaymentMethodService', () => {
 
         describe('getDefaultForClient', () => {
             it('should return default payment method', async () => {
-                const defaultMethod = { ...mockPaymentMethod, defaultMethod: true };
+                const defaultMethod = { ...mockPaymentMethod, isDefault: true };
 
                 mockPaymentMethodModel.getDefaultForClient = vi
                     .fn()
@@ -594,7 +584,7 @@ describe('PaymentMethodService', () => {
 
                 expect(result.error).toBeUndefined();
                 expect(result.data).toBeDefined();
-                expect(result.data?.defaultMethod).toBe(true);
+                expect(result.data?.isDefault).toBe(true);
             });
 
             it('should return null when no default found', async () => {
@@ -612,7 +602,6 @@ describe('PaymentMethodService', () => {
             it('should deny unauthorized user', async () => {
                 const unauthorizedActor: Actor = {
                     id: 'user-id',
-                    email: 'user@example.com',
                     role: RoleEnum.USER,
                     permissions: []
                 };
@@ -656,7 +645,6 @@ describe('PaymentMethodService', () => {
             it('should deny unauthorized user', async () => {
                 const unauthorizedActor: Actor = {
                     id: 'user-id',
-                    email: 'user@example.com',
                     role: RoleEnum.USER,
                     permissions: []
                 };
@@ -672,7 +660,7 @@ describe('PaymentMethodService', () => {
             it('should create payment method with card', async () => {
                 const cardData = {
                     clientId: mockPaymentMethod.clientId,
-                    provider: 'stripe',
+                    type: PaymentMethodEnum.CREDIT_CARD,
                     cardNumber: '4242424242424242',
                     expiryMonth: 12,
                     expiryYear: 2025,
@@ -697,7 +685,7 @@ describe('PaymentMethodService', () => {
             it('should fail on tokenization error', async () => {
                 const cardData = {
                     clientId: mockPaymentMethod.clientId,
-                    provider: 'stripe',
+                    type: PaymentMethodEnum.CREDIT_CARD,
                     cardNumber: '1234567890123456',
                     expiryMonth: 12,
                     expiryYear: 2025,
@@ -721,14 +709,13 @@ describe('PaymentMethodService', () => {
             it('should deny unauthorized user', async () => {
                 const unauthorizedActor: Actor = {
                     id: 'user-id',
-                    email: 'user@example.com',
                     role: RoleEnum.USER,
                     permissions: []
                 };
 
                 const cardData = {
                     clientId: mockPaymentMethod.clientId,
-                    provider: 'stripe',
+                    type: PaymentMethodEnum.CREDIT_CARD,
                     cardNumber: '4242424242424242',
                     expiryMonth: 12,
                     expiryYear: 2025,
@@ -773,7 +760,6 @@ describe('PaymentMethodService', () => {
             it('should deny unauthorized user', async () => {
                 const unauthorizedActor: Actor = {
                     id: 'user-id',
-                    email: 'user@example.com',
                     role: RoleEnum.USER,
                     permissions: []
                 };
@@ -817,7 +803,6 @@ describe('PaymentMethodService', () => {
             it('should deny unauthorized user', async () => {
                 const unauthorizedActor: Actor = {
                     id: 'user-id',
-                    email: 'user@example.com',
                     role: RoleEnum.USER,
                     permissions: []
                 };
