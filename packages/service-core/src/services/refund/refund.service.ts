@@ -1,10 +1,12 @@
-import type { RefundModel } from '@repo/db';
+import { PaymentModel, type RefundModel } from '@repo/db';
 import {
     CreateRefundSchema,
     type ListRelationsConfig,
     PermissionEnum,
+    type PriceCurrencyEnum,
     type Refund,
     RefundQuerySchema,
+    RefundStatusEnum,
     RoleEnum,
     ServiceErrorCode,
     UpdateRefundSchema
@@ -276,7 +278,7 @@ export class RefundService extends BaseCrudService<
         actor: Actor,
         paymentId: string,
         amount: number,
-        reason?: string
+        reason = 'Customer request'
     ): Promise<ServiceOutput<Refund | null>> {
         return this.runWithLoggingAndValidation({
             methodName: 'processRefund',
@@ -285,7 +287,27 @@ export class RefundService extends BaseCrudService<
             execute: async (_validatedData, validatedActor) => {
                 this._canCreate(validatedActor, {});
 
-                const refund = await this.model.processRefund(paymentId, amount, reason);
+                // Get payment to extract userId and currency
+                const paymentModel = new PaymentModel();
+                const payment = await paymentModel.findById(paymentId);
+
+                if (!payment) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Payment not found');
+                }
+
+                // Generate unique refund number
+                const refundNumber = `REF-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+
+                // Process refund with all required parameters
+                const refund = await this.model.processRefund(
+                    paymentId,
+                    payment.userId,
+                    refundNumber,
+                    amount,
+                    payment.currency as PriceCurrencyEnum,
+                    reason,
+                    RefundStatusEnum.PENDING
+                );
 
                 return refund;
             }

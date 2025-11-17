@@ -446,10 +446,13 @@ export class DiscountCodeService extends BaseCrudService<
                 }
 
                 // Increment global usage counter
-                const updatedCode = await this.model.updateById(codeId, {
-                    usedCountGlobal: code.usedCountGlobal + 1,
-                    updatedById: validatedActor.id
-                });
+                const updatedCode = await this.model.update(
+                    { id: codeId },
+                    {
+                        usedCountGlobal: code.usedCountGlobal + 1,
+                        updatedById: validatedActor.id
+                    }
+                );
 
                 return updatedCode;
             }

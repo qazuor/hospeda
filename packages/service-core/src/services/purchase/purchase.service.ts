@@ -529,7 +529,17 @@ export class PurchaseService extends BaseCrudService<
 
                 return result;
             }
-        });
+        }) as Promise<
+            ServiceOutput<{
+                purchase: Purchase;
+                pricingPlan: {
+                    id: string;
+                    amountMinor: number;
+                    currency: string;
+                    billingScheme: string;
+                };
+            } | null>
+        >;
     }
 
     /**
