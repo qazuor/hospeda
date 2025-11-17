@@ -2,6 +2,7 @@ import type { AdminInfoType } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import { jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { clients } from '../client/client.dbschema';
+import { TouristServiceCategoryPgEnum } from '../enums.dbschema';
 import { users } from '../user/user.dbschema';
 import { serviceListings } from './serviceListing.dbschema';
 
@@ -20,7 +21,7 @@ export const touristServices = pgTable('tourist_services', {
 
     // Service information
     name: text('name').notNull(),
-    category: text('category').notNull(), // e.g., 'tour', 'activity', 'experience', 'transport', 'guide'
+    category: TouristServiceCategoryPgEnum('category').notNull(),
     description: text('description'),
 
     // Service details (JSONB for flexibility)

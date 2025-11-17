@@ -2,6 +2,7 @@ import type { AdminInfoType } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import { boolean, jsonb, numeric, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { clients } from '../client/client.dbschema';
+import { ServiceListingStatusPgEnum } from '../enums.dbschema';
 import { users } from '../user/user.dbschema';
 import { serviceListingPlans } from './serviceListingPlan.dbschema';
 import { touristServices } from './touristService.dbschema';
@@ -30,7 +31,7 @@ export const serviceListings = pgTable('service_listings', {
     description: text('description'),
 
     // Pricing and booking
-    basePrice: numeric('base_price', { precision: 10, scale: 2 }),
+    basePrice: numeric('base_price', { precision: 10, scale: 2 }).$type<number>(),
 
     // Listing configuration (JSONB for flexibility)
     listingDetails: jsonb('listing_details').$type<{
@@ -97,11 +98,7 @@ export const serviceListings = pgTable('service_listings', {
     }>(),
 
     // Status and visibility
-    status: text('status', {
-        enum: ['draft', 'pending', 'active', 'paused', 'rejected', 'expired']
-    })
-        .notNull()
-        .default('draft'),
+    status: ServiceListingStatusPgEnum('status').notNull().default('draft'),
     isActive: boolean('is_active').notNull().default(false),
     isFeatured: boolean('is_featured').notNull().default(false),
 
