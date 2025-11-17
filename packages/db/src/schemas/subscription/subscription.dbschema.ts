@@ -1,4 +1,5 @@
 import type { AdminInfoType } from '@repo/schemas';
+import type { LifecycleStatusEnum, SubscriptionStatusEnum } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import { jsonb, pgTable, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { pricingPlans } from '../catalog/pricingPlan.dbschema';
@@ -19,15 +20,18 @@ export const subscriptions = pgTable('subscriptions', {
         .references(() => pricingPlans.id, { onDelete: 'restrict' }),
 
     // Status using enum
-    status: SubscriptionStatusPgEnum('status').notNull(),
+    status: SubscriptionStatusPgEnum('status').notNull().$type<SubscriptionStatusEnum>(),
 
-    // Timestamps
-    startAt: timestamp('start_at', { withTimezone: true }),
-    endAt: timestamp('end_at', { withTimezone: true }),
-    trialEndsAt: timestamp('trial_ends_at', { withTimezone: true }),
+    // Timestamps (aligned with Zod schema - startDate is required)
+    startDate: timestamp('start_date', { withTimezone: true }).notNull(),
+    endDate: timestamp('end_date', { withTimezone: true }),
+    trialEndDate: timestamp('trial_end_date', { withTimezone: true }),
 
     // Lifecycle state
-    lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
+    lifecycleState: LifecycleStatusPgEnum('lifecycle_state')
+        .notNull()
+        .default('ACTIVE')
+        .$type<LifecycleStatusEnum>(),
 
     // Audit fields
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
