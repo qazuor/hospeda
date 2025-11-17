@@ -33,6 +33,12 @@ export enum PermissionCategoryEnum {
     DISCOUNT_CODE = 'DISCOUNT_CODE',
     CAMPAIGN = 'CAMPAIGN',
     SERVICE_LISTING = 'SERVICE_LISTING',
+    BENEFIT_LISTING = 'BENEFIT_LISTING',
+    BENEFIT_PARTNER = 'BENEFIT_PARTNER',
+    BENEFIT_LISTING_PLAN = 'BENEFIT_LISTING_PLAN',
+    TOURIST_SERVICE = 'TOURIST_SERVICE',
+    SERVICE_LISTING_PLAN = 'SERVICE_LISTING_PLAN',
+    NOTIFICATION = 'NOTIFICATION',
     PUBLIC = 'PUBLIC',
     SYSTEM = 'SYSTEM',
     ACCESS = 'ACCESS'
@@ -210,7 +216,6 @@ export enum PermissionEnum {
     DASHBOARD_FULL_VIEW = 'dashboard.fullView', // Allows viewing the full dashboard.
     SETTINGS_MANAGE = 'settings.manage', // Allows managing system settings.
     STATS_VIEW = 'stats.view', // Allows viewing system statistics.
-    NOTIFICATION_SEND = 'notification.send', // Allows sending notifications.
     NOTIFICATION_CONFIGURE = 'notification.configure', // Allows configuring notification settings.
     SEO_MANAGE = 'seo.manage', // Allows managing SEO settings.
 
@@ -548,5 +553,66 @@ export enum PermissionEnum {
     USER_BOOKMARK_DELETE = 'userBookmark.delete', // Allows deleting a user bookmark (soft delete).
     USER_BOOKMARK_VIEW = 'userBookmark.view', // Allows viewing user bookmark information.
     USER_BOOKMARK_RESTORE = 'userBookmark.restore', // Allows restoring a deleted user bookmark.
-    USER_BOOKMARK_HARD_DELETE = 'userBookmark.hardDelete' // Allows permanently deleting a user bookmark.
+    USER_BOOKMARK_HARD_DELETE = 'userBookmark.hardDelete', // Allows permanently deleting a user bookmark.
+
+    // BENEFIT_LISTING: Permissions related to benefit listing management
+    BENEFIT_LISTING_CREATE = 'benefitListing.create', // Allows creating a new benefit listing.
+    BENEFIT_LISTING_UPDATE = 'benefitListing.update', // Allows updating a benefit listing.
+    BENEFIT_LISTING_DELETE = 'benefitListing.delete', // Allows deleting a benefit listing (soft delete).
+    BENEFIT_LISTING_VIEW = 'benefitListing.view', // Allows viewing benefit listing information.
+    BENEFIT_LISTING_RESTORE = 'benefitListing.restore', // Allows restoring a deleted benefit listing.
+    BENEFIT_LISTING_HARD_DELETE = 'benefitListing.hardDelete', // Allows permanently deleting a benefit listing.
+    BENEFIT_LISTING_SOFT_DELETE_VIEW = 'benefitListing.softDelete.view', // Allows viewing soft-deleted benefit listings.
+    BENEFIT_LISTING_STATUS_MANAGE = 'benefitListing.status.manage', // Allows managing benefit listing status.
+
+    // NOTIFICATION: Permissions related to notification management
+    NOTIFICATION_CREATE = 'notification.create', // Allows creating a new notification.
+    NOTIFICATION_UPDATE = 'notification.update', // Allows updating a notification.
+    NOTIFICATION_DELETE = 'notification.delete', // Allows deleting a notification (soft delete).
+    NOTIFICATION_VIEW = 'notification.view', // Allows viewing notification information.
+    NOTIFICATION_RESTORE = 'notification.restore', // Allows restoring a deleted notification.
+    NOTIFICATION_HARD_DELETE = 'notification.hardDelete', // Allows permanently deleting a notification.
+    NOTIFICATION_SOFT_DELETE_VIEW = 'notification.softDelete.view', // Allows viewing soft-deleted notifications.
+    NOTIFICATION_SEND = 'notification.send', // Allows sending notifications.
+    NOTIFICATION_STATUS_MANAGE = 'notification.status.manage', // Allows managing notification status.
+
+    // BENEFIT_PARTNER: Permissions related to benefit partner management
+    BENEFIT_PARTNER_CREATE = 'benefitPartner.create', // Allows creating a new benefit partner.
+    BENEFIT_PARTNER_UPDATE = 'benefitPartner.update', // Allows updating a benefit partner.
+    BENEFIT_PARTNER_DELETE = 'benefitPartner.delete', // Allows deleting a benefit partner (soft delete).
+    BENEFIT_PARTNER_VIEW = 'benefitPartner.view', // Allows viewing benefit partner information.
+    BENEFIT_PARTNER_RESTORE = 'benefitPartner.restore', // Allows restoring a deleted benefit partner.
+    BENEFIT_PARTNER_HARD_DELETE = 'benefitPartner.hardDelete', // Allows permanently deleting a benefit partner.
+    BENEFIT_PARTNER_SOFT_DELETE_VIEW = 'benefitPartner.softDelete.view', // Allows viewing soft-deleted benefit partners.
+    BENEFIT_PARTNER_STATUS_MANAGE = 'benefitPartner.status.manage', // Allows managing benefit partner status.
+
+    // BENEFIT_LISTING_PLAN: Permissions related to benefit listing plan management
+    BENEFIT_LISTING_PLAN_CREATE = 'benefitListingPlan.create', // Allows creating a new benefit listing plan.
+    BENEFIT_LISTING_PLAN_UPDATE = 'benefitListingPlan.update', // Allows updating a benefit listing plan.
+    BENEFIT_LISTING_PLAN_DELETE = 'benefitListingPlan.delete', // Allows deleting a benefit listing plan (soft delete).
+    BENEFIT_LISTING_PLAN_VIEW = 'benefitListingPlan.view', // Allows viewing benefit listing plan information.
+    BENEFIT_LISTING_PLAN_RESTORE = 'benefitListingPlan.restore', // Allows restoring a deleted benefit listing plan.
+    BENEFIT_LISTING_PLAN_HARD_DELETE = 'benefitListingPlan.hardDelete', // Allows permanently deleting a benefit listing plan.
+    BENEFIT_LISTING_PLAN_SOFT_DELETE_VIEW = 'benefitListingPlan.softDelete.view', // Allows viewing soft-deleted benefit listing plans.
+    BENEFIT_LISTING_PLAN_STATUS_MANAGE = 'benefitListingPlan.status.manage', // Allows managing benefit listing plan status.
+
+    // TOURIST_SERVICE: Permissions related to tourist service management
+    TOURIST_SERVICE_CREATE = 'touristService.create', // Allows creating a new tourist service.
+    TOURIST_SERVICE_UPDATE = 'touristService.update', // Allows updating a tourist service.
+    TOURIST_SERVICE_DELETE = 'touristService.delete', // Allows deleting a tourist service (soft delete).
+    TOURIST_SERVICE_VIEW = 'touristService.view', // Allows viewing tourist service information.
+    TOURIST_SERVICE_RESTORE = 'touristService.restore', // Allows restoring a deleted tourist service.
+    TOURIST_SERVICE_HARD_DELETE = 'touristService.hardDelete', // Allows permanently deleting a tourist service.
+    TOURIST_SERVICE_SOFT_DELETE_VIEW = 'touristService.softDelete.view', // Allows viewing soft-deleted tourist services.
+    TOURIST_SERVICE_STATUS_MANAGE = 'touristService.status.manage', // Allows managing tourist service status.
+
+    // SERVICE_LISTING_PLAN: Permissions related to service listing plan management
+    SERVICE_LISTING_PLAN_CREATE = 'serviceListingPlan.create', // Allows creating a new service listing plan.
+    SERVICE_LISTING_PLAN_UPDATE = 'serviceListingPlan.update', // Allows updating a service listing plan.
+    SERVICE_LISTING_PLAN_DELETE = 'serviceListingPlan.delete', // Allows deleting a service listing plan (soft delete).
+    SERVICE_LISTING_PLAN_VIEW = 'serviceListingPlan.view', // Allows viewing service listing plan information.
+    SERVICE_LISTING_PLAN_RESTORE = 'serviceListingPlan.restore', // Allows restoring a deleted service listing plan.
+    SERVICE_LISTING_PLAN_HARD_DELETE = 'serviceListingPlan.hardDelete', // Allows permanently deleting a service listing plan.
+    SERVICE_LISTING_PLAN_SOFT_DELETE_VIEW = 'serviceListingPlan.softDelete.view', // Allows viewing soft-deleted service listing plans.
+    SERVICE_LISTING_PLAN_STATUS_MANAGE = 'serviceListingPlan.status.manage' // Allows managing service listing plan status.
 }

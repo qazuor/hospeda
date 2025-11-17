@@ -20,7 +20,7 @@ export * from './pricingTier/index.js';
 export * from './client-access-right/index.js';
 export * from './client/index.js';
 // TODO: Enable once migration from old payment model is complete
-// export * from './subscription/index.js';
+export * from './subscription/index.js';
 export * from './purchase/index.js';
 export * from './subscriptionItem/index.js';
 export * from './tag/index.js';
@@ -47,9 +47,13 @@ export * from './notification/index.js';
 export * from './professionalService/index.js';
 export * from './serviceOrder/index.js';
 export * from './serviceListing/index.js';
+export * from './serviceListingPlan/index.js';
+export * from './touristService/index.js';
 
 // === Benefit Listings System Entities ===
 export * from './benefitListing/index.js';
+export * from './benefitListingPlan/index.js';
+export * from './benefitPartner/index.js';
 
 // === Accommodation Listings System Entities ===
 export * from './accommodationListing/index.js';

@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { BaseAuditFields } from '../../common/audit.schema.js';
 import { CampaignIdSchema } from '../../common/id.schema.js';
 import { CampaignChannelSchema, CampaignStatusSchema } from '../../enums/index.js';
+import { numericField } from '../../utils/index.js';
 
 /**
  * Campaign Schema
@@ -69,11 +70,11 @@ export const CampaignSchema = z.object({
     // Budget and spending
     budget: z
         .object({
-            totalBudget: z.number().positive().max(1000000),
-            dailyBudget: z.number().positive().max(50000).optional(),
-            spentAmount: z.number().min(0).default(0),
+            totalBudget: numericField(z.number().positive().max(1000000)),
+            dailyBudget: numericField(z.number().positive().max(50000)).optional(),
+            spentAmount: numericField(z.number().min(0)).default(0),
             currency: z.string().length(3).default('USD'),
-            costPerAction: z.number().positive().max(1000).optional(),
+            costPerAction: numericField(z.number().positive().max(1000)).optional(),
             bidStrategy: z
                 .enum(['manual', 'automatic', 'target_cpa', 'maximize_conversions'])
                 .default('automatic')

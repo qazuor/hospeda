@@ -82,6 +82,13 @@ export const NotificationSchema = z
 
         scheduledFor: z.date().optional(),
 
+        // Retry tracking
+        retryCount: z
+            .number()
+            .int({ message: 'zodError.notification.retryCount.int' })
+            .min(0, { message: 'zodError.notification.retryCount.min' })
+            .default(0),
+
         // Channel-specific metadata
         channelMetadata: z.record(z.string(), z.unknown()).optional(),
 

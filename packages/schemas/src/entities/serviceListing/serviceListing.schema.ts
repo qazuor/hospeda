@@ -7,6 +7,7 @@ import {
     ServiceListingPlanIdSchema,
     TouristServiceIdSchema
 } from '../../common/id.schema.js';
+import { ServiceListingStatusEnum } from '../../enums/service-listing-status.enum.js';
 import { ServiceListingStatusSchema } from '../../enums/service-listing-status.schema.js';
 
 /**
@@ -128,7 +129,7 @@ export const ServiceListingSchema = z.object({
         .min(0, { message: 'zodError.serviceListing.basePrice.min' })
         .optional(),
     listingDetails: ListingDetailsSchema.optional(),
-    status: ServiceListingStatusSchema.default('draft'),
+    status: ServiceListingStatusSchema.default(ServiceListingStatusEnum.DRAFT),
     isActive: z.boolean().default(false),
     isFeatured: z.boolean().default(false),
     isTrialListing: z.boolean().default(false),

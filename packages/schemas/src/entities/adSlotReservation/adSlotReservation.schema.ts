@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { AdminInfoSchema } from '../../common/admin-info.schema.js';
 import { AdSlotReservationStatusSchema } from '../../enums/ad-slot-reservation-status.schema.js';
 
 /**
@@ -13,7 +12,6 @@ export const AdSlotReservationSchema = z.object({
     fromDate: z.date(),
     toDate: z.date(),
     status: AdSlotReservationStatusSchema,
-    adminInfo: AdminInfoSchema.nullable().optional(),
     createdAt: z.date(),
     updatedAt: z.date(),
     deletedAt: z.date().nullable(),

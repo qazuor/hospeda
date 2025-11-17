@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { BaseAuditFields } from '../../common/audit.schema.js';
 import { DiscountCodeIdSchema, PromotionIdSchema } from '../../common/id.schema.js';
 import { DiscountTypeEnumSchema } from '../../enums/index.js';
+import { numericField } from '../../utils/index.js';
 
 /**
  * Discount Code Schema - Main Entity Schema
@@ -33,13 +34,12 @@ export const DiscountCodeSchema = z
         discountType: DiscountTypeEnumSchema,
 
         // Percentage off (only for PERCENTAGE type)
-        percentOff: z
-            .number({
-                message: 'zodError.discountCode.percentOff.required'
-            })
-            .min(0, { message: 'zodError.discountCode.percentOff.min' })
-            .max(100, { message: 'zodError.discountCode.percentOff.max' })
-            .optional(),
+        percentOff: numericField(
+            z
+                .number({ message: 'zodError.discountCode.percentOff.required' })
+                .min(0, { message: 'zodError.discountCode.percentOff.min' })
+                .max(100, { message: 'zodError.discountCode.percentOff.max' })
+        ).optional(),
 
         // Fixed amount off in minor currency units (only for FIXED_AMOUNT type)
         amountOffMinor: z
@@ -93,12 +93,11 @@ export const DiscountCodeSchema = z
             .length(3, { message: 'zodError.discountCode.currency.length' })
             .default('USD'),
 
-        minimumPurchaseAmount: z
-            .number({
-                message: 'zodError.discountCode.minimumPurchaseAmount.required'
-            })
-            .nonnegative({ message: 'zodError.discountCode.minimumPurchaseAmount.nonnegative' })
-            .nullable(),
+        minimumPurchaseAmount: numericField(
+            z
+                .number({ message: 'zodError.discountCode.minimumPurchaseAmount.required' })
+                .nonnegative({ message: 'zodError.discountCode.minimumPurchaseAmount.nonnegative' })
+        ).nullable(),
 
         minimumPurchaseCurrency: z
             .string()

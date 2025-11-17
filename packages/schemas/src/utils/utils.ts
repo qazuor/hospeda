@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 // Regex for slugs (e.g.: my-slug-123)
 export const SlugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
@@ -34,3 +36,26 @@ export const omittedSystemFieldsForActions = [
     'deletedAt',
     'deletedById'
 ];
+
+/**
+ * Transform helper for numeric fields that may come as strings from database (Drizzle numeric/decimal)
+ * Accepts both string and number, transforms string to number, then validates as number
+ *
+ * @example
+ * ```ts
+ * // Basic usage
+ * const schema = numericField();
+ *
+ * // With validation
+ * const schema = numericField(z.number().positive().min(0).max(100));
+ * ```
+ */
+export const numericField = (validation?: z.ZodNumber) => {
+    const baseTransform = z
+        .union([z.string(), z.number()])
+        .transform((val: string | number) =>
+            typeof val === 'string' ? Number.parseFloat(val) : val
+        );
+
+    return validation ? baseTransform.pipe(validation) : baseTransform.pipe(z.number());
+};

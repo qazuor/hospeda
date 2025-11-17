@@ -19,8 +19,9 @@ export const BaseAuditFields = {
         .date({
             message: 'zodError.common.deletedAt.required'
         })
-        .nullable(),
-    deletedById: UserIdSchema.nullable()
+        .nullable()
+        .optional(),
+    deletedById: UserIdSchema.nullable().optional()
 } as const;
 export type BaseAuditFieldsType = typeof BaseAuditFields;
 

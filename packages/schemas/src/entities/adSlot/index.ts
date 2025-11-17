@@ -41,7 +41,7 @@ export {
     AdSlotPerformanceQuerySchema,
     AdSlotQuerySchema,
     AdSlotRecommendationQuerySchema,
-    AdSlotReservationAnalyticsSchema,
+    // Note: AdSlotReservationAnalyticsSchema removed - use from adSlotReservation entity
     AdSlotSearchSchema,
     AdSlotSortingSchema
 } from './adSlot.query.schema.js';
@@ -52,7 +52,7 @@ export type {
     AdSlotPerformanceQuery,
     AdSlotQuery,
     AdSlotRecommendationQuery,
-    AdSlotReservationAnalytics,
+    // Note: AdSlotReservationAnalytics removed - use from adSlotReservation entity
     AdSlotSearch,
     AdSlotSorting
 } from './adSlot.query.schema.js';
@@ -75,7 +75,7 @@ export type {
 // Relationship schemas
 export {
     AdSlotMediaAssetsSchema,
-    AdSlotReservationSchema,
+    // Note: AdSlotReservationSchema removed to avoid conflict with main AdSlotReservation entity
     AdSlotTargetingAnalyticsSchema,
     AdSlotWithCampaignSchema,
     AdSlotWithRelationsSchema
@@ -83,7 +83,7 @@ export {
 
 export type {
     AdSlotMediaAssets,
-    AdSlotReservation,
+    // Note: AdSlotReservation type removed to avoid conflict with main AdSlotReservation entity
     AdSlotTargetingAnalytics,
     AdSlotWithCampaign,
     AdSlotWithRelations

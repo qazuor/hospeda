@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { BaseAuditFields } from '../../common/audit.schema.js';
 import { ClientIdSchema, SponsorshipIdSchema } from '../../common/id.schema.js';
 import { SponsorshipEntityTypeSchema, SponsorshipStatusSchema } from '../../enums/index.js';
+import { numericField } from '../../utils/index.js';
 
 /**
  * Sponsorship Schema - Main Entity Schema
@@ -54,17 +55,17 @@ export const SponsorshipSchema = z
             .default(50),
 
         // Budget and cost tracking
-        budgetAmount: z
-            .number()
-            .int({ message: 'zodError.sponsorship.budgetAmount.int' })
-            .nonnegative({ message: 'zodError.sponsorship.budgetAmount.nonnegative' })
-            .optional(),
+        budgetAmount: numericField(
+            z
+                .number({ message: 'zodError.sponsorship.budgetAmount.required' })
+                .nonnegative({ message: 'zodError.sponsorship.budgetAmount.nonnegative' })
+        ).optional(),
 
-        spentAmount: z
-            .number()
-            .int({ message: 'zodError.sponsorship.spentAmount.int' })
-            .nonnegative({ message: 'zodError.sponsorship.spentAmount.nonnegative' })
-            .default(0),
+        spentAmount: numericField(
+            z
+                .number({ message: 'zodError.sponsorship.spentAmount.required' })
+                .nonnegative({ message: 'zodError.sponsorship.spentAmount.nonnegative' })
+        ).default(0),
 
         // Performance metrics
         impressionCount: z

@@ -6,6 +6,7 @@ import {
     PricingModelEnum,
     PricingModelEnumSchema
 } from '../../enums/index.js';
+import { numericField } from '../../utils/index.js';
 
 /**
  * Ad Pricing Catalog Pricing Config Schema
@@ -64,11 +65,11 @@ export const AdPricingCatalogSchema = z.object({
     channel: CampaignChannelSchema,
 
     // Pricing structure
-    basePrice: z
-        .number({
-            message: 'zodError.adPricingCatalog.basePrice.required'
+    basePrice: numericField(
+        z.number({ message: 'zodError.adPricingCatalog.basePrice.required' }).positive({
+            message: 'zodError.adPricingCatalog.basePrice.positive'
         })
-        .positive({ message: 'zodError.adPricingCatalog.basePrice.positive' }),
+    ),
 
     currency: z
         .string({
@@ -82,46 +83,39 @@ export const AdPricingCatalogSchema = z.object({
     pricingModel: PricingModelEnumSchema.default(PricingModelEnum.CPM),
 
     // Time-based pricing (optional)
-    dailyRate: z
-        .number()
-        .positive({ message: 'zodError.adPricingCatalog.dailyRate.positive' })
-        .optional(),
+    dailyRate: numericField(
+        z.number().positive({ message: 'zodError.adPricingCatalog.dailyRate.positive' })
+    ).optional(),
 
-    weeklyRate: z
-        .number()
-        .positive({ message: 'zodError.adPricingCatalog.weeklyRate.positive' })
-        .optional(),
+    weeklyRate: numericField(
+        z.number().positive({ message: 'zodError.adPricingCatalog.weeklyRate.positive' })
+    ).optional(),
 
-    monthlyRate: z
-        .number()
-        .positive({ message: 'zodError.adPricingCatalog.monthlyRate.positive' })
-        .optional(),
+    monthlyRate: numericField(
+        z.number().positive({ message: 'zodError.adPricingCatalog.monthlyRate.positive' })
+    ).optional(),
 
     // Premium multipliers
-    weekendMultiplier: z
-        .number({
-            message: 'zodError.adPricingCatalog.weekendMultiplier.required'
-        })
-        .positive({ message: 'zodError.adPricingCatalog.weekendMultiplier.positive' })
-        .default(1.0),
+    weekendMultiplier: numericField(
+        z
+            .number({ message: 'zodError.adPricingCatalog.weekendMultiplier.required' })
+            .positive({ message: 'zodError.adPricingCatalog.weekendMultiplier.positive' })
+    ).default(1.0),
 
-    holidayMultiplier: z
-        .number({
-            message: 'zodError.adPricingCatalog.holidayMultiplier.required'
-        })
-        .positive({ message: 'zodError.adPricingCatalog.holidayMultiplier.positive' })
-        .default(1.0),
+    holidayMultiplier: numericField(
+        z
+            .number({ message: 'zodError.adPricingCatalog.holidayMultiplier.required' })
+            .positive({ message: 'zodError.adPricingCatalog.holidayMultiplier.positive' })
+    ).default(1.0),
 
     // Budget constraints (optional)
-    minimumBudget: z
-        .number()
-        .positive({ message: 'zodError.adPricingCatalog.minimumBudget.positive' })
-        .optional(),
+    minimumBudget: numericField(
+        z.number().positive({ message: 'zodError.adPricingCatalog.minimumBudget.positive' })
+    ).optional(),
 
-    maximumBudget: z
-        .number()
-        .positive({ message: 'zodError.adPricingCatalog.maximumBudget.positive' })
-        .optional(),
+    maximumBudget: numericField(
+        z.number().positive({ message: 'zodError.adPricingCatalog.maximumBudget.positive' })
+    ).optional(),
 
     // Availability and scheduling (optional)
     availableFrom: z
