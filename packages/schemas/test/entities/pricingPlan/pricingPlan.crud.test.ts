@@ -18,7 +18,7 @@ describe('PricingPlan CRUD Schema', () => {
                 productId: '987fcdeb-51a2-43d7-b123-456789012345',
                 billingScheme: BillingSchemeEnum.RECURRING,
                 interval: BillingIntervalEnum.MONTH,
-                amountMinor: 2999,
+                amount: 29.99,
                 currency: 'ARS'
             };
 
@@ -36,7 +36,7 @@ describe('PricingPlan CRUD Schema', () => {
             const createInput = {
                 productId: '987fcdeb-51a2-43d7-b123-456789012345',
                 billingScheme: BillingSchemeEnum.ONE_TIME,
-                amountMinor: 9999,
+                amount: 99.99,
                 currency: 'USD'
             };
 
@@ -53,7 +53,7 @@ describe('PricingPlan CRUD Schema', () => {
                 productId: '987fcdeb-51a2-43d7-b123-456789012345',
                 billingScheme: BillingSchemeEnum.RECURRING,
                 // interval missing
-                amountMinor: 2999,
+                amount: 29.99,
                 currency: 'ARS'
             };
 
@@ -66,7 +66,7 @@ describe('PricingPlan CRUD Schema', () => {
                 productId: '987fcdeb-51a2-43d7-b123-456789012345',
                 billingScheme: BillingSchemeEnum.ONE_TIME,
                 interval: BillingIntervalEnum.MONTH, // Invalid for ONE_TIME
-                amountMinor: 2999,
+                amount: 29.99,
                 currency: 'ARS'
             };
 
@@ -78,7 +78,7 @@ describe('PricingPlan CRUD Schema', () => {
             const invalidInput = {
                 productId: '987fcdeb-51a2-43d7-b123-456789012345',
                 billingScheme: BillingSchemeEnum.ONE_TIME,
-                amountMinor: -1000, // Invalid
+                amount: -10.0, // Invalid
                 currency: 'ARS'
             };
 
@@ -90,14 +90,14 @@ describe('PricingPlan CRUD Schema', () => {
     describe('PricingPlanUpdateInputSchema', () => {
         it('should allow partial updates', () => {
             const updateInput = {
-                amountMinor: 3999,
+                amount: 39.99,
                 metadata: { updated: true }
             };
 
             const result = PricingPlanUpdateInputSchema.safeParse(updateInput);
             expect(result.success).toBe(true);
             if (result.success) {
-                expect(result.data.amountMinor).toBe(3999);
+                expect(result.data.amount).toBe(39.99);
                 expect(result.data.metadata?.updated).toBe(true);
             }
         });
@@ -168,14 +168,14 @@ describe('PricingPlan CRUD Schema', () => {
                     {
                         productId: '987fcdeb-51a2-43d7-b123-456789012345',
                         billingScheme: BillingSchemeEnum.ONE_TIME,
-                        amountMinor: 1999,
+                        amount: 19.99,
                         currency: 'USD'
                     },
                     {
                         productId: '111e1111-e11b-11d1-a111-111111111111',
                         billingScheme: BillingSchemeEnum.RECURRING,
                         interval: BillingIntervalEnum.YEAR,
-                        amountMinor: 19999,
+                        amount: 199.99,
                         currency: 'EUR'
                     }
                 ]
@@ -197,7 +197,7 @@ describe('PricingPlan CRUD Schema', () => {
                 items: [
                     {
                         id: '123e4567-e89b-12d3-a456-426614174000',
-                        amountMinor: 2499
+                        amount: 24.99
                     },
                     {
                         id: '234e5678-e89b-12d3-a456-426614174001',

@@ -20,14 +20,14 @@ describe('PricingPlan Batch Schema', () => {
                         productId: '123e4567-e89b-12d3-a456-426614174001',
                         billingScheme: BillingSchemeEnum.RECURRING,
                         interval: BillingIntervalEnum.MONTH,
-                        amountMinor: 2999,
+                        amount: 29.99,
                         currency: 'USD',
                         metadata: { type: 'premium' }
                     },
                     {
                         productId: '123e4567-e89b-12d3-a456-426614174002',
                         billingScheme: BillingSchemeEnum.ONE_TIME,
-                        amountMinor: 9999,
+                        amount: 99.99,
                         currency: 'EUR',
                         metadata: { type: 'standard' }
                     }
@@ -50,7 +50,7 @@ describe('PricingPlan Batch Schema', () => {
                     .map((_, i) => ({
                         productId: `123e4567-e89b-12d3-a456-42661417400${i % 10}`,
                         billingScheme: BillingSchemeEnum.ONE_TIME,
-                        amountMinor: 1000 + i,
+                        amount: 10.0 + i,
                         currency: 'USD'
                     }))
             };
@@ -66,7 +66,7 @@ describe('PricingPlan Batch Schema', () => {
                 items: [
                     {
                         id: '123e4567-e89b-12d3-a456-426614174000',
-                        amountMinor: 3499,
+                        amount: 34.99,
                         metadata: { updated: true }
                     },
                     {
@@ -80,7 +80,7 @@ describe('PricingPlan Batch Schema', () => {
             expect(result.success).toBe(true);
             if (result.success) {
                 expect(result.data.items).toHaveLength(2);
-                expect(result.data.items[0]?.amountMinor).toBe(3499);
+                expect(result.data.items[0]?.amount).toBe(34.99);
                 expect(result.data.items[1]?.currency).toBe('GBP');
             }
         });
@@ -186,7 +186,7 @@ describe('PricingPlan Batch Schema', () => {
                         {
                             productId: '123e4567-e89b-12d3-a456-426614174001',
                             billingScheme: BillingSchemeEnum.ONE_TIME,
-                            amountMinor: 4999,
+                            amount: 49.99,
                             currency: 'USD'
                         }
                     ]

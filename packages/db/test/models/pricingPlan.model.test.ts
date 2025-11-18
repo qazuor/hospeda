@@ -13,8 +13,11 @@ const mockPricingPlan: PricingPlan = {
     productId: 'product-1',
     billingScheme: 'RECURRING',
     interval: 'MONTH',
-    amountMinor: 2000,
+    amount: '20.00',
     currency: 'USD',
+    lifecycleState: 'ACTIVE',
+    isActive: true,
+    isDeleted: false,
     createdAt: new Date(),
     updatedAt: new Date(),
     createdById: 'user-1',
@@ -63,7 +66,7 @@ describe('PricingPlanModel', () => {
             const result = await pricingPlanModel.calculateTotal(mockPricingPlan.id, 3);
 
             expect(result).toBeDefined();
-            expect(result.total).toBe(6000); // 2000 * 3
+            expect(result.total).toBe(60); // 20.00 * 3
             expect(result.currency).toBe('USD');
             expect(result.quantity).toBe(3);
             expect(result.billingInterval).toBe('MONTH');

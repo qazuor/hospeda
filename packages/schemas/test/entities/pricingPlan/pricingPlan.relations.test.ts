@@ -16,7 +16,7 @@ describe('PricingPlan Relations Schema', () => {
                 productId: '123e4567-e89b-12d3-a456-426614174001',
                 billingScheme: BillingSchemeEnum.RECURRING,
                 interval: BillingIntervalEnum.MONTH,
-                amountMinor: 2999,
+                amount: 29.99,
                 currency: 'USD',
                 metadata: { feature: 'premium' },
                 lifecycleState: 'ACTIVE',
@@ -54,7 +54,7 @@ describe('PricingPlan Relations Schema', () => {
                 id: '123e4567-e89b-12d3-a456-426614174000',
                 productId: '123e4567-e89b-12d3-a456-426614174001',
                 billingScheme: BillingSchemeEnum.ONE_TIME,
-                amountMinor: 2999,
+                amount: 29.99,
                 currency: 'USD',
                 metadata: {},
                 lifecycleState: 'ACTIVE',
@@ -79,7 +79,7 @@ describe('PricingPlan Relations Schema', () => {
             const minimalPricingPlan = {
                 id: '123e4567-e89b-12d3-a456-426614174000',
                 billingScheme: BillingSchemeEnum.ONE_TIME,
-                amountMinor: 4999,
+                amount: 49.99,
                 currency: 'GBP',
                 lifecycleState: 'ACTIVE'
             };
@@ -96,7 +96,7 @@ describe('PricingPlan Relations Schema', () => {
             const recurringWithoutInterval = {
                 id: '123e4567-e89b-12d3-a456-426614174000',
                 billingScheme: BillingSchemeEnum.RECURRING,
-                amountMinor: 2999,
+                amount: 29.99,
                 currency: 'USD',
                 lifecycleState: 'ACTIVE'
             };
@@ -111,7 +111,7 @@ describe('PricingPlan Relations Schema', () => {
             const nestedCreateData = {
                 billingScheme: BillingSchemeEnum.RECURRING,
                 interval: BillingIntervalEnum.MONTH,
-                amountMinor: 1999,
+                amount: 19.99,
                 currency: 'USD',
                 metadata: { type: 'standard' },
                 product: {
@@ -133,7 +133,7 @@ describe('PricingPlan Relations Schema', () => {
             const oneTimeWithInterval = {
                 billingScheme: BillingSchemeEnum.ONE_TIME,
                 interval: BillingIntervalEnum.MONTH, // Should be invalid
-                amountMinor: 5999,
+                amount: 59.99,
                 currency: 'EUR',
                 product: {
                     name: 'Deluxe Suite',
@@ -150,7 +150,7 @@ describe('PricingPlan Relations Schema', () => {
     describe('PricingPlanNestedUpdateSchema', () => {
         it('should validate partial nested update data', () => {
             const nestedUpdateData = {
-                amountMinor: 2499,
+                amount: 24.99,
                 metadata: { updated: true },
                 product: {
                     name: 'Updated Room Name',
@@ -162,13 +162,13 @@ describe('PricingPlan Relations Schema', () => {
             expect(result.success).toBe(true);
             if (result.success) {
                 expect(result.data.product?.name).toBe('Updated Room Name');
-                expect(result.data.amountMinor).toBe(2499);
+                expect(result.data.amount).toBe(24.99);
             }
         });
 
         it('should allow updating only pricing plan without product', () => {
             const updateOnlyPricing = {
-                amountMinor: 3999,
+                amount: 39.99,
                 currency: 'CAD'
             };
 

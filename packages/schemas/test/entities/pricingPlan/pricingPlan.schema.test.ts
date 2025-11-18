@@ -14,7 +14,7 @@ describe('PricingPlan Schema', () => {
                 productId: '987fcdeb-51a2-43d7-b123-456789012345',
                 billingScheme: BillingSchemeEnum.RECURRING,
                 interval: BillingIntervalEnum.MONTH,
-                amountMinor: 2999,
+                amount: 29.99,
                 currency: 'ARS',
                 isActive: true,
                 isDeleted: false,
@@ -33,7 +33,7 @@ describe('PricingPlan Schema', () => {
             if (result.success) {
                 expect(result.data.billingScheme).toBe(BillingSchemeEnum.RECURRING);
                 expect(result.data.interval).toBe(BillingIntervalEnum.MONTH);
-                expect(result.data.amountMinor).toBe(2999);
+                expect(result.data.amount).toBe(29.99);
                 expect(result.data.currency).toBe('ARS');
             }
         });
@@ -43,7 +43,7 @@ describe('PricingPlan Schema', () => {
                 id: '123e4567-e89b-12d3-a456-426614174000',
                 productId: '987fcdeb-51a2-43d7-b123-456789012345',
                 billingScheme: BillingSchemeEnum.ONE_TIME,
-                amountMinor: 9999,
+                amount: 99.99,
                 currency: 'USD',
                 isActive: true,
                 isDeleted: false,
@@ -71,7 +71,7 @@ describe('PricingPlan Schema', () => {
                 productId: '987fcdeb-51a2-43d7-b123-456789012345',
                 billingScheme: BillingSchemeEnum.RECURRING,
                 // interval missing
-                amountMinor: 2999,
+                amount: 29.99,
                 currency: 'ARS',
                 isActive: true,
                 isDeleted: false,
@@ -93,7 +93,7 @@ describe('PricingPlan Schema', () => {
                 productId: '987fcdeb-51a2-43d7-b123-456789012345',
                 billingScheme: BillingSchemeEnum.ONE_TIME,
                 interval: BillingIntervalEnum.MONTH, // Invalid for ONE_TIME
-                amountMinor: 2999,
+                amount: 29.99,
                 currency: 'ARS',
                 isActive: true,
                 isDeleted: false,
@@ -114,7 +114,7 @@ describe('PricingPlan Schema', () => {
                 id: '123e4567-e89b-12d3-a456-426614174000',
                 productId: '987fcdeb-51a2-43d7-b123-456789012345',
                 billingScheme: BillingSchemeEnum.ONE_TIME,
-                amountMinor: -1000, // Invalid negative amount
+                amount: -10.0, // Invalid negative amount
                 currency: 'ARS',
                 isActive: true,
                 isDeleted: false,
@@ -135,7 +135,7 @@ describe('PricingPlan Schema', () => {
                 id: '123e4567-e89b-12d3-a456-426614174000',
                 productId: '987fcdeb-51a2-43d7-b123-456789012345',
                 billingScheme: BillingSchemeEnum.ONE_TIME,
-                amountMinor: 1000,
+                amount: 10.0,
                 currency: 'EUR',
                 isActive: true,
                 isDeleted: false,

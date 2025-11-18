@@ -14,7 +14,7 @@ describe('PricingPlan Query Schema', () => {
             const searchInput = {
                 page: 1,
                 pageSize: 20,
-                sortBy: 'amountMinor',
+                sortBy: 'amount',
                 sortOrder: 'asc' as const
             };
 
@@ -23,7 +23,7 @@ describe('PricingPlan Query Schema', () => {
             if (result.success) {
                 expect(result.data.page).toBe(1);
                 expect(result.data.pageSize).toBe(20);
-                expect(result.data.sortBy).toBe('amountMinor');
+                expect(result.data.sortBy).toBe('amount');
                 expect(result.data.sortOrder).toBe('asc');
             }
         });
@@ -80,7 +80,7 @@ describe('PricingPlan Query Schema', () => {
             const searchInput = {
                 page: 1,
                 pageSize: 10,
-                sortBy: 'amountMinor',
+                sortBy: 'amount',
                 sortOrder: 'asc' as const,
                 currency: 'USD'
             };
@@ -96,17 +96,17 @@ describe('PricingPlan Query Schema', () => {
             const searchInput = {
                 page: 1,
                 pageSize: 10,
-                sortBy: 'amountMinor',
+                sortBy: 'amount',
                 sortOrder: 'asc' as const,
-                amountMinorMin: 1000,
-                amountMinorMax: 10000
+                amountMin: 10.0,
+                amountMax: 100.0
             };
 
             const result = PricingPlanSearchSchema.safeParse(searchInput);
             expect(result.success).toBe(true);
             if (result.success) {
-                expect(result.data.amountMinorMin).toBe(1000);
-                expect(result.data.amountMinorMax).toBe(10000);
+                expect(result.data.amountMin).toBe(10.0);
+                expect(result.data.amountMax).toBe(100.0);
             }
         });
 
@@ -162,7 +162,7 @@ describe('PricingPlan Query Schema', () => {
                         productId: '987fcdeb-51a2-43d7-b123-456789012345',
                         billingScheme: BillingSchemeEnum.RECURRING,
                         interval: BillingIntervalEnum.MONTH,
-                        amountMinor: 2999,
+                        amount: 29.99,
                         currency: 'ARS',
                         isActive: true,
                         isDeleted: false,
@@ -198,7 +198,7 @@ describe('PricingPlan Query Schema', () => {
                         id: '123e4567-e89b-12d3-a456-426614174000',
                         productId: '987fcdeb-51a2-43d7-b123-456789012345',
                         billingScheme: BillingSchemeEnum.ONE_TIME,
-                        amountMinor: 9999,
+                        amount: 99.99,
                         currency: 'USD',
                         isActive: true,
                         isDeleted: false,
@@ -232,7 +232,7 @@ describe('PricingPlan Query Schema', () => {
                 productId: '987fcdeb-51a2-43d7-b123-456789012345',
                 billingScheme: BillingSchemeEnum.RECURRING,
                 interval: BillingIntervalEnum.MONTH,
-                amountMinor: 2999,
+                amount: 29.99,
                 currency: 'ARS',
                 isActive: true
             };
@@ -243,7 +243,7 @@ describe('PricingPlan Query Schema', () => {
                 expect(result.data.id).toBe('123e4567-e89b-12d3-a456-426614174000');
                 expect(result.data.billingScheme).toBe(BillingSchemeEnum.RECURRING);
                 expect(result.data.interval).toBe(BillingIntervalEnum.MONTH);
-                expect(result.data.amountMinor).toBe(2999);
+                expect(result.data.amount).toBe(29.99);
             }
         });
     });

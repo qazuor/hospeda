@@ -29,8 +29,11 @@ describe('PRICING_PLAN Database Schema', () => {
             expect(pricingPlans).toHaveProperty('productId');
             expect(pricingPlans).toHaveProperty('billingScheme');
             expect(pricingPlans).toHaveProperty('interval');
-            expect(pricingPlans).toHaveProperty('amountMinor');
+            expect(pricingPlans).toHaveProperty('amount');
             expect(pricingPlans).toHaveProperty('currency');
+            expect(pricingPlans).toHaveProperty('lifecycleState');
+            expect(pricingPlans).toHaveProperty('isActive');
+            expect(pricingPlans).toHaveProperty('isDeleted');
             expect(pricingPlans).toHaveProperty('createdAt');
             expect(pricingPlans).toHaveProperty('updatedAt');
             expect(pricingPlans).toHaveProperty('createdById');
