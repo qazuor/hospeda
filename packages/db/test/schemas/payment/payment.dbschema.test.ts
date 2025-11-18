@@ -26,7 +26,7 @@ describe('PAYMENT Database Schema', () => {
             expect(payments).toHaveProperty('provider');
             expect(payments).toHaveProperty('status');
             expect(payments).toHaveProperty('paidAt');
-            expect(payments).toHaveProperty('providerPaymentId');
+            expect(payments).toHaveProperty('mercadoPagoPaymentId');
             expect(payments).toHaveProperty('createdAt');
             expect(payments).toHaveProperty('updatedAt');
             expect(payments).toHaveProperty('createdById');

@@ -31,14 +31,14 @@ describe('Invoice DB Schema', () => {
         });
 
         it('should have amount fields with correct precision', () => {
-            expect(invoices.subtotalAmount).toBeDefined();
-            expect(invoices.subtotalAmount.notNull).toBeTruthy();
+            expect(invoices.subtotal).toBeDefined();
+            expect(invoices.subtotal.notNull).toBeTruthy();
 
-            expect(invoices.taxAmount).toBeDefined();
-            expect(invoices.taxAmount.notNull).toBeTruthy();
+            expect(invoices.taxes).toBeDefined();
+            expect(invoices.taxes.notNull).toBeTruthy();
 
-            expect(invoices.totalAmount).toBeDefined();
-            expect(invoices.totalAmount.notNull).toBeTruthy();
+            expect(invoices.total).toBeDefined();
+            expect(invoices.total.notNull).toBeTruthy();
         });
 
         it('should have currency and exchange rate support', () => {
@@ -51,10 +51,10 @@ describe('Invoice DB Schema', () => {
         });
 
         it('should have date fields', () => {
-            expect(invoices.issuedAt).toBeDefined();
-            expect(invoices.issuedAt.notNull).toBeTruthy();
+            expect(invoices.issueDate).toBeDefined();
+            expect(invoices.issueDate.notNull).toBeTruthy();
 
-            expect(invoices.dueAt).toBeDefined();
+            expect(invoices.dueDate).toBeDefined();
             expect(invoices.paidAt).toBeDefined();
             expect(invoices.voidedAt).toBeDefined();
         });
@@ -111,7 +111,7 @@ describe('Invoice DB Schema', () => {
         });
 
         it('should default tax amount to 0', () => {
-            expect(invoices.taxAmount.default).toBe('0.00');
+            expect(invoices.taxes.default).toBe('0.00');
         });
     });
 });

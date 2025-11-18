@@ -37,6 +37,9 @@ export const payments = pgTable('payments', {
     amount: numeric('amount', { precision: 10, scale: 2 }).notNull().$type<number>(),
     currency: PriceCurrencyPgEnum('currency').notNull(),
 
+    // Payment provider tracking
+    provider: text('provider'), // 'mercadopago', 'stripe', etc.
+
     // Mercado Pago integration
     mercadoPagoPaymentId: text('mercado_pago_payment_id'),
     mercadoPagoPreferenceId: text('mercado_pago_preference_id'),
@@ -50,6 +53,7 @@ export const payments = pgTable('payments', {
 
     // Important dates
     processedAt: timestamp('processed_at', { withTimezone: true }),
+    paidAt: timestamp('paid_at', { withTimezone: true }),
     expiresAt: timestamp('expires_at', { withTimezone: true }),
 
     // Failure handling

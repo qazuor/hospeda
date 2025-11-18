@@ -25,9 +25,12 @@ describe('CAMPAIGN Database Schema', () => {
             expect(campaigns).toHaveProperty('id');
             expect(campaigns).toHaveProperty('clientId');
             expect(campaigns).toHaveProperty('name');
-            expect(campaigns).toHaveProperty('channel');
-            expect(campaigns).toHaveProperty('fromDate');
-            expect(campaigns).toHaveProperty('toDate');
+            expect(campaigns).toHaveProperty('description');
+            expect(campaigns).toHaveProperty('channels'); // jsonb array
+            expect(campaigns).toHaveProperty('schedule'); // jsonb with startDate/endDate
+            expect(campaigns).toHaveProperty('targetAudience'); // jsonb
+            expect(campaigns).toHaveProperty('budget'); // jsonb
+            expect(campaigns).toHaveProperty('content'); // jsonb
             expect(campaigns).toHaveProperty('status');
             expect(campaigns).toHaveProperty('createdAt');
             expect(campaigns).toHaveProperty('updatedAt');

@@ -25,18 +25,25 @@ export const invoices = pgTable('invoices', {
     taxes: numeric('taxes', { precision: 10, scale: 2 }).notNull().default('0.00').$type<number>(),
     total: numeric('total', { precision: 10, scale: 2 }).notNull().$type<number>(),
 
-    // Currency
+    // Currency and multi-currency support
     currency: text('currency').notNull().default('USD'),
+    baseCurrency: text('base_currency').notNull().default('USD'),
+    exchangeRate: numeric('exchange_rate', { precision: 10, scale: 4 })
+        .notNull()
+        .default('1.0000')
+        .$type<number>(),
 
     // Invoice dates (aligned with Zod schema)
     issueDate: timestamp('issue_date', { withTimezone: true }).notNull(),
     dueDate: timestamp('due_date', { withTimezone: true }).notNull(),
     paidAt: timestamp('paid_at', { withTimezone: true }),
+    voidedAt: timestamp('voided_at', { withTimezone: true }),
 
     // Optional text fields (aligned with Zod schema)
     description: text('description'),
     paymentTerms: text('payment_terms'),
     notes: text('notes'),
+    billingAddress: text('billing_address'),
 
     // Invoice metadata
     metadata: jsonb('metadata'),

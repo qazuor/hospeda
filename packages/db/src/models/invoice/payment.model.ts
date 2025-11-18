@@ -1,6 +1,6 @@
 import type { Payment, PaymentTypeEnum } from '@repo/schemas';
 import { PaymentStatusEnum } from '@repo/schemas';
-import { and, desc, eq, isNotNull } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { BaseModel } from '../../base/base.model';
 import { pricingPlans } from '../../schemas/catalog/pricingPlan.dbschema';
@@ -381,7 +381,7 @@ export class PaymentModel extends BaseModel<Payment> {
         const successfulPayments = await db
             .select()
             .from(payments)
-            .where(and(eq(payments.userId, userId), ne(payments.isDeleted, true)));
+            .where(and(eq(payments.userId, userId), eq(payments.isDeleted, false)));
 
         // Filter by approved/authorized status and sum amounts
         return successfulPayments
@@ -547,21 +547,14 @@ export class PaymentModel extends BaseModel<Payment> {
 
     /**
      * Find payments by provider
-     * NOTE: This uses mercadoPagoPaymentId as proxy since 'provider' field doesn't exist in schema
      */
-    async findByProvider(
-        _provider: string,
-        tx?: NodePgDatabase<typeof schema>
-    ): Promise<Payment[]> {
+    async findByProvider(provider: string, tx?: NodePgDatabase<typeof schema>): Promise<Payment[]> {
         const db = this.getClient(tx);
 
-        // Since 'provider' field doesn't exist in schema, we filter by payments that have
-        // mercadoPagoPaymentId (indicating they're from Mercado Pago)
-        // This is a workaround until the schema is updated with a 'provider' field
         const result = await db
             .select()
             .from(payments)
-            .where(isNotNull(payments.mercadoPagoPaymentId))
+            .where(eq(payments.provider, provider))
             .orderBy(desc(payments.createdAt))
             .limit(100);
 

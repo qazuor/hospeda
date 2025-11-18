@@ -29,9 +29,9 @@ describe('SUBSCRIPTION Database Schema', () => {
             expect(subscriptions).toHaveProperty('clientId');
             expect(subscriptions).toHaveProperty('pricingPlanId');
             expect(subscriptions).toHaveProperty('status');
-            expect(subscriptions).toHaveProperty('startAt');
-            expect(subscriptions).toHaveProperty('endAt');
-            expect(subscriptions).toHaveProperty('trialEndsAt');
+            expect(subscriptions).toHaveProperty('startDate');
+            expect(subscriptions).toHaveProperty('endDate');
+            expect(subscriptions).toHaveProperty('trialEndDate');
             expect(subscriptions).toHaveProperty('createdAt');
             expect(subscriptions).toHaveProperty('updatedAt');
             expect(subscriptions).toHaveProperty('createdById');

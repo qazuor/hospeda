@@ -24,7 +24,7 @@ describe('REFUND Database Schema', () => {
         it('should have expected columns for refund', () => {
             expect(refunds).toHaveProperty('id');
             expect(refunds).toHaveProperty('paymentId');
-            expect(refunds).toHaveProperty('amountMinor');
+            expect(refunds).toHaveProperty('amount');
             expect(refunds).toHaveProperty('reason');
             expect(refunds).toHaveProperty('refundedAt');
             expect(refunds).toHaveProperty('createdAt');

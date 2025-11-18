@@ -39,6 +39,7 @@ export enum PermissionCategoryEnum {
     TOURIST_SERVICE = 'TOURIST_SERVICE',
     SERVICE_LISTING_PLAN = 'SERVICE_LISTING_PLAN',
     NOTIFICATION = 'NOTIFICATION',
+    SERVICE_ORDER = 'SERVICE_ORDER',
     PUBLIC = 'PUBLIC',
     SYSTEM = 'SYSTEM',
     ACCESS = 'ACCESS'
@@ -614,5 +615,17 @@ export enum PermissionEnum {
     SERVICE_LISTING_PLAN_RESTORE = 'serviceListingPlan.restore', // Allows restoring a deleted service listing plan.
     SERVICE_LISTING_PLAN_HARD_DELETE = 'serviceListingPlan.hardDelete', // Allows permanently deleting a service listing plan.
     SERVICE_LISTING_PLAN_SOFT_DELETE_VIEW = 'serviceListingPlan.softDelete.view', // Allows viewing soft-deleted service listing plans.
-    SERVICE_LISTING_PLAN_STATUS_MANAGE = 'serviceListingPlan.status.manage' // Allows managing service listing plan status.
+    SERVICE_LISTING_PLAN_STATUS_MANAGE = 'serviceListingPlan.status.manage', // Allows managing service listing plan status.
+
+    // SERVICE_ORDER: Permissions related to professional service order management
+    SERVICE_ORDER_CREATE = 'serviceOrder.create', // Allows creating a new service order.
+    SERVICE_ORDER_UPDATE = 'serviceOrder.update', // Allows updating a service order.
+    SERVICE_ORDER_DELETE = 'serviceOrder.delete', // Allows deleting a service order (soft delete).
+    SERVICE_ORDER_VIEW = 'serviceOrder.view', // Allows viewing service order information.
+    SERVICE_ORDER_RESTORE = 'serviceOrder.restore', // Allows restoring a deleted service order.
+    SERVICE_ORDER_HARD_DELETE = 'serviceOrder.hardDelete', // Allows permanently deleting a service order.
+    SERVICE_ORDER_SOFT_DELETE_VIEW = 'serviceOrder.softDelete.view', // Allows viewing soft-deleted service orders.
+    SERVICE_ORDER_STATUS_MANAGE = 'serviceOrder.status.manage', // Allows managing service order status (start, complete, cancel, refund).
+    SERVICE_ORDER_DELIVERABLES_MANAGE = 'serviceOrder.deliverables.manage', // Allows managing service order deliverables and revisions.
+    SERVICE_ORDER_PRICING_MANAGE = 'serviceOrder.pricing.manage' // Allows managing service order pricing and charges.
 }

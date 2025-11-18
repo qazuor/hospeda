@@ -20,10 +20,9 @@ describe('Billing System Integration - Etapa 2.4', () => {
             expect(invoiceLines.invoiceId).toBeDefined();
             expect(invoiceLines.invoiceId.notNull).toBeTruthy();
 
-            // PAYMENT should relate to INVOICE
+            // PAYMENT should relate to INVOICE (nullable - payment can exist without invoice)
             expect(payments).toBeDefined();
             expect(payments.invoiceId).toBeDefined();
-            expect(payments.invoiceId.notNull).toBeTruthy();
 
             // REFUND should relate to PAYMENT
             expect(refunds).toBeDefined();
@@ -39,12 +38,12 @@ describe('Billing System Integration - Etapa 2.4', () => {
             // 1. Invoice generation with lines
             expect(invoices.invoiceNumber).toBeDefined();
             expect(invoices.invoiceNumber.isUnique).toBeTruthy();
-            expect(invoices.totalAmount).toBeDefined();
+            expect(invoices.total).toBeDefined();
 
             // 2. Invoice lines with pricing
             expect(invoiceLines.unitPrice).toBeDefined();
             expect(invoiceLines.quantity).toBeDefined();
-            expect(invoiceLines.totalAmount).toBeDefined();
+            expect(invoiceLines.total).toBeDefined();
 
             // 3. Payment processing
             expect(payments.amount).toBeDefined();
@@ -52,7 +51,7 @@ describe('Billing System Integration - Etapa 2.4', () => {
             expect(payments.status).toBeDefined();
 
             // 4. Refund capability
-            expect(refunds.amountMinor).toBeDefined();
+            expect(refunds.amount).toBeDefined();
             expect(refunds.reason).toBeDefined();
 
             // 5. Credit note support
@@ -63,7 +62,7 @@ describe('Billing System Integration - Etapa 2.4', () => {
         it('should support payment methods storage', () => {
             expect(paymentMethods).toBeDefined();
             expect(paymentMethods.clientId).toBeDefined();
-            expect(paymentMethods.token).toBeDefined();
+            expect(paymentMethods.providerPaymentMethodId).toBeDefined();
         });
 
         it('should support ad pricing catalog', () => {
@@ -93,7 +92,7 @@ describe('Billing System Integration - Etapa 2.4', () => {
 
         it('should support tax calculations', () => {
             // Invoice level tax
-            expect(invoices.taxAmount).toBeDefined();
+            expect(invoices.taxes).toBeDefined();
 
             // Line level tax
             expect(invoiceLines.taxRate).toBeDefined();
@@ -126,7 +125,7 @@ describe('Billing System Integration - Etapa 2.4', () => {
             // Critical relationships must be enforced
             expect(invoices.clientId.notNull).toBeTruthy();
             expect(invoiceLines.invoiceId.notNull).toBeTruthy();
-            expect(payments.invoiceId.notNull).toBeTruthy();
+            // payments.invoiceId is nullable (payment can exist without invoice)
             expect(creditNotes.invoiceId.notNull).toBeTruthy();
             expect(adPricingCatalog.adSlotId.notNull).toBeTruthy();
         });
@@ -208,7 +207,7 @@ describe('Billing System Integration - Etapa 2.4', () => {
 
             // 1. Invoice generation with client FK
             expect(invoices.clientId).toBeDefined();
-            expect(invoices.totalAmount).toBeDefined();
+            expect(invoices.total).toBeDefined();
 
             // 2. Line-level pricing with FK to INVOICE, PRICING_PLAN, SUBSCRIPTION_ITEM
             expect(invoiceLines.invoiceId).toBeDefined();
@@ -217,7 +216,7 @@ describe('Billing System Integration - Etapa 2.4', () => {
 
             // 3. Payment processing with provider integration
             expect(payments.provider).toBeDefined();
-            expect(payments.providerPaymentId).toBeDefined();
+            expect(payments.mercadoPagoPaymentId).toBeDefined();
 
             // 4. Refund processing
             expect(refunds.paymentId).toBeDefined();
