@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { RefundReasonEnum, RefundStatusEnum } from '../../enums/index.js';
 import { RefundQuerySchema } from './query.schema.js';
-import { RefundReasonEnum, RefundStatusEnum } from './refund.schema.js';
 
 describe('RefundQuerySchema', () => {
     it('should validate empty query', () => {

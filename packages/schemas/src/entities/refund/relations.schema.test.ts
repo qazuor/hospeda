@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { RefundReasonEnum, RefundStatusEnum } from './refund.schema.js';
+import { RefundReasonEnum, RefundStatusEnum } from '../../enums/index.js';
 import {
     RefundClientRelationSchema,
     RefundPaymentRelationSchema,

@@ -1,3 +1,4 @@
+import { PriceCurrencyEnum, RefundStatusEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RefundModel } from '../../src/models/invoice/refund.model';
 
@@ -61,8 +62,12 @@ describe('RefundModel', () => {
             const mockRefund = {
                 id: 'refund-1',
                 paymentId: 'payment-1',
-                amountMinor: 5000,
-                reason: 'Customer request'
+                clientId: 'client-1',
+                refundNumber: 'REF-001',
+                amount: '50.00',
+                currency: PriceCurrencyEnum.USD,
+                reason: 'customer_request',
+                status: RefundStatusEnum.PENDING
             };
 
             // First query: get payment
@@ -74,17 +79,24 @@ describe('RefundModel', () => {
             // Second query: get total refunded
             mockDb.select.mockReturnValueOnce(mockDb);
             mockDb.from.mockReturnValueOnce(mockDb);
-            mockDb.where.mockReturnValueOnce([{ totalMinor: '0' }]);
+            mockDb.where.mockReturnValueOnce([{ total: '0' }]);
 
             // Insert refund
             mockDb.insert.mockReturnValueOnce(mockDb);
             mockDb.values.mockReturnValueOnce(mockDb);
             mockDb.returning.mockReturnValueOnce([mockRefund]);
 
-            const result = await refundModel.processRefund('payment-1', 50, 'Customer request');
+            const result = await refundModel.processRefund(
+                'payment-1',
+                'client-1',
+                'REF-001',
+                50,
+                PriceCurrencyEnum.USD,
+                'customer_request'
+            );
 
             expect(result).toBeDefined();
-            expect(result?.amountMinor).toBe(5000);
+            expect(result?.amount).toBe('50.00');
         });
 
         it('should throw error for non-existent payment', async () => {
@@ -93,9 +105,16 @@ describe('RefundModel', () => {
             mockDb.where.mockReturnValueOnce(mockDb);
             mockDb.limit.mockReturnValueOnce([]);
 
-            await expect(refundModel.processRefund('non-existent', 50)).rejects.toThrow(
-                'PAYMENT_NOT_FOUND'
-            );
+            await expect(
+                refundModel.processRefund(
+                    'non-existent',
+                    'client-1',
+                    'REF-002',
+                    50,
+                    PriceCurrencyEnum.USD,
+                    'customer_request'
+                )
+            ).rejects.toThrow('PAYMENT_NOT_FOUND');
         });
 
         it('should throw error for non-refundable payment status', async () => {
@@ -109,9 +128,16 @@ describe('RefundModel', () => {
 
             mockDb.select().from().where().limit.mockResolvedValue(mockPayment);
 
-            await expect(refundModel.processRefund('payment-1', 50)).rejects.toThrow(
-                'PAYMENT_NOT_REFUNDABLE'
-            );
+            await expect(
+                refundModel.processRefund(
+                    'payment-1',
+                    'client-1',
+                    'REF-003',
+                    50,
+                    PriceCurrencyEnum.USD,
+                    'customer_request'
+                )
+            ).rejects.toThrow('PAYMENT_NOT_REFUNDABLE');
         });
 
         it('should throw error for invalid refund amount', async () => {
@@ -125,9 +151,16 @@ describe('RefundModel', () => {
 
             mockDb.select().from().where().limit.mockResolvedValue(mockPayment);
 
-            await expect(refundModel.processRefund('payment-1', 0)).rejects.toThrow(
-                'INVALID_REFUND_AMOUNT'
-            );
+            await expect(
+                refundModel.processRefund(
+                    'payment-1',
+                    'client-1',
+                    'REF-004',
+                    0,
+                    PriceCurrencyEnum.USD,
+                    'customer_request'
+                )
+            ).rejects.toThrow('INVALID_REFUND_AMOUNT');
         });
 
         it('should throw error for amount exceeding payment', async () => {
@@ -141,9 +174,16 @@ describe('RefundModel', () => {
 
             mockDb.select().from().where().limit.mockResolvedValue(mockPayment);
 
-            await expect(refundModel.processRefund('payment-1', 150)).rejects.toThrow(
-                'INVALID_REFUND_AMOUNT'
-            );
+            await expect(
+                refundModel.processRefund(
+                    'payment-1',
+                    'client-1',
+                    'REF-005',
+                    150,
+                    PriceCurrencyEnum.USD,
+                    'customer_request'
+                )
+            ).rejects.toThrow('INVALID_REFUND_AMOUNT');
         });
 
         it('should throw error if refund exceeds remaining amount', async () => {
@@ -159,40 +199,16 @@ describe('RefundModel', () => {
 
             vi.spyOn(refundModel, 'getTotalRefundedForPayment').mockResolvedValue(80);
 
-            await expect(refundModel.processRefund('payment-1', 30)).rejects.toThrow(
-                'REFUND_AMOUNT_EXCEEDS_REMAINING'
-            );
-        });
-
-        it('should convert amount to minor units correctly', async () => {
-            const mockPayment = [
-                {
-                    id: 'payment-1',
-                    amount: '100.00',
-                    status: 'approved'
-                }
-            ];
-
-            // First query: get payment
-            mockDb.select.mockReturnValueOnce(mockDb);
-            mockDb.from.mockReturnValueOnce(mockDb);
-            mockDb.where.mockReturnValueOnce(mockDb);
-            mockDb.limit.mockReturnValueOnce(mockPayment);
-
-            // Second query: get total refunded
-            mockDb.select.mockReturnValueOnce(mockDb);
-            mockDb.from.mockReturnValueOnce(mockDb);
-            mockDb.where.mockReturnValueOnce([{ totalMinor: '0' }]);
-
-            // Insert refund
-            const mockRefund = { id: 'refund-1', amountMinor: 2550 };
-            mockDb.insert.mockReturnValueOnce(mockDb);
-            mockDb.values.mockReturnValueOnce(mockDb);
-            mockDb.returning.mockReturnValueOnce([mockRefund]);
-
-            const result = await refundModel.processRefund('payment-1', 25.5);
-
-            expect(result?.amountMinor).toBe(2550);
+            await expect(
+                refundModel.processRefund(
+                    'payment-1',
+                    'client-1',
+                    'REF-006',
+                    30,
+                    PriceCurrencyEnum.USD,
+                    'customer_request'
+                )
+            ).rejects.toThrow('REFUND_AMOUNT_EXCEEDS_REMAINING');
         });
     });
 
@@ -256,7 +272,7 @@ describe('RefundModel', () => {
             mockDb
                 .select()
                 .from()
-                .where.mockResolvedValue([{ totalMinor: 5000 }]);
+                .where.mockResolvedValue([{ total: '50.00' }]);
 
             const result = await refundModel.getTotalRefundedForPayment('payment-1');
 
@@ -267,7 +283,7 @@ describe('RefundModel', () => {
             mockDb
                 .select()
                 .from()
-                .where.mockResolvedValue([{ totalMinor: null }]);
+                .where.mockResolvedValue([{ total: null }]);
 
             const result = await refundModel.getTotalRefundedForPayment('payment-1');
 
@@ -487,24 +503,6 @@ describe('RefundModel', () => {
             const result = await refundModel.withPayment('non-existent');
 
             expect(result).toBeNull();
-        });
-    });
-
-    describe('getAmountFromMinor', () => {
-        it('should convert minor units to major units', () => {
-            const refund = { amountMinor: 5000 } as any;
-
-            const result = refundModel.getAmountFromMinor(refund);
-
-            expect(result).toBe(50);
-        });
-
-        it('should handle zero amount', () => {
-            const refund = { amountMinor: 0 } as any;
-
-            const result = refundModel.getAmountFromMinor(refund);
-
-            expect(result).toBe(0);
         });
     });
 

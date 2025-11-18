@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import { RefundReasonEnum, RefundStatusEnum } from '../../enums/index.js';
 import {
     CreateRefundHTTPSchema,
     RefundQueryHTTPSchema,
     UpdateRefundHTTPSchema
 } from './http.schema.js';
-import { RefundReasonEnum, RefundStatusEnum } from './refund.schema.js';
 
 describe('Refund HTTP Schemas', () => {
     const validCreateData = {

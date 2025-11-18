@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { RefundReasonEnum, RefundSchema, RefundStatusEnum } from './refund.schema.js';
+import { RefundReasonEnum, RefundStatusEnum } from '../../enums/index.js';
+import { RefundSchema } from './refund.schema.js';
 
 describe('RefundSchema', () => {
     const validRefundData = {

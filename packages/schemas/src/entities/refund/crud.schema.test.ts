@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { RefundReasonEnum, RefundStatusEnum } from '../../enums/index.js';
 import {
     CreateRefundSchema,
     DeleteRefundSchema,
@@ -6,7 +7,6 @@ import {
     RestoreRefundSchema,
     UpdateRefundSchema
 } from './crud.schema.js';
-import { RefundReasonEnum, RefundStatusEnum } from './refund.schema.js';
 
 describe('Refund CRUD Schemas', () => {
     const validCreateData = {
