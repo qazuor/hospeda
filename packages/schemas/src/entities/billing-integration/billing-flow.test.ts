@@ -5,12 +5,13 @@ import {
     PaymentStatusEnum,
     PaymentTypeEnum
 } from '../../enums/index.js';
+import { RefundReasonEnum, RefundStatusEnum } from '../../enums/index.js';
 import { CreditNoteSchema } from '../creditNote/creditNote.schema.js';
 import { InvoiceSchema } from '../invoice/invoice.schema.js';
 import { InvoiceLineSchema } from '../invoiceLine/invoiceLine.schema.js';
 import { PaymentSchema } from '../payment/payment.schema.js';
 import { PaymentMethodSchema } from '../paymentMethod/paymentMethod.schema.js';
-import { RefundReasonEnum, RefundSchema, RefundStatusEnum } from '../refund/refund.schema.js';
+import { RefundSchema } from '../refund/refund.schema.js';
 
 describe('Billing System Integration Tests', () => {
     const clientId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';

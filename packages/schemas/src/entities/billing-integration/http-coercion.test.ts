@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import { RefundReasonEnum } from '../../enums/index.js';
 import {
     CreateCreditNoteHTTPSchema,
     CreditNoteQueryHTTPSchema
 } from '../creditNote/http.schema.js';
 import { CreateRefundHTTPSchema, RefundQueryHTTPSchema } from '../refund/http.schema.js';
-import { RefundReasonEnum } from '../refund/refund.schema.js';
 
 describe('Billing System HTTP Coercion Tests', () => {
     describe('Amount Conversions', () => {
