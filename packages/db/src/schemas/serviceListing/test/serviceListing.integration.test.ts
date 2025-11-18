@@ -151,7 +151,7 @@ describe('Service Listing Integration Tests - Stage 2.11', () => {
                 id: 'slp-123',
                 name: 'Premium Service Plan',
                 description: 'Full-featured plan for service providers',
-                price: '99.99',
+                price: 99.99,
                 limits: {
                     maxListings: 20,
                     maxPhotos: 50,
@@ -172,7 +172,7 @@ describe('Service Listing Integration Tests - Stage 2.11', () => {
                 },
                 isActive: true,
                 isTrialAvailable: true,
-                trialDays: '14',
+                trialDays: 14,
                 createdById: 'user-123',
                 updatedById: 'user-123'
             };
@@ -194,7 +194,7 @@ describe('Service Listing Integration Tests - Stage 2.11', () => {
             const basicPlanData: NewServiceListingPlan = {
                 id: 'slp-basic',
                 name: 'Basic Service Plan',
-                price: '19.99',
+                price: 19.99,
                 limits: {
                     maxListings: 3,
                     maxPhotos: 10,
@@ -227,7 +227,7 @@ describe('Service Listing Integration Tests - Stage 2.11', () => {
                 listingPlanId: 'slp-123',
                 title: 'Amazing City Tour - Premium Experience',
                 description: 'Join our expertly guided city tour and discover hidden gems',
-                basePrice: '75.00',
+                basePrice: 75.0,
                 listingDetails: {
                     availabilityType: 'scheduled',
                     scheduleDetails: {
@@ -395,7 +395,7 @@ describe('Service Listing Integration Tests - Stage 2.11', () => {
             const plan = await mockServiceListingPlanModel.create({
                 id: 'slp-flow',
                 name: 'Integration Test Plan',
-                price: '29.99',
+                price: 29.99,
                 limits: {
                     maxListings: 5,
                     maxPhotos: 20,
@@ -414,7 +414,7 @@ describe('Service Listing Integration Tests - Stage 2.11', () => {
                 listingPlanId: plan.id,
                 title: 'Integration Test Listing',
                 description: 'Complete flow test listing',
-                basePrice: '50.00',
+                basePrice: 50.0,
                 status: 'active',
                 isActive: true,
                 createdById: 'user-123',
@@ -444,7 +444,7 @@ describe('Service Listing Integration Tests - Stage 2.11', () => {
             const plan = await mockServiceListingPlanModel.create({
                 id: 'slp-delete',
                 name: 'Delete Test Plan',
-                price: '19.99',
+                price: 19.99,
                 createdById: 'user-123',
                 updatedById: 'user-123'
             });
@@ -492,7 +492,7 @@ describe('Service Listing Integration Tests - Stage 2.11', () => {
             const planWithPrice = await mockServiceListingPlanModel.create({
                 id: 'slp-price',
                 name: 'Price Test Plan',
-                price: '99.95',
+                price: 99.95,
                 createdById: 'user-123',
                 updatedById: 'user-123'
             });
@@ -503,7 +503,7 @@ describe('Service Listing Integration Tests - Stage 2.11', () => {
             const expensivePlan = await mockServiceListingPlanModel.create({
                 id: 'slp-expensive',
                 name: 'Expensive Plan',
-                price: '9999.99',
+                price: 9999.99,
                 createdById: 'user-123',
                 updatedById: 'user-123'
             });
