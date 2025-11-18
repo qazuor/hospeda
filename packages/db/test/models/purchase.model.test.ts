@@ -7,6 +7,12 @@ interface Purchase {
     id: string;
     clientId: string;
     pricingPlanId: string;
+    amount: string;
+    currency: string;
+    status: string;
+    quantity: number;
+    paymentId?: string | null;
+    discountCodeId?: string | null;
     purchasedAt: Date;
     createdAt: Date;
     updatedAt: Date;
@@ -22,6 +28,12 @@ const mockPurchase: Purchase = {
     id: '550e8400-e29b-41d4-a716-446655440001',
     clientId: '550e8400-e29b-41d4-a716-446655440002',
     pricingPlanId: '550e8400-e29b-41d4-a716-446655440003',
+    amount: '29.99',
+    currency: 'ARS',
+    status: 'pending',
+    quantity: 1,
+    paymentId: null,
+    discountCodeId: null,
     purchasedAt: new Date('2024-01-01T00:00:00Z'),
     createdAt: new Date('2024-01-01T00:00:00Z'),
     updatedAt: new Date('2024-01-01T00:00:00Z'),
@@ -40,8 +52,8 @@ const mockClient = {
 
 const mockPricingPlan = {
     id: '550e8400-e29b-41d4-a716-446655440003',
-    amountMinor: 2999,
-    currency: 'USD',
+    amount: '29.99',
+    currency: 'ARS',
     billingScheme: 'ONE_TIME'
 };
 
@@ -142,13 +154,13 @@ describe('PurchaseModel', () => {
 
         describe('calculateTotal', () => {
             it('should calculate total amount for a purchase', async () => {
-                mockDb.limit.mockResolvedValue([{ amountMinor: 2999 }]);
+                mockDb.limit.mockResolvedValue([{ amount: '29.99' }]);
 
                 const result = await purchaseModel.calculateTotal(mockPurchase.pricingPlanId, 2);
 
                 expect(mockDb.select).toHaveBeenCalled();
                 expect(mockDb.where).toHaveBeenCalled();
-                expect(result).toBe(5998); // 2999 * 2
+                expect(result).toBe(59.98); // 29.99 * 2
             });
 
             it('should return null for non-existent pricing plan', async () => {
@@ -160,11 +172,11 @@ describe('PurchaseModel', () => {
             });
 
             it('should use default quantity of 1', async () => {
-                mockDb.limit.mockResolvedValue([{ amountMinor: 2999 }]);
+                mockDb.limit.mockResolvedValue([{ amount: '29.99' }]);
 
                 const result = await purchaseModel.calculateTotal(mockPurchase.pricingPlanId);
 
-                expect(result).toBe(2999);
+                expect(result).toBe(29.99);
             });
         });
     });
@@ -174,7 +186,9 @@ describe('PurchaseModel', () => {
             it('should create a purchase from cart data', async () => {
                 const purchaseData = {
                     clientId: mockPurchase.clientId,
-                    pricingPlanId: mockPurchase.pricingPlanId
+                    pricingPlanId: mockPurchase.pricingPlanId,
+                    amount: 29.99,
+                    currency: 'ARS' as any
                 };
 
                 mockDb.returning.mockResolvedValue([mockPurchase]);
@@ -185,16 +199,25 @@ describe('PurchaseModel', () => {
                 expect(mockDb.values).toHaveBeenCalledWith(
                     expect.objectContaining({
                         clientId: purchaseData.clientId,
-                        pricingPlanId: purchaseData.pricingPlanId
+                        pricingPlanId: purchaseData.pricingPlanId,
+                        amount: '29.99',
+                        currency: 'ARS',
+                        status: 'pending',
+                        quantity: 1
                     })
                 );
                 expect(result).toEqual(mockPurchase);
             });
 
-            it('should use provided purchase date', async () => {
+            it('should use provided purchase date and optional fields', async () => {
                 const purchaseData = {
                     clientId: mockPurchase.clientId,
                     pricingPlanId: mockPurchase.pricingPlanId,
+                    amount: 29.99,
+                    currency: 'ARS' as any,
+                    quantity: 2,
+                    paymentId: 'payment-123',
+                    discountCodeId: 'discount-456',
                     purchasedAt: new Date('2024-02-01T00:00:00Z')
                 };
 
@@ -204,7 +227,10 @@ describe('PurchaseModel', () => {
 
                 expect(mockDb.values).toHaveBeenCalledWith(
                     expect.objectContaining({
-                        purchasedAt: purchaseData.purchasedAt
+                        purchasedAt: purchaseData.purchasedAt,
+                        quantity: 2,
+                        paymentId: 'payment-123',
+                        discountCodeId: 'discount-456'
                     })
                 );
             });
@@ -212,14 +238,23 @@ describe('PurchaseModel', () => {
 
         describe('processPayment', () => {
             it('should process payment for a purchase', async () => {
-                const updatedPurchase = { ...mockPurchase, updatedAt: new Date() };
+                const updatedPurchase = {
+                    ...mockPurchase,
+                    status: 'completed',
+                    paymentId: 'payment-123',
+                    updatedAt: new Date()
+                };
                 mockDb.returning.mockResolvedValue([updatedPurchase]);
 
-                const result = await purchaseModel.processPayment(mockPurchase.id);
+                const result = await purchaseModel.processPayment(mockPurchase.id, {
+                    paymentId: 'payment-123'
+                });
 
                 expect(mockDb.update).toHaveBeenCalled();
                 expect(mockDb.set).toHaveBeenCalledWith(
                     expect.objectContaining({
+                        status: 'completed',
+                        paymentId: 'payment-123',
                         updatedAt: expect.any(Date)
                     })
                 );
@@ -229,7 +264,11 @@ describe('PurchaseModel', () => {
 
         describe('markComplete', () => {
             it('should mark a purchase as complete', async () => {
-                const completedPurchase = { ...mockPurchase, updatedAt: new Date() };
+                const completedPurchase = {
+                    ...mockPurchase,
+                    status: 'completed',
+                    updatedAt: new Date()
+                };
                 mockDb.returning.mockResolvedValue([completedPurchase]);
 
                 const result = await purchaseModel.markComplete(mockPurchase.id);
@@ -237,6 +276,7 @@ describe('PurchaseModel', () => {
                 expect(mockDb.update).toHaveBeenCalled();
                 expect(mockDb.set).toHaveBeenCalledWith(
                     expect.objectContaining({
+                        status: 'completed',
                         updatedAt: expect.any(Date)
                     })
                 );

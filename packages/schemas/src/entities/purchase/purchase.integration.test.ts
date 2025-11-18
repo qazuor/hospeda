@@ -7,6 +7,11 @@ describe('Purchase CRUD and Query Schemas', () => {
         const createInput = {
             clientId: '550e8400-e29b-41d4-a716-446655440001',
             pricingPlanId: '550e8400-e29b-41d4-a716-446655440002',
+            amount: 29.99,
+            currency: 'ARS',
+            status: 'pending',
+            quantity: 1,
+            paymentId: null,
             createdById: '550e8400-e29b-41d4-a716-446655440003',
             updatedById: '550e8400-e29b-41d4-a716-446655440003'
         };

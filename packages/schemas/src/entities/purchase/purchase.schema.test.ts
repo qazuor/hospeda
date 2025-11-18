@@ -8,6 +8,11 @@ describe('PurchaseSchema', () => {
             id: '550e8400-e29b-41d4-a716-446655440000',
             clientId: '550e8400-e29b-41d4-a716-446655440001',
             pricingPlanId: '550e8400-e29b-41d4-a716-446655440002',
+            amount: 29.99,
+            currency: 'ARS',
+            status: 'pending',
+            quantity: 1,
+            paymentId: null,
             purchasedAt: new Date('2024-01-01T10:00:00Z'),
             createdAt: new Date(),
             updatedAt: new Date(),
@@ -30,6 +35,9 @@ describe('PurchaseSchema', () => {
             expect(fieldErrors).toContain('id');
             expect(fieldErrors).toContain('clientId');
             expect(fieldErrors).toContain('pricingPlanId');
+            expect(fieldErrors).toContain('amount');
+            expect(fieldErrors).toContain('currency');
+            expect(fieldErrors).toContain('status');
             expect(fieldErrors).toContain('purchasedAt');
         }
     });
@@ -39,12 +47,17 @@ describe('PurchaseSchema', () => {
             id: '550e8400-e29b-41d4-a716-446655440000',
             clientId: '550e8400-e29b-41d4-a716-446655440001',
             pricingPlanId: '550e8400-e29b-41d4-a716-446655440002',
+            amount: 29.99,
+            currency: 'ARS',
+            status: 'pending',
+            quantity: 1,
+            paymentId: null,
             purchasedAt: new Date('2024-01-01T10:00:00Z'),
             createdAt: new Date(),
             updatedAt: new Date(),
             createdById: '550e8400-e29b-41d4-a716-446655440003',
             updatedById: '550e8400-e29b-41d4-a716-446655440003'
-            // adminInfo is optional
+            // adminInfo is optional, discountCodeId is optional
         };
 
         const result = PurchaseSchema.safeParse(purchaseWithOptionals);
@@ -56,6 +69,11 @@ describe('PurchaseSchema', () => {
             id: '550e8400-e29b-41d4-a716-446655440000',
             clientId: '550e8400-e29b-41d4-a716-446655440001',
             pricingPlanId: '550e8400-e29b-41d4-a716-446655440002',
+            amount: 29.99,
+            currency: 'ARS',
+            status: 'pending',
+            quantity: 1,
+            paymentId: null,
             purchasedAt: 'invalid-date',
             createdAt: new Date(),
             updatedAt: new Date(),

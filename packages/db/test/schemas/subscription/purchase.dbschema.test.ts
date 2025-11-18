@@ -25,6 +25,12 @@ describe('PURCHASE Database Schema', () => {
             expect(purchases).toHaveProperty('id');
             expect(purchases).toHaveProperty('clientId');
             expect(purchases).toHaveProperty('pricingPlanId');
+            expect(purchases).toHaveProperty('amount');
+            expect(purchases).toHaveProperty('currency');
+            expect(purchases).toHaveProperty('status');
+            expect(purchases).toHaveProperty('quantity');
+            expect(purchases).toHaveProperty('paymentId');
+            expect(purchases).toHaveProperty('discountCodeId');
             expect(purchases).toHaveProperty('purchasedAt');
             expect(purchases).toHaveProperty('createdAt');
             expect(purchases).toHaveProperty('updatedAt');
