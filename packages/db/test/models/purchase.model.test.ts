@@ -200,7 +200,7 @@ describe('PurchaseModel', () => {
                     expect.objectContaining({
                         clientId: purchaseData.clientId,
                         pricingPlanId: purchaseData.pricingPlanId,
-                        amount: '29.99',
+                        amount: 29.99,
                         currency: 'ARS',
                         status: 'pending',
                         quantity: 1

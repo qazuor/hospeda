@@ -258,7 +258,7 @@ describe('PricingTierModel', () => {
 
     describe('calculateSavings', () => {
         it('should calculate savings compared to base price', async () => {
-            const basePlan = { amountMinor: 2000 };
+            const basePlan = { amount: 2000 };
             const mockDbForPlan = {
                 select: vi.fn().mockReturnValue({
                     from: vi.fn().mockReturnValue({

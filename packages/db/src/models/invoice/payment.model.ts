@@ -1,10 +1,11 @@
 import type { Payment, PaymentTypeEnum } from '@repo/schemas';
 import { PaymentStatusEnum } from '@repo/schemas';
-import { and, desc, eq, ne } from 'drizzle-orm';
+import { and, desc, eq, isNotNull } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { BaseModel } from '../../base/base.model';
 import { pricingPlans } from '../../schemas/catalog/pricingPlan.dbschema';
 import type * as schema from '../../schemas/index.js';
+import { invoices } from '../../schemas/payment/invoice.dbschema';
 import { payments } from '../../schemas/payment/payment.dbschema';
 import { users } from '../../schemas/user/user.dbschema';
 
@@ -454,5 +455,175 @@ export class PaymentModel extends BaseModel<Payment> {
             .returning();
 
         return result[0] ? this.transformToPayment(result[0]) : null;
+    }
+
+    /**
+     * Process payment with provider - Create payment for invoice
+     */
+    async processWithProvider(
+        data: {
+            invoiceId: string;
+            amount: number;
+            provider: string;
+            providerPaymentId?: string;
+        },
+        tx?: NodePgDatabase<typeof schema>
+    ): Promise<Payment | null> {
+        const db = this.getClient(tx);
+
+        // Validate invoice exists
+        const invoice = await db
+            .select({ id: invoices.id, clientId: invoices.clientId })
+            .from(invoices)
+            .where(eq(invoices.id, data.invoiceId))
+            .limit(1);
+
+        if (!invoice[0]) {
+            throw new Error('INVOICE_NOT_FOUND');
+        }
+
+        // Create payment record
+        const result = await db
+            .insert(payments)
+            .values({
+                invoiceId: data.invoiceId,
+                userId: invoice[0].clientId, // Use clientId as userId
+                amount: data.amount,
+                currency: 'USD',
+                status: PaymentStatusEnum.PENDING,
+                type: 'subscription',
+                mercadoPagoPaymentId: data.providerPaymentId
+            })
+            .returning();
+
+        return result[0] ? this.transformToPayment(result[0]) : null;
+    }
+
+    /**
+     * Handle webhook - Shorter version of handleMercadoPagoWebhook
+     */
+    async handleWebhook(
+        providerPaymentId: string,
+        newStatus: PaymentStatusEnum,
+        tx?: NodePgDatabase<typeof schema>
+    ): Promise<Payment | null> {
+        return this.handleMercadoPagoWebhook(providerPaymentId, newStatus, undefined, tx);
+    }
+
+    /**
+     * Sync payment status - Re-fetch and update status
+     */
+    async syncStatus(id: string, tx?: NodePgDatabase<typeof schema>): Promise<Payment | null> {
+        const db = this.getClient(tx);
+
+        // For now, just update the updatedAt timestamp
+        // In a real implementation, this would fetch status from payment provider
+        const result = await db
+            .update(payments)
+            .set({
+                updatedAt: new Date()
+            })
+            .where(eq(payments.id, id))
+            .returning();
+
+        return result[0] ? this.transformToPayment(result[0]) : null;
+    }
+
+    /**
+     * Find payments by invoice
+     */
+    async findByInvoice(invoiceId: string, tx?: NodePgDatabase<typeof schema>): Promise<Payment[]> {
+        const db = this.getClient(tx);
+
+        const result = await db
+            .select()
+            .from(payments)
+            .where(eq(payments.invoiceId, invoiceId))
+            .orderBy(desc(payments.createdAt))
+            .limit(100);
+
+        return this.transformToPayments(result);
+    }
+
+    /**
+     * Find payments by provider
+     * NOTE: This uses mercadoPagoPaymentId as proxy since 'provider' field doesn't exist in schema
+     */
+    async findByProvider(
+        _provider: string,
+        tx?: NodePgDatabase<typeof schema>
+    ): Promise<Payment[]> {
+        const db = this.getClient(tx);
+
+        // Since 'provider' field doesn't exist in schema, we filter by payments that have
+        // mercadoPagoPaymentId (indicating they're from Mercado Pago)
+        // This is a workaround until the schema is updated with a 'provider' field
+        const result = await db
+            .select()
+            .from(payments)
+            .where(isNotNull(payments.mercadoPagoPaymentId))
+            .orderBy(desc(payments.createdAt))
+            .limit(100);
+
+        return this.transformToPayments(result);
+    }
+
+    /**
+     * Get total successful payments for invoice
+     */
+    async getTotalSuccessfulForInvoice(
+        invoiceId: string,
+        tx?: NodePgDatabase<typeof schema>
+    ): Promise<number> {
+        const db = this.getClient(tx);
+
+        const successfulPayments = await db
+            .select()
+            .from(payments)
+            .where(eq(payments.invoiceId, invoiceId));
+
+        // Filter by approved/authorized status and sum amounts
+        return successfulPayments
+            .filter(
+                (p) =>
+                    p.status === PaymentStatusEnum.APPROVED ||
+                    p.status === PaymentStatusEnum.AUTHORIZED
+            )
+            .reduce((total, payment) => {
+                return total + Number(payment.amount);
+            }, 0);
+    }
+
+    /**
+     * Get payment with invoice data
+     */
+    async withInvoice(
+        id: string,
+        tx?: NodePgDatabase<typeof schema>
+    ): Promise<
+        | (Payment & {
+              invoice: typeof invoices.$inferSelect;
+          })
+        | null
+    > {
+        const db = this.getClient(tx);
+
+        const result = await db
+            .select()
+            .from(payments)
+            .innerJoin(invoices, eq(payments.invoiceId, invoices.id))
+            .where(eq(payments.id, id))
+            .limit(1);
+
+        if (!result[0]) {
+            return null;
+        }
+
+        return {
+            ...this.transformToPayment(result[0].payments),
+            invoice: result[0].invoices
+        } as Payment & {
+            invoice: typeof invoices.$inferSelect;
+        };
     }
 }

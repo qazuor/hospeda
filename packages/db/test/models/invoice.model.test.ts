@@ -289,9 +289,7 @@ describe('InvoiceModel', () => {
             mockDb.select.mockReturnValueOnce(mockDb);
             mockDb.from.mockReturnValueOnce(mockDb);
             mockDb.where.mockReturnValueOnce(mockDb);
-            mockDb.limit.mockReturnValueOnce([
-                { status: InvoiceStatusEnum.OPEN, totalAmount: '110.00' }
-            ]);
+            mockDb.limit.mockReturnValueOnce([{ status: InvoiceStatusEnum.OPEN, total: 110 }]);
 
             // Mock amount paid query
             mockDb.select.mockReturnValueOnce(mockDb);
@@ -398,7 +396,7 @@ describe('InvoiceModel', () => {
             mockDb.select.mockReturnValueOnce(mockDb);
             mockDb.from.mockReturnValueOnce(mockDb);
             mockDb.where.mockReturnValueOnce(mockDb);
-            mockDb.limit.mockReturnValueOnce([{ totalAmount: '110.00' }]);
+            mockDb.limit.mockReturnValueOnce([{ total: 110 }]);
 
             const result = await invoiceModel.getTotalDue(mockInvoice.id);
 
@@ -445,7 +443,7 @@ describe('InvoiceModel', () => {
             mockDb.select.mockReturnValueOnce(mockDb);
             mockDb.from.mockReturnValueOnce(mockDb);
             mockDb.where.mockReturnValueOnce(mockDb);
-            mockDb.limit.mockReturnValueOnce([{ totalAmount: '110.00' }]);
+            mockDb.limit.mockReturnValueOnce([{ total: 110 }]);
 
             // Mock getAmountPaid
             mockDb.select.mockReturnValueOnce(mockDb);

@@ -133,8 +133,8 @@ describe('ProductModel', () => {
     describe('getAvailablePlans', () => {
         it('should get available pricing plans for product', async () => {
             const mockPlans = [
-                { id: 'plan-1', productId: mockProduct.id, amountMinor: 1000 },
-                { id: 'plan-2', productId: mockProduct.id, amountMinor: 2000 }
+                { id: 'plan-1', productId: mockProduct.id, amount: 1000 },
+                { id: 'plan-2', productId: mockProduct.id, amount: 2000 }
             ];
 
             const mockDb = {
@@ -158,7 +158,7 @@ describe('ProductModel', () => {
             const mockPricingPlan = {
                 id: 'plan-1',
                 productId: mockProduct.id,
-                amountMinor: 1000,
+                amount: 1000,
                 billingScheme: 'flat_rate',
                 currency: 'USD'
             };
@@ -185,7 +185,7 @@ describe('ProductModel', () => {
             const mockPricingPlan = {
                 id: 'plan-1',
                 productId: mockProduct.id,
-                amountMinor: 1000,
+                amount: 1000,
                 billingScheme: 'flat_rate',
                 currency: 'USD'
             };
@@ -211,7 +211,7 @@ describe('ProductModel', () => {
             const mockPricingPlan = {
                 id: 'plan-1',
                 productId: mockProduct.id,
-                amountMinor: 1000,
+                amount: 1000,
                 billingScheme: 'flat_rate',
                 currency: 'USD'
             };
@@ -273,8 +273,8 @@ describe('ProductModel', () => {
             const productWithPlans = {
                 ...mockProduct,
                 pricingPlans: [
-                    { id: 'plan-1', amountMinor: 1000 },
-                    { id: 'plan-2', amountMinor: 2000 }
+                    { id: 'plan-1', amount: 1000 },
+                    { id: 'plan-2', amount: 2000 }
                 ]
             };
 

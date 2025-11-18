@@ -101,7 +101,7 @@ describe('DiscountCodeModel', () => {
                         limit: vi.fn().mockResolvedValue([
                             {
                                 id: mockDiscountCode.id,
-                                isActive: 'true',
+                                isActive: true,
                                 validFrom: mockDiscountCode.validFrom,
                                 validTo: mockDiscountCode.validTo,
                                 deletedAt: null
@@ -122,7 +122,7 @@ describe('DiscountCodeModel', () => {
                         limit: vi.fn().mockResolvedValue([
                             {
                                 id: mockExpiredCode.id,
-                                isActive: 'true',
+                                isActive: true,
                                 validFrom: mockExpiredCode.validFrom,
                                 validTo: mockExpiredCode.validTo,
                                 deletedAt: null

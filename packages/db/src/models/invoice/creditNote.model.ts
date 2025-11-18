@@ -106,8 +106,8 @@ export class CreditNoteModel extends BaseModel<CreditNote> {
                 return { success: false, error: 'Associated invoice not found' };
             }
 
-            const creditAmount = creditNote.amount;
-            const currentInvoiceAmount = invoice.total;
+            const creditAmount = Number(creditNote.amount);
+            const currentInvoiceAmount = Number(invoice.total);
 
             // Calculate new invoice amount
             const newInvoiceAmount = Math.max(0, currentInvoiceAmount - creditAmount);
@@ -149,7 +149,7 @@ export class CreditNoteModel extends BaseModel<CreditNote> {
                 return 0;
             }
 
-            return creditNote.amount;
+            return Number(creditNote.amount);
         } catch {
             return 0;
         }
@@ -279,7 +279,7 @@ export class CreditNoteModel extends BaseModel<CreditNote> {
                 return { valid: false, reason: 'INVOICE_NOT_FOUND' };
             }
 
-            const invoiceAmount = invoice.total;
+            const invoiceAmount = Number(invoice.total);
             const existingCredits = await this.getTotalCreditForInvoice(invoiceId);
             const maxAllowed = invoiceAmount - existingCredits;
 

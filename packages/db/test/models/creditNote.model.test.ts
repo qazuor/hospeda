@@ -70,7 +70,7 @@ describe('CreditNoteModel', () => {
             const mockRefund = {
                 id: 'refund-1',
                 paymentId: 'payment-1',
-                amountMinor: 10000, // $100.00
+                amount: 100, // $100.00
                 reason: 'Customer request'
             };
 
@@ -82,7 +82,7 @@ describe('CreditNoteModel', () => {
 
             const mockInvoice = {
                 id: 'invoice-1',
-                totalAmount: '200.00'
+                total: 200
             };
 
             const mockCreditNote = {
@@ -121,7 +121,7 @@ describe('CreditNoteModel', () => {
         });
 
         it('should return null if payment not found', async () => {
-            const mockRefund = { id: 'refund-1', paymentId: 'payment-1', amountMinor: 10000 };
+            const mockRefund = { id: 'refund-1', paymentId: 'payment-1', amount: 100 };
             mockDb.query.refunds.findFirst.mockResolvedValue(mockRefund);
             mockDb.query.payments.findFirst.mockResolvedValue(null);
 
@@ -131,7 +131,7 @@ describe('CreditNoteModel', () => {
         });
 
         it('should return null if invoice not found', async () => {
-            const mockRefund = { id: 'refund-1', paymentId: 'payment-1', amountMinor: 10000 };
+            const mockRefund = { id: 'refund-1', paymentId: 'payment-1', amount: 100 };
             const mockPayment = { id: 'payment-1', invoiceId: 'invoice-1', currency: 'USD' };
 
             mockDb.query.refunds.findFirst.mockResolvedValue(mockRefund);
@@ -147,7 +147,7 @@ describe('CreditNoteModel', () => {
             const mockRefund = {
                 id: 'refund-1',
                 paymentId: 'payment-1',
-                amountMinor: 5000
+                amount: 50
             };
             const mockPayment = { id: 'payment-1', invoiceId: 'invoice-1', currency: 'USD' };
             const mockInvoice = { id: 'invoice-1' };
@@ -189,7 +189,7 @@ describe('CreditNoteModel', () => {
             };
             const mockInvoice = {
                 id: 'invoice-1',
-                totalAmount: '200.00'
+                total: 200
             };
 
             mockDb.query.creditNotes.findFirst.mockResolvedValue(mockCreditNote);
@@ -227,8 +227,8 @@ describe('CreditNoteModel', () => {
         });
 
         it('should not allow negative invoice amounts', async () => {
-            const mockCreditNote = { id: 'cn-1', invoiceId: 'invoice-1', amount: '300.00' };
-            const mockInvoice = { id: 'invoice-1', totalAmount: '200.00' };
+            const mockCreditNote = { id: 'cn-1', invoiceId: 'invoice-1', amount: 300 };
+            const mockInvoice = { id: 'invoice-1', total: 200 };
 
             mockDb.query.creditNotes.findFirst.mockResolvedValue(mockCreditNote);
             mockDb.query.invoices.findFirst.mockResolvedValue(mockInvoice);
@@ -434,7 +434,7 @@ describe('CreditNoteModel', () => {
 
     describe('validateCreditAmount', () => {
         it('should validate positive amounts', async () => {
-            const mockInvoice = { id: 'invoice-1', totalAmount: '200.00' };
+            const mockInvoice = { id: 'invoice-1', total: 200 };
             mockDb.query.invoices.findFirst.mockResolvedValue(mockInvoice);
             mockDb.select.mockReturnValueOnce(mockDb);
             mockDb.from.mockReturnValueOnce(mockDb);
@@ -469,7 +469,7 @@ describe('CreditNoteModel', () => {
         });
 
         it('should reject amounts exceeding invoice balance', async () => {
-            const mockInvoice = { id: 'invoice-1', totalAmount: '200.00' };
+            const mockInvoice = { id: 'invoice-1', total: 200 };
             mockDb.query.invoices.findFirst.mockResolvedValue(mockInvoice);
             mockDb.select.mockReturnValueOnce(mockDb);
             mockDb.from.mockReturnValueOnce(mockDb);

@@ -9,9 +9,9 @@ interface Subscription {
     clientId: string;
     pricingPlanId: string;
     status: string;
-    startAt: Date;
-    endAt?: Date | null;
-    trialEndsAt?: Date | null;
+    startDate: Date;
+    endDate?: Date | null;
+    trialEndDate?: Date | null;
     createdAt: Date;
     updatedAt: Date;
     createdById?: string;
@@ -27,9 +27,9 @@ const mockSubscription: Subscription = {
     clientId: '550e8400-e29b-41d4-a716-446655440002',
     pricingPlanId: '550e8400-e29b-41d4-a716-446655440003',
     status: SubscriptionStatusEnum.ACTIVE,
-    startAt: new Date('2024-01-01T00:00:00Z'),
-    endAt: new Date('2025-12-31T23:59:59Z'), // Future date
-    trialEndsAt: new Date('2024-01-15T23:59:59Z'),
+    startDate: new Date('2024-01-01T00:00:00Z'),
+    endDate: new Date('2025-12-31T23:59:59Z'), // Future date
+    trialEndDate: new Date('2024-01-15T23:59:59Z'),
     createdAt: new Date('2024-01-01T00:00:00Z'),
     updatedAt: new Date('2024-01-01T00:00:00Z'),
     createdById: '550e8400-e29b-41d4-a716-446655440000',
@@ -43,7 +43,7 @@ const mockExpiredSubscription: Subscription = {
     ...mockSubscription,
     id: '550e8400-e29b-41d4-a716-446655440004',
     status: SubscriptionStatusEnum.EXPIRED,
-    endAt: new Date('2023-12-31T23:59:59Z')
+    endDate: new Date('2023-12-31T23:59:59Z')
 };
 
 vi.mock('../../src/client', () => ({
@@ -93,7 +93,7 @@ describe('SubscriptionModel', () => {
                     {
                         ...mockSubscription,
                         status: SubscriptionStatusEnum.ACTIVE,
-                        startAt
+                        startDate: startAt
                     }
                 ]);
 
@@ -103,13 +103,13 @@ describe('SubscriptionModel', () => {
                 expect(mockDb.set).toHaveBeenCalledWith(
                     expect.objectContaining({
                         status: SubscriptionStatusEnum.ACTIVE,
-                        startAt
+                        startDate: startAt
                     })
                 );
                 expect(result).toEqual(
                     expect.objectContaining({
                         status: SubscriptionStatusEnum.ACTIVE,
-                        startAt
+                        startDate: startAt
                     })
                 );
             });
@@ -124,7 +124,7 @@ describe('SubscriptionModel', () => {
                     {
                         ...mockSubscription,
                         status: SubscriptionStatusEnum.CANCELLED,
-                        endAt: cancelAt
+                        endDate: cancelAt
                     }
                 ]);
 
@@ -134,13 +134,13 @@ describe('SubscriptionModel', () => {
                 expect(mockDb.set).toHaveBeenCalledWith(
                     expect.objectContaining({
                         status: SubscriptionStatusEnum.CANCELLED,
-                        endAt: cancelAt
+                        endDate: cancelAt
                     })
                 );
                 expect(result).toEqual(
                     expect.objectContaining({
                         status: SubscriptionStatusEnum.CANCELLED,
-                        endAt: cancelAt
+                        endDate: cancelAt
                     })
                 );
             });
@@ -154,7 +154,7 @@ describe('SubscriptionModel', () => {
                 mockDb.returning.mockResolvedValue([
                     {
                         ...mockSubscription,
-                        endAt: newEndAt
+                        endDate: newEndAt
                     }
                 ]);
 
@@ -163,12 +163,12 @@ describe('SubscriptionModel', () => {
                 expect(mockDb.update).toHaveBeenCalled();
                 expect(mockDb.set).toHaveBeenCalledWith(
                     expect.objectContaining({
-                        endAt: newEndAt
+                        endDate: newEndAt
                     })
                 );
                 expect(result).toEqual(
                     expect.objectContaining({
-                        endAt: newEndAt
+                        endDate: newEndAt
                     })
                 );
             });
@@ -207,7 +207,7 @@ describe('SubscriptionModel', () => {
             it('should return true for trial expiring within threshold', async () => {
                 const trialEndingSoon = {
                     ...mockSubscription,
-                    trialEndsAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000) // 2 days from now
+                    trialEndDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000) // 2 days from now
                 };
 
                 subscriptionModel.findById = vi.fn().mockResolvedValue(trialEndingSoon);
@@ -220,7 +220,7 @@ describe('SubscriptionModel', () => {
             it('should return false for trial not expiring soon', async () => {
                 const trialNotEndingSoon = {
                     ...mockSubscription,
-                    trialEndsAt: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000) // 10 days from now
+                    trialEndDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000) // 10 days from now
                 };
 
                 subscriptionModel.findById = vi.fn().mockResolvedValue(trialNotEndingSoon);
@@ -237,7 +237,7 @@ describe('SubscriptionModel', () => {
                     {
                         subscription: {
                             ...mockSubscription,
-                            startAt: new Date('2024-01-01T00:00:00Z')
+                            startDate: new Date('2024-01-01T00:00:00Z')
                         },
                         pricingPlan: {
                             billingInterval: 'MONTH'
