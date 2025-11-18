@@ -45,7 +45,9 @@ export const createMinimalAccommodationListing = () => ({
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     createdById: faker.string.uuid(),
-    updatedById: faker.string.uuid()
+    updatedById: faker.string.uuid(),
+    deletedAt: null,
+    deletedById: null
 });
 
 export const createComplexAccommodationListing = () => ({
