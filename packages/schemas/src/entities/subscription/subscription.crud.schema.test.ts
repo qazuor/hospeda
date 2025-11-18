@@ -11,7 +11,7 @@ describe('SubscriptionCreateInputSchema', () => {
         const validInput = {
             clientId: '550e8400-e29b-41d4-a716-446655440001',
             pricingPlanId: '550e8400-e29b-41d4-a716-446655440002',
-            startAt: new Date('2024-01-01'),
+            startDate: new Date('2024-01-01'),
             createdById: '550e8400-e29b-41d4-a716-446655440003',
             updatedById: '550e8400-e29b-41d4-a716-446655440003'
         };
@@ -23,7 +23,7 @@ describe('SubscriptionCreateInputSchema', () => {
         }
     });
 
-    it('should set default status and startAt', () => {
+    it('should set default status and startDate', () => {
         const minimalInput = {
             clientId: '550e8400-e29b-41d4-a716-446655440001',
             pricingPlanId: '550e8400-e29b-41d4-a716-446655440002',
@@ -35,7 +35,7 @@ describe('SubscriptionCreateInputSchema', () => {
         expect(result.success).toBe(true);
         if (result.success) {
             expect(result.data.status).toBe(SubscriptionStatusEnum.ACTIVE);
-            expect(result.data.startAt).toBeInstanceOf(Date);
+            expect(result.data.startDate).toBeInstanceOf(Date);
         }
     });
 
