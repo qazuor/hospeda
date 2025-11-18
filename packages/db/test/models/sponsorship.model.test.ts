@@ -29,7 +29,7 @@ const mockSponsorshipData: Sponsorship = {
     toDate: new Date('2024-12-31'),
     status: SponsorshipStatusEnum.ACTIVE,
     priority: 50,
-    spentAmount: 0,
+    spentAmount: 0.0,
     impressionCount: 0,
     clickCount: 0,
     createdAt: new Date(),

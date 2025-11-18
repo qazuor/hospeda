@@ -29,8 +29,8 @@ describe('Sponsorship Schema Tests', () => {
                 status: SponsorshipStatusEnum.ACTIVE,
                 description: 'Premium sponsorship for travel content',
                 priority: 80,
-                budgetAmount: 500000,
-                spentAmount: 125000,
+                budgetAmount: 5000.0,
+                spentAmount: 1250.0,
                 impressionCount: 150000,
                 clickCount: 5000,
                 ...baseFields
@@ -49,7 +49,7 @@ describe('Sponsorship Schema Tests', () => {
                 toDate: new Date('2024-08-31T23:59:59Z'),
                 status: SponsorshipStatusEnum.ACTIVE,
                 priority: 50,
-                spentAmount: 0,
+                spentAmount: 0.0,
                 impressionCount: 0,
                 clickCount: 0,
                 ...baseFields
@@ -68,7 +68,7 @@ describe('Sponsorship Schema Tests', () => {
                 toDate: new Date('2024-06-01T00:00:00Z'),
                 status: SponsorshipStatusEnum.ACTIVE,
                 priority: 50,
-                spentAmount: 0,
+                spentAmount: 0.0,
                 impressionCount: 0,
                 clickCount: 0,
                 ...baseFields
@@ -86,8 +86,8 @@ describe('Sponsorship Schema Tests', () => {
                 fromDate: new Date('2024-06-01T00:00:00Z'),
                 toDate: new Date('2024-08-31T23:59:59Z'),
                 status: SponsorshipStatusEnum.ACTIVE,
-                budgetAmount: 100000,
-                spentAmount: 150000,
+                budgetAmount: 1000.0,
+                spentAmount: 1500.0,
                 priority: 50,
                 impressionCount: 1000,
                 clickCount: 50,
@@ -107,7 +107,7 @@ describe('Sponsorship Schema Tests', () => {
                 toDate: new Date('2024-08-31T23:59:59Z'),
                 status: SponsorshipStatusEnum.ACTIVE,
                 priority: 50,
-                spentAmount: 0,
+                spentAmount: 0.0,
                 impressionCount: 1000,
                 clickCount: 1500,
                 ...baseFields
@@ -134,7 +134,7 @@ describe('Sponsorship Schema Tests', () => {
                     toDate: new Date('2024-08-31T23:59:59Z'),
                     status,
                     priority: 50,
-                    spentAmount: 0,
+                    spentAmount: 0.0,
                     impressionCount: 0,
                     clickCount: 0,
                     ...baseFields
@@ -157,7 +157,7 @@ describe('Sponsorship Schema Tests', () => {
                     toDate: new Date('2024-08-31T23:59:59Z'),
                     status: SponsorshipStatusEnum.ACTIVE,
                     priority: 50,
-                    spentAmount: 0,
+                    spentAmount: 0.0,
                     impressionCount: 0,
                     clickCount: 0,
                     ...baseFields
@@ -180,7 +180,7 @@ describe('Sponsorship Schema Tests', () => {
                     toDate: new Date('2024-08-31T23:59:59Z'),
                     status: SponsorshipStatusEnum.ACTIVE,
                     priority,
-                    spentAmount: 0,
+                    spentAmount: 0.0,
                     impressionCount: 0,
                     clickCount: 0,
                     ...baseFields
@@ -208,7 +208,7 @@ describe('Sponsorship Schema Tests', () => {
                 status: SponsorshipStatusEnum.ACTIVE,
                 description: 'New sponsorship for travel content',
                 priority: 85,
-                budgetAmount: 750000
+                budgetAmount: 7500.0
             };
 
             expect(() => CreateSponsorshipSchema.parse(createData)).not.toThrow();
@@ -221,7 +221,7 @@ describe('Sponsorship Schema Tests', () => {
                 updatedById: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
                 description: 'Updated sponsorship description',
                 status: SponsorshipStatusEnum.PAUSED,
-                budgetAmount: 600000,
+                budgetAmount: 6000.0,
                 priority: 75
             };
 
@@ -291,7 +291,7 @@ describe('Sponsorship Schema Tests', () => {
                 toDate: new Date('2024-08-31T23:59:59Z'),
                 status: SponsorshipStatusEnum.ACTIVE,
                 priority: 80,
-                spentAmount: 125000,
+                spentAmount: 1250.0,
                 impressionCount: 150000,
                 clickCount: 5000,
                 // Performance-specific fields
@@ -322,9 +322,9 @@ describe('Sponsorship Schema Tests', () => {
                 toDate: new Date('2027-12-31T23:59:59Z'),
                 status: SponsorshipStatusEnum.ACTIVE,
                 description: 'A'.repeat(999),
-                budgetAmount: 10000000000,
+                budgetAmount: 100000000.0,
                 priority: 100,
-                spentAmount: 5000000000,
+                spentAmount: 50000000.0,
                 impressionCount: 100000000,
                 clickCount: 5000000,
                 ...baseFields
@@ -344,7 +344,7 @@ describe('Sponsorship Schema Tests', () => {
                 status: SponsorshipStatusEnum.ACTIVE,
                 description: 'A'.repeat(1001),
                 priority: 50,
-                spentAmount: 0,
+                spentAmount: 0.0,
                 impressionCount: 0,
                 clickCount: 0,
                 ...baseFields
