@@ -13,10 +13,15 @@ describe('Product Schema', () => {
                     features: ['priority_placement', 'analytics']
                 },
                 lifecycleState: 'ACTIVE',
+                isActive: true,
+                isDeleted: false,
                 createdAt: new Date('2023-01-01T00:00:00Z'),
                 updatedAt: new Date('2023-01-01T00:00:00Z'),
                 createdById: '550e8400-e29b-41d4-a716-446655440001',
-                updatedById: '550e8400-e29b-41d4-a716-446655440001'
+                updatedById: '550e8400-e29b-41d4-a716-446655440001',
+                deletedAt: null,
+                deletedById: null,
+                adminInfo: null
             };
 
             const result = ProductSchema.safeParse(product);
@@ -38,10 +43,15 @@ describe('Product Schema', () => {
                 type: 'campaign',
                 metadata: {},
                 lifecycleState: 'ACTIVE',
+                isActive: true,
+                isDeleted: false,
                 createdAt: new Date('2023-01-01T00:00:00Z'),
                 updatedAt: new Date('2023-01-01T00:00:00Z'),
-                createdById: '550e8400-e29b-41d4-a716-446655440001',
-                updatedById: '550e8400-e29b-41d4-a716-446655440001'
+                createdById: null,
+                updatedById: null,
+                deletedAt: null,
+                deletedById: null,
+                adminInfo: null
             };
 
             const result = ProductSchema.safeParse(product);
@@ -100,10 +110,15 @@ describe('Product Schema', () => {
                     }
                 },
                 lifecycleState: 'ACTIVE',
+                isActive: true,
+                isDeleted: false,
                 createdAt: new Date('2023-01-01T00:00:00Z'),
                 updatedAt: new Date('2023-01-01T00:00:00Z'),
                 createdById: '550e8400-e29b-41d4-a716-446655440001',
-                updatedById: '550e8400-e29b-41d4-a716-446655440001'
+                updatedById: '550e8400-e29b-41d4-a716-446655440001',
+                deletedAt: null,
+                deletedById: null,
+                adminInfo: null
             };
 
             const result = ProductSchema.safeParse(product);
@@ -131,10 +146,15 @@ describe('Product Schema', () => {
                     type,
                     metadata: {},
                     lifecycleState: 'ACTIVE',
+                    isActive: true,
+                    isDeleted: false,
                     createdAt: new Date('2023-01-01T00:00:00Z'),
                     updatedAt: new Date('2023-01-01T00:00:00Z'),
                     createdById: '550e8400-e29b-41d4-a716-446655440001',
-                    updatedById: '550e8400-e29b-41d4-a716-446655440001'
+                    updatedById: '550e8400-e29b-41d4-a716-446655440001',
+                    deletedAt: null,
+                    deletedById: null,
+                    adminInfo: null
                 };
 
                 const result = ProductSchema.safeParse(product);
