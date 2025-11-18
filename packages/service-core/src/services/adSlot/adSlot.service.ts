@@ -467,8 +467,8 @@ export class AdSlotService extends BaseCrudService<
      */
     async findAvailableSlots(
         actor: Actor,
-        _startDate: Date,
-        _endDate: Date
+        startDate: Date,
+        endDate: Date
     ): Promise<ServiceOutput<AdSlot[]>> {
         // Check view permission
         try {
@@ -480,7 +480,7 @@ export class AdSlotService extends BaseCrudService<
             throw error;
         }
 
-        const slots = await this.model.getAvailableSlots();
+        const slots = await this.model.getAvailableSlots(startDate, endDate);
         return { data: slots };
     }
 

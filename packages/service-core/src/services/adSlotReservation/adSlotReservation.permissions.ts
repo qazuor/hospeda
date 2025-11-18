@@ -1,5 +1,5 @@
 import type { AdSlotReservation } from '@repo/schemas';
-import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
+import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import type { Actor } from '../../types';
 import { ServiceError } from '../../types';
 
@@ -90,17 +90,15 @@ export function checkCanDelete(actor: Actor, _entity: AdSlotReservation): void {
 
 /**
  * Checks if an actor has permission to hard delete ad slot reservations.
+ * Hard delete is restricted to administrators only for security reasons.
  * @throws {ServiceError} If the permission check fails.
  */
 export function checkCanHardDelete(actor: Actor, _entity: AdSlotReservation): void {
-    if (
-        !actor ||
-        !actor.id ||
-        !actor.permissions.includes(PermissionEnum.AD_SLOT_RESERVATION_HARD_DELETE)
-    ) {
+    // Hard delete is restricted to administrators only, regardless of permissions
+    if (!actor || !actor.id || actor.role !== RoleEnum.ADMIN) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
-            'Permission denied: Insufficient permissions to permanently delete ad slot reservations'
+            'Permission denied: Only administrators can permanently delete ad slot reservations'
         );
     }
 }
