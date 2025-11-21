@@ -1,6 +1,10 @@
 import type { ServiceListingPlanModel } from '@repo/db';
 import type { ListRelationsConfig, ServiceListingPlan } from '@repo/schemas';
-import { ServiceListingPlanSchema } from '@repo/schemas';
+import {
+    CreateServiceListingPlanSchema,
+    ServiceListingPlanSearchSchema,
+    UpdateServiceListingPlanSchema
+} from '@repo/schemas';
 import type { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service.js';
 import type { Actor, PaginatedListOutput, ServiceContext } from '../../types/index.js';
@@ -27,18 +31,18 @@ import {
 export class ServiceListingPlanService extends BaseCrudService<
     ServiceListingPlan,
     ServiceListingPlanModel,
-    typeof ServiceListingPlanSchema,
-    typeof ServiceListingPlanSchema,
-    typeof ServiceListingPlanSchema
+    typeof CreateServiceListingPlanSchema,
+    typeof UpdateServiceListingPlanSchema,
+    typeof ServiceListingPlanSearchSchema
 > {
     static readonly ENTITY_NAME = 'service-listing-plan';
     protected readonly entityName = ServiceListingPlanService.ENTITY_NAME;
 
     public readonly model: ServiceListingPlanModel;
 
-    public readonly createSchema = ServiceListingPlanSchema;
-    public readonly updateSchema = ServiceListingPlanSchema;
-    public readonly searchSchema = ServiceListingPlanSchema;
+    public readonly createSchema = CreateServiceListingPlanSchema;
+    public readonly updateSchema = UpdateServiceListingPlanSchema;
+    public readonly searchSchema = ServiceListingPlanSearchSchema;
 
     constructor(ctx: ServiceContext, model?: ServiceListingPlanModel) {
         super(ctx, ServiceListingPlanService.ENTITY_NAME);
@@ -98,7 +102,7 @@ export class ServiceListingPlanService extends BaseCrudService<
     }
 
     protected async _executeSearch(
-        _params: z.infer<typeof ServiceListingPlanSchema>,
+        _params: z.infer<typeof ServiceListingPlanSearchSchema>,
         _actor: Actor
     ): Promise<PaginatedListOutput<ServiceListingPlan>> {
         return {
@@ -108,7 +112,7 @@ export class ServiceListingPlanService extends BaseCrudService<
     }
 
     protected async _executeCount(
-        _params: z.infer<typeof ServiceListingPlanSchema>,
+        _params: z.infer<typeof ServiceListingPlanSearchSchema>,
         _actor: Actor
     ): Promise<{ count: number }> {
         return { count: 0 };

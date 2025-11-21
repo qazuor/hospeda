@@ -510,7 +510,7 @@ export class PurchaseService extends BaseCrudService<
             purchase: Purchase;
             pricingPlan: {
                 id: string;
-                amountMinor: number;
+                amount: number;
                 currency: string;
                 billingScheme: string;
             };
@@ -534,7 +534,7 @@ export class PurchaseService extends BaseCrudService<
                 purchase: Purchase;
                 pricingPlan: {
                     id: string;
-                    amountMinor: number;
+                    amount: number;
                     currency: string;
                     billingScheme: string;
                 };

@@ -564,11 +564,11 @@ describe('PurchaseService', () => {
                     purchase: mockPurchase,
                     pricingPlan: {
                         id: 'plan-123',
-                        amount: 100.0,
+                        amount: 10000,
                         currency: 'USD',
                         billingScheme: 'one_time'
                     }
-                };
+                } as any;
                 vi.spyOn(mockModel, 'withPlan').mockResolvedValue(mockResult);
 
                 const result = await service.getWithPlan(userActor, 'purchase-123');
@@ -577,7 +577,7 @@ describe('PurchaseService', () => {
                 expect(result.error).toBeUndefined();
                 if (result.data) {
                     expect(result.data?.purchase.id).toBe('purchase-123');
-                    expect(result.data?.pricingPlan.amount).toBe(100.0);
+                    expect(result.data?.pricingPlan.amount).toBe(10000);
                 }
             });
 

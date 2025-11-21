@@ -1,6 +1,10 @@
 import type { TouristServiceModel } from '@repo/db';
 import type { ListRelationsConfig, TouristService } from '@repo/schemas';
-import { TouristServiceSchema } from '@repo/schemas';
+import {
+    CreateTouristServiceSchema,
+    TouristServiceSearchSchema,
+    UpdateTouristServiceSchema
+} from '@repo/schemas';
 import type { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service.js';
 import type { Actor, PaginatedListOutput, ServiceContext } from '../../types/index.js';
@@ -27,18 +31,18 @@ import {
 export class TouristServiceService extends BaseCrudService<
     TouristService,
     TouristServiceModel,
-    typeof TouristServiceSchema,
-    typeof TouristServiceSchema,
-    typeof TouristServiceSchema
+    typeof CreateTouristServiceSchema,
+    typeof UpdateTouristServiceSchema,
+    typeof TouristServiceSearchSchema
 > {
     static readonly ENTITY_NAME = 'tourist-service';
     protected readonly entityName = TouristServiceService.ENTITY_NAME;
 
     public readonly model: TouristServiceModel;
 
-    public readonly createSchema = TouristServiceSchema;
-    public readonly updateSchema = TouristServiceSchema;
-    public readonly searchSchema = TouristServiceSchema;
+    public readonly createSchema = CreateTouristServiceSchema;
+    public readonly updateSchema = UpdateTouristServiceSchema;
+    public readonly searchSchema = TouristServiceSearchSchema;
 
     constructor(ctx: ServiceContext, model?: TouristServiceModel) {
         super(ctx, TouristServiceService.ENTITY_NAME);
@@ -98,7 +102,7 @@ export class TouristServiceService extends BaseCrudService<
     }
 
     protected async _executeSearch(
-        _params: z.infer<typeof TouristServiceSchema>,
+        _params: z.infer<typeof TouristServiceSearchSchema>,
         _actor: Actor
     ): Promise<PaginatedListOutput<TouristService>> {
         return {
@@ -108,7 +112,7 @@ export class TouristServiceService extends BaseCrudService<
     }
 
     protected async _executeCount(
-        _params: z.infer<typeof TouristServiceSchema>,
+        _params: z.infer<typeof TouristServiceSearchSchema>,
         _actor: Actor
     ): Promise<{ count: number }> {
         return { count: 0 };

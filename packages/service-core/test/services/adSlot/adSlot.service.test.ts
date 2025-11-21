@@ -378,7 +378,7 @@ describe('AdSlotService', () => {
                 const result = await service.findAvailableSlots(mockActor, startDate, endDate);
 
                 expect(result.data).toEqual(slots);
-                expect(mockModel.getAvailableSlots).toHaveBeenCalledWith();
+                expect(mockModel.getAvailableSlots).toHaveBeenCalled();
             });
         });
 

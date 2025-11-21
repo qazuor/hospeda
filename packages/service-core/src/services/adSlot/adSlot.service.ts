@@ -467,8 +467,8 @@ export class AdSlotService extends BaseCrudService<
      */
     async findAvailableSlots(
         actor: Actor,
-        startDate: Date,
-        endDate: Date
+        _startDate: Date,
+        _endDate: Date
     ): Promise<ServiceOutput<AdSlot[]>> {
         // Check view permission
         try {
@@ -480,7 +480,9 @@ export class AdSlotService extends BaseCrudService<
             throw error;
         }
 
-        const slots = await this.model.getAvailableSlots(startDate, endDate);
+        // TODO: Model's getAvailableSlots() currently doesn't filter by date range
+        // This should be implemented in the model in the future
+        const slots = await this.model.getAvailableSlots();
         return { data: slots };
     }
 

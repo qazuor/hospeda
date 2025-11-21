@@ -2,9 +2,10 @@ import type { PaymentModel } from '@repo/db';
 import {
     type ListRelationsConfig,
     type Payment,
-    PaymentSchema,
+    PaymentCreateInputSchema,
     PaymentSearchSchema,
     type PaymentStatusEnum,
+    PaymentUpdateInputSchema,
     PermissionEnum,
     RoleEnum,
     ServiceErrorCode
@@ -22,16 +23,16 @@ import { ServiceError } from '../../types';
 export class PaymentService extends BaseCrudService<
     Payment,
     PaymentModel,
-    typeof PaymentSchema,
-    typeof PaymentSchema,
+    typeof PaymentCreateInputSchema,
+    typeof PaymentUpdateInputSchema,
     typeof PaymentSearchSchema
 > {
     static readonly ENTITY_NAME = 'payment';
     protected readonly entityName = PaymentService.ENTITY_NAME;
     public readonly model: PaymentModel;
 
-    public readonly createSchema = PaymentSchema;
-    public readonly updateSchema = PaymentSchema;
+    public readonly createSchema = PaymentCreateInputSchema;
+    public readonly updateSchema = PaymentUpdateInputSchema;
     public readonly searchSchema = PaymentSearchSchema;
 
     /**

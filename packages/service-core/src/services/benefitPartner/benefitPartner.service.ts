@@ -1,6 +1,10 @@
 import type { BenefitPartnerModel } from '@repo/db';
 import type { BenefitPartner, ListRelationsConfig } from '@repo/schemas';
-import { BenefitPartnerSchema } from '@repo/schemas';
+import {
+    BenefitPartnerSearchSchema,
+    CreateBenefitPartnerSchema,
+    UpdateBenefitPartnerSchema
+} from '@repo/schemas';
 import type { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service.js';
 import type { Actor, PaginatedListOutput, ServiceContext } from '../../types/index.js';
@@ -27,18 +31,18 @@ import {
 export class BenefitPartnerService extends BaseCrudService<
     BenefitPartner,
     BenefitPartnerModel,
-    typeof BenefitPartnerSchema,
-    typeof BenefitPartnerSchema,
-    typeof BenefitPartnerSchema
+    typeof CreateBenefitPartnerSchema,
+    typeof UpdateBenefitPartnerSchema,
+    typeof BenefitPartnerSearchSchema
 > {
     static readonly ENTITY_NAME = 'benefit-partner';
     protected readonly entityName = BenefitPartnerService.ENTITY_NAME;
 
     public readonly model: BenefitPartnerModel;
 
-    public readonly createSchema = BenefitPartnerSchema;
-    public readonly updateSchema = BenefitPartnerSchema;
-    public readonly searchSchema = BenefitPartnerSchema;
+    public readonly createSchema = CreateBenefitPartnerSchema;
+    public readonly updateSchema = UpdateBenefitPartnerSchema;
+    public readonly searchSchema = BenefitPartnerSearchSchema;
 
     constructor(ctx: ServiceContext, model?: BenefitPartnerModel) {
         super(ctx, BenefitPartnerService.ENTITY_NAME);
@@ -141,7 +145,7 @@ export class BenefitPartnerService extends BaseCrudService<
      * Execute search for benefit partners
      */
     protected async _executeSearch(
-        _params: z.infer<typeof BenefitPartnerSchema>,
+        _params: z.infer<typeof BenefitPartnerSearchSchema>,
         _actor: Actor
     ): Promise<PaginatedListOutput<BenefitPartner>> {
         // For now, delegate to list method until search is implemented
@@ -155,7 +159,7 @@ export class BenefitPartnerService extends BaseCrudService<
      * Execute count for benefit partners
      */
     protected async _executeCount(
-        _params: z.infer<typeof BenefitPartnerSchema>,
+        _params: z.infer<typeof BenefitPartnerSearchSchema>,
         _actor: Actor
     ): Promise<{ count: number }> {
         return { count: 0 };
