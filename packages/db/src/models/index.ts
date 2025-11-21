@@ -19,6 +19,7 @@ export * from './featuredAccommodation.model';
 export * from './invoice';
 export * from './notification.model';
 export * from './post';
+export * from './professionalService.model';
 export * from './professionalServiceOrder.model';
 export * from './professionalServiceType.model';
 export * from './promotion';
