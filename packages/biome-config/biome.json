@@ -17,7 +17,8 @@
             "**/.output/**",
             "**/.vinxi/**",
             "**/routeTree.gen.ts",
-            "**/*.astro"
+            "**/*.astro",
+            "**/docs/examples/**"
         ]
     },
     "organizeImports": {
