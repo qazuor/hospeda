@@ -552,9 +552,9 @@ export class PromotionModel extends BaseModel<Promotion> {
                         rules: row.rules,
                         startsAt: row.startsAt,
                         endsAt: row.endsAt,
-                        description: row.description,
-                        targetConditions: row.targetConditions,
-                        maxTotalUsage: row.maxTotalUsage,
+                        description: row.description ?? undefined,
+                        targetConditions: row.targetConditions ?? undefined,
+                        maxTotalUsage: row.maxTotalUsage ?? undefined,
                         currentUsageCount: row.currentUsageCount,
                         isActive: row.isActive,
                         createdAt: row.createdAt,
@@ -563,7 +563,7 @@ export class PromotionModel extends BaseModel<Promotion> {
                         updatedById: row.updatedById,
                         deletedAt: row.deletedAt,
                         deletedById: row.deletedById,
-                        adminInfo: row.adminInfo,
+                        adminInfo: row.adminInfo ?? undefined,
                         discountCodes: []
                     });
                 }
@@ -604,9 +604,9 @@ export class PromotionModel extends BaseModel<Promotion> {
                     rules: row.rules,
                     startsAt: row.startsAt,
                     endsAt: row.endsAt,
-                    description: row.description,
-                    targetConditions: row.targetConditions,
-                    maxTotalUsage: row.maxTotalUsage,
+                    description: row.description ?? undefined,
+                    targetConditions: row.targetConditions ?? undefined,
+                    maxTotalUsage: row.maxTotalUsage ?? undefined,
                     currentUsageCount: row.currentUsageCount,
                     isActive: row.isActive,
                     createdAt: row.createdAt,
@@ -615,7 +615,7 @@ export class PromotionModel extends BaseModel<Promotion> {
                     updatedById: row.updatedById,
                     deletedAt: row.deletedAt,
                     deletedById: row.deletedById,
-                    adminInfo: row.adminInfo,
+                    adminInfo: row.adminInfo ?? undefined,
                     discountCodes: []
                 });
             }
