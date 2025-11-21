@@ -11,6 +11,18 @@ import { z } from '@hono/zod-openapi';
  * @returns A new schema with z.date() fields converted to z.string().datetime() for OpenAPI compatibility
  */
 export function createOpenAPISchema<T extends z.ZodTypeAny>(schema: T): z.ZodTypeAny {
+    // Handle ZodEffects (schemas with .refine(), .transform(), etc.)
+    // biome-ignore lint/suspicious/noExplicitAny: Need to access internal Zod structure
+    if ((schema as any)._def?.typeName === 'ZodEffects') {
+        // biome-ignore lint/suspicious/noExplicitAny: Need to access internal Zod structure
+        const innerSchema = (schema as any)._def.schema;
+        // Convert the inner schema and preserve the effects
+        const _convertedInner = createOpenAPISchema(innerSchema);
+        // Return the original schema since we can't easily reconstruct ZodEffects
+        // The validation will happen at runtime, OpenAPI docs just won't show the refinement
+        return schema;
+    }
+
     // If it's a ZodObject, process its shape
     if (schema instanceof z.ZodObject) {
         const newShape: Record<string, z.ZodTypeAny> = {};

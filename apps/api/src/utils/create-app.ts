@@ -15,6 +15,13 @@ import { securityHeadersMiddleware } from '../middlewares/security';
 import { validationMiddleware } from '../middlewares/validation';
 import type { AppBindings, AppMiddleware, AppOpenAPI } from '../types';
 
+// Import mock auth middleware for testing (only loaded in test env)
+let mockAuthMiddleware: MiddlewareHandler<AppBindings> | null = null;
+if (process.env.NODE_ENV === 'test') {
+    // Dynamic import to avoid loading in production
+    mockAuthMiddleware = (await import('../../test/helpers/mockAuthMiddleware')).mockAuthMiddleware;
+}
+
 // Strongly typed middleware functions
 const serveEmojiFavicon =
     (emoji: string): MiddlewareHandler<AppBindings> =>
@@ -68,11 +75,15 @@ export default function createApp() {
 
         // Request processing
         .use(wrapMiddleware(validationMiddleware()))
-        .use(wrapMiddleware(responseFormattingMiddleware))
+        .use(wrapMiddleware(responseFormattingMiddleware));
 
-        // Authentication and authorization
-        .use(wrapMiddleware(clerkAuth()))
-        .use(wrapMiddleware(actorMiddleware()));
+    // Mock authentication for testing (injected before real auth)
+    if (mockAuthMiddleware) {
+        app.use(wrapMiddleware(mockAuthMiddleware));
+    }
+
+    // Authentication and authorization
+    app.use(wrapMiddleware(clerkAuth())).use(wrapMiddleware(actorMiddleware()));
 
     app.notFound(notFound);
 

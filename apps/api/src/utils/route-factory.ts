@@ -264,12 +264,17 @@ export const createCRUDRoute = (options: CreateOpenApiRouteInterface) => {
         request: createRequestOptions({
             params: options.requestParams || {},
             // Do not declare a body for GET/DELETE requests to avoid JSON parsing on empty bodies
-            // Apply OpenAPI conversion to request body schemas
+            // HTTP schemas (with refinements) don't need OpenAPI conversion
             body:
                 options.method === 'get' || options.method === 'delete'
                     ? undefined
                     : options.requestBody
-                      ? createOpenAPISchema(options.requestBody)
+                      ? // Skip createOpenAPISchema for ZodEffects (schemas with .refine())
+                        // These are already HTTP-ready and need their validations preserved
+                        // biome-ignore lint/suspicious/noExplicitAny: Need to check internal Zod _def structure
+                        (options.requestBody as any)._def?.typeName === 'ZodEffects'
+                          ? options.requestBody
+                          : createOpenAPISchema(options.requestBody)
                       : undefined,
             query: options.requestQuery || {}
         }),
@@ -288,7 +293,12 @@ export const createCRUDRoute = (options: CreateOpenApiRouteInterface) => {
                     : ctx.req.param() || {};
             // Only parse JSON body for methods that are expected to have one
             const shouldParseBody = !(options.method === 'get' || options.method === 'delete');
-            const body = shouldParseBody ? await ctx.req.json().catch(() => ({})) : {};
+            const body = shouldParseBody
+                ? options.requestBody
+                    ? // biome-ignore lint/suspicious/noExplicitAny: Hono validation returns transformed data
+                      (ctx.req as any).valid('json')
+                    : await ctx.req.json().catch(() => ({}))
+                : {};
             const query =
                 options.requestQuery && Object.keys(options.requestQuery).length > 0
                     ? // biome-ignore lint/suspicious/noExplicitAny: Hono validation returns transformed data
@@ -296,6 +306,10 @@ export const createCRUDRoute = (options: CreateOpenApiRouteInterface) => {
                     : {};
 
             const result = await options.handler(ctx, params, body, query);
+            // If handler returns a Response directly (e.g., for custom error handling), use it
+            if (result instanceof Response) {
+                return result;
+            }
             return createResponse(result, ctx, 200);
         } catch (error) {
             return handleRouteError(error, ctx);
