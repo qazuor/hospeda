@@ -97,7 +97,7 @@ export const DiscountCodeSchema = z
             z
                 .number({ message: 'zodError.discountCode.minimumPurchaseAmount.required' })
                 .nonnegative({ message: 'zodError.discountCode.minimumPurchaseAmount.nonnegative' })
-        ).nullable(),
+        ).optional(),
 
         minimumPurchaseCurrency: z
             .string()
@@ -115,7 +115,7 @@ export const DiscountCodeSchema = z
             .string()
             .min(1, { message: 'zodError.discountCode.description.min' })
             .max(500, { message: 'zodError.discountCode.description.max' })
-            .nullable()
+            .optional()
     })
     // Type-specific validation refinement
     .refine(

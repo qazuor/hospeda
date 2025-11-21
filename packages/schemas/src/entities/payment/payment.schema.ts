@@ -29,11 +29,11 @@ export const PaymentSchema = z.object({
 
     // Payment-specific core fields
     userId: UserIdSchema,
-    paymentPlanId: PaymentPlanIdSchema.nullable(),
-    invoiceId: InvoiceIdSchema.nullable(),
+    paymentPlanId: PaymentPlanIdSchema.optional(),
+    invoiceId: InvoiceIdSchema.optional(),
     type: PaymentTypeEnumSchema,
     status: PaymentStatusEnumSchema,
-    paymentMethod: PaymentMethodEnumSchema.nullable(),
+    paymentMethod: PaymentMethodEnumSchema.optional(),
 
     // Amount and currency
     amount: numericField(
@@ -50,14 +50,14 @@ export const PaymentSchema = z.object({
             message: 'zodError.payment.mercadoPagoPaymentId.required'
         })
         .min(1, { message: 'zodError.payment.mercadoPagoPaymentId.min' })
-        .nullable(),
+        .optional(),
 
     mercadoPagoPreferenceId: z
         .string({
             message: 'zodError.payment.mercadoPagoPreferenceId.required'
         })
         .min(1, { message: 'zodError.payment.mercadoPagoPreferenceId.min' })
-        .nullable(),
+        .optional(),
 
     // External reference and description
     externalReference: z
@@ -66,7 +66,7 @@ export const PaymentSchema = z.object({
         })
         .min(1, { message: 'zodError.payment.externalReference.min' })
         .max(100, { message: 'zodError.payment.externalReference.max' })
-        .nullable(),
+        .optional(),
 
     description: z
         .string({
@@ -74,23 +74,23 @@ export const PaymentSchema = z.object({
         })
         .min(1, { message: 'zodError.payment.description.min' })
         .max(500, { message: 'zodError.payment.description.max' })
-        .nullable(),
+        .optional(),
 
     // Metadata and additional info
-    metadata: z.record(z.string(), z.unknown()).nullable(),
+    metadata: z.record(z.string(), z.unknown()).optional(),
 
     // Important dates
     processedAt: z
         .date({
             message: 'zodError.payment.processedAt.invalid'
         })
-        .nullable(),
+        .optional(),
 
     expiresAt: z
         .date({
             message: 'zodError.payment.expiresAt.invalid'
         })
-        .nullable(),
+        .optional(),
 
     // Failure handling
     failureReason: z
@@ -99,10 +99,10 @@ export const PaymentSchema = z.object({
         })
         .min(1, { message: 'zodError.payment.failureReason.min' })
         .max(1000, { message: 'zodError.payment.failureReason.max' })
-        .nullable(),
+        .optional(),
 
     // Raw Mercado Pago response
-    mercadoPagoResponse: z.record(z.string(), z.unknown()).nullable(),
+    mercadoPagoResponse: z.record(z.string(), z.unknown()).optional(),
 
     // Lifecycle fields
     ...BaseLifecycleFields,
