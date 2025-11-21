@@ -11,13 +11,14 @@ flowchart LR
     end
     
     %% Agents Layer
-    subgraph Agents ["Agents (12)"]
+    subgraph Agents ["Agents (14)"]
         direction TB
-        LeadAgents[tech-lead<br/>product-technical]
+        LeadAgents[tech-lead<br/>product-functional<br/>product-technical]
         BackendAgents[hono-engineer<br/>db-engineer<br/>node-typescript-engineer]
         FrontendAgents[astro-engineer<br/>tanstack-start-engineer<br/>react-senior-dev]
-        QualityAgents[qa-engineer]
-        SupportAgents[tech-writer<br/>debugger]
+        DesignAgents[ux-ui-designer<br/>content-writer]
+        QualityAgents[qa-engineer<br/>debugger]
+        SupportAgents[tech-writer<br/>i18n-specialist<br/>seo-ai-specialist<br/>enrichment-agent]
     end
     
     %% Skills Layer
