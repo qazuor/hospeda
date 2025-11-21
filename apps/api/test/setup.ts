@@ -1226,6 +1226,1858 @@ vi.mock('@repo/service-core', () => {
         }
     }
 
+    // Business Model System Services
+    class ClientService {
+        async create(_actor: unknown, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id: 'client_mock_id',
+                    name: String((body as any).name || 'Client Mock'),
+                    billingEmail: String((body as any).billingEmail || 'billing@mock.com'),
+                    userId: (body as any).userId || null,
+                    status: (body as any).status || 'active',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async list(_actor: unknown, _opts?: { page?: number; pageSize?: number }) {
+            return { data: { items: [], total: 0 } };
+        }
+        async getById(_actor: unknown, id: string) {
+            if (id === '87654321-4321-4321-8765-876543218765') return { data: null };
+            return { data: { id, name: 'Test Client', billingEmail: 'test@example.com' } };
+        }
+        async update(_actor: unknown, id: string, body: Record<string, unknown>) {
+            return { data: { id, name: (body as any).name || 'Updated Client' } };
+        }
+        async softDelete(_actor: unknown, id: string) {
+            return { data: { id, deletedAt: new Date().toISOString() } };
+        }
+    }
+
+    class ClientAccessRightService {
+        async create(_actor: unknown, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id: 'client_access_right_mock_id',
+                    clientId: String((body as any).clientId),
+                    subscriptionItemId: String((body as any).subscriptionItemId),
+                    feature: String((body as any).feature),
+                    scope: String((body as any).scope),
+                    scopeId: (body as any).scopeId || null,
+                    scopeType: (body as any).scopeType || null,
+                    validFrom: (body as any).validFrom || null,
+                    validTo: (body as any).validTo || null,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async list(_actor: unknown, _opts?: { page?: number; pageSize?: number }) {
+            return { data: { items: [], total: 0 } };
+        }
+        async getById(_actor: unknown, id: string) {
+            if (id === '87654321-4321-4321-8765-876543218765') return { data: null };
+            return { data: { id, feature: 'test-feature', scope: 'full' } };
+        }
+        async update(_actor: unknown, id: string, body: Record<string, unknown>) {
+            return { data: { id, feature: (body as any).feature } };
+        }
+        async softDelete(_actor: unknown, id: string) {
+            return { data: { id, deletedAt: new Date().toISOString() } };
+        }
+    }
+
+    class ProductService {
+        async create(_actor: unknown, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id: 'product_mock_id',
+                    name: String((body as any).name || 'Product Mock'),
+                    type: String((body as any).type || 'recurring'),
+                    description: (body as any).description || null,
+                    metadata: (body as any).metadata || null,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async list(_actor: unknown, _opts?: { page?: number; pageSize?: number }) {
+            return { data: { items: [], total: 0 } };
+        }
+        async getById(_actor: unknown, id: string) {
+            if (id === '87654321-4321-4321-8765-876543218765') return { data: null };
+            return { data: { id, name: 'Test Product', type: 'recurring' } };
+        }
+        async update(_actor: unknown, id: string, body: Record<string, unknown>) {
+            return { data: { id, name: (body as any).name } };
+        }
+        async softDelete(_actor: unknown, id: string) {
+            return { data: { id, deletedAt: new Date().toISOString() } };
+        }
+    }
+
+    class PricingPlanService {
+        async create(_actor: unknown, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id: 'pricing_plan_mock_id',
+                    productId: String((body as any).productId),
+                    billingScheme: String((body as any).billingScheme || 'per_unit'),
+                    interval: (body as any).interval || null,
+                    amount: Number((body as any).amount || 0),
+                    currency: String((body as any).currency || 'USD'),
+                    metadata: (body as any).metadata || null,
+                    lifecycleState: (body as any).lifecycleState || 'draft',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async list(_actor: unknown, _opts?: { page?: number; pageSize?: number }) {
+            return { data: { items: [], total: 0 } };
+        }
+        async getById(_actor: unknown, id: string) {
+            if (id === '87654321-4321-4321-8765-876543218765') return { data: null };
+            return { data: { id, billingScheme: 'per_unit', currency: 'USD' } };
+        }
+        async update(_actor: unknown, id: string, body: Record<string, unknown>) {
+            return { data: { id, amount: (body as any).amount } };
+        }
+        async softDelete(_actor: unknown, id: string) {
+            return { data: { id, deletedAt: new Date().toISOString() } };
+        }
+    }
+
+    class PricingTierService {
+        async create(_actor: unknown, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id: 'pricing_tier_mock_id',
+                    pricingPlanId: String((body as any).pricingPlanId),
+                    minQuantity: Number((body as any).minQuantity),
+                    maxQuantity:
+                        (body as any).maxQuantity === null
+                            ? null
+                            : Number((body as any).maxQuantity),
+                    unitPriceMinor: Number((body as any).unitPriceMinor),
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async list(_actor: unknown, _opts?: { page?: number; pageSize?: number }) {
+            return { data: { items: [], total: 0 } };
+        }
+        async getById(_actor: unknown, id: string) {
+            if (id === '87654321-4321-4321-8765-876543218765') return { data: null };
+            return { data: { id, minQuantity: 1, maxQuantity: 10, unitPriceMinor: 1000 } };
+        }
+        async update(_actor: unknown, id: string, body: Record<string, unknown>) {
+            return { data: { id, unitPriceMinor: (body as any).unitPriceMinor } };
+        }
+        async softDelete(_actor: unknown, id: string) {
+            return { data: { id, deletedAt: new Date().toISOString() } };
+        }
+    }
+
+    class SubscriptionService {
+        async create(_actor: unknown, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id: 'subscription_mock_id',
+                    clientId: String((body as any).clientId),
+                    pricingPlanId: String((body as any).pricingPlanId),
+                    status: String((body as any).status || 'active'),
+                    currentPeriodStart:
+                        (body as any).currentPeriodStart || new Date().toISOString(),
+                    currentPeriodEnd: (body as any).currentPeriodEnd || null,
+                    canceledAt: (body as any).canceledAt || null,
+                    quantity: Number((body as any).quantity || 1),
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async list(_actor: unknown, _opts?: { page?: number; pageSize?: number }) {
+            return { data: { items: [], total: 0 } };
+        }
+        async getById(_actor: unknown, id: string) {
+            if (id === '87654321-4321-4321-8765-876543218765') return { data: null };
+            return { data: { id, status: 'active', quantity: 1 } };
+        }
+        async update(_actor: unknown, id: string, body: Record<string, unknown>) {
+            return { data: { id, status: (body as any).status } };
+        }
+        async softDelete(_actor: unknown, id: string) {
+            return { data: { id, deletedAt: new Date().toISOString() } };
+        }
+    }
+
+    class PurchaseService {
+        async create(_actor: unknown, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id: 'purchase_mock_id',
+                    clientId: String((body as any).clientId),
+                    pricingPlanId: String((body as any).pricingPlanId),
+                    amount: Number((body as any).amount),
+                    currency: String((body as any).currency),
+                    status: String((body as any).status || 'pending'),
+                    quantity: Number((body as any).quantity || 1),
+                    paymentId: (body as any).paymentId || null,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async list(_actor: unknown, _opts?: { page?: number; pageSize?: number }) {
+            return { data: { items: [], total: 0 } };
+        }
+        async getById(_actor: unknown, id: string) {
+            if (id === '87654321-4321-4321-8765-876543218765') return { data: null };
+            return { data: { id, amount: 99.99, currency: 'USD', status: 'completed' } };
+        }
+        async update(_actor: unknown, id: string, body: Record<string, unknown>) {
+            return { data: { id, status: (body as any).status } };
+        }
+        async softDelete(_actor: unknown, id: string) {
+            return { data: { id, deletedAt: new Date().toISOString() } };
+        }
+    }
+
+    class SubscriptionItemService {
+        async create(_actor: unknown, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id: 'subscription_item_mock_id',
+                    sourceId: String((body as any).sourceId),
+                    sourceType: String((body as any).sourceType),
+                    linkedEntityId: String((body as any).linkedEntityId),
+                    entityType: String((body as any).entityType),
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async list(_actor: unknown, _opts?: { page?: number; pageSize?: number }) {
+            return { data: { items: [], total: 0 } };
+        }
+        async getById(_actor: unknown, id: string) {
+            if (id === '87654321-4321-4321-8765-876543218765') return { data: null };
+            return { data: { id, sourceType: 'subscription', entityType: 'product' } };
+        }
+        async update(_actor: unknown, id: string, body: Record<string, unknown>) {
+            return { data: { id, entityType: (body as any).entityType } };
+        }
+        async softDelete(_actor: unknown, id: string) {
+            return { data: { id, deletedAt: new Date().toISOString() } };
+        }
+    }
+
+    class PaymentService {
+        async create(_actor: unknown, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id: 'payment_mock_id',
+                    userId: String((body as any).userId),
+                    paymentPlanId: (body as any).paymentPlanId || null,
+                    invoiceId: (body as any).invoiceId || null,
+                    type: String((body as any).type || 'SUBSCRIPTION'),
+                    status: String((body as any).status || 'PENDING'),
+                    paymentMethod: (body as any).paymentMethod || null,
+                    amount: Number((body as any).amount),
+                    currency: String((body as any).currency || 'USD'),
+                    description: (body as any).description || null,
+                    metadata: (body as any).metadata || null,
+                    mercadoPagoPaymentId: (body as any).mercadoPagoPaymentId || null,
+                    mercadoPagoPreferenceId: (body as any).mercadoPagoPreferenceId || null,
+                    externalReference: (body as any).externalReference || null,
+                    processedAt: (body as any).processedAt || null,
+                    expiresAt: (body as any).expiresAt || null,
+                    failureReason: (body as any).failureReason || null,
+                    mercadoPagoResponse: (body as any).mercadoPagoResponse || null,
+                    lifecycleState: (body as any).lifecycleState || 'ACTIVE',
+                    isActive: (body as any).isActive !== undefined ? (body as any).isActive : true,
+                    isDeleted:
+                        (body as any).isDeleted !== undefined ? (body as any).isDeleted : false,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async search(_actor: unknown, _opts?: any) {
+            return {
+                data: {
+                    items: [],
+                    pagination: {
+                        page: 1,
+                        pageSize: 10,
+                        total: 0,
+                        totalPages: 0
+                    }
+                }
+            };
+        }
+        async findById(_actor: unknown, params: { id: string }) {
+            if (params.id === '87654321-4321-4321-8765-876543218765') return { data: null };
+            return {
+                data: {
+                    id: params.id,
+                    userId: 'user_mock_id',
+                    amount: 100,
+                    currency: 'USD',
+                    status: 'COMPLETED',
+                    type: 'SUBSCRIPTION',
+                    paymentMethod: 'CREDIT_CARD',
+                    createdAt: '2024-01-01T00:00:00.000Z',
+                    updatedAt: '2024-01-01T00:00:00.000Z'
+                }
+            };
+        }
+        async update(_actor: unknown, params: { id: string; data: Record<string, unknown> }) {
+            return {
+                data: {
+                    id: params.id,
+                    status: (params.data as any).status || 'COMPLETED',
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async delete(_actor: unknown, params: { id: string }) {
+            return {
+                data: {
+                    id: params.id,
+                    deletedAt: new Date().toISOString(),
+                    isDeleted: true
+                }
+            };
+        }
+    }
+
+    class PaymentMethodService {
+        async create(_actor: unknown, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id: 'payment_method_mock_id',
+                    userId: String((body as any).userId),
+                    type: String((body as any).type || 'CREDIT_CARD'),
+                    provider: (body as any).provider || null,
+                    isDefault:
+                        (body as any).isDefault !== undefined ? (body as any).isDefault : false,
+                    cardBrand: (body as any).cardBrand || null,
+                    cardLastFour: (body as any).cardLastFour || null,
+                    cardExpiryMonth: (body as any).cardExpiryMonth || null,
+                    cardExpiryYear: (body as any).cardExpiryYear || null,
+                    cardHolderName: (body as any).cardHolderName || null,
+                    mercadoPagoCardId: (body as any).mercadoPagoCardId || null,
+                    mercadoPagoCustomerId: (body as any).mercadoPagoCustomerId || null,
+                    externalReference: (body as any).externalReference || null,
+                    metadata: (body as any).metadata || null,
+                    lifecycleState: (body as any).lifecycleState || 'ACTIVE',
+                    isActive: (body as any).isActive !== undefined ? (body as any).isActive : true,
+                    isDeleted:
+                        (body as any).isDeleted !== undefined ? (body as any).isDeleted : false,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async search(_actor: unknown, _opts?: any) {
+            return {
+                data: {
+                    items: [],
+                    pagination: {
+                        page: 1,
+                        pageSize: 10,
+                        total: 0,
+                        totalPages: 0
+                    }
+                }
+            };
+        }
+        async findById(_actor: unknown, params: { id: string }) {
+            if (params.id === '87654321-4321-4321-8765-876543218765') return { data: null };
+            return {
+                data: {
+                    id: params.id,
+                    userId: 'user_mock_id',
+                    type: 'CREDIT_CARD',
+                    provider: 'MERCADO_PAGO',
+                    isDefault: true,
+                    cardBrand: 'VISA',
+                    cardLastFour: '4242',
+                    cardExpiryMonth: 12,
+                    cardExpiryYear: 2025,
+                    createdAt: '2024-01-01T00:00:00.000Z',
+                    updatedAt: '2024-01-01T00:00:00.000Z'
+                }
+            };
+        }
+        async update(_actor: unknown, params: { id: string; data: Record<string, unknown> }) {
+            return {
+                data: {
+                    id: params.id,
+                    isDefault:
+                        (params.data as any).isDefault !== undefined
+                            ? (params.data as any).isDefault
+                            : false,
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async delete(_actor: unknown, params: { id: string }) {
+            return {
+                data: {
+                    id: params.id,
+                    deletedAt: new Date().toISOString(),
+                    isDeleted: true
+                }
+            };
+        }
+    }
+
+    class InvoiceService {
+        async create(_actor: unknown, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id: 'invoice_mock_id',
+                    clientId: String((body as any).clientId),
+                    subscriptionId: (body as any).subscriptionId || null,
+                    invoiceNumber: String((body as any).invoiceNumber || 'INV-001'),
+                    status: String((body as any).status || 'DRAFT'),
+                    issueDate: (body as any).issueDate || new Date().toISOString(),
+                    dueDate: (body as any).dueDate || null,
+                    paidDate: (body as any).paidDate || null,
+                    subtotal: Number((body as any).subtotal || 0),
+                    taxAmount: Number((body as any).taxAmount || 0),
+                    totalAmount: Number((body as any).totalAmount || 0),
+                    currency: String((body as any).currency || 'USD'),
+                    notes: (body as any).notes || null,
+                    metadata: (body as any).metadata || null,
+                    lifecycleState: (body as any).lifecycleState || 'ACTIVE',
+                    isActive: (body as any).isActive !== undefined ? (body as any).isActive : true,
+                    isDeleted:
+                        (body as any).isDeleted !== undefined ? (body as any).isDeleted : false,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async search(_actor: unknown, _opts?: any) {
+            return {
+                data: {
+                    items: [],
+                    pagination: {
+                        page: 1,
+                        pageSize: 10,
+                        total: 0,
+                        totalPages: 0
+                    }
+                }
+            };
+        }
+        async findById(_actor: unknown, params: { id: string }) {
+            if (params.id === '87654321-4321-4321-8765-876543218765') return { data: null };
+            return {
+                data: {
+                    id: params.id,
+                    clientId: 'client_mock_id',
+                    invoiceNumber: 'INV-001',
+                    status: 'PAID',
+                    issueDate: '2024-01-01T00:00:00.000Z',
+                    totalAmount: 100,
+                    currency: 'USD',
+                    createdAt: '2024-01-01T00:00:00.000Z',
+                    updatedAt: '2024-01-01T00:00:00.000Z'
+                }
+            };
+        }
+        async update(_actor: unknown, params: { id: string; data: Record<string, unknown> }) {
+            return {
+                data: {
+                    id: params.id,
+                    status: (params.data as any).status || 'PAID',
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async delete(_actor: unknown, params: { id: string }) {
+            return {
+                data: {
+                    id: params.id,
+                    deletedAt: new Date().toISOString(),
+                    isDeleted: true
+                }
+            };
+        }
+    }
+
+    class InvoiceLineService {
+        async create(_actor: unknown, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id: 'invoice_line_mock_id',
+                    invoiceId: String((body as any).invoiceId),
+                    description: String((body as any).description),
+                    quantity: Number((body as any).quantity || 1),
+                    unitPrice: Number((body as any).unitPrice || 0),
+                    totalAmount: Number((body as any).totalAmount || 0),
+                    taxAmount: (body as any).taxAmount || null,
+                    discountAmount: (body as any).discountAmount || null,
+                    productId: (body as any).productId || null,
+                    metadata: (body as any).metadata || null,
+                    lifecycleState: (body as any).lifecycleState || 'ACTIVE',
+                    isActive: (body as any).isActive !== undefined ? (body as any).isActive : true,
+                    isDeleted:
+                        (body as any).isDeleted !== undefined ? (body as any).isDeleted : false,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async search(_actor: unknown, _opts?: any) {
+            return {
+                data: {
+                    items: [],
+                    pagination: {
+                        page: 1,
+                        pageSize: 10,
+                        total: 0,
+                        totalPages: 0
+                    }
+                }
+            };
+        }
+        async findById(_actor: unknown, params: { id: string }) {
+            if (params.id === '87654321-4321-4321-8765-876543218765') return { data: null };
+            return {
+                data: {
+                    id: params.id,
+                    invoiceId: 'invoice_mock_id',
+                    description: 'Test invoice line',
+                    quantity: 1,
+                    unitPrice: 100,
+                    totalAmount: 100,
+                    createdAt: '2024-01-01T00:00:00.000Z',
+                    updatedAt: '2024-01-01T00:00:00.000Z'
+                }
+            };
+        }
+        async update(_actor: unknown, params: { id: string; data: Record<string, unknown> }) {
+            return {
+                data: {
+                    id: params.id,
+                    quantity: (params.data as any).quantity || 1,
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async delete(_actor: unknown, params: { id: string }) {
+            return {
+                data: {
+                    id: params.id,
+                    deletedAt: new Date().toISOString(),
+                    isDeleted: true
+                }
+            };
+        }
+    }
+
+    class RefundService {
+        async create(_actor: unknown, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id: 'refund_mock_id',
+                    paymentId: String((body as any).paymentId),
+                    clientId: String((body as any).clientId),
+                    refundNumber: String((body as any).refundNumber || 'REF-001'),
+                    amount: Number((body as any).amount || 0),
+                    currency: String((body as any).currency || 'USD'),
+                    reason: String((body as any).reason || 'CUSTOMER_REQUEST'),
+                    status: String((body as any).status || 'PENDING'),
+                    description: (body as any).description || null,
+                    processedAt: (body as any).processedAt || null,
+                    processedById: (body as any).processedById || null,
+                    providerRefundId: (body as any).providerRefundId || null,
+                    failureReason: (body as any).failureReason || null,
+                    lifecycleState: (body as any).lifecycleState || 'ACTIVE',
+                    isActive: (body as any).isActive !== undefined ? (body as any).isActive : true,
+                    isDeleted:
+                        (body as any).isDeleted !== undefined ? (body as any).isDeleted : false,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async search(_actor: unknown, _opts?: any) {
+            return {
+                data: {
+                    items: [],
+                    pagination: {
+                        page: 1,
+                        pageSize: 10,
+                        total: 0,
+                        totalPages: 0
+                    }
+                }
+            };
+        }
+        async findById(_actor: unknown, params: { id: string }) {
+            if (params.id === '87654321-4321-4321-8765-876543218765') return { data: null };
+            return {
+                data: {
+                    id: params.id,
+                    paymentId: 'payment_mock_id',
+                    clientId: 'client_mock_id',
+                    refundNumber: 'REF-001',
+                    amount: 50,
+                    currency: 'USD',
+                    reason: 'CUSTOMER_REQUEST',
+                    status: 'COMPLETED',
+                    createdAt: '2024-01-01T00:00:00.000Z',
+                    updatedAt: '2024-01-01T00:00:00.000Z'
+                }
+            };
+        }
+        async update(_actor: unknown, params: { id: string; data: Record<string, unknown> }) {
+            return {
+                data: {
+                    id: params.id,
+                    status: (params.data as any).status || 'COMPLETED',
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async delete(_actor: unknown, params: { id: string }) {
+            return {
+                data: {
+                    id: params.id,
+                    deletedAt: new Date().toISOString(),
+                    isDeleted: true
+                }
+            };
+        }
+    }
+
+    class AdSlotService {
+        async create(_actor: unknown, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id: 'ad_slot_mock_id',
+                    slotIdentifier: String((body as any).slotIdentifier || 'SLOT-001'),
+                    placementPage: String((body as any).placementPage || 'HOME'),
+                    position: String((body as any).position || 'TOP_BANNER'),
+                    dimensions: (body as any).dimensions || { width: 728, height: 90 },
+                    pricingModel: String((body as any).pricingModel || 'CPM'),
+                    basePrice: Number((body as any).basePrice || 0),
+                    currency: String((body as any).currency || 'USD'),
+                    isActive: (body as any).isActive !== undefined ? (body as any).isActive : true,
+                    isTestSlot:
+                        (body as any).isTestSlot !== undefined ? (body as any).isTestSlot : false,
+                    metadata: (body as any).metadata || null,
+                    lifecycleState: (body as any).lifecycleState || 'ACTIVE',
+                    isDeleted:
+                        (body as any).isDeleted !== undefined ? (body as any).isDeleted : false,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async search(_actor: unknown, _opts?: any) {
+            return {
+                data: {
+                    items: [],
+                    pagination: {
+                        page: 1,
+                        pageSize: 10,
+                        total: 0,
+                        totalPages: 0
+                    }
+                }
+            };
+        }
+        async findById(_actor: unknown, params: { id: string }) {
+            if (params.id === '87654321-4321-4321-8765-876543218765') return { data: null };
+            return {
+                data: {
+                    id: params.id,
+                    slotIdentifier: 'SLOT-001',
+                    placementPage: 'HOME',
+                    position: 'TOP_BANNER',
+                    pricingModel: 'CPM',
+                    basePrice: 10,
+                    currency: 'USD',
+                    isActive: true,
+                    createdAt: '2024-01-01T00:00:00.000Z',
+                    updatedAt: '2024-01-01T00:00:00.000Z'
+                }
+            };
+        }
+        async update(_actor: unknown, params: { id: string; data: Record<string, unknown> }) {
+            return {
+                data: {
+                    id: params.id,
+                    basePrice: (params.data as any).basePrice || 10,
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async delete(_actor: unknown, params: { id: string }) {
+            return {
+                data: {
+                    id: params.id,
+                    deletedAt: new Date().toISOString(),
+                    isDeleted: true
+                }
+            };
+        }
+    }
+
+    class AdSlotReservationService {
+        async create(_actor: unknown, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id: 'ad_slot_reservation_mock_id',
+                    adSlotId: String((body as any).adSlotId),
+                    clientId: String((body as any).clientId),
+                    reservationNumber: String((body as any).reservationNumber || 'RES-001'),
+                    startDate: (body as any).startDate || new Date().toISOString(),
+                    endDate: (body as any).endDate || new Date().toISOString(),
+                    status: String((body as any).status || 'PENDING'),
+                    totalAmount: Number((body as any).totalAmount || 0),
+                    currency: String((body as any).currency || 'USD'),
+                    lifecycleState: (body as any).lifecycleState || 'ACTIVE',
+                    isDeleted: false,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async search(_actor: unknown, _opts?: any) {
+            return {
+                data: { items: [], pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 } }
+            };
+        }
+        async findById(_actor: unknown, params: { id: string }) {
+            if (params.id === '87654321-4321-4321-8765-876543218765') return { data: null };
+            return {
+                data: {
+                    id: params.id,
+                    adSlotId: 'adslot_mock_id',
+                    clientId: 'client_mock_id',
+                    reservationNumber: 'RES-001',
+                    status: 'CONFIRMED',
+                    totalAmount: 100,
+                    createdAt: '2024-01-01T00:00:00.000Z',
+                    updatedAt: '2024-01-01T00:00:00.000Z'
+                }
+            };
+        }
+        async update(_actor: unknown, params: { id: string; data: Record<string, unknown> }) {
+            return {
+                data: {
+                    id: params.id,
+                    status: (params.data as any).status || 'CONFIRMED',
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async delete(_actor: unknown, params: { id: string }) {
+            return {
+                data: { id: params.id, deletedAt: new Date().toISOString(), isDeleted: true }
+            };
+        }
+    }
+
+    class ProfessionalServiceService {
+        async create(_actor: unknown, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id: 'professional_service_mock_id',
+                    providerId: String((body as any).providerId),
+                    serviceName: String((body as any).serviceName || 'Mock Service'),
+                    serviceType: String((body as any).serviceType || 'CONSULTING'),
+                    description: String((body as any).description || ''),
+                    basePrice: Number((body as any).basePrice || 0),
+                    currency: String((body as any).currency || 'USD'),
+                    durationMinutes: Number((body as any).durationMinutes || 60),
+                    isActive: (body as any).isActive !== undefined ? (body as any).isActive : true,
+                    metadata: (body as any).metadata || null,
+                    lifecycleState: (body as any).lifecycleState || 'ACTIVE',
+                    isDeleted: false,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async search(_actor: unknown, _opts?: any) {
+            return {
+                data: { items: [], pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 } }
+            };
+        }
+        async findById(_actor: unknown, params: { id: string }) {
+            if (params.id === '87654321-4321-4321-8765-876543218765') return { data: null };
+            return {
+                data: {
+                    id: params.id,
+                    providerId: 'provider_mock_id',
+                    serviceName: 'Mock Service',
+                    serviceType: 'CONSULTING',
+                    basePrice: 100,
+                    currency: 'USD',
+                    durationMinutes: 60,
+                    isActive: true,
+                    createdAt: '2024-01-01T00:00:00.000Z',
+                    updatedAt: '2024-01-01T00:00:00.000Z'
+                }
+            };
+        }
+        async update(_actor: unknown, params: { id: string; data: Record<string, unknown> }) {
+            return {
+                data: {
+                    id: params.id,
+                    basePrice: (params.data as any).basePrice || 100,
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async delete(_actor: unknown, params: { id: string }) {
+            return {
+                data: { id: params.id, deletedAt: new Date().toISOString(), isDeleted: true }
+            };
+        }
+    }
+
+    class ProfessionalServiceOrderService {
+        async create(_actor: unknown, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id: 'service_order_mock_id',
+                    clientId: String((body as any).clientId),
+                    serviceTypeId: String((body as any).serviceTypeId),
+                    pricingPlanId: String((body as any).pricingPlanId),
+                    status: 'PENDING',
+                    orderedAt: new Date().toISOString(),
+                    clientRequirements: String((body as any).clientRequirements || ''),
+                    pricing: (body as any).pricing || {},
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async search(_actor: unknown, _opts?: any) {
+            return {
+                data: { items: [], pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 } }
+            };
+        }
+        async findById(_actor: unknown, params: { id: string }) {
+            if (params.id === '87654321-4321-4321-8765-876543218765') return { data: null };
+            return {
+                data: {
+                    id: params.id,
+                    clientId: 'client_mock_id',
+                    serviceTypeId: 'service_type_mock_id',
+                    pricingPlanId: 'pricing_plan_mock_id',
+                    status: 'PENDING',
+                    orderedAt: '2024-01-01T00:00:00.000Z',
+                    clientRequirements: 'Mock requirements',
+                    pricing: {},
+                    createdAt: '2024-01-01T00:00:00.000Z',
+                    updatedAt: '2024-01-01T00:00:00.000Z'
+                }
+            };
+        }
+        async update(_actor: unknown, params: { id: string; data: Record<string, unknown> }) {
+            return {
+                data: {
+                    id: params.id,
+                    status: (params.data as any).status || 'PENDING',
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async delete(_actor: unknown, params: { id: string }) {
+            return {
+                data: { id: params.id, deletedAt: new Date().toISOString(), isDeleted: true }
+            };
+        }
+    }
+
+    class ServiceListingService {
+        async create(_actor: unknown, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id: 'service_listing_mock_id',
+                    providerId: String((body as any).providerId),
+                    title: String((body as any).title || 'Mock Service Listing'),
+                    description: String((body as any).description || ''),
+                    serviceCategory: String((body as any).serviceCategory || 'OTHER'),
+                    basePrice: Number((body as any).basePrice || 0),
+                    currency: String((body as any).currency || 'USD'),
+                    isActive: (body as any).isActive !== undefined ? (body as any).isActive : true,
+                    metadata: (body as any).metadata || null,
+                    lifecycleState: (body as any).lifecycleState || 'ACTIVE',
+                    isDeleted: false,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async search(_actor: unknown, _opts?: any) {
+            return {
+                data: { items: [], pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 } }
+            };
+        }
+        async findById(_actor: unknown, params: { id: string }) {
+            if (params.id === '87654321-4321-4321-8765-876543218765') return { data: null };
+            return {
+                data: {
+                    id: params.id,
+                    providerId: 'provider_mock_id',
+                    title: 'Mock Service Listing',
+                    serviceCategory: 'CONSULTING',
+                    basePrice: 100,
+                    currency: 'USD',
+                    isActive: true,
+                    createdAt: '2024-01-01T00:00:00.000Z',
+                    updatedAt: '2024-01-01T00:00:00.000Z'
+                }
+            };
+        }
+        async update(_actor: unknown, params: { id: string; data: Record<string, unknown> }) {
+            return {
+                data: {
+                    id: params.id,
+                    basePrice: (params.data as any).basePrice || 100,
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async delete(_actor: unknown, params: { id: string }) {
+            return {
+                data: { id: params.id, deletedAt: new Date().toISOString(), isDeleted: true }
+            };
+        }
+    }
+
+    class AccommodationListingService {
+        async create(_actor: unknown, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id: 'accommodation_listing_mock_id',
+                    accommodationId: String((body as any).accommodationId),
+                    pricingPlanId: String((body as any).pricingPlanId),
+                    status: String((body as any).status || 'DRAFT'),
+                    isTrial: (body as any).isTrial !== undefined ? (body as any).isTrial : false,
+                    trialEndsAt: (body as any).trialEndsAt || null,
+                    listingStartDate: (body as any).listingStartDate || new Date().toISOString(),
+                    listingEndDate: (body as any).listingEndDate || null,
+                    metadata: (body as any).metadata || null,
+                    lifecycleState: (body as any).lifecycleState || 'ACTIVE',
+                    isDeleted: false,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async search(_actor: unknown, _opts?: any) {
+            return {
+                data: { items: [], pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 } }
+            };
+        }
+        async findById(_actor: unknown, params: { id: string }) {
+            if (params.id === '87654321-4321-4321-8765-876543218765') return { data: null };
+            return {
+                data: {
+                    id: params.id,
+                    accommodationId: 'accommodation_mock_id',
+                    pricingPlanId: 'pricing_plan_mock_id',
+                    status: 'ACTIVE',
+                    isTrial: false,
+                    listingStartDate: '2024-01-01T00:00:00.000Z',
+                    createdAt: '2024-01-01T00:00:00.000Z',
+                    updatedAt: '2024-01-01T00:00:00.000Z'
+                }
+            };
+        }
+        async update(_actor: unknown, params: { id: string; data: Record<string, unknown> }) {
+            return {
+                data: {
+                    id: params.id,
+                    status: (params.data as any).status || 'ACTIVE',
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async delete(_actor: unknown, params: { id: string }) {
+            return {
+                data: { id: params.id, deletedAt: new Date().toISOString(), isDeleted: true }
+            };
+        }
+    }
+
+    class CreditNoteService {
+        async create(_actor: unknown, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id: 'credit_note_mock_id',
+                    invoiceId: String((body as any).invoiceId),
+                    clientId: String((body as any).clientId),
+                    creditNoteNumber: String((body as any).creditNoteNumber || 'CN-001'),
+                    amount: Number((body as any).amount || 0),
+                    currency: String((body as any).currency || 'USD'),
+                    reason: String((body as any).reason || 'REFUND'),
+                    status: String((body as any).status || 'DRAFT'),
+                    issueDate: (body as any).issueDate || new Date().toISOString(),
+                    notes: (body as any).notes || null,
+                    metadata: (body as any).metadata || null,
+                    lifecycleState: (body as any).lifecycleState || 'ACTIVE',
+                    isActive: (body as any).isActive !== undefined ? (body as any).isActive : true,
+                    isDeleted: false,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async search(_actor: unknown, _opts?: any) {
+            return {
+                data: { items: [], pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 } }
+            };
+        }
+        async findById(_actor: unknown, params: { id: string }) {
+            if (params.id === '87654321-4321-4321-8765-876543218765') return { data: null };
+            return {
+                data: {
+                    id: params.id,
+                    invoiceId: 'invoice_mock_id',
+                    clientId: 'client_mock_id',
+                    creditNoteNumber: 'CN-001',
+                    amount: 50,
+                    currency: 'USD',
+                    reason: 'REFUND',
+                    status: 'ISSUED',
+                    createdAt: '2024-01-01T00:00:00.000Z',
+                    updatedAt: '2024-01-01T00:00:00.000Z'
+                }
+            };
+        }
+        async update(_actor: unknown, params: { id: string; data: Record<string, unknown> }) {
+            return {
+                data: {
+                    id: params.id,
+                    status: (params.data as any).status || 'ISSUED',
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async delete(_actor: unknown, params: { id: string }) {
+            return {
+                data: { id: params.id, deletedAt: new Date().toISOString(), isDeleted: true }
+            };
+        }
+    }
+
+    class PromotionService {
+        async create(_actor: unknown, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id: 'promotion_mock_id',
+                    name: String((body as any).name || 'Mock Promotion'),
+                    description: (body as any).description || null,
+                    promotionType: String((body as any).promotionType || 'PERCENTAGE'),
+                    discountPercentage: (body as any).discountPercentage || null,
+                    discountAmount: (body as any).discountAmount || null,
+                    startDate: (body as any).startDate || new Date().toISOString(),
+                    endDate: (body as any).endDate || null,
+                    isActive: (body as any).isActive !== undefined ? (body as any).isActive : true,
+                    metadata: (body as any).metadata || null,
+                    lifecycleState: (body as any).lifecycleState || 'ACTIVE',
+                    isDeleted: false,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async search(_actor: unknown, _opts?: any) {
+            return {
+                data: { items: [], pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 } }
+            };
+        }
+        async findById(_actor: unknown, params: { id: string }) {
+            if (params.id === '87654321-4321-4321-8765-876543218765') return { data: null };
+            return {
+                data: {
+                    id: params.id,
+                    name: 'Mock Promotion',
+                    promotionType: 'PERCENTAGE',
+                    discountPercentage: 10,
+                    startDate: '2024-01-01T00:00:00.000Z',
+                    isActive: true,
+                    createdAt: '2024-01-01T00:00:00.000Z',
+                    updatedAt: '2024-01-01T00:00:00.000Z'
+                }
+            };
+        }
+        async update(_actor: unknown, params: { id: string; data: Record<string, unknown> }) {
+            return {
+                data: {
+                    id: params.id,
+                    name: (params.data as any).name || 'Updated Promotion',
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async delete(_actor: unknown, params: { id: string }) {
+            return {
+                data: { id: params.id, deletedAt: new Date().toISOString(), isDeleted: true }
+            };
+        }
+    }
+
+    class DiscountCodeService {
+        async create(_actor: unknown, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id: 'discount_code_mock_id',
+                    code: String((body as any).code || 'MOCK10'),
+                    promotionId: (body as any).promotionId || null,
+                    discountType: String((body as any).discountType || 'PERCENTAGE'),
+                    discountValue: Number((body as any).discountValue || 10),
+                    maxUses: (body as any).maxUses || null,
+                    usedCount: (body as any).usedCount || 0,
+                    validFrom: (body as any).validFrom || new Date().toISOString(),
+                    validTo: (body as any).validTo || null,
+                    isActive: (body as any).isActive !== undefined ? (body as any).isActive : true,
+                    metadata: (body as any).metadata || null,
+                    lifecycleState: (body as any).lifecycleState || 'ACTIVE',
+                    isDeleted: false,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async search(_actor: unknown, _opts?: any) {
+            return {
+                data: { items: [], pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 } }
+            };
+        }
+        async findById(_actor: unknown, params: { id: string }) {
+            if (params.id === '87654321-4321-4321-8765-876543218765') return { data: null };
+            return {
+                data: {
+                    id: params.id,
+                    code: 'MOCK10',
+                    discountType: 'PERCENTAGE',
+                    discountValue: 10,
+                    validFrom: '2024-01-01T00:00:00.000Z',
+                    isActive: true,
+                    usedCount: 0,
+                    createdAt: '2024-01-01T00:00:00.000Z',
+                    updatedAt: '2024-01-01T00:00:00.000Z'
+                }
+            };
+        }
+        async update(_actor: unknown, params: { id: string; data: Record<string, unknown> }) {
+            return {
+                data: {
+                    id: params.id,
+                    code: (params.data as any).code || 'UPDATED10',
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async delete(_actor: unknown, params: { id: string }) {
+            return {
+                data: { id: params.id, deletedAt: new Date().toISOString(), isDeleted: true }
+            };
+        }
+    }
+
+    class DiscountCodeUsageService {
+        async create(_actor: unknown, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id: 'discount_code_usage_mock_id',
+                    discountCodeId: String((body as any).discountCodeId),
+                    clientId: String((body as any).clientId),
+                    subscriptionId: (body as any).subscriptionId || null,
+                    purchaseId: (body as any).purchaseId || null,
+                    discountAmount: Number((body as any).discountAmount || 0),
+                    usedAt: new Date().toISOString(),
+                    metadata: (body as any).metadata || null,
+                    lifecycleState: (body as any).lifecycleState || 'ACTIVE',
+                    isDeleted: false,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async search(_actor: unknown, _opts?: any) {
+            return {
+                data: { items: [], pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 } }
+            };
+        }
+        async findById(_actor: unknown, params: { id: string }) {
+            if (params.id === '87654321-4321-4321-8765-876543218765') return { data: null };
+            return {
+                data: {
+                    id: params.id,
+                    discountCodeId: 'discount_code_mock_id',
+                    clientId: 'client_mock_id',
+                    discountAmount: 10,
+                    usedAt: '2024-01-01T00:00:00.000Z',
+                    createdAt: '2024-01-01T00:00:00.000Z',
+                    updatedAt: '2024-01-01T00:00:00.000Z'
+                }
+            };
+        }
+        async update(_actor: unknown, params: { id: string; data: Record<string, unknown> }) {
+            return {
+                data: {
+                    id: params.id,
+                    discountAmount: (params.data as any).discountAmount || 10,
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async delete(_actor: unknown, params: { id: string }) {
+            return {
+                data: { id: params.id, deletedAt: new Date().toISOString(), isDeleted: true }
+            };
+        }
+    }
+
+    class CampaignService {
+        async create(_actor: unknown, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id: 'campaign_mock_id',
+                    name: String((body as any).name || 'Mock Campaign'),
+                    description: (body as any).description || null,
+                    campaignType: String((body as any).campaignType || 'EMAIL'),
+                    startDate: (body as any).startDate || new Date().toISOString(),
+                    endDate: (body as any).endDate || null,
+                    budget: (body as any).budget || null,
+                    currency: (body as any).currency || 'USD',
+                    status: String((body as any).status || 'DRAFT'),
+                    metadata: (body as any).metadata || null,
+                    lifecycleState: (body as any).lifecycleState || 'ACTIVE',
+                    isActive: (body as any).isActive !== undefined ? (body as any).isActive : true,
+                    isDeleted: false,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async search(_actor: unknown, _opts?: any) {
+            return {
+                data: { items: [], pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 } }
+            };
+        }
+        async findById(_actor: unknown, params: { id: string }) {
+            if (params.id === '87654321-4321-4321-8765-876543218765') return { data: null };
+            return {
+                data: {
+                    id: params.id,
+                    name: 'Mock Campaign',
+                    campaignType: 'EMAIL',
+                    startDate: '2024-01-01T00:00:00.000Z',
+                    status: 'ACTIVE',
+                    createdAt: '2024-01-01T00:00:00.000Z',
+                    updatedAt: '2024-01-01T00:00:00.000Z'
+                }
+            };
+        }
+        async update(_actor: unknown, params: { id: string; data: Record<string, unknown> }) {
+            return {
+                data: {
+                    id: params.id,
+                    status: (params.data as any).status || 'ACTIVE',
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async delete(_actor: unknown, params: { id: string }) {
+            return {
+                data: { id: params.id, deletedAt: new Date().toISOString(), isDeleted: true }
+            };
+        }
+    }
+
+    class NotificationService {
+        async create(_actor: unknown, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id: 'notification_mock_id',
+                    userId: String((body as any).userId),
+                    type: String((body as any).type || 'INFO'),
+                    title: String((body as any).title || 'Mock Notification'),
+                    message: String((body as any).message || 'Mock notification message'),
+                    isRead: (body as any).isRead !== undefined ? (body as any).isRead : false,
+                    readAt: (body as any).readAt || null,
+                    actionUrl: (body as any).actionUrl || null,
+                    metadata: (body as any).metadata || null,
+                    lifecycleState: (body as any).lifecycleState || 'ACTIVE',
+                    isActive: (body as any).isActive !== undefined ? (body as any).isActive : true,
+                    isDeleted: false,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async search(_actor: unknown, _opts?: any) {
+            return {
+                data: { items: [], pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 } }
+            };
+        }
+        async findById(_actor: unknown, params: { id: string }) {
+            if (params.id === '87654321-4321-4321-8765-876543218765') return { data: null };
+            return {
+                data: {
+                    id: params.id,
+                    userId: 'user_mock_id',
+                    type: 'INFO',
+                    title: 'Mock Notification',
+                    message: 'Mock notification message',
+                    isRead: false,
+                    createdAt: '2024-01-01T00:00:00.000Z',
+                    updatedAt: '2024-01-01T00:00:00.000Z'
+                }
+            };
+        }
+        async update(_actor: unknown, params: { id: string; data: Record<string, unknown> }) {
+            return {
+                data: {
+                    id: params.id,
+                    isRead: (params.data as any).isRead || true,
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async delete(_actor: unknown, params: { id: string }) {
+            return {
+                data: { id: params.id, deletedAt: new Date().toISOString(), isDeleted: true }
+            };
+        }
+    }
+
+    class AdPricingCatalogService {
+        async create(_actor: unknown, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id: 'ad_pricing_catalog_mock_id',
+                    name: String((body as any).name || 'Mock Ad Pricing'),
+                    basePrice: Number((body as any).basePrice || 0),
+                    currency: String((body as any).currency || 'USD'),
+                    pricingModel: String((body as any).pricingModel || 'CPM'),
+                    isActive: true,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async search(_actor: unknown, _opts?: any) {
+            return {
+                data: { items: [], pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 } }
+            };
+        }
+        async findById(_actor: unknown, params: { id: string }) {
+            if (params.id === '87654321-4321-4321-8765-876543218765') return { data: null };
+            return {
+                data: {
+                    id: params.id,
+                    name: 'Mock Ad Pricing',
+                    basePrice: 10,
+                    currency: 'USD',
+                    pricingModel: 'CPM',
+                    isActive: true,
+                    createdAt: '2024-01-01T00:00:00.000Z',
+                    updatedAt: '2024-01-01T00:00:00.000Z'
+                }
+            };
+        }
+        async update(_actor: unknown, params: { id: string; data: Record<string, unknown> }) {
+            return {
+                data: {
+                    id: params.id,
+                    basePrice: (params.data as any).basePrice || 10,
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async delete(_actor: unknown, params: { id: string }) {
+            return {
+                data: { id: params.id, deletedAt: new Date().toISOString(), isDeleted: true }
+            };
+        }
+    }
+
+    class AdMediaAssetService {
+        async create(_actor: unknown, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id: 'ad_media_asset_mock_id',
+                    campaignId: String((body as any).campaignId),
+                    assetType: String((body as any).assetType || 'IMAGE'),
+                    assetUrl: String((body as any).assetUrl || 'https://example.com/asset.jpg'),
+                    altText: (body as any).altText || null,
+                    metadata: (body as any).metadata || null,
+                    isActive: true,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async search(_actor: unknown, _opts?: any) {
+            return {
+                data: { items: [], pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 } }
+            };
+        }
+        async findById(_actor: unknown, params: { id: string }) {
+            if (params.id === '87654321-4321-4321-8765-876543218765') return { data: null };
+            return {
+                data: {
+                    id: params.id,
+                    campaignId: 'campaign_mock_id',
+                    assetType: 'IMAGE',
+                    assetUrl: 'https://example.com/asset.jpg',
+                    isActive: true,
+                    createdAt: '2024-01-01T00:00:00.000Z',
+                    updatedAt: '2024-01-01T00:00:00.000Z'
+                }
+            };
+        }
+        async update(_actor: unknown, params: { id: string; data: Record<string, unknown> }) {
+            return {
+                data: {
+                    id: params.id,
+                    assetUrl: (params.data as any).assetUrl || 'https://example.com/updated.jpg',
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async delete(_actor: unknown, params: { id: string }) {
+            return {
+                data: { id: params.id, deletedAt: new Date().toISOString(), isDeleted: true }
+            };
+        }
+    }
+
+    class SponsorshipService {
+        async create(_actor: unknown, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id: 'sponsorship_mock_id',
+                    sponsorId: String((body as any).sponsorId),
+                    entityType: String((body as any).entityType || 'POST'),
+                    entityId: String((body as any).entityId),
+                    startDate: (body as any).startDate || new Date().toISOString(),
+                    endDate: (body as any).endDate || null,
+                    amount: Number((body as any).amount || 0),
+                    currency: String((body as any).currency || 'USD'),
+                    status: String((body as any).status || 'ACTIVE'),
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async search(_actor: unknown, _opts?: any) {
+            return {
+                data: { items: [], pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 } }
+            };
+        }
+        async findById(_actor: unknown, params: { id: string }) {
+            if (params.id === '87654321-4321-4321-8765-876543218765') return { data: null };
+            return {
+                data: {
+                    id: params.id,
+                    sponsorId: 'sponsor_mock_id',
+                    entityType: 'POST',
+                    entityId: 'entity_mock_id',
+                    amount: 100,
+                    currency: 'USD',
+                    status: 'ACTIVE',
+                    createdAt: '2024-01-01T00:00:00.000Z',
+                    updatedAt: '2024-01-01T00:00:00.000Z'
+                }
+            };
+        }
+        async update(_actor: unknown, params: { id: string; data: Record<string, unknown> }) {
+            return {
+                data: {
+                    id: params.id,
+                    status: (params.data as any).status || 'ACTIVE',
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async delete(_actor: unknown, params: { id: string }) {
+            return {
+                data: { id: params.id, deletedAt: new Date().toISOString(), isDeleted: true }
+            };
+        }
+    }
+
+    class FeaturedAccommodationService {
+        async create(_actor: unknown, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id: 'featured_accommodation_mock_id',
+                    accommodationId: String((body as any).accommodationId),
+                    startDate: (body as any).startDate || new Date().toISOString(),
+                    endDate: (body as any).endDate || null,
+                    priority: Number((body as any).priority || 0),
+                    isActive: true,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async search(_actor: unknown, _opts?: any) {
+            return {
+                data: { items: [], pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 } }
+            };
+        }
+        async findById(_actor: unknown, params: { id: string }) {
+            if (params.id === '87654321-4321-4321-8765-876543218765') return { data: null };
+            return {
+                data: {
+                    id: params.id,
+                    accommodationId: 'accommodation_mock_id',
+                    priority: 1,
+                    isActive: true,
+                    createdAt: '2024-01-01T00:00:00.000Z',
+                    updatedAt: '2024-01-01T00:00:00.000Z'
+                }
+            };
+        }
+        async update(_actor: unknown, params: { id: string; data: Record<string, unknown> }) {
+            return {
+                data: {
+                    id: params.id,
+                    priority: (params.data as any).priority || 1,
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async delete(_actor: unknown, params: { id: string }) {
+            return {
+                data: { id: params.id, deletedAt: new Date().toISOString(), isDeleted: true }
+            };
+        }
+    }
+
+    class AccommodationListingPlanService {
+        async create(_actor: unknown, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id: 'accommodation_listing_plan_mock_id',
+                    name: String((body as any).name || 'Mock Plan'),
+                    description: (body as any).description || null,
+                    pricingPlanId: String((body as any).pricingPlanId),
+                    features: (body as any).features || [],
+                    isActive: true,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async search(_actor: unknown, _opts?: any) {
+            return {
+                data: { items: [], pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 } }
+            };
+        }
+        async findById(_actor: unknown, params: { id: string }) {
+            if (params.id === '87654321-4321-4321-8765-876543218765') return { data: null };
+            return {
+                data: {
+                    id: params.id,
+                    name: 'Mock Plan',
+                    pricingPlanId: 'pricing_plan_mock_id',
+                    features: [],
+                    isActive: true,
+                    createdAt: '2024-01-01T00:00:00.000Z',
+                    updatedAt: '2024-01-01T00:00:00.000Z'
+                }
+            };
+        }
+        async update(_actor: unknown, params: { id: string; data: Record<string, unknown> }) {
+            return {
+                data: {
+                    id: params.id,
+                    name: (params.data as any).name || 'Updated Plan',
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async delete(_actor: unknown, params: { id: string }) {
+            return {
+                data: { id: params.id, deletedAt: new Date().toISOString(), isDeleted: true }
+            };
+        }
+    }
+
+    class ServiceListingPlanService {
+        async create(_actor: unknown, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id: 'service_listing_plan_mock_id',
+                    name: String((body as any).name || 'Mock Service Plan'),
+                    description: (body as any).description || null,
+                    pricingPlanId: String((body as any).pricingPlanId),
+                    features: (body as any).features || [],
+                    isActive: true,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async search(_actor: unknown, _opts?: any) {
+            return {
+                data: { items: [], pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 } }
+            };
+        }
+        async findById(_actor: unknown, params: { id: string }) {
+            if (params.id === '87654321-4321-4321-8765-876543218765') return { data: null };
+            return {
+                data: {
+                    id: params.id,
+                    name: 'Mock Service Plan',
+                    pricingPlanId: 'pricing_plan_mock_id',
+                    features: [],
+                    isActive: true,
+                    createdAt: '2024-01-01T00:00:00.000Z',
+                    updatedAt: '2024-01-01T00:00:00.000Z'
+                }
+            };
+        }
+        async update(_actor: unknown, params: { id: string; data: Record<string, unknown> }) {
+            return {
+                data: {
+                    id: params.id,
+                    name: (params.data as any).name || 'Updated Service Plan',
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async delete(_actor: unknown, params: { id: string }) {
+            return {
+                data: { id: params.id, deletedAt: new Date().toISOString(), isDeleted: true }
+            };
+        }
+    }
+
+    class BenefitPartnerService {
+        async create(_actor: unknown, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id: 'benefit_partner_mock_id',
+                    name: String((body as any).name || 'Mock Partner'),
+                    description: (body as any).description || null,
+                    category: String((body as any).category || 'GENERAL'),
+                    contactInfo: (body as any).contactInfo || {},
+                    isActive: true,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async search(_actor: unknown, _opts?: any) {
+            return {
+                data: { items: [], pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 } }
+            };
+        }
+        async findById(_actor: unknown, params: { id: string }) {
+            if (params.id === '87654321-4321-4321-8765-876543218765') return { data: null };
+            return {
+                data: {
+                    id: params.id,
+                    name: 'Mock Partner',
+                    category: 'GENERAL',
+                    contactInfo: {},
+                    isActive: true,
+                    createdAt: '2024-01-01T00:00:00.000Z',
+                    updatedAt: '2024-01-01T00:00:00.000Z'
+                }
+            };
+        }
+        async update(_actor: unknown, params: { id: string; data: Record<string, unknown> }) {
+            return {
+                data: {
+                    id: params.id,
+                    name: (params.data as any).name || 'Updated Partner',
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async delete(_actor: unknown, params: { id: string }) {
+            return {
+                data: { id: params.id, deletedAt: new Date().toISOString(), isDeleted: true }
+            };
+        }
+    }
+
+    class BenefitListingPlanService {
+        async create(_actor: unknown, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id: 'benefit_listing_plan_mock_id',
+                    name: String((body as any).name || 'Mock Benefit Plan'),
+                    description: (body as any).description || null,
+                    pricingPlanId: String((body as any).pricingPlanId),
+                    maxListings: Number((body as any).maxListings || 10),
+                    features: (body as any).features || [],
+                    isActive: true,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async search(_actor: unknown, _opts?: any) {
+            return {
+                data: { items: [], pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 } }
+            };
+        }
+        async findById(_actor: unknown, params: { id: string }) {
+            if (params.id === '87654321-4321-4321-8765-876543218765') return { data: null };
+            return {
+                data: {
+                    id: params.id,
+                    name: 'Mock Benefit Plan',
+                    pricingPlanId: 'pricing_plan_mock_id',
+                    maxListings: 10,
+                    features: [],
+                    isActive: true,
+                    createdAt: '2024-01-01T00:00:00.000Z',
+                    updatedAt: '2024-01-01T00:00:00.000Z'
+                }
+            };
+        }
+        async update(_actor: unknown, params: { id: string; data: Record<string, unknown> }) {
+            return {
+                data: {
+                    id: params.id,
+                    name: (params.data as any).name || 'Updated Benefit Plan',
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async delete(_actor: unknown, params: { id: string }) {
+            return {
+                data: { id: params.id, deletedAt: new Date().toISOString(), isDeleted: true }
+            };
+        }
+    }
+
+    class BenefitListingService {
+        async create(_actor: unknown, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id: 'benefit_listing_mock_id',
+                    clientId: String((body as any).clientId),
+                    benefitPartnerId: String((body as any).benefitPartnerId),
+                    benefitListingPlanId: String((body as any).benefitListingPlanId),
+                    title: String((body as any).title || 'Mock Benefit'),
+                    description: (body as any).description || null,
+                    terms: (body as any).terms || '',
+                    status: 'ACTIVE',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async search(_actor: unknown, _opts?: any) {
+            return {
+                data: { items: [], pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 } }
+            };
+        }
+        async findById(_actor: unknown, params: { id: string }) {
+            if (params.id === '87654321-4321-4321-8765-876543218765') return { data: null };
+            return {
+                data: {
+                    id: params.id,
+                    clientId: 'client_mock_id',
+                    benefitPartnerId: 'partner_mock_id',
+                    benefitListingPlanId: 'plan_mock_id',
+                    title: 'Mock Benefit',
+                    status: 'ACTIVE',
+                    createdAt: '2024-01-01T00:00:00.000Z',
+                    updatedAt: '2024-01-01T00:00:00.000Z'
+                }
+            };
+        }
+        async update(_actor: unknown, params: { id: string; data: Record<string, unknown> }) {
+            return {
+                data: {
+                    id: params.id,
+                    title: (params.data as any).title || 'Updated Benefit',
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async delete(_actor: unknown, params: { id: string }) {
+            return {
+                data: { id: params.id, deletedAt: new Date().toISOString(), isDeleted: true }
+            };
+        }
+    }
+
+    class TouristServiceService {
+        async create(_actor: unknown, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id: 'tourist_service_mock_id',
+                    clientId: String((body as any).clientId),
+                    name: String((body as any).name || 'Mock Tourist Service'),
+                    description: (body as any).description || null,
+                    category: String((body as any).category || 'TOUR'),
+                    pricing: (body as any).pricing || {},
+                    schedule: (body as any).schedule || {},
+                    isActive: true,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async search(_actor: unknown, _opts?: any) {
+            return {
+                data: { items: [], pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 } }
+            };
+        }
+        async findById(_actor: unknown, params: { id: string }) {
+            if (params.id === '87654321-4321-4321-8765-876543218765') return { data: null };
+            return {
+                data: {
+                    id: params.id,
+                    clientId: 'client_mock_id',
+                    name: 'Mock Tourist Service',
+                    category: 'TOUR',
+                    pricing: {},
+                    schedule: {},
+                    isActive: true,
+                    createdAt: '2024-01-01T00:00:00.000Z',
+                    updatedAt: '2024-01-01T00:00:00.000Z'
+                }
+            };
+        }
+        async update(_actor: unknown, params: { id: string; data: Record<string, unknown> }) {
+            return {
+                data: {
+                    id: params.id,
+                    name: (params.data as any).name || 'Updated Tourist Service',
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async delete(_actor: unknown, params: { id: string }) {
+            return {
+                data: { id: params.id, deletedAt: new Date().toISOString(), isDeleted: true }
+            };
+        }
+    }
+
     return {
         PostService,
         AccommodationService,
@@ -1236,7 +3088,42 @@ vi.mock('@repo/service-core', () => {
         DestinationReviewService,
         AttractionService,
         FeatureService,
-        AmenityService
+        AmenityService,
+        ClientService,
+        ClientAccessRightService,
+        ProductService,
+        PricingPlanService,
+        PricingTierService,
+        SubscriptionService,
+        PurchaseService,
+        SubscriptionItemService,
+        PaymentService,
+        PaymentMethodService,
+        InvoiceService,
+        InvoiceLineService,
+        RefundService,
+        AdSlotService,
+        AdSlotReservationService,
+        ProfessionalServiceService,
+        ProfessionalServiceOrderService,
+        ServiceListingService,
+        AccommodationListingService,
+        CreditNoteService,
+        PromotionService,
+        DiscountCodeService,
+        DiscountCodeUsageService,
+        CampaignService,
+        NotificationService,
+        AdPricingCatalogService,
+        AdMediaAssetService,
+        SponsorshipService,
+        FeaturedAccommodationService,
+        AccommodationListingPlanService,
+        ServiceListingPlanService,
+        BenefitPartnerService,
+        BenefitListingPlanService,
+        BenefitListingService,
+        TouristServiceService
     };
 });
 
