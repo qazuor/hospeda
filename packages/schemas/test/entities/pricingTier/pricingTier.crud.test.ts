@@ -19,7 +19,7 @@ describe('PricingTier CRUD Schema', () => {
             pricingPlanId: validPlanId,
             minQuantity: 1,
             maxQuantity: 10,
-            unitPriceMinor: BigInt(999)
+            unitPriceMinor: 999
         };
 
         it('should validate valid create input', () => {
@@ -52,8 +52,8 @@ describe('PricingTier CRUD Schema', () => {
         });
 
         it('should reject zero or negative unitPriceMinor', () => {
-            const zeroPrice = { ...validCreateInput, unitPriceMinor: BigInt(0) };
-            const negativePrice = { ...validCreateInput, unitPriceMinor: BigInt(-100) };
+            const zeroPrice = { ...validCreateInput, unitPriceMinor: 0 };
+            const negativePrice = { ...validCreateInput, unitPriceMinor: -100 };
 
             expect(PricingTierCreateInputSchema.safeParse(zeroPrice).success).toBe(false);
             expect(PricingTierCreateInputSchema.safeParse(negativePrice).success).toBe(false);
@@ -64,9 +64,9 @@ describe('PricingTier CRUD Schema', () => {
         const validBulkInput = {
             pricingPlanId: validPlanId,
             tiers: [
-                { minQuantity: 1, maxQuantity: 10, unitPriceMinor: BigInt(999) },
-                { minQuantity: 11, maxQuantity: 50, unitPriceMinor: BigInt(899) },
-                { minQuantity: 51, maxQuantity: null, unitPriceMinor: BigInt(799) }
+                { minQuantity: 1, maxQuantity: 10, unitPriceMinor: 999 },
+                { minQuantity: 11, maxQuantity: 50, unitPriceMinor: 899 },
+                { minQuantity: 51, maxQuantity: null, unitPriceMinor: 799 }
             ]
         };
 
@@ -79,8 +79,8 @@ describe('PricingTier CRUD Schema', () => {
             const overlappingInput = {
                 pricingPlanId: validPlanId,
                 tiers: [
-                    { minQuantity: 1, maxQuantity: 10, unitPriceMinor: BigInt(999) },
-                    { minQuantity: 8, maxQuantity: 20, unitPriceMinor: BigInt(899) } // Overlaps
+                    { minQuantity: 1, maxQuantity: 10, unitPriceMinor: 999 },
+                    { minQuantity: 8, maxQuantity: 20, unitPriceMinor: 899 } // Overlaps
                 ]
             };
             const result = PricingTierBulkCreateInputSchema.safeParse(overlappingInput);
@@ -97,7 +97,7 @@ describe('PricingTier CRUD Schema', () => {
             const invalidTierInput = {
                 pricingPlanId: validPlanId,
                 tiers: [
-                    { minQuantity: 10, maxQuantity: 5, unitPriceMinor: BigInt(999) } // maxQuantity < minQuantity
+                    { minQuantity: 10, maxQuantity: 5, unitPriceMinor: 999 } // maxQuantity < minQuantity
                 ]
             };
             const result = PricingTierBulkCreateInputSchema.safeParse(invalidTierInput);
@@ -108,8 +108,8 @@ describe('PricingTier CRUD Schema', () => {
             const validUnlimitedLast = {
                 pricingPlanId: validPlanId,
                 tiers: [
-                    { minQuantity: 1, maxQuantity: 10, unitPriceMinor: BigInt(999) },
-                    { minQuantity: 11, maxQuantity: null, unitPriceMinor: BigInt(899) }
+                    { minQuantity: 1, maxQuantity: 10, unitPriceMinor: 999 },
+                    { minQuantity: 11, maxQuantity: null, unitPriceMinor: 899 }
                 ]
             };
             const result = PricingTierBulkCreateInputSchema.safeParse(validUnlimitedLast);
@@ -173,7 +173,7 @@ describe('PricingTier CRUD Schema', () => {
         it('should allow updates without existing tiers context', () => {
             const updateWithoutContext = {
                 id: validTierId,
-                updates: { unitPriceMinor: BigInt(1299) }
+                updates: { unitPriceMinor: 1299 }
             };
             const result = PricingTierUpdateWithContextSchema.safeParse(updateWithoutContext);
             expect(result.success).toBe(true);

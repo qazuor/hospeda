@@ -27,6 +27,9 @@ describe('Product Relations Schema', () => {
                         id: '456e7890-e12b-34d5-a678-901234567890',
                         name: 'Basic Plan',
                         productId: '123e4567-e89b-12d3-a456-426614174000',
+                        billingScheme: 'one_time',
+                        amount: 999,
+                        currency: 'USD',
                         isDefault: true,
                         lifecycleState: 'ACTIVE',
                         createdAt: new Date(),
@@ -93,6 +96,9 @@ describe('Product Relations Schema', () => {
                         id: '456e7890-e12b-34d5-a678-901234567890',
                         name: 'Standard Plan',
                         productId: '123e4567-e89b-12d3-a456-426614174000',
+                        billingScheme: 'one_time',
+                        amount: 999,
+                        currency: 'USD',
                         isDefault: true,
                         lifecycleState: 'ACTIVE',
                         createdAt: new Date(),
@@ -104,19 +110,15 @@ describe('Product Relations Schema', () => {
                         pricingTiers: [
                             {
                                 id: '789e0123-e45f-6789-a901-234567890123',
-                                name: 'Monthly Tier',
                                 pricingPlanId: '456e7890-e12b-34d5-a678-901234567890',
-                                currency: 'USD',
-                                price: 99.99,
-                                billingCycle: 'MONTHLY',
-                                isDefault: true,
+                                minQuantity: 1,
+                                maxQuantity: 10,
+                                unitPriceMinor: 999,
                                 lifecycleState: 'ACTIVE',
                                 createdAt: new Date(),
                                 updatedAt: new Date(),
                                 createdById: 'abcdef01-2345-6789-abcd-ef0123456789',
-                                updatedById: 'abcdef01-2345-6789-abcd-ef0123456789',
-                                isActive: true,
-                                isDeleted: false
+                                updatedById: 'abcdef01-2345-6789-abcd-ef0123456789'
                             }
                         ]
                     }

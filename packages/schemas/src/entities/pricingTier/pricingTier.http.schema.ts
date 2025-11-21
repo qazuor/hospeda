@@ -22,13 +22,13 @@ const booleanCoercion = z.union([
 ]);
 
 /**
- * Custom BigInt coercion for price values
- * Handles string representation of large numbers
+ * Custom number coercion for price values
+ * Handles string representation of numbers
  */
-const bigintCoercion = z.union([
-    z.bigint(),
-    z.string().transform((val) => BigInt(val)),
-    z.number().transform((val) => BigInt(Math.floor(val)))
+const numberCoercion = z.union([
+    z.number(),
+    z.string().transform((val) => Number(val)),
+    z.number().transform((val) => Math.floor(val))
 ]);
 
 /**
@@ -74,8 +74,8 @@ export const HttpPricingTierSearchSchema = PricingTierSearchSchema.extend({
     includesQuantity: z.coerce.number().int().min(1).optional(),
 
     // Coerce price range parameters
-    unitPriceMinorMin: bigintCoercion.refine((val) => val > 0n, 'Must be positive').optional(),
-    unitPriceMinorMax: bigintCoercion.refine((val) => val > 0n, 'Must be positive').optional(),
+    unitPriceMinorMin: numberCoercion.refine((val) => val > 0, 'Must be positive').optional(),
+    unitPriceMinorMax: numberCoercion.refine((val) => val > 0, 'Must be positive').optional(),
 
     // Coerce boolean parameters
     hasUnlimitedMax: booleanCoercion.optional(),
@@ -121,7 +121,7 @@ export const PricingTierCreateHttpSchema = z
         pricingPlanId: z.string().uuid(),
         minQuantity: z.coerce.number().int().min(1),
         maxQuantity: nullableNumberCoercion,
-        unitPriceMinor: bigintCoercion.refine((val) => val > 0n, 'unitPriceMinor must be positive')
+        unitPriceMinor: numberCoercion.refine((val) => val > 0, 'unitPriceMinor must be positive')
     })
     .refine((data) => data.maxQuantity === null || data.maxQuantity > data.minQuantity, {
         message: 'maxQuantity must be greater than minQuantity when specified',
@@ -137,8 +137,8 @@ export const PricingTierUpdateHttpSchema = z
     .object({
         minQuantity: z.coerce.number().int().min(1).optional(),
         maxQuantity: nullableNumberCoercion.optional(),
-        unitPriceMinor: bigintCoercion
-            .refine((val) => val > 0n, 'unitPriceMinor must be positive')
+        unitPriceMinor: numberCoercion
+            .refine((val) => val > 0, 'unitPriceMinor must be positive')
             .optional(),
         lifecycleState: z.string().optional()
     })
@@ -178,15 +178,15 @@ export const PricingTierBulkCreateHttpSchema = z.object({
                 return parsed.map((tier) => ({
                     minQuantity: Number(tier.minQuantity),
                     maxQuantity: tier.maxQuantity === null ? null : Number(tier.maxQuantity),
-                    unitPriceMinor: BigInt(tier.unitPriceMinor)
+                    unitPriceMinor: Number(tier.unitPriceMinor)
                 }));
             }),
             z.array(
                 z.object({
                     minQuantity: z.coerce.number().int().min(1),
                     maxQuantity: nullableNumberCoercion,
-                    unitPriceMinor: bigintCoercion.refine(
-                        (val) => val > 0n,
+                    unitPriceMinor: numberCoercion.refine(
+                        (val) => val > 0,
                         'unitPriceMinor must be positive'
                     )
                 })
@@ -198,7 +198,7 @@ export const PricingTierBulkCreateHttpSchema = z.object({
                     z.object({
                         minQuantity: z.number().int().min(1),
                         maxQuantity: z.number().int().positive().nullable(),
-                        unitPriceMinor: z.bigint().positive()
+                        unitPriceMinor: z.number().int().positive()
                     })
                 )
                 .min(1, 'At least one tier is required')
@@ -259,7 +259,7 @@ export const PricingTierCreateResponseSchema = z.object({
             pricingPlanId: z.string().uuid(),
             minQuantity: z.number().int().min(1),
             maxQuantity: z.number().int().positive().nullable(),
-            unitPriceMinor: z.bigint(),
+            unitPriceMinor: z.number().int().positive(),
             lifecycleState: z.string(),
             createdAt: z.date(),
             quantityRange: z.string()

@@ -48,7 +48,7 @@ describe('PricingTier HTTP Schema', () => {
             }
         });
 
-        it('should coerce string price parameters to BigInt', () => {
+        it('should coerce string price parameters to number', () => {
             const searchParams = {
                 unitPriceMinorMin: '999',
                 unitPriceMinorMax: '99999'
@@ -56,8 +56,8 @@ describe('PricingTier HTTP Schema', () => {
             const result = HttpPricingTierSearchSchema.safeParse(searchParams);
             expect(result.success).toBe(true);
             if (result.success) {
-                expect(result.data.unitPriceMinorMin).toBe(BigInt(999));
-                expect(result.data.unitPriceMinorMax).toBe(BigInt(99999));
+                expect(result.data.unitPriceMinorMin).toBe(999);
+                expect(result.data.unitPriceMinorMax).toBe(99999);
             }
         });
 
@@ -185,7 +185,7 @@ describe('PricingTier HTTP Schema', () => {
             if (result.success) {
                 expect(result.data.minQuantity).toBe(1);
                 expect(result.data.maxQuantity).toBe(10);
-                expect(result.data.unitPriceMinor).toBe(BigInt(999));
+                expect(result.data.unitPriceMinor).toBe(999);
             }
         });
 
@@ -240,7 +240,7 @@ describe('PricingTier HTTP Schema', () => {
             expect(result.success).toBe(true);
             if (result.success) {
                 expect(result.data.minQuantity).toBe(5);
-                expect(result.data.unitPriceMinor).toBe(BigInt(1299));
+                expect(result.data.unitPriceMinor).toBe(1299);
             }
         });
 
@@ -369,7 +369,7 @@ describe('PricingTier HTTP Schema', () => {
                     pricingPlanId: validPlanId,
                     minQuantity: 1,
                     maxQuantity: 10,
-                    unitPriceMinor: BigInt(999),
+                    unitPriceMinor: 999,
                     lifecycleState: 'ACTIVE',
                     createdAt: new Date(),
                     quantityRange: '1-10'

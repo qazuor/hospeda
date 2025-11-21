@@ -50,7 +50,7 @@ describe('PricingTier Batch Schema', () => {
                     pricingPlanId: validPlanId,
                     minQuantity: 1,
                     maxQuantity: 10,
-                    unitPriceMinor: BigInt(999),
+                    unitPriceMinor: 999,
                     lifecycleState: LifecycleStatusEnum.ACTIVE,
                     createdAt: new Date(),
                     updatedAt: new Date(),
@@ -91,7 +91,7 @@ describe('PricingTier Batch Schema', () => {
                             pricingPlanId: validPlanId,
                             minQuantity: 1,
                             maxQuantity: 10,
-                            unitPriceMinor: BigInt(999),
+                            unitPriceMinor: 999,
                             lifecycleState: LifecycleStatusEnum.ACTIVE,
                             createdAt: new Date(),
                             updatedAt: new Date(),
@@ -121,7 +121,7 @@ describe('PricingTier Batch Schema', () => {
                     pricingPlanId: validPlanId,
                     minQuantity: 1,
                     maxQuantity: 10,
-                    unitPriceMinor: BigInt(999),
+                    unitPriceMinor: 999,
                     clientId: 'item-1',
                     positionHint: 0
                 };
@@ -134,7 +134,7 @@ describe('PricingTier Batch Schema', () => {
                     pricingPlanId: validPlanId,
                     minQuantity: 1,
                     maxQuantity: 10,
-                    unitPriceMinor: BigInt(999)
+                    unitPriceMinor: 999
                 };
                 const result = PricingTierBatchCreateItemSchema.safeParse(minimalItem);
                 expect(result.success).toBe(true);
@@ -149,13 +149,13 @@ describe('PricingTier Batch Schema', () => {
                             pricingPlanId: validPlanId,
                             minQuantity: 1,
                             maxQuantity: 10,
-                            unitPriceMinor: BigInt(999)
+                            unitPriceMinor: 999
                         },
                         {
                             pricingPlanId: validPlanId,
                             minQuantity: 11,
                             maxQuantity: null,
-                            unitPriceMinor: BigInt(899)
+                            unitPriceMinor: 899
                         }
                     ],
                     options: {
@@ -178,7 +178,7 @@ describe('PricingTier Batch Schema', () => {
                             pricingPlanId: validPlanId,
                             minQuantity: 1,
                             maxQuantity: 10,
-                            unitPriceMinor: BigInt(999)
+                            unitPriceMinor: 999
                         }
                     ]
                 };
@@ -200,7 +200,7 @@ describe('PricingTier Batch Schema', () => {
                         pricingPlanId: validPlanId,
                         minQuantity: i * 10 + 1,
                         maxQuantity: (i + 1) * 10,
-                        unitPriceMinor: BigInt(1000 - i * 10)
+                        unitPriceMinor: 1000 - i * 10
                     }))
                 };
                 const result = PricingTierBatchCreateRequestSchema.safeParse(tooManyItems);
@@ -215,7 +215,7 @@ describe('PricingTier Batch Schema', () => {
                 const updateItem = {
                     id: validTierId,
                     data: {
-                        unitPriceMinor: BigInt(1099),
+                        unitPriceMinor: 1099,
                         maxQuantity: 15
                     },
                     clientId: 'update-1'
@@ -231,7 +231,7 @@ describe('PricingTier Batch Schema', () => {
                     items: [
                         {
                             id: validTierId,
-                            data: { unitPriceMinor: BigInt(1099) }
+                            data: { unitPriceMinor: 1099 }
                         }
                     ],
                     options: {
@@ -300,17 +300,17 @@ describe('PricingTier Batch Schema', () => {
                         {
                             minQuantity: 1,
                             maxQuantity: 5,
-                            unitPriceMinor: BigInt(1199)
+                            unitPriceMinor: 1199
                         },
                         {
                             minQuantity: 6,
                             maxQuantity: 15,
-                            unitPriceMinor: BigInt(999)
+                            unitPriceMinor: 999
                         },
                         {
                             minQuantity: 16,
                             maxQuantity: null,
-                            unitPriceMinor: BigInt(799)
+                            unitPriceMinor: 799
                         }
                     ],
                     options: {
@@ -340,7 +340,7 @@ describe('PricingTier Batch Schema', () => {
                     newStructure: Array.from({ length: 21 }, (_, i) => ({
                         minQuantity: i * 10 + 1,
                         maxQuantity: (i + 1) * 10,
-                        unitPriceMinor: BigInt(1000 - i * 10)
+                        unitPriceMinor: 1000 - i * 10
                     }))
                 };
                 const result = PricingTierRestructureRequestSchema.safeParse(tooManyTiers);
@@ -359,7 +359,7 @@ describe('PricingTier Batch Schema', () => {
                             pricingPlanId: validPlanId,
                             minQuantity: 1,
                             maxQuantity: 10,
-                            unitPriceMinor: BigInt(999),
+                            unitPriceMinor: 999,
                             lifecycleState: LifecycleStatusEnum.ACTIVE,
                             createdAt: new Date(),
                             updatedAt: new Date(),

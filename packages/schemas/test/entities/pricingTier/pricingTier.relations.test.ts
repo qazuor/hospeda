@@ -26,7 +26,7 @@ describe('PricingTier Relations Schema', () => {
         pricingPlanId: validPlanId,
         minQuantity: 1,
         maxQuantity: 10,
-        unitPriceMinor: BigInt(999),
+        unitPriceMinor: 999,
         lifecycleState: LifecycleStatusEnum.ACTIVE,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -38,7 +38,7 @@ describe('PricingTier Relations Schema', () => {
         id: validPlanId,
         productId: validProductId,
         billingScheme: BillingSchemeEnum.ONE_TIME,
-        amountMinor: 999,
+        amount: 999,
         currency: 'USD',
         isActive: true,
         isDeleted: false,
@@ -119,7 +119,7 @@ describe('PricingTier Relations Schema', () => {
                 pricingPlanId: validPlanId,
                 minQuantity: 1,
                 maxQuantity: 10,
-                unitPriceMinor: BigInt(999),
+                unitPriceMinor: 999,
                 lifecycleState: LifecycleStatusEnum.ACTIVE
             };
             const result = PricingTierMinimalSchema.safeParse(minimalTier);
@@ -143,7 +143,7 @@ describe('PricingTier Relations Schema', () => {
                 pricingPlanId: validPlanId,
                 minQuantity: 1,
                 maxQuantity: 10,
-                unitPriceMinor: BigInt(999),
+                unitPriceMinor: 999,
                 lifecycleState: LifecycleStatusEnum.ACTIVE,
                 quantityRange: '1-10',
                 isUnlimited: false,
@@ -159,7 +159,7 @@ describe('PricingTier Relations Schema', () => {
                 pricingPlanId: validPlanId,
                 minQuantity: 11,
                 maxQuantity: null,
-                unitPriceMinor: BigInt(799),
+                unitPriceMinor: 799,
                 lifecycleState: LifecycleStatusEnum.ACTIVE,
                 quantityRange: '11+',
                 isUnlimited: true
@@ -210,9 +210,9 @@ describe('PricingTier Relations Schema', () => {
                     gaps: []
                 },
                 statistics: {
-                    averageUnitPrice: BigInt(999),
-                    lowestUnitPrice: BigInt(999),
-                    highestUnitPrice: BigInt(999),
+                    averageUnitPrice: 999,
+                    lowestUnitPrice: 999,
+                    highestUnitPrice: 999,
                     totalQuantityRange: 10
                 }
             };
@@ -244,9 +244,9 @@ describe('PricingTier Relations Schema', () => {
                     gaps: []
                 },
                 statistics: {
-                    averageUnitPrice: BigInt(999),
-                    lowestUnitPrice: BigInt(999),
-                    highestUnitPrice: BigInt(999),
+                    averageUnitPrice: 999,
+                    lowestUnitPrice: 999,
+                    highestUnitPrice: 999,
                     totalQuantityRange: null
                 }
             };
@@ -262,7 +262,7 @@ describe('PricingTier Relations Schema', () => {
                     pricingPlanId: validPlanId,
                     minQuantity: 1,
                     maxQuantity: 10,
-                    unitPriceMinor: BigInt(999),
+                    unitPriceMinor: 999,
                     validatePlanExists: true,
                     allowInactivePlan: false
                 };
@@ -276,7 +276,7 @@ describe('PricingTier Relations Schema', () => {
                     pricingPlanId: validPlanId,
                     minQuantity: 1,
                     maxQuantity: 10,
-                    unitPriceMinor: BigInt(999)
+                    unitPriceMinor: 999
                 };
                 const result =
                     PricingTierCreateWithPlanValidationSchema.safeParse(createWithDefaults);
@@ -293,8 +293,8 @@ describe('PricingTier Relations Schema', () => {
                 const bulkCreate = {
                     pricingPlanId: validPlanId,
                     tiers: [
-                        { minQuantity: 1, maxQuantity: 10, unitPriceMinor: BigInt(999) },
-                        { minQuantity: 11, maxQuantity: null, unitPriceMinor: BigInt(899) }
+                        { minQuantity: 1, maxQuantity: 10, unitPriceMinor: 999 },
+                        { minQuantity: 11, maxQuantity: null, unitPriceMinor: 899 }
                     ],
                     validatePlanExists: true,
                     allowInactivePlan: false,
@@ -310,7 +310,7 @@ describe('PricingTier Relations Schema', () => {
             it('should validate update with plan context', () => {
                 const updateWithContext = {
                     minQuantity: 5,
-                    unitPriceMinor: BigInt(1299),
+                    unitPriceMinor: 1299,
                     currentPlanId: validPlanId,
                     validatePlanActive: true,
                     checkRangeConflicts: true,
@@ -331,13 +331,13 @@ describe('PricingTier Relations Schema', () => {
                         id: validTierId,
                         minQuantity: 1,
                         maxQuantity: 10,
-                        unitPriceMinor: BigInt(999)
+                        unitPriceMinor: 999
                     },
                     {
                         id: '550e8400-e29b-41d4-a716-446655440010',
                         minQuantity: 11,
                         maxQuantity: 20,
-                        unitPriceMinor: BigInt(899)
+                        unitPriceMinor: 899
                     }
                 ],
                 rules: {
@@ -359,7 +359,7 @@ describe('PricingTier Relations Schema', () => {
                     id: `550e8400-e29b-41d4-a716-44665544${i.toString().padStart(4, '0')}`,
                     minQuantity: i * 10 + 1,
                     maxQuantity: (i + 1) * 10,
-                    unitPriceMinor: BigInt(1000 - i * 10)
+                    unitPriceMinor: 1000 - i * 10
                 })),
                 rules: { maxTiersPerPlan: 5 }
             };
@@ -375,13 +375,13 @@ describe('PricingTier Relations Schema', () => {
                         id: validTierId,
                         minQuantity: 1,
                         maxQuantity: 10,
-                        unitPriceMinor: BigInt(899)
+                        unitPriceMinor: 899
                     },
                     {
                         id: '550e8400-e29b-41d4-a716-446655440010',
                         minQuantity: 11,
                         maxQuantity: 20,
-                        unitPriceMinor: BigInt(999)
+                        unitPriceMinor: 999
                     } // Price increase
                 ],
                 rules: { allowPriceIncreases: false }
@@ -404,8 +404,8 @@ describe('PricingTier Relations Schema', () => {
                         metadata: { type: 'basic' }
                     },
                     tiers: [
-                        { minQuantity: 1, maxQuantity: 10, unitPriceMinor: BigInt(999) },
-                        { minQuantity: 11, maxQuantity: null, unitPriceMinor: BigInt(899) }
+                        { minQuantity: 1, maxQuantity: 10, unitPriceMinor: 999 },
+                        { minQuantity: 11, maxQuantity: null, unitPriceMinor: 899 }
                     ],
                     validateTierRanges: true
                 };
@@ -435,12 +435,12 @@ describe('PricingTier Relations Schema', () => {
                     operations: [
                         {
                             type: 'create' as const,
-                            tier: { minQuantity: 1, maxQuantity: 5, unitPriceMinor: BigInt(1199) }
+                            tier: { minQuantity: 1, maxQuantity: 5, unitPriceMinor: 1199 }
                         },
                         {
                             type: 'update' as const,
                             tierId: validTierId,
-                            changes: { unitPriceMinor: BigInt(999) }
+                            changes: { unitPriceMinor: 999 }
                         },
                         {
                             type: 'delete' as const,

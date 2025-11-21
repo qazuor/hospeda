@@ -43,8 +43,8 @@ describe('PricingTier Query Schema', () => {
 
         it('should validate price range filters', () => {
             const priceSearch = {
-                unitPriceMinorMin: BigInt(100),
-                unitPriceMinorMax: BigInt(10000)
+                unitPriceMinorMin: 100,
+                unitPriceMinorMax: 10000
             };
             const result = PricingTierSearchSchema.safeParse(priceSearch);
             expect(result.success).toBe(true);
@@ -96,7 +96,7 @@ describe('PricingTier Query Schema', () => {
         });
 
         it('should reject zero or negative price values', () => {
-            const invalidPrice = { unitPriceMinorMin: BigInt(0) };
+            const invalidPrice = { unitPriceMinorMin: 0 };
             const result = PricingTierSearchSchema.safeParse(invalidPrice);
             expect(result.success).toBe(false);
         });
@@ -172,7 +172,7 @@ describe('PricingTier Query Schema', () => {
             pricingPlanId: validPlanId,
             minQuantity: 1,
             maxQuantity: 10,
-            unitPriceMinor: BigInt(999),
+            unitPriceMinor: 999,
             lifecycleState: LifecycleStatusEnum.ACTIVE,
             createdAt: new Date(),
             updatedAt: new Date()
@@ -217,7 +217,7 @@ describe('PricingTier Query Schema', () => {
             pricingPlanId: validPlanId,
             minQuantity: 1,
             maxQuantity: 10,
-            unitPriceMinor: BigInt(999),
+            unitPriceMinor: 999,
             lifecycleState: LifecycleStatusEnum.ACTIVE,
             createdAt: new Date(),
             updatedAt: new Date()
@@ -257,7 +257,7 @@ describe('PricingTier Query Schema', () => {
             pricingPlanId: validPlanId,
             minQuantity: 1,
             maxQuantity: 10,
-            unitPriceMinor: BigInt(999),
+            unitPriceMinor: 999,
             lifecycleState: LifecycleStatusEnum.ACTIVE,
             createdAt: new Date(),
             updatedAt: new Date()
@@ -268,7 +268,7 @@ describe('PricingTier Query Schema', () => {
                 tier: validTierItem,
                 found: true,
                 quantity: 5,
-                totalPrice: BigInt(4995) // 5 * 999
+                totalPrice: 4995 // 5 * 999
             };
             const result = PricingTierLookupResultSchema.safeParse(successfulLookup);
             expect(result.success).toBe(true);

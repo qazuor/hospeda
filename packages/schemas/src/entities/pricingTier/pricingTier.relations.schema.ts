@@ -104,9 +104,9 @@ export const PricingTierStructureSchema = z.object({
         )
     }),
     statistics: z.object({
-        averageUnitPrice: z.bigint(),
-        lowestUnitPrice: z.bigint(),
-        highestUnitPrice: z.bigint(),
+        averageUnitPrice: z.number().int(),
+        lowestUnitPrice: z.number().int(),
+        highestUnitPrice: z.number().int(),
         totalQuantityRange: z.number().int().min(0).nullable()
     })
 });
@@ -176,7 +176,7 @@ export const PricingTierRelationshipValidationSchema = z
                 id: z.string().uuid(),
                 minQuantity: z.number().int().min(1),
                 maxQuantity: z.number().int().positive().nullable(),
-                unitPriceMinor: z.bigint().positive(),
+                unitPriceMinor: z.number().int().positive(),
                 position: z.number().int().min(0).optional()
             })
         ),
@@ -268,7 +268,7 @@ export const PricingPlanWithTiersCreateSchema = z.object({
             z.object({
                 minQuantity: z.number().int().min(1),
                 maxQuantity: z.number().int().positive().nullable(),
-                unitPriceMinor: z.bigint().positive()
+                unitPriceMinor: z.number().int().positive()
             })
         )
         .min(1, 'At least one tier is required'),
@@ -290,7 +290,7 @@ export const PricingTierReorganizationSchema = z.object({
                 tier: z.object({
                     minQuantity: z.number().int().min(1),
                     maxQuantity: z.number().int().positive().nullable(),
-                    unitPriceMinor: z.bigint().positive()
+                    unitPriceMinor: z.number().int().positive()
                 })
             }),
             z.object({

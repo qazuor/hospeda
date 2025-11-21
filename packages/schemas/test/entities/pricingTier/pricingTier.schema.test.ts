@@ -10,7 +10,7 @@ describe('PricingTier Schema', () => {
         pricingPlanId: '550e8400-e29b-41d4-a716-446655440001',
         minQuantity: 1,
         maxQuantity: 10,
-        unitPriceMinor: BigInt(999),
+        unitPriceMinor: 999,
         lifecycleState: 'ACTIVE' as const,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -43,13 +43,13 @@ describe('PricingTier Schema', () => {
         });
 
         it('should reject zero unitPriceMinor', () => {
-            const invalidTier = { ...validPricingTier, unitPriceMinor: BigInt(0) };
+            const invalidTier = { ...validPricingTier, unitPriceMinor: 0 };
             const result = PricingTierSchema.safeParse(invalidTier);
             expect(result.success).toBe(false);
         });
 
         it('should reject negative unitPriceMinor', () => {
-            const invalidTier = { ...validPricingTier, unitPriceMinor: BigInt(-100) };
+            const invalidTier = { ...validPricingTier, unitPriceMinor: -100 };
             const result = PricingTierSchema.safeParse(invalidTier);
             expect(result.success).toBe(false);
         });
