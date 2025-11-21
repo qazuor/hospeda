@@ -107,11 +107,12 @@ export async function syncPlanningToGitHub(options: SyncOptions): Promise<SyncRe
             logger.debug('GitHub client initialized');
         }
 
-        // Step 4: Process all tasks (including subtasks)
-        const allTasks = flattenTasks(session.tasks);
+        // Step 4: Process only top-level tasks (PB-XXX main tasks)
+        // TEMPORARY: Only sync level-0 tasks, not all subtasks
+        const allTasks = session.tasks.filter((task) => task.level === 0);
         result.statistics.totalTasks = allTasks.length;
 
-        logger.info({ count: allTasks.length }, 'Processing tasks');
+        logger.info({ count: allTasks.length }, 'Processing top-level tasks only');
 
         // Store parent issue numbers for linking
         const taskToIssueMap = new Map<string, number>();
@@ -403,14 +404,15 @@ async function processTask(input: {
 
 /**
  * Flatten task hierarchy to array
+ * @deprecated Not currently used, kept for future use
  */
-function flattenTasks(tasks: Task[]): Task[] {
+function _flattenTasks(tasks: Task[]): Task[] {
     const result: Task[] = [];
 
     for (const task of tasks) {
         result.push(task);
         if (task.subtasks) {
-            result.push(...flattenTasks(task.subtasks));
+            result.push(..._flattenTasks(task.subtasks));
         }
     }
 
