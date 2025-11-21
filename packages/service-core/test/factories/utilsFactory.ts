@@ -30,7 +30,11 @@ export type IdTypes =
     | 'product'
     | 'subscription'
     | 'pricingTier'
-    | 'adSlot';
+    | 'adSlot'
+    | 'professionalService'
+    | 'professionalServiceOrder'
+    | 'serviceOrder'
+    | 'file';
 
 function generateValidUuidFromLabel(label: string): string {
     const hash = crypto.createHash('md5').update(label).digest('hex');
