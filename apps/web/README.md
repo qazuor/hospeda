@@ -94,23 +94,32 @@ PUBLIC_DEFAULT_LOCALE=es
 
 ## Documentation
 
-📚 **Complete documentation available in [apps/web/docs/README.md](./docs/README.md)** *(to be created in Phase 2)*
+📚 **Complete documentation available in [apps/web/docs/](./docs/)**
 
 Topics covered in detailed docs:
 
-- **Architecture**: Islands architecture, SSR/SSG strategy
-- **Development**: Creating pages, components, styling
-- **Routing**: File-based routing, dynamic routes
-- **Data Fetching**: Build-time, server-side, client-side
-- **i18n**: Adding translations, managing languages
-- **SEO**: Meta tags, sitemaps, structured data
-- **Performance**: Lighthouse optimization, lazy loading
+- **[Overview](./docs/README.md)**: Architecture, features, and getting started
+- **[Setup Guide](./docs/development/setup.md)**: Environment and configuration
+- **[Architecture](./docs/development/architecture.md)**: Islands architecture and SSR/SSG
+- **[Pages & Routing](./docs/development/pages.md)**: File-based routing and dynamic routes
+- **[Components](./docs/development/components.md)**: Creating and styling components
+- **[Data Fetching](./docs/development/data-fetching.md)**: Build-time, SSR, client-side patterns
+- **[i18n](./docs/development/i18n.md)**: Internationalization and translations
+- **[SEO](./docs/development/seo.md)**: Meta tags, sitemaps, and optimization
+- **[Performance](./docs/development/performance.md)**: Lighthouse optimization strategies
+- **[Deployment](./docs/development/deployment.md)**: Vercel deployment guide
 
-For shared components and utilities, see:
+For cross-app documentation:
 
-- **UI Components**: [packages/auth-ui/docs/](../../packages/auth-ui/docs/)
-- **Icons**: [packages/icons/docs/](../../packages/icons/docs/)
-- **i18n**: [packages/i18n/docs/](../../packages/i18n/docs/)
+- **[Getting Started](../../docs/getting-started/)**: Project setup and onboarding
+- **[Architecture](../../docs/architecture/)**: System design and patterns
+- **[Deployment](../../docs/deployment/)**: Deployment guides
+
+For shared components and utilities:
+
+- **[UI Components](../../packages/auth-ui/docs/)**: Authentication UI components
+- **[Icons](../../packages/icons/docs/)**: Icon library
+- **[i18n](../../packages/i18n/docs/)**: Internationalization package
 
 ## Project Structure
 

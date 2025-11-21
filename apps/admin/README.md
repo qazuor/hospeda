@@ -97,24 +97,32 @@ VITE_APP_NAME=Hospeda Admin
 
 ## Documentation
 
-📚 **Complete documentation available in [apps/admin/docs/README.md](./docs/README.md)** *(to be created in Phase 2)*
+📚 **Complete documentation available in [apps/admin/docs/](./docs/)**
 
 Topics covered in detailed docs:
 
-- **Architecture**: TanStack Start, file-based routing, SSR
-- **Development**: Creating pages, components, forms
-- **Routing**: File-based routing, protected routes, layouts
-- **Data Fetching**: TanStack Query patterns, optimistic updates
-- **Tables**: TanStack Table with sorting, filtering, pagination
-- **Forms**: TanStack Form with validation and error handling
-- **Authentication**: Clerk integration, protected routes, RBAC
-- **UI Components**: Shadcn components, custom variants
+- **[Overview](./docs/README.md)**: Architecture, features, and getting started
+- **[Setup Guide](./docs/development/setup.md)**: Environment and configuration
+- **[Architecture](./docs/development/architecture.md)**: TanStack Start and SSR patterns
+- **[Routing](./docs/development/routing.md)**: File-based routing and protected routes
+- **[Components](./docs/development/components.md)**: Creating and styling components
+- **[Data Fetching](./docs/development/data-fetching.md)**: TanStack Query patterns
+- **[Forms](./docs/development/forms.md)**: TanStack Form with validation
+- **[Tables](./docs/development/tables.md)**: TanStack Table implementation
+- **[Authentication](./docs/AUTH_SYSTEM.md)**: Clerk integration and RBAC
+- **[Deployment](./docs/development/deployment.md)**: Vercel deployment guide
 
-For shared packages, see:
+For cross-app documentation:
 
-- **Service Layer**: [packages/service-core/docs/](../../packages/service-core/docs/)
-- **Database**: [packages/db/docs/](../../packages/db/docs/)
-- **Schemas**: [packages/schemas/docs/](../../packages/schemas/docs/)
+- **[Getting Started](../../docs/getting-started/)**: Project setup and onboarding
+- **[Architecture](../../docs/architecture/)**: System design and patterns
+- **[Deployment](../../docs/deployment/)**: Deployment guides
+
+For shared packages:
+
+- **[Service Layer](../../packages/service-core/docs/)**: Business logic services
+- **[Database](../../packages/db/docs/)**: Models and database operations
+- **[Schemas](../../packages/schemas/docs/)**: Validation schemas
 
 ## Project Structure
 

@@ -99,22 +99,29 @@ CORS_ORIGIN=http://localhost:4321,http://localhost:3000
 
 ## Documentation
 
-📚 **Complete documentation available in [apps/api/docs/README.md](./docs/README.md)** *(to be created in Phase 2)*
+📚 **Complete documentation available in [apps/api/docs/](./docs/)**
 
 Topics covered in detailed docs:
 
-- **Architecture**: Request flow, middleware stack, patterns
-- **Development**: Creating endpoints, route factories, validation
-- **Authentication**: Actor system, permissions, protected routes
-- **Testing**: Unit tests, integration tests, security tests
-- **Deployment**: Production setup, Docker, monitoring
-- **API Reference**: All endpoints, request/response formats
+- **[Overview](./docs/README.md)**: Architecture, features, and getting started
+- **[Setup Guide](./docs/development/setup.md)**: Environment configuration and installation
+- **[API Reference](./docs/COMPLETE_API_GUIDE.md)**: Comprehensive endpoint documentation
+- **[Route Factories](./docs/development/route-factories.md)**: Creating type-safe routes
+- **[Authentication](./docs/AUTH_SYSTEM.md)**: Actor system and permissions
+- **[Testing](./docs/development/testing-guide.md)**: Testing strategies and patterns
+- **[Deployment](./docs/development/deployment.md)**: Production setup and monitoring
 
-For package-level documentation, see:
+For cross-app documentation:
 
-- **Service Layer**: [packages/service-core/docs/](../../packages/service-core/docs/)
-- **Database**: [packages/db/docs/](../../packages/db/docs/)
-- **Schemas**: [packages/schemas/docs/](../../packages/schemas/docs/)
+- **[Getting Started](../../docs/getting-started/)**: Project setup and onboarding
+- **[Architecture](../../docs/architecture/)**: System design and patterns
+- **[Deployment](../../docs/deployment/)**: Deployment guides
+
+For package-level documentation:
+
+- **[Service Layer](../../packages/service-core/docs/)**: Business logic services
+- **[Database](../../packages/db/docs/)**: Models and database operations
+- **[Schemas](../../packages/schemas/docs/)**: Validation schemas
 
 ## Project Structure
 
