@@ -1,6 +1,8 @@
 export enum ProfessionalServiceCategoryEnum {
     PHOTO = 'PHOTO',
+    PHOTOGRAPHY = 'PHOTOGRAPHY',
     COPYWRITING = 'COPYWRITING',
+    CONSULTING = 'CONSULTING',
     SEO = 'SEO',
     DESIGN = 'DESIGN',
     MAINTENANCE = 'MAINTENANCE',

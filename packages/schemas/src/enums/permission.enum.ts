@@ -40,6 +40,8 @@ export enum PermissionCategoryEnum {
     SERVICE_LISTING_PLAN = 'SERVICE_LISTING_PLAN',
     NOTIFICATION = 'NOTIFICATION',
     SERVICE_ORDER = 'SERVICE_ORDER',
+    PROFESSIONAL_SERVICE = 'PROFESSIONAL_SERVICE',
+    PROFESSIONAL_SERVICE_ORDER = 'PROFESSIONAL_SERVICE_ORDER',
     PUBLIC = 'PUBLIC',
     SYSTEM = 'SYSTEM',
     ACCESS = 'ACCESS'
@@ -198,6 +200,7 @@ export enum PermissionEnum {
     USER_PASSWORD_RESET = 'user.password.reset', // Allows resetting user password.
     USER_UPDATE_PROFILE = 'user.update.profile', // Allows updating own user profile.
     USER_SETTINGS_UPDATE = 'user.settings.update', // Allows updating own user settings.
+    MANAGE_USERS = 'user.manage', // Allows full management of users (create, update, delete, roles).
 
     // PUBLIC USER ACTIONS: Permissions for actions available to public or logged-in users
     ACCOMMODATION_REVIEW_CREATE = 'accommodation.review.create', // Allows creating a review for an accommodation.
@@ -213,6 +216,7 @@ export enum PermissionEnum {
     SYSTEM_MAINTENANCE_MODE = 'system.maintenanceMode', // Allows toggling system maintenance mode.
     TRANSLATIONS_MANAGE = 'translations.manage', // Allows managing translations.
     MULTILANGUAGE_CONTENT_EDIT = 'content.multilanguage.edit', // Allows editing multilingual content.
+    MANAGE_CONTENT = 'content.manage', // Allows full management of content (posts, events, accommodations).
     DASHBOARD_BASE_VIEW = 'dashboard.baseView', // Allows viewing the base dashboard.
     DASHBOARD_FULL_VIEW = 'dashboard.fullView', // Allows viewing the full dashboard.
     SETTINGS_MANAGE = 'settings.manage', // Allows managing system settings.
@@ -224,12 +228,14 @@ export enum PermissionEnum {
     ACCESS_PANEL_ADMIN = 'access.panelAdmin', // Allows accessing the admin panel.
     ACCESS_API_ADMIN = 'access.apiAdmin', // Allows accessing the admin API.
     ACCESS_API_PUBLIC = 'access.apiPublic', // Allows accessing the public API.
+    ACCESS_API_PRIVATE = 'access.apiPrivate', // Allows accessing private API endpoints.
     ACCESS_PERMISSIONS_MANAGE = 'access.permissions.manage', // Allows managing permission assignments.
 
     // LOGGING & ERROR TRACKING: Permissions for logs, errors, analytics
     LOGS_VIEW_ALL = 'logs.viewAll', // Allows viewing all logs.
     ERRORS_VIEW = 'errors.view', // Allows viewing error logs.
     ANALYTICS_VIEW = 'analytics.view', // Allows viewing analytics data.
+    VIEW_ANALYTICS = 'analytics.view', // Alias for ANALYTICS_VIEW (for backward compatibility).
 
     // DEBUG & DEPLOY: Permissions for debugging and bulk operations
     DEBUG_TOOLS_ACCESS = 'system.debugTools.access', // Allows accessing debug tools.
@@ -252,12 +258,14 @@ export enum PermissionEnum {
     CLIENT_VIEW = 'client.view', // Allows viewing client information.
     CLIENT_RESTORE = 'client.restore', // Allows restoring a deleted client.
     CLIENT_HARD_DELETE = 'client.hardDelete', // Allows permanently deleting a client.
+    MANAGE_CLIENTS = 'client.manage', // Allows full management of clients.
 
     // SUBSCRIPTION: Permissions related to subscription management
     SUBSCRIPTION_CREATE = 'subscription.create', // Allows creating a new subscription.
     SUBSCRIPTION_UPDATE = 'subscription.update', // Allows updating a subscription.
     SUBSCRIPTION_DELETE = 'subscription.delete', // Allows deleting a subscription.
     SUBSCRIPTION_VIEW = 'subscription.view', // Allows viewing subscription information.
+    MANAGE_SUBSCRIPTIONS = 'subscription.manage', // Allows full management of subscriptions.
 
     // SUBSCRIPTION_ITEM: Permissions related to subscription item management
     SUBSCRIPTION_ITEM_CREATE = 'subscriptionItem.create', // Allows creating a new subscription item.
@@ -273,6 +281,7 @@ export enum PermissionEnum {
     PRODUCT_UPDATE = 'product.update', // Allows updating a product.
     PRODUCT_DELETE = 'product.delete', // Allows deleting a product.
     PRODUCT_VIEW = 'product.view', // Allows viewing product information.
+    MANAGE_PRODUCTS = 'product.manage', // Allows full management of products.
 
     // PRICING_PLAN: Permissions related to pricing plan management
     PRICING_PLAN_CREATE = 'pricingPlan.create', // Allows creating a new pricing plan.
@@ -536,6 +545,7 @@ export enum PermissionEnum {
     PURCHASE_HARD_DELETE = 'purchase.hardDelete', // Allows permanently deleting a purchase.
     PURCHASE_PROCESS = 'purchase.process', // Allows processing purchases.
     PURCHASE_CANCEL = 'purchase.cancel', // Allows canceling purchases.
+    MANAGE_PURCHASES = 'purchase.manage', // Allows full management of purchases.
 
     // REFUND: Permissions related to refund management
     REFUND_CREATE = 'refund.create', // Allows creating a new refund.
@@ -576,6 +586,26 @@ export enum PermissionEnum {
     NOTIFICATION_SOFT_DELETE_VIEW = 'notification.softDelete.view', // Allows viewing soft-deleted notifications.
     NOTIFICATION_SEND = 'notification.send', // Allows sending notifications.
     NOTIFICATION_STATUS_MANAGE = 'notification.status.manage', // Allows managing notification status.
+
+    // PROFESSIONAL_SERVICE: Permissions related to professional service management
+    PROFESSIONAL_SERVICE_CREATE = 'professionalService.create', // Allows creating a new professional service.
+    PROFESSIONAL_SERVICE_UPDATE = 'professionalService.update', // Allows updating a professional service.
+    PROFESSIONAL_SERVICE_DELETE = 'professionalService.delete', // Allows deleting a professional service (soft delete).
+    PROFESSIONAL_SERVICE_VIEW = 'professionalService.view', // Allows viewing professional service information.
+    PROFESSIONAL_SERVICE_RESTORE = 'professionalService.restore', // Allows restoring a deleted professional service.
+    PROFESSIONAL_SERVICE_HARD_DELETE = 'professionalService.hardDelete', // Allows permanently deleting a professional service.
+    PROFESSIONAL_SERVICE_SOFT_DELETE_VIEW = 'professionalService.softDelete.view', // Allows viewing soft-deleted professional services.
+    PROFESSIONAL_SERVICE_STATUS_MANAGE = 'professionalService.status.manage', // Allows managing professional service status.
+
+    // PROFESSIONAL_SERVICE_ORDER: Permissions related to professional service order management
+    PROFESSIONAL_SERVICE_ORDER_CREATE = 'professionalServiceOrder.create', // Allows creating a new professional service order.
+    PROFESSIONAL_SERVICE_ORDER_UPDATE = 'professionalServiceOrder.update', // Allows updating a professional service order.
+    PROFESSIONAL_SERVICE_ORDER_DELETE = 'professionalServiceOrder.delete', // Allows deleting a professional service order (soft delete).
+    PROFESSIONAL_SERVICE_ORDER_VIEW = 'professionalServiceOrder.view', // Allows viewing professional service order information.
+    PROFESSIONAL_SERVICE_ORDER_RESTORE = 'professionalServiceOrder.restore', // Allows restoring a deleted professional service order.
+    PROFESSIONAL_SERVICE_ORDER_HARD_DELETE = 'professionalServiceOrder.hardDelete', // Allows permanently deleting a professional service order.
+    PROFESSIONAL_SERVICE_ORDER_SOFT_DELETE_VIEW = 'professionalServiceOrder.softDelete.view', // Allows viewing soft-deleted professional service orders.
+    PROFESSIONAL_SERVICE_ORDER_STATUS_MANAGE = 'professionalServiceOrder.status.manage', // Allows managing professional service order status.
 
     // BENEFIT_PARTNER: Permissions related to benefit partner management
     BENEFIT_PARTNER_CREATE = 'benefitPartner.create', // Allows creating a new benefit partner.

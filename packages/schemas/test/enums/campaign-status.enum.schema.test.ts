@@ -7,21 +7,29 @@ describe('CampaignStatusEnum', () => {
     describe('enum values', () => {
         it('should have correct enum values', () => {
             expect(CampaignStatusEnum.DRAFT).toBe('DRAFT');
+            expect(CampaignStatusEnum.SCHEDULED).toBe('SCHEDULED');
             expect(CampaignStatusEnum.ACTIVE).toBe('ACTIVE');
             expect(CampaignStatusEnum.PAUSED).toBe('PAUSED');
             expect(CampaignStatusEnum.COMPLETED).toBe('COMPLETED');
             expect(CampaignStatusEnum.CANCELLED).toBe('CANCELLED');
         });
 
-        it('should have exactly 5 values', () => {
+        it('should have exactly 6 values', () => {
             const values = Object.values(CampaignStatusEnum);
-            expect(values).toHaveLength(5);
+            expect(values).toHaveLength(6);
         });
 
         it('should contain all expected values', () => {
             const values = Object.values(CampaignStatusEnum);
             expect(values).toEqual(
-                expect.arrayContaining(['DRAFT', 'ACTIVE', 'PAUSED', 'COMPLETED', 'CANCELLED'])
+                expect.arrayContaining([
+                    'DRAFT',
+                    'SCHEDULED',
+                    'ACTIVE',
+                    'PAUSED',
+                    'COMPLETED',
+                    'CANCELLED'
+                ])
             );
         });
     });
@@ -29,6 +37,7 @@ describe('CampaignStatusEnum', () => {
     describe('CampaignStatusSchema validation', () => {
         it('should validate correct enum values', () => {
             expect(CampaignStatusSchema.parse('DRAFT')).toBe('DRAFT');
+            expect(CampaignStatusSchema.parse('SCHEDULED')).toBe('SCHEDULED');
             expect(CampaignStatusSchema.parse('ACTIVE')).toBe('ACTIVE');
             expect(CampaignStatusSchema.parse('PAUSED')).toBe('PAUSED');
             expect(CampaignStatusSchema.parse('COMPLETED')).toBe('COMPLETED');

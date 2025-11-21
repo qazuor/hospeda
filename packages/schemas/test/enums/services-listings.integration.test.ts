@@ -14,7 +14,9 @@ describe('Services and Listings Enums Integration', () => {
     describe('enums can be imported from main index', () => {
         it('should import ProfessionalServiceCategoryEnum', () => {
             expect(ProfessionalServiceCategoryEnum.PHOTO).toBe('PHOTO');
+            expect(ProfessionalServiceCategoryEnum.PHOTOGRAPHY).toBe('PHOTOGRAPHY');
             expect(ProfessionalServiceCategoryEnum.COPYWRITING).toBe('COPYWRITING');
+            expect(ProfessionalServiceCategoryEnum.CONSULTING).toBe('CONSULTING');
             expect(ProfessionalServiceCategoryEnum.SEO).toBe('SEO');
             expect(ProfessionalServiceCategoryEnum.DESIGN).toBe('DESIGN');
             expect(ProfessionalServiceCategoryEnum.MAINTENANCE).toBe('MAINTENANCE');
@@ -51,7 +53,9 @@ describe('Services and Listings Enums Integration', () => {
         it('should validate professional service categories', () => {
             const serviceCategories = [
                 'PHOTO',
+                'PHOTOGRAPHY',
                 'COPYWRITING',
+                'CONSULTING',
                 'SEO',
                 'DESIGN',
                 'MAINTENANCE',
@@ -132,7 +136,7 @@ describe('Services and Listings Enums Integration', () => {
 
     describe('enum completeness', () => {
         it('should have correct number of values in each enum', () => {
-            expect(Object.values(ProfessionalServiceCategoryEnum)).toHaveLength(8);
+            expect(Object.values(ProfessionalServiceCategoryEnum)).toHaveLength(10);
             expect(Object.values(ServiceOrderStatusEnum)).toHaveLength(5);
             expect(Object.values(ListingStatusEnum)).toHaveLength(4);
             expect(Object.values(NotificationTypeEnum)).toHaveLength(14);

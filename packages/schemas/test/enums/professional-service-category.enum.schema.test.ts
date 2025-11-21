@@ -7,7 +7,9 @@ describe('ProfessionalServiceCategoryEnum', () => {
     describe('enum values', () => {
         it('should have correct enum values', () => {
             expect(ProfessionalServiceCategoryEnum.PHOTO).toBe('PHOTO');
+            expect(ProfessionalServiceCategoryEnum.PHOTOGRAPHY).toBe('PHOTOGRAPHY');
             expect(ProfessionalServiceCategoryEnum.COPYWRITING).toBe('COPYWRITING');
+            expect(ProfessionalServiceCategoryEnum.CONSULTING).toBe('CONSULTING');
             expect(ProfessionalServiceCategoryEnum.SEO).toBe('SEO');
             expect(ProfessionalServiceCategoryEnum.DESIGN).toBe('DESIGN');
             expect(ProfessionalServiceCategoryEnum.MAINTENANCE).toBe('MAINTENANCE');
@@ -16,9 +18,9 @@ describe('ProfessionalServiceCategoryEnum', () => {
             expect(ProfessionalServiceCategoryEnum.OTHER).toBe('OTHER');
         });
 
-        it('should have exactly 8 values', () => {
+        it('should have exactly 10 values', () => {
             const values = Object.values(ProfessionalServiceCategoryEnum);
-            expect(values).toHaveLength(8);
+            expect(values).toHaveLength(10);
         });
 
         it('should contain all expected values', () => {
@@ -26,7 +28,9 @@ describe('ProfessionalServiceCategoryEnum', () => {
             expect(values).toEqual(
                 expect.arrayContaining([
                     'PHOTO',
+                    'PHOTOGRAPHY',
                     'COPYWRITING',
+                    'CONSULTING',
                     'SEO',
                     'DESIGN',
                     'MAINTENANCE',
@@ -41,7 +45,9 @@ describe('ProfessionalServiceCategoryEnum', () => {
     describe('ProfessionalServiceCategorySchema validation', () => {
         it('should validate correct enum values', () => {
             expect(ProfessionalServiceCategorySchema.parse('PHOTO')).toBe('PHOTO');
+            expect(ProfessionalServiceCategorySchema.parse('PHOTOGRAPHY')).toBe('PHOTOGRAPHY');
             expect(ProfessionalServiceCategorySchema.parse('COPYWRITING')).toBe('COPYWRITING');
+            expect(ProfessionalServiceCategorySchema.parse('CONSULTING')).toBe('CONSULTING');
             expect(ProfessionalServiceCategorySchema.parse('SEO')).toBe('SEO');
             expect(ProfessionalServiceCategorySchema.parse('DESIGN')).toBe('DESIGN');
             expect(ProfessionalServiceCategorySchema.parse('MAINTENANCE')).toBe('MAINTENANCE');

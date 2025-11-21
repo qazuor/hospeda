@@ -19,6 +19,7 @@ describe('Campaigns and Advertising Enums Integration', () => {
 
         it('should import CampaignStatusEnum', () => {
             expect(CampaignStatusEnum.DRAFT).toBe('DRAFT');
+            expect(CampaignStatusEnum.SCHEDULED).toBe('SCHEDULED');
             expect(CampaignStatusEnum.ACTIVE).toBe('ACTIVE');
             expect(CampaignStatusEnum.PAUSED).toBe('PAUSED');
             expect(CampaignStatusEnum.COMPLETED).toBe('COMPLETED');
@@ -93,7 +94,7 @@ describe('Campaigns and Advertising Enums Integration', () => {
     describe('enum completeness', () => {
         it('should have correct number of values in each enum', () => {
             expect(Object.values(CampaignChannelEnum)).toHaveLength(2);
-            expect(Object.values(CampaignStatusEnum)).toHaveLength(5);
+            expect(Object.values(CampaignStatusEnum)).toHaveLength(6);
             expect(Object.values(MediaAssetTypeEnum)).toHaveLength(3);
             expect(Object.values(AdSlotReservationStatusEnum)).toHaveLength(5);
         });
