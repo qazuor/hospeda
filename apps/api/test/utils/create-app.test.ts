@@ -128,7 +128,9 @@ describe('Create App Utility', () => {
             module.default();
 
             // Verify middleware registration order
-            expect(mockApp.use).toHaveBeenCalledTimes(13); // All middlewares + requestId + favicon
+            // 14 middlewares: requestId, favicon, logger, cors, security, rateLimit,
+            // compression, cache, metrics, validation, responseFormatting, mockAuth, clerkAuth, actor
+            expect(mockApp.use).toHaveBeenCalledTimes(14);
         });
 
         it('should register notFound handler', async () => {
