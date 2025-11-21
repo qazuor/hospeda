@@ -1,20 +1,14 @@
 import { z } from 'zod';
-import {
-    PaymentIdSchema,
-    PaymentPlanIdSchema,
-    SubscriptionIdSchema
-} from '../../common/id.schema.js';
-import { PaymentPlanSchema } from './payment-plan.schema.js';
+import { PaymentIdSchema } from '../../common/id.schema.js';
+import { BaseSearchSchema } from '../../common/pagination.schema.js';
+import { PaymentStatusEnumSchema } from '../../enums/index.js';
 import { PaymentSchema } from './payment.schema.js';
-import { PaymentSubscriptionSchema } from './subscription.schema.js';
 
 /**
  * Payment CRUD Schemas
  *
  * This file contains all schemas related to CRUD operations for payments:
  * - Payment (create/update/cancel/refund)
- * - PaymentPlan (create/update/delete/activate/deactivate)
- * - Subscription (create/update/cancel/reactivate)
  */
 
 // ============================================================================
@@ -152,307 +146,6 @@ export const PaymentRefundOutputSchema = z.object({
 });
 
 // ============================================================================
-// PAYMENT PLAN CRUD SCHEMAS
-// ============================================================================
-
-/**
- * Schema for creating a new payment plan
- * Omits auto-generated fields like id and audit fields
- */
-export const PaymentPlanCreateInputSchema = PaymentPlanSchema.omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-    createdById: true,
-    updatedById: true,
-    deletedAt: true,
-    deletedById: true
-});
-
-/**
- * Schema for payment plan creation response
- * Returns the complete payment plan object
- */
-export const PaymentPlanCreateOutputSchema = PaymentPlanSchema;
-
-/**
- * Schema for updating a payment plan (PUT - complete replacement)
- * Omits auto-generated fields and makes all fields partial
- */
-export const PaymentPlanUpdateInputSchema = PaymentPlanSchema.omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-    createdById: true,
-    updatedById: true,
-    deletedAt: true,
-    deletedById: true
-}).partial();
-
-/**
- * Schema for partial payment plan updates (PATCH)
- * Same as update but explicitly named for clarity
- */
-export const PaymentPlanPatchInputSchema = PaymentPlanUpdateInputSchema;
-
-/**
- * Schema for payment plan update response
- * Returns the complete updated payment plan object
- */
-export const PaymentPlanUpdateOutputSchema = PaymentPlanSchema;
-
-/**
- * Schema for payment plan deletion input
- * Requires ID and optional force flag for hard delete
- */
-export const PaymentPlanDeleteInputSchema = z.object({
-    id: PaymentPlanIdSchema,
-    force: z
-        .boolean({
-            message: 'zodError.paymentPlan.delete.force.invalidType'
-        })
-        .optional()
-        .default(false)
-});
-
-/**
- * Schema for payment plan deletion response
- * Returns success status and deletion timestamp
- */
-export const PaymentPlanDeleteOutputSchema = z.object({
-    success: z
-        .boolean({
-            message: 'zodError.paymentPlan.delete.success.required'
-        })
-        .default(true),
-    deletedAt: z
-        .date({
-            message: 'zodError.paymentPlan.delete.deletedAt.invalidType'
-        })
-        .optional()
-});
-
-/**
- * Schema for payment plan activation input
- * Requires only the payment plan ID
- */
-export const PaymentPlanActivateInputSchema = z.object({
-    id: PaymentPlanIdSchema,
-    effectiveDate: z
-        .date({
-            message: 'zodError.paymentPlan.activate.effectiveDate.invalidType'
-        })
-        .optional()
-});
-
-/**
- * Schema for payment plan activation response
- * Returns the activated payment plan object
- */
-export const PaymentPlanActivateOutputSchema = PaymentPlanSchema;
-
-/**
- * Schema for payment plan deactivation input
- * Requires payment plan ID and optional reason
- */
-export const PaymentPlanDeactivateInputSchema = z.object({
-    id: PaymentPlanIdSchema,
-    reason: z
-        .string({
-            message: 'zodError.paymentPlan.deactivate.reason.invalidType'
-        })
-        .min(1, { message: 'zodError.paymentPlan.deactivate.reason.min' })
-        .max(500, { message: 'zodError.paymentPlan.deactivate.reason.max' })
-        .optional(),
-    effectiveDate: z
-        .date({
-            message: 'zodError.paymentPlan.deactivate.effectiveDate.invalidType'
-        })
-        .optional()
-});
-
-/**
- * Schema for payment plan deactivation response
- * Returns the deactivated payment plan object
- */
-export const PaymentPlanDeactivateOutputSchema = PaymentPlanSchema;
-
-// ============================================================================
-// SUBSCRIPTION CRUD SCHEMAS
-// ============================================================================
-
-/**
- * Schema for creating a new subscription
- * Omits auto-generated fields like id and audit fields
- */
-export const SubscriptionCreateInputSchema = PaymentSubscriptionSchema.omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-    createdById: true,
-    updatedById: true,
-    deletedAt: true,
-    deletedById: true
-});
-
-/**
- * Schema for subscription creation response
- * Returns the complete subscription object
- */
-export const SubscriptionCreateOutputSchema = PaymentSubscriptionSchema;
-
-/**
- * Schema for updating a subscription (PUT - complete replacement)
- * Omits auto-generated fields and makes all fields partial
- */
-export const SubscriptionUpdateInputSchema = PaymentSubscriptionSchema.omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-    createdById: true,
-    updatedById: true,
-    deletedAt: true,
-    deletedById: true
-}).partial();
-
-/**
- * Schema for partial subscription updates (PATCH)
- * Same as update but explicitly named for clarity
- */
-export const SubscriptionPatchInputSchema = SubscriptionUpdateInputSchema;
-
-/**
- * Schema for subscription update response
- * Returns the complete updated subscription object
- */
-export const SubscriptionUpdateOutputSchema = PaymentSubscriptionSchema;
-
-/**
- * Schema for subscription cancellation input
- * Requires subscription ID and optional cancellation details
- */
-export const SubscriptionCancelInputSchema = z.object({
-    id: SubscriptionIdSchema,
-    reason: z
-        .string({
-            message: 'zodError.subscription.cancel.reason.invalidType'
-        })
-        .min(1, { message: 'zodError.subscription.cancel.reason.min' })
-        .max(500, { message: 'zodError.subscription.cancel.reason.max' })
-        .optional(),
-    cancelAtPeriodEnd: z
-        .boolean({
-            message: 'zodError.subscription.cancel.cancelAtPeriodEnd.invalidType'
-        })
-        .optional()
-        .default(true),
-    effectiveDate: z
-        .date({
-            message: 'zodError.subscription.cancel.effectiveDate.invalidType'
-        })
-        .optional()
-});
-
-/**
- * Schema for subscription cancellation response
- * Returns cancellation status and details
- */
-export const SubscriptionCancelOutputSchema = z.object({
-    success: z
-        .boolean({
-            message: 'zodError.subscription.cancel.success.required'
-        })
-        .default(true),
-    subscription: PaymentSubscriptionSchema,
-    cancellationDetails: z.object({
-        cancelledAt: z.date(),
-        effectiveDate: z.date(),
-        refundAmount: z.number().min(0).optional(),
-        accessUntil: z.date().optional()
-    })
-});
-
-/**
- * Schema for subscription reactivation input
- * Requires subscription ID and optional reactivation details
- */
-export const SubscriptionReactivateInputSchema = z.object({
-    id: SubscriptionIdSchema,
-    newPlanId: PaymentPlanIdSchema.optional(),
-    effectiveDate: z
-        .date({
-            message: 'zodError.subscription.reactivate.effectiveDate.invalidType'
-        })
-        .optional(),
-    prorateBilling: z
-        .boolean({
-            message: 'zodError.subscription.reactivate.prorateBilling.invalidType'
-        })
-        .optional()
-        .default(true)
-});
-
-/**
- * Schema for subscription reactivation response
- * Returns reactivation status and details
- */
-export const SubscriptionReactivateOutputSchema = z.object({
-    success: z
-        .boolean({
-            message: 'zodError.subscription.reactivate.success.required'
-        })
-        .default(true),
-    subscription: PaymentSubscriptionSchema,
-    reactivationDetails: z.object({
-        reactivatedAt: z.date(),
-        effectiveDate: z.date(),
-        prorationAmount: z.number().optional(),
-        nextBillingDate: z.date()
-    })
-});
-
-/**
- * Schema for subscription plan change input
- * Requires subscription ID and new plan details
- */
-export const SubscriptionChangePlanInputSchema = z.object({
-    id: SubscriptionIdSchema,
-    newPlanId: PaymentPlanIdSchema,
-    effectiveDate: z
-        .date({
-            message: 'zodError.subscription.changePlan.effectiveDate.invalidType'
-        })
-        .optional(),
-    prorateBilling: z
-        .boolean({
-            message: 'zodError.subscription.changePlan.prorateBilling.invalidType'
-        })
-        .optional()
-        .default(true)
-});
-
-/**
- * Schema for subscription plan change response
- * Returns plan change status and details
- */
-export const SubscriptionChangePlanOutputSchema = z.object({
-    success: z
-        .boolean({
-            message: 'zodError.subscription.changePlan.success.required'
-        })
-        .default(true),
-    subscription: PaymentSubscriptionSchema,
-    planChangeDetails: z.object({
-        changedAt: z.date(),
-        effectiveDate: z.date(),
-        previousPlanId: PaymentPlanIdSchema,
-        newPlanId: PaymentPlanIdSchema,
-        prorationAmount: z.number().optional(),
-        nextBillingDate: z.date()
-    })
-});
-
-// ============================================================================
 // BULK OPERATIONS SCHEMAS
 // ============================================================================
 
@@ -506,6 +199,24 @@ export const PaymentBulkOperationOutputSchema = z.object({
 });
 
 // ============================================================================
+// PAYMENT SEARCH SCHEMA
+// ============================================================================
+
+/**
+ * Schema for searching/filtering payments
+ * Extends base search with payment-specific filters
+ */
+export const PaymentSearchSchema = BaseSearchSchema.extend({
+    status: PaymentStatusEnumSchema.optional(),
+    userId: z.string().uuid().optional(),
+    pricingPlanId: z.string().uuid().optional(),
+    minAmount: z.number().min(0).optional(),
+    maxAmount: z.number().min(0).optional(),
+    fromDate: z.date().optional(),
+    toDate: z.date().optional()
+});
+
+// ============================================================================
 // TYPE EXPORTS
 // ============================================================================
 
@@ -519,32 +230,9 @@ export type PaymentCancelOutput = z.infer<typeof PaymentCancelOutputSchema>;
 export type PaymentRefundInput = z.infer<typeof PaymentRefundInputSchema>;
 export type PaymentRefundOutput = z.infer<typeof PaymentRefundOutputSchema>;
 
-export type PaymentPlanCreateInput = z.infer<typeof PaymentPlanCreateInputSchema>;
-export type PaymentPlanCreateOutput = z.infer<typeof PaymentPlanCreateOutputSchema>;
-export type PaymentPlanUpdateInput = z.infer<typeof PaymentPlanUpdateInputSchema>;
-export type PaymentPlanPatchInput = z.infer<typeof PaymentPlanPatchInputSchema>;
-export type PaymentPlanUpdateOutput = z.infer<typeof PaymentPlanUpdateOutputSchema>;
-export type PaymentPlanDeleteInput = z.infer<typeof PaymentPlanDeleteInputSchema>;
-export type PaymentPlanDeleteOutput = z.infer<typeof PaymentPlanDeleteOutputSchema>;
-export type PaymentPlanActivateInput = z.infer<typeof PaymentPlanActivateInputSchema>;
-export type PaymentPlanActivateOutput = z.infer<typeof PaymentPlanActivateOutputSchema>;
-export type PaymentPlanDeactivateInput = z.infer<typeof PaymentPlanDeactivateInputSchema>;
-export type PaymentPlanDeactivateOutput = z.infer<typeof PaymentPlanDeactivateOutputSchema>;
-
-export type SubscriptionCreateInput = z.infer<typeof SubscriptionCreateInputSchema>;
-export type SubscriptionCreateOutput = z.infer<typeof SubscriptionCreateOutputSchema>;
-export type SubscriptionUpdateInput = z.infer<typeof SubscriptionUpdateInputSchema>;
-export type SubscriptionPatchInput = z.infer<typeof SubscriptionPatchInputSchema>;
-export type SubscriptionUpdateOutput = z.infer<typeof SubscriptionUpdateOutputSchema>;
-export type SubscriptionCancelInput = z.infer<typeof SubscriptionCancelInputSchema>;
-export type SubscriptionCancelOutput = z.infer<typeof SubscriptionCancelOutputSchema>;
-export type SubscriptionReactivateInput = z.infer<typeof SubscriptionReactivateInputSchema>;
-export type SubscriptionReactivateOutput = z.infer<typeof SubscriptionReactivateOutputSchema>;
-export type SubscriptionChangePlanInput = z.infer<typeof SubscriptionChangePlanInputSchema>;
-export type SubscriptionChangePlanOutput = z.infer<typeof SubscriptionChangePlanOutputSchema>;
-
 export type PaymentBulkOperationInput = z.infer<typeof PaymentBulkOperationInputSchema>;
 export type PaymentBulkOperationOutput = z.infer<typeof PaymentBulkOperationOutputSchema>;
+export type PaymentSearchInput = z.infer<typeof PaymentSearchSchema>;
 
 // ============================================================================
 // Compatibility Aliases (for service naming conventions)

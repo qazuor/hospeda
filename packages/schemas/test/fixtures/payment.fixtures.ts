@@ -37,6 +37,7 @@ const createPaymentEntityFields = () => ({
         ) || null,
     status: faker.helpers.arrayElement(['pending', 'approved', 'rejected'] as PaymentStatusEnum[]),
     type: faker.helpers.arrayElement(['one_time', 'subscription'] as PaymentTypeEnum[]),
+    invoiceId: faker.helpers.maybe(() => faker.string.uuid(), { probability: 0.6 }) || null,
     description: faker.helpers.maybe(() => faker.lorem.sentence(), { probability: 0.7 }) || null,
     externalReference:
         faker.helpers.maybe(() => faker.string.alphanumeric(20), {
@@ -93,6 +94,7 @@ export const createMinimalPayment = () => ({
     type: 'one_time' as PaymentTypeEnum,
     userId: faker.string.uuid(),
     paymentPlanId: faker.string.uuid(),
+    invoiceId: null,
     description: null,
     externalReference: null,
     mercadoPagoPaymentId: null,
