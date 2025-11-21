@@ -10,16 +10,14 @@ describe('SubscriptionSchema', () => {
             clientId: '550e8400-e29b-41d4-a716-446655440001',
             pricingPlanId: '550e8400-e29b-41d4-a716-446655440002',
             status: SubscriptionStatusEnum.ACTIVE,
-            startAt: new Date('2024-01-01T00:00:00Z'),
-            endAt: new Date('2024-12-31T23:59:59Z'),
-            trialEndsAt: new Date('2024-01-07T23:59:59Z'),
+            startDate: new Date('2024-01-01T00:00:00Z'),
+            endDate: new Date('2024-12-31T23:59:59Z'),
+            trialEndDate: new Date('2024-01-07T23:59:59Z'),
             lifecycleState: LifecycleStatusEnum.ACTIVE,
             createdAt: new Date(),
             updatedAt: new Date(),
             createdById: '550e8400-e29b-41d4-a716-446655440003',
             updatedById: '550e8400-e29b-41d4-a716-446655440003',
-            deletedAt: null,
-            deletedById: null,
             adminInfo: { notes: 'Test subscription' }
         };
 
@@ -38,7 +36,7 @@ describe('SubscriptionSchema', () => {
             expect(fieldErrors).toContain('clientId');
             expect(fieldErrors).toContain('pricingPlanId');
             expect(fieldErrors).toContain('status');
-            expect(fieldErrors).toContain('startAt');
+            expect(fieldErrors).toContain('startDate');
         }
     });
 
@@ -48,17 +46,14 @@ describe('SubscriptionSchema', () => {
             clientId: '550e8400-e29b-41d4-a716-446655440001',
             pricingPlanId: '550e8400-e29b-41d4-a716-446655440002',
             status: SubscriptionStatusEnum.ACTIVE,
-            startAt: new Date('2024-01-01T00:00:00Z'),
-            endAt: new Date('2024-01-07T23:59:59Z'),
-            trialEndsAt: new Date('2024-01-15T23:59:59Z'), // After end date
+            startDate: new Date('2024-01-01T00:00:00Z'),
+            endDate: new Date('2024-01-07T23:59:59Z'),
+            trialEndDate: new Date('2024-01-15T23:59:59Z'), // After end date
             lifecycleState: LifecycleStatusEnum.ACTIVE,
             createdAt: new Date(),
             updatedAt: new Date(),
             createdById: '550e8400-e29b-41d4-a716-446655440003',
-            updatedById: '550e8400-e29b-41d4-a716-446655440003',
-            deletedAt: null,
-            deletedById: null,
-            adminInfo: null
+            updatedById: '550e8400-e29b-41d4-a716-446655440003'
         };
 
         const result = SubscriptionSchema.safeParse(subscriptionWithInvalidTrial);
@@ -71,16 +66,14 @@ describe('SubscriptionSchema', () => {
             clientId: '550e8400-e29b-41d4-a716-446655440001',
             pricingPlanId: '550e8400-e29b-41d4-a716-446655440002',
             status: SubscriptionStatusEnum.ACTIVE,
-            startAt: new Date('2024-01-01T00:00:00Z'),
-            endAt: null,
-            trialEndsAt: null,
+            startDate: new Date('2024-01-01T00:00:00Z'),
+            endDate: null,
+            trialEndDate: null,
             lifecycleState: LifecycleStatusEnum.ACTIVE,
             createdAt: new Date(),
             updatedAt: new Date(),
             createdById: '550e8400-e29b-41d4-a716-446655440003',
             updatedById: '550e8400-e29b-41d4-a716-446655440003',
-            deletedAt: null,
-            deletedById: null,
             adminInfo: null
         };
 
