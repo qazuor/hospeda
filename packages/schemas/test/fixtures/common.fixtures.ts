@@ -10,14 +10,19 @@ export const createBaseIdFields = () => ({
     id: faker.string.uuid()
 });
 
-export const createBaseAuditFields = () => ({
-    createdAt: faker.date.past(),
-    updatedAt: faker.date.recent(),
-    createdById: faker.string.uuid(),
-    updatedById: faker.string.uuid(),
-    deletedAt: faker.helpers.maybe(() => faker.date.recent(), { probability: 0.1 }) ?? null,
-    deletedById: faker.helpers.maybe(() => faker.string.uuid(), { probability: 0.1 }) ?? null
-});
+export const createBaseAuditFields = () => {
+    const deletedAt = faker.helpers.maybe(() => faker.date.recent(), { probability: 0.1 });
+    const deletedById = faker.helpers.maybe(() => faker.string.uuid(), { probability: 0.1 });
+
+    return {
+        createdAt: faker.date.past(),
+        updatedAt: faker.date.recent(),
+        createdById: faker.string.uuid(),
+        updatedById: faker.string.uuid(),
+        ...(deletedAt !== undefined && { deletedAt }),
+        ...(deletedById !== undefined && { deletedById })
+    };
+};
 
 export const createBaseLifecycleFields = () => ({
     lifecycleState: faker.helpers.arrayElement(['DRAFT', 'ACTIVE', 'ARCHIVED'])
@@ -206,36 +211,45 @@ export const createBaseTagsFields = () => ({
 /**
  * Creates a complete Tag fixture
  */
-export const createTagFixture = () => ({
-    id: faker.string.uuid(),
-    createdAt: faker.date.past(),
-    updatedAt: faker.date.recent(),
-    createdById: faker.string.uuid(),
-    updatedById: faker.string.uuid(),
-    deletedAt: faker.helpers.maybe(() => faker.date.recent(), { probability: 0.1 }) ?? null,
-    deletedById: faker.helpers.maybe(() => faker.string.uuid(), { probability: 0.1 }) ?? null,
-    lifecycleState: faker.helpers.arrayElement(['DRAFT', 'ACTIVE', 'ARCHIVED']),
-    name: faker.lorem.word().padEnd(2, 'x'), // Ensure minimum 2 characters
-    slug: faker.helpers.slugify(faker.lorem.word().padEnd(2, 'x')),
-    color: faker.helpers.arrayElement([
-        'RED',
-        'BLUE',
-        'GREEN',
-        'YELLOW',
-        'PURPLE',
-        'ORANGE',
-        'PINK',
-        'BROWN',
-        'GREY',
-        'WHITE',
-        'CYAN',
-        'MAGENTA',
-        'LIGHT_BLUE',
-        'LIGHT_GREEN'
-    ]),
-    icon: faker.helpers.maybe(() => faker.lorem.word().padEnd(2, 'x'), { probability: 0.6 }),
-    notes: faker.helpers.maybe(() => faker.lorem.paragraph().slice(0, 300), { probability: 0.4 })
-});
+export const createTagFixture = () => {
+    const deletedAt = faker.helpers.maybe(() => faker.date.recent(), { probability: 0.1 });
+    const deletedById = faker.helpers.maybe(() => faker.string.uuid(), { probability: 0.1 });
+    const icon = faker.helpers.maybe(() => faker.lorem.word().padEnd(2, 'x'), { probability: 0.6 });
+    const notes = faker.helpers.maybe(() => faker.lorem.paragraph().slice(0, 300), {
+        probability: 0.4
+    });
+
+    return {
+        id: faker.string.uuid(),
+        createdAt: faker.date.past(),
+        updatedAt: faker.date.recent(),
+        createdById: faker.string.uuid(),
+        updatedById: faker.string.uuid(),
+        ...(deletedAt !== undefined && { deletedAt }),
+        ...(deletedById !== undefined && { deletedById }),
+        lifecycleState: faker.helpers.arrayElement(['DRAFT', 'ACTIVE', 'ARCHIVED']),
+        name: faker.lorem.word().padEnd(2, 'x'), // Ensure minimum 2 characters
+        slug: faker.helpers.slugify(faker.lorem.word().padEnd(2, 'x')),
+        color: faker.helpers.arrayElement([
+            'RED',
+            'BLUE',
+            'GREEN',
+            'YELLOW',
+            'PURPLE',
+            'ORANGE',
+            'PINK',
+            'BROWN',
+            'GREY',
+            'WHITE',
+            'CYAN',
+            'MAGENTA',
+            'LIGHT_BLUE',
+            'LIGHT_GREEN'
+        ]),
+        ...(icon !== undefined && { icon }),
+        ...(notes !== undefined && { notes })
+    };
+};
 
 export const createBaseAdminFields = () => ({
     adminInfo: faker.helpers.maybe(
@@ -258,33 +272,41 @@ export const createBaseFaqFields = () => ({
     faqs: faker.helpers.maybe(
         () =>
             faker.helpers.multiple(
-                () => ({
-                    // Base audit fields
-                    createdAt: faker.date.past(),
-                    updatedAt: faker.date.recent(),
-                    createdById: faker.string.uuid(),
-                    updatedById: faker.string.uuid(),
-                    deletedAt:
-                        faker.helpers.maybe(() => faker.date.recent(), { probability: 0.1 }) ??
-                        null,
-                    deletedById:
-                        faker.helpers.maybe(() => faker.string.uuid(), {
-                            probability: 0.1
-                        }) ?? null,
-
-                    // Base lifecycle fields
-                    lifecycleState: faker.helpers.arrayElement(['DRAFT', 'ACTIVE', 'ARCHIVED']),
-
-                    // Base admin fields
-                    adminNotes: faker.helpers.maybe(() => faker.lorem.sentence(), {
+                () => {
+                    const deletedAt = faker.helpers.maybe(() => faker.date.recent(), {
+                        probability: 0.1
+                    });
+                    const deletedById = faker.helpers.maybe(() => faker.string.uuid(), {
+                        probability: 0.1
+                    });
+                    const adminNotes = faker.helpers.maybe(() => faker.lorem.sentence(), {
                         probability: 0.3
-                    }),
+                    });
+                    const category = faker.helpers.maybe(() => faker.lorem.word(), {
+                        probability: 0.6
+                    });
 
-                    // FAQ-specific fields
-                    question: faker.lorem.sentence().slice(0, 300),
-                    answer: faker.lorem.paragraph().slice(0, 2000),
-                    category: faker.helpers.maybe(() => faker.lorem.word(), { probability: 0.6 })
-                }),
+                    return {
+                        // Base audit fields
+                        createdAt: faker.date.past(),
+                        updatedAt: faker.date.recent(),
+                        createdById: faker.string.uuid(),
+                        updatedById: faker.string.uuid(),
+                        ...(deletedAt !== undefined && { deletedAt }),
+                        ...(deletedById !== undefined && { deletedById }),
+
+                        // Base lifecycle fields
+                        lifecycleState: faker.helpers.arrayElement(['DRAFT', 'ACTIVE', 'ARCHIVED']),
+
+                        // Base admin fields
+                        ...(adminNotes !== undefined && { adminNotes }),
+
+                        // FAQ-specific fields
+                        question: faker.lorem.sentence().slice(0, 300),
+                        answer: faker.lorem.paragraph().slice(0, 2000),
+                        ...(category !== undefined && { category })
+                    };
+                },
                 { count: { min: 1, max: 5 } }
             ),
         { probability: 0.6 }
