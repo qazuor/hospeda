@@ -9,15 +9,15 @@
 
 import { ProductModel } from '@repo/db';
 import type { ListRelationsConfig } from '@repo/schemas';
-import { RoleEnum, PermissionEnum, ServiceErrorCode } from '@repo/schemas';
+import { RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import type { Product } from '@repo/schemas/entities/product';
 import {
-  ProductCreateInputSchema,
-  ProductUpdateInputSchema,
-  ProductSearchSchema
+    ProductCreateInputSchema,
+    ProductSearchSchema,
+    ProductUpdateInputSchema
 } from '@repo/schemas/entities/product';
 import { BaseCrudService } from '../../base/base.crud.service';
-import type { Actor, ServiceContext, PaginatedListOutput } from '../../types';
+import type { Actor, PaginatedListOutput, ServiceContext } from '../../types';
 import { ServiceError } from '../../types';
 
 /**
@@ -32,210 +32,210 @@ import { ServiceError } from '../../types';
  * Perfect starting point for new services.
  */
 export class ProductService extends BaseCrudService<
-  Product,
-  ProductModel,
-  typeof ProductCreateInputSchema,
-  typeof ProductUpdateInputSchema,
-  typeof ProductSearchSchema
+    Product,
+    ProductModel,
+    typeof ProductCreateInputSchema,
+    typeof ProductUpdateInputSchema,
+    typeof ProductSearchSchema
 > {
-  /** Entity name for logging */
-  static readonly ENTITY_NAME = 'product';
-  protected readonly entityName = ProductService.ENTITY_NAME;
+    /** Entity name for logging */
+    static readonly ENTITY_NAME = 'product';
+    protected readonly entityName = ProductService.ENTITY_NAME;
 
-  /** Database model instance */
-  public readonly model: ProductModel;
+    /** Database model instance */
+    public readonly model: ProductModel;
 
-  /** Zod validation schemas */
-  public readonly createSchema = ProductCreateInputSchema;
-  public readonly updateSchema = ProductUpdateInputSchema;
-  public readonly searchSchema = ProductSearchSchema;
+    /** Zod validation schemas */
+    public readonly createSchema = ProductCreateInputSchema;
+    public readonly updateSchema = ProductUpdateInputSchema;
+    public readonly searchSchema = ProductSearchSchema;
 
-  /**
-   * Initialize service
-   *
-   * @param ctx - Service context with logger
-   * @param model - Optional model instance (for testing)
-   */
-  constructor(ctx: ServiceContext, model?: ProductModel) {
-    super(ctx, ProductService.ENTITY_NAME);
-    this.model = model ?? new ProductModel();
-  }
-
-  /**
-   * Define default relations for list operations
-   *
-   * Returns empty object = no relations loaded by default
-   */
-  protected getDefaultListRelations(): ListRelationsConfig {
-    return {}; // No relations for this simple service
-  }
-
-  // ============================================================================
-  // PERMISSION HOOKS
-  // ============================================================================
-
-  /**
-   * Check create permission
-   *
-   * Rule: Only ADMIN users can create products
-   */
-  protected _canCreate(actor: Actor, _data: unknown): void {
-    if (actor.role !== RoleEnum.ADMIN) {
-      throw new ServiceError(
-        ServiceErrorCode.FORBIDDEN,
-        'Only administrators can create products'
-      );
+    /**
+     * Initialize service
+     *
+     * @param ctx - Service context with logger
+     * @param model - Optional model instance (for testing)
+     */
+    constructor(ctx: ServiceContext, model?: ProductModel) {
+        super(ctx, ProductService.ENTITY_NAME);
+        this.model = model ?? new ProductModel();
     }
-  }
 
-  /**
-   * Check update permission
-   *
-   * Rule: Only ADMIN users can update products
-   */
-  protected _canUpdate(actor: Actor, _entity: Product): void {
-    if (actor.role !== RoleEnum.ADMIN) {
-      throw new ServiceError(
-        ServiceErrorCode.FORBIDDEN,
-        'Only administrators can update products'
-      );
+    /**
+     * Define default relations for list operations
+     *
+     * Returns empty object = no relations loaded by default
+     */
+    protected getDefaultListRelations(): ListRelationsConfig {
+        return {}; // No relations for this simple service
     }
-  }
 
-  /**
-   * Check soft delete permission
-   *
-   * Rule: Only ADMIN users can delete products
-   */
-  protected _canSoftDelete(actor: Actor, _entity: Product): void {
-    if (actor.role !== RoleEnum.ADMIN) {
-      throw new ServiceError(
-        ServiceErrorCode.FORBIDDEN,
-        'Only administrators can delete products'
-      );
+    // ============================================================================
+    // PERMISSION HOOKS
+    // ============================================================================
+
+    /**
+     * Check create permission
+     *
+     * Rule: Only ADMIN users can create products
+     */
+    protected _canCreate(actor: Actor, _data: unknown): void {
+        if (actor.role !== RoleEnum.ADMIN) {
+            throw new ServiceError(
+                ServiceErrorCode.FORBIDDEN,
+                'Only administrators can create products'
+            );
+        }
     }
-  }
 
-  /**
-   * Check hard delete permission
-   *
-   * Rule: Only SUPER_ADMIN can permanently delete
-   */
-  protected _canHardDelete(actor: Actor, _entity: Product): void {
-    if (actor.role !== RoleEnum.SUPER_ADMIN) {
-      throw new ServiceError(
-        ServiceErrorCode.FORBIDDEN,
-        'Only super administrators can permanently delete products'
-      );
+    /**
+     * Check update permission
+     *
+     * Rule: Only ADMIN users can update products
+     */
+    protected _canUpdate(actor: Actor, _entity: Product): void {
+        if (actor.role !== RoleEnum.ADMIN) {
+            throw new ServiceError(
+                ServiceErrorCode.FORBIDDEN,
+                'Only administrators can update products'
+            );
+        }
     }
-  }
 
-  /**
-   * Check restore permission
-   *
-   * Rule: Only ADMIN can restore
-   */
-  protected _canRestore(actor: Actor, _entity: Product): void {
-    if (actor.role !== RoleEnum.ADMIN) {
-      throw new ServiceError(
-        ServiceErrorCode.FORBIDDEN,
-        'Only administrators can restore products'
-      );
+    /**
+     * Check soft delete permission
+     *
+     * Rule: Only ADMIN users can delete products
+     */
+    protected _canSoftDelete(actor: Actor, _entity: Product): void {
+        if (actor.role !== RoleEnum.ADMIN) {
+            throw new ServiceError(
+                ServiceErrorCode.FORBIDDEN,
+                'Only administrators can delete products'
+            );
+        }
     }
-  }
 
-  /**
-   * Check view permission
-   *
-   * Rule: Authenticated users can view products
-   */
-  protected _canView(actor: Actor, _entity: Product): void {
-    if (!actor || !actor.id) {
-      throw new ServiceError(
-        ServiceErrorCode.UNAUTHORIZED,
-        'Authentication required to view products'
-      );
+    /**
+     * Check hard delete permission
+     *
+     * Rule: Only SUPER_ADMIN can permanently delete
+     */
+    protected _canHardDelete(actor: Actor, _entity: Product): void {
+        if (actor.role !== RoleEnum.SUPER_ADMIN) {
+            throw new ServiceError(
+                ServiceErrorCode.FORBIDDEN,
+                'Only super administrators can permanently delete products'
+            );
+        }
     }
-  }
 
-  /**
-   * Check list permission
-   *
-   * Rule: Authenticated users can list
-   */
-  protected _canList(actor: Actor): void {
-    if (!actor || !actor.id) {
-      throw new ServiceError(
-        ServiceErrorCode.UNAUTHORIZED,
-        'Authentication required to list products'
-      );
+    /**
+     * Check restore permission
+     *
+     * Rule: Only ADMIN can restore
+     */
+    protected _canRestore(actor: Actor, _entity: Product): void {
+        if (actor.role !== RoleEnum.ADMIN) {
+            throw new ServiceError(
+                ServiceErrorCode.FORBIDDEN,
+                'Only administrators can restore products'
+            );
+        }
     }
-  }
 
-  /**
-   * Check search permission
-   *
-   * Rule: Authenticated users can search
-   */
-  protected _canSearch(actor: Actor): void {
-    if (!actor || !actor.id) {
-      throw new ServiceError(
-        ServiceErrorCode.UNAUTHORIZED,
-        'Authentication required to search products'
-      );
+    /**
+     * Check view permission
+     *
+     * Rule: Authenticated users can view products
+     */
+    protected _canView(actor: Actor, _entity: Product): void {
+        if (!actor || !actor.id) {
+            throw new ServiceError(
+                ServiceErrorCode.UNAUTHORIZED,
+                'Authentication required to view products'
+            );
+        }
     }
-  }
 
-  /**
-   * Check count permission
-   *
-   * Rule: Authenticated users can count
-   */
-  protected _canCount(actor: Actor): void {
-    if (!actor || !actor.id) {
-      throw new ServiceError(
-        ServiceErrorCode.UNAUTHORIZED,
-        'Authentication required to count products'
-      );
+    /**
+     * Check list permission
+     *
+     * Rule: Authenticated users can list
+     */
+    protected _canList(actor: Actor): void {
+        if (!actor || !actor.id) {
+            throw new ServiceError(
+                ServiceErrorCode.UNAUTHORIZED,
+                'Authentication required to list products'
+            );
+        }
     }
-  }
 
-  // ============================================================================
-  // SEARCH & COUNT IMPLEMENTATION
-  // ============================================================================
+    /**
+     * Check search permission
+     *
+     * Rule: Authenticated users can search
+     */
+    protected _canSearch(actor: Actor): void {
+        if (!actor || !actor.id) {
+            throw new ServiceError(
+                ServiceErrorCode.UNAUTHORIZED,
+                'Authentication required to search products'
+            );
+        }
+    }
 
-  /**
-   * Execute search query
-   *
-   * Translates search parameters into database query
-   */
-  protected async _executeSearch(
-    params: Record<string, unknown>,
-    _actor: Actor
-  ): Promise<PaginatedListOutput<Product>> {
-    // Extract pagination
-    const { page = 1, pageSize = 20, ...filters } = params;
+    /**
+     * Check count permission
+     *
+     * Rule: Authenticated users can count
+     */
+    protected _canCount(actor: Actor): void {
+        if (!actor || !actor.id) {
+            throw new ServiceError(
+                ServiceErrorCode.UNAUTHORIZED,
+                'Authentication required to count products'
+            );
+        }
+    }
 
-    // Execute query
-    return this.model.findAll(filters, { page, pageSize });
-  }
+    // ============================================================================
+    // SEARCH & COUNT IMPLEMENTATION
+    // ============================================================================
 
-  /**
-   * Execute count query
-   *
-   * Counts entities matching filters
-   */
-  protected async _executeCount(
-    params: Record<string, unknown>,
-    _actor: Actor
-  ): Promise<{ count: number }> {
-    // Remove pagination params (not needed for count)
-    const { page, pageSize, ...filters } = params;
+    /**
+     * Execute search query
+     *
+     * Translates search parameters into database query
+     */
+    protected async _executeSearch(
+        params: Record<string, unknown>,
+        _actor: Actor
+    ): Promise<PaginatedListOutput<Product>> {
+        // Extract pagination
+        const { page = 1, pageSize = 20, ...filters } = params;
 
-    // Execute count
-    const count = await this.model.count(filters);
-    return { count };
-  }
+        // Execute query
+        return this.model.findAll(filters, { page, pageSize });
+    }
+
+    /**
+     * Execute count query
+     *
+     * Counts entities matching filters
+     */
+    protected async _executeCount(
+        params: Record<string, unknown>,
+        _actor: Actor
+    ): Promise<{ count: number }> {
+        // Remove pagination params (not needed for count)
+        const { page, pageSize, ...filters } = params;
+
+        // Execute count
+        const count = await this.model.count(filters);
+        return { count };
+    }
 }
 
 // ============================================================================
