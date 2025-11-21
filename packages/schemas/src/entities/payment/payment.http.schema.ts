@@ -247,25 +247,29 @@ export function httpToDomainPaymentCreate(httpData: PaymentCreateHttp): PaymentC
         userId: httpData.userId,
         amount: httpData.amount,
         currency: PriceCurrencyEnumSchema.parse(httpData.currency),
-        paymentMethod: httpData.paymentMethod
-            ? PaymentMethodEnumSchema.parse(httpData.paymentMethod)
-            : null,
+        ...(httpData.paymentMethod && {
+            paymentMethod: PaymentMethodEnumSchema.parse(httpData.paymentMethod)
+        }),
         type: PaymentTypeEnumSchema.parse(httpData.type || 'SUBSCRIPTION'),
         status: PaymentStatusEnumSchema.parse(httpData.status || 'PENDING'),
-        invoiceId: httpData.invoiceId || null,
-        mercadoPagoPaymentId: httpData.mercadoPagoPaymentId || null,
-        mercadoPagoPreferenceId: httpData.mercadoPagoPreferenceId || null,
-        mercadoPagoResponse: httpData.mercadoPagoResponse || null,
-        externalReference: httpData.externalReference || null,
-        description: httpData.description || null,
-        metadata: httpData.metadata || null,
-        processedAt: httpData.processedAt || null,
-        expiresAt: httpData.expiresAt || null,
-        failureReason: httpData.failureReason || null,
+        ...(httpData.invoiceId && { invoiceId: httpData.invoiceId }),
+        ...(httpData.mercadoPagoPaymentId && {
+            mercadoPagoPaymentId: httpData.mercadoPagoPaymentId
+        }),
+        ...(httpData.mercadoPagoPreferenceId && {
+            mercadoPagoPreferenceId: httpData.mercadoPagoPreferenceId
+        }),
+        ...(httpData.mercadoPagoResponse && { mercadoPagoResponse: httpData.mercadoPagoResponse }),
+        ...(httpData.externalReference && { externalReference: httpData.externalReference }),
+        ...(httpData.description && { description: httpData.description }),
+        ...(httpData.metadata && { metadata: httpData.metadata }),
+        ...(httpData.processedAt && { processedAt: httpData.processedAt }),
+        ...(httpData.expiresAt && { expiresAt: httpData.expiresAt }),
+        ...(httpData.failureReason && { failureReason: httpData.failureReason }),
         lifecycleState: LifecycleStatusEnumSchema.parse(httpData.lifecycleState || 'ACTIVE'),
         isActive: httpData.isActive ?? true,
         isDeleted: httpData.isDeleted ?? false,
-        adminInfo: httpData.adminInfo || null
+        ...(httpData.adminInfo && { adminInfo: httpData.adminInfo })
     };
 }
 
@@ -283,10 +287,8 @@ export function httpToDomainPaymentUpdate(httpData: PaymentUpdateHttp): PaymentU
     if (httpData.type !== undefined) result.type = PaymentTypeEnumSchema.parse(httpData.type);
     if (httpData.status !== undefined)
         result.status = PaymentStatusEnumSchema.parse(httpData.status);
-    if (httpData.paymentMethod !== undefined) {
-        result.paymentMethod = httpData.paymentMethod
-            ? PaymentMethodEnumSchema.parse(httpData.paymentMethod)
-            : null;
+    if (httpData.paymentMethod !== undefined && httpData.paymentMethod !== null) {
+        result.paymentMethod = PaymentMethodEnumSchema.parse(httpData.paymentMethod);
     }
     if (httpData.amount !== undefined) result.amount = httpData.amount;
     if (httpData.currency !== undefined)

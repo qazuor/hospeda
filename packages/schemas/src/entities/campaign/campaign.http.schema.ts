@@ -357,7 +357,7 @@ export function httpToDomainCampaignUpdate(httpData: HttpUpdateCampaign): Update
             budget.currency = httpData['budget.currency'];
         if (httpData['budget.bidStrategy'] !== undefined)
             budget.bidStrategy = httpData['budget.bidStrategy'];
-        result.budget = budget;
+        result.budget = budget as NonNullable<UpdateCampaign['budget']>;
     }
 
     // Schedule: Convert dot notation to nested object (partial)
@@ -372,7 +372,7 @@ export function httpToDomainCampaignUpdate(httpData: HttpUpdateCampaign): Update
             schedule.endDate = httpData['schedule.endDate'];
         if (httpData['schedule.timezone'] !== undefined)
             schedule.timezone = httpData['schedule.timezone'];
-        result.schedule = schedule;
+        result.schedule = schedule as NonNullable<UpdateCampaign['schedule']>;
     }
 
     // Content: Convert dot notation to nested object (partial)
@@ -394,7 +394,7 @@ export function httpToDomainCampaignUpdate(httpData: HttpUpdateCampaign): Update
             content.callToAction = httpData['content.callToAction'];
         if (httpData['content.landingPageUrl'] !== undefined)
             content.landingPageUrl = httpData['content.landingPageUrl'];
-        result.content = content;
+        result.content = content as NonNullable<UpdateCampaign['content']>;
     }
 
     // Target Audience: Convert dot notation to nested object (partial)
