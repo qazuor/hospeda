@@ -39,7 +39,7 @@ describe('PromotionService', () => {
         updatedById: null,
         deletedAt: null,
         deletedById: null,
-        adminInfo: null
+        adminInfo: undefined
     };
 
     beforeEach(() => {
