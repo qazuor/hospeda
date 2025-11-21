@@ -17,36 +17,40 @@ export const HttpCreateNotificationSchema = CreateNotificationSchema.extend({
     // Coerce string numbers to numbers
     priority: z.coerce.number().int().min(1).max(5).optional(),
 
-    // Channel metadata as JSON string
+    // Channel metadata as JSON string or object
     channelMetadata: z
-        .string()
-        .transform((str, ctx) => {
-            try {
-                return JSON.parse(str);
-            } catch {
-                ctx.addIssue({
-                    code: z.ZodIssueCode.custom,
-                    message: 'zodError.notification.channelMetadata.invalidJson'
-                });
-                return z.NEVER;
-            }
-        })
+        .union([
+            z.string().transform((str, ctx) => {
+                try {
+                    return JSON.parse(str);
+                } catch {
+                    ctx.addIssue({
+                        code: z.ZodIssueCode.custom,
+                        message: 'zodError.notification.channelMetadata.invalidJson'
+                    });
+                    return z.NEVER;
+                }
+            }),
+            z.record(z.string(), z.unknown())
+        ])
         .optional(),
 
-    // Data as JSON string
+    // Data as JSON string or object
     data: z
-        .string()
-        .transform((str, ctx) => {
-            try {
-                return JSON.parse(str);
-            } catch {
-                ctx.addIssue({
-                    code: z.ZodIssueCode.custom,
-                    message: 'zodError.notification.data.invalidJson'
-                });
-                return z.NEVER;
-            }
-        })
+        .union([
+            z.string().transform((str, ctx) => {
+                try {
+                    return JSON.parse(str);
+                } catch {
+                    ctx.addIssue({
+                        code: z.ZodIssueCode.custom,
+                        message: 'zodError.notification.data.invalidJson'
+                    });
+                    return z.NEVER;
+                }
+            }),
+            z.record(z.string(), z.unknown())
+        ])
         .optional()
 });
 
