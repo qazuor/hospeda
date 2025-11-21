@@ -22,7 +22,7 @@ export const createMockAdminActor = (overrides?: Partial<Actor>): Actor => ({
         PermissionEnum.MANAGE_PRODUCTS,
         PermissionEnum.MANAGE_SUBSCRIPTIONS,
         PermissionEnum.MANAGE_PURCHASES,
-        PermissionEnum.VIEW_ANALYTICS,
+        PermissionEnum.ANALYTICS_VIEW,
         PermissionEnum.MANAGE_CONTENT,
         ...(overrides?.permissions || [])
     ],
@@ -69,7 +69,7 @@ export const createMockClientManagerActor = (overrides?: Partial<Actor>): Actor 
         PermissionEnum.ACCESS_API_PUBLIC,
         PermissionEnum.ACCESS_API_PRIVATE,
         PermissionEnum.MANAGE_CLIENTS,
-        PermissionEnum.VIEW_ANALYTICS,
+        PermissionEnum.ANALYTICS_VIEW,
         ...(overrides?.permissions || [])
     ],
     ...overrides
