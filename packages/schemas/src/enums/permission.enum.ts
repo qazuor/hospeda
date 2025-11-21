@@ -235,7 +235,6 @@ export enum PermissionEnum {
     LOGS_VIEW_ALL = 'logs.viewAll', // Allows viewing all logs.
     ERRORS_VIEW = 'errors.view', // Allows viewing error logs.
     ANALYTICS_VIEW = 'analytics.view', // Allows viewing analytics data.
-    VIEW_ANALYTICS = 'analytics.view', // Alias for ANALYTICS_VIEW (for backward compatibility).
 
     // DEBUG & DEPLOY: Permissions for debugging and bulk operations
     DEBUG_TOOLS_ACCESS = 'system.debugTools.access', // Allows accessing debug tools.
