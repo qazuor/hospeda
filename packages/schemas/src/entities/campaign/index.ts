@@ -43,6 +43,8 @@ export {
     HttpCreateCampaignSchema,
     HttpSearchCampaignsSchema,
     HttpUpdateCampaignSchema,
+    httpToDomainCampaignCreate,
+    httpToDomainCampaignUpdate,
     type HttpBulkCampaignOperation,
     type HttpCampaignAnalytics,
     type HttpCreateCampaign,

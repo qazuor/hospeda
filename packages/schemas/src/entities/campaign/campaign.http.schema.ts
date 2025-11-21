@@ -1,5 +1,7 @@
 import { z } from 'zod';
+import { CampaignChannelSchema, CampaignStatusSchema } from '../../enums/index.js';
 import { HttpFieldFactories } from '../../utils/http-field.factory.js';
+import type { CreateCampaign, UpdateCampaign } from './campaign.crud.schema.js';
 import {
     BulkCampaignOperationSchema,
     CampaignAnalyticsSchema,
@@ -261,3 +263,154 @@ export type HttpUpdateCampaign = z.infer<typeof HttpUpdateCampaignSchema>;
 export type HttpSearchCampaigns = z.infer<typeof HttpSearchCampaignsSchema>;
 export type HttpCampaignAnalytics = z.infer<typeof HttpCampaignAnalyticsSchema>;
 export type HttpBulkCampaignOperation = z.infer<typeof HttpBulkCampaignOperationSchema>;
+
+/**
+ * Transform HTTP Campaign Create data to Domain format.
+ * Converts dot notation to nested objects.
+ */
+export function httpToDomainCampaignCreate(httpData: HttpCreateCampaign): CreateCampaign {
+    // Parse channels to proper enum array
+    const channelsArray = Array.isArray(httpData.channels) ? httpData.channels : [];
+    const channels = channelsArray.map((ch) => CampaignChannelSchema.parse(ch));
+
+    return {
+        name: httpData.name,
+        description: httpData.description,
+        status: CampaignStatusSchema.parse(httpData.status),
+        channels,
+
+        // Budget: Convert dot notation to nested object
+        budget: {
+            totalBudget: httpData['budget.totalBudget'],
+            dailyBudget: httpData['budget.dailyBudget'],
+            spentAmount: 0, // Default for create
+            currency: httpData['budget.currency'],
+            bidStrategy: httpData['budget.bidStrategy'],
+            costPerAction: undefined // Optional, not in HTTP schema
+        },
+
+        // Schedule: Convert dot notation to nested object
+        schedule: {
+            startDate: httpData['schedule.startDate'],
+            endDate: httpData['schedule.endDate'],
+            timezone: httpData['schedule.timezone']
+        },
+
+        // Content: Convert dot notation to nested object
+        content: {
+            subject: httpData['content.subject'],
+            bodyTemplate: httpData['content.bodyTemplate'],
+            callToAction: httpData['content.callToAction'],
+            landingPageUrl: httpData['content.landingPageUrl'],
+            assets: [] // Default empty array
+        },
+
+        // Target Audience: Convert dot notation to nested object
+        targetAudience: {
+            countries: httpData['targetAudience.countries'],
+            regions: undefined, // Optional, not in HTTP schema
+            cities: undefined, // Optional, not in HTTP schema
+            ageRange: undefined, // Optional, not in HTTP schema
+            interests: undefined, // Optional, not in HTTP schema
+            languages: httpData['targetAudience.languages'],
+            userSegments: undefined // Optional, not in HTTP schema
+        },
+
+        // Performance and settings are optional for create
+        performance: undefined,
+        settings: undefined
+    };
+}
+
+/**
+ * Transform HTTP Campaign Update data to Domain format.
+ * Converts dot notation to nested objects.
+ */
+export function httpToDomainCampaignUpdate(httpData: HttpUpdateCampaign): UpdateCampaign {
+    const result: UpdateCampaign = {};
+
+    // Simple fields
+    if (httpData.name !== undefined) result.name = httpData.name;
+    if (httpData.description !== undefined) result.description = httpData.description;
+    if (httpData.status !== undefined) result.status = CampaignStatusSchema.parse(httpData.status);
+    if (httpData.channels !== undefined) {
+        const channelsArray = Array.isArray(httpData.channels) ? httpData.channels : [];
+        result.channels = channelsArray.map((ch) => CampaignChannelSchema.parse(ch));
+    }
+
+    // Budget: Convert dot notation to nested object (partial)
+    const budgetFields = [
+        'budget.totalBudget',
+        'budget.dailyBudget',
+        'budget.currency',
+        'budget.bidStrategy'
+    ] as const;
+    const hasBudgetFields = budgetFields.some((field) => httpData[field] !== undefined);
+
+    if (hasBudgetFields) {
+        const budget: Partial<NonNullable<UpdateCampaign['budget']>> = {};
+        if (httpData['budget.totalBudget'] !== undefined)
+            budget.totalBudget = httpData['budget.totalBudget'];
+        if (httpData['budget.dailyBudget'] !== undefined)
+            budget.dailyBudget = httpData['budget.dailyBudget'];
+        if (httpData['budget.currency'] !== undefined)
+            budget.currency = httpData['budget.currency'];
+        if (httpData['budget.bidStrategy'] !== undefined)
+            budget.bidStrategy = httpData['budget.bidStrategy'];
+        result.budget = budget;
+    }
+
+    // Schedule: Convert dot notation to nested object (partial)
+    const scheduleFields = ['schedule.startDate', 'schedule.endDate', 'schedule.timezone'] as const;
+    const hasScheduleFields = scheduleFields.some((field) => httpData[field] !== undefined);
+
+    if (hasScheduleFields) {
+        const schedule: Partial<NonNullable<UpdateCampaign['schedule']>> = {};
+        if (httpData['schedule.startDate'] !== undefined)
+            schedule.startDate = httpData['schedule.startDate'];
+        if (httpData['schedule.endDate'] !== undefined)
+            schedule.endDate = httpData['schedule.endDate'];
+        if (httpData['schedule.timezone'] !== undefined)
+            schedule.timezone = httpData['schedule.timezone'];
+        result.schedule = schedule;
+    }
+
+    // Content: Convert dot notation to nested object (partial)
+    const contentFields = [
+        'content.subject',
+        'content.bodyTemplate',
+        'content.callToAction',
+        'content.landingPageUrl'
+    ] as const;
+    const hasContentFields = contentFields.some((field) => httpData[field] !== undefined);
+
+    if (hasContentFields) {
+        const content: Partial<NonNullable<UpdateCampaign['content']>> = {};
+        if (httpData['content.subject'] !== undefined)
+            content.subject = httpData['content.subject'];
+        if (httpData['content.bodyTemplate'] !== undefined)
+            content.bodyTemplate = httpData['content.bodyTemplate'];
+        if (httpData['content.callToAction'] !== undefined)
+            content.callToAction = httpData['content.callToAction'];
+        if (httpData['content.landingPageUrl'] !== undefined)
+            content.landingPageUrl = httpData['content.landingPageUrl'];
+        result.content = content;
+    }
+
+    // Target Audience: Convert dot notation to nested object (partial)
+    const targetAudienceFields = ['targetAudience.countries', 'targetAudience.languages'] as const;
+    const hasTargetAudienceFields = targetAudienceFields.some(
+        (field) => httpData[field] !== undefined
+    );
+
+    if (hasTargetAudienceFields) {
+        const targetAudience: Partial<NonNullable<UpdateCampaign['targetAudience']>> = {};
+        if (httpData['targetAudience.countries'] !== undefined)
+            targetAudience.countries = httpData['targetAudience.countries'];
+        if (httpData['targetAudience.languages'] !== undefined)
+            targetAudience.languages = httpData['targetAudience.languages'];
+        result.targetAudience = targetAudience;
+    }
+
+    return result;
+}
