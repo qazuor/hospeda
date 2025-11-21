@@ -404,34 +404,311 @@ describe('AccommodationService', () => {
 });
 ```
 
-## Authorization
+## Authorization & Permission Checks
 
-Services check permissions based on context:
+### 🔥 CRITICAL: Granular Permission Pattern
+
+**ALL permission checks MUST use ONLY granular permissions. NEVER check roles.**
+
+#### Correct Pattern (ALWAYS use this)
 
 ```ts
-export class AccommodationService extends BaseCrudService<...> {
-  async delete(input: { id: string }): Promise<Result<void>> {
-    // Check if user has permission
-    if (this.ctx.role !== 'admin') {
-      throw new ServiceError(
-        'Only admins can delete accommodations',
-        ServiceErrorCode.FORBIDDEN
-      );
+import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
+import type { Actor } from '../../types';
+import { ServiceError } from '../../types';
+
+export function checkCanCreate(actor: Actor, _data: unknown): void {
+    if (
+        !actor ||
+        !actor.id ||
+        !actor.permissions.includes(PermissionEnum.ENTITY_CREATE)
+    ) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied: Insufficient permissions to create entity'
+        );
     }
+}
+```
 
-    return this.softDelete(input);
-  }
+#### Wrong Patterns (NEVER use these)
 
-  async findAll(input: { filters?: SearchAccommodation }) {
-    // Users can only see their own drafts
-    const filters = { ...input.filters };
-
-    if (this.ctx.role !== 'admin') {
-      filters.status = 'published';
+```ts
+// ❌ WRONG - Checks role instead of permissions
+export function checkCanCreate(actor: Actor, _data: unknown): void {
+    if (!actor || !actor.id || actor.role !== RoleEnum.ADMIN) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied: Insufficient permissions to create entity'
+        );
     }
+}
 
-    return super.findAll({ filters });
-  }
+// ❌ WRONG - Uses role as bypass with permissions
+export function checkCanCreate(actor: Actor, _data: unknown): void {
+    if (
+        !actor ||
+        !actor.id ||
+        (actor.role !== RoleEnum.ADMIN &&
+            !actor.permissions.includes(PermissionEnum.ENTITY_CREATE))
+    ) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied: Insufficient permissions to create entity'
+        );
+    }
+}
+```
+
+### Permission Check Rules
+
+1. **ONLY import `PermissionEnum`** - DO NOT import or check `RoleEnum`
+2. **ALWAYS check ONLY**: `!actor.permissions.includes(PermissionEnum.XXX)`
+3. **NO role bypasses** - Even admins must have the specific permission
+4. **Add missing permissions**: If a permission doesn't exist in `permission.enum.ts`, add it
+
+### Standard Permission Mapping
+
+Each service has 11 standard permission hooks that map to permissions:
+
+| Hook | Permission Pattern | Example |
+|------|-------------------|---------|
+| `_canCreate` | `ENTITY_CREATE` | `ACCOMMODATION_LISTING_CREATE` |
+| `_canUpdate` | `ENTITY_UPDATE` | `ACCOMMODATION_LISTING_UPDATE` |
+| `_canPatch` | `ENTITY_UPDATE` | `ACCOMMODATION_LISTING_UPDATE` |
+| `_canDelete` | `ENTITY_DELETE` | `ACCOMMODATION_LISTING_DELETE` |
+| `_canSoftDelete` | `ENTITY_DELETE` | `ACCOMMODATION_LISTING_DELETE` |
+| `_canHardDelete` | `ENTITY_HARD_DELETE` | `ACCOMMODATION_LISTING_HARD_DELETE` |
+| `_canRestore` | `ENTITY_RESTORE` | `ACCOMMODATION_LISTING_RESTORE` |
+| `_canView` | `ENTITY_VIEW` | `ACCOMMODATION_LISTING_VIEW` |
+| `_canList` | `ENTITY_VIEW` | `ACCOMMODATION_LISTING_VIEW` |
+| `_canSearch` | `ENTITY_VIEW` | `ACCOMMODATION_LISTING_VIEW` |
+| `_canCount` | `ENTITY_VIEW` | `ACCOMMODATION_LISTING_VIEW` |
+
+### Complete Permission File Template
+
+```ts
+import type { EntityName } from '@repo/schemas';
+import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
+import type { Actor } from '../../types';
+import { ServiceError } from '../../types';
+
+/**
+ * Checks if an actor has permission to create entities.
+ * @throws {ServiceError} If the permission check fails.
+ */
+export function checkCanCreate(actor: Actor, _data: unknown): void {
+    if (
+        !actor ||
+        !actor.id ||
+        !actor.permissions.includes(PermissionEnum.ENTITY_CREATE)
+    ) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied: Insufficient permissions to create entities'
+        );
+    }
+}
+
+/**
+ * Checks if an actor has permission to update entities.
+ * @throws {ServiceError} If the permission check fails.
+ */
+export function checkCanUpdate(actor: Actor, _entity: EntityName): void {
+    if (
+        !actor ||
+        !actor.id ||
+        !actor.permissions.includes(PermissionEnum.ENTITY_UPDATE)
+    ) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied: Insufficient permissions to update entities'
+        );
+    }
+}
+
+/**
+ * Checks if an actor has permission to patch entities.
+ * @throws {ServiceError} If the permission check fails.
+ */
+export function checkCanPatch(actor: Actor, _entity: EntityName, _data: unknown): void {
+    if (
+        !actor ||
+        !actor.id ||
+        !actor.permissions.includes(PermissionEnum.ENTITY_UPDATE)
+    ) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied: Insufficient permissions to patch entities'
+        );
+    }
+}
+
+/**
+ * Checks if an actor has permission to delete entities.
+ * @throws {ServiceError} If the permission check fails.
+ */
+export function checkCanDelete(actor: Actor, _entity: EntityName): void {
+    if (
+        !actor ||
+        !actor.id ||
+        !actor.permissions.includes(PermissionEnum.ENTITY_DELETE)
+    ) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied: Insufficient permissions to delete entities'
+        );
+    }
+}
+
+/**
+ * Checks if an actor has permission to hard delete entities.
+ * @throws {ServiceError} If the permission check fails.
+ */
+export function checkCanHardDelete(actor: Actor, _entity: EntityName): void {
+    if (
+        !actor ||
+        !actor.id ||
+        !actor.permissions.includes(PermissionEnum.ENTITY_HARD_DELETE)
+    ) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied: Insufficient permissions to permanently delete entities'
+        );
+    }
+}
+
+/**
+ * Checks if an actor has permission to restore entities.
+ * @throws {ServiceError} If the permission check fails.
+ */
+export function checkCanRestore(actor: Actor, _entity: EntityName): void {
+    if (
+        !actor ||
+        !actor.id ||
+        !actor.permissions.includes(PermissionEnum.ENTITY_RESTORE)
+    ) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied: Insufficient permissions to restore entities'
+        );
+    }
+}
+
+/**
+ * Checks if an actor has permission to view entities.
+ * @throws {ServiceError} If the permission check fails.
+ */
+export function checkCanView(actor: Actor, _entity: EntityName): void {
+    if (
+        !actor ||
+        !actor.id ||
+        !actor.permissions.includes(PermissionEnum.ENTITY_VIEW)
+    ) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied: Insufficient permissions to view entities'
+        );
+    }
+}
+
+/**
+ * Checks if an actor has permission to list entities.
+ * @throws {ServiceError} If the permission check fails.
+ */
+export function checkCanList(actor: Actor): void {
+    if (
+        !actor ||
+        !actor.id ||
+        !actor.permissions.includes(PermissionEnum.ENTITY_VIEW)
+    ) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied: Insufficient permissions to list entities'
+        );
+    }
+}
+
+/**
+ * Checks if an actor has permission to soft delete entities.
+ * @throws {ServiceError} If the permission check fails.
+ */
+export function checkCanSoftDelete(actor: Actor, _entity: EntityName): void {
+    if (
+        !actor ||
+        !actor.id ||
+        !actor.permissions.includes(PermissionEnum.ENTITY_DELETE)
+    ) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied: Insufficient permissions to soft delete entities'
+        );
+    }
+}
+
+/**
+ * Checks if an actor has permission to search entities.
+ * @throws {ServiceError} If the permission check fails.
+ */
+export function checkCanSearch(actor: Actor): void {
+    if (
+        !actor ||
+        !actor.id ||
+        !actor.permissions.includes(PermissionEnum.ENTITY_VIEW)
+    ) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied: Insufficient permissions to search entities'
+        );
+    }
+}
+
+/**
+ * Checks if an actor has permission to count entities.
+ * @throws {ServiceError} If the permission check fails.
+ */
+export function checkCanCount(actor: Actor): void {
+    if (
+        !actor ||
+        !actor.id ||
+        !actor.permissions.includes(PermissionEnum.ENTITY_VIEW)
+    ) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied: Insufficient permissions to count entities'
+        );
+    }
+}
+```
+
+### Adding Missing Permissions
+
+If permissions don't exist in `packages/schemas/src/enums/permission.enum.ts`:
+
+1. Add category to `PermissionCategoryEnum`:
+
+```ts
+export enum PermissionCategoryEnum {
+    // ... existing categories
+    ENTITY_NAME = 'ENTITY_NAME',
+}
+```
+
+2. Add permissions to `PermissionEnum`:
+
+```ts
+export enum PermissionEnum {
+    // ... existing permissions
+
+    // ENTITY_NAME: Permissions related to entity management
+    ENTITY_NAME_CREATE = 'entityName.create',
+    ENTITY_NAME_UPDATE = 'entityName.update',
+    ENTITY_NAME_DELETE = 'entityName.delete',
+    ENTITY_NAME_VIEW = 'entityName.view',
+    ENTITY_NAME_RESTORE = 'entityName.restore',
+    ENTITY_NAME_HARD_DELETE = 'entityName.hardDelete',
+    ENTITY_NAME_SOFT_DELETE_VIEW = 'entityName.softDelete.view',
+    ENTITY_NAME_STATUS_MANAGE = 'entityName.status.manage', // Optional, for status management
 }
 ```
 
