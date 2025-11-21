@@ -14,8 +14,8 @@ export const HttpCreateNotificationSchema = CreateNotificationSchema.extend({
     // Coerce string dates to Date objects
     scheduledFor: HttpFieldFactories.dateField('scheduledFor'),
 
-    // Coerce string numbers to numbers
-    priority: z.coerce.number().int().min(1).max(5).optional(),
+    // Coerce string numbers to numbers - matches base schema with max 10 and default 5
+    priority: z.coerce.number().int().min(1).max(10).default(5),
 
     // Channel metadata as JSON string or object
     channelMetadata: z
