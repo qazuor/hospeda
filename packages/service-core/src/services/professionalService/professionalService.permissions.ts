@@ -8,7 +8,11 @@ import { ServiceError } from '../../types';
  * @throws {ServiceError} If the permission check fails.
  */
 export function checkCanCreate(actor: Actor, _data: unknown): void {
-    if (!actor || !actor.id || !actor.permissions.includes(PermissionEnum.SERVICE_LISTING_CREATE)) {
+    if (
+        !actor ||
+        !actor.id ||
+        !actor.permissions.includes(PermissionEnum.PROFESSIONAL_SERVICE_CREATE)
+    ) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
             'Permission denied: Insufficient permissions to create professional services'
@@ -21,7 +25,11 @@ export function checkCanCreate(actor: Actor, _data: unknown): void {
  * @throws {ServiceError} If the permission check fails.
  */
 export function checkCanUpdate(actor: Actor, _entity: ProfessionalService): void {
-    if (!actor || !actor.id || !actor.permissions.includes(PermissionEnum.SERVICE_LISTING_UPDATE)) {
+    if (
+        !actor ||
+        !actor.id ||
+        !actor.permissions.includes(PermissionEnum.PROFESSIONAL_SERVICE_UPDATE)
+    ) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
             'Permission denied: Insufficient permissions to update professional services'
@@ -34,7 +42,11 @@ export function checkCanUpdate(actor: Actor, _entity: ProfessionalService): void
  * @throws {ServiceError} If the permission check fails.
  */
 export function checkCanPatch(actor: Actor, _entity: ProfessionalService, _data: unknown): void {
-    if (!actor || !actor.id || !actor.permissions.includes(PermissionEnum.SERVICE_LISTING_UPDATE)) {
+    if (
+        !actor ||
+        !actor.id ||
+        !actor.permissions.includes(PermissionEnum.PROFESSIONAL_SERVICE_UPDATE)
+    ) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
             'Permission denied: Insufficient permissions to patch professional services'
@@ -47,7 +59,11 @@ export function checkCanPatch(actor: Actor, _entity: ProfessionalService, _data:
  * @throws {ServiceError} If the permission check fails.
  */
 export function checkCanDelete(actor: Actor, _entity: ProfessionalService): void {
-    if (!actor || !actor.id || !actor.permissions.includes(PermissionEnum.SERVICE_LISTING_DELETE)) {
+    if (
+        !actor ||
+        !actor.id ||
+        !actor.permissions.includes(PermissionEnum.PROFESSIONAL_SERVICE_DELETE)
+    ) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
             'Permission denied: Insufficient permissions to delete professional services'
@@ -63,7 +79,7 @@ export function checkCanHardDelete(actor: Actor, _entity: ProfessionalService): 
     if (
         !actor ||
         !actor.id ||
-        !actor.permissions.includes(PermissionEnum.SERVICE_LISTING_HARD_DELETE)
+        !actor.permissions.includes(PermissionEnum.PROFESSIONAL_SERVICE_HARD_DELETE)
     ) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
@@ -80,7 +96,7 @@ export function checkCanRestore(actor: Actor, _entity: ProfessionalService): voi
     if (
         !actor ||
         !actor.id ||
-        !actor.permissions.includes(PermissionEnum.SERVICE_LISTING_RESTORE)
+        !actor.permissions.includes(PermissionEnum.PROFESSIONAL_SERVICE_RESTORE)
     ) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
@@ -94,7 +110,11 @@ export function checkCanRestore(actor: Actor, _entity: ProfessionalService): voi
  * @throws {ServiceError} If the permission check fails.
  */
 export function checkCanView(actor: Actor, _entity: ProfessionalService): void {
-    if (!actor || !actor.id || !actor.permissions.includes(PermissionEnum.SERVICE_LISTING_VIEW)) {
+    if (
+        !actor ||
+        !actor.id ||
+        !actor.permissions.includes(PermissionEnum.PROFESSIONAL_SERVICE_VIEW)
+    ) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
             'Permission denied: Insufficient permissions to view professional services'
@@ -107,7 +127,11 @@ export function checkCanView(actor: Actor, _entity: ProfessionalService): void {
  * @throws {ServiceError} If the permission check fails.
  */
 export function checkCanList(actor: Actor): void {
-    if (!actor || !actor.id || !actor.permissions.includes(PermissionEnum.SERVICE_LISTING_VIEW)) {
+    if (
+        !actor ||
+        !actor.id ||
+        !actor.permissions.includes(PermissionEnum.PROFESSIONAL_SERVICE_VIEW)
+    ) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
             'Permission denied: Insufficient permissions to list professional services'
@@ -120,7 +144,11 @@ export function checkCanList(actor: Actor): void {
  * @throws {ServiceError} If the permission check fails.
  */
 export function checkCanSoftDelete(actor: Actor, _entity: ProfessionalService): void {
-    if (!actor || !actor.id || !actor.permissions.includes(PermissionEnum.SERVICE_LISTING_DELETE)) {
+    if (
+        !actor ||
+        !actor.id ||
+        !actor.permissions.includes(PermissionEnum.PROFESSIONAL_SERVICE_DELETE)
+    ) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
             'Permission denied: Insufficient permissions to soft delete professional services'
@@ -133,7 +161,11 @@ export function checkCanSoftDelete(actor: Actor, _entity: ProfessionalService): 
  * @throws {ServiceError} If the permission check fails.
  */
 export function checkCanSearch(actor: Actor): void {
-    if (!actor || !actor.id || !actor.permissions.includes(PermissionEnum.SERVICE_LISTING_VIEW)) {
+    if (
+        !actor ||
+        !actor.id ||
+        !actor.permissions.includes(PermissionEnum.PROFESSIONAL_SERVICE_VIEW)
+    ) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
             'Permission denied: Insufficient permissions to search professional services'
@@ -146,7 +178,11 @@ export function checkCanSearch(actor: Actor): void {
  * @throws {ServiceError} If the permission check fails.
  */
 export function checkCanCount(actor: Actor): void {
-    if (!actor || !actor.id || !actor.permissions.includes(PermissionEnum.SERVICE_LISTING_VIEW)) {
+    if (
+        !actor ||
+        !actor.id ||
+        !actor.permissions.includes(PermissionEnum.PROFESSIONAL_SERVICE_VIEW)
+    ) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
             'Permission denied: Insufficient permissions to count professional services'
@@ -159,7 +195,11 @@ export function checkCanCount(actor: Actor): void {
  * @throws {ServiceError} If the permission check fails.
  */
 export function checkCanUpdateVisibility(actor: Actor, _entity: ProfessionalService): void {
-    if (!actor || !actor.id || !actor.permissions.includes(PermissionEnum.SERVICE_LISTING_UPDATE)) {
+    if (
+        !actor ||
+        !actor.id ||
+        !actor.permissions.includes(PermissionEnum.PROFESSIONAL_SERVICE_UPDATE)
+    ) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
             'Permission denied: Insufficient permissions to update professional service visibility'

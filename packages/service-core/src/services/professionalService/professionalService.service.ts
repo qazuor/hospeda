@@ -5,9 +5,8 @@ import {
     SearchProfessionalServicesSchema,
     UpdateProfessionalServiceSchema
 } from '@repo/schemas';
-import type { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service.js';
-import type { Actor, PaginatedListOutput, ServiceContext } from '../../types/index.js';
+import type { Actor, ServiceContext } from '../../types/index.js';
 import {
     checkCanCount,
     checkCanCreate,
@@ -143,25 +142,28 @@ export class ProfessionalServiceService extends BaseCrudService<
 
     /**
      * Execute search for professional services
+     * Delegates to model.findAll() with search parameters
      */
     protected async _executeSearch(
-        _params: z.infer<typeof SearchProfessionalServicesSchema>,
+        params: Record<string, unknown>,
         _actor: Actor
-    ): Promise<PaginatedListOutput<ProfessionalService>> {
-        // For now, delegate to list method until search is implemented
+    ): Promise<{ items: ProfessionalService[]; total: number }> {
+        const result = await this.model.findAll(params);
         return {
-            items: [],
-            total: 0
+            items: result.items,
+            total: result.total
         };
     }
 
     /**
      * Execute count for professional services
+     * Delegates to model.count() with search parameters
      */
     protected async _executeCount(
-        _params: z.infer<typeof SearchProfessionalServicesSchema>,
+        params: Record<string, unknown>,
         _actor: Actor
     ): Promise<{ count: number }> {
-        return { count: 0 };
+        const count = await this.model.count(params);
+        return { count };
     }
 }
