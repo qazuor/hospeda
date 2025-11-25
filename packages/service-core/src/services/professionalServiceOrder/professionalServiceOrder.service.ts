@@ -166,7 +166,7 @@ export class ProfessionalServiceOrderService extends BaseCrudService<
         if (
             !actor ||
             !actor.id ||
-            !actor.permissions.includes(PermissionEnum.SERVICE_ORDER_UPDATE)
+            !actor.permissions.includes(PermissionEnum.PROFESSIONAL_SERVICE_ORDER_UPDATE)
         ) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
