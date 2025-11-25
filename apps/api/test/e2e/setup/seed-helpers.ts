@@ -1,5 +1,7 @@
 import {
     ClientModel,
+    InvoiceLineModel,
+    InvoiceModel,
     PricingPlanModel,
     ProductModel,
     ProfessionalServiceModel,
@@ -10,6 +12,8 @@ import {
 } from '@repo/db';
 import type {
     Client,
+    Invoice,
+    InvoiceLine,
     PricingPlan,
     Product,
     ProfessionalService,
@@ -19,7 +23,11 @@ import type {
     Subscription,
     User
 } from '@repo/schemas';
-import { ProfessionalServiceCategoryEnum, ServiceOrderStatusEnum } from '@repo/schemas';
+import {
+    InvoiceStatusEnum,
+    ProfessionalServiceCategoryEnum,
+    ServiceOrderStatusEnum
+} from '@repo/schemas';
 
 /**
  * E2E test data seeding helpers
@@ -331,4 +339,128 @@ export async function setupProfessionalServiceOrderFlow() {
     const order = await createTestProfessionalServiceOrder(client.id, serviceType.id, plan.id);
 
     return { client, serviceType, plan, order };
+}
+
+/**
+ * Generate a unique invoice number
+ * @returns Generated invoice number
+ */
+function generateInvoiceNumber(): string {
+    const year = new Date().getFullYear();
+    const timestamp = Date.now();
+    const random = Math.floor(Math.random() * 10000)
+        .toString()
+        .padStart(4, '0');
+    return `INV-${year}-${timestamp}-${random}`;
+}
+
+/**
+ * Create a test invoice
+ * @param clientId - Client ID for the invoice
+ * @param overrides - Partial data to override defaults
+ * @returns Created invoice
+ */
+export async function createTestInvoice(
+    clientId: string,
+    overrides?: Partial<Invoice>
+): Promise<Invoice> {
+    const model = new InvoiceModel();
+
+    const now = new Date();
+    const dueDate = new Date(now);
+    dueDate.setDate(dueDate.getDate() + 30); // 30 days from now
+
+    const subtotal = overrides?.subtotal ?? 1000;
+    const taxes = overrides?.taxes ?? 210; // 21% IVA
+    const total = overrides?.total ?? subtotal + taxes;
+
+    const defaultData = {
+        clientId,
+        invoiceNumber: overrides?.invoiceNumber || generateInvoiceNumber(),
+        status: overrides?.status || InvoiceStatusEnum.OPEN,
+        subtotal,
+        taxes,
+        total,
+        currency: overrides?.currency || 'ARS',
+        issueDate: overrides?.issueDate || now,
+        dueDate: overrides?.dueDate || dueDate,
+        description: overrides?.description,
+        paymentTerms: overrides?.paymentTerms,
+        notes: overrides?.notes,
+        metadata: overrides?.metadata,
+        ...overrides
+    };
+
+    const result = await model.create(defaultData as any);
+    return result as Invoice;
+}
+
+/**
+ * Create a test invoice line
+ * @param invoiceId - Invoice ID for the line
+ * @param overrides - Partial data to override defaults
+ * @returns Created invoice line
+ */
+export async function createTestInvoiceLine(
+    invoiceId: string,
+    overrides?: Partial<InvoiceLine>
+): Promise<InvoiceLine> {
+    const model = new InvoiceLineModel();
+
+    const quantity = overrides?.quantity ?? 1;
+    const unitPrice = overrides?.unitPrice ?? 1000;
+    const total = overrides?.total ?? quantity * unitPrice;
+
+    const defaultData = {
+        invoiceId,
+        description: overrides?.description || 'Test invoice line item',
+        quantity,
+        unitPrice,
+        total,
+        productReference: overrides?.productReference,
+        taxAmount: overrides?.taxAmount,
+        taxRate: overrides?.taxRate,
+        discountRate: overrides?.discountRate,
+        discountAmount: overrides?.discountAmount,
+        notes: overrides?.notes,
+        metadata: overrides?.metadata,
+        ...overrides
+    };
+
+    const result = await model.create(defaultData as any);
+    return result as InvoiceLine;
+}
+
+/**
+ * Create a complete invoice flow setup
+ * Returns client, invoice, and invoice lines
+ */
+export async function setupInvoiceFlow(lineCount = 1) {
+    const client = await createTestClient();
+
+    // Calculate totals based on line items
+    const lineAmount = 1000;
+    const taxRate = 0.21;
+    const subtotal = lineAmount * lineCount;
+    const taxes = Math.round(subtotal * taxRate);
+    const total = subtotal + taxes;
+
+    const invoice = await createTestInvoice(client.id, {
+        subtotal,
+        taxes,
+        total
+    });
+
+    const lines: InvoiceLine[] = [];
+    for (let i = 0; i < lineCount; i++) {
+        const line = await createTestInvoiceLine(invoice.id, {
+            description: `Service item ${i + 1}`,
+            quantity: 1,
+            unitPrice: lineAmount,
+            total: lineAmount
+        });
+        lines.push(line);
+    }
+
+    return { client, invoice, lines };
 }

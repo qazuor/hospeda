@@ -38,8 +38,9 @@ export const createMockAdminActor = (overrides?: Partial<Actor>): Actor => ({
         PermissionEnum.PAYMENT_REFUND,
         PermissionEnum.PAYMENT_CANCEL,
         // Granular client permissions
+        PermissionEnum.MANAGE_CLIENTS, // Required for invoice service operations
         PermissionEnum.CLIENT_CREATE,
-        PermissionEnum.CLIENT_UPDATE,
+        PermissionEnum.CLIENT_UPDATE, // Used by invoice/payment services for permission checks
         PermissionEnum.CLIENT_DELETE,
         PermissionEnum.CLIENT_VIEW,
         // Granular pricing plan permissions
@@ -81,6 +82,24 @@ export const createMockAdminActor = (overrides?: Partial<Actor>): Actor => ({
         PermissionEnum.PROFESSIONAL_SERVICE_ORDER_HARD_DELETE,
         PermissionEnum.PROFESSIONAL_SERVICE_ORDER_SOFT_DELETE_VIEW,
         PermissionEnum.PROFESSIONAL_SERVICE_ORDER_STATUS_MANAGE,
+        // Granular invoice permissions
+        PermissionEnum.INVOICE_CREATE,
+        PermissionEnum.INVOICE_UPDATE,
+        PermissionEnum.INVOICE_DELETE,
+        PermissionEnum.INVOICE_VIEW,
+        PermissionEnum.INVOICE_RESTORE,
+        PermissionEnum.INVOICE_HARD_DELETE,
+        PermissionEnum.INVOICE_GENERATE,
+        PermissionEnum.INVOICE_SEND,
+        PermissionEnum.INVOICE_VOID,
+        PermissionEnum.INVOICE_MARK_PAID,
+        // Granular invoice line permissions
+        PermissionEnum.INVOICE_LINE_CREATE,
+        PermissionEnum.INVOICE_LINE_UPDATE,
+        PermissionEnum.INVOICE_LINE_DELETE,
+        PermissionEnum.INVOICE_LINE_VIEW,
+        PermissionEnum.INVOICE_LINE_RESTORE,
+        PermissionEnum.INVOICE_LINE_HARD_DELETE,
         ...(overrides?.permissions || [])
     ],
     ...overrides
