@@ -13,6 +13,7 @@ import {
  * Simplified coercion for campaign creation via HTTP
  */
 export const HttpCreateCampaignSchema = z.object({
+    clientId: z.string().uuid(),
     name: z.string().min(3).max(200),
     description: z.string().min(10).max(2000),
     status: z.string(),
@@ -56,8 +57,16 @@ export const HttpCreateCampaignSchema = z.object({
 /**
  * HTTP Update Campaign Schema
  * Simplified update schema for HTTP
+ * Note: We remove defaults from create schema to avoid validation issues
  */
-export const HttpUpdateCampaignSchema = HttpCreateCampaignSchema.partial();
+export const HttpUpdateCampaignSchema = HttpCreateCampaignSchema.partial().extend({
+    // Override fields with defaults to remove the defaults for updates
+    'budget.currency': z.string().length(3).optional(),
+    'budget.bidStrategy': z
+        .enum(['manual', 'automatic', 'target_cpa', 'maximize_conversions'])
+        .optional(),
+    'schedule.timezone': z.string().optional()
+});
 
 /**
  * HTTP Search Campaigns Schema
@@ -273,7 +282,12 @@ export function httpToDomainCampaignCreate(httpData: HttpCreateCampaign): Create
     const channelsArray = Array.isArray(httpData.channels) ? httpData.channels : [];
     const channels = channelsArray.map((ch) => CampaignChannelSchema.parse(ch));
 
+    // Handle dates - convert to Date objects if they're strings
+    const startDate = httpData['schedule.startDate'];
+    const endDate = httpData['schedule.endDate'];
+
     return {
+        clientId: httpData.clientId,
         name: httpData.name,
         description: httpData.description,
         status: CampaignStatusSchema.parse(httpData.status),
@@ -290,9 +304,10 @@ export function httpToDomainCampaignCreate(httpData: HttpCreateCampaign): Create
         },
 
         // Schedule: Convert dot notation to nested object
+        // Convert ISO strings to Date objects (domain schema expects Date)
         schedule: {
-            startDate: httpData['schedule.startDate'],
-            endDate: httpData['schedule.endDate'],
+            startDate: startDate instanceof Date ? startDate : new Date(startDate),
+            endDate: endDate instanceof Date ? endDate : endDate ? new Date(endDate) : undefined,
             timezone: httpData['schedule.timezone']
         },
 
@@ -366,10 +381,15 @@ export function httpToDomainCampaignUpdate(httpData: HttpUpdateCampaign): Update
 
     if (hasScheduleFields) {
         const schedule: Partial<NonNullable<UpdateCampaign['schedule']>> = {};
-        if (httpData['schedule.startDate'] !== undefined)
-            schedule.startDate = httpData['schedule.startDate'];
-        if (httpData['schedule.endDate'] !== undefined)
-            schedule.endDate = httpData['schedule.endDate'];
+        // Convert ISO strings to Date objects (domain schema expects Date)
+        if (httpData['schedule.startDate'] !== undefined) {
+            const startDate = httpData['schedule.startDate'];
+            schedule.startDate = startDate instanceof Date ? startDate : new Date(startDate);
+        }
+        if (httpData['schedule.endDate'] !== undefined) {
+            const endDate = httpData['schedule.endDate'];
+            schedule.endDate = endDate instanceof Date ? endDate : new Date(endDate);
+        }
         if (httpData['schedule.timezone'] !== undefined)
             schedule.timezone = httpData['schedule.timezone'];
         result.schedule = schedule as NonNullable<UpdateCampaign['schedule']>;
