@@ -81,6 +81,50 @@ interface CreateRequestOptionsInterface {
 }
 
 /**
+ * Helper function to check if a single schema field has coercion enabled
+ * Recursively unwraps ZodOptional, ZodNullable, ZodDefault, etc. to find the inner type
+ */
+const hasCoercion = (fieldSchema: z.ZodTypeAny): boolean => {
+    // biome-ignore lint/suspicious/noExplicitAny: Need to access internal Zod _def structure
+    const def = (fieldSchema as any)._def;
+
+    // Direct coercion check (z.coerce.number(), z.coerce.date(), etc.)
+    if (def?.coerce === true) {
+        return true;
+    }
+
+    // Check for wrapped types (ZodOptional, ZodNullable, ZodDefault, etc.)
+    // These store the inner schema in innerType or schema
+    const innerSchema = def?.innerType || def?.schema;
+    if (innerSchema) {
+        return hasCoercion(innerSchema);
+    }
+
+    return false;
+};
+
+/**
+ * Helper function to check if a schema has HTTP-specific coercion fields
+ * (e.g., z.coerce.date(), z.coerce.number())
+ * These schemas should NOT be processed by createOpenAPISchema as they need
+ * their coercion logic preserved for runtime validation
+ */
+const hasHttpCoercionFields = (schema: z.ZodTypeAny): boolean => {
+    if (!(schema instanceof z.ZodObject)) {
+        return false;
+    }
+
+    // Check if any field in the schema has coercion enabled (including wrapped types)
+    for (const fieldSchema of Object.values(schema.shape)) {
+        if (hasCoercion(fieldSchema as z.ZodTypeAny)) {
+            return true;
+        }
+    }
+
+    return false;
+};
+
+/**
  * Helper function to create body request configuration
  * Reduces boilerplate for body requests
  */
@@ -264,15 +308,17 @@ export const createCRUDRoute = (options: CreateOpenApiRouteInterface) => {
         request: createRequestOptions({
             params: options.requestParams || {},
             // Do not declare a body for GET/DELETE requests to avoid JSON parsing on empty bodies
-            // HTTP schemas (with refinements) don't need OpenAPI conversion
+            // HTTP schemas (with refinements or coercion) don't need OpenAPI conversion
             body:
                 options.method === 'get' || options.method === 'delete'
                     ? undefined
                     : options.requestBody
-                      ? // Skip createOpenAPISchema for ZodEffects (schemas with .refine())
-                        // These are already HTTP-ready and need their validations preserved
+                      ? // Skip createOpenAPISchema for:
+                        // 1. ZodEffects (schemas with .refine()) - need validations preserved
+                        // 2. Schemas with coercion fields (z.coerce.date(), z.coerce.number()) - need coercion preserved
                         // biome-ignore lint/suspicious/noExplicitAny: Need to check internal Zod _def structure
-                        (options.requestBody as any)._def?.typeName === 'ZodEffects'
+                        (options.requestBody as any)._def?.typeName === 'ZodEffects' ||
+                        hasHttpCoercionFields(options.requestBody)
                           ? options.requestBody
                           : createOpenAPISchema(options.requestBody)
                       : undefined,
