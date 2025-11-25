@@ -117,6 +117,11 @@ export function transformApiInputToDomain<T extends Record<string, unknown>>(inp
     const result = { ...input };
 
     for (const [key, value] of Object.entries(result)) {
+        // If value is already a Date, keep it as-is
+        if (value instanceof Date) {
+            continue;
+        }
+
         if (typeof value === 'string' && isDateString(value)) {
             // Convert string to Date object
             const date = new Date(value);
@@ -124,14 +129,14 @@ export function transformApiInputToDomain<T extends Record<string, unknown>>(inp
                 (result as Record<string, unknown>)[key] = date;
             }
         } else if (value && typeof value === 'object' && !Array.isArray(value)) {
-            // Recursively handle nested objects
+            // Recursively handle nested objects (but not Date objects)
             (result as Record<string, unknown>)[key] = transformApiInputToDomain(
                 value as Record<string, unknown>
             );
         } else if (Array.isArray(value)) {
             // Handle arrays
             (result as Record<string, unknown>)[key] = value.map((item: unknown) =>
-                typeof item === 'object' && item !== null
+                typeof item === 'object' && item !== null && !(item instanceof Date)
                     ? transformApiInputToDomain(item as Record<string, unknown>)
                     : item
             );

@@ -115,8 +115,9 @@ const hasHttpCoercionFields = (schema: z.ZodTypeAny): boolean => {
     }
 
     // Check if any field in the schema has coercion enabled (including wrapped types)
-    for (const fieldSchema of Object.values(schema.shape)) {
-        if (hasCoercion(fieldSchema as z.ZodTypeAny)) {
+    for (const [_fieldName, fieldSchema] of Object.entries(schema.shape)) {
+        const hasCoercionResult = hasCoercion(fieldSchema as z.ZodTypeAny);
+        if (hasCoercionResult) {
             return true;
         }
     }

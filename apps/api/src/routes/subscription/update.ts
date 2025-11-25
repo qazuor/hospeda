@@ -27,9 +27,6 @@ export const subscriptionUpdateRoute = createCRUDRoute({
         const { id } = params;
         const service = new SubscriptionService({ logger: apiLogger });
 
-        // Cast body to the correct type (it's already validated by the requestBody schema)
-        const _validatedBody = body as z.infer<typeof SubscriptionUpdateHttpSchema>;
-
         // Transform API input (string dates) to domain format (Date objects)
         const domainBody = transformApiInputToDomain(body as Record<string, unknown>);
 
