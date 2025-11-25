@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { BaseAuditFields } from '../../common/audit.schema.js';
-import { CampaignIdSchema } from '../../common/id.schema.js';
+import { CampaignIdSchema, ClientIdSchema } from '../../common/id.schema.js';
 import { CampaignChannelSchema, CampaignStatusSchema } from '../../enums/index.js';
 import { numericField } from '../../utils/index.js';
 
@@ -13,6 +13,7 @@ import { numericField } from '../../utils/index.js';
 export const CampaignSchema = z.object({
     // Base fields
     id: CampaignIdSchema,
+    clientId: ClientIdSchema.describe('Client who owns this campaign'),
     ...BaseAuditFields,
 
     // Basic campaign information
