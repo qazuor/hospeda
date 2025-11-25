@@ -13,9 +13,9 @@ import { SubscriptionQuerySchema } from './subscription.query.schema.js';
  */
 export const SubscriptionCreateHttpSchema = SubscriptionCreateInputSchema.extend({
     // HTTP date coercion for form inputs
-    startAt: z.coerce.date().default(() => new Date()),
-    endAt: z.coerce.date().optional(),
-    trialEndsAt: z.coerce.date().optional()
+    startDate: z.coerce.date().default(() => new Date()),
+    endDate: z.coerce.date().optional(),
+    trialEndDate: z.coerce.date().optional()
 });
 
 export type SubscriptionCreateHttp = z.infer<typeof SubscriptionCreateHttpSchema>;
@@ -27,8 +27,8 @@ export type SubscriptionCreateHttp = z.infer<typeof SubscriptionCreateHttpSchema
  */
 export const SubscriptionUpdateHttpSchema = SubscriptionUpdateInputSchema.extend({
     // HTTP date coercion for form inputs
-    endAt: z.coerce.date().optional(),
-    trialEndsAt: z.coerce.date().optional()
+    endDate: z.coerce.date().optional(),
+    trialEndDate: z.coerce.date().optional()
 });
 
 export type SubscriptionUpdateHttp = z.infer<typeof SubscriptionUpdateHttpSchema>;

@@ -14,25 +14,31 @@ import {
 
 /**
  * Payment status enumeration for HTTP requests
+ * Must match PaymentStatusEnum values exactly
  */
 export const PaymentStatusHttpSchema = z.enum([
     'pending',
-    'processing',
-    'completed',
-    'failed',
+    'approved',
+    'authorized',
+    'in_process',
+    'in_mediation',
+    'rejected',
     'cancelled',
-    'refunded'
+    'refunded',
+    'charged_back'
 ]);
 
 /**
  * Payment type enumeration for HTTP requests
+ * Must match PaymentTypeEnum values exactly
  */
-export const PaymentTypeHttpSchema = z.enum(['SUBSCRIPTION', 'ONE_TIME', 'RECURRING', 'REFUND']);
+export const PaymentTypeHttpSchema = z.enum(['one_time', 'subscription']);
 
 /**
  * Lifecycle status enumeration for HTTP requests
+ * Must match LifecycleStatusEnum values exactly
  */
-export const LifecycleStatusHttpSchema = z.enum(['ACTIVE', 'INACTIVE', 'ARCHIVED', 'DELETED']);
+export const LifecycleStatusHttpSchema = z.enum(['DRAFT', 'ACTIVE', 'ARCHIVED']);
 
 /**
  * HTTP-compatible payment search schema with automatic coercion
@@ -108,7 +114,7 @@ export const PaymentCreateHttpSchema = z.object({
     amount: z.coerce.number().min(0),
     currency: z.string().length(3),
     paymentMethod: z.string(),
-    type: PaymentTypeHttpSchema.optional().default('SUBSCRIPTION'),
+    type: PaymentTypeHttpSchema.optional().default('subscription'),
     status: PaymentStatusHttpSchema.optional().default('pending'),
 
     // Optional relational fields
@@ -194,7 +200,7 @@ export type PaymentUpdateHttp = z.infer<typeof PaymentUpdateHttpSchema>;
  * These functions convert HTTP request data to domain-compatible formats
  */
 
-import {
+import type {
     LifecycleStatusEnumSchema,
     PaymentMethodEnumSchema,
     PaymentStatusEnumSchema,
@@ -246,12 +252,12 @@ export function httpToDomainPaymentCreate(httpData: PaymentCreateHttp): PaymentC
         // Pass through all other fields directly (they're already validated and coerced)
         userId: httpData.userId,
         amount: httpData.amount,
-        currency: PriceCurrencyEnumSchema.parse(httpData.currency),
+        currency: httpData.currency as z.infer<typeof PriceCurrencyEnumSchema>,
         ...(httpData.paymentMethod && {
-            paymentMethod: PaymentMethodEnumSchema.parse(httpData.paymentMethod)
+            paymentMethod: httpData.paymentMethod as z.infer<typeof PaymentMethodEnumSchema>
         }),
-        type: PaymentTypeEnumSchema.parse(httpData.type || 'SUBSCRIPTION'),
-        status: PaymentStatusEnumSchema.parse(httpData.status || 'PENDING'),
+        type: httpData.type as z.infer<typeof PaymentTypeEnumSchema>,
+        status: httpData.status as z.infer<typeof PaymentStatusEnumSchema>,
         ...(httpData.invoiceId && { invoiceId: httpData.invoiceId }),
         ...(httpData.mercadoPagoPaymentId && {
             mercadoPagoPaymentId: httpData.mercadoPagoPaymentId
@@ -266,7 +272,7 @@ export function httpToDomainPaymentCreate(httpData: PaymentCreateHttp): PaymentC
         ...(httpData.processedAt && { processedAt: httpData.processedAt }),
         ...(httpData.expiresAt && { expiresAt: httpData.expiresAt }),
         ...(httpData.failureReason && { failureReason: httpData.failureReason }),
-        lifecycleState: LifecycleStatusEnumSchema.parse(httpData.lifecycleState || 'ACTIVE'),
+        lifecycleState: httpData.lifecycleState as z.infer<typeof LifecycleStatusEnumSchema>,
         isActive: httpData.isActive ?? true,
         isDeleted: httpData.isDeleted ?? false,
         ...(httpData.adminInfo && { adminInfo: httpData.adminInfo })
@@ -284,15 +290,16 @@ export function httpToDomainPaymentUpdate(httpData: PaymentUpdateHttp): PaymentU
     // Only include fields that are actually provided
     if (httpData.paymentPlanId !== undefined) result.paymentPlanId = httpData.paymentPlanId;
     if (httpData.invoiceId !== undefined) result.invoiceId = httpData.invoiceId;
-    if (httpData.type !== undefined) result.type = PaymentTypeEnumSchema.parse(httpData.type);
+    if (httpData.type !== undefined)
+        result.type = httpData.type as z.infer<typeof PaymentTypeEnumSchema>;
     if (httpData.status !== undefined)
-        result.status = PaymentStatusEnumSchema.parse(httpData.status);
+        result.status = httpData.status as z.infer<typeof PaymentStatusEnumSchema>;
     if (httpData.paymentMethod !== undefined && httpData.paymentMethod !== null) {
-        result.paymentMethod = PaymentMethodEnumSchema.parse(httpData.paymentMethod);
+        result.paymentMethod = httpData.paymentMethod as z.infer<typeof PaymentMethodEnumSchema>;
     }
     if (httpData.amount !== undefined) result.amount = httpData.amount;
     if (httpData.currency !== undefined)
-        result.currency = PriceCurrencyEnumSchema.parse(httpData.currency);
+        result.currency = httpData.currency as z.infer<typeof PriceCurrencyEnumSchema>;
     if (httpData.mercadoPagoPaymentId !== undefined)
         result.mercadoPagoPaymentId = httpData.mercadoPagoPaymentId;
     if (httpData.mercadoPagoPreferenceId !== undefined)
@@ -307,7 +314,9 @@ export function httpToDomainPaymentUpdate(httpData: PaymentUpdateHttp): PaymentU
     if (httpData.expiresAt !== undefined) result.expiresAt = httpData.expiresAt;
     if (httpData.failureReason !== undefined) result.failureReason = httpData.failureReason;
     if (httpData.lifecycleState !== undefined) {
-        result.lifecycleState = LifecycleStatusEnumSchema.parse(httpData.lifecycleState);
+        result.lifecycleState = httpData.lifecycleState as z.infer<
+            typeof LifecycleStatusEnumSchema
+        >;
     }
     if (httpData.isActive !== undefined) result.isActive = httpData.isActive;
     if (httpData.isDeleted !== undefined) result.isDeleted = httpData.isDeleted;

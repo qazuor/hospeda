@@ -33,11 +33,12 @@ export type SubscriptionCreateInput = z.infer<typeof SubscriptionCreateInputSche
  *
  * Schema for updating existing subscriptions.
  * Includes status transition validation.
+ * Allows pricingPlanId updates for upgrade/downgrade scenarios.
  */
 export const SubscriptionUpdateInputSchema = SubscriptionSchema.omit({
     id: true,
     clientId: true,
-    pricingPlanId: true,
+    // pricingPlanId removed from omit to allow upgrade/downgrade
     createdAt: true,
     createdById: true,
     updatedById: true,
