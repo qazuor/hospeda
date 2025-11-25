@@ -74,6 +74,7 @@ describe('EventService.update', () => {
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {
+        vi.spyOn(EventModel.prototype, 'findOne').mockResolvedValue(null);
         (modelMock.findById as Mock).mockResolvedValue(existingEvent);
         (modelMock.update as Mock).mockRejectedValue(new Error('DB error'));
         const result = await service.update(actorWithPerm, eventId, updateInput);

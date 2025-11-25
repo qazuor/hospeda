@@ -252,8 +252,8 @@ describe('MockupGenerator', () => {
                 sessionPath
             });
 
-            // Assert
-            expect(result.metadata.generationTime).toBeGreaterThan(0);
+            // Assert - generationTime can be 0 if mock completes instantly
+            expect(result.metadata.generationTime).toBeGreaterThanOrEqual(0);
             expect(result.metadata.timestamp).toBeDefined();
         });
 

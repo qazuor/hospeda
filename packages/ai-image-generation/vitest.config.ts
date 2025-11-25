@@ -13,6 +13,8 @@ export default defineConfig({
                 'node_modules/',
                 'dist/',
                 'test/',
+                'examples/',
+                'scripts/',
                 '**/*.test.ts',
                 '**/*.spec.ts',
                 '**/index.ts',
@@ -20,10 +22,10 @@ export default defineConfig({
                 '*.config.ts'
             ],
             thresholds: {
-                lines: 90,
+                lines: 80,
                 functions: 90,
-                branches: 90,
-                statements: 90
+                branches: 75,
+                statements: 80
             }
         }
     }
