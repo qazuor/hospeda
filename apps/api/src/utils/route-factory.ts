@@ -310,7 +310,9 @@ export const createCRUDRoute = (options: CreateOpenApiRouteInterface) => {
             if (result instanceof Response) {
                 return result;
             }
-            return createResponse(result, ctx, 200);
+            // Use 201 Created for POST requests, 200 OK for all others
+            const statusCode = options.method === 'post' ? 201 : 200;
+            return createResponse(result, ctx, statusCode);
         } catch (error) {
             return handleRouteError(error, ctx);
         }

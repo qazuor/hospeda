@@ -20,6 +20,28 @@ import { userCache } from '../utils/user-cache';
  */
 export const actorMiddleware = (): MiddlewareHandler => {
     return async (c, next) => {
+        // TESTING SUPPORT: Check for mock actor headers (E2E tests)
+        const mockActorId = c.req.header('x-mock-actor-id');
+        const mockActorRole = c.req.header('x-mock-actor-role');
+        const mockActorPermissions = c.req.header('x-mock-actor-permissions');
+
+        if (mockActorId && mockActorRole && mockActorPermissions) {
+            // Use mock actor from test headers
+            try {
+                const actor: Actor = {
+                    id: mockActorId,
+                    role: mockActorRole as RoleEnum,
+                    permissions: JSON.parse(mockActorPermissions)
+                };
+                c.set('actor', actor);
+                await next();
+                return;
+            } catch (error) {
+                apiLogger.error('Error parsing mock actor headers:', error);
+                // Fall through to normal authentication
+            }
+        }
+
         const auth = getAuth(c);
         let actor: Actor;
 

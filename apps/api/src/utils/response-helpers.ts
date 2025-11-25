@@ -3,6 +3,9 @@
  * Provides helper functions to create consistent responses across endpoints
  */
 
+import { DbError } from '@repo/db/utils';
+import { ServiceErrorCode } from '@repo/schemas';
+import { ServiceError } from '@repo/service-core/types';
 import type { Context } from 'hono';
 import { apiLogger } from './logger';
 
@@ -126,7 +129,99 @@ export const createPaginatedResponse = (
 export const handleRouteError = (error: unknown, c: Context) => {
     apiLogger.error({ message: 'Route error', error });
 
+    // Check for ServiceError first (most specific)
+    if (error instanceof ServiceError) {
+        // Map ServiceErrorCode to HTTP status codes
+        let statusCode = 500;
+
+        switch (error.code) {
+            case ServiceErrorCode.NOT_FOUND:
+                statusCode = 404;
+                break;
+            case ServiceErrorCode.VALIDATION_ERROR:
+            case ServiceErrorCode.INVALID_PAGINATION_PARAMS:
+            case ServiceErrorCode.ALREADY_EXISTS:
+                statusCode = 400;
+                break;
+            case ServiceErrorCode.UNAUTHORIZED:
+                statusCode = 401;
+                break;
+            case ServiceErrorCode.FORBIDDEN:
+                statusCode = 403;
+                break;
+            case ServiceErrorCode.NOT_IMPLEMENTED:
+                statusCode = 501;
+                break;
+            default:
+                statusCode = 500;
+                break;
+        }
+
+        return createErrorResponse(
+            {
+                code: error.code,
+                message: error.message,
+                details: process.env.NODE_ENV === 'development' ? error.details : undefined
+            },
+            c,
+            statusCode
+        );
+    }
+
+    // Check for DbError (database errors from models)
+    if (error instanceof DbError) {
+        // Check for foreign key constraint violations
+        if (error.message.includes('violates foreign key constraint')) {
+            return createErrorResponse(
+                {
+                    code: 'INVALID_REFERENCE',
+                    message: 'Invalid reference: The specified resource does not exist',
+                    details: process.env.NODE_ENV === 'development' ? error.message : undefined
+                },
+                c,
+                400
+            );
+        }
+
+        // Other database errors are server errors
+        return createErrorResponse(
+            {
+                code: 'DATABASE_ERROR',
+                message: 'A database error occurred',
+                details: process.env.NODE_ENV === 'development' ? error.message : undefined
+            },
+            c,
+            500
+        );
+    }
+
     if (error instanceof Error) {
+        // Check for foreign key constraint violations (client errors, not server errors)
+        if (error.message.includes('violates foreign key constraint')) {
+            return createErrorResponse(
+                {
+                    code: 'INVALID_REFERENCE',
+                    message: 'Invalid reference: The specified resource does not exist',
+                    details: process.env.NODE_ENV === 'development' ? error.message : undefined
+                },
+                c,
+                400
+            );
+        }
+
+        // Check for validation errors
+        if (error.message.includes('validation') || error.message.includes('Invalid')) {
+            return createErrorResponse(
+                {
+                    code: 'VALIDATION_ERROR',
+                    message: error.message,
+                    details: process.env.NODE_ENV === 'development' ? error.message : undefined
+                },
+                c,
+                400
+            );
+        }
+
         return createErrorResponse(
             {
                 code: 'INTERNAL_ERROR',
@@ -136,6 +231,37 @@ export const handleRouteError = (error: unknown, c: Context) => {
             c,
             500
         );
+    }
+
+    // Handle errors that are objects but not Error instances (e.g., DbError)
+    if (error && typeof error === 'object' && 'message' in error) {
+        const errorMessage = String(error.message);
+
+        // Check for foreign key constraint violations
+        if (errorMessage.includes('violates foreign key constraint')) {
+            return createErrorResponse(
+                {
+                    code: 'INVALID_REFERENCE',
+                    message: 'Invalid reference: The specified resource does not exist',
+                    details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+                },
+                c,
+                400
+            );
+        }
+
+        // Check for validation errors
+        if (errorMessage.includes('validation') || errorMessage.includes('Invalid')) {
+            return createErrorResponse(
+                {
+                    code: 'VALIDATION_ERROR',
+                    message: errorMessage,
+                    details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+                },
+                c,
+                400
+            );
+        }
     }
 
     return createErrorResponse(
