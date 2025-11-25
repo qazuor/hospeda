@@ -1,4 +1,4 @@
-import type { PaymentModel } from '@repo/db';
+import { PaymentModel } from '@repo/db';
 import {
     type ListRelationsConfig,
     type Payment,
@@ -42,7 +42,7 @@ export class PaymentService extends BaseCrudService<
      */
     constructor(ctx: ServiceContext, model?: PaymentModel) {
         super(ctx, PaymentService.ENTITY_NAME);
-        this.model = model ?? ({} as PaymentModel);
+        this.model = model ?? new PaymentModel();
     }
 
     /**

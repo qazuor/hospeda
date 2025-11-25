@@ -1,6 +1,12 @@
-import { SubscriptionModel, type subscriptionItems } from '@repo/db';
+import { PricingPlanModel, SubscriptionModel, type subscriptionItems } from '@repo/db';
 import type { ClientIdType, ListRelationsConfig, SubscriptionStatusEnum } from '@repo/schemas';
-import { PermissionEnum, RoleEnum, ServiceErrorCode, type VisibilityEnum } from '@repo/schemas';
+import {
+    BillingIntervalEnum,
+    PermissionEnum,
+    RoleEnum,
+    ServiceErrorCode,
+    type VisibilityEnum
+} from '@repo/schemas';
 import {
     type Subscription,
     SubscriptionCreateInputSchema,
@@ -26,6 +32,7 @@ export class SubscriptionService extends BaseCrudService<
     static readonly ENTITY_NAME = 'subscription';
     protected readonly entityName = SubscriptionService.ENTITY_NAME;
     public readonly model: SubscriptionModel;
+    private readonly pricingPlanModel: PricingPlanModel;
 
     public readonly createSchema = SubscriptionCreateInputSchema;
     public readonly updateSchema = SubscriptionUpdateInputSchema;
@@ -39,6 +46,7 @@ export class SubscriptionService extends BaseCrudService<
     constructor(ctx: ServiceContext, model?: SubscriptionModel) {
         super(ctx, SubscriptionService.ENTITY_NAME);
         this.model = model ?? new SubscriptionModel();
+        this.pricingPlanModel = new PricingPlanModel();
     }
 
     /**
@@ -46,6 +54,80 @@ export class SubscriptionService extends BaseCrudService<
      */
     protected getDefaultListRelations(): ListRelationsConfig {
         return {};
+    }
+
+    // ============================================================================
+    // LIFECYCLE HOOKS
+    // ============================================================================
+
+    /**
+     * Hook called before creating a subscription.
+     * Automatically calculates endDate based on pricing plan interval if not provided.
+     * @param data - The validated subscription creation data
+     * @returns The data with calculated endDate
+     */
+    protected async _beforeCreate(
+        data: z.infer<typeof SubscriptionCreateInputSchema>
+    ): Promise<z.infer<typeof SubscriptionCreateInputSchema>> {
+        // If endDate is already provided, use it as-is
+        if (data.endDate) {
+            return data;
+        }
+
+        // Fetch pricing plan to get billing interval
+        const plan = await this.pricingPlanModel.findById(data.pricingPlanId);
+
+        if (!plan) {
+            throw new ServiceError(
+                ServiceErrorCode.NOT_FOUND,
+                `Pricing plan with ID ${data.pricingPlanId} not found`
+            );
+        }
+
+        // Only calculate endDate for recurring plans with an interval
+        if (plan.billingScheme !== 'recurring' || !plan.interval) {
+            return data;
+        }
+
+        // Calculate endDate based on interval
+        // startDate may not be present yet, will be set by schema default (new Date())
+        // We use new Date() as the base for calculation since the default will be applied during model.create()
+        const startDate = data.startDate instanceof Date ? data.startDate : new Date();
+        const endDate = this.calculateEndDate(startDate, plan.interval);
+
+        return {
+            ...data,
+            endDate
+        };
+    }
+
+    /**
+     * Calculates the end date based on start date and billing interval
+     * @param startDate - The subscription start date
+     * @param interval - The billing interval from pricing plan
+     * @returns The calculated end date
+     */
+    private calculateEndDate(startDate: Date, interval: BillingIntervalEnum): Date {
+        const endDate = new Date(startDate);
+
+        switch (interval) {
+            case BillingIntervalEnum.MONTH:
+                endDate.setMonth(endDate.getMonth() + 1);
+                break;
+            case BillingIntervalEnum.YEAR:
+                endDate.setFullYear(endDate.getFullYear() + 1);
+                break;
+            case BillingIntervalEnum.BIYEAR:
+                endDate.setFullYear(endDate.getFullYear() + 2);
+                break;
+            default:
+                throw new ServiceError(
+                    ServiceErrorCode.VALIDATION_ERROR,
+                    `Invalid billing interval: ${interval}`
+                );
+        }
+
+        return endDate;
     }
 
     // ============================================================================
@@ -257,6 +339,50 @@ export class SubscriptionService extends BaseCrudService<
         const { ...filterParams } = params;
         const count = await this.model.count(filterParams);
         return { count };
+    }
+
+    // ============================================================================
+    // CRUD METHODS WITH HOOKS
+    // ============================================================================
+
+    /**
+     * Creates a new subscription with automatic endDate calculation.
+     * Calls _beforeCreate hook to calculate endDate based on pricing plan interval.
+     * @param actor - The user or system performing the action.
+     * @param data - The validated subscription creation data
+     * @returns ServiceOutput containing the created subscription.
+     */
+    public async create(
+        actor: Actor,
+        data: z.infer<typeof SubscriptionCreateInputSchema>
+    ): Promise<ServiceOutput<Subscription>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'create',
+            input: { actor },
+            schema: z.object({}),
+            execute: async (_validatedData, validatedActor) => {
+                // Validate input data with subscription schema
+                const validatedSubscriptionData = SubscriptionCreateInputSchema.parse(data);
+
+                // Permission check
+                this._canCreate(validatedActor, validatedSubscriptionData);
+
+                // Call _beforeCreate hook to calculate endDate
+                const dataWithEndDate = await this._beforeCreate(validatedSubscriptionData);
+
+                // Create subscription with calculated endDate
+                const subscription = await this.model.create(dataWithEndDate);
+
+                if (!subscription) {
+                    throw new ServiceError(
+                        ServiceErrorCode.INTERNAL_ERROR,
+                        'Failed to create subscription'
+                    );
+                }
+
+                return subscription;
+            }
+        });
     }
 
     // ============================================================================

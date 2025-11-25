@@ -105,6 +105,12 @@ export abstract class BaseService<TNormalizers = Record<string, unknown>> {
                 logError(`${this.entityName}.${methodName}`, error, params, actor);
                 return { error };
             }
+
+            // Re-throw database errors to preserve their type for proper HTTP status mapping
+            if (error && typeof error === 'object' && 'name' in error && error.name === 'DbError') {
+                throw error;
+            }
+
             const serviceError = new ServiceError(
                 ServiceErrorCode.INTERNAL_ERROR,
                 `An unexpected error occurred: ${error instanceof Error ? error.message : String(error)}`,
