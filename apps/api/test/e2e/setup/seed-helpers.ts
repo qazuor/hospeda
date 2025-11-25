@@ -2,10 +2,24 @@ import {
     ClientModel,
     PricingPlanModel,
     ProductModel,
+    ProfessionalServiceModel,
+    ProfessionalServiceOrderModel,
+    ProfessionalServiceTypeModel,
     SubscriptionModel,
     UserModel
 } from '@repo/db';
-import type { Client, PricingPlan, Product, RoleEnum, Subscription, User } from '@repo/schemas';
+import type {
+    Client,
+    PricingPlan,
+    Product,
+    ProfessionalService,
+    ProfessionalServiceOrder,
+    ProfessionalServiceType,
+    RoleEnum,
+    Subscription,
+    User
+} from '@repo/schemas';
+import { ProfessionalServiceCategoryEnum, ServiceOrderStatusEnum } from '@repo/schemas';
 
 /**
  * E2E test data seeding helpers
@@ -198,4 +212,123 @@ export async function createTestPlans(
     }
 
     return plans;
+}
+
+/**
+ * Create a test professional service type
+ * @param overrides - Partial data to override defaults
+ * @returns Created professional service type
+ */
+export async function createTestProfessionalServiceType(
+    overrides?: Partial<ProfessionalServiceType>
+): Promise<ProfessionalServiceType> {
+    const model = new ProfessionalServiceTypeModel();
+
+    const timestamp = Date.now();
+    const defaultData = {
+        name: overrides?.name || `Test Service Type ${timestamp}`,
+        category: overrides?.category || ProfessionalServiceCategoryEnum.PHOTOGRAPHY,
+        description: overrides?.description || 'A test professional service type for E2E testing',
+        defaultPricing: overrides?.defaultPricing || {
+            hourlyRate: 50,
+            fixedPrice: 500,
+            currency: 'ARS',
+            notes: 'Test pricing'
+        },
+        isActive: overrides?.isActive ?? true,
+        ...overrides
+    };
+
+    const result = await model.create(defaultData as any);
+    return result as ProfessionalServiceType;
+}
+
+/**
+ * Create a test professional service
+ * @param overrides - Partial data to override defaults
+ * @returns Created professional service
+ */
+export async function createTestProfessionalService(
+    overrides?: Partial<ProfessionalService>
+): Promise<ProfessionalService> {
+    const model = new ProfessionalServiceModel();
+
+    const timestamp = Date.now();
+    const defaultData = {
+        name: overrides?.name || `Test Professional Service ${timestamp}`,
+        description:
+            overrides?.description ||
+            'A test professional service for E2E testing with detailed description',
+        category: overrides?.category || ProfessionalServiceCategoryEnum.PHOTOGRAPHY,
+        defaultPricing: overrides?.defaultPricing || {
+            basePrice: 150,
+            currency: 'ARS',
+            billingUnit: 'project' as const,
+            minOrderValue: 100,
+            maxOrderValue: 10000
+        },
+        isActive: overrides?.isActive ?? true,
+        ...overrides
+    };
+
+    const result = await model.create(defaultData as any);
+    return result as ProfessionalService;
+}
+
+/**
+ * Create a test professional service order
+ * @param clientId - Client ID for the order
+ * @param serviceTypeId - Service type ID for the order
+ * @param pricingPlanId - Pricing plan ID for the order
+ * @param overrides - Partial data to override defaults
+ * @returns Created professional service order
+ */
+export async function createTestProfessionalServiceOrder(
+    clientId: string,
+    serviceTypeId: string,
+    pricingPlanId: string,
+    overrides?: Partial<ProfessionalServiceOrder>
+): Promise<ProfessionalServiceOrder> {
+    const model = new ProfessionalServiceOrderModel();
+
+    const defaultData = {
+        clientId,
+        serviceTypeId,
+        pricingPlanId,
+        status: overrides?.status || ServiceOrderStatusEnum.PENDING,
+        orderedAt: overrides?.orderedAt || new Date(),
+        notes: overrides?.notes || 'Test order notes',
+        clientRequirements:
+            overrides?.clientRequirements || 'Test client requirements for the order',
+        ...overrides
+    };
+
+    const result = await model.create(defaultData as any);
+    return result as ProfessionalServiceOrder;
+}
+
+/**
+ * Create a complete professional service flow setup
+ * Returns client, service type, pricing plan, and service
+ */
+export async function setupProfessionalServiceFlow() {
+    const client = await createTestClient();
+    const serviceType = await createTestProfessionalServiceType();
+    const plan = await createTestPlan();
+    const service = await createTestProfessionalService();
+
+    return { client, serviceType, plan, service };
+}
+
+/**
+ * Create a complete professional service order flow setup
+ * Returns client, service type, pricing plan, and order
+ */
+export async function setupProfessionalServiceOrderFlow() {
+    const client = await createTestClient();
+    const serviceType = await createTestProfessionalServiceType();
+    const plan = await createTestPlan();
+    const order = await createTestProfessionalServiceOrder(client.id, serviceType.id, plan.id);
+
+    return { client, serviceType, plan, order };
 }
