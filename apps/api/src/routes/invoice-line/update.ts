@@ -1,6 +1,7 @@
 import { z } from '@hono/zod-openapi';
+import { InvoiceLineModel } from '@repo/db';
 import { InvoiceLineHttpUpdateSchema, InvoiceLineSchema } from '@repo/schemas';
-import { InvoiceLineService } from '@repo/service-core';
+import { InvoiceLineService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import type { z as zodType } from 'zod';
 import { getActorFromContext } from '../../utils/actor';
@@ -22,13 +23,13 @@ export const invoiceLineUpdateRoute = createCRUDRoute({
         const actor = getActorFromContext(ctx);
         const { id } = params;
 
-        const service = new InvoiceLineService({ logger: apiLogger });
+        const service = new InvoiceLineService({ logger: apiLogger }, new InvoiceLineModel());
         // Cast body to the correct type (it's already validated by the requestBody schema)
         const validatedBody = body as zodType.infer<typeof InvoiceLineHttpUpdateSchema>;
         const result = await service.update(actor, id as string, validatedBody);
 
         if (result.error) {
-            throw new Error(result.error.message);
+            throw new ServiceError(result.error.code, result.error.message, result.error.details);
         }
 
         return result.data;

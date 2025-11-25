@@ -1,5 +1,6 @@
+import { InvoiceModel } from '@repo/db';
 import { InvoiceHttpSearchSchema, InvoiceSchema } from '@repo/schemas';
-import { InvoiceService } from '@repo/service-core';
+import { InvoiceService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
@@ -18,11 +19,11 @@ export const invoiceListRoute = createListRoute({
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
 
-        const service = new InvoiceService({ logger: apiLogger });
-        const result = await service.list(actor, query || {});
+        const service = new InvoiceService({ logger: apiLogger }, new InvoiceModel());
+        const result = await service.search(actor, query || {});
 
         if (result.error) {
-            throw new Error(result.error.message);
+            throw new ServiceError(result.error.code, result.error.message, result.error.details);
         }
 
         return {

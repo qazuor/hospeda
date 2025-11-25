@@ -1,6 +1,7 @@
 import { z } from '@hono/zod-openapi';
+import { InvoiceLineModel } from '@repo/db';
 import { InvoiceLineSchema } from '@repo/schemas';
-import { InvoiceLineService } from '@repo/service-core';
+import { InvoiceLineService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
@@ -20,11 +21,11 @@ export const invoiceLineDeleteRoute = createCRUDRoute({
         const actor = getActorFromContext(ctx);
         const { id } = params;
 
-        const service = new InvoiceLineService({ logger: apiLogger });
+        const service = new InvoiceLineService({ logger: apiLogger }, new InvoiceLineModel());
         const result = await service.softDelete(actor, id as string);
 
         if (result.error) {
-            throw new Error(result.error.message);
+            throw new ServiceError(result.error.code, result.error.message, result.error.details);
         }
 
         return result.data;
