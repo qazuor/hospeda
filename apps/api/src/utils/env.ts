@@ -51,9 +51,15 @@ const ApiEnvSchema = z.object({
     HOSPEDA_API_URL: z.string().url('Must be a valid API URL'),
     HOSPEDA_DATABASE_URL: z.string().min(1, 'Database URL is required'),
 
-    // Authentication (Clerk) - REQUIRED, NO DEFAULTS
-    HOSPEDA_CLERK_SECRET_KEY: z.string().min(1, 'Clerk secret key is required'),
-    HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().min(1, 'Clerk publishable key is required'),
+    // Authentication (Clerk) - Optional in test mode with mock defaults
+    HOSPEDA_CLERK_SECRET_KEY:
+        process.env.NODE_ENV === 'test'
+            ? z.string().default('YOUR_TEST_SECRET_HERE')
+            : z.string().min(1, 'Clerk secret key is required'),
+    HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY:
+        process.env.NODE_ENV === 'test'
+            ? z.string().default('YOUR_TEST_PUBLISHABLE_HERE')
+            : z.string().min(1, 'Clerk publishable key is required'),
     HOSPEDA_CLERK_WEBHOOK_SECRET: z.string().optional(),
 
     // Logging Configuration (API-specific)

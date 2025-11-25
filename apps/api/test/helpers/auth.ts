@@ -24,6 +24,34 @@ export const createMockAdminActor = (overrides?: Partial<Actor>): Actor => ({
         PermissionEnum.MANAGE_PURCHASES,
         PermissionEnum.ANALYTICS_VIEW,
         PermissionEnum.MANAGE_CONTENT,
+        // Granular subscription permissions
+        PermissionEnum.SUBSCRIPTION_CREATE,
+        PermissionEnum.SUBSCRIPTION_UPDATE,
+        PermissionEnum.SUBSCRIPTION_DELETE,
+        PermissionEnum.SUBSCRIPTION_VIEW,
+        // Granular payment permissions
+        PermissionEnum.PAYMENT_CREATE,
+        PermissionEnum.PAYMENT_UPDATE,
+        PermissionEnum.PAYMENT_DELETE,
+        PermissionEnum.PAYMENT_VIEW,
+        PermissionEnum.PAYMENT_PROCESS,
+        PermissionEnum.PAYMENT_REFUND,
+        PermissionEnum.PAYMENT_CANCEL,
+        // Granular client permissions
+        PermissionEnum.CLIENT_CREATE,
+        PermissionEnum.CLIENT_UPDATE,
+        PermissionEnum.CLIENT_DELETE,
+        PermissionEnum.CLIENT_VIEW,
+        // Granular pricing plan permissions
+        PermissionEnum.PRICING_PLAN_CREATE,
+        PermissionEnum.PRICING_PLAN_UPDATE,
+        PermissionEnum.PRICING_PLAN_DELETE,
+        PermissionEnum.PRICING_PLAN_VIEW,
+        // Granular product permissions
+        PermissionEnum.PRODUCT_CREATE,
+        PermissionEnum.PRODUCT_UPDATE,
+        PermissionEnum.PRODUCT_DELETE,
+        PermissionEnum.PRODUCT_VIEW,
         ...(overrides?.permissions || [])
     ],
     ...overrides
