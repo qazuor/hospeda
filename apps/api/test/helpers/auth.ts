@@ -63,6 +63,24 @@ export const createMockAdminActor = (overrides?: Partial<Actor>): Actor => ({
         PermissionEnum.CAMPAIGN_BUDGET_MANAGE,
         PermissionEnum.CAMPAIGN_PERFORMANCE_VIEW,
         PermissionEnum.CAMPAIGN_ANALYTICS_VIEW,
+        // Granular professional service permissions
+        PermissionEnum.PROFESSIONAL_SERVICE_CREATE,
+        PermissionEnum.PROFESSIONAL_SERVICE_UPDATE,
+        PermissionEnum.PROFESSIONAL_SERVICE_DELETE,
+        PermissionEnum.PROFESSIONAL_SERVICE_VIEW,
+        PermissionEnum.PROFESSIONAL_SERVICE_RESTORE,
+        PermissionEnum.PROFESSIONAL_SERVICE_HARD_DELETE,
+        PermissionEnum.PROFESSIONAL_SERVICE_SOFT_DELETE_VIEW,
+        PermissionEnum.PROFESSIONAL_SERVICE_STATUS_MANAGE,
+        // Granular professional service order permissions
+        PermissionEnum.PROFESSIONAL_SERVICE_ORDER_CREATE,
+        PermissionEnum.PROFESSIONAL_SERVICE_ORDER_UPDATE,
+        PermissionEnum.PROFESSIONAL_SERVICE_ORDER_DELETE,
+        PermissionEnum.PROFESSIONAL_SERVICE_ORDER_VIEW,
+        PermissionEnum.PROFESSIONAL_SERVICE_ORDER_RESTORE,
+        PermissionEnum.PROFESSIONAL_SERVICE_ORDER_HARD_DELETE,
+        PermissionEnum.PROFESSIONAL_SERVICE_ORDER_SOFT_DELETE_VIEW,
+        PermissionEnum.PROFESSIONAL_SERVICE_ORDER_STATUS_MANAGE,
         ...(overrides?.permissions || [])
     ],
     ...overrides
