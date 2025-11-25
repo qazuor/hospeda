@@ -8,7 +8,7 @@ import { createCRUDRoute } from '../../utils/route-factory';
 
 export const subscriptionGetByIdRoute = createCRUDRoute({
     method: 'get',
-    path: '//:id',
+    path: '/:id',
     summary: 'Get subscription by ID',
     description: 'Retrieves a single subscription by their unique identifier',
     tags: ['Subscriptions'],

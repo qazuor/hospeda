@@ -1,5 +1,5 @@
 import { PaymentCreateHttpSchema, PaymentSchema, httpToDomainPaymentCreate } from '@repo/schemas';
-import { PaymentService } from '@repo/service-core';
+import { PaymentService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import type { z } from 'zod';
 import { getActorFromContext } from '../../utils/actor';
@@ -17,6 +17,7 @@ export const paymentCreateRoute = createCRUDRoute({
     handler: async (ctx: Context, _params, body) => {
         const actor = getActorFromContext(ctx);
         const service = new PaymentService({ logger: apiLogger });
+
         // Cast body to the correct type (it's already validated by the requestBody schema)
         const validatedBody = body as z.infer<typeof PaymentCreateHttpSchema>;
 
@@ -26,7 +27,8 @@ export const paymentCreateRoute = createCRUDRoute({
         const result = await service.create(actor, domainData);
 
         if (result.error) {
-            throw new Error(result.error.message);
+            // Re-throw ServiceError to preserve error code and details
+            throw new ServiceError(result.error.code, result.error.message, result.error.details);
         }
 
         return result.data;

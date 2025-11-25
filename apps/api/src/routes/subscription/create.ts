@@ -3,7 +3,7 @@ import {
     SubscriptionCreateHttpSchema,
     SubscriptionSchema
 } from '@repo/schemas';
-import { SubscriptionService } from '@repo/service-core';
+import { ServiceError, SubscriptionService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
@@ -19,14 +19,16 @@ export const subscriptionCreateRoute = createCRUDRoute({
     responseSchema: SubscriptionSchema,
     handler: async (ctx: Context, _params, body) => {
         const actor = getActorFromContext(ctx);
-
         const service = new SubscriptionService({ logger: apiLogger });
+
         const result = await service.create(actor, body as SubscriptionCreateHttp);
 
         if (result.error) {
-            throw new Error(result.error.message);
+            // Re-throw ServiceError to preserve error code and details
+            throw new ServiceError(result.error.code, result.error.message, result.error.details);
         }
 
-        return result.data;
+        // Return Response with 201 Created status for resource creation
+        return ctx.json({ success: true, data: result.data }, 201);
     }
 });

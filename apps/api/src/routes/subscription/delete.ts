@@ -7,7 +7,7 @@ import { createCRUDRoute } from '../../utils/route-factory';
 
 export const subscriptionDeleteRoute = createCRUDRoute({
     method: 'delete',
-    path: '//:id',
+    path: '/:id',
     summary: 'Delete subscription',
     description: 'Soft deletes a subscription (sets deletedAt timestamp)',
     tags: ['Subscriptions'],
