@@ -37,7 +37,10 @@ export const actorMiddleware = (): MiddlewareHandler => {
                 await next();
                 return;
             } catch (error) {
-                apiLogger.error('Error parsing mock actor headers:', error);
+                apiLogger.error(
+                    'Error parsing mock actor headers:',
+                    error instanceof Error ? error.message : String(error)
+                );
                 // Fall through to normal authentication
             }
         }

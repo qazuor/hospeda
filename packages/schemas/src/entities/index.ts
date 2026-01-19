@@ -9,59 +9,10 @@ export * from './event/index.js';
 export * from './eventLocation/index.js';
 export * from './eventOrganizer/index.js';
 export * from './feature/index.js';
-export * from './payment/index.js';
 export * from './permission/index.js';
 export * from './post/index.js';
 export * from './postSponsor/index.js';
 export * from './postSponsorship/index.js';
-export * from './product/index.js';
-export * from './pricingPlan/index.js';
-export * from './pricingTier/index.js';
-export * from './client-access-right/index.js';
-export * from './client/index.js';
-// TODO: Enable once migration from old payment model is complete
-export * from './subscription/index.js';
-export * from './purchase/index.js';
-export * from './subscriptionItem/index.js';
 export * from './tag/index.js';
 export * from './user/index.js';
 export * from './userBookmark/index.js';
-
-// === Billing System Entities ===
-export * from './creditNote/index.js';
-export * from './invoice/index.js';
-export * from './invoiceLine/index.js';
-export * from './paymentMethod/index.js';
-export * from './refund/index.js';
-
-// === Promotions & Discounts System Entities ===
-export * from './discountCode/index.js';
-export * from './promotion/index.js';
-export * from './sponsorship/index.js';
-
-// === Notifications & Marketing System Entities ===
-export * from './campaign/index.js';
-export * from './notification/index.js';
-
-// === Professional Services System Entities ===
-export * from './professionalService/index.js';
-export * from './serviceOrder/index.js';
-export * from './serviceListing/index.js';
-export * from './serviceListingPlan/index.js';
-export * from './touristService/index.js';
-
-// === Benefit Listings System Entities ===
-export * from './benefitListing/index.js';
-export * from './benefitListingPlan/index.js';
-export * from './benefitPartner/index.js';
-
-// === Accommodation Listings System Entities ===
-export * from './accommodationListing/index.js';
-export * from './accommodationListingPlan/index.js';
-export * from './featuredAccommodation/index.js';
-
-// === Advertising System Entities ===
-export * from './adMediaAsset/index.js';
-export * from './adPricingCatalog/index.js';
-export * from './adSlot/index.js';
-export * from './adSlotReservation/index.js';

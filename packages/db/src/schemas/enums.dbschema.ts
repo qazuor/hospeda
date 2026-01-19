@@ -1,57 +1,23 @@
 import {
     AccessRightScopeEnum,
     AccommodationTypeEnum,
-    AdSlotReservationStatusEnum,
     AmenitiesTypeEnum,
     AuthProviderEnum,
-    BenefitCategoryEnum,
-    BillingCycleEnum,
-    BillingIntervalEnum,
-    BillingSchemeEnum,
-    CampaignChannelEnum,
-    CampaignStatusEnum,
     ClientTypeEnum,
-    DiscountTypeEnum,
     EntityPermissionReasonEnum,
     EntityTypeEnum,
     EventCategoryEnum,
-    FeaturedStatusEnum,
-    FeaturedTypeEnum,
-    InvoiceStatusEnum,
     LifecycleStatusEnum,
-    ListingStatusEnum,
-    MediaAssetTypeEnum,
     ModerationStatusEnum,
-    NotificationChannelEnum,
-    NotificationRecipientTypeEnum,
-    NotificationStatusEnum,
-    NotificationTypeEnum,
-    PaymentMethodEnum,
-    PaymentProviderEnum,
-    PaymentStatusEnum,
-    PaymentTypeEnum,
     PermissionCategoryEnum,
     PermissionEnum,
     PostCategoryEnum,
     PreferredContactEnum,
     PriceCurrencyEnum,
-    PricingModelEnum,
     ProductTypeEnum,
-    ProfessionalServiceCategoryEnum,
-    PurchaseStatusEnum,
     RecurrenceTypeEnum,
-    RefundReasonEnum,
-    RefundStatusEnum,
     RoleEnum,
-    ServiceListingStatusEnum,
-    ServiceOrderStatusEnum,
-    SponsorshipEntityTypeEnum,
-    SponsorshipStatusEnum,
-    SubscriptionItemEntityTypeEnum,
-    SubscriptionItemSourceTypeEnum,
-    SubscriptionStatusEnum,
     TagColorEnum,
-    TouristServiceCategoryEnum,
     VisibilityEnum
 } from '@repo/schemas';
 import { pgEnum } from 'drizzle-orm/pg-core';
@@ -77,8 +43,6 @@ export const PreferredContactPgEnum = pgEnum(
 );
 
 export const PriceCurrencyPgEnum = pgEnum('price_currency_enum', enumToTuple(PriceCurrencyEnum));
-
-export const PricingModelPgEnum = pgEnum('pricing_model_enum', enumToTuple(PricingModelEnum));
 
 export const ProductTypePgEnum = pgEnum('product_type_enum', enumToTuple(ProductTypeEnum));
 
@@ -111,134 +75,11 @@ export const ModerationStatusPgEnum = pgEnum(
 
 export const TagColorPgEnum = pgEnum('tag_color_enum', enumToTuple(TagColorEnum));
 
-export const TouristServiceCategoryPgEnum = pgEnum(
-    'tourist_service_category_enum',
-    enumToTuple(TouristServiceCategoryEnum)
-);
-
 export const VisibilityPgEnum = pgEnum('visibility_enum', enumToTuple(VisibilityEnum));
 
 export const AuthProviderPgEnum = pgEnum('auth_provider_enum', enumToTuple(AuthProviderEnum));
 
-export const BenefitCategoryPgEnum = pgEnum(
-    'benefit_category_enum',
-    enumToTuple(BenefitCategoryEnum)
-);
-
-export const BillingCyclePgEnum = pgEnum('billing_cycle_enum', enumToTuple(BillingCycleEnum));
-
-export const BillingIntervalPgEnum = pgEnum(
-    'billing_interval_enum',
-    enumToTuple(BillingIntervalEnum)
-);
-
-export const BillingSchemePgEnum = pgEnum('billing_scheme_enum', enumToTuple(BillingSchemeEnum));
-
 export const EntityPermissionReasonPgEnum = pgEnum(
     'entity_permission_reason_enum',
     enumToTuple(EntityPermissionReasonEnum)
-);
-
-export const PaymentMethodPgEnum = pgEnum('payment_method_enum', enumToTuple(PaymentMethodEnum));
-
-export const PaymentProviderPgEnum = pgEnum(
-    'payment_provider_enum',
-    enumToTuple(PaymentProviderEnum)
-);
-
-export const PaymentStatusPgEnum = pgEnum('payment_status_enum', enumToTuple(PaymentStatusEnum));
-
-export const PaymentTypePgEnum = pgEnum('payment_type_enum', enumToTuple(PaymentTypeEnum));
-
-export const PurchaseStatusPgEnum = pgEnum('purchase_status_enum', enumToTuple(PurchaseStatusEnum));
-
-export const RefundReasonPgEnum = pgEnum('refund_reason_enum', enumToTuple(RefundReasonEnum));
-
-export const RefundStatusPgEnum = pgEnum('refund_status_enum', enumToTuple(RefundStatusEnum));
-
-export const SubscriptionStatusPgEnum = pgEnum(
-    'subscription_status_enum',
-    enumToTuple(SubscriptionStatusEnum)
-);
-
-export const SubscriptionItemSourceTypePgEnum = pgEnum(
-    'subscription_item_source_type_enum',
-    enumToTuple(SubscriptionItemSourceTypeEnum)
-);
-
-export const SubscriptionItemEntityTypePgEnum = pgEnum(
-    'subscription_item_entity_type_enum',
-    enumToTuple(SubscriptionItemEntityTypeEnum)
-);
-
-export const CampaignChannelPgEnum = pgEnum(
-    'campaign_channel_enum',
-    enumToTuple(CampaignChannelEnum)
-);
-
-export const CampaignStatusPgEnum = pgEnum('campaign_status_enum', enumToTuple(CampaignStatusEnum));
-
-export const MediaAssetTypePgEnum = pgEnum(
-    'media_asset_type_enum',
-    enumToTuple(MediaAssetTypeEnum)
-);
-
-export const AdSlotReservationStatusPgEnum = pgEnum(
-    'ad_slot_reservation_status_enum',
-    enumToTuple(AdSlotReservationStatusEnum)
-);
-
-export const SponsorshipEntityTypePgEnum = pgEnum(
-    'sponsorship_entity_type_enum',
-    enumToTuple(SponsorshipEntityTypeEnum)
-);
-
-export const SponsorshipStatusPgEnum = pgEnum(
-    'sponsorship_status_enum',
-    enumToTuple(SponsorshipStatusEnum)
-);
-
-export const FeaturedTypePgEnum = pgEnum('featured_type_enum', enumToTuple(FeaturedTypeEnum));
-
-export const FeaturedStatusPgEnum = pgEnum('featured_status_enum', enumToTuple(FeaturedStatusEnum));
-
-export const ProfessionalServiceCategoryPgEnum = pgEnum(
-    'professional_service_category_enum',
-    enumToTuple(ProfessionalServiceCategoryEnum)
-);
-
-export const ServiceOrderStatusPgEnum = pgEnum(
-    'service_order_status_enum',
-    enumToTuple(ServiceOrderStatusEnum)
-);
-
-export const ServiceListingStatusPgEnum = pgEnum(
-    'service_listing_status_enum',
-    enumToTuple(ServiceListingStatusEnum)
-);
-
-export const ListingStatusPgEnum = pgEnum('listing_status_enum', enumToTuple(ListingStatusEnum));
-
-export const InvoiceStatusPgEnum = pgEnum('invoice_status_enum', enumToTuple(InvoiceStatusEnum));
-
-export const DiscountTypePgEnum = pgEnum('discount_type_enum', enumToTuple(DiscountTypeEnum));
-
-export const NotificationChannelPgEnum = pgEnum(
-    'notification_channel_enum',
-    enumToTuple(NotificationChannelEnum)
-);
-
-export const NotificationRecipientTypePgEnum = pgEnum(
-    'notification_recipient_type_enum',
-    enumToTuple(NotificationRecipientTypeEnum)
-);
-
-export const NotificationStatusPgEnum = pgEnum(
-    'notification_status_enum',
-    enumToTuple(NotificationStatusEnum)
-);
-
-export const NotificationTypePgEnum = pgEnum(
-    'notification_type_enum',
-    enumToTuple(NotificationTypeEnum)
 );
