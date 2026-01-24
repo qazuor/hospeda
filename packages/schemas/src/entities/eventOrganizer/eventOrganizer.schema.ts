@@ -27,6 +27,16 @@ export const EventOrganizerSchema = z.object({
         .min(3, { message: 'zodError.eventOrganizer.name.min' })
         .max(100, { message: 'zodError.eventOrganizer.name.max' }),
 
+    slug: z
+        .string({
+            message: 'zodError.eventOrganizer.slug.required'
+        })
+        .min(3, { message: 'zodError.eventOrganizer.slug.min' })
+        .max(100, { message: 'zodError.eventOrganizer.slug.max' })
+        .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, {
+            message: 'zodError.eventOrganizer.slug.format'
+        }),
+
     description: z
         .string({
             message: 'zodError.eventOrganizer.description.invalidType'
