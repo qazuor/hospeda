@@ -48,18 +48,5 @@ export default function configureOpenAPI(app: AppOpenAPI) {
         apiLogger.error('Failed to configure OpenAPI:', String(error));
         throw error;
     }
-
-    // app.get(
-    //     '/docs/reference',
-    //     Scalar({
-    //         url: '/docs/openapi.json',
-    //         theme: 'kepler',
-    //         layout: 'classic',
-    //         defaultHttpClient: {
-    //             targetKey: 'js',
-    //             clientKey: 'fetch'
-    //         }
-    //         // biome-ignore lint/suspicious/noExplicitAny: Scalar middleware has type compatibility issues with Hono versions
-    //     }) as any
-    // );
+    // Note: Scalar API Reference is configured in routes/docs/scalar.ts
 }

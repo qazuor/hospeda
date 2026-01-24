@@ -2,7 +2,7 @@ import type { User } from '@repo/schemas';
 import { AuthProviderEnum } from '@repo/schemas';
 import { UserService } from '@repo/service-core';
 import { LRUCache } from 'lru-cache';
-import { createGuestActor } from './actor.js';
+import { createSystemActor } from './actor.js';
 import { apiLogger } from './logger.js';
 
 /**
@@ -48,12 +48,14 @@ export class UserCache {
     };
 
     private userService: UserService;
+    private statsIntervalId: ReturnType<typeof setInterval> | null = null;
 
     constructor() {
         this.userService = new UserService({ logger: apiLogger });
 
         // Log cache stats every 5 minutes
-        setInterval(
+        // Store interval ID to allow cleanup and prevent memory leaks
+        this.statsIntervalId = setInterval(
             () => {
                 const stats = this.getStats();
                 if (stats.hitCount > 0 || stats.missCount > 0) {
@@ -64,6 +66,20 @@ export class UserCache {
             },
             5 * 60 * 1000
         );
+    }
+
+    /**
+     * Cleanup resources when cache is no longer needed
+     * Call this method before destroying the cache instance to prevent memory leaks
+     */
+    destroy(): void {
+        if (this.statsIntervalId) {
+            clearInterval(this.statsIntervalId);
+            this.statsIntervalId = null;
+            apiLogger.debug('UserCache stats interval cleared');
+        }
+        this.cache.clear();
+        this.pendingQueries.clear();
     }
 
     /**
@@ -179,11 +195,17 @@ export class UserCache {
     /**
      * Query user from database
      * Private method that handles the actual DB interaction
+     *
+     * @note Uses SYSTEM actor for internal cache operations
+     * This is safe because the cache only returns user data to the actor middleware,
+     * which then creates the appropriate actor context for the request
      */
     private async queryDatabase(clerkUserId: string): Promise<User | null> {
-        const guestActor = createGuestActor();
+        // Use SYSTEM actor for internal cache operations
+        // This ensures the cache can access user data regardless of permission restrictions
+        const systemActor = createSystemActor();
 
-        const result = await this.userService.getByAuthProviderId(guestActor, {
+        const result = await this.userService.getByAuthProviderId(systemActor, {
             provider: AuthProviderEnum.CLERK,
             providerUserId: clerkUserId
         });

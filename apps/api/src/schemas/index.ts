@@ -14,11 +14,10 @@ export {
     searchWithPaginationSchema
 } from './base-schemas';
 
-// Response schemas
+// Response schemas (Zod schemas for OpenAPI)
+// NOTE: For runtime response helpers, import from '../utils/response-helpers'
 export {
     apiErrorCodes,
-    createErrorResponse,
-    createSuccessResponse,
     errorResponseSchema,
     httpStatusCodes,
     paginatedListResponseSchema,

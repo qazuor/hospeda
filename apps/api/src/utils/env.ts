@@ -1,12 +1,21 @@
 import { existsSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { createStartupValidator } from '@repo/config';
+import { createLogger } from '@repo/logger';
 /**
  * Environment configuration with validation
  * Uses @repo/config for centralized environment variable management
  */
 import { config } from 'dotenv';
 import { z } from 'zod';
+
+// ESM-compatible __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Create a logger for env loading - uses basic config since env isn't loaded yet
+const envLogger = createLogger('env');
 
 // Load environment variables from root directory
 const rootDir = resolve(__dirname, '../../../..');
@@ -27,13 +36,18 @@ for (const envFile of envFiles) {
     try {
         const result = config({ path: envFile });
         if (result?.error) {
-            console.warn(`⚠️  Could not load ${envFile}: ${result.error.message}`);
+            envLogger.warn({
+                message: 'Could not load env file',
+                file: envFile,
+                error: result.error.message
+            });
         }
     } catch (error) {
-        console.warn(
-            `⚠️  Error loading ${envFile}:`,
-            error instanceof Error ? error.message : String(error)
-        );
+        envLogger.warn({
+            message: 'Error loading env file',
+            file: envFile,
+            error: error instanceof Error ? error.message : String(error)
+        });
     }
 }
 
@@ -51,16 +65,15 @@ const ApiEnvSchema = z.object({
     HOSPEDA_API_URL: z.string().url('Must be a valid API URL'),
     HOSPEDA_DATABASE_URL: z.string().min(1, 'Database URL is required'),
 
-    // Authentication (Clerk) - Optional in test mode with mock defaults
-    HOSPEDA_CLERK_SECRET_KEY:
-        process.env.NODE_ENV === 'test'
-            ? z.string().default('YOUR_TEST_SECRET_HERE')
-            : z.string().min(1, 'Clerk secret key is required'),
-    HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY:
-        process.env.NODE_ENV === 'test'
-            ? z.string().default('YOUR_TEST_PUBLISHABLE_HERE')
-            : z.string().min(1, 'Clerk publishable key is required'),
+    // Authentication (Clerk) - Always required, no test defaults
+    // Use DISABLE_CLERK_AUTH=true in test environment to bypass authentication
+    HOSPEDA_CLERK_SECRET_KEY: z.string().min(1, 'Clerk secret key is required'),
+    HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().min(1, 'Clerk publishable key is required'),
     HOSPEDA_CLERK_WEBHOOK_SECRET: z.string().optional(),
+
+    // Test environment flags (explicit opt-in required)
+    DISABLE_CLERK_AUTH: z.coerce.boolean().default(false),
+    ALLOW_MOCK_ACTOR: z.coerce.boolean().default(false),
 
     // Logging Configuration (API-specific)
     API_LOG_LEVEL: z
@@ -120,6 +133,12 @@ const ApiEnvSchema = z.object({
     API_RATE_LIMIT_STANDARD_HEADERS: z.coerce.boolean().default(true),
     API_RATE_LIMIT_LEGACY_HEADERS: z.coerce.boolean().default(false),
     API_RATE_LIMIT_MESSAGE: z.string().default('Too many requests, please try again later.'),
+    // Trusted proxy configuration for rate limiting
+    // When true, trusts x-forwarded-for, x-real-ip, cf-connecting-ip headers
+    // Should only be true when behind a trusted reverse proxy (Vercel, Cloudflare, etc.)
+    API_RATE_LIMIT_TRUST_PROXY: z.coerce.boolean().default(false),
+    // Comma-separated list of trusted proxy IPs/CIDRs (optional, for future strict mode)
+    API_RATE_LIMIT_TRUSTED_PROXIES: z.string().default(''),
 
     // Auth Rate Limiting
     API_RATE_LIMIT_AUTH_ENABLED: z.coerce.boolean().default(true),
@@ -320,6 +339,9 @@ export const getRateLimitConfig = () => ({
     standardHeaders: safeEnv.getBoolean('API_RATE_LIMIT_STANDARD_HEADERS', true),
     legacyHeaders: safeEnv.getBoolean('API_RATE_LIMIT_LEGACY_HEADERS', false),
     message: safeEnv.get('API_RATE_LIMIT_MESSAGE', 'Too many requests, please try again later.'),
+    // Trusted proxy configuration
+    trustProxy: safeEnv.getBoolean('API_RATE_LIMIT_TRUST_PROXY', false),
+    trustedProxies: parseCommaSeparated(safeEnv.get('API_RATE_LIMIT_TRUSTED_PROXIES', '')),
 
     // Auth-specific
     authEnabled: safeEnv.getBoolean('API_RATE_LIMIT_AUTH_ENABLED', true),

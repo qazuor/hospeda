@@ -12,3 +12,16 @@ export type { ValidationConfig } from './validation-config';
 export { ValidationErrorCode } from './validation-errors.enum';
 export { ValidationError, validationMessages } from './validation-messages';
 export type { ValidationErrorDetail } from './validation-messages';
+
+/**
+ * Authorization types exports
+ */
+export { DEFAULT_AUTH_CONFIGS, DEFAULT_OWNERSHIP_CONFIGS } from './authorization';
+export type {
+    AuthorizationConfig,
+    AuthorizationContext,
+    AuthorizationLevel,
+    OwnableEntityType,
+    OwnershipConfig,
+    OwnershipField
+} from './authorization';

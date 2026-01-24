@@ -11,7 +11,8 @@ import { loggerMiddleware } from '../middlewares/logger';
 import { metricsMiddleware } from '../middlewares/metrics';
 import { rateLimitMiddleware } from '../middlewares/rate-limit';
 import { createErrorHandler, responseFormattingMiddleware } from '../middlewares/response';
-import { securityHeadersMiddleware } from '../middlewares/security';
+import { responseValidatorMiddleware } from '../middlewares/response-validator';
+import { originVerificationMiddleware, securityHeadersMiddleware } from '../middlewares/security';
 import { validationMiddleware } from '../middlewares/validation';
 import type { AppBindings, AppMiddleware, AppOpenAPI } from '../types';
 
@@ -65,17 +66,25 @@ export default function createApp() {
 
         // Security and access control
         .use(wrapMiddleware(corsMiddleware()))
+        .use(wrapMiddleware(originVerificationMiddleware))
         .use(wrapMiddleware(securityHeadersMiddleware))
         .use(wrapMiddleware(rateLimitMiddleware))
 
-        // Performance and optimization
+        // Performance: compression early for all responses
         .use(wrapMiddleware(compressionMiddleware()))
+
+        // Request processing: validation BEFORE caching to avoid caching invalid requests
+        .use(wrapMiddleware(validationMiddleware()))
+
+        // Performance: caching AFTER validation (only cache valid requests)
         .use(wrapMiddleware(cacheMiddleware()))
         .use(wrapMiddleware(metricsMiddleware()))
 
-        // Request processing
-        .use(wrapMiddleware(validationMiddleware()))
-        .use(wrapMiddleware(responseFormattingMiddleware));
+        // Response formatting
+        .use(wrapMiddleware(responseFormattingMiddleware))
+
+        // Response validation (development/test only by default)
+        .use(wrapMiddleware(responseValidatorMiddleware));
 
     // Mock authentication for testing (injected before real auth)
     if (mockAuthMiddleware) {

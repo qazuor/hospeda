@@ -11,12 +11,16 @@ import { apiLogger } from './logger';
 
 /**
  * Interface for pagination metadata
+ * Uses pageSize for consistency with standard pagination patterns
+ * Includes hasNextPage and hasPreviousPage for enhanced navigation
  */
 export interface PaginationMetadata {
     page: number;
-    limit: number;
+    pageSize: number;
     total: number;
     totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
 }
 
 /**
@@ -113,9 +117,9 @@ export const createPaginatedResponse = (
         },
         metadata: {
             timestamp: new Date().toISOString(),
-            requestId: c.get('requestId') || 'unknown',
-            total: pagination.total,
-            count: items.length
+            requestId: c.get('requestId') || 'unknown'
+            // Note: total and count are available in data.pagination
+            // Removed from metadata to avoid duplication
         }
     };
 
@@ -196,6 +200,38 @@ export const handleRouteError = (error: unknown, c: Context) => {
     }
 
     if (error instanceof Error) {
+        // Check for ServiceErrorCode prefix in message (e.g., "NOT_FOUND: Resource not found")
+        // This handles errors thrown with format `throw new Error(`${result.error.code}: ${result.error.message}`)`
+        const errorCodeMatch = error.message.match(/^([A-Z_]+):\s*(.+)$/);
+        if (errorCodeMatch?.[1] && errorCodeMatch[2]) {
+            const codeStr = errorCodeMatch[1];
+            const message = errorCodeMatch[2];
+            const code = codeStr as ServiceErrorCode;
+
+            // Map ServiceErrorCode to HTTP status codes
+            const statusCodeMap: Record<string, number> = {
+                [ServiceErrorCode.NOT_FOUND]: 404,
+                [ServiceErrorCode.VALIDATION_ERROR]: 400,
+                [ServiceErrorCode.INVALID_PAGINATION_PARAMS]: 400,
+                [ServiceErrorCode.ALREADY_EXISTS]: 409,
+                [ServiceErrorCode.UNAUTHORIZED]: 401,
+                [ServiceErrorCode.FORBIDDEN]: 403,
+                [ServiceErrorCode.NOT_IMPLEMENTED]: 501,
+                [ServiceErrorCode.INTERNAL_ERROR]: 500
+            };
+
+            const statusCode = statusCodeMap[code] ?? 500;
+            return createErrorResponse(
+                {
+                    code,
+                    message,
+                    details: process.env.NODE_ENV === 'development' ? error.message : undefined
+                },
+                c,
+                statusCode
+            );
+        }
+
         // Check for foreign key constraint violations (client errors, not server errors)
         if (error.message.includes('violates foreign key constraint')) {
             return createErrorResponse(
@@ -272,4 +308,165 @@ export const handleRouteError = (error: unknown, c: Context) => {
         c,
         500
     );
+};
+
+/**
+ * Interface for bulk operation result
+ */
+export interface BulkResultItem {
+    id: string;
+    success: boolean;
+    error?: {
+        code: string;
+        message: string;
+    };
+}
+
+/**
+ * Interface for bulk response structure
+ */
+export interface BulkResponse {
+    success: true;
+    data: {
+        results: BulkResultItem[];
+        summary: {
+            total: number;
+            succeeded: number;
+            failed: number;
+        };
+    };
+    metadata: {
+        timestamp: string;
+        requestId: string;
+    };
+}
+
+/**
+ * Helper function to create bulk operation responses
+ * Used for batch create/update/delete operations
+ * @param results - Array of bulk operation results
+ * @param c - Hono context
+ * @param statusCode - HTTP status code (default 200)
+ */
+export const createBulkResponse = (results: BulkResultItem[], c: Context, statusCode = 200) => {
+    const succeeded = results.filter((r) => r.success).length;
+    const failed = results.length - succeeded;
+
+    const response: BulkResponse = {
+        success: true,
+        data: {
+            results,
+            summary: {
+                total: results.length,
+                succeeded,
+                failed
+            }
+        },
+        metadata: {
+            timestamp: new Date().toISOString(),
+            requestId: c.get('requestId') || 'unknown'
+        }
+    };
+
+    return c.json(response, statusCode as 200 | 207);
+};
+
+/**
+ * Interface for accepted (async) response structure
+ */
+export interface AcceptedResponse {
+    success: true;
+    data: {
+        taskId: string;
+        status: 'pending';
+        message: string;
+    };
+    metadata: {
+        timestamp: string;
+        requestId: string;
+    };
+}
+
+/**
+ * Helper function to create accepted responses for async operations
+ * Returns HTTP 202 Accepted with a task ID for tracking
+ * @param taskId - Unique identifier for the async task
+ * @param c - Hono context
+ * @param message - Optional message describing the async operation
+ */
+export const createAcceptedResponse = (
+    taskId: string,
+    c: Context,
+    message = 'Request accepted for processing'
+) => {
+    const response: AcceptedResponse = {
+        success: true,
+        data: {
+            taskId,
+            status: 'pending',
+            message
+        },
+        metadata: {
+            timestamp: new Date().toISOString(),
+            requestId: c.get('requestId') || 'unknown'
+        }
+    };
+
+    return c.json(response, 202);
+};
+
+/**
+ * Helper function to create no content responses
+ * Returns HTTP 204 No Content
+ * Used for successful delete operations or updates that don't return data
+ * @param c - Hono context
+ */
+export const createNoContentResponse = (c: Context) => {
+    return c.body(null, 204);
+};
+
+/**
+ * Helper function to throw ServiceError from service result
+ * Provides a clean, consistent way to handle service errors in route handlers
+ *
+ * @example
+ * ```ts
+ * const result = await service.findById(id);
+ * throwIfError(result);
+ * return result.data;
+ * ```
+ *
+ * @param result - Service result with potential error
+ * @throws ServiceError if result contains an error
+ */
+export const throwIfError = <T>(result: {
+    error?: { code: ServiceErrorCode; message: string };
+    data?: T;
+}): asserts result is { data: T; error?: undefined } => {
+    if (result.error) {
+        throw new ServiceError(result.error.code, result.error.message);
+    }
+};
+
+/**
+ * Helper function to throw ServiceError from service result, with custom error message
+ *
+ * @example
+ * ```ts
+ * const result = await service.findById(id);
+ * throwIfErrorWithMessage(result, 'Accommodation not found');
+ * return result.data;
+ * ```
+ *
+ * @param result - Service result with potential error
+ * @param customMessage - Custom message to use in the error
+ * @throws ServiceError if result contains an error
+ */
+export const throwIfErrorWithMessage = <T>(
+    result: { error?: { code: ServiceErrorCode; message: string }; data?: T },
+    customMessage: string
+): asserts result is { data: T; error?: undefined } => {
+    if (result.error) {
+        throw new ServiceError(result.error.code, customMessage);
+    }
 };

@@ -20,6 +20,22 @@ export const createGuestActor = (): Actor => ({
 });
 
 /**
+ * Creates a SYSTEM actor for internal operations
+ * SYSTEM actors have all permissions and should ONLY be used for:
+ * - Internal cache operations
+ * - Background jobs
+ * - System-level data access
+ *
+ * @warning NEVER expose this actor to user-facing code or external requests
+ * @returns {Actor} A system actor with all permissions
+ */
+export const createSystemActor = (): Actor => ({
+    id: '00000000-0000-4000-8000-000000000001', // Valid UUID v4 for system actor
+    role: RoleEnum.SUPER_ADMIN,
+    permissions: Object.values(PermissionEnum)
+});
+
+/**
  * Check if an actor is a guest user
  * @param actor - The actor to check
  * @returns {boolean} True if the actor is a guest user

@@ -37,15 +37,15 @@ export const paginationQuerySchema = z.object({
             },
             example: 1
         }),
-    limit: z.coerce
+    pageSize: z.coerce
         .number()
         .int()
-        .min(1, { message: 'zodError.common.pagination.limit.min_value' })
-        .max(100, { message: 'zodError.common.pagination.limit.max_value' })
+        .min(1, { message: 'zodError.common.pagination.pageSize.min_value' })
+        .max(100, { message: 'zodError.common.pagination.pageSize.max_value' })
         .default(20)
         .openapi({
             param: {
-                name: 'limit',
+                name: 'pageSize',
                 in: 'query'
             },
             example: 20

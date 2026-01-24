@@ -42,12 +42,15 @@ export const errorResponseSchema = z.object({
 
 /**
  * Pagination metadata schema
+ * Enhanced with hasNextPage/hasPreviousPage for better navigation
  */
 export const paginationMetadataSchema = z.object({
     page: z.number().int().positive(),
-    limit: z.number().int().positive(),
+    pageSize: z.number().int().positive(),
     total: z.number().int().nonnegative(),
-    totalPages: z.number().int().nonnegative()
+    totalPages: z.number().int().nonnegative(),
+    hasNextPage: z.boolean(),
+    hasPreviousPage: z.boolean()
 });
 
 /**
@@ -100,84 +103,58 @@ export const apiErrorCodes = {
 } as const;
 
 /**
- * Standard API response types
+ * Success response type
  */
-export type ApiResponse<T = unknown> =
-    | {
-          success: true;
-          data: T;
-          metadata?: {
-              timestamp: string;
-              version?: string;
-              requestId?: string;
-              pagination?: {
-                  page: number;
-                  limit: number;
-                  total: number;
-                  totalPages: number;
-              };
-          };
-      }
-    | {
-          success: false;
-          error: {
-              code: string;
-              message: string;
-              details?: unknown;
-          };
-          metadata?: {
-              timestamp: string;
-              version?: string;
-              requestId?: string;
-          };
-      };
+export type ApiSuccessResponse<T = unknown> = {
+    success: true;
+    data: T;
+    metadata?: {
+        timestamp: string;
+        version?: string;
+        requestId?: string;
+        pagination?: PaginationData;
+    };
+};
+
+/**
+ * Error response type
+ */
+export type ApiErrorResponse = {
+    success: false;
+    error: {
+        code: string;
+        message: string;
+        details?: unknown;
+    };
+    metadata?: {
+        timestamp: string;
+        version?: string;
+        requestId?: string;
+    };
+};
+
+/**
+ * Standard API response types (union of success and error)
+ */
+export type ApiResponse<T = unknown> = ApiSuccessResponse<T> | ApiErrorResponse;
 
 /**
  * Pagination data type
+ * Unified pagination type used across the API
+ * Inferred from paginationMetadataSchema
  */
-export type PaginationData = {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-};
+export type PaginationData = z.infer<typeof paginationMetadataSchema>;
 
 /**
- * Helper function to create a success response
+ * ============================================================================
+ * RUNTIME HELPER FUNCTIONS
+ * ============================================================================
+ * For runtime response helpers that return c.json(), use:
+ * - import { createResponse, createErrorResponse, createPaginatedResponse, ... } from '../utils/response-helpers';
+ *
+ * This file (response-schemas.ts) is for:
+ * - Zod schemas for OpenAPI documentation
+ * - Type definitions inferred from schemas
+ * - HTTP status codes and error code constants
+ * ============================================================================
  */
-export const createSuccessResponse = <T>(data: T, pagination?: PaginationData): ApiResponse<T> => {
-    const response: ApiResponse<T> = {
-        success: true,
-        data
-    };
-
-    if (pagination) {
-        response.metadata = {
-            timestamp: new Date().toISOString(),
-            pagination
-        };
-    }
-
-    return response;
-};
-
-/**
- * Helper function to create an error response
- */
-export const createErrorResponse = (
-    code: string,
-    message: string,
-    details?: unknown
-): ApiResponse => {
-    return {
-        success: false,
-        error: {
-            code,
-            message,
-            ...(details ? { details } : {})
-        },
-        metadata: {
-            timestamp: new Date().toISOString()
-        }
-    };
-};

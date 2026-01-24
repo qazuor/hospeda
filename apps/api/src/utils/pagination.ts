@@ -3,6 +3,16 @@
  * Centralizes pagination calculation logic to avoid duplication across routes
  */
 
+/**
+ * Maximum allowed page size to prevent excessive query results
+ */
+export const MAX_PAGE_SIZE = 100;
+
+/**
+ * Default page size when not specified
+ */
+export const DEFAULT_PAGE_SIZE = 20;
+
 export type PaginationParams = {
     page: number;
     pageSize: number;
@@ -40,15 +50,17 @@ export function calculatePagination(params: PaginationParams): PaginationResult 
 
 /**
  * Extract and normalize pagination parameters from query object
+ * Clamps pageSize to MAX_PAGE_SIZE to prevent excessive query results
  * @param query - Query object that may contain page and pageSize
- * @returns Normalized pagination parameters with defaults
+ * @returns Normalized pagination parameters with defaults and clamped values
  */
 export function extractPaginationParams(query: Record<string, unknown> = {}): {
     page: number;
     pageSize: number;
 } {
-    const page = Number(query.page) || 1;
-    const pageSize = Number(query.pageSize) || 20;
+    const page = Math.max(1, Number(query.page) || 1);
+    const requestedPageSize = Number(query.pageSize) || DEFAULT_PAGE_SIZE;
+    const pageSize = Math.min(Math.max(1, requestedPageSize), MAX_PAGE_SIZE);
 
     return { page, pageSize };
 }
