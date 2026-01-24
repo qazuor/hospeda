@@ -12,7 +12,7 @@ export const features: ReturnType<typeof pgTable> = pgTable('features', {
     description: text('description'),
     icon: text('icon'),
     isBuiltin: boolean('is_builtin').notNull().default(false),
-    is_featured: boolean('is_featured').notNull().default(false),
+    isFeatured: boolean('is_featured').notNull().default(false),
     lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
     adminInfo: jsonb('admin_info').$type<AdminInfoType>(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),

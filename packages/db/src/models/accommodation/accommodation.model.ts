@@ -5,16 +5,10 @@ import type {
     UserSummary
 } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
-import { and, asc, count, desc, eq, gte, inArray, lte } from 'drizzle-orm';
+import { and, asc, count, desc, eq, gte, lte } from 'drizzle-orm';
 import { BaseModel } from '../../base/base.model';
 import { getDb } from '../../client';
 import { accommodations } from '../../schemas/accommodation/accommodation.dbschema';
-
-// Temporary interfaces for accommodation-related data
-interface AccommodationRow {
-    accommodationId: string;
-    [key: string]: unknown;
-}
 
 export class AccommodationModel extends BaseModel<Accommodation> {
     protected table = accommodations;
@@ -202,6 +196,8 @@ export class AccommodationModel extends BaseModel<Accommodation> {
     /**
      * Finds top-rated accommodations with optional filters and relations loaded.
      * Orders by averageRating DESC then reviewsCount DESC and limits the result size.
+     *
+     * Optimized to load all relations in a single query using Drizzle's `with` clause.
      */
     public async findTopRated(params: {
         limit?: number;
@@ -211,6 +207,8 @@ export class AccommodationModel extends BaseModel<Accommodation> {
     }): Promise<Accommodation[]> {
         const db = getDb();
         const { limit = 10, destinationId, type, onlyFeatured = false } = params ?? {};
+
+        // Single query with all relations loaded via Drizzle's `with` clause
         const results = await db.query.accommodations.findMany({
             where: (fields, { eq }) => {
                 const clauses: SQL<unknown>[] = [];
@@ -221,43 +219,16 @@ export class AccommodationModel extends BaseModel<Accommodation> {
                 if (clauses.length === 1) return clauses[0];
                 return and(...clauses);
             },
-            with: { destination: true },
+            with: {
+                destination: true,
+                amenities: { with: { amenity: true } },
+                features: { with: { feature: true } }
+            },
             orderBy: [desc(accommodations.averageRating), desc(accommodations.reviewsCount)],
             limit
         });
-        const items = results as unknown as Accommodation[];
-        if (!items || items.length === 0) return items;
-        const ids = items.map((i) => i.id);
-        // Fetch amenities with amenity joined
-        const [amenitiesRows, featuresRows] = await Promise.all([
-            db.query.rAccommodationAmenity.findMany({
-                where: (fields) => inArray(fields.accommodationId, ids),
-                with: { amenity: true }
-            }),
-            db.query.rAccommodationFeature.findMany({
-                where: (fields) => inArray(fields.accommodationId, ids),
-                with: { feature: true }
-            })
-        ]);
-        const amenitiesByAcc = new Map<string, unknown[]>();
-        for (const row of amenitiesRows as unknown as AccommodationRow[]) {
-            const accId = row.accommodationId;
-            const arr = amenitiesByAcc.get(accId) ?? [];
-            arr.push(row);
-            amenitiesByAcc.set(accId, arr);
-        }
-        const featuresByAcc = new Map<string, unknown[]>();
-        for (const row of featuresRows as unknown as AccommodationRow[]) {
-            const accId = row.accommodationId;
-            const arr = featuresByAcc.get(accId) ?? [];
-            arr.push(row);
-            featuresByAcc.set(accId, arr);
-        }
-        return items.map((i) => ({
-            ...i,
-            amenities: amenitiesByAcc.get(i.id),
-            features: featuresByAcc.get(i.id)
-        })) as unknown as Accommodation[];
+
+        return results as unknown as Accommodation[];
     }
 
     /**

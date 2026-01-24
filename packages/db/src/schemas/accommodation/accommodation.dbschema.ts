@@ -87,7 +87,18 @@ export const accommodations: ReturnType<typeof pgTable> = pgTable(
         ).on(table.visibility, table.isFeatured),
         accommodations_destinationId_visibility_idx: index(
             'accommodations_destinationId_visibility_idx'
-        ).on(table.destinationId, table.visibility)
+        ).on(table.destinationId, table.visibility),
+        accommodations_ownerId_idx: index('accommodations_ownerId_idx').on(table.ownerId),
+        accommodations_type_idx: index('accommodations_type_idx').on(table.type),
+        accommodations_createdAt_idx: index('accommodations_createdAt_idx').on(table.createdAt),
+        accommodations_destinationId_isFeatured_visibility_idx: index(
+            'accommodations_destinationId_isFeatured_visibility_idx'
+        ).on(table.destinationId, table.isFeatured, table.visibility),
+        // Performance indexes for soft delete and moderation queries
+        accommodations_deletedAt_idx: index('accommodations_deletedAt_idx').on(table.deletedAt),
+        accommodations_moderationState_idx: index('accommodations_moderationState_idx').on(
+            table.moderationState
+        )
     })
 );
 

@@ -65,6 +65,12 @@ export const destinations: ReturnType<typeof pgTable> = pgTable(
         destinations_visibility_isFeatured_idx: index('destinations_visibility_isFeatured_idx').on(
             table.visibility,
             table.isFeatured
+        ),
+        // Performance indexes for common query patterns
+        destinations_createdById_idx: index('destinations_createdById_idx').on(table.createdById),
+        destinations_deletedAt_idx: index('destinations_deletedAt_idx').on(table.deletedAt),
+        destinations_moderationState_idx: index('destinations_moderationState_idx').on(
+            table.moderationState
         )
     })
 );

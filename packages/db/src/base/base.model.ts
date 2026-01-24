@@ -9,6 +9,16 @@ import { DbError } from '../utils/error';
 import { logError, logQuery } from '../utils/logger';
 
 /**
+ * Maximum allowed page size to prevent memory issues with large datasets
+ */
+const MAX_PAGE_SIZE = 100;
+
+/**
+ * Default page size when pagination is not explicitly provided
+ */
+const DEFAULT_PAGE_SIZE = 20;
+
+/**
  * Abstract base class for all database models.
  * Provides standardized CRUD, soft/hard delete, restore, and relation methods with logging and error handling.
  * Extend this class for each domain model and provide the required schema/table and entity name.
@@ -41,12 +51,11 @@ export abstract class BaseModel<T> {
     }
 
     /**
-     * Finds entities matching a where clause.
+     * Finds entities matching a where clause with mandatory pagination.
      *
-     * If pagination options (`page`, `pageSize`) are provided, it returns a paginated result,
-     * including a total count of all matching records.
-     * If no pagination is provided, it returns all matching entities, and `total` will be the
-     * length of the returned `items` array.
+     * Pagination is ALWAYS applied to prevent unbounded queries:
+     * - If no pagination options are provided, defaults to page=1, pageSize=DEFAULT_PAGE_SIZE
+     * - pageSize is capped at MAX_PAGE_SIZE (100) to prevent memory issues
      *
      * @param where - The filter object to apply.
      * @param options - Optional pagination parameters: `{ page, pageSize }`.
@@ -60,31 +69,27 @@ export abstract class BaseModel<T> {
     ): Promise<{ items: T[]; total: number }> {
         const db = this.getClient(tx);
         const safeWhere = where ?? {};
-        const page = options?.page;
-        const pageSize = options?.pageSize;
-        const isPaginated = page !== undefined && pageSize !== undefined;
-        const logContext = { where: safeWhere, page, pageSize };
+
+        // Always apply pagination - default to page 1 with DEFAULT_PAGE_SIZE
+        const page = options?.page ?? 1;
+        // Cap pageSize at MAX_PAGE_SIZE to prevent memory issues
+        const requestedPageSize = options?.pageSize ?? DEFAULT_PAGE_SIZE;
+        const pageSize = Math.min(requestedPageSize, MAX_PAGE_SIZE);
+
+        const logContext = { where: safeWhere, page, pageSize, requestedPageSize };
 
         try {
             const whereClause = buildWhereClause(safeWhere, this.table as unknown);
+            const offset = (page - 1) * pageSize;
 
-            if (isPaginated) {
-                const offset = (page - 1) * pageSize;
-                const [items, total] = await Promise.all([
-                    db.select().from(this.table).where(whereClause).limit(pageSize).offset(offset),
-                    this.count(safeWhere, tx)
-                ]);
+            const [items, total] = await Promise.all([
+                db.select().from(this.table).where(whereClause).limit(pageSize).offset(offset),
+                this.count(safeWhere, tx)
+            ]);
 
-                const result = { items: items as T[], total };
-                try {
-                    logQuery(this.entityName, 'findAll', logContext, result);
-                } catch {}
-                return result;
-            }
-            const items = (await db.select().from(this.table).where(whereClause)) || [];
-            const result = { items: items as T[], total: items.length };
+            const result = { items: items as T[], total };
             try {
-                logQuery(this.entityName, 'findAll', { where: safeWhere }, result);
+                logQuery(this.entityName, 'findAll', logContext, result);
             } catch {}
             return result;
         } catch (error) {
@@ -413,6 +418,10 @@ export abstract class BaseModel<T> {
      * Finds all entities with specified relations populated.
      * Supports nested relations (e.g., { sponsorship: { sponsor: true } })
      *
+     * Pagination is ALWAYS applied to prevent unbounded queries:
+     * - If no pagination options are provided, defaults to page=1, pageSize=DEFAULT_PAGE_SIZE
+     * - pageSize is capped at MAX_PAGE_SIZE (100) to prevent memory issues
+     *
      * @param relations Relations to include (e.g., { destination: true, sponsorship: { sponsor: true } })
      * @param where Filter conditions
      * @param options Pagination and other options
@@ -424,7 +433,11 @@ export abstract class BaseModel<T> {
         options: PaginatedListOptions = {}
     ): Promise<{ items: T[]; total: number }> {
         const db = this.getClient();
-        const { page = 1, pageSize = 20 } = options;
+        // Always apply pagination - default to page 1 with DEFAULT_PAGE_SIZE
+        const page = options.page ?? 1;
+        // Cap pageSize at MAX_PAGE_SIZE to prevent memory issues
+        const requestedPageSize = options.pageSize ?? DEFAULT_PAGE_SIZE;
+        const pageSize = Math.min(requestedPageSize, MAX_PAGE_SIZE);
         const offset = (page - 1) * pageSize;
         const safeWhere = where ?? {};
 
@@ -504,60 +517,31 @@ export abstract class BaseModel<T> {
                 return transformed;
             };
 
-            // Check if pagination is requested
-            const isPaginated = page !== undefined && pageSize !== undefined;
-
-            if (isPaginated) {
-                const transformedRelations = transformRelationsForDrizzle(relations);
-                const queryOptions = {
-                    where: whereClause,
-                    with: transformedRelations,
-                    limit: pageSize,
-                    offset: offset
-                };
-
-                // Execute query with relations and get total count
-                const [items, totalCount] = await Promise.all([
-                    typedQueryTable.findMany(queryOptions),
-                    this.count(safeWhere)
-                ]);
-
-                const result = { items: items as T[], total: totalCount };
-
-                logQuery(
-                    this.entityName,
-                    'findAllWithRelations',
-                    { where: safeWhere, options, relations },
-                    {
-                        itemCount: items.length,
-                        total: totalCount,
-                        hasRelations: true,
-                        isPaginated: true
-                    }
-                );
-
-                return result;
-            }
-
-            // No pagination - get all items
+            // Pagination is always applied to prevent unbounded queries
             const transformedRelations = transformRelationsForDrizzle(relations);
             const queryOptions = {
                 where: whereClause,
-                with: transformedRelations
+                with: transformedRelations,
+                limit: pageSize,
+                offset: offset
             };
 
-            const items = await typedQueryTable.findMany(queryOptions);
-            const result = { items: items as T[], total: items.length };
+            // Execute query with relations and get total count
+            const [items, totalCount] = await Promise.all([
+                typedQueryTable.findMany(queryOptions),
+                this.count(safeWhere)
+            ]);
+
+            const result = { items: items as T[], total: totalCount };
 
             logQuery(
                 this.entityName,
                 'findAllWithRelations',
-                { where: safeWhere, options, relations },
+                { where: safeWhere, options: { page, pageSize, requestedPageSize }, relations },
                 {
                     itemCount: items.length,
-                    total: items.length,
-                    hasRelations: true,
-                    isPaginated: false
+                    total: totalCount,
+                    hasRelations: true
                 }
             );
 

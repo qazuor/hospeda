@@ -59,7 +59,11 @@ export const events: ReturnType<typeof pgTable> = pgTable(
         events_category_visibility_idx: index('events_category_visibility_idx').on(
             table.category,
             table.visibility
-        )
+        ),
+        // Performance indexes for common query patterns
+        events_deletedAt_idx: index('events_deletedAt_idx').on(table.deletedAt),
+        events_moderationState_idx: index('events_moderationState_idx').on(table.moderationState),
+        events_authorId_idx: index('events_authorId_idx').on(table.authorId)
     })
 );
 
