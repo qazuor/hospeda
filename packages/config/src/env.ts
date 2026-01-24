@@ -2,6 +2,13 @@ import type { Plugin } from 'vite';
 import { z } from 'zod';
 
 /**
+ * Note: This package uses console.* directly because:
+ * 1. @repo/logger depends on @repo/config, so using logger here would create a circular dependency
+ * 2. This is low-level config/validation code that runs before other packages are fully loaded
+ * 3. These messages are startup-time diagnostics, not runtime application logging
+ */
+
+/**
  * Mapping of public environment variable names to their source names
  * @example { PUBLIC_API_URL: 'HOSPEDA_API_URL' }
  */
@@ -48,8 +55,6 @@ export function validateEnv<T>(schema: z.ZodSchema<T>, context: string): T {
             console.warn(
                 '🔍 Looking for variables starting with: HOSPEDA_, API_, TODO_LINEAR_, DB_, NODE_ENV'
             );
-        } else {
-            // Found relevant environment variables
         }
 
         const result = schema.parse(process.env);
@@ -195,7 +200,7 @@ export function exposeSharedEnv(
             if (validate && schema) {
                 try {
                     schema.parse(process.env);
-                    // biome-ignore lint/suspicious/noConsoleLog: <explanation>
+                    // biome-ignore lint/suspicious/noConsoleLog: Startup validation message
                     console.log(`✅ ${context} environment validation passed`);
                 } catch (error) {
                     if (error instanceof z.ZodError) {
