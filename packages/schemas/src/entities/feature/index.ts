@@ -1,6 +1,9 @@
 // Core schemas
 export * from './feature.schema.js'; // Main entity schema
 
+// Access schemas
+export * from './feature.access.schema.js'; // Public, Protected, Admin access schemas
+
 // CRUD operations
 export * from './feature.crud.schema.js'; // Create, Update, Delete, Restore schemas
 

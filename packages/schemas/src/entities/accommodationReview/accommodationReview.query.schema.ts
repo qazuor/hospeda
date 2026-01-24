@@ -352,10 +352,12 @@ export const AccommodationReviewListByAccommodationOutputSchema =
 
 /**
  * Wrapper schema for accommodation review list responses
- * Follows the established pattern: { accommodationReviews: AccommodationReview[] }
+ * Follows the established pattern: { accommodationReviews: AccommodationReview[], total?: number }
+ * The total field is optional for backwards compatibility but should be included for pagination
  */
 export const AccommodationReviewListWrapperSchema = z.object({
-    accommodationReviews: z.array(AccommodationReviewListItemSchema)
+    accommodationReviews: z.array(AccommodationReviewListItemSchema),
+    total: z.number().int().min(0).optional()
 });
 
 /**

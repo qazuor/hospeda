@@ -1,6 +1,9 @@
 // Core schemas
 export * from './user.schema.js'; // Main entity schema
 
+// Access schemas (public, protected, admin)
+export * from './user.access.schema.js'; // Access-level schemas
+
 // CRUD operations
 export * from './user.crud.schema.js'; // Create, Update, Delete, Restore schemas
 

@@ -212,6 +212,49 @@ export const PostUpdateHttpSchema = PostCreateHttpSchema.partial();
 
 export type PostUpdateHttp = z.infer<typeof PostUpdateHttpSchema>;
 
+/**
+ * HTTP-compatible post patch schema
+ * Same as update schema for PATCH requests
+ */
+export const PostPatchHttpSchema = PostUpdateHttpSchema;
+
+export type PostPatchHttp = z.infer<typeof PostPatchHttpSchema>;
+
+/**
+ * HTTP-compatible schema for posts by category
+ * Specific schema for posts filtered by category
+ */
+export const PostsByCategoryHttpSchema = BaseHttpSearchSchema.extend({
+    // Standard pagination
+    page: z.coerce.number().int().min(1).default(1),
+    pageSize: z.coerce.number().int().min(1).max(100).default(20),
+
+    // Sorting
+    sortBy: z.string().optional(),
+    sortOrder: z.enum(['asc', 'desc']).default('desc'),
+
+    // Search query
+    q: z.string().optional(),
+
+    // Category-specific filters
+    isFeatured: createBooleanQueryParam('Filter featured posts'),
+    isPublished: createBooleanQueryParam('Filter published posts').default(true)
+});
+
+export type PostsByCategoryHttp = z.infer<typeof PostsByCategoryHttpSchema>;
+
+/**
+ * Post slug schema
+ * Schema for validating post slugs in URL parameters
+ */
+export const PostSlugSchema = z
+    .string()
+    .min(1)
+    .max(200)
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
+
+export type PostSlug = z.infer<typeof PostSlugSchema>;
+
 // ============================================================================
 // HTTP TO DOMAIN CONVERSION FUNCTIONS
 // ============================================================================
@@ -219,7 +262,7 @@ export type PostUpdateHttp = z.infer<typeof PostUpdateHttpSchema>;
 import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
 import { ModerationStatusEnum } from '../../enums/moderation-status.enum.js';
 import { VisibilityEnum } from '../../enums/visibility.enum.js';
-import type { PostCreateInput, PostUpdateInput } from './post.crud.schema.js';
+import type { PostCreateInput, PostPatchInput, PostUpdateInput } from './post.crud.schema.js';
 import type { PostSearchInput } from './post.query.schema.js';
 
 /**
@@ -327,3 +370,10 @@ export const httpToDomainPostUpdate = (httpData: PostUpdateHttp): PostUpdateInpu
     // Note: Lifecycle, visibility, and moderation states typically
     // should not be updated via simple HTTP requests for security
 });
+
+/**
+ * Convert HTTP patch data to domain patch input
+ * Same as update (both handle partial updates)
+ */
+export const httpToDomainPostPatch = (httpData: PostPatchHttp): PostPatchInput =>
+    httpToDomainPostUpdate(httpData);

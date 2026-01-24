@@ -1,6 +1,9 @@
 // Core schemas
 export * from './attraction.schema.js'; // Main entity schema
 
+// Access level schemas
+export * from './attraction.access.schema.js'; // Public, Protected, Admin schemas
+
 // CRUD operations
 export * from './attraction.crud.schema.js'; // Create, Update, Delete, Restore schemas
 
