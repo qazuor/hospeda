@@ -9,6 +9,7 @@ import { createSeedFactory } from '../utils/seedFactory.js';
  */
 const eventLocationNormalizer = (data: Record<string, unknown>) => {
     return {
+        slug: data.slug as string,
         state: data.state as string,
         city: data.city as string,
         country: data.country as string,

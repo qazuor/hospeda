@@ -2,6 +2,7 @@
     "$schema": "../../schemas/eventOrganizer.schema.json",
     "id": "001-eventOrganizer-turismo-de-gualeguaychu",
     "name": "Cámara de Turismo de Gualeguaychú",
+    "slug": "camara-turismo-gualeguaychu",
     "logo": "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop",
     "contactInfo": {
         "workEmail": "info@turismogualeaguaychu.com",

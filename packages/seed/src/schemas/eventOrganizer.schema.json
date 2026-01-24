@@ -16,6 +16,10 @@
             "type": "string",
             "description": "Organizer name"
         },
+        "slug": {
+            "type": "string",
+            "description": "URL-friendly slug for the organizer"
+        },
         "logo": {
             "type": "string",
             "description": "Organizer logo URL"

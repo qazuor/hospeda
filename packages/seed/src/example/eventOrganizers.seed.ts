@@ -9,6 +9,7 @@ import { createSeedFactory } from '../utils/seedFactory.js';
 const eventOrganizerNormalizer = (data: Record<string, unknown>) => {
     return {
         name: data.name as string,
+        slug: data.slug as string,
         logo: data.logo as string,
         contactInfo: data.contactInfo,
         socialNetworks: data.socialNetworks,

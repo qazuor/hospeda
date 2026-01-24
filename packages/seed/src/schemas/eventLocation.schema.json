@@ -12,6 +12,10 @@
             "type": "string",
             "description": "EventLocation ID (UUID)"
         },
+        "slug": {
+            "type": "string",
+            "description": "URL-friendly slug for the location"
+        },
         "state": {
             "type": "string",
             "description": "Location state"

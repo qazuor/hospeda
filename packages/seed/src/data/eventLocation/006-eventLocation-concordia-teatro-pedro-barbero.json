@@ -1,6 +1,7 @@
 {
     "$schema": "../../schemas/eventLocation.schema.json",
     "id": "006-eventLocation-concordia-teatro-pedro-barbero",
+    "slug": "teatro-pedro-barbero",
     "state": "Entre Ríos",
     "city": "Concordia",
     "country": "Argentina",

@@ -78,7 +78,10 @@ const preProcessBookmark = async (item: unknown, context: SeedContext) => {
             context.actor = {
                 id: realUserId,
                 role: RoleEnum.SUPER_ADMIN, // Default role, should be updated with actual user role
-                permissions: [PermissionEnum.USER_BOOKMARK_MANAGE] as PermissionEnum[] // Default permissions, should be updated with actual user permissions
+                permissions: [
+                    PermissionEnum.USER_BOOKMARK_CREATE,
+                    PermissionEnum.USER_BOOKMARK_MANAGE
+                ] as PermissionEnum[] // Required permissions for bookmark creation
             };
         }
     }

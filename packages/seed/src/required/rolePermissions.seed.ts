@@ -347,6 +347,40 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.POST_SPONSORSHIP_MANAGE
     ],
 
+    [RoleEnum.CLIENT_MANAGER]: [
+        // USER: Client management permissions
+        PermissionEnum.USER_READ_ALL,
+        PermissionEnum.USER_CREATE,
+        PermissionEnum.USER_DELETE,
+        PermissionEnum.USER_VIEW_PROFILE,
+        PermissionEnum.USER_BLOCK,
+        PermissionEnum.USER_RESTORE,
+        PermissionEnum.USER_SOFT_DELETE_VIEW,
+        PermissionEnum.USER_ACTIVITY_LOG_VIEW,
+        PermissionEnum.USER_UPDATE_PROFILE,
+        PermissionEnum.USER_SETTINGS_UPDATE,
+
+        // ACCOMMODATION: View access for client support
+        PermissionEnum.ACCOMMODATION_VIEW_ALL,
+        PermissionEnum.ACCOMMODATION_VIEW_PRIVATE,
+
+        // DESTINATION: View access
+        PermissionEnum.DESTINATION_VIEW_ALL,
+        PermissionEnum.DESTINATION_VIEW_PRIVATE,
+
+        // SYSTEM: Dashboard and analytics
+        PermissionEnum.DASHBOARD_BASE_VIEW,
+        PermissionEnum.DASHBOARD_FULL_VIEW,
+        PermissionEnum.STATS_VIEW,
+        PermissionEnum.ANALYTICS_VIEW,
+        PermissionEnum.NOTIFICATION_SEND,
+
+        // ACCESS: Admin panel and APIs
+        PermissionEnum.ACCESS_PANEL_ADMIN,
+        PermissionEnum.ACCESS_API_ADMIN,
+        PermissionEnum.ACCESS_API_PUBLIC
+    ],
+
     [RoleEnum.EDITOR]: [
         // EVENT: Create, update, publish, manage
         PermissionEnum.EVENT_CREATE,

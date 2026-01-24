@@ -2,6 +2,7 @@
     "$schema": "../../schemas/eventOrganizer.schema.json",
     "id": "005-eventOrganizer-productores-rurales",
     "name": "Asociación de Productores Rurales",
+    "slug": "asociacion-productores-rurales",
     "logo": "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=200&h=200&fit=crop",
     "contactInfo": {
         "workEmail": "info@productoresruraleser.org",
