@@ -5,6 +5,7 @@ import {
     AccommodationByDestinationParamsSchema,
     type AccommodationCreateInput,
     AccommodationCreateInputSchema,
+    type AccommodationFaq,
     type AccommodationFaqAddInput,
     AccommodationFaqAddInputSchema,
     type AccommodationFaqListInput,
@@ -703,6 +704,7 @@ export class AccommodationService extends BaseCrudService<
 
     /**
      * Gets all FAQs for an accommodation.
+     * Optimized to use a single query with relations.
      * @param actor - The actor performing the action
      * @param data - The input object containing accommodationId
      * @returns The list of FAQs
@@ -716,16 +718,18 @@ export class AccommodationService extends BaseCrudService<
             input: { ...data, actor },
             schema: AccommodationFaqListInputSchema,
             execute: async (validated, actor) => {
-                const accommodation = await this.model.findById(validated.accommodationId);
+                // Single query to load accommodation with FAQs
+                const accommodation = await this.model.findWithRelations(
+                    { id: validated.accommodationId },
+                    { faqs: true }
+                );
                 if (!accommodation) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
                 }
                 this._canView(actor, accommodation);
-                const faqModel = new AccommodationFaqModel();
-                const { items: faqs } = await faqModel.findAll({
-                    accommodationId: validated.accommodationId
-                });
-                return { faqs };
+                // FAQs are already loaded via the relation
+                const faqs = (accommodation as unknown as { faqs?: unknown[] }).faqs ?? [];
+                return { faqs: faqs as AccommodationFaq[] };
             }
         });
     }

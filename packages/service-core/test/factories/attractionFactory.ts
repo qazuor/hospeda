@@ -11,7 +11,7 @@ export class AttractionFactoryBuilder {
 
     constructor() {
         this.attraction = {
-            id: getMockId('feature') as AttractionIdType,
+            id: getMockId('attraction') as AttractionIdType,
             slug: 'test-attraction',
             name: 'Test Attraction',
             description: 'A test attraction',

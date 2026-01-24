@@ -175,10 +175,10 @@ export class AccommodationReviewService extends BaseCrudService<
                     { page, pageSize }
                 );
 
-                // Wrap the result in consistent format
+                // Wrap the result in consistent format with total for pagination
                 const accommodationReviews = Array.isArray(result.items) ? result.items : [];
 
-                return { accommodationReviews };
+                return { accommodationReviews, total: result.total };
             }
         });
     }

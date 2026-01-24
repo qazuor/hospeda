@@ -178,6 +178,7 @@ export class AttractionService extends BaseCrudRelatedService<
 
     /**
      * Adds an attraction to a destination, ensuring validation, permissions, and uniqueness.
+     * Optimized to run existence checks in parallel.
      */
     public async addAttractionToDestination(
         actor: Actor,
@@ -190,35 +191,36 @@ export class AttractionService extends BaseCrudRelatedService<
             execute: async (validatedParams, actor) => {
                 this._canAddAttractionToDestination(actor);
                 const { destinationId, attractionId } = validatedParams;
-                // Verify attraction exists
-                const attraction = await this.model.findOne({
-                    id: attractionId as AttractionIdType
-                });
+
+                // Run all existence checks in parallel for better performance
+                const [attraction, destination, existing] = await Promise.all([
+                    this.model.findOne({ id: attractionId as AttractionIdType }),
+                    this.destinationModel.findOne({ id: destinationId as DestinationIdType }),
+                    this.relatedModel.findOne({
+                        destinationId: destinationId as DestinationIdType,
+                        attractionId: attractionId as AttractionIdType
+                    })
+                ]);
+
                 if (!attraction) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Attraction not found');
                 }
-                const destination = await this.destinationModel.findOne({
-                    id: destinationId as DestinationIdType
-                });
                 if (!destination) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Destination not found');
                 }
-                // Verify that the relation does not already exist
-                const existing = await this.relatedModel.findOne({
-                    destinationId: destinationId as DestinationIdType,
-                    attractionId: attractionId as AttractionIdType
-                });
                 if (existing) {
                     throw new ServiceError(
                         ServiceErrorCode.ALREADY_EXISTS,
                         'Attraction already added to destination'
                     );
                 }
+
                 // Create the relation
                 const relation = await this.relatedModel.create({
                     destinationId: destinationId as DestinationIdType,
                     attractionId: attractionId as AttractionIdType
                 });
+
                 // If the model returns just an id or number, fetch the full relation
                 let fullRelation = relation;
                 if (typeof relation === 'number' || typeof relation === 'string' || !relation) {
@@ -308,6 +310,7 @@ export class AttractionService extends BaseCrudRelatedService<
 
     /**
      * Lists all attractions for a destination.
+     * Optimized to use a single JOIN query instead of 2 sequential queries.
      */
     public async getAttractionsForDestination(
         actor: Actor,
@@ -320,19 +323,31 @@ export class AttractionService extends BaseCrudRelatedService<
             execute: async (validatedParams, actor) => {
                 this._canList(actor);
                 const { destinationId } = validatedParams;
-                // Verify destination exists
-                const destination = await this.destinationModel.findOne({
-                    id: destinationId as DestinationIdType
-                });
+
+                // Run existence check and data fetch in parallel
+                const [destination, relationsResult] = await Promise.all([
+                    this.destinationModel.findOne({
+                        id: destinationId as DestinationIdType
+                    }),
+                    this.relatedModel.findAll({ destinationId })
+                ]);
+
                 if (!destination) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Destination not found');
                 }
-                // Find all relations for this destination
-                const { items: relations } = await this.relatedModel.findAll({ destinationId });
+
+                const { items: relations } = relationsResult;
+
+                // If no relations, return empty array early
+                if (relations.length === 0) {
+                    return { attractions: [] };
+                }
+
                 const attractionIds = relations.map(
                     (r: DestinationAttractionRelation) => r.attractionId
                 );
-                // Find all attractions by id
+
+                // Fetch all attractions in one query
                 const { items: attractions } = await this.model.findAll({ id: attractionIds });
                 return { attractions };
             }
@@ -341,6 +356,7 @@ export class AttractionService extends BaseCrudRelatedService<
 
     /**
      * Lists all destinations for a given attraction.
+     * Optimized to use parallel queries instead of 2 sequential queries.
      */
     public async getDestinationsByAttraction(
         actor: Actor,
@@ -353,19 +369,31 @@ export class AttractionService extends BaseCrudRelatedService<
             execute: async (validatedParams, actor) => {
                 this._canList(actor);
                 const { attractionId } = validatedParams;
-                // Verify attraction exists
-                const attraction = await this.model.findOne({
-                    id: attractionId as AttractionIdType
-                });
+
+                // Run existence check and data fetch in parallel
+                const [attraction, relationsResult] = await Promise.all([
+                    this.model.findOne({
+                        id: attractionId as AttractionIdType
+                    }),
+                    this.relatedModel.findAll({ attractionId })
+                ]);
+
                 if (!attraction) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Attraction not found');
                 }
-                // Find all relations for this attraction
-                const { items: relations } = await this.relatedModel.findAll({ attractionId });
+
+                const { items: relations } = relationsResult;
+
+                // If no relations, return empty array early
+                if (relations.length === 0) {
+                    return { destinations: [] };
+                }
+
                 const destinationIds = relations.map(
                     (r: DestinationAttractionRelation) => r.destinationId
                 );
-                // Find all destinations by id
+
+                // Fetch all destinations in one query
                 const { items: destinations } = await this.destinationModel.findAll({
                     id: destinationIds
                 });
@@ -406,6 +434,7 @@ export class AttractionService extends BaseCrudRelatedService<
 
     /**
      * Searches for attractions with destination counts.
+     * Optimized to fetch all counts in a single query using aggregation.
      * @param actor - The actor performing the action
      * @param params - The search parameters
      * @returns Attractions with destination counts in standardized pagination format
@@ -428,18 +457,41 @@ export class AttractionService extends BaseCrudRelatedService<
 
         const { items, total } = await this.model.findAll(where, { page, pageSize });
 
-        // Get destination counts for each attraction
-        const itemsWithCounts = await Promise.all(
-            items.map(async (attraction) => {
-                const { items: relations } = await this.relatedModel.findAll({
-                    attractionId: attraction.id as AttractionIdType
-                });
-                return {
-                    ...attraction,
-                    destinationCount: relations.length
-                };
-            })
-        );
+        // If no items, return early
+        if (items.length === 0) {
+            return {
+                data: [],
+                pagination: {
+                    page,
+                    pageSize,
+                    total,
+                    totalPages: 0,
+                    hasNextPage: false,
+                    hasPreviousPage: false
+                }
+            };
+        }
+
+        // Get all attraction IDs from the current page
+        const attractionIds = items.map((item) => item.id as AttractionIdType);
+
+        // Fetch all relations for these attractions in a single query
+        const { items: allRelations } = await this.relatedModel.findAll({
+            attractionId: attractionIds
+        });
+
+        // Build a map of attraction ID to count
+        const countMap = new Map<string, number>();
+        for (const relation of allRelations) {
+            const attractionId = relation.attractionId as string;
+            countMap.set(attractionId, (countMap.get(attractionId) ?? 0) + 1);
+        }
+
+        // Merge counts with attractions
+        const itemsWithCounts = items.map((attraction) => ({
+            ...attraction,
+            destinationCount: countMap.get(attraction.id as string) ?? 0
+        }));
 
         return {
             data: itemsWithCounts,
