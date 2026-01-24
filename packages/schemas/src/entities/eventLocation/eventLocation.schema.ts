@@ -14,6 +14,15 @@ import {
 export const EventLocationSchema = BaseLocationSchema.extend({
     // Base fields
     id: EventLocationIdSchema,
+    slug: z
+        .string({
+            message: 'zodError.eventLocation.slug.required'
+        })
+        .min(2, { message: 'zodError.eventLocation.slug.min' })
+        .max(100, { message: 'zodError.eventLocation.slug.max' })
+        .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, {
+            message: 'zodError.eventLocation.slug.format'
+        }),
     ...BaseAuditFields,
     ...BaseLifecycleFields,
     ...BaseAdminFields,
@@ -43,10 +52,11 @@ export const EventLocationSchema = BaseLocationSchema.extend({
         .max(50, { message: 'zodError.eventLocation.neighborhood.max' })
         .optional(),
     city: z
-        .string()
+        .string({
+            message: 'zodError.eventLocation.city.required'
+        })
         .min(2, { message: 'zodError.eventLocation.city.min' })
-        .max(50, { message: 'zodError.eventLocation.city.max' })
-        .optional(),
+        .max(50, { message: 'zodError.eventLocation.city.max' }),
     department: z
         .string()
         .min(2, { message: 'zodError.eventLocation.department.min' })

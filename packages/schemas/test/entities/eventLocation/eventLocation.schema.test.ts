@@ -95,7 +95,7 @@ describe('EventLocationSchema', () => {
                 floor: undefined,
                 apartment: undefined,
                 neighborhood: undefined,
-                city: undefined,
+                // city is required, so not setting it to undefined
                 department: undefined,
                 placeName: undefined
             };

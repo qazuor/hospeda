@@ -56,6 +56,12 @@ export type EventLocationSearchHttp = z.infer<typeof EventLocationSearchHttpSche
  */
 export const EventLocationCreateHttpSchema = z.object({
     name: z.string().min(3).max(100),
+    slug: z
+        .string()
+        .min(2)
+        .max(100)
+        .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+        .optional(), // Auto-generated from name if not provided
     description: z.string().min(10).max(500).optional(),
 
     // Address information
@@ -160,6 +166,21 @@ export const httpToDomainEventLocationSearch = (
 import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
 
 /**
+ * Generate a URL-friendly slug from a string
+ * @param text - The text to convert to a slug
+ * @returns A lowercase slug with hyphens
+ */
+const generateSlug = (text: string): string => {
+    return text
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+        .replace(/\s+/g, '-') // Replace spaces with hyphens
+        .replace(/-+/g, '-') // Replace multiple hyphens with single
+        .replace(/^-|-$/g, ''); // Remove leading/trailing hyphens
+};
+
+/**
  * Convert HTTP event location create data to domain create input
  * Handles form data conversion to proper domain types
  * Sets default lifecycle state to ACTIVE and handles required fields
@@ -168,6 +189,9 @@ export const httpToDomainEventLocationCreate = (
     httpData: EventLocationCreateHttp
 ): EventLocationCreateInput => {
     return {
+        // Required fields
+        slug: httpData.slug || generateSlug(httpData.name),
+
         // Required fields from BaseLocationSchema
         state: httpData.state || '', // Default if not provided
         country: httpData.country,

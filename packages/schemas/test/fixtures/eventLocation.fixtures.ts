@@ -21,6 +21,14 @@ const createInvalidCoordinates = () => ({
 });
 
 /**
+ * Create a valid slug for event location
+ */
+const createValidSlug = () => {
+    const words = faker.lorem.words(3).toLowerCase().replace(/\s+/g, '-');
+    return words.replace(/[^a-z0-9-]/g, '').slice(0, 100);
+};
+
+/**
  * Create base location fields directly (not nested)
  */
 const createDirectLocationFields = () => ({
@@ -49,6 +57,7 @@ const createEventLocationEntityFields = () => ({
 
 export const createValidEventLocation = () => ({
     ...createBaseIdFields(),
+    slug: createValidSlug(),
     ...createBaseAuditFields(),
     ...createEventLocationEntityFields(),
     ...createBaseLifecycleFields(),
@@ -58,6 +67,8 @@ export const createValidEventLocation = () => ({
 
 export const createMinimalEventLocation = () => ({
     ...createBaseIdFields(),
+    slug: createValidSlug(),
+    city: faker.location.city().slice(0, 50),
     ...createBaseAuditFields(),
     ...createBaseLifecycleFields(),
     ...createDirectLocationFields()
@@ -97,7 +108,7 @@ export const createEventLocationEdgeCases = () => [
     // With all optional fields
     createComplexEventLocation(),
 
-    // With undefined optional strings (should be valid)
+    // With undefined optional strings (should be valid) - city is required so not undefined
     {
         ...createMinimalEventLocation(),
         street: undefined,
@@ -105,7 +116,6 @@ export const createEventLocationEdgeCases = () => [
         floor: undefined,
         apartment: undefined,
         neighborhood: undefined,
-        city: undefined,
         department: undefined,
         placeName: undefined
     },
@@ -113,6 +123,7 @@ export const createEventLocationEdgeCases = () => [
     // With minimum length strings
     {
         ...createMinimalEventLocation(),
+        slug: 'ab',
         street: 'AB',
         number: '1',
         floor: '1',
@@ -126,6 +137,7 @@ export const createEventLocationEdgeCases = () => [
     // With maximum length strings
     {
         ...createMinimalEventLocation(),
+        slug: 'a'.repeat(100),
         street: 'A'.repeat(50),
         number: '1'.repeat(10),
         floor: '1'.repeat(10),
