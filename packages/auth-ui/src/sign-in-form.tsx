@@ -1,6 +1,7 @@
 import { useAuth, useSignIn } from '@clerk/clerk-react';
 import React, { useState } from 'react';
 import { useAuthTranslations } from './hooks/use-auth-translations';
+import { authLogger } from './logger';
 
 type Props = {
     onSynced?: (dbUserId: string) => void;
@@ -64,7 +65,7 @@ export const SignInForm = ({ onSynced, apiBaseUrl, redirectTo, refreshAuthContex
             try {
                 await refreshAuthContext();
             } catch (error) {
-                console.warn('Failed to refresh auth context:', error);
+                authLogger.warn('Failed to refresh auth context', error);
             }
         }
 
@@ -95,14 +96,14 @@ export const SignInForm = ({ onSynced, apiBaseUrl, redirectTo, refreshAuthContex
         try {
             // Check if already signed in
             if (isSignedIn) {
-                console.warn('User is already signed in, redirecting...');
+                authLogger.warn('User is already signed in, redirecting...');
                 await syncAndRedirect();
                 return;
             }
 
             // Check if signIn object is available
             if (!signIn) {
-                console.error('SignIn object not available');
+                authLogger.error('SignIn object not available');
                 setError('Authentication not ready. Please refresh the page.');
                 return;
             }
@@ -118,7 +119,7 @@ export const SignInForm = ({ onSynced, apiBaseUrl, redirectTo, refreshAuthContex
                 redirectUrlComplete: redirect
             });
         } catch (err) {
-            console.error('OAuth error:', err);
+            authLogger.error('OAuth error', err);
 
             // Handle specific error cases
             if (err instanceof Error) {

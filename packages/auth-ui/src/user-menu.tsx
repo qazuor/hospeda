@@ -1,5 +1,6 @@
 import { useAuth, useUser } from '@clerk/clerk-react';
 import { useState } from 'react';
+import { authLogger } from './logger';
 
 interface UserMenuProps {
     apiBaseUrl?: string;
@@ -32,7 +33,7 @@ export const UserMenu = ({ apiBaseUrl }: UserMenuProps) => {
                         credentials: 'include'
                     });
                 } catch (apiError) {
-                    console.warn('API signout failed:', apiError);
+                    authLogger.warn('API signout failed', apiError);
                 }
             }
 
@@ -44,7 +45,7 @@ export const UserMenu = ({ apiBaseUrl }: UserMenuProps) => {
                 window.location.href = '/';
             }
         } catch (error) {
-            console.error('Sign out error:', error);
+            authLogger.error('Sign out error', error);
         }
     };
 

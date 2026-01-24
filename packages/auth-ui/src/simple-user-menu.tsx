@@ -1,4 +1,5 @@
 import { useAuth, useUser } from '@clerk/clerk-react';
+import { authLogger } from './logger';
 
 interface Props {
     apiBaseUrl?: string;
@@ -38,7 +39,7 @@ export const SimpleUserMenu = ({ apiBaseUrl, redirectTo = '/', refreshAuthContex
                 try {
                     await refreshAuthContext();
                 } catch (error) {
-                    console.warn('Failed to refresh auth context:', error);
+                    authLogger.warn('Failed to refresh auth context', error);
                 }
             }
 
@@ -50,7 +51,7 @@ export const SimpleUserMenu = ({ apiBaseUrl, redirectTo = '/', refreshAuthContex
                 window.location.href = redirectTo;
             }
         } catch (error) {
-            console.error('Error during sign out:', error);
+            authLogger.error('Error during sign out', error);
         }
     };
 

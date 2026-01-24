@@ -1,5 +1,6 @@
 import { useAuth } from '@clerk/clerk-react';
 import type { FC } from 'react';
+import { authLogger } from './logger';
 
 /**
  * Props for the SignOutButton component
@@ -40,7 +41,7 @@ export const SignOutButton: FC<SignOutButtonProps> = ({
                         credentials: 'include'
                     });
                 } catch (apiError) {
-                    console.warn('API signout failed, continuing with Clerk signout:', apiError);
+                    authLogger.warn('API signout failed, continuing with Clerk signout', apiError);
                 }
             }
 
@@ -55,7 +56,7 @@ export const SignOutButton: FC<SignOutButtonProps> = ({
                 window.location.href = redirectTo;
             }
         } catch (error) {
-            console.error('Sign out error:', error);
+            authLogger.error('Sign out error', error);
         }
     };
 
@@ -89,7 +90,7 @@ export const ClearSessionButton: FC = () => {
             // Reload the page
             window.location.reload();
         } catch (error) {
-            console.error('Clear session error:', error);
+            authLogger.error('Clear session error', error);
         }
     };
 

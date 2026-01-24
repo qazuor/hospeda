@@ -1,5 +1,6 @@
 import { useAuth, useSignUp } from '@clerk/clerk-react';
 import { useState } from 'react';
+import { authLogger } from './logger';
 
 type Props = {
     onSynced?: (dbUserId: string) => void;
@@ -56,7 +57,7 @@ export const SignUpForm = ({ onSynced, apiBaseUrl, redirectTo, refreshAuthContex
             try {
                 await refreshAuthContext();
             } catch (error) {
-                console.warn('Failed to refresh auth context:', error);
+                authLogger.warn('Failed to refresh auth context', error);
             }
         }
 
@@ -88,7 +89,7 @@ export const SignUpForm = ({ onSynced, apiBaseUrl, redirectTo, refreshAuthContex
         try {
             // Check if already signed in
             if (isSignedIn) {
-                console.warn('User is already signed in, redirecting...');
+                authLogger.warn('User is already signed in, redirecting...');
                 await syncAndRedirect();
                 return;
             }
@@ -103,7 +104,7 @@ export const SignUpForm = ({ onSynced, apiBaseUrl, redirectTo, refreshAuthContex
                 redirectUrlComplete: redirect
             });
         } catch (err) {
-            console.error('OAuth error:', err);
+            authLogger.error('OAuth error', err);
 
             // Handle specific error cases
             if (err instanceof Error) {
