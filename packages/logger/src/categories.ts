@@ -3,7 +3,7 @@
  * @module logger/categories
  */
 
-import { getConfigFromEnv } from './enviroment.js';
+import { getConfigFromEnv } from './environment.js';
 import { type LoggerCategory, type LoggerCategoryOptions, LoggerColors } from './types.js';
 
 /**

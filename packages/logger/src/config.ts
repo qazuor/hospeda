@@ -3,7 +3,7 @@
  * @module logger/config
  */
 
-import { getConfigFromEnv } from './enviroment.js';
+import { getConfigFromEnv } from './environment.js';
 import { type BaseLoggerConfig, LogLevel, type LoggerConfig } from './types.js';
 
 /**
