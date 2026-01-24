@@ -9,7 +9,8 @@
     "accommodations": {
         "title": "Alojamientos",
         "add": "Agregar",
-        "list": "Lista"
+        "list": "Lista",
+        "myAccommodations": "Mis Alojamientos"
     },
     "destinations": {
         "title": "Destinos",
@@ -20,8 +21,8 @@
         "title": "Eventos",
         "add": "Agregar",
         "list": "Lista",
-        "organizers": "Organizadores de Eventos",
-        "locations": "Ubicaciones de Eventos"
+        "organizers": "Organizadores",
+        "locations": "Ubicaciones"
     },
     "posts": {
         "title": "Publicaciones",
@@ -33,7 +34,18 @@
         "add": "Agregar",
         "list": "Lista"
     },
-    "admin": "Administración",
+    "admin": {
+        "title": "Administración",
+        "permissions": "Permisos",
+        "tags": "Etiquetas",
+        "seo": "SEO",
+        "portalSettings": "Configuración del Portal"
+    },
     "sponsors": "Patrocinadores",
-    "analytics": "Analíticas"
+    "analytics": {
+        "title": "Analíticas",
+        "usage": "De Uso",
+        "debug": "Debug",
+        "business": "De Negocio"
+    }
 }

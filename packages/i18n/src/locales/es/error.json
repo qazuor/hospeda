@@ -20,5 +20,68 @@
     "field": {
         "required": "{{field}} es requerido",
         "required-generic": "Este campo es requerido"
+    },
+    "boundary": {
+        "global": {
+            "title": "¡Ups! Algo salió mal",
+            "message": "Lo sentimos, pero ocurrió algo inesperado. Nuestro equipo ha sido notificado y está trabajando para solucionar el problema.",
+            "tryAgain": "Intentar de nuevo",
+            "reloadPage": "Recargar página",
+            "goToDashboard": "Ir al panel",
+            "reportError": "Reportar este error a soporte",
+            "errorDetails": "Detalles del error (Solo desarrollo)",
+            "errorMessage": "Mensaje de error:",
+            "stackTrace": "Traza de pila:",
+            "globalErrorIcon": "Error global"
+        },
+        "entity": {
+            "notFoundTitle": "{{entity}} no encontrado",
+            "notFoundMessage": "El {{entity}} que estás buscando no existe o ha sido eliminado.",
+            "accessDeniedTitle": "Acceso denegado",
+            "accessDeniedMessage": "No tienes permiso para {{operation}} este {{entity}}.",
+            "connectionErrorTitle": "Error de conexión",
+            "connectionErrorMessage": "No se puede conectar al servidor. Por favor, verifica tu conexión a internet e intenta de nuevo.",
+            "validationErrorTitle": "Error de validación",
+            "validationErrorMessage": "Los datos proporcionados no son válidos. Por favor, verifica tus entradas e intenta de nuevo.",
+            "genericErrorTitle": "Algo salió mal",
+            "genericErrorMessage": "Ocurrió un error al {{operation}} {{entity}}. Por favor, intenta de nuevo.",
+            "tryAgain": "Intentar de nuevo",
+            "goBack": "Volver",
+            "showErrorDetails": "Mostrar detalles del error",
+            "retryCount": "({{count}}/{{max}})"
+        },
+        "toast": {
+            "errorCopied": "Error copiado",
+            "errorCopiedMessage": "Detalles del error copiados al portapapeles. Por favor, compártelo con soporte.",
+            "copyFailed": "Error al copiar",
+            "copyFailedMessage": "No se pudieron copiar los detalles del error. Por favor, toma una captura de pantalla."
+        },
+        "operations": {
+            "view": "ver",
+            "edit": "editar",
+            "create": "crear",
+            "delete": "eliminar",
+            "list": "listar",
+            "access": "acceder"
+        },
+        "route": {
+            "updateRequiredTitle": "Actualización requerida",
+            "updateRequiredMessage": "La aplicación se ha actualizado. Por favor, recarga la página para continuar.",
+            "connectionProblemTitle": "Problema de conexión",
+            "connectionProblemMessage": "No se pudo cargar la página. Por favor, verifica tu conexión a internet e intenta de nuevo.",
+            "accessDeniedTitle": "Acceso denegado",
+            "accessDeniedMessage": "No tienes permiso para acceder a {{route}}.",
+            "accessDeniedMessageGeneric": "No tienes permiso para acceder a esta página.",
+            "genericErrorTitle": "Algo salió mal",
+            "genericErrorMessage": "Ocurrió un error inesperado al cargar {{route}}. Nuestro equipo ha sido notificado.",
+            "genericErrorMessageGeneric": "Ocurrió un error inesperado. Nuestro equipo ha sido notificado.",
+            "refreshPage": "Recargar página",
+            "tryAgain": "Intentar de nuevo",
+            "goHome": "Ir al inicio",
+            "goBack": "Volver",
+            "showTechnicalDetails": "Mostrar detalles técnicos",
+            "errorMessage": "Mensaje de error:",
+            "stackTrace": "Traza de pila:"
+        }
     }
 }

@@ -44,12 +44,13 @@ export const useTranslations = (locale: string = defaultLocale) => {
 
             if (!params) return raw;
 
-            // Replace {key} and {{key}} patterns with parameter values
+            // Replace {{key}} and {key} patterns with parameter values
+            // IMPORTANT: Must replace double braces FIRST to avoid partial matches
             return Object.keys(params).reduce((acc, k) => {
                 const v = params[k];
                 return acc
-                    .replace(new RegExp(`\\{${k}\\}`, 'g'), String(v))
-                    .replace(new RegExp(`\\{\\{${k}\\}\\}`, 'g'), String(v));
+                    .replace(new RegExp(`\\{\\{${k}\\}\\}`, 'g'), String(v))
+                    .replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
             }, raw);
         };
 

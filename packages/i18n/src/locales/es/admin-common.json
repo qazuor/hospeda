@@ -1,4 +1,7 @@
 {
+    "actions": {
+        "seeAll": "Ver todo"
+    },
     "notifications": {
         "title": "Notificaciones",
         "closeToast": "Cerrar notificación",

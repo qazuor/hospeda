@@ -6,7 +6,9 @@
     },
     "loading": {
         "text": "Cargando...",
-        "spinner": "Cargando"
+        "spinner": "Cargando",
+        "items": "Cargando elementos...",
+        "more": "Cargando más..."
     },
     "errors": {
         "general": "Ha ocurrido un error",
@@ -30,7 +32,19 @@
         "goBack": "Volver",
         "retry": "Reintentar",
         "clearSession": "Limpiar sesión",
-        "reload": "Recargar"
+        "reload": "Recargar",
+        "refresh": "Actualizar",
+        "edit": "Editar",
+        "delete": "Eliminar",
+        "view": "Ver",
+        "viewDetails": "Ver detalles",
+        "scrollToTop": "Ir al inicio",
+        "scrollToBottom": "Ir al final",
+        "previewImage": "Vista previa",
+        "downloadImage": "Descargar imagen",
+        "openInNewTab": "Abrir en nueva pestaña",
+        "editField": "Editar campo",
+        "debugInfo": "Información de depuración"
     },
     "navigation": {
         "navigation": "Navegación",
@@ -61,6 +75,9 @@
         "myProfile": "Mi Perfil",
         "mySettings": "Mi Configuración",
         "todoAddContent": "TODO: agregar contenido"
+    },
+    "grid": {
+        "noDisplayableFields": "Sin campos para mostrar"
     },
     "table": {
         "pageInfo": "Página {page} de {pageCount}",

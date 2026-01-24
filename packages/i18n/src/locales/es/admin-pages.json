@@ -14,10 +14,20 @@
         "accommodationsNew": "Alojamientos - Nuevo",
         "destinationsList": "Destinos - Lista",
         "destinationsNew": "Destinos - Nuevo",
+        "destinationsView": "Destinos - Ver",
+        "destinationsEdit": "Destinos - Editar",
         "eventsList": "Eventos - Lista",
         "eventsNew": "Eventos - Nuevo",
         "postsList": "Publicaciones - Lista",
         "postsNew": "Publicaciones - Nuevo",
-        "usersNew": "Usuarios - Nuevo"
+        "usersList": "Usuarios - Lista",
+        "usersNew": "Usuarios - Nuevo",
+        "accessPermissions": "Acceso - Permisos",
+        "settingsTags": "Configuración - Etiquetas",
+        "settingsSeo": "Configuración - SEO",
+        "settingsCritical": "Configuración - Portal (Crítico)",
+        "analyticsUsage": "Analíticas - Uso",
+        "analyticsDebug": "Analíticas - Debug",
+        "analyticsBusiness": "Analíticas - Negocio"
     }
 }

@@ -41,7 +41,8 @@ export const namespaces = [
     'admin-menu',
     'admin-pages',
     'admin-tables',
-    'admin-common'
+    'admin-common',
+    'admin-entities'
 ] as const;
 
 export type Namespace = (typeof namespaces)[number];
@@ -92,6 +93,7 @@ import accommodationsEs from './locales/es/accommodations.json';
 import adminAuthEs from './locales/es/admin-auth.json';
 import adminCommonEs from './locales/es/admin-common.json';
 import adminDashboardEs from './locales/es/admin-dashboard.json';
+import adminEntitiesEs from './locales/es/admin-entities.json';
 import adminMenuEs from './locales/es/admin-menu.json';
 import adminNavEs from './locales/es/admin-nav.json';
 import adminPagesEs from './locales/es/admin-pages.json';
@@ -146,7 +148,8 @@ const rawTranslations = {
         'admin-menu': adminMenuEs,
         'admin-pages': adminPagesEs,
         'admin-tables': adminTablesEs,
-        'admin-common': adminCommonEs
+        'admin-common': adminCommonEs,
+        'admin-entities': adminEntitiesEs
     }
 };
 
