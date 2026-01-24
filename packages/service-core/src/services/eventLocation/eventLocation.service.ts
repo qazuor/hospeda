@@ -7,7 +7,7 @@ import {
     ServiceErrorCode
 } from '@repo/schemas';
 import { BaseCrudService } from '../../base';
-import type { Actor, PaginatedListOutput, ServiceContext } from '../../types';
+import type { Actor, PaginatedListOutput, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { normalizeCreateInput, normalizeUpdateInput } from './eventLocation.normalizers';
 import {
@@ -202,5 +202,144 @@ export class EventLocationService extends BaseCrudService<
             items: result.items,
             total: result.total
         };
+    }
+
+    /**
+     * Find event locations by city.
+     * Returns all locations in the specified city with pagination support.
+     *
+     * @param actor - The actor performing the action
+     * @param city - The city name to filter by
+     * @param options - Pagination options (optional)
+     * @returns ServiceOutput with paginated list of event locations
+     */
+    public async findByCity(
+        actor: Actor,
+        city: string,
+        options?: { page?: number; pageSize?: number }
+    ): Promise<ServiceOutput<PaginatedListOutput<EventLocation>>> {
+        // Check permissions
+        this._canList(actor);
+
+        try {
+            const { page = 1, pageSize = 20 } = options || {};
+
+            // Query locations by city
+            const result = await this.model.findAll({ city }, { page, pageSize });
+
+            return {
+                data: result
+            };
+        } catch (error) {
+            this.logger?.error(
+                `Error finding event locations by city: ${city} - ${error instanceof Error ? error.message : String(error)}`
+            );
+            throw new ServiceError(
+                ServiceErrorCode.INTERNAL_ERROR,
+                'Failed to find event locations by city'
+            );
+        }
+    }
+
+    /**
+     * Find event locations by country.
+     * Returns all locations in the specified country with pagination support.
+     *
+     * @param actor - The actor performing the action
+     * @param country - The country name to filter by
+     * @param options - Pagination options (optional)
+     * @returns ServiceOutput with paginated list of event locations
+     */
+    public async findByCountry(
+        actor: Actor,
+        country: string,
+        options?: { page?: number; pageSize?: number }
+    ): Promise<ServiceOutput<PaginatedListOutput<EventLocation>>> {
+        // Check permissions
+        this._canList(actor);
+
+        try {
+            const { page = 1, pageSize = 20 } = options || {};
+
+            // Query locations by country
+            const result = await this.model.findAll({ country }, { page, pageSize });
+
+            return {
+                data: result
+            };
+        } catch (error) {
+            this.logger?.error(
+                `Error finding event locations by country: ${country} - ${error instanceof Error ? error.message : String(error)}`
+            );
+            throw new ServiceError(
+                ServiceErrorCode.INTERNAL_ERROR,
+                'Failed to find event locations by country'
+            );
+        }
+    }
+
+    /**
+     * Get statistics for an event location.
+     * Returns aggregated information about the location including basic metadata.
+     *
+     * @param actor - The actor performing the action
+     * @param id - The event location ID
+     * @returns ServiceOutput with location statistics
+     */
+    public async getStats(
+        actor: Actor,
+        id: string
+    ): Promise<
+        ServiceOutput<{
+            stats: {
+                id: string;
+                city: string | undefined;
+                state: string | undefined;
+                country: string | undefined;
+                placeName: string | undefined;
+                totalEvents?: number; // Could be extended with actual event count
+            };
+        }>
+    > {
+        // Check permissions
+        this._canView(actor);
+
+        try {
+            // Find the location
+            const location = await this.model.findById(id);
+
+            if (!location) {
+                throw new ServiceError(
+                    ServiceErrorCode.NOT_FOUND,
+                    `Event location with id '${id}' not found`
+                );
+            }
+
+            // Build stats object
+            const stats = {
+                id: location.id,
+                city: location.city ?? undefined,
+                state: location.state ?? undefined,
+                country: location.country ?? undefined,
+                placeName: location.placeName ?? undefined,
+                totalEvents: 0 // TODO: Implement actual event count when events integration is ready
+            };
+
+            return {
+                data: { stats }
+            };
+        } catch (error) {
+            if (error instanceof ServiceError) {
+                throw error;
+            }
+
+            this.logger?.error(
+                `Error getting event location stats: ${id} - ${error instanceof Error ? error.message : String(error)}`
+            );
+            throw new ServiceError(
+                ServiceErrorCode.INTERNAL_ERROR,
+                'Failed to get event location statistics'
+            );
+        }
     }
 }

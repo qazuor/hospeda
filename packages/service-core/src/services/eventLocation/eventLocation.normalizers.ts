@@ -17,6 +17,8 @@ export const normalizeCreateInput = (
 
     return {
         ...(adminInfo ? { adminInfo } : {}),
+        // Required field
+        slug: data.slug?.trim().toLowerCase() || '',
         // BaseLocationSchema fields
         state: data.state?.trim(),
         zipCode: data.zipCode?.trim(),
@@ -61,6 +63,9 @@ export const normalizeUpdateInput = (
     const result: EventLocationUpdateInput = {
         ...(adminInfo ? { adminInfo } : {})
     };
+
+    // Required field
+    if (data.slug) result.slug = data.slug.trim().toLowerCase();
 
     // LocationSchema fields
     if (data.state) result.state = data.state.trim();
