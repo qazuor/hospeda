@@ -10,10 +10,12 @@ import type {
 import {
     EventOrganizerCreateInputSchema,
     EventOrganizerSearchInputSchema,
-    EventOrganizerUpdateInputSchema
+    EventOrganizerUpdateInputSchema,
+    ServiceErrorCode
 } from '@repo/schemas';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, PaginatedListOutput, ServiceContext } from '../../types';
+import { ServiceError } from '../../types';
 import * as helpers from './eventOrganizer.helpers';
 import { normalizeCreateInput, normalizeUpdateInput } from './eventOrganizer.normalizers';
 import {
@@ -154,6 +156,69 @@ export class EventOrganizerService extends BaseCrudService<
         return {
             items: result.items,
             total: result.total
+        };
+    }
+
+    /**
+     * Gets the number of events organized by this event organizer.
+     * TODO: Implement once EventModel supports counting by organizerId
+     * @param actor - The actor performing the action
+     * @param id - The event organizer ID
+     * @returns Count of events for this organizer
+     */
+    public async getEventCount(actor: Actor, id: string): Promise<{ count: number }> {
+        // Check permissions
+        await this._canView(actor, { id } as EventOrganizer);
+
+        // Verify organizer exists
+        const organizer = await this.model.findById(id);
+        if (!organizer) {
+            throw new ServiceError(
+                ServiceErrorCode.NOT_FOUND,
+                `Event organizer with id '${id}' not found`
+            );
+        }
+
+        // TODO: When EventModel supports counting by organizerId, implement this properly
+        // For now, return 0 as placeholder
+        return { count: 0 };
+    }
+
+    /**
+     * Gets statistics for an event organizer.
+     * TODO: Implement once EventModel supports aggregations by organizerId
+     * @param actor - The actor performing the action
+     * @param id - The event organizer ID
+     * @returns Statistics for this organizer
+     */
+    public async getStats(
+        actor: Actor,
+        id: string
+    ): Promise<{
+        totalEvents: number;
+        activeEvents: number;
+        upcomingEvents: number;
+        pastEvents: number;
+    }> {
+        // Check permissions
+        await this._canView(actor, { id } as EventOrganizer);
+
+        // Verify organizer exists
+        const organizer = await this.model.findById(id);
+        if (!organizer) {
+            throw new ServiceError(
+                ServiceErrorCode.NOT_FOUND,
+                `Event organizer with id '${id}' not found`
+            );
+        }
+
+        // TODO: When EventModel supports aggregations by organizerId, implement this properly
+        // For now, return placeholder values
+        return {
+            totalEvents: 0,
+            activeEvents: 0,
+            upcomingEvents: 0,
+            pastEvents: 0
         };
     }
 }

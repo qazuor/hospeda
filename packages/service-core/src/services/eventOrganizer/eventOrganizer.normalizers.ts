@@ -37,6 +37,7 @@ export const normalizeCreateInput = (
 
     return {
         name: data.name.trim(),
+        slug: data.slug.trim(),
         description: data.description?.trim(),
         logo: data.logo?.trim(),
         contactInfo: normalizedContactInfo,
@@ -70,6 +71,7 @@ export const normalizeUpdateInput = (
 ): EventOrganizerUpdateInput => {
     const result: EventOrganizerUpdateInput = {};
     if (data.name) result.name = data.name.trim();
+    if (data.slug) result.slug = data.slug.trim();
     if (data.description) result.description = data.description.trim();
     if (data.logo) result.logo = data.logo.trim();
     if (data.contactInfo) {
