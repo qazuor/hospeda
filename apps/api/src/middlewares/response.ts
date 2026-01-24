@@ -1,39 +1,33 @@
 import { ServiceErrorCode } from '@repo/schemas';
+import { ServiceError } from '@repo/service-core';
 /**
  * Response formatting middleware
  * Ensures consistent response format across the API
  */
 import type { Context, MiddlewareHandler } from 'hono';
+import { HTTPException } from 'hono/http-exception';
+import type {
+    ApiErrorResponse,
+    ApiResponse,
+    ApiSuccessResponse,
+    PaginationData
+} from '../schemas/response-schemas';
 import { getResponseConfig } from '../utils/env';
 import { apiLogger } from '../utils/logger';
 
-// Standard API response types
-type ApiResponse<T = unknown> = {
-    success: boolean;
-    data?: T;
-    error?: {
-        code: string;
-        message: string;
-        details?: unknown;
-    };
-    metadata?: {
-        timestamp: string;
-        version?: string;
-        requestId?: string;
-        pagination?: {
-            page: number;
-            limit: number;
-            total: number;
-            totalPages: number;
-        };
-    };
-};
-
-type PaginationData = {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
+/**
+ * Centralized mapping from ServiceErrorCode to HTTP status codes
+ * This ensures consistent HTTP responses across the API
+ */
+const ERROR_CODE_TO_HTTP: Record<ServiceErrorCode, number> = {
+    [ServiceErrorCode.VALIDATION_ERROR]: 400,
+    [ServiceErrorCode.INVALID_PAGINATION_PARAMS]: 400,
+    [ServiceErrorCode.UNAUTHORIZED]: 401,
+    [ServiceErrorCode.FORBIDDEN]: 403,
+    [ServiceErrorCode.NOT_FOUND]: 404,
+    [ServiceErrorCode.ALREADY_EXISTS]: 409,
+    [ServiceErrorCode.INTERNAL_ERROR]: 500,
+    [ServiceErrorCode.NOT_IMPLEMENTED]: 501
 };
 
 /**
@@ -208,8 +202,8 @@ export const createErrorResponse = (
     message: string,
     status = 500,
     details?: unknown
-): ApiResponse => {
-    return formatErrorResponse(code, message, status, details);
+): ApiErrorResponse => {
+    return formatErrorResponse(code, message, status, details) as ApiErrorResponse;
 };
 
 /**
@@ -220,8 +214,8 @@ export const createSuccessResponse = <T>(
     data: T,
     status = 200,
     pagination?: PaginationData
-): ApiResponse<T> => {
-    return formatSuccessResponse(data, status, pagination);
+): ApiSuccessResponse<T> => {
+    return formatSuccessResponse(data, status, pagination) as ApiSuccessResponse<T>;
 };
 
 /**
@@ -243,8 +237,23 @@ export const sendFormattedResponse = <T>(
 };
 
 /**
+ * Gets HTTP status code from ServiceErrorCode using the centralized mapping
+ * @param code - The ServiceErrorCode
+ * @returns The corresponding HTTP status code
+ */
+const getHttpStatusFromErrorCode = (code: ServiceErrorCode): number => {
+    return ERROR_CODE_TO_HTTP[code] ?? 500;
+};
+
+/**
  * Creates an error handler for Hono app.onError()
  * This is the preferred way to handle errors in Hono
+ *
+ * Error handling priority:
+ * 1. ServiceError (from @repo/service-core) - uses code property for HTTP status
+ * 2. HTTPException (from Hono) - uses status property
+ * 3. SyntaxError (JSON parsing) - returns 400
+ * 4. All other errors - returns 500
  */
 export const createErrorHandler = () => {
     return (error: Error, c: Context) => {
@@ -266,53 +275,71 @@ export const createErrorHandler = () => {
             throw error; // Let Hono handle it
         }
 
-        // Format error responses
-        let errorCode = ServiceErrorCode.INTERNAL_ERROR;
-        let errorMessage = responseConfig.errorMessage;
-        let statusCode = 500;
+        let errorCode: ServiceErrorCode;
+        let errorMessage: string;
+        let statusCode: number;
+        let errorDetails: unknown;
 
-        // Handle different types of errors
-        if (error instanceof Error) {
+        // Priority 1: ServiceError from service layer (preferred)
+        // Use instanceof for type-safe error detection
+        if (error instanceof ServiceError) {
+            errorCode = error.code;
+            errorMessage = error.message;
+            statusCode = getHttpStatusFromErrorCode(error.code);
+            errorDetails = error.details;
+        }
+        // Priority 2: Hono HTTPException
+        else if (error instanceof HTTPException) {
+            statusCode = error.status;
             errorMessage = error.message;
 
-            // Map common error types to appropriate codes
-            if (error.name === 'ValidationError') {
+            // Map HTTP status to ServiceErrorCode
+            if (statusCode === 400) {
                 errorCode = ServiceErrorCode.VALIDATION_ERROR;
-                statusCode = 400;
-            } else if (error.name === 'UnauthorizedError') {
+            } else if (statusCode === 401) {
                 errorCode = ServiceErrorCode.UNAUTHORIZED;
-                statusCode = 401;
-            } else if (error.name === 'ForbiddenError') {
+            } else if (statusCode === 403) {
                 errorCode = ServiceErrorCode.FORBIDDEN;
-                statusCode = 403;
-            } else if (error.name === 'NotFoundError') {
+            } else if (statusCode === 404) {
                 errorCode = ServiceErrorCode.NOT_FOUND;
-                statusCode = 404;
-            } else if (error.name === 'ConflictError' || error.name === 'AlreadyExistsError') {
+            } else if (statusCode === 409) {
                 errorCode = ServiceErrorCode.ALREADY_EXISTS;
-                statusCode = 409;
-            } else if (error.name === 'NotImplementedError') {
-                errorCode = ServiceErrorCode.NOT_IMPLEMENTED;
-                statusCode = 501;
-            } else if (
-                error.constructor.name === 'HTTPException' &&
-                error.message.includes('Malformed JSON')
-            ) {
-                errorCode = ServiceErrorCode.VALIDATION_ERROR;
-                errorMessage = 'Invalid JSON format in request body';
-                statusCode = 400;
-            } else if (error instanceof SyntaxError && error.message.includes('JSON')) {
-                errorCode = ServiceErrorCode.VALIDATION_ERROR;
-                errorMessage = 'Invalid JSON format in request body';
-                statusCode = 400;
-            } else if (error.message === 'Malformed JSON in request body') {
-                errorCode = ServiceErrorCode.VALIDATION_ERROR;
-                errorMessage = 'Invalid JSON format in request body';
-                statusCode = 400;
             } else {
                 errorCode = ServiceErrorCode.INTERNAL_ERROR;
-                statusCode = 500;
             }
+        }
+        // Priority 3: JSON parsing errors
+        else if (
+            error instanceof SyntaxError &&
+            (error.message.includes('JSON') || error.message.includes('Unexpected'))
+        ) {
+            errorCode = ServiceErrorCode.VALIDATION_ERROR;
+            errorMessage = 'Invalid JSON format in request body';
+            statusCode = 400;
+        }
+        // Priority 4: Legacy error.name based detection (for backwards compatibility)
+        else if (error.name === 'ValidationError') {
+            errorCode = ServiceErrorCode.VALIDATION_ERROR;
+            errorMessage = error.message;
+            statusCode = 400;
+        } else if (error.name === 'UnauthorizedError') {
+            errorCode = ServiceErrorCode.UNAUTHORIZED;
+            errorMessage = error.message;
+            statusCode = 401;
+        } else if (error.name === 'ForbiddenError') {
+            errorCode = ServiceErrorCode.FORBIDDEN;
+            errorMessage = error.message;
+            statusCode = 403;
+        } else if (error.name === 'NotFoundError') {
+            errorCode = ServiceErrorCode.NOT_FOUND;
+            errorMessage = error.message;
+            statusCode = 404;
+        }
+        // Priority 5: Default to internal error
+        else {
+            errorCode = ServiceErrorCode.INTERNAL_ERROR;
+            errorMessage = responseConfig.errorMessage;
+            statusCode = 500;
         }
 
         const requestId = c.get('requestId');
@@ -320,7 +347,7 @@ export const createErrorHandler = () => {
             errorCode,
             errorMessage,
             statusCode,
-            error,
+            errorDetails,
             requestId
         );
 

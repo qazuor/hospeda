@@ -5,6 +5,46 @@
 
 import { clerkMiddleware } from '@hono/clerk-auth';
 import type { Context, Next } from 'hono';
+import { HTTPException } from 'hono/http-exception';
+
+/**
+ * Basic JWT token format validation
+ * Validates that the token has the expected structure without verifying the signature
+ * This is a pre-filter to reject obviously malformed tokens before calling Clerk API
+ *
+ * @param token - The Bearer token (without "Bearer " prefix)
+ * @returns true if the token appears to be a valid JWT format
+ */
+const isValidJwtFormat = (token: string): boolean => {
+    // JWT tokens have exactly 3 parts separated by dots
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+        return false;
+    }
+
+    // Each part should be base64url encoded (non-empty alphanumeric with - and _)
+    const base64UrlRegex = /^[A-Za-z0-9_-]+$/;
+    return parts.every((part) => part.length > 0 && base64UrlRegex.test(part));
+};
+
+/**
+ * Check if mock authentication is allowed
+ * @internal TEST-ONLY - Never enable in production or staging!
+ *
+ * Mock authentication is ONLY allowed when ALL conditions are met:
+ * - NODE_ENV === 'test'
+ * - DISABLE_CLERK_AUTH === 'true' (explicit opt-in)
+ * - CI !== 'true' (never in CI pipelines with real tokens)
+ *
+ * @returns {boolean} Whether mock authentication is allowed
+ */
+const isMockAuthAllowed = (): boolean => {
+    return (
+        process.env.NODE_ENV === 'test' &&
+        process.env.DISABLE_CLERK_AUTH === 'true' &&
+        process.env.CI !== 'true'
+    );
+};
 
 /**
  * Creates Clerk authentication middleware
@@ -13,11 +53,16 @@ import type { Context, Next } from 'hono';
  * @throws Error if required Clerk environment variables are not set
  */
 export const clerkAuth = () => {
-    // In test environment, disable Clerk auth if validation is disabled
-    if (
-        process.env.NODE_ENV === 'test' &&
-        process.env.API_VALIDATION_CLERK_AUTH_ENABLED === 'false'
-    ) {
+    /**
+     * @internal TEST-ONLY: Mock authentication for local testing
+     * This mock is ONLY active when:
+     * - NODE_ENV === 'test'
+     * - DISABLE_CLERK_AUTH === 'true'
+     * - CI !== 'true'
+     *
+     * @warning NEVER set DISABLE_CLERK_AUTH=true in production or staging!
+     */
+    if (isMockAuthAllowed()) {
         // Return a no-op middleware that mocks Clerk's behavior
         return async (c: Context, next: Next) => {
             // Check if there's a valid authorization header
@@ -58,8 +103,27 @@ export const clerkAuth = () => {
         );
     }
 
-    return clerkMiddleware({
+    // Wrap clerkMiddleware with JWT format pre-validation
+    const originalClerkMiddleware = clerkMiddleware({
         secretKey,
         publishableKey
     });
+
+    return async (c: Context, next: Next) => {
+        const authHeader = c.req.header('authorization');
+
+        // If there's a Bearer token, validate its format before calling Clerk
+        if (authHeader?.startsWith('Bearer ')) {
+            const token = authHeader.slice(7); // Remove "Bearer " prefix
+
+            if (token && !isValidJwtFormat(token)) {
+                throw new HTTPException(401, {
+                    message: 'Invalid token format'
+                });
+            }
+        }
+
+        // Call the original Clerk middleware
+        return originalClerkMiddleware(c, next);
+    };
 };

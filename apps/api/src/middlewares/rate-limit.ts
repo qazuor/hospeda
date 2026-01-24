@@ -103,18 +103,40 @@ export const rateLimitMiddleware = async (c: Context, next: Next) => {
         return;
     }
 
-    // Get client IP
-    const forwardedFor = c.req.header('x-forwarded-for');
-    const realIp = c.req.header('x-real-ip');
-    const cfConnectingIp = c.req.header('cf-connecting-ip');
+    // Get client IP with proxy trust validation
+    const baseRateLimitConfig = getBaseRateLimitConfig();
+    const trustProxy = baseRateLimitConfig.trustProxy;
 
     let clientIp = 'unknown';
-    if (forwardedFor) {
-        clientIp = forwardedFor.split(',')[0]?.trim() || 'unknown';
-    } else if (realIp) {
-        clientIp = realIp;
-    } else if (cfConnectingIp) {
-        clientIp = cfConnectingIp;
+
+    if (trustProxy) {
+        // Only trust proxy headers when explicitly configured
+        // This should only be enabled when running behind a trusted reverse proxy
+        const forwardedFor = c.req.header('x-forwarded-for');
+        const realIp = c.req.header('x-real-ip');
+        const cfConnectingIp = c.req.header('cf-connecting-ip');
+
+        if (forwardedFor) {
+            clientIp = forwardedFor.split(',')[0]?.trim() || 'unknown';
+        } else if (realIp) {
+            clientIp = realIp;
+        } else if (cfConnectingIp) {
+            clientIp = cfConnectingIp;
+        }
+    } else {
+        // When not trusting proxies, all requests share a single rate limit bucket
+        // This is safer but less granular - should configure trust_proxy in production
+        // Log warning on first request only to avoid spam
+        if (!rateLimitStore.has('__proxy_warning_logged__')) {
+            apiLogger.warn(
+                'Rate limiting: API_RATE_LIMIT_TRUST_PROXY is false. ' +
+                    'All requests share one rate limit bucket. ' +
+                    'Set to true when behind a trusted reverse proxy (Vercel, Cloudflare, etc.)'
+            );
+            rateLimitStore.set('__proxy_warning_logged__', { count: 1, windowStart: Date.now() });
+        }
+        // Use a generic identifier when we cannot trust the IP
+        clientIp = 'untrusted-proxy';
     }
 
     const now = Date.now();
