@@ -1,4 +1,5 @@
 import { adminLogger } from '../../utils/logger';
+import { ApiError } from '../errors';
 
 export type FetchApiInput = {
     readonly path: string;
@@ -30,9 +31,9 @@ const getClerkToken = async (): Promise<string | undefined> => {
         };
     };
     const w = window as unknown as ClerkWindow;
-    adminLogger.debug(!!w.Clerk, 'getClerkToken: Clerk object');
-    adminLogger.debug(!!w.Clerk?.session, 'getClerkToken: Clerk session');
-    adminLogger.debug(typeof w.Clerk?.session?.getToken, 'getClerkToken: getToken function');
+    adminLogger.debug('getClerkToken: Clerk object', !!w.Clerk);
+    adminLogger.debug('getClerkToken: Clerk session', !!w.Clerk?.session);
+    adminLogger.debug('getClerkToken: getToken function', typeof w.Clerk?.session?.getToken);
 
     const getToken = w.Clerk?.session?.getToken;
     if (typeof getToken !== 'function') {
@@ -41,10 +42,10 @@ const getClerkToken = async (): Promise<string | undefined> => {
     }
     try {
         const token = await getToken();
-        adminLogger.debug(!!token, 'getClerkToken: Token obtained');
+        adminLogger.debug('getClerkToken: Token obtained', !!token);
         return token ?? undefined;
     } catch (error) {
-        adminLogger.error(error, 'getClerkToken: Error getting token');
+        adminLogger.error('getClerkToken: Error getting token', error);
         return undefined;
     }
 };
@@ -119,22 +120,30 @@ export const fetchApi = async <T>({
         const errorBody = parsed as
             | {
                   message?: string;
-                  error?: { message?: string; name?: string };
+                  error?: { message?: string; name?: string; code?: string };
                   success?: boolean;
               }
             | undefined;
 
         let message = `Request failed (${status})`;
+        let errorCode: string | undefined;
 
         if (errorBody?.error?.message) {
             // API error with nested error object (like Zod errors)
             message = errorBody.error.message;
+            errorCode = errorBody.error.code;
         } else if (errorBody?.message) {
             // Direct message property
             message = errorBody.message;
         }
 
-        throw Object.assign(new Error(message), { status, body: parsed });
+        throw new ApiError(message, {
+            status,
+            code: errorCode as import('../errors').ApiErrorCode | undefined,
+            body: parsed,
+            url,
+            method
+        });
     }
     return { data: parsed as T, status };
 };

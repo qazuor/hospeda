@@ -10,8 +10,7 @@ import { createEventLocationsColumns } from './event-locations.columns';
 
 export const eventLocationsConfig: EntityConfig<EventLocation> = {
     name: 'eventLocations',
-    displayName: 'Event Location',
-    pluralDisplayName: 'Event Locations',
+    entityKey: 'eventLocation',
     entityType: EntityType.EVENT_LOCATION,
 
     // API
@@ -28,7 +27,6 @@ export const eventLocationsConfig: EntityConfig<EventLocation> = {
     searchConfig: {
         minChars: 2,
         debounceMs: 300,
-        placeholder: 'Search event locations...',
         enabled: true
     },
 
@@ -54,10 +52,8 @@ export const eventLocationsConfig: EntityConfig<EventLocation> = {
 
     // Layout configuration
     layoutConfig: {
-        title: 'Event Locations - List',
         showBreadcrumbs: true,
         showCreateButton: true,
-        createButtonText: 'New Event Location',
         createButtonPath: '/event-locations/new'
     },
 

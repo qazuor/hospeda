@@ -1,4 +1,5 @@
 import { fetchApi } from '@/lib/api/client';
+import { isApiError } from '@/lib/errors';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { AccommodationCore } from '../schemas/accommodation-client.schema';
 import {
@@ -48,8 +49,7 @@ export const useAccommodationQuery = (
         gcTime: options?.cacheTime ?? 10 * 60 * 1000, // 10 minutes
         retry: (failureCount, error) => {
             // Don't retry on 404 errors
-            // biome-ignore lint/suspicious/noExplicitAny: Error type from fetch is unknown
-            if ((error as any)?.status === 404) return false;
+            if (isApiError(error) && error.status === 404) return false;
             return failureCount < 3;
         }
     });

@@ -1,3 +1,4 @@
+import { adminLogger } from '@/utils/logger';
 import { useCallback, useMemo, useRef } from 'react';
 
 /**
@@ -127,7 +128,7 @@ export const useSmartScroll = (userOptions: SmartScrollOptions = {}) => {
                 return true;
             }
 
-            console.warn(`Section with ID "${sectionId}" not found`);
+            adminLogger.warn(`Section with ID "${sectionId}" not found`);
             return false;
         },
         [scrollToElement]
@@ -169,7 +170,7 @@ export const useSmartScroll = (userOptions: SmartScrollOptions = {}) => {
                 return true;
             }
 
-            console.warn(`Error field "${firstErrorField}" not found in DOM`);
+            adminLogger.warn(`Error field "${firstErrorField}" not found in DOM`);
             return false;
         },
         [scrollToElement]

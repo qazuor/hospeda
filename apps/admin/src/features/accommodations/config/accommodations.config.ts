@@ -11,8 +11,7 @@ import { createAccommodationsColumns } from './accommodations.columns';
 export const accommodationsConfig: EntityConfig<Accommodation> = {
     // Metadata
     name: 'accommodations',
-    displayName: 'Accommodation',
-    pluralDisplayName: 'Accommodations',
+    entityKey: 'accommodation',
     entityType: EntityType.ACCOMMODATION,
 
     // API
@@ -29,7 +28,6 @@ export const accommodationsConfig: EntityConfig<Accommodation> = {
     searchConfig: {
         minChars: 3,
         debounceMs: 400,
-        placeholder: 'Search accommodations...',
         enabled: true
     },
 
@@ -55,10 +53,8 @@ export const accommodationsConfig: EntityConfig<Accommodation> = {
 
     // Layout configuration
     layoutConfig: {
-        title: 'Accommodations - List',
         showBreadcrumbs: true,
         showCreateButton: true,
-        createButtonText: 'New Accommodation',
         createButtonPath: '/accommodations/new'
     },
 

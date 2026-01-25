@@ -2,8 +2,8 @@ import { PermissionEnum } from '@repo/schemas';
 import type { ReactNode } from 'react';
 
 export type MenuItem = {
-    /** Visible label in the sidebar */
-    readonly title: string;
+    /** i18n key for the menu item label (use with t() function) */
+    readonly titleKey: string;
     /** Route path starting with '/' */
     readonly to?: string;
     /** Icon element (@repo/icons) */
@@ -52,23 +52,23 @@ export const filterMenuByPermissions = (
         .filter(Boolean) as MenuItem[];
 };
 
-// TODO: Wire icons in Sidebar to keep this file headless (no JSX icons here)
+// Menu items use i18n keys - translate with t(item.titleKey) in components
 export const menuTree: readonly MenuItem[] = [
     {
-        title: 'Dashboard',
+        titleKey: 'admin-menu.dashboard',
         to: '/dashboard',
         permission: [PermissionEnum.DASHBOARD_BASE_VIEW, PermissionEnum.DASHBOARD_FULL_VIEW]
     },
     {
-        title: 'Contenido',
+        titleKey: 'admin-menu.content.title',
         children: [
             {
-                title: 'Destination Attractions',
+                titleKey: 'admin-menu.content.destinationAttractions',
                 to: '/content/destination-attractions',
                 permission: PermissionEnum.DESTINATION_ATTRACTION_MANAGE
             },
             {
-                title: 'Accommodation Amenities',
+                titleKey: 'admin-menu.content.accommodationAmenities',
                 to: '/content/accommodation-amenities',
                 permission: [
                     PermissionEnum.AMENITY_CREATE,
@@ -77,7 +77,7 @@ export const menuTree: readonly MenuItem[] = [
                 ]
             },
             {
-                title: 'Accommodation Features',
+                titleKey: 'admin-menu.content.accommodationFeatures',
                 to: '/content/accommodation-features',
                 permission: [
                     PermissionEnum.FEATURE_CREATE,
@@ -88,20 +88,20 @@ export const menuTree: readonly MenuItem[] = [
         ]
     },
     {
-        title: 'Alojamientos',
+        titleKey: 'admin-menu.accommodations.title',
         children: [
             {
-                title: 'Agregar',
+                titleKey: 'admin-menu.accommodations.add',
                 to: '/accommodations/new',
                 permission: PermissionEnum.ACCOMMODATION_CREATE
             },
             {
-                title: 'Lista',
+                titleKey: 'admin-menu.accommodations.list',
                 to: '/accommodations',
                 permission: PermissionEnum.ACCOMMODATION_VIEW_ALL
             },
             {
-                title: 'Mis alojamientos',
+                titleKey: 'admin-menu.accommodations.myAccommodations',
                 to: '/me/accommodations',
                 permission: [
                     PermissionEnum.ACCOMMODATION_VIEW_PRIVATE,
@@ -111,85 +111,85 @@ export const menuTree: readonly MenuItem[] = [
         ]
     },
     {
-        title: 'Destinos',
+        titleKey: 'admin-menu.destinations.title',
         children: [
             {
-                title: 'Agregar',
+                titleKey: 'admin-menu.destinations.add',
                 to: '/destinations/new',
                 permission: PermissionEnum.DESTINATION_CREATE
             },
             {
-                title: 'Lista',
+                titleKey: 'admin-menu.destinations.list',
                 to: '/destinations',
                 permission: PermissionEnum.DESTINATION_VIEW_ALL
             }
         ]
     },
     {
-        title: 'Eventos',
+        titleKey: 'admin-menu.events.title',
         children: [
             {
-                title: 'Agregar',
+                titleKey: 'admin-menu.events.add',
                 to: '/events/new',
                 permission: PermissionEnum.EVENT_CREATE
             },
             {
-                title: 'Lista',
+                titleKey: 'admin-menu.events.list',
                 to: '/events',
                 permission: PermissionEnum.EVENT_VIEW_ALL
             },
             {
-                title: 'Organizer',
+                titleKey: 'admin-menu.events.organizers',
                 to: '/events/organizers',
                 permission: PermissionEnum.EVENT_ORGANIZER_MANAGE
             },
             {
-                title: 'Locations',
+                titleKey: 'admin-menu.events.locations',
                 to: '/events/locations',
                 permission: PermissionEnum.EVENT_LOCATION_MANAGE
             }
         ]
     },
     {
-        title: 'Publicaciones',
+        titleKey: 'admin-menu.posts.title',
         children: [
             {
-                title: 'Agregar',
+                titleKey: 'admin-menu.posts.add',
                 to: '/posts/new',
                 permission: PermissionEnum.POST_CREATE
             },
             {
-                title: 'Lista',
+                titleKey: 'admin-menu.posts.list',
                 to: '/posts',
                 permission: PermissionEnum.POST_VIEW_ALL
             }
         ]
     },
     {
-        title: 'Users',
+        titleKey: 'admin-menu.users.title',
         children: [
             {
-                title: 'Agregar',
+                titleKey: 'admin-menu.users.add',
                 to: '/access/users/new',
                 permission: PermissionEnum.USER_CREATE
             },
             {
-                title: 'Lista',
+                titleKey: 'admin-menu.users.list',
                 to: '/access/users',
                 permission: PermissionEnum.USER_READ_ALL
             }
         ]
     },
     {
-        title: 'Admin',
+        titleKey: 'admin-menu.admin.title',
         children: [
             {
-                title: 'Permisos',
+                titleKey: 'admin-menu.admin.permissions',
                 to: '/access/permissions',
                 permission: PermissionEnum.ACCESS_PERMISSIONS_MANAGE
             },
             {
-                title: 'Tags',
+                titleKey: 'admin-menu.admin.tags',
                 to: '/settings/tags',
                 permission: [
                     PermissionEnum.TAG_CREATE,
@@ -198,37 +198,37 @@ export const menuTree: readonly MenuItem[] = [
                 ]
             },
             {
-                title: 'SEO',
+                titleKey: 'admin-menu.admin.seo',
                 to: '/settings/seo',
                 permission: PermissionEnum.SEO_MANAGE
             },
             {
-                title: 'Portal Settings',
+                titleKey: 'admin-menu.admin.portalSettings',
                 to: '/settings/critical',
                 permission: PermissionEnum.SETTINGS_MANAGE
             }
         ]
     },
     {
-        title: 'Sponsors',
+        titleKey: 'admin-menu.sponsors',
         to: '/sponsors',
         permission: [PermissionEnum.POST_SPONSOR_MANAGE, PermissionEnum.POST_SPONSORSHIP_MANAGE]
     },
     {
-        title: 'Analiticas',
+        titleKey: 'admin-menu.analytics.title',
         children: [
             {
-                title: 'de uso',
+                titleKey: 'admin-menu.analytics.usage',
                 to: '/analytics/usage',
                 permission: PermissionEnum.ANALYTICS_VIEW
             },
             {
-                title: 'debug',
+                titleKey: 'admin-menu.analytics.debug',
                 to: '/analytics/debug',
                 permission: [PermissionEnum.LOGS_VIEW_ALL, PermissionEnum.ERRORS_VIEW]
             },
             {
-                title: 'de negocio',
+                titleKey: 'admin-menu.analytics.business',
                 to: '/analytics/business',
                 permission: PermissionEnum.STATS_VIEW
             }

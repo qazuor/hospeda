@@ -7,8 +7,7 @@ import { createAttractionsColumns } from './attractions.columns';
 
 export const attractionsConfig: EntityConfig<Attraction> = {
     name: 'attractions',
-    displayName: 'Attraction',
-    pluralDisplayName: 'Attractions',
+    entityKey: 'attraction',
     entityType: EntityType.ATTRACTION,
 
     // API
@@ -25,7 +24,6 @@ export const attractionsConfig: EntityConfig<Attraction> = {
     searchConfig: {
         minChars: 2,
         debounceMs: 300,
-        placeholder: 'Search attractions...',
         enabled: true
     },
 
@@ -51,10 +49,8 @@ export const attractionsConfig: EntityConfig<Attraction> = {
 
     // Layout configuration
     layoutConfig: {
-        title: 'Attractions - List',
         showBreadcrumbs: true,
         showCreateButton: true,
-        createButtonText: 'New Attraction',
         createButtonPath: '/attractions/new'
     },
 

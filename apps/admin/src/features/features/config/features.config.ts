@@ -7,8 +7,7 @@ import { createFeaturesColumns } from './features.columns';
 
 export const featuresConfig: EntityConfig<Feature> = {
     name: 'features',
-    displayName: 'Feature',
-    pluralDisplayName: 'Features',
+    entityKey: 'feature',
     entityType: EntityType.FEATURE,
 
     // API
@@ -25,7 +24,6 @@ export const featuresConfig: EntityConfig<Feature> = {
     searchConfig: {
         minChars: 2,
         debounceMs: 300,
-        placeholder: 'Search features...',
         enabled: true
     },
 
@@ -51,10 +49,8 @@ export const featuresConfig: EntityConfig<Feature> = {
 
     // Layout configuration
     layoutConfig: {
-        title: 'Features - List',
         showBreadcrumbs: true,
         showCreateButton: true,
-        createButtonText: 'New Feature',
         createButtonPath: '/features/new'
     },
 

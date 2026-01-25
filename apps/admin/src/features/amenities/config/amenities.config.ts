@@ -7,8 +7,7 @@ import { createAmenitiesColumns } from './amenities.columns';
 
 export const amenitiesConfig: EntityConfig<Amenity> = {
     name: 'amenities',
-    displayName: 'Amenity',
-    pluralDisplayName: 'Amenities',
+    entityKey: 'amenity',
     entityType: EntityType.AMENITY,
 
     // API
@@ -25,7 +24,6 @@ export const amenitiesConfig: EntityConfig<Amenity> = {
     searchConfig: {
         minChars: 2,
         debounceMs: 300,
-        placeholder: 'Search amenities...',
         enabled: true
     },
 
@@ -51,10 +49,8 @@ export const amenitiesConfig: EntityConfig<Amenity> = {
 
     // Layout configuration
     layoutConfig: {
-        title: 'Amenities - List',
         showBreadcrumbs: true,
         showCreateButton: true,
-        createButtonText: 'New Amenity',
         createButtonPath: '/amenities/new'
     },
 

@@ -1,5 +1,6 @@
 import type { ValidationTriggerEnum } from '@/components/entity-form/enums/form-config.enums';
 import { fetchApi } from '@/lib/api/client';
+import { adminLogger } from '@/utils/logger';
 
 /**
  * Configuration for async validation
@@ -77,7 +78,7 @@ export const createUniqueValidator = (config: UniqueValidatorConfig): AsyncValid
             const response = await fetchApi({ path: `${endpoint}?${params}` });
             return (response.data as { isUnique: boolean }).isUnique;
         } catch (error) {
-            console.error('Unique validation error:', error);
+            adminLogger.error('Unique validation error', error);
             return false;
         }
     };
@@ -100,7 +101,7 @@ export const createExistsValidator = (config: ExistsValidatorConfig): AsyncValid
             const response = await fetchApi({ path: endpoint });
             return (response.data as { exists: boolean }).exists;
         } catch (error) {
-            console.error('Exists validation error:', error);
+            adminLogger.error('Exists validation error', error);
             return false;
         }
     };
@@ -131,7 +132,7 @@ export const createRelationshipValidator = (
             });
             return (response.data as { accessible: boolean }).accessible;
         } catch (error) {
-            console.error('Relationship validation error:', error);
+            adminLogger.error('Relationship validation error', error);
             return false;
         }
     };
@@ -166,7 +167,7 @@ export const createEmailValidator = (config?: {
                 });
                 return (response.data as { isValid: boolean }).isValid;
             } catch (error) {
-                console.error('Email validation error:', error);
+                adminLogger.error('Email validation error', error);
                 return false;
             }
         }
@@ -209,7 +210,7 @@ export const createUrlValidator = (config?: {
                     });
                     return (response.data as { isReachable: boolean }).isReachable;
                 } catch (error) {
-                    console.error('URL validation error:', error);
+                    adminLogger.error('URL validation error', error);
                     return false;
                 }
             }
@@ -322,7 +323,7 @@ export const createDebouncedValidator = (
                     const result = await validator(value, context);
                     resolve(result);
                 } catch (error) {
-                    console.error('Debounced validation error:', error);
+                    adminLogger.error('Debounced validation error', error);
                     resolve(false);
                 }
             }, debounceMs);

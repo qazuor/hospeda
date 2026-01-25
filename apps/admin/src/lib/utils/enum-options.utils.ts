@@ -1,5 +1,14 @@
 import type { SelectOption } from '@/components/entity-form/types/field-config.types';
-import { useTranslations } from '@repo/i18n';
+import { type TranslationKey, useTranslations } from '@repo/i18n';
+
+/**
+ * Helper to create a dynamic translation key.
+ * Returns a TranslationKey type for type-safe usage with t().
+ * The i18n system handles missing keys gracefully at runtime.
+ */
+function createDynamicTranslationKey(key: string): TranslationKey {
+    return key as TranslationKey;
+}
 
 /**
  * Convert an enum to select options with i18n support
@@ -32,8 +41,9 @@ export const useEnumOptions = (
 
     return Object.values(enumObject).map((value) => ({
         value,
-        // biome-ignore lint/suspicious/noExplicitAny: i18n keys are dynamic and type-safe at runtime
-        label: t(`${i18nPrefix}.${value.toLowerCase()}` as any, { defaultValue: value }),
+        label: t(createDynamicTranslationKey(`${i18nPrefix}.${value.toLowerCase()}`), {
+            defaultValue: value
+        }),
         labelKey: `${i18nPrefix}.${value.toLowerCase()}`
     }));
 };
@@ -48,8 +58,7 @@ export const useCommonEnumOptions = () => {
     const createOptions = (enumObj: Record<string, string>, prefix: string) =>
         Object.values(enumObj).map((value) => ({
             value,
-            // biome-ignore lint/suspicious/noExplicitAny: i18n keys are dynamic and type-safe at runtime
-            label: t(`common.enums.${prefix}.${value.toLowerCase()}` as any, {
+            label: t(createDynamicTranslationKey(`common.enums.${prefix}.${value.toLowerCase()}`), {
                 defaultValue: value
             }),
             labelKey: `common.enums.${prefix}.${value.toLowerCase()}`
@@ -110,8 +119,7 @@ export const useBooleanOptions = (
 
     return optionTypes[type].map((option) => ({
         value: option.value,
-        // biome-ignore lint/suspicious/noExplicitAny: i18n keys are dynamic and type-safe at runtime
-        label: t(option.labelKey as any, { defaultValue: option.value }),
+        label: t(createDynamicTranslationKey(option.labelKey), { defaultValue: option.value }),
         labelKey: option.labelKey
     }));
 };

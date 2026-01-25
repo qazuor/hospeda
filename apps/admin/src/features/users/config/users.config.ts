@@ -11,8 +11,7 @@ import { createUsersColumns } from './users.columns';
 export const usersConfig: EntityConfig<User> = {
     // Metadata
     name: 'users',
-    displayName: 'User',
-    pluralDisplayName: 'Users',
+    entityKey: 'user',
     entityType: EntityType.USER,
 
     // API
@@ -29,7 +28,6 @@ export const usersConfig: EntityConfig<User> = {
     searchConfig: {
         minChars: 2,
         debounceMs: 300,
-        placeholder: 'Search users...',
         enabled: true
     },
 
@@ -55,10 +53,8 @@ export const usersConfig: EntityConfig<User> = {
 
     // Layout configuration
     layoutConfig: {
-        title: 'Users - List',
         showBreadcrumbs: true,
         showCreateButton: true,
-        createButtonText: 'New User',
         createButtonPath: '/users/new'
     },
 

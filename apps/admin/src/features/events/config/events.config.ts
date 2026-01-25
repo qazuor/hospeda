@@ -7,8 +7,7 @@ import { createEventsColumns } from './events.columns';
 
 export const eventsConfig: EntityConfig<Event> = {
     name: 'events',
-    displayName: 'Event',
-    pluralDisplayName: 'Events',
+    entityKey: 'event',
     entityType: EntityType.EVENT,
     apiEndpoint: '/api/v1/public/events',
     basePath: '/events',
@@ -18,7 +17,6 @@ export const eventsConfig: EntityConfig<Event> = {
     searchConfig: {
         minChars: 3,
         debounceMs: 400,
-        placeholder: 'Search events...',
         enabled: true
     },
     viewConfig: {
@@ -38,10 +36,8 @@ export const eventsConfig: EntityConfig<Event> = {
         allowedPageSizes: [10, 15, 30, 50]
     },
     layoutConfig: {
-        title: 'Events - List',
         showBreadcrumbs: true,
         showCreateButton: true,
-        createButtonText: 'New Event',
         createButtonPath: '/events/new'
     },
     createColumns: createEventsColumns

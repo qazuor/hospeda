@@ -10,8 +10,7 @@ import { createEventOrganizersColumns } from './event-organizers.columns';
 
 export const eventOrganizersConfig: EntityConfig<EventOrganizer> = {
     name: 'eventOrganizers',
-    displayName: 'Event Organizer',
-    pluralDisplayName: 'Event Organizers',
+    entityKey: 'eventOrganizer',
     entityType: EntityType.EVENT_ORGANIZER,
 
     // API
@@ -28,7 +27,6 @@ export const eventOrganizersConfig: EntityConfig<EventOrganizer> = {
     searchConfig: {
         minChars: 2,
         debounceMs: 300,
-        placeholder: 'Search event organizers...',
         enabled: true
     },
 
@@ -54,10 +52,8 @@ export const eventOrganizersConfig: EntityConfig<EventOrganizer> = {
 
     // Layout configuration
     layoutConfig: {
-        title: 'Event Organizers - List',
         showBreadcrumbs: true,
         showCreateButton: true,
-        createButtonText: 'New Event Organizer',
         createButtonPath: '/event-organizers/new'
     },
 

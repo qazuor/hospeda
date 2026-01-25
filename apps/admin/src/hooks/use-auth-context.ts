@@ -1,4 +1,5 @@
 import { AuthContext, type AuthContextValue } from '@/contexts/auth-context';
+import { adminLogger } from '@/utils/logger';
 import { useContext } from 'react';
 
 /**
@@ -8,12 +9,12 @@ export function useAuthContext(): AuthContextValue {
     const context = useContext(AuthContext);
     if (!context) {
         // Add debug info to help identify where this is being called from
-        console.error('useAuthContext called but HospedaAuthContext not found');
-        console.error('Stack trace:', new Error().stack);
+        adminLogger.error('useAuthContext called but HospedaAuthContext not found');
+        adminLogger.error('Stack trace:', new Error().stack);
 
         // ALWAYS return a fallback context instead of throwing
         // This prevents the app from crashing during navigation
-        console.warn('Returning fallback AuthContext to prevent crash');
+        adminLogger.warn('Returning fallback AuthContext to prevent crash');
         return {
             isLoading: false,
             isAuthenticated: false,
@@ -21,13 +22,13 @@ export function useAuthContext(): AuthContextValue {
             clerkUser: null,
             error: null,
             refreshSession: async () => {
-                console.warn('refreshSession called on fallback context');
+                adminLogger.warn('refreshSession called on fallback context');
             },
             clearSession: () => {
-                console.warn('clearSession called on fallback context');
+                adminLogger.warn('clearSession called on fallback context');
             },
             signOut: async () => {
-                console.warn('signOut called on fallback context');
+                adminLogger.warn('signOut called on fallback context');
             }
         };
     }

@@ -7,8 +7,7 @@ import { createPostsColumns } from './posts.columns';
 
 export const postsConfig: EntityConfig<Post> = {
     name: 'posts',
-    displayName: 'Post',
-    pluralDisplayName: 'Posts',
+    entityKey: 'post',
     entityType: EntityType.POST,
 
     // API
@@ -25,7 +24,6 @@ export const postsConfig: EntityConfig<Post> = {
     searchConfig: {
         minChars: 3,
         debounceMs: 400,
-        placeholder: 'Search posts...',
         enabled: true
     },
 
@@ -51,10 +49,8 @@ export const postsConfig: EntityConfig<Post> = {
 
     // Layout configuration
     layoutConfig: {
-        title: 'Posts - List',
         showBreadcrumbs: true,
         showCreateButton: true,
-        createButtonText: 'New Post',
         createButtonPath: '/posts/new'
     },
 

@@ -7,8 +7,7 @@ import { createSponsorsColumns } from './sponsors.columns';
 
 export const sponsorsConfig: EntityConfig<Sponsor> = {
     name: 'sponsors',
-    displayName: 'Sponsor',
-    pluralDisplayName: 'Sponsors',
+    entityKey: 'sponsor',
     entityType: EntityType.SPONSOR,
 
     // API
@@ -25,7 +24,6 @@ export const sponsorsConfig: EntityConfig<Sponsor> = {
     searchConfig: {
         minChars: 2,
         debounceMs: 300,
-        placeholder: 'Search sponsors...',
         enabled: true
     },
 
@@ -51,10 +49,8 @@ export const sponsorsConfig: EntityConfig<Sponsor> = {
 
     // Layout configuration
     layoutConfig: {
-        title: 'Sponsors - List',
         showBreadcrumbs: true,
         showCreateButton: true,
-        createButtonText: 'New Sponsor',
         createButtonPath: '/sponsors/new'
     },
 

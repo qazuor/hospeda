@@ -11,8 +11,7 @@ import { createDestinationsColumns } from './destinations.columns';
 export const destinationsConfig: EntityConfig<Destination> = {
     // Metadata
     name: 'destinations',
-    displayName: 'Destination',
-    pluralDisplayName: 'Destinations',
+    entityKey: 'destination',
     entityType: EntityType.DESTINATION,
 
     // API
@@ -29,7 +28,6 @@ export const destinationsConfig: EntityConfig<Destination> = {
     searchConfig: {
         minChars: 5,
         debounceMs: 500,
-        placeholder: 'Search destinations...',
         enabled: true
     },
 
@@ -55,10 +53,8 @@ export const destinationsConfig: EntityConfig<Destination> = {
 
     // Layout configuration
     layoutConfig: {
-        title: 'Destinations - List',
         showBreadcrumbs: true,
         showCreateButton: true,
-        createButtonText: 'New Destination',
         createButtonPath: '/destinations/new'
     },
 

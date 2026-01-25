@@ -1,8 +1,17 @@
-import { useTranslations } from '@repo/i18n';
+import { type TranslationKey, useTranslations } from '@repo/i18n';
 
 /**
  * Utility functions for converting enums to select options
  */
+
+/**
+ * Helper to create a dynamic translation key.
+ * Returns a TranslationKey type for type-safe usage with t().
+ * The i18n system handles missing keys gracefully at runtime.
+ */
+function createEnumTranslationKey(prefix: string, value: string): TranslationKey {
+    return `${prefix}.${value.toLowerCase()}` as TranslationKey;
+}
 
 /**
  * Option type for select components
@@ -53,8 +62,7 @@ export const useAccommodationTypeOptions = <T extends Record<string, string>>(
     return Object.values(enumObject).map((value) => ({
         value,
         label:
-            // biome-ignore lint/suspicious/noExplicitAny: i18n keys are dynamic and type-safe at runtime
-            t(`common.enums.accommodationType.${value.toLowerCase()}` as any) ||
+            t(createEnumTranslationKey('common.enums.accommodationType', value)) ||
             formatEnumLabel(value)
     }));
 };
@@ -69,8 +77,8 @@ export const useVisibilityOptions = <T extends Record<string, string>>(
 
     return Object.values(enumObject).map((value) => ({
         value,
-        // biome-ignore lint/suspicious/noExplicitAny: i18n keys are dynamic and type-safe at runtime
-        label: t(`common.enums.visibility.${value.toLowerCase()}` as any) || formatEnumLabel(value)
+        label:
+            t(createEnumTranslationKey('common.enums.visibility', value)) || formatEnumLabel(value)
     }));
 };
 
@@ -85,8 +93,7 @@ export const useLifecycleStatusOptions = <T extends Record<string, string>>(
     return Object.values(enumObject).map((value) => ({
         value,
         label:
-            // biome-ignore lint/suspicious/noExplicitAny: i18n keys are dynamic and type-safe at runtime
-            t(`common.enums.lifecycleStatus.${value.toLowerCase()}` as any) ||
+            t(createEnumTranslationKey('common.enums.lifecycleStatus', value)) ||
             formatEnumLabel(value)
     }));
 };
@@ -102,8 +109,7 @@ export const useModerationStatusOptions = <T extends Record<string, string>>(
     return Object.values(enumObject).map((value) => ({
         value,
         label:
-            // biome-ignore lint/suspicious/noExplicitAny: i18n keys are dynamic and type-safe at runtime
-            t(`common.enums.moderationStatus.${value.toLowerCase()}` as any) ||
+            t(createEnumTranslationKey('common.enums.moderationStatus', value)) ||
             formatEnumLabel(value)
     }));
 };

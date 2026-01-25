@@ -1,6 +1,7 @@
 import { EntityTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type { SelectOption } from '@/components/entity-form/types/field-config.types';
 import { fetchApi } from '@/lib/api/client';
+import { adminLogger } from '@/utils/logger';
 
 /**
  * Configuration for entity search functionality
@@ -97,7 +98,7 @@ export const createEntitySearchFn = (config: EntitySearchConfig) => {
                 }
             }));
         } catch (error) {
-            console.error(`Entity search error for ${config.entityType}:`, error);
+            adminLogger.error(`Entity search error for ${config.entityType}`, error);
             return [];
         }
     };
@@ -149,7 +150,7 @@ export const createEntityLoadByIdsFn = (config: EntityLoadConfig) => {
                     })
                 );
             } catch (error) {
-                console.error(`Entity load by IDs error for ${config.entityType}:`, error);
+                adminLogger.error(`Entity load by IDs error for ${config.entityType}`, error);
                 return [];
             }
         } else {
@@ -166,7 +167,7 @@ export const createEntityLoadByIdsFn = (config: EntityLoadConfig) => {
                             });
                             return response.data as EntitySearchItem;
                         } catch (error) {
-                            console.error(`Failed to load ${config.entityType} ${id}:`, error);
+                            adminLogger.error(`Failed to load ${config.entityType} ${id}`, error);
                             return null;
                         }
                     })
@@ -190,7 +191,7 @@ export const createEntityLoadByIdsFn = (config: EntityLoadConfig) => {
                         }
                     }));
             } catch (error) {
-                console.error(`Entity load by IDs error for ${config.entityType}:`, error);
+                adminLogger.error(`Entity load by IDs error for ${config.entityType}`, error);
                 return [];
             }
         }
@@ -258,7 +259,7 @@ export const createPaginatedEntitySearchFn = (config: EntitySearchConfig) => {
                 total: data.total
             };
         } catch (error) {
-            console.error(`Paginated entity search error for ${config.entityType}:`, error);
+            adminLogger.error(`Paginated entity search error for ${config.entityType}`, error);
             return { options: [], hasMore: false, total: 0 };
         }
     };

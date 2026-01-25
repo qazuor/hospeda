@@ -1,3 +1,4 @@
+import { adminLogger } from '@/utils/logger';
 import type { ZodObject, ZodRawShape, ZodSchema } from 'zod';
 
 /**
@@ -21,7 +22,7 @@ export const extractFieldSchema = <T extends ZodRawShape>(
             // Handle ZodObject with _def structure
             currentSchema = currentSchema._def.shape[part];
         } else {
-            console.warn(`Schema field not found: ${fieldPath} at part: ${part}`);
+            adminLogger.warn(`Schema field not found: ${fieldPath} at part: ${part}`);
             return undefined;
         }
     }
