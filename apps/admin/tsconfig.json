@@ -1,5 +1,6 @@
 {
-    "include": ["**/*.ts", "**/*.tsx", "src/routes/_authed/index.tsx1"],
+    "include": ["**/*.ts", "**/*.tsx"],
+    "exclude": ["docs/**/*", "node_modules/**/*", "dist/**/*"],
     "compilerOptions": {
         "target": "ES2022",
         "jsx": "react-jsx",

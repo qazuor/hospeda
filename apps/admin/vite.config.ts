@@ -168,22 +168,114 @@ export default defineConfig({
         }
     },
     build: {
-        // Disable minification for debugging
-        minify: false,
-        // Keep readable variable names
+        // Enable minification for production
+        minify: process.env.NODE_ENV === 'production' ? 'esbuild' : false,
+        // Target modern browsers for smaller bundles
+        target: 'es2020',
+        // Code splitting configuration
         rollupOptions: {
             output: {
-                // Don't mangle variable names
-                compact: false,
-                // Keep function names readable
-                preserveModules: false
+                // Manual chunks for better code splitting
+                manualChunks: (id) => {
+                    // Vendor chunks - large external dependencies
+                    if (id.includes('node_modules')) {
+                        // React ecosystem
+                        if (
+                            id.includes('react') ||
+                            id.includes('react-dom') ||
+                            id.includes('scheduler')
+                        ) {
+                            return 'vendor-react';
+                        }
+
+                        // TanStack libraries
+                        if (id.includes('@tanstack')) {
+                            if (id.includes('router') || id.includes('start')) {
+                                return 'vendor-tanstack-router';
+                            }
+                            if (id.includes('query')) {
+                                return 'vendor-tanstack-query';
+                            }
+                            if (id.includes('table') || id.includes('virtual')) {
+                                return 'vendor-tanstack-table';
+                            }
+                            if (id.includes('form')) {
+                                return 'vendor-tanstack-form';
+                            }
+                            return 'vendor-tanstack-other';
+                        }
+
+                        // Clerk authentication
+                        if (id.includes('@clerk')) {
+                            return 'vendor-clerk';
+                        }
+
+                        // Radix UI components
+                        if (id.includes('@radix-ui')) {
+                            return 'vendor-radix';
+                        }
+
+                        // Zod validation
+                        if (id.includes('zod')) {
+                            return 'vendor-zod';
+                        }
+
+                        // Lucide icons
+                        if (id.includes('lucide')) {
+                            return 'vendor-icons';
+                        }
+
+                        // Other vendor code
+                        return 'vendor';
+                    }
+
+                    // Feature chunks from src/features/
+                    if (id.includes('/features/')) {
+                        const match = id.match(/\/features\/([^/]+)\//);
+                        if (match?.[1]) {
+                            return `feature-${match[1]}`;
+                        }
+                    }
+
+                    // Component chunks
+                    if (id.includes('/components/entity-')) {
+                        return 'components-entity';
+                    }
+                    if (id.includes('/components/table/')) {
+                        return 'components-table';
+                    }
+                    if (id.includes('/components/ui/')) {
+                        return 'components-ui';
+                    }
+
+                    // Lib/utils chunks
+                    if (id.includes('/lib/') || id.includes('/utils/')) {
+                        return 'lib-utils';
+                    }
+
+                    // Default - let Rollup decide
+                    return undefined;
+                },
+                // Chunk file naming
+                chunkFileNames: (chunkInfo) => {
+                    const name = chunkInfo.name || 'chunk';
+                    return `assets/${name}-[hash].js`;
+                },
+                // Entry file naming
+                entryFileNames: 'assets/[name]-[hash].js',
+                // Asset file naming
+                assetFileNames: 'assets/[name]-[hash][extname]'
             }
         },
+        // Chunk size warnings
+        chunkSizeWarningLimit: 500, // 500 KB warning threshold
         commonjsOptions: {
             include: [/node_modules/, /packages\/.*/],
             transformMixedEsModules: true,
             requireReturnsDefault: 'auto'
-        }
+        },
+        // Source maps for production debugging
+        sourcemap: process.env.NODE_ENV === 'production' ? 'hidden' : true
     },
     define: {
         'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production'),

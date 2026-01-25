@@ -5,21 +5,31 @@
 
 import '@testing-library/jest-dom';
 import { cleanup } from '@testing-library/react';
-import { afterEach, beforeAll, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, vi } from 'vitest';
+import { server } from './mocks/server';
 
-// Global test setup
+// Start MSW server before all tests
 beforeAll(() => {
     // Setup test environment
     process.env.NODE_ENV = 'test';
 
     // Mock environment variables for testing
     process.env.PUBLIC_CLERK_PUBLISHABLE_KEY = 'test_clerk_publishable';
+
+    // Start MSW server to intercept HTTP requests
+    server.listen({ onUnhandledRequest: 'warn' });
 });
 
-// Cleanup after each test
+// Reset handlers after each test (important for test isolation)
 afterEach(() => {
     cleanup();
     vi.clearAllMocks();
+    server.resetHandlers();
+});
+
+// Close MSW server after all tests
+afterAll(() => {
+    server.close();
 });
 
 // Mock Clerk authentication
