@@ -5,6 +5,7 @@ import type {
 } from '@/components/entity-form/types/field-config.types';
 import { Label } from '@/components/ui-wrapped';
 import { cn } from '@/lib/utils';
+import DOMPurify from 'dompurify';
 
 import * as React from 'react';
 
@@ -123,8 +124,8 @@ export const RichTextViewField = React.forwardRef<HTMLDivElement, RichTextViewFi
                             maxHeight && 'overflow-y-auto'
                         )}
                         style={{ maxHeight }}
-                        // biome-ignore lint/security/noDangerouslySetInnerHtml: Controlled HTML content from markdown parsing
-                        dangerouslySetInnerHTML={{ __html: htmlContent }}
+                        // biome-ignore lint/security/noDangerouslySetInnerHtml: Content is sanitized with DOMPurify
+                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(htmlContent) }}
                     />
                 );
             }

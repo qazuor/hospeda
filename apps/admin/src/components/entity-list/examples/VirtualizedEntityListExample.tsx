@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useTranslations } from '@/hooks/use-translations';
 import { adminLogger } from '@/utils/logger';
 import { DeleteIcon, EditIcon, ViewAllIcon } from '@repo/icons';
 import { Link } from '@tanstack/react-router';
@@ -65,6 +66,8 @@ export const VirtualizedEntityListExample: React.FC<VirtualizedEntityListExample
     preset = 'medium',
     enableInfiniteLoading = true
 }) => {
+    const { t } = useTranslations();
+
     // Custom item renderer
     const renderEntityItem = (entity: ExampleEntity, index: number) => (
         <Card className="mx-2 mb-2 transition-shadow hover:shadow-md">
@@ -105,12 +108,12 @@ export const VirtualizedEntityListExample: React.FC<VirtualizedEntityListExample
                             variant="ghost"
                             size="sm"
                             className="h-8 w-8 p-0"
-                            title="View details"
+                            title={t('ui.actions.viewDetails')}
                         >
                             <Link
-                                // biome-ignore lint/suspicious/noExplicitAny: Dynamic route paths require any for type compatibility
+                                // biome-ignore lint/suspicious/noExplicitAny: Dynamic route paths in example component
                                 to={`/${entityName}/$id` as any}
-                                // biome-ignore lint/suspicious/noExplicitAny: Dynamic route params require any for type compatibility
+                                // biome-ignore lint/suspicious/noExplicitAny: Dynamic route params in example component
                                 params={{ id: entity.id } as any}
                             >
                                 <ViewAllIcon className="h-4 w-4" />
@@ -122,12 +125,12 @@ export const VirtualizedEntityListExample: React.FC<VirtualizedEntityListExample
                             variant="ghost"
                             size="sm"
                             className="h-8 w-8 p-0"
-                            title="Edit"
+                            title={t('ui.actions.edit')}
                         >
                             <Link
-                                // biome-ignore lint/suspicious/noExplicitAny: Dynamic route paths require any for type compatibility
+                                // biome-ignore lint/suspicious/noExplicitAny: Dynamic route paths in example component
                                 to={`/${entityName}/$id/edit` as any}
-                                // biome-ignore lint/suspicious/noExplicitAny: Dynamic route params require any for type compatibility
+                                // biome-ignore lint/suspicious/noExplicitAny: Dynamic route params in example component
                                 params={{ id: entity.id } as any}
                             >
                                 <EditIcon className="h-4 w-4" />
@@ -139,7 +142,7 @@ export const VirtualizedEntityListExample: React.FC<VirtualizedEntityListExample
                             variant="ghost"
                             size="sm"
                             className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                            title="Delete"
+                            title={t('ui.actions.delete')}
                             onClick={() => {
                                 if (confirm('Are you sure you want to delete this item?')) {
                                     adminLogger.info('Delete item:', entity.id);

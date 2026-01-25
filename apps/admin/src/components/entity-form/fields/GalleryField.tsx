@@ -5,6 +5,7 @@ import type {
 } from '@/components/entity-form/types/field-config.types';
 import { Button, Input, Label } from '@/components/ui-wrapped';
 import { cn } from '@/lib/utils';
+import { adminLogger } from '@/utils/logger';
 
 import { GripVertical, ImageIcon, Plus, Trash2, Upload } from 'lucide-react';
 import * as React from 'react';
@@ -120,13 +121,13 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
                 for (const file of filesToProcess) {
                     // Validate file type
                     if (!allowedTypes.includes(file.type)) {
-                        console.error('Invalid file type:', file.name);
+                        adminLogger.error('Invalid file type', file.name);
                         continue;
                     }
 
                     // Validate file size
                     if (file.size > maxSize) {
-                        console.error('File too large:', file.name);
+                        adminLogger.error('File too large', file.name);
                         continue;
                     }
 
@@ -153,7 +154,7 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
 
                 onChange?.([...value, ...newImages]);
             } catch (error) {
-                console.error('Upload failed:', error);
+                adminLogger.error('Upload failed', error);
                 // TODO: Show error toast
             } finally {
                 setIsUploading(false);

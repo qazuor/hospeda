@@ -1,3 +1,4 @@
+import { adminLogger } from '@/utils/logger';
 import { useTranslations } from '@repo/i18n';
 import { useForm } from '@tanstack/react-form';
 import * as React from 'react';
@@ -55,7 +56,7 @@ export const EntityFormProvider: React.FC<EntityFormProviderProps> = ({
                 // Reset dirty state after successful save
                 setDirtyFields({});
             } catch (error) {
-                console.error('Form save error:', error);
+                adminLogger.error('Form save error', error);
                 // TODO: Handle save errors properly
             } finally {
                 setIsSaving(false);
@@ -153,7 +154,7 @@ export const EntityFormProvider: React.FC<EntityFormProviderProps> = ({
 
             return formErrors;
         } catch (error) {
-            console.error('Form validation error:', error);
+            adminLogger.error('Form validation error', error);
             return {};
         }
     }, [form.state.values, config.sections, t]);
@@ -177,7 +178,7 @@ export const EntityFormProvider: React.FC<EntityFormProviderProps> = ({
             setDirtyFields({});
             setErrors({});
         } catch (error) {
-            console.error('Form save error:', error);
+            adminLogger.error('Form save error', error);
             // Re-throw error so it can be handled by the calling component
             throw error;
         } finally {
@@ -194,7 +195,7 @@ export const EntityFormProvider: React.FC<EntityFormProviderProps> = ({
             setDirtyFields({});
             setErrors({});
         } catch (error) {
-            console.error('Form save and publish error:', error);
+            adminLogger.error('Form save and publish error', error);
             // TODO: Handle save errors properly
         } finally {
             setIsSaving(false);

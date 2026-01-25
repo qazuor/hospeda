@@ -1,3 +1,4 @@
+import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
 import { adminLogger } from '@/utils/logger';
 import type { ReactNode } from 'react';
@@ -105,6 +106,7 @@ export const VirtualizedEntityListPage = <TData extends { id: string }>({
     footer,
     loadingMoreIndicator
 }: VirtualizedEntityListPageProps<TData>) => {
+    const { t } = useTranslations();
     const {
         items,
         totalCount,
@@ -128,9 +130,11 @@ export const VirtualizedEntityListPage = <TData extends { id: string }>({
         staleTime
     });
 
-    // Default states
-    const defaultEmptyState = emptyState || <DefaultEmptyState message="No items found" />;
-    const defaultLoadingState = loadingState || <DefaultLoadingState message="Loading items..." />;
+    // Default states - DefaultEmptyState and DefaultLoadingState use translations internally
+    const defaultEmptyState = emptyState || <DefaultEmptyState />;
+    const defaultLoadingState = loadingState || (
+        <DefaultLoadingState message={t('ui.loading.items')} />
+    );
     const defaultErrorState = errorState || (
         <DefaultErrorState
             error={error instanceof Error ? error : undefined}
@@ -142,7 +146,7 @@ export const VirtualizedEntityListPage = <TData extends { id: string }>({
         <div className="flex items-center justify-center py-4">
             <div className="flex items-center gap-2 text-gray-500 text-sm">
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
-                Loading more...
+                {t('ui.loading.more')}
             </div>
         </div>
     );
@@ -171,7 +175,7 @@ export const VirtualizedEntityListPage = <TData extends { id: string }>({
                         onClick={() => refetch()}
                         disabled={isLoading}
                         className="rounded bg-gray-100 px-3 py-1 text-gray-700 text-sm hover:bg-gray-200 disabled:opacity-50"
-                        title="Refresh"
+                        title={t('ui.actions.refresh')}
                     >
                         <svg
                             className="h-4 w-4"
@@ -179,7 +183,7 @@ export const VirtualizedEntityListPage = <TData extends { id: string }>({
                             viewBox="0 0 24 24"
                             stroke="currentColor"
                         >
-                            <title>Refresh</title>
+                            <title>{t('ui.actions.refresh')}</title>
                             <path
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
@@ -201,7 +205,7 @@ export const VirtualizedEntityListPage = <TData extends { id: string }>({
                                 );
                             }}
                             className="rounded bg-blue-100 px-2 py-1 text-blue-700 text-xs hover:bg-blue-200"
-                            title="Debug info"
+                            title={t('ui.actions.debugInfo')}
                         >
                             Debug
                         </button>

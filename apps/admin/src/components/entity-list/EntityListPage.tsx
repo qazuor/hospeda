@@ -6,6 +6,8 @@ import { DataTableToolbar } from '@/components/table/DataTableToolbar';
 import { useToast } from '@/components/ui/ToastProvider';
 import { useTranslations } from '@/hooks/use-translations';
 import { adminLogger } from '@/utils/logger';
+import type { TranslationKey } from '@repo/i18n';
+import type { NavigateOptions, RegisteredRouter } from '@tanstack/react-router';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createEntityApi } from './api/createEntityApi';
@@ -13,12 +15,29 @@ import { useEntityQuery } from './hooks/useEntityQuery';
 import type { EntityConfig, EntityListComponents, GenerateRowType } from './types';
 
 /**
+ * Search params type for entity list pages
+ */
+interface EntityListSearchParams {
+    page?: number;
+    pageSize?: number;
+    q?: string;
+    sort?: string;
+    view?: 'table' | 'grid';
+}
+
+/**
+ * Type helper for dynamic navigation options.
+ * TanStack Router requires literal route types, but factory patterns need dynamic routes.
+ */
+type DynamicNavigateOptions = NavigateOptions<RegisteredRouter, string, string>;
+
+/**
  * Default configurations
  */
 const DEFAULT_SEARCH_CONFIG = {
     minChars: 5,
     debounceMs: 500,
-    placeholder: 'Search...',
+    // placeholder is computed dynamically using translations
     enabled: true
 } as const;
 
@@ -86,6 +105,31 @@ export const createEntityListPage = <TData extends { id: string }>(
         const navigate = useNavigate();
         const search = Route.useSearch();
 
+        // Compute translated entity names
+        const entityPlural = useMemo(
+            () =>
+                t(`admin-entities.entities.${config.entityKey}.plural` as TranslationKey) ||
+                config.pluralDisplayName ||
+                config.name,
+            [t, config.entityKey, config.pluralDisplayName, config.name]
+        );
+
+        // Compute translated UI strings
+        const translatedTitle = useMemo(
+            () =>
+                config.layoutConfig?.title ||
+                t('admin-entities.list.title' as TranslationKey, { entities: entityPlural }),
+            [t, entityPlural, config.layoutConfig?.title]
+        );
+        const translatedSearchPlaceholder = useMemo(
+            () =>
+                searchConfig.placeholder ||
+                t('admin-entities.list.searchPlaceholder' as TranslationKey, {
+                    entities: entityPlural.toLowerCase()
+                }),
+            [t, entityPlural]
+        );
+
         // Local state for debounced search
         const [localQuery, setLocalQuery] = useState(search.q || '');
         const [isSearching, setIsSearching] = useState(false);
@@ -115,10 +159,12 @@ export const createEntityListPage = <TData extends { id: string }>(
 
                 if (queryToSend !== search.q) {
                     navigate({
-                        // biome-ignore lint/suspicious/noExplicitAny: TanStack Router type compatibility
-                        search: (prev: any) => ({ ...prev, q: queryToSend, page: 1 })
-                        // biome-ignore lint/suspicious/noExplicitAny: TanStack Router type compatibility
-                    } as any);
+                        search: (prev: EntityListSearchParams) => ({
+                            ...prev,
+                            q: queryToSend,
+                            page: 1
+                        })
+                    } as DynamicNavigateOptions);
                 }
 
                 setIsSearching(false);
@@ -159,13 +205,15 @@ export const createEntityListPage = <TData extends { id: string }>(
         useEffect(() => {
             if (error) {
                 addToast({
-                    title: `Failed to load ${config.pluralDisplayName.toLowerCase()}`,
+                    title: t('admin-entities.messages.error.load' as TranslationKey, {
+                        entity: entityPlural
+                    }),
                     message: error.message ?? 'Unknown error',
                     variant: 'error'
                 });
-                adminLogger.error(error, `Failed to load ${config.name}`);
+                adminLogger.error(`Failed to load ${config.name}`, error);
             }
-        }, [error, addToast, config.name, config.pluralDisplayName]);
+        }, [error, addToast, config.name, entityPlural, t]);
 
         const rows: Row[] = (data?.data ?? []) as Row[];
         const total = data?.total ?? 0;
@@ -226,10 +274,8 @@ export const createEntityListPage = <TData extends { id: string }>(
 
         // Handlers
         const updateSearch = useCallback(
-            // biome-ignore lint/suspicious/noExplicitAny: TanStack Router type compatibility
-            (updater: (prev: any) => any) => {
-                // biome-ignore lint/suspicious/noExplicitAny: TanStack Router type compatibility
-                navigate({ search: updater } as any);
+            (updater: (prev: EntityListSearchParams) => EntityListSearchParams) => {
+                navigate({ search: updater } as DynamicNavigateOptions);
             },
             [navigate]
         );
@@ -271,7 +317,7 @@ export const createEntityListPage = <TData extends { id: string }>(
         }, [getInitialColumnVisibility]);
 
         return (
-            <SidebarPageLayout title={config.layoutConfig.title}>
+            <SidebarPageLayout title={translatedTitle}>
                 <div className="space-y-4">
                     <DataTableToolbar
                         key={`search-config-${searchConfig.minChars}`}
@@ -282,6 +328,7 @@ export const createEntityListPage = <TData extends { id: string }>(
                         isSearching={isSearching}
                         onClearSearch={handleClearSearch}
                         searchMinChars={searchConfig.minChars}
+                        searchPlaceholder={translatedSearchPlaceholder}
                         columnVisibility={currentViewVisibility}
                         onColumnVisibilityChange={handleColsChange}
                         availableColumns={availableColumns}
@@ -313,7 +360,7 @@ export const createEntityListPage = <TData extends { id: string }>(
                                 </div>
                             ) : rows.length === 0 ? (
                                 <div className="text-muted-foreground text-sm">
-                                    No records found
+                                    {t('admin-entities.list.noResults' as TranslationKey)}
                                 </div>
                             ) : (
                                 rows.map((r) => (
@@ -334,7 +381,9 @@ export const createEntityListPage = <TData extends { id: string }>(
     };
 
     // Create route
-    // biome-ignore lint/suspicious/noExplicitAny: TanStack Router type compatibility
+    // TanStack Router requires literal route types, but factory patterns need dynamic routes.
+    // We use type assertion here because this is a generic factory component.
+    // biome-ignore lint/suspicious/noExplicitAny: Factory pattern requires dynamic route paths
     const Route = createFileRoute(`${config.basePath}/` as any)({
         validateSearch,
         component: EntityListPageComponent

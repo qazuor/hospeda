@@ -48,9 +48,15 @@ export type PaginationConfig = {
  * Configuration for layout and UI
  */
 export type LayoutConfig = {
-    readonly title: string;
+    /**
+     * @deprecated Use entityKey for i18n support. Title will be computed from translations.
+     */
+    readonly title?: string;
     readonly showBreadcrumbs?: boolean;
     readonly showCreateButton?: boolean;
+    /**
+     * @deprecated Use entityKey for i18n support. Button text will be computed from translations.
+     */
     readonly createButtonText?: string;
     readonly createButtonPath?: string;
 };
@@ -164,8 +170,19 @@ export type EntityQueryResponse<TData> = {
 export type EntityConfig<TData = unknown> = {
     // Metadata
     readonly name: string;
-    readonly displayName: string;
-    readonly pluralDisplayName: string;
+    /**
+     * Translation key for this entity (e.g., 'accommodation', 'destination')
+     * Used to look up translations in admin-entities namespace
+     */
+    readonly entityKey: string;
+    /**
+     * @deprecated Use entityKey for i18n support. Kept for backwards compatibility.
+     */
+    readonly displayName?: string;
+    /**
+     * @deprecated Use entityKey for i18n support. Kept for backwards compatibility.
+     */
+    readonly pluralDisplayName?: string;
     readonly entityType: EntityType;
 
     // API

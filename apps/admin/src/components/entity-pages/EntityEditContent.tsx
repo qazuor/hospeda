@@ -75,7 +75,7 @@ export const EntityEditContent = ({ renderSection, className }: EntityEditConten
                 variant: 'success'
             });
         } catch (error) {
-            console.error('Failed to save entity:', error);
+            adminLogger.error('Failed to save entity', error);
 
             // Extract more detailed error message and field-specific errors
             let errorMessage = t('error.form.unexpected-error');

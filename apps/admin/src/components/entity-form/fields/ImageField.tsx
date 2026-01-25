@@ -5,6 +5,7 @@ import type {
 } from '@/components/entity-form/types/field-config.types';
 import { Button, Input, Label } from '@/components/ui-wrapped';
 import { cn } from '@/lib/utils';
+import { adminLogger } from '@/utils/logger';
 
 import { ImageIcon, Upload, X } from 'lucide-react';
 import * as React from 'react';
@@ -87,7 +88,6 @@ export const ImageField = React.forwardRef<HTMLInputElement, ImageFieldProps>(
         const maxWidth = imageConfig?.maxWidth;
         const maxHeight = imageConfig?.maxHeight;
         const aspectRatio = imageConfig?.aspectRatio;
-        // const quality = imageConfig?.quality || 0.9; // TODO: Use when implementing image compression
 
         // File input ref
         const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -102,14 +102,14 @@ export const ImageField = React.forwardRef<HTMLInputElement, ImageFieldProps>(
             // Validate file type
             if (!allowedTypes.includes(file.type)) {
                 // TODO: Show error toast
-                console.error('Invalid file type');
+                adminLogger.error('Invalid file type');
                 return;
             }
 
             // Validate file size
             if (file.size > maxSize) {
                 // TODO: Show error toast
-                console.error('File too large');
+                adminLogger.error('File too large');
                 return;
             }
 
@@ -134,7 +134,7 @@ export const ImageField = React.forwardRef<HTMLInputElement, ImageFieldProps>(
 
                 onChange?.(imageValue);
             } catch (error) {
-                console.error('Upload failed:', error);
+                adminLogger.error('Upload failed', error);
                 // TODO: Show error toast
             } finally {
                 setIsUploading(false);

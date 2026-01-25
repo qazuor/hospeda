@@ -5,7 +5,9 @@ import type {
     ImageFieldConfig
 } from '@/components/entity-form/types/field-config.types';
 import { Badge, Label } from '@/components/ui-wrapped';
+import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
+import { adminLogger } from '@/utils/logger';
 
 import { Download, ExternalLink, ImageIcon } from 'lucide-react';
 import * as React from 'react';
@@ -60,6 +62,8 @@ export const ImageViewField = React.forwardRef<HTMLDivElement, ImageViewFieldPro
         },
         ref
     ) => {
+        const { t } = useTranslations();
+
         // Use direct translations from config
         const label = config.label;
         const description = config.description;
@@ -108,7 +112,7 @@ export const ImageViewField = React.forwardRef<HTMLDivElement, ImageViewFieldPro
 
                 window.URL.revokeObjectURL(url);
             } catch (error) {
-                console.error('Download failed:', error);
+                adminLogger.error('Download failed', error);
             }
         };
 
@@ -155,7 +159,9 @@ export const ImageViewField = React.forwardRef<HTMLDivElement, ImageViewFieldPro
                         }}
                         tabIndex={clickable && value?.url ? 0 : -1}
                         role={clickable && value?.url ? 'button' : undefined}
-                        aria-label={clickable && value?.url ? 'Preview image' : undefined}
+                        aria-label={
+                            clickable && value?.url ? t('ui.actions.previewImage') : undefined
+                        }
                         loading="lazy"
                     />
 
@@ -167,7 +173,7 @@ export const ImageViewField = React.forwardRef<HTMLDivElement, ImageViewFieldPro
                                     type="button"
                                     onClick={handleDownload}
                                     className="rounded-full bg-white/20 p-2 transition-colors hover:bg-white/30"
-                                    title="Download image"
+                                    title={t('ui.actions.downloadImage')}
                                 >
                                     <Download className="h-4 w-4 text-white" />
                                 </button>
@@ -178,7 +184,7 @@ export const ImageViewField = React.forwardRef<HTMLDivElement, ImageViewFieldPro
                                     type="button"
                                     onClick={handleExternalLink}
                                     className="rounded-full bg-white/20 p-2 transition-colors hover:bg-white/30"
-                                    title="Open in new tab"
+                                    title={t('ui.actions.openInNewTab')}
                                 >
                                     <ExternalLink className="h-4 w-4 text-white" />
                                 </button>

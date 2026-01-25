@@ -1,3 +1,4 @@
+import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
 import type { VirtualItem } from '@tanstack/react-virtual';
 import type { ReactNode } from 'react';
@@ -76,6 +77,7 @@ export const VirtualizedEntityList = <TData extends { id: string }>({
     onScrollNearBottom,
     nearBottomThreshold = 100
 }: VirtualizedEntityListProps<TData>) => {
+    const { t } = useTranslations();
     const {
         virtualizer,
         containerRef,
@@ -152,7 +154,7 @@ export const VirtualizedEntityList = <TData extends { id: string }>({
                         type="button"
                         onClick={() => scrollToTop()}
                         className="rounded bg-gray-800/80 p-1 text-white opacity-70 hover:opacity-100"
-                        title="Scroll to top"
+                        title={t('ui.actions.scrollToTop')}
                     >
                         <svg
                             className="h-4 w-4"
@@ -160,7 +162,7 @@ export const VirtualizedEntityList = <TData extends { id: string }>({
                             viewBox="0 0 24 24"
                             stroke="currentColor"
                         >
-                            <title>Scroll to top</title>
+                            <title>{t('ui.actions.scrollToTop')}</title>
                             <path
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
@@ -173,7 +175,7 @@ export const VirtualizedEntityList = <TData extends { id: string }>({
                         type="button"
                         onClick={() => scrollToBottom()}
                         className="rounded bg-gray-800/80 p-1 text-white opacity-70 hover:opacity-100"
-                        title="Scroll to bottom"
+                        title={t('ui.actions.scrollToBottom')}
                     >
                         <svg
                             className="h-4 w-4"
@@ -181,7 +183,7 @@ export const VirtualizedEntityList = <TData extends { id: string }>({
                             viewBox="0 0 24 24"
                             stroke="currentColor"
                         >
-                            <title>Scroll to bottom</title>
+                            <title>{t('ui.actions.scrollToBottom')}</title>
                             <path
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
@@ -232,27 +234,30 @@ export const VirtualizedEntityList = <TData extends { id: string }>({
 /**
  * Default empty state component
  */
-export const DefaultEmptyState: React.FC<{ message?: string }> = ({
-    message = 'No items found'
-}) => (
-    <div className="flex flex-col items-center justify-center py-12 text-gray-500">
-        <svg
-            className="mb-4 h-12 w-12"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-        >
-            <title>Empty state</title>
-            <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1}
-                d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
-            />
-        </svg>
-        <p className="font-medium text-sm">{message}</p>
-    </div>
-);
+export const DefaultEmptyState: React.FC<{ message?: string }> = ({ message }) => {
+    const { t } = useTranslations();
+    const displayMessage = message || t('admin-entities.list.noResults');
+
+    return (
+        <div className="flex flex-col items-center justify-center py-12 text-gray-500">
+            <svg
+                className="mb-4 h-12 w-12"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+            >
+                <title>{t('ui.accessibility.tableView')}</title>
+                <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1}
+                    d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+                />
+            </svg>
+            <p className="font-medium text-sm">{displayMessage}</p>
+        </div>
+    );
+};
 
 /**
  * Default loading state component

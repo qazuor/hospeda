@@ -8,6 +8,20 @@ export {
     SelectAllCheckbox,
     SelectionCheckbox
 } from './BulkOperationsToolbar';
+
+// Column factory
+export {
+    createEntityColumnsFactory,
+    VISIBILITY_BADGE_OPTIONS,
+    LIFECYCLE_STATE_BADGE_OPTIONS,
+    MODERATION_STATE_BADGE_OPTIONS
+} from './columns.factory';
+export type {
+    BadgeOption as ColumnBadgeOption,
+    ColumnFactoryConfig,
+    NameColumnOptions,
+    BadgeColumnOptions
+} from './columns.factory';
 export { createEntityListPage } from './EntityListPage';
 export { useBulkOperations } from './hooks/useBulkOperations';
 export { useEntityListMutations } from './hooks/useEntityListMutations';

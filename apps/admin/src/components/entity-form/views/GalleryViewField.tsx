@@ -5,7 +5,9 @@ import type {
     GalleryFieldConfig
 } from '@/components/entity-form/types/field-config.types';
 import { Badge, Label } from '@/components/ui-wrapped';
+import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
+import { adminLogger } from '@/utils/logger';
 
 import { Download, ExternalLink, ImageIcon, ZoomIn } from 'lucide-react';
 import * as React from 'react';
@@ -69,6 +71,8 @@ export const GalleryViewField = React.forwardRef<HTMLDivElement, GalleryViewFiel
         },
         ref
     ) => {
+        const { t } = useTranslations();
+
         // Use direct translations from config
         const label = config.label;
         const description = config.description;
@@ -128,7 +132,7 @@ export const GalleryViewField = React.forwardRef<HTMLDivElement, GalleryViewFiel
 
                 window.URL.revokeObjectURL(url);
             } catch (error) {
-                console.error('Download failed:', error);
+                adminLogger.error('Download failed', error);
             }
         };
 
@@ -178,7 +182,7 @@ export const GalleryViewField = React.forwardRef<HTMLDivElement, GalleryViewFiel
                             type="button"
                             onClick={() => handleImageClick(image)}
                             className="rounded-full bg-white/20 p-2 transition-colors hover:bg-white/30"
-                            title="Preview image"
+                            title={t('ui.actions.previewImage')}
                         >
                             <ZoomIn className="h-4 w-4 text-white" />
                         </button>
@@ -189,7 +193,7 @@ export const GalleryViewField = React.forwardRef<HTMLDivElement, GalleryViewFiel
                             type="button"
                             onClick={() => handleDownload(image)}
                             className="rounded-full bg-white/20 p-2 transition-colors hover:bg-white/30"
-                            title="Download image"
+                            title={t('ui.actions.downloadImage')}
                         >
                             <Download className="h-4 w-4 text-white" />
                         </button>
@@ -200,7 +204,7 @@ export const GalleryViewField = React.forwardRef<HTMLDivElement, GalleryViewFiel
                             type="button"
                             onClick={() => handleExternalLink(image)}
                             className="rounded-full bg-white/20 p-2 transition-colors hover:bg-white/30"
-                            title="Open in new tab"
+                            title={t('ui.actions.openInNewTab')}
                         >
                             <ExternalLink className="h-4 w-4 text-white" />
                         </button>

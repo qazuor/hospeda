@@ -4,6 +4,7 @@ import { EntityErrorBoundary } from '@/components/error-boundaries';
 import { Icon } from '@/components/icons';
 import { Button } from '@/components/ui-wrapped/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui-wrapped/Card';
+import { adminLogger } from '@/utils/logger';
 import type { PermissionEnum } from '@repo/schemas';
 
 import React, { Suspense, type ReactNode } from 'react';
@@ -88,8 +89,7 @@ export const EntityPageBase = <T = Record<string, unknown>>({
     const handleSave = React.useCallback(
         async (values: Record<string, unknown>) => {
             // DEBUG: Log all form values
-            // biome-ignore lint/suspicious/noConsoleLog: Temporary debugging
-            console.log('[EntityPageBase] All form values:', values);
+            adminLogger.debug('[EntityPageBase] All form values', values);
 
             // Extract only the fields that are defined in the configuration
             const fieldsToSave: Record<string, unknown> = {};
@@ -105,8 +105,7 @@ export const EntityPageBase = <T = Record<string, unknown>>({
             }
 
             // DEBUG: Log filtered values being sent to API
-            // biome-ignore lint/suspicious/noConsoleLog: Temporary debugging
-            console.log('[EntityPageBase] Filtered values for API:', fieldsToSave);
+            adminLogger.debug('[EntityPageBase] Filtered values for API', fieldsToSave);
 
             await updateMutation.mutateAsync(fieldsToSave);
             // After successful save, navigate to view mode

@@ -23,7 +23,9 @@ import {
     SelectViewField,
     TextViewField
 } from '@/components/entity-form/views';
+import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
+import { adminLogger } from '@/utils/logger';
 import { Edit, Eye } from 'lucide-react';
 import * as React from 'react';
 
@@ -74,6 +76,8 @@ const EntityViewSectionComponent = React.forwardRef<HTMLDivElement, EntityViewSe
         },
         ref
     ) => {
+        const { t } = useTranslations();
+
         // Use title and description directly from config (they are i18n keys)
         const title = config.title;
         const description = config.description;
@@ -86,14 +90,6 @@ const EntityViewSectionComponent = React.forwardRef<HTMLDivElement, EntityViewSe
                     : config.permissions.view.some((permission) =>
                           userPermissions.includes(permission)
                       );
-
-            // // biome-ignore lint/suspicious/noConsoleLog: Debug logging
-            // console.log('🔍 [EntityViewSection] Section permissions check:', {
-            //     sectionId: config.id,
-            //     requiredPermissions: config.permissions?.view,
-            //     userPermissions,
-            //     hasViewPermission: result
-            // });
 
             return result;
         }, [config.permissions, userPermissions]);
@@ -143,12 +139,6 @@ const EntityViewSectionComponent = React.forwardRef<HTMLDivElement, EntityViewSe
                 if (!hasValue && !showEmptyFields) {
                     return false;
                 }
-
-                // // biome-ignore lint/suspicious/noConsoleLog: Debug logging
-                // console.log(
-                //     `🔍 [EntityViewSection] Field ${field.id} visible - value:`,
-                //     fieldValue
-                // );
 
                 // TODO: Check field visibility conditions
                 // For now, show all permitted fields
@@ -212,7 +202,7 @@ const EntityViewSectionComponent = React.forwardRef<HTMLDivElement, EntityViewSe
                             [field.id]: options
                         }));
                     } catch (error) {
-                        console.error(`Failed to load options for field ${field.id}:`, error);
+                        adminLogger.error(`Failed to load options for field ${field.id}`, error);
                     }
                 }
             };
@@ -383,7 +373,7 @@ const EntityViewSectionComponent = React.forwardRef<HTMLDivElement, EntityViewSe
                                         type="button"
                                         onClick={() => onEditField(field.id)}
                                         className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
-                                        title="Edit field"
+                                        title={t('ui.actions.editField')}
                                     >
                                         <Edit className="h-4 w-4" />
                                     </button>
@@ -426,10 +416,6 @@ const EntityViewSectionComponent = React.forwardRef<HTMLDivElement, EntityViewSe
                 case 'TABS':
                     // TODO: Implement tabs layout for nested sections
                     return <div className="space-y-4">{visibleFields.map(renderViewField)}</div>;
-
-                // case 'ACCORDION':
-                //     // TODO: Implement accordion layout for nested sections
-                //     return <div className="space-y-4">{visibleFields.map(renderViewField)}</div>;
 
                 default:
                     return <div className="space-y-4">{visibleFields.map(renderViewField)}</div>;
