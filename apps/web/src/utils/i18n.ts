@@ -1,5 +1,6 @@
 import { defaultLocale, trans } from '@/i18n/config';
 import type { TranslationKey } from '@/i18n/translation-keys';
+import { webLogger } from './logger';
 
 export function getLangFromUrl(url: URL) {
     const [, lang] = url.pathname.split('/');
@@ -13,7 +14,7 @@ export function useTranslations(lang: keyof typeof trans) {
     return function t(key: TranslationKey, params?: Record<string, unknown>): string {
         const raw = trans[lang][key] || trans[defaultLocale][key];
         if (!raw) {
-            console.error(`Translation key not found: ${key}`);
+            webLogger.error(`Translation key not found: ${key}`);
             return `[MISSING: ${key}]`;
         }
         if (!params) return raw;

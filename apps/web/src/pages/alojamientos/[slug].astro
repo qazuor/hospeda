@@ -9,6 +9,7 @@ import { getAccommodationBySlug, getAllAccommodations } from '@/data/db';
 import Layout from '@/layout/MainLayout.astro';
 import { getLangFromUrl, useTranslations } from '@/utils/i18n';
 import type { Accommodation } from '@repo/schemas';
+import logger from '@repo/logger';
 import type { GetStaticPaths } from 'astro';
 
 /**
@@ -29,7 +30,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
             },
         }));
     } catch (error) {
-        console.error('Error generating static paths for accommodations:', error);
+        logger.error({ error }, 'Error generating static paths for accommodations');
         return [];
     }
 };

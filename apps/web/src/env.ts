@@ -1,12 +1,16 @@
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { createStartupValidator } from '@repo/config';
+import { createLogger } from '@repo/logger';
 /**
  * Environment configuration with validation for Web App
  * Uses @repo/config for centralized environment variable management
  */
 import { config } from 'dotenv';
 import { z } from 'zod';
+
+// Create a logger for env loading - uses basic config since env isn't loaded yet
+const envLogger = createLogger('web-env');
 
 // Load environment variables from root directory
 const rootDir = resolve(__dirname, '../../../..');
@@ -26,13 +30,18 @@ for (const envFile of envFiles) {
     try {
         const result = config({ path: envFile });
         if (result?.error) {
-            console.warn(`⚠️  Could not load ${envFile}: ${result.error.message}`);
+            envLogger.warn({
+                message: 'Could not load env file',
+                file: envFile,
+                error: result.error.message
+            });
         }
     } catch (error) {
-        console.warn(
-            `⚠️  Error loading ${envFile}:`,
-            error instanceof Error ? error.message : String(error)
-        );
+        envLogger.warn({
+            message: 'Error loading env file',
+            file: envFile,
+            error: error instanceof Error ? error.message : String(error)
+        });
     }
 }
 

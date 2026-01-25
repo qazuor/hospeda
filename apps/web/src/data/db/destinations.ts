@@ -1,4 +1,5 @@
 import { ensureDatabase } from '@/server/db';
+import logger from '@repo/logger';
 import type { Destination } from '@repo/schemas';
 import { DestinationService } from '@repo/service-core';
 
@@ -126,7 +127,7 @@ export const getAllDestinations = async ({
         });
         return (data?.items as Destination[]) ?? [];
     } catch (error) {
-        console.error('Error fetching all destinations:', error);
+        logger.error({ error }, 'Error fetching all destinations');
         return [];
     }
 };

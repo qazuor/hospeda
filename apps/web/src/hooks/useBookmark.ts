@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { webLogger } from '../utils/logger';
 
 /**
  * Custom hook for managing bookmarks/favorites
@@ -39,7 +40,7 @@ export const useBookmark = (
 
             return newBookmarkedState;
         } catch (error) {
-            console.error('Failed to toggle bookmark:', error);
+            webLogger.error('Failed to toggle bookmark', error);
             // Revert optimistic update on error
             throw error;
         } finally {

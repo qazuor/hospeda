@@ -1,3 +1,4 @@
+import logger from '@repo/logger';
 import { UserBookmarkToggleHttpSchema } from '@repo/schemas';
 import type { APIRoute } from 'astro';
 import { z } from 'zod';
@@ -38,7 +39,7 @@ export const POST: APIRoute = async ({ request }) => {
             }
         );
     } catch (error) {
-        console.error('Bookmark API error:', error);
+        logger.error({ error }, 'Bookmark API error');
 
         if (error instanceof z.ZodError) {
             return new Response(

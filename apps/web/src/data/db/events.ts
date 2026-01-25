@@ -1,4 +1,5 @@
 import { ensureDatabase } from '@/server/db';
+import logger from '@repo/logger';
 import type { Event } from '@repo/schemas';
 import { EventService } from '@repo/service-core';
 
@@ -126,7 +127,7 @@ export const getAllEvents = async ({
         });
         return (data?.items as Event[]) ?? [];
     } catch (error) {
-        console.error('Error fetching all events:', error);
+        logger.error({ error }, 'Error fetching all events');
         return [];
     }
 };

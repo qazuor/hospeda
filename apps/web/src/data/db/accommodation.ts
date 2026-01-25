@@ -1,5 +1,6 @@
 import { getCurrentUser } from '@/data/user';
 import { ensureDatabase } from '@/server/db';
+import logger from '@repo/logger';
 import type { Accommodation } from '@repo/schemas';
 import { AccommodationService, DestinationService } from '@repo/service-core';
 
@@ -56,7 +57,7 @@ export const getAccommodations = async ({
             totalPages
         };
     } catch (error) {
-        console.error('Error fetching accommodations:', error);
+        logger.error({ error }, 'Error fetching accommodations');
         return {
             accommodations: [],
             total: 0,
@@ -148,7 +149,7 @@ export const getAllAccommodations = async ({
         });
         return (data?.items as Accommodation[]) ?? [];
     } catch (error) {
-        console.error('Error fetching all accommodations:', error);
+        logger.error({ error }, 'Error fetching all accommodations');
         return [];
     }
 };

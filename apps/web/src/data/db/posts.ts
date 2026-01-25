@@ -1,4 +1,5 @@
 import { ensureDatabase } from '@/server/db';
+import logger from '@repo/logger';
 import type { Post } from '@repo/schemas';
 import { PostService } from '@repo/service-core';
 
@@ -125,7 +126,7 @@ export const getAllPosts = async ({
         });
         return (data?.items as Post[]) ?? [];
     } catch (error) {
-        console.error('Error fetching all posts:', error);
+        logger.error({ error }, 'Error fetching all posts');
         return [];
     }
 };

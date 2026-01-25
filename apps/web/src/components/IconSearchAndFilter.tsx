@@ -2,6 +2,7 @@ import type { IconProps } from '@repo/icons';
 import * as Icons from '@repo/icons';
 import { SearchIcon } from '@repo/icons';
 import React, { useMemo, useState } from 'react';
+import { webLogger } from '../utils/logger';
 
 // Mapa de traducción inglés → español para búsqueda
 const iconTranslations: Record<string, string[]> = {
@@ -613,7 +614,7 @@ export const IconSearchAndFilter = ({ iconCategories }: IconSearchAndFilterProps
 
                                     // Safety check for component
                                     if (!IconComponent) {
-                                        console.warn(`Icon component not found for: ${icon.name}`);
+                                        webLogger.warn(`Icon component not found: ${icon.name}`);
                                         return (
                                             <div
                                                 key={icon.name}

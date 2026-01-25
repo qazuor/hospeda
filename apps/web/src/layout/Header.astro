@@ -50,8 +50,16 @@ const t = useTranslations(lang);
                 id='mobile-menu-button'
                 class='md:hidden p-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none'
                 aria-label='Toggle mobile menu'
+                aria-expanded='false'
             >
-                <MenuIcon className='w-6 h-6' />
+                <!-- Menu icon (hamburger) - shown when menu is closed -->
+                <svg id='menu-icon-open' class='w-6 h-6' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                    <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 6h16M4 12h16M4 18h16' />
+                </svg>
+                <!-- Close icon (X) - shown when menu is open -->
+                <svg id='menu-icon-close' class='w-6 h-6 hidden' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                    <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 18L18 6M6 6l12 12' />
+                </svg>
             </button>
         </div>
     </div>
@@ -80,16 +88,16 @@ const t = useTranslations(lang);
     <script>
         const btn = document.getElementById('mobile-menu-button');
         const menu = document.getElementById('mobile-menu');
+        const iconOpen = document.getElementById('menu-icon-open');
+        const iconClose = document.getElementById('menu-icon-close');
 
-        if (btn && menu) {
+        if (btn && menu && iconOpen && iconClose) {
             btn.addEventListener('click', () => {
+                const isExpanded = btn.getAttribute('aria-expanded') === 'true';
                 menu.classList.toggle('hidden');
-                const icon = btn.querySelector('svg');
-                if (icon) {
-                    icon.innerHTML = menu.classList.contains('hidden')
-                        ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />'
-                        : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />';
-                }
+                iconOpen.classList.toggle('hidden');
+                iconClose.classList.toggle('hidden');
+                btn.setAttribute('aria-expanded', String(!isExpanded));
             });
         }
     </script>

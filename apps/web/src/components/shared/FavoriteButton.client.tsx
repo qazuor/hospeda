@@ -1,5 +1,6 @@
 'use client';
 import { useBookmark } from '@/hooks/useBookmark';
+import { webLogger } from '@/utils/logger';
 import { FavoriteIcon } from '@repo/icons';
 import { useEffect } from 'react';
 
@@ -50,7 +51,7 @@ export function FavoriteButton({
         } catch (error) {
             // Error is already logged in the hook
             // Could show a toast notification here
-            console.error('Failed to toggle bookmark:', error);
+            webLogger.error('Failed to toggle bookmark', error);
         }
     };
 

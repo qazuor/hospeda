@@ -1,5 +1,6 @@
 import { useAuth, useUser } from '@clerk/clerk-react';
 import { type ReactNode, createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { webLogger } from '../utils/logger';
 
 /**
  * User session data stored in context and session storage
@@ -77,7 +78,7 @@ function getStoredSession(): { user: UserSession | null; isValid: boolean } {
         const user = JSON.parse(userStr) as UserSession;
         return { user, isValid: true };
     } catch (error) {
-        console.warn('Failed to parse stored session:', error);
+        webLogger.warn('Failed to parse stored session', error);
         clearStoredSession();
         return { user: null, isValid: false };
     }
@@ -96,7 +97,7 @@ function storeSession(user: UserSession): void {
         sessionStorage.setItem(SESSION_KEYS.USER, JSON.stringify(user));
         sessionStorage.setItem(SESSION_KEYS.TIMESTAMP, Date.now().toString());
     } catch (error) {
-        console.warn('Failed to store session:', error);
+        webLogger.warn('Failed to store session', error);
     }
 }
 
@@ -114,7 +115,7 @@ function clearStoredSession(): void {
         sessionStorage.removeItem(SESSION_KEYS.TIMESTAMP);
         sessionStorage.removeItem(SESSION_KEYS.CLERK_STATE);
     } catch (error) {
-        console.warn('Failed to clear stored session:', error);
+        webLogger.warn('Failed to clear stored session', error);
     }
 }
 
@@ -292,13 +293,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 });
             } catch (cleanupError) {
                 // Ignore cleanup errors - not critical for sign out
-                console.debug('Server cleanup during sign out (non-critical):', cleanupError);
+                webLogger.debug('Server cleanup during sign out (non-critical)', cleanupError);
             }
 
             // Sign out from Clerk
             await clerkSignOut();
         } catch (error) {
-            console.error('Sign out error:', error);
+            webLogger.error('Sign out error', error);
         }
     };
 
