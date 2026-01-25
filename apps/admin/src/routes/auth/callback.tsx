@@ -23,14 +23,11 @@ function AuthCallbackPage(): React.JSX.Element {
     useEffect(() => {
         const handleCallback = async () => {
             try {
-                adminLogger.info(
-                    {
-                        isLoaded,
-                        isSignedIn,
-                        user: !!user
-                    },
-                    'Auth callback - checking status'
-                );
+                adminLogger.info('Auth callback - checking status', {
+                    isLoaded,
+                    isSignedIn,
+                    user: !!user
+                });
 
                 if (!isLoaded) {
                     return; // Wait for Clerk to load
@@ -51,29 +48,55 @@ function AuthCallbackPage(): React.JSX.Element {
                     method: 'POST'
                 });
 
-                adminLogger.info(response.data, 'Sync result');
+                adminLogger.info('Sync result', response.data);
 
-                if (
+                // Type the API response properly
+                // Success response: { user: { id: string, ... } }
+                // Error response: { success: false, error: { code: string, message: string } }
+                interface SyncSuccessResponse {
+                    user: { id: string };
+                }
+                interface SyncErrorResponse {
+                    success: false;
+                    error: {
+                        code: string;
+                        message: string;
+                    };
+                }
+                type SyncResponse = SyncSuccessResponse | SyncErrorResponse;
+                const syncData = response.data as unknown as SyncResponse;
+
+                // Success is indicated by presence of 'user' field, not 'success' boolean
+                const isSuccess =
                     response.status >= 200 &&
                     response.status < 300 &&
-                    // biome-ignore lint/suspicious/noExplicitAny: API response structure is dynamic
-                    (response.data as any)?.success
-                ) {
+                    'user' in syncData &&
+                    syncData.user?.id;
+
+                if (isSuccess) {
                     adminLogger.info('Sync successful, redirecting to dashboard');
                     setStatus('redirecting');
 
-                    // Get redirect URL from query params or default to root
+                    // Get redirect URL from query params or default to dashboard
                     const redirect =
-                        (router.state.location.search as { redirect?: string })?.redirect || '/';
-                    await router.navigate({ to: redirect });
+                        (router.state.location.search as { redirect?: string })?.redirect ||
+                        '/dashboard';
+
+                    // Use window.location.href for a full page reload
+                    // This ensures the server receives the updated Clerk cookies
+                    // router.navigate() does client-side navigation that may not
+                    // properly sync cookies for server-side auth checks
+                    if (typeof window !== 'undefined') {
+                        window.location.href = redirect;
+                    }
                 } else {
-                    adminLogger.error('Sync failed', 'Response was not successful');
-                    // biome-ignore lint/suspicious/noExplicitAny: API response structure is dynamic
-                    setError((response.data as any)?.error?.message || 'Failed to sync user data');
+                    const errorData = syncData as SyncErrorResponse;
+                    adminLogger.error('Sync failed', errorData?.error?.message || 'Unknown error');
+                    setError(errorData?.error?.message || 'Failed to sync user data');
                     setStatus('error');
                 }
             } catch (err) {
-                adminLogger.error(err, 'Callback error');
+                adminLogger.error('Callback error', err);
                 setError(err instanceof Error ? err.message : 'Unknown error occurred');
                 setStatus('error');
             }

@@ -94,7 +94,7 @@ function getStoredSession(): { user: UserSession | null; isValid: boolean } {
         const user = JSON.parse(userStr) as UserSession;
         return { user, isValid: true };
     } catch (error) {
-        adminLogger.warn(error, 'Failed to parse stored session');
+        adminLogger.warn('Failed to parse stored session', error);
         clearStoredSession();
         return { user: null, isValid: false };
     }
@@ -113,7 +113,7 @@ function storeSession(user: UserSession): void {
         sessionStorage.setItem(SESSION_KEYS.USER, JSON.stringify(user));
         sessionStorage.setItem(SESSION_KEYS.TIMESTAMP, Date.now().toString());
     } catch (error) {
-        adminLogger.warn(error, 'Failed to store session');
+        adminLogger.warn('Failed to store session', error);
     }
 }
 
@@ -131,7 +131,7 @@ function clearStoredSession(): void {
         sessionStorage.removeItem(SESSION_KEYS.TIMESTAMP);
         sessionStorage.removeItem(SESSION_KEYS.CLERK_STATE);
     } catch (error) {
-        adminLogger.warn(error, 'Failed to clear stored session');
+        adminLogger.warn('Failed to clear stored session', error);
     }
 }
 
@@ -147,15 +147,25 @@ async function fetchUserSession(): Promise<UserSession | null> {
         });
 
         adminLogger.debug(`API response status: ${response.status}`);
-        adminLogger.debug('API response data:', JSON.stringify(response.data));
+        adminLogger.debug('API response data', JSON.stringify(response.data));
 
         if (response.status < 200 || response.status >= 300) {
             throw new Error(`HTTP ${response.status}`);
         }
 
         // Check if response has the expected structure
-        // biome-ignore lint/suspicious/noExplicitAny: API response structure is dynamic
-        const responseData = response.data as any;
+        interface AuthMeResponse {
+            success: boolean;
+            data?: {
+                isAuthenticated: boolean;
+                actor?: {
+                    id: string;
+                    role: string;
+                    permissions?: string[];
+                };
+            };
+        }
+        const responseData = response.data as unknown as AuthMeResponse;
 
         if (
             responseData?.success &&
@@ -181,7 +191,7 @@ async function fetchUserSession(): Promise<UserSession | null> {
         return null;
     } catch (error) {
         adminLogger.error(
-            'Error fetching user session:',
+            'Error fetching user session',
             error instanceof Error ? error.message : String(error)
         );
         return null;
@@ -341,10 +351,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 adminLogger.info('✅ Server-side cleanup completed during sign out');
             } catch (cleanupError) {
                 // Ignore cleanup errors - not critical for sign out
-                adminLogger.debug(cleanupError, 'Server cleanup during sign out (non-critical)');
+                adminLogger.debug('Server cleanup during sign out (non-critical)', cleanupError);
             }
         } catch (error) {
-            adminLogger.error(error, 'Sign out error');
+            adminLogger.error('Sign out error', error);
         }
     };
 

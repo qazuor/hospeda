@@ -1,105 +1,54 @@
 /**
- * This module configures and extends the base logger for admin specific logging.
- * It provides a standardized logging interface for the admin application with
- * appropriate categorization and formatting.
+ * Frontend logger for admin application
+ * Provides styled console output with category prefix for easy filtering
  */
 
-// import logger, { type ILogger, LoggerColors } from '@repo/logger';
+type LogLevel = 'log' | 'info' | 'warn' | 'error' | 'debug';
 
-// /**
-//  * Admin-specific logger instance with proper categorization and styling.
-//  * Uses cyan color to distinguish admin logs from other application logs.
-//  */
-// const adminLogger = logger.registerCategory('ADMIN', 'ADMIN', {
-//     color: LoggerColors.CYAN_BRIGHT,
-//     truncateLongText: true,
-//     truncateLongTextAt: 500,
-//     save: false,
-//     expandObjectLevels: 2,
-//     stringifyObj: false
-// });
+interface LoggerOptions {
+    category: string;
+    bgColor: string;
+    textColor?: string;
+    enabled?: boolean;
+}
 
-// /**
-//  * Typed admin logger for use throughout the admin application.
-//  * Provides all standard logging methods (log, info, warn, error, debug)
-//  * with admin-specific categorization.
-//  */
-// export { adminLogger };
-// export type { ILogger as AdminLogger };
+/**
+ * Creates a frontend logger with styled console output
+ */
+function createFrontendLogger(options: LoggerOptions) {
+    const { category, bgColor, textColor = '#000000', enabled = true } = options;
+    const style = `color: ${textColor}; background-color: ${bgColor}; font-weight: bold; padding: 1px 5px;`;
 
-const adminLogger = {
-    log: (value?: unknown, label?: string) => {
-        if (label) {
-            // biome-ignore lint/suspicious/noConsoleLog: <explanation>
-            console.log(
-                `%c[ADMIN] ${label ?? ''}`,
-                'color: #000000; background-color: #00ff00; font-weight: bold; padding: 1px 5px;',
-                value
-            );
-        } else {
-            // biome-ignore lint/suspicious/noConsoleLog: <explanation>
-            console.log(
-                `%c[ADMIN] ${value ?? ''}`,
-                'color: #000000; background-color: #00ff00; font-weight: bold; padding: 1px 5px;'
-            );
-        }
-    },
-    info: (value?: unknown, label?: string) => {
-        if (label) {
-            console.info(
-                `%c[ADMIN] ${label ?? ''}`,
-                'color: #000000; background-color: #0006ba; font-weight: bold; padding: 1px 5px; color: #ffffff;',
-                value
-            );
-        } else {
-            console.info(
-                `%c[ADMIN] ${value ?? ''}`,
-                'color: #000000; background-color: #0006ba; font-weight: bold; padding: 1px 5px; color: #ffffff;'
-            );
-        }
-    },
-    warn: (value?: unknown, label?: string) => {
-        if (label) {
-            console.warn(
-                `%c[ADMIN] ${label ?? ''}`,
-                'color: #000000; background-color: #fbf600; font-weight: bold; padding: 1px 5px;',
-                value
-            );
-        } else {
-            console.warn(
-                `%c[ADMIN] ${value ?? ''}`,
-                'color: #000000; background-color: #fbf600; font-weight: bold; padding: 1px 5px;'
-            );
-        }
-    },
-    error: (value?: unknown, label?: string) => {
-        if (label) {
-            console.error(
-                `%c[ADMIN] ${label ?? ''}`,
-                'color: #000000; background-color: #ff0000; font-weight: bold; padding: 1px 5px;',
-                value
-            );
-        } else {
-            console.error(
-                `%c[ADMIN] ${value ?? ''}`,
-                'color: #000000; background-color: #ff0000; font-weight: bold; padding: 1px 5px;'
-            );
-        }
-    },
-    debug: (value?: unknown, label?: string) => {
-        if (label) {
-            console.debug(
-                `%c[ADMIN] ${label ?? ''}`,
-                'color: #000000; background-color: #ff00ee; font-weight: bold; padding: 1px 5px;',
-                value
-            );
-        } else {
-            console.debug(
-                `%c[ADMIN] ${value ?? ''}`,
-                'color: #000000; background-color: #ff00ee; font-weight: bold; padding: 1px 5px;'
-            );
-        }
-    }
-};
+    const createLogMethod = (level: LogLevel) => {
+        return (message: string, data?: unknown) => {
+            if (!enabled) return;
 
-export { adminLogger };
+            const consoleMethod = console[level] ?? console.log;
+
+            if (data !== undefined) {
+                consoleMethod(`%c[${category}] ${message}`, style, data);
+            } else {
+                consoleMethod(`%c[${category}] ${message}`, style);
+            }
+        };
+    };
+
+    return {
+        log: createLogMethod('log'),
+        info: createLogMethod('info'),
+        warn: createLogMethod('warn'),
+        error: createLogMethod('error'),
+        debug: createLogMethod('debug')
+    };
+}
+
+/**
+ * Admin-specific logger instance
+ * Uses green color scheme to distinguish admin logs
+ */
+export const adminLogger = createFrontendLogger({
+    category: 'ADMIN',
+    bgColor: '#22c55e',
+    textColor: '#ffffff',
+    enabled: import.meta.env.DEV || import.meta.env.VITE_ENABLE_LOGGING === 'true'
+});

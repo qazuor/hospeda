@@ -11,7 +11,7 @@ function NotificationsPage() {
 
     return (
         <MainPageLayout title={t('admin-pages.titles.notifications')}>
-            <div>TODO: add content</div>
+            <div>{t('ui.pages.todoAddContent')}</div>
         </MainPageLayout>
     );
 }

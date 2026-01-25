@@ -11,7 +11,7 @@ function MyAccommodations() {
 
     return (
         <SidebarPageLayout title={t('admin-pages.titles.myAccommodations')}>
-            <div>TODO: add content</div>
+            <div>{t('ui.pages.todoAddContent')}</div>
         </SidebarPageLayout>
     );
 }

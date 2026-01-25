@@ -2,10 +2,16 @@ import { ClerkProvider } from '@clerk/tanstack-react-start';
 import { TanstackDevtools } from '@tanstack/react-devtools';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { HeadContent, Link, Outlet, Scripts, createRootRoute } from '@tanstack/react-router';
+import { useState } from 'react';
 import type * as React from 'react';
 
 import { ToastProvider } from '@/components/ui/ToastProvider';
 import { useTranslations } from '@/hooks/use-translations';
+import { GlobalErrorBoundary } from '@/lib/error-boundaries';
+import { initSentry } from '@/lib/sentry';
+
+// Initialize Sentry for error tracking (only in production with valid DSN)
+initSentry();
 
 import appCss from '../styles.css?url';
 
@@ -62,14 +68,34 @@ export const Route = createRootRoute({
 });
 
 function RootDocument({ children }: { children: React.ReactNode }) {
-    const queryClient = new QueryClient({
-        defaultOptions: {
-            queries: {
-                staleTime: 5 * 60 * 1000, // 5 minutes
-                gcTime: 30 * 60 * 1000 // 30 minutes
-            }
-        }
-    });
+    // Use useState with lazy initializer to prevent QueryClient recreation on every render
+    // This ensures the cache persists across component re-renders and navigations
+    const [queryClient] = useState(
+        () =>
+            new QueryClient({
+                defaultOptions: {
+                    queries: {
+                        staleTime: 5 * 60 * 1000, // 5 minutes - data considered fresh
+                        gcTime: 30 * 60 * 1000, // 30 minutes - cache garbage collection time
+                        retry: (failureCount, error) => {
+                            // Don't retry on 4xx errors (client errors)
+                            if (error instanceof Error && 'status' in error) {
+                                const status = (error as { status: number }).status;
+                                if (status >= 400 && status < 500) {
+                                    return false;
+                                }
+                            }
+                            // Retry up to 3 times for other errors
+                            return failureCount < 3;
+                        },
+                        refetchOnWindowFocus: false // Avoid unnecessary refetches
+                    },
+                    mutations: {
+                        retry: false // Don't retry mutations by default
+                    }
+                }
+            })
+    );
 
     return (
         <ClerkProvider>
@@ -83,7 +109,9 @@ function RootDocument({ children }: { children: React.ReactNode }) {
                 </head>
                 <body>
                     <QueryClientProvider client={queryClient}>
-                        <ToastProvider>{children}</ToastProvider>
+                        <ToastProvider>
+                            <GlobalErrorBoundary>{children}</GlobalErrorBoundary>
+                        </ToastProvider>
                     </QueryClientProvider>
                     {process.env.NODE_ENV === 'development' && <TanstackDevtools />}
                     <Scripts />

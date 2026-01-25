@@ -4,6 +4,7 @@
  *
  * Note: Vite automatically loads .env files, so we don't need dotenv here
  */
+import { adminLogger } from '@/utils/logger';
 import { z } from 'zod';
 
 /**
@@ -56,6 +57,13 @@ const AdminEnvSchema = z.object({
         .default('100')
         .transform((val) => Number.parseInt(val, 10))
         .describe('Maximum pagination size'),
+
+    // Monitoring
+    VITE_SENTRY_DSN: z
+        .string()
+        .url()
+        .optional()
+        .describe('Sentry DSN for error tracking (production only)'),
 
     // Development
     NODE_ENV: z
@@ -118,6 +126,7 @@ export const validateAdminEnv = (): AdminEnv => {
             VITE_ENABLE_ROUTER_DEVTOOLS: import.meta.env.VITE_ENABLE_ROUTER_DEVTOOLS || 'false',
             VITE_DEFAULT_PAGE_SIZE: import.meta.env.VITE_DEFAULT_PAGE_SIZE || '25',
             VITE_MAX_PAGE_SIZE: import.meta.env.VITE_MAX_PAGE_SIZE || '100',
+            VITE_SENTRY_DSN: import.meta.env.VITE_SENTRY_DSN,
             NODE_ENV: import.meta.env.NODE_ENV || 'development',
             DEV: import.meta.env.DEV,
             PROD: import.meta.env.PROD
@@ -125,8 +134,8 @@ export const validateAdminEnv = (): AdminEnv => {
 
         return AdminEnvSchema.parse(envData);
     } catch (error) {
-        console.error('❌ Admin App environment validation FAILED');
-        console.error(error instanceof Error ? error.message : String(error));
+        adminLogger.error('❌ Admin App environment validation FAILED');
+        adminLogger.error(error instanceof Error ? error.message : String(error));
         throw new Error('Environment validation failed for Admin App');
     }
 };
@@ -196,6 +205,13 @@ export const isProduction = (): boolean => {
  */
 export const isTest = (): boolean => {
     return safeEnv.get('NODE_ENV', 'development') === 'test';
+};
+
+/**
+ * Get Sentry DSN for error tracking (optional, only used in production)
+ */
+export const getSentryDsn = (): string | undefined => {
+    return safeEnv.get('VITE_SENTRY_DSN') as string | undefined;
 };
 
 // Export the schema for testing
