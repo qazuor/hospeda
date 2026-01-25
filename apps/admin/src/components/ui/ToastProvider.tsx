@@ -7,7 +7,8 @@
  */
 
 import { type FlashyToastType, useFlashyToast } from '@/hooks/use-flashy-toast';
-import { type ReactNode, createContext, useCallback, useContext, useMemo } from 'react';
+import { setToastFunction } from '@/lib/errors';
+import { type ReactNode, createContext, useCallback, useContext, useEffect, useMemo } from 'react';
 
 /**
  * Legacy toast variant type for backward compatibility
@@ -105,6 +106,30 @@ export const ToastProvider = ({ children }: ToastProviderProps) => {
         },
         [toast]
     );
+
+    // Register toast function for global error handling (showErrorToast, showInfoToast, etc.)
+    useEffect(() => {
+        setToastFunction((options) => {
+            // Map the global toast API to the provider's API
+            const variantMap: Record<string, ToastVariant> = {
+                default: 'default',
+                destructive: 'error',
+                success: 'success'
+            };
+
+            const variant = variantMap[options.variant || 'default'] || 'default';
+            const message = options.description || options.title || '';
+
+            toast(options.title ? `${options.title}: ${message}` : message, {
+                type: mapVariantToFlashyType(variant),
+                duration: options.duration || 5000,
+                position: 'top-right',
+                closable: true,
+                animation: 'fade',
+                theme: 'dark'
+            });
+        });
+    }, [toast]);
 
     const value = useMemo<ToastContextValue>(() => ({ addToast }), [addToast]);
 

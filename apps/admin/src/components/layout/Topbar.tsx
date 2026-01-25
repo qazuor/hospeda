@@ -38,39 +38,28 @@ export const Topbar = ({ onToggleSidebar }: TopbarProps) => {
     const router = useRouter();
     const { t } = useTranslations();
     const sectionIcon = useMemo(() => {
-        const top = (() => {
+        const titleKey = (() => {
             const direct = menuTree.find((it) => it.to === location.pathname);
-            if (direct) return direct.title;
+            if (direct) return direct.titleKey;
             for (const it of menuTree) {
-                if (it.children?.some((c) => c.to === location.pathname)) return it.title;
+                if (it.children?.some((c) => c.to === location.pathname)) return it.titleKey;
             }
             return undefined;
         })();
         const iconProps = { className: 'h-5 w-5' };
-        switch (top) {
-            case 'Dashboard':
-                return <DashboardIcon {...iconProps} />;
-            case 'Contenido':
-                return <ContentIcon {...iconProps} />;
-            case 'Alojamientos':
-                return <AccommodationIcon {...iconProps} />;
-            case 'Destinos':
-                return <MapIcon {...iconProps} />;
-            case 'Eventos':
-                return <EventIcon {...iconProps} />;
-            case 'Publicaciones':
-                return <PostIcon {...iconProps} />;
-            case 'Users':
-                return <UsersIcon {...iconProps} />;
-            case 'Admin':
-                return <AdminIcon {...iconProps} />;
-            case 'Sponsors':
-                return <PostSponsorIcon {...iconProps} />;
-            case 'Analiticas':
-                return <AnalyticsIcon {...iconProps} />;
-            default:
-                return <SectionIcon {...iconProps} />;
-        }
+        // Match on titleKey patterns
+        if (!titleKey) return <SectionIcon {...iconProps} />;
+        if (titleKey.includes('dashboard')) return <DashboardIcon {...iconProps} />;
+        if (titleKey.includes('content')) return <ContentIcon {...iconProps} />;
+        if (titleKey.includes('accommodations')) return <AccommodationIcon {...iconProps} />;
+        if (titleKey.includes('destinations')) return <MapIcon {...iconProps} />;
+        if (titleKey.includes('events')) return <EventIcon {...iconProps} />;
+        if (titleKey.includes('posts')) return <PostIcon {...iconProps} />;
+        if (titleKey.includes('users')) return <UsersIcon {...iconProps} />;
+        if (titleKey.includes('admin')) return <AdminIcon {...iconProps} />;
+        if (titleKey.includes('sponsors')) return <PostSponsorIcon {...iconProps} />;
+        if (titleKey.includes('analytics')) return <AnalyticsIcon {...iconProps} />;
+        return <SectionIcon {...iconProps} />;
     }, [location]);
     const [showNotifications, setShowNotifications] = useState(false);
     const notifRef = useRef<HTMLDivElement | null>(null);
@@ -115,7 +104,7 @@ export const Topbar = ({ onToggleSidebar }: TopbarProps) => {
                 <div className="ml-auto flex items-center gap-2">
                     <div className="hidden items-center gap-2 rounded-md border bg-card px-2 py-1.5 text-muted-foreground text-sm sm:flex">
                         <SearchIcon className="h-4 w-4" />
-                        <span>Search…</span>
+                        <span>{t('admin-nav.topbar.search')}</span>
                     </div>
                     <div
                         ref={notifRef}
@@ -154,7 +143,7 @@ export const Topbar = ({ onToggleSidebar }: TopbarProps) => {
                                         className="underline"
                                         onClick={() => setShowNotifications(false)}
                                     >
-                                        See all
+                                        {t('admin-common.actions.seeAll')}
                                     </Link>
                                 </div>
                             </div>

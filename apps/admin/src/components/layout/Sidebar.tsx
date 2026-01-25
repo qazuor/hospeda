@@ -1,28 +1,33 @@
+/**
+ * Sidebar component
+ *
+ * Main navigation sidebar for the admin dashboard.
+ * On desktop it is a static column. On mobile it slides in as a drawer.
+ *
+ * Composed of sub-components:
+ * - SidebarHeader: Mobile header with close button
+ * - SidebarNav: Primary icon rail navigation
+ * - SidebarItem: Individual navigation items
+ * - SidebarGroup: Secondary panel with child links
+ * - SidebarFooter: Optional footer section
+ */
+
 import { useTranslations } from '@/hooks/use-translations';
+import { useSidebarPersistence } from '@/hooks/useSidebarPersistence';
 import type { PermissionValue } from '@/lib/menu';
 import { filterMenuByPermissions, menuTree } from '@/lib/menu';
 import { cn } from '@/lib/utils';
-import {
-    AccommodationIcon,
-    AddIcon,
-    AdminIcon,
-    AnalyticsIcon,
-    CloseIcon,
-    ContentIcon,
-    DashboardIcon,
-    DebugIcon,
-    EventIcon,
-    ListIcon,
-    MapIcon,
-    PostIcon,
-    PostSponsorIcon,
-    SearchIcon,
-    SettingsIcon,
-    TagIcon,
-    UsersIcon
-} from '@repo/icons';
-import { Link, useRouter, useRouterState } from '@tanstack/react-router';
+import { useRouter, useRouterState } from '@tanstack/react-router';
 import { useEffect, useMemo, useState } from 'react';
+
+import {
+    SidebarGroup,
+    SidebarHeader,
+    type SidebarMenuItem,
+    SidebarNav,
+    getChildMenuIcon,
+    getMenuIcon
+} from './sidebar';
 
 export type SidebarProps = {
     /**
@@ -35,7 +40,11 @@ export type SidebarProps = {
     readonly onClose: () => void;
 };
 
-// Navigation items are driven by permissions from menuTree
+/**
+ * Header routes that should not show sidebar selection
+ * Defined outside component to avoid recreating on each render
+ */
+const HEADER_ROUTES = ['/me/profile', '/me/settings', '/notifications'] as const;
 
 /**
  * Sidebar renders the primary navigation. On desktop it is a static column.
@@ -45,113 +54,107 @@ export const Sidebar = ({ open, onClose }: SidebarProps) => {
     const { location } = useRouterState();
     const router = useRouter();
     const { t } = useTranslations();
+
     // TODO: Replace with real user permissions from Clerk session/ctx
     const userPermissions: PermissionValue[] | undefined = undefined;
-    const items = filterMenuByPermissions(menuTree, userPermissions);
+    const items = filterMenuByPermissions(menuTree, userPermissions) as SidebarMenuItem[];
 
-    const getIcon = (title: string) => {
-        switch (title) {
-            case 'Dashboard':
-                return <DashboardIcon className="h-5 w-5" />;
-            case 'Contenido':
-                return <ContentIcon className="h-5 w-5" />;
-            case 'Alojamientos':
-                return <AccommodationIcon className="h-5 w-5" />;
-            case 'Destinos':
-                return <MapIcon className="h-5 w-5" />;
-            case 'Eventos':
-                return <EventIcon className="h-5 w-5" />;
-            case 'Publicaciones':
-                return <PostIcon className="h-5 w-5" />;
-            case 'Users':
-                return <UsersIcon className="h-5 w-5" />;
-            case 'Admin':
-                return <AdminIcon className="h-5 w-5" />;
-            case 'Sponsors':
-                return <PostSponsorIcon className="h-5 w-5" />;
-            case 'Analiticas':
-                return <AnalyticsIcon className="h-5 w-5" />;
-            // Profile/Settings moved to header
-            default:
-                return <ContentIcon className="h-5 w-5" />;
-        }
-    };
-
-    const getChildIcon = (parent: string, child: string) => {
-        const childLower = child.toLowerCase();
-        if (/(agregar|new|create)/.test(childLower)) return <AddIcon className="h-4 w-4" />;
-        if (/(lista|list|all)/.test(childLower)) return <ListIcon className="h-4 w-4" />;
-        if (parent === 'Contenido') {
-            if (/amenit/.test(childLower)) return <SettingsIcon className="h-4 w-4" />;
-            if (/feature/.test(childLower)) return <ContentIcon className="h-4 w-4" />;
-            if (/attraction/.test(childLower)) return <TagIcon className="h-4 w-4" />;
-        }
-        if (parent === 'Alojamientos') return <AccommodationIcon className="h-4 w-4" />;
-        if (parent === 'Destinos') return <MapIcon className="h-4 w-4" />;
-        if (parent === 'Eventos') {
-            if (/organizer/.test(childLower)) return <UsersIcon className="h-4 w-4" />;
-            if (/location/.test(childLower)) return <MapIcon className="h-4 w-4" />;
-            return <EventIcon className="h-4 w-4" />;
-        }
-        if (parent === 'Publicaciones') return <PostIcon className="h-4 w-4" />;
-        if (parent === 'Users')
-            return /agregar|new|create/.test(childLower) ? (
-                <AddIcon className="h-4 w-4" />
-            ) : (
-                <UsersIcon className="h-4 w-4" />
-            );
-        if (parent === 'Admin') {
-            if (/permiso/.test(childLower)) return <AdminIcon className="h-4 w-4" />;
-            if (/tag/.test(childLower)) return <TagIcon className="h-4 w-4" />;
-            if (/seo/.test(childLower)) return <SearchIcon className="h-4 w-4" />;
-            if (/portal|setting/.test(childLower)) return <SettingsIcon className="h-4 w-4" />;
-        }
-        if (parent === 'Analiticas') {
-            if (/debug/.test(childLower)) return <DebugIcon className="h-4 w-4" />;
-            return <AnalyticsIcon className="h-4 w-4" />;
-        }
-        if (parent === 'Sponsors') return <PostSponsorIcon className="h-4 w-4" />;
-        return <ContentIcon className="h-4 w-4" />;
-    };
-
-    const headerRoutes = ['/me/profile', '/me/settings', '/notifications'] as const;
     const isHeaderRoute = useMemo(
-        () => headerRoutes.some((r) => location.pathname.startsWith(r)),
-        [location.pathname, headerRoutes]
+        () => HEADER_ROUTES.some((r) => location.pathname.startsWith(r)),
+        [location.pathname]
     );
 
+    // Determine selected item from current location
     const selectedTopFromLocation = useMemo(() => {
         if (isHeaderRoute) return undefined;
         const path = location.pathname;
+
+        // Check for direct match
         const direct = items.find((it) => it.to && it.to === path);
-        if (direct) return direct.title;
+        if (direct) return direct.titleKey;
+
+        // Check children for match
         for (const it of items) {
             if (it.children) {
                 const child = it.children.find((c) => c.to === path);
-                if (child) return it.title;
+                if (child) return it.titleKey;
             }
         }
-        return items[0]?.title;
+
+        return items[0]?.titleKey;
     }, [items, location.pathname, isHeaderRoute]);
 
-    const [selectedTitle, setSelectedTitle] = useState<string | undefined>(selectedTopFromLocation);
-    const [hoveredTitle, setHoveredTitle] = useState<string | undefined>(undefined);
+    // Persistent sidebar state
+    const {
+        selectedTitleKey: persistedTitleKey,
+        setSelectedTitleKey: setPersistedTitleKey,
+        isCollapsed: isSubPanelCollapsed,
+        toggleCollapsed: toggleSubPanelCollapsed
+    } = useSidebarPersistence({
+        defaultTitleKey: selectedTopFromLocation
+    });
+
+    // State management for selection and hover
+    const [selectedTitleKey, setSelectedTitleKey] = useState<string | undefined>(
+        persistedTitleKey ?? selectedTopFromLocation
+    );
+    const [hoveredTitleKey, setHoveredTitleKey] = useState<string | undefined>(undefined);
+
+    // Sync selected state with location (but prefer persisted if on same parent route)
     useEffect(() => {
-        setSelectedTitle(selectedTopFromLocation);
+        // Always sync with URL for correct highlighting
+        setSelectedTitleKey(selectedTopFromLocation);
     }, [selectedTopFromLocation]);
 
+    // Persist selection when manually changed
+    const handleSelectTitleKey = (key: string | undefined) => {
+        setSelectedTitleKey(key);
+        setPersistedTitleKey(key);
+    };
+
+    // Computed values for display
     const selectedItem = useMemo(() => {
-        if (!selectedTitle) return undefined;
-        return items.find((i) => i.title === selectedTitle);
-    }, [items, selectedTitle]);
+        if (!selectedTitleKey) return undefined;
+        return items.find((i) => i.titleKey === selectedTitleKey);
+    }, [items, selectedTitleKey]);
+
     const viewedItem = useMemo(() => {
-        const effectiveTitle = hoveredTitle ?? selectedTitle;
-        if (!effectiveTitle) return undefined;
-        return items.find((i) => i.title === effectiveTitle);
-    }, [items, hoveredTitle, selectedTitle]);
+        const effectiveKey = hoveredTitleKey ?? selectedTitleKey;
+        if (!effectiveKey) return undefined;
+        return items.find((i) => i.titleKey === effectiveKey);
+    }, [items, hoveredTitleKey, selectedTitleKey]);
+
     const showSubPanel = Boolean(
-        viewedItem?.children && viewedItem.children.length > 0 && (hoveredTitle || !isHeaderRoute)
+        viewedItem?.children &&
+            viewedItem.children.length > 0 &&
+            (hoveredTitleKey || !isHeaderRoute) &&
+            !isSubPanelCollapsed
     );
+
+    // Event handlers
+    const handleItemClick = (item: SidebarMenuItem) => {
+        const hasChildren = Boolean(item.children && item.children.length > 0);
+        if (hasChildren) {
+            handleSelectTitleKey(item.titleKey);
+        } else if (item.to) {
+            router.navigate({ to: item.to });
+            onClose();
+        }
+    };
+
+    // Keyboard navigation handler
+    const handleKeyDown = (event: React.KeyboardEvent) => {
+        if (event.key === '[' && event.ctrlKey) {
+            // Ctrl+[ to toggle collapsed state
+            event.preventDefault();
+            toggleSubPanelCollapsed();
+        }
+    };
+
+    const handleMouseLeave = () => {
+        setHoveredTitleKey(undefined);
+    };
+
     return (
         <aside
             className={cn(
@@ -161,92 +164,40 @@ export const Sidebar = ({ open, onClose }: SidebarProps) => {
                 open && 'translate-x-0'
             )}
             aria-label="Primary"
+            onKeyDown={handleKeyDown}
         >
-            <div className="flex h-14 items-center justify-between px-3 md:hidden">
-                <span className="font-semibold text-sm">{t('admin-nav.sidebar.navigation')}</span>
-                <button
-                    aria-label={t('admin-common.aria.closeMenu')}
-                    className="inline-flex items-center justify-center rounded-md p-2 hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    type="button"
-                    onClick={onClose}
-                >
-                    <CloseIcon className="h-5 w-5" />
-                </button>
-            </div>
+            {/* Mobile Header */}
+            <SidebarHeader
+                t={t}
+                onClose={onClose}
+            />
 
+            {/* Navigation Container */}
             <div
                 className="flex h-full"
-                onMouseLeave={() => setHoveredTitle(undefined)}
+                onMouseLeave={handleMouseLeave}
             >
-                {/* Primary icon rail */}
-                <div className="flex h-full w-14 flex-col items-stretch border-r">
-                    {items.map((item) => {
-                        const isSelected = selectedItem ? item.title === selectedItem.title : false;
-                        const hasChildren = Boolean(item.children && item.children.length > 0);
-                        const handleClick = () => {
-                            if (hasChildren) {
-                                setSelectedTitle(item.title);
-                            } else if (item.to) {
-                                router.navigate({ to: item.to });
-                                onClose();
-                            }
-                        };
-                        return (
-                            <button
-                                key={item.title}
-                                type="button"
-                                onClick={handleClick}
-                                onMouseEnter={() => setHoveredTitle(item.title)}
-                                onFocus={() => setHoveredTitle(item.title)}
-                                aria-label={item.title}
-                                title={item.title}
-                                className={cn(
-                                    'm-2 flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl ring-1 ring-transparent transition hover:ring-2 hover:ring-accent/70 hover:ring-offset-2 hover:ring-offset-sidebar',
-                                    isSelected &&
-                                        'scale-110 bg-gradient-to-br from-fuchsia-500 via-violet-500 to-indigo-500 text-white shadow-2xl shadow-fuchsia-500/40 ring-4 ring-fuchsia-400/50 ring-offset-2 ring-offset-sidebar'
-                                )}
-                            >
-                                {getIcon(item.title)}
-                            </button>
-                        );
-                    })}
-                </div>
+                {/* Primary Icon Rail */}
+                <SidebarNav
+                    items={items}
+                    selectedTitleKey={selectedItem?.titleKey}
+                    getIcon={getMenuIcon}
+                    t={t}
+                    onItemClick={handleItemClick}
+                    onItemMouseEnter={setHoveredTitleKey}
+                    onItemFocus={setHoveredTitleKey}
+                />
 
-                {/* Secondary panel */}
-                {showSubPanel ? (
-                    <div className="w-64 p-2">
-                        {viewedItem ? (
-                            <>
-                                <div className="px-2 py-2 font-semibold text-sm">
-                                    {viewedItem.title}
-                                </div>
-                                <div className="space-y-1">
-                                    {viewedItem.children?.map((child) => {
-                                        if (!child.to) return null;
-                                        const isActive = location.pathname === child.to;
-                                        return (
-                                            <Link
-                                                key={child.to}
-                                                to={child.to}
-                                                className={cn(
-                                                    'block rounded-md px-3 py-2 transition hover:bg-accent/30 hover:text-accent-foreground/90',
-                                                    isActive &&
-                                                        'border-fuchsia-400 border-l-4 bg-gradient-to-r from-fuchsia-600 to-indigo-600 font-semibold text-white shadow-md ring-2 ring-fuchsia-400/60 ring-offset-2 ring-offset-sidebar'
-                                                )}
-                                                onClick={onClose}
-                                            >
-                                                <span className="inline-flex items-center gap-2">
-                                                    {getChildIcon(viewedItem.title, child.title)}
-                                                    {child.title}
-                                                </span>
-                                            </Link>
-                                        );
-                                    })}
-                                </div>
-                            </>
-                        ) : null}
-                    </div>
-                ) : null}
+                {/* Secondary Panel */}
+                {showSubPanel && viewedItem && (
+                    <SidebarGroup
+                        item={viewedItem}
+                        currentPath={location.pathname}
+                        onClose={onClose}
+                        getChildIcon={getChildMenuIcon}
+                        t={t}
+                    />
+                )}
             </div>
         </aside>
     );

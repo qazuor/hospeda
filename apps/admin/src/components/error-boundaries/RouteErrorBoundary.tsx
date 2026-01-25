@@ -10,7 +10,8 @@
 
 import { Icon } from '@/components/icons';
 import { Button } from '@/components/ui-wrapped';
-import { adminLogger } from '@/utils/logger';
+import { reportComponentError } from '@/lib/errors';
+import { t } from '@/lib/i18n';
 import { Component, type ReactNode } from 'react';
 
 /**
@@ -78,42 +79,15 @@ export class RouteErrorBoundary extends Component<
         // Call custom error handler
         this.props.onError?.(error, errorInfo);
 
-        // Report error if enabled
-        if (this.props.enableReporting) {
-            this.reportError(error, errorInfo);
-        }
-
-        // Log error in development
-        if (process.env.NODE_ENV === 'development') {
-            console.error('Route Error Boundary caught an error:', {
+        // Report error to monitoring system
+        if (this.props.enableReporting !== false) {
+            reportComponentError(
                 error,
-                errorInfo,
-                routeName: this.props.routeName
-            });
-        }
-    }
-
-    private reportError = (error: Error, errorInfo: React.ErrorInfo) => {
-        // Here you would integrate with your error reporting service
-        // e.g., Sentry, LogRocket, etc.
-
-        // In development, log to console
-        if (process.env.NODE_ENV === 'development') {
-            adminLogger.log(
-                {
-                    error: error.message,
-                    stack: error.stack,
-                    componentStack: errorInfo.componentStack,
-                    route: this.props.routeName,
-                    timestamp: new Date().toISOString()
-                },
-                'Reporting error to monitoring service'
+                errorInfo.componentStack ?? undefined,
+                `RouteErrorBoundary:${this.props.routeName || 'unknown'}`
             );
         }
-
-        // In production, send to monitoring service
-        // Example: Sentry.captureException(error, { extra: errorInfo });
-    };
+    }
 
     private handleReload = () => {
         window.location.reload();
@@ -156,62 +130,64 @@ export class RouteErrorBoundary extends Component<
         switch (errorType) {
             case 'chunk':
                 return {
-                    title: 'Update Required',
-                    message:
-                        'The application has been updated. Please refresh the page to continue.',
+                    title: t('error.boundary.route.updateRequiredTitle'),
+                    message: t('error.boundary.route.updateRequiredMessage'),
                     icon: 'refresh' as const,
                     primaryAction: {
-                        label: 'Refresh Page',
+                        label: t('error.boundary.route.refreshPage'),
                         action: this.handleReload
                     },
                     secondaryAction: {
-                        label: 'Go Home',
+                        label: t('error.boundary.route.goHome'),
                         action: this.handleGoHome
                     }
                 };
 
             case 'network':
                 return {
-                    title: 'Connection Problem',
-                    message:
-                        'Unable to load the page. Please check your internet connection and try again.',
+                    title: t('error.boundary.route.connectionProblemTitle'),
+                    message: t('error.boundary.route.connectionProblemMessage'),
                     icon: 'alert-triangle' as const,
                     primaryAction: {
-                        label: 'Try Again',
+                        label: t('error.boundary.route.tryAgain'),
                         action: this.handleReload
                     },
                     secondaryAction: {
-                        label: 'Go Back',
+                        label: t('error.boundary.route.goBack'),
                         action: this.handleGoBack
                     }
                 };
 
             case 'permission':
                 return {
-                    title: 'Access Denied',
-                    message: `You don't have permission to access ${routeName ? `the ${routeName}` : 'this page'}.`,
+                    title: t('error.boundary.route.accessDeniedTitle'),
+                    message: routeName
+                        ? t('error.boundary.route.accessDeniedMessage', { route: routeName })
+                        : t('error.boundary.route.accessDeniedMessageGeneric'),
                     icon: 'user' as const,
                     primaryAction: {
-                        label: 'Go Home',
+                        label: t('error.boundary.route.goHome'),
                         action: this.handleGoHome
                     },
                     secondaryAction: {
-                        label: 'Go Back',
+                        label: t('error.boundary.route.goBack'),
                         action: this.handleGoBack
                     }
                 };
 
             default:
                 return {
-                    title: 'Something went wrong',
-                    message: `An unexpected error occurred${routeName ? ` while loading ${routeName}` : ''}. Our team has been notified.`,
+                    title: t('error.boundary.route.genericErrorTitle'),
+                    message: routeName
+                        ? t('error.boundary.route.genericErrorMessage', { route: routeName })
+                        : t('error.boundary.route.genericErrorMessageGeneric'),
                     icon: 'alert-triangle' as const,
                     primaryAction: {
-                        label: 'Reload Page',
+                        label: t('error.boundary.route.refreshPage'),
                         action: this.handleReload
                     },
                     secondaryAction: {
-                        label: 'Go Home',
+                        label: t('error.boundary.route.goHome'),
                         action: this.handleGoHome
                     }
                 };
@@ -265,17 +241,19 @@ export class RouteErrorBoundary extends Component<
                         {this.props.showDetails && this.state.error && (
                             <details className="mt-8 text-left">
                                 <summary className="cursor-pointer text-gray-500 text-sm hover:text-gray-700">
-                                    Show Technical Details
+                                    {t('error.boundary.route.showTechnicalDetails')}
                                 </summary>
                                 <div className="mt-4 rounded bg-gray-100 p-4">
                                     <h3 className="mb-2 font-medium text-gray-900">
-                                        Error Message:
+                                        {t('error.boundary.route.errorMessage')}
                                     </h3>
                                     <p className="mb-4 text-gray-700 text-sm">
                                         {this.state.error.message}
                                     </p>
 
-                                    <h3 className="mb-2 font-medium text-gray-900">Stack Trace:</h3>
+                                    <h3 className="mb-2 font-medium text-gray-900">
+                                        {t('error.boundary.route.stackTrace')}
+                                    </h3>
                                     <pre className="overflow-auto text-gray-600 text-xs">
                                         {this.state.error.stack}
                                     </pre>

@@ -1,5 +1,7 @@
 import type { DataTableColumn } from '@/components/table/DataTable';
 import { renderCellByType } from '@/components/table/DataTable';
+import { useTranslations } from '@/hooks/use-translations';
+import type { TranslationKey } from '@repo/i18n';
 import type { ReactNode } from 'react';
 
 type GridCardProps<TData> = {
@@ -19,6 +21,8 @@ export const GridCard = <TData,>({
     visibleColumns,
     maxFields = 8
 }: GridCardProps<TData>): ReactNode => {
+    const { t } = useTranslations();
+
     // Filter columns to only show visible ones
     const displayColumns = columns.filter((col) => visibleColumns.includes(col.id));
 
@@ -36,7 +40,9 @@ export const GridCard = <TData,>({
     if (!primaryColumn) {
         return (
             <article className="rounded-lg border p-4">
-                <div className="text-muted-foreground text-sm">No displayable fields</div>
+                <div className="text-muted-foreground text-sm">
+                    {t('ui.grid.noDisplayableFields')}
+                </div>
             </article>
         );
     }
@@ -180,7 +186,7 @@ export const GridCard = <TData,>({
                                             {renderCellByType(column, value, item)}
                                         </div>
                                         <div className="text-muted-foreground text-xs">
-                                            {getStatLabel(column.id)}
+                                            {getStatLabel(column.id, t)}
                                         </div>
                                     </div>
                                 );
@@ -279,19 +285,18 @@ function getFieldValue<TData>(item: TData, accessorKey?: string): unknown {
 }
 
 /**
- * Gets user-friendly labels for stat fields.
+ * Gets user-friendly labels for stat fields using translations.
  */
-function getStatLabel(fieldId: string): string {
-    switch (fieldId) {
-        case 'accommodationsCount':
-            return 'Accommodations';
-        case 'averageRating':
-            return 'Rating';
-        case 'reviewsCount':
-            return 'Reviews';
-        case 'attractionsCount':
-            return 'Attractions';
-        default:
-            return fieldId.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase());
+function getStatLabel(fieldId: string, t: (key: TranslationKey) => string): string {
+    // Try to get translation from admin-entities.columns
+    const key = `admin-entities.columns.${fieldId}` as TranslationKey;
+    const translated = t(key);
+
+    // If translation found (not a MISSING key), return it
+    if (!translated.startsWith('[MISSING:')) {
+        return translated;
     }
+
+    // Fallback: convert camelCase to Title Case
+    return fieldId.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase());
 }

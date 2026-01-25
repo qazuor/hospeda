@@ -1,4 +1,4 @@
-import { adminLogger } from '@/utils/logger';
+import { reportComponentError } from '@/lib/errors';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import React from 'react';
@@ -209,10 +209,11 @@ class BasicErrorBoundary extends React.Component<
     }
 
     componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-        // Log error for monitoring
-        adminLogger.error(
-            `Entity Error Boundary caught error: ${error.message}`,
-            `Entity: ${this.props.entityName}, ID: ${this.props.entityId}, Stack: ${error.stack}`
+        // Report error to monitoring system
+        reportComponentError(
+            error,
+            errorInfo.componentStack ?? undefined,
+            `EntityErrorBoundary:${this.props.entityName || 'unknown'}`
         );
 
         // Call custom error handler if provided

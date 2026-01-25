@@ -10,6 +10,8 @@
 
 import { Icon } from '@/components/icons';
 import { Button } from '@/components/ui-wrapped';
+import { reportComponentError } from '@/lib/errors';
+import { t } from '@/lib/i18n';
 import { Component, type ReactNode } from 'react';
 
 /**
@@ -83,14 +85,12 @@ export class EntityErrorBoundary extends Component<
         // Call custom error handler
         this.props.onError?.(error, errorInfo);
 
-        // Log error for monitoring
-        console.error('Entity Error Boundary caught an error:', {
+        // Report error to monitoring system
+        reportComponentError(
             error,
-            errorInfo,
-            entityName: this.props.entityName,
-            entityId: this.props.entityId,
-            operation: this.props.operation
-        });
+            errorInfo.componentStack ?? undefined,
+            `EntityErrorBoundary:${this.props.entityName || 'unknown'}:${this.props.operation || 'unknown'}`
+        );
     }
 
     private handleRetry = () => {
@@ -113,44 +113,57 @@ export class EntityErrorBoundary extends Component<
         });
     };
 
+    private getOperationText(operation?: string): string {
+        if (!operation) return t('error.boundary.operations.access');
+        const key = `error.boundary.operations.${operation}` as Parameters<typeof t>[0];
+        return t(key) || operation;
+    }
+
     private getErrorMessage(): { title: string; message: string } {
         const { entityName, operation } = this.props;
         const { error } = this.state;
+        const entity = entityName || 'elemento';
+        const operationText = this.getOperationText(operation);
 
         // Entity-specific error messages
         if (error?.message.includes('404') || error?.message.includes('not found')) {
             return {
-                title: `${entityName ? entityName.charAt(0).toUpperCase() + entityName.slice(1) : 'Item'} Not Found`,
-                message: `The ${entityName || 'item'} you're looking for doesn't exist or has been removed.`
+                title: t('error.boundary.entity.notFoundTitle', { entity }),
+                message: t('error.boundary.entity.notFoundMessage', { entity })
             };
         }
 
         if (error?.message.includes('403') || error?.message.includes('unauthorized')) {
             return {
-                title: 'Access Denied',
-                message: `You don't have permission to ${operation || 'access'} this ${entityName || 'item'}.`
+                title: t('error.boundary.entity.accessDeniedTitle'),
+                message: t('error.boundary.entity.accessDeniedMessage', {
+                    operation: operationText,
+                    entity
+                })
             };
         }
 
         if (error?.message.includes('network') || error?.message.includes('fetch')) {
             return {
-                title: 'Connection Error',
-                message:
-                    'Unable to connect to the server. Please check your internet connection and try again.'
+                title: t('error.boundary.entity.connectionErrorTitle'),
+                message: t('error.boundary.entity.connectionErrorMessage')
             };
         }
 
         if (error?.message.includes('validation')) {
             return {
-                title: 'Validation Error',
-                message: 'The data provided is invalid. Please check your inputs and try again.'
+                title: t('error.boundary.entity.validationErrorTitle'),
+                message: t('error.boundary.entity.validationErrorMessage')
             };
         }
 
         // Generic error message
         return {
-            title: 'Something went wrong',
-            message: `An error occurred while ${operation ? `trying to ${operation}` : 'processing'} ${entityName ? `the ${entityName}` : 'this item'}. Please try again.`
+            title: t('error.boundary.entity.genericErrorTitle'),
+            message: t('error.boundary.entity.genericErrorMessage', {
+                operation: operationText,
+                entity
+            })
         };
     }
 
@@ -187,10 +200,13 @@ export class EntityErrorBoundary extends Component<
                                     size="sm"
                                     className="mr-2"
                                 />
-                                Try Again
+                                {t('error.boundary.entity.tryAgain')}
                                 {this.state.retryCount > 0 && (
                                     <span className="ml-1 text-xs">
-                                        ({this.state.retryCount}/{this.maxRetries})
+                                        {t('error.boundary.entity.retryCount', {
+                                            count: this.state.retryCount,
+                                            max: this.maxRetries
+                                        })}
                                     </span>
                                 )}
                             </Button>
@@ -205,14 +221,14 @@ export class EntityErrorBoundary extends Component<
                                 size="sm"
                                 className="mr-2"
                             />
-                            Go Back
+                            {t('error.boundary.entity.goBack')}
                         </Button>
                     </div>
 
                     {this.props.showDetails && this.state.error && (
                         <details className="mt-6 max-w-2xl">
                             <summary className="cursor-pointer text-gray-500 text-sm hover:text-gray-700">
-                                Show Error Details
+                                {t('error.boundary.entity.showErrorDetails')}
                             </summary>
                             <pre className="mt-2 overflow-auto rounded bg-gray-100 p-4 text-left text-gray-800 text-xs">
                                 {this.state.error.stack}

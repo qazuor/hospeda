@@ -1,5 +1,6 @@
 import { useTranslations } from '@/hooks/use-translations';
 import { menuTree } from '@/lib/menu';
+import type { TranslationKey } from '@repo/i18n';
 import { BreadcrumbsIcon } from '@repo/icons';
 import { Link, useRouterState } from '@tanstack/react-router';
 
@@ -15,7 +16,9 @@ export type EntityBreadcrumbContext = {
     type?: string;
 };
 
-const getLabelForPath = (path: string, entityContext?: EntityBreadcrumbContext): string => {
+type LabelResult = { type: 'i18n'; key: string } | { type: 'text'; value: string };
+
+const getLabelForPath = (path: string, entityContext?: EntityBreadcrumbContext): LabelResult => {
     // Check if this is an entity detail path (contains an ID-like segment)
     const segments = path.split('/').filter(Boolean);
     const lastSegment = segments[segments.length - 1];
@@ -23,22 +26,23 @@ const getLabelForPath = (path: string, entityContext?: EntityBreadcrumbContext):
     // If we have entity context and this looks like an entity ID path
     if (entityContext && lastSegment && isEntityId(lastSegment)) {
         // Use entity name if available, otherwise use slug
-        return entityContext.name || entityContext.slug || lastSegment;
+        return { type: 'text', value: entityContext.name || entityContext.slug || lastSegment };
     }
 
-    // Check menu tree for predefined labels
+    // Check menu tree for predefined labels (returns titleKey for translation)
     for (const item of menuTree) {
-        if (item.to === path && item.title) return item.title;
+        if (item.to === path && item.titleKey) return { type: 'i18n', key: item.titleKey };
         if (item.children) {
             for (const child of item.children) {
-                if (child.to === path && child.title) return child.title;
+                if (child.to === path && child.titleKey)
+                    return { type: 'i18n', key: child.titleKey };
             }
         }
     }
 
     // Default: capitalize the last segment
     const seg = path.split('/').filter(Boolean).pop() ?? '';
-    return seg.charAt(0).toUpperCase() + seg.slice(1);
+    return { type: 'text', value: seg.charAt(0).toUpperCase() + seg.slice(1) };
 };
 
 /**
@@ -83,20 +87,25 @@ export const Breadcrumbs = ({ entityContext }: BreadcrumbsProps = {}) => {
             >
                 {t('ui.navigation.home')}
             </Link>
-            {paths.map((p) => (
-                <span
-                    key={p}
-                    className="inline-flex items-center"
-                >
-                    <BreadcrumbsIcon className="mx-2 h-4 w-4" />
-                    <Link
-                        to={p}
-                        className="hover:underline"
+            {paths.map((p) => {
+                const label = getLabelForPath(p, entityContext);
+                const displayText =
+                    label.type === 'i18n' ? t(label.key as TranslationKey) : label.value;
+                return (
+                    <span
+                        key={p}
+                        className="inline-flex items-center"
                     >
-                        {getLabelForPath(p, entityContext)}
-                    </Link>
-                </span>
-            ))}
+                        <BreadcrumbsIcon className="mx-2 h-4 w-4" />
+                        <Link
+                            to={p}
+                            className="hover:underline"
+                        >
+                            {displayText}
+                        </Link>
+                    </span>
+                );
+            })}
         </nav>
     );
 };

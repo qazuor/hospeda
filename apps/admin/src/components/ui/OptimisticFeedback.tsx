@@ -212,14 +212,6 @@ export const BulkOperationFeedback = ({
 }: BulkOperationFeedbackProps) => {
     if (!operation || selectedCount === 0) return null;
 
-    // Determine the current state based on props
-    // const getState = (): OptimisticState => {
-    //     if (isError) return 'error';
-    //     if (isPending) return 'pending';
-    //     if (isSuccess) return 'success';
-    //     return 'idle';
-    // };
-
     const getMessage = () => {
         const action = operation === 'delete' ? 'Deleting' : 'Updating';
         const items = selectedCount === 1 ? 'item' : 'items';

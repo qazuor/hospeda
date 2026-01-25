@@ -1,3 +1,4 @@
+import { adminLogger } from '@/utils/logger';
 import type { ReactNode } from 'react';
 
 type WidgetCellProps<TData> = {
@@ -28,7 +29,7 @@ export const WidgetCell = <TData,>({ row, widgetRenderer }: WidgetCellProps<TDat
         return <div className="widget-cell-container">{renderedWidget}</div>;
     } catch (error) {
         // Handle rendering errors gracefully
-        console.error('Widget renderer error:', error);
+        adminLogger.error('Widget renderer error', error);
         return <span className="text-red-500 text-sm dark:text-red-400">Widget error</span>;
     }
 };

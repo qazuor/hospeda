@@ -1,4 +1,4 @@
-import { adminLogger } from '@/utils/logger';
+import { reportComponentError } from '@/lib/errors';
 import { useQueryClient } from '@tanstack/react-query';
 import React from 'react';
 
@@ -207,10 +207,11 @@ class BasicQueryErrorBoundary extends React.Component<
     }
 
     componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-        // Log error for monitoring
-        adminLogger.error(
-            `Query Error Boundary caught error: ${error.message}`,
-            `QueryKey: ${JSON.stringify(this.props.queryKey)}, Stack: ${error.stack}`
+        // Report error to monitoring system
+        reportComponentError(
+            error,
+            errorInfo.componentStack ?? undefined,
+            `QueryErrorBoundary:${this.props.queryKey ? JSON.stringify(this.props.queryKey) : 'unknown'}`
         );
 
         // Call custom error handler if provided

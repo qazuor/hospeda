@@ -1,4 +1,5 @@
-import { adminLogger } from '@/utils/logger';
+import { reportComponentError } from '@/lib/errors';
+import { showErrorToast, showInfoToast } from '@/lib/errors';
 import React from 'react';
 
 /**
@@ -26,10 +27,9 @@ const GlobalErrorFallback: React.FC<GlobalErrorFallbackProps> = ({ error, resetE
     };
 
     /**
-     * Report error to support (placeholder)
+     * Report error to support
      */
     const handleReportError = () => {
-        // TODO: Implement error reporting to support system
         const errorReport = {
             message: error.message,
             stack: error.stack,
@@ -38,16 +38,25 @@ const GlobalErrorFallback: React.FC<GlobalErrorFallbackProps> = ({ error, resetE
             timestamp: new Date().toISOString()
         };
 
-        adminLogger.error(errorReport, 'Error report');
+        // Report error to monitoring system
+        reportComponentError(error, error.stack, 'GlobalErrorBoundary');
 
-        // For now, copy to clipboard
+        // Copy to clipboard and show toast notification
         navigator.clipboard
             .writeText(JSON.stringify(errorReport, null, 2))
             .then(() => {
-                alert('Error details copied to clipboard. Please share with support.');
+                showInfoToast(
+                    'Error Copied',
+                    'Error details copied to clipboard. Please share with support.'
+                );
             })
             .catch(() => {
-                alert('Unable to copy error details. Please take a screenshot.');
+                showErrorToast({
+                    error: new Error('Clipboard access denied'),
+                    title: 'Copy Failed',
+                    description: 'Unable to copy error details. Please take a screenshot.',
+                    report: false
+                });
             });
     };
 
@@ -180,11 +189,8 @@ class BasicGlobalErrorBoundary extends React.Component<
     }
 
     componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-        // Log error for monitoring
-        adminLogger.error(
-            `Global Error Boundary caught error: ${error.message}`,
-            `URL: ${window.location.href}, UserAgent: ${navigator.userAgent}, Stack: ${error.stack}`
-        );
+        // Report error to monitoring system
+        reportComponentError(error, errorInfo.componentStack ?? undefined, 'GlobalErrorBoundary');
 
         // Call custom error handler if provided
         this.props.onError?.(error, errorInfo);

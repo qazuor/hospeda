@@ -13,6 +13,7 @@ export type DataTableToolbarProps = {
     readonly isSearching?: boolean;
     readonly onClearSearch?: () => void;
     readonly searchMinChars?: number;
+    readonly searchPlaceholder?: string;
 
     readonly columnVisibility: Record<string, boolean>;
     readonly onColumnVisibilityChange: (visibility: Record<string, boolean>) => void;
@@ -30,6 +31,7 @@ export const DataTableToolbar = ({
     isSearching = false,
     onClearSearch,
     searchMinChars = 3,
+    searchPlaceholder,
     columnVisibility,
     onColumnVisibilityChange,
     availableColumns
@@ -77,7 +79,10 @@ export const DataTableToolbar = ({
                     />
                     <input
                         type="search"
-                        placeholder={t('ui.table.searchPlaceholder', { minChars: searchMinChars })}
+                        placeholder={
+                            searchPlaceholder ||
+                            t('ui.table.searchPlaceholder', { minChars: searchMinChars })
+                        }
                         className="h-9 rounded-md border pr-8 pl-8 text-sm"
                         value={query}
                         onChange={(e) => onQueryChange(e.target.value)}
