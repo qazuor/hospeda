@@ -11,6 +11,9 @@ export { useIntelligentNavigation } from './useIntelligentNavigation';
 export { useSectionProgress } from './useSectionProgress';
 export { useSmartScroll } from './useSmartScroll';
 
+// Layout hooks
+export { useSidebarPersistence } from './useSidebarPersistence';
+
 // Entity hooks
 export { useEntityPage } from './useEntityPage';
 
@@ -26,3 +29,8 @@ export type { UseIntersectionObserverOptions } from './useIntersectionObserver';
 export type { LazySectionConfig } from './useLazySections';
 export type { OverallProgress, SectionProgress, SectionStatus } from './useSectionProgress';
 export type { SmartScrollOptions } from './useSmartScroll';
+export type {
+    SidebarState,
+    UseSidebarPersistenceConfig,
+    UseSidebarPersistenceResult
+} from './useSidebarPersistence';

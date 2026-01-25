@@ -38,7 +38,7 @@ export const Route = createFileRoute('/auth/signin')({
 function SignInPage(): React.JSX.Element {
     const [isClient, setIsClient] = useState(false);
     const [backgroundImage, setBackgroundImage] = useState<AuthBackgroundImage | null>(null);
-    const { isSyncing, shouldShowSignIn } = useAuthSync();
+    const { isSyncing, shouldShowSignIn, canRedirectToProtected, syncError } = useAuthSync();
 
     useEffect(() => {
         setIsClient(true);
@@ -64,8 +64,55 @@ function SignInPage(): React.JSX.Element {
         );
     }
 
-    // Don't show sign-in form if user is already signed in
-    if (!shouldShowSignIn) {
+    // Show sync error if there was a problem
+    if (syncError) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-emerald-50 to-blue-100">
+                <div className="flex min-h-screen items-center justify-center">
+                    <div className="text-center">
+                        <div className="mb-4">
+                            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
+                                <svg
+                                    className="h-6 w-6 text-red-600"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                    role="img"
+                                    aria-labelledby="error-icon-title"
+                                >
+                                    <title id="error-icon-title">Error</title>
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                                    />
+                                </svg>
+                            </div>
+                        </div>
+                        <h2 className="font-semibold text-gray-900 text-xl">
+                            Error de autenticación
+                        </h2>
+                        <p className="mt-2 text-gray-600">{syncError}</p>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                if (typeof window !== 'undefined') {
+                                    window.location.reload();
+                                }
+                            }}
+                            className="mt-4 rounded-md bg-cyan-600 px-4 py-2 text-white hover:bg-cyan-700"
+                        >
+                            Reintentar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // Only redirect to protected routes AFTER sync has completed successfully
+    if (canRedirectToProtected) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-emerald-50 to-blue-100">
                 <div className="flex min-h-screen items-center justify-center">
@@ -90,6 +137,26 @@ function SignInPage(): React.JSX.Element {
                             </button>
                         </p>
                         <AutoRedirect />
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // If user is signed in with Clerk but sync hasn't started yet, show syncing state
+    // This handles the timing gap between Clerk auth and backend sync
+    if (!shouldShowSignIn && !canRedirectToProtected && !isSyncing && !syncError) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-emerald-50 to-blue-100">
+                <div className="flex min-h-screen items-center justify-center">
+                    <div className="text-center">
+                        <div className="mb-4">
+                            <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-cyan-600 border-t-transparent" />
+                        </div>
+                        <h2 className="font-semibold text-gray-900 text-xl">
+                            Preparando sesión...
+                        </h2>
+                        <p className="mt-2 text-gray-600">Conectando con el servidor</p>
                     </div>
                 </div>
             </div>

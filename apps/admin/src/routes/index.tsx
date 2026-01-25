@@ -1,5 +1,5 @@
 import { getAuth } from '@clerk/tanstack-react-start/server';
-import { createFileRoute, redirect } from '@tanstack/react-router';
+import { createFileRoute, isRedirect, redirect } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getWebRequest } from '@tanstack/react-start/server';
 
@@ -37,8 +37,12 @@ export const Route = createFileRoute('/')({
             throw redirect({
                 to: '/auth/signin'
             });
-        } catch {
-            // If there's an error checking auth state, redirect to signin
+        } catch (error) {
+            // Re-throw redirect errors - they're intentional and should not be caught
+            if (isRedirect(error)) {
+                throw error;
+            }
+            // If there's an actual error checking auth state, redirect to signin
             // The signin page will handle the sync automatically
             throw redirect({
                 to: '/auth/signin'

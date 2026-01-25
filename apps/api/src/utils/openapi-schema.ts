@@ -27,7 +27,11 @@ export function createOpenAPISchema<T extends z.ZodTypeAny>(schema: T): z.ZodTyp
     if (schema instanceof z.ZodObject) {
         const newShape: Record<string, z.ZodTypeAny> = {};
 
-        for (const [key, value] of Object.entries(schema.shape)) {
+        // Access the shape - works with both Zod 3 and Zod 4
+        // biome-ignore lint/suspicious/noExplicitAny: Need to access internal Zod structure
+        const shapeObj = (schema._def as any).shape;
+
+        for (const [key, value] of Object.entries(shapeObj)) {
             newShape[key] = convertDateField(value as z.ZodTypeAny, key);
         }
 
