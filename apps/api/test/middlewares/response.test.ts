@@ -70,7 +70,13 @@ vi.mock('../../src/utils/env', () => {
     return mockModule;
 });
 
-// Note: ServiceErrorCode is now imported directly via alias, no mock needed
+// Mock @repo/service-core to include ServiceError
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/service-core')>();
+    return {
+        ...actual
+    };
+});
 
 describe('Response Middleware', () => {
     let app: Hono;
@@ -196,11 +202,13 @@ describe('Response Middleware', () => {
             expect(data.error.message).toBe('Resource not found');
         });
 
-        it('should format conflict errors correctly', async () => {
+        it('should format conflict errors correctly using ServiceError', async () => {
+            // Import ServiceError for this test
+            const { ServiceError } = await import('@repo/service-core');
+            const { ServiceErrorCode } = await import('@repo/schemas');
+
             app.get('/conflict', () => {
-                const error = new Error('Already exists');
-                error.name = 'ConflictError';
-                throw error;
+                throw new ServiceError(ServiceErrorCode.ALREADY_EXISTS, 'Already exists');
             });
 
             const res = await app.request('/conflict');
@@ -212,11 +220,13 @@ describe('Response Middleware', () => {
             expect(data.error.message).toBe('Already exists');
         });
 
-        it('should format not implemented errors correctly', async () => {
+        it('should format not implemented errors correctly using ServiceError', async () => {
+            // Import ServiceError for this test
+            const { ServiceError } = await import('@repo/service-core');
+            const { ServiceErrorCode } = await import('@repo/schemas');
+
             app.get('/not-implemented', () => {
-                const error = new Error('Not implemented');
-                error.name = 'NotImplementedError';
-                throw error;
+                throw new ServiceError(ServiceErrorCode.NOT_IMPLEMENTED, 'Not implemented');
             });
 
             const res = await app.request('/not-implemented');
@@ -235,11 +245,12 @@ describe('Response Middleware', () => {
 
             const res = await app.request('/generic-error');
 
+            // Generic errors are hidden behind a generic message for security
             expect(res.status).toBe(500);
             const data = await res.json();
             expect(data.success).toBe(false);
             expect(data.error.code).toBe('INTERNAL_ERROR');
-            expect(data.error.message).toBe('Something went wrong');
+            expect(data.error.message).toBe('Internal server error');
         });
 
         it('should include request ID in headers and metadata', async () => {
@@ -336,9 +347,11 @@ describe('Response Middleware', () => {
             const data = [{ id: 1 }, { id: 2 }];
             const pagination = {
                 page: 1,
-                limit: 10,
+                pageSize: 10,
                 total: 100,
-                totalPages: 10
+                totalPages: 10,
+                hasNextPage: true,
+                hasPreviousPage: false
             };
             const response = createSuccessResponse(data, 200, pagination);
 
@@ -370,11 +383,12 @@ describe('Response Middleware', () => {
 
             const res = await app.request('/generic-error');
 
+            // Generic errors are hidden for security - actual message is masked
             expect(res.status).toBe(500);
             const data = await res.json();
             expect(data.success).toBe(false);
             expect(data.error.code).toBe('INTERNAL_ERROR');
-            expect(data.error.message).toBe('Generic error without specific name');
+            expect(data.error.message).toBe('Internal server error');
         });
 
         it('should handle null and undefined data', () => {
@@ -388,9 +402,11 @@ describe('Response Middleware', () => {
         it('should handle complex pagination data', () => {
             const pagination = {
                 page: 5,
-                limit: 25,
+                pageSize: 25,
                 total: 1000,
-                totalPages: 40
+                totalPages: 40,
+                hasNextPage: true,
+                hasPreviousPage: true
             };
             const response = createSuccessResponse([], 200, pagination);
 

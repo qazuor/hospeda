@@ -2,6 +2,7 @@
     "name": "hospeda-api",
     "description": "Complete API for the Hospeda tourism accommodation platform",
     "version": "0.0.1",
+    "type": "module",
     "private": true,
     "main": "dist/index.js",
     "scripts": {
@@ -38,6 +39,7 @@
         "hono-rate-limiter": "^0.4.2",
         "lru-cache": "^11.1.0",
         "pg": "^8.15.6",
+        "sanitize-html": "^2.17.0",
         "svix": "^1.73.0",
         "zod": "^4.0.8"
     },
@@ -46,6 +48,7 @@
         "@types/lru-cache": "^7.10.10",
         "@types/node": "^22.15.3",
         "@types/pg": "^8.15.1",
+        "@types/sanitize-html": "^2.16.0",
         "@vitest/coverage-v8": "^2.1.8",
         "tsup": "^8.4.0",
         "tsx": "^4.7.1",

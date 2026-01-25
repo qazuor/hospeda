@@ -55,6 +55,10 @@ export const setupRoutes = (app: AppOpenAPI) => {
     // Metrics routes
     app.route('/metrics', metricsRoutes);
 
+    // Auth routes - MUST be registered first to avoid conflicts with wildcard routes
+    // Routes mounted at /api/v1/public with /:id patterns would otherwise catch /auth/sync
+    app.route('/api/v1/public/auth', authRoutes);
+
     // Public routes
     app.route('/api/v1/public/users', userRoutes);
 
@@ -101,8 +105,6 @@ export const setupRoutes = (app: AppOpenAPI) => {
         apiLogger.debug('❌ Failed to register routes:', String(error));
         throw error;
     }
-
-    app.route('/api/v1/public/auth', authRoutes);
 
     // Documentation routes
     app.route('/docs', docsIndexRoutes);

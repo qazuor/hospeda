@@ -24,6 +24,8 @@ beforeAll(async () => {
     process.env.HOSPEDA_CLERK_SECRET_KEY = 'test_clerk_secret';
     process.env.HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY = 'test_clerk_publishable';
     process.env.API_VALIDATION_CLERK_AUTH_ENABLED = 'false';
+    // Enable mock authentication for tests (required for isMockAuthAllowed())
+    process.env.DISABLE_CLERK_AUTH = 'true';
 
     // Initialize environment validation
     try {
@@ -1190,6 +1192,158 @@ vi.mock('@repo/service-core', () => {
             return {
                 data: { items: [], pagination: { page, pageSize, total: 0, totalPages: 0 } }
             };
+        }
+
+        async softDelete(_actor: unknown, id: string) {
+            if (id === '87654321-4321-4321-8765-876543218765') {
+                return { data: null };
+            }
+            return { data: { id, deletedAt: new Date().toISOString() } };
+        }
+
+        async restore(_actor: unknown, id: string) {
+            if (id === '87654321-4321-4321-8765-876543218765') {
+                return { data: null };
+            }
+            return { data: { id } };
+        }
+
+        async hardDelete(_actor: unknown, id: string) {
+            if (id === '87654321-4321-4321-8765-876543218765') {
+                return { data: null };
+            }
+            return { data: { id, deleted: true, count: 1 } };
+        }
+    }
+
+    class EventLocationService {
+        async create(_actor: unknown, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id: 'event_location_mock_id',
+                    slug: String((body as any).slug || 'location-mock'),
+                    name: String((body as any).name || 'Location Mock'),
+                    city: String((body as any).city || 'Test City'),
+                    address: String((body as any).address || '123 Test St'),
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                    createdById: 'user_mock',
+                    updatedById: 'user_mock'
+                }
+            };
+        }
+
+        async update(_actor: unknown, id: string, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id,
+                    slug: String((body as any).slug || 'location-updated'),
+                    name: String((body as any).name || 'Location Updated')
+                }
+            };
+        }
+
+        async list(_actor: unknown, _opts: { page?: number; pageSize?: number }) {
+            return { data: { items: [], total: 0 } };
+        }
+
+        async getById(_actor: unknown, id: string) {
+            if (id === '87654321-4321-4321-8765-876543218765') {
+                return { data: null };
+            }
+            return {
+                data: {
+                    id,
+                    slug: 'location-slug',
+                    name: 'Test Location',
+                    city: 'Test City',
+                    address: '123 Test St',
+                    visibility: 'PUBLIC',
+                    lifecycleState: 'ACTIVE',
+                    createdAt: '2024-01-01T00:00:00.000Z',
+                    updatedAt: '2024-01-01T00:00:00.000Z',
+                    deletedAt: null
+                }
+            };
+        }
+
+        async getBySlug(_actor: unknown, slug: string) {
+            return { data: { id: 'location_by_slug', slug, name: 'Location By Slug' } };
+        }
+
+        async softDelete(_actor: unknown, id: string) {
+            if (id === '87654321-4321-4321-8765-876543218765') {
+                return { data: null };
+            }
+            return { data: { id, deletedAt: new Date().toISOString() } };
+        }
+
+        async restore(_actor: unknown, id: string) {
+            if (id === '87654321-4321-4321-8765-876543218765') {
+                return { data: null };
+            }
+            return { data: { id } };
+        }
+
+        async hardDelete(_actor: unknown, id: string) {
+            if (id === '87654321-4321-4321-8765-876543218765') {
+                return { data: null };
+            }
+            return { data: { id, deleted: true, count: 1 } };
+        }
+    }
+
+    class EventOrganizerService {
+        async create(_actor: unknown, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id: 'event_organizer_mock_id',
+                    slug: String((body as any).slug || 'organizer-mock'),
+                    name: String((body as any).name || 'Organizer Mock'),
+                    description: (body as any).description || null,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                    createdById: 'user_mock',
+                    updatedById: 'user_mock'
+                }
+            };
+        }
+
+        async update(_actor: unknown, id: string, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id,
+                    slug: String((body as any).slug || 'organizer-updated'),
+                    name: String((body as any).name || 'Organizer Updated')
+                }
+            };
+        }
+
+        async list(_actor: unknown, _opts: { page?: number; pageSize?: number }) {
+            return { data: { items: [], total: 0 } };
+        }
+
+        async getById(_actor: unknown, id: string) {
+            if (id === '87654321-4321-4321-8765-876543218765') {
+                return { data: null };
+            }
+            return {
+                data: {
+                    id,
+                    slug: 'organizer-slug',
+                    name: 'Test Organizer',
+                    description: 'Test description',
+                    visibility: 'PUBLIC',
+                    lifecycleState: 'ACTIVE',
+                    createdAt: '2024-01-01T00:00:00.000Z',
+                    updatedAt: '2024-01-01T00:00:00.000Z',
+                    deletedAt: null
+                }
+            };
+        }
+
+        async getBySlug(_actor: unknown, slug: string) {
+            return { data: { id: 'organizer_by_slug', slug, name: 'Organizer By Slug' } };
         }
 
         async softDelete(_actor: unknown, id: string) {
@@ -3083,6 +3237,8 @@ vi.mock('@repo/service-core', () => {
         AccommodationService,
         DestinationService,
         EventService,
+        EventLocationService,
+        EventOrganizerService,
         UserService,
         AccommodationReviewService,
         DestinationReviewService,

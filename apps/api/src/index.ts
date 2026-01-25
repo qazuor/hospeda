@@ -85,13 +85,38 @@ const startServer = async (): Promise<void> => {
 // Start the server
 startServer();
 
+/**
+ * Global error handlers
+ *
+ * These handlers log errors but DO NOT terminate the process.
+ * This allows the server to continue serving requests after non-fatal errors.
+ *
+ * Note: In production, these errors should be monitored via observability tools
+ * (e.g., Sentry, DataDog) to track and fix issues.
+ */
+
 // Handle uncaught exceptions
+// WARNING: The process state might be corrupted after an uncaught exception.
+// Consider adding health checks to verify the server is still functioning correctly.
 process.on('uncaughtException', (error) => {
-    apiLogger.error(`Uncaught exception: ${error.message}`, error.stack || '');
-    process.exit(1);
+    apiLogger.error(
+        `🚨 UNCAUGHT EXCEPTION - Process state may be corrupted: ${error.message}`,
+        error.stack || ''
+    );
+    // Log but do NOT terminate - allow the server to continue
+    // In production, monitor these closely via observability tools
 });
 
+// Handle unhandled promise rejections
+// These are less severe than uncaught exceptions and can usually be recovered from
 process.on('unhandledRejection', (reason, promise) => {
-    apiLogger.error(`Unhandled rejection at: ${promise}`, `Reason: ${reason}`);
-    process.exit(1);
+    const reasonStr = reason instanceof Error ? reason.message : String(reason);
+    const stack = reason instanceof Error ? reason.stack : '';
+    apiLogger.error({
+        message: `⚠️ UNHANDLED REJECTION: ${reasonStr}`,
+        promise: String(promise),
+        stack: stack || undefined
+    });
+    // Log but do NOT terminate - allow the server to continue
+    // In production, monitor these via observability tools
 });

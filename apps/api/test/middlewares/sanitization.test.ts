@@ -248,14 +248,31 @@ describe('Sanitization Middleware', () => {
         });
 
         it('should handle headers with special characters', () => {
+            // Note: The new implementation preserves special characters in headers
+            // because they're not XSS attacks - only HTML tags are removed
             const headers = {
                 'x-custom-header': 'hello@world#$%^&*()',
                 'x-api-key': '  API_KEY_123  '
             };
 
             const result = sanitizeHeaders(headers);
-            expect(result['x-custom-header']).toBe('hello world');
-            expect(result['x-api-key']).toBe('api key 123');
+            // Special characters are preserved (not XSS)
+            expect(result['x-custom-header']).toBe('hello@world#$%^&*()');
+            // Whitespace is trimmed
+            expect(result['x-api-key']).toBe('API_KEY_123');
+        });
+
+        it('should remove HTML tags from headers', () => {
+            const headers = {
+                'x-custom-header': '<script>alert("xss")</script>valid',
+                'x-api-key': '<b>bold</b>key'
+            };
+
+            const result = sanitizeHeaders(headers);
+            // Script content is removed entirely
+            expect(result['x-custom-header']).toBe('valid');
+            // HTML tags are removed but text content is preserved
+            expect(result['x-api-key']).toBe('boldkey');
         });
     });
 

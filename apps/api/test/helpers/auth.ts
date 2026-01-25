@@ -1,10 +1,28 @@
+/**
+ * @fileoverview Test helpers for authentication mocking
+ *
+ * ==============================================================================
+ * WARNING: TEST-ONLY FILE - DO NOT USE IN PRODUCTION CODE
+ * ==============================================================================
+ *
+ * This file contains mock utilities for testing ONLY.
+ *
+ * IMPORTANT RESTRICTIONS:
+ * - NEVER import or use these functions in production code
+ * - NEVER use in src/ directory files
+ * - NEVER expose these functions via API endpoints
+ *
+ * These mocks bypass real authentication and should ONLY be used in:
+ * - Unit tests (*.test.ts, *.spec.ts)
+ * - Integration tests (test/ directory)
+ * - Test setup files (test/setup.ts)
+ *
+ * @module test/helpers/auth
+ * @see apps/api/src/middlewares/actor.ts for production actor handling
+ */
+
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
-
-/**
- * Test helpers for authentication mocking
- * Provides utilities to create mock actors with different roles and permissions
- */
 
 /**
  * Creates a mock admin actor with all permissions
