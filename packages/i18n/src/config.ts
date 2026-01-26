@@ -42,7 +42,8 @@ export const namespaces = [
     'admin-pages',
     'admin-tables',
     'admin-common',
-    'admin-entities'
+    'admin-entities',
+    'admin-tabs'
 ] as const;
 
 export type Namespace = (typeof namespaces)[number];
@@ -98,6 +99,7 @@ import adminMenuEs from './locales/es/admin-menu.json';
 import adminNavEs from './locales/es/admin-nav.json';
 import adminPagesEs from './locales/es/admin-pages.json';
 import adminTablesEs from './locales/es/admin-tables.json';
+import adminTabsEs from './locales/es/admin-tabs.json';
 import authUiEs from './locales/es/auth-ui.json';
 import benefitsEs from './locales/es/benefits.json';
 import blogEs from './locales/es/blog.json';
@@ -149,7 +151,8 @@ const rawTranslations = {
         'admin-pages': adminPagesEs,
         'admin-tables': adminTablesEs,
         'admin-common': adminCommonEs,
-        'admin-entities': adminEntitiesEs
+        'admin-entities': adminEntitiesEs,
+        'admin-tabs': adminTabsEs
     }
 };
 
