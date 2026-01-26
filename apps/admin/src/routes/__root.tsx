@@ -6,12 +6,16 @@ import { useState } from 'react';
 import type * as React from 'react';
 
 import { ToastProvider } from '@/components/ui/ToastProvider';
+import { initializeSections } from '@/config/sections';
 import { useTranslations } from '@/hooks/use-translations';
 import { GlobalErrorBoundary } from '@/lib/error-boundaries';
 import { initSentry } from '@/lib/sentry';
 
 // Initialize Sentry for error tracking (only in production with valid DSN)
 initSentry();
+
+// Initialize navigation sections (register all sections with the registry)
+initializeSections();
 
 import appCss from '../styles.css?url';
 
