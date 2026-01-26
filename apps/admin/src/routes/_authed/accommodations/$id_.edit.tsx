@@ -1,5 +1,6 @@
 import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
+import { PageTabs, accommodationTabs } from '@/components/layout/PageTabs';
 import { useAccommodationPage } from '@/features/accommodations/hooks/useAccommodationPage';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 import { createFileRoute } from '@tanstack/react-router';
@@ -23,13 +24,21 @@ function AccommodationEditPage() {
     const entityData = useAccommodationPage(id);
 
     return (
-        <EntityPageBase
-            entityType="accommodation"
-            entityId={id}
-            initialMode="edit"
-            entityData={entityData}
-        >
-            <EntityEditContent entityType="accommodation" />
-        </EntityPageBase>
+        <div className="space-y-4">
+            {/* Level 3 Navigation: Page Tabs */}
+            <PageTabs
+                tabs={accommodationTabs}
+                basePath={`/accommodations/${id}`}
+            />
+
+            <EntityPageBase
+                entityType="accommodation"
+                entityId={id}
+                initialMode="edit"
+                entityData={entityData}
+            >
+                <EntityEditContent entityType="accommodation" />
+            </EntityPageBase>
+        </div>
     );
 }

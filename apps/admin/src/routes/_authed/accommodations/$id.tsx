@@ -1,5 +1,6 @@
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { EntityViewContent } from '@/components/entity-pages/EntityViewContent';
+import { PageTabs, accommodationTabs } from '@/components/layout/PageTabs';
 import { useAccommodationPage } from '@/features/accommodations/hooks/useAccommodationPage';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 import { createFileRoute } from '@tanstack/react-router';
@@ -24,19 +25,27 @@ function AccommodationViewPage() {
     const entityData = useAccommodationPage(id);
 
     return (
-        <EntityPageBase
-            entityType="accommodation"
-            entityId={id}
-            initialMode="view"
-            entityData={entityData}
-        >
-            <EntityViewContent
+        <div className="space-y-4">
+            {/* Level 3 Navigation: Page Tabs */}
+            <PageTabs
+                tabs={accommodationTabs}
+                basePath={`/accommodations/${id}`}
+            />
+
+            <EntityPageBase
                 entityType="accommodation"
                 entityId={id}
-                sections={entityData.sections}
-                entity={entityData.entity || {}}
-                userPermissions={entityData.userPermissions}
-            />
-        </EntityPageBase>
+                initialMode="view"
+                entityData={entityData}
+            >
+                <EntityViewContent
+                    entityType="accommodation"
+                    entityId={id}
+                    sections={entityData.sections}
+                    entity={entityData.entity || {}}
+                    userPermissions={entityData.userPermissions}
+                />
+            </EntityPageBase>
+        </div>
     );
 }
