@@ -17,6 +17,10 @@ import { docsIndexRoutes, scalarRoutes, swaggerRoutes } from './docs';
 import { featureRoutes } from './feature';
 import { dbHealthRoutes, healthRoutes, liveRoutes, readyRoutes } from './health';
 import { metricsRoutes } from './metrics';
+import { ownerPromotionRoutes } from './owner-promotion';
+import { sponsorshipRoutes } from './sponsorship';
+import { sponsorshipLevelRoutes } from './sponsorship-level';
+import { sponsorshipPackageRoutes } from './sponsorship-package';
 import { userRoutes } from './user';
 
 import { ApiInfoSchema } from '@repo/schemas';
@@ -101,6 +105,22 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/public', eventLocationRoutes);
         app.route('/api/v1/event-locations', eventLocationRoutes);
         apiLogger.debug('✅ Event location routes registered successfully');
+
+        apiLogger.debug('🔗 Registering sponsorship level routes...');
+        app.route('/api/v1/public/sponsorship-levels', sponsorshipLevelRoutes);
+        apiLogger.debug('✅ Sponsorship level routes registered successfully');
+
+        apiLogger.debug('🔗 Registering sponsorship package routes...');
+        app.route('/api/v1/public/sponsorship-packages', sponsorshipPackageRoutes);
+        apiLogger.debug('✅ Sponsorship package routes registered successfully');
+
+        apiLogger.debug('🔗 Registering sponsorship routes...');
+        app.route('/api/v1/sponsorships', sponsorshipRoutes);
+        apiLogger.debug('✅ Sponsorship routes registered successfully');
+
+        apiLogger.debug('🔗 Registering owner promotion routes...');
+        app.route('/api/v1/public/owner-promotions', ownerPromotionRoutes);
+        apiLogger.debug('✅ Owner promotion routes registered successfully');
     } catch (error) {
         apiLogger.debug('❌ Failed to register routes:', String(error));
         throw error;
