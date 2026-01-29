@@ -1,0 +1,63 @@
+/**
+ * GET /api/v1/public/accommodations/by-destination
+ * Get accommodations filtered by destination
+ */
+
+import { AccommodationListWrapperSchema, ServiceErrorCode } from '@repo/schemas';
+import { AccommodationService, ServiceError } from '@repo/service-core';
+import type { Context } from 'hono';
+import { createGuestActor } from '../../../utils/actor';
+import { apiLogger } from '../../../utils/logger';
+import { createSimpleRoute } from '../../../utils/route-factory';
+
+// Initialize service once
+const accommodationService = new AccommodationService({ logger: apiLogger });
+
+/**
+ * Handler for getting accommodations by destination
+ * Simplified handler that focuses on business logic
+ *
+ * @param c - Hono context
+ * @returns Accommodations list data
+ */
+const getByDestinationHandler = async (c: Context) => {
+    const { destinationId } = c.req.param();
+
+    // Create guest actor for public endpoint
+    const actor = createGuestActor();
+
+    // Validate required parameters
+    if (!destinationId) {
+        throw new ServiceError(ServiceErrorCode.VALIDATION_ERROR, 'destination ID is required');
+    }
+
+    // Get accommodations by destination
+    const result = await accommodationService.getByDestination(actor, {
+        destinationId,
+        page: 1,
+        pageSize: 20
+    });
+
+    if (result.error) {
+        throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+    }
+
+    return result.data || [];
+};
+
+/**
+ * Route definition using createSimpleRoute factory
+ * ✅ 80% less boilerplate than manual createRoute
+ */
+export const getByDestinationRoute = createSimpleRoute({
+    method: 'get',
+    path: '/destination/{destinationId}',
+    summary: 'Get accommodations by destination',
+    description: 'Retrieve all accommodations for a specific destination',
+    tags: ['Accommodations'],
+    responseSchema: AccommodationListWrapperSchema,
+    handler: getByDestinationHandler
+});
+
+// Export handler for use in route registration (compatibility)
+export { getByDestinationHandler };

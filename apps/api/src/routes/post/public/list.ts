@@ -1,0 +1,45 @@
+/**
+ * Public post list endpoint
+ * Returns paginated list of public posts
+ */
+import { PostPublicSchema, PostSearchHttpSchema, type ServiceErrorCode } from '@repo/schemas';
+import { PostService, ServiceError } from '@repo/service-core';
+import { getActorFromContext } from '../../../utils/actor';
+import { apiLogger } from '../../../utils/logger';
+import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
+import { createPublicListRoute } from '../../../utils/route-factory';
+
+const postService = new PostService({ logger: apiLogger });
+
+/**
+ * GET /api/v1/public/posts
+ * List posts - Public endpoint
+ */
+export const publicListPostsRoute = createPublicListRoute({
+    method: 'get',
+    path: '/',
+    summary: 'List posts',
+    description: 'Returns a paginated list of public posts',
+    tags: ['Posts'],
+    requestQuery: PostSearchHttpSchema.shape,
+    responseSchema: PostPublicSchema,
+    handler: async (ctx, _params, _body, query) => {
+        const actor = getActorFromContext(ctx);
+        const { page, pageSize } = extractPaginationParams(query || {});
+
+        const result = await postService.list(actor, query || {});
+
+        if (result.error) {
+            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+        }
+
+        return {
+            items: result.data?.items || [],
+            pagination: getPaginationResponse(result.data?.total || 0, { page, pageSize })
+        };
+    },
+    options: {
+        cacheTTL: 300, // Cache for 5 minutes
+        customRateLimit: { requests: 200, windowMs: 60000 }
+    }
+});
