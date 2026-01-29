@@ -3,12 +3,16 @@ import {
     AccommodationTypeEnum,
     AmenitiesTypeEnum,
     AuthProviderEnum,
+    BillingIntervalEnum,
     ClientTypeEnum,
     EntityPermissionReasonEnum,
     EntityTypeEnum,
     EventCategoryEnum,
+    InvoiceStatusEnum,
     LifecycleStatusEnum,
     ModerationStatusEnum,
+    OwnerPromotionDiscountTypeEnum,
+    PaymentStatusEnum,
     PermissionCategoryEnum,
     PermissionEnum,
     PostCategoryEnum,
@@ -16,7 +20,12 @@ import {
     PriceCurrencyEnum,
     ProductTypeEnum,
     RecurrenceTypeEnum,
+    RefundStatusEnum,
     RoleEnum,
+    SponsorshipStatusEnum,
+    SponsorshipTargetTypeEnum,
+    SponsorshipTierEnum,
+    SubscriptionStatusEnum,
     TagColorEnum,
     VisibilityEnum
 } from '@repo/schemas';
@@ -83,3 +92,39 @@ export const EntityPermissionReasonPgEnum = pgEnum(
     'entity_permission_reason_enum',
     enumToTuple(EntityPermissionReasonEnum)
 );
+
+export const SponsorshipStatusPgEnum = pgEnum(
+    'sponsorship_status_enum',
+    enumToTuple(SponsorshipStatusEnum)
+);
+
+export const SponsorshipTargetTypePgEnum = pgEnum(
+    'sponsorship_target_type_enum',
+    enumToTuple(SponsorshipTargetTypeEnum)
+);
+
+export const SponsorshipTierPgEnum = pgEnum(
+    'sponsorship_tier_enum',
+    enumToTuple(SponsorshipTierEnum)
+);
+
+export const OwnerPromotionDiscountTypePgEnum = pgEnum(
+    'owner_promotion_discount_type_enum',
+    enumToTuple(OwnerPromotionDiscountTypeEnum)
+);
+
+export const BillingIntervalPgEnum = pgEnum(
+    'billing_interval_enum',
+    enumToTuple(BillingIntervalEnum)
+);
+
+export const SubscriptionStatusPgEnum = pgEnum(
+    'subscription_status_enum',
+    enumToTuple(SubscriptionStatusEnum)
+);
+
+export const PaymentStatusPgEnum = pgEnum('payment_status_enum', enumToTuple(PaymentStatusEnum));
+
+export const InvoiceStatusPgEnum = pgEnum('invoice_status_enum', enumToTuple(InvoiceStatusEnum));
+
+export const RefundStatusPgEnum = pgEnum('refund_status_enum', enumToTuple(RefundStatusEnum));
