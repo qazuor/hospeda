@@ -1,0 +1,621 @@
+---
+/**
+ * Server-Side Rendered (SSR) Page Example
+ *
+ * This page demonstrates:
+ * - Server-side rendering on each request
+ * - Dynamic content based on request data
+ * - URL parameters and query strings
+ * - User authentication with Clerk
+ * - Request headers and cookies
+ * - Server-side redirects
+ * - Form handling with POST requests
+ * - Session management
+ * - Real-time data (no stale builds)
+ *
+ * File location: src/pages/search.astro
+ *
+ * KEY: export const prerender = false
+ * This disables static generation and enables SSR
+ */
+
+import type { GetStaticPaths } from 'astro';
+import { getAuth } from '@clerk/astro/server';
+import MainLayout from '../layouts/MainLayout.astro';
+import { AccommodationService, DestinationService } from '@repo/service-core';
+import { Icon } from '@repo/icons';
+import { SearchForm, SearchResults } from '../components/SearchForm';
+
+// ============================================================================
+// SSR CONFIGURATION
+// ============================================================================
+
+/**
+ * CRITICAL: Disable static generation
+ * Without this, page is built once at build time (SSG)
+ * With this, page is rendered on each request (SSR)
+ */
+export const prerender = false;
+
+// ============================================================================
+// SERVER-SIDE LOGIC (runs on each request)
+// ============================================================================
+
+/**
+ * Get authentication data
+ * This runs on the server for each request
+ */
+const { userId } = getAuth(Astro);
+
+/**
+ * Check if user is authenticated
+ * Redirect to sign-in if not
+ */
+if (!userId && Astro.url.pathname.startsWith('/dashboard')) {
+  return Astro.redirect('/auth/signin');
+}
+
+/**
+ * Extract URL parameters and query strings
+ * Available on every request
+ */
+const url = new URL(Astro.request.url);
+const searchQuery = url.searchParams.get('q') || '';
+const destination = url.searchParams.get('destination') || '';
+const page = Number(url.searchParams.get('page')) || 1;
+const sort = url.searchParams.get('sort') || 'relevance';
+
+/**
+ * Access request headers
+ * Useful for language detection, user agent, etc.
+ */
+const userAgent = Astro.request.headers.get('user-agent') || '';
+const acceptLanguage = Astro.request.headers.get('accept-language') || '';
+const isMobile = /mobile/i.test(userAgent);
+
+/**
+ * Access cookies
+ * Can be used for sessions, preferences, etc.
+ */
+const cookies = Astro.cookies;
+const recentSearches = cookies.get('recent_searches')?.json() || [];
+
+/**
+ * Fetch data from services on each request
+ * This is ALWAYS fresh data (never stale)
+ */
+const accommodationService = new AccommodationService({ userId: userId || undefined });
+const destinationService = new DestinationService();
+
+// Fetch search results based on query params
+const searchResult = await accommodationService.findAll({
+  filters: {
+    search: searchQuery,
+    destinationId: destination || undefined,
+  },
+  page,
+  pageSize: 12,
+  sort: sort === 'price-asc' ? 'pricePerNight' :
+        sort === 'price-desc' ? '-pricePerNight' :
+        sort === 'name' ? 'name' : undefined,
+});
+
+// Fetch all destinations for filter dropdown
+const destinationsResult = await destinationService.findAll({
+  limit: 100,
+});
+
+const accommodations = searchResult.success ? searchResult.data.items : [];
+const total = searchResult.success ? searchResult.data.total : 0;
+const totalPages = Math.ceil(total / 12);
+
+const destinations = destinationsResult.success ? destinationsResult.data.items : [];
+
+/**
+ * Handle form submissions (POST requests)
+ * This is server-side form processing
+ */
+if (Astro.request.method === 'POST') {
+  try {
+    const formData = await Astro.request.formData();
+    const action = formData.get('action');
+
+    if (action === 'save-search') {
+      // Save search to user preferences
+      const searchToSave = formData.get('query')?.toString();
+
+      if (searchToSave && userId) {
+        // Save to database or session
+        recentSearches.push(searchToSave);
+
+        // Update cookie
+        cookies.set('recent_searches', JSON.stringify(recentSearches.slice(-5)), {
+          path: '/',
+          maxAge: 60 * 60 * 24 * 30, // 30 days
+        });
+      }
+
+      return Astro.redirect(`/search?q=${searchToSave}`);
+    }
+  } catch (error) {
+    console.error('Form processing error:', error);
+  }
+}
+
+/**
+ * Save current search to recent searches cookie
+ */
+if (searchQuery && !recentSearches.includes(searchQuery)) {
+  const updated = [...recentSearches, searchQuery].slice(-5); // Keep last 5
+  cookies.set('recent_searches', JSON.stringify(updated), {
+    path: '/',
+    maxAge: 60 * 60 * 24 * 30, // 30 days
+  });
+}
+
+/**
+ * Generate pagination URLs
+ */
+const getPaginationUrl = (targetPage: number) => {
+  const params = new URLSearchParams();
+  if (searchQuery) params.set('q', searchQuery);
+  if (destination) params.set('destination', destination);
+  if (sort) params.set('sort', sort);
+  params.set('page', targetPage.toString());
+  return `/search?${params.toString()}`;
+};
+
+// SEO metadata (dynamic based on search)
+const title = searchQuery
+  ? `Resultados para "${searchQuery}"${destination ? ` en ${destination}` : ''}`
+  : 'Buscar Alojamientos';
+const description = `Encontrá alojamientos ${searchQuery ? `de ${searchQuery}` : ''} en el Litoral argentino. ${total} resultados disponibles.`;
+const canonicalUrl = `${import.meta.env.PUBLIC_SITE_URL}/search`;
+---
+
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title} | Hospeda</title>
+    <meta name="description" content={description} />
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href={canonicalUrl} />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalUrl} />
+
+    <!-- Tell search engines this page changes frequently -->
+    <meta name="robots" content="index, follow" />
+
+    <!-- Structured Data for Search -->
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "SearchResultsPage",
+      "name": title,
+      "description": description,
+      "url": canonicalUrl,
+      "numberOfItems": total,
+    })} />
+  </head>
+
+  <body>
+    <MainLayout title={title} description={description}>
+      <div class="search-page">
+        <!-- Page Header -->
+        <header class="page-header">
+          <div class="container">
+            <h1>Buscar Alojamientos</h1>
+
+            <!-- Show user info if authenticated -->
+            {userId && (
+              <p class="user-greeting">
+                Buscando alojamientos personalizados para vos
+              </p>
+            )}
+
+            <!-- Mobile detection example -->
+            {isMobile && (
+              <p class="mobile-notice">
+                💡 Descargá nuestra app para una mejor experiencia móvil
+              </p>
+            )}
+          </div>
+        </header>
+
+        <div class="container">
+          <!-- Search Filters Section -->
+          <aside class="filters-sidebar">
+            <form method="GET" class="search-form">
+              <!-- Search Query -->
+              <div class="form-group">
+                <label for="search-query">Buscar</label>
+                <input
+                  id="search-query"
+                  type="text"
+                  name="q"
+                  value={searchQuery}
+                  placeholder="Hotel, cabaña, apartamento..."
+                  class="form-input"
+                />
+              </div>
+
+              <!-- Destination Filter -->
+              <div class="form-group">
+                <label for="destination">Destino</label>
+                <select id="destination" name="destination" class="form-select">
+                  <option value="">Todos los destinos</option>
+                  {destinations.map(dest => (
+                    <option
+                      value={dest.id}
+                      selected={destination === dest.id}
+                    >
+                      {dest.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <!-- Sort Order -->
+              <div class="form-group">
+                <label for="sort">Ordenar por</label>
+                <select id="sort" name="sort" class="form-select">
+                  <option value="relevance" selected={sort === 'relevance'}>Relevancia</option>
+                  <option value="price-asc" selected={sort === 'price-asc'}>Precio: menor a mayor</option>
+                  <option value="price-desc" selected={sort === 'price-desc'}>Precio: mayor a menor</option>
+                  <option value="name" selected={sort === 'name'}>Nombre A-Z</option>
+                </select>
+              </div>
+
+              <button type="submit" class="btn-primary">
+                <Icon name="search" size={20} />
+                <span>Buscar</span>
+              </button>
+            </form>
+
+            <!-- Recent Searches (from cookies) -->
+            {recentSearches.length > 0 && (
+              <div class="recent-searches">
+                <h3>Búsquedas recientes</h3>
+                <ul>
+                  {recentSearches.map(search => (
+                    <li>
+                      <a href={`/search?q=${search}`}>{search}</a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </aside>
+
+          <!-- Results Section -->
+          <main class="results-section">
+            <!-- Results Header -->
+            <div class="results-header">
+              <h2>
+                {searchQuery ? `Resultados para "${searchQuery}"` : 'Todos los alojamientos'}
+              </h2>
+              <p class="results-count">
+                {total} {total === 1 ? 'resultado' : 'resultados'} encontrados
+              </p>
+            </div>
+
+            <!-- Results Grid -->
+            {accommodations.length > 0 ? (
+              <div class="results-grid">
+                {accommodations.map(accommodation => (
+                  <article class="accommodation-card">
+                    <a href={`/alojamientos/${accommodation.slug}`}>
+                      <img
+                        src={accommodation.images[0]?.url || '/placeholder.jpg'}
+                        alt={accommodation.name}
+                        width="400"
+                        height="300"
+                        loading="lazy"
+                      />
+                      <div class="card-content">
+                        <h3>{accommodation.name}</h3>
+                        <p class="destination">
+                          <Icon name="map-pin" size={16} />
+                          <span>{accommodation.destination?.name}</span>
+                        </p>
+                        <div class="card-footer">
+                          <div class="rating">
+                            {Array.from({ length: accommodation.stars }).map(() => (
+                              <Icon name="star" size={16} />
+                            ))}
+                          </div>
+                          <p class="price">
+                            ${accommodation.pricePerNight} / noche
+                          </p>
+                        </div>
+                      </div>
+                    </a>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div class="no-results">
+                <Icon name="search-x" size={48} />
+                <h3>No se encontraron resultados</h3>
+                <p>
+                  {searchQuery
+                    ? `No hay alojamientos que coincidan con "${searchQuery}"`
+                    : 'No hay alojamientos disponibles en este momento'
+                  }
+                </p>
+                <a href="/search" class="btn-secondary">Limpiar filtros</a>
+              </div>
+            )}
+
+            <!-- Pagination -->
+            {totalPages > 1 && (
+              <nav class="pagination" aria-label="Paginación">
+                {page > 1 && (
+                  <a href={getPaginationUrl(page - 1)} class="page-link">
+                    <Icon name="chevron-left" size={20} />
+                    <span>Anterior</span>
+                  </a>
+                )}
+
+                <div class="page-numbers">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    const pageNum = i + 1;
+                    return (
+                      <a
+                        href={getPaginationUrl(pageNum)}
+                        class={pageNum === page ? 'page-number active' : 'page-number'}
+                        aria-current={pageNum === page ? 'page' : undefined}
+                      >
+                        {pageNum}
+                      </a>
+                    );
+                  })}
+                </div>
+
+                {page < totalPages && (
+                  <a href={getPaginationUrl(page + 1)} class="page-link">
+                    <span>Siguiente</span>
+                    <Icon name="chevron-right" size={20} />
+                  </a>
+                )}
+              </nav>
+            )}
+          </main>
+        </div>
+
+        <!-- Interactive Search (React Island for advanced features) -->
+        <div class="interactive-search">
+          <SearchForm
+            client:idle
+            initialQuery={searchQuery}
+            showFilters={false}
+          />
+        </div>
+      </div>
+    </MainLayout>
+  </body>
+</html>
+
+<style>
+  /* Page Layout */
+  .search-page {
+    @apply min-h-screen bg-gray-50;
+  }
+
+  .page-header {
+    @apply bg-white border-b border-gray-200 py-8;
+  }
+
+  .page-header .container {
+    @apply max-w-7xl mx-auto px-4;
+  }
+
+  .page-header h1 {
+    @apply text-4xl font-bold mb-2;
+  }
+
+  .user-greeting {
+    @apply text-gray-600;
+  }
+
+  .mobile-notice {
+    @apply mt-4 p-3 bg-blue-50 text-blue-700 rounded-lg text-sm;
+  }
+
+  .container {
+    @apply max-w-7xl mx-auto px-4 py-8;
+    @apply grid grid-cols-1 lg:grid-cols-4 gap-8;
+  }
+
+  /* Filters Sidebar */
+  .filters-sidebar {
+    @apply lg:col-span-1;
+  }
+
+  .search-form {
+    @apply bg-white rounded-lg shadow-md p-6 space-y-4;
+  }
+
+  .form-group {
+    @apply space-y-2;
+  }
+
+  .form-group label {
+    @apply block text-sm font-medium text-gray-700;
+  }
+
+  .form-input,
+  .form-select {
+    @apply w-full px-4 py-2 border border-gray-300 rounded-lg;
+    @apply focus:ring-2 focus:ring-primary focus:border-transparent;
+  }
+
+  .btn-primary {
+    @apply w-full px-4 py-2 bg-primary text-white rounded-lg font-medium;
+    @apply hover:bg-primary-dark transition-colors;
+    @apply flex items-center justify-center gap-2;
+  }
+
+  .recent-searches {
+    @apply mt-6 bg-white rounded-lg shadow-md p-6;
+  }
+
+  .recent-searches h3 {
+    @apply text-lg font-semibold mb-4;
+  }
+
+  .recent-searches ul {
+    @apply space-y-2;
+  }
+
+  .recent-searches a {
+    @apply text-primary hover:underline;
+  }
+
+  /* Results Section */
+  .results-section {
+    @apply lg:col-span-3;
+  }
+
+  .results-header {
+    @apply mb-6;
+  }
+
+  .results-header h2 {
+    @apply text-2xl font-bold mb-2;
+  }
+
+  .results-count {
+    @apply text-gray-600;
+  }
+
+  /* Results Grid */
+  .results-grid {
+    @apply grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8;
+  }
+
+  .accommodation-card {
+    @apply bg-white rounded-lg shadow-md overflow-hidden;
+    @apply hover:shadow-xl transition-shadow;
+  }
+
+  .accommodation-card img {
+    @apply w-full h-48 object-cover;
+  }
+
+  .card-content {
+    @apply p-4;
+  }
+
+  .card-content h3 {
+    @apply font-semibold text-lg mb-2;
+  }
+
+  .card-content .destination {
+    @apply flex items-center gap-2 text-gray-600 text-sm mb-3;
+  }
+
+  .card-footer {
+    @apply flex items-center justify-between;
+  }
+
+  .rating {
+    @apply flex items-center text-yellow-500;
+  }
+
+  .price {
+    @apply text-primary font-medium;
+  }
+
+  /* No Results */
+  .no-results {
+    @apply text-center py-12;
+  }
+
+  .no-results h3 {
+    @apply text-xl font-semibold mt-4 mb-2;
+  }
+
+  .no-results p {
+    @apply text-gray-600 mb-6;
+  }
+
+  .btn-secondary {
+    @apply inline-block px-6 py-2 border border-gray-300 rounded-lg;
+    @apply hover:bg-gray-50 transition-colors;
+  }
+
+  /* Pagination */
+  .pagination {
+    @apply flex items-center justify-center gap-2;
+  }
+
+  .page-link {
+    @apply flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg;
+    @apply hover:bg-gray-50 transition-colors;
+  }
+
+  .page-numbers {
+    @apply flex gap-2;
+  }
+
+  .page-number {
+    @apply px-4 py-2 border border-gray-300 rounded-lg;
+    @apply hover:bg-gray-50 transition-colors;
+  }
+
+  .page-number.active {
+    @apply bg-primary text-white border-primary;
+  }
+
+  /* Interactive Search */
+  .interactive-search {
+    @apply mt-8;
+  }
+</style>
+
+<!--
+  KEY DIFFERENCES FROM SSG:
+
+  1. export const prerender = false
+     - Page is rendered on each request
+     - Always fresh data
+
+  2. Access to request data:
+     - URL parameters: Astro.url.searchParams
+     - Headers: Astro.request.headers
+     - Cookies: Astro.cookies
+     - User auth: getAuth(Astro)
+
+  3. Can handle POST requests:
+     - Form submissions
+     - API-like behavior
+
+  4. Can redirect:
+     - return Astro.redirect('/path')
+
+  5. Dynamic based on user:
+     - Personalized content
+     - Authentication checks
+
+  WHEN TO USE SSR:
+  - Search/filter pages
+  - User-specific content
+  - Real-time data
+  - Forms with server processing
+  - Authentication-required pages
+  - Content that changes frequently
+
+  WHEN TO USE SSG:
+  - Static content (About, Contact)
+  - Blog posts, news
+  - Product/accommodation listings (with revalidation)
+  - Landing pages
+  - Documentation
+-->
