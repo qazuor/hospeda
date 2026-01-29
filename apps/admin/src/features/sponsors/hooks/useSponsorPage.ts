@@ -1,0 +1,124 @@
+import { PermissionEnum } from '@repo/schemas';
+import { useNavigate } from '@tanstack/react-router';
+import { useMemo, useState } from 'react';
+
+import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
+import { filterSectionsByMode } from '@/components/entity-form/utils/section-filter.utils';
+import { createSponsorConsolidatedConfig } from '../config';
+import { useSponsorQuery, useUpdateSponsorMutation } from './useSponsorQuery';
+
+/**
+ * Hook for managing sponsor entity pages
+ * Centralizes all sponsor-specific logic in one place
+ */
+export const useSponsorPage = (entityId: string) => {
+    const navigate = useNavigate();
+
+    // State for mode (view/edit)
+    const [mode, setMode] = useState<'view' | 'edit'>('view');
+    const [activeSection, setActiveSection] = useState<string>();
+
+    // Use hooks directly at the top level
+    const query = useSponsorQuery(entityId);
+    const updateMutation = useUpdateSponsorMutation(entityId);
+
+    // Consolidated configuration
+    const entityConfig = useMemo(() => {
+        const consolidatedConfig = createSponsorConsolidatedConfig();
+
+        const viewSections = filterSectionsByMode(consolidatedConfig.sections, 'view');
+        const editSections = filterSectionsByMode(consolidatedConfig.sections, 'edit');
+
+        return {
+            viewSections,
+            editSections,
+            metadata: consolidatedConfig.metadata
+        };
+    }, []);
+
+    // Permissions configuration - static
+    const permissions = useMemo(
+        () => ({
+            view: [PermissionEnum.POST_SPONSOR_VIEW],
+            edit: [PermissionEnum.POST_SPONSOR_UPDATE],
+            create: [PermissionEnum.POST_SPONSOR_CREATE],
+            delete: [PermissionEnum.POST_SPONSOR_DELETE]
+        }),
+        []
+    );
+
+    // User permissions (hardcoded for now, can be made dynamic)
+    const userPermissions = useMemo(
+        () => [
+            PermissionEnum.POST_SPONSOR_VIEW,
+            PermissionEnum.POST_SPONSOR_CREATE,
+            PermissionEnum.POST_SPONSOR_UPDATE,
+            PermissionEnum.POST_SPONSOR_DELETE
+        ],
+        []
+    );
+
+    // Check permissions for current mode
+    const canView = useMemo(() => {
+        return permissions.view.some((permission) => userPermissions.includes(permission));
+    }, [permissions.view, userPermissions]);
+
+    const canEdit = useMemo(() => {
+        return permissions.edit.some((permission) => userPermissions.includes(permission));
+    }, [permissions.edit, userPermissions]);
+
+    // Mode switching
+    const switchToView = () => setMode('view');
+    const switchToEdit = () => setMode('edit');
+
+    // Navigation
+    const goToList = () => navigate({ to: '/sponsors' });
+    const goToView = () => navigate({ to: `/sponsors/${entityId}` });
+    const goToEdit = () => navigate({ to: `/sponsors/${entityId}/edit` });
+
+    // Get sections based on current mode
+    const getSections = (): SectionConfig[] => {
+        return mode === 'view' ? entityConfig.viewSections : entityConfig.editSections;
+    };
+
+    const hookReturn = {
+        // State
+        mode,
+        setMode,
+        switchToView,
+        switchToEdit,
+        activeSection,
+        setActiveSection,
+
+        // Data
+        entity: query.data,
+        isLoading: query.isLoading,
+        error: query.error,
+
+        // Configuration
+        entityConfig,
+        sections: getSections(),
+
+        // Permissions
+        userPermissions,
+        canView,
+        canEdit,
+
+        // Mutations
+        updateMutation: {
+            mutateAsync: updateMutation.mutateAsync,
+            isLoading: updateMutation.isPending
+        },
+
+        // Utilities
+        entityType: 'sponsor',
+        entityId,
+
+        // Navigation
+        goToList,
+        goToView,
+        goToEdit
+    };
+
+    return hookReturn;
+};
