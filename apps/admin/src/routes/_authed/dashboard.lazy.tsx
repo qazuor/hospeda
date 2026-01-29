@@ -1,12 +1,14 @@
-import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 /**
  * Dashboard page - Lazy loaded component
  *
  * This file contains the heavy UI components that are loaded on demand.
  * The route configuration is in dashboard.tsx
  */
+import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { DashboardSkeleton } from '@/components/loading';
+import { useDashboardStats } from '@/features/dashboard/hooks/useDashboardStats';
 import { useTranslations } from '@/hooks/use-translations';
+import { useQueryClient } from '@tanstack/react-query';
 import { createLazyFileRoute } from '@tanstack/react-router';
 
 export const Route = createLazyFileRoute('/_authed/dashboard')({
@@ -16,6 +18,36 @@ export const Route = createLazyFileRoute('/_authed/dashboard')({
 
 function Dashboard() {
     const { t } = useTranslations();
+    const { entities, isLoading } = useDashboardStats();
+    const queryClient = useQueryClient();
+
+    // Map entity names to KPI config
+    const kpiConfig = [
+        {
+            key: 'accommodations',
+            titleKey: 'admin-dashboard.kpis.accommodations' as const,
+            gradient: 'from-emerald-500 to-lime-500'
+        },
+        {
+            key: 'destinations',
+            titleKey: 'admin-dashboard.kpis.destinations' as const,
+            gradient: 'from-sky-500 to-cyan-500'
+        },
+        {
+            key: 'events',
+            titleKey: 'admin-dashboard.kpis.events' as const,
+            gradient: 'from-amber-500 to-orange-500'
+        },
+        {
+            key: 'posts',
+            titleKey: 'admin-dashboard.kpis.posts' as const,
+            gradient: 'from-violet-500 to-fuchsia-500'
+        }
+    ];
+
+    const handleRefresh = () => {
+        queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    };
 
     return (
         <SidebarPageLayout
@@ -24,78 +56,41 @@ function Dashboard() {
                 <div className="flex items-center gap-2">
                     <button
                         type="button"
+                        onClick={handleRefresh}
                         className="inline-flex items-center justify-center rounded-md border px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
                         aria-label={t('admin-common.aria.refresh')}
                     >
                         {t('admin-dashboard.actions.refresh')}
-                    </button>
-                    <button
-                        type="button"
-                        className="inline-flex items-center justify-center rounded-md bg-accent px-3 py-2 text-accent-foreground text-sm hover:brightness-95"
-                        aria-label={t('admin-common.aria.create')}
-                    >
-                        {t('admin-dashboard.actions.create')}
                     </button>
                 </div>
             }
         >
             {/* KPI Cards */}
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <KpiCard
-                    title={t('admin-dashboard.kpis.visitors')}
-                    value="8.2k"
-                    trend="+12.4%"
-                    gradient="from-sky-500 to-cyan-500"
-                />
-                <KpiCard
-                    title={t('admin-dashboard.kpis.posts')}
-                    value="324"
-                    trend="+3.1%"
-                    gradient="from-violet-500 to-fuchsia-500"
-                />
-                <KpiCard
-                    title={t('admin-dashboard.kpis.accommodations')}
-                    value="142"
-                    trend="+1.8%"
-                    gradient="from-emerald-500 to-lime-500"
-                />
-                <KpiCard
-                    title={t('admin-dashboard.kpis.events')}
-                    value="56"
-                    trend="-0.9%"
-                    gradient="from-amber-500 to-orange-500"
-                />
+                {kpiConfig.map((kpi) => {
+                    const entity = entities.find((e) => e.name === kpi.key);
+                    return (
+                        <KpiCard
+                            key={kpi.key}
+                            title={t(kpi.titleKey)}
+                            value={entity?.isLoading ? '...' : String(entity?.count ?? 0)}
+                            gradient={kpi.gradient}
+                            loading={entity?.isLoading ?? isLoading}
+                        />
+                    );
+                })}
             </div>
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                {/* Simple bars chart placeholder */}
+                {/* Traffic chart placeholder */}
                 <div className="rounded-lg border p-4 lg:col-span-2">
                     <h2 className="mb-3 font-semibold text-sm">
                         {t('admin-dashboard.charts.traffic')}
                     </h2>
-                    <div className="flex h-48 items-end justify-between gap-2">
-                        {(
-                            [
-                                { label: t('admin-dashboard.charts.days.mon'), value: 30 },
-                                { label: t('admin-dashboard.charts.days.tue'), value: 45 },
-                                { label: t('admin-dashboard.charts.days.wed'), value: 60 },
-                                { label: t('admin-dashboard.charts.days.thu'), value: 80 },
-                                { label: t('admin-dashboard.charts.days.fri'), value: 55 },
-                                { label: t('admin-dashboard.charts.days.sat'), value: 70 },
-                                { label: t('admin-dashboard.charts.days.sun'), value: 95 }
-                            ] as const
-                        ).map(({ label, value }) => (
-                            <div
-                                key={label}
-                                className="flex w-full flex-col items-center gap-2"
-                            >
-                                <div
-                                    className="w-full rounded-t bg-gradient-to-t from-indigo-500 to-fuchsia-500"
-                                    style={{ height: `${value}%` }}
-                                />
-                                <span className="text-muted-foreground text-xs">{label}</span>
-                            </div>
-                        ))}
+                    <div className="flex h-48 items-center justify-center">
+                        <p className="text-muted-foreground text-sm">
+                            Connect analytics provider to view traffic data
+                        </p>
                     </div>
                 </div>
 
@@ -104,24 +99,31 @@ function Dashboard() {
                     <h2 className="mb-3 font-semibold text-sm">
                         {t('admin-dashboard.activity.title')}
                     </h2>
-                    <ul className="space-y-2">
-                        {(
-                            [
-                                t('admin-dashboard.activity.items.newPost'),
-                                t('admin-dashboard.activity.items.accommodationUpdated'),
-                                t('admin-dashboard.activity.items.newReview'),
-                                t('admin-dashboard.activity.items.eventCreated')
-                            ] as const
-                        ).map((text) => (
-                            <li
-                                key={text}
-                                className="rounded-md border px-3 py-2 text-sm hover:bg-accent/40"
-                            >
-                                {text}
-                            </li>
-                        ))}
-                    </ul>
+                    <div className="flex h-48 items-center justify-center">
+                        <p className="text-center text-muted-foreground text-sm">
+                            Activity feed will be available once the audit log system is implemented
+                        </p>
+                    </div>
                 </div>
+            </div>
+
+            {/* Additional stats row */}
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                {entities
+                    .filter((e) => !kpiConfig.some((k) => k.key === e.name))
+                    .map((entity) => (
+                        <div
+                            key={entity.name}
+                            className="rounded-lg border p-4"
+                        >
+                            <p className="text-muted-foreground text-sm capitalize">
+                                {entity.name}
+                            </p>
+                            <p className="font-semibold text-2xl">
+                                {entity.isLoading ? '...' : entity.count}
+                            </p>
+                        </div>
+                    ))}
             </div>
         </SidebarPageLayout>
     );
@@ -130,17 +132,21 @@ function Dashboard() {
 type KpiCardProps = {
     readonly title: string;
     readonly value: string;
-    readonly trend: string;
     readonly gradient: string;
+    readonly loading?: boolean;
 };
 
-const KpiCard = ({ title, value, trend, gradient }: KpiCardProps) => (
+const KpiCard = ({ title, value, gradient, loading }: KpiCardProps) => (
     <div className="rounded-lg border p-4">
         <div className="mb-3 text-muted-foreground text-sm">{title}</div>
         <div className="flex items-end justify-between">
-            <div className="font-semibold text-3xl">{value}</div>
+            {loading ? (
+                <div className="h-9 w-20 animate-pulse rounded bg-muted" />
+            ) : (
+                <div className="font-semibold text-3xl">{value}</div>
+            )}
             <div className={`rounded-md bg-gradient-to-r ${gradient} px-2 py-1 text-white text-xs`}>
-                {trend}
+                Live
             </div>
         </div>
     </div>
