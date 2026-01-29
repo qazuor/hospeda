@@ -1,0 +1,288 @@
+{
+    "entities": {
+        "accommodation": {
+            "singular": "Accommodation",
+            "plural": "Accommodations",
+            "description": "Manage hotels, cabins, apartments and other accommodations"
+        },
+        "destination": {
+            "singular": "Destination",
+            "plural": "Destinations",
+            "description": "Manage tourist destinations and their attractions"
+        },
+        "event": {
+            "singular": "Event",
+            "plural": "Events",
+            "description": "Manage cultural events, festivals and activities"
+        },
+        "post": {
+            "singular": "Post",
+            "plural": "Posts",
+            "description": "Manage blog articles and news"
+        },
+        "user": {
+            "singular": "User",
+            "plural": "Users",
+            "description": "Manage users and permissions"
+        },
+        "amenity": {
+            "singular": "Amenity",
+            "plural": "Amenities",
+            "description": "Manage accommodation amenities"
+        },
+        "feature": {
+            "singular": "Feature",
+            "plural": "Features",
+            "description": "Manage accommodation features"
+        },
+        "attraction": {
+            "singular": "Attraction",
+            "plural": "Attractions",
+            "description": "Manage tourist attractions of destinations",
+            "list": "Attractions List"
+        },
+        "eventOrganizer": {
+            "singular": "Organizer",
+            "plural": "Organizers",
+            "description": "Manage event organizers"
+        },
+        "eventLocation": {
+            "singular": "Location",
+            "plural": "Locations",
+            "description": "Manage event locations"
+        },
+        "sponsor": {
+            "singular": "Sponsor",
+            "plural": "Sponsors",
+            "description": "Manage sponsors and advertisers"
+        },
+        "tag": {
+            "singular": "Tag",
+            "plural": "Tags",
+            "description": "Manage tags for categorization"
+        },
+        "review": {
+            "singular": "Review",
+            "plural": "Reviews",
+            "description": "Manage reviews and ratings"
+        }
+    },
+    "columns": {
+        "id": "ID",
+        "name": "Name",
+        "slug": "Slug",
+        "description": "Description",
+        "shortDescription": "Short Description",
+        "type": "Type",
+        "category": "Category",
+        "status": "Status",
+        "visibility": "Visibility",
+        "moderation": "Moderation",
+        "featured": "Featured",
+        "price": "Price",
+        "basePrice": "Base Price",
+        "rating": "Rating",
+        "averageRating": "Average Rating",
+        "reviewsCount": "Reviews",
+        "accommodationsCount": "Accommodations",
+        "attractionsCount": "Attractions",
+        "views": "Views",
+        "viewCount": "View Count",
+        "createdAt": "Created",
+        "updatedAt": "Updated",
+        "createdBy": "Created By",
+        "updatedBy": "Updated By",
+        "owner": "Owner",
+        "author": "Author",
+        "destination": "Destination",
+        "location": "Location",
+        "address": "Address",
+        "city": "City",
+        "state": "State",
+        "country": "Country",
+        "coordinates": "Coordinates",
+        "email": "Email",
+        "phone": "Phone",
+        "website": "Website",
+        "whatsapp": "WhatsApp",
+        "socialNetworks": "Social Networks",
+        "featuredImage": "Featured Image",
+        "gallery": "Gallery",
+        "logo": "Logo",
+        "tags": "Tags",
+        "attractions": "Attractions",
+        "amenities": "Amenities",
+        "features": "Features",
+        "organizer": "Organizer",
+        "startDate": "Start Date",
+        "endDate": "End Date",
+        "actions": "Actions"
+    },
+    "actions": {
+        "view": "View",
+        "edit": "Edit",
+        "delete": "Delete",
+        "archive": "Archive",
+        "restore": "Restore",
+        "duplicate": "Duplicate",
+        "create": "Create",
+        "save": "Save",
+        "cancel": "Cancel",
+        "back": "Back",
+        "search": "Search",
+        "filter": "Filter",
+        "export": "Export",
+        "import": "Import",
+        "refresh": "Refresh",
+        "reset": "Reset",
+        "publish": "Publish",
+        "unpublish": "Unpublish",
+        "approve": "Approve",
+        "reject": "Reject",
+        "activate": "Activate",
+        "deactivate": "Deactivate"
+    },
+    "confirmations": {
+        "delete": {
+            "title": "Delete {entity}",
+            "message": "Are you sure you want to delete this {entity}? This action cannot be undone.",
+            "confirm": "Yes, delete",
+            "cancel": "Cancel"
+        },
+        "archive": {
+            "title": "Archive {entity}",
+            "message": "Are you sure you want to archive this {entity}?",
+            "confirm": "Yes, archive",
+            "cancel": "Cancel"
+        },
+        "restore": {
+            "title": "Restore {entity}",
+            "message": "Do you want to restore this {entity}?",
+            "confirm": "Yes, restore",
+            "cancel": "Cancel"
+        },
+        "unsavedChanges": {
+            "title": "Unsaved Changes",
+            "message": "You have unsaved changes. Do you want to discard them?",
+            "confirm": "Yes, discard",
+            "cancel": "Keep editing"
+        }
+    },
+    "messages": {
+        "created": "{entity} created successfully",
+        "updated": "{entity} updated successfully",
+        "deleted": "{entity} deleted successfully",
+        "archived": "{entity} archived successfully",
+        "restored": "{entity} restored successfully",
+        "published": "{entity} published successfully",
+        "unpublished": "{entity} unpublished successfully",
+        "approved": "{entity} approved successfully",
+        "rejected": "{entity} rejected successfully",
+        "error": {
+            "create": "Error creating {entity}",
+            "update": "Error updating {entity}",
+            "delete": "Error deleting {entity}",
+            "load": "Error loading {entity}",
+            "notFound": "{entity} not found"
+        },
+        "empty": {
+            "title": "No {entities}",
+            "description": "No {entities} found. Create a new one to get started."
+        },
+        "loading": "Loading {entities}...",
+        "saving": "Saving...",
+        "deleting": "Deleting..."
+    },
+    "list": {
+        "title": "{entities} - List",
+        "new": "New {entity}",
+        "noResults": "No results found",
+        "searchPlaceholder": "Search {entities}...",
+        "pagination": {
+            "showing": "Showing {start} to {end} of {total}",
+            "page": "Page {page} of {totalPages}",
+            "rowsPerPage": "Rows per page"
+        }
+    },
+    "detail": {
+        "title": "{entity} - Detail",
+        "sections": {
+            "basicInfo": "Basic Information",
+            "contactInfo": "Contact Information",
+            "location": "Location",
+            "media": "Media",
+            "settings": "Settings",
+            "states": "States",
+            "relations": "Relations",
+            "metadata": "Metadata",
+            "audit": "Audit"
+        }
+    },
+    "form": {
+        "title": {
+            "create": "Create {entity}",
+            "edit": "Edit {entity}"
+        },
+        "required": "This field is required",
+        "invalid": "Invalid value",
+        "validation": {
+            "minLength": "Minimum {min} characters",
+            "maxLength": "Maximum {max} characters",
+            "email": "Invalid email",
+            "url": "Invalid URL",
+            "phone": "Invalid phone",
+            "number": "Must be a number",
+            "positive": "Must be a positive number",
+            "integer": "Must be an integer",
+            "date": "Invalid date",
+            "unique": "This value already exists"
+        }
+    },
+    "states": {
+        "lifecycle": {
+            "draft": "Draft",
+            "active": "Active",
+            "archived": "Archived"
+        },
+        "moderation": {
+            "pending": "Pending",
+            "approved": "Approved",
+            "rejected": "Rejected"
+        },
+        "visibility": {
+            "public": "Public",
+            "private": "Private",
+            "restricted": "Restricted"
+        },
+        "publishStatus": {
+            "draft": "Draft",
+            "published": "Published",
+            "scheduled": "Scheduled",
+            "unpublished": "Unpublished"
+        }
+    },
+    "types": {
+        "accommodation": {
+            "hotel": "Hotel",
+            "hostel": "Hostel",
+            "apartment": "Apartment",
+            "house": "House",
+            "countryHouse": "Country House",
+            "cabin": "Cabin",
+            "camping": "Camping",
+            "room": "Room",
+            "motel": "Motel",
+            "resort": "Resort"
+        },
+        "event": {
+            "concert": "Concert",
+            "festival": "Festival",
+            "exhibition": "Exhibition",
+            "conference": "Conference",
+            "workshop": "Workshop",
+            "sports": "Sports",
+            "theater": "Theater",
+            "other": "Other"
+        }
+    }
+}

@@ -1,0 +1,35 @@
+{
+    "title": "Dashboard",
+    "actions": {
+        "refresh": "Refresh",
+        "create": "Create"
+    },
+    "kpis": {
+        "visitors": "Visitors",
+        "posts": "Posts",
+        "accommodations": "Accommodations",
+        "events": "Events",
+        "destinations": "Destinations"
+    },
+    "charts": {
+        "traffic": "Traffic (last 7 days)",
+        "days": {
+            "mon": "Mon",
+            "tue": "Tue",
+            "wed": "Wed",
+            "thu": "Thu",
+            "fri": "Fri",
+            "sat": "Sat",
+            "sun": "Sun"
+        }
+    },
+    "activity": {
+        "title": "Recent activity",
+        "items": {
+            "newPost": "New post: Summer in Patagonia",
+            "accommodationUpdated": "Accommodation updated: Mountain View Cabin",
+            "newReview": "New review on: Urban Loft Apartment",
+            "eventCreated": "Event created: Jazz Night at La Bahia"
+        }
+    }
+}

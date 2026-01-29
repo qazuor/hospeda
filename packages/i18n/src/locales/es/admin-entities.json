@@ -38,7 +38,8 @@
         "attraction": {
             "singular": "Atracción",
             "plural": "Atracciones",
-            "description": "Gestiona atracciones turísticas de destinos"
+            "description": "Gestiona atracciones turísticas de destinos",
+            "list": "Lista de Atracciones"
         },
         "eventOrganizer": {
             "singular": "Organizador",
