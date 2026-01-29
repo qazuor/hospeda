@@ -1,0 +1,144 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import * as dbUtils from '../../src/client';
+import { TagModel } from '../../src/models/tag/tag.model';
+import * as logger from '../../src/utils/logger';
+
+const mockFindOne = vi.fn();
+
+vi.mock('../../src/client', () => ({
+    getDb: vi.fn()
+}));
+
+vi.mock('../../src/utils/logger', () => ({
+    logQuery: vi.fn(),
+    logError: vi.fn()
+}));
+
+describe('TagModel', () => {
+    let model: TagModel;
+    let getDb: ReturnType<typeof vi.fn>;
+    let logQuery: ReturnType<typeof vi.fn>;
+    let _logError: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+        model = new TagModel();
+        getDb = dbUtils.getDb as ReturnType<typeof vi.fn>;
+        logQuery = logger.logQuery as ReturnType<typeof vi.fn>;
+        _logError = logger.logError as ReturnType<typeof vi.fn>;
+        vi.clearAllMocks();
+        // Mock findOne fallback
+        model.findOne = mockFindOne;
+    });
+
+    describe('getTableName', () => {
+        it('should return correct table name', () => {
+            // Access the protected method via type assertion for testing
+            const tableName = (model as any).getTableName();
+            expect(tableName).toBe('tags');
+        });
+    });
+
+    describe('findAllWithRelations', () => {
+        it('should call parent findAllWithRelations with correct table name', async () => {
+            const mockFindMany = vi.fn().mockResolvedValue([
+                {
+                    id: '1',
+                    name: 'Beach',
+                    entityTags: [{ id: 'e1', entityType: 'accommodation' }]
+                }
+            ]);
+            const mockCount = vi.spyOn(model, 'count').mockResolvedValue(1);
+
+            const db = {
+                query: {
+                    tags: {
+                        findMany: mockFindMany
+                    }
+                }
+            };
+            getDb.mockReturnValue(db);
+
+            const result = await model.findAllWithRelations({
+                entityTags: true
+            });
+
+            expect(mockFindMany).toHaveBeenCalledWith({
+                where: undefined, // buildWhereClause returns undefined for empty object
+                with: { entityTags: true },
+                limit: 20,
+                offset: 0
+            });
+            expect(result.items).toHaveLength(1);
+            expect(result.items[0]).toHaveProperty('entityTags');
+            expect(logQuery).toHaveBeenCalledWith(
+                'tags',
+                'findAllWithRelations',
+                expect.objectContaining({
+                    relations: { entityTags: true }
+                }),
+                expect.objectContaining({
+                    hasRelations: true,
+                    isPaginated: true
+                })
+            );
+
+            mockCount.mockRestore();
+        });
+
+        it('should handle pagination correctly', async () => {
+            const mockFindMany = vi.fn().mockResolvedValue([
+                { id: '1', name: 'Beach' },
+                { id: '2', name: 'Mountain' }
+            ]);
+            const mockCount = vi.spyOn(model, 'count').mockResolvedValue(10);
+
+            const db = {
+                query: {
+                    tags: {
+                        findMany: mockFindMany
+                    }
+                }
+            };
+            getDb.mockReturnValue(db);
+
+            const result = await model.findAllWithRelations(
+                { entityTags: true },
+                { name: 'Beach' },
+                { page: 2, pageSize: 3 }
+            );
+
+            expect(mockFindMany).toHaveBeenCalledWith({
+                where: expect.anything(), // buildWhereClause result - can be complex object or undefined
+                with: { entityTags: true },
+                limit: 3,
+                offset: 3
+            });
+            expect(result.total).toBe(10);
+            expect(result.items).toHaveLength(2);
+
+            mockCount.mockRestore();
+        });
+
+        it('should fall back to findAll when no relations specified', async () => {
+            const mockFindAll = vi.spyOn(model, 'findAll').mockResolvedValue({
+                items: [{ id: '1', name: 'Beach' } as any],
+                total: 1
+            });
+
+            const result = await model.findAllWithRelations({});
+
+            expect(mockFindAll).toHaveBeenCalledWith({}, {});
+            expect(result.items).toHaveLength(1);
+            expect(logQuery).toHaveBeenCalledWith(
+                'tags',
+                'findAllWithRelations',
+                expect.objectContaining({
+                    relations: {}
+                }),
+                'Falling back to findAll - no relations requested'
+            );
+
+            mockFindAll.mockRestore();
+        });
+    });
+});
