@@ -37,12 +37,12 @@ graph TD
 
 Use Level 1 for:
 
-- ✅ Fixing typos in code or documentation
-- ✅ Updating configuration values
-- ✅ Adding comments
-- ✅ Formatting fixes
-- ✅ Renaming variables (single file)
-- ✅ Simple documentation updates
+- Fixing typos in code or documentation
+- Updating configuration values
+- Adding comments
+- Formatting fixes
+- Renaming variables (single file)
+- Simple documentation updates
 
 ### Process
 
@@ -118,12 +118,12 @@ grep -r "Accomodation" packages/service-core/src/
 
 Use Level 2 for:
 
-- ✅ Bug fixes (with tests)
-- ✅ New API endpoints
-- ✅ New React components
-- ✅ Service method additions
-- ✅ Database model updates
-- ✅ Small feature implementations
+- Bug fixes (with tests)
+- New API endpoints
+- New React components
+- Service method additions
+- Database model updates
+- Small feature implementations
 
 ### TDD Workflow (Red-Green-Refactor)
 
@@ -143,14 +143,14 @@ COMMIT: Atomic commit
 
 ```mermaid
 graph TD
-    Start[Start Task PB-XXX] --> Understand[Understand Requirements]
-    Understand --> Red[🔴 RED: Write Failing Test]
+    Start[Start Task] --> Understand[Understand Requirements]
+    Understand --> Red[RED: Write Failing Test]
     Red --> RunRed[Run Test - Should Fail]
-    RunRed --> Green[🟢 GREEN: Implement Code]
+    RunRed --> Green[GREEN: Implement Code]
     Green --> RunGreen[Run Test - Should Pass]
     RunGreen --> Pass{Tests Pass?}
     Pass -->|No| Green
-    Pass -->|Yes| Refactor[🔵 REFACTOR: Improve Code]
+    Pass -->|Yes| Refactor[REFACTOR: Improve Code]
     Refactor --> Quality[Run Quality Checks]
     Quality --> AllPass{All Pass?}
     AllPass -->|No| Fix[Fix Issues]
@@ -161,7 +161,7 @@ graph TD
 
 ### Step-by-Step Example
 
-#### Task PB-042: Add endpoint to cancel booking
+#### Task: Add endpoint to cancel booking
 
 #### 1. Understand Requirements
 
@@ -270,7 +270,7 @@ describe('DELETE /bookings/:id', () => {
 
 ```bash
 cd apps/api && pnpm test cancel
-# ❌ All tests fail (endpoint doesn't exist yet)
+# All tests fail (endpoint doesn't exist yet)
 ```
 
 #### 3. GREEN: Implement Code
@@ -415,7 +415,7 @@ export class BookingService extends BaseCrudService<...> {
 
 ```bash
 cd apps/api && pnpm test cancel
-# ✅ All tests pass
+# All tests pass
 ```
 
 #### 4. REFACTOR: Improve Code
@@ -487,7 +487,7 @@ export class BookingService extends BaseCrudService<...> {
 
 ```bash
 cd apps/api && pnpm test cancel
-# ✅ All tests still pass after refactoring
+# All tests still pass after refactoring
 ```
 
 #### 5. Run Quality Checks
@@ -497,10 +497,10 @@ cd apps/api && pnpm test cancel
 
 # Output:
 # Running quality checks...
-# 1. Linting... ✓
-# 2. Type checking... ✓
-# 3. Tests... ✓ (92% coverage)
-# 4. Format validation... ✓
+# 1. Linting... pass
+# 2. Type checking... pass
+# 3. Tests... pass (92% coverage)
+# 4. Format validation... pass
 #
 # All checks passed!
 ```
@@ -532,7 +532,7 @@ git commit -m "feat(schemas): add booking cancelled status"
 # ... (remaining commits)
 ```
 
-**Task Complete!** ✅
+**Task Complete!**
 
 ### Atomic Task Checklist
 
@@ -545,7 +545,7 @@ git commit -m "feat(schemas): add booking cancelled status"
 - [ ] Updated documentation (if needed)
 - [ ] Task code referenced in commits
 
-## Level 3: Feature Planning (4 Phases)
+## Level 3: Feature Planning (Task Master Plugin)
 
 **Time**: Multi-day
 **Complexity**: High
@@ -555,458 +555,191 @@ git commit -m "feat(schemas): add booking cancelled status"
 
 Use Level 3 for:
 
-- ✅ New features requiring multiple components
-- ✅ Database schema changes
-- ✅ Architecture changes
-- ✅ Cross-team coordination
-- ✅ Multiple atomic tasks (5+)
-- ✅ Breaking changes
+- New features requiring multiple components
+- Database schema changes
+- Architecture changes
+- Cross-team coordination
+- Multiple atomic tasks (5+)
+- Breaking changes
 
-### Overview of 4 Phases
+### Overview
+
+Level 3 features are managed through the **Task Master plugin**, which provides specification-driven planning, automatic task generation, and progress tracking.
 
 ```mermaid
 graph LR
-    P1[Phase 1<br/>Planning] --> P2[Phase 2<br/>Implementation]
-    P2 --> P3[Phase 3<br/>Validation]
-    P3 --> P4[Phase 4<br/>Finalization]
-
-    P1 -.->|PDR| P1
-    P1 -.->|Mockups| P1
-    P1 -.->|Tech Analysis| P1
-    P1 -.->|TODOs| P1
-
-    P2 -.->|TDD| P2
-    P2 -.->|Agents| P2
-    P2 -.->|Quality| P2
-
-    P3 -.->|QA| P3
-    P3 -.->|Review| P3
-    P3 -.->|Testing| P3
-
-    P4 -.->|Docs| P4
-    P4 -.->|Commits| P4
-    P4 -.->|Deploy| P4
+    S1[Create Spec<br/>/spec] --> S2[Review &<br/>Approve Spec]
+    S2 --> S3[Generate Tasks<br/>Automatic]
+    S3 --> S4[Implement Tasks<br/>/next-task]
+    S4 --> S5[Track Progress<br/>/task-status]
+    S5 -->|Re-plan if needed| S6[/replan]
+    S6 --> S4
 ```
 
-### Phase 1: Planning
+### Task Master Commands
 
-**Goal**: Create comprehensive plan with all necessary artifacts
+| Command | Purpose |
+|---------|---------|
+| `/spec` | Create a feature specification with requirements and acceptance criteria |
+| `/tasks` | View the task dashboard showing all tasks and their status |
+| `/next-task` | Get the next available task to work on |
+| `/new-task` | Create a standalone task outside of a specification |
+| `/task-status` | Get a detailed progress report on tasks |
+| `/replan` | Re-plan remaining tasks if requirements change |
 
-#### Artifacts Created
+### Step-by-Step Feature Workflow
 
-1. **PDR** (Product Design & Requirements)
-2. **Mockups** (UI/UX designs)
-3. **tech-analysis.md** (Technical analysis)
-4. **TODOs.md** (Task breakdown)
-
-#### Phase 1: Process
-
-#### Step 1: Initiate Planning
+#### Step 1: Create Specification
 
 ```bash
-/start-feature-plan
+/spec
 ```
 
-#### Step 2: Describe Feature
+Describe the feature when prompted. The specification captures:
 
-```text
-Claude: "Describe the feature you want to plan"
+- Feature overview and goals
+- User stories and acceptance criteria
+- Technical considerations
+- Out-of-scope items
+- Success metrics
 
-You: "Subscription system for hosts to access premium features:
+#### Step 2: Review and Approve Specification
 
-Features:
-- Multiple pricing tiers (Basic free, Pro $29/mo, Enterprise $99/mo)
-- 14-day free trial
-- Monthly/yearly billing
-- Credit card payments via Mercado Pago
-- Usage limits per tier
-- Subscription management (upgrade/downgrade/cancel)
+Review the generated specification. Request changes if needed. Once approved, tasks are automatically generated from the specification.
 
-Users:
-- Hosts can subscribe
-- Admins can manage subscriptions
-- Guests see host's tier badge
+#### Step 3: Work Through Tasks
 
-Scope:
-- Phase 1: Basic subscription (this planning)
-- Future: Usage-based billing, team plans"
+```bash
+# See the task dashboard
+/tasks
+
+# Get the next task to work on
+/next-task
 ```
 
-#### Step 3: Review PDR
+Each task follows the TDD workflow (Red-Green-Refactor) from Level 2. Tasks are ordered by dependency so you always work on the right thing next.
 
-```text
-Claude invokes product-functional agent, generates PDR:
+#### Step 4: Track Progress
 
-# PDR: Host Subscription System
-
-## Overview
-Enable hosts to subscribe to premium features with tiered pricing.
-
-## User Stories
-1. As a host, I want to subscribe to Pro tier to access premium features
-2. As a host, I want a 14-day free trial before being charged
-3. As a host, I want to manage my subscription (upgrade/cancel)
-4. As an admin, I want to track subscription revenue
-
-## Acceptance Criteria
-- [ ] Support 3 tiers: Basic (free), Pro ($29/mo), Enterprise ($99/mo)
-- [ ] 14-day free trial for paid tiers
-- [ ] Monthly and yearly billing options
-- [ ] Credit card payments via Mercado Pago
-- [ ] Email notifications for subscription changes
-- [ ] Admin dashboard for subscription analytics
-
-## Out of Scope
-- Usage-based billing
-- Team/organization plans
-- Custom pricing
-
-## Success Metrics
-- 20% of hosts upgrade to paid tier within 3 months
-- 60% trial-to-paid conversion rate
+```bash
+# Get a detailed progress report
+/task-status
 ```
 
-You: "Approved! Continue with mockups"
+#### Step 5: Re-plan if Needed
 
-#### Step 4: Review Mockups
+If requirements change or you discover new work during implementation:
 
-```text
-Claude invokes ux-ui-designer agent, generates mockups:
-
-[Detailed UI mockups for:]
-1. Pricing page
-2. Subscription selection
-3. Payment form
-4. Subscription management
-5. Admin analytics dashboard
-
-You: "Looks good! Please change the payment form to single-page
-instead of multi-step."
-
-Claude: [Updates mockups]
-
-You: "Perfect! Continue with technical analysis"
+```bash
+/replan
 ```
 
-#### Step 5: Review Technical Analysis
+This re-evaluates remaining tasks and adjusts the plan accordingly.
 
-```text
-Claude invokes product-technical agent, generates tech-analysis.md:
+### Example: Subscription System Feature
 
-# Technical Analysis: Subscription System
+#### 1. Create the Specification
 
-## Architecture
+```bash
+/spec
 
-### Database Schema
-- subscriptions table (tier, status, trial_end, current_period_end)
-- subscription_items table (usage tracking)
-- pricing_tiers table (tier configuration)
-
-### Services
-- SubscriptionService (CRUD, upgrade/downgrade, cancel)
-- BillingService (payment processing, invoicing)
-- UsageService (track usage against limits)
-
-### API Endpoints
-- POST /subscriptions (create/subscribe)
-- GET /subscriptions (list user's subscriptions)
-- PATCH /subscriptions/:id (upgrade/downgrade)
-- DELETE /subscriptions/:id (cancel)
-- POST /subscriptions/:id/resume (reactivate)
-
-### Frontend
-- Web: Pricing page, subscription management
-- Admin: Subscription analytics, user management
-
-## Implementation Phases
-Phase 1: Database + Service (PB-100 to PB-105)
-Phase 2: API Endpoints (PB-106 to PB-110)
-Phase 3: Frontend (PB-111 to PB-115)
-Phase 4: Testing + Docs (PB-116 to PB-120)
-
-## Dependencies
-- Mercado Pago SDK
-- Email service (for notifications)
-- Redis (for rate limiting)
-
-## Risks
-- Payment gateway integration complexity
-- PCI compliance requirements
-- Proration calculation complexity
-
-## Estimated Effort
-- Backend: 3-4 days
-- Frontend: 2-3 days
-- Testing: 1-2 days
-- Total: ~8 days
+# Describe the feature:
+# "Subscription system for hosts to access premium features:
+#
+# Features:
+# - Multiple pricing tiers (Basic free, Pro $29/mo, Enterprise $99/mo)
+# - 14-day free trial
+# - Monthly/yearly billing
+# - Credit card payments via Mercado Pago
+# - Usage limits per tier
+# - Subscription management (upgrade/downgrade/cancel)
+#
+# Users:
+# - Hosts can subscribe
+# - Admins can manage subscriptions
+# - Guests see host's tier badge"
 ```
 
-You: "Approved! Generate task breakdown"
+#### 2. Review Generated Tasks
 
-#### Step 6: Review TODOs
+```bash
+/tasks
 
-```text
-Claude generates TODOs.md with atomized tasks:
-
-# Subscription System - Task Breakdown
-
-## Phase 1: Database Foundation (Days 1-2)
-
-### PB-100: Create subscription Zod schemas
-- [ ] Create subscription validation schemas
-- [ ] Create pricing tier schemas
-- [ ] Add subscription status enum
-**Agent**: node-typescript-engineer
-**Estimated**: 1h
-
-### PB-101: Create subscription database schema
-- [ ] Create subscriptions table
-- [ ] Create pricing_tiers table
-- [ ] Create subscription_items table
-- [ ] Add migration
-**Agent**: db-drizzle-engineer
-**Estimated**: 2h
-
-### PB-102: Create SubscriptionModel
-- [ ] Extend BaseModel
-- [ ] Add findByUser method
-- [ ] Add findActive method
-- [ ] Add tests (90%+ coverage)
-**Agent**: db-drizzle-engineer
-**Estimated**: 2h
-
-[... more tasks ...]
-
-You: "Perfect! Let's start implementation"
+# Shows auto-generated tasks like:
+# 1. Create subscription Zod schemas
+# 2. Create subscription database schema and migration
+# 3. Create SubscriptionModel
+# 4. Create SubscriptionService
+# 5. Create subscription API endpoints
+# 6. Create frontend components
+# 7. Write integration tests
+# ...
 ```
 
-**Planning Phase Checklist:**
+#### 3. Implement Tasks with TDD
 
-- [ ] Feature clearly described
-- [ ] PDR created and approved
-- [ ] Mockups created and approved
-- [ ] Technical analysis completed
-- [ ] Tasks atomized (each < 3h)
-- [ ] Dependencies identified
-- [ ] Risks documented
-- [ ] Effort estimated
+```bash
+/next-task
 
-### Phase 2: Implementation
-
-**Goal**: Implement all tasks using TDD with specialized agents
-
-#### Phase 2: Process
-
-**For Each Task:**
-
-```text
-1. Select task from TODOs.md
-2. Invoke appropriate agent
-3. Use TDD (Red-Green-Refactor)
-4. Run quality checks
-5. Mark task complete
-6. Commit changes
+# Work on each task using TDD:
+# RED: Write failing test
+# GREEN: Make test pass
+# REFACTOR: Improve code
+# Then commit and move to next task
 ```
 
-#### Example: Implementing PB-102
+#### 4. Monitor Progress
 
-```text
-Task: PB-102 - Create SubscriptionModel
+```bash
+/task-status
 
-1. Read task requirements from TODOs.md
-
-1. Invoke agent:
-"Task: Invoke db-drizzle-engineer agent to implement PB-102:
-
-Create SubscriptionModel in packages/db/src/models/subscription.model.ts
-- Extend BaseModel<Subscription>
-- Add findByUser(userId: string): Promise<Result<Subscription[]>>
-- Add findActive(userId: string): Promise<Result<Subscription | null>>
-- Include comprehensive tests in test/models/subscription.model.test.ts
-- Follow pattern from AccommodationModel
-- Ensure 90%+ coverage"
-
-1. Agent uses TDD:
-   RED: Writes failing tests
-   GREEN: Implements SubscriptionModel
-   REFACTOR: Improves code quality
-
-1. Run quality checks:
-   /quality-check
-
-1. Mark complete in TODOs.md:
-   - [x] PB-102: Create SubscriptionModel ✅
-
-1. Commit:
-   /commit
-   git commit -m "feat(db): add SubscriptionModel with user queries"
+# Shows completion percentage, blockers, and remaining work
 ```
 
-**Implementation Phase Checklist:**
+### Implementation Guidelines
 
-- [ ] All tasks from TODOs.md completed
-- [ ] Each task followed TDD
+Each task from the Task Master follows the same TDD discipline as Level 2:
+
+1. **Write failing tests first** (RED)
+2. **Implement code to pass tests** (GREEN)
+3. **Refactor for quality** (REFACTOR)
+4. **Run quality checks** (`/quality-check`, `/code-check`)
+5. **Commit changes** (`/commit`)
+
+### Validation
+
+After all tasks are complete:
+
+1. Run full test suite: `/run-tests`
+2. Verify 90%+ coverage: `pnpm test:coverage`
+3. Run quality checks: `/quality-check`
+4. Manual testing of key flows
+5. Code review
+
+### Finalization
+
+1. Update documentation: `/update-docs`
+2. Create atomic commits: `/commit`
+3. Create PR with implementation summary, testing notes, and any breaking changes
+4. Deploy through CI/CD pipeline
+
+**Feature Checklist:**
+
+- [ ] Specification created and approved
+- [ ] All tasks completed with TDD
 - [ ] All quality checks passed
 - [ ] 90%+ test coverage achieved
-- [ ] All changes committed
-- [ ] Documentation updated
-
-### Phase 3: Validation
-
-**Goal**: Comprehensive QA and quality validation
-
-#### Phase 3: Process
-
-#### Step 1: QA Validation
-
-```text
-Task: Invoke qa-engineer agent to validate subscription system:
-
-1. Review all tests for completeness
-2. Add missing edge case tests
-3. Perform integration testing
-4. Verify error handling
-5. Check happy paths and sad paths
-6. Validate acceptance criteria from PDR
-```
-
-#### Step 2: Code Review
-
-```text
-Request code review from Claude:
-
-"Review the subscription system implementation for:
-1. Code quality and patterns
-2. Type safety
-3. Error handling
-4. Security issues
-5. Performance concerns
-6. Documentation completeness"
-```
-
-#### Step 3: Testing
-
-```bash
-# Run all tests
-/run-tests
-
-# Run specific test suites
-cd packages/service-core && pnpm test subscription
-cd apps/api && pnpm test subscriptions
-
-# Check coverage
-pnpm test:coverage
-# Verify 90%+ coverage
-```
-
-#### Step 4: Manual Testing
-
-```bash
-# Start development environment
-pnpm dev
-
-# Test flows:
-1. Create subscription
-2. Upgrade tier
-3. Downgrade tier
-4. Cancel subscription
-5. Reactivate subscription
-6. Trial expiration
-7. Payment failure
-```
-
-**Validation Phase Checklist:**
-
-- [ ] QA engineer validated
-- [ ] Code review completed
-- [ ] All automated tests pass
-- [ ] 90%+ coverage verified
-- [ ] Manual testing completed
-- [ ] Acceptance criteria met
-- [ ] No critical issues found
-
-### Phase 4: Finalization
-
-**Goal**: Documentation, commits, and deployment
-
-#### Phase 4: Process
-
-#### Step 1: Update Documentation
-
-```bash
-/update-docs
-
-# Updates:
-1. API documentation (OpenAPI spec)
-2. Architecture docs
-3. User guides
-4. README files
-5. Inline JSDoc comments
-```
-
-#### Step 2: Generate Commits
-
-```bash
-/commit
-
-# Review suggested commits
-# Ensure atomic commits
-# Verify conventional commit format
-```
-
-#### Step 3: Create PR
-
-```bash
-# Push branch
-git push origin feature/subscription-system
-
-# Create PR with:
-- PDR link
-- Implementation summary
-- Testing notes
-- Breaking changes (if any)
-- Screenshots/demos
-```
-
-#### Step 4: Sync to Linear
-
-```bash
-# Sync planning to Linear
-pnpm planning:sync .claude/sessions/planning/P-00X-subscription-system/
-
-# Or use command
-/sync-planning-github
-```
-
-#### Step 5: Deployment
-
-```bash
-# Merge to main
-# CI/CD will:
-1. Run all tests
-2. Run quality checks
-3. Build applications
-4. Deploy to staging
-5. Run E2E tests
-6. Deploy to production (if approved)
-```
-
-**Finalization Phase Checklist:**
-
 - [ ] Documentation updated
 - [ ] Atomic commits created
-- [ ] PR created with description
-- [ ] Planning synced to Linear
+- [ ] PR created
 - [ ] CI/CD passing
-- [ ] Deployed to staging
-- [ ] Stakeholder approval
-- [ ] Deployed to production
+- [ ] Deployed and verified
 
 ## Common Workflows
 
 ### Creating a New Entity
 
-Complete entity creation (DB → Service → API → Frontend)
+Complete entity creation (DB -> Service -> API -> Frontend)
 
 ```bash
 /add-new-entity
@@ -1030,7 +763,7 @@ Relations: belongsTo User, hasMany SubscriptionItems
 Use Level 2 workflow with TDD:
 
 ```text
-1. Create issue in Linear/GitHub
+1. Create issue in GitHub
 2. Reproduce bug with failing test (RED)
 3. Fix bug (GREEN)
 4. Refactor if needed (REFACTOR)
@@ -1042,25 +775,26 @@ Use Level 2 workflow with TDD:
 ### Adding a Feature
 
 **Small feature** (< 1 day): Use Level 2
-**Large feature** (multi-day): Use Level 3
+**Large feature** (multi-day): Use Level 3 with `/spec`
 
 ### Refactoring Code
 
+For major refactoring, use the Task Master plugin:
+
 ```bash
-# For major refactoring:
-/start-refactor-plan
+# Create a specification for the refactoring work
+/spec
 
-# Claude will:
-1. Analyze current code
-2. Identify issues
-3. Suggest improvements
-4. Create refactoring plan
-5. Break into tasks
+# Describe the refactoring goals, scope, and constraints
+# Tasks will be auto-generated
 
-# Then implement with:
-- TDD to maintain behavior
-- Quality checks at each step
-- Atomic commits
+# Work through tasks
+/next-task
+
+# Each task uses:
+# - TDD to maintain behavior
+# - Quality checks at each step
+# - Atomic commits
 ```
 
 ### Writing Tests
@@ -1120,21 +854,6 @@ subscription system:
 
 ## GitHub Integration
 
-### Syncing Planning to Linear
-
-After completing Phase 1 (Planning):
-
-```bash
-# Sync planning session
-pnpm planning:sync .claude/sessions/planning/P-00X-feature-name/
-
-# This creates:
-1. Linear issue for feature
-2. Sub-tasks for each TODO
-3. Links to planning artifacts
-4. Proper labels and assignees
-```
-
 ### Creating Issues
 
 Use GitHub MCP server:
@@ -1150,7 +869,7 @@ Assignee: @username"
 
 ### Tracking Tasks
 
-Link commits to Linear tasks:
+Link commits to task references:
 
 ```bash
 git commit -m "feat(service): add subscription cancellation
@@ -1167,14 +886,14 @@ Closes PB-105"
 Example: Complex feature requiring coordination
 
 ```text
-1. product-functional → Create PDR
-2. ux-ui-designer → Create mockups
-3. product-technical → Analyze architecture
-4. db-drizzle-engineer → Design database
-5. hono-engineer → Create API
-6. react-senior-dev → Create components
-7. qa-engineer → Write tests
-8. tech-writer → Update docs
+1. product-functional -> Create specification
+2. ux-ui-designer -> Create mockups
+3. product-technical -> Analyze architecture
+4. db-drizzle-engineer -> Design database
+5. hono-engineer -> Create API
+6. react-senior-dev -> Create components
+7. qa-engineer -> Write tests
+8. tech-writer -> Update docs
 ```
 
 ### Agent Coordination
@@ -1210,7 +929,7 @@ Options:
    Pros: Flexible schema, single table
    Cons: Less type safety, harder to query
 
-1. Separate table (type-safe but more complex)
+2. Separate table (type-safe but more complex)
    Pros: Type safety, easier validation
    Cons: More tables, more joins
 
@@ -1229,6 +948,7 @@ You: [Make decision based on project needs]
 
 | Version | Date | Changes | Author |
 |---------|------|---------|--------|
+| 2.0.0 | 2026-01-29 | Replace old planning system with Task Master plugin references | tech-writer |
 | 1.0.0 | 2025-01-15 | Initial workflows documentation | tech-writer |
 
 ---

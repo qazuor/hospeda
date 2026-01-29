@@ -757,36 +757,41 @@ Commands are predefined workflows that automate common development tasks. They c
 
 ### Command Categories
 
-#### Planning Commands (3)
+#### Planning & Task Management Commands (6)
 
-##### /start-feature-plan
+##### /spec
 
-- **Purpose**: Initiate Level 3 feature planning
+- **Purpose**: Create a specification for features or refactoring (replaces /start-feature-plan and /start-refactor-plan)
 - **Workflow**:
-  1. Invoke product-functional (PDR)
-  2. Invoke ux-ui-designer (mockups)
-  3. Invoke product-technical (tech-analysis)
-  4. Generate TODOs
-- **Output**: Planning session with all artifacts
+  1. Define requirements and scope
+  2. Generate specification document
+  3. Break down into actionable tasks
+- **Output**: Specification with task breakdown
 
-##### /start-refactor-plan
+##### /tasks
 
-- **Purpose**: Plan major refactoring
-- **Workflow**:
-  1. Analyze current code
-  2. Identify improvements
-  3. Create refactoring plan
-  4. Generate tasks
-- **Output**: Refactoring plan with tasks
+- **Purpose**: View task dashboard
+- **Output**: Overview of all tasks and their statuses
 
-##### /sync-planning-github
+##### /next-task
 
-- **Purpose**: Sync planning docs to GitHub/Linear
-- **Workflow**:
-  1. Parse planning documents
-  2. Create/update Linear issues
-  3. Link to planning session
-- **Output**: Synced tasks in Linear
+- **Purpose**: Get next available task to work on
+- **Output**: Next actionable task with context
+
+##### /new-task
+
+- **Purpose**: Create a standalone task
+- **Output**: New task entry in task system
+
+##### /task-status
+
+- **Purpose**: Detailed progress report
+- **Output**: Comprehensive status of all tasks
+
+##### /replan
+
+- **Purpose**: Re-plan tasks when requirements or priorities change
+- **Output**: Updated task plan
 
 #### Quality Commands (3)
 
@@ -1293,7 +1298,7 @@ Refine: "Update checkAvailability to detect date overlaps using
 **For New Features:**
 
 ```bash
-/start-feature-plan   # Structured planning
+/spec                 # Create specification
 # ... implement ...
 /update-docs          # Update documentation
 ```

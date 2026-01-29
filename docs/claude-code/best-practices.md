@@ -378,9 +378,12 @@ Each command has a specific purpose.
 
 #### Planning Commands
 
-- `/start-feature-plan` - Complex multi-day features
-- `/start-refactor-plan` - Major refactoring efforts
-- `/sync-planning-github` - Sync planning to Linear
+- `/spec` - Create a specification for complex features or refactoring efforts
+- `/tasks` - View task dashboard
+- `/next-task` - Get next available task
+- `/new-task` - Create standalone task
+- `/task-status` - Detailed progress report
+- `/replan` - Re-plan tasks
 
 **When to use:** Beginning of Level 3 workflows
 
@@ -428,7 +431,7 @@ Combine commands for workflows.
 
 ```bash
 # New feature workflow:
-/start-feature-plan   # 1. Plan feature
+/spec                 # 1. Create specification
 # ... implement ...
 /quality-check        # 2. Validate quality
 /update-docs          # 3. Update documentation
@@ -524,7 +527,7 @@ Each skill has specific capabilities.
 
 Know what to expect from each skill.
 
-**Example: performance-audit**
+##### Example: performance-audit
 
 ```text
 Input: "Audit accommodation search performance"
@@ -558,7 +561,7 @@ Never blindly accept generated code.
 
 #### Always Review Review Checklist
 
-**1. Correctness**
+##### 1. Correctness
 
 ```typescript
 // ❌ Generated code with bug:
@@ -572,7 +575,7 @@ async function calculatePrice(nights: number, pricePerNight: number) {
 }
 ```
 
-**2. Type Safety**
+##### 2. Type Safety
 
 ```typescript
 // ❌ Using any:
@@ -586,7 +589,7 @@ async function processBooking(data: CreateBookingInput): Promise<Result<Booking>
 }
 ```
 
-**3. Error Handling**
+##### 3. Error Handling
 
 ```typescript
 // ❌ Unhandled errors:
@@ -610,7 +613,7 @@ async function createBooking(data: CreateBookingInput): Promise<Result<Booking>>
 }
 ```
 
-**4. Security**
+##### 4. Security
 
 ```typescript
 // ❌ SQL injection vulnerable:
@@ -620,7 +623,7 @@ const query = `SELECT * FROM users WHERE email = '${email}'`;
 const users = await db.select().from(usersTable).where(eq(usersTable.email, email));
 ```
 
-**5. Performance**
+##### 5. Performance
 
 ```typescript
 // ❌ N+1 query:

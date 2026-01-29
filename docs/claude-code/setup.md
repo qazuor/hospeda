@@ -263,8 +263,8 @@ The Hospeda project includes a `.claude/` directory with project-specific config
 │   ├── qa-engineer.md
 │   └── ...
 ├── commands/            # 16 commands
-│   ├── start-feature-plan.md
 │   ├── quality-check.md
+│   ├── spec.md
 │   └── ...
 ├── skills/              # 19 skills
 │   ├── tdd-methodology.md
@@ -676,10 +676,13 @@ Run these commands to verify everything is configured:
 ```text
 Available Commands:
 
-Planning:
-  /start-feature-plan    - Start Level 3 feature planning
-  /start-refactor-plan   - Plan major refactoring
-  /sync-planning-github  - Sync planning to Linear
+Planning & Task Management:
+  /spec                  - Create a specification for features or refactoring
+  /tasks                 - View task dashboard
+  /next-task             - Get next available task
+  /new-task              - Create standalone task
+  /task-status           - Detailed progress report
+  /replan                - Re-plan tasks
 
 Quality:
   /quality-check         - Comprehensive quality validation

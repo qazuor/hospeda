@@ -102,7 +102,7 @@ This page provides links to official documentation, learning resources, and refe
 ### Command Documentation
 
 - **[Commands Overview](../../.claude/commands/README.md)** - All 16 commands
-- **[Planning Commands](../../.claude/commands/start-feature-plan.md)** - Feature planning
+- **[Planning Commands](../../.claude/commands/README.md)** - Feature planning and task management
 - **[Quality Commands](../../.claude/commands/quality-check.md)** - Quality validation
 - **[Development Commands](../../.claude/commands/add-new-entity.md)** - Entity scaffolding
 - **[Git Commands](../../.claude/commands/commit.md)** - Commit generation
@@ -389,28 +389,28 @@ This page provides links to official documentation, learning resources, and refe
 
 ### For New Developers
 
-**Week 1: Fundamentals**
+##### Week 1: Fundamentals
 
 1. Read [Quick Start Guide](../../.claude/docs/quick-start.md)
 2. Complete [Setup Guide](./setup.md)
 3. Read [CLAUDE.md](../../CLAUDE.md)
 4. Review [Code Standards](../../.claude/docs/standards/code-standards.md)
 
-**Week 2: Claude Code Basics**
+##### Week 2: Claude Code Basics
 
 1. Read [Introduction](./introduction.md)
 2. Study [Best Practices](./best-practices.md)
 3. Practice Level 1 workflows
 4. Practice Level 2 workflows
 
-**Week 3: Technology Stack**
+##### Week 3: Technology Stack
 
 1. Learn Astro basics
 2. Learn React 19 features
 3. Learn Hono framework
 4. Learn Drizzle ORM
 
-**Week 4: Advanced Topics**
+##### Week 4: Advanced Topics
 
 1. Master Level 3 workflows
 2. Study [Architecture](../architecture/README.md)
@@ -614,7 +614,7 @@ claude-code
 
 # Common commands
 /meta:help                  # Show help
-/start-feature-plan         # Plan feature
+/spec                       # Create specification
 /quality-check              # Run checks
 /run-tests                  # Run tests
 /commit                     # Generate commit

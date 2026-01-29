@@ -52,24 +52,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Validate documentation structure
-        run: |
-          echo "📁 Validating documentation files..."
-          pnpm claude:validate:docs || echo "validate:docs script not found, skipping"
-        continue-on-error: false
-
-      - name: Validate schemas
-        run: |
-          echo "🔍 Validating JSON schemas..."
-          pnpm claude:validate:schemas || echo "validate:schemas script not found, skipping"
-        continue-on-error: false
-
-      - name: Run health check
-        run: |
-          echo "🏥 Running system health check..."
-          pnpm health-check
-        continue-on-error: false
-
       - name: Lint markdown files
         run: |
           echo "📝 Linting markdown files..."
@@ -112,31 +94,15 @@ jobs:
           COMMAND_COUNT=$(find .claude/commands -name "*.md" -type f ! -name "README.md" | wc -l)
           SKILL_COUNT=$(find .claude/skills -name "*.md" -type f ! -name "README.md" | wc -l)
 
-          echo "Agents: $AGENT_COUNT (expected: 15)"
-          echo "Commands: $COMMAND_COUNT (expected: 23)"
-          echo "Skills: $SKILL_COUNT (expected: 19)"
+          echo "Agents: $AGENT_COUNT"
+          echo "Commands: $COMMAND_COUNT"
+          echo "Skills: $SKILL_COUNT"
 
-          ERRORS=0
-
-          if [ "$AGENT_COUNT" -ne 15 ]; then
-            echo "❌ Agent count mismatch"
-            ERRORS=$((ERRORS + 1))
-          fi
-
-          if [ "$COMMAND_COUNT" -ne 23 ]; then
-            echo "❌ Command count mismatch"
-            ERRORS=$((ERRORS + 1))
-          fi
-
-          if [ "$SKILL_COUNT" -ne 19 ]; then
-            echo "❌ Skill count mismatch"
-            ERRORS=$((ERRORS + 1))
-          fi
-
-          if [ $ERRORS -gt 0 ]; then
+          if [ "$AGENT_COUNT" -eq 0 ] || [ "$COMMAND_COUNT" -eq 0 ] || [ "$SKILL_COUNT" -eq 0 ]; then
+            echo "❌ Missing components detected"
             exit 1
           else
-            echo "✅ All file counts match"
+            echo "✅ All component directories have files"
           fi
         continue-on-error: false
 

@@ -89,24 +89,7 @@ This directory contains legacy documentation that needs to be reviewed, updated,
 
 ---
 
-### 6. planning-linear-sync.md (9K)
-
-**Current Content**: Planning and Linear integration workflow
-**Target Location**: `/docs/guides/planning-workflow.md`
-**Migration Task**: PB-046 (Cross-cutting Guides Batch 2)
-**Status**: Keep temporarily - VALUABLE CONTENT
-**Action Required**:
-
-- Update for current GitHub workflow integration
-- Document new planning-sync scripts
-- Add workflow diagrams
-- Migrate to guides section
-
-**Note**: This file contains current workflow documentation that's actively used
-
----
-
-### 7. testing-guide.md (14K)
+### 6. testing-guide.md (14K)
 
 **Current Content**: Testing strategies and patterns
 **Target Location**: `/docs/testing/testing-guide.md`
@@ -122,7 +105,7 @@ This directory contains legacy documentation that needs to be reviewed, updated,
 
 ---
 
-### 8. README.md (11K)
+### 7. README.md (11K)
 
 **Current Content**: Old development guide index
 **Target Location**: N/A (replaced by new structure)
@@ -136,8 +119,7 @@ This directory contains legacy documentation that needs to be reviewed, updated,
 
 ### High Priority (Actively Used)
 
-1. `planning-linear-sync.md` - Current workflow documentation
-2. `markdown-formatting.md` - Current formatting standards
+1. `markdown-formatting.md` - Current formatting standards
 
 ### Medium Priority (Useful Reference)
 

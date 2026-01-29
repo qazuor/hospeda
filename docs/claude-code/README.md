@@ -133,11 +133,14 @@ Agents are specialized AI assistants designed for specific tasks. Hospeda uses 1
 
 Commands are predefined workflows that automate common tasks. They're organized by category:
 
-#### Planning (3)
+#### Planning & Task Management (6)
 
-- `/start-feature-plan` - Initiate Level 3 feature planning workflow
-- `/start-refactor-plan` - Plan major refactoring work
-- `/sync-planning-github` - Sync planning docs to GitHub/Linear
+- `/spec` - Create a specification (replaces /start-feature-plan and /start-refactor-plan)
+- `/tasks` - View task dashboard
+- `/next-task` - Get next available task
+- `/new-task` - Create standalone task
+- `/task-status` - Detailed progress report
+- `/replan` - Re-plan tasks
 
 #### Quality (3)
 
@@ -258,8 +261,8 @@ Hospeda uses three workflow levels based on task complexity:
 ### Most Common Commands
 
 ```bash
-# Start a new feature
-/start-feature-plan
+# Create a specification for a new feature or refactor
+/spec
 
 # Quality checks before commit
 /quality-check
@@ -400,10 +403,10 @@ export class AccommodationService extends BaseCrudService<
 For complex features requiring multiple components:
 
 1. **Start Feature Planning**
-   - Run `/start-feature-plan`
+   - Run `/spec`
    - Provide feature description
-   - Review generated PDR, mockups, tech-analysis
-   - Approve task breakdown
+   - Review generated specification and task breakdown
+   - Approve tasks
 
 1. **Implementation Phase**
    - Work through TODOs in order
@@ -476,7 +479,7 @@ For improving test coverage:
 For improving code quality:
 
 1. **Plan Refactoring**
-   - Run `/start-refactor-plan` for large refactors
+   - Run `/spec` for large refactors
    - Define scope and goals
 
 1. **Ensure Test Coverage**
