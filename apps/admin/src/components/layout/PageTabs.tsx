@@ -150,3 +150,14 @@ export const postTabs: TabConfig[] = [
         href: '/sponsorship'
     }
 ];
+
+export const eventLocationTabs: TabConfig[] = [
+    { id: 'overview', label: 'General', labelKey: 'admin-tabs.overview', href: '' },
+    { id: 'events', label: 'Eventos', labelKey: 'admin-tabs.events', href: '/events' }
+];
+
+export const eventOrganizerTabs: TabConfig[] = [
+    { id: 'overview', label: 'General', labelKey: 'admin-tabs.overview', href: '' },
+    { id: 'events', label: 'Eventos', labelKey: 'admin-tabs.events', href: '/events' },
+    { id: 'contact', label: 'Contacto', labelKey: 'admin-tabs.contact', href: '/contact' }
+];
