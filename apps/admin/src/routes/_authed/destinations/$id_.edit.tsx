@@ -1,45 +1,44 @@
+import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
+import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { PageTabs, destinationTabs } from '@/components/layout/PageTabs';
-import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
-import { useTranslations } from '@/hooks/use-translations';
+import { useDestinationPage } from '@/features/destinations/hooks/useDestinationPage';
+import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 import { createFileRoute } from '@tanstack/react-router';
 
 /**
- * Destination Edit Route
- *
- * Allows editing a destination's details.
- * TODO: Implement full entity edit page with useDestinationPage hook
+ * Destination Edit Route Configuration
  */
 export const Route = createFileRoute('/_authed/destinations/$id_/edit')({
-    component: DestinationEditPage
+    component: DestinationEditPage,
+    loader: async ({ params }) => ({ destinationId: params.id }),
+    errorComponent: createErrorComponent('Destination'),
+    pendingComponent: createPendingComponent()
 });
 
+/**
+ * Destination Edit Page Component
+ */
 function DestinationEditPage() {
     const { id } = Route.useParams();
-    const { t } = useTranslations();
-
-    const entityName = t('admin-entities.entities.destination.singular');
+    // Use the hook at the top level
+    const entityData = useDestinationPage(id);
 
     return (
-        <SidebarPageLayout titleKey="admin-pages.titles.destinationsEdit">
-            <div className="space-y-4">
-                {/* Level 3 Navigation: Page Tabs */}
-                <PageTabs
-                    tabs={destinationTabs}
-                    basePath={`/destinations/${id}`}
-                />
+        <div className="space-y-4">
+            {/* Level 3 Navigation: Page Tabs */}
+            <PageTabs
+                tabs={destinationTabs}
+                basePath={`/destinations/${id}`}
+            />
 
-                <div className="rounded-lg border bg-card p-6">
-                    <h2 className="mb-4 font-semibold text-lg">
-                        {t('admin-entities.form.title.edit', { entity: entityName })}
-                    </h2>
-                    <p className="text-muted-foreground">
-                        ID: <code className="rounded bg-muted px-2 py-1">{id}</code>
-                    </p>
-                    <p className="mt-4 text-muted-foreground text-sm">
-                        {t('ui.pages.todoAddContent')}
-                    </p>
-                </div>
-            </div>
-        </SidebarPageLayout>
+            <EntityPageBase
+                entityType="destination"
+                entityId={id}
+                initialMode="edit"
+                entityData={entityData}
+            >
+                <EntityEditContent entityType="destination" />
+            </EntityPageBase>
+        </div>
     );
 }

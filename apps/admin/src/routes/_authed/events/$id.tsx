@@ -4,37 +4,46 @@
  * Displays event information with tabs for tickets and attendees.
  */
 
+import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
+import { EntityViewContent } from '@/components/entity-pages/EntityViewContent';
 import { PageTabs, eventTabs } from '@/components/layout/PageTabs';
-import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
-import { useTranslations } from '@/hooks/use-translations';
+import { useEventPage } from '@/features/events/hooks/useEventPage';
+import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/events/$id')({
-    component: EventDetailPage
+    component: EventViewPage,
+    loader: async ({ params }) => ({ eventId: params.id }),
+    errorComponent: createErrorComponent('Event'),
+    pendingComponent: createPendingComponent()
 });
 
-function EventDetailPage() {
+function EventViewPage() {
     const { id } = Route.useParams();
-    const { t } = useTranslations();
+    // Use the hook at the top level
+    const entityData = useEventPage(id);
 
     return (
-        <SidebarPageLayout titleKey="admin-pages.titles.eventsView">
-            <div className="space-y-4">
-                <PageTabs
-                    tabs={eventTabs}
-                    basePath={`/events/${id}`}
-                />
+        <div className="space-y-4">
+            <PageTabs
+                tabs={eventTabs}
+                basePath={`/events/${id}`}
+            />
 
-                <div className="rounded-lg border bg-card p-6">
-                    <h2 className="mb-4 font-semibold text-lg">{t('admin-tabs.overview')}</h2>
-                    <p className="text-muted-foreground">
-                        ID: <code className="rounded bg-muted px-2 py-1">{id}</code>
-                    </p>
-                    <p className="mt-4 text-muted-foreground text-sm">
-                        {t('ui.pages.todoAddContent')}
-                    </p>
-                </div>
-            </div>
-        </SidebarPageLayout>
+            <EntityPageBase
+                entityType="event"
+                entityId={id}
+                initialMode="view"
+                entityData={entityData}
+            >
+                <EntityViewContent
+                    entityType="event"
+                    entityId={id}
+                    sections={entityData.sections}
+                    entity={entityData.entity || {}}
+                    userPermissions={entityData.userPermissions}
+                />
+            </EntityPageBase>
+        </div>
     );
 }

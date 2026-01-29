@@ -1,17 +1,11 @@
-import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
-import { useTranslations } from '@/hooks/use-translations';
+/**
+ * Tags list page - using generic entity list system
+ */
+import { TagsPageComponent, TagsRoute } from '@/features/tags/config/tags.config';
 import { createFileRoute } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/_authed/settings/tags')({
-    component: TagsSettingsPage
-});
+// HACK: Prevent TypeScript error for TanStack Router auto-generated import
+createFileRoute;
 
-function TagsSettingsPage() {
-    const { t } = useTranslations();
-
-    return (
-        <SidebarPageLayout titleKey="admin-pages.titles.settingsTags">
-            <div>{t('ui.pages.todoAddContent')}</div>
-        </SidebarPageLayout>
-    );
-}
+export const Route = TagsRoute;
+export default TagsPageComponent;
