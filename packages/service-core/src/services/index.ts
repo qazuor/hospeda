@@ -13,6 +13,8 @@ export * from './permission/permission.service';
 export * from './post/post.service';
 export * from './postSponsor/postSponsor.service';
 export * from './postSponsorship/postSponsorship.service';
+export * from './sponsorship';
+export * from './owner-promotion';
 export * from './tag/tag.service';
 export * from './user/user.service';
 export * from './userBookmark/userBookmark.service';
