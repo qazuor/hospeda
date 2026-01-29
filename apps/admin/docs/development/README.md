@@ -45,6 +45,7 @@ This section provides **comprehensive development guides** for engineers buildin
 | Fetch data from API | [Queries](./queries.md) | 15 min |
 | Protect route with auth | [Authentication](./authentication.md) | 10 min |
 | Add UI component | [Components](./components.md) | 5 min |
+| Use factory functions | [Factories](./factories.md) | 10 min |
 | Debug SSR issues | [Debugging](./debugging.md) | Variable |
 
 ---
@@ -129,6 +130,17 @@ This section provides **comprehensive development guides** for engineers buildin
 - Redirect strategies
 - Loading states during auth check
 - Error handling for unauthorized access
+
+### Factory Functions
+
+**[Factory Functions Guide](./factories.md)**
+
+- createEntityHooks - Query/mutation hook generation
+- createEntityLayout - Layout with tab navigation
+- createEntityRoutes - Route component generation
+- createEntityListPage - List page configuration
+- createEntityColumnsFactory - Table column definitions
+- Base columns and utility factories
 
 ### UI Components
 
