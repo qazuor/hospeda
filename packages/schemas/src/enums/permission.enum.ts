@@ -43,6 +43,9 @@ export enum PermissionCategoryEnum {
     PROFESSIONAL_SERVICE = 'PROFESSIONAL_SERVICE',
     PROFESSIONAL_SERVICE_ORDER = 'PROFESSIONAL_SERVICE_ORDER',
     PUBLIC = 'PUBLIC',
+    SPONSORSHIP = 'SPONSORSHIP',
+    OWNER_PROMOTION = 'OWNER_PROMOTION',
+    FEATURED_ACCOMMODATION = 'FEATURED_ACCOMMODATION',
     SYSTEM = 'SYSTEM',
     ACCESS = 'ACCESS'
 }
@@ -374,6 +377,15 @@ export enum PermissionEnum {
     SPONSORSHIP_RESTORE = 'sponsorship.restore', // Allows restoring a deleted sponsorship.
     SPONSORSHIP_HARD_DELETE = 'sponsorship.hardDelete', // Allows permanently deleting a sponsorship.
     SPONSORSHIP_STATUS_MANAGE = 'sponsorship.status.manage', // Allows managing sponsorship status (activate, pause, expire, cancel).
+
+    // OWNER_PROMOTION: Permissions related to owner promotion management
+    OWNER_PROMOTION_CREATE = 'ownerPromotion.create', // Allows creating a new owner promotion.
+    OWNER_PROMOTION_UPDATE = 'ownerPromotion.update', // Allows updating an owner promotion.
+    OWNER_PROMOTION_DELETE = 'ownerPromotion.delete', // Allows deleting an owner promotion (soft delete).
+    OWNER_PROMOTION_VIEW = 'ownerPromotion.view', // Allows viewing owner promotion information.
+    OWNER_PROMOTION_RESTORE = 'ownerPromotion.restore', // Allows restoring a deleted owner promotion.
+    OWNER_PROMOTION_HARD_DELETE = 'ownerPromotion.hardDelete', // Allows permanently deleting an owner promotion.
+    OWNER_PROMOTION_STATUS_MANAGE = 'ownerPromotion.status.manage', // Allows managing owner promotion status.
 
     // FEATURED_ACCOMMODATION: Permissions related to featured accommodation management
     FEATURED_ACCOMMODATION_CREATE = 'featuredAccommodation.create', // Allows creating a new featured accommodation.

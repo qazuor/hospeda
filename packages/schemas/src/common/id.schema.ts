@@ -134,6 +134,15 @@ export type PromotionIdType = z.infer<typeof PromotionIdSchema>;
 export const SponsorshipIdSchema = BaseIdSchema;
 export type SponsorshipIdType = z.infer<typeof SponsorshipIdSchema>;
 
+export const SponsorshipLevelIdSchema = BaseIdSchema;
+export type SponsorshipLevelIdType = z.infer<typeof SponsorshipLevelIdSchema>;
+
+export const SponsorshipPackageIdSchema = BaseIdSchema;
+export type SponsorshipPackageIdType = z.infer<typeof SponsorshipPackageIdSchema>;
+
+export const OwnerPromotionIdSchema = BaseIdSchema;
+export type OwnerPromotionIdType = z.infer<typeof OwnerPromotionIdSchema>;
+
 // === Notifications & Marketing System IDs ===
 export const NotificationIdSchema = BaseIdSchema;
 export type NotificationIdType = z.infer<typeof NotificationIdSchema>;

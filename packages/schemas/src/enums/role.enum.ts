@@ -6,6 +6,7 @@
 // CLIENT_MANAGER: Manages client accounts, billing, subscriptions, and analytics.
 // EDITOR: Can create/edit/publish events and posts only.
 // HOST: Owner of an accommodation, can only edit their own accommodations.
+// SPONSOR: External business or user that sponsors events/posts. Limited dashboard access.
 // USER: Logged-in user of the public portal, can favorite and review, etc.
 // GUEST: Public user, used for the website (not logged in).
 
@@ -15,6 +16,7 @@ export enum RoleEnum {
     CLIENT_MANAGER = 'CLIENT_MANAGER',
     EDITOR = 'EDITOR',
     HOST = 'HOST',
+    SPONSOR = 'SPONSOR',
     USER = 'USER',
     GUEST = 'GUEST'
 }
