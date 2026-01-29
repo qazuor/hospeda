@@ -14,8 +14,8 @@ export const amenitiesConfig: EntityConfig<Amenity> = {
     apiEndpoint: '/api/v1/public/amenities',
 
     // Routes
-    basePath: '/amenities',
-    detailPath: '/amenities/[slug]',
+    basePath: '/content/accommodation-amenities',
+    detailPath: '/content/accommodation-amenities/[id]',
 
     // Schemas - Use type assertion for Zod version compatibility
     listItemSchema: AmenityListItemSchema as unknown as z.ZodSchema<Amenity>,
@@ -51,7 +51,7 @@ export const amenitiesConfig: EntityConfig<Amenity> = {
     layoutConfig: {
         showBreadcrumbs: true,
         showCreateButton: true,
-        createButtonPath: '/amenities/new'
+        createButtonPath: '/content/accommodation-amenities/new'
     },
 
     // Columns

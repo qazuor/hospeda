@@ -17,8 +17,8 @@ export const eventLocationsConfig: EntityConfig<EventLocation> = {
     apiEndpoint: '/api/v1/public/event-locations',
 
     // Routes
-    basePath: '/event-locations',
-    detailPath: '/event-locations/[id]',
+    basePath: '/events/locations',
+    detailPath: '/events/locations/[id]',
 
     // Schemas - Use type assertion for Zod version compatibility
     listItemSchema: EventLocationListItemSchema as unknown as z.ZodSchema<EventLocation>,
@@ -54,7 +54,7 @@ export const eventLocationsConfig: EntityConfig<EventLocation> = {
     layoutConfig: {
         showBreadcrumbs: true,
         showCreateButton: true,
-        createButtonPath: '/event-locations/new'
+        createButtonPath: '/events/locations/new'
     },
 
     // Columns

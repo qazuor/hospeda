@@ -17,8 +17,8 @@ export const eventOrganizersConfig: EntityConfig<EventOrganizer> = {
     apiEndpoint: '/api/v1/public/event-organizers',
 
     // Routes
-    basePath: '/event-organizers',
-    detailPath: '/event-organizers/[id]',
+    basePath: '/events/organizers',
+    detailPath: '/events/organizers/[id]',
 
     // Schemas - Use type assertion for Zod version compatibility
     listItemSchema: EventOrganizerListItemSchema as unknown as z.ZodSchema<EventOrganizer>,
@@ -54,7 +54,7 @@ export const eventOrganizersConfig: EntityConfig<EventOrganizer> = {
     layoutConfig: {
         showBreadcrumbs: true,
         showCreateButton: true,
-        createButtonPath: '/event-organizers/new'
+        createButtonPath: '/events/organizers/new'
     },
 
     // Columns

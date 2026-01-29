@@ -15,7 +15,7 @@ export const createEventOrganizersColumns = (): readonly ColumnConfig<EventOrgan
             enableSorting: true,
             columnType: ColumnType.ENTITY,
             entityOptions: { entityType: EntityType.EVENT_ORGANIZER },
-            linkHandler: (row) => ({ to: `/event-organizers/${row.id}` }),
+            linkHandler: (row) => ({ to: `/events/organizers/${row.id}` }),
             startVisibleOnTable: true,
             startVisibleOnGrid: true
         },

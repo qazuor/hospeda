@@ -14,8 +14,8 @@ export const featuresConfig: EntityConfig<Feature> = {
     apiEndpoint: '/api/v1/public/features',
 
     // Routes
-    basePath: '/features',
-    detailPath: '/features/[slug]',
+    basePath: '/content/accommodation-features',
+    detailPath: '/content/accommodation-features/[id]',
 
     // Schemas - Use type assertion for Zod version compatibility
     listItemSchema: FeatureListItemSchema as unknown as z.ZodSchema<Feature>,
@@ -51,7 +51,7 @@ export const featuresConfig: EntityConfig<Feature> = {
     layoutConfig: {
         showBreadcrumbs: true,
         showCreateButton: true,
-        createButtonPath: '/features/new'
+        createButtonPath: '/content/accommodation-features/new'
     },
 
     // Columns

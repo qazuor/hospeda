@@ -15,7 +15,7 @@ export const createEventLocationsColumns = (): readonly ColumnConfig<EventLocati
             enableSorting: true,
             columnType: ColumnType.ENTITY,
             entityOptions: { entityType: EntityType.EVENT_LOCATION },
-            linkHandler: (row) => ({ to: `/event-locations/${row.id}` }),
+            linkHandler: (row) => ({ to: `/events/locations/${row.id}` }),
             startVisibleOnTable: true,
             startVisibleOnGrid: true
         },

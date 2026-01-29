@@ -13,10 +13,7 @@ export const createFeaturesColumns = (): readonly ColumnConfig<Feature>[] => [
             entityType: EntityType.FEATURE,
             color: BadgeColor.INDIGO
         },
-        linkHandler: (row) => ({
-            to: '/features/$slug',
-            params: { slug: row.slug }
-        })
+        linkHandler: (row) => ({ to: `/content/accommodation-features/${row.id}` })
     },
     {
         id: 'slug',
