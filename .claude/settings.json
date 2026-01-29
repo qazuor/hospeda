@@ -21,7 +21,6 @@
             "Bash(mkdir:*)",
             "Bash(grep:*)",
             "Bash(grep -n:*)",
-            "WebFetch(*)",
             "Bash(docker:*)",
             "Bash(docker-compose:*)",
             "Edit",
