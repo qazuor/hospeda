@@ -1,24 +1,23 @@
 %%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#3B82F6','primaryTextColor':'#fff','primaryBorderColor':'#2563EB','lineColor':'#6B7280','secondaryColor':'#10B981','tertiaryColor':'#F59E0B'}}}%%
 flowchart LR
     %% Commands Layer
-    subgraph Commands ["/commands (16)"]
+    subgraph Commands ["/commands (10)"]
         direction TB
-        QualityCmd["/quality-check<br/>/code-check"]
-        PlanningCmd["/start-feature-plan<br/>/start-refactor-plan"]
+        QualityCmd["/quality-check<br/>/code-check<br/>/run-tests"]
         AuditCmd["/security-audit<br/>/performance-audit<br/>/accessibility-audit"]
         MetaCmd["/create-agent<br/>/create-command<br/>/create-skill<br/>/help"]
-        DevCmd["/add-new-entity<br/>/update-docs<br/>/commit"]
+        DevCmd["/add-new-entity<br/>/update-docs<br/>/commit<br/>/five-why"]
     end
     
     %% Agents Layer
-    subgraph Agents ["Agents (14)"]
+    subgraph Agents ["Agents (13)"]
         direction TB
         LeadAgents[tech-lead<br/>product-functional<br/>product-technical]
         BackendAgents[hono-engineer<br/>db-engineer<br/>node-typescript-engineer]
         FrontendAgents[astro-engineer<br/>tanstack-start-engineer<br/>react-senior-dev]
         DesignAgents[ux-ui-designer<br/>content-writer]
         QualityAgents[qa-engineer<br/>debugger]
-        SupportAgents[tech-writer<br/>i18n-specialist<br/>seo-ai-specialist<br/>enrichment-agent]
+        SupportAgents[tech-writer<br/>i18n-specialist<br/>seo-ai-specialist]
     end
     
     %% Skills Layer
@@ -35,7 +34,6 @@ flowchart LR
     Agents -->|use| Skills
     
     QualityCmd -.->|uses| QualityAgents
-    PlanningCmd -.->|uses| LeadAgents
     AuditCmd -.->|tech-lead coordinates| TestingSkills
     DevCmd -.->|uses| BackendAgents
     DevCmd -.->|uses| FrontendAgents
@@ -50,6 +48,6 @@ flowchart LR
     classDef agentClass fill:#3B82F6,stroke:#2563EB,color:#fff
     classDef skillClass fill:#10B981,stroke:#059669,color:#fff
     
-    class Commands,QualityCmd,PlanningCmd,AuditCmd,MetaCmd,DevCmd commandClass
+    class Commands,QualityCmd,AuditCmd,MetaCmd,DevCmd commandClass
     class Agents,LeadAgents,BackendAgents,FrontendAgents,QualityAgents,SupportAgents agentClass
     class Skills,TestingSkills,DevSkills,DesignSkills,UtilSkills skillClass

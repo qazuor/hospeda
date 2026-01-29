@@ -4,41 +4,11 @@ This directory contains Mermaid diagrams visualizing the Hospeda workflow system
 
 ## Available Diagrams
 
-### 1. Workflow Decision Tree
-
-**File:** [workflow-decision-tree.mmd](./workflow-decision-tree.mmd)
-
-**Purpose:** Visual guide for selecting the appropriate workflow level
-
-**Shows:**
-
-- Decision criteria for each workflow level
-- Level 1 (Quick Fix): < 30min, 1-2 files, very low risk
-- Level 2 (Atomic Task): 30min-3h, 2-10 files, low-medium risk
-- Level 3 (Feature Planning): Multi-day, architecture, DB changes
-- Step counts for each level
-- Color-coded paths (green=quick, orange=atomic, blue=feature)
-
-**Use When:**
-
-- Starting a new task
-- Uncertain which workflow to use
-- Training new team members
-- Documenting workflow selection
-
-**View:**
-
-```mermaid
-# Paste content from workflow-decision-tree.mmd
-```
-
----
-
-### 2. Agent Hierarchy
+### 1. Agent Hierarchy
 
 **File:** [agent-hierarchy.mmd](./agent-hierarchy.mmd)
 
-**Purpose:** Visual organization of the 14 specialized agents across 6 categories
+**Purpose:** Visual organization of the 13 specialized agents across 6 categories
 
 **Shows:**
 
@@ -50,7 +20,7 @@ This directory contains Mermaid diagrams visualizing the Hospeda workflow system
   - Frontend Team (astro-engineer, tanstack-start-engineer, react-senior-dev)
   - Design & Content (ux-ui-designer, content-writer)
   - Quality Team (qa-engineer, debugger)
-  - Specialized Team (tech-writer, i18n-specialist, enrichment-agent, seo-ai-specialist)
+  - Specialized Team (tech-writer, i18n-specialist, seo-ai-specialist)
 - Reporting lines
 - Color-coded by team
 
@@ -69,7 +39,7 @@ This directory contains Mermaid diagrams visualizing the Hospeda workflow system
 
 ---
 
-### 3. Tools Relationship
+### 2. Tools Relationship
 
 **File:** [tools-relationship.mmd](./tools-relationship.mmd)
 
@@ -83,7 +53,7 @@ This directory contains Mermaid diagrams visualizing the Hospeda workflow system
   - Skills Layer (16 skills)
 - Flow: Commands → Agents → Skills
 - Relationships between specific tools
-- Command categories (Quality, Planning, Audit, Meta, Dev)
+- Command categories (Quality, Audit, Meta, Dev)
 - Agent groups (Lead, Backend, Frontend, Quality, Support)
 - Skill categories (Testing, Development, Design, Utils)
 
@@ -102,7 +72,7 @@ This directory contains Mermaid diagrams visualizing the Hospeda workflow system
 
 ---
 
-### 4. Documentation Map
+### 3. Documentation Map
 
 **File:** [documentation-map.mmd](./documentation-map.mmd)
 
@@ -111,14 +81,12 @@ This directory contains Mermaid diagrams visualizing the Hospeda workflow system
 **Shows:**
 
 - Main directories:
-  - `agents/` - Agent definitions (14)
-  - `commands/` - Command definitions (16)
+  - `agents/` - Agent definitions (13)
+  - `commands/` - Command definitions (10)
   - `skills/` - Skill definitions (16)
   - `docs/` - Documentation
-  - `sessions/` - Planning & tasks
 - Subdirectories and organization
-- Key files (README.md, REGISTRY.md, etc.)
-- Session structures (P-004, PB-XXX)
+- Key files (README.md, etc.)
 - Color-coded by type
 
 **Use When:**
@@ -143,7 +111,7 @@ This directory contains Mermaid diagrams visualizing the Hospeda workflow system
 Reference diagrams in documentation:
 
 ```markdown
-See the [Workflow Decision Tree](../diagrams/workflow-decision-tree.mmd) for workflow selection.
+See the [Agent Hierarchy](../diagrams/agent-hierarchy.mmd) for agent organization.
 ```
 
 ### In Mermaid Live Editor
@@ -173,10 +141,9 @@ Install Mermaid extension:
 
 When system changes, update relevant diagrams:
 
-1. **Workflow changes** → Update `workflow-decision-tree.mmd`
-2. **Agent changes** → Update `agent-hierarchy.mmd`
-3. **New commands/skills** → Update `tools-relationship.mmd`
-4. **Directory structure** → Update `documentation-map.mmd`
+1. **Agent changes** → Update `agent-hierarchy.mmd`
+2. **New commands/skills** → Update `tools-relationship.mmd`
+3. **Directory structure** → Update `documentation-map.mmd`
 
 ## Diagram Conventions
 
@@ -205,7 +172,6 @@ When system changes, update relevant diagrams:
 
 ## Related Documentation
 
-- [Workflow Decision Tree Doc](../workflows/README.md)
 - [Agent Documentation](../../agents/README.md)
 - [Command Documentation](../../commands/README.md)
 - [Skill Documentation](../../skills/README.md)

@@ -62,25 +62,27 @@ User: "I need to add user authentication"
 
 ### Starting a New Task
 
-**🤔 Not sure which workflow to use?**
+Planning, spec generation, task management, and quality gating are handled by the Task Master plugin (github:qazuor/claude-code-task-master).
 
-→ **[Decision Tree](.claude/docs/workflows/decision-tree.md)** ← START HERE
-
-**Visual Guide:** [.claude/docs/diagrams/workflow-decision-tree.mmd](.claude/docs/diagrams/workflow-decision-tree.mmd)
+**Key commands:** `/spec`, `/tasks`, `/next-task`, `/new-task`, `/task-status`, `/replan`
 
 ### Workflow Quick Selection
 
 | Time | Files | Risk | Workflow |
 |------|-------|------|----------|
-| < 30min | 1-2 | Very low | **[Level 1: Quick Fix](.claude/docs/workflows/quick-fix-protocol.md)** |
-| 30min-3h | 2-10 | Low-Med | **[Level 2: Atomic Task](.claude/docs/workflows/atomic-task-protocol.md)** |
-| Multi-day | 10+ | Med-High | **[Level 3: Feature Planning](.claude/docs/workflows/phase-1-planning.md)** |
+| < 30min | 1-2 | Very low | **Level 1: Quick Fix** - Edit, validate, commit |
+| 30min-3h | 2-10 | Low-Med | **Level 2: Atomic Task** - TDD implementation |
+| Multi-day | 10+ | Med-High | **Level 3: Feature Planning** - Use `/spec` + `/tasks` |
 
 ### Common Tasks
 
 ```bash
-# Start a new feature (Level 3)
-/start-feature-plan
+# Plan a new feature
+/spec "Feature description"
+
+# Generate and manage tasks
+/tasks
+/next-task
 
 # Quality checks
 /quality-check
@@ -88,9 +90,6 @@ User: "I need to add user authentication"
 
 # Generate commits
 /commit
-
-# Sync planning to GitHub
-pnpm planning:sync <session-path>
 ```
 
 ---
@@ -157,7 +156,6 @@ hospeda/
 - Files: 1-2
 - Risk: Very low
 - Examples: Typos, formatting, config updates
-- **Guide:** [.claude/docs/workflows/quick-fix-protocol.md](.claude/docs/workflows/quick-fix-protocol.md)
 
 #### Level 2: Atomic Task Protocol
 
@@ -165,29 +163,20 @@ hospeda/
 - Files: 2-10
 - Risk: Low to medium
 - Examples: Bugfixes, small features, new endpoints
-- Uses: TDD (Red-Green-Refactor), PB-XXX task codes
-- **Guide:** [.claude/docs/workflows/atomic-task-protocol.md](.claude/docs/workflows/atomic-task-protocol.md)
+- Uses: TDD (Red-Green-Refactor)
 
-#### Level 3: Feature Planning (4 Phases)
+#### Level 3: Feature Planning
 
 - Time: Multi-day
 - Complexity: High (architecture, DB changes, cross-team)
-- **Phase 1:** [Planning](.claude/docs/workflows/phase-1-planning.md) - PDR, tech-analysis, task breakdown
-- **Phase 2:** [Implementation](.claude/docs/workflows/phase-2-implementation.md) - TDD implementation
-- **Phase 3:** [Validation](.claude/docs/workflows/phase-3-validation.md) - QA, quality checks, reviews
-- **Phase 4:** [Finalization](.claude/docs/workflows/phase-4-finalization.md) - Docs, commits, closure
-
-### Supporting Documentation
-
-- **Task Atomization:** [.claude/docs/workflows/task-atomization.md](.claude/docs/workflows/task-atomization.md)
-- **Task Completion:** [.claude/docs/workflows/task-completion-protocol.md](.claude/docs/workflows/task-completion-protocol.md)
-- **Full Workflow Index:** [.claude/docs/workflows/README.md](.claude/docs/workflows/README.md)
+- Uses Task Master plugin: `/spec`, `/tasks`, `/next-task`, `/replan`
+- Phases: Planning, Implementation, Validation, Finalization
 
 ---
 
 ## 5. Tools Quick Reference
 
-### 14 Specialized Agents
+### 13 Specialized Agents
 
 | Team | Agents | Purpose |
 |------|--------|---------|
@@ -197,20 +186,21 @@ hospeda/
 | **Frontend** | astro-engineer, tanstack-engineer, react-dev | Web, admin, components |
 | **Design & Content** | ux-ui-designer, content-writer | UI/UX design & web copywriting |
 | **Quality** | qa-engineer, debugger | Testing, QA & debugging |
-| **Specialized** | tech-writer, i18n-specialist, seo-ai-specialist, enrichment-agent | Docs, translations, SEO & planning |
+| **Specialized** | tech-writer, i18n-specialist, seo-ai-specialist | Docs, translations, SEO |
 
 **Note:** Security and performance audits are handled via specialized skills (security-audit, performance-audit, accessibility-audit) coordinated by tech-lead rather than dedicated agents.
 
 **Full details:** [.claude/agents/README.md](.claude/agents/README.md)
 **Visual:** [.claude/docs/diagrams/agent-hierarchy.mmd](.claude/docs/diagrams/agent-hierarchy.mmd)
 
-### 16 Commands
+### 15 Commands
 
-**Planning:** `/start-feature-plan`, `/start-refactor-plan`
 **Quality:** `/quality-check`, `/code-check`, `/run-tests`
-**Review:** `/review-code`, `/review-security`, `/review-performance`
+**Audit:** `/security-audit`, `/performance-audit`, `/accessibility-audit`
 **Development:** `/add-new-entity`, `/update-docs`
+**Meta:** `/create-agent`, `/create-command`, `/create-skill`, `/help`
 **Git:** `/commit`
+**Analysis:** `/five-why`
 
 **Full details:** [.claude/commands/README.md](.claude/commands/README.md)
 
@@ -408,14 +398,12 @@ He analizado el problema y tengo 3 opciones:
 - **No trailing punctuation in headings** - Headings should not end with `.`, `!`, `?`, or `:`
 - **Full docs:** `docs/development/markdown-formatting.md`
 
-### Planning & Linear Sync
+### Task Completion
 
-- **Sync after planning approval** - Always offer to sync planning to Linear
 - **Commit before marking complete** - Code MUST be committed before task completion
 - **Auto-generate commit suggestions** - Group files logically (schemas, models+tests, services, API)
 - **Use conventional commits** - feat/refactor/fix with proper scope
 - **Cross-device workflow** - Commit → Push → Access from anywhere
-- **Full docs:** [.claude/docs/workflows/task-completion-protocol.md](.claude/docs/workflows/task-completion-protocol.md)
 
 ### Common Patterns
 
@@ -491,11 +479,6 @@ All learnings are documented in individual files for detailed reference. The lat
 - **Quick Start**: [.claude/docs/quick-start.md](.claude/docs/quick-start.md)
 - **Glossary**: [.claude/docs/glossary.md](.claude/docs/glossary.md)
 
-### 🔄 Workflows
-
-- **Decision Tree**: [.claude/docs/workflows/decision-tree.md](.claude/docs/workflows/decision-tree.md)
-- **All Workflows**: [.claude/docs/workflows/README.md](.claude/docs/workflows/README.md)
-
 ### 📐 Standards
 
 - **Code Standards**: [.claude/docs/standards/code-standards.md](.claude/docs/standards/code-standards.md)
@@ -505,7 +488,6 @@ All learnings are documented in individual files for detailed reference. The lat
 ### 📊 Diagrams
 
 - **All Diagrams**: [.claude/docs/diagrams/README.md](.claude/docs/diagrams/README.md)
-- **Workflow Decision Tree**: [.claude/docs/diagrams/workflow-decision-tree.mmd](.claude/docs/diagrams/workflow-decision-tree.mmd)
 - **Agent Hierarchy**: [.claude/docs/diagrams/agent-hierarchy.mmd](.claude/docs/diagrams/agent-hierarchy.mmd)
 - **Tools Relationship**: [.claude/docs/diagrams/tools-relationship.mmd](.claude/docs/diagrams/tools-relationship.mmd)
 - **Documentation Map**: [.claude/docs/diagrams/documentation-map.mmd](.claude/docs/diagrams/documentation-map.mmd)
@@ -515,12 +497,6 @@ All learnings are documented in individual files for detailed reference. The lat
 - **Agents**: [.claude/agents/README.md](.claude/agents/README.md)
 - **Commands**: [.claude/commands/README.md](.claude/commands/README.md)
 - **Skills**: [.claude/skills/README.md](.claude/skills/README.md)
-
-### 🗂️ Templates
-
-- **PDR Template**: [.claude/docs/templates/PDR-template.md](.claude/docs/templates/PDR-template.md)
-- **Tech Analysis Template**: [.claude/docs/templates/tech-analysis-template.md](.claude/docs/templates/tech-analysis-template.md)
-- **TODOs Template**: [.claude/docs/templates/TODOs-template.md](.claude/docs/templates/TODOs-template.md)
 
 ---
 
@@ -546,14 +522,11 @@ hospeda/
 │   └── seed/                   # Database seeding
 ├── docs/                       # Project documentation
 └── .claude/
-    ├── sessions/planning/      # Feature planning & context
     ├── commands/               # Command definitions (READ-ONLY)
     ├── agents/                 # Agent definitions
     ├── skills/                 # Skill definitions
     └── docs/                   # Documentation & guides
         ├── standards/          # Code & architecture standards
-        ├── workflows/          # Workflow guides
-        ├── templates/          # Document templates
         └── diagrams/           # Mermaid diagrams
 ```
 
@@ -592,9 +565,6 @@ pnpm format:md              # Format all markdown files
 pnpm format:md:claude       # Format only .claude docs
 pnpm lint:md                # Check markdown without fixing
 
-# Planning
-pnpm planning:sync <session-path>     # Sync planning to Linear
-/sync-planning              # Interactive sync from Claude
 ```
 
 ### Entity Creation Order
@@ -608,4 +578,4 @@ pnpm planning:sync <session-path>     # Sync planning to Linear
 
 ---
 
-Last updated: 2025-10-31
+Last updated: 2026-01-29

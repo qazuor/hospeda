@@ -1,6 +1,6 @@
 # Hospeda Project - AI Agents
 
-This directory contains **14 specialized AI agents** for the Hospeda tourism platform. Each agent is an expert in specific areas and can be invoked during development workflow.
+This directory contains **13 specialized AI agents** for the Hospeda tourism platform. Each agent is an expert in specific areas and can be invoked during development workflow.
 
 > **Note**: Security and performance audits are handled via specialized skills (security-audit, performance-audit, accessibility-audit) coordinated by tech-lead rather than dedicated agents. This provides lightweight, reusable audit capabilities without full agent overhead.
 
@@ -39,11 +39,10 @@ Agents are organized into the following categories:
 - **[qa-engineer](quality/qa-engineer.md)** - Ensures quality through testing, validates acceptance criteria, and verifies features meet standards during Phase 3 Validation
 - **[debugger](quality/debugger.md)** - Investigates bugs, diagnoses issues, identifies root causes, and proposes fixes using systematic debugging during Phase 3 and issue resolution
 
-### Specialized (4 agents)
+### Specialized (3 agents)
 
 - **[tech-writer](specialized/tech-writer.md)** - Creates comprehensive documentation for code, APIs, architecture, processes, manages dependency tracking and updates, and generates changelogs following Keep a Changelog format during Phase 4 Finalization and all phases
 - **[i18n-specialist](specialized/i18n-specialist.md)** - Designs and maintains internationalization system, manages translations, and ensures multi-language support during all phases
-- **[enrichment-agent](specialized/enrichment-agent.md)** - Analyzes planning sessions and enriches GitHub issues with relevant planning context, technical decisions, and task relationships during planning sync and issue creation
 - **[seo-ai-specialist](specialized/seo-ai-specialist.md)** - Optimizes web presence for traditional search engines and AI-powered search through technical SEO, Core Web Vitals, structured data, and LLM-readiness strategies during all phases
 
 ## Usage
@@ -102,10 +101,9 @@ Each agent file must include:
 ├── design/                             # Design & UX (2)
 │   ├── ux-ui-designer.md
 │   └── content-writer.md
-└── specialized/                        # Specialized (4)
+└── specialized/                        # Specialized (3)
     ├── tech-writer.md
     ├── i18n-specialist.md
-    ├── enrichment-agent.md
     └── seo-ai-specialist.md
 ```
 
@@ -137,11 +135,11 @@ When adding new agents:
 
 ## Statistics
 
-- **Total Agents**: 14
+- **Total Agents**: 13
 - **Product & Planning**: 2
 - **Technical Leadership**: 1
 - **Backend Development**: 3
 - **Frontend Development**: 3
 - **Design & UX**: 2
 - **Quality Assurance**: 2
-- **Specialized**: 4
+- **Specialized**: 3

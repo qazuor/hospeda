@@ -468,8 +468,7 @@ These checks **REPORT** findings but don't stop:
 ### Workflow Commands
 
 - `/commit` - Generate commit messages (after quality-check)
-- `/update-docs` - Update documentation (Phase 4)
-- `/start-feature-plan` - Begin new feature (Phase 1)
+- `/update-docs` - Update documentation
 
 ---
 

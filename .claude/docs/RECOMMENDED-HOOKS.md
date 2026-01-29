@@ -104,18 +104,9 @@ git commit -m "updates"
 
 **What it does**:
 
-1. **Registry Validation**
-   - Checks if `.code-registry.json` exists
-   - Validates JSON format
-   - Reports registry metadata
-
-2. **Staleness Check**
-   - Warns if registry is older than 7 days
-   - Suggests running `pnpm planning:sync`
-
-3. **Active Sessions**
-   - Lists active planning sessions
-   - Shows checkpoint information
+1. **Consistency Validation**
+   - Verifies project structure consistency
+   - Reports any configuration issues
 
 **Speed**: <2 seconds
 

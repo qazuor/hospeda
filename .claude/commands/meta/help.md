@@ -91,10 +91,6 @@ Select topic (1-7) or press Enter for quick start:
   /code-check           Run linting and type checking
   /run-tests            Execute test suite with coverage
 
-📋 Planning & Project Management (2)
-  /start-feature-plan   Initialize Level 2 feature planning
-  /start-refactor-plan  Initialize Level 2 refactor planning
-
 ✅ Quality & Validation (1)
   /quality-check        Comprehensive quality validation
 
@@ -149,10 +145,9 @@ Example: /help commands security-audit
   qa-engineer          Testing and acceptance validation
   debugger             Bug investigation and root cause analysis
 
-🔧 Specialized (4)
+🔧 Specialized (3)
   tech-writer          Documentation, dependencies, changelogs
   i18n-specialist      Internationalization and translations
-  enrichment-agent     GitHub issue enrichment
   seo-ai-specialist    SEO, Core Web Vitals, AI optimization
 
 Use /help agents <name> for detailed information
@@ -193,22 +188,14 @@ Example: /help skills qa-criteria-validator
 Goal: Create comprehensive, atomic plan
 
 Steps:
-1. Initialize planning session
-   Command: /start-feature-plan
-   Creates: .claude/sessions/planning/{feature-name}/
+1. Create specification
+   Command: /spec (via Task Master plugin)
+   Creates: .claude/specs/SPEC-NNN-slug/
 
-2. Create Product Design Requirements
-   Agent: product-functional
-   Deliverable: PDR.md (user stories, mockups, acceptance criteria)
+2. Generate tasks from specification
+   Automatic after spec approval
 
-3. Create Technical Analysis
-   Agent: product-technical
-   Deliverable: tech-analysis.md (architecture, stack, risks)
-
-4. Break down into atomic tasks
-   Deliverable: TODOs.md (1-2 hour tasks with dependencies)
-
-5. Get user approval
+3. Get user approval
 
 ⏱️ Time: 2-4 hours
 📄 Deliverables: PDR.md, tech-analysis.md, TODOs.md
@@ -482,7 +469,7 @@ Step 3: Understand Workflow (5 min)
 4. Finalization - Documentation and commits
 
 Start a feature:
-  /start-feature-plan
+  /spec (via Task Master plugin)
 
 View workflow details:
   /help workflow
@@ -495,7 +482,7 @@ Next Steps:
 ✓ Review existing features in .claude/sessions/
 ✓ Try creating a simple feature
 
-Ready to start? Use /start-feature-plan
+Ready to start? Use /spec to create a specification or /new-task for simple tasks
 ```text
 
 ## Architecture Overview

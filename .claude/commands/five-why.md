@@ -463,7 +463,6 @@ Root Cause: Insufficient architecture planning in early development
 
 ## Related Commands
 
-- `/start-refactor-plan` - For architectural problem solutions
 - `/review-code` - For code quality issue analysis
 - `/quality-check` - For systematic quality problems
 

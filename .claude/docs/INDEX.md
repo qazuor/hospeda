@@ -44,149 +44,6 @@ Master index for all Claude Code workflow system documentation.
 
 ---
 
-## 🔄 Workflows
-
-### Decision Tree & Selection
-
-**[workflows/decision-tree.md](workflows/decision-tree.md)** - Workflow selection framework
-
-**Includes:**
-
-- Interactive Mermaid diagram
-- Level 1: Quick Fix (< 30min, 1-2 files)
-- Level 2: Atomic Task (30min-3h, 2-10 files)
-- Level 3: Feature Planning (Multi-day, architecture changes)
-- Decision factors reference
-- Common scenarios
-- Visual summary table
-
-**Also see:** [diagrams/workflow-decision-tree.mmd](diagrams/workflow-decision-tree.mmd) - Visual flowchart
-
-**Audience:** Before starting any task
-
-### Level 1: Quick Fix Protocol
-
-**[workflows/quick-fix-protocol.md](workflows/quick-fix-protocol.md)** - Trivial changes workflow
-
-**6-Step Process:**
-
-1. Verify Quick Fix Criteria
-2. Make the Change
-3. Quick Validation
-4. Commit with Conventional Message
-5. Push or Create PR
-6. Done
-
-**Use when:**
-
-- < 30 minutes estimated time
-- 1-2 files affected
-- Very low risk (typos, formatting, config)
-- No architecture changes
-
-**Examples:** Typo fixes, markdown formatting, import organization, environment updates
-
-**Audience:** All developers, for minor fixes
-
-### Level 2: Atomic Task Protocol
-
-**[workflows/atomic-task-protocol.md](workflows/atomic-task-protocol.md)** - Bugfixes and small features
-
-**11-Step TDD Workflow:**
-
-1. Create Atomic Task Session (PB-XXX)
-2. Create Simplified Tech Analysis
-3. Review & Approve Plan
-4. Write Tests First (TDD RED)
-5. Implement Solution (GREEN)
-6. Refactor (keep tests green)
-7. Add Documentation
-8. Test Coverage Check (>= 90%)
-9. Quality Checks
-10. Commit with Conventional Message
-11. Update Registry & Close Task
-
-**Use when:**
-
-- 30 minutes to 3 hours estimated time
-- 2-10 files affected
-- Low to medium risk
-- Bugfixes or small features
-- No major architecture changes
-
-**Includes:** PB-XXX code system, task registry, tech analysis template, 3 detailed examples
-
-**Audience:** Developers, for most day-to-day work
-
-### Level 3: Feature Planning
-
-**4-Phase Workflow Documentation:**
-
-#### Phase 1: Planning
-
-- **[workflows/phase-1-planning.md](workflows/phase-1-planning.md)** - Comprehensive planning process
-- Create PDR (Product Design Requirements)
-- Create tech-analysis.md
-- Break down into atomic tasks
-- Get user approval
-
-#### Phase 2: Implementation
-
-- **[workflows/phase-2-implementation.md](workflows/phase-2-implementation.md)** - TDD implementation
-- RED-GREEN-REFACTOR cycle
-- Follow existing patterns
-- Continuous validation
-
-#### Phase 3: Validation
-
-- **[workflows/phase-3-validation.md](workflows/phase-3-validation.md)** - Quality assurance
-- Validate acceptance criteria
-- Run quality checks
-- Technical review
-
-#### Phase 4: Finalization
-
-- **[workflows/phase-4-finalization.md](workflows/phase-4-finalization.md)** - Documentation and commits
-- Update documentation
-- Generate commits
-- Final checklist
-
-**Use when:**
-
-- Multi-day projects
-- Architecture changes required
-- Database schema changes
-- Multiple team members involved
-- High complexity or risk
-
-**Audience:** Tech leads, for complex features
-
-### Supporting Workflows
-
-**[workflows/task-atomization.md](workflows/task-atomization.md)** - Breaking down tasks
-
-- 0.5-4 hour rule
-- Dependency mapping
-- Granularity guidelines
-
-**[workflows/task-completion-protocol.md](workflows/task-completion-protocol.md)** - Task completion and GitHub sync
-
-- Commit requirements
-- Issue synchronization
-- Registry updates
-
-**[workflows/edge-cases.md](workflows/edge-cases.md)** - Exception handling and non-standard scenarios
-
-- 20 documented edge cases
-- Resolution strategies for each
-- Communication templates
-- Quick reference guide
-- Covers: unclear requirements, blocking issues, test failures, performance issues, security vulnerabilities, production bugs
-
-**Audience:** All participants, reference when encountering unexpected situations
-
----
-
 ## 📊 System Diagrams
 
 **Directory:** [diagrams/](diagrams/)
@@ -195,28 +52,21 @@ Master index for all Claude Code workflow system documentation.
 
 ### Available Diagrams
 
-#### 1. Workflow Decision Tree
-
-- **File:** [diagrams/workflow-decision-tree.mmd](diagrams/workflow-decision-tree.mmd)
-- **Purpose:** Visual guide for selecting the appropriate workflow level
-- **Shows:** Decision criteria, level characteristics, step counts, color-coded paths
-- **Use when:** Starting a new task, uncertain which workflow to use
-
-#### 2. Agent Hierarchy
+#### 1. Agent Hierarchy
 
 - **File:** [diagrams/agent-hierarchy.mmd](diagrams/agent-hierarchy.mmd)
-- **Purpose:** Visual organization of the 12 specialized agents across 6 categories
+- **Purpose:** Visual organization of the 13 specialized agents across 6 categories
 - **Shows:** tech-lead as coordinator, agent teams (Product, Backend, Frontend, Design, Quality, Specialized)
 - **Use when:** Understanding agent responsibilities, assigning tasks
 
-#### 3. Tools Relationship
+#### 2. Tools Relationship
 
 - **File:** [diagrams/tools-relationship.mmd](diagrams/tools-relationship.mmd)
 - **Purpose:** Show how commands, agents, and skills interact
 - **Shows:** 3 layers (Commands → Agents → Skills), relationships between tools
 - **Use when:** Understanding system architecture, finding which agent uses which skill
 
-#### 4. Documentation Map
+#### 3. Documentation Map
 
 - **File:** [diagrams/documentation-map.mmd](diagrams/documentation-map.mmd)
 - **Purpose:** Navigate the `.claude/` directory structure
@@ -327,34 +177,6 @@ Master index for all Claude Code workflow system documentation.
 
 ---
 
-## 🛠️ Tools & Scripts
-
-### Validation Tools
-
-**Scripts:**
-
-- `validate-docs.sh` - Documentation structure validation
-- `validate-schemas.ts` - JSON schema validation
-- `sync-registry.sh` - Code registry synchronization
-
-**Usage:**
-
-```bash
-# Validate documentation
-pnpm claude:validate:docs
-
-# Validate schemas
-pnpm claude:validate:schemas
-
-# Sync code registry
-pnpm claude:sync:registry
-
-# Run all validations
-pnpm claude:validate
-```
-
-**Documentation:** See script headers for detailed usage
-
 ---
 
 ## 🤖 System Components
@@ -363,7 +185,7 @@ pnpm claude:validate
 
 **Directory:** [../agents/](../agents/)
 
-**Organization:** Specialized agent system with 12 agents organized in 6 categories
+**Organization:** Specialized agent system with 13 agents organized in 7 categories
 
 **Teams:**
 
@@ -371,11 +193,11 @@ pnpm claude:validate
 - **Technical Leadership (1):** tech-lead
 - **Backend Development (3):** hono-engineer, db-drizzle-engineer, node-typescript-engineer
 - **Frontend Development (3):** astro-engineer, react-senior-dev, tanstack-start-engineer
-- **Design & UX (1):** ux-ui-designer
+- **Design & UX (2):** ux-ui-designer, content-writer
 - **Quality Assurance (2):** qa-engineer, debugger
-- **Specialized (3):** tech-writer, i18n-specialist, enrichment-agent
+- **Specialized (3):** tech-writer, i18n-specialist, seo-ai-specialist
 
-**Total:** 12 agents
+**Total:** 13 agents
 
 **Visual:** See [diagrams/agent-hierarchy.mmd](diagrams/agent-hierarchy.mmd)
 
@@ -391,7 +213,7 @@ pnpm claude:validate
 - `formatting/` - Code formatting
 - (Root level for other commands)
 
-**Total:** 16 commands
+**Total:** 15 commands
 
 **Documentation:** [../commands/README.md](../commands/README.md)
 
@@ -420,20 +242,6 @@ pnpm claude:validate
 
 ---
 
-## 🗂️ Templates
-
-**Directory:** [templates/](templates/)
-
-**Available templates:**
-
-- Planning session templates
-- Document templates
-- Schema templates
-
-**Usage:** Reference when creating new planning sessions or documents
-
----
-
 ## 📊 JSON Schemas
 
 **Directory:** [../schemas/](../schemas/)
@@ -446,9 +254,8 @@ pnpm claude:validate
 - `problems.schema.json` - Problems & Improvements
 - `workflows.schema.json` - Workflow Definitions
 - `checkpoint.schema.json` - Workflow Checkpoints
-- `code-registry.schema.json` - Code Registry
 
-**Total:** 7 schemas
+**Total:** 6 schemas
 
 **Validation:** Run `pnpm claude:validate:schemas`
 
@@ -473,28 +280,6 @@ pnpm claude:validate
 
 ---
 
-## 📝 Planning Sessions
-
-**Directory:** [../sessions/planning/](../sessions/planning/)
-
-**Structure:**
-
-```
-planning/
-├── .code-registry.json     # Computed index (regenerate with sync-registry.sh)
-└── {session-folder}/
-    ├── PDR.md              # Product requirements
-    ├── tech-analysis.md    # Technical analysis
-    ├── TODOs.md            # Task list (SOURCE OF TRUTH)
-    ├── .checkpoint.json    # Progress tracker
-    ├── issues-sync.json    # GitHub issues mapping
-    └── problems.md         # (Optional) Problems encountered
-```
-
-**Current sessions:** Browse directory for active/archived sessions
-
----
-
 ## 🎯 By Role
 
 ### Product Manager / Designer
@@ -503,8 +288,7 @@ planning/
 
 1. [quick-start.md](quick-start.md) - System overview
 2. [glossary.md](glossary.md) - Terminology (PDR, User Stories sections)
-3. [workflows/decision-tree.md](workflows/decision-tree.md) - Choosing workflow level
-4. [../agents/product/](../agents/product/) - Product agents
+3. [../agents/product/](../agents/product/) - Product agents
 
 **Common tasks:**
 
@@ -550,8 +334,7 @@ planning/
 
 1. [standards/architecture-patterns.md](standards/architecture-patterns.md) - System patterns
 2. [standards/code-standards.md](standards/code-standards.md) - Code guidelines
-3. [workflows/](workflows/) - All workflow guides
-4. [glossary.md](glossary.md) - Complete reference
+3. [glossary.md](glossary.md) - Complete reference
 
 **Common tasks:**
 
@@ -568,7 +351,6 @@ planning/
 
 - [quick-start.md](quick-start.md) - 15-minute onboarding
 - [glossary.md](glossary.md) - Terminology reference
-- [workflows/decision-tree.md](workflows/decision-tree.md) - Choose workflow level
 - [standards/code-standards.md](standards/code-standards.md) - Coding guidelines
 
 ### Validation & Tools
@@ -576,7 +358,6 @@ planning/
 - `pnpm claude:validate` - Run all validations
 - `pnpm claude:validate:docs` - Validate documentation
 - `pnpm claude:validate:schemas` - Validate schemas
-- `pnpm claude:sync:registry` - Sync code registry
 
 ### External Resources
 
@@ -592,9 +373,7 @@ planning/
 
 1. Create file in appropriate directory:
    - Core docs: `.claude/docs/`
-   - Workflows: `.claude/docs/workflows/`
    - Standards: `.claude/docs/standards/`
-   - Templates: `.claude/docs/templates/`
 
 2. Update this INDEX.md with link to new document
 
@@ -638,21 +417,10 @@ planning/
 
 | Document | Status | Last Updated |
 |----------|--------|--------------|
-| INDEX.md | ✅ Current | 2025-10-31 |
-| quick-start.md | ✅ Current | 2025-10-31 |
+| INDEX.md | ✅ Current | 2026-01-29 |
+| quick-start.md | ✅ Current | 2026-01-29 |
 | glossary.md | ✅ Current | 2025-10-31 |
 | mcp-servers.md | ✅ Current | 2025-10-28 |
-| **Workflows** | | |
-| workflows/decision-tree.md | ✅ Current | 2025-10-31 |
-| workflows/quick-fix-protocol.md | ✅ Current | 2025-10-31 |
-| workflows/atomic-task-protocol.md | ✅ Current | 2025-10-31 |
-| workflows/phase-1-planning.md | ✅ Current | 2025-10-28 |
-| workflows/phase-2-implementation.md | ✅ Current | 2025-10-28 |
-| workflows/phase-3-validation.md | ✅ Current | 2025-10-28 |
-| workflows/phase-4-finalization.md | ✅ Current | 2025-10-28 |
-| workflows/task-atomization.md | ✅ Current | 2025-10-28 |
-| workflows/task-completion-protocol.md | ✅ Current | 2025-10-28 |
-| workflows/edge-cases.md | ✅ Current | 2025-11-03 |
 | **Standards** | | |
 | standards/code-standards.md | ✅ Current | 2025-10-28 |
 | standards/architecture-patterns.md | ✅ Current | 2025-10-28 |
@@ -662,16 +430,11 @@ planning/
 | **Examples** | | |
 | examples/end-to-end-workflow.md | ✅ Current | 2025-11-03 |
 | **Diagrams** | | |
-| diagrams/README.md | ✅ Current | 2025-10-31 |
-| diagrams/workflow-decision-tree.mmd | ✅ Current | 2025-10-31 |
+| diagrams/README.md | ✅ Current | 2026-01-29 |
 | diagrams/agent-hierarchy.mmd | ✅ Current | 2025-10-31 |
 | diagrams/tools-relationship.mmd | ✅ Current | 2025-10-31 |
 | diagrams/documentation-map.mmd | ✅ Current | 2025-10-31 |
-| **Templates** | | |
-| templates/PDR-template.md | ✅ Current | 2025-10-28 |
-| templates/tech-analysis-template.md | ✅ Current | 2025-10-28 |
-| templates/TODOs-template.md | ✅ Current | 2025-10-28 |
 
 ---
 
-Last updated: 2025-10-31
+Last updated: 2026-01-29

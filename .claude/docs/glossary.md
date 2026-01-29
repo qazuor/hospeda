@@ -21,7 +21,7 @@ A specialized AI assistant designed to perform specific tasks within the develop
 
 ### Command
 
-A predefined workflow or action that can be executed via slash commands (e.g., `/start-feature-plan`, `/quality-check`). Commands are defined in `.claude/commands/` and provide standardized procedures for common tasks.
+A predefined workflow or action that can be executed via slash commands (e.g., `/quality-check`, `/add-new-entity`). Commands are defined in `.claude/commands/` and provide standardized procedures for common tasks.
 
 **Key characteristics:**
 
@@ -144,8 +144,6 @@ The source of truth for task tracking within a planning session. Contains all ta
   - **Status**: Not Started
 ```
 
-**Note:** The code registry (`.code-registry.json`) is computed from TODOs.md, not vice versa.
-
 ---
 
 ## Workflow System
@@ -252,38 +250,6 @@ function createUser(name: string, email: string): [User, string] {
 
 ## Quality & Validation
 
-### Schema Validation
-
-JSON Schema-based validation of planning documents and configuration files.
-
-**Tool:** `validate-schemas.ts` using ajv
-
-**Validated files:**
-
-- PDR.md (frontmatter)
-- tech-analysis.md (frontmatter)
-- TODOs.md (frontmatter)
-- .checkpoint.json
-- .code-registry.json
-
-**Usage:** `pnpm claude:validate:schemas`
-
-### Code Registry
-
-A computed JSON file that aggregates all task codes from TODOs.md files across all planning sessions.
-
-**Location:** `.claude/sessions/planning/.code-registry.json`
-
-**Purpose:**
-
-- Quick lookup of task codes
-- Cross-session task tracking
-- Validation and reporting
-
-**Generation:** `sync-registry.sh` or `pnpm claude:sync:registry`
-
-**Important:** This is NOT the source of truth. TODOs.md files are authoritative.
-
 ### Quality Check
 
 A comprehensive validation process that runs multiple checks in sequence.
@@ -360,7 +326,7 @@ A pattern used for creating consistent API routes with shared configuration.
 
 **Agents:** kebab-case, domain-descriptive (e.g., `hono-engineer`, `db-drizzle-engineer`)
 
-**Commands:** kebab-case, action-verb (e.g., `/start-feature-plan`, `/quality-check`)
+**Commands:** kebab-case, action-verb (e.g., `/quality-check`, `/add-new-entity`)
 
 **Skills:** kebab-case, noun-phrase (e.g., `git-commit-helper`, `qa-criteria-validator`)
 
@@ -392,55 +358,6 @@ A pattern used for creating consistent API routes with shared configuration.
 
 ---
 
-## Tools & Scripts
-
-### validate-docs.sh
-
-Shell script that validates documentation structure and consistency.
-
-**Checks:**
-
-- Agent/command/skill counts vs READMEs
-- Broken internal links
-- Required directory structure
-
-**Usage:** `pnpm claude:validate:docs`
-
-### validate-schemas.ts
-
-TypeScript script that validates JSON files and markdown frontmatter against JSON schemas.
-
-**Features:**
-
-- ajv-based validation
-- Schema caching for performance
-- Detailed error reporting
-
-**Usage:** `pnpm claude:validate:schemas`
-
-### sync-registry.sh
-
-Shell script that regenerates the code registry from all TODOs.md files.
-
-**Purpose:** Keep `.code-registry.json` in sync with source of truth
-
-**Usage:** `pnpm claude:sync:registry`
-
-### generate-code-registry.ts
-
-TypeScript script that parses TODOs.md files and generates `.code-registry.json`.
-
-**Features:**
-
-- Parses task codes, titles, status
-- Extracts estimated hours
-- Sorts tasks alphabetically
-- Generates metadata
-
-**Invoked by:** `sync-registry.sh`
-
----
-
 ## Git & Version Control
 
 ### Conventional Commits
@@ -458,21 +375,7 @@ A commit message format that provides semantic meaning to changes.
 - `test`: Test additions/changes
 - `chore`: Maintenance tasks
 
-**Example:** `feat(planning): implement code registry system`
-
-### GitHub Issues Sync
-
-The process of syncing planning sessions to GitHub Issues for tracking.
-
-**Mapping:**
-
-- Planning session → Parent issue
-- Tasks → Sub-issues
-- Subtasks → Checklist items
-
-**File:** `.claude/sessions/planning/{session}/issues-sync.json`
-
-**Tool:** `planning-sync` package
+**Example:** `feat(db): add user model with base CRUD operations`
 
 ---
 

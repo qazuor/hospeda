@@ -530,7 +530,6 @@ Frontend (8 files):
 
 ## Related Commands
 
-- `/start-feature-plan` - For complex entity planning
 - `/quality-check` - Entity validation
 - `/review-code` - Code quality verification
 - `/update-docs` - Documentation updates
