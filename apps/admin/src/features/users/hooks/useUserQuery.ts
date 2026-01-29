@@ -2,53 +2,95 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { adminLogger } from '@/utils/logger';
 
+const API_BASE = '/api/v1';
+
 /**
  * Query keys for user operations
  */
 export const userQueryKeys = {
     all: ['users'] as const,
     lists: () => [...userQueryKeys.all, 'list'] as const,
-    list: (filters: Record<string, unknown>) => [...userQueryKeys.lists(), { filters }] as const,
+    list: (filters: Record<string, unknown>) => [...userQueryKeys.lists(), filters] as const,
     details: () => [...userQueryKeys.all, 'detail'] as const,
     detail: (id: string) => [...userQueryKeys.details(), id] as const
 };
 
-// Mock API functions - Replace with actual API calls
-const mockFetchUser = async (id: string) => {
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    return {
-        id,
-        slug: `user-${id}`,
-        displayName: `Usuario ${id}`,
-        firstName: 'Juan',
-        lastName: 'Pérez',
-        email: 'juan@hospeda.com',
-        phone: '+54 9 11 1234-5678',
-        role: 'USER',
-        permissions: [],
-        authProvider: 'CLERK',
-        visibility: 'PRIVATE',
-        lifecycleState: 'ACTIVE',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-    };
-};
+/**
+ * Fetch a single user by ID
+ */
+async function fetchUser(id: string) {
+    const response = await fetch(`${API_BASE}/admin/users/${id}`, {
+        credentials: 'include'
+    });
 
-const mockUpdateUser = async (id: string, data: Record<string, unknown>) => {
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    return { id, ...data };
-};
+    if (!response.ok) {
+        throw new Error(`Failed to fetch user: ${response.statusText}`);
+    }
 
-const mockCreateUser = async (data: Record<string, unknown>) => {
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    const id = crypto.randomUUID();
-    return { id, ...data };
-};
+    const json = await response.json();
+    return json.data;
+}
 
-const mockDeleteUser = async (id: string) => {
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    return { id, deleted: true };
-};
+/**
+ * Update a user
+ */
+async function updateUser(id: string, data: Record<string, unknown>) {
+    const response = await fetch(`${API_BASE}/admin/users/${id}`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify(data)
+    });
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.message || `Failed to update user: ${response.statusText}`);
+    }
+
+    const json = await response.json();
+    return json.data;
+}
+
+/**
+ * Create a new user
+ */
+async function createUser(data: Record<string, unknown>) {
+    const response = await fetch(`${API_BASE}/admin/users`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify(data)
+    });
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.message || `Failed to create user: ${response.statusText}`);
+    }
+
+    const json = await response.json();
+    return json.data;
+}
+
+/**
+ * Delete a user (soft delete)
+ */
+async function deleteUser(id: string) {
+    const response = await fetch(`${API_BASE}/admin/users/${id}`, {
+        method: 'DELETE',
+        credentials: 'include'
+    });
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.message || `Failed to delete user: ${response.statusText}`);
+    }
+
+    return true;
+}
 
 /**
  * Hook to fetch a single user by ID
@@ -56,10 +98,9 @@ const mockDeleteUser = async (id: string) => {
 export const useUserQuery = (id: string, options?: { enabled?: boolean }) => {
     return useQuery({
         queryKey: userQueryKeys.detail(id),
-        queryFn: () => mockFetchUser(id),
+        queryFn: () => fetchUser(id),
         enabled: options?.enabled !== false && !!id,
-        staleTime: 5 * 60 * 1000, // 5 minutes
-        gcTime: 10 * 60 * 1000 // 10 minutes (formerly cacheTime)
+        staleTime: 30_000
     });
 };
 
@@ -70,12 +111,16 @@ export const useUpdateUserMutation = (id: string) => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (data: Record<string, unknown>) => mockUpdateUser(id, data),
-        onSuccess: (data) => {
-            adminLogger.debug('[UserMutation] User updated successfully', { id, data });
+        mutationFn: (data: Record<string, unknown>) => updateUser(id, data),
+        onSuccess: (updatedData) => {
+            adminLogger.debug('[UserMutation] User updated successfully', {
+                id,
+                data: updatedData
+            });
 
-            // Invalidate and refetch
-            queryClient.invalidateQueries({ queryKey: userQueryKeys.detail(id) });
+            // Update the cache with new data
+            queryClient.setQueryData(userQueryKeys.detail(id), updatedData);
+            // Invalidate list queries
             queryClient.invalidateQueries({ queryKey: userQueryKeys.lists() });
         },
         onError: (error) => {
@@ -91,11 +136,11 @@ export const useCreateUserMutation = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (data: Record<string, unknown>) => mockCreateUser(data),
+        mutationFn: (data: Record<string, unknown>) => createUser(data),
         onSuccess: (data) => {
             adminLogger.debug('[UserMutation] User created successfully', data);
 
-            // Invalidate list to show new user
+            // Invalidate list queries to refetch
             queryClient.invalidateQueries({ queryKey: userQueryKeys.lists() });
         },
         onError: (error) => {
@@ -111,12 +156,13 @@ export const useDeleteUserMutation = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (id: string) => mockDeleteUser(id),
+        mutationFn: (id: string) => deleteUser(id),
         onSuccess: (_data, id) => {
             adminLogger.debug('[UserMutation] User deleted successfully', { id });
 
-            // Invalidate queries
-            queryClient.invalidateQueries({ queryKey: userQueryKeys.detail(id) });
+            // Remove from cache
+            queryClient.removeQueries({ queryKey: userQueryKeys.detail(id) });
+            // Invalidate list queries
             queryClient.invalidateQueries({ queryKey: userQueryKeys.lists() });
         },
         onError: (error, id) => {
