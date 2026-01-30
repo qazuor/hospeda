@@ -8,6 +8,7 @@
 import { type SectionConfig, registerSections } from '@/lib/sections';
 import { administrationSection } from './administration.section';
 import { analyticsSection } from './analytics.section';
+import { billingSection } from './billing.section';
 import { contentSection } from './content.section';
 import { dashboardSection } from './dashboard.section';
 
@@ -17,6 +18,7 @@ import { dashboardSection } from './dashboard.section';
 export const sections: SectionConfig[] = [
     dashboardSection,
     contentSection,
+    billingSection,
     administrationSection,
     analyticsSection
 ];
@@ -44,5 +46,6 @@ export const headerNavItems = sections.map((section) => ({
 // Re-export individual sections for direct access
 export { administrationSection } from './administration.section';
 export { analyticsSection } from './analytics.section';
+export { billingSection } from './billing.section';
 export { contentSection } from './content.section';
 export { dashboardSection } from './dashboard.section';
