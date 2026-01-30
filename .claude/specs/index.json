@@ -1,0 +1,10 @@
+[
+    {
+        "specId": "SPEC-001",
+        "title": "Hospeda Platform Monetization System",
+        "type": "feature",
+        "complexity": "high",
+        "status": "approved",
+        "path": "SPEC-001-monetization-system"
+    }
+]

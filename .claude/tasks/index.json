@@ -1,0 +1,17 @@
+{
+    "version": "1.0",
+    "epics": [
+        {
+            "specId": "SPEC-001",
+            "title": "Hospeda Platform Monetization System",
+            "status": "in-progress",
+            "progress": "13/55",
+            "path": "SPEC-001-monetization-system"
+        }
+    ],
+    "standalone": {
+        "path": "standalone",
+        "total": 0,
+        "completed": 0
+    }
+}

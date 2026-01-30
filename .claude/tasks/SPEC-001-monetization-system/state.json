@@ -1,0 +1,904 @@
+{
+    "specId": "SPEC-001",
+    "title": "Hospeda Platform Monetization System",
+    "status": "in-progress",
+    "summary": {
+        "total": 55,
+        "completed": 13,
+        "inProgress": 0,
+        "pending": 42,
+        "blocked": 0
+    },
+    "tasks": [
+        {
+            "id": "T-001",
+            "phase": "setup",
+            "title": "Create packages/billing package with qzpay integration",
+            "description": "Create the new packages/billing workspace package with package.json, tsconfig.json, tsup.config.ts. Add plan definitions (9 plans: 3 owner, 3 complex, 3 tourist), entitlement definitions (31 keys), limit keys (6), add-on configs, promo code defaults. Include TypeScript types and tests.",
+            "complexity": 7,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-002", "T-003", "T-004", "T-005", "T-008", "T-009", "T-017"],
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": "2026-01-29T18:35:00.000Z",
+                "completed": "2026-01-29T18:50:00.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "phase": "setup",
+            "title": "Install qzpay dependencies across the monorepo",
+            "description": "Install @qazuor/qzpay-core, @qazuor/qzpay-mercadopago, @qazuor/qzpay-drizzle, @qazuor/qzpay-hono (apps/api), @qazuor/qzpay-react (apps/admin, apps/web). Note: qzpay packages may not be published yet - create placeholder integration points.",
+            "complexity": 3,
+            "status": "pending",
+            "blockedBy": ["T-001"],
+            "blocks": ["T-003", "T-004", "T-005", "T-010", "T-011"],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "phase": "setup",
+            "title": "Configure qzpay-drizzle storage adapter with existing DB",
+            "description": "Wire qzpay-drizzle storage adapter into the existing Drizzle/PostgreSQL connection in packages/db. Configure the adapter to use the same connection pool.",
+            "complexity": 4,
+            "status": "pending",
+            "blockedBy": ["T-002"],
+            "blocks": ["T-005"],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "phase": "setup",
+            "title": "Configure qzpay-mercadopago adapter",
+            "description": "Configure the Mercado Pago payment adapter with API keys, webhook URLs, and sandbox mode settings. Create environment variable definitions in @repo/config.",
+            "complexity": 4,
+            "status": "pending",
+            "blockedBy": ["T-002"],
+            "blocks": ["T-012"],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "phase": "setup",
+            "title": "Run qzpay database migrations (24 billing tables)",
+            "description": "Execute qzpay-drizzle migrations to create the 24 billing_* tables in PostgreSQL. Verify all tables and indexes are created correctly.",
+            "complexity": 3,
+            "status": "pending",
+            "blockedBy": ["T-003"],
+            "blocks": ["T-009", "T-010", "T-013"],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "phase": "setup",
+            "title": "Add SPONSOR role to RoleEnum",
+            "description": "Add SPONSOR = 'SPONSOR' to the RoleEnum in packages/schemas/src/enums/role.enum.ts. This enables external sponsor users with limited dashboard access.",
+            "complexity": 1,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-030"],
+            "qualityGate": { "lint": true, "typecheck": true, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": "2026-01-29T18:32:00.000Z",
+                "completed": "2026-01-29T18:33:00.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "phase": "setup",
+            "title": "Create new billing-related enums in @repo/schemas",
+            "description": "Create 9 enum+schema file pairs: BillingInterval, SubscriptionStatus, PaymentStatus, InvoiceStatus, RefundStatus, SponsorshipStatus, SponsorshipTargetType, SponsorshipTier, OwnerPromotionDiscountType. Update enums/index.ts barrel exports.",
+            "complexity": 5,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-023", "T-024"],
+            "qualityGate": { "lint": true, "typecheck": true, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": "2026-01-29T18:33:00.000Z",
+                "completed": "2026-01-29T18:40:00.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "phase": "core",
+            "title": "Define all 9 plans with entitlements and limits in packages/billing",
+            "description": "Already completed as part of T-001. All 9 plan definitions (owner-basico/pro/premium, complex-basico/pro/premium, tourist-free/plus/vip) with prices, entitlements, and limits are configured in packages/billing/src/config/plans.config.ts.",
+            "complexity": 6,
+            "status": "completed",
+            "blockedBy": ["T-001"],
+            "blocks": ["T-009"],
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": "2026-01-29T18:35:00.000Z",
+                "completed": "2026-01-29T18:50:00.000Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "phase": "core",
+            "title": "Seed default plans, entitlements, and limits into database",
+            "description": "Create seed scripts to populate billing_plans, billing_entitlements, billing_limits tables with the 9 plans, 31 entitlements, and 6 limits from packages/billing configs.",
+            "complexity": 5,
+            "status": "pending",
+            "blockedBy": ["T-005", "T-008"],
+            "blocks": ["T-014", "T-015", "T-016"],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "phase": "core",
+            "title": "Integrate qzpay-hono middleware into apps/api",
+            "description": "Set up qzpay-hono middleware in the API app. Configure billing context, auth integration, and error handling middleware.",
+            "complexity": 5,
+            "status": "pending",
+            "blockedBy": ["T-002", "T-005"],
+            "blocks": ["T-011"],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "phase": "core",
+            "title": "Mount qzpay billing routes in the API",
+            "description": "Mount all pre-built qzpay-hono routes under /api/billing/: customers, subscriptions, plans, checkout, payments, entitlements, limits.",
+            "complexity": 4,
+            "status": "pending",
+            "blockedBy": ["T-010"],
+            "blocks": ["T-012", "T-013", "T-015"],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "phase": "core",
+            "title": "Set up Mercado Pago webhook endpoint",
+            "description": "Configure the IPN webhook endpoint at POST /api/billing/webhooks/mercadopago. Set up signature verification via qzpay-mercadopago and event processing.",
+            "complexity": 5,
+            "status": "pending",
+            "blockedBy": ["T-004", "T-011"],
+            "blocks": ["T-051"],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "phase": "core",
+            "title": "Implement Clerk user -> billing customer sync",
+            "description": "Create middleware/webhook handler to sync Clerk users with billing_customers. Map user.id to billing customer via metadata. Handle new user creation, user updates, and user deletion.",
+            "complexity": 6,
+            "status": "pending",
+            "blockedBy": ["T-005", "T-011"],
+            "blocks": ["T-014"],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "phase": "core",
+            "title": "Implement trial flow (14-day, auto-block on expiry)",
+            "description": "Implement the 14-day trial for owners/complexes: auto-start on registration (Basico plan access), countdown display, auto-block on expiry (dashboard blocked, listings hidden, data preserved).",
+            "complexity": 7,
+            "status": "pending",
+            "blockedBy": ["T-009", "T-013"],
+            "blocks": ["T-044"],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "phase": "core",
+            "title": "Implement entitlement checking middleware",
+            "description": "Create middleware that checks user entitlements via qzpay on every request. Cache results with 5-min TTL. Provide helper functions for route-level entitlement checks.",
+            "complexity": 6,
+            "status": "pending",
+            "blockedBy": ["T-009", "T-011"],
+            "blocks": ["T-016", "T-044", "T-045"],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "phase": "core",
+            "title": "Implement limit enforcement in existing services",
+            "description": "Add limit checks to existing services: max_accommodations in AccommodationService.create(), max_photos_per_accommodation in photo upload, max_active_promotions in promotion creation.",
+            "complexity": 6,
+            "status": "pending",
+            "blockedBy": ["T-009", "T-015"],
+            "blocks": ["T-052"],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "phase": "integration",
+            "title": "Configure all add-ons (one-time + recurring) in packages/billing",
+            "description": "Already partially completed in T-001 (5 add-ons defined). Expand to include all add-ons from the spec: visibility boosts (7/14/30 days), photo sessions, verification express, text improvement, full setup, extra photos pack, advanced analytics, search highlighting, extra promotions, own promo codes, tourist alerts, price reports.",
+            "complexity": 4,
+            "status": "completed",
+            "blockedBy": ["T-001"],
+            "blocks": ["T-018"],
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": "2026-01-29T18:35:00.000Z",
+                "completed": "2026-01-29T18:50:00.000Z"
+            }
+        },
+        {
+            "id": "T-018",
+            "phase": "integration",
+            "title": "Implement add-on purchase flow",
+            "description": "Create API routes and service methods for purchasing add-ons. Handle one-time vs recurring billing. Integrate with Mercado Pago checkout.",
+            "complexity": 6,
+            "status": "pending",
+            "blockedBy": ["T-017", "T-011"],
+            "blocks": ["T-019", "T-046"],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-019",
+            "phase": "integration",
+            "title": "Implement add-on limit adjustments (e.g., extra photos)",
+            "description": "When an add-on is purchased, adjust the user's limits accordingly. For example, 'Pack fotos extra' adds +20 to max_photos_per_accommodation.",
+            "complexity": 4,
+            "status": "pending",
+            "blockedBy": ["T-018"],
+            "blocks": [],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-020",
+            "phase": "integration",
+            "title": "Implement promo code system (CRUD + validation + application)",
+            "description": "Create promo code CRUD operations in the service layer. Implement validation (expiry, max uses, plan restrictions, first-purchase condition, min amount). Apply promo codes at checkout.",
+            "complexity": 7,
+            "status": "pending",
+            "blockedBy": ["T-011"],
+            "blocks": ["T-021", "T-022", "T-036"],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-021",
+            "phase": "integration",
+            "title": "Create HOSPEDA_FREE permanent discount code",
+            "description": "Create a special promo code HOSPEDA_FREE that applies 100% permanent discount. No payment method required. Subscription shows active with $0 billing.",
+            "complexity": 3,
+            "status": "pending",
+            "blockedBy": ["T-020"],
+            "blocks": [],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-022",
+            "phase": "integration",
+            "title": "Implement promo code checkout integration",
+            "description": "Integrate promo code validation and application into the Mercado Pago checkout flow. Show discount in checkout UI. Increment usage count atomically.",
+            "complexity": 5,
+            "status": "pending",
+            "blockedBy": ["T-020"],
+            "blocks": [],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-023",
+            "phase": "core",
+            "title": "Create sponsorship Zod schemas in @repo/schemas",
+            "description": "Create Zod schemas for SponsorshipLevel, SponsorshipPackage, Sponsorship, and OwnerPromotion entities. Include base, create, update, and search schemas. Add ID schemas to common/id.schema.ts. Export from entities/index.ts.",
+            "complexity": 6,
+            "status": "completed",
+            "blockedBy": ["T-007"],
+            "blocks": ["T-025", "T-026", "T-029"],
+            "qualityGate": { "lint": true, "typecheck": true, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": "2026-01-29T18:53:00.000Z",
+                "completed": "2026-01-29T18:56:00.000Z"
+            }
+        },
+        {
+            "id": "T-024",
+            "phase": "core",
+            "title": "Create sponsorship Drizzle schemas in @repo/db",
+            "description": "Create Drizzle table schemas for sponsorship_levels, sponsorship_packages, sponsorships, and owner_promotions. Add 9 new PgEnums to enums.dbschema.ts. Create relations. Add performance indexes. Export from schemas/index.ts.",
+            "complexity": 6,
+            "status": "completed",
+            "blockedBy": ["T-007"],
+            "blocks": ["T-025", "T-029"],
+            "qualityGate": { "lint": true, "typecheck": true, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": "2026-01-29T18:50:00.000Z",
+                "completed": "2026-01-29T18:55:00.000Z"
+            }
+        },
+        {
+            "id": "T-025",
+            "phase": "core",
+            "title": "Create sponsorship models in @repo/db",
+            "description": "Create SponsorshipLevelModel, SponsorshipPackageModel, SponsorshipModel extending BaseModel. Include custom query methods for finding by target type, status, sponsor user ID.",
+            "complexity": 5,
+            "status": "pending",
+            "blockedBy": ["T-023", "T-024"],
+            "blocks": ["T-026"],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-026",
+            "phase": "core",
+            "title": "Create SponsorshipService in @repo/service-core",
+            "description": "Create SponsorshipService, SponsorshipLevelService, SponsorshipPackageService extending BaseCrudService. Include permission hooks, analytics tracking, package assignment logic.",
+            "complexity": 7,
+            "status": "pending",
+            "blockedBy": ["T-023", "T-025"],
+            "blocks": ["T-027"],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-027",
+            "phase": "core",
+            "title": "Create sponsorship API routes in apps/api",
+            "description": "Create CRUD routes for sponsorships, sponsorship-levels, sponsorship-packages using factory patterns. Include analytics endpoint. Auth: admin for levels/packages, admin/sponsor for sponsorships.",
+            "complexity": 5,
+            "status": "completed",
+            "blockedBy": ["T-026"],
+            "blocks": ["T-038"],
+            "qualityGate": { "lint": true, "typecheck": true, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": "2026-01-29T22:15:00.000Z",
+                "completed": "2026-01-29T22:35:00.000Z"
+            }
+        },
+        {
+            "id": "T-028",
+            "phase": "core",
+            "title": "Create SponsorshipLevel and SponsorshipPackage CRUD",
+            "description": "Ensure full CRUD for sponsorship levels (Bronze, Silver, Gold for events; Standard, Premium for posts) and packages (Basico, Profesional, Ilimitado). Include seed data.",
+            "complexity": 4,
+            "status": "pending",
+            "blockedBy": ["T-027"],
+            "blocks": ["T-038"],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-029",
+            "phase": "core",
+            "title": "Create OwnerPromotion entity (schema, model, service, routes)",
+            "description": "Create OwnerPromotionModel (BaseModel), OwnerPromotionService (BaseCrudService), and API routes. Include validation: only Pro/Premium owners can create promotions. Enforce max_active_promotions limit.",
+            "complexity": 6,
+            "status": "pending",
+            "blockedBy": ["T-023", "T-024"],
+            "blocks": ["T-047"],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-030",
+            "phase": "core",
+            "title": "Implement sponsor user creation flow (SPONSOR role)",
+            "description": "Verified: existing user creation flow supports SPONSOR role natively via POST /api/v1/users with role=SPONSOR. No new code needed - KISS principle.",
+            "complexity": 5,
+            "status": "completed",
+            "blockedBy": ["T-006"],
+            "blocks": ["T-048"],
+            "qualityGate": { "lint": true, "typecheck": true, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": "2026-01-29T22:20:00.000Z",
+                "completed": "2026-01-29T22:28:00.000Z"
+            }
+        },
+        {
+            "id": "T-031",
+            "phase": "integration",
+            "title": "Create billing admin section with sidebar navigation",
+            "description": "Add new billing section to admin sidebar following existing section factory patterns. Include: Plans, Subscriptions, Payments, Invoices, Promo Codes, Add-ons, Sponsorships, Metrics, Settings.",
+            "complexity": 4,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": [
+                "T-032",
+                "T-033",
+                "T-034",
+                "T-035",
+                "T-036",
+                "T-037",
+                "T-038",
+                "T-039",
+                "T-040"
+            ],
+            "qualityGate": { "lint": true, "typecheck": true, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": "2026-01-29T22:15:00.000Z",
+                "completed": "2026-01-29T22:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-032",
+            "phase": "integration",
+            "title": "Create plans management page (CRUD)",
+            "description": "Admin page at /admin/billing/plans to list, create, edit, delete plans. Show plan details: name, prices (monthly/annual), entitlements, limits. Follow existing admin CRUD patterns.",
+            "complexity": 6,
+            "status": "pending",
+            "blockedBy": ["T-031"],
+            "blocks": [],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-033",
+            "phase": "integration",
+            "title": "Create subscriptions management page (list, view, cancel, change)",
+            "description": "Admin page at /admin/billing/subscriptions. List all subscriptions with filters (status, plan, user). View details, cancel, change plan, apply discount.",
+            "complexity": 6,
+            "status": "pending",
+            "blockedBy": ["T-031"],
+            "blocks": [],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-034",
+            "phase": "integration",
+            "title": "Create payments management page (list, refunds)",
+            "description": "Admin page at /admin/billing/payments. List all payments with filters. View payment details. Process refunds (full/partial).",
+            "complexity": 5,
+            "status": "pending",
+            "blockedBy": ["T-031"],
+            "blocks": [],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-035",
+            "phase": "integration",
+            "title": "Create invoices management page",
+            "description": "Admin page at /admin/billing/invoices. List invoices with filters. View invoice details with line items. Mark as paid/void.",
+            "complexity": 5,
+            "status": "pending",
+            "blockedBy": ["T-031"],
+            "blocks": [],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-036",
+            "phase": "integration",
+            "title": "Create promo codes management page (CRUD)",
+            "description": "Admin page at /admin/billing/promo-codes. List, create, edit, delete promo codes. Show usage stats, conditions, validity period. Toggle active/inactive.",
+            "complexity": 5,
+            "status": "pending",
+            "blockedBy": ["T-020", "T-031"],
+            "blocks": [],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-037",
+            "phase": "integration",
+            "title": "Create add-ons management page (CRUD)",
+            "description": "Admin page at /admin/billing/addons. List, create, edit, delete add-ons. Configure pricing, billing type (one-time/recurring), description.",
+            "complexity": 5,
+            "status": "pending",
+            "blockedBy": ["T-031"],
+            "blocks": [],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-038",
+            "phase": "integration",
+            "title": "Create sponsorships management page (CRUD + analytics)",
+            "description": "Admin page at /admin/billing/sponsorships. List sponsorships with filters. Create/edit/delete. View analytics (impressions, clicks, coupon usage). Manage levels and packages.",
+            "complexity": 7,
+            "status": "pending",
+            "blockedBy": ["T-027", "T-028", "T-031"],
+            "blocks": [],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-039",
+            "phase": "integration",
+            "title": "Create billing metrics dashboard page (MRR, churn, revenue)",
+            "description": "Admin page at /admin/billing/metrics. Show MRR, churn rate, active subscriptions count, revenue breakdown by plan type. Use qzpay MetricsService. Charts with Recharts or similar.",
+            "complexity": 7,
+            "status": "pending",
+            "blockedBy": ["T-031"],
+            "blocks": [],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-040",
+            "phase": "integration",
+            "title": "Create billing settings page (grace period, retry, trial days)",
+            "description": "Admin page at /admin/billing/settings. Configure: grace period duration, payment retry attempts/intervals, trial duration, default currency, webhook URL.",
+            "complexity": 4,
+            "status": "pending",
+            "blockedBy": ["T-031"],
+            "blocks": [],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-041",
+            "phase": "integration",
+            "title": "Create pricing page for owners (plan comparison + checkout)",
+            "description": "Public web page showing owner plans (Basico/Pro/Premium) with feature comparison table, pricing toggle (monthly/annual), and checkout CTA button. Use qzpay-react PricingTable component.",
+            "complexity": 6,
+            "status": "pending",
+            "blockedBy": ["T-011"],
+            "blocks": [],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-042",
+            "phase": "integration",
+            "title": "Create pricing page for tourists (plan comparison + checkout)",
+            "description": "Public web page showing tourist plans (Free/Plus/VIP) with feature comparison table, pricing toggle, checkout button. Highlight that free plan is permanent.",
+            "complexity": 5,
+            "status": "pending",
+            "blockedBy": ["T-011"],
+            "blocks": [],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-043",
+            "phase": "integration",
+            "title": "Create subscription management page (current plan, upgrade, cancel)",
+            "description": "Authenticated web page for users to manage their subscription: view current plan, billing history, upgrade/downgrade, cancel, manage payment method.",
+            "complexity": 6,
+            "status": "pending",
+            "blockedBy": ["T-011"],
+            "blocks": [],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-044",
+            "phase": "integration",
+            "title": "Implement entitlement gating in accommodation features",
+            "description": "Gate owner features by entitlements: rich description (Pro+), video embed (Premium), calendar (Pro+), external calendar sync (Premium), WhatsApp display (Pro+), WhatsApp direct (Premium).",
+            "complexity": 6,
+            "status": "pending",
+            "blockedBy": ["T-014", "T-015"],
+            "blocks": [],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-045",
+            "phase": "integration",
+            "title": "Implement entitlement gating in tourist features",
+            "description": "Gate tourist features by entitlements: favorites limit, alerts, comparator, review photos (VIP), search history, recommendations (VIP), exclusive deals (VIP), early event access (VIP), ad removal (Plus+).",
+            "complexity": 6,
+            "status": "pending",
+            "blockedBy": ["T-015"],
+            "blocks": [],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-046",
+            "phase": "integration",
+            "title": "Create add-on purchase UI",
+            "description": "Web UI for owners/tourists to browse and purchase add-ons. Show pricing, description, billing type. Integrate with Mercado Pago checkout.",
+            "complexity": 5,
+            "status": "pending",
+            "blockedBy": ["T-018"],
+            "blocks": [],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-047",
+            "phase": "integration",
+            "title": "Create owner promotion management UI",
+            "description": "Web UI for owners (Pro/Premium) to create, edit, delete promotions for VIP tourists. Show active/inactive promotions, usage stats, limit countdown.",
+            "complexity": 5,
+            "status": "pending",
+            "blockedBy": ["T-029"],
+            "blocks": [],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-048",
+            "phase": "integration",
+            "title": "Create sponsor dashboard (limited access)",
+            "description": "Create a limited dashboard for SPONSOR role users. Show: their sponsorships, analytics (impressions, clicks, coupons), invoices. No access to other admin features.",
+            "complexity": 6,
+            "status": "pending",
+            "blockedBy": ["T-030"],
+            "blocks": [],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-049",
+            "phase": "testing",
+            "title": "Write unit tests for packages/billing (plan configs, entitlements)",
+            "description": "Comprehensive unit tests for all billing package functionality: plan lookups, entitlement definitions, limit configs, add-on configs, promo code defaults, helper functions.",
+            "complexity": 4,
+            "status": "completed",
+            "blockedBy": ["T-001"],
+            "blocks": [],
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": "2026-01-29T18:35:00.000Z",
+                "completed": "2026-01-29T18:50:00.000Z"
+            }
+        },
+        {
+            "id": "T-050",
+            "phase": "testing",
+            "title": "Write integration tests for billing API routes",
+            "description": "Integration tests for all billing API routes: customer creation, subscription CRUD, plan listing, checkout flow, payment processing, entitlement/limit checks.",
+            "complexity": 7,
+            "status": "pending",
+            "blockedBy": ["T-011"],
+            "blocks": [],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-051",
+            "phase": "testing",
+            "title": "Write integration tests for webhook processing",
+            "description": "Tests for Mercado Pago IPN webhook: signature verification, event processing (payment confirmed, subscription updated), dead letter queue, idempotency.",
+            "complexity": 6,
+            "status": "pending",
+            "blockedBy": ["T-012"],
+            "blocks": [],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-052",
+            "phase": "testing",
+            "title": "Write integration tests for entitlement enforcement",
+            "description": "Tests verifying entitlement/limit enforcement: blocked actions show upgrade prompts, limits prevent over-creation, plan changes update entitlements correctly.",
+            "complexity": 6,
+            "status": "pending",
+            "blockedBy": ["T-016"],
+            "blocks": [],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-053",
+            "phase": "testing",
+            "title": "Write E2E tests for subscription purchase flow",
+            "description": "End-to-end tests: owner registration -> trial -> subscription purchase via Mercado Pago sandbox -> plan activation -> entitlement verification -> upgrade -> downgrade -> cancel.",
+            "complexity": 8,
+            "status": "pending",
+            "blockedBy": ["T-014"],
+            "blocks": [],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-054",
+            "phase": "testing",
+            "title": "Write E2E tests for sponsorship purchase flow",
+            "description": "End-to-end tests: admin creates sponsor user -> sponsor logs in -> purchases Gold event sponsorship -> logo appears on event page -> analytics tracked.",
+            "complexity": 7,
+            "status": "pending",
+            "blockedBy": ["T-027"],
+            "blocks": [],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-055",
+            "phase": "docs",
+            "title": "Update documentation (API docs, admin guide)",
+            "description": "Document all billing API endpoints, admin panel usage, plan configuration guide, webhook setup, promo code management, sponsorship system. Update CLAUDE.md with billing patterns.",
+            "complexity": 5,
+            "status": "pending",
+            "blockedBy": [],
+            "blocks": [],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-01-29T18:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ]
+}
