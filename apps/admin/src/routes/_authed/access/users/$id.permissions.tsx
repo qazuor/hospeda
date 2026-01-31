@@ -44,6 +44,10 @@ const ROLE_INFO: Record<RoleEnum, { label: string; description: string }> = {
         label: 'User',
         description: 'Registered user of the public portal'
     },
+    [RoleEnum.SPONSOR]: {
+        label: 'Sponsor',
+        description: 'External business sponsor with limited dashboard access'
+    },
     [RoleEnum.GUEST]: {
         label: 'Guest',
         description: 'Public visitor, not logged in'

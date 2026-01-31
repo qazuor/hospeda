@@ -15,7 +15,7 @@ import {
     PromotionsIcon,
     SettingsIcon
 } from '@repo/icons';
-import { CreditCard, FileText, Receipt, Tags } from 'lucide-react';
+import { Clock, CreditCard, FileText, Receipt, Tags } from 'lucide-react';
 
 export const billingSection = createSection({
     id: 'billing',
@@ -112,6 +112,12 @@ export const billingSection = createSection({
                 'Configuración',
                 '/billing/settings',
                 <SettingsIcon className="h-4 w-4" />
+            ),
+            sidebar.link(
+                'cron',
+                'Tareas Programadas',
+                '/billing/cron',
+                <Clock className="h-4 w-4" />
             )
         ]
     }

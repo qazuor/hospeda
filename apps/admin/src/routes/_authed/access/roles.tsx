@@ -104,6 +104,14 @@ const ROLE_INFO: Record<RoleEnum, RoleInfo> = {
             'Contact hosts'
         ]
     },
+    [RoleEnum.SPONSOR]: {
+        label: 'Sponsor',
+        description:
+            'External business sponsor with access to sponsorship management and analytics',
+        level: 'low',
+        icon: User,
+        capabilities: ['Manage sponsorships', 'View sponsorship analytics', 'View invoices']
+    },
     [RoleEnum.GUEST]: {
         label: 'Guest',
         description: 'Public visitor without authentication, limited to viewing public content',
