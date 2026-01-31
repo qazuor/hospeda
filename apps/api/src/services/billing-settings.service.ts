@@ -15,8 +15,7 @@
  * @module services/billing-settings
  */
 
-import { type QZPayBillingAuditLog, billingAuditLogs, getDb } from '@repo/db';
-import { and, desc, eq } from 'drizzle-orm';
+import { and, billingAuditLogs, desc, eq, getDb } from '@repo/db';
 import { apiLogger } from '../utils/logger';
 
 /**
@@ -107,12 +106,17 @@ export class BillingSettingsService {
             }
 
             const latestEntry = settingsEntries[0];
+            if (!latestEntry) {
+                apiLogger.debug('No settings entry found, using defaults');
+                return DEFAULT_SETTINGS;
+            }
 
-            // Parse metadata as settings object
-            const customSettings = latestEntry.metadata as Partial<BillingSettings> | null;
+            // Parse changes as settings object
+            const customSettings =
+                latestEntry.changes as unknown as Partial<BillingSettings> | null;
 
             if (!customSettings || typeof customSettings !== 'object') {
-                apiLogger.warn('Invalid settings metadata format, using defaults');
+                apiLogger.warn('Invalid settings format, using defaults');
                 return DEFAULT_SETTINGS;
             }
 
@@ -167,16 +171,18 @@ export class BillingSettingsService {
             const db = getDb();
 
             // Insert new audit log entry with updated settings
-            const auditEntry: Partial<QZPayBillingAuditLog> = {
+            await db.insert(billingAuditLogs).values({
                 action: 'billing_settings_update',
                 entityType: 'settings',
                 entityId: 'global',
                 actorId: actorId || null,
-                metadata: updatedSettings as Record<string, unknown>,
-                livemode: true
-            };
-
-            await db.insert(billingAuditLogs).values(auditEntry);
+                actorType: actorId ? 'admin' : 'system',
+                changes: updatedSettings as unknown,
+                previousValues: currentSettings as unknown,
+                livemode: true,
+                ipAddress: null,
+                userAgent: null
+            });
 
             apiLogger.info(
                 {
@@ -215,16 +221,18 @@ export class BillingSettingsService {
             const db = getDb();
 
             // Insert new audit log entry with default settings
-            const auditEntry: Partial<QZPayBillingAuditLog> = {
+            await db.insert(billingAuditLogs).values({
                 action: 'billing_settings_reset',
                 entityType: 'settings',
                 entityId: 'global',
                 actorId: actorId || null,
-                metadata: DEFAULT_SETTINGS as Record<string, unknown>,
-                livemode: true
-            };
-
-            await db.insert(billingAuditLogs).values(auditEntry);
+                actorType: actorId ? 'admin' : 'system',
+                changes: DEFAULT_SETTINGS as unknown,
+                previousValues: null,
+                livemode: true,
+                ipAddress: null,
+                userAgent: null
+            });
 
             apiLogger.info(
                 {

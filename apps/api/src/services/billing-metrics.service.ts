@@ -8,9 +8,8 @@
  * @module services/billing-metrics
  */
 
-import { getDb } from '@repo/db';
+import { getDb, sql } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
-import { sql } from 'drizzle-orm';
 import { apiLogger } from '../utils/logger';
 
 /**
@@ -203,14 +202,17 @@ export class BillingMetricsService {
                 totalRevenue: Math.round(totalRevenue)
             };
 
-            apiLogger.debug('Overview metrics calculated', { metrics });
+            apiLogger.debug({ metrics }, 'Overview metrics calculated');
 
             return {
                 success: true,
                 data: metrics
             };
         } catch (error) {
-            apiLogger.error('Failed to get overview metrics', error);
+            apiLogger.error(
+                { error: error instanceof Error ? error.message : String(error) },
+                'Failed to get overview metrics'
+            );
             return {
                 success: false,
                 error: {
@@ -255,17 +257,23 @@ export class BillingMetricsService {
                 paymentCount: Number(row.payment_count)
             }));
 
-            apiLogger.debug('Revenue time series calculated', {
-                months,
-                dataPoints: dataPoints.length
-            });
+            apiLogger.debug(
+                {
+                    months,
+                    dataPoints: dataPoints.length
+                },
+                'Revenue time series calculated'
+            );
 
             return {
                 success: true,
                 data: dataPoints
             };
         } catch (error) {
-            apiLogger.error('Failed to get revenue time series', error);
+            apiLogger.error(
+                { error: error instanceof Error ? error.message : String(error) },
+                'Failed to get revenue time series'
+            );
             return {
                 success: false,
                 error: {
@@ -314,14 +322,17 @@ export class BillingMetricsService {
                 updatedAt: new Date(row.updated_at as Date).toISOString()
             }));
 
-            apiLogger.debug('Recent activity retrieved', { limit, activities: activities.length });
+            apiLogger.debug({ limit, activities: activities.length }, 'Recent activity retrieved');
 
             return {
                 success: true,
                 data: activities
             };
         } catch (error) {
-            apiLogger.error('Failed to get recent activity', error);
+            apiLogger.error(
+                { error: error instanceof Error ? error.message : String(error) },
+                'Failed to get recent activity'
+            );
             return {
                 success: false,
                 error: {
@@ -362,14 +373,17 @@ export class BillingMetricsService {
                 trialingCount: Number(row.trialing_count || 0)
             }));
 
-            apiLogger.debug('Subscription breakdown calculated', { breakdown: breakdown.length });
+            apiLogger.debug({ breakdown: breakdown.length }, 'Subscription breakdown calculated');
 
             return {
                 success: true,
                 data: breakdown
             };
         } catch (error) {
-            apiLogger.error('Failed to get subscription breakdown', error);
+            apiLogger.error(
+                { error: error instanceof Error ? error.message : String(error) },
+                'Failed to get subscription breakdown'
+            );
             return {
                 success: false,
                 error: {

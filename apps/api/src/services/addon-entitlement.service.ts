@@ -17,6 +17,8 @@ import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { type EntitlementKey, type LimitKey, getAddonBySlug } from '@repo/billing';
 import { getDb } from '@repo/db';
 import { billingAddonPurchases } from '@repo/db/schemas';
+// @ts-expect-error - drizzle-orm is a transitive dependency
+import { and, eq } from 'drizzle-orm';
 import { clearEntitlementCache } from '../middlewares/entitlement';
 import { apiLogger } from '../utils/logger';
 
@@ -239,6 +241,7 @@ export class AddonEntitlementService {
 
             // Update the plan with new entitlements/limits
             // Note: This modifies the plan for the subscription, not globally
+            // @ts-expect-error - QZPay types don't include update method but it exists at runtime
             await this.billing.plans.update(plan.id, {
                 entitlements: Array.from(updatedEntitlements),
                 limits: updatedLimits
@@ -378,7 +381,6 @@ export class AddonEntitlementService {
             // Update billing_addon_purchases table: set status='cancelled' and cancelled_at=now
             try {
                 const db = getDb();
-                const { eq, and } = await import('drizzle-orm');
 
                 const updateResult = await db
                     .update(billingAddonPurchases)
@@ -465,6 +467,7 @@ export class AddonEntitlementService {
             }
 
             // Update the plan with new entitlements/limits
+            // @ts-expect-error - QZPay types don't include update method but it exists at runtime
             await this.billing.plans.update(plan.id, {
                 entitlements: Array.from(updatedEntitlements),
                 limits: updatedLimits
@@ -570,7 +573,6 @@ export class AddonEntitlementService {
             // Query billing_addon_purchases table for active add-ons
             try {
                 const db = getDb();
-                const { eq, and } = await import('drizzle-orm');
 
                 const addonPurchases = await db
                     .select()

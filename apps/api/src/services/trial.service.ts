@@ -120,8 +120,8 @@ export class TrialService {
             );
 
             // Get plan by slug
-            const plans = await this.billing.plans.list();
-            const plan = plans.find((p) => p.slug === planSlug);
+            const plansResult = await this.billing.plans.list();
+            const plan = plansResult.data.find((p: { name: string }) => p.name === planSlug);
 
             if (!plan) {
                 apiLogger.error({ planSlug }, 'Trial plan not found');
@@ -151,12 +151,7 @@ export class TrialService {
             const subscription = await this.billing.subscriptions.create({
                 customerId,
                 planId: plan.id,
-                status: 'trialing',
-                trialStart: now,
-                trialEnd,
-                currentPeriodStart: now,
-                currentPeriodEnd: trialEnd,
-                cancelAtPeriodEnd: false,
+                trialDays,
                 metadata: {
                     userType,
                     autoStarted: true,
@@ -268,7 +263,7 @@ export class TrialService {
                     : null,
                 expiresAt: trialEnd ? trialEnd.toISOString() : null,
                 daysRemaining,
-                planSlug: plan?.slug || null
+                planSlug: plan?.name || null
             };
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
@@ -322,11 +317,11 @@ export class TrialService {
             apiLogger.info('Starting expired trial blocking batch job');
 
             // Get all trialing subscriptions
-            const allSubscriptions = await this.billing.subscriptions.list({
-                status: 'trialing'
+            const allSubscriptionsResult = await this.billing.subscriptions.list({
+                filters: { status: 'trialing' }
             });
 
-            if (!allSubscriptions || allSubscriptions.length === 0) {
+            if (!allSubscriptionsResult || allSubscriptionsResult.data.length === 0) {
                 apiLogger.info('No trialing subscriptions found');
                 return 0;
             }
@@ -335,7 +330,7 @@ export class TrialService {
             let blockedCount = 0;
 
             // Check each trial subscription
-            for (const subscription of allSubscriptions) {
+            for (const subscription of allSubscriptionsResult.data) {
                 const trialEnd = subscription.trialEnd ? new Date(subscription.trialEnd) : null;
 
                 // Skip if no trial end date
@@ -350,15 +345,8 @@ export class TrialService {
                         const customer = await this.billing.customers.get(subscription.customerId);
                         const plan = await this.billing.plans.get(subscription.planId);
 
-                        // Update subscription status to expired
-                        await this.billing.subscriptions.update(subscription.id, {
-                            status: 'expired',
-                            metadata: {
-                                ...subscription.metadata,
-                                expiredAt: now.toISOString(),
-                                blockedBy: 'trial-service-batch'
-                            }
-                        });
+                        // Update subscription to cancel (QZPay doesn't support 'expired' status)
+                        await this.billing.subscriptions.cancel(subscription.id);
 
                         blockedCount++;
 
@@ -376,8 +364,8 @@ export class TrialService {
                             this.sendNotification({
                                 type: NotificationType.TRIAL_EXPIRED,
                                 recipientEmail: customer.email,
-                                recipientName: customer.metadata?.name || customer.email,
-                                userId: customer.metadata?.userId || null,
+                                recipientName: String(customer.metadata?.name || customer.email),
+                                userId: String(customer.metadata?.userId || null),
                                 customerId: customer.id,
                                 planName: plan.name,
                                 trialEndDate: trialEnd.toISOString(),
@@ -450,7 +438,7 @@ export class TrialService {
             // Cancel existing trial subscriptions
             if (existingSubscriptions && existingSubscriptions.length > 0) {
                 for (const sub of existingSubscriptions) {
-                    if (sub.status === 'trialing' || sub.status === 'expired') {
+                    if (sub.status === 'trialing' || sub.status === 'canceled') {
                         await this.billing.subscriptions.cancel(sub.id);
                         apiLogger.debug(
                             {
@@ -464,18 +452,12 @@ export class TrialService {
 
             // Create new paid subscription
             const now = new Date();
-            const periodEnd = new Date(now);
-            periodEnd.setMonth(periodEnd.getMonth() + 1); // 1 month subscription
 
             const newSubscription = await this.billing.subscriptions.create({
                 customerId,
                 planId,
-                status: 'active',
-                currentPeriodStart: now,
-                currentPeriodEnd: periodEnd,
-                cancelAtPeriodEnd: false,
                 metadata: {
-                    convertedFromTrial: true,
+                    convertedFromTrial: 'true',
                     convertedAt: now.toISOString()
                 }
             });
@@ -528,11 +510,11 @@ export class TrialService {
             apiLogger.info({ daysAhead }, 'Finding trials ending soon');
 
             // Get all active trialing subscriptions
-            const allSubscriptions = await this.billing.subscriptions.list({
-                status: 'trialing'
+            const allSubscriptionsResult = await this.billing.subscriptions.list({
+                filters: { status: 'trialing' }
             });
 
-            if (!allSubscriptions || allSubscriptions.length === 0) {
+            if (!allSubscriptionsResult || allSubscriptionsResult.data.length === 0) {
                 apiLogger.info('No trialing subscriptions found');
                 return [];
             }
@@ -544,7 +526,7 @@ export class TrialService {
             const endingSoon: TrialEndingSubscription[] = [];
 
             // Check each subscription for expiry within timeframe
-            for (const subscription of allSubscriptions) {
+            for (const subscription of allSubscriptionsResult.data) {
                 const trialEnd = subscription.trialEnd ? new Date(subscription.trialEnd) : null;
 
                 if (!trialEnd) {
@@ -587,9 +569,9 @@ export class TrialService {
                             id: subscription.id,
                             customerId: customer.id,
                             userEmail: customer.email,
-                            userName: customer.metadata?.name || customer.email,
-                            userId: customer.metadata?.userId || '',
-                            planSlug: plan.slug,
+                            userName: String(customer.metadata?.name || customer.email),
+                            userId: String(customer.metadata?.userId || ''),
+                            planSlug: plan.name,
                             trialEnd,
                             daysRemaining
                         });

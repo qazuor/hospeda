@@ -7,8 +7,105 @@
  * @module utils/notification-helper
  */
 
+import { getDb } from '@repo/db';
+import {
+    NotificationService,
+    PreferenceService,
+    ResendEmailTransport,
+    type RetryService,
+    createResendClient
+} from '@repo/notifications';
 import type { NotificationPayload } from '@repo/notifications';
 import { apiLogger } from './logger';
+
+/**
+ * Lazy singleton for NotificationService
+ * Initialized only when first needed
+ */
+let notificationServiceInstance: NotificationService | null = null;
+let initializationFailed = false;
+
+/**
+ * Simple mock functions for PreferenceService
+ * Returns null (user has no preferences) since we don't have user settings table yet
+ */
+const mockGetUserSettings = async (_userId: string): Promise<Record<string, unknown> | null> => {
+    return null;
+};
+
+const mockUpdateUserSettings = async (
+    _userId: string,
+    _settings: Record<string, unknown>
+): Promise<void> => {
+    // No-op for now
+};
+
+/**
+ * Get or create NotificationService instance
+ *
+ * @returns NotificationService instance or null if initialization failed
+ */
+function getNotificationService(): NotificationService | null {
+    // Return null if initialization previously failed
+    if (initializationFailed) {
+        return null;
+    }
+
+    // Return existing instance if already initialized
+    if (notificationServiceInstance) {
+        return notificationServiceInstance;
+    }
+
+    try {
+        // Check if RESEND_API_KEY is set
+        if (!process.env.RESEND_API_KEY) {
+            apiLogger.warn(
+                'RESEND_API_KEY not set in environment. Notifications will not be sent.'
+            );
+            initializationFailed = true;
+            return null;
+        }
+
+        // Create Resend client
+        const resendClient = createResendClient();
+
+        // Create email transport
+        const emailTransport = new ResendEmailTransport(resendClient);
+
+        // Create preference service with mock functions
+        const preferenceService = new PreferenceService({
+            getUserSettings: mockGetUserSettings,
+            updateUserSettings: mockUpdateUserSettings
+        });
+
+        // Retry service is optional (requires Redis)
+        // For now, we pass null - notifications will be logged but not retried
+        const retryService: RetryService | null = null;
+
+        // Get database instance
+        const db = getDb();
+
+        // Create NotificationService instance
+        notificationServiceInstance = new NotificationService({
+            emailTransport,
+            preferenceService,
+            retryService,
+            db,
+            logger: apiLogger
+        });
+
+        apiLogger.info('NotificationService initialized successfully');
+
+        return notificationServiceInstance;
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        apiLogger.warn(
+            `Failed to initialize NotificationService: ${errorMessage}. Notifications will not be sent.`
+        );
+        initializationFailed = true;
+        return null;
+    }
+}
 
 /**
  * Send a notification asynchronously (fire-and-forget)
@@ -47,25 +144,47 @@ export async function sendNotification(payload: NotificationPayload): Promise<vo
                 userId: payload.userId,
                 customerId: payload.customerId
             },
-            'Queuing notification (async)'
+            'Sending notification (async)'
         );
 
-        // TODO: Initialize NotificationService and send
-        // For now, just log - actual implementation will be added when NotificationService is wired up
-        // This allows the webhook to work without blocking on notification infrastructure
+        // Get NotificationService instance
+        const notificationService = getNotificationService();
 
-        // When implementing:
-        // 1. Get or create NotificationService instance (singleton)
-        // 2. Call notificationService.send(payload)
-        // 3. Handle errors silently (retry service picks up failures)
+        // If service not available, log and skip gracefully
+        if (!notificationService) {
+            apiLogger.debug(
+                {
+                    type: payload.type,
+                    recipientEmail: payload.recipientEmail
+                },
+                'NotificationService not available, skipping notification'
+            );
+            return;
+        }
 
-        apiLogger.info(
-            {
-                type: payload.type,
-                recipientEmail: payload.recipientEmail
-            },
-            'Notification queued (implementation pending)'
-        );
+        // Send notification via NotificationService
+        const result = await notificationService.send(payload);
+
+        if (result.success) {
+            apiLogger.info(
+                {
+                    type: payload.type,
+                    recipientEmail: payload.recipientEmail,
+                    messageId: result.messageId
+                },
+                'Notification sent successfully'
+            );
+        } else {
+            apiLogger.warn(
+                {
+                    type: payload.type,
+                    recipientEmail: payload.recipientEmail,
+                    status: result.status,
+                    error: 'error' in result ? result.error : result.skippedReason
+                },
+                'Notification not sent'
+            );
+        }
     } catch (error) {
         // Log but don't throw - fire-and-forget pattern
         apiLogger.error(
@@ -73,7 +192,7 @@ export async function sendNotification(payload: NotificationPayload): Promise<vo
                 type: payload.type,
                 error: error instanceof Error ? error.message : String(error)
             },
-            'Failed to queue notification'
+            'Failed to send notification'
         );
     }
 }

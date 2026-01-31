@@ -16,6 +16,8 @@
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { ALL_ADDONS, type AddonDefinition, getAddonBySlug } from '@repo/billing';
+// @ts-expect-error - drizzle-orm is a transitive dependency
+import { and, eq } from 'drizzle-orm';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 import { apiLogger } from '../utils/logger';
 import { AddonEntitlementService } from './addon-entitlement.service';
@@ -465,7 +467,6 @@ export class AddonService {
             // Import DB utilities and schema
             const { getDb } = await import('@repo/db/client');
             const { billingAddonPurchases } = await import('@repo/db/schemas/billing');
-            const { eq, and } = await import('drizzle-orm');
             const db = getDb();
 
             // Query billing_addon_purchases table for active add-ons
@@ -897,7 +898,6 @@ export class AddonService {
             try {
                 const { getDb } = await import('@repo/db/client');
                 const { billingAddonPurchases } = await import('@repo/db/schemas/billing');
-                const { eq, and } = await import('drizzle-orm');
                 const db = getDb();
 
                 const updateResult = await db

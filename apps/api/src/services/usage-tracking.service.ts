@@ -225,18 +225,24 @@ export class UsageTrackingService {
                 upgradeUrl: '/billing/plans'
             };
 
-            apiLogger.debug('Usage summary generated', {
-                customerId,
-                overallThreshold,
-                limitCount: limitUsageList.length
-            });
+            apiLogger.debug(
+                'Usage summary generated',
+                JSON.stringify({
+                    customerId,
+                    overallThreshold,
+                    limitCount: limitUsageList.length
+                })
+            );
 
             return {
                 success: true,
                 data: summary
             };
         } catch (error) {
-            apiLogger.error('Failed to get usage summary', error);
+            apiLogger.error(
+                'Failed to get usage summary',
+                error instanceof Error ? error.message : String(error)
+            );
             return {
                 success: false,
                 error: {
@@ -278,7 +284,10 @@ export class UsageTrackingService {
                 data: usageResult.data.threshold
             };
         } catch (error) {
-            apiLogger.error('Failed to check usage threshold', error);
+            apiLogger.error(
+                'Failed to check usage threshold',
+                error instanceof Error ? error.message : String(error)
+            );
             return {
                 success: false,
                 error: {
@@ -379,14 +388,20 @@ export class UsageTrackingService {
                 addonBonusLimit
             };
 
-            apiLogger.debug('Limit usage retrieved', { customerId, limitKey, threshold });
+            apiLogger.debug(
+                'Limit usage retrieved',
+                JSON.stringify({ customerId, limitKey, threshold })
+            );
 
             return {
                 success: true,
                 data: limitUsage
             };
         } catch (error) {
-            apiLogger.error('Failed to get usage for limit', error);
+            apiLogger.error(
+                'Failed to get usage for limit',
+                error instanceof Error ? error.message : String(error)
+            );
             return {
                 success: false,
                 error: {
@@ -462,7 +477,14 @@ export class UsageTrackingService {
                     return 0;
             }
         } catch (error) {
-            apiLogger.error('Failed to get current usage', { limitKey, customerId, error });
+            apiLogger.error(
+                'Failed to get current usage',
+                JSON.stringify({
+                    limitKey,
+                    customerId,
+                    error: error instanceof Error ? error.message : String(error)
+                })
+            );
             return 0;
         }
     }
