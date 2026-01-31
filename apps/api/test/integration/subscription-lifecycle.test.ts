@@ -254,7 +254,7 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
                 email: 'upgrade-basico-pro@hospeda.com',
                 name: 'Upgrade Test User',
                 externalId: 'user_upgrade_basico_pro_123'
-            });
+            } as any);
 
             // Create initial Basico subscription
             const now = new Date();
@@ -268,7 +268,7 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
                 currentPeriodStart: now,
                 currentPeriodEnd: periodEnd,
                 cancelAtPeriodEnd: false
-            });
+            } as any);
 
             // Act - Cancel Basico and create Pro subscription (simulating upgrade)
             await billing.subscriptions.cancel(basicoSubscription.id);
@@ -283,7 +283,7 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
                 metadata: {
                     upgradedFrom: 'owner-basico'
                 }
-            });
+            } as any);
 
             // Assert
             expect(proSubscription).toBeDefined();
@@ -370,7 +370,7 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
                 email: 'upgrade-metadata@hospeda.com',
                 name: 'Metadata Test',
                 externalId: 'user_upgrade_metadata_123'
-            });
+            } as any);
 
             const now = new Date();
             const periodEnd = new Date(now);
@@ -387,7 +387,7 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
                     source: 'trial-conversion',
                     originalPlan: 'owner-basico'
                 }
-            });
+            } as any);
 
             // Act - Upgrade
             await billing.subscriptions.cancel(basicoSubscription.id);
@@ -403,7 +403,7 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
                     upgradedFrom: 'owner-basico',
                     previousSubscriptionId: basicoSubscription.id
                 }
-            });
+            } as any);
 
             // Assert
             expect(proSubscription.metadata).toBeDefined();
@@ -437,7 +437,7 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
                 email: 'upgrade-pro-premium@hospeda.com',
                 name: 'Pro to Premium Test',
                 externalId: 'user_upgrade_pro_premium_123'
-            });
+            } as any);
 
             const now = new Date();
             const periodEnd = new Date(now);
@@ -451,7 +451,7 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
                 currentPeriodStart: now,
                 currentPeriodEnd: periodEnd,
                 cancelAtPeriodEnd: false
-            });
+            } as any);
 
             // Act - Upgrade to Premium
             await billing.subscriptions.cancel(proSubscription.id);
@@ -466,7 +466,7 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
                 metadata: {
                     upgradedFrom: 'owner-pro'
                 }
-            });
+            } as any);
 
             // Assert
             expect(premiumSubscription).toBeDefined();
@@ -539,7 +539,7 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
                 email: 'downgrade-premium-pro@hospeda.com',
                 name: 'Downgrade Test',
                 externalId: 'user_downgrade_premium_pro_123'
-            });
+            } as any);
 
             const now = new Date();
             const periodEnd = new Date(now);
@@ -553,7 +553,7 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
                 currentPeriodStart: now,
                 currentPeriodEnd: periodEnd,
                 cancelAtPeriodEnd: false
-            });
+            } as any);
 
             // Act - Schedule downgrade (simulate updating plan_id but keeping current plan active)
             // In real implementation, this would schedule the change for period end
@@ -649,7 +649,7 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
                 email: 'downgrade-pro-basico@hospeda.com',
                 name: 'Pro to Basico Downgrade',
                 externalId: 'user_downgrade_pro_basico_123'
-            });
+            } as any);
 
             const now = new Date();
             const periodEnd = new Date(now);
@@ -662,7 +662,7 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
                 currentPeriodStart: now,
                 currentPeriodEnd: periodEnd,
                 cancelAtPeriodEnd: false
-            });
+            } as any);
 
             // Act - Schedule downgrade
             const updatedSubscription = await billing.subscriptions.update(proSubscription.id, {
@@ -670,7 +670,7 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
                     scheduledDowngradeTo: 'owner-basico',
                     downgradePlanId: basicoPlan!.id
                 }
-            });
+            } as any);
 
             // Assert
             expect(updatedSubscription.metadata?.scheduledDowngradeTo).toBe('owner-basico');
@@ -738,7 +738,7 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
                 email: 'cancel-subscription@hospeda.com',
                 name: 'Cancel Test',
                 externalId: 'user_cancel_123'
-            });
+            } as any);
 
             const now = new Date();
             const periodEnd = new Date(now);
@@ -751,7 +751,7 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
                 currentPeriodStart: now,
                 currentPeriodEnd: periodEnd,
                 cancelAtPeriodEnd: false
-            });
+            } as any);
 
             // Act - Cancel subscription
             const canceledSubscription = await billing.subscriptions.cancel(subscription.id);
@@ -778,7 +778,7 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
                 email: 'cancel-period-end@hospeda.com',
                 name: 'Period End Cancel',
                 externalId: 'user_cancel_period_end_123'
-            });
+            } as any);
 
             // Create subscription that already ended
             const pastDate = new Date();
@@ -794,7 +794,7 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
                 currentPeriodStart: startDate,
                 currentPeriodEnd: pastDate,
                 cancelAtPeriodEnd: true
-            });
+            } as any);
 
             // Assert
             expect(subscription.status).toBe('canceled');
@@ -821,7 +821,7 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
                 email: 'preserve-data@hospeda.com',
                 name: 'Preserve Data Test',
                 externalId: 'user_preserve_data_123'
-            });
+            } as any);
 
             const now = new Date();
             const periodEnd = new Date(now);
@@ -834,7 +834,7 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
                 currentPeriodStart: now,
                 currentPeriodEnd: periodEnd,
                 cancelAtPeriodEnd: false
-            });
+            } as any);
 
             // Act - Cancel
             await billing.subscriptions.cancel(subscription.id);
@@ -874,7 +874,7 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
                 email: 'cancel-trial@hospeda.com',
                 name: 'Cancel Trial Test',
                 externalId: 'user_cancel_trial_123'
-            });
+            } as any);
 
             const now = new Date();
             const trialEnd = new Date(now);
@@ -889,7 +889,7 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
                 currentPeriodStart: now,
                 currentPeriodEnd: trialEnd,
                 cancelAtPeriodEnd: false
-            });
+            } as any);
 
             // Act - Cancel trial
             const canceledSubscription = await billing.subscriptions.cancel(trialSubscription.id);
@@ -925,7 +925,7 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
                 email: 'resubscribe@hospeda.com',
                 name: 'Resubscribe Test',
                 externalId: 'user_resubscribe_123'
-            });
+            } as any);
 
             const now = new Date();
             const periodEnd = new Date(now);
@@ -939,7 +939,7 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
                 currentPeriodStart: now,
                 currentPeriodEnd: periodEnd,
                 cancelAtPeriodEnd: false
-            });
+            } as any);
 
             await billing.subscriptions.cancel(oldSubscription.id);
 
@@ -955,7 +955,7 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
                     reactivation: true,
                     previousSubscriptionId: oldSubscription.id
                 }
-            });
+            } as any);
 
             // Assert
             expect(newSubscription).toBeDefined();
@@ -986,7 +986,7 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
                 email: 'invalid-upgrade@hospeda.com',
                 name: 'Invalid Upgrade Test',
                 externalId: 'user_invalid_upgrade_123'
-            });
+            } as any);
 
             const now = new Date();
             const periodEnd = new Date(now);
@@ -1001,7 +1001,7 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
                     currentPeriodStart: now,
                     currentPeriodEnd: periodEnd,
                     cancelAtPeriodEnd: false
-                })
+                } as any)
             ).rejects.toThrow();
         });
 
@@ -1052,7 +1052,7 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
                 email: 'monthly-cycle@hospeda.com',
                 name: 'Monthly Cycle Test',
                 externalId: 'user_monthly_cycle_123'
-            });
+            } as any);
 
             const now = new Date();
             const periodEnd = new Date(now);
@@ -1066,7 +1066,7 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
                 currentPeriodStart: now,
                 currentPeriodEnd: periodEnd,
                 cancelAtPeriodEnd: false
-            });
+            } as any);
 
             // Assert - Verify period is 1 month
             const start = new Date(subscription.currentPeriodStart);
@@ -1094,7 +1094,7 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
                 email: 'annual-cycle@hospeda.com',
                 name: 'Annual Cycle Test',
                 externalId: 'user_annual_cycle_123'
-            });
+            } as any);
 
             const now = new Date();
             const periodEnd = new Date(now);
@@ -1111,7 +1111,7 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
                 metadata: {
                     billingCycle: 'annual'
                 }
-            });
+            } as any);
 
             // Assert
             const start = new Date(subscription.currentPeriodStart);
@@ -1154,7 +1154,7 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
                 email: 'multiple-subs@hospeda.com',
                 name: 'Multiple Subscriptions Test',
                 externalId: 'user_multiple_subs_123'
-            });
+            } as any);
 
             const now = new Date();
             const periodEnd = new Date(now);
@@ -1168,7 +1168,7 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
                 currentPeriodStart: now,
                 currentPeriodEnd: periodEnd,
                 cancelAtPeriodEnd: false
-            });
+            } as any);
 
             // Act - Get all subscriptions
             const subscriptions = await billing.subscriptions.getByCustomerId(customer.id);

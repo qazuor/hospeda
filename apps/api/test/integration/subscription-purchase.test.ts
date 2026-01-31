@@ -34,7 +34,8 @@ vi.mock('@repo/logger', () => {
         error: vi.fn(),
         debug: vi.fn(),
         registerLogMethod: vi.fn().mockReturnThis(),
-        permission: vi.fn()
+        permission: vi.fn(),
+        registerCategory: vi.fn()
     });
 
     const mockedLogger = {
@@ -46,7 +47,8 @@ vi.mock('@repo/logger', () => {
         configure: vi.fn(),
         resetConfig: vi.fn(),
         createLogger: vi.fn(() => createMockedLogger()),
-        registerLogMethod: vi.fn().mockReturnThis()
+        registerLogMethod: vi.fn().mockReturnThis(),
+        permission: vi.fn()
     };
 
     const LoggerColors = {

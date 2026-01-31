@@ -56,14 +56,7 @@ vi.mock('../../src/utils/logger', () => ({
 
 describe('entitlementMiddleware', () => {
     let app: Hono<AppBindings>;
-    let mockBilling: {
-        subscriptions: {
-            getByCustomerId: ReturnType<typeof vi.fn>;
-        };
-        plans: {
-            get: ReturnType<typeof vi.fn>;
-        };
-    };
+    let mockBilling: any;
 
     beforeEach(() => {
         app = new Hono<AppBindings>();
@@ -78,7 +71,7 @@ describe('entitlementMiddleware', () => {
             }
         };
 
-        vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as never);
+        vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
 
         // Clear cache before each test
         clearEntitlementCache('test-customer-id');

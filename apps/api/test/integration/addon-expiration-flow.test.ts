@@ -26,7 +26,8 @@ vi.mock('@repo/logger', () => {
         error: vi.fn(),
         debug: vi.fn(),
         registerLogMethod: vi.fn().mockReturnThis(),
-        permission: vi.fn()
+        permission: vi.fn(),
+        registerCategory: vi.fn()
     });
 
     const mockedLogger = {
@@ -38,7 +39,8 @@ vi.mock('@repo/logger', () => {
         configure: vi.fn(),
         resetConfig: vi.fn(),
         createLogger: vi.fn(() => createMockedLogger()),
-        registerLogMethod: vi.fn().mockReturnThis()
+        registerLogMethod: vi.fn().mockReturnThis(),
+        permission: vi.fn()
     };
 
     const LoggerColors = {
@@ -136,7 +138,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 email: 'addon-purchase@hospeda.com',
                 name: 'Add-on Purchase Test',
                 externalId: 'user_addon_purchase_001'
-            });
+            } as any);
 
             // Create active subscription (required for add-on purchase)
             const plans = await billing.plans.list();
@@ -154,7 +156,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 currentPeriodStart: now,
                 currentPeriodEnd: periodEnd,
                 cancelAtPeriodEnd: false
-            });
+            } as any);
 
             // Create addon service
             const addonService = new AddonService(billing);
@@ -220,7 +222,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 email: 'addon-entitlement@hospeda.com',
                 name: 'Add-on Entitlement Test',
                 externalId: 'user_addon_entitlement_001'
-            });
+            } as any);
 
             const plans = await billing.plans.list();
             const basicoPlan = plans.find((p) => p.slug === 'owner-basico');
@@ -236,7 +238,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 currentPeriodStart: now,
                 currentPeriodEnd: periodEnd,
                 cancelAtPeriodEnd: false
-            });
+            } as any);
 
             const addonService = new AddonService(billing);
 
@@ -291,7 +293,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 email: 'addon-limit@hospeda.com',
                 name: 'Add-on Limit Test',
                 externalId: 'user_addon_limit_001'
-            });
+            } as any);
 
             const plans = await billing.plans.list();
             const basicoPlan = plans.find((p) => p.slug === 'owner-basico');
@@ -307,7 +309,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 currentPeriodStart: now,
                 currentPeriodEnd: periodEnd,
                 cancelAtPeriodEnd: false
-            });
+            } as any);
 
             const addonService = new AddonService(billing);
 
@@ -375,7 +377,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 email: 'addon-list@hospeda.com',
                 name: 'Add-on List Test',
                 externalId: 'user_addon_list_001'
-            });
+            } as any);
 
             const plans = await billing.plans.list();
             const basicoPlan = plans.find((p) => p.slug === 'owner-basico');
@@ -391,7 +393,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 currentPeriodStart: now,
                 currentPeriodEnd: periodEnd,
                 cancelAtPeriodEnd: false
-            });
+            } as any);
 
             const addonService = new AddonService(billing);
 
@@ -428,7 +430,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 email: 'addon-active@hospeda.com',
                 name: 'Add-on Active Test',
                 externalId: 'user_addon_active_001'
-            });
+            } as any);
 
             const plans = await billing.plans.list();
             const basicoPlan = plans.find((p) => p.slug === 'owner-basico');
@@ -444,7 +446,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 currentPeriodStart: now,
                 currentPeriodEnd: periodEnd,
                 cancelAtPeriodEnd: false
-            });
+            } as any);
 
             const addonService = new AddonService(billing);
 
@@ -487,7 +489,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 email: 'addon-expired@hospeda.com',
                 name: 'Add-on Expired Test',
                 externalId: 'user_addon_expired_001'
-            });
+            } as any);
 
             // Manually create an expired add-on purchase
             const pastDate = new Date();
@@ -535,7 +537,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 email: 'addon-check-expired@hospeda.com',
                 name: 'Add-on Check Expired Test',
                 externalId: 'user_addon_check_expired_001'
-            });
+            } as any);
 
             // Create expired add-on purchase
             const pastDate = new Date();
@@ -585,7 +587,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 email: 'addon-no-sub@hospeda.com',
                 name: 'Add-on No Subscription Test',
                 externalId: 'user_addon_no_sub_001'
-            });
+            } as any);
 
             const addonService = new AddonService(billing);
 
@@ -613,7 +615,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 email: 'addon-invalid@hospeda.com',
                 name: 'Add-on Invalid Test',
                 externalId: 'user_addon_invalid_001'
-            });
+            } as any);
 
             const plans = await billing.plans.list();
             const basicoPlan = plans.find((p) => p.slug === 'owner-basico');
@@ -629,7 +631,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 currentPeriodStart: now,
                 currentPeriodEnd: periodEnd,
                 cancelAtPeriodEnd: false
-            });
+            } as any);
 
             const addonService = new AddonService(billing);
 
@@ -668,7 +670,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 email: 'addon-manual-expire@hospeda.com',
                 name: 'Add-on Manual Expire Test',
                 externalId: 'user_addon_manual_expire_001'
-            });
+            } as any);
 
             const plans = await billing.plans.list();
             const basicoPlan = plans.find((p) => p.slug === 'owner-basico');
@@ -684,7 +686,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 currentPeriodStart: now,
                 currentPeriodEnd: periodEnd,
                 cancelAtPeriodEnd: false
-            });
+            } as any);
 
             // Create add-on purchase with past expiration date
             const pastPurchaseDate = new Date();
@@ -752,7 +754,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 email: 'addon-verify-inactive@hospeda.com',
                 name: 'Add-on Verify Inactive Test',
                 externalId: 'user_addon_verify_inactive_001'
-            });
+            } as any);
 
             const plans = await billing.plans.list();
             const basicoPlan = plans.find((p) => p.slug === 'owner-basico');
@@ -768,7 +770,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 currentPeriodStart: now,
                 currentPeriodEnd: periodEnd,
                 cancelAtPeriodEnd: false
-            });
+            } as any);
 
             // Create expired add-on purchase
             const pastDate = new Date();
@@ -831,7 +833,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 email: 'addon-cron-test@hospeda.com',
                 name: 'Add-on Cron Test',
                 externalId: 'user_addon_cron_test_001'
-            });
+            } as any);
 
             const plans = await billing.plans.list();
             const basicoPlan = plans.find((p) => p.slug === 'owner-basico');
@@ -847,7 +849,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 currentPeriodStart: now,
                 currentPeriodEnd: periodEnd,
                 cancelAtPeriodEnd: false
-            });
+            } as any);
 
             // Create expired add-on
             const pastDate = new Date();
@@ -880,7 +882,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 },
                 startedAt: new Date(),
                 dryRun: false
-            };
+            } as const;
 
             // Act - Call cron job handler
             const result = await addonExpiryJob.handler(mockContext);
@@ -917,7 +919,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 email: 'addon-warn-3days@hospeda.com',
                 name: 'Add-on Warning 3 Days Test',
                 externalId: 'user_addon_warn_3days_001'
-            });
+            } as any);
 
             const plans = await billing.plans.list();
             const basicoPlan = plans.find((p) => p.slug === 'owner-basico');
@@ -933,7 +935,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 currentPeriodStart: now,
                 currentPeriodEnd: periodEnd,
                 cancelAtPeriodEnd: false
-            });
+            } as any);
 
             // Create add-on expiring in 3 days
             const purchaseDate = new Date();
@@ -965,7 +967,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 },
                 startedAt: new Date(),
                 dryRun: false
-            };
+            } as const;
 
             // Act - Call cron job handler
             const result = await addonExpiryJob.handler(mockContext);
@@ -991,7 +993,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 email: 'addon-warn-1day@hospeda.com',
                 name: 'Add-on Warning 1 Day Test',
                 externalId: 'user_addon_warn_1day_001'
-            });
+            } as any);
 
             const plans = await billing.plans.list();
             const basicoPlan = plans.find((p) => p.slug === 'owner-basico');
@@ -1007,7 +1009,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 currentPeriodStart: now,
                 currentPeriodEnd: periodEnd,
                 cancelAtPeriodEnd: false
-            });
+            } as any);
 
             // Create add-on expiring in 1 day
             const purchaseDate = new Date();
@@ -1039,7 +1041,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 },
                 startedAt: new Date(),
                 dryRun: false
-            };
+            } as const;
 
             // Act - Call cron job handler
             const result = await addonExpiryJob.handler(mockContext);
@@ -1073,7 +1075,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 email: 'addon-notif-log@hospeda.com',
                 name: 'Add-on Notification Log Test',
                 externalId: 'user_addon_notif_log_001'
-            });
+            } as any);
 
             const plans = await billing.plans.list();
             const basicoPlan = plans.find((p) => p.slug === 'owner-basico');
@@ -1089,7 +1091,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 currentPeriodStart: now,
                 currentPeriodEnd: periodEnd,
                 cancelAtPeriodEnd: false
-            });
+            } as any);
 
             // Create expired add-on
             const pastDate = new Date();
@@ -1161,7 +1163,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 email: 'addon-notif-metadata@hospeda.com',
                 name: 'Add-on Notification Metadata Test',
                 externalId: 'user_addon_notif_metadata_001'
-            });
+            } as any);
 
             // Note: This is a placeholder test for when NotificationService is implemented
             // It demonstrates the expected structure of notification metadata
@@ -1204,7 +1206,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 email: 'addon-idempotent@hospeda.com',
                 name: 'Add-on Idempotent Test',
                 externalId: 'user_addon_idempotent_001'
-            });
+            } as any);
 
             const plans = await billing.plans.list();
             const basicoPlan = plans.find((p) => p.slug === 'owner-basico');
@@ -1220,7 +1222,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 currentPeriodStart: now,
                 currentPeriodEnd: periodEnd,
                 cancelAtPeriodEnd: false
-            });
+            } as any);
 
             // Create expired add-on
             const pastDate = new Date();
@@ -1289,7 +1291,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 email: 'addon-skip-expired@hospeda.com',
                 name: 'Add-on Skip Expired Test',
                 externalId: 'user_addon_skip_expired_001'
-            });
+            } as any);
 
             const plans = await billing.plans.list();
             const basicoPlan = plans.find((p) => p.slug === 'owner-basico');
@@ -1305,7 +1307,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 currentPeriodStart: now,
                 currentPeriodEnd: periodEnd,
                 cancelAtPeriodEnd: false
-            });
+            } as any);
 
             // Create add-on purchase
             const pastDate = new Date();
