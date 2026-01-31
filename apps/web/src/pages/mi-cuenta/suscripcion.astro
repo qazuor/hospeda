@@ -1,0 +1,307 @@
+---
+export const prerender = false; // SSR for authenticated content
+
+import Layout from '@/layout/MainLayout.astro';
+import { ActiveAddons, UsageMeters, BillingHistory } from '@/components/dashboard';
+
+/**
+ * Subscription Management Page
+ * Consolidated dashboard with subscription, usage, add-ons, and billing
+ * Requires authentication
+ */
+
+// Check authentication (Clerk injects auth into Astro.locals via middleware)
+const { userId } = Astro.locals.auth();
+
+if (!userId) {
+  return Astro.redirect('/auth/sign-in?redirect=/mi-cuenta/suscripcion');
+}
+
+// Fetch user subscription data from API
+const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:3001';
+
+let subscription = null;
+let invoices: any[] = [];
+
+try {
+  // Get user's active subscription
+  const subResponse = await fetch(`${apiUrl}/api/v1/billing/subscriptions?limit=1`, {
+    headers: {
+      'Content-Type': 'application/json',
+      'Cookie': Astro.request.headers.get('cookie') || ''
+    }
+  });
+
+  if (subResponse.ok) {
+    const subData = await subResponse.json();
+    subscription = subData.data?.[0] || null;
+  }
+
+  // Get user's invoices
+  const invResponse = await fetch(`${apiUrl}/api/v1/billing/invoices?limit=10`, {
+    headers: {
+      'Content-Type': 'application/json',
+      'Cookie': Astro.request.headers.get('cookie') || ''
+    }
+  });
+
+  if (invResponse.ok) {
+    const invData = await invResponse.json();
+    invoices = invData.data || [];
+  }
+} catch (error) {
+  console.error('Error fetching subscription data:', error);
+  // Keep defaults (null/empty)
+}
+
+function formatPrice(priceInCents: number): string {
+  const price = priceInCents / 100;
+  return new Intl.NumberFormat('es-AR', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(price);
+}
+
+function formatDate(date: Date): string {
+  return new Intl.DateTimeFormat('es-AR', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric'
+  }).format(date);
+}
+
+const title = 'Mi Suscripción';
+const description = 'Administrá tu plan y facturación';
+---
+
+<Layout title={title} description={description}>
+  <section class="py-16 bg-gray-50 min-h-screen">
+    <div class="max-w-7xl mx-auto px-4">
+      <!-- Page Header -->
+      <div class="mb-8">
+        <h1 class="text-4xl font-bold text-gray-900 mb-2">Mi Suscripción</h1>
+        <p class="text-gray-600">Administrá tu plan, uso de recursos, complementos y facturación</p>
+      </div>
+
+      <!-- Quick Navigation -->
+      <div class="mb-8 flex flex-wrap gap-4">
+        <a
+          href="/mi-cuenta/addons"
+          class="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 font-medium text-gray-700 shadow-md transition-colors hover:bg-gray-50"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+          </svg>
+          Comprar complementos
+        </a>
+        <a
+          href="/mi-cuenta/mis-addons"
+          class="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 font-medium text-gray-700 shadow-md transition-colors hover:bg-gray-50"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+          </svg>
+          Gestionar mis complementos
+        </a>
+        <a
+          href="/mi-cuenta/billing"
+          class="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 font-medium text-gray-700 shadow-md transition-colors hover:bg-gray-50"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+          </svg>
+          Panel de facturación completo
+        </a>
+      </div>
+
+      <!-- Current Plan Card -->
+      {subscription ? (
+        <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
+          <div class="flex items-start justify-between mb-6">
+            <div>
+              <div class="flex items-center gap-3 mb-2">
+                <h2 class="text-2xl font-bold text-gray-900">
+                  Plan {subscription.planName || subscription.planSlug}
+                </h2>
+                {subscription.status === 'active' && (
+                  <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+                    Activo
+                  </span>
+                )}
+                {subscription.status === 'trialing' && (
+                  <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+                    Período de prueba
+                  </span>
+                )}
+                {subscription.status === 'past_due' && (
+                  <span class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-sm font-medium">
+                    Pago pendiente
+                  </span>
+                )}
+                {subscription.status === 'canceled' && (
+                  <span class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-medium">
+                    Cancelado
+                  </span>
+                )}
+              </div>
+              <p class="text-gray-600">
+                Facturación {subscription.billingPeriod === 'monthly' ? 'mensual' : 'anual'}
+              </p>
+            </div>
+            <div class="text-right">
+              <div class="text-3xl font-bold text-gray-900">
+                ${formatPrice(subscription.currentPeriodAmount)}
+              </div>
+              <div class="text-sm text-gray-600">
+                /{subscription.billingPeriod === 'monthly' ? 'mes' : 'año'}
+              </div>
+            </div>
+          </div>
+
+          {subscription.status === 'trialing' && subscription.trialEndsAt ? (
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <p class="text-blue-800">
+                <strong>Período de prueba:</strong> Tu prueba gratis termina el{' '}
+                {formatDate(new Date(subscription.trialEndsAt))}
+              </p>
+            </div>
+          ) : subscription.currentPeriodEnd ? (
+            <div class="bg-gray-50 rounded-lg p-4 mb-6">
+              <p class="text-gray-700">
+                <strong>Próxima renovación:</strong> {formatDate(new Date(subscription.currentPeriodEnd))}
+              </p>
+            </div>
+          ) : null}
+
+          <!-- Action Buttons -->
+          <div class="flex flex-wrap gap-4">
+            <a
+              href="/precios/propietarios"
+              class="px-6 py-3 bg-primary text-white rounded-lg font-semibold hover:bg-primary/90 transition-colors"
+            >
+              Cambiar de plan
+            </a>
+            {subscription.status === 'active' && (
+              <button
+                type="button"
+                id="cancel-subscription-btn"
+                data-subscription-id={subscription.id}
+                class="px-6 py-3 bg-white border-2 border-red-500 text-red-500 rounded-lg font-semibold hover:bg-red-50 transition-colors"
+              >
+                Cancelar suscripción
+              </button>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
+          <div class="text-center py-8">
+            <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <h2 class="text-2xl font-bold text-gray-900 mb-2">No tenés suscripción activa</h2>
+            <p class="text-gray-600 mb-6">
+              Elegí un plan para empezar a publicar tus alojamientos y llegar a miles de viajeros
+            </p>
+            <a
+              href="/precios/propietarios"
+              class="inline-block px-6 py-3 bg-primary text-white rounded-lg font-semibold hover:bg-primary/90 transition-colors"
+            >
+              Ver planes disponibles
+            </a>
+          </div>
+        </div>
+      )}
+
+      <!-- Dashboard Widgets (React Islands) -->
+      {subscription && (
+        <div class="space-y-8 mb-8">
+          <!-- Usage Meters -->
+          <UsageMeters client:load />
+
+          <!-- Active Add-ons -->
+          <ActiveAddons client:load />
+
+          <!-- Billing History -->
+          <BillingHistory client:load />
+        </div>
+      )}
+
+      <!-- Payment Method Card -->
+      {subscription && (
+        <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
+          <h2 class="text-2xl font-bold text-gray-900 mb-6">Método de pago</h2>
+
+          <div class="text-center py-8">
+            <p class="text-gray-600 mb-4">
+              Los pagos se procesan a través de Mercado Pago
+            </p>
+            <p class="text-sm text-gray-500">
+              La información de tu método de pago se gestiona de forma segura en Mercado Pago
+            </p>
+          </div>
+        </div>
+      )}
+
+      <!-- Help Section -->
+      <div class="mt-8 bg-blue-50 border border-blue-200 rounded-xl p-6">
+        <h3 class="font-semibold text-blue-900 mb-2">¿Necesitás ayuda?</h3>
+        <p class="text-blue-800 mb-4">
+          Si tenés alguna pregunta sobre tu suscripción o facturación, nuestro equipo está disponible para ayudarte.
+        </p>
+        <a
+          href="/contacto"
+          class="inline-block px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          Contactar soporte
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Cancel Subscription Handler -->
+  <script>
+    document.getElementById('cancel-subscription-btn')?.addEventListener('click', async (e) => {
+      const button = e.currentTarget as HTMLButtonElement;
+      const subscriptionId = button.dataset.subscriptionId;
+
+      if (!subscriptionId) {
+        alert('Error: No se pudo identificar la suscripción');
+        return;
+      }
+
+      if (!confirm('¿Estás seguro que querés cancelar tu suscripción? Seguirás teniendo acceso hasta el final del período actual.')) {
+        return;
+      }
+
+      button.disabled = true;
+      button.textContent = 'Cancelando...';
+
+      try {
+        const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:3001';
+        const response = await fetch(`${apiUrl}/api/v1/billing/subscriptions/${subscriptionId}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include'
+        });
+
+        if (response.ok) {
+          alert('Tu suscripción ha sido cancelada. Seguirás teniendo acceso hasta el final del período actual.');
+          window.location.reload();
+        } else {
+          const error = await response.json();
+          alert(`Error al cancelar: ${error.error?.message || 'Error desconocido'}`);
+          button.disabled = false;
+          button.textContent = 'Cancelar suscripción';
+        }
+      } catch (error) {
+        console.error('Error canceling subscription:', error);
+        alert('Error al cancelar la suscripción. Por favor intentá nuevamente.');
+        button.disabled = false;
+        button.textContent = 'Cancelar suscripción';
+      }
+    });
+  </script>
+</Layout>

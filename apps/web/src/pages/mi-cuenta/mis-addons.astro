@@ -1,0 +1,112 @@
+---
+export const prerender = false; // SSR for authenticated content
+
+import Layout from '@/layout/MainLayout.astro';
+import { AddonManagement } from '@/components/dashboard';
+
+/**
+ * My Add-ons Management Page
+ * Allows users to view and manage their purchased add-ons
+ * Requires authentication
+ */
+
+// Check authentication (Clerk injects auth into Astro.locals via middleware)
+const { userId } = Astro.locals.auth();
+
+if (!userId) {
+	return Astro.redirect('/auth/sign-in?redirect=/mi-cuenta/mis-addons');
+}
+
+const title = 'Mis Complementos';
+const description = 'Administrá tus complementos activos, vencidos y cancelados';
+---
+
+<Layout title={title} description={description}>
+	<section class="min-h-screen bg-gray-50 py-16">
+		<div class="mx-auto max-w-7xl px-4">
+			<!-- Page Header -->
+			<div class="mb-8">
+				<h1 class="mb-2 font-bold text-4xl text-gray-900">Mis Complementos</h1>
+				<p class="text-gray-600">Gestioná todos tus complementos activos, vencidos y cancelados</p>
+			</div>
+
+			<!-- Breadcrumb -->
+			<nav class="mb-8" aria-label="Breadcrumb">
+				<ol class="flex items-center gap-2 text-sm">
+					<li>
+						<a href="/mi-cuenta/suscripcion" class="text-primary hover:underline">Mi Cuenta</a>
+					</li>
+					<li class="text-gray-400">/</li>
+					<li class="text-gray-600">Mis Complementos</li>
+				</ol>
+			</nav>
+
+			<!-- Quick Actions -->
+			<div class="mb-8 rounded-xl border border-primary/20 bg-gradient-to-r from-primary/10 to-blue-500/10 p-6">
+				<div class="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
+					<div>
+						<h2 class="mb-1 font-bold text-gray-900 text-lg">¿Necesitás más complementos?</h2>
+						<p class="text-gray-600 text-sm">
+							Explorá nuestro catálogo y potenciá tu plan con funcionalidades adicionales
+						</p>
+					</div>
+					<a
+						href="/mi-cuenta/addons"
+						class="rounded-lg bg-primary px-6 py-3 font-semibold text-white transition-colors hover:bg-primary/90"
+					>
+						Ver complementos disponibles
+					</a>
+				</div>
+			</div>
+
+			<!-- Add-on Management Component -->
+			<AddonManagement client:load />
+
+			<!-- Help Section -->
+			<div class="mt-8 rounded-xl border border-blue-200 bg-blue-50 p-6">
+				<div class="flex items-start gap-4">
+					<svg
+						class="mt-1 h-6 w-6 flex-shrink-0 text-blue-600"
+						fill="none"
+						stroke="currentColor"
+						viewBox="0 0 24 24"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+					</svg>
+					<div class="flex-1">
+						<h3 class="mb-2 font-semibold text-blue-900">¿Necesitás ayuda?</h3>
+						<p class="mb-4 text-blue-800">
+							Si tenés alguna pregunta sobre tus complementos o cómo gestionarlos, nuestro equipo
+							está disponible para ayudarte.
+						</p>
+						<div class="flex flex-wrap gap-3">
+							<a
+								href="/contacto"
+								class="inline-block rounded-lg bg-blue-600 px-6 py-2 font-semibold text-white transition-colors hover:bg-blue-700"
+							>
+								Contactar soporte
+							</a>
+							<a
+								href="/mi-cuenta/suscripcion"
+								class="inline-flex items-center gap-2 rounded-lg border-2 border-blue-600 bg-white px-6 py-2 font-semibold text-blue-600 transition-colors hover:bg-blue-50"
+							>
+								<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+								</svg>
+								Volver a mi suscripción
+							</a>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</section>
+</Layout>
