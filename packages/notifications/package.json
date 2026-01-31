@@ -1,0 +1,42 @@
+{
+    "name": "@repo/notifications",
+    "version": "0.0.0",
+    "private": true,
+    "type": "module",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+        }
+    },
+    "scripts": {
+        "build": "tsup",
+        "dev": "tsup --watch",
+        "typecheck": "tsc --noEmit",
+        "lint": "biome check .",
+        "format": "biome format --write .",
+        "check": "biome check --write .",
+        "clean": "rm -rf node_modules && rm -rf dist",
+        "test": "vitest run --passWithNoTests",
+        "test:watch": "vitest --passWithNoTests",
+        "test:coverage": "vitest run --coverage"
+    },
+    "dependencies": {
+        "@react-email/components": "^0.0.30",
+        "@repo/config": "workspace:*",
+        "@repo/db": "workspace:*",
+        "@repo/logger": "workspace:*",
+        "ioredis": "^5.4.0",
+        "react": "^19.1.1",
+        "resend": "^4.0.0"
+    },
+    "devDependencies": {
+        "@repo/typescript-config": "workspace:*",
+        "@types/react": "^19.0.0",
+        "@types/react-dom": "^19.2.3",
+        "react-dom": "19.1.1",
+        "tsup": "^8.3.5",
+        "typescript": "^5.8.3",
+        "vitest": "^3.1.3"
+    }
+}
