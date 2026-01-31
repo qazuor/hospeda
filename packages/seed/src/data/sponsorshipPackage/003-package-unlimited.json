@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/sponsorshipPackage.schema.json",
+    "id": "003-package-unlimited",
+    "slug": "unlimited-package",
+    "name": "Unlimited Package",
+    "description": "Premium sponsorship package with unlimited posts and events per month",
+    "priceAmount": 6000000,
+    "priceCurrency": "ARS",
+    "includedPosts": 999999,
+    "includedEvents": 999999,
+    "eventLevelId": "003-level-event-gold",
+    "sortOrder": 3,
+    "isActive": true
+}

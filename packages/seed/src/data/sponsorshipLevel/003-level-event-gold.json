@@ -1,0 +1,21 @@
+{
+    "$schema": "../../schemas/sponsorshipLevel.schema.json",
+    "id": "003-level-event-gold",
+    "slug": "event-gold",
+    "name": "Gold Event",
+    "description": "Premium event sponsorship with all benefits including newsletter mention and priority placement",
+    "targetType": "EVENT",
+    "tier": "GOLD",
+    "priceAmount": 2000000,
+    "priceCurrency": "ARS",
+    "benefits": [
+        "Logo placement on event page",
+        "Clickable link to sponsor website",
+        "Exclusive discount coupon for event attendees",
+        "Featured mention in newsletter",
+        "Priority placement in sponsor list",
+        "Enhanced brand visibility"
+    ],
+    "sortOrder": 3,
+    "isActive": true
+}

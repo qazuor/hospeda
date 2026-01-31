@@ -1,0 +1,19 @@
+{
+    "$schema": "../../schemas/sponsorshipLevel.schema.json",
+    "id": "002-level-event-silver",
+    "slug": "event-silver",
+    "name": "Silver Event",
+    "description": "Enhanced event sponsorship with logo, link, and attendee discount coupon",
+    "targetType": "EVENT",
+    "tier": "SILVER",
+    "priceAmount": 1000000,
+    "priceCurrency": "ARS",
+    "benefits": [
+        "Logo placement on event page",
+        "Clickable link to sponsor website",
+        "Exclusive discount coupon for event attendees",
+        "Brand visibility to event attendees"
+    ],
+    "sortOrder": 2,
+    "isActive": true
+}

@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/sponsorshipPackage.schema.json",
+    "id": "002-package-professional",
+    "slug": "professional-package",
+    "name": "Professional Package",
+    "description": "Professional sponsorship package with 5 posts and 2 Gold events per month",
+    "priceAmount": 3500000,
+    "priceCurrency": "ARS",
+    "includedPosts": 5,
+    "includedEvents": 2,
+    "eventLevelId": "003-level-event-gold",
+    "sortOrder": 2,
+    "isActive": true
+}

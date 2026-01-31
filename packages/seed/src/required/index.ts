@@ -4,9 +4,15 @@ import type { SeedContext } from '../utils/seedContext.js';
 import { summaryTracker } from '../utils/summaryTracker.js';
 import { seedAmenities } from './amenities.seed.js';
 import { seedAttractions } from './attractions.seed.js';
+import { seedBillingAddons } from './billingAddons.seed.js';
+import { seedBillingEntitlements } from './billingEntitlements.seed.js';
+import { seedBillingLimits } from './billingLimits.seed.js';
+import { seedBillingPlans } from './billingPlans.seed.js';
 import { seedDestinations } from './destinations.seed.js';
 import { seedFeatures } from './features.seed.js';
 import { seedRolePermissions } from './rolePermissions.seed.js';
+import { seedSponsorshipLevels } from './sponsorshipLevels.seed.js';
+import { seedSponsorshipPackages } from './sponsorshipPackages.seed.js';
 import { seedUsers } from './users.seed.js';
 
 /**
@@ -19,6 +25,8 @@ import { seedUsers } from './users.seed.js';
  * - Amenities and features
  * - Attractions
  * - Destinations with their relationships
+ * - Sponsorship levels and packages
+ * - Billing entitlements, limits, plans, and add-ons
  *
  * The seeds are executed in a specific order to ensure that:
  * - Dependencies are available before they're needed
@@ -38,6 +46,12 @@ import { seedUsers } from './users.seed.js';
  * // 4. Features
  * // 5. Attractions
  * // 6. Destinations with attractions
+ * // 7. Sponsorship levels
+ * // 8. Sponsorship packages
+ * // 9. Billing entitlements
+ * // 10. Billing limits
+ * // 11. Billing plans
+ * // 12. Billing add-ons
  * ```
  *
  * @throws {Error} When seeding fails and continueOnError is false
@@ -67,6 +81,24 @@ export async function runRequiredSeeds(context: SeedContext): Promise<void> {
 
         // 6. Load destinations (uses ID mapping for relationships)
         await seedDestinations(context);
+
+        // 7. Load sponsorship levels (before packages to have ID mapping)
+        await seedSponsorshipLevels(context);
+
+        // 8. Load sponsorship packages (uses ID mapping for eventLevelId)
+        await seedSponsorshipPackages(context);
+
+        // 9. Load billing entitlements (before plans to have entitlements available)
+        await seedBillingEntitlements(context);
+
+        // 10. Load billing limits (before plans to have limit definitions available)
+        await seedBillingLimits(context);
+
+        // 11. Load billing plans (uses entitlements and limits)
+        await seedBillingPlans(context);
+
+        // 12. Load billing add-ons (after plans, uses entitlements and limits)
+        await seedBillingAddons(context);
 
         logger.info(`${separator}`);
         // biome-ignore lint/suspicious/noConsoleLog: <explanation>

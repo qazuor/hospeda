@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/sponsorshipPackage.schema.json",
+    "id": "001-package-basic",
+    "slug": "basic-package",
+    "name": "Basic Package",
+    "description": "Entry-level sponsorship package with 3 posts and 1 Silver event per month",
+    "priceAmount": 1500000,
+    "priceCurrency": "ARS",
+    "includedPosts": 3,
+    "includedEvents": 1,
+    "eventLevelId": "002-level-event-silver",
+    "sortOrder": 1,
+    "isActive": true
+}

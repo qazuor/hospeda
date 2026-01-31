@@ -276,5 +276,21 @@
         "078-feature-no_cell_signal.json",
         "079-feature-solar_showers.json",
         "080-feature-workshop_training_space.json"
-    ]
+    ],
+    "sponsorshipLevels": [
+        "001-level-event-bronze.json",
+        "002-level-event-silver.json",
+        "003-level-event-gold.json",
+        "004-level-post-standard.json",
+        "005-level-post-premium.json"
+    ],
+    "sponsorshipPackages": [
+        "001-package-basic.json",
+        "002-package-professional.json",
+        "003-package-unlimited.json"
+    ],
+    "billingEntitlements": [],
+    "billingLimits": [],
+    "billingPlans": [],
+    "billingAddons": []
 }

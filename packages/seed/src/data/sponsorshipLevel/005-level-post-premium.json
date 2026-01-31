@@ -1,0 +1,20 @@
+{
+    "$schema": "../../schemas/sponsorshipLevel.schema.json",
+    "id": "005-level-post-premium",
+    "slug": "post-premium",
+    "name": "Premium Post",
+    "description": "Premium post sponsorship with all benefits including newsletter mention",
+    "targetType": "POST",
+    "tier": "GOLD",
+    "priceAmount": 600000,
+    "priceCurrency": "ARS",
+    "benefits": [
+        "Banner placement on post",
+        "Clickable link to sponsor website",
+        "\"Sponsored by\" mention on post",
+        "Featured mention in newsletter",
+        "Enhanced brand visibility"
+    ],
+    "sortOrder": 5,
+    "isActive": true
+}

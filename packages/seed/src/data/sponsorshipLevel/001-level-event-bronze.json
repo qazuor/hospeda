@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/sponsorshipLevel.schema.json",
+    "id": "001-level-event-bronze",
+    "slug": "event-bronze",
+    "name": "Bronze Event",
+    "description": "Basic event sponsorship with logo placement on event page",
+    "targetType": "EVENT",
+    "tier": "BRONZE",
+    "priceAmount": 500000,
+    "priceCurrency": "ARS",
+    "benefits": ["Logo placement on event page", "Brand visibility to event attendees"],
+    "sortOrder": 1,
+    "isActive": true
+}
