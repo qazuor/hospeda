@@ -376,7 +376,7 @@ Used Clerk for authentication as decided in ADR-003. Middleware validates JWT on
 
 ## PR Size Guidelines
 
-#### Keep PRs small for faster reviews and easier understanding.
+#### Keep PRs small for faster reviews and easier understanding
 
 ### Size Categories
 

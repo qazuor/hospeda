@@ -1,0 +1,51 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "pnpm build",
+  "devCommand": "pnpm dev",
+  "installCommand": "pnpm install",
+  "framework": null,
+  "outputDirectory": "dist",
+
+  "crons": [
+    {
+      "path": "/api/v1/cron/check-trial-expiry",
+      "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/v1/cron/retry-failed-webhooks",
+      "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/v1/cron/send-scheduled-notifications",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/v1/cron/check-addon-expiry",
+      "schedule": "0 1 * * *"
+    }
+  ],
+
+  "env": {
+    "NODE_ENV": "production",
+    "CRON_ADAPTER": "vercel"
+  },
+
+  "headers": [
+    {
+      "source": "/api/v1/cron/(.*)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
+    }
+  ],
+
+  "rewrites": [
+    {
+      "source": "/api/v1/(.*)",
+      "destination": "/api/v1/$1"
+    }
+  ]
+}
