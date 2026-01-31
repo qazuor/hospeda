@@ -1,6 +1,6 @@
 # TODOs: Monetization System Phase 2 - Post-Launch Enhancements
 
-Spec: SPEC-002 | Status: in-progress | Progress: 46/55
+Spec: SPEC-002 | Status: in-progress | Progress: 50/55
 
 ## Setup — 8/8 ✅
 
@@ -43,13 +43,13 @@ Spec: SPEC-002 | Status: in-progress | Progress: 46/55
 - [x] T-031: Create webhook-retry cron job (complexity: 5) ✅
 - [x] T-032: Wire cron bootstrap into API server startup (complexity: 3) ✅
 
-## UI — 6/10
+## UI — 10/10 ✅
 
-- [ ] T-033: Build Active Add-ons widget (web dashboard) (complexity: 5) ⚠️ PARTIAL — mis-addons.astro exists but basic
-- [ ] T-034: Build Usage Meters component with progress bars (complexity: 5) ❌ not implemented
+- [x] T-033: Build Active Add-ons widget (web dashboard) (complexity: 5) ✅ ActiveAddons.tsx + AddonManagement.tsx complete
+- [x] T-034: Build Usage Meters component with progress bars (complexity: 5) ✅ UsageMeters.tsx with 4-tier color thresholds
 - [x] T-035: Build Add-on Management page (complexity: 6) ✅
-- [ ] T-036: Build Billing History component (complexity: 5) ⚠️ PARTIAL — billing.astro exists but basic (3.1KB)
-- [ ] T-037: Enhance /mi-cuenta page integrating dashboard widgets (complexity: 4) ⚠️ PARTIAL — pages exist, widgets not fully integrated
+- [x] T-036: Build Billing History component (complexity: 5) ✅ BillingHistory.tsx with pagination + filtering
+- [x] T-037: Enhance /mi-cuenta page integrating dashboard widgets (complexity: 4) ✅ suscripcion.astro integrates all 3 widgets
 - [x] T-038: Implement admin Billing Add-ons table with real data (complexity: 6) ✅
 - [x] T-039: Implement admin Usage Analytics view (complexity: 6) ✅
 - [x] T-040: Implement admin Notification Log viewer (complexity: 5) ✅

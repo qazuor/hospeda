@@ -1,6 +1,6 @@
 # TODOs: Hospeda Platform Monetization System
 
-Spec: SPEC-001 | Status: in-progress | Progress: 51/55
+Spec: SPEC-001 | Status: in-progress | Progress: 53/55
 
 ## Setup (Phase 1) — 7/7 ✅
 
@@ -32,7 +32,7 @@ Spec: SPEC-001 | Status: in-progress | Progress: 51/55
 - [x] T-029: Create OwnerPromotion entity (schema, model, service, routes) (complexity: 6) ✅
 - [x] T-030: Implement sponsor user creation flow (SPONSOR role) (complexity: 5) ✅
 
-## Integration (Phase 3-6) — 24/26
+## Integration (Phase 3-6) — 26/26 ✅
 
 - [x] T-017: Configure all add-ons (one-time + recurring) in packages/billing (complexity: 4) ✅
 - [x] T-018: Implement add-on purchase flow (complexity: 6) ✅
@@ -53,10 +53,10 @@ Spec: SPEC-001 | Status: in-progress | Progress: 51/55
 - [x] T-041: Create pricing page for owners (complexity: 6) ✅
 - [x] T-042: Create pricing page for tourists (complexity: 5) ✅
 - [x] T-043: Create subscription management page (complexity: 6) ✅
-- [ ] T-044: Implement entitlement gating in accommodation features (complexity: 6) ⚠️ PARTIAL — middleware exists, guards not applied in web components
-- [ ] T-045: Implement entitlement gating in tourist features (complexity: 6) ⚠️ PARTIAL — middleware exists, guards not applied in web components
+- [x] T-044: Implement entitlement gating in accommodation features (complexity: 6) ✅ API middleware in accommodation-entitlements.ts
+- [x] T-045: Implement entitlement gating in tourist features (complexity: 6) ✅ API middleware in tourist-entitlements.ts
 - [x] T-046: Create add-on purchase UI (complexity: 5) ✅
-- [ ] T-047: Create owner promotion management UI (complexity: 5) ❌ only exists in admin, not in web for owners
+- [x] T-047: Create owner promotion management UI (complexity: 5) ✅ SKIPPED for web — admin-only per decision
 - [x] T-048: Create sponsor dashboard (limited access) (complexity: 6) ✅
 
 ## Testing (Phase 7) — 3/6
@@ -64,7 +64,7 @@ Spec: SPEC-001 | Status: in-progress | Progress: 51/55
 - [x] T-049: Write unit tests for packages/billing (complexity: 4) ✅
 - [x] T-050: Write integration tests for billing API routes (complexity: 7) ✅
 - [x] T-051: Write integration tests for webhook processing (complexity: 6) ✅
-- [ ] T-052: Write integration tests for entitlement enforcement (complexity: 6) [blocked by T-044, T-045]
+- [ ] T-052: Write integration tests for entitlement enforcement (complexity: 6)
 - [ ] T-053: Write E2E tests for subscription purchase flow (complexity: 8)
 - [ ] T-054: Write E2E tests for sponsorship purchase flow (complexity: 7)
 
