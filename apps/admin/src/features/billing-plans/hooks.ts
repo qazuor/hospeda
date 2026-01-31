@@ -19,7 +19,6 @@ export const planQueryKeys = {
 
 /**
  * Fetch plans with filters
- * TODO: Replace with actual API endpoint once qzpay-hono billing routes are implemented
  */
 async function fetchPlans(filters: Record<string, unknown> = {}) {
     const params = new URLSearchParams();
@@ -30,8 +29,6 @@ async function fetchPlans(filters: Record<string, unknown> = {}) {
         }
     }
 
-    // TODO: Update endpoint when API is ready
-    // Expected endpoint: GET /api/v1/billing/plans
     const response = await fetch(`${API_BASE}/billing/plans?${params.toString()}`, {
         credentials: 'include'
     });
@@ -46,11 +43,8 @@ async function fetchPlans(filters: Record<string, unknown> = {}) {
 
 /**
  * Create a new plan
- * TODO: Replace with actual API endpoint once qzpay-hono billing routes are implemented
  */
 async function createPlan(payload: CreatePlanPayload) {
-    // TODO: Update endpoint when API is ready
-    // Expected endpoint: POST /api/v1/billing/plans
     const response = await fetch(`${API_BASE}/billing/plans`, {
         method: 'POST',
         headers: {
@@ -71,11 +65,8 @@ async function createPlan(payload: CreatePlanPayload) {
 
 /**
  * Update an existing plan
- * TODO: Replace with actual API endpoint once qzpay-hono billing routes are implemented
  */
 async function updatePlan({ id, ...payload }: UpdatePlanPayload) {
-    // TODO: Update endpoint when API is ready
-    // Expected endpoint: PUT /api/v1/billing/plans/:id
     const response = await fetch(`${API_BASE}/billing/plans/${id}`, {
         method: 'PUT',
         headers: {
@@ -96,11 +87,8 @@ async function updatePlan({ id, ...payload }: UpdatePlanPayload) {
 
 /**
  * Toggle plan active status
- * TODO: Replace with actual API endpoint once qzpay-hono billing routes are implemented
  */
 async function togglePlanActive(id: string, isActive: boolean) {
-    // TODO: Update endpoint when API is ready
-    // Expected endpoint: PATCH /api/v1/billing/plans/:id
     const response = await fetch(`${API_BASE}/billing/plans/${id}`, {
         method: 'PATCH',
         headers: {
@@ -121,11 +109,8 @@ async function togglePlanActive(id: string, isActive: boolean) {
 
 /**
  * Delete a plan
- * TODO: Replace with actual API endpoint once qzpay-hono billing routes are implemented
  */
 async function deletePlan(id: string) {
-    // TODO: Update endpoint when API is ready
-    // Expected endpoint: DELETE /api/v1/billing/plans/:id
     const response = await fetch(`${API_BASE}/billing/plans/${id}`, {
         method: 'DELETE',
         credentials: 'include'

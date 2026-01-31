@@ -367,21 +367,9 @@ function SubscriptionDetailsDialog({
 
     const plan = getPlanBySlug(subscription.planSlug);
 
-    // Mock payment history
-    const paymentHistory: PaymentHistory[] = [
-        {
-            id: '1',
-            date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-            amount: subscription.monthlyAmount,
-            status: 'paid'
-        },
-        {
-            id: '2',
-            date: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
-            amount: subscription.monthlyAmount,
-            status: 'paid'
-        }
-    ];
+    // TODO: Payment history should come from API endpoint
+    // Expected endpoint: GET /api/v1/billing/subscriptions/:id/payments
+    const paymentHistory: PaymentHistory[] = [];
 
     return (
         <Dialog
@@ -496,51 +484,66 @@ function SubscriptionDetailsDialog({
                     {/* Payment history */}
                     <div>
                         <h3 className="mb-2 font-medium text-sm">Historial de pagos</h3>
-                        <div className="overflow-hidden rounded-md border">
-                            <table className="w-full text-sm">
-                                <thead className="bg-muted">
-                                    <tr>
-                                        <th className="px-3 py-2 text-left font-medium">Fecha</th>
-                                        <th className="px-3 py-2 text-right font-medium">Monto</th>
-                                        <th className="px-3 py-2 text-center font-medium">
-                                            Estado
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {paymentHistory.map((payment) => (
-                                        <tr
-                                            key={payment.id}
-                                            className="border-t"
-                                        >
-                                            <td className="px-3 py-2">
-                                                {formatDate(payment.date)}
-                                            </td>
-                                            <td className="px-3 py-2 text-right">
-                                                {formatArs(payment.amount)}
-                                            </td>
-                                            <td className="px-3 py-2 text-center">
-                                                <Badge
-                                                    variant={
-                                                        payment.status === 'paid'
-                                                            ? 'default'
-                                                            : payment.status === 'pending'
-                                                              ? 'secondary'
-                                                              : 'destructive'
-                                                    }
-                                                >
-                                                    {payment.status === 'paid'
-                                                        ? 'Pagado'
-                                                        : payment.status === 'pending'
-                                                          ? 'Pendiente'
-                                                          : 'Fallido'}
-                                                </Badge>
-                                            </td>
+                        {paymentHistory.length === 0 ? (
+                            <div className="rounded-md border p-6 text-center">
+                                <p className="text-muted-foreground text-sm">
+                                    No hay historial de pagos disponible
+                                </p>
+                                <p className="mt-1 text-muted-foreground text-xs">
+                                    El historial se mostrará cuando se procesen los pagos
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="overflow-hidden rounded-md border">
+                                <table className="w-full text-sm">
+                                    <thead className="bg-muted">
+                                        <tr>
+                                            <th className="px-3 py-2 text-left font-medium">
+                                                Fecha
+                                            </th>
+                                            <th className="px-3 py-2 text-right font-medium">
+                                                Monto
+                                            </th>
+                                            <th className="px-3 py-2 text-center font-medium">
+                                                Estado
+                                            </th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                                    </thead>
+                                    <tbody>
+                                        {paymentHistory.map((payment) => (
+                                            <tr
+                                                key={payment.id}
+                                                className="border-t"
+                                            >
+                                                <td className="px-3 py-2">
+                                                    {formatDate(payment.date)}
+                                                </td>
+                                                <td className="px-3 py-2 text-right">
+                                                    {formatArs(payment.amount)}
+                                                </td>
+                                                <td className="px-3 py-2 text-center">
+                                                    <Badge
+                                                        variant={
+                                                            payment.status === 'paid'
+                                                                ? 'default'
+                                                                : payment.status === 'pending'
+                                                                  ? 'secondary'
+                                                                  : 'destructive'
+                                                        }
+                                                    >
+                                                        {payment.status === 'paid'
+                                                            ? 'Pagado'
+                                                            : payment.status === 'pending'
+                                                              ? 'Pendiente'
+                                                              : 'Fallido'}
+                                                    </Badge>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
                     </div>
 
                     {/* Actions */}

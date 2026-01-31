@@ -30,7 +30,6 @@ export const addonQueryKeys = {
 
 /**
  * Fetch add-ons with filters
- * TODO: Replace with actual API endpoint once qzpay-hono billing routes are implemented
  */
 async function fetchAddons(filters: Record<string, unknown> = {}) {
     const params = new URLSearchParams();
@@ -41,8 +40,6 @@ async function fetchAddons(filters: Record<string, unknown> = {}) {
         }
     }
 
-    // TODO: Update endpoint when API is ready
-    // Expected endpoint: GET /api/v1/billing/addons
     const response = await fetch(`${API_BASE}/billing/addons?${params.toString()}`, {
         credentials: 'include'
     });
@@ -83,11 +80,8 @@ async function fetchPurchasedAddons(
 
 /**
  * Create a new add-on
- * TODO: Replace with actual API endpoint once qzpay-hono billing routes are implemented
  */
 async function createAddon(payload: CreateAddonPayload) {
-    // TODO: Update endpoint when API is ready
-    // Expected endpoint: POST /api/v1/billing/addons
     const response = await fetch(`${API_BASE}/billing/addons`, {
         method: 'POST',
         headers: {
@@ -108,11 +102,8 @@ async function createAddon(payload: CreateAddonPayload) {
 
 /**
  * Update an existing add-on
- * TODO: Replace with actual API endpoint once qzpay-hono billing routes are implemented
  */
 async function updateAddon({ id, ...payload }: UpdateAddonPayload) {
-    // TODO: Update endpoint when API is ready
-    // Expected endpoint: PUT /api/v1/billing/addons/:id
     const response = await fetch(`${API_BASE}/billing/addons/${id}`, {
         method: 'PUT',
         headers: {
@@ -133,11 +124,8 @@ async function updateAddon({ id, ...payload }: UpdateAddonPayload) {
 
 /**
  * Toggle add-on active status
- * TODO: Replace with actual API endpoint once qzpay-hono billing routes are implemented
  */
 async function toggleAddonActive(id: string, isActive: boolean) {
-    // TODO: Update endpoint when API is ready
-    // Expected endpoint: PATCH /api/v1/billing/addons/:id
     const response = await fetch(`${API_BASE}/billing/addons/${id}`, {
         method: 'PATCH',
         headers: {
@@ -158,11 +146,8 @@ async function toggleAddonActive(id: string, isActive: boolean) {
 
 /**
  * Delete an add-on
- * TODO: Replace with actual API endpoint once qzpay-hono billing routes are implemented
  */
 async function deleteAddon(id: string) {
-    // TODO: Update endpoint when API is ready
-    // Expected endpoint: DELETE /api/v1/billing/addons/:id
     const response = await fetch(`${API_BASE}/billing/addons/${id}`, {
         method: 'DELETE',
         credentials: 'include'
