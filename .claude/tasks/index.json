@@ -4,9 +4,16 @@
         {
             "specId": "SPEC-001",
             "title": "Hospeda Platform Monetization System",
-            "status": "in-progress",
-            "progress": "13/55",
+            "status": "completed",
+            "progress": "76/76",
             "path": "SPEC-001-monetization-system"
+        },
+        {
+            "specId": "SPEC-002",
+            "title": "Monetization System Phase 2 - Post-Launch Enhancements",
+            "status": "completed",
+            "progress": "79/79",
+            "path": "SPEC-002-monetization-phase2"
         }
     ],
     "standalone": {
