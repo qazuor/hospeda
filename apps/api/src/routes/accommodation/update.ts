@@ -6,6 +6,7 @@ import { z } from '@hono/zod-openapi';
 import { AccommodationSchema, AccommodationUpdateInputSchema } from '@repo/schemas';
 import { AccommodationService } from '@repo/service-core';
 import type { Context } from 'hono';
+import { gateRichDescription, gateVideoEmbed } from '../../middlewares/accommodation-entitlements';
 import { getActorFromContext } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
 import { createCRUDRoute } from '../../utils/route-factory';
@@ -48,6 +49,10 @@ export const updateAccommodationRoute = createCRUDRoute({
         return result.data;
     },
     options: {
-        customRateLimit: { requests: 20, windowMs: 60000 } // 20 requests per minute
+        customRateLimit: { requests: 20, windowMs: 60000 }, // 20 requests per minute
+        middlewares: [
+            gateRichDescription(), // Strip markdown if user lacks CAN_USE_RICH_DESCRIPTION
+            gateVideoEmbed() // Strip video content if user lacks CAN_EMBED_VIDEO
+        ]
     }
 });

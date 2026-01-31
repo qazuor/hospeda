@@ -27,9 +27,14 @@
         "@hono/node-server": "^1.17.1",
         "@hono/swagger-ui": "^0.5.2",
         "@hono/zod-openapi": "^1.0.2",
+        "@qazuor/qzpay-core": "^1.1.0",
+        "@qazuor/qzpay-hono": "^1.1.0",
+        "@qazuor/qzpay-mercadopago": "^1.1.0",
+        "@repo/billing": "workspace:*",
         "@repo/config": "workspace:*",
         "@repo/db": "workspace:*",
         "@repo/logger": "workspace:*",
+        "@repo/notifications": "workspace:*",
         "@repo/schemas": "workspace:*",
         "@repo/service-core": "workspace:*",
         "@repo/utils": "workspace:*",
@@ -38,6 +43,7 @@
         "hono": "^4.7.8",
         "hono-rate-limiter": "^0.4.2",
         "lru-cache": "^11.1.0",
+        "mercadopago": "^2.12.0",
         "pg": "^8.15.6",
         "sanitize-html": "^2.17.0",
         "svix": "^1.73.0",
@@ -47,6 +53,7 @@
         "@repo/typescript-config": "workspace:*",
         "@types/lru-cache": "^7.10.10",
         "@types/node": "^22.15.3",
+        "@types/node-cron": "^3.0.11",
         "@types/pg": "^8.15.1",
         "@types/sanitize-html": "^2.16.0",
         "@vitest/coverage-v8": "^2.1.8",
@@ -54,5 +61,8 @@
         "tsx": "^4.7.1",
         "typescript": "^5.8.3",
         "vitest": "^2.1.8"
+    },
+    "optionalDependencies": {
+        "node-cron": "^3.0.3"
     }
 }

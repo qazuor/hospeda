@@ -1,4 +1,6 @@
 import type { OpenAPIHono, RouteConfig, RouteHandler } from '@hono/zod-openapi';
+import type { QZPayBilling } from '@qazuor/qzpay-core';
+import type { EntitlementKey, LimitKey } from '@repo/billing';
 import type { Actor } from '@repo/service-core';
 import type { MiddlewareHandler, Schema } from 'hono';
 import type { ApiLogger } from './utils/logger';
@@ -7,6 +9,12 @@ export interface AppBindings {
     Variables: {
         logger: ApiLogger;
         actor: Actor;
+        qzpay?: QZPayBilling;
+        billingEnabled?: boolean;
+        billingCustomerId?: string | null;
+        userEntitlements: Set<EntitlementKey>;
+        userLimits: Map<LimitKey, number>;
+        webhookEventId?: string;
     };
 }
 

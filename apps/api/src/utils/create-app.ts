@@ -4,9 +4,12 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { requestId } from 'hono/request-id';
 import { actorMiddleware } from '../middlewares/actor';
 import { clerkAuth } from '../middlewares/auth';
+import { billingMiddleware } from '../middlewares/billing';
+import { billingCustomerMiddleware } from '../middlewares/billing-customer';
 import { cacheMiddleware } from '../middlewares/cache';
 import { compressionMiddleware } from '../middlewares/compression';
 import { corsMiddleware } from '../middlewares/cors';
+import { entitlementMiddleware } from '../middlewares/entitlement';
 import { loggerMiddleware } from '../middlewares/logger';
 import { metricsMiddleware } from '../middlewares/metrics';
 import { rateLimitMiddleware } from '../middlewares/rate-limit';
@@ -93,6 +96,15 @@ export default function createApp() {
 
     // Authentication and authorization
     app.use(wrapMiddleware(clerkAuth())).use(wrapMiddleware(actorMiddleware()));
+
+    // Billing context (after authentication)
+    app.use(wrapMiddleware(billingMiddleware));
+
+    // Billing customer sync (after billing middleware)
+    app.use(wrapMiddleware(billingCustomerMiddleware()));
+
+    // Entitlement checking (after billing customer middleware)
+    app.use(wrapMiddleware(entitlementMiddleware()));
 
     app.notFound(notFound);
 

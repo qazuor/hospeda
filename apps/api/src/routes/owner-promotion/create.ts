@@ -10,6 +10,7 @@ import {
 } from '@repo/schemas';
 import { OwnerPromotionService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
+import { enforcePromotionLimit } from '../../middlewares/limit-enforcement';
 import { getActorFromContext } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
 import { createProtectedRoute } from '../../utils/route-factory';
@@ -42,5 +43,8 @@ export const createOwnerPromotionRoute = createProtectedRoute({
         }
 
         return result.data;
+    },
+    options: {
+        middlewares: [enforcePromotionLimit()] // Check promotion limit before creation
     }
 });

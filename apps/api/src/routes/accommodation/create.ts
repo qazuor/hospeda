@@ -2,6 +2,8 @@ import { AccommodationCreateInputSchema, AccommodationSchema } from '@repo/schem
 import { AccommodationService } from '@repo/service-core';
 import type { Context } from 'hono';
 import type { z } from 'zod';
+import { gateRichDescription, gateVideoEmbed } from '../../middlewares/accommodation-entitlements';
+import { enforceAccommodationLimit } from '../../middlewares/limit-enforcement';
 import { getActorFromContext } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
 import { createCRUDRoute } from '../../utils/route-factory';
@@ -41,6 +43,11 @@ export const createAccommodationRoute = createCRUDRoute({
         return result.data;
     },
     options: {
-        customRateLimit: { requests: 10, windowMs: 60000 } // 10 requests per minute
+        customRateLimit: { requests: 10, windowMs: 60000 }, // 10 requests per minute
+        middlewares: [
+            enforceAccommodationLimit(), // Check accommodation limit before creation
+            gateRichDescription(), // Strip markdown if user lacks CAN_USE_RICH_DESCRIPTION
+            gateVideoEmbed() // Strip video content if user lacks CAN_EMBED_VIDEO
+        ]
     }
 });

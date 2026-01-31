@@ -26,3 +26,58 @@ export {
 } from './response-schemas';
 
 export type { ApiResponse, PaginationData } from './response-schemas';
+
+// Add-on schemas
+export {
+    AddonBillingTypeSchema,
+    AddonResponseSchema,
+    AddonTargetCategorySchema,
+    CancelAddonSchema,
+    ListAddonsQuerySchema,
+    PurchaseAddonResponseSchema,
+    PurchaseAddonSchema,
+    UserAddonResponseSchema
+} from './addon.schema';
+
+export type {
+    AddonResponse,
+    CancelAddon,
+    ListAddonsQuery,
+    PurchaseAddon,
+    PurchaseAddonResponse,
+    UserAddonResponse
+} from './addon.schema';
+
+// Notification schemas
+export {
+    ListNotificationLogsQuerySchema,
+    NotificationLogResponseSchema,
+    NotificationLogsListResponseSchema
+} from './notification.schema';
+
+export type {
+    ListNotificationLogsQuery,
+    NotificationLogResponse,
+    NotificationLogsListResponse
+} from './notification.schema';
+
+// Webhook schemas
+export {
+    DeadLetterEntryResponseSchema,
+    DeadLetterQueueListResponseSchema,
+    DeadLetterRetryResponseSchema,
+    ListDeadLetterQueueQuerySchema,
+    ListWebhookEventsQuerySchema,
+    WebhookEventResponseSchema,
+    WebhookEventsListResponseSchema
+} from './webhook.schema';
+
+export type {
+    DeadLetterEntryResponse,
+    DeadLetterQueueListResponse,
+    DeadLetterRetryResponse,
+    ListDeadLetterQueueQuery,
+    ListWebhookEventsQuery,
+    WebhookEventResponse,
+    WebhookEventsListResponse
+} from './webhook.schema';

@@ -1,0 +1,246 @@
+/**
+ * Trial Routes
+ *
+ * API endpoints for managing 14-day trial lifecycle.
+ * Provides trial status checking and expiry management.
+ *
+ * Routes:
+ * - GET  /api/v1/billing/trial/status - Get current trial status (authenticated)
+ * - POST /api/v1/billing/trial/start - Start trial for new user (internal/auth-sync)
+ * - POST /api/v1/billing/trial/check-expiry - Trigger expired trial check (admin only)
+ *
+ * @module routes/billing/trial
+ */
+
+import { HTTPException } from 'hono/http-exception';
+import { z } from 'zod';
+import { getQZPayBilling } from '../../middlewares/billing';
+import { TrialService } from '../../services/trial.service';
+import { createRouter } from '../../utils/create-app';
+import { apiLogger } from '../../utils/logger';
+import { createSimpleRoute } from '../../utils/route-factory';
+
+/**
+ * Trial status response schema
+ */
+const trialStatusResponseSchema = z.object({
+    isOnTrial: z.boolean(),
+    isExpired: z.boolean(),
+    startedAt: z.string().nullable(),
+    expiresAt: z.string().nullable(),
+    daysRemaining: z.number(),
+    planSlug: z.string().nullable()
+});
+
+/**
+ * Start trial request schema
+ */
+const startTrialRequestSchema = z.object({
+    customerId: z.string(),
+    userType: z.enum(['owner', 'complex'])
+});
+
+/**
+ * Start trial response schema
+ */
+const startTrialResponseSchema = z.object({
+    success: z.boolean(),
+    subscriptionId: z.string().nullable(),
+    message: z.string().optional()
+});
+
+/**
+ * Check expiry response schema
+ */
+const checkExpiryResponseSchema = z.object({
+    success: z.boolean(),
+    blockedCount: z.number(),
+    message: z.string()
+});
+
+/**
+ * GET /api/v1/billing/trial/status
+ * Get trial status for authenticated user
+ */
+export const getTrialStatusRoute = createSimpleRoute({
+    method: 'get',
+    path: '/status',
+    summary: 'Get trial status',
+    description: 'Returns current trial status for the authenticated user',
+    tags: ['Billing', 'Trial'],
+    responseSchema: trialStatusResponseSchema,
+    handler: async (c) => {
+        const billingEnabled = c.get('billingEnabled');
+
+        if (!billingEnabled) {
+            throw new HTTPException(503, {
+                message: 'Billing service is not configured'
+            });
+        }
+
+        const billingCustomerId = c.get('billingCustomerId');
+
+        if (!billingCustomerId) {
+            throw new HTTPException(400, {
+                message: 'No billing account found'
+            });
+        }
+
+        const billing = getQZPayBilling();
+        const trialService = new TrialService(billing);
+
+        const status = await trialService.getTrialStatus({
+            customerId: billingCustomerId
+        });
+
+        return status;
+    }
+});
+
+/**
+ * POST /api/v1/billing/trial/start
+ * Start trial for a new user (internal use)
+ *
+ * This is typically called by the auth sync service when a new user registers.
+ * Can also be called manually for testing or admin purposes.
+ */
+export const startTrialRoute = createSimpleRoute({
+    method: 'post',
+    path: '/start',
+    summary: 'Start trial',
+    description: 'Start a trial subscription for a new user',
+    tags: ['Billing', 'Trial'],
+    options: { skipAuth: true }, // Allow internal calls
+    responseSchema: startTrialResponseSchema,
+    handler: async (c) => {
+        const billingEnabled = c.get('billingEnabled');
+
+        if (!billingEnabled) {
+            throw new HTTPException(503, {
+                message: 'Billing service is not configured'
+            });
+        }
+
+        // Parse request body
+        const body = await c.req.json();
+        const parseResult = startTrialRequestSchema.safeParse(body);
+
+        if (!parseResult.success) {
+            throw new HTTPException(400, {
+                message: 'Invalid request body',
+                cause: parseResult.error.flatten()
+            });
+        }
+
+        const { customerId, userType } = parseResult.data;
+
+        const billing = getQZPayBilling();
+        const trialService = new TrialService(billing);
+
+        try {
+            const subscriptionId = await trialService.startTrial({
+                customerId,
+                userType
+            });
+
+            if (!subscriptionId) {
+                return {
+                    success: false,
+                    subscriptionId: null,
+                    message: 'User already has a subscription or trial could not be created'
+                };
+            }
+
+            return {
+                success: true,
+                subscriptionId,
+                message: 'Trial started successfully'
+            };
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+
+            apiLogger.error(
+                {
+                    customerId,
+                    userType,
+                    error: errorMessage
+                },
+                'Failed to start trial'
+            );
+
+            return {
+                success: false,
+                subscriptionId: null,
+                message: `Failed to start trial: ${errorMessage}`
+            };
+        }
+    }
+});
+
+/**
+ * POST /api/v1/billing/trial/check-expiry
+ * Trigger batch expiry check (admin only)
+ *
+ * This endpoint is meant to be called by a cron job or admin interface.
+ * It finds all expired trials and blocks them.
+ */
+export const checkExpiryRoute = createSimpleRoute({
+    method: 'post',
+    path: '/check-expiry',
+    summary: 'Check expired trials',
+    description: 'Batch job to find and block all expired trials',
+    tags: ['Billing', 'Trial', 'Admin'],
+    responseSchema: checkExpiryResponseSchema,
+    handler: async (c) => {
+        const billingEnabled = c.get('billingEnabled');
+
+        if (!billingEnabled) {
+            throw new HTTPException(503, {
+                message: 'Billing service is not configured'
+            });
+        }
+
+        // TODO: Add admin-only check here once role-based auth is implemented
+        // const actor = c.get('actor');
+        // if (actor.role !== 'admin') {
+        //   throw new HTTPException(403, { message: 'Admin access required' });
+        // }
+
+        const billing = getQZPayBilling();
+        const trialService = new TrialService(billing);
+
+        try {
+            const blockedCount = await trialService.blockExpiredTrials();
+
+            return {
+                success: true,
+                blockedCount,
+                message: `Successfully blocked ${blockedCount} expired trial(s)`
+            };
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+
+            apiLogger.error(
+                {
+                    error: errorMessage
+                },
+                'Failed to run expired trial check'
+            );
+
+            throw new HTTPException(500, {
+                message: `Failed to check expired trials: ${errorMessage}`
+            });
+        }
+    }
+});
+
+/**
+ * Trial routes router
+ */
+const trialRouter = createRouter();
+
+trialRouter.route('/', getTrialStatusRoute);
+trialRouter.route('/', startTrialRoute);
+trialRouter.route('/', checkExpiryRoute);
+
+export default trialRouter;

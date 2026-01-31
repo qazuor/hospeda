@@ -47,6 +47,29 @@ const isMockAuthAllowed = (): boolean => {
 };
 
 /**
+ * Middleware to require authentication
+ * Returns 401 if user is not authenticated
+ *
+ * @example
+ * ```typescript
+ * import { requireAuth } from './middlewares/auth';
+ *
+ * app.use('/protected/*', requireAuth);
+ * ```
+ */
+export const requireAuth = async (c: Context, next: Next) => {
+    const auth = c.get('auth');
+
+    if (!auth?.userId) {
+        throw new HTTPException(401, {
+            message: 'Authentication required'
+        });
+    }
+
+    await next();
+};
+
+/**
  * Creates Clerk authentication middleware
  * Uses environment variables for configuration
  * @returns Clerk middleware instance or no-op middleware in test environment

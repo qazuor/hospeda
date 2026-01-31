@@ -3,6 +3,9 @@ import { getAuth } from '@hono/clerk-auth';
 import { AuthProviderEnum, SyncUserResponseSchema } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { UserService } from '@repo/service-core';
+import { getQZPayBilling } from '../../middlewares/billing';
+import { BillingCustomerSyncService } from '../../services/billing-customer-sync';
+import { TrialService } from '../../services/trial.service';
 import { createGuestActor } from '../../utils/actor';
 import { env } from '../../utils/env';
 import { apiLogger } from '../../utils/logger';
@@ -10,6 +13,13 @@ import { createSimpleRoute } from '../../utils/route-factory';
 import { userCache } from '../../utils/user-cache';
 
 const userService = new UserService({ logger: apiLogger });
+
+// Initialize billing customer sync service
+const billing = getQZPayBilling();
+const billingCustomerSyncService = new BillingCustomerSyncService(billing, {
+    cacheTtlMs: 300000, // 5 minutes
+    throwOnError: false // Log silently, don't break user sync
+});
 
 export const authSyncRoute = createSimpleRoute({
     method: 'post',
@@ -120,6 +130,7 @@ export const authSyncRoute = createSimpleRoute({
 
             // Invalidate user cache since user data may have been updated
             userCache.invalidate(providerUserId);
+
             // Update Clerk publicMetadata with dbUserId
             try {
                 await client.users.updateUser(providerUserId, {
@@ -129,6 +140,60 @@ export const authSyncRoute = createSimpleRoute({
                     }
                 });
             } catch {}
+
+            // Ensure billing customer exists (non-blocking)
+            // This creates a billing customer record for subscriptions/payments
+            const primaryEmail =
+                clerkUser.emailAddresses.find(
+                    (email) => email.id === clerkUser.primaryEmailAddressId
+                )?.emailAddress || clerkUser.emailAddresses[0]?.emailAddress;
+
+            if (primaryEmail) {
+                const billingCustomerId = await billingCustomerSyncService.ensureCustomerExists({
+                    userId: result.data.user.id,
+                    email: primaryEmail,
+                    name: clerkUser.fullName || undefined
+                });
+
+                // Auto-start trial for HOST users (owner) (non-blocking)
+                // Map HOST role to owner plan
+                // Other roles (USER, GUEST, etc.) don't get auto-trial
+                if (billingCustomerId) {
+                    const userRole = result.data.user.role;
+
+                    // Only HOST role gets auto-trial with owner-basico plan
+                    // TODO: Add COMPLEX role when implemented
+                    if (userRole === 'HOST') {
+                        try {
+                            const trialService = new TrialService(billing);
+                            await trialService.startTrial({
+                                customerId: billingCustomerId,
+                                userType: 'owner' // HOST maps to owner plan
+                            });
+
+                            apiLogger.info(
+                                {
+                                    userId: result.data.user.id,
+                                    customerId: billingCustomerId,
+                                    userRole,
+                                    planType: 'owner'
+                                },
+                                'Trial auto-started for new HOST user'
+                            );
+                        } catch (error) {
+                            // Log error but don't fail user sync
+                            apiLogger.error(
+                                {
+                                    userId: result.data.user.id,
+                                    customerId: billingCustomerId,
+                                    error: error instanceof Error ? error.message : String(error)
+                                },
+                                'Failed to auto-start trial'
+                            );
+                        }
+                    }
+                }
+            }
 
             return { user: result.data.user };
         } catch (error) {

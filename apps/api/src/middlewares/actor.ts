@@ -150,3 +150,26 @@ export const actorMiddleware = (): MiddlewareHandler => {
         await next();
     };
 };
+
+/**
+ * Get actor from context
+ *
+ * Retrieves the actor that was injected by actorMiddleware.
+ * Throws if actor is not available (should never happen if middleware is properly configured).
+ *
+ * @param c - Hono context
+ * @returns Actor object
+ * @throws Error if actor is not in context
+ */
+export const getActorFromContext = (c: Parameters<MiddlewareHandler>[0]): Actor => {
+    const actor = c.get('actor');
+
+    if (!actor) {
+        apiLogger.error('Actor not found in context - actorMiddleware may not be running');
+        throw new HTTPException(500, {
+            message: 'Internal server error: Actor not available'
+        });
+    }
+
+    return actor;
+};

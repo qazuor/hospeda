@@ -11,8 +11,11 @@ import { postRoutes } from './post';
 apiLogger.debug('🏠 Loading accommodation routes...');
 apiLogger.debug('✅ Accommodation routes loaded successfully');
 
+import { cronRoutes } from '../cron';
 import { amenityRoutes } from './amenity';
 import { authRoutes } from './auth';
+import { billingRoutes } from './billing';
+import { adminBillingRoutes } from './billing/admin';
 import { docsIndexRoutes, scalarRoutes, swaggerRoutes } from './docs';
 import { featureRoutes } from './feature';
 import { dbHealthRoutes, healthRoutes, liveRoutes, readyRoutes } from './health';
@@ -22,6 +25,8 @@ import { sponsorshipRoutes } from './sponsorship';
 import { sponsorshipLevelRoutes } from './sponsorship-level';
 import { sponsorshipPackageRoutes } from './sponsorship-package';
 import { userRoutes } from './user';
+import { mercadoPagoWebhookRoutes, webhookHealthRoutes } from './webhooks';
+import { adminWebhookRouter } from './webhooks/admin';
 
 import { ApiInfoSchema } from '@repo/schemas';
 import { createSimpleRoute } from '../utils/route-factory';
@@ -121,6 +126,38 @@ export const setupRoutes = (app: AppOpenAPI) => {
         apiLogger.debug('🔗 Registering owner promotion routes...');
         app.route('/api/v1/public/owner-promotions', ownerPromotionRoutes);
         apiLogger.debug('✅ Owner promotion routes registered successfully');
+
+        apiLogger.debug('🔗 Registering billing routes...');
+        app.route('/api/v1/billing', billingRoutes);
+        apiLogger.debug('✅ Billing routes registered successfully');
+
+        apiLogger.debug('🔗 Registering admin billing routes...');
+        app.route('/api/v1/admin/billing', adminBillingRoutes);
+        apiLogger.debug('✅ Admin billing routes registered successfully');
+
+        // Cron routes (protected by CRON_SECRET)
+        apiLogger.debug('🔗 Registering cron routes...');
+        app.route('/api/v1/cron', cronRoutes);
+        apiLogger.debug('✅ Cron routes registered successfully');
+
+        // Webhook routes (public endpoints with signature verification)
+        if (mercadoPagoWebhookRoutes) {
+            apiLogger.debug('🔗 Registering MercadoPago webhook routes...');
+            app.route('/api/v1/webhooks/mercadopago', mercadoPagoWebhookRoutes);
+            apiLogger.debug('✅ MercadoPago webhook routes registered successfully');
+        } else {
+            apiLogger.warn('⚠️ MercadoPago webhook routes not registered - billing not configured');
+        }
+
+        // Webhook health monitoring (protected by CRON_SECRET)
+        apiLogger.debug('🔗 Registering webhook health routes...');
+        app.route('/api/v1/webhooks', webhookHealthRoutes);
+        apiLogger.debug('✅ Webhook health routes registered successfully');
+
+        // Admin webhook routes (protected by admin auth)
+        apiLogger.debug('🔗 Registering admin webhook routes...');
+        app.route('/api/v1/admin/webhooks', adminWebhookRouter);
+        apiLogger.debug('✅ Admin webhook routes registered successfully');
     } catch (error) {
         apiLogger.debug('❌ Failed to register routes:', String(error));
         throw error;

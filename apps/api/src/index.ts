@@ -4,6 +4,8 @@
  */
 import { serve } from '@hono/node-server';
 import { initApp } from './app';
+import { startCronScheduler } from './cron';
+import { ensureDefaultPromoCodes } from './services/promo-code-defaults';
 import { closeDatabase, initializeDatabase } from './utils/database';
 import { env, validateApiEnv } from './utils/env';
 import { listRoutes } from './utils/list-routes';
@@ -24,6 +26,9 @@ const startServer = async (): Promise<void> => {
         // Initialize database connection before starting the server
         await initializeDatabase();
 
+        // Ensure default promo codes exist (HOSPEDA_FREE, etc.)
+        await ensureDefaultPromoCodes();
+
         const app = initApp();
 
         // Start the server
@@ -39,6 +44,16 @@ const startServer = async (): Promise<void> => {
                 setTimeout(() => {
                     listRoutes(app);
                 }, 100);
+
+                // Start cron scheduler (only in non-test environments)
+                if (process.env.NODE_ENV !== 'test') {
+                    startCronScheduler(port).catch((error) => {
+                        apiLogger.error(
+                            'Failed to start cron scheduler:',
+                            error instanceof Error ? error.message : String(error)
+                        );
+                    });
+                }
             }
         );
 
