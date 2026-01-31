@@ -18,5 +18,7 @@ export enum ServiceErrorCode {
      * Use this code for public service methods that are stubs or not yet implemented.
      * Always return this error via the homogeneous pipeline (runWithLoggingAndValidation).
      */
-    NOT_IMPLEMENTED = 'NOT_IMPLEMENTED'
+    NOT_IMPLEMENTED = 'NOT_IMPLEMENTED',
+    /** External service or dependency is not available or not configured */
+    SERVICE_UNAVAILABLE = 'SERVICE_UNAVAILABLE'
 }
