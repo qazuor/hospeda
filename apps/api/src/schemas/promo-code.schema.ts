@@ -102,7 +102,8 @@ export const ValidatePromoCodeSchema = z.object({
  */
 export const ApplyPromoCodeSchema = z.object({
     code: z.string().min(1, 'Code is required'),
-    checkoutId: z.string().uuid('Invalid checkout ID')
+    checkoutId: z.string().uuid('Invalid checkout ID'),
+    amount: z.number().int().positive().optional()
 });
 
 /**

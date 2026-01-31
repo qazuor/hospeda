@@ -803,13 +803,10 @@ export class PromoCodeService {
      *
      * @param code - Promo code string
      * @param checkoutId - Checkout session ID
-     * @returns Updated checkout session
-     *
-     * @note Currently validates code and returns acceptance confirmation
-     * @note Actual checkout session modification depends on QZPay integration
-     * @todo Implement with actual QZPay API: billing.checkout.applyPromoCode()
+     * @param amount - Optional amount to apply discount to
+     * @returns Discount calculation result
      */
-    async apply(code: string, checkoutId: string) {
+    async apply(code: string, checkoutId: string, amount?: number) {
         this.ensureBilling();
 
         const normalizedCode = code.toUpperCase();
@@ -821,9 +818,8 @@ export class PromoCodeService {
             const result = await this.getByCode(normalizedCode);
 
             if (!result.success || !result.data) {
-                apiLogger.info({ code: normalizedCode }, 'Promo code not found');
                 return {
-                    success: false,
+                    success: false as const,
                     error: {
                         code: ServiceErrorCode.NOT_FOUND,
                         message: 'Promo code not found'
@@ -836,7 +832,7 @@ export class PromoCodeService {
             // Check if active
             if (!promoCode.active) {
                 return {
-                    success: false,
+                    success: false as const,
                     error: {
                         code: ServiceErrorCode.VALIDATION_ERROR,
                         message: 'This promo code is no longer active'
@@ -847,7 +843,7 @@ export class PromoCodeService {
             // Check expiry
             if (promoCode.expiresAt && new Date() > new Date(promoCode.expiresAt)) {
                 return {
-                    success: false,
+                    success: false as const,
                     error: {
                         code: ServiceErrorCode.VALIDATION_ERROR,
                         message: 'This promo code has expired'
@@ -855,27 +851,65 @@ export class PromoCodeService {
                 };
             }
 
+            // Check max uses
+            if (promoCode.maxUses && promoCode.timesRedeemed >= promoCode.maxUses) {
+                return {
+                    success: false as const,
+                    error: {
+                        code: ServiceErrorCode.VALIDATION_ERROR,
+                        message: 'This promo code has reached its maximum number of uses'
+                    }
+                };
+            }
+
+            // Calculate discount
+            let discountAmount = 0;
+            const effectiveAmount = amount || 0;
+
+            if (effectiveAmount > 0) {
+                if (promoCode.type === 'percentage') {
+                    discountAmount = Math.round((effectiveAmount * promoCode.value) / 100);
+                } else {
+                    discountAmount = Math.min(promoCode.value, effectiveAmount);
+                }
+            }
+
+            const finalAmount = Math.max(0, effectiveAmount - discountAmount);
+
+            // Record usage and increment counter (only for DB promo codes, not local config)
+            if (!promoCode.id.startsWith('local_')) {
+                await this.incrementUsage(promoCode.id);
+
+                await this.recordUsage({
+                    promoCodeId: promoCode.id,
+                    customerId: checkoutId, // Using checkoutId as reference
+                    discountAmount,
+                    currency: 'ARS'
+                });
+            }
+
             apiLogger.info(
                 {
                     code: normalizedCode,
                     checkoutId,
-                    type: promoCode.type,
-                    value: promoCode.value,
-                    metadata: promoCode.metadata
+                    originalAmount: effectiveAmount,
+                    discountAmount,
+                    finalAmount,
+                    discountType: promoCode.type,
+                    discountValue: promoCode.value
                 },
-                'Promo code accepted - QZPay integration pending for checkout session update'
+                'Promo code applied successfully'
             );
 
-            // Return success with promo code details
-            // Actual checkout session update will happen when QZPay integration is complete
             return {
-                success: true,
+                success: true as const,
                 data: {
                     code: promoCode.code,
                     type: promoCode.type,
                     value: promoCode.value,
-                    metadata: promoCode.metadata,
-                    message: 'Promo code accepted. Checkout session integration pending QZPay.'
+                    discountAmount,
+                    finalAmount,
+                    originalAmount: effectiveAmount
                 }
             };
         } catch (error) {
@@ -885,7 +919,7 @@ export class PromoCodeService {
             );
 
             return {
-                success: false,
+                success: false as const,
                 error: {
                     code: ServiceErrorCode.INTERNAL_ERROR,
                     message: error instanceof Error ? error.message : 'Failed to apply promo code'

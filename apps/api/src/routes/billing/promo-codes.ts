@@ -269,18 +269,21 @@ export const applyPromoCodeRoute = createProtectedRoute({
 
         apiLogger.info('Applying promo code');
 
-        const result = await service.apply(body.code as string, body.checkoutId as string);
+        const result = await service.apply(
+            body.code as string,
+            body.checkoutId as string,
+            body.amount as number | undefined
+        );
 
         if (result.success === false) {
             throw new Error(result.error?.message ?? 'Unknown error applying promo code');
         }
 
-        // Placeholder return for now (until QZPay integration is complete)
         return {
             id: body.checkoutId as string,
             promoCode: body.code as string,
-            amount: 0,
-            discountAmount: 0
+            amount: result.data.finalAmount,
+            discountAmount: result.data.discountAmount
         };
     }
 });
