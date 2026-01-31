@@ -12,8 +12,10 @@
  * @module routes/billing/trial
  */
 
+import { RoleEnum } from '@repo/schemas';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
+import { getActorFromContext } from '../../middlewares/actor';
 import { getQZPayBilling } from '../../middlewares/billing';
 import { TrialService } from '../../services/trial.service';
 import { createRouter } from '../../utils/create-app';
@@ -178,6 +180,62 @@ export const startTrialRoute = createSimpleRoute({
 });
 
 /**
+ * Handler for checking and blocking expired trials
+ * Extracted for testability
+ *
+ * @param c - Hono context
+ * @returns Response with blocked trial count
+ * @throws HTTPException 503 if billing not configured
+ * @throws HTTPException 403 if user is not admin
+ * @throws HTTPException 500 if service fails
+ */
+export const handleCheckExpiry = async (
+    c: Parameters<typeof createSimpleRoute>[0]['handler'][0]
+) => {
+    const billingEnabled = c.get('billingEnabled');
+
+    if (!billingEnabled) {
+        throw new HTTPException(503, {
+            message: 'Billing service is not configured'
+        });
+    }
+
+    // Admin-only check
+    const actor = getActorFromContext(c);
+    if (actor.role !== RoleEnum.ADMIN && actor.role !== RoleEnum.SUPER_ADMIN) {
+        throw new HTTPException(403, {
+            message: 'Admin access required'
+        });
+    }
+
+    const billing = getQZPayBilling();
+    const trialService = new TrialService(billing);
+
+    try {
+        const blockedCount = await trialService.blockExpiredTrials();
+
+        return {
+            success: true,
+            blockedCount,
+            message: `Successfully blocked ${blockedCount} expired trial(s)`
+        };
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+
+        apiLogger.error(
+            {
+                error: errorMessage
+            },
+            'Failed to run expired trial check'
+        );
+
+        throw new HTTPException(500, {
+            message: `Failed to check expired trials: ${errorMessage}`
+        });
+    }
+};
+
+/**
  * POST /api/v1/billing/trial/check-expiry
  * Trigger batch expiry check (admin only)
  *
@@ -191,47 +249,7 @@ export const checkExpiryRoute = createSimpleRoute({
     description: 'Batch job to find and block all expired trials',
     tags: ['Billing', 'Trial', 'Admin'],
     responseSchema: checkExpiryResponseSchema,
-    handler: async (c) => {
-        const billingEnabled = c.get('billingEnabled');
-
-        if (!billingEnabled) {
-            throw new HTTPException(503, {
-                message: 'Billing service is not configured'
-            });
-        }
-
-        // TODO: Add admin-only check here once role-based auth is implemented
-        // const actor = c.get('actor');
-        // if (actor.role !== 'admin') {
-        //   throw new HTTPException(403, { message: 'Admin access required' });
-        // }
-
-        const billing = getQZPayBilling();
-        const trialService = new TrialService(billing);
-
-        try {
-            const blockedCount = await trialService.blockExpiredTrials();
-
-            return {
-                success: true,
-                blockedCount,
-                message: `Successfully blocked ${blockedCount} expired trial(s)`
-            };
-        } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-
-            apiLogger.error(
-                {
-                    error: errorMessage
-                },
-                'Failed to run expired trial check'
-            );
-
-            throw new HTTPException(500, {
-                message: `Failed to check expired trials: ${errorMessage}`
-            });
-        }
-    }
+    handler: handleCheckExpiry
 });
 
 /**

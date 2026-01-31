@@ -16,6 +16,7 @@ import { rateLimitMiddleware } from '../middlewares/rate-limit';
 import { createErrorHandler, responseFormattingMiddleware } from '../middlewares/response';
 import { responseValidatorMiddleware } from '../middlewares/response-validator';
 import { originVerificationMiddleware, securityHeadersMiddleware } from '../middlewares/security';
+import { trialMiddleware } from '../middlewares/trial';
 import { validationMiddleware } from '../middlewares/validation';
 import type { AppBindings, AppMiddleware, AppOpenAPI } from '../types';
 
@@ -105,6 +106,10 @@ export default function createApp() {
 
     // Entitlement checking (after billing customer middleware)
     app.use(wrapMiddleware(entitlementMiddleware()));
+
+    // Trial expiry checking (after entitlement middleware)
+    // Blocks access with 402 when trial has expired, allows billing/export/docs routes
+    app.use(wrapMiddleware(trialMiddleware()));
 
     app.notFound(notFound);
 
