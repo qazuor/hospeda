@@ -63,7 +63,7 @@ importers:
     dependencies:
       '@clerk/tanstack-react-start':
         specifier: ^0.23.1
-        version: 0.23.1(@tanstack/react-router@1.131.26(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(@tanstack/react-start@1.131.26(@netlify/blobs@9.1.2)(@tanstack/react-router@1.131.26(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(@vitejs/plugin-react@4.7.0(vite@6.3.5(@types/node@22.17.2)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1)))(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@19.1.10)(pg@8.16.3)(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(vite@6.3.5(@types/node@22.17.2)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1)))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+        version: 0.23.1(@tanstack/react-router@1.131.26(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(@tanstack/react-start@1.131.26(@netlify/blobs@9.1.2)(@tanstack/react-router@1.131.26(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(@vitejs/plugin-react@4.7.0(vite@6.3.5(@types/node@22.17.2)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1)))(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@19.1.10)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(vite@6.3.5(@types/node@22.17.2)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1)))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       '@faker-js/faker':
         specifier: 9.6.0
         version: 9.6.0
@@ -73,21 +73,36 @@ importers:
       '@pablotheblink/flashyjs':
         specifier: ^1.0.5
         version: 1.0.5
+      '@qazuor/qzpay-core':
+        specifier: ^1.1.0
+        version: 1.1.0
+      '@qazuor/qzpay-react':
+        specifier: ^1.1.0
+        version: 1.1.0(react@19.1.1)
       '@radix-ui/react-accordion':
         specifier: ^1.2.12
         version: 1.2.12(@types/react-dom@19.1.7(@types/react@19.1.10))(@types/react@19.1.10)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+      '@radix-ui/react-alert-dialog':
+        specifier: ^1.1.15
+        version: 1.1.15(@types/react-dom@19.1.7(@types/react@19.1.10))(@types/react@19.1.10)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       '@radix-ui/react-checkbox':
         specifier: ^1.3.3
         version: 1.3.3(@types/react-dom@19.1.7(@types/react@19.1.10))(@types/react@19.1.10)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       '@radix-ui/react-dialog':
         specifier: ^1.1.15
         version: 1.1.15(@types/react-dom@19.1.7(@types/react@19.1.10))(@types/react@19.1.10)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+      '@radix-ui/react-dropdown-menu':
+        specifier: ^2.1.16
+        version: 2.1.16(@types/react-dom@19.1.7(@types/react@19.1.10))(@types/react@19.1.10)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       '@radix-ui/react-label':
         specifier: ^2.1.7
         version: 2.1.7(@types/react-dom@19.1.7(@types/react@19.1.10))(@types/react@19.1.10)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       '@radix-ui/react-popover':
         specifier: ^1.1.15
         version: 1.1.15(@types/react-dom@19.1.7(@types/react@19.1.10))(@types/react@19.1.10)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+      '@radix-ui/react-progress':
+        specifier: ^1.1.8
+        version: 1.1.8(@types/react-dom@19.1.7(@types/react@19.1.10))(@types/react@19.1.10)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       '@radix-ui/react-select':
         specifier: ^2.2.6
         version: 2.2.6(@types/react-dom@19.1.7(@types/react@19.1.10))(@types/react@19.1.10)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
@@ -103,6 +118,9 @@ importers:
       '@repo/auth-ui':
         specifier: workspace:*
         version: link:../../packages/auth-ui
+      '@repo/billing':
+        specifier: workspace:*
+        version: link:../../packages/billing
       '@repo/config':
         specifier: workspace:*
         version: link:../../packages/config
@@ -144,7 +162,7 @@ importers:
         version: 1.131.26(@tanstack/query-core@5.85.5)(@tanstack/react-query@5.59.20(react@19.1.1))(@tanstack/react-router@1.131.26(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(@tanstack/router-core@1.131.27)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       '@tanstack/react-start':
         specifier: 1.131.26
-        version: 1.131.26(@netlify/blobs@9.1.2)(@tanstack/react-router@1.131.26(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(@vitejs/plugin-react@4.7.0(vite@6.3.5(@types/node@22.17.2)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1)))(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@19.1.10)(pg@8.16.3)(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(vite@6.3.5(@types/node@22.17.2)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1))
+        version: 1.131.26(@netlify/blobs@9.1.2)(@tanstack/react-router@1.131.26(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(@vitejs/plugin-react@4.7.0(vite@6.3.5(@types/node@22.17.2)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1)))(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@19.1.10)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(vite@6.3.5(@types/node@22.17.2)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1))
       '@tanstack/react-table':
         specifier: 8.21.2
         version: 8.21.2(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
@@ -263,6 +281,18 @@ importers:
       '@hono/zod-openapi':
         specifier: ^1.0.2
         version: 1.1.0(hono@4.9.2)(zod@4.0.17)
+      '@qazuor/qzpay-core':
+        specifier: ^1.1.0
+        version: 1.1.0
+      '@qazuor/qzpay-hono':
+        specifier: ^1.1.0
+        version: 1.1.0(hono@4.9.2)(zod@4.0.17)
+      '@qazuor/qzpay-mercadopago':
+        specifier: ^1.1.0
+        version: 1.1.0(mercadopago@2.12.0)
+      '@repo/billing':
+        specifier: workspace:*
+        version: link:../../packages/billing
       '@repo/config':
         specifier: workspace:*
         version: link:../../packages/config
@@ -272,6 +302,9 @@ importers:
       '@repo/logger':
         specifier: workspace:*
         version: link:../../packages/logger
+      '@repo/notifications':
+        specifier: workspace:*
+        version: link:../../packages/notifications
       '@repo/schemas':
         specifier: workspace:*
         version: link:../../packages/schemas
@@ -296,6 +329,9 @@ importers:
       lru-cache:
         specifier: ^11.1.0
         version: 11.1.0
+      mercadopago:
+        specifier: ^2.12.0
+        version: 2.12.0
       pg:
         specifier: ^8.15.6
         version: 8.16.3
@@ -308,6 +344,10 @@ importers:
       zod:
         specifier: ^4.0.8
         version: 4.0.17
+    optionalDependencies:
+      node-cron:
+        specifier: ^3.0.3
+        version: 3.0.3
     devDependencies:
       '@repo/typescript-config':
         specifier: workspace:*
@@ -318,6 +358,9 @@ importers:
       '@types/node':
         specifier: ^22.15.3
         version: 22.17.2
+      '@types/node-cron':
+        specifier: ^3.0.11
+        version: 3.0.11
       '@types/pg':
         specifier: ^8.15.1
         version: 8.15.5
@@ -344,7 +387,7 @@ importers:
     dependencies:
       '@astrojs/node':
         specifier: ^9.4.2
-        version: 9.4.2(astro@5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1))
+        version: 9.4.2(astro@5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1))
       '@astrojs/react':
         specifier: ^3.0.9
         version: 3.6.3(@types/node@22.17.2)(@types/react-dom@18.3.7(@types/react@18.3.23))(@types/react@18.3.23)(lightningcss@1.30.1)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(terser@5.43.1)
@@ -353,19 +396,28 @@ importers:
         version: 3.5.0
       '@astrojs/tailwind':
         specifier: ^5.1.0
-        version: 5.1.5(astro@5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1))(tailwindcss@4.1.12)
+        version: 5.1.5(astro@5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1))(tailwindcss@4.1.12)
       '@astrojs/vercel':
         specifier: ^8.1.4
-        version: 8.2.6(astro@5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1))(react@19.1.1)(rollup@4.46.3)
+        version: 8.2.6(astro@5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1))(react@19.1.1)(rollup@4.46.3)
       '@clerk/astro':
         specifier: ^2.11.2
-        version: 2.11.4(astro@5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+        version: 2.11.4(astro@5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       '@clerk/clerk-react':
         specifier: ^5.42.0
         version: 5.42.2(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+      '@qazuor/qzpay-core':
+        specifier: ^1.1.0
+        version: 1.1.0
+      '@qazuor/qzpay-react':
+        specifier: ^1.1.0
+        version: 1.1.0(react@19.1.1)
       '@repo/auth-ui':
         specifier: workspace:*
         version: link:../../packages/auth-ui
+      '@repo/billing':
+        specifier: workspace:*
+        version: link:../../packages/billing
       '@repo/config':
         specifier: workspace:*
         version: link:../../packages/config
@@ -392,7 +444,7 @@ importers:
         version: link:../../packages/utils
       '@reunmedia/astro-normalize-trailing-slash':
         specifier: ^0.1.1
-        version: 0.1.1(astro@5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1))
+        version: 0.1.1(astro@5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1))
       '@tailwindcss/forms':
         specifier: ^0.5.10
         version: 0.5.10(tailwindcss@4.1.12)
@@ -401,19 +453,19 @@ importers:
         version: 0.5.16(tailwindcss@4.1.12)
       astro:
         specifier: ^5.12.9
-        version: 5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1)
+        version: 5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1)
       astro-devtool-breakpoints:
         specifier: ^0.3.0
-        version: 0.3.0(astro@5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1))
+        version: 0.3.0(astro@5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1))
       astro-lighthouse:
         specifier: ^0.1.3
         version: 0.1.3
       astro-og:
         specifier: ^0.3.0
-        version: 0.3.0(astro@5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1))
+        version: 0.3.0(astro@5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1))
       astro-typed-links:
         specifier: ^1.1.4
-        version: 1.1.4(astro@5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1))
+        version: 1.1.4(astro@5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1))
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
@@ -468,7 +520,7 @@ importers:
         version: 3.2.4(vitest@3.2.4)
       astro-font-picker:
         specifier: ^0.2.2
-        version: 0.2.2(astro@5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1))
+        version: 0.2.2(astro@5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1))
       jsdom:
         specifier: ^26.0.0
         version: 26.0.0
@@ -539,6 +591,12 @@ importers:
 
   packages/billing:
     dependencies:
+      '@qazuor/qzpay-core':
+        specifier: ^1.1.0
+        version: 1.1.0
+      '@qazuor/qzpay-mercadopago':
+        specifier: ^1.1.0
+        version: 1.1.0(mercadopago@2.12.0)
       '@repo/config':
         specifier: workspace:*
         version: link:../config
@@ -595,6 +653,15 @@ importers:
 
   packages/db:
     dependencies:
+      '@qazuor/qzpay-core':
+        specifier: ^1.1.0
+        version: 1.1.0
+      '@qazuor/qzpay-drizzle':
+        specifier: ^1.1.0
+        version: 1.1.0(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@19.1.10)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1))(postgres@3.4.8)(zod@3.25.76)
+      '@repo/billing':
+        specifier: workspace:*
+        version: link:../billing
       '@repo/config':
         specifier: workspace:*
         version: link:../config
@@ -612,7 +679,7 @@ importers:
         version: 3.0.2
       drizzle-orm:
         specifier: ^0.29.5
-        version: 0.29.5(@types/pg@8.15.5)(@types/react@19.1.10)(pg@8.16.3)(react@19.1.1)
+        version: 0.29.5(@types/pg@8.15.5)(@types/react@19.1.10)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1)
     devDependencies:
       '@repo/typescript-config':
         specifier: workspace:*
@@ -707,7 +774,7 @@ importers:
         version: 6.7.0
       '@testing-library/react':
         specifier: ^16.2.0
-        version: 16.2.0(@testing-library/dom@10.4.0)(@types/react-dom@19.1.7(@types/react@18.3.23))(@types/react@18.3.23)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+        version: 16.2.0(@testing-library/dom@10.4.0)(@types/react-dom@19.2.3(@types/react@18.3.23))(@types/react@18.3.23)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       '@types/node':
         specifier: ^22.15.3
         version: 22.17.2
@@ -762,6 +829,52 @@ importers:
         version: 22.17.2
       tsup:
         specifier: ^8.4.0
+        version: 8.5.0(jiti@2.6.1)(postcss@8.5.6)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1)
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.2
+      vitest:
+        specifier: ^3.1.3
+        version: 3.2.4(@types/debug@4.1.12)(@types/node@22.17.2)(@vitest/ui@3.2.4)(jiti@2.6.1)(jsdom@26.0.0)(lightningcss@1.30.1)(msw@2.12.7(@types/node@22.17.2)(typescript@5.9.2))(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1)
+
+  packages/notifications:
+    dependencies:
+      '@react-email/components':
+        specifier: ^0.0.30
+        version: 0.0.30(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+      '@repo/config':
+        specifier: workspace:*
+        version: link:../config
+      '@repo/db':
+        specifier: workspace:*
+        version: link:../db
+      '@repo/logger':
+        specifier: workspace:*
+        version: link:../logger
+      ioredis:
+        specifier: ^5.4.0
+        version: 5.7.0
+      react:
+        specifier: 19.1.1
+        version: 19.1.1
+      resend:
+        specifier: ^4.0.0
+        version: 4.8.0(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+    devDependencies:
+      '@repo/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.1.10
+      '@types/react-dom':
+        specifier: ^19.2.3
+        version: 19.2.3(@types/react@19.1.10)
+      react-dom:
+        specifier: 19.1.1
+        version: 19.1.1(react@19.1.1)
+      tsup:
+        specifier: ^8.3.5
         version: 8.5.0(jiti@2.6.1)(postcss@8.5.6)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1)
       typescript:
         specifier: ^5.8.3
@@ -2195,6 +2308,12 @@ packages:
       hono: '>=3.9.0'
       zod: ^3.25.0 || ^4.0.0
 
+  '@hono/zod-validator@0.7.6':
+    resolution: {integrity: sha512-Io1B6d011Gj1KknV4rXYz4le5+5EubcWEU/speUjuw9XMMIaP3n78yXLhjd2A3PXaXaUwEAluOiAyLqhBEJgsw==}
+    peerDependencies:
+      hono: '>=3.9.0'
+      zod: ^3.25.0 || ^4.0.0
+
   '@img/sharp-darwin-arm64@0.33.5':
     resolution: {integrity: sha512-UT4p+iz/2H4twwAoLCqfA9UH5pI6DggwKEGuaPy7nCVQ8ZsiY5PIcrRvD1DzuY3qYL07NtIQcWnBSY/heikIFQ==}
     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
@@ -2581,6 +2700,37 @@ packages:
     engines: {node: '>=18'}
     hasBin: true
 
+  '@qazuor/qzpay-core@1.1.0':
+    resolution: {integrity: sha512-7FxPFPZaK57o6Hragxb7mGp4bcmwjvD9GoM5myPP+BEkGiZNH9kCnxdwVf9nEtVeP0kIt3fscnK3F/fScYTY9w==}
+    engines: {node: '>=22'}
+
+  '@qazuor/qzpay-drizzle@1.1.0':
+    resolution: {integrity: sha512-Lc8v+HAsLC96Eb75FrIoI/Eaqcy4/XKTo6tJDXgTLOcsZWzV20MJDoQwl3ZIJMGPM2mnV98CA3ept4p1hRWa4g==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      drizzle-orm: '>=0.35.0'
+      postgres: '>=3.4.0'
+      zod: '>=3.0.0'
+
+  '@qazuor/qzpay-hono@1.1.0':
+    resolution: {integrity: sha512-MoVXAySrY5iI6tjOO7z/yao2hkJcYdoA+HcBHrc2EeJ4YoZ3dkqkfyJx5YKd6VUoWvEzWqgPmCovYSU+dFNThQ==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      hono: '>=4.0.0'
+      zod: '>=3.0.0'
+
+  '@qazuor/qzpay-mercadopago@1.1.0':
+    resolution: {integrity: sha512-a2Rac7OqbAfffdeIESxb2dHr2RJO3a55LTgpnTv5GUF9JvKRoKRiS0kuB6zpPZvp/K4sSKhJwFdjprFah1rIJQ==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      mercadopago: '>=2.0.0'
+
+  '@qazuor/qzpay-react@1.1.0':
+    resolution: {integrity: sha512-+ry97xvTyay16fOsVg0ODwKRURaiQ8u+c5OsiFm2lAOKHL8oPef6dFoFR1RqNnhQ01u8eIe3EH5TymVdDh+zwg==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      react: 19.1.1
+
   '@radix-ui/number@1.1.1':
     resolution: {integrity: sha512-MkKCwxlXTgz6CFoJx3pCwn07GKp36+aZyu/u2Ln2VrA5DcdyCZkASEDBTd8x5whTQQL5CiYf4prXKLcgQdv29g==}
 
@@ -2589,6 +2739,19 @@ packages:
 
   '@radix-ui/react-accordion@1.2.12':
     resolution: {integrity: sha512-T4nygeh9YE9dLRPhAHSeOZi7HBXo+0kYIPJXayZfvWOWA0+n3dESrZbjfDPUABkUNym6Hd+f2IR113To8D2GPA==}
+    peerDependencies:
+      '@types/react': '*'
+      '@types/react-dom': '*'
+      react: 19.1.1
+      react-dom: 19.1.1
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+      '@types/react-dom':
+        optional: true
+
+  '@radix-ui/react-alert-dialog@1.1.15':
+    resolution: {integrity: sha512-oTVLkEw5GpdRe29BqJ0LSDFWI3qu0vR1M0mUkOQWDIUnY/QIkLpgDMWuKxP94c2NAC2LGcgVhG1ImF3jkZ5wXw==}
     peerDependencies:
       '@types/react': '*'
       '@types/react-dom': '*'
@@ -2670,6 +2833,15 @@ packages:
       '@types/react':
         optional: true
 
+  '@radix-ui/react-context@1.1.3':
+    resolution: {integrity: sha512-ieIFACdMpYfMEjF0rEf5KLvfVyIkOz6PDGyNnP+u+4xQ6jny3VCgA4OgXOwNx2aUkxn8zx9fiVcM8CfFYv9Lxw==}
+    peerDependencies:
+      '@types/react': '*'
+      react: 19.1.1
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+
   '@radix-ui/react-dialog@1.1.15':
     resolution: {integrity: sha512-TCglVRtzlffRNxRMEyR36DGBLJpeusFcgMVD9PZEzAKnUs1lKCgX5u9BmC2Yg+LL9MgZDugFFs1Vl+Jp4t/PGw==}
     peerDependencies:
@@ -2694,6 +2866,19 @@ packages:
 
   '@radix-ui/react-dismissable-layer@1.1.11':
     resolution: {integrity: sha512-Nqcp+t5cTB8BinFkZgXiMJniQH0PsUt2k51FUhbdfeKvc4ACcG2uQniY/8+h1Yv6Kza4Q7lD7PQV0z0oicE0Mg==}
+    peerDependencies:
+      '@types/react': '*'
+      '@types/react-dom': '*'
+      react: 19.1.1
+      react-dom: 19.1.1
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+      '@types/react-dom':
+        optional: true
+
+  '@radix-ui/react-dropdown-menu@2.1.16':
+    resolution: {integrity: sha512-1PLGQEynI/3OX/ftV54COn+3Sud/Mn8vALg2rWnBLnRaGtJDduNW/22XjlGgPdpcIbiQxjKtb7BkcjP00nqfJw==}
     peerDependencies:
       '@types/react': '*'
       '@types/react-dom': '*'
@@ -2738,6 +2923,19 @@ packages:
 
   '@radix-ui/react-label@2.1.7':
     resolution: {integrity: sha512-YT1GqPSL8kJn20djelMX7/cTRp/Y9w5IZHvfxQTVHrOqa2yMl7i/UfMqKRU5V7mEyKTrUVgJXhNQPVCG8PBLoQ==}
+    peerDependencies:
+      '@types/react': '*'
+      '@types/react-dom': '*'
+      react: 19.1.1
+      react-dom: 19.1.1
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+      '@types/react-dom':
+        optional: true
+
+  '@radix-ui/react-menu@2.1.16':
+    resolution: {integrity: sha512-72F2T+PLlphrqLcAotYPp0uJMr5SjP5SL01wfEspJbru5Zs5vQaSHb4VB3ZMJPimgHHCHG7gMOeOB9H3Hdmtxg==}
     peerDependencies:
       '@types/react': '*'
       '@types/react-dom': '*'
@@ -2814,6 +3012,32 @@ packages:
       '@types/react-dom':
         optional: true
 
+  '@radix-ui/react-primitive@2.1.4':
+    resolution: {integrity: sha512-9hQc4+GNVtJAIEPEqlYqW5RiYdrr8ea5XQ0ZOnD6fgru+83kqT15mq2OCcbe8KnjRZl5vF3ks69AKz3kh1jrhg==}
+    peerDependencies:
+      '@types/react': '*'
+      '@types/react-dom': '*'
+      react: 19.1.1
+      react-dom: 19.1.1
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+      '@types/react-dom':
+        optional: true
+
+  '@radix-ui/react-progress@1.1.8':
+    resolution: {integrity: sha512-+gISHcSPUJ7ktBy9RnTqbdKW78bcGke3t6taawyZ71pio1JewwGSJizycs7rLhGTvMJYCQB1DBK4KQsxs7U8dA==}
+    peerDependencies:
+      '@types/react': '*'
+      '@types/react-dom': '*'
+      react: 19.1.1
+      react-dom: 19.1.1
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+      '@types/react-dom':
+        optional: true
+
   '@radix-ui/react-roving-focus@1.1.11':
     resolution: {integrity: sha512-7A6S9jSgm/S+7MdtNDSb+IU859vQqJ/QAtcYQcfFC6W8RS4IxIZDldLR0xqCFZ6DCyrQLjLPsxtTNch5jVA4lA==}
     peerDependencies:
@@ -2842,6 +3066,15 @@ packages:
 
   '@radix-ui/react-slot@1.2.3':
     resolution: {integrity: sha512-aeNmHnBxbi2St0au6VBVC7JXFlhLlOnvIIlePNniyUNAClzmtAUEY8/pBiK3iHjufOlwA+c20/8jngo7xcrg8A==}
+    peerDependencies:
+      '@types/react': '*'
+      react: 19.1.1
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+
+  '@radix-ui/react-slot@1.2.4':
+    resolution: {integrity: sha512-Jl+bCv8HxKnlTLVrcDE8zTMJ09R9/ukw4qBs/oZClOfoQk/cOTbDn+NceXfV7j09YPVQUryJPHurafcSg6EVKA==}
     peerDependencies:
       '@types/react': '*'
       react: 19.1.1
@@ -2962,6 +3195,138 @@ packages:
 
   '@radix-ui/rect@1.1.1':
     resolution: {integrity: sha512-HPwpGIzkl28mWyZqG52jiqDJ12waP11Pa1lGoiyUkIEuMLBP0oeK/C89esbXrxsky5we7dfd8U58nm0SgAWpVw==}
+
+  '@react-email/body@0.0.11':
+    resolution: {integrity: sha512-ZSD2SxVSgUjHGrB0Wi+4tu3MEpB4fYSbezsFNEJk2xCWDBkFiOeEsjTmR5dvi+CxTK691hQTQlHv0XWuP7ENTg==}
+    peerDependencies:
+      react: 19.1.1
+
+  '@react-email/button@0.0.19':
+    resolution: {integrity: sha512-HYHrhyVGt7rdM/ls6FuuD6XE7fa7bjZTJqB2byn6/oGsfiEZaogY77OtoLL/mrQHjHjZiJadtAMSik9XLcm7+A==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      react: 19.1.1
+
+  '@react-email/code-block@0.0.11':
+    resolution: {integrity: sha512-4D43p+LIMjDzm66gTDrZch0Flkip5je91mAT7iGs6+SbPyalHgIA+lFQoQwhz/VzHHLxuD0LV6gwmU/WUQ2WEg==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      react: 19.1.1
+
+  '@react-email/code-inline@0.0.5':
+    resolution: {integrity: sha512-MmAsOzdJpzsnY2cZoPHFPk6uDO/Ncpb4Kh1hAt9UZc1xOW3fIzpe1Pi9y9p6wwUmpaeeDalJxAxH6/fnTquinA==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      react: 19.1.1
+
+  '@react-email/column@0.0.13':
+    resolution: {integrity: sha512-Lqq17l7ShzJG/d3b1w/+lVO+gp2FM05ZUo/nW0rjxB8xBICXOVv6PqjDnn3FXKssvhO5qAV20lHM6S+spRhEwQ==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      react: 19.1.1
+
+  '@react-email/components@0.0.30':
+    resolution: {integrity: sha512-JkPcGE/r3WsHMVO4kjkaQzAyXiSPATg5TgzTImypjGHbwrdLaDMVEBZz1SuLV8GexqCnmzo1qmhVHtHq8E7UWg==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      react: 19.1.1
+
+  '@react-email/container@0.0.15':
+    resolution: {integrity: sha512-Qo2IQo0ru2kZq47REmHW3iXjAQaKu4tpeq/M8m1zHIVwKduL2vYOBQWbC2oDnMtWPmkBjej6XxgtZByxM6cCFg==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      react: 19.1.1
+
+  '@react-email/font@0.0.9':
+    resolution: {integrity: sha512-4zjq23oT9APXkerqeslPH3OZWuh5X4crHK6nx82mVHV2SrLba8+8dPEnWbaACWTNjOCbcLIzaC9unk7Wq2MIXw==}
+    peerDependencies:
+      react: 19.1.1
+
+  '@react-email/head@0.0.12':
+    resolution: {integrity: sha512-X2Ii6dDFMF+D4niNwMAHbTkeCjlYYnMsd7edXOsi0JByxt9wNyZ9EnhFiBoQdqkE+SMDcu8TlNNttMrf5sJeMA==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      react: 19.1.1
+
+  '@react-email/heading@0.0.15':
+    resolution: {integrity: sha512-xF2GqsvBrp/HbRHWEfOgSfRFX+Q8I5KBEIG5+Lv3Vb2R/NYr0s8A5JhHHGf2pWBMJdbP4B2WHgj/VUrhy8dkIg==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      react: 19.1.1
+
+  '@react-email/hr@0.0.11':
+    resolution: {integrity: sha512-S1gZHVhwOsd1Iad5IFhpfICwNPMGPJidG/Uysy1AwmspyoAP5a4Iw3OWEpINFdgh9MHladbxcLKO2AJO+cA9Lw==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      react: 19.1.1
+
+  '@react-email/html@0.0.11':
+    resolution: {integrity: sha512-qJhbOQy5VW5qzU74AimjAR9FRFQfrMa7dn4gkEXKMB/S9xZN8e1yC1uA9C15jkXI/PzmJ0muDIWmFwatm5/+VA==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      react: 19.1.1
+
+  '@react-email/img@0.0.11':
+    resolution: {integrity: sha512-aGc8Y6U5C3igoMaqAJKsCpkbm1XjguQ09Acd+YcTKwjnC2+0w3yGUJkjWB2vTx4tN8dCqQCXO8FmdJpMfOA9EQ==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      react: 19.1.1
+
+  '@react-email/link@0.0.12':
+    resolution: {integrity: sha512-vF+xxQk2fGS1CN7UPQDbzvcBGfffr+GjTPNiWM38fhBfsLv6A/YUfaqxWlmL7zLzVmo0K2cvvV9wxlSyNba1aQ==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      react: 19.1.1
+
+  '@react-email/markdown@0.0.14':
+    resolution: {integrity: sha512-5IsobCyPkb4XwnQO8uFfGcNOxnsg3311GRXhJ3uKv51P7Jxme4ycC/MITnwIZ10w2zx7HIyTiqVzTj4XbuIHbg==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      react: 19.1.1
+
+  '@react-email/preview@0.0.12':
+    resolution: {integrity: sha512-g/H5fa9PQPDK6WUEG7iTlC19sAktI23qyoiJtMLqQiXFCfWeQMhqjLGKeLSKkfzszqmfJCjZtpSiKtBoOdxp3Q==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      react: 19.1.1
+
+  '@react-email/render@1.0.3':
+    resolution: {integrity: sha512-VQ8g4SuIq/jWdfBTdTjb7B8Np0jj+OoD7VebfdHhLTZzVQKesR2aigpYqE/ZXmwj4juVxDm8T2b6WIIu48rPCg==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      react: 19.1.1
+      react-dom: 19.1.1
+
+  '@react-email/render@1.1.2':
+    resolution: {integrity: sha512-RnRehYN3v9gVlNMehHPHhyp2RQo7+pSkHDtXPvg3s0GbzM9SQMW4Qrf8GRNvtpLC4gsI+Wt0VatNRUFqjvevbw==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      react: 19.1.1
+      react-dom: 19.1.1
+
+  '@react-email/row@0.0.12':
+    resolution: {integrity: sha512-HkCdnEjvK3o+n0y0tZKXYhIXUNPDx+2vq1dJTmqappVHXS5tXS6W5JOPZr5j+eoZ8gY3PShI2LWj5rWF7ZEtIQ==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      react: 19.1.1
+
+  '@react-email/section@0.0.16':
+    resolution: {integrity: sha512-FjqF9xQ8FoeUZYKSdt8sMIKvoT9XF8BrzhT3xiFKdEMwYNbsDflcjfErJe3jb7Wj/es/lKTbV5QR1dnLzGpL3w==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      react: 19.1.1
+
+  '@react-email/tailwind@1.0.3':
+    resolution: {integrity: sha512-VwRft4u/c0KuD6YlGWr+pltfzLzHS6Qt/L0XvdJf6ij6Iz6kKtuc7ZVZp/CJVbGnkUgWl/uiDlJ4FIAF6IzWTQ==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      react: 19.1.1
+
+  '@react-email/text@0.0.11':
+    resolution: {integrity: sha512-a7nl/2KLpRHOYx75YbYZpWspUbX1DFY7JIZbOv5x0QU8SvwDbJt+Hm01vG34PffFyYvHEXrc6Qnip2RTjljNjg==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      react: 19.1.1
 
   '@remix-run/node@2.17.0':
     resolution: {integrity: sha512-ISy3N4peKB+Fo8ddh+mU6ki3HzQqLXwJxUrAtqxYxrBDM4Pwc7EvISrcQ4QasB6ORBknJeEZSBu69WDRhGzrjA==}
@@ -3198,6 +3563,9 @@ packages:
   '@scalar/types@0.2.11':
     resolution: {integrity: sha512-SUZzGmoisWsYv33LmmT/ajvSlcl9ZDj9d5RncJ+wB9ZQ2l018xlfpDIH9Kdfo+6KCKQOe3LYLXfH4Lzm891Mag==}
     engines: {node: '>=20'}
+
+  '@selderee/plugin-htmlparser2@0.11.0':
+    resolution: {integrity: sha512-P33hHGdldxGabLFjPPpaTxVolMrzrcegejx+0GxjrIb9Zv48D8yAIA/QTDR2dFl7Uz7urX8aX6+5bCZslr+gWQ==}
 
   '@sentry-internal/browser-utils@10.36.0':
     resolution: {integrity: sha512-WILVR8HQBWOxbqLRuTxjzRCMIACGsDTo6jXvzA8rz6ezElElLmIrn3CFAswrESLqEEUa4CQHl5bLgSVJCRNweA==}
@@ -3760,6 +4128,9 @@ packages:
   '@types/nlcst@2.0.3':
     resolution: {integrity: sha512-vSYNSDe6Ix3q+6Z7ri9lyWqgGhJTmzRjZRqyq15N0Z/1/UnVsno9G/N40NBijoYx2seFDIl0+B2mgAb9mezUCA==}
 
+  '@types/node-cron@3.0.11':
+    resolution: {integrity: sha512-0ikrnug3/IyneSHqCBeslAhlK2aBfYek1fGo4bP4QnZPmiqSGRK+Oy7ZMisLWkesffJvQ1cqAcBnJC+8+nxIAg==}
+
   '@types/node@17.0.45':
     resolution: {integrity: sha512-w+tIMs3rq2afQdsPJlODhoUEKzFP1ayaoyl1CcnwtIlsVe7K7bA1NGm4s3PraqTLlXnbIN84zuBlxBWo1u9BLw==}
 
@@ -3787,6 +4158,11 @@ packages:
     resolution: {integrity: sha512-i5ZzwYpqjmrKenzkoLM2Ibzt6mAsM7pxB6BCIouEVVmgiqaMj1TjaK7hnA36hbW5aZv20kx7Lw6hWzPWg0Rurw==}
     peerDependencies:
       '@types/react': ^19.0.0
+
+  '@types/react-dom@19.2.3':
+    resolution: {integrity: sha512-jp2L/eY6fn+KgVVQAOqYItbF0VY/YApe5Mz2F0aykSO8gx31bYCZyvSeYxCHKvzHG5eZjc+zyaS5BrBWya2+kQ==}
+    peerDependencies:
+      '@types/react': ^19.2.0
 
   '@types/react@18.3.23':
     resolution: {integrity: sha512-/LDXMQh55EzZQ0uVAZmKKhfENivEvWz6E+EYzh+/MCjMhNsotd+ZHhBGIjFDTi6+fz0OhQQQLbTgdQIxxCsC0w==}
@@ -5090,6 +5466,12 @@ packages:
       sqlite3:
         optional: true
 
+  drizzle-zod@0.5.1:
+    resolution: {integrity: sha512-C/8bvzUH/zSnVfwdSibOgFjLhtDtbKYmkbPbUCq46QZyZCH6kODIMSOgZ8R7rVjoI+tCj3k06MRJMDqsIeoS4A==}
+    peerDependencies:
+      drizzle-orm: '>=0.23.13'
+      zod: '*'
+
   dset@3.1.4:
     resolution: {integrity: sha512-2QF/g9/zTaPDc3BjNcVTGoBbXBgYfMTTceLaYcFJ/W9kggFUkhxD/hMEeuLKbugyef9SqAx8cpgwlIP/jinUTA==}
     engines: {node: '>=4'}
@@ -5318,6 +5700,9 @@ packages:
     resolution: {integrity: sha512-GDhU9ntwuKyGXdZBUgTIe+vXnWj0fppUEtMDL0+idd5Sta8TGpHssn/eusA9mrPr9qNDym6SxAYZjNvCn/9RBg==}
     engines: {node: '>= 10.17.0'}
     hasBin: true
+
+  fast-deep-equal@2.0.1:
+    resolution: {integrity: sha512-bCK/2Z4zLidyB4ReuIsvALH6w31YfAQDmXMqMx6FyfHqvBxtjC0eRumeSu4Bs3XtXwpyIywtSTrVT99BxY1f9w==}
 
   fast-deep-equal@3.1.3:
     resolution: {integrity: sha512-f3qQ9oQy9j2AhBe/H9VC91wLmKBCCU/gDOnKNAYG5hswO7BLKj09Hc5HYNz9cGI++xlpDCIgDaitVs03ATR84Q==}
@@ -5651,6 +6036,10 @@ packages:
 
   html-escaper@3.0.3:
     resolution: {integrity: sha512-RuMffC89BOWQoY0WKGpIhn5gX3iI54O6nRA0yC124NYVtzjmFWBIiFd8M0x+ZdX0P9R4lADg1mgP8C7PxGOWuQ==}
+
+  html-to-text@9.0.5:
+    resolution: {integrity: sha512-qY60FjREgVZL03vJU6IfMV4GDjGBIoOyvuFdpBDIX9yTlDw0TjxVBQp+P8NvpdIXNJvfWBTNul7fsAQJq2FNpg==}
+    engines: {node: '>=14'}
 
   html-void-elements@3.0.0:
     resolution: {integrity: sha512-bEqo66MRXsUGxWHV5IP0PUiAWwoEjba4VCzg0LjFJBpchPaTfyfCKTG6bc5F8ucKec3q5y6qOdGyYTSBEvhCrg==}
@@ -6075,6 +6464,9 @@ packages:
     resolution: {integrity: sha512-b94GiNHQNy6JNTrt5w6zNyffMrNkXZb3KTkCZJb2V1xaEGCk093vkZ2jk3tpaeP33/OiXC+WvK9AxUebnf5nbw==}
     engines: {node: '>= 0.6.3'}
 
+  leac@0.6.0:
+    resolution: {integrity: sha512-y+SqErxb8h7nE/fiEX07jsbuhrpO9lL8eca7/Y1nuWV2moNlXhyd59iDGcRf6moVyDMbmTNzL40SUyrFU/yDpg==}
+
   lighthouse-logger@2.0.2:
     resolution: {integrity: sha512-vWl2+u5jgOQuZR55Z1WM0XDdrJT6mzMP8zHUct7xTlWhuQs+eV0g+QL0RQdFjT54zVmbhLCP8vIVpy1wGn/gCg==}
 
@@ -6325,12 +6717,22 @@ packages:
     resolution: {integrity: sha512-xaSxkaU7wY/0852zGApM8LdlIfGCW8ETZ0Rr62IQtAnUMlMuifsg09vWJcNYeL4f0anvr8Vo4ZQar8jGpV0btQ==}
     engines: {node: '>=20'}
 
+  marked@7.0.4:
+    resolution: {integrity: sha512-t8eP0dXRJMtMvBojtkcsA7n48BkauktUKzfkPSCq85ZMTJ0v76Rke4DYz01omYpPTUh4p/f7HePgRo3ebG8+QQ==}
+    engines: {node: '>= 16'}
+    hasBin: true
+
   marky@1.3.0:
     resolution: {integrity: sha512-ocnPZQLNpvbedwTy9kNrQEsknEfgvcLMvOtz3sFeWApDq1MXH1TqkCIx58xlpESsfwQOnuBO9beyQuNGzVvuhQ==}
 
   math-intrinsics@1.1.0:
     resolution: {integrity: sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g==}
     engines: {node: '>= 0.4'}
+
+  md-to-react-email@5.0.5:
+    resolution: {integrity: sha512-OvAXqwq57uOk+WZqFFNCMZz8yDp8BD3WazW1wAKHUrPbbdr89K9DWS6JXY09vd9xNdPNeurI8DU/X4flcfaD8A==}
+    peerDependencies:
+      react: 19.1.1
 
   mdast-util-definitions@6.0.0:
     resolution: {integrity: sha512-scTllyX6pnYNZH/AIp/0ePz6s4cZtARxImwoPJ7kS42n+MnVsI4XbnG6d4ibehRIldYMWM2LD7ImQblVhUejVQ==}
@@ -6384,6 +6786,9 @@ packages:
   meow@12.1.1:
     resolution: {integrity: sha512-BhXM0Au22RwUneMPwSCnyhTOizdWoIEPU9sp0Aqa1PnDMR5Wv2FGXYDjuzJEIX+Eo2Rb8xuYe5jrnm5QowQFkw==}
     engines: {node: '>=16.10'}
+
+  mercadopago@2.12.0:
+    resolution: {integrity: sha512-9S+ZB/Fltd4BV9/U79r7U/+LrYJP844kxxvtAlVbbeVmhOE9rZt0YhPy1GXO3Yf4XyQaHwZ/SCyL2kebAicaLw==}
 
   merge-options@3.0.4:
     resolution: {integrity: sha512-2Sug1+knBjkaMsMgf1ctR1Ujx+Ayku4EdJN4Z+C2+JzoeF7A3OZ9KM2GY0CpQS51NR61LTurMJrRKPhSs3ZRTQ==}
@@ -6661,6 +7066,10 @@ packages:
   node-addon-api@7.1.1:
     resolution: {integrity: sha512-5m3bsyrjFWE1xf7nz7YXdN4udnVtXK6/Yfgn5qnahL6bCkf2yKt4k3nuTKAtT4r3IG8JNR2ncsIMdZuAzJjHQQ==}
 
+  node-cron@3.0.3:
+    resolution: {integrity: sha512-dOal67//nohNgYWb+nWmg5dkFdIwDm8EpeGYMekPMrngV3637lqnX0lbUcCtgibHTz6SEz7DAIjKvKDFYCnO1A==}
+    engines: {node: '>=6.0.0'}
+
   node-domexception@1.0.0:
     resolution: {integrity: sha512-/jKZoMpw0F8GRwl4/eLROPA3cfcXtLApP0QzLmUT/HuPCZWyB7IY9ZrMeKw2O/nFIqPQB3PVM9aYm0F312AXDQ==}
     engines: {node: '>=10.5.0'}
@@ -6886,6 +7295,9 @@ packages:
   parse5@7.3.0:
     resolution: {integrity: sha512-IInvU7fabl34qmi9gY8XOVxhYyMyuH2xUNpb2q8/Y+7552KlejkRvqvD19nMoUW/uQGGbqNpA6Tufu5FL5BZgw==}
 
+  parseley@0.12.1:
+    resolution: {integrity: sha512-e6qHKe3a9HWr0oMRVDTRhKce+bRO8VGQR3NyVwcjwrbhMmFCX9KszEV35+rn4AdilFAq9VPxP/Fe1wC9Qjd2lw==}
+
   parseurl@1.3.3:
     resolution: {integrity: sha512-CiyeOxFT/JZyN5m0z9PfXw4SCBJ6Sygz1Dpl0wqjlhDEGGBP1GnsUVEL0p63hoG1fcj3fHynXi9NYO4nWOL+qQ==}
     engines: {node: '>= 0.8'}
@@ -6936,6 +7348,9 @@ packages:
   pathval@2.0.1:
     resolution: {integrity: sha512-//nshmD55c46FuFw26xV/xFAaB5HF9Xdap7HJBBnrKdAd6/GxDBaNA1870O79+9ueg61cZLSVc+OaFlfmObYVQ==}
     engines: {node: '>= 14.16'}
+
+  peberminta@0.9.0:
+    resolution: {integrity: sha512-XIxfHpEuSJbITd1H3EeQwpcZbTLHc+VVr8ANI9t5sit565tsI4/xK3KWTUFE2e6QiangUkh3B0jihzmGnNrRsQ==}
 
   pend@1.2.0:
     resolution: {integrity: sha512-F3asv42UuXchdzt+xXqfW1OGlVBe+mxa2mqI0pg5yAHZPvFmY3Y6drSf/GQ1A86WgWEN9Kzh/WrgKa6iGcHXLg==}
@@ -7070,12 +7485,21 @@ packages:
     resolution: {integrity: sha512-9ZhXKM/rw350N1ovuWHbGxnGh/SNJ4cnxHiM0rxE4VN41wsg8P8zWn9hv/buK00RP4WvlOyr/RBDiptyxVbkZQ==}
     engines: {node: '>=0.10.0'}
 
+  postgres@3.4.8:
+    resolution: {integrity: sha512-d+JFcLM17njZaOLkv6SCev7uoLaBtfK86vMUXhW1Z4glPWh4jozno9APvW/XKFJ3CCxVoC7OL38BqRydtu5nGg==}
+    engines: {node: '>=12'}
+
   preact@10.26.5:
     resolution: {integrity: sha512-fmpDkgfGU6JYux9teDWLhj9mKN55tyepwYbxHgQuIxbWQzgFg5vk7Mrrtfx7xRxq798ynkY4DDDxZr235Kk+4w==}
 
   precinct@12.2.0:
     resolution: {integrity: sha512-NFBMuwIfaJ4SocE9YXPU/n4AcNSoFMVFjP72nvl3cx69j/ke61/hPOWFREVxLkFhhEGnA8ZuVfTqJBa+PK3b5w==}
     engines: {node: '>=18'}
+    hasBin: true
+
+  prettier@3.3.3:
+    resolution: {integrity: sha512-i2tDNA0O5IrMO757lfrdQZCc2jPNDVntV0m/+4whiDfWaTKfMNgR7Qz0NAeGz/nRqF4m5/6CLzbP4/liHt12Ew==}
+    engines: {node: '>=14'}
     hasBin: true
 
   prettier@3.6.2:
@@ -7090,6 +7514,10 @@ packages:
   pretty-format@27.5.1:
     resolution: {integrity: sha512-Qb1gy5OrP5+zDf2Bvnzdl3jsTf1qXVMazbvCoKhtKqVs4/YK4ozX4gKQJJVyNe+cajNPn0KoC0MC3FUmaHWEmQ==}
     engines: {node: ^10.13.0 || ^12.13.0 || ^14.15.0 || >=15.0.0}
+
+  prismjs@1.29.0:
+    resolution: {integrity: sha512-Kx/1w86q/epKcmte75LNrEoT+lX8pBpavuAbvJWRXar7Hz8jrtF+e3vY751p0R8H9HdArwaCTNDDzHg/ScJK1Q==}
+    engines: {node: '>=6'}
 
   prismjs@1.30.0:
     resolution: {integrity: sha512-DEvV2ZF2r2/63V+tK8hQvrR2ZGn10srHbXviTlcv7Kpzw8jWiNTqbVgjO3IY8RxrrOUF8VPMQQFysYYYv0YZxw==}
@@ -7181,6 +7609,9 @@ packages:
 
   react-is@17.0.2:
     resolution: {integrity: sha512-w2GsyukL62IJnlaff/nRegPQR94C/XXamvMWmSHRJ4y7Ts/4ocGRmTHvOs8PSE6pB3dWOrD/nueuU5sduBsQ4w==}
+
+  react-promise-suspense@0.3.4:
+    resolution: {integrity: sha512-I42jl7L3Ze6kZaq+7zXWSunBa3b1on5yfvUW6Eo/3fFOj6dZ5Bqmcd264nJbTK/gn1HjjILAjSwnZbV4RpSaNQ==}
 
   react-refresh@0.17.0:
     resolution: {integrity: sha512-z6F7K9bV85EfseRCp2bzrpyQ0Gkw1uLoCel9XBVWPg/TjRj94SkJzUTGfOa4bs7iJvBWtQG0Wq7wnI0syw3EBQ==}
@@ -7323,6 +7754,10 @@ packages:
   requires-port@1.0.0:
     resolution: {integrity: sha512-KigOCHcocU3XODJxsu8i/j8T9tzT4adHiecwORRQ0ZZFcp7ahwXuRU1m+yuO90C5ZUyGeGfocHDI14M3L3yDAQ==}
 
+  resend@4.8.0:
+    resolution: {integrity: sha512-R8eBOFQDO6dzRTDmaMEdpqrkmgSjPpVXt4nGfWsZdYOet0kqra0xgbvTES6HmCriZEXbmGk3e0DiGIaLFTFSHA==}
+    engines: {node: '>=18'}
+
   resolve-from@4.0.0:
     resolution: {integrity: sha512-pb/MYmXstAkysRFx8piNI1tGFNQIFA3vkE3Gq4EuA1dF6gHp/+vgZqsCGJapvy8N3Q+4o7FwvquPJcnZ7RYy4g==}
     engines: {node: '>=4'}
@@ -7436,6 +7871,9 @@ packages:
 
   scule@1.3.0:
     resolution: {integrity: sha512-6FtHJEvt+pVMIB9IBY+IcCJ6Z5f1iQnytgyfKMhDKgmzYG+TeH/wx1y3l27rshSbLiSanrR9ffZDrEsmjlQF2g==}
+
+  selderee@0.11.0:
+    resolution: {integrity: sha512-5TF+l7p4+OsnP8BCCvSyZiSPc4x4//p5uPwK8TCnVPJYRmU2aYKMpOXvw8zM5a5JvuuCGN1jmsMwuU2W02ukfA==}
 
   semver@5.7.2:
     resolution: {integrity: sha512-cBznnQ9KjJqU67B52RMC65CMarK2600WFnbkcaiwWq3xy/5haFJlshgnpjovMVJ+Hff49d8GEn0b87C5pDQ10g==}
@@ -8279,6 +8717,14 @@ packages:
     resolution: {integrity: sha512-0/A9rDy9P7cJ+8w1c9WD9V//9Wj15Ce2MPz8Ri6032usz+NfePxx5AcN3bN+r6ZL6jEo066/yNYB3tn4pQEx+A==}
     hasBin: true
 
+  uuid@8.3.2:
+    resolution: {integrity: sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==}
+    hasBin: true
+
+  uuid@9.0.1:
+    resolution: {integrity: sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==}
+    hasBin: true
+
   v8-to-istanbul@9.3.0:
     resolution: {integrity: sha512-kiGUalWN+rgBJ/1OHZsBtU4rXZOfj/7rKQxULKlIzwzQSvMJUUNgPwJEEh7gU6xEVxC0ahoOBvN2YI8GH6FNgA==}
     engines: {node: '>=10.12.0'}
@@ -8771,10 +9217,10 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@astrojs/node@9.4.2(astro@5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1))':
+  '@astrojs/node@9.4.2(astro@5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1))':
     dependencies:
       '@astrojs/internal-helpers': 0.7.2
-      astro: 5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1)
+      astro: 5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1)
       send: 1.2.0
       server-destroy: 1.0.1
     transitivePeerDependencies:
@@ -8810,9 +9256,9 @@ snapshots:
       stream-replace-string: 2.0.0
       zod: 3.25.76
 
-  '@astrojs/tailwind@5.1.5(astro@5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1))(tailwindcss@4.1.12)':
+  '@astrojs/tailwind@5.1.5(astro@5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1))(tailwindcss@4.1.12)':
     dependencies:
-      astro: 5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1)
+      astro: 5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1)
       autoprefixer: 10.4.21(postcss@8.5.6)
       postcss: 8.5.6
       postcss-load-config: 4.0.2(postcss@8.5.6)
@@ -8832,14 +9278,14 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@astrojs/vercel@8.2.6(astro@5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1))(react@19.1.1)(rollup@4.46.3)':
+  '@astrojs/vercel@8.2.6(astro@5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1))(react@19.1.1)(rollup@4.46.3)':
     dependencies:
       '@astrojs/internal-helpers': 0.7.2
       '@vercel/analytics': 1.5.0(react@19.1.1)
       '@vercel/functions': 2.2.12
       '@vercel/nft': 0.29.4(rollup@4.46.3)
       '@vercel/routing-utils': 5.1.1
-      astro: 5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1)
+      astro: 5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1)
       esbuild: 0.25.9
       tinyglobby: 0.2.14
     transitivePeerDependencies:
@@ -9111,12 +9557,12 @@ snapshots:
     transitivePeerDependencies:
       - encoding
 
-  '@clerk/astro@2.11.4(astro@5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
+  '@clerk/astro@2.11.4(astro@5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
     dependencies:
       '@clerk/backend': 2.9.2(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       '@clerk/shared': 3.21.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       '@clerk/types': 4.79.0
-      astro: 5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1)
+      astro: 5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1)
       nanoid: 5.1.5
       nanostores: 1.0.1
     transitivePeerDependencies:
@@ -9185,14 +9631,14 @@ snapshots:
       react: 19.1.1
       react-dom: 19.1.1(react@19.1.1)
 
-  '@clerk/tanstack-react-start@0.23.1(@tanstack/react-router@1.131.26(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(@tanstack/react-start@1.131.26(@netlify/blobs@9.1.2)(@tanstack/react-router@1.131.26(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(@vitejs/plugin-react@4.7.0(vite@6.3.5(@types/node@22.17.2)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1)))(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@19.1.10)(pg@8.16.3)(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(vite@6.3.5(@types/node@22.17.2)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1)))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
+  '@clerk/tanstack-react-start@0.23.1(@tanstack/react-router@1.131.26(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(@tanstack/react-start@1.131.26(@netlify/blobs@9.1.2)(@tanstack/react-router@1.131.26(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(@vitejs/plugin-react@4.7.0(vite@6.3.5(@types/node@22.17.2)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1)))(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@19.1.10)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(vite@6.3.5(@types/node@22.17.2)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1)))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
     dependencies:
       '@clerk/backend': 2.10.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       '@clerk/clerk-react': 5.45.0(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       '@clerk/shared': 3.23.0(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       '@clerk/types': 4.83.0
       '@tanstack/react-router': 1.131.26(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@tanstack/react-start': 1.131.26(@netlify/blobs@9.1.2)(@tanstack/react-router@1.131.26(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(@vitejs/plugin-react@4.7.0(vite@6.3.5(@types/node@22.17.2)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1)))(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@19.1.10)(pg@8.16.3)(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(vite@6.3.5(@types/node@22.17.2)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1))
+      '@tanstack/react-start': 1.131.26(@netlify/blobs@9.1.2)(@tanstack/react-router@1.131.26(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(@vitejs/plugin-react@4.7.0(vite@6.3.5(@types/node@22.17.2)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1)))(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@19.1.10)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(vite@6.3.5(@types/node@22.17.2)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1))
       react: 19.1.1
       react-dom: 19.1.1(react@19.1.1)
       tslib: 2.8.1
@@ -9808,6 +10254,11 @@ snapshots:
       hono: 4.9.2
       zod: 4.0.17
 
+  '@hono/zod-validator@0.7.6(hono@4.9.2)(zod@4.0.17)':
+    dependencies:
+      hono: 4.9.2
+      zod: 4.0.17
+
   '@img/sharp-darwin-arm64@0.33.5':
     optionalDependencies:
       '@img/sharp-libvips-darwin-arm64': 1.0.4
@@ -10240,6 +10691,33 @@ snapshots:
       - bare-buffer
       - supports-color
 
+  '@qazuor/qzpay-core@1.1.0': {}
+
+  '@qazuor/qzpay-drizzle@1.1.0(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@19.1.10)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1))(postgres@3.4.8)(zod@3.25.76)':
+    dependencies:
+      '@qazuor/qzpay-core': 1.1.0
+      drizzle-orm: 0.29.5(@types/pg@8.15.5)(@types/react@19.1.10)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1)
+      drizzle-zod: 0.5.1(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@19.1.10)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1))(zod@3.25.76)
+      postgres: 3.4.8
+      zod: 3.25.76
+
+  '@qazuor/qzpay-hono@1.1.0(hono@4.9.2)(zod@4.0.17)':
+    dependencies:
+      '@hono/zod-validator': 0.7.6(hono@4.9.2)(zod@4.0.17)
+      '@qazuor/qzpay-core': 1.1.0
+      hono: 4.9.2
+      zod: 4.0.17
+
+  '@qazuor/qzpay-mercadopago@1.1.0(mercadopago@2.12.0)':
+    dependencies:
+      '@qazuor/qzpay-core': 1.1.0
+      mercadopago: 2.12.0
+
+  '@qazuor/qzpay-react@1.1.0(react@19.1.1)':
+    dependencies:
+      '@qazuor/qzpay-core': 1.1.0
+      react: 19.1.1
+
   '@radix-ui/number@1.1.1': {}
 
   '@radix-ui/primitive@1.1.3': {}
@@ -10255,6 +10733,20 @@ snapshots:
       '@radix-ui/react-id': 1.1.1(@types/react@19.1.10)(react@19.1.1)
       '@radix-ui/react-primitive': 2.1.3(@types/react-dom@19.1.7(@types/react@19.1.10))(@types/react@19.1.10)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       '@radix-ui/react-use-controllable-state': 1.2.2(@types/react@19.1.10)(react@19.1.1)
+      react: 19.1.1
+      react-dom: 19.1.1(react@19.1.1)
+    optionalDependencies:
+      '@types/react': 19.1.10
+      '@types/react-dom': 19.1.7(@types/react@19.1.10)
+
+  '@radix-ui/react-alert-dialog@1.1.15(@types/react-dom@19.1.7(@types/react@19.1.10))(@types/react@19.1.10)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
+    dependencies:
+      '@radix-ui/primitive': 1.1.3
+      '@radix-ui/react-compose-refs': 1.1.2(@types/react@19.1.10)(react@19.1.1)
+      '@radix-ui/react-context': 1.1.2(@types/react@19.1.10)(react@19.1.1)
+      '@radix-ui/react-dialog': 1.1.15(@types/react-dom@19.1.7(@types/react@19.1.10))(@types/react@19.1.10)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+      '@radix-ui/react-primitive': 2.1.3(@types/react-dom@19.1.7(@types/react@19.1.10))(@types/react@19.1.10)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+      '@radix-ui/react-slot': 1.2.3(@types/react@19.1.10)(react@19.1.1)
       react: 19.1.1
       react-dom: 19.1.1(react@19.1.1)
     optionalDependencies:
@@ -10326,6 +10818,12 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.1.10
 
+  '@radix-ui/react-context@1.1.3(@types/react@19.1.10)(react@19.1.1)':
+    dependencies:
+      react: 19.1.1
+    optionalDependencies:
+      '@types/react': 19.1.10
+
   '@radix-ui/react-dialog@1.1.15(@types/react-dom@19.1.7(@types/react@19.1.10))(@types/react@19.1.10)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
     dependencies:
       '@radix-ui/primitive': 1.1.3
@@ -10367,6 +10865,21 @@ snapshots:
       '@types/react': 19.1.10
       '@types/react-dom': 19.1.7(@types/react@19.1.10)
 
+  '@radix-ui/react-dropdown-menu@2.1.16(@types/react-dom@19.1.7(@types/react@19.1.10))(@types/react@19.1.10)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
+    dependencies:
+      '@radix-ui/primitive': 1.1.3
+      '@radix-ui/react-compose-refs': 1.1.2(@types/react@19.1.10)(react@19.1.1)
+      '@radix-ui/react-context': 1.1.2(@types/react@19.1.10)(react@19.1.1)
+      '@radix-ui/react-id': 1.1.1(@types/react@19.1.10)(react@19.1.1)
+      '@radix-ui/react-menu': 2.1.16(@types/react-dom@19.1.7(@types/react@19.1.10))(@types/react@19.1.10)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+      '@radix-ui/react-primitive': 2.1.3(@types/react-dom@19.1.7(@types/react@19.1.10))(@types/react@19.1.10)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+      '@radix-ui/react-use-controllable-state': 1.2.2(@types/react@19.1.10)(react@19.1.1)
+      react: 19.1.1
+      react-dom: 19.1.1(react@19.1.1)
+    optionalDependencies:
+      '@types/react': 19.1.10
+      '@types/react-dom': 19.1.7(@types/react@19.1.10)
+
   '@radix-ui/react-focus-guards@1.1.3(@types/react@19.1.10)(react@19.1.1)':
     dependencies:
       react: 19.1.1
@@ -10396,6 +10909,32 @@ snapshots:
       '@radix-ui/react-primitive': 2.1.3(@types/react-dom@19.1.7(@types/react@19.1.10))(@types/react@19.1.10)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       react: 19.1.1
       react-dom: 19.1.1(react@19.1.1)
+    optionalDependencies:
+      '@types/react': 19.1.10
+      '@types/react-dom': 19.1.7(@types/react@19.1.10)
+
+  '@radix-ui/react-menu@2.1.16(@types/react-dom@19.1.7(@types/react@19.1.10))(@types/react@19.1.10)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
+    dependencies:
+      '@radix-ui/primitive': 1.1.3
+      '@radix-ui/react-collection': 1.1.7(@types/react-dom@19.1.7(@types/react@19.1.10))(@types/react@19.1.10)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+      '@radix-ui/react-compose-refs': 1.1.2(@types/react@19.1.10)(react@19.1.1)
+      '@radix-ui/react-context': 1.1.2(@types/react@19.1.10)(react@19.1.1)
+      '@radix-ui/react-direction': 1.1.1(@types/react@19.1.10)(react@19.1.1)
+      '@radix-ui/react-dismissable-layer': 1.1.11(@types/react-dom@19.1.7(@types/react@19.1.10))(@types/react@19.1.10)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+      '@radix-ui/react-focus-guards': 1.1.3(@types/react@19.1.10)(react@19.1.1)
+      '@radix-ui/react-focus-scope': 1.1.7(@types/react-dom@19.1.7(@types/react@19.1.10))(@types/react@19.1.10)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+      '@radix-ui/react-id': 1.1.1(@types/react@19.1.10)(react@19.1.1)
+      '@radix-ui/react-popper': 1.2.8(@types/react-dom@19.1.7(@types/react@19.1.10))(@types/react@19.1.10)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+      '@radix-ui/react-portal': 1.1.9(@types/react-dom@19.1.7(@types/react@19.1.10))(@types/react@19.1.10)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+      '@radix-ui/react-presence': 1.1.5(@types/react-dom@19.1.7(@types/react@19.1.10))(@types/react@19.1.10)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+      '@radix-ui/react-primitive': 2.1.3(@types/react-dom@19.1.7(@types/react@19.1.10))(@types/react@19.1.10)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+      '@radix-ui/react-roving-focus': 1.1.11(@types/react-dom@19.1.7(@types/react@19.1.10))(@types/react@19.1.10)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+      '@radix-ui/react-slot': 1.2.3(@types/react@19.1.10)(react@19.1.1)
+      '@radix-ui/react-use-callback-ref': 1.1.1(@types/react@19.1.10)(react@19.1.1)
+      aria-hidden: 1.2.6
+      react: 19.1.1
+      react-dom: 19.1.1(react@19.1.1)
+      react-remove-scroll: 2.7.1(@types/react@19.1.10)(react@19.1.1)
     optionalDependencies:
       '@types/react': 19.1.10
       '@types/react-dom': 19.1.7(@types/react@19.1.10)
@@ -10470,6 +11009,25 @@ snapshots:
       '@types/react': 19.1.10
       '@types/react-dom': 19.1.7(@types/react@19.1.10)
 
+  '@radix-ui/react-primitive@2.1.4(@types/react-dom@19.1.7(@types/react@19.1.10))(@types/react@19.1.10)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
+    dependencies:
+      '@radix-ui/react-slot': 1.2.4(@types/react@19.1.10)(react@19.1.1)
+      react: 19.1.1
+      react-dom: 19.1.1(react@19.1.1)
+    optionalDependencies:
+      '@types/react': 19.1.10
+      '@types/react-dom': 19.1.7(@types/react@19.1.10)
+
+  '@radix-ui/react-progress@1.1.8(@types/react-dom@19.1.7(@types/react@19.1.10))(@types/react@19.1.10)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
+    dependencies:
+      '@radix-ui/react-context': 1.1.3(@types/react@19.1.10)(react@19.1.1)
+      '@radix-ui/react-primitive': 2.1.4(@types/react-dom@19.1.7(@types/react@19.1.10))(@types/react@19.1.10)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+      react: 19.1.1
+      react-dom: 19.1.1(react@19.1.1)
+    optionalDependencies:
+      '@types/react': 19.1.10
+      '@types/react-dom': 19.1.7(@types/react@19.1.10)
+
   '@radix-ui/react-roving-focus@1.1.11(@types/react-dom@19.1.7(@types/react@19.1.10))(@types/react@19.1.10)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
     dependencies:
       '@radix-ui/primitive': 1.1.3
@@ -10517,6 +11075,13 @@ snapshots:
       '@types/react-dom': 19.1.7(@types/react@19.1.10)
 
   '@radix-ui/react-slot@1.2.3(@types/react@19.1.10)(react@19.1.1)':
+    dependencies:
+      '@radix-ui/react-compose-refs': 1.1.2(@types/react@19.1.10)(react@19.1.1)
+      react: 19.1.1
+    optionalDependencies:
+      '@types/react': 19.1.10
+
+  '@radix-ui/react-slot@1.2.4(@types/react@19.1.10)(react@19.1.1)':
     dependencies:
       '@radix-ui/react-compose-refs': 1.1.2(@types/react@19.1.10)(react@19.1.1)
       react: 19.1.1
@@ -10619,6 +11184,126 @@ snapshots:
 
   '@radix-ui/rect@1.1.1': {}
 
+  '@react-email/body@0.0.11(react@19.1.1)':
+    dependencies:
+      react: 19.1.1
+
+  '@react-email/button@0.0.19(react@19.1.1)':
+    dependencies:
+      react: 19.1.1
+
+  '@react-email/code-block@0.0.11(react@19.1.1)':
+    dependencies:
+      prismjs: 1.29.0
+      react: 19.1.1
+
+  '@react-email/code-inline@0.0.5(react@19.1.1)':
+    dependencies:
+      react: 19.1.1
+
+  '@react-email/column@0.0.13(react@19.1.1)':
+    dependencies:
+      react: 19.1.1
+
+  '@react-email/components@0.0.30(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
+    dependencies:
+      '@react-email/body': 0.0.11(react@19.1.1)
+      '@react-email/button': 0.0.19(react@19.1.1)
+      '@react-email/code-block': 0.0.11(react@19.1.1)
+      '@react-email/code-inline': 0.0.5(react@19.1.1)
+      '@react-email/column': 0.0.13(react@19.1.1)
+      '@react-email/container': 0.0.15(react@19.1.1)
+      '@react-email/font': 0.0.9(react@19.1.1)
+      '@react-email/head': 0.0.12(react@19.1.1)
+      '@react-email/heading': 0.0.15(react@19.1.1)
+      '@react-email/hr': 0.0.11(react@19.1.1)
+      '@react-email/html': 0.0.11(react@19.1.1)
+      '@react-email/img': 0.0.11(react@19.1.1)
+      '@react-email/link': 0.0.12(react@19.1.1)
+      '@react-email/markdown': 0.0.14(react@19.1.1)
+      '@react-email/preview': 0.0.12(react@19.1.1)
+      '@react-email/render': 1.0.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+      '@react-email/row': 0.0.12(react@19.1.1)
+      '@react-email/section': 0.0.16(react@19.1.1)
+      '@react-email/tailwind': 1.0.3(react@19.1.1)
+      '@react-email/text': 0.0.11(react@19.1.1)
+      react: 19.1.1
+    transitivePeerDependencies:
+      - react-dom
+
+  '@react-email/container@0.0.15(react@19.1.1)':
+    dependencies:
+      react: 19.1.1
+
+  '@react-email/font@0.0.9(react@19.1.1)':
+    dependencies:
+      react: 19.1.1
+
+  '@react-email/head@0.0.12(react@19.1.1)':
+    dependencies:
+      react: 19.1.1
+
+  '@react-email/heading@0.0.15(react@19.1.1)':
+    dependencies:
+      react: 19.1.1
+
+  '@react-email/hr@0.0.11(react@19.1.1)':
+    dependencies:
+      react: 19.1.1
+
+  '@react-email/html@0.0.11(react@19.1.1)':
+    dependencies:
+      react: 19.1.1
+
+  '@react-email/img@0.0.11(react@19.1.1)':
+    dependencies:
+      react: 19.1.1
+
+  '@react-email/link@0.0.12(react@19.1.1)':
+    dependencies:
+      react: 19.1.1
+
+  '@react-email/markdown@0.0.14(react@19.1.1)':
+    dependencies:
+      md-to-react-email: 5.0.5(react@19.1.1)
+      react: 19.1.1
+
+  '@react-email/preview@0.0.12(react@19.1.1)':
+    dependencies:
+      react: 19.1.1
+
+  '@react-email/render@1.0.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
+    dependencies:
+      html-to-text: 9.0.5
+      prettier: 3.3.3
+      react: 19.1.1
+      react-dom: 19.1.1(react@19.1.1)
+      react-promise-suspense: 0.3.4
+
+  '@react-email/render@1.1.2(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
+    dependencies:
+      html-to-text: 9.0.5
+      prettier: 3.6.2
+      react: 19.1.1
+      react-dom: 19.1.1(react@19.1.1)
+      react-promise-suspense: 0.3.4
+
+  '@react-email/row@0.0.12(react@19.1.1)':
+    dependencies:
+      react: 19.1.1
+
+  '@react-email/section@0.0.16(react@19.1.1)':
+    dependencies:
+      react: 19.1.1
+
+  '@react-email/tailwind@1.0.3(react@19.1.1)':
+    dependencies:
+      react: 19.1.1
+
+  '@react-email/text@0.0.11(react@19.1.1)':
+    dependencies:
+      react: 19.1.1
+
   '@remix-run/node@2.17.0(typescript@5.7.2)':
     dependencies:
       '@remix-run/server-runtime': 2.17.0(typescript@5.7.2)
@@ -10673,9 +11358,9 @@ snapshots:
     dependencies:
       web-streams-polyfill: 3.3.3
 
-  '@reunmedia/astro-normalize-trailing-slash@0.1.1(astro@5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1))':
+  '@reunmedia/astro-normalize-trailing-slash@0.1.1(astro@5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1))':
     dependencies:
-      astro: 5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1)
+      astro: 5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1)
 
   '@rolldown/pluginutils@1.0.0-beta.27': {}
 
@@ -10820,6 +11505,11 @@ snapshots:
       '@scalar/openapi-types': 0.3.7
       nanoid: 5.1.5
       zod: 3.24.1
+
+  '@selderee/plugin-htmlparser2@0.11.0':
+    dependencies:
+      domhandler: 5.0.3
+      selderee: 0.11.0
 
   '@sentry-internal/browser-utils@10.36.0':
     dependencies:
@@ -11173,9 +11863,9 @@ snapshots:
       tiny-invariant: 1.3.3
       tiny-warning: 1.0.3
 
-  '@tanstack/react-start-plugin@1.131.26(@netlify/blobs@9.1.2)(@tanstack/react-router@1.131.26(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(@vitejs/plugin-react@4.7.0(vite@6.3.5(@types/node@22.17.2)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1)))(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@19.1.10)(pg@8.16.3)(react@19.1.1))(vite@6.3.5(@types/node@22.17.2)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1))':
+  '@tanstack/react-start-plugin@1.131.26(@netlify/blobs@9.1.2)(@tanstack/react-router@1.131.26(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(@vitejs/plugin-react@4.7.0(vite@6.3.5(@types/node@22.17.2)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1)))(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@19.1.10)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1))(vite@6.3.5(@types/node@22.17.2)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1))':
     dependencies:
-      '@tanstack/start-plugin-core': 1.131.26(@netlify/blobs@9.1.2)(@tanstack/react-router@1.131.26(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@19.1.10)(pg@8.16.3)(react@19.1.1))(vite@6.3.5(@types/node@22.17.2)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1))
+      '@tanstack/start-plugin-core': 1.131.26(@netlify/blobs@9.1.2)(@tanstack/react-router@1.131.26(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@19.1.10)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1))(vite@6.3.5(@types/node@22.17.2)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1))
       '@vitejs/plugin-react': 4.7.0(vite@6.3.5(@types/node@22.17.2)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1))
       pathe: 2.0.3
       vite: 6.3.5(@types/node@22.17.2)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1)
@@ -11224,10 +11914,10 @@ snapshots:
       react: 19.1.1
       react-dom: 19.1.1(react@19.1.1)
 
-  '@tanstack/react-start@1.131.26(@netlify/blobs@9.1.2)(@tanstack/react-router@1.131.26(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(@vitejs/plugin-react@4.7.0(vite@6.3.5(@types/node@22.17.2)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1)))(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@19.1.10)(pg@8.16.3)(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(vite@6.3.5(@types/node@22.17.2)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1))':
+  '@tanstack/react-start@1.131.26(@netlify/blobs@9.1.2)(@tanstack/react-router@1.131.26(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(@vitejs/plugin-react@4.7.0(vite@6.3.5(@types/node@22.17.2)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1)))(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@19.1.10)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(vite@6.3.5(@types/node@22.17.2)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1))':
     dependencies:
       '@tanstack/react-start-client': 1.131.26(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@tanstack/react-start-plugin': 1.131.26(@netlify/blobs@9.1.2)(@tanstack/react-router@1.131.26(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(@vitejs/plugin-react@4.7.0(vite@6.3.5(@types/node@22.17.2)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1)))(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@19.1.10)(pg@8.16.3)(react@19.1.1))(vite@6.3.5(@types/node@22.17.2)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1))
+      '@tanstack/react-start-plugin': 1.131.26(@netlify/blobs@9.1.2)(@tanstack/react-router@1.131.26(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(@vitejs/plugin-react@4.7.0(vite@6.3.5(@types/node@22.17.2)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1)))(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@19.1.10)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1))(vite@6.3.5(@types/node@22.17.2)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1))
       '@tanstack/react-start-server': 1.131.26(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       '@tanstack/start-server-functions-client': 1.131.26(vite@6.3.5(@types/node@22.17.2)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1))
       '@tanstack/start-server-functions-server': 1.131.2(vite@6.3.5(@types/node@22.17.2)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1))
@@ -11398,7 +12088,7 @@ snapshots:
       tiny-invariant: 1.3.3
       tiny-warning: 1.0.3
 
-  '@tanstack/start-plugin-core@1.131.26(@netlify/blobs@9.1.2)(@tanstack/react-router@1.131.26(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@19.1.10)(pg@8.16.3)(react@19.1.1))(vite@6.3.5(@types/node@22.17.2)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1))':
+  '@tanstack/start-plugin-core@1.131.26(@netlify/blobs@9.1.2)(@tanstack/react-router@1.131.26(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@19.1.10)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1))(vite@6.3.5(@types/node@22.17.2)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1))':
     dependencies:
       '@babel/code-frame': 7.26.2
       '@babel/core': 7.28.3
@@ -11414,7 +12104,7 @@ snapshots:
       babel-dead-code-elimination: 1.0.10
       cheerio: 1.1.2
       h3: 1.13.0
-      nitropack: 2.12.4(@netlify/blobs@9.1.2)(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@19.1.10)(pg@8.16.3)(react@19.1.1))
+      nitropack: 2.12.4(@netlify/blobs@9.1.2)(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@19.1.10)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1))
       pathe: 2.0.3
       ufo: 1.6.1
       vite: 6.3.5(@types/node@22.17.2)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1)
@@ -11530,16 +12220,6 @@ snapshots:
       '@types/react': 18.3.23
       '@types/react-dom': 18.3.7(@types/react@18.3.23)
 
-  '@testing-library/react@16.2.0(@testing-library/dom@10.4.0)(@types/react-dom@19.1.7(@types/react@18.3.23))(@types/react@18.3.23)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@babel/runtime': 7.28.3
-      '@testing-library/dom': 10.4.0
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
-    optionalDependencies:
-      '@types/react': 18.3.23
-      '@types/react-dom': 19.1.7(@types/react@18.3.23)
-
   '@testing-library/react@16.2.0(@testing-library/dom@10.4.0)(@types/react-dom@19.1.7(@types/react@19.1.10))(@types/react@19.1.10)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
     dependencies:
       '@babel/runtime': 7.28.3
@@ -11549,6 +12229,16 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.1.10
       '@types/react-dom': 19.1.7(@types/react@19.1.10)
+
+  '@testing-library/react@16.2.0(@testing-library/dom@10.4.0)(@types/react-dom@19.2.3(@types/react@18.3.23))(@types/react@18.3.23)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
+    dependencies:
+      '@babel/runtime': 7.28.3
+      '@testing-library/dom': 10.4.0
+      react: 19.1.1
+      react-dom: 19.1.1(react@19.1.1)
+    optionalDependencies:
+      '@types/react': 18.3.23
+      '@types/react-dom': 19.2.3(@types/react@18.3.23)
 
   '@testing-library/user-event@14.6.1(@testing-library/dom@10.4.0)':
     dependencies:
@@ -11633,6 +12323,8 @@ snapshots:
     dependencies:
       '@types/unist': 3.0.3
 
+  '@types/node-cron@3.0.11': {}
+
   '@types/node@17.0.45': {}
 
   '@types/node@20.19.11':
@@ -11657,12 +12349,16 @@ snapshots:
     dependencies:
       '@types/react': 18.3.23
 
-  '@types/react-dom@19.1.7(@types/react@18.3.23)':
+  '@types/react-dom@19.1.7(@types/react@19.1.10)':
+    dependencies:
+      '@types/react': 19.1.10
+
+  '@types/react-dom@19.2.3(@types/react@18.3.23)':
     dependencies:
       '@types/react': 18.3.23
     optional: true
 
-  '@types/react-dom@19.1.7(@types/react@19.1.10)':
+  '@types/react-dom@19.2.3(@types/react@19.1.10)':
     dependencies:
       '@types/react': 19.1.10
 
@@ -12203,13 +12899,13 @@ snapshots:
       estree-walker: 3.0.3
       js-tokens: 9.0.1
 
-  astro-devtool-breakpoints@0.3.0(astro@5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1)):
+  astro-devtool-breakpoints@0.3.0(astro@5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1)):
     dependencies:
-      astro: 5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1)
+      astro: 5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1)
 
-  astro-font-picker@0.2.2(astro@5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1)):
+  astro-font-picker@0.2.2(astro@5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1)):
     dependencies:
-      astro: 5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1)
+      astro: 5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1)
       webfontloader: 1.6.28
 
   astro-lighthouse@0.1.3:
@@ -12221,16 +12917,16 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  astro-og@0.3.0(astro@5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1)):
+  astro-og@0.3.0(astro@5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1)):
     dependencies:
-      astro: 5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1)
+      astro: 5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1)
       preact: 10.26.5
 
-  astro-typed-links@1.1.4(astro@5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1)):
+  astro-typed-links@1.1.4(astro@5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1)):
     dependencies:
-      astro: 5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1)
+      astro: 5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1)
 
-  astro@5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1):
+  astro@5.13.2(@netlify/blobs@9.1.2)(@types/node@22.17.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1)))(ioredis@5.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(rollup@4.46.3)(terser@5.43.1)(tsx@4.20.4)(typescript@5.9.2)(yaml@2.8.1):
     dependencies:
       '@astrojs/compiler': 2.12.2
       '@astrojs/internal-helpers': 0.7.2
@@ -12284,7 +12980,7 @@ snapshots:
       ultrahtml: 1.6.0
       unifont: 0.5.2
       unist-util-visit: 5.0.0
-      unstorage: 1.16.1(@netlify/blobs@9.1.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(react@19.1.1)))(ioredis@5.7.0)
+      unstorage: 1.16.1(@netlify/blobs@9.1.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1)))(ioredis@5.7.0)
       vfile: 6.0.3
       vite: 6.3.5(@types/node@22.17.2)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1)
       vitefu: 1.1.1(vite@6.3.5(@types/node@22.17.2)(jiti@2.6.1)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.4)(yaml@2.8.1))
@@ -12904,14 +13600,14 @@ snapshots:
 
   date-fns@4.1.0: {}
 
-  db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(react@19.1.1)):
+  db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1)):
     optionalDependencies:
-      drizzle-orm: 0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(react@19.1.1)
+      drizzle-orm: 0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1)
     optional: true
 
-  db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@19.1.10)(pg@8.16.3)(react@19.1.1)):
+  db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@19.1.10)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1)):
     optionalDependencies:
-      drizzle-orm: 0.29.5(@types/pg@8.15.5)(@types/react@19.1.10)(pg@8.16.3)(react@19.1.1)
+      drizzle-orm: 0.29.5(@types/pg@8.15.5)(@types/react@19.1.10)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1)
 
   debug@4.4.1(supports-color@5.5.0):
     dependencies:
@@ -13119,20 +13815,27 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(react@19.1.1):
+  drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1):
     optionalDependencies:
       '@types/pg': 8.15.5
       '@types/react': 18.3.23
       pg: 8.16.3
+      postgres: 3.4.8
       react: 19.1.1
     optional: true
 
-  drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@19.1.10)(pg@8.16.3)(react@19.1.1):
+  drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@19.1.10)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1):
     optionalDependencies:
       '@types/pg': 8.15.5
       '@types/react': 19.1.10
       pg: 8.16.3
+      postgres: 3.4.8
       react: 19.1.1
+
+  drizzle-zod@0.5.1(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@19.1.10)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1))(zod@3.25.76):
+    dependencies:
+      drizzle-orm: 0.29.5(@types/pg@8.15.5)(@types/react@19.1.10)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1)
+      zod: 3.25.76
 
   dset@3.1.4: {}
 
@@ -13461,6 +14164,8 @@ snapshots:
       '@types/yauzl': 2.10.3
     transitivePeerDependencies:
       - supports-color
+
+  fast-deep-equal@2.0.1: {}
 
   fast-deep-equal@3.1.3: {}
 
@@ -13878,6 +14583,14 @@ snapshots:
 
   html-escaper@3.0.3: {}
 
+  html-to-text@9.0.5:
+    dependencies:
+      '@selderee/plugin-htmlparser2': 0.11.0
+      deepmerge: 4.3.1
+      dom-serializer: 2.0.0
+      htmlparser2: 8.0.2
+      selderee: 0.11.0
+
   html-void-elements@3.0.0: {}
 
   htmlparser2@10.0.0:
@@ -14262,6 +14975,8 @@ snapshots:
     dependencies:
       readable-stream: 2.3.8
 
+  leac@0.6.0: {}
+
   lighthouse-logger@2.0.2:
     dependencies:
       debug: 4.4.3
@@ -14561,9 +15276,16 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  marked@7.0.4: {}
+
   marky@1.3.0: {}
 
   math-intrinsics@1.1.0: {}
+
+  md-to-react-email@5.0.5(react@19.1.1):
+    dependencies:
+      marked: 7.0.4
+      react: 19.1.1
 
   mdast-util-definitions@6.0.0:
     dependencies:
@@ -14701,6 +15423,13 @@ snapshots:
       timers-ext: 0.1.8
 
   meow@12.1.1: {}
+
+  mercadopago@2.12.0:
+    dependencies:
+      node-fetch: 2.7.0
+      uuid: 9.0.1
+    transitivePeerDependencies:
+      - encoding
 
   merge-options@3.0.4:
     dependencies:
@@ -15112,7 +15841,7 @@ snapshots:
 
   next-tick@1.1.0: {}
 
-  nitropack@2.12.4(@netlify/blobs@9.1.2)(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@19.1.10)(pg@8.16.3)(react@19.1.1)):
+  nitropack@2.12.4(@netlify/blobs@9.1.2)(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@19.1.10)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1)):
     dependencies:
       '@cloudflare/kv-asset-handler': 0.4.0
       '@netlify/functions': 3.1.10(rollup@4.46.3)
@@ -15134,7 +15863,7 @@ snapshots:
       cookie-es: 2.0.0
       croner: 9.1.0
       crossws: 0.3.5
-      db0: 0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@19.1.10)(pg@8.16.3)(react@19.1.1))
+      db0: 0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@19.1.10)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1))
       defu: 6.1.4
       destr: 2.0.5
       dot-prop: 9.0.0
@@ -15180,7 +15909,7 @@ snapshots:
       unenv: 2.0.0-rc.19
       unimport: 5.2.0
       unplugin-utils: 0.2.5
-      unstorage: 1.16.1(@netlify/blobs@9.1.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@19.1.10)(pg@8.16.3)(react@19.1.1)))(ioredis@5.7.0)
+      unstorage: 1.16.1(@netlify/blobs@9.1.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@19.1.10)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1)))(ioredis@5.7.0)
       untyped: 2.0.0
       unwasm: 0.3.11
       youch: 4.1.0-beta.8
@@ -15217,6 +15946,11 @@ snapshots:
       '@types/nlcst': 2.0.3
 
   node-addon-api@7.1.1: {}
+
+  node-cron@3.0.3:
+    dependencies:
+      uuid: 8.3.2
+    optional: true
 
   node-domexception@1.0.0: {}
 
@@ -15463,6 +16197,11 @@ snapshots:
     dependencies:
       entities: 6.0.1
 
+  parseley@0.12.1:
+    dependencies:
+      leac: 0.6.0
+      peberminta: 0.9.0
+
   parseurl@1.3.3: {}
 
   path-exists@4.0.0: {}
@@ -15496,6 +16235,8 @@ snapshots:
   pathe@2.0.3: {}
 
   pathval@2.0.1: {}
+
+  peberminta@0.9.0: {}
 
   pend@1.2.0: {}
 
@@ -15606,6 +16347,8 @@ snapshots:
     dependencies:
       xtend: 4.0.2
 
+  postgres@3.4.8: {}
+
   preact@10.26.5: {}
 
   precinct@12.2.0:
@@ -15628,6 +16371,8 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  prettier@3.3.3: {}
+
   prettier@3.6.2: {}
 
   pretty-bytes@6.1.1: {}
@@ -15637,6 +16382,8 @@ snapshots:
       ansi-regex: 5.0.1
       ansi-styles: 5.2.0
       react-is: 17.0.2
+
+  prismjs@1.29.0: {}
 
   prismjs@1.30.0: {}
 
@@ -15727,6 +16474,10 @@ snapshots:
       scheduler: 0.26.0
 
   react-is@17.0.2: {}
+
+  react-promise-suspense@0.3.4:
+    dependencies:
+      fast-deep-equal: 2.0.1
 
   react-refresh@0.17.0: {}
 
@@ -15914,6 +16665,13 @@ snapshots:
 
   requires-port@1.0.0: {}
 
+  resend@4.8.0(react-dom@19.1.1(react@19.1.1))(react@19.1.1):
+    dependencies:
+      '@react-email/render': 1.1.2(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+    transitivePeerDependencies:
+      - react
+      - react-dom
+
   resolve-from@4.0.0: {}
 
   resolve-from@5.0.0: {}
@@ -16049,6 +16807,10 @@ snapshots:
   scheduler@0.26.0: {}
 
   scule@1.3.0: {}
+
+  selderee@0.11.0:
+    dependencies:
+      parseley: 0.12.1
 
   semver@5.7.2: {}
 
@@ -16828,7 +17590,7 @@ snapshots:
       picomatch: 4.0.3
       webpack-virtual-modules: 0.6.2
 
-  unstorage@1.16.1(@netlify/blobs@9.1.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(react@19.1.1)))(ioredis@5.7.0):
+  unstorage@1.16.1(@netlify/blobs@9.1.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1)))(ioredis@5.7.0):
     dependencies:
       anymatch: 3.1.3
       chokidar: 4.0.3
@@ -16840,10 +17602,10 @@ snapshots:
       ufo: 1.6.1
     optionalDependencies:
       '@netlify/blobs': 9.1.2
-      db0: 0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(react@19.1.1))
+      db0: 0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@18.3.23)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1))
       ioredis: 5.7.0
 
-  unstorage@1.16.1(@netlify/blobs@9.1.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@19.1.10)(pg@8.16.3)(react@19.1.1)))(ioredis@5.7.0):
+  unstorage@1.16.1(@netlify/blobs@9.1.2)(db0@0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@19.1.10)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1)))(ioredis@5.7.0):
     dependencies:
       anymatch: 3.1.3
       chokidar: 4.0.3
@@ -16855,7 +17617,7 @@ snapshots:
       ufo: 1.6.1
     optionalDependencies:
       '@netlify/blobs': 9.1.2
-      db0: 0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@19.1.10)(pg@8.16.3)(react@19.1.1))
+      db0: 0.3.2(drizzle-orm@0.29.5(@types/pg@8.15.5)(@types/react@19.1.10)(pg@8.16.3)(postgres@3.4.8)(react@19.1.1))
       ioredis: 5.7.0
 
   until-async@3.0.2: {}
@@ -16937,6 +17699,11 @@ snapshots:
   uuid@10.0.0: {}
 
   uuid@11.1.0: {}
+
+  uuid@8.3.2:
+    optional: true
+
+  uuid@9.0.1: {}
 
   v8-to-istanbul@9.3.0:
     dependencies:
