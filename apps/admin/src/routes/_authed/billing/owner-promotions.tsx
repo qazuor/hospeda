@@ -396,8 +396,7 @@ function PromotionFormDialog({
                                     setFormData((prev) => ({ ...prev, title: e.target.value }))
                                 }
                                 required
-                                disabled
-                                placeholder="Requiere API para buscar propietarios"
+                                placeholder="Nombre de la promoción"
                             />
                         </div>
 
@@ -413,8 +412,7 @@ function PromotionFormDialog({
                                     }))
                                 }
                                 rows={3}
-                                disabled
-                                placeholder="Requiere API para crear promociones"
+                                placeholder="Descripción opcional de la promoción"
                             />
                         </div>
 
@@ -435,7 +433,6 @@ function PromotionFormDialog({
                                                 | 'SPECIAL_PRICE'
                                         }))
                                     }
-                                    disabled
                                 >
                                     <option value="PERCENTAGE">Porcentaje</option>
                                     <option value="FIXED_AMOUNT">Monto fijo</option>
@@ -457,7 +454,6 @@ function PromotionFormDialog({
                                         }))
                                     }
                                     required
-                                    disabled
                                 />
                             </div>
                         </div>
@@ -476,7 +472,6 @@ function PromotionFormDialog({
                                         }))
                                     }
                                     required
-                                    disabled
                                 />
                             </div>
 
@@ -493,7 +488,6 @@ function PromotionFormDialog({
                                         }))
                                     }
                                     required
-                                    disabled
                                 />
                             </div>
                         </div>
@@ -507,13 +501,7 @@ function PromotionFormDialog({
                         >
                             Cancelar
                         </Button>
-                        <Button
-                            type="submit"
-                            disabled
-                            title="Requiere API para crear/editar promociones"
-                        >
-                            {mode === 'create' ? 'Crear' : 'Guardar'}
-                        </Button>
+                        <Button type="submit">{mode === 'create' ? 'Crear' : 'Guardar'}</Button>
                     </DialogFooter>
                 </form>
             </DialogContent>
