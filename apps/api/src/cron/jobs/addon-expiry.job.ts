@@ -16,7 +16,9 @@
  */
 
 import { NotificationType } from '@repo/notifications';
+import { getQZPayBilling } from '../../middlewares/billing.js';
 import { AddonExpirationService } from '../../services/addon-expiration.service.js';
+import { lookupCustomerDetails } from '../../utils/customer-lookup.js';
 import { sendNotification } from '../../utils/notification-helper.js';
 import type { CronJobDefinition } from '../types.js';
 
@@ -186,12 +188,36 @@ export const addonExpiryJob: CronJobDefinition = {
                                 continue;
                             }
 
+                            // Look up customer details for notification
+                            const billing = getQZPayBilling();
+                            if (!billing) {
+                                logger.warn('Billing not configured, skipping notification', {
+                                    customerId: addon.customerId
+                                });
+                                continue;
+                            }
+
+                            const customerDetails = await lookupCustomerDetails(
+                                billing,
+                                addon.customerId
+                            );
+                            if (!customerDetails) {
+                                logger.warn(
+                                    'Could not look up customer details, skipping notification',
+                                    {
+                                        customerId: addon.customerId,
+                                        addonSlug: addon.addonSlug
+                                    }
+                                );
+                                continue;
+                            }
+
                             // Fire-and-forget notification
                             sendNotification({
                                 type: NotificationType.ADDON_EXPIRATION_WARNING,
-                                recipientEmail: '', // TODO: Get user email from customer
-                                recipientName: '', // TODO: Get user name from customer
-                                userId: null, // TODO: Get user ID from customer
+                                recipientEmail: customerDetails.email,
+                                recipientName: customerDetails.name,
+                                userId: customerDetails.userId,
                                 customerId: addon.customerId,
                                 addonName: addon.addonSlug,
                                 expirationDate: addon.expiresAt.toISOString(),
@@ -278,12 +304,36 @@ export const addonExpiryJob: CronJobDefinition = {
                                 continue;
                             }
 
+                            // Look up customer details for notification
+                            const billing = getQZPayBilling();
+                            if (!billing) {
+                                logger.warn('Billing not configured, skipping notification', {
+                                    customerId: addon.customerId
+                                });
+                                continue;
+                            }
+
+                            const customerDetails = await lookupCustomerDetails(
+                                billing,
+                                addon.customerId
+                            );
+                            if (!customerDetails) {
+                                logger.warn(
+                                    'Could not look up customer details, skipping notification',
+                                    {
+                                        customerId: addon.customerId,
+                                        addonSlug: addon.addonSlug
+                                    }
+                                );
+                                continue;
+                            }
+
                             // Fire-and-forget notification
                             sendNotification({
                                 type: NotificationType.ADDON_EXPIRATION_WARNING,
-                                recipientEmail: '', // TODO: Get user email from customer
-                                recipientName: '', // TODO: Get user name from customer
-                                userId: null, // TODO: Get user ID from customer
+                                recipientEmail: customerDetails.email,
+                                recipientName: customerDetails.name,
+                                userId: customerDetails.userId,
                                 customerId: addon.customerId,
                                 addonName: addon.addonSlug,
                                 expirationDate: addon.expiresAt.toISOString(),

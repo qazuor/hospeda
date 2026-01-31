@@ -18,6 +18,7 @@
 import { type NotificationPayload, NotificationType, RetryService } from '@repo/notifications';
 import { getQZPayBilling } from '../../middlewares/billing.js';
 import { TrialService } from '../../services/trial.service.js';
+import { lookupCustomerDetails } from '../../utils/customer-lookup.js';
 import { sendNotification } from '../../utils/notification-helper.js';
 import type { CronJobDefinition } from '../types.js';
 
@@ -270,16 +271,152 @@ export const notificationScheduleJob: CronJobDefinition = {
             // 3. Find subscriptions renewing in 3 days
             logger.info('Finding subscriptions renewing in 3 days');
 
-            if (dryRun) {
-                logger.info('Dry run mode - skipping renewal reminders (not implemented yet)');
-            } else {
-                // TODO: Implement subscription renewal reminders
-                // This requires:
-                // 1. SubscriptionService.findSubscriptionsRenewingSoon(daysAhead: 3)
-                // 2. Send RENEWAL_REMINDER notifications
-                // 3. Track sent notifications with idempotency keys
+            let renewalsSent = 0;
 
-                logger.debug('Subscription renewal reminders not implemented yet');
+            if (dryRun) {
+                // In dry run, still count what would be sent
+                try {
+                    const activeSubscriptions = await billing.subscriptions.list({
+                        filters: { status: 'active' }
+                    });
+
+                    const now = new Date();
+                    const targetDate = new Date(now);
+                    targetDate.setDate(targetDate.getDate() + 3);
+
+                    const renewingSoon = (activeSubscriptions?.data || []).filter((sub) => {
+                        if (!sub.currentPeriodEnd) return false;
+                        const endDate = new Date(sub.currentPeriodEnd);
+                        const msRemaining = endDate.getTime() - now.getTime();
+                        const daysRemaining = Math.ceil(msRemaining / (1000 * 60 * 60 * 24));
+                        return daysRemaining === 3;
+                    });
+
+                    logger.info('Dry run mode - would send renewal reminders', {
+                        count: renewingSoon.length
+                    });
+                    renewalsSent += renewingSoon.length;
+                } catch (renewalError) {
+                    logger.error('Failed to check renewal subscriptions (dry run)', {
+                        error:
+                            renewalError instanceof Error
+                                ? renewalError.message
+                                : String(renewalError)
+                    });
+                }
+            } else {
+                try {
+                    const activeSubscriptions = await billing.subscriptions.list({
+                        filters: { status: 'active' }
+                    });
+
+                    const now = new Date();
+
+                    for (const subscription of activeSubscriptions?.data || []) {
+                        if (!subscription.currentPeriodEnd) continue;
+
+                        const endDate = new Date(subscription.currentPeriodEnd);
+                        const msRemaining = endDate.getTime() - now.getTime();
+                        const daysRemaining = Math.ceil(msRemaining / (1000 * 60 * 60 * 24));
+
+                        if (daysRemaining !== 3) continue;
+
+                        try {
+                            // Check idempotency
+                            if (
+                                wasNotificationSent(
+                                    NotificationType.RENEWAL_REMINDER,
+                                    subscription.customerId
+                                )
+                            ) {
+                                logger.debug('Skipping duplicate renewal reminder', {
+                                    customerId: subscription.customerId
+                                });
+                                continue;
+                            }
+
+                            // Look up customer details
+                            const customerDetails = await lookupCustomerDetails(
+                                billing,
+                                subscription.customerId
+                            );
+                            if (!customerDetails) {
+                                logger.warn('Could not look up customer for renewal reminder', {
+                                    customerId: subscription.customerId
+                                });
+                                continue;
+                            }
+
+                            // Get plan name
+                            let planName = 'Unknown Plan';
+                            try {
+                                const plan = await billing.plans.get(subscription.planId);
+                                if (plan) {
+                                    planName = plan.name;
+                                }
+                            } catch {
+                                // Use default plan name
+                            }
+
+                            // TODO: Get actual amount from subscription metadata or payment history
+                            // For now, use placeholder values (notification template will work without them)
+                            const amount = 0;
+                            const currency = 'ARS';
+
+                            // Fire-and-forget notification
+                            sendNotification({
+                                type: NotificationType.RENEWAL_REMINDER,
+                                recipientEmail: customerDetails.email,
+                                recipientName: customerDetails.name,
+                                userId: customerDetails.userId,
+                                customerId: subscription.customerId,
+                                planName,
+                                amount,
+                                currency,
+                                renewalDate: endDate.toISOString(),
+                                idempotencyKey: generateIdempotencyKey(
+                                    NotificationType.RENEWAL_REMINDER,
+                                    subscription.customerId
+                                )
+                            }).catch((notifError) => {
+                                logger.debug('Renewal reminder failed (will retry)', {
+                                    customerId: subscription.customerId,
+                                    error:
+                                        notifError instanceof Error
+                                            ? notifError.message
+                                            : String(notifError)
+                                });
+                            });
+
+                            markNotificationSent(
+                                NotificationType.RENEWAL_REMINDER,
+                                subscription.customerId
+                            );
+                            renewalsSent++;
+                            processed++;
+
+                            logger.debug('Sent renewal reminder', {
+                                customerId: subscription.customerId,
+                                daysRemaining: 3
+                            });
+                        } catch (error) {
+                            errors++;
+                            logger.error('Failed to send renewal reminder', {
+                                customerId: subscription.customerId,
+                                error: error instanceof Error ? error.message : String(error)
+                            });
+                        }
+                    }
+
+                    logger.info('Renewal reminders processed', { sent: renewalsSent });
+                } catch (renewalError) {
+                    logger.error('Failed to process renewal reminders', {
+                        error:
+                            renewalError instanceof Error
+                                ? renewalError.message
+                                : String(renewalError)
+                    });
+                }
             }
 
             // 4. Process notification retries from Redis queue
@@ -362,6 +499,7 @@ export const notificationScheduleJob: CronJobDefinition = {
                 details: {
                     trialsEnding3Days: trialsEnding3Days.length,
                     trialsEnding1Day: trialsEnding1Day.length,
+                    renewalsSent,
                     retries: {
                         processed: retriesProcessed,
                         succeeded: retriesSucceeded,
