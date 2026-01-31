@@ -23,8 +23,9 @@
  */
 
 import { EntitlementKey, LimitKey } from '@repo/billing';
+import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
-import type { AppMiddleware } from '../types';
+import type { AppBindings, AppMiddleware } from '../types';
 import { checkLimit } from '../utils/limit-check';
 import { apiLogger } from '../utils/logger';
 import { hasEntitlement } from './entitlement';
@@ -76,11 +77,12 @@ export function gateFavorites(): AppMiddleware {
             }
 
             // Get current favorites count from context (set by route handler)
-            const currentCount = (c.get('currentFavoritesCount') as number) || 0;
+            const currentCountValue = c.get('currentFavoritesCount' as never);
+            const currentCount = typeof currentCountValue === 'number' ? currentCountValue : 0;
 
             // Check limit
             const limitCheck = checkLimit({
-                context: c,
+                context: c as Context<AppBindings>,
                 limitKey: LimitKey.MAX_FAVORITES,
                 currentCount
             });
@@ -170,13 +172,14 @@ export function gateAlerts(): AppMiddleware {
             }
 
             // Get current active alerts count from context (set by route handler)
-            const currentCount = (c.get('currentActiveAlertsCount') as number) || 0;
+            const currentCountValue = c.get('currentActiveAlertsCount' as never);
+            const currentCount = typeof currentCountValue === 'number' ? currentCountValue : 0;
 
             // Check limit (max_active_alerts)
             // Note: This limit key needs to be added to LimitKey enum in @repo/billing
             const limitKey = 'max_active_alerts' as LimitKey;
             const limitCheck = checkLimit({
-                context: c,
+                context: c as Context<AppBindings>,
                 limitKey,
                 currentCount
             });
@@ -269,12 +272,13 @@ export function gateComparator(): AppMiddleware {
             }
 
             // Get current compare items count from context (set by route handler)
-            const currentCount = (c.get('currentCompareItemsCount') as number) || 0;
+            const currentCountValue = c.get('currentCompareItemsCount' as never);
+            const currentCount = typeof currentCountValue === 'number' ? currentCountValue : 0;
 
             // Check limit
             const limitKey = 'max_compare_items' as LimitKey;
             const limitCheck = checkLimit({
-                context: c,
+                context: c as Context<AppBindings>,
                 limitKey,
                 currentCount
             });
@@ -602,7 +606,9 @@ export function gateEarlyEventAccess(): AppMiddleware {
             }
 
             // Get event start date from context (set by route handler)
-            const eventStartDate = c.get('eventStartDate') as Date | undefined;
+            const eventStartDateValue = c.get('eventStartDate' as never) as unknown;
+            const eventStartDate =
+                eventStartDateValue instanceof Date ? eventStartDateValue : undefined;
 
             if (eventStartDate) {
                 // Check if event is within 24-hour early access window

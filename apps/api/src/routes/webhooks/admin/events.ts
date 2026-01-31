@@ -11,8 +11,9 @@
  */
 
 import { billingWebhookEvents, getDb } from '@repo/db';
-import { PermissionEnum } from '@repo/schemas';
-import { and, count, desc, eq, gte, lte } from 'drizzle-orm';
+import type { PermissionEnum } from '@repo/schemas';
+// @ts-expect-error - drizzle-orm is a transitive dependency
+import { type SQL, and, count, desc, eq, gte, lte } from 'drizzle-orm';
 import { HTTPException } from 'hono/http-exception';
 import { ListWebhookEventsQuerySchema, WebhookEventsListResponseSchema } from '../../../schemas';
 import { apiLogger } from '../../../utils/logger';
@@ -29,7 +30,7 @@ export const listWebhookEventsRoute = createAdminRoute({
     description:
         'Returns paginated list of webhook events with optional filtering by status, type, provider, and date range',
     tags: ['Webhooks'],
-    requiredPermissions: [PermissionEnum.BILLING_READ_ALL],
+    requiredPermissions: ['BILLING_READ_ALL' as PermissionEnum],
     requestQuery: ListWebhookEventsQuerySchema.shape,
     responseSchema: WebhookEventsListResponseSchema,
     handler: async (_c, _params, _body, query) => {
@@ -37,7 +38,7 @@ export const listWebhookEventsRoute = createAdminRoute({
 
         try {
             // Build filter conditions
-            const conditions = [];
+            const conditions: SQL[] = [];
 
             if (query?.status) {
                 conditions.push(eq(billingWebhookEvents.status, query.status));
@@ -56,20 +57,24 @@ export const listWebhookEventsRoute = createAdminRoute({
             }
 
             if (query?.startDate) {
-                conditions.push(gte(billingWebhookEvents.createdAt, new Date(query.startDate)));
+                const startDate = new Date(query.startDate as string);
+                conditions.push(gte(billingWebhookEvents.createdAt, startDate));
             }
 
             if (query?.endDate) {
-                conditions.push(lte(billingWebhookEvents.createdAt, new Date(query.endDate)));
+                const endDate = new Date(query.endDate as string);
+                conditions.push(lte(billingWebhookEvents.createdAt, endDate));
             }
 
             const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
             // Get total count
-            const [{ total }] = await db
+            const totalResult = await db
                 .select({ total: count() })
                 .from(billingWebhookEvents)
                 .where(whereClause);
+
+            const total = totalResult[0]?.total ?? 0;
 
             // Get paginated results
             const results = await db
@@ -89,8 +94,8 @@ export const listWebhookEventsRoute = createAdminRoute({
                 .from(billingWebhookEvents)
                 .where(whereClause)
                 .orderBy(desc(billingWebhookEvents.createdAt))
-                .limit(query?.limit || 50)
-                .offset(query?.offset || 0);
+                .limit((query?.limit ?? 50) as number)
+                .offset((query?.offset ?? 0) as number);
 
             apiLogger.debug(
                 {
@@ -120,8 +125,8 @@ export const listWebhookEventsRoute = createAdminRoute({
                     createdAt: row.createdAt.toISOString()
                 })),
                 total: Number(total),
-                limit: query?.limit || 50,
-                offset: query?.offset || 0
+                limit: query?.limit ?? 50,
+                offset: query?.offset ?? 0
             };
         } catch (error) {
             apiLogger.error(

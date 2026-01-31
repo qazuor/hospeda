@@ -43,7 +43,7 @@ export const NotificationLogResponseSchema = z.object({
     status: z.string(),
     sentAt: z.string().datetime().nullable(),
     errorMessage: z.string().nullable(),
-    metadata: z.record(z.unknown()).nullable(),
+    metadata: z.record(z.string(), z.unknown()).nullable(),
     createdAt: z.string().datetime()
 });
 

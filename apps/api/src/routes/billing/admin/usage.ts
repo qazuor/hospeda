@@ -10,7 +10,7 @@
  * @module routes/billing/admin/usage
  */
 
-import { PermissionEnum } from '@repo/schemas';
+import type { PermissionEnum } from '@repo/schemas';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 import { getQZPayBilling } from '../../../middlewares/billing';
@@ -57,7 +57,7 @@ export const getAdminCustomerUsageSummaryRoute = createAdminRoute({
     description:
         "Returns any customer's resource usage across all plan limits with threshold status",
     tags: ['Billing', 'Usage'],
-    requiredPermissions: [PermissionEnum.BILLING_READ_ALL],
+    requiredPermissions: ['BILLING_READ_ALL' as PermissionEnum],
     requestParams: customerIdParamSchema.shape,
     responseSchema: usageSummarySchema,
     handler: async (c, params) => {

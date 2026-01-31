@@ -12,8 +12,9 @@
 
 import { getDb } from '@repo/db';
 import { billingNotificationLog } from '@repo/db';
-import { PermissionEnum } from '@repo/schemas';
-import { and, count, desc, eq, gte, lte } from 'drizzle-orm';
+import type { PermissionEnum } from '@repo/schemas';
+// @ts-expect-error - drizzle-orm is a transitive dependency
+import { type SQL, and, count, desc, eq, gte, lte } from 'drizzle-orm';
 import { HTTPException } from 'hono/http-exception';
 import {
     ListNotificationLogsQuerySchema,
@@ -33,7 +34,7 @@ export const listNotificationLogsRoute = createAdminRoute({
     description:
         'Returns paginated list of notification logs with optional filtering by type, status, and date range',
     tags: ['Billing', 'Notifications'],
-    requiredPermissions: [PermissionEnum.BILLING_READ_ALL],
+    requiredPermissions: ['BILLING_READ_ALL' as PermissionEnum],
     requestQuery: ListNotificationLogsQuerySchema.shape,
     responseSchema: NotificationLogsListResponseSchema,
     handler: async (_c, _params, _body, query) => {
@@ -41,7 +42,7 @@ export const listNotificationLogsRoute = createAdminRoute({
 
         try {
             // Build filter conditions
-            const conditions = [];
+            const conditions: SQL[] = [];
 
             if (query?.type) {
                 conditions.push(eq(billingNotificationLog.type, query.type));
@@ -52,20 +53,24 @@ export const listNotificationLogsRoute = createAdminRoute({
             }
 
             if (query?.startDate) {
-                conditions.push(gte(billingNotificationLog.createdAt, new Date(query.startDate)));
+                const startDate = new Date(query.startDate as string);
+                conditions.push(gte(billingNotificationLog.createdAt, startDate));
             }
 
             if (query?.endDate) {
-                conditions.push(lte(billingNotificationLog.createdAt, new Date(query.endDate)));
+                const endDate = new Date(query.endDate as string);
+                conditions.push(lte(billingNotificationLog.createdAt, endDate));
             }
 
             const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
             // Get total count
-            const [{ total }] = await db
+            const totalResult = await db
                 .select({ total: count() })
                 .from(billingNotificationLog)
                 .where(whereClause);
+
+            const total = totalResult[0]?.total ?? 0;
 
             // Get paginated results
             const results = await db
@@ -86,8 +91,8 @@ export const listNotificationLogsRoute = createAdminRoute({
                 .from(billingNotificationLog)
                 .where(whereClause)
                 .orderBy(desc(billingNotificationLog.createdAt))
-                .limit(query?.limit || 50)
-                .offset(query?.offset || 0);
+                .limit((query?.limit ?? 50) as number)
+                .offset((query?.offset ?? 0) as number);
 
             apiLogger.debug(
                 {
@@ -114,8 +119,8 @@ export const listNotificationLogsRoute = createAdminRoute({
                     createdAt: row.createdAt.toISOString()
                 })),
                 total: Number(total),
-                limit: query?.limit || 50,
-                offset: query?.offset || 0
+                limit: query?.limit ?? 50,
+                offset: query?.offset ?? 0
             };
         } catch (error) {
             apiLogger.error(

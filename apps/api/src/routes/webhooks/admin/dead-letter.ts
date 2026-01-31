@@ -11,9 +11,20 @@
  * @module routes/webhooks/admin/dead-letter
  */
 
-import { billingWebhookDeadLetter, billingWebhookEvents, getDb } from '@repo/db';
+import {
+    and,
+    billingWebhookDeadLetter,
+    billingWebhookEvents,
+    count,
+    desc,
+    eq,
+    getDb,
+    gte,
+    isNotNull,
+    isNull,
+    lte
+} from '@repo/db';
 import { PermissionEnum } from '@repo/schemas';
-import { and, count, desc, eq, gte, isNull, lte } from 'drizzle-orm';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 import {
@@ -42,7 +53,7 @@ export const listDeadLetterQueueRoute = createAdminRoute({
     description:
         'Returns paginated list of webhook dead letter queue entries with optional filtering',
     tags: ['Webhooks'],
-    requiredPermissions: [PermissionEnum.BILLING_READ_ALL],
+    requiredPermissions: [PermissionEnum.ACCESS_API_ADMIN],
     requestQuery: ListDeadLetterQueueQuerySchema.shape,
     responseSchema: DeadLetterQueueListResponseSchema,
     handler: async (_c, _params, _body, query) => {
@@ -50,44 +61,53 @@ export const listDeadLetterQueueRoute = createAdminRoute({
 
         try {
             // Build filter conditions
-            const conditions = [];
+            const conditions: ReturnType<typeof eq>[] = [];
 
             if (query?.provider) {
-                conditions.push(eq(billingWebhookDeadLetter.provider, query.provider));
+                conditions.push(eq(billingWebhookDeadLetter.provider, query.provider as string));
             }
 
             if (query?.type) {
-                conditions.push(eq(billingWebhookDeadLetter.type, query.type));
+                conditions.push(eq(billingWebhookDeadLetter.type, query.type as string));
             }
 
             if (query?.livemode !== undefined) {
-                conditions.push(eq(billingWebhookDeadLetter.livemode, query.livemode));
+                conditions.push(eq(billingWebhookDeadLetter.livemode, query.livemode as boolean));
             }
 
             // Filter by resolved status
             if (query?.resolved === true) {
-                conditions.push(isNull(billingWebhookDeadLetter.resolvedAt).not());
+                conditions.push(isNotNull(billingWebhookDeadLetter.resolvedAt));
             } else if (query?.resolved === false) {
                 conditions.push(isNull(billingWebhookDeadLetter.resolvedAt));
             }
 
             if (query?.startDate) {
-                conditions.push(gte(billingWebhookDeadLetter.createdAt, new Date(query.startDate)));
+                conditions.push(
+                    gte(billingWebhookDeadLetter.createdAt, new Date(query.startDate as string))
+                );
             }
 
             if (query?.endDate) {
-                conditions.push(lte(billingWebhookDeadLetter.createdAt, new Date(query.endDate)));
+                conditions.push(
+                    lte(billingWebhookDeadLetter.createdAt, new Date(query.endDate as string))
+                );
             }
 
             const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
             // Get total count
-            const [{ total }] = await db
+            const countResult = await db
                 .select({ total: count() })
                 .from(billingWebhookDeadLetter)
                 .where(whereClause);
 
+            const total = countResult[0]?.total ?? 0;
+
             // Get paginated results
+            const limit: number = Number(query?.limit ?? 50);
+            const offset: number = Number(query?.offset ?? 0);
+
             const results = await db
                 .select({
                     id: billingWebhookDeadLetter.id,
@@ -104,8 +124,8 @@ export const listDeadLetterQueueRoute = createAdminRoute({
                 .from(billingWebhookDeadLetter)
                 .where(whereClause)
                 .orderBy(desc(billingWebhookDeadLetter.createdAt))
-                .limit(query?.limit || 50)
-                .offset(query?.offset || 0);
+                .limit(limit)
+                .offset(offset);
 
             apiLogger.debug(
                 {
@@ -134,8 +154,8 @@ export const listDeadLetterQueueRoute = createAdminRoute({
                     createdAt: row.createdAt.toISOString()
                 })),
                 total: Number(total),
-                limit: query?.limit || 50,
-                offset: query?.offset || 0
+                limit,
+                offset
             };
         } catch (error) {
             apiLogger.error(
@@ -163,7 +183,7 @@ export const retryDeadLetterRoute = createAdminRoute({
     summary: 'Retry dead letter queue entry',
     description: 'Manually retry processing a webhook event from the dead letter queue',
     tags: ['Webhooks'],
-    requiredPermissions: [PermissionEnum.BILLING_WRITE_ALL],
+    requiredPermissions: [PermissionEnum.ACCESS_API_ADMIN],
     requestParams: deadLetterIdParamSchema.shape,
     responseSchema: DeadLetterRetryResponseSchema,
     handler: async (_c, params) => {
@@ -199,7 +219,7 @@ export const retryDeadLetterRoute = createAdminRoute({
             }
 
             // Create a new webhook event for retry
-            const [newEvent] = await db
+            const newEventResult = await db
                 .insert(billingWebhookEvents)
                 .values({
                     providerEventId: deadLetterEntry.providerEventId,
@@ -213,6 +233,13 @@ export const retryDeadLetterRoute = createAdminRoute({
                 .returning({
                     id: billingWebhookEvents.id
                 });
+
+            const newEvent = newEventResult[0];
+            if (!newEvent) {
+                throw new HTTPException(500, {
+                    message: 'Failed to create new webhook event'
+                });
+            }
 
             // Mark dead letter entry as resolved
             await db
