@@ -17,6 +17,13 @@
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { LIMIT_METADATA, LimitKey } from '@repo/billing';
 import { ServiceErrorCode } from '@repo/schemas';
+import {
+    AccommodationService,
+    OwnerPromotionService,
+    UserBookmarkService
+} from '@repo/service-core';
+import { createSystemActor } from '../utils/actor';
+import { lookupCustomerDetails } from '../utils/customer-lookup';
 import { apiLogger } from '../utils/logger';
 
 /**
@@ -416,6 +423,7 @@ export class UsageTrackingService {
      * Get current usage count for a specific limit
      *
      * Queries the database to count actual resource usage.
+     * Maps billing customerId to userId via customer metadata.
      *
      * @param limitKey - The limit key to count
      * @param customerId - The billing customer ID
@@ -423,53 +431,59 @@ export class UsageTrackingService {
      */
     private async getCurrentUsage(limitKey: string, customerId: string): Promise<number> {
         try {
-            // Note: This is a simplified implementation
-            // In production, you'd need to map customerId to userId
-            // and query the appropriate tables
+            // Resolve userId from billing customerId
+            const userId = await this.resolveUserId(customerId);
+
+            if (!userId) {
+                apiLogger.warn(
+                    'Cannot resolve userId for usage counting',
+                    JSON.stringify({ customerId, limitKey })
+                );
+                return 0;
+            }
+
+            const systemActor = createSystemActor();
+            // Override actor.id with the real userId for ownership queries
+            const actor = { ...systemActor, id: userId };
 
             switch (limitKey) {
                 case LimitKey.MAX_ACCOMMODATIONS: {
-                    // Count accommodations owned by this user
-                    // TODO: Map customerId to userId
-                    // const accommodationService = new AccommodationService({ logger: apiLogger });
-                    // const result = await accommodationService.count(actor, { ownerId: userId });
-                    // return result.data?.count || 0;
-                    return 0; // Placeholder
+                    const accommodationService = new AccommodationService({ logger: apiLogger });
+                    const result = await accommodationService.count(actor, {
+                        ownerId: userId
+                    } as never);
+                    return result.data?.count || 0;
                 }
 
                 case LimitKey.MAX_PHOTOS_PER_ACCOMMODATION: {
-                    // This limit is per-accommodation, not per-user
-                    // Return 0 as it's checked differently (in middleware)
+                    // Per-accommodation limit, checked in middleware per request
                     return 0;
                 }
 
                 case LimitKey.MAX_ACTIVE_PROMOTIONS: {
-                    // Count active promotions for this user
-                    // TODO: Map customerId to userId
-                    // const promotionService = new OwnerPromotionService({ logger: apiLogger });
-                    // const result = await promotionService.count(actor, {
-                    //   isActive: true,
-                    //   ownerId: userId
-                    // });
-                    // return result.data?.count || 0;
-                    return 0; // Placeholder
+                    const promotionService = new OwnerPromotionService({ logger: apiLogger });
+                    const result = await promotionService.count(actor, {
+                        isActive: true,
+                        ownerId: userId
+                    } as never);
+                    return result.data?.count || 0;
                 }
 
                 case LimitKey.MAX_FAVORITES: {
-                    // Count favorites for this user
-                    // TODO: Implement when favorites feature is available
-                    return 0;
+                    const bookmarkService = new UserBookmarkService({ logger: apiLogger });
+                    const result = await bookmarkService.countBookmarksForUser(actor, {
+                        userId
+                    });
+                    return result.data?.count || 0;
                 }
 
                 case LimitKey.MAX_PROPERTIES: {
-                    // Count properties in complex
-                    // TODO: Implement when complex feature is available
+                    // Blocked: complex/property table not yet created
                     return 0;
                 }
 
                 case LimitKey.MAX_STAFF_ACCOUNTS: {
-                    // Count staff accounts
-                    // TODO: Implement when staff management is available
+                    // Blocked: staff management table not yet created
                     return 0;
                 }
 
@@ -487,6 +501,34 @@ export class UsageTrackingService {
             );
             return 0;
         }
+    }
+
+    /**
+     * Resolve billing customerId to application userId
+     *
+     * Uses customer metadata from QZPay billing to find the associated userId.
+     * Results are cached per-instance to avoid repeated lookups within a single
+     * usage summary request.
+     *
+     * @param customerId - The billing customer ID
+     * @returns The application userId or null if not found
+     */
+    private userIdCache = new Map<string, string | null>();
+
+    private async resolveUserId(customerId: string): Promise<string | null> {
+        if (this.userIdCache.has(customerId)) {
+            return this.userIdCache.get(customerId) || null;
+        }
+
+        if (!this.billing) {
+            return null;
+        }
+
+        const details = await lookupCustomerDetails(this.billing, customerId);
+        const userId = details?.userId || null;
+
+        this.userIdCache.set(customerId, userId);
+        return userId;
     }
 
     /**
