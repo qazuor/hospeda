@@ -19,7 +19,11 @@
  */
 
 import { LimitKey } from '@repo/billing';
-import { AccommodationService, OwnerPromotionService } from '@repo/service-core';
+import {
+    AccommodationService,
+    OwnerPromotionService,
+    UserBookmarkService
+} from '@repo/service-core';
 import { HTTPException } from 'hono/http-exception';
 import type { AppMiddleware } from '../types';
 import { getActorFromContext } from '../utils/actor';
@@ -411,9 +415,27 @@ export function enforceFavoritesLimit(): AppMiddleware {
                 return;
             }
 
-            // TODO: Get current favorites count when favorites service is available
-            // For now, use 0 as placeholder
-            const currentCount = 0;
+            // Get current favorites (bookmarks) count from UserBookmarkService
+            let currentCount = 0;
+            try {
+                const bookmarkService = new UserBookmarkService({ logger: apiLogger });
+                const countResult = await bookmarkService.countBookmarksForUser(actor, {
+                    userId: actor.id
+                });
+
+                if (countResult.data) {
+                    currentCount = countResult.data.count;
+                } else if (countResult.error) {
+                    apiLogger.warn(
+                        `Failed to get bookmark count for user ${actor.id}: ${countResult.error.message}`
+                    );
+                }
+            } catch (countError) {
+                apiLogger.warn(
+                    `Error fetching bookmark count for user ${actor.id}: ${countError instanceof Error ? countError.message : String(countError)}`
+                );
+                // Continue with 0 count - don't block user on service failure
+            }
 
             // Check limit
             const limitCheck = checkLimit({
@@ -521,8 +543,10 @@ export function enforcePropertiesLimit(): AppMiddleware {
                 return;
             }
 
-            // TODO: Get current properties count when complex service is available
-            // For now, use 0 as placeholder
+            // BLOCKED: No complex/properties table or service exists yet.
+            // When the complex feature is implemented, replace with:
+            //   const complexService = new ComplexService({ logger: apiLogger });
+            //   const countResult = await complexService.countProperties(actor, { complexId });
             const currentPropertyCount = 0;
 
             // Check limit
@@ -621,8 +645,10 @@ export function enforceStaffAccountsLimit(): AppMiddleware {
                 return;
             }
 
-            // TODO: Get current staff accounts count when staff service is available
-            // For now, use 0 as placeholder
+            // BLOCKED: No staff accounts table or service exists yet.
+            // When the staff management feature is implemented, replace with:
+            //   const staffService = new StaffService({ logger: apiLogger });
+            //   const countResult = await staffService.countStaffForUser(actor, { userId: actor.id });
             const currentCount = 0;
 
             // Check limit
