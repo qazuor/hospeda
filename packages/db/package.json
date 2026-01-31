@@ -36,6 +36,9 @@
         "test:coverage": "vitest run --coverage"
     },
     "dependencies": {
+        "@qazuor/qzpay-core": "^1.1.0",
+        "@qazuor/qzpay-drizzle": "^1.1.0",
+        "@repo/billing": "workspace:*",
         "@repo/config": "workspace:*",
         "@repo/logger": "workspace:*",
         "@repo/schemas": "workspace:*",

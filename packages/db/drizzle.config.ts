@@ -11,7 +11,7 @@ envConfig({
 });
 
 export default {
-    schema: './src/schemas',
+    schema: ['./src/schemas', './src/billing/schemas.ts'],
     out: './src/migrations',
     driver: 'pg',
     dbCredentials: {
