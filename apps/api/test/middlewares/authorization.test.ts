@@ -121,8 +121,7 @@ describe('Authorization Middleware', () => {
 
             app.use(authorizationMiddleware({ level: 'public' }));
             app.get('/test', (c) => {
-                // biome-ignore lint/suspicious/noExplicitAny: Testing context extension
-                const level = (c as any).get('authorizationLevel');
+                const level = (c as unknown as Record<string, unknown>).get('authorizationLevel');
                 return c.json({ level });
             });
 

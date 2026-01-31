@@ -123,6 +123,7 @@ vi.mock('@repo/logger', () => {
     return {
         default: mockedLogger,
         logger: mockedLogger,
+        createLogger: mockedLogger.createLogger,
         LoggerColors,
         LogLevel
     };
@@ -2874,6 +2875,153 @@ vi.mock('@repo/service-core', () => {
         }
     }
 
+    class OwnerPromotionService {
+        async create(_actor: unknown, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id: 'owner_promotion_mock_id',
+                    ownerId: String((body as any).ownerId),
+                    accommodationId: String((body as any).accommodationId),
+                    startDate: (body as any).startDate || new Date().toISOString(),
+                    endDate: (body as any).endDate || null,
+                    type: String((body as any).type || 'HIGHLIGHT'),
+                    status: String((body as any).status || 'ACTIVE'),
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async search(_actor: unknown, _opts?: any) {
+            return {
+                data: { items: [], pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 } }
+            };
+        }
+        async findById(_actor: unknown, params: { id: string }) {
+            if (params.id === '87654321-4321-4321-8765-876543218765') return { data: null };
+            return {
+                data: {
+                    id: params.id,
+                    ownerId: 'owner_mock_id',
+                    accommodationId: 'accommodation_mock_id',
+                    type: 'HIGHLIGHT',
+                    status: 'ACTIVE',
+                    createdAt: '2024-01-01T00:00:00.000Z',
+                    updatedAt: '2024-01-01T00:00:00.000Z'
+                }
+            };
+        }
+        async update(_actor: unknown, params: { id: string; data: Record<string, unknown> }) {
+            return {
+                data: {
+                    id: params.id,
+                    status: (params.data as any).status || 'ACTIVE',
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async delete(_actor: unknown, params: { id: string }) {
+            return {
+                data: { id: params.id, deletedAt: new Date().toISOString(), isDeleted: true }
+            };
+        }
+    }
+
+    class SponsorshipLevelService {
+        async create(_actor: unknown, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id: 'sponsorship_level_mock_id',
+                    name: String((body as any).name || 'Mock Level'),
+                    description: (body as any).description || null,
+                    benefits: (body as any).benefits || [],
+                    sortOrder: Number((body as any).sortOrder || 0),
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async search(_actor: unknown, _opts?: any) {
+            return {
+                data: { items: [], pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 } }
+            };
+        }
+        async findById(_actor: unknown, params: { id: string }) {
+            return {
+                data: {
+                    id: params.id,
+                    name: 'Mock Level',
+                    benefits: [],
+                    sortOrder: 0,
+                    createdAt: '2024-01-01T00:00:00.000Z',
+                    updatedAt: '2024-01-01T00:00:00.000Z'
+                }
+            };
+        }
+        async update(_actor: unknown, params: { id: string; data: Record<string, unknown> }) {
+            return {
+                data: {
+                    id: params.id,
+                    name: (params.data as any).name || 'Updated Level',
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async delete(_actor: unknown, params: { id: string }) {
+            return {
+                data: { id: params.id, deletedAt: new Date().toISOString(), isDeleted: true }
+            };
+        }
+    }
+
+    class SponsorshipPackageService {
+        async create(_actor: unknown, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id: 'sponsorship_package_mock_id',
+                    name: String((body as any).name || 'Mock Package'),
+                    description: (body as any).description || null,
+                    price: Number((body as any).price || 0),
+                    duration: Number((body as any).duration || 30),
+                    features: (body as any).features || [],
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async search(_actor: unknown, _opts?: any) {
+            return {
+                data: { items: [], pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 } }
+            };
+        }
+        async findById(_actor: unknown, params: { id: string }) {
+            return {
+                data: {
+                    id: params.id,
+                    name: 'Mock Package',
+                    price: 100,
+                    duration: 30,
+                    features: [],
+                    createdAt: '2024-01-01T00:00:00.000Z',
+                    updatedAt: '2024-01-01T00:00:00.000Z'
+                }
+            };
+        }
+        async update(_actor: unknown, params: { id: string; data: Record<string, unknown> }) {
+            return {
+                data: {
+                    id: params.id,
+                    name: (params.data as any).name || 'Updated Package',
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async delete(_actor: unknown, params: { id: string }) {
+            return {
+                data: { id: params.id, deletedAt: new Date().toISOString(), isDeleted: true }
+            };
+        }
+    }
+
     class FeaturedAccommodationService {
         async create(_actor: unknown, body: Record<string, unknown>) {
             return {
@@ -3273,6 +3421,9 @@ vi.mock('@repo/service-core', () => {
         AdPricingCatalogService,
         AdMediaAssetService,
         SponsorshipService,
+        SponsorshipLevelService,
+        SponsorshipPackageService,
+        OwnerPromotionService,
         FeaturedAccommodationService,
         AccommodationListingPlanService,
         ServiceListingPlanService,
