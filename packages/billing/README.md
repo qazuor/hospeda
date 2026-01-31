@@ -12,6 +12,7 @@ This package provides the core billing configuration for Hospeda's monetization 
 - **5 Add-on Definitions** (one-time and recurring add-ons)
 - **3 Default Promo Codes**
 - **Billing Constants** (trial days, grace periods, etc.)
+- **Payment Adapter Configuration** (MercadoPago integration)
 
 ## Installation
 
@@ -92,6 +93,65 @@ import {
 console.log(`Trial period: ${OWNER_TRIAL_DAYS} days`);
 console.log(`Currency: ${DEFAULT_CURRENCY}`);
 ```
+
+### Payment Adapter (MercadoPago)
+
+```typescript
+import { createMercadoPagoAdapter, getDefaultCurrency, getDefaultCountry } from '@repo/billing';
+
+// Create adapter using environment variables (recommended)
+const mpAdapter = createMercadoPagoAdapter();
+
+// Or with custom configuration
+const mpAdapter = createMercadoPagoAdapter({
+  accessToken: 'TEST-your-access-token',
+  sandbox: true,
+  timeout: 10000,
+  webhookSecret: 'your-webhook-secret',
+  retry: {
+    enabled: true,
+    maxAttempts: 5,
+    initialDelayMs: 2000
+  }
+});
+
+// Use with QZPayBilling
+import { QZPayBilling } from '@qazuor/qzpay-core';
+import { createDrizzleAdapter } from '@qazuor/qzpay-drizzle';
+
+const billing = new QZPayBilling({
+  storage: createDrizzleAdapter({ db }),
+  paymentAdapter: mpAdapter
+});
+
+// Get default values
+const currency = getDefaultCurrency(); // 'ARS'
+const country = getDefaultCountry();   // 'AR'
+```
+
+#### Environment Variables
+
+Required environment variables for MercadoPago:
+
+```env
+# Required
+MERCADO_PAGO_ACCESS_TOKEN=TEST-your-access-token
+
+# Optional
+MERCADO_PAGO_WEBHOOK_SECRET=your-webhook-secret
+MERCADO_PAGO_SANDBOX=true                # default: true
+MERCADO_PAGO_TIMEOUT=5000                # default: 5000ms
+MERCADO_PAGO_PLATFORM_ID=                # optional
+MERCADO_PAGO_INTEGRATOR_ID=              # optional
+```
+
+**Important Notes:**
+
+- Access token must start with `TEST-` (sandbox) or `APP_USR-` (production)
+- Sandbox mode must match token type (TEST- for sandbox=true, APP_USR- for sandbox=false)
+- Default currency is ARS (Argentine Peso)
+- Default country is AR (Argentina)
+- Retry is enabled by default with 3 attempts and exponential backoff
 
 ## Plan Structure
 
@@ -192,19 +252,19 @@ pnpm test:watch
 
 - All prices are in ARS cents (divide by 100 for display)
 - USD prices are reference only for display purposes
-- This package does NOT include qzpay integration yet (will be added later)
+- MercadoPago adapter is configured for Argentina (ARS currency)
 - Types are defined in TypeScript, no Zod schemas needed for config
 - All exports use named exports (no default exports)
 
-## Future Enhancements
+## Payment Integration
 
-When qzpay packages are published, this package will be extended with:
+This package now includes MercadoPago payment adapter configuration:
 
-- qzpay client initialization
-- Subscription management functions
-- Entitlement checking functions
-- Usage tracking helpers
-- Billing event handlers
+- Factory function for creating configured MercadoPago adapter
+- Environment-based configuration with sensible defaults
+- Sandbox/production mode validation
+- Retry configuration for transient errors
+- Argentina-specific defaults (ARS currency, AR country)
 
 ## License
 

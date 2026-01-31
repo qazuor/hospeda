@@ -9,6 +9,7 @@ export enum EntitlementKey {
     VIEW_BASIC_STATS = 'view_basic_stats',
     VIEW_ADVANCED_STATS = 'view_advanced_stats',
     RESPOND_REVIEWS = 'respond_reviews',
+    RESPOND_REVIEWS_HIGHLIGHTED = 'respond_reviews_highlighted',
     PRIORITY_SUPPORT = 'priority_support',
     FEATURED_LISTING = 'featured_listing',
     CUSTOM_BRANDING = 'custom_branding',
@@ -16,6 +17,15 @@ export enum EntitlementKey {
     DEDICATED_MANAGER = 'dedicated_manager',
     CREATE_PROMOTIONS = 'create_promotions',
     SOCIAL_MEDIA_INTEGRATION = 'social_media_integration',
+
+    /** Accommodation feature entitlements */
+    CAN_USE_RICH_DESCRIPTION = 'can_use_rich_description',
+    CAN_EMBED_VIDEO = 'can_embed_video',
+    CAN_USE_CALENDAR = 'can_use_calendar',
+    CAN_SYNC_EXTERNAL_CALENDAR = 'can_sync_external_calendar',
+    CAN_CONTACT_WHATSAPP_DISPLAY = 'can_contact_whatsapp_display',
+    CAN_CONTACT_WHATSAPP_DIRECT = 'can_contact_whatsapp_direct',
+    HAS_VERIFICATION_BADGE = 'has_verification_badge',
 
     /** Complex entitlements (extend owner) */
     MULTI_PROPERTY_MANAGEMENT = 'multi_property_management',
