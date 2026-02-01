@@ -20,7 +20,7 @@ import { getQZPayBilling } from '../../middlewares/billing';
 import { TrialService } from '../../services/trial.service';
 import { createRouter } from '../../utils/create-app';
 import { apiLogger } from '../../utils/logger';
-import { createSimpleRoute } from '../../utils/route-factory';
+import { type SimpleRouteInterface, createSimpleRoute } from '../../utils/route-factory';
 
 /**
  * Trial status response schema
@@ -282,9 +282,7 @@ export const extendTrialRoute = createSimpleRoute({
  * @throws HTTPException 403 if user is not admin
  * @throws HTTPException 500 if service fails
  */
-export const handleCheckExpiry = async (
-    c: Parameters<typeof createSimpleRoute>[0]['handler'][0]
-) => {
+export const handleCheckExpiry = async (c: Parameters<SimpleRouteInterface['handler']>[0]) => {
     const billingEnabled = c.get('billingEnabled');
 
     if (!billingEnabled) {
