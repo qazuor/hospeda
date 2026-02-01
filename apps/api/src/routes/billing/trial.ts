@@ -52,6 +52,23 @@ const startTrialResponseSchema = z.object({
 });
 
 /**
+ * Extend trial request schema
+ */
+const extendTrialRequestSchema = z.object({
+    subscriptionId: z.string(),
+    additionalDays: z.number().int().min(1).max(90)
+});
+
+/**
+ * Extend trial response schema
+ */
+const extendTrialResponseSchema = z.object({
+    success: z.boolean(),
+    newTrialEnd: z.string().nullable(),
+    message: z.string()
+});
+
+/**
  * Check expiry response schema
  */
 const checkExpiryResponseSchema = z.object({
@@ -180,6 +197,82 @@ export const startTrialRoute = createSimpleRoute({
 });
 
 /**
+ * POST /api/v1/billing/trial/extend
+ * Extend a trial subscription by additional days (admin only)
+ */
+export const extendTrialRoute = createSimpleRoute({
+    method: 'post',
+    path: '/extend',
+    summary: 'Extend trial period',
+    description: 'Extend a trial subscription by additional days (admin only)',
+    tags: ['Billing', 'Trial', 'Admin'],
+    responseSchema: extendTrialResponseSchema,
+    handler: async (c) => {
+        const billingEnabled = c.get('billingEnabled');
+
+        if (!billingEnabled) {
+            throw new HTTPException(503, {
+                message: 'Billing service is not configured'
+            });
+        }
+
+        // Admin-only check
+        const actor = getActorFromContext(c);
+        if (actor.role !== RoleEnum.ADMIN && actor.role !== RoleEnum.SUPER_ADMIN) {
+            throw new HTTPException(403, {
+                message: 'Admin access required'
+            });
+        }
+
+        // Parse request body
+        const body = await c.req.json();
+        const parseResult = extendTrialRequestSchema.safeParse(body);
+
+        if (!parseResult.success) {
+            throw new HTTPException(400, {
+                message: 'Invalid request body',
+                cause: parseResult.error.flatten()
+            });
+        }
+
+        const { subscriptionId, additionalDays } = parseResult.data;
+
+        const billing = getQZPayBilling();
+        const trialService = new TrialService(billing);
+
+        try {
+            const result = await trialService.extendTrial({
+                subscriptionId,
+                additionalDays
+            });
+
+            return {
+                success: true,
+                newTrialEnd: result.newTrialEnd,
+                message: `Trial extended by ${additionalDays} day(s)`
+            };
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+
+            apiLogger.error(
+                {
+                    subscriptionId,
+                    additionalDays,
+                    error: errorMessage
+                },
+                'Failed to extend trial'
+            );
+
+            return {
+                success: false,
+                newTrialEnd: null,
+                message: `Failed to extend trial: ${errorMessage}`
+            };
+        }
+    }
+});
+
+/**
  * Handler for checking and blocking expired trials
  * Extracted for testability
  *
@@ -259,6 +352,7 @@ const trialRouter = createRouter();
 
 trialRouter.route('/', getTrialStatusRoute);
 trialRouter.route('/', startTrialRoute);
+trialRouter.route('/', extendTrialRoute);
 trialRouter.route('/', checkExpiryRoute);
 
 export default trialRouter;

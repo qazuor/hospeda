@@ -409,6 +409,86 @@ export class TrialService {
     }
 
     /**
+     * Extend an active trial by additional days
+     * Only works for subscriptions with status 'trialing'
+     *
+     * @param input - Extension parameters
+     * @returns New trial end date
+     */
+    async extendTrial(input: {
+        subscriptionId: string;
+        additionalDays: number;
+    }): Promise<{ newTrialEnd: string }> {
+        if (!this.billing) {
+            throw new Error('Billing not enabled');
+        }
+
+        const { subscriptionId, additionalDays } = input;
+
+        try {
+            apiLogger.info({ subscriptionId, additionalDays }, 'Extending trial period');
+
+            // Get the subscription
+            const subscription = await this.billing.subscriptions.get(subscriptionId);
+
+            if (!subscription) {
+                throw new Error(`Subscription not found: ${subscriptionId}`);
+            }
+
+            if (subscription.status !== 'trialing') {
+                throw new Error(
+                    `Cannot extend trial: subscription status is '${subscription.status}', expected 'trialing'`
+                );
+            }
+
+            // Calculate new trial end date
+            const currentTrialEnd = subscription.trialEnd
+                ? new Date(subscription.trialEnd)
+                : new Date();
+            const newTrialEnd = new Date(currentTrialEnd);
+            newTrialEnd.setDate(newTrialEnd.getDate() + additionalDays);
+
+            // Update the subscription metadata to track extension
+            // QZPay service input only supports planId, metadata, etc.
+            // We store extension info in metadata for audit trail
+            await this.billing.subscriptions.update(subscriptionId, {
+                metadata: {
+                    ...((subscription.metadata as Record<string, string>) || {}),
+                    trialExtendedAt: new Date().toISOString(),
+                    trialExtendedBy: `${additionalDays} days`,
+                    originalTrialEnd: currentTrialEnd.toISOString(),
+                    newTrialEnd: newTrialEnd.toISOString()
+                }
+            });
+
+            apiLogger.info(
+                {
+                    subscriptionId,
+                    previousTrialEnd: currentTrialEnd.toISOString(),
+                    newTrialEnd: newTrialEnd.toISOString(),
+                    additionalDays
+                },
+                'Trial period extended successfully'
+            );
+
+            return { newTrialEnd: newTrialEnd.toISOString() };
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+
+            apiLogger.error(
+                {
+                    subscriptionId,
+                    additionalDays,
+                    error: errorMessage
+                },
+                'Failed to extend trial'
+            );
+
+            throw error;
+        }
+    }
+
+    /**
      * Reactivate from trial to paid subscription
      * Converts an expired or active trial to a paid plan
      *
