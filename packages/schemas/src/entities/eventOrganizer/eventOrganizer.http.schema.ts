@@ -131,6 +131,21 @@ export const httpToDomainEventOrganizerSearch = (
 };
 
 /**
+ * Generate a URL-friendly slug from a string
+ * @param text - The text to convert to a slug
+ * @returns A lowercase slug with hyphens
+ */
+const generateSlug = (text: string): string => {
+    return text
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
+};
+
+/**
  * Convert HTTP event organizer create data to domain create input
  * Handles form data conversion to proper domain types
  * Sets default lifecycle state to ACTIVE and handles nested object structure
@@ -140,6 +155,7 @@ export const httpToDomainEventOrganizerCreate = (
 ): EventOrganizerCreateInput => {
     return {
         name: httpData.name,
+        slug: generateSlug(httpData.name),
         description: httpData.description,
         logo: httpData.logo,
         lifecycleState: LifecycleStatusEnum.ACTIVE,
