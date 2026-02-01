@@ -121,9 +121,13 @@ export function initSentry(): void {
         beforeSend(event) {
             // Remove sensitive headers
             if (event.request?.headers) {
-                event.request.headers.Authorization = undefined;
-                event.request.headers.Cookie = undefined;
-                event.request.headers['X-Auth-Token'] = undefined;
+                const {
+                    Authorization: _auth,
+                    Cookie: _cookie,
+                    'X-Auth-Token': _token,
+                    ...cleanHeaders
+                } = event.request.headers;
+                event.request.headers = cleanHeaders;
             }
 
             return event;
