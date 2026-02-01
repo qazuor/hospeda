@@ -11,10 +11,12 @@
  */
 
 import type { PermissionEnum } from '@repo/schemas';
+import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 import { getQZPayBilling } from '../../../middlewares/billing';
 import { UsageTrackingService } from '../../../services/usage-tracking.service';
+import type { AppBindings } from '../../../types';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
 
@@ -47,6 +49,66 @@ const customerIdParamSchema = z.object({
 });
 
 /**
+ * Handler for getting customer usage summary
+ * Extracted for testing purposes
+ */
+export const getAdminCustomerUsageSummaryHandler = async (
+    c: Context<AppBindings>,
+    params: Record<string, unknown>
+) => {
+    const billingEnabled = c.get('billingEnabled');
+
+    if (!billingEnabled) {
+        throw new HTTPException(503, {
+            message: 'Billing service is not configured'
+        });
+    }
+
+    // Get customer ID from path params
+    const { customerId } = params;
+
+    // Get QZPay billing instance
+    const billing = getQZPayBilling();
+
+    if (!billing) {
+        throw new HTTPException(503, {
+            message: 'Billing service is unavailable'
+        });
+    }
+
+    // Create usage tracking service
+    const usageTrackingService = new UsageTrackingService(billing);
+
+    // Get usage summary for specified customer
+    const result = await usageTrackingService.getUsageSummary(customerId as string);
+
+    if (!result.success || !result.data) {
+        const errorMessage = result.error?.message || 'Failed to get usage summary';
+        apiLogger.error(
+            {
+                customerId,
+                error: result.error
+            },
+            'Admin failed to get customer usage summary via API'
+        );
+
+        throw new HTTPException(500, {
+            message: errorMessage
+        });
+    }
+
+    apiLogger.debug(
+        {
+            customerId,
+            overallThreshold: result.data.overallThreshold
+        },
+        'Admin retrieved customer usage summary via API'
+    );
+
+    return result.data;
+};
+
+/**
  * GET /api/v1/admin/billing/usage/:customerId
  * Get usage summary for any customer (admin only)
  */
@@ -60,56 +122,5 @@ export const getAdminCustomerUsageSummaryRoute = createAdminRoute({
     requiredPermissions: ['BILLING_READ_ALL' as PermissionEnum],
     requestParams: customerIdParamSchema.shape,
     responseSchema: usageSummarySchema,
-    handler: async (c, params) => {
-        const billingEnabled = c.get('billingEnabled');
-
-        if (!billingEnabled) {
-            throw new HTTPException(503, {
-                message: 'Billing service is not configured'
-            });
-        }
-
-        // Get customer ID from path params
-        const { customerId } = params;
-
-        // Get QZPay billing instance
-        const billing = getQZPayBilling();
-
-        if (!billing) {
-            throw new HTTPException(503, {
-                message: 'Billing service is unavailable'
-            });
-        }
-
-        // Create usage tracking service
-        const usageTrackingService = new UsageTrackingService(billing);
-
-        // Get usage summary for specified customer
-        const result = await usageTrackingService.getUsageSummary(customerId as string);
-
-        if (!result.success || !result.data) {
-            const errorMessage = result.error?.message || 'Failed to get usage summary';
-            apiLogger.error(
-                {
-                    customerId,
-                    error: result.error
-                },
-                'Admin failed to get customer usage summary via API'
-            );
-
-            throw new HTTPException(500, {
-                message: errorMessage
-            });
-        }
-
-        apiLogger.debug(
-            {
-                customerId,
-                overallThreshold: result.data.overallThreshold
-            },
-            'Admin retrieved customer usage summary via API'
-        );
-
-        return result.data;
-    }
+    handler: getAdminCustomerUsageSummaryHandler
 });
