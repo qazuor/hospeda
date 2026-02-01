@@ -10,7 +10,7 @@
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { listNotificationLogsRoute } from '../../src/routes/billing/admin/notifications';
+import { listNotificationLogsHandler } from '../../src/routes/billing/admin/notifications';
 
 // Mock logger
 vi.mock('../../src/utils/logger', () => ({
@@ -97,12 +97,7 @@ describe('Admin Notifications API - GET /', () => {
             queryChain.offset.mockResolvedValueOnce([]); // select query
 
             // Act
-            const result = await listNotificationLogsRoute.handler(
-                mockContext as Context,
-                {},
-                {},
-                {}
-            );
+            const result = await listNotificationLogsHandler(mockContext as Context, {}, {}, {});
 
             // Assert
             expect(result.data).toEqual([]);
@@ -148,22 +143,17 @@ describe('Admin Notifications API - GET /', () => {
             queryChain.offset.mockResolvedValueOnce(mockNotifications); // select query
 
             // Act
-            const result = await listNotificationLogsRoute.handler(
-                mockContext as Context,
-                {},
-                {},
-                {}
-            );
+            const result = await listNotificationLogsHandler(mockContext as Context, {}, {}, {});
 
             // Assert
             expect(result.data).toHaveLength(2);
             expect(result.total).toBe(2);
-            expect(result.data[0].id).toBe('notif-1');
-            expect(result.data[0].type).toBe('usage_warning');
-            expect(result.data[0].status).toBe('sent');
-            expect(result.data[0].sentAt).toBe('2024-01-01T10:00:00.000Z');
-            expect(result.data[1].id).toBe('notif-2');
-            expect(result.data[1].sentAt).toBe(null);
+            expect(result.data[0]!.id).toBe('notif-1');
+            expect(result.data[0]!.type).toBe('usage_warning');
+            expect(result.data[0]!.status).toBe('sent');
+            expect(result.data[0]!.sentAt).toBe('2024-01-01T10:00:00.000Z');
+            expect(result.data[1]!.id).toBe('notif-2');
+            expect(result.data[1]!.sentAt).toBe(null);
         });
 
         it('should convert dates to ISO strings', async () => {
@@ -189,16 +179,11 @@ describe('Admin Notifications API - GET /', () => {
             queryChain.offset.mockResolvedValueOnce(mockNotifications);
 
             // Act
-            const result = await listNotificationLogsRoute.handler(
-                mockContext as Context,
-                {},
-                {},
-                {}
-            );
+            const result = await listNotificationLogsHandler(mockContext as Context, {}, {}, {});
 
             // Assert
-            expect(result.data[0].sentAt).toBe('2024-01-15T14:30:00.000Z');
-            expect(result.data[0].createdAt).toBe('2024-01-15T14:00:00.000Z');
+            expect(result.data[0]!.sentAt).toBe('2024-01-15T14:30:00.000Z');
+            expect(result.data[0]!.createdAt).toBe('2024-01-15T14:00:00.000Z');
         });
     });
 
@@ -209,12 +194,7 @@ describe('Admin Notifications API - GET /', () => {
             queryChain.offset.mockResolvedValueOnce([]);
 
             // Act
-            const result = await listNotificationLogsRoute.handler(
-                mockContext as Context,
-                {},
-                {},
-                {}
-            );
+            const result = await listNotificationLogsHandler(mockContext as Context, {}, {}, {});
 
             // Assert
             expect(result.limit).toBe(50);
@@ -234,12 +214,7 @@ describe('Admin Notifications API - GET /', () => {
             };
 
             // Act
-            const result = await listNotificationLogsRoute.handler(
-                mockContext as Context,
-                {},
-                {},
-                query
-            );
+            const result = await listNotificationLogsHandler(mockContext as Context, {}, {}, query);
 
             // Assert
             expect(result.limit).toBe(20);
@@ -258,12 +233,7 @@ describe('Admin Notifications API - GET /', () => {
             };
 
             // Act
-            const result = await listNotificationLogsRoute.handler(
-                mockContext as Context,
-                {},
-                {},
-                query
-            );
+            const result = await listNotificationLogsHandler(mockContext as Context, {}, {}, query);
 
             // Assert
             expect(result.limit).toBe(100);
@@ -273,6 +243,7 @@ describe('Admin Notifications API - GET /', () => {
     describe('Success Cases - Filtering', () => {
         it('should filter by notification type', async () => {
             // Arrange
+            // @ts-expect-error - drizzle-orm is mocked
             const { eq } = await import('drizzle-orm');
 
             queryChain.offset.mockResolvedValueOnce([{ total: 5 }]);
@@ -283,7 +254,7 @@ describe('Admin Notifications API - GET /', () => {
             };
 
             // Act
-            await listNotificationLogsRoute.handler(mockContext as Context, {}, {}, query);
+            await listNotificationLogsHandler(mockContext as Context, {}, {}, query);
 
             // Assert
             expect(eq).toHaveBeenCalled();
@@ -291,6 +262,7 @@ describe('Admin Notifications API - GET /', () => {
 
         it('should filter by status', async () => {
             // Arrange
+            // @ts-expect-error - drizzle-orm is mocked
             const { eq } = await import('drizzle-orm');
 
             queryChain.offset.mockResolvedValueOnce([{ total: 3 }]);
@@ -301,7 +273,7 @@ describe('Admin Notifications API - GET /', () => {
             };
 
             // Act
-            await listNotificationLogsRoute.handler(mockContext as Context, {}, {}, query);
+            await listNotificationLogsHandler(mockContext as Context, {}, {}, query);
 
             // Assert
             expect(eq).toHaveBeenCalled();
@@ -309,6 +281,7 @@ describe('Admin Notifications API - GET /', () => {
 
         it('should filter by date range (start and end)', async () => {
             // Arrange
+            // @ts-expect-error - drizzle-orm is mocked
             const { gte, lte } = await import('drizzle-orm');
 
             queryChain.offset.mockResolvedValueOnce([{ total: 10 }]);
@@ -320,7 +293,7 @@ describe('Admin Notifications API - GET /', () => {
             };
 
             // Act
-            await listNotificationLogsRoute.handler(mockContext as Context, {}, {}, query);
+            await listNotificationLogsHandler(mockContext as Context, {}, {}, query);
 
             // Assert
             expect(gte).toHaveBeenCalled();
@@ -329,6 +302,7 @@ describe('Admin Notifications API - GET /', () => {
 
         it('should filter by start date only', async () => {
             // Arrange
+            // @ts-expect-error - drizzle-orm is mocked
             const { gte } = await import('drizzle-orm');
 
             queryChain.offset.mockResolvedValueOnce([{ total: 15 }]);
@@ -339,7 +313,7 @@ describe('Admin Notifications API - GET /', () => {
             };
 
             // Act
-            await listNotificationLogsRoute.handler(mockContext as Context, {}, {}, query);
+            await listNotificationLogsHandler(mockContext as Context, {}, {}, query);
 
             // Assert
             expect(gte).toHaveBeenCalled();
@@ -347,6 +321,7 @@ describe('Admin Notifications API - GET /', () => {
 
         it('should filter by end date only', async () => {
             // Arrange
+            // @ts-expect-error - drizzle-orm is mocked
             const { lte } = await import('drizzle-orm');
 
             queryChain.offset.mockResolvedValueOnce([{ total: 12 }]);
@@ -357,7 +332,7 @@ describe('Admin Notifications API - GET /', () => {
             };
 
             // Act
-            await listNotificationLogsRoute.handler(mockContext as Context, {}, {}, query);
+            await listNotificationLogsHandler(mockContext as Context, {}, {}, query);
 
             // Assert
             expect(lte).toHaveBeenCalled();
@@ -365,6 +340,7 @@ describe('Admin Notifications API - GET /', () => {
 
         it('should combine multiple filters', async () => {
             // Arrange
+            // @ts-expect-error - drizzle-orm is mocked
             const { eq, gte, lte, and } = await import('drizzle-orm');
 
             queryChain.offset.mockResolvedValueOnce([{ total: 2 }]);
@@ -378,7 +354,7 @@ describe('Admin Notifications API - GET /', () => {
             };
 
             // Act
-            await listNotificationLogsRoute.handler(mockContext as Context, {}, {}, query);
+            await listNotificationLogsHandler(mockContext as Context, {}, {}, query);
 
             // Assert
             expect(eq).toHaveBeenCalled();
@@ -395,7 +371,7 @@ describe('Admin Notifications API - GET /', () => {
 
             // Act & Assert
             await expect(
-                listNotificationLogsRoute.handler(mockContext as Context, {}, {}, {})
+                listNotificationLogsHandler(mockContext as Context, {}, {}, {})
             ).rejects.toThrow(HTTPException);
         });
 
@@ -405,7 +381,7 @@ describe('Admin Notifications API - GET /', () => {
 
             // Act & Assert
             await expect(
-                listNotificationLogsRoute.handler(mockContext as Context, {}, {}, {})
+                listNotificationLogsHandler(mockContext as Context, {}, {}, {})
             ).rejects.toThrow(HTTPException);
         });
 
@@ -415,7 +391,7 @@ describe('Admin Notifications API - GET /', () => {
 
             // Act & Assert
             try {
-                await listNotificationLogsRoute.handler(mockContext as Context, {}, {}, {});
+                await listNotificationLogsHandler(mockContext as Context, {}, {}, {});
                 expect.fail('Should have thrown HTTPException');
             } catch (error) {
                 expect(error).toBeInstanceOf(HTTPException);
@@ -436,7 +412,7 @@ describe('Admin Notifications API - GET /', () => {
 
             // Act & Assert
             await expect(
-                listNotificationLogsRoute.handler(mockContext as Context, {}, {}, query)
+                listNotificationLogsHandler(mockContext as Context, {}, {}, query)
             ).rejects.toThrow(HTTPException);
         });
     });
@@ -465,12 +441,7 @@ describe('Admin Notifications API - GET /', () => {
             queryChain.offset.mockResolvedValueOnce(mockNotifications);
 
             // Act
-            const result = await listNotificationLogsRoute.handler(
-                mockContext as Context,
-                {},
-                {},
-                {}
-            );
+            const result = await listNotificationLogsHandler(mockContext as Context, {}, {}, {});
 
             // Assert - Check top-level structure
             expect(result).toHaveProperty('data');
@@ -518,19 +489,14 @@ describe('Admin Notifications API - GET /', () => {
             queryChain.offset.mockResolvedValueOnce(mockNotifications);
 
             // Act
-            const result = await listNotificationLogsRoute.handler(
-                mockContext as Context,
-                {},
-                {},
-                {}
-            );
+            const result = await listNotificationLogsHandler(mockContext as Context, {}, {}, {});
 
             // Assert
-            expect(result.data[0].customerId).toBe(null);
-            expect(result.data[0].templateId).toBe(null);
-            expect(result.data[0].sentAt).toBe(null);
-            expect(result.data[0].errorMessage).toBe(null);
-            expect(result.data[0].metadata).toBe(null);
+            expect(result.data[0]!.customerId).toBe(null);
+            expect(result.data[0]!.templateId).toBe(null);
+            expect(result.data[0]!.sentAt).toBe(null);
+            expect(result.data[0]!.errorMessage).toBe(null);
+            expect(result.data[0]!.metadata).toBe(null);
         });
     });
 
@@ -541,7 +507,7 @@ describe('Admin Notifications API - GET /', () => {
             queryChain.offset.mockResolvedValueOnce([]);
 
             // Act
-            await listNotificationLogsRoute.handler(mockContext as Context, {}, {}, {});
+            await listNotificationLogsHandler(mockContext as Context, {}, {}, {});
 
             // Assert
             expect(mockDb.select).toHaveBeenCalledTimes(2);
@@ -557,7 +523,7 @@ describe('Admin Notifications API - GET /', () => {
             };
 
             // Act
-            await listNotificationLogsRoute.handler(mockContext as Context, {}, {}, query);
+            await listNotificationLogsHandler(mockContext as Context, {}, {}, query);
 
             // Assert
             expect(queryChain.where).toHaveBeenCalled();
@@ -565,13 +531,14 @@ describe('Admin Notifications API - GET /', () => {
 
         it('should order by createdAt descending', async () => {
             // Arrange
+            // @ts-expect-error - drizzle-orm is mocked
             const { desc } = await import('drizzle-orm');
 
             queryChain.offset.mockResolvedValueOnce([{ total: 10 }]);
             queryChain.offset.mockResolvedValueOnce([]);
 
             // Act
-            await listNotificationLogsRoute.handler(mockContext as Context, {}, {}, {});
+            await listNotificationLogsHandler(mockContext as Context, {}, {}, {});
 
             // Assert
             expect(desc).toHaveBeenCalled();

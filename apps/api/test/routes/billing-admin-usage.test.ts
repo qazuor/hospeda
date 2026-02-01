@@ -10,7 +10,7 @@
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getAdminCustomerUsageSummaryRoute } from '../../src/routes/billing/admin/usage';
+import { getAdminCustomerUsageSummaryHandler } from '../../src/routes/billing/admin/usage';
 import type { UsageTrackingService } from '../../src/services/usage-tracking.service';
 
 // Mock logger
@@ -99,12 +99,9 @@ describe('Admin Usage API - GET /:customerId', () => {
             (UsageTrackingService as any).mockImplementation(() => mockUsageService);
 
             // Act
-            const result = await getAdminCustomerUsageSummaryRoute.handler(
-                mockContext as Context,
-                { customerId },
-                {},
-                {}
-            );
+            const result = await getAdminCustomerUsageSummaryHandler(mockContext as Context, {
+                customerId
+            });
 
             // Assert
             expect(result).toEqual(expectedData);
@@ -144,12 +141,9 @@ describe('Admin Usage API - GET /:customerId', () => {
             (UsageTrackingService as any).mockImplementation(() => mockUsageService);
 
             // Act
-            const result = await getAdminCustomerUsageSummaryRoute.handler(
-                mockContext as Context,
-                { customerId },
-                {},
-                {}
-            );
+            const result = await getAdminCustomerUsageSummaryHandler(mockContext as Context, {
+                customerId
+            });
 
             // Assert
             expect(result).toEqual(expectedData);
@@ -198,12 +192,9 @@ describe('Admin Usage API - GET /:customerId', () => {
             (UsageTrackingService as any).mockImplementation(() => mockUsageService);
 
             // Act
-            const result = await getAdminCustomerUsageSummaryRoute.handler(
-                mockContext as Context,
-                { customerId },
-                {},
-                {}
-            );
+            const result = await getAdminCustomerUsageSummaryHandler(mockContext as Context, {
+                customerId
+            });
 
             // Assert
             expect(result.limits).toHaveLength(2);
@@ -221,21 +212,15 @@ describe('Admin Usage API - GET /:customerId', () => {
 
             // Act & Assert
             await expect(
-                getAdminCustomerUsageSummaryRoute.handler(
-                    mockContext as Context,
-                    { customerId: 'customer-123' },
-                    {},
-                    {}
-                )
+                getAdminCustomerUsageSummaryHandler(mockContext as Context, {
+                    customerId: 'customer-123'
+                })
             ).rejects.toThrow(HTTPException);
 
             await expect(
-                getAdminCustomerUsageSummaryRoute.handler(
-                    mockContext as Context,
-                    { customerId: 'customer-123' },
-                    {},
-                    {}
-                )
+                getAdminCustomerUsageSummaryHandler(mockContext as Context, {
+                    customerId: 'customer-123'
+                })
             ).rejects.toThrow('Billing service is not configured');
         });
 
@@ -246,21 +231,15 @@ describe('Admin Usage API - GET /:customerId', () => {
 
             // Act & Assert
             await expect(
-                getAdminCustomerUsageSummaryRoute.handler(
-                    mockContext as Context,
-                    { customerId: 'customer-123' },
-                    {},
-                    {}
-                )
+                getAdminCustomerUsageSummaryHandler(mockContext as Context, {
+                    customerId: 'customer-123'
+                })
             ).rejects.toThrow(HTTPException);
 
             await expect(
-                getAdminCustomerUsageSummaryRoute.handler(
-                    mockContext as Context,
-                    { customerId: 'customer-123' },
-                    {},
-                    {}
-                )
+                getAdminCustomerUsageSummaryHandler(mockContext as Context, {
+                    customerId: 'customer-123'
+                })
             ).rejects.toThrow('Billing service is unavailable');
 
             // Restore mock
@@ -285,21 +264,11 @@ describe('Admin Usage API - GET /:customerId', () => {
 
             // Act & Assert
             await expect(
-                getAdminCustomerUsageSummaryRoute.handler(
-                    mockContext as Context,
-                    { customerId },
-                    {},
-                    {}
-                )
+                getAdminCustomerUsageSummaryHandler(mockContext as Context, { customerId })
             ).rejects.toThrow(HTTPException);
 
             await expect(
-                getAdminCustomerUsageSummaryRoute.handler(
-                    mockContext as Context,
-                    { customerId },
-                    {},
-                    {}
-                )
+                getAdminCustomerUsageSummaryHandler(mockContext as Context, { customerId })
             ).rejects.toThrow('Customer has no subscription');
         });
 
@@ -318,12 +287,7 @@ describe('Admin Usage API - GET /:customerId', () => {
 
             // Act & Assert
             await expect(
-                getAdminCustomerUsageSummaryRoute.handler(
-                    mockContext as Context,
-                    { customerId },
-                    {},
-                    {}
-                )
+                getAdminCustomerUsageSummaryHandler(mockContext as Context, { customerId })
             ).rejects.toThrow(HTTPException);
         });
 
@@ -345,12 +309,7 @@ describe('Admin Usage API - GET /:customerId', () => {
 
             // Act & Assert
             await expect(
-                getAdminCustomerUsageSummaryRoute.handler(
-                    mockContext as Context,
-                    { customerId },
-                    {},
-                    {}
-                )
+                getAdminCustomerUsageSummaryHandler(mockContext as Context, { customerId })
             ).rejects.toThrow(HTTPException);
         });
     });
@@ -388,12 +347,9 @@ describe('Admin Usage API - GET /:customerId', () => {
             (UsageTrackingService as any).mockImplementation(() => mockUsageService);
 
             // Act
-            const result = await getAdminCustomerUsageSummaryRoute.handler(
-                mockContext as Context,
-                { customerId },
-                {},
-                {}
-            );
+            const result = await getAdminCustomerUsageSummaryHandler(mockContext as Context, {
+                customerId
+            });
 
             // Assert - Check structure
             expect(result).toHaveProperty('customerId');
@@ -403,7 +359,7 @@ describe('Admin Usage API - GET /:customerId', () => {
 
             // Assert - Check limit structure
             expect(Array.isArray(result.limits)).toBe(true);
-            const limit = result.limits[0];
+            const limit = result.limits[0]!;
             expect(limit).toHaveProperty('limitKey');
             expect(limit).toHaveProperty('displayName');
             expect(limit).toHaveProperty('currentUsage');
@@ -455,16 +411,13 @@ describe('Admin Usage API - GET /:customerId', () => {
                 (UsageTrackingService as any).mockImplementation(() => mockUsageService);
 
                 // Act
-                const result = await getAdminCustomerUsageSummaryRoute.handler(
-                    mockContext as Context,
-                    { customerId },
-                    {},
-                    {}
-                );
+                const result = await getAdminCustomerUsageSummaryHandler(mockContext as Context, {
+                    customerId
+                });
 
                 // Assert
                 expect(result.overallThreshold).toBe(threshold);
-                expect(result.limits[0].threshold).toBe(threshold);
+                expect(result.limits[0]!.threshold).toBe(threshold);
             }
         });
     });
@@ -490,12 +443,7 @@ describe('Admin Usage API - GET /:customerId', () => {
             (UsageTrackingService as any).mockImplementation(UsageTrackingServiceSpy);
 
             // Act
-            await getAdminCustomerUsageSummaryRoute.handler(
-                mockContext as Context,
-                { customerId },
-                {},
-                {}
-            );
+            await getAdminCustomerUsageSummaryHandler(mockContext as Context, { customerId });
 
             // Assert
             expect(UsageTrackingServiceSpy).toHaveBeenCalledWith(mockQZPayBilling);
@@ -521,12 +469,7 @@ describe('Admin Usage API - GET /:customerId', () => {
             (UsageTrackingService as any).mockImplementation(() => mockUsageService);
 
             // Act
-            await getAdminCustomerUsageSummaryRoute.handler(
-                mockContext as Context,
-                { customerId },
-                {},
-                {}
-            );
+            await getAdminCustomerUsageSummaryHandler(mockContext as Context, { customerId });
 
             // Assert
             expect(mockUsageService.getUsageSummary).toHaveBeenCalledWith(customerId);

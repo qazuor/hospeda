@@ -10,6 +10,7 @@ import type { Actor } from '@repo/service-core';
 import type { Context } from 'hono';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { billingCustomerMiddleware } from '../../src/middlewares/billing-customer';
+import type { AppBindings } from '../../src/types';
 
 // Mock dependencies
 vi.mock('../../src/middlewares/billing', () => ({
@@ -74,7 +75,7 @@ describe('billingCustomerMiddleware', () => {
     describe('Billing Disabled Scenarios', () => {
         it('should set billingCustomerId to null when billing is not enabled', async () => {
             // Arrange
-            vi.mocked(mockContext.get!).mockImplementation((key: string) => {
+            mockContext.get = vi.fn((key: string) => {
                 if (key === 'billingEnabled') return false;
                 if (key === 'actor') return mockActor;
                 return undefined;
@@ -93,7 +94,7 @@ describe('billingCustomerMiddleware', () => {
 
         it('should not call getQZPayBilling when billing is disabled', async () => {
             // Arrange
-            vi.mocked(mockContext.get!).mockImplementation((key: string) => {
+            mockContext.get = vi.fn((key: string) => {
                 if (key === 'billingEnabled') return false;
                 if (key === 'actor') return mockActor;
                 return undefined;
@@ -110,7 +111,7 @@ describe('billingCustomerMiddleware', () => {
 
         it('should skip customer lookup when billingEnabled is undefined', async () => {
             // Arrange
-            vi.mocked(mockContext.get!).mockImplementation((key: string) => {
+            mockContext.get = vi.fn((key: string) => {
                 if (key === 'billingEnabled') return undefined;
                 if (key === 'actor') return mockActor;
                 return undefined;
@@ -130,7 +131,7 @@ describe('billingCustomerMiddleware', () => {
     describe('Authentication Scenarios', () => {
         it('should set billingCustomerId to null when no actor exists', async () => {
             // Arrange
-            vi.mocked(mockContext.get!).mockImplementation((key: string) => {
+            mockContext.get = vi.fn((key: string) => {
                 if (key === 'billingEnabled') return true;
                 if (key === 'actor') return null;
                 return undefined;
@@ -148,7 +149,7 @@ describe('billingCustomerMiddleware', () => {
 
         it('should set billingCustomerId to null when actor has no id', async () => {
             // Arrange
-            vi.mocked(mockContext.get!).mockImplementation((key: string) => {
+            mockContext.get = vi.fn((key: string) => {
                 if (key === 'billingEnabled') return true;
                 if (key === 'actor') return { ...mockActor, id: undefined };
                 return undefined;
@@ -166,7 +167,7 @@ describe('billingCustomerMiddleware', () => {
 
         it('should set billingCustomerId to null when actor id is empty string', async () => {
             // Arrange
-            vi.mocked(mockContext.get!).mockImplementation((key: string) => {
+            mockContext.get = vi.fn((key: string) => {
                 if (key === 'billingEnabled') return true;
                 if (key === 'actor') return { ...mockActor, id: '' };
                 return undefined;
@@ -184,7 +185,7 @@ describe('billingCustomerMiddleware', () => {
 
         it('should handle actor with only whitespace id', async () => {
             // Arrange
-            vi.mocked(mockContext.get!).mockImplementation((key: string) => {
+            mockContext.get = vi.fn((key: string) => {
                 if (key === 'billingEnabled') return true;
                 if (key === 'actor') return { ...mockActor, id: '   ' };
                 return undefined;
@@ -264,7 +265,7 @@ describe('billingCustomerMiddleware', () => {
         it('should use correct externalId for customer lookup', async () => {
             // Arrange
             const customActor = { ...mockActor, id: 'custom_user_456' };
-            vi.mocked(mockContext.get!).mockImplementation((key: string) => {
+            mockContext.get = vi.fn((key: string) => {
                 if (key === 'billingEnabled') return true;
                 if (key === 'actor') return customActor;
                 return undefined;
@@ -385,13 +386,14 @@ describe('billingCustomerMiddleware', () => {
             await middleware(mockContext as Context<AppBindings>, mockNext);
 
             // Assert - billingCustomerId should be set
-            const setCall = vi
-                .mocked(mockContext.set!)
-                .mock.calls.find((call) => call[0] === 'billingCustomerId');
+            const mockSet = vi.mocked(mockContext.set!);
+            const setCall = mockSet.mock.calls.find(
+                (call: any[]) => call[0] === 'billingCustomerId'
+            );
             expect(setCall).toBeDefined();
-            expect(setCall![0]).toBe('billingCustomerId');
+            expect(setCall?.[0]).toBe('billingCustomerId');
             // Value can be null or a string (depends on billing state)
-            expect(setCall![1] === null || typeof setCall![1] === 'string').toBe(true);
+            expect(setCall?.[1] === null || typeof setCall?.[1] === 'string').toBe(true);
         });
 
         it('should only set billingCustomerId once per request', async () => {
@@ -409,9 +411,10 @@ describe('billingCustomerMiddleware', () => {
             await middleware(mockContext as Context<AppBindings>, mockNext);
 
             // Assert
-            const setCalls = vi
-                .mocked(mockContext.set!)
-                .mock.calls.filter((call) => call[0] === 'billingCustomerId');
+            const mockSet = vi.mocked(mockContext.set!);
+            const setCalls = mockSet.mock.calls.filter(
+                (call: any[]) => call[0] === 'billingCustomerId'
+            );
             expect(setCalls.length).toBe(1);
         });
 
@@ -431,7 +434,8 @@ describe('billingCustomerMiddleware', () => {
 
             // Assert
             expect(mockContext.set).toHaveBeenCalledWith('billingCustomerId', 'cus_abc123');
-            const setCall = vi.mocked(mockContext.set!).mock.calls[0];
+            const mockSet = vi.mocked(mockContext.set!);
+            const setCall = mockSet.mock.calls[0] as any[];
             expect(typeof setCall[1]).toBe('string');
         });
     });
@@ -451,7 +455,7 @@ describe('billingCustomerMiddleware', () => {
 
         it('should call next middleware even when billing is disabled', async () => {
             // Arrange
-            vi.mocked(mockContext.get!).mockImplementation((key: string) => {
+            mockContext.get = vi.fn((key: string) => {
                 if (key === 'billingEnabled') return false;
                 return undefined;
             });
@@ -487,7 +491,7 @@ describe('billingCustomerMiddleware', () => {
             // Arrange
             const executionOrder: string[] = [];
 
-            vi.mocked(mockContext.set!).mockImplementation((..._args: any[]) => {
+            mockContext.set = vi.fn((..._args: any[]) => {
                 executionOrder.push('set');
             });
 
@@ -506,17 +510,17 @@ describe('billingCustomerMiddleware', () => {
     });
 
     describe('Multiple Actor Roles', () => {
-        it('should handle OWNER actor correctly', async () => {
+        it('should handle HOST actor correctly', async () => {
             // Arrange
-            const ownerActor: Actor = {
-                id: 'owner_789',
-                role: RoleEnum.OWNER,
+            const hostActor: Actor = {
+                id: 'host_789',
+                role: RoleEnum.HOST,
                 permissions: []
             };
 
-            vi.mocked(mockContext.get!).mockImplementation((key: string) => {
+            mockContext.get = vi.fn((key: string) => {
                 if (key === 'billingEnabled') return true;
-                if (key === 'actor') return ownerActor;
+                if (key === 'actor') return hostActor;
                 return undefined;
             });
 
@@ -524,8 +528,8 @@ describe('billingCustomerMiddleware', () => {
                 customers: {
                     getByExternalId: vi.fn().mockResolvedValue({
                         ...mockCustomer,
-                        id: 'cus_owner789',
-                        externalId: 'owner_789'
+                        id: 'cus_host789',
+                        externalId: 'host_789'
                     })
                 }
             };
@@ -537,8 +541,8 @@ describe('billingCustomerMiddleware', () => {
             await middleware(mockContext as Context<AppBindings>, mockNext);
 
             // Assert
-            expect(mockBilling.customers.getByExternalId).toHaveBeenCalledWith('owner_789');
-            expect(mockContext.set).toHaveBeenCalledWith('billingCustomerId', 'cus_owner789');
+            expect(mockBilling.customers.getByExternalId).toHaveBeenCalledWith('host_789');
+            expect(mockContext.set).toHaveBeenCalledWith('billingCustomerId', 'cus_host789');
         });
 
         it('should handle ADMIN actor correctly', async () => {
@@ -549,7 +553,7 @@ describe('billingCustomerMiddleware', () => {
                 permissions: []
             };
 
-            vi.mocked(mockContext.get!).mockImplementation((key: string) => {
+            mockContext.get = vi.fn((key: string) => {
                 if (key === 'billingEnabled') return true;
                 if (key === 'actor') return adminActor;
                 return undefined;

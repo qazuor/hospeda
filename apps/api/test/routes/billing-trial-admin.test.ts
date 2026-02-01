@@ -116,11 +116,9 @@ describe('Trial Check Expiry - Admin Authentication', () => {
             });
 
             // Act & Assert
-            await expect(handleCheckExpiry(mockContext as Context, {}, {}, {})).rejects.toThrow(
-                HTTPException
-            );
+            await expect(handleCheckExpiry(mockContext as Context)).rejects.toThrow(HTTPException);
 
-            await expect(handleCheckExpiry(mockContext as Context, {}, {}, {})).rejects.toThrow(
+            await expect(handleCheckExpiry(mockContext as Context)).rejects.toThrow(
                 'Admin access required'
             );
 
@@ -137,11 +135,9 @@ describe('Trial Check Expiry - Admin Authentication', () => {
             });
 
             // Act & Assert
-            await expect(handleCheckExpiry(mockContext as Context, {}, {}, {})).rejects.toThrow(
-                HTTPException
-            );
+            await expect(handleCheckExpiry(mockContext as Context)).rejects.toThrow(HTTPException);
 
-            await expect(handleCheckExpiry(mockContext as Context, {}, {}, {})).rejects.toThrow(
+            await expect(handleCheckExpiry(mockContext as Context)).rejects.toThrow(
                 'Admin access required'
             );
         });
@@ -159,7 +155,7 @@ describe('Trial Check Expiry - Admin Authentication', () => {
             });
 
             // Act & Assert
-            await expect(handleCheckExpiry(mockContext as Context, {}, {}, {})).rejects.toThrow(
+            await expect(handleCheckExpiry(mockContext as Context)).rejects.toThrow(
                 'Admin access required'
             );
         });
@@ -175,7 +171,7 @@ describe('Trial Check Expiry - Admin Authentication', () => {
             });
 
             // Act
-            const result = await handleCheckExpiry(mockContext as Context, {}, {}, {});
+            const result = await handleCheckExpiry(mockContext as Context);
 
             // Assert
             expect(result).toHaveProperty('success', true);
@@ -198,7 +194,7 @@ describe('Trial Check Expiry - Admin Authentication', () => {
             mockTrialService.blockExpiredTrials.mockResolvedValue(3);
 
             // Act
-            const result = await handleCheckExpiry(mockContext as Context, {}, {}, {});
+            const result = await handleCheckExpiry(mockContext as Context);
 
             // Assert
             expect(result).toHaveProperty('success', true);
@@ -222,11 +218,9 @@ describe('Trial Check Expiry - Admin Authentication', () => {
             });
 
             // Act & Assert
-            await expect(handleCheckExpiry(mockContext as Context, {}, {}, {})).rejects.toThrow(
-                HTTPException
-            );
+            await expect(handleCheckExpiry(mockContext as Context)).rejects.toThrow(HTTPException);
 
-            await expect(handleCheckExpiry(mockContext as Context, {}, {}, {})).rejects.toThrow(
+            await expect(handleCheckExpiry(mockContext as Context)).rejects.toThrow(
                 'Billing service is not configured'
             );
         });
@@ -246,11 +240,9 @@ describe('Trial Check Expiry - Admin Authentication', () => {
             );
 
             // Act & Assert
-            await expect(handleCheckExpiry(mockContext as Context, {}, {}, {})).rejects.toThrow(
-                HTTPException
-            );
+            await expect(handleCheckExpiry(mockContext as Context)).rejects.toThrow(HTTPException);
 
-            await expect(handleCheckExpiry(mockContext as Context, {}, {}, {})).rejects.toThrow(
+            await expect(handleCheckExpiry(mockContext as Context)).rejects.toThrow(
                 'Database connection failed'
             );
         });
@@ -266,11 +258,9 @@ describe('Trial Check Expiry - Admin Authentication', () => {
             mockTrialService.blockExpiredTrials.mockRejectedValue('Unknown error');
 
             // Act & Assert
-            await expect(handleCheckExpiry(mockContext as Context, {}, {}, {})).rejects.toThrow(
-                HTTPException
-            );
+            await expect(handleCheckExpiry(mockContext as Context)).rejects.toThrow(HTTPException);
 
-            await expect(handleCheckExpiry(mockContext as Context, {}, {}, {})).rejects.toThrow(
+            await expect(handleCheckExpiry(mockContext as Context)).rejects.toThrow(
                 'Unknown error'
             );
         });
@@ -288,7 +278,7 @@ describe('Trial Check Expiry - Admin Authentication', () => {
             mockTrialService.blockExpiredTrials.mockResolvedValue(0);
 
             // Act
-            const result = await handleCheckExpiry(mockContext as Context, {}, {}, {});
+            const result = await handleCheckExpiry(mockContext as Context);
 
             // Assert
             expect(result).toEqual({
@@ -309,7 +299,7 @@ describe('Trial Check Expiry - Admin Authentication', () => {
             mockTrialService.blockExpiredTrials.mockResolvedValue(42);
 
             // Act
-            const result = await handleCheckExpiry(mockContext as Context, {}, {}, {});
+            const result = await handleCheckExpiry(mockContext as Context);
 
             // Assert
             expect(result.success).toBe(true);
@@ -335,7 +325,7 @@ describe('Trial Check Expiry - Admin Authentication', () => {
 
             // Act & Assert
             // Should fail with billing not configured, not admin access required
-            await expect(handleCheckExpiry(mockContext as Context, {}, {}, {})).rejects.toThrow(
+            await expect(handleCheckExpiry(mockContext as Context)).rejects.toThrow(
                 'Billing service is not configured'
             );
         });
@@ -351,7 +341,7 @@ describe('Trial Check Expiry - Admin Authentication', () => {
             const serviceSpy = vi.spyOn(mockTrialService, 'blockExpiredTrials');
 
             // Act & Assert
-            await expect(handleCheckExpiry(mockContext as Context, {}, {}, {})).rejects.toThrow(
+            await expect(handleCheckExpiry(mockContext as Context)).rejects.toThrow(
                 'Admin access required'
             );
 
@@ -386,13 +376,13 @@ describe('Trial Check Expiry - Admin Authentication', () => {
 
                 // Act & Assert
                 if (testCase.shouldAllow) {
-                    const result = await handleCheckExpiry(mockContext as Context, {}, {}, {});
+                    const result = await handleCheckExpiry(mockContext as Context);
                     expect(result.success).toBe(true);
                     expect(mockTrialService.blockExpiredTrials).toHaveBeenCalled();
                 } else {
-                    await expect(
-                        handleCheckExpiry(mockContext as Context, {}, {}, {})
-                    ).rejects.toThrow('Admin access required');
+                    await expect(handleCheckExpiry(mockContext as Context)).rejects.toThrow(
+                        'Admin access required'
+                    );
                     expect(mockTrialService.blockExpiredTrials).not.toHaveBeenCalled();
                 }
             }

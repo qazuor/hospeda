@@ -523,7 +523,7 @@ describe('Webhook Retry Cron Job', () => {
             vi.mocked(getDb).mockReturnValue(mockDb as any);
 
             // Act
-            await webhookRetryJob.handler(ctx);
+            const result = await webhookRetryJob.handler(ctx);
 
             // Assert - Currently simulates success, but in real scenario would log admin alert
             expect(result.success).toBe(true);

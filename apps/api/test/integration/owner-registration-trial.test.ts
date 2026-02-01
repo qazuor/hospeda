@@ -224,7 +224,6 @@ describe('Owner Registration and Trial Activation E2E', () => {
             const trialService = new TrialService(billing);
 
             // Create mock customer
-            // @ts-expect-error - QZPay types may not match exactly
             const customer = await billing.customers.create({
                 email: 'trial-owner@hospeda.com',
                 name: 'Trial Owner',
@@ -254,7 +253,6 @@ describe('Owner Registration and Trial Activation E2E', () => {
             const trialService = new TrialService(billing);
 
             // Create customer
-            // @ts-expect-error - QZPay types may not match exactly
             const customer = await billing.customers.create({
                 email: 'trial-dates@hospeda.com',
                 name: 'Trial Dates Test',
@@ -298,7 +296,6 @@ describe('Owner Registration and Trial Activation E2E', () => {
 
             const trialService = new TrialService(billing);
 
-            // @ts-expect-error - QZPay types may not match exactly
             const customer = await billing.customers.create({
                 email: 'basico-plan@hospeda.com',
                 name: 'Basico Plan Test',
@@ -330,7 +327,6 @@ describe('Owner Registration and Trial Activation E2E', () => {
 
             const trialService = new TrialService(billing);
 
-            // @ts-expect-error - QZPay types may not match exactly
             const customer = await billing.customers.create({
                 email: 'duplicate-trial@hospeda.com',
                 name: 'Duplicate Trial Test',
@@ -373,10 +369,8 @@ describe('Owner Registration and Trial Activation E2E', () => {
             }
 
             // Get owner-basico plan
-            // @ts-expect-error - QZPay types may not match exactly
             const plansResult = await billing.plans.list();
-            const plans = plansResult.data || plansResult;
-            const basicoPlan = plans.find((p: any) => p.slug === 'owner-basico');
+            const basicoPlan = plansResult.data.find((p: any) => p.slug === 'owner-basico');
 
             // Assert
             expect(basicoPlan).toBeDefined();
@@ -392,10 +386,8 @@ describe('Owner Registration and Trial Activation E2E', () => {
                 return;
             }
 
-            // @ts-expect-error - QZPay types may not match exactly
             const plansResult = await billing.plans.list();
-            const plans = plansResult.data || plansResult;
-            const basicoPlan = plans.find((p: any) => p.slug === 'owner-basico');
+            const basicoPlan = plansResult.data.find((p: any) => p.slug === 'owner-basico');
 
             // Assert
             expect(basicoPlan).toBeDefined();
@@ -414,10 +406,8 @@ describe('Owner Registration and Trial Activation E2E', () => {
                 return;
             }
 
-            // @ts-expect-error - QZPay types may not match exactly
             const plansResult = await billing.plans.list();
-            const plans = plansResult.data || plansResult;
-            const basicoPlan = plans.find((p: any) => p.slug === 'owner-basico');
+            const basicoPlan = plansResult.data.find((p: any) => p.slug === 'owner-basico');
 
             // Assert
             const maxPhotosLimit = basicoPlan?.limits?.[LimitKey.MAX_PHOTOS_PER_ACCOMMODATION];
@@ -433,10 +423,8 @@ describe('Owner Registration and Trial Activation E2E', () => {
                 return;
             }
 
-            // @ts-expect-error - QZPay types may not match exactly
             const plansResult = await billing.plans.list();
-            const plans = plansResult.data || plansResult;
-            const basicoPlan = plans.find((p: any) => p.slug === 'owner-basico');
+            const basicoPlan = plansResult.data.find((p: any) => p.slug === 'owner-basico');
 
             // Assert
             expect(basicoPlan?.entitlements).toContain(EntitlementKey.EDIT_ACCOMMODATION_INFO);
@@ -451,10 +439,8 @@ describe('Owner Registration and Trial Activation E2E', () => {
                 return;
             }
 
-            // @ts-expect-error - QZPay types may not match exactly
             const plansResult = await billing.plans.list();
-            const plans = plansResult.data || plansResult;
-            const basicoPlan = plans.find((p: any) => p.slug === 'owner-basico');
+            const basicoPlan = plansResult.data.find((p: any) => p.slug === 'owner-basico');
 
             // Assert
             expect(basicoPlan?.entitlements).toContain(EntitlementKey.VIEW_BASIC_STATS);
@@ -469,10 +455,8 @@ describe('Owner Registration and Trial Activation E2E', () => {
                 return;
             }
 
-            // @ts-expect-error - QZPay types may not match exactly
             const plansResult = await billing.plans.list();
-            const plans = plansResult.data || plansResult;
-            const basicoPlan = plans.find((p: any) => p.slug === 'owner-basico');
+            const basicoPlan = plansResult.data.find((p: any) => p.slug === 'owner-basico');
 
             // Assert
             expect(basicoPlan?.entitlements).toContain(EntitlementKey.RESPOND_REVIEWS);
@@ -487,10 +471,8 @@ describe('Owner Registration and Trial Activation E2E', () => {
                 return;
             }
 
-            // @ts-expect-error - QZPay types may not match exactly
             const plansResult = await billing.plans.list();
-            const plans = plansResult.data || plansResult;
-            const basicoPlan = plans.find((p: any) => p.slug === 'owner-basico');
+            const basicoPlan = plansResult.data.find((p: any) => p.slug === 'owner-basico');
 
             // Assert - Basico plan should NOT have advanced stats
             expect(basicoPlan?.entitlements).not.toContain(EntitlementKey.VIEW_ADVANCED_STATS);
@@ -517,7 +499,6 @@ describe('Owner Registration and Trial Activation E2E', () => {
 
             const trialService = new TrialService(billing);
 
-            // @ts-expect-error - QZPay types may not match exactly
             const customer = await billing.customers.create({
                 email: 'days-remaining@hospeda.com',
                 name: 'Days Remaining Test',
@@ -550,7 +531,6 @@ describe('Owner Registration and Trial Activation E2E', () => {
 
             const trialService = new TrialService(billing);
 
-            // @ts-expect-error - QZPay types may not match exactly
             const customer = await billing.customers.create({
                 email: 'is-active@hospeda.com',
                 name: 'Is Active Test',
@@ -583,7 +563,6 @@ describe('Owner Registration and Trial Activation E2E', () => {
 
             const trialService = new TrialService(billing);
 
-            // @ts-expect-error - QZPay types may not match exactly
             const customer = await billing.customers.create({
                 email: 'expiry-date@hospeda.com',
                 name: 'Expiry Date Test',
@@ -650,7 +629,6 @@ describe('Owner Registration and Trial Activation E2E', () => {
 
             const trialService = new TrialService(billing);
 
-            // @ts-expect-error - QZPay types may not match exactly
             const customer = await billing.customers.create({
                 email: 'expired@hospeda.com',
                 name: 'Expired Trial Test',
@@ -658,10 +636,8 @@ describe('Owner Registration and Trial Activation E2E', () => {
             });
 
             // Create subscription with expired trial (trialEnd in the past)
-            // @ts-expect-error - QZPay types may not match exactly
             const plansResult = await billing.plans.list();
-            const plans = plansResult.data || plansResult;
-            const basicoPlan = plans.find((p: any) => p.slug === 'owner-basico');
+            const basicoPlan = plansResult.data.find((p: any) => p.slug === 'owner-basico');
 
             if (!basicoPlan) {
                 throw new Error('owner-basico plan not found');
@@ -673,17 +649,15 @@ describe('Owner Registration and Trial Activation E2E', () => {
             const startDate = new Date();
             startDate.setDate(startDate.getDate() - 15); // Started 15 days ago
 
-            // @ts-expect-error - QZPay types may not match exactly
             await billing.subscriptions.create({
                 customerId: customer.id,
-                planId: basicoPlan.id,
-                status: 'trialing',
+                planId: basicoPlan!.id,
                 trialStart: startDate,
                 trialEnd: pastDate, // Expired yesterday
                 currentPeriodStart: startDate,
                 currentPeriodEnd: pastDate,
                 cancelAtPeriodEnd: false
-            });
+            } as any);
 
             // Act
             const status = await trialService.getTrialStatus({
@@ -830,17 +804,14 @@ describe('Owner Registration and Trial Activation E2E', () => {
 
             const trialService = new TrialService(billing);
 
-            // @ts-expect-error - QZPay types may not match exactly
             const customer = await billing.customers.create({
                 email: 'zero-days@hospeda.com',
                 name: 'Zero Days Test',
                 externalId: 'user_zero_days_123'
             });
 
-            // @ts-expect-error - QZPay types may not match exactly
             const plansResult = await billing.plans.list();
-            const plans = plansResult.data || plansResult;
-            const basicoPlan = plans.find((p: any) => p.slug === 'owner-basico');
+            const basicoPlan = plansResult.data.find((p: any) => p.slug === 'owner-basico');
 
             if (!basicoPlan) {
                 throw new Error('owner-basico plan not found');
@@ -854,17 +825,15 @@ describe('Owner Registration and Trial Activation E2E', () => {
             const startDate = new Date(now);
             startDate.setDate(startDate.getDate() - 14);
 
-            // @ts-expect-error - QZPay types may not match exactly
             await billing.subscriptions.create({
                 customerId: customer.id,
-                planId: basicoPlan.id,
-                status: 'trialing',
+                planId: basicoPlan!.id,
                 trialStart: startDate,
                 trialEnd: endOfToday,
                 currentPeriodStart: startDate,
                 currentPeriodEnd: endOfToday,
                 cancelAtPeriodEnd: false
-            });
+            } as any);
 
             // Act
             const status = await trialService.getTrialStatus({
@@ -888,17 +857,14 @@ describe('Owner Registration and Trial Activation E2E', () => {
 
             const trialService = new TrialService(billing);
 
-            // @ts-expect-error - QZPay types may not match exactly
             const customer = await billing.customers.create({
                 email: 'paid-sub@hospeda.com',
                 name: 'Paid Subscription Test',
                 externalId: 'user_paid_sub_123'
             });
 
-            // @ts-expect-error - QZPay types may not match exactly
             const plansResult = await billing.plans.list();
-            const plans = plansResult.data || plansResult;
-            const proPlan = plans.find((p: any) => p.slug === 'owner-pro');
+            const proPlan = plansResult.data.find((p: any) => p.slug === 'owner-pro');
 
             if (!proPlan) {
                 throw new Error('owner-pro plan not found');
@@ -909,15 +875,13 @@ describe('Owner Registration and Trial Activation E2E', () => {
             const periodEnd = new Date(now);
             periodEnd.setMonth(periodEnd.getMonth() + 1);
 
-            // @ts-expect-error - QZPay types may not match exactly
             await billing.subscriptions.create({
                 customerId: customer.id,
-                planId: proPlan.id,
-                status: 'active', // Paid subscription
+                planId: proPlan!.id,
                 currentPeriodStart: now,
                 currentPeriodEnd: periodEnd,
                 cancelAtPeriodEnd: false
-            });
+            } as any);
 
             // Act
             const status = await trialService.getTrialStatus({

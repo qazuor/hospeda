@@ -7,17 +7,16 @@
  * @module test/helpers/test-db
  */
 
-import { billingCustomers, initializeDb } from '@repo/db';
+import { billingCustomers, eq, type getDb, initializeDb } from '@repo/db';
 import { users } from '@repo/db/schemas';
 import { RoleEnum } from '@repo/schemas';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 
 /**
  * Test database instance
  * Null until initialized
  */
-let testDbInstance: NodePgDatabase<any> | null = null;
+let testDbInstance: ReturnType<typeof getDb> | null = null;
 
 /**
  * PostgreSQL connection pool for tests
@@ -46,7 +45,7 @@ export function isDatabaseAvailable(): boolean {
  * }
  * ```
  */
-export function createTestDb(): NodePgDatabase<any> | null {
+export function createTestDb(): ReturnType<typeof getDb> | null {
     // If database is not available, return null (tests will skip)
     if (!isDatabaseAvailable()) {
         return null;
@@ -78,7 +77,7 @@ export function createTestDb(): NodePgDatabase<any> | null {
  * @returns Database instance
  * @throws Error if database not initialized
  */
-export function getTestDb(): NodePgDatabase<any> {
+export function getTestDb(): ReturnType<typeof getDb> {
     if (!testDbInstance) {
         const db = createTestDb();
         if (!db) {
@@ -109,7 +108,7 @@ export interface TestUser {
  */
 export interface TestCustomer {
     id: string;
-    userId: string;
+    externalId: string;
     email: string;
 }
 
@@ -126,13 +125,13 @@ export interface TestCustomer {
  * ```
  */
 export async function seedTestData(
-    db: NodePgDatabase<any>
+    db: ReturnType<typeof getDb>
 ): Promise<{ user: TestUser; customer: TestCustomer }> {
     // Create test user
     const testUserId = crypto.randomUUID();
     const testSlug = `test-user-${Date.now()}`;
 
-    const [createdUser] = await db
+    const createdUserResult = await db
         .insert(users)
         .values({
             id: testUserId,
@@ -153,19 +152,23 @@ export async function seedTestData(
         })
         .returning();
 
+    const createdUser = (createdUserResult as any[])[0];
+
     // Create test billing customer
     const testCustomerId = crypto.randomUUID();
 
-    const [createdCustomer] = await db
+    const createdCustomerResult = await db
         .insert(billingCustomers)
         .values({
             id: testCustomerId,
-            userId: testUserId,
+            externalId: testUserId,
             email: 'test@example.com',
             name: 'Test User',
             metadata: {}
-        })
+        } as any)
         .returning();
+
+    const createdCustomer = (createdCustomerResult as any[])[0];
 
     return {
         user: {
@@ -179,7 +182,7 @@ export async function seedTestData(
         },
         customer: {
             id: createdCustomer.id,
-            userId: createdCustomer.userId,
+            externalId: createdCustomer.externalId,
             email: createdCustomer.email || ''
         }
     };
@@ -197,7 +200,7 @@ export async function seedTestData(
  * });
  * ```
  */
-export async function cleanupTestDb(db: NodePgDatabase<any>): Promise<void> {
+export async function cleanupTestDb(db: ReturnType<typeof getDb>): Promise<void> {
     // Delete in correct order to avoid foreign key violations
     // Delete billing customers first (references users)
     await db.delete(billingCustomers);
@@ -233,14 +236,10 @@ export async function closeTestDb(): Promise<void> {
  * @returns User or null
  */
 export async function findTestUserById(
-    db: NodePgDatabase<any>,
+    db: ReturnType<typeof getDb>,
     userId: string
 ): Promise<TestUser | null> {
-    const [user] = await db
-        .select()
-        .from(users)
-        .where((users as any).id === userId)
-        .limit(1);
+    const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
 
     if (!user) {
         return null;
@@ -265,13 +264,13 @@ export async function findTestUserById(
  * @returns Customer or null
  */
 export async function findTestCustomerByUserId(
-    db: NodePgDatabase<any>,
+    db: ReturnType<typeof getDb>,
     userId: string
 ): Promise<TestCustomer | null> {
     const [customer] = await db
         .select()
         .from(billingCustomers)
-        .where((billingCustomers as any).userId === userId)
+        .where(eq(billingCustomers.externalId, userId))
         .limit(1);
 
     if (!customer) {
@@ -280,7 +279,7 @@ export async function findTestCustomerByUserId(
 
     return {
         id: customer.id,
-        userId: customer.userId,
+        externalId: customer.externalId,
         email: customer.email || ''
     };
 }
@@ -294,14 +293,14 @@ export async function findTestCustomerByUserId(
  * @returns Created test user
  */
 export async function createTestUser(
-    db: NodePgDatabase<any>,
+    db: ReturnType<typeof getDb>,
     role: RoleEnum,
     overrides?: Partial<typeof users.$inferInsert>
 ): Promise<TestUser> {
     const testUserId = crypto.randomUUID();
     const testSlug = `test-user-${Date.now()}-${Math.random().toString(36).substring(7)}`;
 
-    const [createdUser] = await db
+    const createdUserResult = await db
         .insert(users)
         .values({
             id: testUserId,
@@ -322,6 +321,8 @@ export async function createTestUser(
             ...overrides
         })
         .returning();
+
+    const createdUser = (createdUserResult as any[])[0];
 
     return {
         id: createdUser.id,

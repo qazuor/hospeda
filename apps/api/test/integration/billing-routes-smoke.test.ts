@@ -44,17 +44,18 @@ describe.skipIf(!isDatabaseAvailable())('Billing Routes - Smoke Tests', () => {
         testUserId = testUser.id;
 
         // Create billing customer for test user
-        const [customer] = await db
+        const customerResult = await db
             .insert(billingCustomers)
             .values({
                 id: crypto.randomUUID(),
-                userId: testUserId,
+                externalId: testUserId,
                 email: 'test-billing@example.com',
                 name: 'Test Billing User',
                 metadata: {}
-            })
+            } as any)
             .returning();
 
+        const customer = (customerResult as any[])[0];
         testCustomerId = customer.id;
     });
 
@@ -123,8 +124,8 @@ describe.skipIf(!isDatabaseAvailable())('Billing Routes - Smoke Tests', () => {
             .limit(1);
 
         expect(customer).toBeDefined();
-        expect(customer.id).toBe(testCustomerId);
-        expect(customer.email).toBe('test-billing@example.com');
+        expect(customer!.id).toBe(testCustomerId);
+        expect(customer!.email).toBe('test-billing@example.com');
     });
 
     it('should handle customer creation for new user', async () => {
@@ -136,19 +137,20 @@ describe.skipIf(!isDatabaseAvailable())('Billing Routes - Smoke Tests', () => {
         const newUser = await createTestUser(db, RoleEnum.USER);
 
         // Create billing customer
-        const [newCustomer] = await db
+        const newCustomerResult = await db
             .insert(billingCustomers)
             .values({
                 id: crypto.randomUUID(),
-                userId: newUser.id,
+                externalId: newUser.id,
                 email: `test-${Date.now()}@example.com`,
                 name: 'New Test User',
                 metadata: {}
-            })
+            } as any)
             .returning();
 
+        const newCustomer = (newCustomerResult as any[])[0];
         expect(newCustomer).toBeDefined();
-        expect(newCustomer.userId).toBe(newUser.id);
+        expect(newCustomer.externalId).toBe(newUser.id);
 
         // Verify customer can be found by ID
         const [foundCustomer] = await db
@@ -158,7 +160,7 @@ describe.skipIf(!isDatabaseAvailable())('Billing Routes - Smoke Tests', () => {
             .limit(1);
 
         expect(foundCustomer).toBeDefined();
-        expect(foundCustomer.id).toBe(newCustomer.id);
+        expect(foundCustomer!.id).toBe(newCustomer.id);
     });
 
     it('GET /api/v1/billing/trial - should handle trial status check', async () => {

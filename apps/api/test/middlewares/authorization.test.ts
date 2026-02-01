@@ -121,7 +121,7 @@ describe('Authorization Middleware', () => {
 
             app.use(authorizationMiddleware({ level: 'public' }));
             app.get('/test', (c) => {
-                const level = (c as unknown as Record<string, unknown>).get('authorizationLevel');
+                const level = c.get('authorizationLevel' as any);
                 return c.json({ level });
             });
 

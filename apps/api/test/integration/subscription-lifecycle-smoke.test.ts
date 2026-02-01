@@ -40,21 +40,22 @@ describe.skipIf(!isDatabaseAvailable())('Subscription Lifecycle - Smoke Tests', 
         testUserId = testUser.id;
 
         // Create billing customer
-        const [customer] = await db
+        const customerResult = await db
             .insert(billingCustomers)
             .values({
                 id: crypto.randomUUID(),
-                userId: testUserId,
+                externalId: testUserId,
                 email: 'test-subscription@example.com',
                 name: 'Test Subscription User',
                 metadata: {}
-            })
+            } as any)
             .returning();
 
+        const customer = (customerResult as any[])[0];
         testCustomerId = customer.id;
 
         // Create a test plan
-        const [plan] = await db
+        const planResult = await db
             .insert(billingPlans)
             .values({
                 id: crypto.randomUUID(),
@@ -64,13 +65,14 @@ describe.skipIf(!isDatabaseAvailable())('Subscription Lifecycle - Smoke Tests', 
                 productType: 'owner_subscription',
                 isActive: true,
                 metadata: {}
-            })
+            } as any)
             .returning();
 
+        const plan = (planResult as any[])[0];
         testPlanId = plan.id;
 
         // Create a test price for the plan
-        const [price] = await db
+        const priceResult = await db
             .insert(billingPrices)
             .values({
                 id: crypto.randomUUID(),
@@ -80,9 +82,10 @@ describe.skipIf(!isDatabaseAvailable())('Subscription Lifecycle - Smoke Tests', 
                 billingInterval: 'month',
                 isActive: true,
                 metadata: {}
-            })
+            } as any)
             .returning();
 
+        const price = (priceResult as any[])[0];
         testPriceId = price.id;
     });
 
@@ -114,9 +117,9 @@ describe.skipIf(!isDatabaseAvailable())('Subscription Lifecycle - Smoke Tests', 
             .limit(1);
 
         expect(customer).toBeDefined();
-        expect(customer.id).toBe(testCustomerId);
-        expect(customer.userId).toBe(testUserId);
-        expect(customer.email).toBe('test-subscription@example.com');
+        expect(customer!.id).toBe(testCustomerId);
+        expect(customer!.externalId).toBe(testUserId);
+        expect(customer!.email).toBe('test-subscription@example.com');
     });
 
     it('should create subscription for customer', async () => {
@@ -124,20 +127,21 @@ describe.skipIf(!isDatabaseAvailable())('Subscription Lifecycle - Smoke Tests', 
             throw new Error('Database not initialized');
         }
 
-        const [subscription] = await db
+        const subscriptionResult = await db
             .insert(billingSubscriptions)
             .values({
                 id: crypto.randomUUID(),
                 customerId: testCustomerId,
                 planId: testPlanId,
-                priceId: testPriceId,
+                billingInterval: 'month',
                 status: SubscriptionStatusEnum.ACTIVE,
                 currentPeriodStart: new Date(),
                 currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
                 metadata: {}
-            })
+            } as any)
             .returning();
 
+        const subscription = (subscriptionResult as any[])[0];
         expect(subscription).toBeDefined();
         expect(subscription.customerId).toBe(testCustomerId);
         expect(subscription.planId).toBe(testPlanId);
@@ -151,7 +155,7 @@ describe.skipIf(!isDatabaseAvailable())('Subscription Lifecycle - Smoke Tests', 
             .limit(1);
 
         expect(foundSubscription).toBeDefined();
-        expect(foundSubscription.id).toBe(subscription.id);
+        expect(foundSubscription!.id).toBe(subscription.id);
     });
 
     it('should update subscription status to canceled', async () => {
@@ -160,19 +164,21 @@ describe.skipIf(!isDatabaseAvailable())('Subscription Lifecycle - Smoke Tests', 
         }
 
         // First, create a subscription
-        const [subscription] = await db
+        const subscriptionResult = await db
             .insert(billingSubscriptions)
             .values({
                 id: crypto.randomUUID(),
                 customerId: testCustomerId,
                 planId: testPlanId,
-                priceId: testPriceId,
+                billingInterval: 'month',
                 status: SubscriptionStatusEnum.ACTIVE,
                 currentPeriodStart: new Date(),
                 currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
                 metadata: {}
-            })
+            } as any)
             .returning();
+
+        const subscription = (subscriptionResult as any[])[0];
 
         // Update status to canceled
         const [updatedSubscription] = await db
@@ -184,8 +190,8 @@ describe.skipIf(!isDatabaseAvailable())('Subscription Lifecycle - Smoke Tests', 
             .where(eq(billingSubscriptions.id, subscription.id))
             .returning();
 
-        expect(updatedSubscription.status).toBe(SubscriptionStatusEnum.CANCELLED);
-        expect(updatedSubscription.canceledAt).toBeDefined();
+        expect(updatedSubscription!.status).toBe(SubscriptionStatusEnum.CANCELLED);
+        expect(updatedSubscription!.canceledAt).toBeDefined();
     });
 
     it('should detect trial subscription', async () => {
@@ -194,22 +200,23 @@ describe.skipIf(!isDatabaseAvailable())('Subscription Lifecycle - Smoke Tests', 
         }
 
         // Create a trial subscription
-        const [trialSubscription] = await db
+        const trialResult = await db
             .insert(billingSubscriptions)
             .values({
                 id: crypto.randomUUID(),
                 customerId: testCustomerId,
                 planId: testPlanId,
-                priceId: testPriceId,
+                billingInterval: 'month',
                 status: SubscriptionStatusEnum.TRIALING,
                 currentPeriodStart: new Date(),
                 currentPeriodEnd: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days trial
                 trialStart: new Date(),
                 trialEnd: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
                 metadata: {}
-            })
+            } as any)
             .returning();
 
+        const trialSubscription = (trialResult as any[])[0];
         expect(trialSubscription.status).toBe(SubscriptionStatusEnum.TRIALING);
         expect(trialSubscription.trialStart).toBeDefined();
         expect(trialSubscription.trialEnd).toBeDefined();
@@ -250,7 +257,7 @@ describe.skipIf(!isDatabaseAvailable())('Subscription Lifecycle - Smoke Tests', 
             .limit(1);
 
         expect(plan).toBeDefined();
-        expect(plan.id).toBe(testPlanId);
+        expect(plan!.id).toBe(testPlanId);
 
         // Verify price
         const [price] = await db
@@ -260,8 +267,8 @@ describe.skipIf(!isDatabaseAvailable())('Subscription Lifecycle - Smoke Tests', 
             .limit(1);
 
         expect(price).toBeDefined();
-        expect(price.id).toBe(testPriceId);
-        expect(price.planId).toBe(testPlanId);
+        expect(price!.id).toBe(testPriceId);
+        expect(price!.planId).toBe(testPlanId);
     });
 
     it('should handle subscription period updates', async () => {
@@ -270,19 +277,21 @@ describe.skipIf(!isDatabaseAvailable())('Subscription Lifecycle - Smoke Tests', 
         }
 
         // Create a subscription
-        const [subscription] = await db
+        const subscriptionResult = await db
             .insert(billingSubscriptions)
             .values({
                 id: crypto.randomUUID(),
                 customerId: testCustomerId,
                 planId: testPlanId,
-                priceId: testPriceId,
+                billingInterval: 'month',
                 status: SubscriptionStatusEnum.ACTIVE,
                 currentPeriodStart: new Date(),
                 currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
                 metadata: {}
-            })
+            } as any)
             .returning();
+
+        const subscription = (subscriptionResult as any[])[0];
 
         // Update period
         const newPeriodStart = new Date();
@@ -297,8 +306,8 @@ describe.skipIf(!isDatabaseAvailable())('Subscription Lifecycle - Smoke Tests', 
             .where(eq(billingSubscriptions.id, subscription.id))
             .returning();
 
-        expect(updatedSubscription.currentPeriodStart).toBeDefined();
-        expect(updatedSubscription.currentPeriodEnd).toBeDefined();
+        expect(updatedSubscription!.currentPeriodStart).toBeDefined();
+        expect(updatedSubscription!.currentPeriodEnd).toBeDefined();
     });
 
     it('should verify database transaction integrity', async () => {
@@ -319,12 +328,12 @@ describe.skipIf(!isDatabaseAvailable())('Subscription Lifecycle - Smoke Tests', 
             id: crypto.randomUUID(),
             customerId: testCustomerId,
             planId: testPlanId,
-            priceId: testPriceId,
+            billingInterval: 'month',
             status: SubscriptionStatusEnum.ACTIVE,
             currentPeriodStart: new Date(),
             currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
             metadata: {}
-        });
+        } as any);
 
         // Count subscriptions after
         const subscriptionsAfter = await db

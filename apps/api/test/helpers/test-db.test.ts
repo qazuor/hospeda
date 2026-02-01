@@ -70,7 +70,7 @@ describe('Test Database Helpers', () => {
 
             expect(customer).toBeDefined();
             expect(customer.id).toBeDefined();
-            expect(customer.userId).toBe(user.id);
+            expect(customer.externalId).toBe(user.id);
             expect(customer.email).toBe('test@example.com');
         });
     });
@@ -118,7 +118,7 @@ describe('Test Database Helpers', () => {
             // Assert
             expect(foundCustomer).toBeDefined();
             expect(foundCustomer?.id).toBe(customer.id);
-            expect(foundCustomer?.userId).toBe(user.id);
+            expect(foundCustomer?.externalId).toBe(user.id);
         });
 
         it.skipIf(skipTests)('should return null for non-existent customer', async () => {

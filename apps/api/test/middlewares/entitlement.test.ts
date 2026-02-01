@@ -754,7 +754,7 @@ describe('Tourist Entitlement Gates', () => {
                 limits.set(LimitKey.MAX_FAVORITES, 10);
                 c.set('userEntitlements', entitlements);
                 c.set('userLimits', limits);
-                c.set('currentFavoritesCount', 5);
+                c.set('currentFavoritesCount' as any, 5);
                 return next();
             });
             app.use(gateFavorites());
@@ -788,7 +788,7 @@ describe('Tourist Entitlement Gates', () => {
                 limits.set(LimitKey.MAX_FAVORITES, 10);
                 c.set('userEntitlements', entitlements);
                 c.set('userLimits', limits);
-                c.set('currentFavoritesCount', 10); // Already at limit
+                c.set('currentFavoritesCount' as any, 10); // Already at limit
                 return next();
             });
             app.use(gateFavorites());
@@ -812,7 +812,7 @@ describe('Tourist Entitlement Gates', () => {
                 // Not setting MAX_FAVORITES means unlimited
                 c.set('userEntitlements', entitlements);
                 c.set('userLimits', limits);
-                c.set('currentFavoritesCount', 100);
+                c.set('currentFavoritesCount' as any, 100);
                 return next();
             });
             app.use(gateFavorites());
@@ -860,7 +860,7 @@ describe('Tourist Entitlement Gates', () => {
                 c.set('userEntitlements', new Set([EntitlementKey.EARLY_ACCESS_EVENTS]));
                 // Event starts in 12 hours (within 24h early access window)
                 const eventStart = new Date(Date.now() + 12 * 60 * 60 * 1000);
-                c.set('eventStartDate', eventStart);
+                c.set('eventStartDate' as any, eventStart);
                 return next();
             });
             app.use(gateEarlyEventAccess());
@@ -891,7 +891,7 @@ describe('Tourist Entitlement Gates', () => {
                 c.set('userEntitlements', new Set([EntitlementKey.EARLY_ACCESS_EVENTS]));
                 // Event starts in 36 hours (before 24h early access window)
                 const eventStart = new Date(Date.now() + 36 * 60 * 60 * 1000);
-                c.set('eventStartDate', eventStart);
+                c.set('eventStartDate' as any, eventStart);
                 return next();
             });
             app.use(gateEarlyEventAccess());
@@ -909,7 +909,7 @@ describe('Tourist Entitlement Gates', () => {
                 c.set('userEntitlements', new Set([EntitlementKey.EARLY_ACCESS_EVENTS]));
                 // Event started 1 hour ago (in public sale period)
                 const eventStart = new Date(Date.now() - 1 * 60 * 60 * 1000);
-                c.set('eventStartDate', eventStart);
+                c.set('eventStartDate' as any, eventStart);
                 return next();
             });
             app.use(gateEarlyEventAccess());
@@ -928,7 +928,7 @@ describe('Tourist Entitlement Gates', () => {
                 limits.set('max_active_alerts' as LimitKey, 5);
                 c.set('userEntitlements', entitlements);
                 c.set('userLimits', limits);
-                c.set('currentActiveAlertsCount', 2);
+                c.set('currentActiveAlertsCount' as any, 2);
                 return next();
             });
             app.use(gateAlerts());
@@ -962,7 +962,7 @@ describe('Tourist Entitlement Gates', () => {
                 limits.set('max_active_alerts' as LimitKey, 5);
                 c.set('userEntitlements', entitlements);
                 c.set('userLimits', limits);
-                c.set('currentActiveAlertsCount', 5); // At limit
+                c.set('currentActiveAlertsCount' as any, 5); // At limit
                 return next();
             });
             app.use(gateAlerts());
@@ -985,7 +985,7 @@ describe('Tourist Entitlement Gates', () => {
                 limits.set('max_compare_items' as LimitKey, 3);
                 c.set('userEntitlements', entitlements);
                 c.set('userLimits', limits);
-                c.set('currentCompareItemsCount', 1);
+                c.set('currentCompareItemsCount' as any, 1);
                 return next();
             });
             app.use(gateComparator());

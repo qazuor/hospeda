@@ -142,7 +142,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
 
             // Create active subscription (required for add-on purchase)
             const plans = await billing.plans.list();
-            const basicoPlan = plans.find((p) => p.slug === 'owner-basico');
+            const basicoPlan = plans.data.find((p: any) => p.slug === 'owner-basico');
             expect(basicoPlan).toBeDefined();
 
             const now = new Date();
@@ -152,7 +152,6 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
             const subscription = await billing.subscriptions.create({
                 customerId: customer.id,
                 planId: basicoPlan!.id,
-                status: 'active',
                 currentPeriodStart: now,
                 currentPeriodEnd: periodEnd,
                 cancelAtPeriodEnd: false
@@ -186,7 +185,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
 
             expect(addonPurchases).toHaveLength(1);
 
-            const purchase = addonPurchases[0];
+            const purchase = addonPurchases[0]!;
 
             // Verify basic fields
             expect(purchase.addonSlug).toBe('visibility-boost-7d');
@@ -225,7 +224,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
             } as any);
 
             const plans = await billing.plans.list();
-            const basicoPlan = plans.find((p) => p.slug === 'owner-basico');
+            const basicoPlan = plans.data.find((p: any) => p.slug === 'owner-basico');
 
             const now = new Date();
             const periodEnd = new Date(now);
@@ -234,7 +233,6 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
             const subscription = await billing.subscriptions.create({
                 customerId: customer.id,
                 planId: basicoPlan!.id,
-                status: 'active',
                 currentPeriodStart: now,
                 currentPeriodEnd: periodEnd,
                 cancelAtPeriodEnd: false
@@ -264,16 +262,16 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
             expect(purchase).toHaveLength(1);
 
             // Verify entitlement adjustments array exists
-            expect(purchase[0].entitlementAdjustments).toBeDefined();
-            expect(Array.isArray(purchase[0].entitlementAdjustments)).toBe(true);
+            expect(purchase[0]!.entitlementAdjustments).toBeDefined();
+            expect(Array.isArray(purchase[0]!.entitlementAdjustments)).toBe(true);
 
             // If add-on grants entitlement, verify it's recorded
             if (
-                purchase[0].entitlementAdjustments &&
-                Array.isArray(purchase[0].entitlementAdjustments) &&
-                purchase[0].entitlementAdjustments.length > 0
+                purchase[0]!.entitlementAdjustments &&
+                Array.isArray(purchase[0]!.entitlementAdjustments) &&
+                purchase[0]!.entitlementAdjustments.length > 0
             ) {
-                const firstEntitlement = purchase[0].entitlementAdjustments[0];
+                const firstEntitlement = purchase[0]!.entitlementAdjustments[0]!;
                 expect(firstEntitlement).toHaveProperty('entitlementKey');
                 expect(firstEntitlement).toHaveProperty('granted');
                 expect(firstEntitlement.granted).toBe(true);
@@ -296,7 +294,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
             } as any);
 
             const plans = await billing.plans.list();
-            const basicoPlan = plans.find((p) => p.slug === 'owner-basico');
+            const basicoPlan = plans.data.find((p: any) => p.slug === 'owner-basico');
 
             const now = new Date();
             const periodEnd = new Date(now);
@@ -305,7 +303,6 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
             const subscription = await billing.subscriptions.create({
                 customerId: customer.id,
                 planId: basicoPlan!.id,
-                status: 'active',
                 currentPeriodStart: now,
                 currentPeriodEnd: periodEnd,
                 cancelAtPeriodEnd: false
@@ -337,16 +334,16 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
             expect(purchase).toHaveLength(1);
 
             // Verify limit adjustments array exists
-            expect(purchase[0].limitAdjustments).toBeDefined();
-            expect(Array.isArray(purchase[0].limitAdjustments)).toBe(true);
+            expect(purchase[0]!.limitAdjustments).toBeDefined();
+            expect(Array.isArray(purchase[0]!.limitAdjustments)).toBe(true);
 
             // If add-on increases limits, verify adjustment recorded
             if (
-                purchase[0].limitAdjustments &&
-                Array.isArray(purchase[0].limitAdjustments) &&
-                purchase[0].limitAdjustments.length > 0
+                purchase[0]!.limitAdjustments &&
+                Array.isArray(purchase[0]!.limitAdjustments) &&
+                purchase[0]!.limitAdjustments.length > 0
             ) {
-                const firstLimit = purchase[0].limitAdjustments[0];
+                const firstLimit = purchase[0]!.limitAdjustments[0]!;
                 expect(firstLimit).toHaveProperty('limitKey');
                 expect(firstLimit).toHaveProperty('increase');
                 expect(firstLimit).toHaveProperty('previousValue');
@@ -380,7 +377,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
             } as any);
 
             const plans = await billing.plans.list();
-            const basicoPlan = plans.find((p) => p.slug === 'owner-basico');
+            const basicoPlan = plans.data.find((p: any) => p.slug === 'owner-basico');
 
             const now = new Date();
             const periodEnd = new Date(now);
@@ -389,7 +386,6 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
             await billing.subscriptions.create({
                 customerId: customer.id,
                 planId: basicoPlan!.id,
-                status: 'active',
                 currentPeriodStart: now,
                 currentPeriodEnd: periodEnd,
                 cancelAtPeriodEnd: false
@@ -433,7 +429,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
             } as any);
 
             const plans = await billing.plans.list();
-            const basicoPlan = plans.find((p) => p.slug === 'owner-basico');
+            const basicoPlan = plans.data.find((p: any) => p.slug === 'owner-basico');
 
             const now = new Date();
             const periodEnd = new Date(now);
@@ -442,7 +438,6 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
             await billing.subscriptions.create({
                 customerId: customer.id,
                 planId: basicoPlan!.id,
-                status: 'active',
                 currentPeriodStart: now,
                 currentPeriodEnd: periodEnd,
                 cancelAtPeriodEnd: false
@@ -618,7 +613,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
             } as any);
 
             const plans = await billing.plans.list();
-            const basicoPlan = plans.find((p) => p.slug === 'owner-basico');
+            const basicoPlan = plans.data.find((p: any) => p.slug === 'owner-basico');
 
             const now = new Date();
             const periodEnd = new Date(now);
@@ -627,7 +622,6 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
             await billing.subscriptions.create({
                 customerId: customer.id,
                 planId: basicoPlan!.id,
-                status: 'active',
                 currentPeriodStart: now,
                 currentPeriodEnd: periodEnd,
                 cancelAtPeriodEnd: false
@@ -673,7 +667,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
             } as any);
 
             const plans = await billing.plans.list();
-            const basicoPlan = plans.find((p) => p.slug === 'owner-basico');
+            const basicoPlan = plans.data.find((p: any) => p.slug === 'owner-basico');
 
             const now = new Date();
             const periodEnd = new Date(now);
@@ -682,7 +676,6 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
             const subscription = await billing.subscriptions.create({
                 customerId: customer.id,
                 planId: basicoPlan!.id,
-                status: 'active',
                 currentPeriodStart: now,
                 currentPeriodEnd: periodEnd,
                 cancelAtPeriodEnd: false
@@ -738,7 +731,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 );
 
             expect(updatedPurchases).toHaveLength(1);
-            expect(updatedPurchases[0].status).toBe('expired');
+            expect(updatedPurchases[0]!.status).toBe('expired');
         });
 
         it('should verify add-on is no longer active after expiration', async () => {
@@ -757,7 +750,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
             } as any);
 
             const plans = await billing.plans.list();
-            const basicoPlan = plans.find((p) => p.slug === 'owner-basico');
+            const basicoPlan = plans.data.find((p: any) => p.slug === 'owner-basico');
 
             const now = new Date();
             const periodEnd = new Date(now);
@@ -766,7 +759,6 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
             const subscription = await billing.subscriptions.create({
                 customerId: customer.id,
                 planId: basicoPlan!.id,
-                status: 'active',
                 currentPeriodStart: now,
                 currentPeriodEnd: periodEnd,
                 cancelAtPeriodEnd: false
@@ -836,7 +828,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
             } as any);
 
             const plans = await billing.plans.list();
-            const basicoPlan = plans.find((p) => p.slug === 'owner-basico');
+            const basicoPlan = plans.data.find((p: any) => p.slug === 'owner-basico');
 
             const now = new Date();
             const periodEnd = new Date(now);
@@ -845,7 +837,6 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
             const subscription = await billing.subscriptions.create({
                 customerId: customer.id,
                 planId: basicoPlan!.id,
-                status: 'active',
                 currentPeriodStart: now,
                 currentPeriodEnd: periodEnd,
                 cancelAtPeriodEnd: false
@@ -903,7 +894,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 );
 
             expect(updatedPurchases).toHaveLength(1);
-            expect(updatedPurchases[0].status).toBe('expired');
+            expect(updatedPurchases[0]!.status).toBe('expired');
         });
 
         it('should send warnings for add-ons expiring in 3 days', async () => {
@@ -922,7 +913,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
             } as any);
 
             const plans = await billing.plans.list();
-            const basicoPlan = plans.find((p) => p.slug === 'owner-basico');
+            const basicoPlan = plans.data.find((p: any) => p.slug === 'owner-basico');
 
             const now = new Date();
             const periodEnd = new Date(now);
@@ -931,7 +922,6 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
             const subscription = await billing.subscriptions.create({
                 customerId: customer.id,
                 planId: basicoPlan!.id,
-                status: 'active',
                 currentPeriodStart: now,
                 currentPeriodEnd: periodEnd,
                 cancelAtPeriodEnd: false
@@ -996,7 +986,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
             } as any);
 
             const plans = await billing.plans.list();
-            const basicoPlan = plans.find((p) => p.slug === 'owner-basico');
+            const basicoPlan = plans.data.find((p: any) => p.slug === 'owner-basico');
 
             const now = new Date();
             const periodEnd = new Date(now);
@@ -1005,7 +995,6 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
             const subscription = await billing.subscriptions.create({
                 customerId: customer.id,
                 planId: basicoPlan!.id,
-                status: 'active',
                 currentPeriodStart: now,
                 currentPeriodEnd: periodEnd,
                 cancelAtPeriodEnd: false
@@ -1078,7 +1067,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
             } as any);
 
             const plans = await billing.plans.list();
-            const basicoPlan = plans.find((p) => p.slug === 'owner-basico');
+            const basicoPlan = plans.data.find((p: any) => p.slug === 'owner-basico');
 
             const now = new Date();
             const periodEnd = new Date(now);
@@ -1087,7 +1076,6 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
             const subscription = await billing.subscriptions.create({
                 customerId: customer.id,
                 planId: basicoPlan!.id,
-                status: 'active',
                 currentPeriodStart: now,
                 currentPeriodEnd: periodEnd,
                 cancelAtPeriodEnd: false
@@ -1136,7 +1124,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 );
 
             expect(updatedPurchases).toHaveLength(1);
-            expect(updatedPurchases[0].status).toBe('expired');
+            expect(updatedPurchases[0]!.status).toBe('expired');
 
             // TODO: When NotificationService is wired up, verify notification log:
             // const notifications = await db
@@ -1209,7 +1197,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
             } as any);
 
             const plans = await billing.plans.list();
-            const basicoPlan = plans.find((p) => p.slug === 'owner-basico');
+            const basicoPlan = plans.data.find((p: any) => p.slug === 'owner-basico');
 
             const now = new Date();
             const periodEnd = new Date(now);
@@ -1218,7 +1206,6 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
             const subscription = await billing.subscriptions.create({
                 customerId: customer.id,
                 planId: basicoPlan!.id,
-                status: 'active',
                 currentPeriodStart: now,
                 currentPeriodEnd: periodEnd,
                 cancelAtPeriodEnd: false
@@ -1275,7 +1262,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 );
 
             expect(finalPurchases).toHaveLength(1);
-            expect(finalPurchases[0].status).toBe('expired');
+            expect(finalPurchases[0]!.status).toBe('expired');
         });
 
         it('should skip add-ons that are already expired when called via expireAddon', async () => {
@@ -1294,7 +1281,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
             } as any);
 
             const plans = await billing.plans.list();
-            const basicoPlan = plans.find((p) => p.slug === 'owner-basico');
+            const basicoPlan = plans.data.find((p: any) => p.slug === 'owner-basico');
 
             const now = new Date();
             const periodEnd = new Date(now);
@@ -1303,7 +1290,6 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
             const subscription = await billing.subscriptions.create({
                 customerId: customer.id,
                 planId: basicoPlan!.id,
-                status: 'active',
                 currentPeriodStart: now,
                 currentPeriodEnd: periodEnd,
                 cancelAtPeriodEnd: false
@@ -1315,7 +1301,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
             const expirationDate = new Date(pastDate);
             expirationDate.setDate(expirationDate.getDate() + 7);
 
-            const [createdPurchase] = await db
+            const createdPurchases = await db
                 .insert(billingAddonPurchases)
                 .values({
                     customerId: customer.id,
@@ -1329,6 +1315,10 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                     metadata: {}
                 })
                 .returning();
+
+            const createdPurchase = (
+                Array.isArray(createdPurchases) ? createdPurchases[0] : undefined
+            )!;
 
             const { AddonExpirationService } = await import(
                 '../../src/services/addon-expiration.service'
@@ -1359,7 +1349,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
                 .where(eq(billingAddonPurchases.id, createdPurchase.id));
 
             expect(finalPurchases).toHaveLength(1);
-            expect(finalPurchases[0].status).toBe('expired');
+            expect(finalPurchases[0]!.status).toBe('expired');
         });
     });
 });

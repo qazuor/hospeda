@@ -120,7 +120,10 @@ describe('Promo Code Apply Functionality', () => {
                 newCustomersOnly: false,
                 livemode: false,
                 createdAt: new Date(),
-                deletedAt: null
+                startsAt: null,
+                maxPerCustomer: null,
+                existingCustomersOnly: false,
+                combinable: null
             };
 
             mockDb.limit.mockResolvedValue([mockPromoCode]);
@@ -160,7 +163,10 @@ describe('Promo Code Apply Functionality', () => {
                 newCustomersOnly: false,
                 livemode: false,
                 createdAt: new Date(),
-                deletedAt: null
+                startsAt: null,
+                maxPerCustomer: null,
+                existingCustomersOnly: false,
+                combinable: null
             };
 
             mockDb.limit.mockResolvedValue([mockPromoCode]);
@@ -200,7 +206,10 @@ describe('Promo Code Apply Functionality', () => {
                 newCustomersOnly: false,
                 livemode: false,
                 createdAt: new Date(),
-                deletedAt: null
+                startsAt: null,
+                maxPerCustomer: null,
+                existingCustomersOnly: false,
+                combinable: null
             };
 
             mockDb.limit.mockResolvedValue([mockPromoCode]);
@@ -236,7 +245,10 @@ describe('Promo Code Apply Functionality', () => {
                 newCustomersOnly: false,
                 livemode: false,
                 createdAt: new Date(),
-                deletedAt: null
+                startsAt: null,
+                maxPerCustomer: null,
+                existingCustomersOnly: false,
+                combinable: null
             };
 
             mockDb.limit.mockResolvedValue([mockPromoCode]);
@@ -277,7 +289,10 @@ describe('Promo Code Apply Functionality', () => {
                 newCustomersOnly: false,
                 livemode: false,
                 createdAt: new Date(),
-                deletedAt: null
+                startsAt: null,
+                maxPerCustomer: null,
+                existingCustomersOnly: false,
+                combinable: null
             };
 
             mockDb.limit.mockResolvedValue([mockPromoCode]);
@@ -311,7 +326,10 @@ describe('Promo Code Apply Functionality', () => {
                 newCustomersOnly: false,
                 livemode: false,
                 createdAt: new Date(),
-                deletedAt: null
+                startsAt: null,
+                maxPerCustomer: null,
+                existingCustomersOnly: false,
+                combinable: null
             };
 
             mockDb.limit.mockResolvedValue([mockPromoCode]);
@@ -345,7 +363,10 @@ describe('Promo Code Apply Functionality', () => {
                 newCustomersOnly: false,
                 livemode: false,
                 createdAt: new Date(),
-                deletedAt: null
+                startsAt: null,
+                maxPerCustomer: null,
+                existingCustomersOnly: false,
+                combinable: null
             };
 
             mockDb.limit.mockResolvedValue([mockPromoCode]);
@@ -398,7 +419,10 @@ describe('Promo Code Apply Functionality', () => {
                 newCustomersOnly: false,
                 livemode: false,
                 createdAt: new Date(),
-                deletedAt: null
+                startsAt: null,
+                maxPerCustomer: null,
+                existingCustomersOnly: false,
+                combinable: null
             };
 
             mockDb.limit.mockResolvedValue([mockPromoCode]);
@@ -466,7 +490,10 @@ describe('Promo Code Apply Functionality', () => {
                 newCustomersOnly: false,
                 livemode: false,
                 createdAt: new Date(),
-                deletedAt: null
+                startsAt: null,
+                maxPerCustomer: null,
+                existingCustomersOnly: false,
+                combinable: null
             };
 
             mockDb.limit.mockResolvedValue([mockPromoCode]);
@@ -535,7 +562,10 @@ describe('Promo Code Apply Functionality', () => {
                 newCustomersOnly: false,
                 livemode: false,
                 createdAt: new Date(),
-                deletedAt: null
+                startsAt: null,
+                maxPerCustomer: null,
+                existingCustomersOnly: false,
+                combinable: null
             };
 
             mockDb.limit.mockResolvedValue([mockPromoCode]);
@@ -588,7 +618,10 @@ describe('Promo Code Apply Functionality', () => {
                 newCustomersOnly: false,
                 livemode: false,
                 createdAt: new Date(),
-                deletedAt: null
+                startsAt: null,
+                maxPerCustomer: null,
+                existingCustomersOnly: false,
+                combinable: null
             };
 
             mockDb.limit.mockResolvedValue([mockPromoCode]);
@@ -624,7 +657,10 @@ describe('Promo Code Apply Functionality', () => {
                 newCustomersOnly: false,
                 livemode: false,
                 createdAt: new Date(),
-                deletedAt: null
+                startsAt: null,
+                maxPerCustomer: null,
+                existingCustomersOnly: false,
+                combinable: null
             };
 
             mockDb.limit.mockResolvedValue([mockPromoCode]);
@@ -659,7 +695,10 @@ describe('Promo Code Apply Functionality', () => {
                 newCustomersOnly: false,
                 livemode: false,
                 createdAt: new Date(),
-                deletedAt: null
+                startsAt: null,
+                maxPerCustomer: null,
+                existingCustomersOnly: false,
+                combinable: null
             };
 
             mockDb.limit.mockResolvedValue([mockPromoCode]);
@@ -696,7 +735,10 @@ describe('Promo Code Apply Functionality', () => {
                 newCustomersOnly: false,
                 livemode: false,
                 createdAt: new Date(),
-                deletedAt: null
+                startsAt: null,
+                maxPerCustomer: null,
+                existingCustomersOnly: false,
+                combinable: null
             };
 
             mockDb.limit.mockResolvedValue([mockPromoCode]);
@@ -730,7 +772,10 @@ describe('Promo Code Apply Functionality', () => {
                 newCustomersOnly: false,
                 livemode: false,
                 createdAt: new Date(),
-                deletedAt: null
+                startsAt: null,
+                maxPerCustomer: null,
+                existingCustomersOnly: false,
+                combinable: null
             };
 
             mockDb.limit.mockResolvedValue([mockPromoCode]);
