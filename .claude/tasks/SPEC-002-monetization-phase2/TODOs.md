@@ -1,6 +1,6 @@
 # TODOs: Monetization System Phase 2 - Post-Launch Enhancements
 
-Spec: SPEC-002 | Status: in-progress | Progress: 50/55
+Spec: SPEC-002 | Status: in-progress | Progress: 51/55
 
 ## Setup — 8/8 ✅
 
@@ -18,7 +18,7 @@ Spec: SPEC-002 | Status: in-progress | Progress: 50/55
 - [x] T-009: Refactor AddonEntitlementService to use billing_addon_purchases table (complexity: 7) ✅
 - [x] T-010: Refactor AddonService to use billing_addon_purchases table (complexity: 6) ✅
 - [x] T-011: Create AddonExpirationService (complexity: 6) ✅
-- [x] T-012: Create UsageTrackingService (complexity: 5) ✅ (note: getCurrentUsage() has placeholders returning 0)
+- [x] T-012: Create UsageTrackingService (complexity: 5) ✅ (getCurrentUsage() uses real DB queries for accommodations, promotions, favorites)
 - [x] T-013: Create NotificationService - main orchestrator (complexity: 7) ✅
 - [x] T-014: Create PreferenceService for notification opt-in/opt-out (complexity: 4) ✅
 - [x] T-015: Create RetryService with Redis-backed queue (complexity: 6) ✅
@@ -56,10 +56,10 @@ Spec: SPEC-002 | Status: in-progress | Progress: 50/55
 - [x] T-041: Implement admin Webhook Event viewer (complexity: 5) ✅
 - [x] T-042: Add admin cron job management panel (complexity: 5) ✅ (note: cron.tsx is minimal at 1.3KB)
 
-## Testing — 8/10
+## Testing — 9/10
 
 - [x] T-043: Unit tests: AddonExpirationService (complexity: 5) ✅
-- [ ] T-044: Unit tests: UsageTrackingService (complexity: 4) ⚠️ PARTIAL — covered in integration tests only
+- [x] T-044: Unit tests: UsageTrackingService (complexity: 4) ✅ comprehensive test suite with threshold, boundary, and edge case tests
 - [x] T-045: Unit tests: NotificationService + PreferenceService (complexity: 5) ✅
 - [x] T-046: Unit tests: RetryService (complexity: 4) ✅
 - [x] T-047: Unit tests: Email template rendering (complexity: 4) ✅
