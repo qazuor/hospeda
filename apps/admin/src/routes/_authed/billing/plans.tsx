@@ -10,11 +10,15 @@ import type { DataTableColumn } from '@/components/table/DataTable';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
+    type CreatePlanPayload,
     type PlanDefinition,
+    PlanDialog,
     getPlanColumns,
+    useCreatePlanMutation,
     useDeletePlanMutation,
     usePlansQuery,
-    useTogglePlanActiveMutation
+    useTogglePlanActiveMutation,
+    useUpdatePlanMutation
 } from '@/features/billing-plans';
 import { ALL_PLANS } from '@repo/billing';
 import { createFileRoute } from '@tanstack/react-router';
@@ -31,6 +35,8 @@ function BillingPlansPage() {
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(20);
     const [categoryFilter, setCategoryFilter] = useState<PlanCategory>('all');
+    const [dialogOpen, setDialogOpen] = useState(false);
+    const [editingPlan, setEditingPlan] = useState<PlanDefinition | null>(null);
 
     // Fetch plans from API
     // NOTE: Currently using static data from @repo/billing as fallback
@@ -43,6 +49,8 @@ function BillingPlansPage() {
 
     const toggleActiveMutation = useTogglePlanActiveMutation();
     const deleteMutation = useDeletePlanMutation();
+    const createMutation = useCreatePlanMutation();
+    const updateMutation = useUpdatePlanMutation();
 
     // Use API data if available, otherwise fall back to static config
     const plans = data?.items || ALL_PLANS;
@@ -57,13 +65,25 @@ function BillingPlansPage() {
           });
 
     const handleCreateNew = () => {
-        // TODO: Implement create dialog
-        alert('Funcionalidad de creación en desarrollo. Requiere API de facturación.');
+        setEditingPlan(null);
+        setDialogOpen(true);
     };
 
-    const handleEdit = (_plan: PlanDefinition) => {
-        // TODO: Implement edit dialog
-        alert('Funcionalidad de edición en desarrollo. Requiere API de facturación.');
+    const handleEdit = (plan: PlanDefinition) => {
+        setEditingPlan(plan);
+        setDialogOpen(true);
+    };
+
+    const handleSubmit = async (payload: CreatePlanPayload) => {
+        if (editingPlan) {
+            const planWithId = editingPlan as PlanDefinition & { id?: string };
+            await updateMutation.mutateAsync({
+                id: planWithId.id || editingPlan.slug,
+                ...payload
+            });
+        } else {
+            await createMutation.mutateAsync(payload);
+        }
     };
 
     const handleToggleActive = (id: string, isActive: boolean) => {
@@ -138,6 +158,14 @@ function BillingPlansPage() {
                         onCategoryFilterChange={setCategoryFilter}
                         onCreateNew={handleCreateNew}
                     />
+
+                    <PlanDialog
+                        open={dialogOpen}
+                        onOpenChange={setDialogOpen}
+                        plan={editingPlan}
+                        onSubmit={handleSubmit}
+                        isSubmitting={createMutation.isPending || updateMutation.isPending}
+                    />
                 </div>
             </SidebarPageLayout>
         );
@@ -179,6 +207,14 @@ function BillingPlansPage() {
                     onPageSizeChange={setPageSize}
                     onCategoryFilterChange={setCategoryFilter}
                     onCreateNew={handleCreateNew}
+                />
+
+                <PlanDialog
+                    open={dialogOpen}
+                    onOpenChange={setDialogOpen}
+                    plan={editingPlan}
+                    onSubmit={handleSubmit}
+                    isSubmitting={createMutation.isPending || updateMutation.isPending}
                 />
             </div>
         </SidebarPageLayout>
