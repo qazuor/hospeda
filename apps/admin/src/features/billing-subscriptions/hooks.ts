@@ -165,3 +165,84 @@ export const useChangePlanMutation = () => {
         }
     });
 };
+
+/**
+ * Extend a trial subscription
+ */
+async function extendTrial(payload: { subscriptionId: string; additionalDays: number }) {
+    const response = await fetch(`${API_BASE}/billing/trial/extend`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.message || `Failed to extend trial: ${response.statusText}`);
+    }
+
+    const json = await response.json();
+    return json.data;
+}
+
+/**
+ * Hook to extend a trial period
+ */
+export const useExtendTrialMutation = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (payload: { subscriptionId: string; additionalDays: number }) =>
+            extendTrial(payload),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: subscriptionQueryKeys.subscriptions.lists()
+            });
+        }
+    });
+};
+
+/**
+ * Fetch payment history for a subscription
+ */
+async function fetchPaymentHistory(subscriptionId: string) {
+    const params = new URLSearchParams();
+    params.append('subscriptionId', subscriptionId);
+
+    const response = await fetch(`${API_BASE}/billing/payments?${params.toString()}`, {
+        credentials: 'include'
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to fetch payment history: ${response.statusText}`);
+    }
+
+    const json = await response.json();
+    return json.data;
+}
+
+/**
+ * Query keys for payment-related queries
+ */
+export const paymentQueryKeys = {
+    payments: {
+        all: ['billing-payments'] as const,
+        bySubscription: (subscriptionId: string) =>
+            [...paymentQueryKeys.payments.all, 'subscription', subscriptionId] as const
+    }
+};
+
+/**
+ * Hook to fetch payment history for a subscription
+ */
+export const usePaymentHistoryQuery = (subscriptionId: string | undefined) => {
+    return useQuery({
+        queryKey: paymentQueryKeys.payments.bySubscription(subscriptionId || ''),
+        queryFn: () => fetchPaymentHistory(subscriptionId as string),
+        staleTime: 60_000,
+        enabled: !!subscriptionId
+    });
+};

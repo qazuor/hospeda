@@ -16,11 +16,13 @@ import { Label } from '@/components/ui/label';
 import {
     useCancelSubscriptionMutation,
     useChangePlanMutation,
+    useExtendTrialMutation,
+    usePaymentHistoryQuery,
     useSubscriptionsQuery
 } from '@/features/billing-subscriptions/hooks';
 import { ALL_PLANS, type PlanDefinition } from '@repo/billing';
 import { createFileRoute } from '@tanstack/react-router';
-import { CalendarIcon, CreditCardIcon, XCircleIcon } from 'lucide-react';
+import { CalendarIcon, CreditCardIcon, Loader2, XCircleIcon } from 'lucide-react';
 import { useState } from 'react';
 
 export const Route = createFileRoute('/_authed/billing/subscriptions')({
@@ -363,13 +365,24 @@ function SubscriptionDetailsDialog({
     readonly onChangePlan: (sub: Subscription) => void;
     readonly onExtendTrial: (sub: Subscription) => void;
 }) {
+    const { data: paymentData, isLoading: isLoadingPayments } = usePaymentHistoryQuery(
+        subscription?.id
+    );
+
     if (!subscription) return null;
 
     const plan = getPlanBySlug(subscription.planSlug);
 
-    // TODO: Payment history should come from API endpoint
-    // Expected endpoint: GET /api/v1/billing/subscriptions/:id/payments
-    const paymentHistory: PaymentHistory[] = [];
+    // Map API payment data to PaymentHistory interface
+    const paymentHistory: PaymentHistory[] = (paymentData?.items || []).map(
+        (p: { id: string; createdAt: string; amount: number; status: string }) => ({
+            id: p.id,
+            date: p.createdAt,
+            amount: p.amount / 100,
+            status:
+                p.status === 'completed' ? 'paid' : p.status === 'pending' ? 'pending' : 'failed'
+        })
+    );
 
     return (
         <Dialog
@@ -484,13 +497,20 @@ function SubscriptionDetailsDialog({
                     {/* Payment history */}
                     <div>
                         <h3 className="mb-2 font-medium text-sm">Historial de pagos</h3>
-                        {paymentHistory.length === 0 ? (
+                        {isLoadingPayments ? (
+                            <div className="rounded-md border p-6 text-center">
+                                <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
+                                <p className="mt-2 text-muted-foreground text-xs">
+                                    Cargando historial de pagos...
+                                </p>
+                            </div>
+                        ) : paymentHistory.length === 0 ? (
                             <div className="rounded-md border p-6 text-center">
                                 <p className="text-muted-foreground text-sm">
                                     No hay historial de pagos disponible
                                 </p>
                                 <p className="mt-1 text-muted-foreground text-xs">
-                                    El historial se mostrará cuando se procesen los pagos
+                                    El historial se mostrara cuando se procesen los pagos
                                 </p>
                             </div>
                         ) : (
@@ -593,6 +613,103 @@ function SubscriptionDetailsDialog({
 }
 
 /**
+ * Extend trial dialog component
+ */
+function ExtendTrialDialog({
+    subscription,
+    isOpen,
+    onClose,
+    onConfirm,
+    isPending
+}: {
+    readonly subscription: Subscription;
+    readonly isOpen: boolean;
+    readonly onClose: () => void;
+    readonly onConfirm: (additionalDays: number) => void;
+    readonly isPending: boolean;
+}) {
+    const [additionalDays, setAdditionalDays] = useState(7);
+
+    const currentTrialEnd = subscription.trialEnd ? new Date(subscription.trialEnd) : null;
+    const newTrialEnd = currentTrialEnd
+        ? new Date(currentTrialEnd.getTime() + additionalDays * 24 * 60 * 60 * 1000)
+        : null;
+
+    const handleConfirm = () => {
+        onConfirm(additionalDays);
+    };
+
+    return (
+        <Dialog
+            open={isOpen}
+            onOpenChange={onClose}
+        >
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Extender periodo de prueba</DialogTitle>
+                    <DialogDescription>
+                        Extiende el periodo de prueba de {subscription.userName}
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="extend-days">Dias adicionales</Label>
+                        <Input
+                            id="extend-days"
+                            type="number"
+                            min={1}
+                            max={90}
+                            value={additionalDays}
+                            onChange={(e) => setAdditionalDays(Number(e.target.value))}
+                        />
+                        <p className="text-muted-foreground text-xs">
+                            Minimo 1 dia, maximo 90 dias
+                        </p>
+                    </div>
+
+                    <div className="rounded-md border bg-muted p-3">
+                        <div className="space-y-1 text-sm">
+                            <div className="flex justify-between">
+                                <span className="text-muted-foreground">Fin actual:</span>
+                                <span>
+                                    {currentTrialEnd
+                                        ? formatDate(currentTrialEnd.toISOString())
+                                        : 'N/A'}
+                                </span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-muted-foreground">Nuevo fin:</span>
+                                <span className="font-medium">
+                                    {newTrialEnd ? formatDate(newTrialEnd.toISOString()) : 'N/A'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <DialogFooter>
+                    <Button
+                        variant="outline"
+                        onClick={onClose}
+                        disabled={isPending}
+                    >
+                        Cancelar
+                    </Button>
+                    <Button
+                        onClick={handleConfirm}
+                        disabled={additionalDays < 1 || additionalDays > 90 || isPending}
+                    >
+                        {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Extender prueba
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+/**
  * Main subscriptions page component
  */
 function BillingSubscriptionsPage() {
@@ -604,6 +721,7 @@ function BillingSubscriptionsPage() {
     const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
     const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
     const [changePlanDialogOpen, setChangePlanDialogOpen] = useState(false);
+    const [extendTrialDialogOpen, setExtendTrialDialogOpen] = useState(false);
 
     // Fetch subscriptions with filters
     const {
@@ -619,6 +737,7 @@ function BillingSubscriptionsPage() {
     // Mutations
     const cancelMutation = useCancelSubscriptionMutation();
     const changePlanMutation = useChangePlanMutation();
+    const extendTrialMutation = useExtendTrialMutation();
 
     const filteredSubscriptions = subscriptions.filter((sub: Subscription) => {
         const matchesStatus = statusFilter === 'all' || sub.status === statusFilter;
@@ -704,14 +823,37 @@ function BillingSubscriptionsPage() {
         );
     };
 
-    const handleExtendTrial = (_subscription: Subscription) => {
-        addToast({
-            message: 'Período de prueba extendido por 7 días',
-            variant: 'success'
-        });
+    const handleExtendTrialClick = (subscription: Subscription) => {
+        setSelectedSubscription(subscription);
+        setExtendTrialDialogOpen(true);
+        setDetailsDialogOpen(false);
+    };
 
-        // TODO: Implement API call to extend trial
-        // API call would go here: await extendTrial({ subscriptionId: subscription.id })
+    const handleConfirmExtendTrial = (additionalDays: number) => {
+        if (!selectedSubscription) return;
+
+        extendTrialMutation.mutate(
+            {
+                subscriptionId: selectedSubscription.id,
+                additionalDays
+            },
+            {
+                onSuccess: () => {
+                    addToast({
+                        message: `Periodo de prueba extendido por ${additionalDays} dia(s)`,
+                        variant: 'success'
+                    });
+                    setExtendTrialDialogOpen(false);
+                    setSelectedSubscription(null);
+                },
+                onError: (error) => {
+                    addToast({
+                        message: `Error al extender prueba: ${error.message}`,
+                        variant: 'error'
+                    });
+                }
+            }
+        );
     };
 
     // Get unique plan categories for filter
@@ -950,7 +1092,7 @@ function BillingSubscriptionsPage() {
                 onClose={() => setDetailsDialogOpen(false)}
                 onCancel={handleCancelClick}
                 onChangePlan={handleChangePlanClick}
-                onExtendTrial={handleExtendTrial}
+                onExtendTrial={handleExtendTrialClick}
             />
 
             {selectedSubscription && (
@@ -967,6 +1109,14 @@ function BillingSubscriptionsPage() {
                         isOpen={changePlanDialogOpen}
                         onClose={() => setChangePlanDialogOpen(false)}
                         onConfirm={handleConfirmChangePlan}
+                    />
+
+                    <ExtendTrialDialog
+                        subscription={selectedSubscription}
+                        isOpen={extendTrialDialogOpen}
+                        onClose={() => setExtendTrialDialogOpen(false)}
+                        onConfirm={handleConfirmExtendTrial}
+                        isPending={extendTrialMutation.isPending}
                     />
                 </>
             )}
