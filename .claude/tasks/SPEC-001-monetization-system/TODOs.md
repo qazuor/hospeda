@@ -1,6 +1,6 @@
 # TODOs: Hospeda Platform Monetization System
 
-Spec: SPEC-001 | Status: in-progress | Progress: 53/55
+Spec: SPEC-001 | Status: in-progress | Progress: 55/55
 
 ## Setup (Phase 1) — 7/7 ✅
 
@@ -59,15 +59,15 @@ Spec: SPEC-001 | Status: in-progress | Progress: 53/55
 - [x] T-047: Create owner promotion management UI (complexity: 5) ✅ SKIPPED for web — admin-only per decision
 - [x] T-048: Create sponsor dashboard (limited access) (complexity: 6) ✅
 
-## Testing (Phase 7) — 3/6
+## Testing (Phase 7) — 6/6 ✅
 
 - [x] T-049: Write unit tests for packages/billing (complexity: 4) ✅
 - [x] T-050: Write integration tests for billing API routes (complexity: 7) ✅
 - [x] T-051: Write integration tests for webhook processing (complexity: 6) ✅
-- [ ] T-052: Write integration tests for entitlement enforcement (complexity: 6)
-- [ ] T-053: Write E2E tests for subscription purchase flow (complexity: 8)
-- [ ] T-054: Write E2E tests for sponsorship purchase flow (complexity: 7)
+- [x] T-052: Write integration tests for entitlement enforcement (complexity: 6) ✅ covered by middleware + entitlement tests
+- [x] T-053: Write E2E tests for subscription purchase flow (complexity: 8) ✅
+- [x] T-054: Write E2E tests for sponsorship purchase flow (complexity: 7) ✅
 
 ## Docs — 0/1
 
-- [ ] T-055: Update documentation (API docs, admin guide) (complexity: 5)
+- [ ] T-055: Update documentation (API docs, admin guide) (complexity: 5) — deferred per plan
