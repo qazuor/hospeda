@@ -38,12 +38,9 @@ export const billingSettingsQueryKeys = {
 
 /**
  * Fetch billing settings
- * TODO: Replace with actual API endpoint once billing API routes are implemented
  */
 async function fetchBillingSettings(): Promise<BillingSettings> {
     try {
-        // TODO: Update endpoint when API is ready
-        // Expected endpoint: GET /api/v1/billing/settings
         const response = await fetch(`${API_BASE}/billing/settings`, {
             credentials: 'include'
         });
@@ -62,13 +59,10 @@ async function fetchBillingSettings(): Promise<BillingSettings> {
 
 /**
  * Update billing settings
- * TODO: Replace with actual API endpoint once billing API routes are implemented
  */
 async function updateBillingSettings(
     payload: UpdateBillingSettingsPayload
 ): Promise<BillingSettings> {
-    // TODO: Update endpoint when API is ready
-    // Expected endpoint: PATCH /api/v1/billing/settings
     const response = await fetch(`${API_BASE}/billing/settings`, {
         method: 'PATCH',
         headers: {
