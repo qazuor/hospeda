@@ -6,7 +6,7 @@
  *
  * Routes:
  * - GET  /api/v1/billing/trial/status - Get current trial status (authenticated)
- * - POST /api/v1/billing/trial/start - Start trial for new user (internal/auth-sync)
+ * - POST /api/v1/billing/trial/start - Start trial for authenticated user
  * - POST /api/v1/billing/trial/check-expiry - Trigger expired trial check (admin only)
  *
  * @module routes/billing/trial
@@ -38,7 +38,6 @@ const trialStatusResponseSchema = z.object({
  * Start trial request schema
  */
 const startTrialRequestSchema = z.object({
-    customerId: z.string(),
     userType: z.enum(['owner', 'complex'])
 });
 
@@ -118,18 +117,17 @@ export const getTrialStatusRoute = createSimpleRoute({
 
 /**
  * POST /api/v1/billing/trial/start
- * Start trial for a new user (internal use)
+ * Start trial for authenticated user
  *
- * This is typically called by the auth sync service when a new user registers.
- * Can also be called manually for testing or admin purposes.
+ * This endpoint starts a trial subscription for the authenticated user.
+ * The billing customer ID is obtained from the user's billing context.
  */
 export const startTrialRoute = createSimpleRoute({
     method: 'post',
     path: '/start',
     summary: 'Start trial',
-    description: 'Start a trial subscription for a new user',
+    description: 'Start a trial subscription for the authenticated user',
     tags: ['Billing', 'Trial'],
-    options: { skipAuth: true }, // Allow internal calls
     responseSchema: startTrialResponseSchema,
     handler: async (c) => {
         const billingEnabled = c.get('billingEnabled');
@@ -137,6 +135,15 @@ export const startTrialRoute = createSimpleRoute({
         if (!billingEnabled) {
             throw new HTTPException(503, {
                 message: 'Billing service is not configured'
+            });
+        }
+
+        // Get billing customer ID from authenticated user context
+        const billingCustomerId = c.get('billingCustomerId');
+
+        if (!billingCustomerId) {
+            throw new HTTPException(400, {
+                message: 'No billing account found'
             });
         }
 
@@ -151,7 +158,8 @@ export const startTrialRoute = createSimpleRoute({
             });
         }
 
-        const { customerId, userType } = parseResult.data;
+        const { userType } = parseResult.data;
+        const customerId = billingCustomerId;
 
         const billing = getQZPayBilling();
         const trialService = new TrialService(billing);

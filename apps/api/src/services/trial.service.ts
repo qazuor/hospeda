@@ -121,7 +121,13 @@ export class TrialService {
 
             // Get plan by slug
             const plansResult = await this.billing.plans.list();
-            const plan = plansResult.data.find((p: { name: string }) => p.name === planSlug);
+
+            if (!plansResult.data) {
+                apiLogger.error({ planSlug }, 'Failed to fetch plans list');
+                throw new Error('Failed to fetch plans list');
+            }
+
+            const plan = plansResult.data.find((p: { slug?: string }) => p.slug === planSlug);
 
             if (!plan) {
                 apiLogger.error({ planSlug }, 'Trial plan not found');
@@ -618,8 +624,8 @@ export class TrialService {
                 const daysRemaining = Math.ceil(msRemaining / (1000 * 60 * 60 * 24));
 
                 // Check if trial ends within the specified days
-                // We want trials ending EXACTLY in daysAhead days (within 24h window)
-                const isEndingSoon = daysRemaining === daysAhead;
+                // We want trials ending within daysAhead days, but not already expired
+                const isEndingSoon = daysRemaining <= daysAhead && daysRemaining > 0;
 
                 if (isEndingSoon) {
                     try {

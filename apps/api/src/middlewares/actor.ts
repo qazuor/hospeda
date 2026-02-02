@@ -122,10 +122,17 @@ export const actorMiddleware = (): MiddlewareHandler => {
                         permissions = Object.values(PermissionEnum);
                     }
 
+                    // Get entitlements from context and convert to Set<string>
+                    const userEntitlements = c.get('userEntitlements');
+                    const entitlements = new Set<string>(
+                        Array.from(userEntitlements || []).map((e) => String(e))
+                    );
+
                     actor = {
                         id: dbUser.id,
                         role: dbUser.role,
-                        permissions
+                        permissions,
+                        entitlements
                     };
                 } else {
                     // Fallback to GUEST if user not found

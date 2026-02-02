@@ -42,6 +42,7 @@ import {
     type CountResponse,
     type IdOrSlugParams,
     IdOrSlugParamsSchema,
+    RoleEnum,
     ServiceErrorCode,
     type Success,
     type WithOwnerIdParams,
@@ -281,22 +282,38 @@ export class AccommodationService extends BaseCrudService<
      * This implementation ensures that any branded types (like `UserId`) are
      * cast to primitives before being passed to the database model.
      * @param params The validated and processed search parameters.
-     * @param _actor The actor performing the search.
+     * @param actor The actor performing the search.
      * @returns A paginated list of accommodations matching the criteria.
      */
-    protected async _executeSearch(params: AccommodationSearchInput, _actor: Actor) {
-        return this.model.search(params);
+    protected async _executeSearch(params: AccommodationSearchInput, actor: Actor) {
+        const hasVipAccess =
+            actor.entitlements?.has('vip_promotions_access') ||
+            actor.role === RoleEnum.ADMIN ||
+            actor.role === RoleEnum.SUPER_ADMIN;
+
+        return this.model.search({
+            ...params,
+            excludeRestricted: !hasVipAccess
+        });
     }
 
     /**
      * @inheritdoc
      * Executes the database count for accommodations.
      * @param params The validated and processed search parameters.
-     * @param _actor The actor performing the count.
+     * @param actor The actor performing the count.
      * @returns An object containing the total count of accommodations matching the criteria.
      */
-    protected async _executeCount(params: AccommodationSearchInput, _actor: Actor) {
-        return this.model.countByFilters(params);
+    protected async _executeCount(params: AccommodationSearchInput, actor: Actor) {
+        const hasVipAccess =
+            actor.entitlements?.has('vip_promotions_access') ||
+            actor.role === RoleEnum.ADMIN ||
+            actor.role === RoleEnum.SUPER_ADMIN;
+
+        return this.model.countByFilters({
+            ...params,
+            excludeRestricted: !hasVipAccess
+        });
     }
 
     /**
@@ -332,6 +349,11 @@ export class AccommodationService extends BaseCrudService<
                 const page = processedParams.page ?? 1;
                 const pageSize = processedParams.pageSize ?? 10;
 
+                const hasVipAccess =
+                    validatedActor.entitlements?.has('vip_promotions_access') ||
+                    validatedActor.role === RoleEnum.ADMIN ||
+                    validatedActor.role === RoleEnum.SUPER_ADMIN;
+
                 // Convert AccommodationSearchInput to model parameters format
                 const modelParams = {
                     page,
@@ -345,7 +367,8 @@ export class AccommodationService extends BaseCrudService<
                     destinationId: processedParams.destinationId,
                     amenities: processedParams.amenities,
                     isFeatured: processedParams.isFeatured,
-                    isAvailable: processedParams.isAvailable
+                    isAvailable: processedParams.isAvailable,
+                    excludeRestricted: !hasVipAccess
                 };
 
                 const result = await this.model.searchWithRelations(modelParams);
@@ -393,9 +416,16 @@ export class AccommodationService extends BaseCrudService<
             schema: AccommodationTopRatedParamsSchema,
             execute: async (validated, actor) => {
                 this._canList(actor);
+
+                const hasVipAccess =
+                    actor.entitlements?.has('vip_promotions_access') ||
+                    actor.role === RoleEnum.ADMIN ||
+                    actor.role === RoleEnum.SUPER_ADMIN;
+
                 const items = await this.model.findTopRated({
                     limit: validated.pageSize,
-                    destinationId: validated.destinationId
+                    destinationId: validated.destinationId,
+                    excludeRestricted: !hasVipAccess
                     // type: validated.type, // Field not available in schema
                     // onlyFeatured: validated.onlyFeatured // Field not available in schema
                 });
@@ -578,9 +608,15 @@ export class AccommodationService extends BaseCrudService<
                     );
                 }
 
+                const hasVipAccess =
+                    actor.entitlements?.has('vip_promotions_access') ||
+                    actor.role === RoleEnum.ADMIN ||
+                    actor.role === RoleEnum.SUPER_ADMIN;
+
                 const items = await this.model.findTopRated({
                     limit: validated.pageSize,
-                    destinationId: validated.destinationId
+                    destinationId: validated.destinationId,
+                    excludeRestricted: !hasVipAccess
                 });
 
                 const accommodations =

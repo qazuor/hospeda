@@ -15,7 +15,6 @@
  * - Exclusive deals
  * - Early event access (24h window)
  * - Ad-free experience
- * - Direct contact information
  *
  * Must be used AFTER entitlement middleware which loads user entitlements.
  *
@@ -251,10 +250,7 @@ export function gateComparator(): AppMiddleware {
     return async (c, next) => {
         try {
             // Check entitlement
-            // Note: This entitlement key needs to be added to EntitlementKey enum
-            const comparatorEntitlement = 'can_compare_accommodations' as EntitlementKey;
-
-            if (!hasEntitlement(c, comparatorEntitlement)) {
+            if (!hasEntitlement(c, EntitlementKey.CAN_COMPARE_ACCOMMODATIONS)) {
                 throw new HTTPException(403, {
                     message: JSON.stringify({
                         success: false,
@@ -263,7 +259,7 @@ export function gateComparator(): AppMiddleware {
                             message:
                                 'El comparador de alojamientos solo está disponible en los planes Plus y VIP. Actualiza tu plan para acceder.',
                             details: {
-                                entitlement: comparatorEntitlement,
+                                entitlement: EntitlementKey.CAN_COMPARE_ACCOMMODATIONS,
                                 upgradeUrl: '/billing/plans'
                             }
                         }
@@ -347,18 +343,16 @@ export function gateReviewPhotos(): AppMiddleware {
     return async (c, next) => {
         try {
             // Check entitlement
-            const reviewPhotosEntitlement = 'can_attach_review_photos' as EntitlementKey;
-
-            if (!hasEntitlement(c, reviewPhotosEntitlement)) {
+            if (!hasEntitlement(c, EntitlementKey.CAN_ATTACH_REVIEW_PHOTOS)) {
                 throw new HTTPException(403, {
                     message: JSON.stringify({
                         success: false,
                         error: {
                             code: 'ENTITLEMENT_REQUIRED',
                             message:
-                                'Adjuntar fotos a reseñas es una funcionalidad exclusiva del plan VIP. Actualiza para acceder.',
+                                'Adjuntar fotos a reseñas es una funcionalidad exclusiva de los planes Plus y VIP. Actualiza para acceder.',
                             details: {
-                                entitlement: reviewPhotosEntitlement,
+                                entitlement: EntitlementKey.CAN_ATTACH_REVIEW_PHOTOS,
                                 upgradeUrl: '/billing/plans'
                             }
                         }
@@ -407,9 +401,7 @@ export function gateSearchHistory(): AppMiddleware {
     return async (c, next) => {
         try {
             // Check entitlement
-            const searchHistoryEntitlement = 'can_view_search_history' as EntitlementKey;
-
-            if (!hasEntitlement(c, searchHistoryEntitlement)) {
+            if (!hasEntitlement(c, EntitlementKey.CAN_VIEW_SEARCH_HISTORY)) {
                 throw new HTTPException(403, {
                     message: JSON.stringify({
                         success: false,
@@ -418,7 +410,7 @@ export function gateSearchHistory(): AppMiddleware {
                             message:
                                 'El historial de búsqueda solo está disponible en los planes Plus y VIP. Actualiza tu plan para acceder.',
                             details: {
-                                entitlement: searchHistoryEntitlement,
+                                entitlement: EntitlementKey.CAN_VIEW_SEARCH_HISTORY,
                                 upgradeUrl: '/billing/plans'
                             }
                         }
@@ -467,18 +459,16 @@ export function gateRecommendations(): AppMiddleware {
     return async (c, next) => {
         try {
             // Check entitlement
-            const recommendationsEntitlement = 'can_view_recommendations' as EntitlementKey;
-
-            if (!hasEntitlement(c, recommendationsEntitlement)) {
+            if (!hasEntitlement(c, EntitlementKey.CAN_VIEW_RECOMMENDATIONS)) {
                 throw new HTTPException(403, {
                     message: JSON.stringify({
                         success: false,
                         error: {
                             code: 'ENTITLEMENT_REQUIRED',
                             message:
-                                'Las recomendaciones personalizadas son exclusivas del plan VIP. Actualiza para acceder.',
+                                'Las recomendaciones personalizadas están disponibles en todos los planes. Inicia sesión para acceder.',
                             details: {
-                                entitlement: recommendationsEntitlement,
+                                entitlement: EntitlementKey.CAN_VIEW_RECOMMENDATIONS,
                                 upgradeUrl: '/billing/plans'
                             }
                         }
@@ -652,67 +642,6 @@ export function gateEarlyEventAccess(): AppMiddleware {
 
             apiLogger.error(
                 `Error in early event access gate: ${error instanceof Error ? error.message : String(error)}`
-            );
-            throw error;
-        }
-    };
-}
-
-/**
- * Gate direct contact feature
- *
- * Checks if user has the entitlement to view direct contact information
- * (email/phone) for accommodations.
- * Plus and VIP plans only.
- *
- * @returns Middleware handler
- *
- * @example
- * ```typescript
- * import { gateDirectContact } from '../middlewares/tourist-entitlements';
- *
- * app.get(
- *   '/accommodations/:id/contact',
- *   entitlementMiddleware(),
- *   gateDirectContact(),
- *   async (c) => {
- *     // User can view contact info - proceed
- *   }
- * );
- * ```
- */
-export function gateDirectContact(): AppMiddleware {
-    return async (c, next) => {
-        try {
-            // Check entitlement
-            const directContactEntitlement = 'can_contact_email_direct' as EntitlementKey;
-
-            if (!hasEntitlement(c, directContactEntitlement)) {
-                throw new HTTPException(403, {
-                    message: JSON.stringify({
-                        success: false,
-                        error: {
-                            code: 'ENTITLEMENT_REQUIRED',
-                            message:
-                                'El contacto directo con alojamientos solo está disponible en los planes Plus y VIP. Actualiza para acceder.',
-                            details: {
-                                entitlement: directContactEntitlement,
-                                upgradeUrl: '/billing/plans'
-                            }
-                        }
-                    })
-                });
-            }
-
-            // Entitlement OK - proceed
-            await next();
-        } catch (error) {
-            if (error instanceof HTTPException) {
-                throw error;
-            }
-
-            apiLogger.error(
-                `Error in direct contact gate: ${error instanceof Error ? error.message : String(error)}`
             );
             throw error;
         }

@@ -31,21 +31,73 @@ import { sendNotification } from '../../utils/notification-helper';
 /**
  * Storage for webhook event ID during processing
  * Maps request ID to webhook event ID
+ *
+ * @deprecated Use database-only approach for idempotency
  */
 const webhookEventIds = new Map<string, string>();
+
+/**
+ * Sanitize error message for notification to admin
+ *
+ * Removes potentially sensitive information like:
+ * - Stack traces (lines starting with "at ")
+ * - File paths (/home/, /app/, node_modules/, etc.)
+ * - Connection strings (postgresql://, mysql://, mongodb://, etc.)
+ * - Environment variables patterns
+ * - IP addresses
+ *
+ * @param error - Raw error message or string
+ * @param maxLength - Maximum length to truncate (default: 500 chars)
+ * @returns Sanitized error message safe for notifications
+ */
+function sanitizeErrorForNotification(error: string, maxLength = 500): string {
+    let sanitized = error;
+
+    // Remove stack traces (lines starting with "at ")
+    sanitized = sanitized.replace(/^\s*at\s+.+$/gm, '');
+
+    // Remove file paths
+    sanitized = sanitized.replace(/\/[a-zA-Z0-9_\-./]+/g, '[path]');
+    sanitized = sanitized.replace(/[A-Z]:\\[a-zA-Z0-9_\-\\]+/g, '[path]');
+
+    // Remove connection strings
+    sanitized = sanitized.replace(
+        /(postgresql|mysql|mongodb|redis):\/\/[^\s]+/gi,
+        '[connection-string]'
+    );
+
+    // Remove potential environment variable values (KEY=value patterns)
+    sanitized = sanitized.replace(/[A-Z_]+=[^\s]+/g, '[env-var]');
+
+    // Remove IP addresses
+    sanitized = sanitized.replace(/\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g, '[ip]');
+
+    // Remove multiple consecutive newlines/whitespace
+    sanitized = sanitized.replace(/\n\s*\n+/g, '\n').trim();
+
+    // Truncate to max length
+    if (sanitized.length > maxLength) {
+        sanitized = `${sanitized.substring(0, maxLength)}... [truncated]`;
+    }
+
+    return sanitized;
+}
 
 /**
  * Mark webhook event as successfully processed
  *
  * Updates the webhook event status to 'processed' in the database.
+ * Retries up to 3 times on failure to ensure status is persisted.
  *
- * @param requestId - Request ID to look up webhook event
+ * @param webhookEventId - Webhook event ID to mark as processed
+ * @throws Error if all retry attempts fail
  */
-async function markWebhookEventProcessed(requestId: string): Promise<void> {
-    try {
-        const webhookEventId = webhookEventIds.get(requestId);
+async function markWebhookEventProcessed(webhookEventId: string): Promise<void> {
+    const MAX_RETRIES = 3;
+    let lastError: Error | null = null;
 
-        if (webhookEventId) {
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        try {
             const db = getDb();
 
             await db
@@ -58,23 +110,44 @@ async function markWebhookEventProcessed(requestId: string): Promise<void> {
 
             apiLogger.debug(
                 {
-                    webhookEventId
+                    webhookEventId,
+                    attempt
                 },
                 'Marked webhook event as processed'
             );
 
-            // Clean up the mapping
-            webhookEventIds.delete(requestId);
+            return; // Success - exit
+        } catch (error) {
+            lastError = error instanceof Error ? error : new Error(String(error));
+
+            apiLogger.warn(
+                {
+                    webhookEventId,
+                    attempt,
+                    maxRetries: MAX_RETRIES,
+                    error: lastError.message
+                },
+                `Failed to update webhook event status (attempt ${attempt}/${MAX_RETRIES})`
+            );
+
+            // Wait before retry (exponential backoff: 100ms, 200ms, 400ms)
+            if (attempt < MAX_RETRIES) {
+                await new Promise((resolve) => setTimeout(resolve, 100 * 2 ** (attempt - 1)));
+            }
         }
-    } catch (error) {
-        // Log error but don't fail the webhook processing
-        apiLogger.error(
-            {
-                error: error instanceof Error ? error.message : String(error)
-            },
-            'Failed to update webhook event status to processed'
-        );
     }
+
+    // All retries failed - propagate error
+    apiLogger.error(
+        {
+            webhookEventId,
+            error: lastError?.message,
+            retriesAttempted: MAX_RETRIES
+        },
+        'Failed to update webhook event status after all retries - webhook may be reprocessed'
+    );
+
+    throw lastError || new Error('Failed to update webhook event status');
 }
 
 /**
@@ -120,8 +193,11 @@ const handlePaymentCreated: QZPayWebhookHandler = async (c, event) => {
     // Let qzpay handle the payment processing
     // The createWebhookRouter already processes the event through the billing instance
     // After successful processing, mark webhook event as processed
-    const requestId = String(c.get('requestId') || event.id);
-    await markWebhookEventProcessed(requestId);
+    const webhookEventId = webhookEventIds.get(String(c.get('requestId') || event.id));
+    if (webhookEventId) {
+        await markWebhookEventProcessed(webhookEventId);
+        webhookEventIds.delete(String(c.get('requestId') || event.id));
+    }
 
     return undefined; // Continue to default processing
 };
@@ -346,6 +422,9 @@ function sendPaymentFailureNotifications(
                 }
             }
 
+            // Sanitize failure reason for user notification
+            const sanitizedUserReason = sanitizeErrorForNotification(failureReason, 200);
+
             // User notification
             sendNotification({
                 type: NotificationType.PAYMENT_FAILURE,
@@ -356,7 +435,7 @@ function sendPaymentFailureNotifications(
                 planName,
                 amount,
                 currency,
-                failureReason,
+                failureReason: sanitizedUserReason,
                 retryDate: retryDate.toISOString()
             }).catch((error) => {
                 apiLogger.debug(
@@ -367,6 +446,9 @@ function sendPaymentFailureNotifications(
                     'User payment failure notification failed (will retry)'
                 );
             });
+
+            // Sanitize failure reason for admin notification (more permissive than user)
+            const sanitizedAdminReason = sanitizeErrorForNotification(failureReason, 500);
 
             // Admin notification
             const adminEmails =
@@ -390,7 +472,7 @@ function sendPaymentFailureNotifications(
                         eventDetails: {
                             amount,
                             currency,
-                            failureReason,
+                            failureReason: sanitizedAdminReason,
                             planName,
                             retryDate: retryDate.toISOString()
                         },
@@ -510,9 +592,18 @@ const handlePaymentUpdated: QZPayWebhookHandler = async (c, event) => {
             if (addonSlug) {
                 // We have addon slug from reference, but need to find customerId
                 // This is a fallback scenario - prefer using metadata
-                apiLogger.debug(
-                    { addonSlug, eventId: event.id },
-                    'Found add-on slug in external_reference (missing customerId, will rely on QZPay default processing)'
+                apiLogger.warn(
+                    {
+                        addonSlug,
+                        eventId: event.id,
+                        eventType: event.type,
+                        externalReference: data.external_reference,
+                        hasMetadata: !!data.metadata,
+                        metadataKeys: data.metadata ? Object.keys(data.metadata) : [],
+                        paymentId: data.id,
+                        paymentStatus: data.status
+                    },
+                    'Found add-on slug in external_reference but missing customerId - addon purchase may not be confirmed properly. Will rely on QZPay default processing.'
                 );
 
                 // Continue to default processing - QZPay will handle it
@@ -642,8 +733,11 @@ const handlePaymentUpdated: QZPayWebhookHandler = async (c, event) => {
 
     // Always continue to default qzpay processing
     // After successful processing, mark webhook event as processed
-    const requestId = String(c.get('requestId') || event.id);
-    await markWebhookEventProcessed(requestId);
+    const webhookEventId = webhookEventIds.get(String(c.get('requestId') || event.id));
+    if (webhookEventId) {
+        await markWebhookEventProcessed(webhookEventId);
+        webhookEventIds.delete(String(c.get('requestId') || event.id));
+    }
 
     return undefined;
 };
@@ -666,8 +760,11 @@ const handleSubscriptionUpdated: QZPayWebhookHandler = async (c, event) => {
 
     // Let qzpay handle the subscription processing
     // After successful processing, mark webhook event as processed
-    const requestId = String(c.get('requestId') || event.id);
-    await markWebhookEventProcessed(requestId);
+    const webhookEventId = webhookEventIds.get(String(c.get('requestId') || event.id));
+    if (webhookEventId) {
+        await markWebhookEventProcessed(webhookEventId);
+        webhookEventIds.delete(String(c.get('requestId') || event.id));
+    }
 
     return undefined; // Continue to default processing
 };
@@ -678,6 +775,11 @@ const handleSubscriptionUpdated: QZPayWebhookHandler = async (c, event) => {
  * Logs all webhook events for monitoring and debugging.
  * Persists webhook events to database before processing.
  * Implements idempotency to prevent duplicate event processing.
+ *
+ * Uses optimistic locking approach:
+ * 1. Try INSERT first (most common case - new event)
+ * 2. On duplicate, SELECT with status check
+ * 3. Race condition window is minimized by checking status immediately
  */
 const handleWebhookEvent: QZPayWebhookHandler = async (c, event) => {
     apiLogger.debug(
@@ -692,25 +794,92 @@ const handleWebhookEvent: QZPayWebhookHandler = async (c, event) => {
     // Persist webhook event to database with idempotency check
     try {
         const db = getDb();
-
-        // Extract provider event ID from event data
         const providerEventId = String(event.id);
+        const requestId = String(c.get('requestId') || event.id);
 
-        // Check if this event has already been processed (idempotency)
-        const existingEvent = await db
-            .select()
-            .from(billingWebhookEvents)
-            .where(eq(billingWebhookEvents.providerEventId, providerEventId))
-            .limit(1);
+        // Optimistic approach: Try INSERT first (fastest path for new events)
+        try {
+            const result = await db
+                .insert(billingWebhookEvents)
+                .values({
+                    provider: 'mercadopago',
+                    type: event.type,
+                    providerEventId,
+                    status: 'pending',
+                    payload: event
+                })
+                .returning();
 
-        if (existingEvent.length > 0) {
-            const existing = existingEvent[0];
+            const webhookEvent = result[0];
+
+            if (webhookEvent) {
+                // Store webhook event ID in map using request ID as key
+                webhookEventIds.set(requestId, webhookEvent.id);
+
+                apiLogger.debug(
+                    {
+                        webhookEventId: webhookEvent.id,
+                        eventId: event.id,
+                        eventType: event.type,
+                        requestId
+                    },
+                    'Webhook event persisted to database'
+                );
+            }
+
+            return undefined; // Continue to processing
+        } catch (insertError) {
+            // INSERT failed - likely duplicate providerEventId
+            // Check if it's a uniqueness violation (code 23505 in PostgreSQL)
+            const errorMessage =
+                insertError instanceof Error ? insertError.message : String(insertError);
+            const isDuplicateError =
+                errorMessage.includes('unique') || errorMessage.includes('duplicate');
+
+            if (!isDuplicateError) {
+                // Not a duplicate error - propagate
+                throw insertError;
+            }
+
+            // Duplicate detected - check existing event status
+            // Use a short retry loop to minimize race condition window
+            let existingEvent: typeof billingWebhookEvents.$inferSelect | null = null;
+            const MAX_STATUS_CHECK_ATTEMPTS = 3;
+
+            for (let attempt = 1; attempt <= MAX_STATUS_CHECK_ATTEMPTS; attempt++) {
+                const result = await db
+                    .select()
+                    .from(billingWebhookEvents)
+                    .where(eq(billingWebhookEvents.providerEventId, providerEventId))
+                    .limit(1);
+
+                if (result.length > 0) {
+                    existingEvent = result[0];
+                    break;
+                }
+
+                // Event not found yet (race condition) - wait and retry
+                if (attempt < MAX_STATUS_CHECK_ATTEMPTS) {
+                    await new Promise((resolve) => setTimeout(resolve, 50));
+                }
+            }
+
+            if (!existingEvent) {
+                apiLogger.error(
+                    {
+                        providerEventId,
+                        eventType: event.type
+                    },
+                    'Duplicate webhook detected but event not found in database - possible race condition'
+                );
+                throw new Error('Webhook event not found after duplicate detection');
+            }
 
             // If already processed successfully, skip reprocessing
-            if (existing && existing.status === 'processed') {
+            if (existingEvent.status === 'processed') {
                 apiLogger.info(
                     {
-                        webhookEventId: existing.id,
+                        webhookEventId: existingEvent.id,
                         providerEventId,
                         eventType: event.type
                     },
@@ -727,11 +896,31 @@ const handleWebhookEvent: QZPayWebhookHandler = async (c, event) => {
                 );
             }
 
-            // If failed, allow reprocessing by updating the existing row
-            if (existing && existing.status === 'failed') {
+            // If currently being processed (pending), skip to avoid race
+            if (existingEvent.status === 'pending') {
                 apiLogger.info(
                     {
-                        webhookEventId: existing.id,
+                        webhookEventId: existingEvent.id,
+                        providerEventId,
+                        eventType: event.type
+                    },
+                    'Duplicate webhook skipped - currently being processed'
+                );
+
+                return c.json(
+                    {
+                        success: true,
+                        message: 'Webhook currently being processed'
+                    },
+                    200
+                );
+            }
+
+            // If failed, allow reprocessing by updating the existing row
+            if (existingEvent.status === 'failed') {
+                apiLogger.info(
+                    {
+                        webhookEventId: existingEvent.id,
                         providerEventId,
                         eventType: event.type
                     },
@@ -747,45 +936,14 @@ const handleWebhookEvent: QZPayWebhookHandler = async (c, event) => {
                         error: null,
                         processedAt: null
                     })
-                    .where(eq(billingWebhookEvents.id, existing.id));
+                    .where(eq(billingWebhookEvents.id, existingEvent.id));
 
                 // Store webhook event ID for later status update
-                const requestId = String(c.get('requestId') || event.id);
-                webhookEventIds.set(requestId, existing.id);
+                webhookEventIds.set(requestId, existingEvent.id);
 
                 // Continue to processing
                 return undefined;
             }
-        }
-
-        // Insert new webhook event into database
-        const result = await db
-            .insert(billingWebhookEvents)
-            .values({
-                provider: 'mercadopago',
-                type: event.type,
-                providerEventId,
-                status: 'pending',
-                payload: event
-            })
-            .returning();
-
-        const webhookEvent = result[0];
-
-        if (webhookEvent) {
-            // Store webhook event ID in map using request ID as key
-            const requestId = String(c.get('requestId') || event.id);
-            webhookEventIds.set(requestId, webhookEvent.id);
-
-            apiLogger.debug(
-                {
-                    webhookEventId: webhookEvent.id,
-                    eventId: event.id,
-                    eventType: event.type,
-                    requestId
-                },
-                'Webhook event persisted to database'
-            );
         }
     } catch (error) {
         // Log error but don't fail webhook processing

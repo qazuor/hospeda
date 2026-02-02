@@ -105,7 +105,7 @@ export class BillingMetricsService {
             // Get active subscriptions count
             const activeSubsResult = await db.execute(sql`
                 SELECT COUNT(*) as count
-                FROM qzpay_subscriptions
+                FROM billing_subscriptions
                 WHERE status = 'active'
                 AND livemode = ${livemode}
                 AND deleted_at IS NULL
@@ -115,32 +115,33 @@ export class BillingMetricsService {
             // Get trialing subscriptions count
             const trialingSubsResult = await db.execute(sql`
                 SELECT COUNT(*) as count
-                FROM qzpay_subscriptions
+                FROM billing_subscriptions
                 WHERE status = 'trialing'
                 AND livemode = ${livemode}
                 AND deleted_at IS NULL
             `);
             const trialingSubscriptions = Number(trialingSubsResult.rows[0]?.count || 0);
 
-            // Calculate MRR from active subscriptions
-            // Note: This is a simplified calculation assuming monthly billing
-            // In production, you'd need to join with billing_prices to get actual prices
+            // Calculate MRR from active subscriptions by joining with actual prices
+            // For annual subscriptions, divide by 12 to get monthly equivalent
             const mrrResult = await db.execute(sql`
                 SELECT COALESCE(SUM(
                     CASE
-                        WHEN billing_interval = 'month' THEN 1
-                        WHEN billing_interval = 'year' THEN 1.0 / 12
+                        WHEN s.billing_interval = 'month' THEN p.unit_amount
+                        WHEN s.billing_interval = 'year' THEN p.unit_amount / 12.0
                         ELSE 0
                     END
-                ), 0) as mrr_count
-                FROM qzpay_subscriptions
-                WHERE status = 'active'
-                AND livemode = ${livemode}
-                AND deleted_at IS NULL
+                ), 0) as mrr_total
+                FROM billing_subscriptions s
+                INNER JOIN billing_prices p ON s.plan_id = p.plan_id::text
+                    AND s.billing_interval = p.billing_interval
+                    AND p.livemode = s.livemode
+                    AND p.active = true
+                WHERE s.status = 'active'
+                AND s.livemode = ${livemode}
+                AND s.deleted_at IS NULL
             `);
-            // Placeholder: Multiply by average plan price
-            // In real implementation, join with billing_prices table
-            const mrr = Number(mrrResult.rows[0]?.mrr_count || 0) * 1000; // Placeholder: 1000 = avg price
+            const mrr = Number(mrrResult.rows[0]?.mrr_total || 0);
 
             // Calculate churn rate (last 30 days)
             const thirtyDaysAgo = new Date();
@@ -148,7 +149,7 @@ export class BillingMetricsService {
 
             const churnResult = await db.execute(sql`
                 SELECT COUNT(*) as churned
-                FROM qzpay_subscriptions
+                FROM billing_subscriptions
                 WHERE status = 'canceled'
                 AND canceled_at >= ${thirtyDaysAgo.toISOString()}
                 AND livemode = ${livemode}
@@ -161,11 +162,12 @@ export class BillingMetricsService {
             const arpu = activeSubscriptions > 0 ? mrr / activeSubscriptions : 0;
 
             // Calculate trial conversion rate
+            // Using trial_converted column to track successful conversions from trial to paid
             const conversionResult = await db.execute(sql`
                 SELECT
                     COUNT(*) FILTER (WHERE trial_converted = true) as converted,
                     COUNT(*) as total_trials
-                FROM qzpay_subscriptions
+                FROM billing_subscriptions
                 WHERE trial_start IS NOT NULL
                 AND livemode = ${livemode}
             `);
@@ -176,7 +178,7 @@ export class BillingMetricsService {
             // Get total customers
             const customersResult = await db.execute(sql`
                 SELECT COUNT(*) as count
-                FROM qzpay_customers
+                FROM billing_customers
                 WHERE livemode = ${livemode}
                 AND deleted_at IS NULL
             `);
@@ -185,7 +187,7 @@ export class BillingMetricsService {
             // Get total revenue
             const revenueResult = await db.execute(sql`
                 SELECT COALESCE(SUM(amount), 0) as total
-                FROM qzpay_payments
+                FROM billing_payments
                 WHERE status = 'completed'
                 AND livemode = ${livemode}
             `);
@@ -243,7 +245,7 @@ export class BillingMetricsService {
                     TO_CHAR(DATE_TRUNC('month', created_at), 'YYYY-MM') as month,
                     COALESCE(SUM(amount), 0) as revenue,
                     COUNT(*) as payment_count
-                FROM qzpay_payments
+                FROM billing_payments
                 WHERE status = 'completed'
                 AND livemode = ${livemode}
                 AND created_at >= NOW() - INTERVAL '${sql.raw(months.toString())} months'
@@ -306,8 +308,8 @@ export class BillingMetricsService {
                     s.status,
                     s.plan_id,
                     s.updated_at
-                FROM qzpay_subscriptions s
-                JOIN qzpay_customers c ON s.customer_id = c.id
+                FROM billing_subscriptions s
+                JOIN billing_customers c ON s.customer_id = c.id
                 WHERE s.livemode = ${livemode}
                 AND s.deleted_at IS NULL
                 ORDER BY s.updated_at DESC
@@ -359,7 +361,7 @@ export class BillingMetricsService {
                     plan_id,
                     COUNT(*) FILTER (WHERE status = 'active') as active_count,
                     COUNT(*) FILTER (WHERE status = 'trialing') as trialing_count
-                FROM qzpay_subscriptions
+                FROM billing_subscriptions
                 WHERE status IN ('active', 'trialing')
                 AND livemode = ${livemode}
                 AND deleted_at IS NULL

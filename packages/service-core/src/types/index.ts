@@ -31,6 +31,8 @@ export type Actor = {
     role: RoleEnum;
     /** Permissions assigned to the actor (direct + by role) */
     permissions: PermissionEnum[];
+    /** Entitlements granted to the actor (VIP access, premium features, etc.) */
+    entitlements?: Set<string>;
 };
 
 /**

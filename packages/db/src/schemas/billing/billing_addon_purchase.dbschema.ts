@@ -1,6 +1,6 @@
-import { relations } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 import { index, jsonb, pgTable, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
-import { billingCustomers } from '../../billing/index.js';
+import { billingAddons, billingCustomers, billingSubscriptions } from '../../billing/index.js';
 
 /**
  * Limit adjustments stored as JSONB
@@ -31,9 +31,11 @@ export const billingAddonPurchases: ReturnType<typeof pgTable> = pgTable(
         customerId: uuid('customer_id')
             .notNull()
             .references(() => billingCustomers.id, { onDelete: 'restrict' }),
-        subscriptionId: uuid('subscription_id'),
+        subscriptionId: uuid('subscription_id').references(() => billingSubscriptions.id, {
+            onDelete: 'set null'
+        }),
         addonSlug: varchar('addon_slug', { length: 100 }).notNull(),
-        addonId: uuid('addon_id'),
+        addonId: uuid('addon_id').references(() => billingAddons.id, { onDelete: 'restrict' }),
         status: varchar('status', { length: 50 }).notNull().default('pending'),
         purchasedAt: timestamp('purchased_at', { withTimezone: true }).defaultNow().notNull(),
         expiresAt: timestamp('expires_at', { withTimezone: true }),
@@ -59,7 +61,10 @@ export const billingAddonPurchases: ReturnType<typeof pgTable> = pgTable(
         addonPurchases_customer_addon_idx: index('addonPurchases_customer_addon_idx').on(
             table.customerId,
             table.addonSlug
-        )
+        ),
+        addonPurchases_active_customer_idx: index('addonPurchases_active_customer_idx')
+            .on(table.customerId)
+            .where(sql`status = 'active'`)
     })
 );
 

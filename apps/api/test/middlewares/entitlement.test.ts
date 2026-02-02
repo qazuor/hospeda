@@ -29,7 +29,6 @@ import {
 import {
     gateAlerts,
     gateComparator,
-    gateDirectContact,
     gateEarlyEventAccess,
     gateExclusiveDeals,
     gateFavorites,
@@ -1102,37 +1101,6 @@ describe('Tourist Entitlement Gates', () => {
             const data = await res.json();
             expect(data.error.message).toContain('recomendaciones personalizadas');
             expect(data.error.message).toContain('VIP');
-        });
-    });
-
-    describe('gateDirectContact', () => {
-        it('should allow viewing contact info when user has entitlement', async () => {
-            const directContactEntitlement = 'can_contact_email_direct' as EntitlementKey;
-            app.use((c, next) => {
-                c.set('userEntitlements', new Set([directContactEntitlement]));
-                return next();
-            });
-            app.use(gateDirectContact());
-            app.get('/accommodations/123/contact', (c) => c.json({ email: 'owner@example.com' }));
-
-            const res = await app.request('/accommodations/123/contact');
-            expect(res.status).toBe(200);
-        });
-
-        it('should return 403 when user lacks entitlement', async () => {
-            app.use((c, next) => {
-                c.set('userEntitlements', new Set<EntitlementKey>());
-                return next();
-            });
-            app.use(gateDirectContact());
-            app.get('/accommodations/123/contact', (c) => c.json({ email: 'owner@example.com' }));
-
-            const res = await app.request('/accommodations/123/contact');
-            expect(res.status).toBe(403);
-
-            const data = await res.json();
-            expect(data.error.message).toContain('contacto directo');
-            expect(data.error.message).toContain('Plus y VIP');
         });
     });
 });

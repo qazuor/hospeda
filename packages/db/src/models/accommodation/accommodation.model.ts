@@ -5,7 +5,7 @@ import type {
     UserSummary
 } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
-import { and, asc, count, desc, eq, gte, lte } from 'drizzle-orm';
+import { and, asc, count, desc, eq, gte, lte, ne } from 'drizzle-orm';
 import { BaseModel } from '../../base/base.model';
 import { getDb } from '../../client';
 import { accommodations } from '../../schemas/accommodation/accommodation.dbschema';
@@ -18,7 +18,9 @@ export class AccommodationModel extends BaseModel<Accommodation> {
         return 'accommodations';
     }
 
-    public async countByFilters(params: AccommodationSearchInput): Promise<{ count: number }> {
+    public async countByFilters(
+        params: AccommodationSearchInput & { excludeRestricted?: boolean }
+    ): Promise<{ count: number }> {
         const db = getDb();
 
         const whereClauses = [];
@@ -37,6 +39,9 @@ export class AccommodationModel extends BaseModel<Accommodation> {
         if (params.destinationId) {
             whereClauses.push(eq(this.table.destinationId, params.destinationId));
         }
+        if (params.excludeRestricted) {
+            whereClauses.push(ne(this.table.visibility, 'RESTRICTED'));
+        }
 
         const where = and(...whereClauses);
 
@@ -46,7 +51,7 @@ export class AccommodationModel extends BaseModel<Accommodation> {
     }
 
     public async search(
-        params: AccommodationSearchInput
+        params: AccommodationSearchInput & { excludeRestricted?: boolean }
     ): Promise<{ items: Accommodation[]; total: number }> {
         const db = getDb();
 
@@ -65,6 +70,9 @@ export class AccommodationModel extends BaseModel<Accommodation> {
         }
         if (params.destinationId) {
             whereClauses.push(eq(this.table.destinationId, params.destinationId));
+        }
+        if (params.excludeRestricted) {
+            whereClauses.push(ne(this.table.visibility, 'RESTRICTED'));
         }
         // Note: Filtering by amenities would require a join and is more complex.
         // This is a simplified example.
@@ -101,7 +109,9 @@ export class AccommodationModel extends BaseModel<Accommodation> {
     /**
      * Search accommodations with destination and owner relations
      */
-    public async searchWithRelations(params: AccommodationSearchInput): Promise<{
+    public async searchWithRelations(
+        params: AccommodationSearchInput & { excludeRestricted?: boolean }
+    ): Promise<{
         items: Array<
             Accommodation & {
                 destination?: DestinationSummary;
@@ -127,6 +137,9 @@ export class AccommodationModel extends BaseModel<Accommodation> {
         }
         if (params.destinationId) {
             whereClauses.push(eq(this.table.destinationId, params.destinationId));
+        }
+        if (params.excludeRestricted) {
+            whereClauses.push(ne(this.table.visibility, 'RESTRICTED'));
         }
 
         const where = and(...whereClauses);
@@ -204,17 +217,25 @@ export class AccommodationModel extends BaseModel<Accommodation> {
         destinationId?: string;
         type?: string;
         onlyFeatured?: boolean;
+        excludeRestricted?: boolean;
     }): Promise<Accommodation[]> {
         const db = getDb();
-        const { limit = 10, destinationId, type, onlyFeatured = false } = params ?? {};
+        const {
+            limit = 10,
+            destinationId,
+            type,
+            onlyFeatured = false,
+            excludeRestricted = false
+        } = params ?? {};
 
         // Single query with all relations loaded via Drizzle's `with` clause
         const results = await db.query.accommodations.findMany({
-            where: (fields, { eq }) => {
+            where: (fields, { eq, ne: neOp }) => {
                 const clauses: SQL<unknown>[] = [];
                 if (destinationId) clauses.push(eq(fields.destinationId, destinationId));
                 if (type) clauses.push(eq(fields.type, type as unknown as typeof fields.type));
                 if (onlyFeatured) clauses.push(eq(fields.isFeatured, true));
+                if (excludeRestricted) clauses.push(neOp(fields.visibility, 'RESTRICTED'));
                 if (clauses.length === 0) return undefined;
                 if (clauses.length === 1) return clauses[0];
                 return and(...clauses);

@@ -131,13 +131,12 @@ export const getPromoCodeRoute = createAdminRoute({
 
         const result = await service.getById(params.id as string);
 
-        // Check for error
-        if ('error' in result && result.error) {
-            throw new Error(result.error.message);
+        // Check for error or missing data
+        if (!result.success || !result.data) {
+            throw new Error(result.error?.message ?? 'Promo code not found');
         }
 
-        // Type assertion since we know data exists after error check
-        return (result as unknown as { success: true; data: unknown }).data;
+        return result.data;
     }
 });
 
@@ -264,10 +263,29 @@ export const applyPromoCodeRoute = createProtectedRoute({
         amount: z.number(),
         discountAmount: z.number()
     }),
-    handler: async (_c, _params, body) => {
+    handler: async (c, _params, body) => {
         const service = new PromoCodeService();
+        const actor = getActorFromContext(c);
 
         apiLogger.info('Applying promo code');
+
+        // Get billing customer ID from context
+        const billingCustomerId = c.get('billingCustomerId');
+
+        if (!billingCustomerId) {
+            throw new Error('Billing customer not found. Please contact support.');
+        }
+
+        // Verify ownership: ensure user is applying promo code to their own checkout
+        // The checkoutId should match the billingCustomerId for security
+        // Admins/super_admins can apply promo codes for any checkout
+        if (
+            actor.role !== RoleEnum.ADMIN &&
+            actor.role !== RoleEnum.SUPER_ADMIN &&
+            body.checkoutId !== billingCustomerId
+        ) {
+            throw new Error("Cannot apply promo code to another user's checkout");
+        }
 
         const result = await service.apply(
             body.code as string,

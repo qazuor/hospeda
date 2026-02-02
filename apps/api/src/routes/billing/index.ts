@@ -31,6 +31,7 @@ import { createRouter } from '../../utils/create-app';
 import { apiLogger } from '../../utils/logger';
 import addonsRouter from './addons';
 import metricsRouter from './metrics';
+import notificationsRouter from './notifications';
 import promoCodesRouter from './promo-codes';
 import settingsRouter from './settings';
 import trialRouter from './trial';
@@ -163,6 +164,9 @@ billingRoutes.route('/settings', settingsRouter);
 // Mount custom usage tracking routes
 billingRoutes.route('/usage', usageRouter);
 
+// Mount custom notification management routes
+billingRoutes.route('/notifications', notificationsRouter);
+
 apiLogger.debug(
-    'Billing routes configured with custom promo code, add-on, trial, metrics, settings, and usage routes'
+    'Billing routes configured with custom promo code, add-on, trial, metrics, settings, usage, and notification routes'
 );

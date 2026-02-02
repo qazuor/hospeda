@@ -33,7 +33,9 @@ export const OWNER_BASICO_PLAN: PlanDefinition = {
         EntitlementKey.PUBLISH_ACCOMMODATIONS,
         EntitlementKey.EDIT_ACCOMMODATION_INFO,
         EntitlementKey.VIEW_BASIC_STATS,
-        EntitlementKey.RESPOND_REVIEWS
+        EntitlementKey.RESPOND_REVIEWS,
+        EntitlementKey.CAN_USE_CALENDAR,
+        EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY
     ],
     limits: [
         limit(LimitKey.MAX_ACCOMMODATIONS, 1),
@@ -63,7 +65,13 @@ export const OWNER_PRO_PLAN: PlanDefinition = {
         EntitlementKey.RESPOND_REVIEWS,
         EntitlementKey.PRIORITY_SUPPORT,
         EntitlementKey.FEATURED_LISTING,
-        EntitlementKey.CREATE_PROMOTIONS
+        EntitlementKey.CREATE_PROMOTIONS,
+        EntitlementKey.CAN_USE_RICH_DESCRIPTION,
+        EntitlementKey.CAN_EMBED_VIDEO,
+        EntitlementKey.CAN_USE_CALENDAR,
+        EntitlementKey.CAN_SYNC_EXTERNAL_CALENDAR,
+        EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY,
+        EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT
     ],
     limits: [
         limit(LimitKey.MAX_ACCOMMODATIONS, 3),
@@ -97,7 +105,14 @@ export const OWNER_PREMIUM_PLAN: PlanDefinition = {
         EntitlementKey.API_ACCESS,
         EntitlementKey.DEDICATED_MANAGER,
         EntitlementKey.CREATE_PROMOTIONS,
-        EntitlementKey.SOCIAL_MEDIA_INTEGRATION
+        EntitlementKey.SOCIAL_MEDIA_INTEGRATION,
+        EntitlementKey.CAN_USE_RICH_DESCRIPTION,
+        EntitlementKey.CAN_EMBED_VIDEO,
+        EntitlementKey.CAN_USE_CALENDAR,
+        EntitlementKey.CAN_SYNC_EXTERNAL_CALENDAR,
+        EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY,
+        EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT,
+        EntitlementKey.HAS_VERIFICATION_BADGE
     ],
     limits: [
         limit(LimitKey.MAX_ACCOMMODATIONS, 10),
@@ -126,7 +141,9 @@ export const COMPLEX_BASICO_PLAN: PlanDefinition = {
         EntitlementKey.EDIT_ACCOMMODATION_INFO,
         EntitlementKey.VIEW_BASIC_STATS,
         EntitlementKey.RESPOND_REVIEWS,
-        EntitlementKey.MULTI_PROPERTY_MANAGEMENT
+        EntitlementKey.MULTI_PROPERTY_MANAGEMENT,
+        EntitlementKey.CAN_USE_CALENDAR,
+        EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY
     ],
     limits: [
         limit(LimitKey.MAX_PROPERTIES, 3),
@@ -161,7 +178,13 @@ export const COMPLEX_PRO_PLAN: PlanDefinition = {
         EntitlementKey.CONSOLIDATED_ANALYTICS,
         EntitlementKey.CENTRALIZED_BOOKING,
         EntitlementKey.STAFF_MANAGEMENT,
-        EntitlementKey.CREATE_PROMOTIONS
+        EntitlementKey.CREATE_PROMOTIONS,
+        EntitlementKey.CAN_USE_RICH_DESCRIPTION,
+        EntitlementKey.CAN_EMBED_VIDEO,
+        EntitlementKey.CAN_USE_CALENDAR,
+        EntitlementKey.CAN_SYNC_EXTERNAL_CALENDAR,
+        EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY,
+        EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT
     ],
     limits: [
         limit(LimitKey.MAX_PROPERTIES, 10),
@@ -202,7 +225,14 @@ export const COMPLEX_PREMIUM_PLAN: PlanDefinition = {
         EntitlementKey.WHITE_LABEL,
         EntitlementKey.MULTI_CHANNEL_INTEGRATION,
         EntitlementKey.CREATE_PROMOTIONS,
-        EntitlementKey.SOCIAL_MEDIA_INTEGRATION
+        EntitlementKey.SOCIAL_MEDIA_INTEGRATION,
+        EntitlementKey.CAN_USE_RICH_DESCRIPTION,
+        EntitlementKey.CAN_EMBED_VIDEO,
+        EntitlementKey.CAN_USE_CALENDAR,
+        EntitlementKey.CAN_SYNC_EXTERNAL_CALENDAR,
+        EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY,
+        EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT,
+        EntitlementKey.HAS_VERIFICATION_BADGE
     ],
     limits: [
         limit(LimitKey.MAX_PROPERTIES, -1), // unlimited
@@ -230,7 +260,8 @@ export const TOURIST_FREE_PLAN: PlanDefinition = {
     entitlements: [
         EntitlementKey.SAVE_FAVORITES,
         EntitlementKey.WRITE_REVIEWS,
-        EntitlementKey.READ_REVIEWS
+        EntitlementKey.READ_REVIEWS,
+        EntitlementKey.CAN_VIEW_RECOMMENDATIONS
     ],
     limits: [limit(LimitKey.MAX_FAVORITES, 3)]
 };
@@ -255,7 +286,12 @@ export const TOURIST_PLUS_PLAN: PlanDefinition = {
         EntitlementKey.AD_FREE,
         EntitlementKey.PRICE_ALERTS,
         EntitlementKey.EARLY_ACCESS_EVENTS,
-        EntitlementKey.EXCLUSIVE_DEALS
+        EntitlementKey.EXCLUSIVE_DEALS,
+        EntitlementKey.CAN_COMPARE_ACCOMMODATIONS,
+        EntitlementKey.CAN_ATTACH_REVIEW_PHOTOS,
+        EntitlementKey.CAN_VIEW_SEARCH_HISTORY,
+        EntitlementKey.CAN_VIEW_RECOMMENDATIONS,
+        EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY
     ],
     limits: [limit(LimitKey.MAX_FAVORITES, 20)]
 };
@@ -284,7 +320,13 @@ export const TOURIST_VIP_PLAN: PlanDefinition = {
         EntitlementKey.VIP_SUPPORT,
         EntitlementKey.CONCIERGE_SERVICE,
         EntitlementKey.AIRPORT_TRANSFERS,
-        EntitlementKey.VIP_PROMOTIONS_ACCESS
+        EntitlementKey.VIP_PROMOTIONS_ACCESS,
+        EntitlementKey.CAN_COMPARE_ACCOMMODATIONS,
+        EntitlementKey.CAN_ATTACH_REVIEW_PHOTOS,
+        EntitlementKey.CAN_VIEW_SEARCH_HISTORY,
+        EntitlementKey.CAN_VIEW_RECOMMENDATIONS,
+        EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY,
+        EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT
     ],
     limits: [
         limit(LimitKey.MAX_FAVORITES, -1) // unlimited

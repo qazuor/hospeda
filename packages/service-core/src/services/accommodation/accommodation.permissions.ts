@@ -106,6 +106,7 @@ export function checkCanRestore(actor: Actor, entity: Accommodation): void {
 /**
  * Checks if an actor has permission to view an accommodation.
  * Public accommodations are always viewable. Private ones require specific permissions.
+ * Restricted accommodations require VIP access or special permissions.
  * The owner of an accommodation can always view it, regardless of other permissions.
  * @param actor The actor performing the action.
  * @param entity The accommodation entity to be viewed.
@@ -120,6 +121,17 @@ export function checkCanView(actor: Actor, entity: Accommodation): void {
         isOwner(actor, entity)
     ) {
         return;
+    }
+
+    if (entity.visibility === 'RESTRICTED') {
+        if (
+            actor.entitlements?.has('vip_promotions_access') ||
+            hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL) ||
+            isOwner(actor, entity)
+        ) {
+            return;
+        }
+        throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'VIP access required');
     }
 
     throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Permission denied to view accommodation');

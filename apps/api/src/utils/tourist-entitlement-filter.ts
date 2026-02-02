@@ -116,8 +116,8 @@ export function filterContentForTourist<T>(
     }
 
     // Filter direct contact info if enabled and user lacks direct contact entitlement
-    const directContactEntitlement = 'can_contact_email_direct' as EntitlementKey;
-    if (filterDirectContact && !hasEntitlement(c, directContactEntitlement)) {
+    // Note: Using CAN_CONTACT_WHATSAPP_DISPLAY as proxy for contact info access
+    if (filterDirectContact && !hasEntitlement(c, EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY)) {
         filtered = hideDirectContactInfo(filtered);
     }
 
@@ -327,6 +327,6 @@ export function canViewExclusiveDeals(c: Context<AppBindings>): boolean {
  * ```
  */
 export function canViewDirectContact(c: Context<AppBindings>): boolean {
-    const directContactEntitlement = 'can_contact_email_direct' as EntitlementKey;
-    return hasEntitlement(c, directContactEntitlement);
+    // Using CAN_CONTACT_WHATSAPP_DISPLAY as proxy for contact info access
+    return hasEntitlement(c, EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY);
 }

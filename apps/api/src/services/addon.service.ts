@@ -19,8 +19,10 @@ import { ALL_ADDONS, type AddonDefinition, getAddonBySlug } from '@repo/billing'
 // @ts-expect-error - drizzle-orm is a transitive dependency
 import { and, eq } from 'drizzle-orm';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
+import { z } from 'zod';
 import { apiLogger } from '../utils/logger';
 import { AddonEntitlementService } from './addon-entitlement.service';
+import { PromoCodeService } from './promo-code.service';
 
 /**
  * Result wrapper for service methods
@@ -109,6 +111,20 @@ export interface CancelAddonInput {
     /** User ID for tracking */
     userId: string;
 }
+
+/**
+ * Schema for validating addon adjustment metadata from JSON
+ * Used for backward compatibility with JSON-stored addon data
+ */
+const addonAdjustmentSchema = z.object({
+    addonSlug: z.string(),
+    limitKey: z.string().optional().nullable(),
+    limitIncrease: z.number().optional().nullable(),
+    entitlement: z.string().optional().nullable(),
+    appliedAt: z.string()
+});
+
+const addonAdjustmentsArraySchema = z.array(addonAdjustmentSchema);
 
 /**
  * Service for add-on operations
@@ -319,6 +335,41 @@ export class AddonService {
                 };
             }
 
+            // Validate and apply promo code if provided
+            let finalPrice = addon.priceArs;
+            let promoCodeId: string | undefined;
+            let discountAmount = 0;
+
+            if (input.promoCode) {
+                const promoService = new PromoCodeService();
+                const validation = await promoService.validate(input.promoCode, {
+                    userId: input.userId,
+                    amount: addon.priceArs
+                });
+
+                if (!validation.valid) {
+                    return {
+                        success: false,
+                        error: {
+                            code: 'INVALID_PROMO_CODE',
+                            message: validation.errorMessage || 'Invalid promo code'
+                        }
+                    };
+                }
+
+                // Apply discount
+                if (validation.discountAmount) {
+                    discountAmount = validation.discountAmount;
+                    finalPrice = Math.max(0, addon.priceArs - discountAmount);
+                }
+
+                // Get promo code ID for usage tracking
+                const promoCodeResult = await promoService.getByCode(input.promoCode);
+                if (promoCodeResult.success && promoCodeResult.data) {
+                    promoCodeId = promoCodeResult.data.id;
+                }
+            }
+
             // Create Mercado Pago preference for add-on purchase
             const mpAccessToken = process.env.MERCADO_PAGO_ACCESS_TOKEN;
             if (!mpAccessToken) {
@@ -346,7 +397,7 @@ export class AddonService {
                             title: addon.name,
                             description: addon.description,
                             quantity: 1,
-                            unit_price: addon.priceArs,
+                            unit_price: finalPrice,
                             currency_id: 'ARS'
                         }
                     ],
@@ -357,7 +408,11 @@ export class AddonService {
                         customerId: input.customerId,
                         user_id: input.userId,
                         userId: input.userId,
-                        type: 'addon_purchase'
+                        type: 'addon_purchase',
+                        promo_code: input.promoCode || null,
+                        promo_code_id: promoCodeId || null,
+                        discount_amount: discountAmount,
+                        original_price: addon.priceArs
                     },
                     external_reference: orderId,
                     back_urls: {
@@ -388,12 +443,49 @@ export class AddonService {
 
             const expiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
 
+            // Record promo code usage if applicable
+            if (promoCodeId && input.promoCode) {
+                try {
+                    const promoService = new PromoCodeService();
+                    await promoService.incrementUsage(promoCodeId);
+                    await promoService.recordUsage({
+                        promoCodeId,
+                        customerId: input.customerId,
+                        discountAmount,
+                        currency: 'ARS'
+                    });
+
+                    apiLogger.info(
+                        {
+                            promoCodeId,
+                            promoCode: input.promoCode,
+                            customerId: input.customerId,
+                            discountAmount
+                        },
+                        'Promo code usage recorded for add-on purchase'
+                    );
+                } catch (error) {
+                    // Log but don't fail the purchase
+                    apiLogger.warn(
+                        {
+                            promoCodeId,
+                            promoCode: input.promoCode,
+                            error: error instanceof Error ? error.message : String(error)
+                        },
+                        'Failed to record promo code usage'
+                    );
+                }
+            }
+
             apiLogger.info(
                 {
                     customerId: input.customerId,
                     addonSlug: addon.slug,
                     billingType: addon.billingType,
-                    amount: addon.priceArs,
+                    amount: finalPrice,
+                    originalAmount: addon.priceArs,
+                    discountAmount,
+                    promoCode: input.promoCode,
                     orderId,
                     preferenceId: preference.id
                 },
@@ -406,7 +498,7 @@ export class AddonService {
                     checkoutUrl,
                     orderId,
                     addonId: addon.slug,
-                    amount: addon.priceArs,
+                    amount: finalPrice,
                     currency: 'ARS',
                     expiresAt: expiresAt.toISOString()
                 }
@@ -494,8 +586,16 @@ export class AddonService {
                     purchase.limitAdjustments.length > 0
                 ) {
                     const firstLimit = purchase.limitAdjustments[0];
-                    affectsLimitKey = firstLimit.limitKey;
-                    limitIncrease = firstLimit.increase;
+                    // Type guard: ensure object has expected properties
+                    if (
+                        firstLimit &&
+                        typeof firstLimit === 'object' &&
+                        'limitKey' in firstLimit &&
+                        'increase' in firstLimit
+                    ) {
+                        affectsLimitKey = firstLimit.limitKey as string;
+                        limitIncrease = firstLimit.increase as number;
+                    }
                 }
 
                 // Extract entitlement adjustment
@@ -543,8 +643,13 @@ export class AddonService {
 
                     if (adjustmentsJson) {
                         try {
-                            const adjustments = JSON.parse(adjustmentsJson);
-                            if (Array.isArray(adjustments)) {
+                            const parsed = JSON.parse(adjustmentsJson);
+
+                            // Validate parsed JSON with Zod schema
+                            const validationResult = addonAdjustmentsArraySchema.safeParse(parsed);
+
+                            if (validationResult.success) {
+                                const adjustments = validationResult.data;
                                 for (const adj of adjustments) {
                                     // Only include if not already in table results
                                     const existsInTable = userAddonsFromTable.some(
@@ -569,6 +674,15 @@ export class AddonService {
                                         });
                                     }
                                 }
+                            } else {
+                                apiLogger.warn(
+                                    {
+                                        userId,
+                                        customerId: customer.id,
+                                        validationErrors: validationResult.error.flatten()
+                                    },
+                                    'Addon adjustments JSON failed schema validation, skipping malformed data'
+                                );
                             }
                         } catch (error) {
                             apiLogger.error(
@@ -915,17 +1029,21 @@ export class AddonService {
                         )
                     );
 
-                if (!updateResult || (updateResult as { rowCount?: number }).rowCount === 0) {
-                    // No active row found in table (might be pre-migration data)
+                // Check number of rows affected to detect race conditions
+                const rowCount = (updateResult as { rowCount?: number }).rowCount || 0;
+
+                if (rowCount === 0) {
+                    // No active row found in table (might be pre-migration data or already cancelled)
                     apiLogger.warn(
                         {
                             customerId: input.customerId,
                             addonSlug,
                             reason: input.reason
                         },
-                        'No active billing_addon_purchase record found to cancel (might be pre-migration data, continuing with entitlement removal)'
+                        'No active billing_addon_purchase record found to cancel (might be pre-migration data or already cancelled, continuing with entitlement removal)'
                     );
-                } else {
+                } else if (rowCount === 1) {
+                    // Expected case: exactly one row updated
                     apiLogger.info(
                         {
                             customerId: input.customerId,
@@ -933,6 +1051,17 @@ export class AddonService {
                             reason: input.reason
                         },
                         'Cancelled billing_addon_purchase record'
+                    );
+                } else {
+                    // Unexpected case: multiple rows updated (data integrity issue)
+                    apiLogger.error(
+                        {
+                            customerId: input.customerId,
+                            addonSlug,
+                            reason: input.reason,
+                            rowsUpdated: rowCount
+                        },
+                        'WARNING: Multiple billing_addon_purchase records were cancelled - possible data integrity issue or race condition'
                     );
                 }
             } catch (dbError) {

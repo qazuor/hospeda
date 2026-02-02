@@ -114,32 +114,81 @@ export const getDashboardMetricsRoute = createAdminRoute({
 
         apiLogger.debug('Fetching dashboard metrics');
 
-        // Fetch all metrics in parallel
-        const [overviewResult, revenueResult, breakdownResult] = await Promise.all([
+        // Fetch all metrics in parallel - use allSettled for resilience
+        const [overviewResult, revenueResult, breakdownResult] = await Promise.allSettled([
             service.getOverviewMetrics(livemode),
             service.getRevenueTimeSeries(months, livemode),
             service.getSubscriptionBreakdown(livemode)
         ]);
 
-        // Check for errors
-        if (!overviewResult.success || !overviewResult.data) {
-            throw new Error(overviewResult.error?.message ?? 'Failed to fetch overview metrics');
+        // Default fallback values
+        const defaultOverview = {
+            mrr: 0,
+            activeSubscriptions: 0,
+            trialingSubscriptions: 0,
+            churnRate: 0,
+            arpu: 0,
+            trialConversionRate: 0,
+            totalCustomers: 0,
+            totalRevenue: 0
+        };
+        const defaultRevenue: Array<{
+            month: string;
+            revenue: number;
+            paymentCount: number;
+        }> = [];
+        const defaultBreakdown: Array<{
+            planId: string;
+            activeCount: number;
+            trialingCount: number;
+        }> = [];
+
+        // Extract overview metrics with fallback
+        let overview = defaultOverview;
+        if (overviewResult.status === 'fulfilled') {
+            if (overviewResult.value.success && overviewResult.value.data) {
+                overview = overviewResult.value.data;
+            } else {
+                apiLogger.warn('Overview metrics failed', {
+                    error: overviewResult.value.error?.message
+                });
+            }
+        } else {
+            apiLogger.warn('Overview metrics rejected', { reason: overviewResult.reason });
         }
 
-        if (!revenueResult.success || !revenueResult.data) {
-            throw new Error(revenueResult.error?.message ?? 'Failed to fetch revenue time series');
+        // Extract revenue time series with fallback
+        let revenueTimeSeries = defaultRevenue;
+        if (revenueResult.status === 'fulfilled') {
+            if (revenueResult.value.success && revenueResult.value.data) {
+                revenueTimeSeries = revenueResult.value.data;
+            } else {
+                apiLogger.warn('Revenue time series failed', {
+                    error: revenueResult.value.error?.message
+                });
+            }
+        } else {
+            apiLogger.warn('Revenue time series rejected', { reason: revenueResult.reason });
         }
 
-        if (!breakdownResult.success || !breakdownResult.data) {
-            throw new Error(
-                breakdownResult.error?.message ?? 'Failed to fetch subscription breakdown'
-            );
+        // Extract subscription breakdown with fallback
+        let subscriptionBreakdown = defaultBreakdown;
+        if (breakdownResult.status === 'fulfilled') {
+            if (breakdownResult.value.success && breakdownResult.value.data) {
+                subscriptionBreakdown = breakdownResult.value.data;
+            } else {
+                apiLogger.warn('Subscription breakdown failed', {
+                    error: breakdownResult.value.error?.message
+                });
+            }
+        } else {
+            apiLogger.warn('Subscription breakdown rejected', { reason: breakdownResult.reason });
         }
 
         return {
-            overview: overviewResult.data,
-            revenueTimeSeries: revenueResult.data,
-            subscriptionBreakdown: breakdownResult.data
+            overview,
+            revenueTimeSeries,
+            subscriptionBreakdown
         };
     }
 });

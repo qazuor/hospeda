@@ -151,5 +151,26 @@ export const ENTITLEMENT_DEFINITIONS: EntitlementDefinition[] = [
         key: EntitlementKey.VIP_PROMOTIONS_ACCESS,
         name: 'Acceso a promociones VIP',
         description: 'Acceso a promociones exclusivas creadas por alojamientos'
+    },
+    {
+        key: EntitlementKey.CAN_COMPARE_ACCOMMODATIONS,
+        name: 'Comparar alojamientos',
+        description: 'Permite comparar multiples alojamientos lado a lado'
+    },
+    {
+        key: EntitlementKey.CAN_ATTACH_REVIEW_PHOTOS,
+        name: 'Adjuntar fotos a resenas',
+        description: 'Permite agregar fotografias a las resenas de alojamientos'
+    },
+    {
+        key: EntitlementKey.CAN_VIEW_SEARCH_HISTORY,
+        name: 'Ver historial de busqueda',
+        description: 'Acceso al historial de busquedas realizadas'
+    },
+    {
+        key: EntitlementKey.CAN_VIEW_RECOMMENDATIONS,
+        name: 'Ver recomendaciones personalizadas',
+        description:
+            'Acceso a recomendaciones de alojamientos personalizadas basadas en preferencias'
     }
 ];

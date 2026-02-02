@@ -9,7 +9,6 @@ export enum EntitlementKey {
     VIEW_BASIC_STATS = 'view_basic_stats',
     VIEW_ADVANCED_STATS = 'view_advanced_stats',
     RESPOND_REVIEWS = 'respond_reviews',
-    RESPOND_REVIEWS_HIGHLIGHTED = 'respond_reviews_highlighted',
     PRIORITY_SUPPORT = 'priority_support',
     FEATURED_LISTING = 'featured_listing',
     CUSTOM_BRANDING = 'custom_branding',
@@ -46,7 +45,11 @@ export enum EntitlementKey {
     VIP_SUPPORT = 'vip_support',
     CONCIERGE_SERVICE = 'concierge_service',
     AIRPORT_TRANSFERS = 'airport_transfers',
-    VIP_PROMOTIONS_ACCESS = 'vip_promotions_access'
+    VIP_PROMOTIONS_ACCESS = 'vip_promotions_access',
+    CAN_COMPARE_ACCOMMODATIONS = 'can_compare_accommodations',
+    CAN_ATTACH_REVIEW_PHOTOS = 'can_attach_review_photos',
+    CAN_VIEW_SEARCH_HISTORY = 'can_view_search_history',
+    CAN_VIEW_RECOMMENDATIONS = 'can_view_recommendations'
 }
 
 /**
