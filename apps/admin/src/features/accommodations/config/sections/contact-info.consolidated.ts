@@ -77,6 +77,52 @@ export const createContactInfoConsolidatedSection = (
                 edit: [PermissionEnum.ACCOMMODATION_CONTACT_INFO_EDIT]
             },
             typeConfig: {}
+        },
+        // T-G-010: Social media integration (premium feature)
+        {
+            id: 'facebookUrl',
+            type: FieldTypeEnum.TEXT,
+            required: false,
+            modes: ['view', 'edit', 'create'],
+            label: 'Facebook',
+            description: 'URL de la página de Facebook',
+            placeholder: 'https://facebook.com/tupagina',
+            permissions: {
+                view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
+                edit: [PermissionEnum.ACCOMMODATION_CONTACT_INFO_EDIT]
+            },
+            entitlementKey: 'social-media-integration', // T-G-010: Gate social media
+            typeConfig: {}
+        },
+        {
+            id: 'instagramUrl',
+            type: FieldTypeEnum.TEXT,
+            required: false,
+            modes: ['view', 'edit', 'create'],
+            label: 'Instagram',
+            description: 'URL del perfil de Instagram',
+            placeholder: 'https://instagram.com/tuperfil',
+            permissions: {
+                view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
+                edit: [PermissionEnum.ACCOMMODATION_CONTACT_INFO_EDIT]
+            },
+            entitlementKey: 'social-media-integration', // T-G-010: Gate social media
+            typeConfig: {}
+        },
+        {
+            id: 'twitterUrl',
+            type: FieldTypeEnum.TEXT,
+            required: false,
+            modes: ['view', 'edit', 'create'],
+            label: 'Twitter/X',
+            description: 'URL del perfil de Twitter/X',
+            placeholder: 'https://twitter.com/tuperfil',
+            permissions: {
+                view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
+                edit: [PermissionEnum.ACCOMMODATION_CONTACT_INFO_EDIT]
+            },
+            entitlementKey: 'social-media-integration', // T-G-010: Gate social media
+            typeConfig: {}
         }
     ]
 });

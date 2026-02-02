@@ -401,6 +401,10 @@ export type FieldConfig = {
     helpText?: string;
     helpTextKey?: string; // i18n key
 
+    // Entitlement gating (for premium features)
+    entitlementKey?: string;
+    limitKey?: string; // For limit-based gates (e.g., max_photos)
+
     // Type-specific configuration
     typeConfig?: FieldTypeConfig;
 };

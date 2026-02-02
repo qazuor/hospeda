@@ -8,6 +8,7 @@ import { PageTabs, accommodationTabs } from '@/components/layout/PageTabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAccommodationQuery } from '@/features/accommodations/hooks/useAccommodationQuery';
 import { useTranslations } from '@/hooks/use-translations';
+import { EntitlementGate } from '@qazuor/qzpay-react';
 import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/accommodations/$id/reviews')({
@@ -142,6 +143,35 @@ function AccommodationReviewsPage() {
                                 only.
                             </p>
                         </div>
+
+                        {/* T-G-005: Gate for responding to reviews (placeholder for future implementation) */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-lg">Responder a Reviews</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <EntitlementGate
+                                    entitlementKey="respond-reviews"
+                                    fallback={
+                                        <div className="rounded-md border border-amber-200 bg-amber-50 p-4">
+                                            <p className="font-medium text-amber-900">
+                                                Responder a reviews está disponible en planes Pro y
+                                                Premium
+                                            </p>
+                                            <p className="mt-2 text-amber-800 text-sm">
+                                                Actualiza tu plan para poder responder públicamente
+                                                a las opiniones de tus huéspedes.
+                                            </p>
+                                        </div>
+                                    }
+                                >
+                                    <p className="text-muted-foreground text-sm">
+                                        La funcionalidad de respuesta a reviews estará disponible
+                                        próximamente.
+                                    </p>
+                                </EntitlementGate>
+                            </CardContent>
+                        </Card>
                     </div>
                 )}
             </div>

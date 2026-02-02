@@ -28,6 +28,7 @@ import {
     useUpdateOwnerPromotionMutation
 } from '@/features/owner-promotions/hooks';
 import type { CreateOwnerPromotionInput, OwnerPromotion } from '@/features/owner-promotions/types';
+import { EntitlementGate } from '@qazuor/qzpay-react';
 import { createFileRoute } from '@tanstack/react-router';
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
@@ -268,10 +269,21 @@ function BillingOwnerPromotionsPage() {
                         </select>
                     </div>
 
-                    <Button onClick={() => setCreateDialogOpen(true)}>
-                        <Plus className="mr-2 h-4 w-4" />
-                        Crear promoción
-                    </Button>
+                    <EntitlementGate
+                        entitlementKey="create-promotions"
+                        fallback={
+                            <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm">
+                                <p className="font-medium text-amber-900">
+                                    Crear promociones está disponible en planes Pro y Premium
+                                </p>
+                            </div>
+                        }
+                    >
+                        <Button onClick={() => setCreateDialogOpen(true)}>
+                            <Plus className="mr-2 h-4 w-4" />
+                            Crear promoción
+                        </Button>
+                    </EntitlementGate>
                 </div>
 
                 {/* Table */}

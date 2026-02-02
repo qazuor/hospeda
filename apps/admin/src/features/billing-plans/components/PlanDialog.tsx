@@ -55,7 +55,6 @@ const ENTITLEMENT_GROUPS: {
             EntitlementKey.VIEW_BASIC_STATS,
             EntitlementKey.VIEW_ADVANCED_STATS,
             EntitlementKey.RESPOND_REVIEWS,
-            EntitlementKey.RESPOND_REVIEWS_HIGHLIGHTED,
             EntitlementKey.PRIORITY_SUPPORT,
             EntitlementKey.FEATURED_LISTING,
             EntitlementKey.CUSTOM_BRANDING,

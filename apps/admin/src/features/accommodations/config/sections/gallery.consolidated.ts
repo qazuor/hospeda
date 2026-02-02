@@ -108,7 +108,7 @@ export const createGalleryConsolidatedSection = (
                 },
                 typeConfig: {}
             },
-            // Videos
+            // Videos - T-G-006: Gate video upload (premium feature)
             {
                 id: 'videos',
                 type: FieldTypeEnum.FILE,
@@ -121,6 +121,7 @@ export const createGalleryConsolidatedSection = (
                     view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
                     edit: [PermissionEnum.ACCOMMODATION_GALLERY_MANAGE]
                 },
+                entitlementKey: 'can-embed-video', // Requires premium plan
                 typeConfig: {}
             },
             // URLs de videos externos (YouTube, Vimeo, etc.)
@@ -138,7 +139,7 @@ export const createGalleryConsolidatedSection = (
                 },
                 typeConfig: {}
             },
-            // Tipo de videos
+            // Tipo de videos - T-G-006: Gate video types (premium feature)
             {
                 id: 'videoTypes',
                 type: FieldTypeEnum.JSON,
@@ -151,6 +152,7 @@ export const createGalleryConsolidatedSection = (
                     view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
                     edit: [PermissionEnum.ACCOMMODATION_GALLERY_MANAGE]
                 },
+                entitlementKey: 'can-embed-video', // Requires premium plan
                 typeConfig: {}
             },
             // Tour virtual 360°

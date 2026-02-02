@@ -1,4 +1,5 @@
 import { EntityViewSection } from '@/components/entity-form';
+import { EntitlementGatedSection } from '@/components/entity-form/sections/EntitlementGatedSection';
 import { LazySectionWrapper } from '@/components/entity-form/sections/LazySectionWrapper';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
 import { useLazySections } from '@/hooks';
@@ -83,6 +84,19 @@ export const EntityViewContent = ({
                         />
                     );
 
+                    // Wrap with entitlement gate if needed
+                    const gatedContent = section.entitlementKey ? (
+                        <EntitlementGatedSection
+                            key={section.id || `section-${index}`}
+                            entitlementKey={section.entitlementKey}
+                            sectionTitle={section.title}
+                        >
+                            {sectionContent}
+                        </EntitlementGatedSection>
+                    ) : (
+                        sectionContent
+                    );
+
                     if (isLazy) {
                         return (
                             <LazySectionWrapper
@@ -93,12 +107,12 @@ export const EntityViewContent = ({
                                 threshold={0.1}
                                 className="min-h-[200px]"
                             >
-                                {sectionContent}
+                                {gatedContent}
                             </LazySectionWrapper>
                         );
                     }
 
-                    return sectionContent;
+                    return gatedContent;
                 })}
             </div>
         </div>

@@ -22,6 +22,7 @@ export const createStatisticsConsolidatedSection = (
             view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
             edit: [] // No editable
         },
+        entitlementKey: 'view-advanced-stats', // T-G-004: Gate statistics section
         fields: [
             // Métricas de visualización
             {

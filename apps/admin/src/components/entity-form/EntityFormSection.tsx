@@ -21,6 +21,7 @@ import { GridLayout } from '@/components/entity-form/layouts';
 import type { SelectFieldConfig } from '@/components/entity-form/types/field-config.types';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
 import { cn } from '@/lib/utils';
+import { EntitlementGate, LimitGate } from '@qazuor/qzpay-react';
 import * as React from 'react';
 
 /**
@@ -274,7 +275,58 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
                 }
             };
 
-            return <div key={field.id}>{renderFieldComponent()}</div>;
+            const fieldContent = renderFieldComponent();
+
+            // Wrap with entitlement or limit gate if needed
+            if (field.entitlementKey) {
+                return (
+                    <div key={field.id}>
+                        <EntitlementGate
+                            entitlementKey={field.entitlementKey}
+                            fallback={
+                                <div className="space-y-2">
+                                    <div className="rounded-md border border-amber-200 bg-amber-50 p-3">
+                                        <p className="font-medium text-amber-900 text-sm">
+                                            {field.label || field.id} - Premium
+                                        </p>
+                                        <p className="text-amber-800 text-xs">
+                                            Esta funcionalidad está disponible en planes superiores
+                                        </p>
+                                    </div>
+                                </div>
+                            }
+                        >
+                            {fieldContent}
+                        </EntitlementGate>
+                    </div>
+                );
+            }
+
+            if (field.limitKey) {
+                return (
+                    <div key={field.id}>
+                        <LimitGate
+                            limitKey={field.limitKey}
+                            fallback={
+                                <div className="space-y-2">
+                                    <div className="rounded-md border border-amber-200 bg-amber-50 p-3">
+                                        <p className="font-medium text-amber-900 text-sm">
+                                            {field.label || field.id} - Límite alcanzado
+                                        </p>
+                                        <p className="text-amber-800 text-xs">
+                                            Has alcanzado el límite de tu plan actual
+                                        </p>
+                                    </div>
+                                </div>
+                            }
+                        >
+                            {fieldContent}
+                        </LimitGate>
+                    </div>
+                );
+            }
+
+            return <div key={field.id}>{fieldContent}</div>;
         };
 
         // Render section content based on layout

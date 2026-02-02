@@ -59,4 +59,7 @@ export type SectionConfig = {
         validator: (sectionData: Record<string, unknown>) => Promise<boolean> | boolean;
         errorMessageKey: string; // i18n key
     };
+
+    // Entitlement gating (for premium features)
+    entitlementKey?: string;
 };

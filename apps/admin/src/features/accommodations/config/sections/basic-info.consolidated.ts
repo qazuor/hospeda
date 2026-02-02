@@ -56,6 +56,27 @@ export const createBasicInfoConsolidatedSection = (
                 maxLength: 2000
             }
         },
+        // T-G-007: Rich description field (premium feature)
+        // TODO: This should be a RICH_TEXT field type when implemented
+        // For now, this is a placeholder for when rich text editor is added
+        {
+            id: 'richDescription',
+            type: FieldTypeEnum.TEXTAREA, // Should be RICH_TEXT when available
+            required: false,
+            modes: ['view', 'edit', 'create'],
+            label: 'Descripción Enriquecida (Premium)',
+            description: 'Descripción con formato avanzado, imágenes y estilos personalizados',
+            placeholder: 'Agrega una descripción rica con formato HTML...',
+            permissions: {
+                view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
+                edit: [PermissionEnum.ACCOMMODATION_BASIC_INFO_EDIT]
+            },
+            entitlementKey: 'custom-branding', // T-G-007: Gate rich description
+            typeConfig: {
+                minRows: 6,
+                maxLength: 5000
+            }
+        },
         {
             id: 'type',
             type: FieldTypeEnum.SELECT,
@@ -83,6 +104,7 @@ export const createBasicInfoConsolidatedSection = (
                 view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
                 edit: [PermissionEnum.ACCOMMODATION_FEATURED_TOGGLE]
             },
+            entitlementKey: 'featured-listing', // T-G-009: Gate featured listing toggle
             typeConfig: {}
         },
         {
