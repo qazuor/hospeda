@@ -21,7 +21,7 @@
 import type { QZPayStorageAdapter } from '@qazuor/qzpay-core';
 import { type QZPayDrizzleStorageAdapter, createQZPayDrizzleAdapter } from '@qazuor/qzpay-drizzle';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type * as schema from '../schemas/index.js';
+import type * as schema from '../schemas/index.ts';
 
 /**
  * Configuration options for the QZPay storage adapter

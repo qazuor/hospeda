@@ -1,3 +1,3 @@
-export * from './event.model';
-export * from './eventLocation.model';
-export * from './eventOrganizer.model';
+export * from './event.model.ts';
+export * from './eventLocation.model.ts';
+export * from './eventOrganizer.model.ts';

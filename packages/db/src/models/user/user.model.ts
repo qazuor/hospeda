@@ -1,13 +1,13 @@
 import type { User } from '@repo/schemas';
 import { type SQL, and, count, eq, ilike, or } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { BaseModel } from '../../base/base.model';
-import { accommodations } from '../../schemas/accommodation/accommodation.dbschema';
-import { events } from '../../schemas/event/event.dbschema';
-import type * as schema from '../../schemas/index.js';
-import { posts } from '../../schemas/post/post.dbschema';
-import { users } from '../../schemas/user/user.dbschema';
-import { buildWhereClause } from '../../utils/drizzle-helpers';
+import { BaseModel } from '../../base/base.model.ts';
+import { accommodations } from '../../schemas/accommodation/accommodation.dbschema.ts';
+import { events } from '../../schemas/event/event.dbschema.ts';
+import type * as schema from '../../schemas/index.ts';
+import { posts } from '../../schemas/post/post.dbschema.ts';
+import { users } from '../../schemas/user/user.dbschema.ts';
+import { buildWhereClause } from '../../utils/drizzle-helpers.ts';
 
 export type UserWithCounts = User & {
     accommodationsCount: number;

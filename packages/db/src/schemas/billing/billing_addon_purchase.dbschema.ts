@@ -1,6 +1,6 @@
 import { relations, sql } from 'drizzle-orm';
 import { index, jsonb, pgTable, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
-import { billingAddons, billingCustomers, billingSubscriptions } from '../../billing/index.js';
+import { billingAddons, billingCustomers, billingSubscriptions } from '../../billing/index.ts';
 
 /**
  * Limit adjustments stored as JSONB

@@ -1,2 +1,2 @@
-export * from './rEntityTag.model';
-export * from './tag.model';
+export * from './rEntityTag.model.ts';
+export * from './tag.model.ts';

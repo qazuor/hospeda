@@ -1,3 +1,3 @@
-export * from './post.model';
-export * from './postSponsor.model';
-export * from './postSponsorship.model';
+export * from './post.model.ts';
+export * from './postSponsor.model.ts';
+export * from './postSponsorship.model.ts';

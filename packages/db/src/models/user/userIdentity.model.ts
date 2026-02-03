@@ -1,6 +1,6 @@
 import type { UserAuthIdentity } from '@repo/schemas';
-import { BaseModel } from '../../base/base.model';
-import { userAuthIdentities } from '../../schemas/user/user_identity.dbschema';
+import { BaseModel } from '../../base/base.model.ts';
+import { userAuthIdentities } from '../../schemas/user/user_identity.dbschema.ts';
 
 export class UserIdentityModel extends BaseModel<UserAuthIdentity> {
     protected table = userAuthIdentities;

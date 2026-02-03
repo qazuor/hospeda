@@ -1,6 +1,6 @@
 import type { Tag } from '@repo/schemas';
-import { BaseModel } from '../../base/base.model';
-import { tags } from '../../schemas/tag/tag.dbschema';
+import { BaseModel } from '../../base/base.model.ts';
+import { tags } from '../../schemas/tag/tag.dbschema.ts';
 
 export class TagModel extends BaseModel<Tag> {
     protected table = tags;

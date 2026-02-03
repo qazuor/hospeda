@@ -1,1 +1,1 @@
-export * from './ownerPromotion.model';
+export * from './ownerPromotion.model.ts';

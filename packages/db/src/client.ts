@@ -2,7 +2,7 @@ import { qzpaySchema } from '@qazuor/qzpay-drizzle';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import type { Pool } from 'pg';
-import * as hospedaSchema from './schemas/index.js';
+import * as hospedaSchema from './schemas/index.ts';
 
 /**
  * Combined schema including both Hospeda application schemas

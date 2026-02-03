@@ -14,9 +14,9 @@ export {
     isNotNull
 } from 'drizzle-orm';
 
-export * from './base/base.model';
-export * from './billing';
-export * from './client';
-export * from './models';
-export * from './schemas';
-export * from './utils';
+export * from './base/base.model.ts';
+export * from './billing/index.ts';
+export * from './client.ts';
+export * from './models/index.ts';
+export * from './schemas/index.ts';
+export * from './utils/index.ts';

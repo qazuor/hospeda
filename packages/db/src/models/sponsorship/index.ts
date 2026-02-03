@@ -1,3 +1,3 @@
-export * from './sponsorship.model';
-export * from './sponsorshipLevel.model';
-export * from './sponsorshipPackage.model';
+export * from './sponsorship.model.ts';
+export * from './sponsorshipLevel.model.ts';
+export * from './sponsorshipPackage.model.ts';

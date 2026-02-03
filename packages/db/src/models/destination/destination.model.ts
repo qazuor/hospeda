@@ -1,12 +1,12 @@
 import type { Destination, DestinationWithAttractionNames } from '@repo/schemas';
 import { type SQL, and, asc, count, desc, eq, ilike, or } from 'drizzle-orm';
-import { BaseModel } from '../../base/base.model';
-import { getDb } from '../../client';
-import { attractions } from '../../schemas/destination/attraction.dbschema';
-import { destinations } from '../../schemas/destination/destination.dbschema';
-import { rDestinationAttraction } from '../../schemas/destination/r_destination_attraction.dbschema';
-import { DbError } from '../../utils/error';
-import { logError, logQuery } from '../../utils/logger';
+import { BaseModel } from '../../base/base.model.ts';
+import { getDb } from '../../client.ts';
+import { attractions } from '../../schemas/destination/attraction.dbschema.ts';
+import { destinations } from '../../schemas/destination/destination.dbschema.ts';
+import { rDestinationAttraction } from '../../schemas/destination/r_destination_attraction.dbschema.ts';
+import { DbError } from '../../utils/error.ts';
+import { logError, logQuery } from '../../utils/logger.ts';
 
 export class DestinationModel extends BaseModel<Destination> {
     protected table = destinations;

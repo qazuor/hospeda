@@ -1,6 +1,6 @@
 import type { Post } from '@repo/schemas';
-import { BaseModel } from '../../base/base.model';
-import { posts } from '../../schemas/post/post.dbschema';
+import { BaseModel } from '../../base/base.model.ts';
+import { posts } from '../../schemas/post/post.dbschema.ts';
 
 export class PostModel extends BaseModel<Post> {
     protected table = posts;

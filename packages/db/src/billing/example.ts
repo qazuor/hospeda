@@ -9,8 +9,8 @@
 
 import { QZPay } from '@qazuor/qzpay-core';
 import { Pool } from 'pg';
-import { getDb, initializeDb } from '../client.js';
-import { createBillingAdapter } from './drizzle-adapter.js';
+import { getDb, initializeDb } from '../client.ts';
+import { createBillingAdapter } from './drizzle-adapter.ts';
 
 /**
  * Example: Initialize billing system

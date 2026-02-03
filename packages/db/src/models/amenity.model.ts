@@ -1,9 +1,9 @@
 import type { Amenity } from '@repo/schemas';
-import { BaseModel } from '../base/base.model';
-import { getDb } from '../client';
-import { amenities } from '../schemas/accommodation/amenity.dbschema';
-import { DbError } from '../utils/error';
-import { logError, logQuery } from '../utils/logger';
+import { BaseModel } from '../base/base.model.ts';
+import { getDb } from '../client.ts';
+import { amenities } from '../schemas/accommodation/amenity.dbschema.ts';
+import { DbError } from '../utils/error.ts';
+import { logError, logQuery } from '../utils/logger.ts';
 
 /**
  * Model for the Amenity entity.

@@ -1,11 +1,11 @@
 import type { DestinationReview } from '@repo/schemas';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { BaseModel } from '../../base/base.model';
-import { destinationReviews } from '../../schemas/destination/destination_review.dbschema';
-import type * as schema from '../../schemas/index.js';
-import { buildWhereClause } from '../../utils/drizzle-helpers';
-import { DbError } from '../../utils/error';
-import { logError, logQuery } from '../../utils/logger';
+import { BaseModel } from '../../base/base.model.ts';
+import { destinationReviews } from '../../schemas/destination/destination_review.dbschema.ts';
+import type * as schema from '../../schemas/index.ts';
+import { buildWhereClause } from '../../utils/drizzle-helpers.ts';
+import { DbError } from '../../utils/error.ts';
+import { logError, logQuery } from '../../utils/logger.ts';
 
 /**
  * Type for destination review with user and destination relations

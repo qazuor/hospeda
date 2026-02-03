@@ -1,6 +1,6 @@
 import type { AccommodationFaq } from '@repo/schemas';
-import { BaseModel } from '../../base/base.model';
-import { accommodationFaqs } from '../../schemas/accommodation/accommodation_faq.dbschema';
+import { BaseModel } from '../../base/base.model.ts';
+import { accommodationFaqs } from '../../schemas/accommodation/accommodation_faq.dbschema.ts';
 
 export class AccommodationFaqModel extends BaseModel<AccommodationFaq> {
     protected table = accommodationFaqs;

@@ -1,10 +1,10 @@
 import type { SponsorshipLevel } from '@repo/schemas';
 import { eq } from 'drizzle-orm';
-import { BaseModel } from '../../base/base.model';
-import { getDb } from '../../client';
-import { sponsorshipLevels } from '../../schemas/sponsorship/sponsorship_level.dbschema';
-import { DbError } from '../../utils/error';
-import { logError, logQuery } from '../../utils/logger';
+import { BaseModel } from '../../base/base.model.ts';
+import { getDb } from '../../client.ts';
+import { sponsorshipLevels } from '../../schemas/sponsorship/sponsorship_level.dbschema.ts';
+import { DbError } from '../../utils/error.ts';
+import { logError, logQuery } from '../../utils/logger.ts';
 
 /**
  * Model for managing sponsorship levels in the database.

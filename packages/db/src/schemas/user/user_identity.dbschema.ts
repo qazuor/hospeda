@@ -1,6 +1,6 @@
 import { relations } from 'drizzle-orm';
 import { jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
-import { AuthProviderPgEnum } from '../enums.dbschema';
+import { AuthProviderPgEnum } from '../enums.dbschema.ts';
 import { users } from './user.dbschema.ts';
 
 export const userAuthIdentities: ReturnType<typeof pgTable> = pgTable(

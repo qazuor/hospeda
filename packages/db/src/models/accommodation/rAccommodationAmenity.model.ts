@@ -1,9 +1,9 @@
 import type { AccommodationAmenityRelation } from '@repo/schemas';
-import { BaseModel } from '../../base/base.model';
-import { getDb } from '../../client';
-import { rAccommodationAmenity } from '../../schemas/accommodation/r_accommodation_amenity.dbschema';
-import { DbError } from '../../utils/error';
-import { logError, logQuery } from '../../utils/logger';
+import { BaseModel } from '../../base/base.model.ts';
+import { getDb } from '../../client.ts';
+import { rAccommodationAmenity } from '../../schemas/accommodation/r_accommodation_amenity.dbschema.ts';
+import { DbError } from '../../utils/error.ts';
+import { logError, logQuery } from '../../utils/logger.ts';
 
 export class RAccommodationAmenityModel extends BaseModel<AccommodationAmenityRelation> {
     protected table = rAccommodationAmenity;

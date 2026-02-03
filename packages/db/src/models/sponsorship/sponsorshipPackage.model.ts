@@ -1,10 +1,10 @@
 import type { SponsorshipPackage } from '@repo/schemas';
 import { eq } from 'drizzle-orm';
-import { BaseModel } from '../../base/base.model';
-import { getDb } from '../../client';
-import { sponsorshipPackages } from '../../schemas/sponsorship/sponsorship_package.dbschema';
-import { DbError } from '../../utils/error';
-import { logError, logQuery } from '../../utils/logger';
+import { BaseModel } from '../../base/base.model.ts';
+import { getDb } from '../../client.ts';
+import { sponsorshipPackages } from '../../schemas/sponsorship/sponsorship_package.dbschema.ts';
+import { DbError } from '../../utils/error.ts';
+import { logError, logQuery } from '../../utils/logger.ts';
 
 /**
  * Model for managing sponsorship packages in the database.

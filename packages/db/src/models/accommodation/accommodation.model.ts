@@ -6,9 +6,9 @@ import type {
 } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
 import { and, asc, count, desc, eq, gte, lte, ne } from 'drizzle-orm';
-import { BaseModel } from '../../base/base.model';
-import { getDb } from '../../client';
-import { accommodations } from '../../schemas/accommodation/accommodation.dbschema';
+import { BaseModel } from '../../base/base.model.ts';
+import { getDb } from '../../client.ts';
+import { accommodations } from '../../schemas/accommodation/accommodation.dbschema.ts';
 
 export class AccommodationModel extends BaseModel<Accommodation> {
     protected table = accommodations;

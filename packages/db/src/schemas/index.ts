@@ -1,5 +1,5 @@
 export * from './accommodation/index.ts';
-export * from './billing/index.js';
+export * from './billing/index.ts';
 export * from './destination/index.ts';
 export * from './enums.dbschema.ts';
 export * from './event/index.ts';

@@ -23,9 +23,9 @@
 import { ALL_ADDONS, type AddonDefinition } from '@repo/billing';
 import { createLogger } from '@repo/logger';
 import { sql } from 'drizzle-orm';
-import { getDb } from '../client.js';
-import { billingAddonPurchases } from '../schemas/index.js';
-import { billingSubscriptions } from './schemas.js';
+import { getDb } from '../client.ts';
+import { billingAddonPurchases } from '../schemas/index.ts';
+import { billingSubscriptions } from './schemas.ts';
 
 /**
  * Logger for migration operations

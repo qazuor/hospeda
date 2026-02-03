@@ -16,7 +16,7 @@ export {
     type QZPayAdapterConfig,
     type QZPayStorageAdapter,
     type QZPayDrizzleStorageAdapter
-} from './drizzle-adapter.js';
+} from './drizzle-adapter.ts';
 // Export schemas and types (excluding transaction utilities to avoid conflicts)
 export {
     // Add-on exports
@@ -188,4 +188,4 @@ export {
     // Schema object
     qzpaySchema,
     QZPAY_DRIZZLE_SCHEMA_VERSION
-} from './schemas.js';
+} from './schemas.ts';

@@ -1,9 +1,9 @@
 import type { AccommodationFeature } from '@repo/schemas';
-import { BaseModel } from '../../base/base.model';
-import { getDb } from '../../client';
-import { rAccommodationFeature } from '../../schemas/accommodation/r_accommodation_feature.dbschema';
-import { DbError } from '../../utils/error';
-import { logError, logQuery } from '../../utils/logger';
+import { BaseModel } from '../../base/base.model.ts';
+import { getDb } from '../../client.ts';
+import { rAccommodationFeature } from '../../schemas/accommodation/r_accommodation_feature.dbschema.ts';
+import { DbError } from '../../utils/error.ts';
+import { logError, logQuery } from '../../utils/logger.ts';
 
 export class RAccommodationFeatureModel extends BaseModel<AccommodationFeature> {
     protected table = rAccommodationFeature;

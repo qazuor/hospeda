@@ -1,10 +1,10 @@
 import type { OwnerPromotion } from '@repo/schemas';
 import { and, eq, gte, lte } from 'drizzle-orm';
-import { BaseModel } from '../../base/base.model';
-import { getDb } from '../../client';
-import { ownerPromotions } from '../../schemas/owner-promotion/owner_promotion.dbschema';
-import { DbError } from '../../utils/error';
-import { logError, logQuery } from '../../utils/logger';
+import { BaseModel } from '../../base/base.model.ts';
+import { getDb } from '../../client.ts';
+import { ownerPromotions } from '../../schemas/owner-promotion/owner_promotion.dbschema.ts';
+import { DbError } from '../../utils/error.ts';
+import { logError, logQuery } from '../../utils/logger.ts';
 
 /**
  * Model for managing owner promotions in the database.

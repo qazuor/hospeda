@@ -2,11 +2,11 @@ import type { PaginatedListOptions } from '@repo/schemas';
 import type { SQL, Table } from 'drizzle-orm';
 import { count } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { getDb } from '../client';
-import type * as schema from '../schemas/index.js';
-import { buildWhereClause } from '../utils/drizzle-helpers';
-import { DbError } from '../utils/error';
-import { logError, logQuery } from '../utils/logger';
+import { getDb } from '../client.ts';
+import type * as schema from '../schemas/index.ts';
+import { buildWhereClause } from '../utils/drizzle-helpers.ts';
+import { DbError } from '../utils/error.ts';
+import { logError, logQuery } from '../utils/logger.ts';
 
 /**
  * Maximum allowed page size to prevent memory issues with large datasets

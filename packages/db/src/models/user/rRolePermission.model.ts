@@ -1,10 +1,10 @@
 import type { RolePermissionAssignment } from '@repo/schemas';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { BaseModel } from '../../base/base.model';
-import type * as schema from '../../schemas/index.js';
-import { rolePermission } from '../../schemas/user/r_role_permission.dbschema';
-import { DbError } from '../../utils/error';
-import { logError, logQuery } from '../../utils/logger';
+import { BaseModel } from '../../base/base.model.ts';
+import type * as schema from '../../schemas/index.ts';
+import { rolePermission } from '../../schemas/user/r_role_permission.dbschema.ts';
+import { DbError } from '../../utils/error.ts';
+import { logError, logQuery } from '../../utils/logger.ts';
 
 export class RRolePermissionModel extends BaseModel<RolePermissionAssignment> {
     protected table = rolePermission;

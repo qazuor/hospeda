@@ -1,5 +1,5 @@
 import { index, jsonb, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
-import { billingCustomers } from '../../billing/index.js';
+import { billingCustomers } from '../../billing/index.ts';
 
 /**
  * Billing notification log table
