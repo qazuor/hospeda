@@ -129,6 +129,119 @@ vi.mock('@repo/logger', () => {
     };
 });
 
+// Mock @repo/db to avoid module resolution issues
+// This must be at the top level to ensure it's hoisted before module imports
+vi.mock('@repo/db', () => ({
+    // Database client
+    getDb: vi.fn(() => ({
+        select: vi.fn().mockReturnThis(),
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockReturnThis(),
+        orderBy: vi.fn().mockReturnThis(),
+        execute: vi.fn().mockResolvedValue([]),
+        insert: vi.fn().mockReturnThis(),
+        values: vi.fn().mockReturnThis(),
+        returning: vi.fn().mockResolvedValue([]),
+        update: vi.fn().mockReturnThis(),
+        set: vi.fn().mockReturnThis(),
+        delete: vi.fn().mockReturnThis(),
+        query: {},
+        transaction: vi.fn()
+    })),
+    initializeDb: vi.fn(),
+
+    // Re-export drizzle-orm operators (commonly used)
+    sql: vi.fn(),
+    eq: vi.fn((a: string, b: unknown) => ({ type: 'eq', left: a, right: b })),
+    and: vi.fn((...args: unknown[]) => ({ type: 'and', conditions: args })),
+    or: vi.fn((...args: unknown[]) => ({ type: 'or', conditions: args })),
+    ilike: vi.fn((a: string, b: string) => ({ type: 'ilike', column: a, pattern: b })),
+    desc: vi.fn((a: string) => ({ type: 'desc', column: a })),
+    asc: vi.fn((a: string) => ({ type: 'asc', column: a })),
+    count: vi.fn(),
+    gte: vi.fn((a: string, b: unknown) => ({ type: 'gte', left: a, right: b })),
+    lte: vi.fn((a: string, b: unknown) => ({ type: 'lte', left: a, right: b })),
+    isNull: vi.fn((a: string) => ({ type: 'isNull', column: a })),
+    isNotNull: vi.fn((a: string) => ({ type: 'isNotNull', column: a })),
+
+    // Mock BaseModel class
+    BaseModel: class MockBaseModel {
+        protected table = {};
+        protected entityName = 'mock';
+        protected getTableName() {
+            return 'mock_table';
+        }
+    },
+
+    // Mock billing schemas
+    billingAddonPurchases: {
+        id: 'id',
+        customerId: 'customer_id',
+        subscriptionId: 'subscription_id',
+        addonSlug: 'addon_slug',
+        status: 'status',
+        purchasedAt: 'purchased_at',
+        expiresAt: 'expires_at',
+        cancelledAt: 'cancelled_at',
+        paymentId: 'payment_id',
+        limitAdjustments: 'limit_adjustments',
+        entitlementAdjustments: 'entitlement_adjustments',
+        promoCodeId: 'promo_code_id',
+        metadata: 'metadata',
+        createdAt: 'created_at',
+        updatedAt: 'updated_at'
+    },
+    billingNotificationLogs: {
+        id: 'id',
+        customerId: 'customer_id',
+        eventType: 'event_type',
+        channel: 'channel',
+        status: 'status',
+        metadata: 'metadata',
+        createdAt: 'created_at'
+    },
+    billingAuditLogs: {
+        action: 'action',
+        entityType: 'entityType',
+        entityId: 'entityId',
+        actorId: 'actorId',
+        metadata: 'metadata',
+        livemode: 'livemode',
+        createdAt: 'createdAt'
+    }
+}));
+
+// Mock @repo/db/schemas separately
+vi.mock('@repo/db/schemas', () => ({
+    billingAddonPurchases: {
+        id: 'id',
+        customerId: 'customer_id',
+        subscriptionId: 'subscription_id',
+        addonSlug: 'addon_slug',
+        status: 'status',
+        purchasedAt: 'purchased_at',
+        expiresAt: 'expires_at',
+        cancelledAt: 'cancelled_at',
+        paymentId: 'payment_id',
+        limitAdjustments: 'limit_adjustments',
+        entitlementAdjustments: 'entitlement_adjustments',
+        promoCodeId: 'promo_code_id',
+        metadata: 'metadata',
+        createdAt: 'created_at',
+        updatedAt: 'updated_at'
+    },
+    billingNotificationLogs: {
+        id: 'id',
+        customerId: 'customer_id',
+        eventType: 'event_type',
+        channel: 'channel',
+        status: 'status',
+        metadata: 'metadata',
+        createdAt: 'created_at'
+    }
+}));
+
 // Mock @repo/service-core to force 2xx happy paths without DB/auth
 // This must be at the top level to ensure it's hoisted before module imports
 vi.mock('@repo/service-core', () => {
