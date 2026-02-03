@@ -10,6 +10,22 @@
         ".": {
             "import": "./src/index.ts",
             "require": "./src/index.ts"
+        },
+        "./schemas": {
+            "import": "./src/schemas/index.ts",
+            "require": "./src/schemas/index.ts"
+        },
+        "./models": {
+            "import": "./src/models/index.ts",
+            "require": "./src/models/index.ts"
+        },
+        "./utils": {
+            "import": "./src/utils/index.ts",
+            "require": "./src/utils/index.ts"
+        },
+        "./client": {
+            "import": "./src/client.ts",
+            "require": "./src/client.ts"
         }
     },
     "files": ["dist"],
