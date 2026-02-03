@@ -13,11 +13,9 @@
  * @module test/services/addon-expiration.service.test
  */
 
-import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AddonEntitlementService } from '../../src/services/addon-entitlement.service';
-import { AddonExpirationService } from '../../src/services/addon-expiration.service';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock dependencies
+// Mock dependencies - must be before imports
 vi.mock('@repo/db', () => ({
     getDb: vi.fn()
 }));
@@ -59,6 +57,14 @@ vi.mock('../../src/utils/logger', () => ({
         debug: vi.fn()
     }
 }));
+
+// Import after mocks
+import { getDb } from '@repo/db';
+import { AddonEntitlementService } from '../../src/services/addon-entitlement.service';
+import { AddonExpirationService } from '../../src/services/addon-expiration.service';
+
+// Get typed mock references
+const mockGetDb = vi.mocked(getDb);
 
 describe('AddonExpirationService', () => {
     let service: AddonExpirationService;
@@ -113,8 +119,7 @@ describe('AddonExpirationService', () => {
             set: vi.fn().mockReturnThis()
         };
 
-        const { getDb } = require('@repo/db');
-        (getDb as Mock).mockReturnValue(mockDb);
+        mockGetDb.mockReturnValue(mockDb as any);
 
         // Setup mock entitlement service
         mockEntitlementService = {
