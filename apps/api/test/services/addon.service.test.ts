@@ -17,6 +17,46 @@ import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AddonService } from '../../src/services/addon.service';
 
+// Use vi.hoisted to define mock database utilities available before vi.mock runs
+// Only destructure the top-level values we need to pass to vi.mock
+const { mockDbSelect, mockDbUpdate, mockDbInsert, mockBillingAddonPurchases } = vi.hoisted(() => {
+    // Select chain: select() -> from() -> where()
+    const mockDbWhere = vi.fn().mockResolvedValue([]);
+    const mockDbFrom = vi.fn(() => ({ where: mockDbWhere }));
+    const mockDbSelect = vi.fn(() => ({ from: mockDbFrom }));
+    // Update chain: update() -> set() -> where()
+    const mockDbUpdateWhere = vi.fn().mockResolvedValue({ rowCount: 1 });
+    const mockDbUpdateSet = vi.fn(() => ({ where: mockDbUpdateWhere }));
+    const mockDbUpdate = vi.fn(() => ({ set: mockDbUpdateSet }));
+    // Insert chain: insert() -> values()
+    const mockDbInsertValues = vi.fn().mockResolvedValue({ rowCount: 1 });
+    const mockDbInsert = vi.fn(() => ({ values: mockDbInsertValues }));
+    return {
+        mockDbSelect,
+        mockDbUpdate,
+        mockDbInsert,
+        mockBillingAddonPurchases: {
+            customerId: 'customerId',
+            status: 'status',
+            addonSlug: 'addonSlug'
+        }
+    };
+});
+
+// Mock @repo/db/client
+vi.mock('@repo/db/client', () => ({
+    getDb: vi.fn(() => ({
+        select: mockDbSelect,
+        update: mockDbUpdate,
+        insert: mockDbInsert
+    }))
+}));
+
+// Mock @repo/db/schemas/billing
+vi.mock('@repo/db/schemas/billing', () => ({
+    billingAddonPurchases: mockBillingAddonPurchases
+}));
+
 // Mock @repo/billing - Define mock data inline in factory to avoid hoisting issues
 vi.mock('@repo/billing', () => {
     const LimitKeyEnum = {
@@ -96,8 +136,15 @@ vi.mock('@repo/billing', () => {
     };
 });
 
+// Use vi.hoisted to ensure mock functions are defined before vi.mock runs (hoisting)
+const { mockPreferenceCreate, mockApplyAddonEntitlements, mockRemoveAddonEntitlements } =
+    vi.hoisted(() => ({
+        mockPreferenceCreate: vi.fn(),
+        mockApplyAddonEntitlements: vi.fn(),
+        mockRemoveAddonEntitlements: vi.fn()
+    }));
+
 // Mock mercadopago
-const mockPreferenceCreate = vi.fn();
 vi.mock('mercadopago', () => ({
     MercadoPagoConfig: vi.fn(),
     Preference: vi.fn().mockImplementation(() => ({
@@ -106,8 +153,6 @@ vi.mock('mercadopago', () => ({
 }));
 
 // Mock addon-entitlement service
-const mockApplyAddonEntitlements = vi.fn();
-const mockRemoveAddonEntitlements = vi.fn();
 vi.mock('../../src/services/addon-entitlement.service', () => ({
     AddonEntitlementService: vi.fn().mockImplementation(() => ({
         applyAddonEntitlements: mockApplyAddonEntitlements,
@@ -142,6 +187,9 @@ describe('AddonService', () => {
             },
             subscriptions: {
                 getByCustomerId: vi.fn()
+            },
+            plans: {
+                get: vi.fn()
             }
         } as unknown as QZPayBilling;
 
@@ -393,8 +441,9 @@ describe('AddonService', () => {
         });
 
         it('should return error when MERCADO_PAGO_ACCESS_TOKEN not set', async () => {
-            // Arrange
-            process.env.MERCADO_PAGO_ACCESS_TOKEN = undefined;
+            // Arrange - set env var to empty string (falsy) to trigger check
+            const originalToken = process.env.MERCADO_PAGO_ACCESS_TOKEN;
+            process.env.MERCADO_PAGO_ACCESS_TOKEN = '';
             (mockBilling.customers.get as Mock).mockResolvedValue({ id: 'cust_123' });
             (mockBilling.subscriptions.getByCustomerId as Mock).mockResolvedValue([
                 { id: 'sub_1', status: 'active' }
@@ -409,7 +458,7 @@ describe('AddonService', () => {
             expect(result.error?.message).toContain('not configured');
 
             // Restore
-            process.env.MERCADO_PAGO_ACCESS_TOKEN = 'test-token';
+            process.env.MERCADO_PAGO_ACCESS_TOKEN = originalToken || 'test-token';
         });
 
         it('should create MercadoPago preference and return checkout URL', async () => {
@@ -747,7 +796,14 @@ describe('AddonService', () => {
         });
 
         it('should delegate to entitlementService.applyAddonEntitlements', async () => {
-            // Arrange
+            // Arrange - set up required mocks for confirmPurchase flow
+            (mockBilling.subscriptions.getByCustomerId as Mock).mockResolvedValue([
+                { id: 'sub_1', status: 'active', planId: 'plan_123' }
+            ]);
+            (mockBilling.plans.get as Mock).mockResolvedValue({
+                id: 'plan_123',
+                slug: 'owner-pro'
+            });
             mockApplyAddonEntitlements.mockResolvedValue({ success: true });
 
             // Act
@@ -761,8 +817,15 @@ describe('AddonService', () => {
             });
         });
 
-        it('should return error when entitlements fail to apply', async () => {
-            // Arrange
+        it('should still succeed when entitlements fail to apply (table is primary source)', async () => {
+            // Arrange - set up required mocks for confirmPurchase flow
+            (mockBilling.subscriptions.getByCustomerId as Mock).mockResolvedValue([
+                { id: 'sub_1', status: 'active', planId: 'plan_123' }
+            ]);
+            (mockBilling.plans.get as Mock).mockResolvedValue({
+                id: 'plan_123',
+                slug: 'owner-pro'
+            });
             mockApplyAddonEntitlements.mockResolvedValue({
                 success: false,
                 error: {
@@ -774,13 +837,20 @@ describe('AddonService', () => {
             // Act
             const result = await service.confirmPurchase(confirmInput);
 
-            // Assert
-            expect(result.success).toBe(false);
-            expect(result.error?.code).toBe('ENTITLEMENT_ERROR');
+            // Assert - confirmPurchase continues with success even if JSON metadata update fails
+            // because the table insert (primary source) succeeded
+            expect(result.success).toBe(true);
         });
 
         it('should handle exceptions gracefully', async () => {
-            // Arrange
+            // Arrange - set up required mocks for confirmPurchase flow
+            (mockBilling.subscriptions.getByCustomerId as Mock).mockResolvedValue([
+                { id: 'sub_1', status: 'active', planId: 'plan_123' }
+            ]);
+            (mockBilling.plans.get as Mock).mockResolvedValue({
+                id: 'plan_123',
+                slug: 'owner-pro'
+            });
             mockApplyAddonEntitlements.mockRejectedValue(new Error('Unexpected error'));
 
             // Act
@@ -893,7 +963,7 @@ describe('AddonService', () => {
             });
         });
 
-        it('should return error when entitlement removal fails', async () => {
+        it('should still succeed when entitlement removal fails (table is primary source)', async () => {
             // Arrange
             (mockBilling.customers.get as Mock).mockResolvedValue({
                 id: 'cust_123',
@@ -927,9 +997,9 @@ describe('AddonService', () => {
             // Act
             const result = await service.cancelAddon(cancelInput);
 
-            // Assert
-            expect(result.success).toBe(false);
-            expect(result.error?.code).toBe('ENTITLEMENT_ERROR');
+            // Assert - cancelAddon continues with success even if JSON metadata removal fails
+            // because the table update (primary source) succeeded
+            expect(result.success).toBe(true);
         });
 
         it('should handle exceptions gracefully', async () => {
