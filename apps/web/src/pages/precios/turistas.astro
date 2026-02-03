@@ -2,9 +2,14 @@
 export const prerender = true;
 
 import Layout from '@/layout/MainLayout.astro';
+import { BillingIsland, VipPromotionsBanner, CheckoutResultBanner } from '@/components/billing';
 import { PricingSection } from '@/components/pricing/PricingSection';
 import { PLANS_BY_CATEGORY } from '@repo/billing';
 import type { PlanDefinition } from '@repo/billing';
+import { getAuth } from '@clerk/astro/server';
+
+const { userId } = getAuth(Astro);
+const isAuthenticated = !!userId;
 
 /**
  * Tourist Pricing Page
@@ -71,14 +76,28 @@ const description = 'Descubrí el Litoral Argentino con beneficios exclusivos. E
         </p>
       </div>
 
-      <PricingSection
+      <!-- Checkout Result Banner -->
+      <CheckoutResultBanner client:load />
+
+      <BillingIsland
         client:load
-        plans={touristPlans}
-        highlightedPlanSlug="tourist-plus"
-        badges={badges}
-        showToggle={true}
-        getFeatures={getTouristPlanFeatures}
-      />
+        apiUrl={import.meta.env.PUBLIC_API_URL || '/api/v1'}
+        livemode={import.meta.env.PROD}
+      >
+        <PricingSection
+          plans={touristPlans}
+          highlightedPlanSlug="tourist-plus"
+          badges={badges}
+          showToggle={true}
+          getFeatures={getTouristPlanFeatures}
+          isAuthenticated={isAuthenticated}
+          successUrl="/mi-cuenta/suscripcion?checkout=success"
+          cancelUrl="/precios/turistas?checkout=cancelled"
+        />
+        <div class="mt-8">
+          <VipPromotionsBanner />
+        </div>
+      </BillingIsland>
 
       <!-- Benefits Section -->
       <div class="mt-20 grid md:grid-cols-3 gap-8">

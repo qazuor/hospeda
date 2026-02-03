@@ -1,3 +1,6 @@
+'use client';
+
+import { useState } from 'react';
 import { FeatureList } from './FeatureList';
 
 /**
@@ -21,10 +24,14 @@ interface PlanCardProps {
     ctaText: string;
     ctaLink?: string;
     onCtaClick?: () => void;
+    onCheckout?: (priceId: string) => Promise<void>;
+    planSlug?: string;
     highlighted?: boolean;
     badge?: string;
     trialText?: string;
     currency?: string;
+    isTrial?: boolean;
+    isAuthenticated?: boolean;
 }
 
 /**
@@ -49,22 +56,59 @@ export function PlanCard({
     ctaText,
     ctaLink,
     onCtaClick,
+    onCheckout,
+    planSlug,
     highlighted = false,
     badge,
     trialText,
-    currency = 'ARS'
+    currency = 'ARS',
+    isTrial = false,
+    isAuthenticated = false
 }: PlanCardProps) {
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
     const formattedPrice = formatPrice(price);
     const formattedOriginalPrice = originalPrice ? formatPrice(originalPrice) : null;
     const periodText = period === 'monthly' ? '/mes' : '/año';
     const hasDiscount = originalPrice && originalPrice !== price;
 
+    const handleCheckout = async () => {
+        if (!onCheckout || !planSlug) return;
+
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            // Create price ID based on period
+            const priceId = period === 'monthly' ? `${planSlug}-monthly` : `${planSlug}-annual`;
+            await onCheckout(priceId);
+        } catch (err) {
+            const errorMessage =
+                err instanceof Error ? err.message : 'Error al crear sesión de pago';
+            setError(errorMessage);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const handleClick = () => {
-        if (onCtaClick) {
+        // If checkout handler is provided and user is authenticated, use checkout
+        if (onCheckout && isAuthenticated && planSlug) {
+            handleCheckout();
+        } else if (onCtaClick) {
             onCtaClick();
         } else if (ctaLink) {
             window.location.href = ctaLink;
         }
+    };
+
+    // Determine button text
+    const getButtonText = () => {
+        if (isLoading) return 'Cargando...';
+        if (price === 0) return ctaText || 'Crear cuenta gratis';
+        if (isTrial) return 'Comenzar prueba gratis (14 días)';
+        return ctaText;
     };
 
     return (
@@ -162,14 +206,21 @@ export function PlanCard({
             <button
                 type="button"
                 onClick={handleClick}
+                disabled={isLoading}
                 className={`mb-6 w-full rounded-lg px-6 py-3 font-semibold transition-colors ${
                     highlighted
                         ? 'bg-white text-primary hover:bg-gray-100'
                         : 'bg-primary text-white hover:bg-primary/90'
-                }`}
+                } ${isLoading ? 'cursor-not-allowed opacity-50' : ''}`}
             >
-                {ctaText}
+                {getButtonText()}
             </button>
+
+            {error && (
+                <div className="mb-4 rounded-md bg-red-50 p-3">
+                    <p className="text-red-700 text-sm">{error}</p>
+                </div>
+            )}
 
             <FeatureList
                 features={features}

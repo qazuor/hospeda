@@ -1,374 +1,367 @@
-'use client';
-
-import { useCallback, useEffect, useState } from 'react';
-
 /**
  * BillingHistory Component
- * Displays chronological list of billing events with pagination
+ *
+ * Displays chronological list of invoices using useInvoices() from @qazuor/qzpay-react.
+ * Shows invoice date, amount, status, and download link.
+ *
+ * @module components/dashboard/BillingHistory
  */
 
-type BillingEventType =
-    | 'payment'
-    | 'subscription_created'
-    | 'subscription_updated'
-    | 'subscription_canceled'
-    | 'addon_purchased'
-    | 'refund';
+'use client';
 
-interface BillingEvent {
-    id: string;
-    type: BillingEventType;
-    description: string;
-    amountCents: number;
-    currency: string;
-    status: 'completed' | 'pending' | 'failed' | 'refunded';
-    createdAt: string;
-    metadata?: {
-        planName?: string;
-        addonName?: string;
-        invoiceId?: string;
-        receiptUrl?: string;
-    };
-}
-
-interface ApiResponse {
-    success: boolean;
-    data: BillingEvent[];
-    pagination: {
-        page: number;
-        pageSize: number;
-        totalItems: number;
-        totalPages: number;
-        hasMore: boolean;
-    };
-    error?: {
-        code: string;
-        message: string;
-    };
-}
+import type { QZPayInvoice } from '@qazuor/qzpay-core';
+import { useInvoices } from '@qazuor/qzpay-react';
 
 /**
- * Format price in ARS with thousands separator
+ * Format currency amount to ARS format
+ *
+ * @param amount - Amount in cents
+ * @returns Formatted currency string
  */
-function formatPrice(priceInCents: number): string {
-    const price = priceInCents / 100;
+function formatCurrency(amount: number): string {
+    const amountInPesos = amount / 100;
     return new Intl.NumberFormat('es-AR', {
+        style: 'currency',
+        currency: 'ARS',
         minimumFractionDigits: 0,
         maximumFractionDigits: 0
-    }).format(price);
+    }).format(amountInPesos);
 }
 
 /**
- * Format date in Spanish locale
+ * Format date to es-AR locale
+ *
+ * @param dateInput - Date string or Date object
+ * @returns Formatted date string
  */
-function formatDate(date: Date): string {
+function formatDate(dateInput: string | Date): string {
+    const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+
     return new Intl.DateTimeFormat('es-AR', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric'
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
     }).format(date);
 }
 
 /**
- * Get event type label in Spanish
+ * Get status badge configuration
+ *
+ * @param status - Invoice status
+ * @returns Badge configuration with label and color classes
  */
-function getEventTypeLabel(type: BillingEventType): string {
-    const labels: Record<BillingEventType, string> = {
-        payment: 'Pago',
-        subscription_created: 'Suscripción',
-        subscription_updated: 'Cambio de plan',
-        subscription_canceled: 'Cancelación',
-        addon_purchased: 'Complemento',
-        refund: 'Reembolso'
-    };
-    return labels[type];
+function getStatusBadge(status: QZPayInvoice['status']): {
+    label: string;
+    colorClass: string;
+    bgColorClass: string;
+} {
+    switch (status) {
+        case 'paid':
+            return {
+                label: 'Pagada',
+                colorClass: 'text-green-700',
+                bgColorClass: 'bg-green-100'
+            };
+        case 'open':
+            return {
+                label: 'Pendiente',
+                colorClass: 'text-yellow-700',
+                bgColorClass: 'bg-yellow-100'
+            };
+        case 'uncollectible':
+            return {
+                label: 'Incobrable',
+                colorClass: 'text-red-700',
+                bgColorClass: 'bg-red-100'
+            };
+        case 'void':
+            return {
+                label: 'Anulada',
+                colorClass: 'text-gray-700',
+                bgColorClass: 'bg-gray-100'
+            };
+        case 'draft':
+            return {
+                label: 'Borrador',
+                colorClass: 'text-gray-600',
+                bgColorClass: 'bg-gray-50'
+            };
+        default:
+            return {
+                label: status,
+                colorClass: 'text-gray-700',
+                bgColorClass: 'bg-gray-100'
+            };
+    }
 }
 
 /**
- * Get status badge styling
+ * LoadingSkeleton Component
+ *
+ * Displays a loading skeleton matching the table layout
  */
-function getStatusBadge(status: BillingEvent['status']) {
-    switch (status) {
-        case 'completed':
-            return {
-                className: 'bg-green-100 text-green-700',
-                label: 'Completado'
-            };
-        case 'pending':
-            return {
-                className: 'bg-yellow-100 text-yellow-700',
-                label: 'Pendiente'
-            };
-        case 'failed':
-            return {
-                className: 'bg-red-100 text-red-700',
-                label: 'Fallido'
-            };
-        case 'refunded':
-            return {
-                className: 'bg-gray-100 text-gray-700',
-                label: 'Reembolsado'
-            };
-    }
-}
-
-export function BillingHistory() {
-    const [events, setEvents] = useState<BillingEvent[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [loadingMore, setLoadingMore] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [pagination, setPagination] = useState<ApiResponse['pagination'] | null>(null);
-    const [currentPage, setCurrentPage] = useState(1);
-    const [filterType, setFilterType] = useState<BillingEventType | 'all'>('all');
-
-    const fetchEvents = useCallback(
-        async (page: number, type: BillingEventType | 'all', append = false) => {
-            try {
-                if (append) {
-                    setLoadingMore(true);
-                } else {
-                    setLoading(true);
-                    setError(null);
-                }
-
-                const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:3001';
-                const typeParam = type !== 'all' ? `&type=${type}` : '';
-                const response = await fetch(
-                    `${apiUrl}/api/v1/billing/history?page=${page}&pageSize=10${typeParam}`,
-                    {
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        credentials: 'include'
-                    }
-                );
-
-                if (!response.ok) {
-                    throw new Error('Error al cargar el historial');
-                }
-
-                const data: ApiResponse = await response.json();
-
-                if (data.success) {
-                    if (append) {
-                        setEvents((prev) => [...prev, ...data.data]);
-                    } else {
-                        setEvents(data.data);
-                    }
-                    setPagination(data.pagination);
-                    setCurrentPage(page);
-                } else {
-                    throw new Error(data.error?.message || 'Error desconocido');
-                }
-            } catch (err) {
-                console.error('Error fetching billing history:', err);
-                setError(err instanceof Error ? err.message : 'Error al cargar el historial');
-            } finally {
-                setLoading(false);
-                setLoadingMore(false);
-            }
-        },
-        []
-    );
-
-    useEffect(() => {
-        fetchEvents(1, filterType);
-    }, [filterType, fetchEvents]);
-
-    const handleLoadMore = () => {
-        if (pagination?.hasMore) {
-            fetchEvents(currentPage + 1, filterType, true);
-        }
-    };
-
-    const handleFilterChange = (type: BillingEventType | 'all') => {
-        setFilterType(type);
-        setCurrentPage(1);
-    };
-
-    if (loading) {
-        return (
-            <div className="rounded-xl bg-white p-8 shadow-lg">
-                <h2 className="mb-6 font-bold text-2xl text-gray-900">Historial de facturación</h2>
-                <div className="flex items-center justify-center py-12">
-                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-primary" />
-                </div>
-            </div>
-        );
-    }
-
+function LoadingSkeleton() {
     return (
         <div className="rounded-xl bg-white p-8 shadow-lg">
-            <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <h2 className="font-bold text-2xl text-gray-900">Historial de facturación</h2>
-
-                {/* Filter */}
-                <div className="flex items-center gap-2">
-                    <label
-                        htmlFor="type-filter"
-                        className="text-gray-700 text-sm"
-                    >
-                        Filtrar:
-                    </label>
-                    <select
-                        id="type-filter"
-                        value={filterType}
-                        onChange={(e) =>
-                            handleFilterChange(e.target.value as BillingEventType | 'all')
-                        }
-                        className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                    >
-                        <option value="all">Todos</option>
-                        <option value="payment">Pagos</option>
-                        <option value="subscription_created">Suscripciones</option>
-                        <option value="subscription_updated">Cambios de plan</option>
-                        <option value="addon_purchased">Complementos</option>
-                        <option value="refund">Reembolsos</option>
-                    </select>
+            <h2 className="mb-6 font-bold text-2xl text-gray-900">Historial de Facturación</h2>
+            <div
+                className="animate-pulse"
+                // biome-ignore lint/a11y/useSemanticElements: loading indicator pattern used in tests
+                role="status"
+                aria-busy="true"
+                aria-label="Cargando historial de facturación"
+            >
+                <div className="space-y-3">
+                    {[1, 2, 3].map((i) => (
+                        <div
+                            key={i}
+                            className="flex gap-4"
+                        >
+                            <div className="h-12 flex-1 rounded bg-gray-200" />
+                            <div className="h-12 w-32 rounded bg-gray-200" />
+                            <div className="h-12 w-24 rounded bg-gray-200" />
+                            <div className="h-12 w-20 rounded bg-gray-200" />
+                        </div>
+                    ))}
                 </div>
             </div>
+        </div>
+    );
+}
 
-            {error && (
-                <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-6 text-center">
-                    <svg
-                        className="mx-auto mb-3 h-12 w-12 text-red-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        aria-hidden="true"
-                    >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                    </svg>
-                    <p className="text-red-700">{error}</p>
-                </div>
-            )}
+/**
+ * ErrorState Component
+ *
+ * Displays error state with retry button
+ */
+function ErrorState(props: { onRetry: () => void }) {
+    return (
+        <div className="rounded-xl bg-white p-8 shadow-lg">
+            <h2 className="mb-6 font-bold text-2xl text-gray-900">Historial de Facturación</h2>
+            <div
+                className="rounded-lg border border-red-200 bg-red-50 p-6 text-center"
+                role="alert"
+            >
+                <svg
+                    className="mx-auto mb-3 h-12 w-12 text-red-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                >
+                    <title>Error</title>
+                    <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                </svg>
+                <p className="mb-4 text-red-700">No pudimos cargar el historial de facturación</p>
+                <button
+                    type="button"
+                    onClick={props.onRetry}
+                    className="rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                >
+                    Reintentar
+                </button>
+            </div>
+        </div>
+    );
+}
 
-            {events.length === 0 && !error && (
-                <div className="py-12 text-center">
-                    <svg
-                        className="mx-auto mb-4 h-16 w-16 text-gray-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        aria-hidden="true"
-                    >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                        />
-                    </svg>
-                    <h3 className="mb-2 font-bold text-gray-900 text-xl">Sin historial</h3>
-                    <p className="text-gray-600">
-                        No hay eventos de facturación
-                        {filterType !== 'all' && ' para este filtro'}
-                    </p>
-                </div>
-            )}
+/**
+ * EmptyState Component
+ *
+ * Displays empty state when there are no invoices
+ */
+function EmptyState() {
+    return (
+        <div className="rounded-xl bg-white p-8 shadow-lg">
+            <h2 className="mb-6 font-bold text-2xl text-gray-900">Historial de Facturación</h2>
+            <div className="py-12 text-center">
+                <svg
+                    className="mx-auto mb-4 h-16 w-16 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                >
+                    <title>Sin facturas</title>
+                    <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                </svg>
+                <h3 className="mb-2 font-bold text-gray-900 text-xl">Sin facturas</h3>
+                <p className="text-gray-600">No hay facturas disponibles</p>
+            </div>
+        </div>
+    );
+}
 
-            {events.length > 0 && (
-                <>
-                    <div className="space-y-4">
-                        {events.map((event) => {
-                            const statusBadge = getStatusBadge(event.status);
-                            const typeLabel = getEventTypeLabel(event.type);
+/**
+ * Get invoice download URL from provider IDs
+ *
+ * @param invoice - Invoice with provider IDs
+ * @returns Download URL or null
+ */
+function getInvoiceUrl(invoice: QZPayInvoice): string | null {
+    // Check if we have a Mercado Pago invoice URL in metadata
+    if (invoice.metadata?.invoiceUrl && typeof invoice.metadata.invoiceUrl === 'string') {
+        return invoice.metadata.invoiceUrl;
+    }
 
-                            return (
-                                <div
-                                    key={event.id}
-                                    className="flex flex-col gap-4 rounded-lg border border-gray-200 p-4 transition-shadow hover:shadow-md sm:flex-row sm:items-center sm:justify-between"
-                                >
-                                    <div className="flex-1">
-                                        <div className="mb-2 flex flex-wrap items-center gap-2">
-                                            <span className="rounded-full bg-blue-100 px-3 py-1 font-medium text-blue-700 text-xs">
-                                                {typeLabel}
-                                            </span>
-                                            <span
-                                                className={`rounded-full px-3 py-1 font-medium text-xs ${statusBadge.className}`}
-                                            >
-                                                {statusBadge.label}
-                                            </span>
-                                        </div>
-                                        <p className="mb-1 font-medium text-gray-900">
-                                            {event.description}
-                                        </p>
-                                        <p className="text-gray-600 text-sm">
-                                            {formatDate(new Date(event.createdAt))}
-                                        </p>
-                                        {event.metadata?.receiptUrl && (
-                                            <a
-                                                href={event.metadata.receiptUrl}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="mt-2 inline-flex items-center gap-1 text-primary text-sm hover:underline"
-                                            >
-                                                <svg
-                                                    className="h-4 w-4"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    viewBox="0 0 24 24"
-                                                    aria-hidden="true"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth={2}
-                                                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                                                    />
-                                                </svg>
-                                                Ver comprobante
-                                            </a>
-                                        )}
-                                    </div>
-                                    <div className="text-right sm:text-left">
-                                        <div className="font-bold text-gray-900 text-lg">
-                                            {event.status === 'refunded' && '- '}$
-                                            {formatPrice(event.amountCents)}
-                                        </div>
-                                        <div className="text-gray-600 text-sm">
-                                            {event.currency}
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
+    // Check for provider-specific invoice IDs that could be used to construct URLs
+    // This is a placeholder - actual implementation depends on provider integration
+    if (invoice.providerInvoiceIds?.mercadopago) {
+        // In production, this would link to the actual Mercado Pago invoice
+        return null; // Return null for now since we don't have the actual URL format
+    }
 
-                    {/* Load more button */}
-                    {pagination?.hasMore && (
-                        <div className="mt-6 text-center">
-                            <button
-                                type="button"
-                                onClick={handleLoadMore}
-                                disabled={loadingMore}
-                                className="rounded-lg border-2 border-primary px-6 py-3 font-semibold text-primary transition-colors hover:bg-primary/5 disabled:cursor-not-allowed disabled:border-gray-300 disabled:text-gray-300"
+    return null;
+}
+
+/**
+ * InvoiceTable Component
+ *
+ * Displays table of invoices
+ */
+function InvoiceTable(props: { invoices: QZPayInvoice[] }) {
+    return (
+        <div className="overflow-x-auto">
+            <table className="w-full">
+                <thead className="bg-gray-50">
+                    <tr>
+                        <th
+                            scope="col"
+                            className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider"
+                        >
+                            Fecha
+                        </th>
+                        <th
+                            scope="col"
+                            className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider"
+                        >
+                            Monto
+                        </th>
+                        <th
+                            scope="col"
+                            className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider"
+                        >
+                            Estado
+                        </th>
+                        <th
+                            scope="col"
+                            className="px-6 py-3 text-left font-medium text-gray-500 text-xs uppercase tracking-wider"
+                        >
+                            Acción
+                        </th>
+                    </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 bg-white">
+                    {props.invoices.map((invoice) => {
+                        const statusBadge = getStatusBadge(invoice.status);
+                        const date = invoice.paidAt || invoice.dueDate || invoice.createdAt;
+                        const invoiceUrl = getInvoiceUrl(invoice);
+
+                        return (
+                            <tr
+                                key={invoice.id}
+                                className="hover:bg-gray-50"
                             >
-                                {loadingMore ? (
-                                    <span className="flex items-center gap-2">
-                                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-primary" />
-                                        Cargando...
+                                <td className="whitespace-nowrap px-6 py-4 text-gray-900 text-sm">
+                                    {formatDate(date)}
+                                </td>
+                                <td className="whitespace-nowrap px-6 py-4 font-medium text-gray-900 text-sm">
+                                    {formatCurrency(invoice.total)}
+                                </td>
+                                <td className="whitespace-nowrap px-6 py-4 text-sm">
+                                    <span
+                                        className={`inline-flex items-center rounded-full px-3 py-1 font-medium text-xs ${statusBadge.colorClass} ${statusBadge.bgColorClass}`}
+                                    >
+                                        {statusBadge.label}
                                     </span>
-                                ) : (
-                                    `Cargar más (${pagination.totalItems - events.length} restantes)`
-                                )}
-                            </button>
-                        </div>
-                    )}
+                                </td>
+                                <td className="whitespace-nowrap px-6 py-4 text-sm">
+                                    {invoiceUrl ? (
+                                        <a
+                                            href={invoiceUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:underline"
+                                        >
+                                            <svg
+                                                className="h-4 w-4"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                                aria-hidden="true"
+                                            >
+                                                <title>Descargar</title>
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                                />
+                                            </svg>
+                                            Descargar
+                                        </a>
+                                    ) : (
+                                        <span className="text-gray-400 text-xs">-</span>
+                                    )}
+                                </td>
+                            </tr>
+                        );
+                    })}
+                </tbody>
+            </table>
+        </div>
+    );
+}
 
-                    {/* Pagination info */}
-                    {pagination && (
-                        <div className="mt-6 text-center text-gray-600 text-sm">
-                            Mostrando {events.length} de {pagination.totalItems} eventos
-                        </div>
-                    )}
-                </>
-            )}
+/**
+ * BillingHistory Component
+ *
+ * Main component that manages invoice data fetching and rendering.
+ * Uses useInvoices() hook from @qazuor/qzpay-react.
+ *
+ * @returns React element displaying billing history
+ *
+ * @example
+ * ```tsx
+ * import { BillingHistory } from '@/components/dashboard';
+ *
+ * <BillingHistory />
+ * ```
+ */
+export function BillingHistory() {
+    // Fetch invoices using qzpay-react hook
+    const { data, isLoading, error, refetch } = useInvoices();
+
+    // Loading state
+    if (isLoading) {
+        return <LoadingSkeleton />;
+    }
+
+    // Error state
+    if (error) {
+        return <ErrorState onRetry={() => void refetch()} />;
+    }
+
+    // Empty state
+    if (!data || data.length === 0) {
+        return <EmptyState />;
+    }
+
+    // Success state with invoices
+    return (
+        <div className="rounded-xl bg-white p-8 shadow-lg">
+            <h2 className="mb-6 font-bold text-2xl text-gray-900">Historial de Facturación</h2>
+            <InvoiceTable invoices={data} />
         </div>
     );
 }

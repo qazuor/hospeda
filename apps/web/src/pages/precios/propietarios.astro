@@ -2,9 +2,14 @@
 export const prerender = true;
 
 import Layout from '@/layout/MainLayout.astro';
+import { BillingIsland, CheckoutResultBanner } from '@/components/billing';
 import { PricingSection } from '@/components/pricing/PricingSection';
 import { PLANS_BY_CATEGORY } from '@repo/billing';
 import type { PlanDefinition, EntitlementKey } from '@repo/billing';
+import { getAuth } from '@clerk/astro/server';
+
+const { userId } = getAuth(Astro);
+const isAuthenticated = !!userId;
 
 /**
  * Owner Pricing Page
@@ -72,14 +77,25 @@ const description = 'Elegí el plan ideal para tu alojamiento. Comenzá con 14 d
         </p>
       </div>
 
-      <PricingSection
+      <!-- Checkout Result Banner -->
+      <CheckoutResultBanner client:load />
+
+      <BillingIsland
         client:load
-        plans={ownerPlans}
-        highlightedPlanSlug="owner-pro"
-        badges={badges}
-        showToggle={true}
-        getFeatures={getOwnerPlanFeatures}
-      />
+        apiUrl={import.meta.env.PUBLIC_API_URL || '/api/v1'}
+        livemode={import.meta.env.PROD}
+      >
+        <PricingSection
+          plans={ownerPlans}
+          highlightedPlanSlug="owner-pro"
+          badges={badges}
+          showToggle={true}
+          getFeatures={getOwnerPlanFeatures}
+          isAuthenticated={isAuthenticated}
+          successUrl="/mi-cuenta/suscripcion?checkout=success"
+          cancelUrl="/precios/propietarios?checkout=cancelled"
+        />
+      </BillingIsland>
 
       <!-- FAQ Section -->
       <div class="mt-20 max-w-4xl mx-auto">
