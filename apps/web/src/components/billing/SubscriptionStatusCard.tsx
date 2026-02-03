@@ -11,7 +11,8 @@
 'use client';
 
 import type { QZPaySubscription } from '@qazuor/qzpay-core';
-import type { ReactElement } from 'react';
+import { useSubscription } from '@qazuor/qzpay-react';
+import { type ReactElement, useEffect, useState } from 'react';
 import { updateBillingSubscription } from '../../store/billing';
 import { CancelSubscriptionDialog } from './CancelSubscriptionDialog';
 import { PlanChangeDialog } from './PlanChangeDialog';

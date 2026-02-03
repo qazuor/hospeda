@@ -45,7 +45,7 @@ const mockStaticPlans: PlanDefinition[] = [
         trialDays: 0,
         isDefault: true,
         sortOrder: 1,
-        entitlements: [EntitlementKey.BASIC_LISTING],
+        entitlements: [EntitlementKey.PUBLISH_ACCOMMODATIONS],
         limits: [
             {
                 key: LimitKey.MAX_ACCOMMODATIONS,
@@ -68,7 +68,7 @@ const mockStaticPlans: PlanDefinition[] = [
         trialDays: 14,
         isDefault: false,
         sortOrder: 2,
-        entitlements: [EntitlementKey.BASIC_LISTING, EntitlementKey.PRIORITY_SUPPORT],
+        entitlements: [EntitlementKey.PUBLISH_ACCOMMODATIONS, EntitlementKey.PRIORITY_SUPPORT],
         limits: [
             {
                 key: LimitKey.MAX_ACCOMMODATIONS,
@@ -92,9 +92,9 @@ const mockStaticPlans: PlanDefinition[] = [
         isDefault: false,
         sortOrder: 3,
         entitlements: [
-            EntitlementKey.BASIC_LISTING,
+            EntitlementKey.PUBLISH_ACCOMMODATIONS,
             EntitlementKey.PRIORITY_SUPPORT,
-            EntitlementKey.ADVANCED_ANALYTICS
+            EntitlementKey.VIEW_ADVANCED_STATS
         ],
         limits: [
             {
@@ -156,7 +156,7 @@ describe('PricingSection', () => {
         });
 
         it('should apply correct grid layout for 2 plans', () => {
-            const twoPlans = [mockStaticPlans[0], mockStaticPlans[1]];
+            const twoPlans = mockStaticPlans.slice(0, 2);
             const { container } = render(<PricingSection plans={twoPlans} />);
 
             const grid = container.querySelector('.grid');

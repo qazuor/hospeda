@@ -233,7 +233,9 @@ describe('BillingIsland', () => {
         expect(QZPayProvider).toHaveBeenCalled();
 
         // Verify it received billing instance and initialCustomer
-        const providerCall = (QZPayProvider as ReturnType<typeof vi.fn>).mock.calls[0][0];
+        const providerCalls = (QZPayProvider as ReturnType<typeof vi.fn>).mock.calls;
+        expect(providerCalls.length).toBeGreaterThan(0);
+        const providerCall = providerCalls[0]?.[0];
         expect(providerCall).toHaveProperty('billing');
         expect(providerCall).toHaveProperty('initialCustomer');
         expect(providerCall.initialCustomer).toEqual({ id: 'test-customer-123' });
@@ -260,7 +262,9 @@ describe('BillingIsland', () => {
         // Verify QZPayThemeProvider was called with hospedaQzpayTheme
         expect(QZPayThemeProvider).toHaveBeenCalled();
 
-        const themeProviderCall = (QZPayThemeProvider as ReturnType<typeof vi.fn>).mock.calls[0][0];
+        const themeCalls = (QZPayThemeProvider as ReturnType<typeof vi.fn>).mock.calls;
+        expect(themeCalls.length).toBeGreaterThan(0);
+        const themeProviderCall = themeCalls[0]?.[0];
         expect(themeProviderCall).toHaveProperty('theme');
         expect(themeProviderCall.theme).toBe(hospedaQzpayTheme);
     });

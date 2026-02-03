@@ -20,6 +20,55 @@ import {
     updateBillingSubscription
 } from '../../src/store/billing';
 
+/**
+ * Factory function to create mock customer with all required fields
+ */
+function createMockCustomer(overrides: Partial<QZPayCustomer> = {}): QZPayCustomer {
+    return {
+        id: overrides.id || 'cus_test123',
+        externalId: overrides.externalId || 'ext_123',
+        email: overrides.email || 'test@example.com',
+        name: overrides.name || 'Test User',
+        phone: overrides.phone || null,
+        providerCustomerIds: overrides.providerCustomerIds || {},
+        metadata: overrides.metadata || {},
+        livemode: overrides.livemode !== undefined ? overrides.livemode : false,
+        createdAt: overrides.createdAt || new Date('2024-01-01'),
+        updatedAt: overrides.updatedAt || new Date('2024-01-01'),
+        deletedAt: overrides.deletedAt !== undefined ? overrides.deletedAt : null
+    };
+}
+
+/**
+ * Factory function to create mock subscription with all required fields
+ */
+function createMockSubscription(overrides: Partial<QZPaySubscription> = {}): QZPaySubscription {
+    return {
+        id: overrides.id || 'sub_test123',
+        customerId: overrides.customerId || 'cus_test123',
+        planId: overrides.planId || 'plan_professional',
+        status: overrides.status || 'active',
+        interval: overrides.interval || 'month',
+        intervalCount: overrides.intervalCount || 1,
+        quantity: overrides.quantity || 1,
+        currentPeriodStart: overrides.currentPeriodStart || new Date('2024-01-01'),
+        currentPeriodEnd: overrides.currentPeriodEnd || new Date('2024-02-01'),
+        trialStart: overrides.trialStart !== undefined ? overrides.trialStart : null,
+        trialEnd: overrides.trialEnd !== undefined ? overrides.trialEnd : null,
+        cancelAt: overrides.cancelAt !== undefined ? overrides.cancelAt : null,
+        canceledAt: overrides.canceledAt !== undefined ? overrides.canceledAt : null,
+        cancelAtPeriodEnd:
+            overrides.cancelAtPeriodEnd !== undefined ? overrides.cancelAtPeriodEnd : false,
+        providerSubscriptionIds: overrides.providerSubscriptionIds || {},
+        promoCodeId: overrides.promoCodeId,
+        metadata: overrides.metadata || {},
+        livemode: overrides.livemode !== undefined ? overrides.livemode : false,
+        createdAt: overrides.createdAt || new Date('2024-01-01'),
+        updatedAt: overrides.updatedAt || new Date('2024-01-01'),
+        deletedAt: overrides.deletedAt !== undefined ? overrides.deletedAt : null
+    };
+}
+
 describe('billing store atoms', () => {
     beforeEach(() => {
         // Reset store before each test
@@ -50,14 +99,7 @@ describe('billing store atoms', () => {
 
     describe('updateBillingCustomer', () => {
         it('should update customer with valid data', () => {
-            const mockCustomer: QZPayCustomer = {
-                id: 'cus_test123',
-                email: 'test@example.com',
-                name: 'Test User',
-                metadata: {},
-                createdAt: new Date('2024-01-01'),
-                updatedAt: new Date('2024-01-01')
-            };
+            const mockCustomer = createMockCustomer();
 
             updateBillingCustomer(mockCustomer);
 
@@ -65,14 +107,7 @@ describe('billing store atoms', () => {
         });
 
         it('should update customer to null', () => {
-            const mockCustomer: QZPayCustomer = {
-                id: 'cus_test123',
-                email: 'test@example.com',
-                name: 'Test User',
-                metadata: {},
-                createdAt: new Date('2024-01-01'),
-                updatedAt: new Date('2024-01-01')
-            };
+            const mockCustomer = createMockCustomer();
 
             updateBillingCustomer(mockCustomer);
             expect(billingCustomer.get()).toEqual(mockCustomer);
@@ -84,18 +119,7 @@ describe('billing store atoms', () => {
 
     describe('updateBillingSubscription', () => {
         it('should update subscription with valid data', () => {
-            const mockSubscription: QZPaySubscription = {
-                id: 'sub_test123',
-                customerId: 'cus_test123',
-                planId: 'plan_professional',
-                status: 'active',
-                currentPeriodStart: new Date('2024-01-01'),
-                currentPeriodEnd: new Date('2024-02-01'),
-                cancelAtPeriodEnd: false,
-                metadata: {},
-                createdAt: new Date('2024-01-01'),
-                updatedAt: new Date('2024-01-01')
-            };
+            const mockSubscription = createMockSubscription();
 
             updateBillingSubscription(mockSubscription);
 
@@ -103,18 +127,7 @@ describe('billing store atoms', () => {
         });
 
         it('should update subscription to null', () => {
-            const mockSubscription: QZPaySubscription = {
-                id: 'sub_test123',
-                customerId: 'cus_test123',
-                planId: 'plan_professional',
-                status: 'active',
-                currentPeriodStart: new Date('2024-01-01'),
-                currentPeriodEnd: new Date('2024-02-01'),
-                cancelAtPeriodEnd: false,
-                metadata: {},
-                createdAt: new Date('2024-01-01'),
-                updatedAt: new Date('2024-01-01')
-            };
+            const mockSubscription = createMockSubscription();
 
             updateBillingSubscription(mockSubscription);
             expect(billingSubscription.get()).toEqual(mockSubscription);
@@ -202,7 +215,8 @@ describe('billing store atoms', () => {
 
             updateBillingLimits(mockLimits);
 
-            expect(billingLimits.get().storage.remaining).toBe(0);
+            const storedLimits = billingLimits.get();
+            expect(storedLimits.storage?.remaining).toBe(0);
         });
     });
 
@@ -225,27 +239,8 @@ describe('billing store atoms', () => {
     describe('resetBillingStore', () => {
         it('should reset all atoms to default values', () => {
             // Set some data
-            const mockCustomer: QZPayCustomer = {
-                id: 'cus_test123',
-                email: 'test@example.com',
-                name: 'Test User',
-                metadata: {},
-                createdAt: new Date(),
-                updatedAt: new Date()
-            };
-
-            const mockSubscription: QZPaySubscription = {
-                id: 'sub_test123',
-                customerId: 'cus_test123',
-                planId: 'plan_professional',
-                status: 'active',
-                currentPeriodStart: new Date(),
-                currentPeriodEnd: new Date(),
-                cancelAtPeriodEnd: false,
-                metadata: {},
-                createdAt: new Date(),
-                updatedAt: new Date()
-            };
+            const mockCustomer = createMockCustomer();
+            const mockSubscription = createMockSubscription();
 
             updateBillingCustomer(mockCustomer);
             updateBillingSubscription(mockSubscription);
@@ -283,14 +278,11 @@ describe('React integration with useStore', () => {
 
         expect(result.current).toBeNull();
 
-        const mockCustomer: QZPayCustomer = {
+        const mockCustomer = createMockCustomer({
             id: 'cus_react123',
             email: 'react@example.com',
-            name: 'React User',
-            metadata: {},
-            createdAt: new Date(),
-            updatedAt: new Date()
-        };
+            name: 'React User'
+        });
 
         act(() => {
             updateBillingCustomer(mockCustomer);
@@ -304,18 +296,11 @@ describe('React integration with useStore', () => {
 
         expect(result.current).toBeNull();
 
-        const mockSubscription: QZPaySubscription = {
+        const mockSubscription = createMockSubscription({
             id: 'sub_react123',
             customerId: 'cus_react123',
-            planId: 'plan_basic',
-            status: 'active',
-            currentPeriodStart: new Date('2024-01-01'),
-            currentPeriodEnd: new Date('2024-02-01'),
-            cancelAtPeriodEnd: false,
-            metadata: {},
-            createdAt: new Date(),
-            updatedAt: new Date()
-        };
+            planId: 'plan_basic'
+        });
 
         act(() => {
             updateBillingSubscription(mockSubscription);
@@ -380,14 +365,11 @@ describe('React integration with useStore', () => {
         const entitlementsHook = renderHook(() => useStore(billingEntitlements));
         const loadingHook = renderHook(() => useStore(billingIsLoading));
 
-        const mockCustomer: QZPayCustomer = {
+        const mockCustomer = createMockCustomer({
             id: 'cus_reset123',
             email: 'reset@example.com',
-            name: 'Reset User',
-            metadata: {},
-            createdAt: new Date(),
-            updatedAt: new Date()
-        };
+            name: 'Reset User'
+        });
 
         act(() => {
             updateBillingCustomer(mockCustomer);

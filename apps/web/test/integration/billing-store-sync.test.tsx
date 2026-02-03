@@ -28,6 +28,55 @@ import {
     updateBillingSubscription
 } from '../../src/store/billing';
 
+/**
+ * Factory function to create mock customer with all required fields
+ */
+function createMockCustomer(overrides: Partial<QZPayCustomer> = {}): QZPayCustomer {
+    return {
+        id: overrides.id || 'cus_test_123',
+        externalId: overrides.externalId || 'ext_123',
+        email: overrides.email || 'test@hospeda.com',
+        name: overrides.name || 'Test User',
+        phone: overrides.phone || null,
+        providerCustomerIds: overrides.providerCustomerIds || {},
+        metadata: overrides.metadata || {},
+        livemode: overrides.livemode !== undefined ? overrides.livemode : false,
+        createdAt: overrides.createdAt || new Date(),
+        updatedAt: overrides.updatedAt || new Date(),
+        deletedAt: overrides.deletedAt !== undefined ? overrides.deletedAt : null
+    };
+}
+
+/**
+ * Factory function to create mock subscription with all required fields
+ */
+function createMockSubscription(overrides: Partial<QZPaySubscription> = {}): QZPaySubscription {
+    return {
+        id: overrides.id || 'sub_test_456',
+        customerId: overrides.customerId || 'cus_test_123',
+        planId: overrides.planId || 'plan_basic',
+        status: overrides.status || 'active',
+        interval: overrides.interval || 'month',
+        intervalCount: overrides.intervalCount || 1,
+        quantity: overrides.quantity || 1,
+        currentPeriodStart: overrides.currentPeriodStart || new Date('2024-01-01'),
+        currentPeriodEnd: overrides.currentPeriodEnd || new Date('2024-02-01'),
+        trialStart: overrides.trialStart !== undefined ? overrides.trialStart : null,
+        trialEnd: overrides.trialEnd !== undefined ? overrides.trialEnd : null,
+        cancelAt: overrides.cancelAt !== undefined ? overrides.cancelAt : null,
+        canceledAt: overrides.canceledAt !== undefined ? overrides.canceledAt : null,
+        cancelAtPeriodEnd:
+            overrides.cancelAtPeriodEnd !== undefined ? overrides.cancelAtPeriodEnd : false,
+        providerSubscriptionIds: overrides.providerSubscriptionIds || {},
+        promoCodeId: overrides.promoCodeId,
+        metadata: overrides.metadata || {},
+        livemode: overrides.livemode !== undefined ? overrides.livemode : false,
+        createdAt: overrides.createdAt || new Date(),
+        updatedAt: overrides.updatedAt || new Date(),
+        deletedAt: overrides.deletedAt !== undefined ? overrides.deletedAt : null
+    };
+}
+
 describe('Billing Store Synchronization - Integration Tests', () => {
     // Reset store before each test
     beforeEach(() => {
@@ -58,14 +107,7 @@ describe('Billing Store Synchronization - Integration Tests', () => {
 
     it('should update customer ID in store', () => {
         // Arrange
-        const mockCustomer: QZPayCustomer = {
-            id: 'cus_test_123',
-            email: 'test@hospeda.com',
-            name: 'Test User',
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            livemode: false
-        };
+        const mockCustomer = createMockCustomer();
 
         // Act
         act(() => {
@@ -81,17 +123,7 @@ describe('Billing Store Synchronization - Integration Tests', () => {
 
     it('should update subscription data in store', () => {
         // Arrange
-        const mockSubscription: QZPaySubscription = {
-            id: 'sub_test_456',
-            customerId: 'cus_test_123',
-            planId: 'plan_basic',
-            status: 'active',
-            interval: 'month',
-            currentPeriodStart: new Date('2024-01-01'),
-            currentPeriodEnd: new Date('2024-02-01'),
-            createdAt: new Date(),
-            updatedAt: new Date()
-        };
+        const mockSubscription = createMockSubscription();
 
         // Act
         act(() => {
@@ -130,13 +162,10 @@ describe('Billing Store Synchronization - Integration Tests', () => {
         expect(screen.getByTestId('component-b')).toHaveTextContent('no-customer');
 
         // Update customer
-        const mockCustomer: QZPayCustomer = {
+        const mockCustomer = createMockCustomer({
             id: 'cus_shared_test',
-            email: 'shared@hospeda.com',
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            livemode: false
-        };
+            email: 'shared@hospeda.com'
+        });
 
         act(() => {
             updateBillingCustomer(mockCustomer);
@@ -186,25 +215,16 @@ describe('Billing Store Synchronization - Integration Tests', () => {
 
     it('should clear all billing state when reset', () => {
         // Arrange - populate store with data
-        const mockCustomer: QZPayCustomer = {
+        const mockCustomer = createMockCustomer({
             id: 'cus_to_clear',
-            email: 'clear@hospeda.com',
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            livemode: false
-        };
+            email: 'clear@hospeda.com'
+        });
 
-        const mockSubscription: QZPaySubscription = {
+        const mockSubscription = createMockSubscription({
             id: 'sub_to_clear',
             customerId: 'cus_to_clear',
-            planId: 'plan_test',
-            status: 'active',
-            interval: 'month',
-            currentPeriodStart: new Date(),
-            currentPeriodEnd: new Date(),
-            createdAt: new Date(),
-            updatedAt: new Date()
-        };
+            planId: 'plan_test'
+        });
 
         act(() => {
             updateBillingCustomer(mockCustomer);
@@ -241,13 +261,10 @@ describe('Billing Store Synchronization - Integration Tests', () => {
         // Act - render, set customer, unmount
         const { unmount } = render(<CustomerDisplay />);
 
-        const mockCustomer: QZPayCustomer = {
+        const mockCustomer = createMockCustomer({
             id: 'cus_persistent',
-            email: 'persistent@hospeda.com',
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            livemode: false
-        };
+            email: 'persistent@hospeda.com'
+        });
 
         act(() => {
             updateBillingCustomer(mockCustomer);
@@ -301,19 +318,16 @@ describe('Billing Store Synchronization - Integration Tests', () => {
         // Assert
         const storedLimits = billingLimits.get();
         expect(storedLimits).toEqual(limits);
-        expect(storedLimits.accommodations.current).toBe(3);
-        expect(storedLimits.photos.remaining).toBe(55);
+        expect(storedLimits.accommodations?.current).toBe(3);
+        expect(storedLimits.photos?.remaining).toBe(55);
     });
 
     it('should handle null values when clearing customer', () => {
         // Arrange - set customer first
-        const mockCustomer: QZPayCustomer = {
+        const mockCustomer = createMockCustomer({
             id: 'cus_to_null',
-            email: 'tonull@hospeda.com',
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            livemode: false
-        };
+            email: 'tonull@hospeda.com'
+        });
 
         act(() => {
             updateBillingCustomer(mockCustomer);
