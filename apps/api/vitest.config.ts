@@ -7,8 +7,8 @@ export default defineConfig({
         environment: 'node',
         setupFiles: ['./test/setup.ts'],
         include: ['test/**/*.test.ts', 'src/**/*.test.ts'],
-        // E2E tests run separately
-        exclude: ['test/e2e/**/*.test.ts', 'node_modules/**'],
+        // E2E and integration tests run separately with vitest.config.e2e.ts
+        exclude: ['test/e2e/**/*.test.ts', 'test/integration/**/*.test.ts', 'node_modules/**'],
         coverage: {
             provider: 'v8',
             reporter: ['text', 'json', 'html'],
