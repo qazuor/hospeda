@@ -1100,7 +1100,7 @@ describe('Tourist Entitlement Gates', () => {
 
             const data = await res.json();
             expect(data.error.message).toContain('recomendaciones personalizadas');
-            expect(data.error.message).toContain('VIP');
+            expect(data.error.message).toContain('todos los planes');
         });
     });
 });

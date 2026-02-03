@@ -24,10 +24,6 @@ vi.mock('../../src/utils/actor', () => ({
     getActorFromContext: vi.fn()
 }));
 
-vi.mock('../../src/utils/limit-check', () => ({
-    checkLimit: vi.fn()
-}));
-
 vi.mock('@repo/service-core', () => ({
     AccommodationService: vi.fn(),
     OwnerPromotionService: vi.fn()
@@ -43,20 +39,29 @@ vi.mock('../../src/utils/logger', () => ({
 }));
 
 import { getActorFromContext } from '../../src/utils/actor';
-import { checkLimit } from '../../src/utils/limit-check';
 
 describe('Limit Enforcement Middleware', () => {
     let mockContext: Context<AppBindings>;
     let mockNext: Next;
+    let mockLimitsMap: Map<LimitKey, number>;
 
     beforeEach(() => {
         vi.clearAllMocks();
+
+        // Create a mock limits map that will be returned by context.get()
+        mockLimitsMap = new Map<LimitKey, number>();
 
         mockContext = {
             req: {
                 param: vi.fn()
             },
-            get: vi.fn()
+            get: vi.fn((key: string) => {
+                if (key === 'userLimits') {
+                    return mockLimitsMap;
+                }
+                return undefined;
+            }),
+            header: vi.fn()
         } as unknown as Context<AppBindings>;
 
         mockNext = vi.fn();
@@ -73,6 +78,9 @@ describe('Limit Enforcement Middleware', () => {
             // Mock actor
             vi.mocked(getActorFromContext).mockReturnValue(mockActor);
 
+            // Set up limit in context
+            mockLimitsMap.set(LimitKey.MAX_ACCOMMODATIONS, 5);
+
             // Mock service count
             const mockCount = vi.fn().mockResolvedValue({
                 success: true,
@@ -85,27 +93,17 @@ describe('Limit Enforcement Middleware', () => {
                     }) as unknown as AccommodationService
             );
 
-            // Mock limit check - under limit
-            vi.mocked(checkLimit).mockReturnValue({
-                allowed: true,
-                currentCount: 3,
-                maxAllowed: 5,
-                remaining: 2
-            });
-
             const middleware = enforceAccommodationLimit();
             await middleware(mockContext, mockNext);
 
             expect(mockNext).toHaveBeenCalled();
-            expect(checkLimit).toHaveBeenCalledWith({
-                context: mockContext,
-                limitKey: LimitKey.MAX_ACCOMMODATIONS,
-                currentCount: 3
-            });
         });
 
         it('should block when at limit', async () => {
             vi.mocked(getActorFromContext).mockReturnValue(mockActor);
+
+            // Set up limit in context
+            mockLimitsMap.set(LimitKey.MAX_ACCOMMODATIONS, 5);
 
             const mockCount = vi.fn().mockResolvedValue({
                 success: true,
@@ -117,15 +115,6 @@ describe('Limit Enforcement Middleware', () => {
                         count: mockCount
                     }) as unknown as AccommodationService
             );
-
-            vi.mocked(checkLimit).mockReturnValue({
-                allowed: false,
-                currentCount: 5,
-                maxAllowed: 5,
-                remaining: 0,
-                upgradeMessage:
-                    'Has alcanzado el límite de 5 alojamientos. Actualiza tu plan para obtener más.'
-            });
 
             const middleware = enforceAccommodationLimit();
 
@@ -170,6 +159,9 @@ describe('Limit Enforcement Middleware', () => {
         it('should allow unlimited when limit is -1', async () => {
             vi.mocked(getActorFromContext).mockReturnValue(mockActor);
 
+            // Set up unlimited limit in context (not set, getRemainingLimit will return -1)
+            // Don't set limit in map - getRemainingLimit will return -1 for missing keys
+
             const mockCount = vi.fn().mockResolvedValue({
                 success: true,
                 data: { count: 100 }
@@ -180,13 +172,6 @@ describe('Limit Enforcement Middleware', () => {
                         count: mockCount
                     }) as unknown as AccommodationService
             );
-
-            vi.mocked(checkLimit).mockReturnValue({
-                allowed: true,
-                currentCount: 100,
-                maxAllowed: -1,
-                remaining: -1
-            });
 
             const middleware = enforceAccommodationLimit();
             await middleware(mockContext, mockNext);
@@ -209,6 +194,9 @@ describe('Limit Enforcement Middleware', () => {
         it('should allow when under photo limit', async () => {
             vi.mocked(getActorFromContext).mockReturnValue(mockActor);
 
+            // Set up limit in context
+            mockLimitsMap.set(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 10);
+
             const mockGetById = vi.fn().mockResolvedValue({
                 success: true,
                 data: { id: 'accommodation-id-123', photosCount: 5 }
@@ -220,26 +208,17 @@ describe('Limit Enforcement Middleware', () => {
                     }) as unknown as AccommodationService
             );
 
-            vi.mocked(checkLimit).mockReturnValue({
-                allowed: true,
-                currentCount: 5,
-                maxAllowed: 10,
-                remaining: 5
-            });
-
             const middleware = enforcePhotoLimit();
             await middleware(mockContext, mockNext);
 
             expect(mockNext).toHaveBeenCalled();
-            expect(checkLimit).toHaveBeenCalledWith({
-                context: mockContext,
-                limitKey: LimitKey.MAX_PHOTOS_PER_ACCOMMODATION,
-                currentCount: 5
-            });
         });
 
         it('should block when at photo limit', async () => {
             vi.mocked(getActorFromContext).mockReturnValue(mockActor);
+
+            // Set up limit in context
+            mockLimitsMap.set(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 10);
 
             const mockGetById = vi.fn().mockResolvedValue({
                 success: true,
@@ -251,15 +230,6 @@ describe('Limit Enforcement Middleware', () => {
                         getById: mockGetById
                     }) as unknown as AccommodationService
             );
-
-            vi.mocked(checkLimit).mockReturnValue({
-                allowed: false,
-                currentCount: 10,
-                maxAllowed: 10,
-                remaining: 0,
-                upgradeMessage:
-                    'Has alcanzado el límite de 10 fotos por alojamiento. Actualiza tu plan para obtener más.'
-            });
 
             const middleware = enforcePhotoLimit();
 
@@ -279,6 +249,9 @@ describe('Limit Enforcement Middleware', () => {
         it('should handle accommodation with 0 photos', async () => {
             vi.mocked(getActorFromContext).mockReturnValue(mockActor);
 
+            // Set up limit in context
+            mockLimitsMap.set(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 10);
+
             const mockGetById = vi.fn().mockResolvedValue({
                 data: { id: 'accommodation-id-123' }
             });
@@ -288,13 +261,6 @@ describe('Limit Enforcement Middleware', () => {
                         getById: mockGetById
                     }) as unknown as AccommodationService
             );
-
-            vi.mocked(checkLimit).mockReturnValue({
-                allowed: true,
-                currentCount: 0,
-                maxAllowed: 10,
-                remaining: 10
-            });
 
             const middleware = enforcePhotoLimit();
             await middleware(mockContext, mockNext);
@@ -313,6 +279,9 @@ describe('Limit Enforcement Middleware', () => {
         it('should allow when under promotion limit', async () => {
             vi.mocked(getActorFromContext).mockReturnValue(mockActor);
 
+            // Set up limit in context
+            mockLimitsMap.set(LimitKey.MAX_ACTIVE_PROMOTIONS, 3);
+
             const mockCount = vi.fn().mockResolvedValue({
                 success: true,
                 data: { count: 2 }
@@ -323,13 +292,6 @@ describe('Limit Enforcement Middleware', () => {
                         count: mockCount
                     }) as unknown as OwnerPromotionService
             );
-
-            vi.mocked(checkLimit).mockReturnValue({
-                allowed: true,
-                currentCount: 2,
-                maxAllowed: 3,
-                remaining: 1
-            });
 
             const middleware = enforcePromotionLimit();
             await middleware(mockContext, mockNext);
@@ -345,6 +307,9 @@ describe('Limit Enforcement Middleware', () => {
         it('should block when at promotion limit', async () => {
             vi.mocked(getActorFromContext).mockReturnValue(mockActor);
 
+            // Set up limit in context
+            mockLimitsMap.set(LimitKey.MAX_ACTIVE_PROMOTIONS, 3);
+
             const mockCount = vi.fn().mockResolvedValue({
                 success: true,
                 data: { count: 3 }
@@ -355,15 +320,6 @@ describe('Limit Enforcement Middleware', () => {
                         count: mockCount
                     }) as unknown as OwnerPromotionService
             );
-
-            vi.mocked(checkLimit).mockReturnValue({
-                allowed: false,
-                currentCount: 3,
-                maxAllowed: 3,
-                remaining: 0,
-                upgradeMessage:
-                    'Has alcanzado el límite de 3 promociones activas. Actualiza tu plan para obtener más.'
-            });
 
             const middleware = enforcePromotionLimit();
 
@@ -393,6 +349,9 @@ describe('Limit Enforcement Middleware', () => {
         it('should only count active promotions', async () => {
             vi.mocked(getActorFromContext).mockReturnValue(mockActor);
 
+            // Set up limit in context
+            mockLimitsMap.set(LimitKey.MAX_ACTIVE_PROMOTIONS, 3);
+
             const mockCount = vi.fn().mockResolvedValue({
                 success: true,
                 data: { count: 1 }
@@ -403,13 +362,6 @@ describe('Limit Enforcement Middleware', () => {
                         count: mockCount
                     }) as unknown as OwnerPromotionService
             );
-
-            vi.mocked(checkLimit).mockReturnValue({
-                allowed: true,
-                currentCount: 1,
-                maxAllowed: 3,
-                remaining: 2
-            });
 
             const middleware = enforcePromotionLimit();
             await middleware(mockContext, mockNext);
@@ -446,11 +398,12 @@ describe('Limit Enforcement Middleware', () => {
                         }) as unknown as AccommodationService
                 );
 
-                vi.mocked(checkLimit).mockReturnValue({
-                    allowed: true,
-                    currentCount: 2,
-                    maxAllowed: 5,
-                    remaining: 3
+                // Set up middleware to inject limits into context
+                app.use('/*', async (c, next) => {
+                    const limitsMap = new Map<LimitKey, number>();
+                    limitsMap.set(LimitKey.MAX_ACCOMMODATIONS, 5);
+                    c.set('userLimits', limitsMap);
+                    await next();
                 });
 
                 app.use('/*', enforceAccommodationLimit());
@@ -490,13 +443,12 @@ describe('Limit Enforcement Middleware', () => {
                         }) as unknown as AccommodationService
                 );
 
-                vi.mocked(checkLimit).mockReturnValue({
-                    allowed: false,
-                    currentCount: 5,
-                    maxAllowed: 5,
-                    remaining: 0,
-                    upgradeMessage:
-                        'Has alcanzado el límite de 5 alojamientos. Actualiza tu plan para obtener más.'
+                // Set up middleware to inject limits into context
+                app.use('/*', async (c, next) => {
+                    const limitsMap = new Map<LimitKey, number>();
+                    limitsMap.set(LimitKey.MAX_ACCOMMODATIONS, 5);
+                    c.set('userLimits', limitsMap);
+                    await next();
                 });
 
                 app.use('/*', enforceAccommodationLimit());
@@ -590,13 +542,12 @@ describe('Limit Enforcement Middleware', () => {
                         }) as unknown as AccommodationService
                 );
 
-                vi.mocked(checkLimit).mockReturnValue({
-                    allowed: false,
-                    currentCount: 0,
-                    maxAllowed: 0,
-                    remaining: 0,
-                    upgradeMessage:
-                        'Esta funcionalidad no está disponible en tu plan actual. Actualiza tu plan para poder usar alojamientos.'
+                // Set up middleware to inject limits into context (limit = 0 means disabled)
+                app.use('/*', async (c, next) => {
+                    const limitsMap = new Map<LimitKey, number>();
+                    limitsMap.set(LimitKey.MAX_ACCOMMODATIONS, 0);
+                    c.set('userLimits', limitsMap);
+                    await next();
                 });
 
                 app.use('/*', enforceAccommodationLimit());
@@ -626,6 +577,8 @@ describe('Limit Enforcement Middleware', () => {
 
                 vi.mocked(getActorFromContext).mockReturnValue(mockActor);
 
+                // Don't set limit - will return -1 (unlimited)
+
                 const mockCount = vi.fn().mockResolvedValue({
                     success: true,
                     data: { count: 999999 }
@@ -636,13 +589,6 @@ describe('Limit Enforcement Middleware', () => {
                             count: mockCount
                         }) as unknown as AccommodationService
                 );
-
-                vi.mocked(checkLimit).mockReturnValue({
-                    allowed: true,
-                    currentCount: 999999,
-                    maxAllowed: -1,
-                    remaining: -1
-                });
 
                 const middleware = enforceAccommodationLimit();
                 await middleware(mockContext, mockNext);
@@ -699,11 +645,12 @@ describe('Limit Enforcement Middleware', () => {
                         }) as unknown as OwnerPromotionService
                 );
 
-                vi.mocked(checkLimit).mockReturnValue({
-                    allowed: true,
-                    currentCount: 1,
-                    maxAllowed: 3,
-                    remaining: 2
+                // Set up middleware to inject limits into context
+                app.use('/*', async (c, next) => {
+                    const limitsMap = new Map<LimitKey, number>();
+                    limitsMap.set(LimitKey.MAX_ACTIVE_PROMOTIONS, 3);
+                    c.set('userLimits', limitsMap);
+                    await next();
                 });
 
                 app.use('/*', enforcePromotionLimit());
@@ -743,13 +690,12 @@ describe('Limit Enforcement Middleware', () => {
                         }) as unknown as OwnerPromotionService
                 );
 
-                vi.mocked(checkLimit).mockReturnValue({
-                    allowed: false,
-                    currentCount: 3,
-                    maxAllowed: 3,
-                    remaining: 0,
-                    upgradeMessage:
-                        'Has alcanzado el límite de 3 promociones activas. Actualiza tu plan para obtener más.'
+                // Set up middleware to inject limits into context
+                app.use('/*', async (c, next) => {
+                    const limitsMap = new Map<LimitKey, number>();
+                    limitsMap.set(LimitKey.MAX_ACTIVE_PROMOTIONS, 3);
+                    c.set('userLimits', limitsMap);
+                    await next();
                 });
 
                 app.use('/*', enforcePromotionLimit());
@@ -820,11 +766,14 @@ describe('Limit Enforcement Middleware', () => {
                 );
 
                 // Both limits OK
-                vi.mocked(checkLimit).mockReturnValue({
-                    allowed: true,
-                    currentCount: 2,
-                    maxAllowed: 5,
-                    remaining: 3
+
+                // Set up middleware to inject limits into context
+                app.use('/*', async (c, next) => {
+                    const limitsMap = new Map<LimitKey, number>();
+                    limitsMap.set(LimitKey.MAX_ACCOMMODATIONS, 5);
+                    limitsMap.set(LimitKey.MAX_ACTIVE_PROMOTIONS, 3);
+                    c.set('userLimits', limitsMap);
+                    await next();
                 });
 
                 // Chain both middleware
@@ -857,6 +806,9 @@ describe('Limit Enforcement Middleware', () => {
 
             vi.mocked(getActorFromContext).mockReturnValue(mockActor);
 
+            // Set up limit in context
+            mockLimitsMap.set(LimitKey.MAX_ACCOMMODATIONS, 10);
+
             const mockCount = vi.fn().mockResolvedValue({
                 success: true,
                 data: { count: 10 }
@@ -867,14 +819,6 @@ describe('Limit Enforcement Middleware', () => {
                         count: mockCount
                     }) as unknown as AccommodationService
             );
-
-            vi.mocked(checkLimit).mockReturnValue({
-                allowed: false,
-                currentCount: 10,
-                maxAllowed: 10,
-                remaining: 0,
-                upgradeMessage: 'Has alcanzado el límite de 10 alojamientos.'
-            });
 
             const middleware = enforceAccommodationLimit();
 

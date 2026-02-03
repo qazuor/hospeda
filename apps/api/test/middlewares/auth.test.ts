@@ -19,7 +19,8 @@ beforeEach(() => {
         HOSPEDA_CLERK_SECRET_KEY: 'YOUR_TEST_SECRET_HERE',
         HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY: 'YOUR_TEST_PUBLISHABLE_HERE',
         NODE_ENV: 'test',
-        API_VALIDATION_CLERK_AUTH_ENABLED: 'false'
+        DISABLE_CLERK_AUTH: 'true',
+        CI: 'false'
     };
 });
 
@@ -40,7 +41,7 @@ describe('Auth Middleware', () => {
             // Call the function
             clerkAuth();
 
-            // In test environment with API_VALIDATION_CLERK_AUTH_ENABLED=false,
+            // In test environment with DISABLE_CLERK_AUTH=true,
             // clerkAuth should return a mock middleware, not call clerkMiddleware
             expect(mockClerkMiddleware).not.toHaveBeenCalled();
         });
@@ -68,8 +69,8 @@ describe('Auth Middleware', () => {
         });
 
         it('should use environment variables for configuration', async () => {
-            // Set up environment for real Clerk auth
-            process.env.API_VALIDATION_CLERK_AUTH_ENABLED = 'true';
+            // Set up environment for real Clerk auth (disable mock)
+            process.env.DISABLE_CLERK_AUTH = 'false';
 
             // Force reimport to get new behavior
             vi.resetModules();
@@ -87,9 +88,11 @@ describe('Auth Middleware', () => {
 
     describe('Integration with Hono', () => {
         it('should integrate properly with Hono app', async () => {
-            // Enable auth for this test
-            process.env.API_VALIDATION_CLERK_AUTH_ENABLED = 'true';
+            // Enable real Clerk auth for this test
+            process.env.DISABLE_CLERK_AUTH = 'false';
 
+            // Force reimport
+            vi.resetModules();
             const { clerkAuth } = await import('../../src/middlewares/auth');
 
             // Mock middleware that calls next()
@@ -108,13 +111,15 @@ describe('Auth Middleware', () => {
             expect(mockMiddleware).toHaveBeenCalled();
 
             // Restore original value
-            process.env.API_VALIDATION_CLERK_AUTH_ENABLED = 'false';
+            process.env.DISABLE_CLERK_AUTH = 'true';
         });
 
         it('should handle middleware errors gracefully', async () => {
-            // Enable auth for this test
-            process.env.API_VALIDATION_CLERK_AUTH_ENABLED = 'true';
+            // Enable real Clerk auth for this test
+            process.env.DISABLE_CLERK_AUTH = 'false';
 
+            // Force reimport
+            vi.resetModules();
             const { clerkAuth } = await import('../../src/middlewares/auth');
 
             // Mock middleware that throws an error
@@ -124,6 +129,12 @@ describe('Auth Middleware', () => {
             mockClerkMiddleware.mockReturnValue(mockMiddleware);
 
             const app = new Hono();
+
+            // Add error handler to catch middleware errors
+            app.onError((err, c) => {
+                return c.json({ error: err.message }, 500);
+            });
+
             app.use(clerkAuth());
             app.get('/test', (c) => c.json({ message: 'success' }));
 
@@ -132,17 +143,18 @@ describe('Auth Middleware', () => {
             expect(res.status).toBe(500);
 
             // Restore original value
-            process.env.API_VALIDATION_CLERK_AUTH_ENABLED = 'false';
+            process.env.DISABLE_CLERK_AUTH = 'true';
         });
     });
 
     describe('Configuration Validation', () => {
         it('should handle missing environment variables gracefully', async () => {
-            // Set up environment with missing Clerk keys but auth disabled
+            // Set up environment with missing Clerk keys but mock auth enabled
             process.env = {
                 ...originalEnv,
                 NODE_ENV: 'test',
-                API_VALIDATION_CLERK_AUTH_ENABLED: 'false'
+                DISABLE_CLERK_AUTH: 'true',
+                CI: 'false'
                 // HOSPEDA_CLERK_SECRET_KEY and HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY are undefined
             };
 
@@ -150,7 +162,7 @@ describe('Auth Middleware', () => {
             vi.resetModules();
             const { clerkAuth } = await import('../../src/middlewares/auth');
 
-            // Should not throw when auth is disabled
+            // Should not throw when mock auth is enabled
             expect(() => clerkAuth()).not.toThrow();
 
             const middleware = clerkAuth();
@@ -165,9 +177,9 @@ describe('Auth Middleware', () => {
             process.env.HOSPEDA_CLERK_SECRET_KEY = undefined;
             process.env.HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY = undefined;
 
-            // Set up environment with Clerk auth enabled but missing keys
+            // Set up environment with real Clerk auth enabled but missing keys
             process.env.NODE_ENV = 'test';
-            process.env.API_VALIDATION_CLERK_AUTH_ENABLED = 'true';
+            process.env.DISABLE_CLERK_AUTH = 'false';
 
             // Force reimport of the module
             vi.resetModules();

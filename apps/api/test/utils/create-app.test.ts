@@ -43,7 +43,8 @@ vi.mock('../../src/middlewares/rate-limit', () => ({
 }));
 
 vi.mock('../../src/middlewares/security', () => ({
-    securityHeadersMiddleware: vi.fn(() => vi.fn())
+    securityHeadersMiddleware: vi.fn(() => vi.fn()),
+    originVerificationMiddleware: vi.fn(() => vi.fn())
 }));
 
 vi.mock('../../src/middlewares/validation', () => ({
@@ -55,15 +56,34 @@ vi.mock('hono/request-id', () => ({
     requestId: vi.fn(() => vi.fn())
 }));
 
-// Mock OpenAPIHono
-const mockOpenAPIHono = vi.fn();
-vi.mock('@hono/zod-openapi', () => ({
-    OpenAPIHono: mockOpenAPIHono
-}));
+// Mock OpenAPIHono while preserving other exports like 'z'
+vi.mock('@hono/zod-openapi', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@hono/zod-openapi')>();
+    const mockOpenAPIHono = vi.fn();
+
+    // Set default implementation
+    mockOpenAPIHono.mockImplementation(() => ({
+        onError: vi.fn(),
+        use: vi.fn().mockReturnThis(),
+        notFound: vi.fn(),
+        route: vi.fn().mockReturnThis(),
+        get: vi.fn(),
+        request: vi.fn()
+    }));
+
+    return {
+        ...actual,
+        OpenAPIHono: mockOpenAPIHono
+    };
+});
 
 describe('Create App Utility', () => {
-    beforeEach(() => {
+    beforeEach(async () => {
         vi.clearAllMocks();
+
+        // Get the mocked OpenAPIHono from the module
+        const { OpenAPIHono } = await import('@hono/zod-openapi');
+        const mockOpenAPIHono = vi.mocked(OpenAPIHono);
 
         // Reset the mock implementation for each test
         mockOpenAPIHono.mockImplementation(() => ({
@@ -84,6 +104,9 @@ describe('Create App Utility', () => {
         });
 
         it('should create router with strict: false configuration', async () => {
+            const { OpenAPIHono } = await import('@hono/zod-openapi');
+            const mockOpenAPIHono = vi.mocked(OpenAPIHono);
+
             const module = await import('../../src/utils/create-app');
             module.createRouter();
             expect(mockOpenAPIHono).toHaveBeenCalledWith({
@@ -100,6 +123,9 @@ describe('Create App Utility', () => {
         });
 
         it('should register global error handler', async () => {
+            const { OpenAPIHono } = await import('@hono/zod-openapi');
+            const mockOpenAPIHono = vi.mocked(OpenAPIHono);
+
             const module = await import('../../src/utils/create-app');
 
             const mockApp = {
@@ -116,6 +142,9 @@ describe('Create App Utility', () => {
         });
 
         it('should register all middlewares in correct order', async () => {
+            const { OpenAPIHono } = await import('@hono/zod-openapi');
+            const mockOpenAPIHono = vi.mocked(OpenAPIHono);
+
             const module = await import('../../src/utils/create-app');
 
             const mockApp = {
@@ -128,12 +157,17 @@ describe('Create App Utility', () => {
             module.default();
 
             // Verify middleware registration order
-            // 14 middlewares: requestId, favicon, logger, cors, security, rateLimit,
-            // compression, cache, metrics, validation, responseFormatting, mockAuth, clerkAuth, actor
-            expect(mockApp.use).toHaveBeenCalledTimes(14);
+            // 20 middlewares: requestId, favicon, logger, cors, originVerification, securityHeaders,
+            // rateLimit, compression, validation, cache, metrics, responseFormatting,
+            // responseValidator, mockAuth (test env), clerkAuth, actor, billing,
+            // billingCustomer, entitlement, trial
+            expect(mockApp.use).toHaveBeenCalledTimes(20);
         });
 
         it('should register notFound handler', async () => {
+            const { OpenAPIHono } = await import('@hono/zod-openapi');
+            const mockOpenAPIHono = vi.mocked(OpenAPIHono);
+
             const module = await import('../../src/utils/create-app');
 
             const mockApp = {
@@ -149,6 +183,9 @@ describe('Create App Utility', () => {
         });
 
         it('should return the configured app', async () => {
+            const { OpenAPIHono } = await import('@hono/zod-openapi');
+            const mockOpenAPIHono = vi.mocked(OpenAPIHono);
+
             const module = await import('../../src/utils/create-app');
 
             const mockApp = {
@@ -166,6 +203,9 @@ describe('Create App Utility', () => {
 
     describe('createTestApp', () => {
         it('should create test app with router', async () => {
+            const { OpenAPIHono } = await import('@hono/zod-openapi');
+            const mockOpenAPIHono = vi.mocked(OpenAPIHono);
+
             const module = await import('../../src/utils/create-app');
 
             const mockRouter = {
@@ -187,6 +227,9 @@ describe('Create App Utility', () => {
         });
 
         it('should use createApp internally', async () => {
+            const { OpenAPIHono } = await import('@hono/zod-openapi');
+            const mockOpenAPIHono = vi.mocked(OpenAPIHono);
+
             const module = await import('../../src/utils/create-app');
 
             const mockRouter = {
@@ -227,6 +270,9 @@ describe('Create App Utility', () => {
 
     describe('App Configuration', () => {
         it('should create app with OpenAPIHono configuration', async () => {
+            const { OpenAPIHono } = await import('@hono/zod-openapi');
+            const mockOpenAPIHono = vi.mocked(OpenAPIHono);
+
             const module = await import('../../src/utils/create-app');
             module.default();
 
@@ -236,6 +282,9 @@ describe('Create App Utility', () => {
         });
 
         it('should register all required middlewares', async () => {
+            const { OpenAPIHono } = await import('@hono/zod-openapi');
+            const mockOpenAPIHono = vi.mocked(OpenAPIHono);
+
             const module = await import('../../src/utils/create-app');
 
             const mockApp = {
@@ -255,6 +304,9 @@ describe('Create App Utility', () => {
 
     describe('Error Handling', () => {
         it('should handle middleware registration errors gracefully', async () => {
+            const { OpenAPIHono } = await import('@hono/zod-openapi');
+            const mockOpenAPIHono = vi.mocked(OpenAPIHono);
+
             const module = await import('../../src/utils/create-app');
 
             const mockApp = {
@@ -270,6 +322,9 @@ describe('Create App Utility', () => {
         });
 
         it('should handle app creation errors', async () => {
+            const { OpenAPIHono } = await import('@hono/zod-openapi');
+            const mockOpenAPIHono = vi.mocked(OpenAPIHono);
+
             const module = await import('../../src/utils/create-app');
 
             mockOpenAPIHono.mockImplementation(() => {

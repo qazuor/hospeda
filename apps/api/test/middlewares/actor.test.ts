@@ -194,7 +194,8 @@ describe('Actor Middleware', () => {
             expect(data.actor).toEqual({
                 id: 'user-123',
                 role: RoleEnum.USER,
-                permissions: [PermissionEnum.ACCESS_API_PUBLIC, PermissionEnum.USER_UPDATE_PROFILE]
+                permissions: [PermissionEnum.ACCESS_API_PUBLIC, PermissionEnum.USER_UPDATE_PROFILE],
+                entitlements: expect.any(Object) // Entitlements can be empty or populated
             });
             expect(mockUserCache.getUser).toHaveBeenCalledWith('user-123');
         });

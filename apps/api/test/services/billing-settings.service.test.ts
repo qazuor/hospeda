@@ -153,7 +153,7 @@ describe('BillingSettingsService', () => {
                 action: 'billing_settings_update',
                 entityType: 'settings',
                 entityId: 'global',
-                metadata: customSettings,
+                changes: customSettings,
                 createdAt: new Date()
             };
 
@@ -178,7 +178,7 @@ describe('BillingSettingsService', () => {
                 action: 'billing_settings_update',
                 entityType: 'settings',
                 entityId: 'global',
-                metadata: null,
+                changes: null,
                 createdAt: new Date()
             };
 
@@ -197,7 +197,7 @@ describe('BillingSettingsService', () => {
                 action: 'billing_settings_update',
                 entityType: 'settings',
                 entityId: 'global',
-                metadata: 'invalid-string',
+                changes: 'invalid-string',
                 createdAt: new Date()
             };
 
@@ -261,11 +261,15 @@ describe('BillingSettingsService', () => {
                 entityType: 'settings',
                 entityId: 'global',
                 actorId: null,
-                metadata: {
+                actorType: 'system',
+                changes: {
                     ...DEFAULT_SETTINGS,
                     ...patch
                 },
-                livemode: true
+                previousValues: DEFAULT_SETTINGS,
+                livemode: true,
+                ipAddress: null,
+                userAgent: null
             });
         });
 
@@ -285,8 +289,12 @@ describe('BillingSettingsService', () => {
                 entityType: 'settings',
                 entityId: 'global',
                 actorId: actorId,
-                metadata: expect.any(Object),
-                livemode: true
+                actorType: 'admin',
+                changes: expect.any(Object),
+                previousValues: expect.any(Object),
+                livemode: true,
+                ipAddress: null,
+                userAgent: null
             });
         });
 
@@ -533,8 +541,12 @@ describe('BillingSettingsService', () => {
                 entityType: 'settings',
                 entityId: 'global',
                 actorId: null,
-                metadata: DEFAULT_SETTINGS,
-                livemode: true
+                actorType: 'system',
+                changes: DEFAULT_SETTINGS,
+                previousValues: null,
+                livemode: true,
+                ipAddress: null,
+                userAgent: null
             });
         });
 
@@ -552,8 +564,12 @@ describe('BillingSettingsService', () => {
                 entityType: 'settings',
                 entityId: 'global',
                 actorId: actorId,
-                metadata: DEFAULT_SETTINGS,
-                livemode: true
+                actorType: 'admin',
+                changes: DEFAULT_SETTINGS,
+                previousValues: null,
+                livemode: true,
+                ipAddress: null,
+                userAgent: null
             });
         });
 
@@ -621,7 +637,7 @@ describe('BillingSettingsService', () => {
                 action: 'billing_settings_update',
                 entityType: 'settings',
                 entityId: 'global',
-                metadata: existingSettings,
+                changes: existingSettings,
                 createdAt: new Date()
             };
 

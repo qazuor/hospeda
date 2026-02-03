@@ -55,12 +55,8 @@ describe('Security Middleware', () => {
             expect(res.status).toBe(200);
             expect(res.headers.get('Content-Security-Policy')).toBeDefined();
             expect(res.headers.get('Content-Security-Policy')).toContain("default-src 'self'");
-            expect(res.headers.get('Content-Security-Policy')).toContain(
-                "script-src 'self' 'unsafe-inline'"
-            );
-            expect(res.headers.get('Content-Security-Policy')).toContain(
-                "style-src 'self' 'unsafe-inline'"
-            );
+            expect(res.headers.get('Content-Security-Policy')).toContain("script-src 'self'");
+            expect(res.headers.get('Content-Security-Policy')).toContain("style-src 'self'");
         });
 
         it('should include Strict-Transport-Security header', async () => {
@@ -308,28 +304,28 @@ describe('Security Middleware', () => {
 
             // Check for essential CSP directives
             expect(csp).toContain("default-src 'self'");
-            expect(csp).toContain("script-src 'self' 'unsafe-inline'");
-            expect(csp).toContain("style-src 'self' 'unsafe-inline'");
+            expect(csp).toContain("script-src 'self'");
+            expect(csp).toContain("style-src 'self'");
             expect(csp).toContain("img-src 'self' data: https:");
             expect(csp).toContain("connect-src 'self'");
             expect(csp).toContain("font-src 'self' https: data:");
             expect(csp).toContain("object-src 'none'");
             expect(csp).toContain("media-src 'self'");
-            expect(csp).toContain("frame-src 'self'");
+            expect(csp).toContain("frame-src 'none'");
         });
 
         it('should prevent XSS attacks with proper script-src directive', async () => {
             const res = await app.request('/test');
 
             const csp = res.headers.get('Content-Security-Policy');
-            expect(csp).toContain("script-src 'self' 'unsafe-inline'");
+            expect(csp).toContain("script-src 'self'");
         });
 
         it('should prevent clickjacking with frame-src directive', async () => {
             const res = await app.request('/test');
 
             const csp = res.headers.get('Content-Security-Policy');
-            expect(csp).toContain("frame-src 'self'");
+            expect(csp).toContain("frame-src 'none'");
         });
     });
 

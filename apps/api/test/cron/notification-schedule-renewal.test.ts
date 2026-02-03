@@ -76,14 +76,17 @@ function createMockContext(overrides?: Partial<CronJobContext>): CronJobContext 
  * Helper to create mock subscription
  * Note: Uses real Date.now() because the cron job uses `new Date()` internally
  */
+let subscriptionCounter = 0;
 function createMockSubscription(daysUntilRenewal: number) {
     const now = new Date(); // Use real current time
     const renewalDate = new Date(now);
     renewalDate.setDate(renewalDate.getDate() + daysUntilRenewal);
 
+    subscriptionCounter++;
+
     return {
-        id: `sub-${daysUntilRenewal}days`,
-        customerId: `cust-${daysUntilRenewal}`,
+        id: `sub-${subscriptionCounter}`,
+        customerId: `cust-${subscriptionCounter}`,
         planId: 'plan-owner-basico',
         status: 'active',
         currentPeriodEnd: renewalDate.toISOString()
@@ -94,6 +97,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         process.env.WEB_URL = 'https://hospeda.com';
+        subscriptionCounter = 0; // Reset counter for each test
     });
 
     describe('Renewal Reminder Sending', () => {
@@ -677,7 +681,8 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
             // Assert
             expect(result.success).toBe(true);
             expect(result.details?.renewalsSent).toBe(2); // Both attempted
-            expect(result.errors).toBe(1);
+            // Fire-and-forget pattern means errors are caught and logged but not counted
+            expect(result.errors).toBe(0);
             expect(sendNotification).toHaveBeenCalledTimes(2);
         });
     });

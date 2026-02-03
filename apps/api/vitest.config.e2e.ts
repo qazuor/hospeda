@@ -1,4 +1,5 @@
 import { resolve } from 'node:path';
+import tsconfigPaths from 'vite-tsconfig-paths';
 import { defineConfig } from 'vitest/config';
 
 /**
@@ -9,6 +10,7 @@ import { defineConfig } from 'vitest/config';
  * which automatically loads .env.test when NODE_ENV=test
  */
 export default defineConfig({
+    plugins: [tsconfigPaths()],
     test: {
         globals: true,
         environment: 'node',
@@ -51,7 +53,13 @@ export default defineConfig({
             '@repo/logger': resolve(__dirname, '../../packages/logger/src'),
             '@repo/utils': resolve(__dirname, '../../packages/utils/src'),
             '@repo/config': resolve(__dirname, '../../packages/config/src'),
-            '@repo/service-core': resolve(__dirname, '../../packages/service-core/src')
+            '@repo/service-core': resolve(__dirname, '../../packages/service-core/src'),
+            '@repo/billing': resolve(__dirname, '../../packages/billing/src'),
+            '@repo/notifications': resolve(__dirname, '../../packages/notifications/src')
         }
+    },
+    // Don't try to bundle external dependencies - let Node.js resolve them
+    ssr: {
+        external: ['drizzle-orm', 'pg', 'zod']
     }
 });

@@ -8,11 +8,12 @@
 
 import { ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { BillingMetricsService } from '../../src/services/billing-metrics.service';
 
-// Mock drizzle-orm functions
-// sql is a tagged template function that needs special handling
-vi.mock('drizzle-orm', () => {
+// Mock database execute function
+const mockExecute = vi.fn();
+
+// Mock @repo/db - MUST be before imports
+vi.mock('@repo/db', () => {
     const mockSql = Object.assign(
         vi.fn((...args: any[]) => ({
             // Return a mock SQL object
@@ -24,24 +25,12 @@ vi.mock('drizzle-orm', () => {
     );
 
     return {
-        and: vi.fn(),
-        count: vi.fn(),
-        desc: vi.fn(),
-        eq: vi.fn(),
-        gte: vi.fn(),
+        getDb: vi.fn(() => ({
+            execute: mockExecute
+        })),
         sql: mockSql
     };
 });
-
-// Mock database execute function
-const mockExecute = vi.fn();
-
-// Mock getDb to return object with execute method
-vi.mock('@repo/db', () => ({
-    getDb: vi.fn(() => ({
-        execute: mockExecute
-    }))
-}));
 
 // Mock logger
 vi.mock('../../src/utils/logger', () => ({
@@ -52,6 +41,9 @@ vi.mock('../../src/utils/logger', () => ({
         warn: vi.fn()
     }
 }));
+
+// Import after mocks
+import { BillingMetricsService } from '../../src/services/billing-metrics.service';
 
 describe('BillingMetricsService', () => {
     let service: BillingMetricsService;
@@ -67,7 +59,7 @@ describe('BillingMetricsService', () => {
             mockExecute
                 .mockResolvedValueOnce({ rows: [{ count: '10' }] }) // active subscriptions
                 .mockResolvedValueOnce({ rows: [{ count: '3' }] }) // trialing subscriptions
-                .mockResolvedValueOnce({ rows: [{ mrr_count: '8' }] }) // MRR count
+                .mockResolvedValueOnce({ rows: [{ mrr_total: '8000' }] }) // MRR total
                 .mockResolvedValueOnce({ rows: [{ churned: '2' }] }) // churned subscriptions
                 .mockResolvedValueOnce({ rows: [{ converted: '5', total_trials: '10' }] }) // trial conversion
                 .mockResolvedValueOnce({ rows: [{ count: '50' }] }) // total customers
@@ -81,7 +73,7 @@ describe('BillingMetricsService', () => {
             expect(result.data).toBeDefined();
             expect(result.data?.activeSubscriptions).toBe(10);
             expect(result.data?.trialingSubscriptions).toBe(3);
-            expect(result.data?.mrr).toBe(8000); // 8 * 1000
+            expect(result.data?.mrr).toBe(8000);
             expect(result.data?.churnRate).toBe(20); // (2/10) * 100
             expect(result.data?.arpu).toBe(800); // 8000 / 10
             expect(result.data?.trialConversionRate).toBe(50); // (5/10) * 100
@@ -95,7 +87,7 @@ describe('BillingMetricsService', () => {
             mockExecute
                 .mockResolvedValueOnce({ rows: [{ count: '15' }] })
                 .mockResolvedValueOnce({ rows: [{ count: '2' }] })
-                .mockResolvedValueOnce({ rows: [{ mrr_count: '12.5' }] }) // 12.5 subscriptions normalized to monthly
+                .mockResolvedValueOnce({ rows: [{ mrr_total: '12500.50' }] }) // MRR total with decimals
                 .mockResolvedValueOnce({ rows: [{ churned: '1' }] })
                 .mockResolvedValueOnce({ rows: [{ converted: '3', total_trials: '5' }] })
                 .mockResolvedValueOnce({ rows: [{ count: '75' }] })
@@ -106,7 +98,7 @@ describe('BillingMetricsService', () => {
 
             // Assert
             expect(result.success).toBe(true);
-            expect(result.data?.mrr).toBe(12500); // Math.round(12.5 * 1000)
+            expect(result.data?.mrr).toBe(12501); // Math.round(12500.50)
         });
 
         it('should calculate churn rate as percentage of active subscriptions', async () => {
@@ -114,7 +106,7 @@ describe('BillingMetricsService', () => {
             mockExecute
                 .mockResolvedValueOnce({ rows: [{ count: '50' }] }) // active
                 .mockResolvedValueOnce({ rows: [{ count: '5' }] }) // trialing
-                .mockResolvedValueOnce({ rows: [{ mrr_count: '40' }] })
+                .mockResolvedValueOnce({ rows: [{ mrr_total: '40000' }] })
                 .mockResolvedValueOnce({ rows: [{ churned: '5' }] }) // 5 churned
                 .mockResolvedValueOnce({ rows: [{ converted: '10', total_trials: '20' }] })
                 .mockResolvedValueOnce({ rows: [{ count: '100' }] })
@@ -133,7 +125,7 @@ describe('BillingMetricsService', () => {
             mockExecute
                 .mockResolvedValueOnce({ rows: [{ count: '25' }] }) // active
                 .mockResolvedValueOnce({ rows: [{ count: '5' }] })
-                .mockResolvedValueOnce({ rows: [{ mrr_count: '20' }] }) // MRR = 20,000
+                .mockResolvedValueOnce({ rows: [{ mrr_total: '20000' }] }) // MRR = 20,000
                 .mockResolvedValueOnce({ rows: [{ churned: '3' }] })
                 .mockResolvedValueOnce({ rows: [{ converted: '8', total_trials: '15' }] })
                 .mockResolvedValueOnce({ rows: [{ count: '80' }] })
@@ -152,7 +144,7 @@ describe('BillingMetricsService', () => {
             mockExecute
                 .mockResolvedValueOnce({ rows: [{ count: '30' }] })
                 .mockResolvedValueOnce({ rows: [{ count: '8' }] })
-                .mockResolvedValueOnce({ rows: [{ mrr_count: '25' }] })
+                .mockResolvedValueOnce({ rows: [{ mrr_total: '25' }] })
                 .mockResolvedValueOnce({ rows: [{ churned: '2' }] })
                 .mockResolvedValueOnce({ rows: [{ converted: '18', total_trials: '30' }] }) // 60% conversion
                 .mockResolvedValueOnce({ rows: [{ count: '90' }] })
@@ -171,7 +163,7 @@ describe('BillingMetricsService', () => {
             mockExecute
                 .mockResolvedValueOnce({ rows: [{ count: '0' }] }) // active = 0
                 .mockResolvedValueOnce({ rows: [{ count: '0' }] }) // trialing = 0
-                .mockResolvedValueOnce({ rows: [{ mrr_count: '0' }] }) // mrr = 0
+                .mockResolvedValueOnce({ rows: [{ mrr_total: '0' }] }) // mrr = 0
                 .mockResolvedValueOnce({ rows: [{ churned: '0' }] })
                 .mockResolvedValueOnce({ rows: [{ converted: '0', total_trials: '0' }] }) // trials = 0
                 .mockResolvedValueOnce({ rows: [{ count: '0' }] })
@@ -255,7 +247,7 @@ describe('BillingMetricsService', () => {
             mockExecute
                 .mockResolvedValueOnce({ rows: [{ count: '5' }] })
                 .mockResolvedValueOnce({ rows: [{ count: '2' }] })
-                .mockResolvedValueOnce({ rows: [{ mrr_count: '4' }] })
+                .mockResolvedValueOnce({ rows: [{ mrr_total: '4' }] })
                 .mockResolvedValueOnce({ rows: [{ churned: '1' }] })
                 .mockResolvedValueOnce({ rows: [{ converted: '3', total_trials: '5' }] })
                 .mockResolvedValueOnce({ rows: [{ count: '25' }] })

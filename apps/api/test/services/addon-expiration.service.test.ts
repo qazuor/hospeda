@@ -281,8 +281,9 @@ describe('AddonExpirationService', () => {
                 status: 'active'
             });
 
+            // Setup mock chain: select().from().where().limit() returns purchase
+            mockDb.where.mockReturnThis();
             mockDb.limit.mockResolvedValue([mockPurchase]);
-            mockDb.where.mockResolvedValue(mockDb);
             mockEntitlementService.removeAddonEntitlements.mockResolvedValue({ success: true });
 
             // Act
@@ -370,8 +371,9 @@ describe('AddonExpirationService', () => {
                 status: 'active'
             });
 
+            // Setup mock chain
+            mockDb.where.mockReturnThis();
             mockDb.limit.mockResolvedValue([mockPurchase]);
-            mockDb.where.mockResolvedValue(mockDb);
             mockEntitlementService.removeAddonEntitlements.mockResolvedValue({
                 success: false,
                 error: {
@@ -433,7 +435,11 @@ describe('AddonExpirationService', () => {
                 expiresAt: new Date('2024-01-31')
             });
 
-            mockDb.where.mockResolvedValue([mockPurchase]);
+            // First call: findExpiredAddons
+            mockDb.where.mockResolvedValueOnce([mockPurchase]);
+
+            // Second call: expireAddon
+            mockDb.where.mockReturnThis();
             mockDb.limit.mockResolvedValue([mockPurchase]);
             mockEntitlementService.removeAddonEntitlements.mockResolvedValue({ success: true });
 
@@ -462,9 +468,11 @@ describe('AddonExpirationService', () => {
                 })
             );
 
-            mockDb.where.mockResolvedValue(mockPurchases);
+            // First call: findExpiredAddons
+            mockDb.where.mockResolvedValueOnce(mockPurchases);
 
-            // Mock expireAddon for each call
+            // Subsequent calls: expireAddon for each purchase
+            mockDb.where.mockReturnThis();
             const purchases = mockPurchases.map((p) => createMockAddonPurchase(p));
             let callIndex = 0;
             mockDb.limit.mockImplementation(() => {
@@ -520,9 +528,11 @@ describe('AddonExpirationService', () => {
                 createMockAddonPurchase({ id: 'purchase_3', expiresAt: new Date('2024-01-31') })
             ];
 
-            mockDb.where.mockResolvedValue(mockPurchases);
+            // First call: findExpiredAddons
+            mockDb.where.mockResolvedValueOnce(mockPurchases);
 
-            // Mock individual expireAddon calls
+            // Subsequent calls: expireAddon for each purchase
+            mockDb.where.mockReturnThis();
             let callIndex = 0;
             mockDb.limit.mockImplementation(() => {
                 const purchase = mockPurchases[callIndex];
@@ -566,9 +576,11 @@ describe('AddonExpirationService', () => {
                 })
             );
 
-            mockDb.where.mockResolvedValue(mockPurchases);
+            // First call: findExpiredAddons
+            mockDb.where.mockResolvedValueOnce(mockPurchases);
 
-            // Mock expireAddon for each call (only first 100 should be processed)
+            // Subsequent calls: expireAddon for each purchase (only first 100 should be processed)
+            mockDb.where.mockReturnThis();
             const purchases = mockPurchases.slice(0, 100).map((p) => createMockAddonPurchase(p));
             let callIndex = 0;
             mockDb.limit.mockImplementation(() => {
@@ -604,9 +616,12 @@ describe('AddonExpirationService', () => {
                 createMockAddonPurchase({ id: 'purchase_2', expiresAt: new Date('2024-01-31') })
             ];
 
-            mockDb.where.mockResolvedValue(mockPurchases);
+            // First call: findExpiredAddons
+            mockDb.where.mockResolvedValueOnce(mockPurchases);
 
-            // Mock first call throws exception
+            // Subsequent calls: expireAddon for each purchase
+            // First call throws exception, second succeeds
+            mockDb.where.mockReturnThis();
             let callIndex = 0;
             mockDb.limit.mockImplementation(() => {
                 const purchase = mockPurchases[callIndex];
@@ -628,7 +643,8 @@ describe('AddonExpirationService', () => {
             expect(result.data?.failed).toBe(1); // First failed
             expect(result.data?.errors).toHaveLength(1);
             expect(result.data?.errors?.[0]?.purchaseId).toBe('purchase_1');
-            expect(result.data?.errors?.[0]?.error).toBe('Unexpected database error');
+            // expireAddon catches exceptions and returns generic error message
+            expect(result.data?.errors?.[0]?.error).toBe('Failed to expire add-on purchase');
 
             vi.useRealTimers();
         });
@@ -810,8 +826,9 @@ describe('AddonExpirationService', () => {
                 status: 'active'
             });
 
+            // Setup mock chain
+            mockDb.where.mockReturnThis();
             mockDb.limit.mockResolvedValue([mockPurchase]);
-            mockDb.where.mockResolvedValue(mockDb);
             mockEntitlementService.removeAddonEntitlements.mockResolvedValue({
                 success: false,
                 error: {

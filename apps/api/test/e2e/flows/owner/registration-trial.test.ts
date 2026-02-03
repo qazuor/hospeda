@@ -20,103 +20,36 @@
  */
 
 import { EntitlementKey, LimitKey } from '@repo/billing';
-import type { Hono } from 'hono';
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { getQZPayBilling } from '../../src/middlewares/billing';
-import { TrialService } from '../../src/services/trial.service';
-import type { AppBindings } from '../../src/types';
-import { validateApiEnv } from '../../src/utils/env';
-
-// Mock @repo/logger
-vi.mock('@repo/logger', () => {
-    const createMockedLogger = () => ({
-        info: vi.fn(),
-        warn: vi.fn(),
-        error: vi.fn(),
-        debug: vi.fn(),
-        registerLogMethod: vi.fn().mockReturnThis(),
-        permission: vi.fn()
-    });
-
-    const mockedLogger = {
-        info: vi.fn(),
-        warn: vi.fn(),
-        error: vi.fn(),
-        debug: vi.fn(),
-        registerCategory: vi.fn(() => createMockedLogger()),
-        configure: vi.fn(),
-        resetConfig: vi.fn(),
-        createLogger: vi.fn(() => createMockedLogger()),
-        registerLogMethod: vi.fn().mockReturnThis()
-    };
-
-    const LoggerColors = {
-        BLACK: 'BLACK',
-        RED: 'RED',
-        GREEN: 'GREEN',
-        YELLOW: 'YELLOW',
-        BLUE: 'BLUE',
-        MAGENTA: 'MAGENTA',
-        CYAN: 'CYAN',
-        WHITE: 'WHITE',
-        GRAY: 'GRAY',
-        BLACK_BRIGHT: 'BLACK_BRIGHT',
-        RED_BRIGHT: 'RED_BRIGHT',
-        GREEN_BRIGHT: 'GREEN_BRIGHT',
-        YELLOW_BRIGHT: 'YELLOW_BRIGHT',
-        BLUE_BRIGHT: 'BLUE_BRIGHT',
-        MAGENTA_BRIGHT: 'MAGENTA_BRIGHT',
-        CYAN_BRIGHT: 'CYAN_BRIGHT',
-        WHITE_BRIGHT: 'WHITE_BRIGHT'
-    };
-
-    const LogLevel = {
-        LOG: 'LOG',
-        INFO: 'INFO',
-        WARN: 'WARN',
-        ERROR: 'ERROR',
-        DEBUG: 'DEBUG'
-    };
-
-    return {
-        default: mockedLogger,
-        logger: mockedLogger,
-        createLogger: mockedLogger.createLogger,
-        LoggerColors,
-        LogLevel
-    };
-});
-
-// Mock Clerk auth - simulate authenticated owner user
-vi.mock('@hono/clerk-auth', () => ({
-    getAuth: vi.fn(() => ({
-        userId: 'clerk_test_owner_123',
-        sessionId: 'session_test_123'
-    })),
-    clerkMiddleware: vi.fn(() => (_c: any, next: any) => next())
-}));
-
-// Mock service-core (auto-mock all services)
-vi.mock('@repo/service-core');
-
-// Import dynamically to avoid circular dependency
-async function getApp(): Promise<Hono<AppBindings>> {
-    const { initApp } = await import('../../src/app');
-    return initApp();
-}
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { initApp } from '../../../../src/app.js';
+import { getQZPayBilling } from '../../../../src/middlewares/billing.js';
+import { TrialService } from '../../../../src/services/trial.service.js';
+import { testDb } from '../../setup/test-database.js';
 
 describe('Owner Registration and Trial Activation E2E', () => {
-    let app: Hono<AppBindings>;
+    let app: ReturnType<typeof initApp>;
+    let _transactionClient: unknown;
 
-    beforeAll(() => {
-        // Validate environment before running tests
-        validateApiEnv();
+    beforeAll(async () => {
+        // Setup test database
+        await testDb.setup();
+        // Initialize app
+        app = initApp();
+    });
+
+    afterAll(async () => {
+        // Teardown database
+        await testDb.teardown();
     });
 
     beforeEach(async () => {
-        // Initialize app fresh for each test
-        app = await getApp();
-        vi.clearAllMocks();
+        // Begin transaction for test isolation
+        _transactionClient = await testDb.beginTransaction();
+    });
+
+    afterEach(async () => {
+        // Rollback transaction after each test
+        await testDb.rollbackTransaction(_transactionClient);
     });
 
     /**

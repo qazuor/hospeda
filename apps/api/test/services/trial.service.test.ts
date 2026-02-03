@@ -25,7 +25,11 @@ const createMockBilling = () => {
             getByCustomerId: vi.fn(),
             list: vi.fn(),
             update: vi.fn(),
-            cancel: vi.fn()
+            cancel: vi.fn(),
+            get: vi.fn()
+        },
+        customers: {
+            get: vi.fn()
         }
     } as unknown as QZPayBilling;
 };
@@ -56,7 +60,9 @@ describe('TrialService', () => {
                 status: 'trialing'
             };
 
-            vi.spyOn(mockBilling.plans, 'list').mockResolvedValue([mockPlan] as never);
+            vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
+                data: [mockPlan]
+            } as never);
             vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([] as never);
             vi.spyOn(mockBilling.subscriptions, 'create').mockResolvedValue(
                 mockSubscription as never
@@ -74,7 +80,12 @@ describe('TrialService', () => {
                 expect.objectContaining({
                     customerId,
                     planId: mockPlan.id,
-                    status: 'trialing'
+                    trialDays: 14,
+                    metadata: expect.objectContaining({
+                        userType: 'owner',
+                        autoStarted: true,
+                        createdBy: 'trial-service'
+                    })
                 })
             );
         });
@@ -95,7 +106,9 @@ describe('TrialService', () => {
                 status: 'trialing'
             };
 
-            vi.spyOn(mockBilling.plans, 'list').mockResolvedValue([mockPlan] as never);
+            vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
+                data: [mockPlan]
+            } as never);
             vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([] as never);
             vi.spyOn(mockBilling.subscriptions, 'create').mockResolvedValue(
                 mockSubscription as never
@@ -113,7 +126,12 @@ describe('TrialService', () => {
                 expect.objectContaining({
                     customerId,
                     planId: mockPlan.id,
-                    status: 'trialing'
+                    trialDays: 14,
+                    metadata: expect.objectContaining({
+                        userType: 'complex',
+                        autoStarted: true,
+                        createdBy: 'trial-service'
+                    })
                 })
             );
         });
@@ -127,9 +145,9 @@ describe('TrialService', () => {
                 status: 'active'
             };
 
-            vi.spyOn(mockBilling.plans, 'list').mockResolvedValue([
-                { id: 'plan-1', slug: 'owner-basico' }
-            ] as never);
+            vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
+                data: [{ id: 'plan-1', slug: 'owner-basico' }]
+            } as never);
             vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
                 existingSubscription
             ] as never);
@@ -179,7 +197,7 @@ describe('TrialService', () => {
 
             const mockPlan = {
                 id: 'plan-owner-basico',
-                slug: 'owner-basico'
+                name: 'owner-basico'
             };
 
             vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
@@ -216,7 +234,7 @@ describe('TrialService', () => {
 
             const mockPlan = {
                 id: 'plan-complex-basico',
-                slug: 'complex-basico'
+                name: 'complex-basico'
             };
 
             vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
@@ -288,7 +306,7 @@ describe('TrialService', () => {
             ] as never);
             vi.spyOn(mockBilling.plans, 'get').mockResolvedValue({
                 id: 'plan-owner-basico',
-                slug: 'owner-basico'
+                name: 'owner-basico'
             } as never);
 
             // Act
@@ -318,7 +336,7 @@ describe('TrialService', () => {
             ] as never);
             vi.spyOn(mockBilling.plans, 'get').mockResolvedValue({
                 id: 'plan-complex-basico',
-                slug: 'complex-basico'
+                name: 'complex-basico'
             } as never);
 
             // Act
@@ -364,41 +382,42 @@ describe('TrialService', () => {
                 }
             ];
 
-            vi.spyOn(mockBilling.subscriptions, 'list').mockResolvedValue(
-                mockSubscriptions as never
-            );
-            vi.spyOn(mockBilling.subscriptions, 'update').mockResolvedValue({} as never);
+            vi.spyOn(mockBilling.subscriptions, 'list').mockResolvedValue({
+                data: mockSubscriptions
+            } as never);
+            vi.spyOn(mockBilling.subscriptions, 'cancel').mockResolvedValue({} as never);
+            vi.spyOn(mockBilling.customers, 'get').mockResolvedValue({
+                id: 'customer-1',
+                email: 'test@example.com',
+                metadata: { name: 'Test User', userId: 'user-1' }
+            } as never);
+            vi.spyOn(mockBilling.plans, 'get').mockResolvedValue({
+                id: 'plan-1',
+                name: 'Test Plan'
+            } as never);
 
             // Act
             const result = await trialService.blockExpiredTrials();
 
             // Assert
             expect(result).toBe(2);
-            expect(mockBilling.subscriptions.update).toHaveBeenCalledTimes(2);
-            expect(mockBilling.subscriptions.update).toHaveBeenCalledWith(
-                'sub-expired-1',
-                expect.objectContaining({
-                    status: 'expired'
-                })
-            );
-            expect(mockBilling.subscriptions.update).toHaveBeenCalledWith(
-                'sub-expired-2',
-                expect.objectContaining({
-                    status: 'expired'
-                })
-            );
+            expect(mockBilling.subscriptions.cancel).toHaveBeenCalledTimes(2);
+            expect(mockBilling.subscriptions.cancel).toHaveBeenCalledWith('sub-expired-1');
+            expect(mockBilling.subscriptions.cancel).toHaveBeenCalledWith('sub-expired-2');
         });
 
         it('should return 0 if no trialing subscriptions', async () => {
             // Arrange
-            vi.spyOn(mockBilling.subscriptions, 'list').mockResolvedValue([] as never);
+            vi.spyOn(mockBilling.subscriptions, 'list').mockResolvedValue({
+                data: []
+            } as never);
 
             // Act
             const result = await trialService.blockExpiredTrials();
 
             // Assert
             expect(result).toBe(0);
-            expect(mockBilling.subscriptions.update).not.toHaveBeenCalled();
+            expect(mockBilling.subscriptions.cancel).not.toHaveBeenCalled();
         });
 
         it('should continue on individual update errors', async () => {
@@ -424,12 +443,21 @@ describe('TrialService', () => {
                 }
             ];
 
-            vi.spyOn(mockBilling.subscriptions, 'list').mockResolvedValue(
-                mockSubscriptions as never
-            );
-            vi.spyOn(mockBilling.subscriptions, 'update')
-                .mockRejectedValueOnce(new Error('Update failed'))
-                .mockResolvedValueOnce({} as never);
+            vi.spyOn(mockBilling.subscriptions, 'list').mockResolvedValue({
+                data: mockSubscriptions
+            } as never);
+            vi.spyOn(mockBilling.customers, 'get')
+                .mockRejectedValueOnce(new Error('Customer fetch failed'))
+                .mockResolvedValueOnce({
+                    id: 'customer-2',
+                    email: 'test2@example.com',
+                    metadata: { name: 'Test User 2', userId: 'user-2' }
+                } as never);
+            vi.spyOn(mockBilling.plans, 'get').mockResolvedValue({
+                id: 'plan-1',
+                name: 'Test Plan'
+            } as never);
+            vi.spyOn(mockBilling.subscriptions, 'cancel').mockResolvedValue({} as never);
 
             // Act
             const result = await trialService.blockExpiredTrials();
@@ -479,7 +507,9 @@ describe('TrialService', () => {
                 expect.objectContaining({
                     customerId,
                     planId: newPlanId,
-                    status: 'active'
+                    metadata: expect.objectContaining({
+                        convertedFromTrial: 'true'
+                    })
                 })
             );
         });

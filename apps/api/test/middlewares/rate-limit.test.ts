@@ -50,6 +50,7 @@ vi.mock('../../src/utils/env', () => {
         standardHeaders: mockEnv.API_RATE_LIMIT_STANDARD_HEADERS,
         legacyHeaders: mockEnv.API_RATE_LIMIT_LEGACY_HEADERS,
         message: mockEnv.API_RATE_LIMIT_MESSAGE,
+        trustProxy: true, // Enable proxy trust for IP detection in tests
 
         // Auth-specific
         authEnabled: mockEnv.API_RATE_LIMIT_AUTH_ENABLED,

@@ -56,18 +56,24 @@ export function createTestDb(): ReturnType<typeof getDb> | null {
         return testDbInstance;
     }
 
-    // Create connection pool
-    testPool = new Pool({
-        connectionString: process.env.HOSPEDA_DATABASE_URL,
-        max: 10,
-        idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 2000
-    });
+    try {
+        // Create connection pool
+        testPool = new Pool({
+            connectionString: process.env.HOSPEDA_DATABASE_URL,
+            max: 10,
+            idleTimeoutMillis: 30000,
+            connectionTimeoutMillis: 2000
+        });
 
-    // Initialize database
-    testDbInstance = initializeDb(testPool);
+        // Initialize database
+        testDbInstance = initializeDb(testPool);
 
-    return testDbInstance;
+        return testDbInstance;
+    } catch (error) {
+        console.error('Error creating test database:', error);
+        // Return null if initialization fails
+        return null;
+    }
 }
 
 /**

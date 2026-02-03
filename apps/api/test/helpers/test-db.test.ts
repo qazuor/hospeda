@@ -16,16 +16,17 @@ import {
 } from './test-db';
 
 describe('Test Database Helpers', () => {
-    const db = createTestDb();
-
     // Skip all tests if database is not available
     const skipTests = !isDatabaseAvailable();
+    let db: ReturnType<typeof createTestDb> = null;
 
     beforeAll(async () => {
         if (skipTests) {
             // Tests skipped - DATABASE_URL not configured
             return;
         }
+        // Create database connection for tests
+        db = createTestDb();
     });
 
     afterEach(async () => {
@@ -39,11 +40,10 @@ describe('Test Database Helpers', () => {
     });
 
     describe('createTestDb', () => {
-        it('should return null if DATABASE_URL not set', () => {
-            // Note: This test will pass if DATABASE_URL IS set
-            // It just verifies the function doesn't throw
-            const result = createTestDb();
-            expect(result !== undefined).toBe(true);
+        it('should not throw when called', () => {
+            // This test verifies the function doesn't throw
+            // Actual database initialization is tested by other tests that use the db
+            expect(() => createTestDb()).not.toThrow();
         });
     });
 

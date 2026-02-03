@@ -22,14 +22,30 @@ vi.mock('../../src/utils/logger', () => ({
     }
 }));
 
+// Mock drizzle-orm
+vi.mock('drizzle-orm', () => ({
+    and: vi.fn((...conditions) => ({ _tag: 'and', conditions })),
+    eq: vi.fn((field, value) => ({ _tag: 'eq', field, value })),
+    gte: vi.fn((field, value) => ({ _tag: 'gte', field, value })),
+    lte: vi.fn((field, value) => ({ _tag: 'lte', field, value })),
+    count: vi.fn(() => ({ _tag: 'count' })),
+    desc: vi.fn((field) => ({ _tag: 'desc', field }))
+}));
+
+// Create query chain mock that will be reused
+let countQueryChain: any;
+let selectQueryChain: any;
+
 // Mock database
 const mockDb = {
-    select: vi.fn(),
-    from: vi.fn(),
-    where: vi.fn(),
-    orderBy: vi.fn(),
-    limit: vi.fn(),
-    offset: vi.fn()
+    select: vi.fn((fields?: unknown) => {
+        // If fields include count(), return count query chain
+        // Otherwise return select query chain
+        if (fields && typeof fields === 'object' && 'total' in fields) {
+            return countQueryChain;
+        }
+        return selectQueryChain;
+    })
 };
 
 vi.mock('@repo/db', () => ({
@@ -51,26 +67,20 @@ vi.mock('@repo/db', () => ({
     sql: vi.fn()
 }));
 
-// Mock drizzle-orm
-vi.mock('drizzle-orm', () => ({
-    and: vi.fn((...conditions) => ({ _tag: 'and', conditions })),
-    eq: vi.fn((field, value) => ({ _tag: 'eq', field, value })),
-    gte: vi.fn((field, value) => ({ _tag: 'gte', field, value })),
-    lte: vi.fn((field, value) => ({ _tag: 'lte', field, value })),
-    count: vi.fn(() => ({ _tag: 'count' })),
-    desc: vi.fn((field) => ({ _tag: 'desc', field }))
-}));
-
 describe('Admin Notifications API - GET /', () => {
     let mockContext: Partial<Context>;
-    let queryChain: any;
 
     beforeEach(() => {
         vi.clearAllMocks();
 
-        // Create chainable query mock
-        queryChain = {
-            select: vi.fn().mockReturnThis(),
+        // Create separate chainable query mocks for count and select queries
+        // Use Symbol.toStringTag to make them thenable without using 'then' property
+        countQueryChain = {
+            from: vi.fn().mockReturnThis(),
+            where: vi.fn().mockResolvedValue([{ total: 0 }])
+        };
+
+        selectQueryChain = {
             from: vi.fn().mockReturnThis(),
             where: vi.fn().mockReturnThis(),
             orderBy: vi.fn().mockReturnThis(),
@@ -85,16 +95,13 @@ describe('Admin Notifications API - GET /', () => {
                 return undefined;
             })
         };
-
-        // Setup mock db methods
-        mockDb.select = vi.fn().mockReturnValue(queryChain);
     });
 
     describe('Success Cases - Listing', () => {
         it('should return empty list when no notifications exist', async () => {
             // Arrange
-            queryChain.offset.mockResolvedValueOnce([{ total: 0 }]); // count query
-            queryChain.offset.mockResolvedValueOnce([]); // select query
+            countQueryChain.where.mockResolvedValue([{ total: 0 }]);
+            selectQueryChain.offset.mockResolvedValue([]);
 
             // Act
             const result = await listNotificationLogsHandler(mockContext as Context, {}, {}, {});
@@ -139,8 +146,8 @@ describe('Admin Notifications API - GET /', () => {
                 }
             ];
 
-            queryChain.offset.mockResolvedValueOnce([{ total: 2 }]); // count query
-            queryChain.offset.mockResolvedValueOnce(mockNotifications); // select query
+            countQueryChain.where.mockResolvedValue([{ total: 2 }]);
+            selectQueryChain.offset.mockResolvedValue(mockNotifications);
 
             // Act
             const result = await listNotificationLogsHandler(mockContext as Context, {}, {}, {});
@@ -175,8 +182,8 @@ describe('Admin Notifications API - GET /', () => {
                 }
             ];
 
-            queryChain.offset.mockResolvedValueOnce([{ total: 1 }]);
-            queryChain.offset.mockResolvedValueOnce(mockNotifications);
+            countQueryChain.where.mockResolvedValue([{ total: 1 }]);
+            selectQueryChain.offset.mockResolvedValue(mockNotifications);
 
             // Act
             const result = await listNotificationLogsHandler(mockContext as Context, {}, {}, {});
@@ -190,8 +197,8 @@ describe('Admin Notifications API - GET /', () => {
     describe('Success Cases - Pagination', () => {
         it('should apply default pagination (limit 50, offset 0)', async () => {
             // Arrange
-            queryChain.offset.mockResolvedValueOnce([{ total: 100 }]);
-            queryChain.offset.mockResolvedValueOnce([]);
+            countQueryChain.where.mockResolvedValue([{ total: 100 }]);
+            selectQueryChain.offset.mockResolvedValue([]);
 
             // Act
             const result = await listNotificationLogsHandler(mockContext as Context, {}, {}, {});
@@ -199,14 +206,14 @@ describe('Admin Notifications API - GET /', () => {
             // Assert
             expect(result.limit).toBe(50);
             expect(result.offset).toBe(0);
-            expect(queryChain.limit).toHaveBeenCalledWith(50);
-            expect(queryChain.offset).toHaveBeenCalledWith(0);
+            expect(selectQueryChain.limit).toHaveBeenCalledWith(50);
+            expect(selectQueryChain.offset).toHaveBeenCalledWith(0);
         });
 
         it('should apply custom limit and offset', async () => {
             // Arrange
-            queryChain.offset.mockResolvedValueOnce([{ total: 100 }]);
-            queryChain.offset.mockResolvedValueOnce([]);
+            countQueryChain.where.mockResolvedValue([{ total: 100 }]);
+            selectQueryChain.offset.mockResolvedValue([]);
 
             const query = {
                 limit: 20,
@@ -219,14 +226,14 @@ describe('Admin Notifications API - GET /', () => {
             // Assert
             expect(result.limit).toBe(20);
             expect(result.offset).toBe(40);
-            expect(queryChain.limit).toHaveBeenCalledWith(20);
-            expect(queryChain.offset).toHaveBeenCalledWith(40);
+            expect(selectQueryChain.limit).toHaveBeenCalledWith(20);
+            expect(selectQueryChain.offset).toHaveBeenCalledWith(40);
         });
 
         it('should enforce maximum limit of 100', async () => {
             // Arrange
-            queryChain.offset.mockResolvedValueOnce([{ total: 200 }]);
-            queryChain.offset.mockResolvedValueOnce([]);
+            countQueryChain.where.mockResolvedValue([{ total: 200 }]);
+            selectQueryChain.offset.mockResolvedValue([]);
 
             const query = {
                 limit: 100
@@ -246,8 +253,8 @@ describe('Admin Notifications API - GET /', () => {
             // @ts-expect-error - drizzle-orm is mocked
             const { eq } = await import('drizzle-orm');
 
-            queryChain.offset.mockResolvedValueOnce([{ total: 5 }]);
-            queryChain.offset.mockResolvedValueOnce([]);
+            countQueryChain.where.mockResolvedValue([{ total: 5 }]);
+            selectQueryChain.offset.mockResolvedValue([]);
 
             const query = {
                 type: 'usage_warning'
@@ -265,8 +272,8 @@ describe('Admin Notifications API - GET /', () => {
             // @ts-expect-error - drizzle-orm is mocked
             const { eq } = await import('drizzle-orm');
 
-            queryChain.offset.mockResolvedValueOnce([{ total: 3 }]);
-            queryChain.offset.mockResolvedValueOnce([]);
+            countQueryChain.where.mockResolvedValue([{ total: 3 }]);
+            selectQueryChain.offset.mockResolvedValue([]);
 
             const query = {
                 status: 'sent' as const
@@ -284,8 +291,8 @@ describe('Admin Notifications API - GET /', () => {
             // @ts-expect-error - drizzle-orm is mocked
             const { gte, lte } = await import('drizzle-orm');
 
-            queryChain.offset.mockResolvedValueOnce([{ total: 10 }]);
-            queryChain.offset.mockResolvedValueOnce([]);
+            countQueryChain.where.mockResolvedValue([{ total: 10 }]);
+            selectQueryChain.offset.mockResolvedValue([]);
 
             const query = {
                 startDate: '2024-01-01T00:00:00Z',
@@ -305,8 +312,8 @@ describe('Admin Notifications API - GET /', () => {
             // @ts-expect-error - drizzle-orm is mocked
             const { gte } = await import('drizzle-orm');
 
-            queryChain.offset.mockResolvedValueOnce([{ total: 15 }]);
-            queryChain.offset.mockResolvedValueOnce([]);
+            countQueryChain.where.mockResolvedValue([{ total: 15 }]);
+            selectQueryChain.offset.mockResolvedValue([]);
 
             const query = {
                 startDate: '2024-01-01T00:00:00Z'
@@ -324,8 +331,8 @@ describe('Admin Notifications API - GET /', () => {
             // @ts-expect-error - drizzle-orm is mocked
             const { lte } = await import('drizzle-orm');
 
-            queryChain.offset.mockResolvedValueOnce([{ total: 12 }]);
-            queryChain.offset.mockResolvedValueOnce([]);
+            countQueryChain.where.mockResolvedValue([{ total: 12 }]);
+            selectQueryChain.offset.mockResolvedValue([]);
 
             const query = {
                 endDate: '2024-01-31T23:59:59Z'
@@ -343,8 +350,8 @@ describe('Admin Notifications API - GET /', () => {
             // @ts-expect-error - drizzle-orm is mocked
             const { eq, gte, lte, and } = await import('drizzle-orm');
 
-            queryChain.offset.mockResolvedValueOnce([{ total: 2 }]);
-            queryChain.offset.mockResolvedValueOnce([]);
+            countQueryChain.where.mockResolvedValue([{ total: 2 }]);
+            selectQueryChain.offset.mockResolvedValue([]);
 
             const query = {
                 type: 'payment_failed',
@@ -367,7 +374,7 @@ describe('Admin Notifications API - GET /', () => {
     describe('Error Cases', () => {
         it('should handle database query errors', async () => {
             // Arrange
-            queryChain.offset.mockRejectedValueOnce(new Error('Database connection failed'));
+            countQueryChain.where.mockRejectedValue(new Error('Database connection failed'));
 
             // Act & Assert
             await expect(
@@ -377,7 +384,7 @@ describe('Admin Notifications API - GET /', () => {
 
         it('should handle database timeout errors', async () => {
             // Arrange
-            queryChain.offset.mockRejectedValueOnce(new Error('Query timeout'));
+            countQueryChain.where.mockRejectedValue(new Error('Query timeout'));
 
             // Act & Assert
             await expect(
@@ -387,7 +394,7 @@ describe('Admin Notifications API - GET /', () => {
 
         it('should throw 500 with generic message on unknown error', async () => {
             // Arrange
-            queryChain.offset.mockRejectedValueOnce('Unknown error');
+            countQueryChain.where.mockRejectedValue('Unknown error');
 
             // Act & Assert
             try {
@@ -404,7 +411,7 @@ describe('Admin Notifications API - GET /', () => {
 
         it('should handle invalid date format gracefully', async () => {
             // Arrange
-            queryChain.offset.mockRejectedValueOnce(new Error('Invalid date format'));
+            countQueryChain.where.mockRejectedValue(new Error('Invalid date format'));
 
             const query = {
                 startDate: 'invalid-date'
@@ -437,8 +444,8 @@ describe('Admin Notifications API - GET /', () => {
                 }
             ];
 
-            queryChain.offset.mockResolvedValueOnce([{ total: 1 }]);
-            queryChain.offset.mockResolvedValueOnce(mockNotifications);
+            countQueryChain.where.mockResolvedValue([{ total: 1 }]);
+            selectQueryChain.offset.mockResolvedValue(mockNotifications);
 
             // Act
             const result = await listNotificationLogsHandler(mockContext as Context, {}, {}, {});
@@ -485,8 +492,8 @@ describe('Admin Notifications API - GET /', () => {
                 }
             ];
 
-            queryChain.offset.mockResolvedValueOnce([{ total: 1 }]);
-            queryChain.offset.mockResolvedValueOnce(mockNotifications);
+            countQueryChain.where.mockResolvedValue([{ total: 1 }]);
+            selectQueryChain.offset.mockResolvedValue(mockNotifications);
 
             // Act
             const result = await listNotificationLogsHandler(mockContext as Context, {}, {}, {});
@@ -503,8 +510,8 @@ describe('Admin Notifications API - GET /', () => {
     describe('Query Performance', () => {
         it('should execute exactly 2 database queries (count + select)', async () => {
             // Arrange
-            queryChain.offset.mockResolvedValueOnce([{ total: 10 }]);
-            queryChain.offset.mockResolvedValueOnce([]);
+            countQueryChain.where.mockResolvedValue([{ total: 10 }]);
+            selectQueryChain.offset.mockResolvedValue([]);
 
             // Act
             await listNotificationLogsHandler(mockContext as Context, {}, {}, {});
@@ -515,8 +522,8 @@ describe('Admin Notifications API - GET /', () => {
 
         it('should use WHERE clause when filters are provided', async () => {
             // Arrange
-            queryChain.offset.mockResolvedValueOnce([{ total: 5 }]);
-            queryChain.offset.mockResolvedValueOnce([]);
+            countQueryChain.where.mockResolvedValue([{ total: 5 }]);
+            selectQueryChain.offset.mockResolvedValue([]);
 
             const query = {
                 type: 'usage_warning'
@@ -526,7 +533,8 @@ describe('Admin Notifications API - GET /', () => {
             await listNotificationLogsHandler(mockContext as Context, {}, {}, query);
 
             // Assert
-            expect(queryChain.where).toHaveBeenCalled();
+            expect(countQueryChain.where).toHaveBeenCalled();
+            expect(selectQueryChain.where).toHaveBeenCalled();
         });
 
         it('should order by createdAt descending', async () => {
@@ -534,15 +542,15 @@ describe('Admin Notifications API - GET /', () => {
             // @ts-expect-error - drizzle-orm is mocked
             const { desc } = await import('drizzle-orm');
 
-            queryChain.offset.mockResolvedValueOnce([{ total: 10 }]);
-            queryChain.offset.mockResolvedValueOnce([]);
+            countQueryChain.where.mockResolvedValue([{ total: 10 }]);
+            selectQueryChain.offset.mockResolvedValue([]);
 
             // Act
             await listNotificationLogsHandler(mockContext as Context, {}, {}, {});
 
             // Assert
             expect(desc).toHaveBeenCalled();
-            expect(queryChain.orderBy).toHaveBeenCalled();
+            expect(selectQueryChain.orderBy).toHaveBeenCalled();
         });
     });
 });

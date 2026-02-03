@@ -134,6 +134,10 @@ describe('Trial Expiry Cron Job', () => {
             const expiredTrialEnd = new Date('2024-06-14T00:00:00Z');
             const activeTrialEnd = new Date('2024-06-20T00:00:00Z');
 
+            // Use fake timers to control Date
+            vi.useFakeTimers();
+            vi.setSystemTime(now);
+
             const mockBilling = {
                 subscriptions: {
                     list: vi.fn().mockResolvedValue({
@@ -169,10 +173,6 @@ describe('Trial Expiry Cron Job', () => {
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
 
-            // Mock Date.now for consistent timing
-            const originalNow = Date.now;
-            Date.now = vi.fn(() => now.getTime());
-
             // Act
             const result = await trialExpiryJob.handler(ctx);
 
@@ -184,8 +184,8 @@ describe('Trial Expiry Cron Job', () => {
             expect(result.details?.dryRun).toBe(true);
             expect(result.details?.totalSubscriptions).toBe(4);
 
-            // Restore Date.now
-            Date.now = originalNow;
+            // Restore real timers
+            vi.useRealTimers();
         });
 
         it('should handle no expired trials in dry-run mode', async () => {
