@@ -34,7 +34,9 @@ const mockQZPayBilling = {
 };
 
 vi.mock('../../src/middlewares/billing', () => ({
-    getQZPayBilling: vi.fn(() => mockQZPayBilling)
+    getQZPayBilling: vi.fn(() => mockQZPayBilling),
+    billingMiddleware: vi.fn(async (_c: unknown, next: () => Promise<void>) => next()),
+    requireBilling: vi.fn(async (_c: unknown, next: () => Promise<void>) => next())
 }));
 
 // Mock usage tracking service
