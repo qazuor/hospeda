@@ -18,8 +18,9 @@
         "test:file": "vitest run --passWithNoTests",
         "test:coverage": "vitest run --coverage",
         "test:cache": "node test-cache.js",
-        "test:e2e": "vitest run --config vitest.config.e2e.ts",
-        "test:e2e:watch": "vitest --config vitest.config.e2e.ts"
+        "test:e2e": "pnpm run build:deps && vitest run --config vitest.config.e2e.ts",
+        "test:e2e:watch": "vitest --config vitest.config.e2e.ts",
+        "build:deps": "turbo run build --filter=@repo/db --filter=@repo/service-core --filter=@repo/schemas --filter=@repo/logger --filter=@repo/config --filter=@repo/billing --filter=@repo/notifications --filter=@repo/utils"
     },
     "dependencies": {
         "@clerk/backend": "^2.6.2",
@@ -40,11 +41,12 @@
         "@repo/utils": "workspace:*",
         "@scalar/hono-api-reference": "^0.9.12",
         "dotenv": "^16.5.0",
+        "drizzle-orm": "^0.29.5",
         "hono": "^4.7.8",
         "hono-rate-limiter": "^0.4.2",
         "lru-cache": "^11.1.0",
         "mercadopago": "^2.12.0",
-        "pg": "^8.15.6",
+        "pg": "^8.16.3",
         "sanitize-html": "^2.17.0",
         "svix": "^1.73.0",
         "zod": "^4.0.8"

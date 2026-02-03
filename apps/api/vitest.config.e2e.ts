@@ -21,7 +21,7 @@ export default defineConfig({
             './test/e2e/setup/env-setup.ts', // Load env vars FIRST
             './test/e2e/setup/test-database.ts'
         ],
-        include: ['test/e2e/**/*.test.ts'],
+        include: ['test/e2e/**/*.test.ts', 'test/integration/**/*.test.ts'],
         // E2E tests can be slower, increase timeout
         testTimeout: 30000,
         hookTimeout: 30000,
@@ -46,20 +46,9 @@ export default defineConfig({
         }
     },
     resolve: {
+        // Only alias local src imports - let Node resolve @repo/* packages via package.json exports
         alias: {
-            '@': resolve(__dirname, './src'),
-            '@repo/schemas': resolve(__dirname, '../../packages/schemas/src'),
-            '@repo/db': resolve(__dirname, '../../packages/db/src'),
-            '@repo/logger': resolve(__dirname, '../../packages/logger/src'),
-            '@repo/utils': resolve(__dirname, '../../packages/utils/src'),
-            '@repo/config': resolve(__dirname, '../../packages/config/src'),
-            '@repo/service-core': resolve(__dirname, '../../packages/service-core/src'),
-            '@repo/billing': resolve(__dirname, '../../packages/billing/src'),
-            '@repo/notifications': resolve(__dirname, '../../packages/notifications/src')
+            '@': resolve(__dirname, './src')
         }
-    },
-    // Don't try to bundle external dependencies - let Node.js resolve them
-    ssr: {
-        external: ['drizzle-orm', 'pg', 'zod']
     }
 });
