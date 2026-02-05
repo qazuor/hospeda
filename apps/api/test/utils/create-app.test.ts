@@ -51,6 +51,10 @@ vi.mock('../../src/middlewares/validation', () => ({
     validationMiddleware: vi.fn(() => vi.fn())
 }));
 
+vi.mock('../../src/middlewares/sentry', () => ({
+    sentryMiddleware: vi.fn(() => vi.fn())
+}));
+
 // Mock Hono modules
 vi.mock('hono/request-id', () => ({
     requestId: vi.fn(() => vi.fn())
@@ -157,11 +161,11 @@ describe('Create App Utility', () => {
             module.default();
 
             // Verify middleware registration order
-            // 20 middlewares: requestId, favicon, logger, cors, originVerification, securityHeaders,
-            // rateLimit, compression, validation, cache, metrics, responseFormatting,
-            // responseValidator, mockAuth (test env), clerkAuth, actor, billing,
-            // billingCustomer, entitlement, trial
-            expect(mockApp.use).toHaveBeenCalledTimes(20);
+            // 21 middlewares: requestId, favicon, sentry, logger, cors, originVerification,
+            // securityHeaders, rateLimit, compression, validation, cache, metrics,
+            // responseFormatting, responseValidator, mockAuth (test env), clerkAuth, actor,
+            // billing, billingCustomer, entitlement, trial
+            expect(mockApp.use).toHaveBeenCalledTimes(21);
         });
 
         it('should register notFound handler', async () => {
