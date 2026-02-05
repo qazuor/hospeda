@@ -21,6 +21,7 @@
         "typecheck": "tsc --noEmit --project ./tsconfig.json"
     },
     "dependencies": {
+        "@clerk/clerk-react": "^5.60.0",
         "@clerk/tanstack-react-start": "^0.23.1",
         "@faker-js/faker": "9.6.0",
         "@github/relative-time-element": "^4.4.8",
