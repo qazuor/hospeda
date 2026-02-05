@@ -27,7 +27,7 @@ import { apiLogger } from '../utils/logger';
  * @returns True if all required environment variables are set
  */
 function isBillingConfigured(): boolean {
-    const requiredEnvVars = ['MERCADO_PAGO_ACCESS_TOKEN', 'DATABASE_URL'];
+    const requiredEnvVars = ['MERCADO_PAGO_ACCESS_TOKEN', 'HOSPEDA_DATABASE_URL'];
 
     const missingVars = requiredEnvVars.filter((varName) => !process.env[varName]);
 
