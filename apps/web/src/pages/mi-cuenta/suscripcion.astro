@@ -3,7 +3,7 @@ export const prerender = false; // SSR for authenticated content
 
 import Layout from '@/layout/MainLayout.astro';
 import { BillingHistory } from '@/components/dashboard';
-import { BillingIsland, SubscriptionStatusCard, ActiveAddons, UsageMeters, CheckoutResultBanner } from '@/components/billing';
+import { BillingIsland, SubscriptionStatusCard, ActiveAddons, UsageMeters, CheckoutResultBanner, BillingErrorBoundary } from '@/components/billing';
 import { getAuth } from '@clerk/astro/server';
 
 /**
@@ -75,16 +75,22 @@ const description = 'Administrá tu plan y facturación';
         livemode={import.meta.env.PROD}
       >
         <!-- Current Plan Card -->
-        <SubscriptionStatusCard customerId={userId} />
+        <BillingErrorBoundary client:load>
+          <SubscriptionStatusCard customerId={userId} />
+        </BillingErrorBoundary>
 
         <!-- Usage Meters (uses useLimits from qzpay-react) -->
-        <UsageMeters />
+        <BillingErrorBoundary client:load>
+          <UsageMeters />
+        </BillingErrorBoundary>
       </BillingIsland>
 
       <!-- Dashboard Widgets (React Islands) -->
       <div class="space-y-8 mb-8">
         <!-- Active Add-ons (uses direct API fetch) -->
-        <ActiveAddons client:load apiUrl={import.meta.env.PUBLIC_API_URL || '/api/v1'} />
+        <BillingErrorBoundary client:load>
+          <ActiveAddons client:load />
+        </BillingErrorBoundary>
 
         <!-- Billing History -->
         <BillingHistory client:load />

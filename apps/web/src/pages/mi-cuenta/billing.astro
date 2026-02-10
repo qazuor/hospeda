@@ -5,6 +5,7 @@ import Layout from '@/layout/MainLayout.astro';
 import { ActiveAddons } from '@/components/dashboard/ActiveAddons';
 import { UsageMeters } from '@/components/dashboard/UsageMeters';
 import { BillingHistory } from '@/components/dashboard/BillingHistory';
+import { BillingErrorBoundary } from '@/components/billing/BillingErrorBoundary';
 
 /**
  * Billing Dashboard Page
@@ -48,10 +49,14 @@ const description = 'Gestión completa de tu facturación y uso de recursos';
 			<!-- Components Grid -->
 			<div class="space-y-8">
 				<!-- Usage Meters -->
-				<UsageMeters client:load />
+				<BillingErrorBoundary client:load>
+					<UsageMeters client:load />
+				</BillingErrorBoundary>
 
 				<!-- Active Add-ons -->
-				<ActiveAddons client:load />
+				<BillingErrorBoundary client:load>
+					<ActiveAddons client:load />
+				</BillingErrorBoundary>
 
 				<!-- Billing History -->
 				<BillingHistory client:load />
