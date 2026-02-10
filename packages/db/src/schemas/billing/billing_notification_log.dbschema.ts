@@ -38,6 +38,7 @@ export const billingNotificationLog: ReturnType<typeof pgTable> = pgTable(
         notificationLog_status_created_idx: index('notificationLog_status_created_idx').on(
             table.status,
             table.createdAt
-        )
+        ),
+        notificationLog_expiredAt_idx: index('notificationLog_expiredAt_idx').on(table.expiredAt)
     })
 );
