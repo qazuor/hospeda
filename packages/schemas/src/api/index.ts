@@ -25,3 +25,5 @@ export * from './health.schema.js'; // Health check schemas (health, database, l
 export * from './info.schema.js'; // API information schemas (metadata, version info)
 export * from './params.schema.js'; // Path parameters (IDs, slugs, entity-specific parameters)
 export * from './result.schema.js'; // Result schemas (success, delete, restore, assignment, removal)
+
+export * from './billing/index.js'; // Billing schemas (plan change request/response)
