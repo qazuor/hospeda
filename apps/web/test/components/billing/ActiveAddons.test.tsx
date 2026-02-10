@@ -1,17 +1,22 @@
 /**
  * ActiveAddons Component Tests
  *
- * Tests for the ActiveAddons billing component
+ * Tests for the ActiveAddons billing component with useAddons hook
  */
 
 import { render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ActiveAddons } from '../../../src/components/billing/ActiveAddons';
-import type { ActiveAddonPurchase } from '../../../src/components/billing/ActiveAddons';
+import type { ActiveAddonPurchase } from '../../../src/hooks/useAddons';
 
 // Mock fetch
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
+
+// Mock useQZPay hook
+vi.mock('@qazuor/qzpay-react', () => ({
+    useQZPay: vi.fn(() => null)
+}));
 
 describe('ActiveAddons', () => {
     beforeEach(() => {
@@ -31,7 +36,7 @@ describe('ActiveAddons', () => {
                 })
         );
 
-        render(<ActiveAddons apiUrl="/api/v1" />);
+        render(<ActiveAddons />);
 
         expect(screen.getByText('Complementos Activos')).toBeInTheDocument();
         expect(screen.getByRole('status', { hidden: true })).toBeInTheDocument();
@@ -46,7 +51,7 @@ describe('ActiveAddons', () => {
             })
         });
 
-        render(<ActiveAddons apiUrl="/api/v1" />);
+        render(<ActiveAddons />);
 
         await waitFor(() => {
             expect(screen.getByText('No tenés complementos activos')).toBeInTheDocument();
@@ -59,6 +64,7 @@ describe('ActiveAddons', () => {
     it('should render error state on fetch failure', async () => {
         mockFetch.mockResolvedValueOnce({
             ok: false,
+            status: 500,
             json: async () => ({
                 error: {
                     message: 'Network error'
@@ -66,10 +72,10 @@ describe('ActiveAddons', () => {
             })
         });
 
-        render(<ActiveAddons apiUrl="/api/v1" />);
+        render(<ActiveAddons />);
 
         await waitFor(() => {
-            expect(screen.getByText('Error al cargar los complementos')).toBeInTheDocument();
+            expect(screen.getByText(/Failed to fetch addons/)).toBeInTheDocument();
         });
     });
 
@@ -103,7 +109,7 @@ describe('ActiveAddons', () => {
             })
         });
 
-        render(<ActiveAddons apiUrl="/api/v1" />);
+        render(<ActiveAddons />);
 
         await waitFor(() => {
             expect(screen.getByText('Fotos Extra')).toBeInTheDocument();
@@ -137,7 +143,7 @@ describe('ActiveAddons', () => {
             })
         });
 
-        render(<ActiveAddons apiUrl="/api/v1" />);
+        render(<ActiveAddons />);
 
         await waitFor(() => {
             expect(screen.getByText('Addon Vencido')).toBeInTheDocument();
@@ -169,7 +175,7 @@ describe('ActiveAddons', () => {
             })
         });
 
-        render(<ActiveAddons apiUrl="/api/v1" />);
+        render(<ActiveAddons />);
 
         await waitFor(() => {
             expect(screen.getByText('Multiple Units')).toBeInTheDocument();
@@ -200,7 +206,7 @@ describe('ActiveAddons', () => {
         });
 
         expect(mockFetch).toHaveBeenCalledWith(
-            expect.stringContaining('http://localhost:3001'),
+            expect.stringContaining('http://localhost:3001/billing/addons/my'),
             expect.any(Object)
         );
 
@@ -217,7 +223,7 @@ describe('ActiveAddons', () => {
             })
         });
 
-        render(<ActiveAddons apiUrl="/api/v1" />);
+        render(<ActiveAddons />);
 
         await waitFor(() => {
             expect(mockFetch).toHaveBeenCalled();

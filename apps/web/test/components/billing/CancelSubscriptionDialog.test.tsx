@@ -71,7 +71,7 @@ describe('CancelSubscriptionDialog', () => {
         it('should display plan name in warning message', () => {
             render(<CancelSubscriptionDialog {...defaultProps} />);
 
-            expect(screen.getByText('Pro Plan')).toBeInTheDocument();
+            expect(screen.getByText(/Pro Plan/)).toBeInTheDocument();
         });
 
         it('should display generic warning when no plan name provided', () => {

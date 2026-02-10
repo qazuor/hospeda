@@ -8,6 +8,7 @@
  * @module test/integration/billing-island-ssr
  */
 
+import { defaultLocale, trans } from '@repo/i18n';
 import { render } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { renderToString } from 'react-dom/server';
@@ -157,7 +158,9 @@ describe('BillingIsland - SSR Integration Tests', () => {
         expect(html).toContain('billing-island-skeleton');
         expect(html).toContain('animate-pulse');
         expect(html).toContain('role="status"');
-        expect(html).toContain('Loading billing...');
+        const loadingAria =
+            trans[defaultLocale]['billing.island.loadingAria'] ?? 'Cargando facturación...';
+        expect(html).toContain(loadingAria);
     });
 
     it('should hydrate without errors after SSR', () => {

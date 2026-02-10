@@ -7,20 +7,34 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PaymentMethodSection } from '../../../src/components/billing/PaymentMethodSection';
+import type { UsePaymentMethodsReturn } from '../../../src/hooks/usePaymentMethods';
 import type { PaymentMethod } from '../../../src/lib/billing-api-client';
 
-// Mock billing-api-client
-vi.mock('../../../src/lib/billing-api-client', () => ({
-    getPaymentMethods: vi.fn(),
-    updateDefaultPaymentMethod: vi.fn()
+// Mock usePaymentMethods hook
+vi.mock('../../../src/hooks/usePaymentMethods', () => ({
+    usePaymentMethods: vi.fn()
 }));
 
-import { getPaymentMethods, updateDefaultPaymentMethod } from '../../../src/lib/billing-api-client';
+import { usePaymentMethods } from '../../../src/hooks/usePaymentMethods';
 
-const mockGetPaymentMethods = vi.mocked(getPaymentMethods);
-const mockUpdateDefaultPaymentMethod = vi.mocked(updateDefaultPaymentMethod);
+const mockUsePaymentMethods = vi.mocked(usePaymentMethods);
 
 describe('PaymentMethodSection', () => {
+    const mockRefetch = vi.fn();
+    const mockSetDefault = vi.fn();
+
+    const createMockHookReturn = (
+        overrides: Partial<UsePaymentMethodsReturn> = {}
+    ): UsePaymentMethodsReturn => ({
+        data: null,
+        isLoading: false,
+        error: null,
+        refetch: mockRefetch,
+        setDefault: mockSetDefault,
+        isSettingDefault: false,
+        ...overrides
+    });
+
     beforeEach(() => {
         vi.clearAllMocks();
     });
@@ -30,11 +44,10 @@ describe('PaymentMethodSection', () => {
     });
 
     it('should render loading state initially', () => {
-        mockGetPaymentMethods.mockImplementation(
-            () =>
-                new Promise(() => {
-                    /* never resolves */
-                })
+        mockUsePaymentMethods.mockReturnValue(
+            createMockHookReturn({
+                isLoading: true
+            })
         );
 
         render(<PaymentMethodSection />);
@@ -60,14 +73,15 @@ describe('PaymentMethodSection', () => {
             }
         ];
 
-        mockGetPaymentMethods.mockResolvedValue(mockMethods);
+        mockUsePaymentMethods.mockReturnValue(
+            createMockHookReturn({
+                data: mockMethods
+            })
+        );
 
         render(<PaymentMethodSection />);
 
-        await waitFor(() => {
-            expect(screen.getByText(/Visa/)).toBeInTheDocument();
-        });
-
+        expect(screen.getByText(/Visa/)).toBeInTheDocument();
         expect(screen.getByText(/4242/)).toBeInTheDocument();
         expect(screen.getByText(/Mastercard/)).toBeInTheDocument();
         expect(screen.getByText(/5555/)).toBeInTheDocument();
@@ -91,16 +105,18 @@ describe('PaymentMethodSection', () => {
             }
         ];
 
-        mockGetPaymentMethods.mockResolvedValue(mockMethods);
+        mockUsePaymentMethods.mockReturnValue(
+            createMockHookReturn({
+                data: mockMethods
+            })
+        );
 
         render(<PaymentMethodSection />);
 
-        await waitFor(() => {
-            expect(screen.getByText(/Predeterminado/)).toBeInTheDocument();
-        });
+        expect(screen.getByText(/Predeterminado/)).toBeInTheDocument();
     });
 
-    it('should call updateDefaultPaymentMethod when set default button clicked', async () => {
+    it('should call setDefault when set default button clicked', async () => {
         const mockMethods: PaymentMethod[] = [
             {
                 id: 'pm_1',
@@ -118,14 +134,15 @@ describe('PaymentMethodSection', () => {
             }
         ];
 
-        mockGetPaymentMethods.mockResolvedValue(mockMethods);
-        mockUpdateDefaultPaymentMethod.mockResolvedValue();
+        mockSetDefault.mockResolvedValue(undefined);
+
+        mockUsePaymentMethods.mockReturnValue(
+            createMockHookReturn({
+                data: mockMethods
+            })
+        );
 
         render(<PaymentMethodSection />);
-
-        await waitFor(() => {
-            expect(screen.getByText(/Mastercard/)).toBeInTheDocument();
-        });
 
         const setDefaultButtons = screen.getAllByRole('button', {
             name: /Establecer como predeterminado/
@@ -136,12 +153,12 @@ describe('PaymentMethodSection', () => {
             fireEvent.click(firstButton);
 
             await waitFor(() => {
-                expect(mockUpdateDefaultPaymentMethod).toHaveBeenCalledWith('pm_2');
+                expect(mockSetDefault).toHaveBeenCalledWith('pm_2');
             });
         }
     });
 
-    it('should refetch payment methods after setting default', async () => {
+    it('should handle setDefault error gracefully', async () => {
         const mockMethods: PaymentMethod[] = [
             {
                 id: 'pm_1',
@@ -159,33 +176,17 @@ describe('PaymentMethodSection', () => {
             }
         ];
 
-        const updatedMethods: PaymentMethod[] = [
-            {
-                id: 'pm_1',
-                type: 'card',
-                last4: '4242',
-                brand: 'Visa',
-                isDefault: false
-            },
-            {
-                id: 'pm_2',
-                type: 'card',
-                last4: '5555',
-                brand: 'Mastercard',
-                isDefault: true
-            }
-        ];
+        const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-        mockGetPaymentMethods
-            .mockResolvedValueOnce(mockMethods)
-            .mockResolvedValueOnce(updatedMethods);
-        mockUpdateDefaultPaymentMethod.mockResolvedValue();
+        mockSetDefault.mockRejectedValue(new Error('Update failed'));
+
+        mockUsePaymentMethods.mockReturnValue(
+            createMockHookReturn({
+                data: mockMethods
+            })
+        );
 
         render(<PaymentMethodSection />);
-
-        await waitFor(() => {
-            expect(screen.getByText(/Visa/)).toBeInTheDocument();
-        });
 
         const setDefaultButtons = screen.getAllByRole('button', {
             name: /Establecer como predeterminado/
@@ -196,56 +197,66 @@ describe('PaymentMethodSection', () => {
             fireEvent.click(firstButton);
 
             await waitFor(() => {
-                expect(mockGetPaymentMethods).toHaveBeenCalledTimes(2);
+                expect(mockSetDefault).toHaveBeenCalledWith('pm_2');
             });
+
+            expect(consoleErrorSpy).toHaveBeenCalled();
         }
+
+        consoleErrorSpy.mockRestore();
     });
 
     it('should render empty state when no payment methods', async () => {
-        mockGetPaymentMethods.mockResolvedValue([]);
+        mockUsePaymentMethods.mockReturnValue(
+            createMockHookReturn({
+                data: []
+            })
+        );
 
         render(<PaymentMethodSection />);
 
-        await waitFor(() => {
-            expect(screen.getByText(/No tenés métodos de pago configurados/)).toBeInTheDocument();
-        });
+        expect(screen.getByText(/No tenés métodos de pago configurados/)).toBeInTheDocument();
+    });
+
+    it('should render empty state when data is null', async () => {
+        mockUsePaymentMethods.mockReturnValue(
+            createMockHookReturn({
+                data: null
+            })
+        );
+
+        render(<PaymentMethodSection />);
+
+        expect(screen.getByText(/No tenés métodos de pago configurados/)).toBeInTheDocument();
     });
 
     it('should render error state on fetch failure', async () => {
-        mockGetPaymentMethods.mockRejectedValue(new Error('Network error'));
+        mockUsePaymentMethods.mockReturnValue(
+            createMockHookReturn({
+                error: new Error('Network error')
+            })
+        );
 
         render(<PaymentMethodSection />);
 
-        await waitFor(() => {
-            expect(screen.getByRole('alert')).toBeInTheDocument();
-        });
+        expect(screen.getByRole('alert')).toBeInTheDocument();
     });
 
     it('should retry fetching on error state retry button click', async () => {
-        mockGetPaymentMethods
-            .mockRejectedValueOnce(new Error('Network error'))
-            .mockResolvedValueOnce([
-                {
-                    id: 'pm_1',
-                    type: 'card',
-                    last4: '4242',
-                    brand: 'Visa',
-                    isDefault: true
-                }
-            ]);
+        mockUsePaymentMethods.mockReturnValue(
+            createMockHookReturn({
+                error: new Error('Network error')
+            })
+        );
 
         render(<PaymentMethodSection />);
 
-        await waitFor(() => {
-            expect(screen.getByRole('alert')).toBeInTheDocument();
-        });
+        expect(screen.getByRole('alert')).toBeInTheDocument();
 
         const retryButton = screen.getByRole('button', { name: /Reintentar/ });
         fireEvent.click(retryButton);
 
-        await waitFor(() => {
-            expect(screen.getByText(/Visa/)).toBeInTheDocument();
-        });
+        expect(mockRefetch).toHaveBeenCalledOnce();
     });
 
     it('should not show set default button on already default method', async () => {
@@ -259,26 +270,91 @@ describe('PaymentMethodSection', () => {
             }
         ];
 
-        mockGetPaymentMethods.mockResolvedValue(mockMethods);
+        mockUsePaymentMethods.mockReturnValue(
+            createMockHookReturn({
+                data: mockMethods
+            })
+        );
 
         render(<PaymentMethodSection />);
 
-        await waitFor(() => {
-            expect(screen.getByText(/Visa/)).toBeInTheDocument();
-        });
+        expect(screen.getByText(/Visa/)).toBeInTheDocument();
 
         expect(
             screen.queryByRole('button', { name: /Establecer como predeterminado/ })
         ).not.toBeInTheDocument();
     });
 
-    it('should use custom API URL when provided', async () => {
-        mockGetPaymentMethods.mockResolvedValue([]);
+    it('should render empty state without props', async () => {
+        mockUsePaymentMethods.mockReturnValue(
+            createMockHookReturn({
+                data: []
+            })
+        );
 
-        render(<PaymentMethodSection apiUrl="https://custom-api.com" />);
+        render(<PaymentMethodSection />);
 
-        await waitFor(() => {
-            expect(mockGetPaymentMethods).toHaveBeenCalled();
-        });
+        expect(screen.getByText(/No tenés métodos de pago configurados/)).toBeInTheDocument();
+    });
+
+    it('should disable set default button and show "Actualizando..." while setting default', async () => {
+        const mockMethods: PaymentMethod[] = [
+            {
+                id: 'pm_1',
+                type: 'card',
+                last4: '4242',
+                brand: 'Visa',
+                isDefault: true
+            },
+            {
+                id: 'pm_2',
+                type: 'card',
+                last4: '5555',
+                brand: 'Mastercard',
+                isDefault: false
+            }
+        ];
+
+        mockUsePaymentMethods.mockReturnValue(
+            createMockHookReturn({
+                data: mockMethods,
+                isSettingDefault: true
+            })
+        );
+
+        render(<PaymentMethodSection />);
+
+        // Check button text changed
+        const updatingText = screen.getByText(/Actualizando.../);
+        expect(updatingText).toBeInTheDocument();
+
+        // Check button is disabled
+        const button = updatingText.closest('button');
+        expect(button).not.toBeNull();
+        expect(button).toBeDisabled();
+    });
+
+    it('should render add payment method CTA', async () => {
+        const mockMethods: PaymentMethod[] = [
+            {
+                id: 'pm_1',
+                type: 'card',
+                last4: '4242',
+                brand: 'Visa',
+                isDefault: true
+            }
+        ];
+
+        mockUsePaymentMethods.mockReturnValue(
+            createMockHookReturn({
+                data: mockMethods
+            })
+        );
+
+        render(<PaymentMethodSection />);
+
+        const addLink = screen.getByRole('link', { name: /Agregar método de pago/ });
+        expect(addLink).toBeInTheDocument();
+        expect(addLink).toHaveAttribute('href', '/mi-cuenta/payment-methods/add');
     });
 });

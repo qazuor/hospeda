@@ -28,12 +28,10 @@ describe('LimitFallback', () => {
         // Check title
         expect(screen.getByText('Límite alcanzado')).toBeInTheDocument();
 
-        // Check message parts - text is split across multiple elements
+        // Check full interpolated message
         expect(
-            screen.getByText('Has alcanzado el límite de', { exact: false })
+            screen.getByText(/Has alcanzado el límite de 5 alojamientos de tu plan Básico/i)
         ).toBeInTheDocument();
-        expect(screen.getByText(/5\s+alojamientos/i)).toBeInTheDocument();
-        expect(screen.getByText('Básico')).toBeInTheDocument();
     });
 
     it('should show correct current/max values in counter', () => {
@@ -187,10 +185,8 @@ describe('LimitFallback', () => {
 
         render(<LimitFallback {...props} />);
 
-        // Check that "Premium" appears in the rendered output
-        expect(screen.getByText('Premium')).toBeInTheDocument();
-        // Also check that the message context is present
-        expect(screen.getByText('de tu plan', { exact: false })).toBeInTheDocument();
+        // Check full interpolated message with Premium plan name
+        expect(screen.getByText(/de tu plan Premium/i)).toBeInTheDocument();
     });
 
     it('should handle different upgrade link paths', () => {

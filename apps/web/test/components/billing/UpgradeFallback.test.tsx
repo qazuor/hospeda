@@ -24,13 +24,10 @@ describe('UpgradeFallback', () => {
     it('should render required plan name in message', () => {
         render(<UpgradeFallback {...defaultProps} />);
 
-        // Check that the main message text is present
+        // Check that the message with interpolated plan name is present
         expect(
-            screen.getByText('Esta función está disponible en el plan', { exact: false })
+            screen.getByText(/Esta función está disponible en el plan Profesional/i)
         ).toBeInTheDocument();
-
-        // Check that the plan name is present as a separate element
-        expect(screen.getByText('Profesional')).toBeInTheDocument();
     });
 
     it('should render CTA link with correct href', () => {
