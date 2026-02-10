@@ -2,18 +2,11 @@
     "version": "1.0",
     "epics": [
         {
-            "specId": "SPEC-001",
-            "title": "Hospeda Platform Monetization System",
+            "specId": "SPEC-003",
+            "title": "Billing System Production Readiness",
             "status": "completed",
-            "progress": "76/76",
-            "path": "SPEC-001-monetization-system"
-        },
-        {
-            "specId": "SPEC-002",
-            "title": "Monetization System Phase 2 - Post-Launch Enhancements",
-            "status": "completed",
-            "progress": "79/79",
-            "path": "SPEC-002-monetization-phase2"
+            "progress": "34/34",
+            "path": "SPEC-003-billing-production-readiness"
         }
     ],
     "standalone": {
