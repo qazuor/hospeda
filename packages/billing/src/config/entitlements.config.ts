@@ -65,6 +65,42 @@ export const ENTITLEMENT_DEFINITIONS: EntitlementDefinition[] = [
         name: 'Integracion redes sociales',
         description: 'Publicacion automatica en redes sociales'
     },
+    // Accommodation feature entitlements
+    {
+        key: EntitlementKey.CAN_USE_RICH_DESCRIPTION,
+        name: 'Descripcion enriquecida',
+        description: 'Permite usar formato enriquecido en la descripcion del alojamiento'
+    },
+    {
+        key: EntitlementKey.CAN_EMBED_VIDEO,
+        name: 'Insertar video',
+        description: 'Permite insertar videos en el listado del alojamiento'
+    },
+    {
+        key: EntitlementKey.CAN_USE_CALENDAR,
+        name: 'Calendario de disponibilidad',
+        description: 'Permite usar el calendario de disponibilidad en el listado'
+    },
+    {
+        key: EntitlementKey.CAN_SYNC_EXTERNAL_CALENDAR,
+        name: 'Sincronizacion de calendario externo',
+        description: 'Permite sincronizar con calendarios externos como Google Calendar o iCal'
+    },
+    {
+        key: EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY,
+        name: 'Mostrar WhatsApp',
+        description: 'Permite mostrar el numero de WhatsApp en el listado'
+    },
+    {
+        key: EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT,
+        name: 'Contacto directo por WhatsApp',
+        description: 'Permite que los turistas contacten directamente por WhatsApp'
+    },
+    {
+        key: EntitlementKey.HAS_VERIFICATION_BADGE,
+        name: 'Insignia de verificacion',
+        description: 'Muestra una insignia de verificacion en el listado del alojamiento'
+    },
     // Complex entitlements
     {
         key: EntitlementKey.MULTI_PROPERTY_MANAGEMENT,
