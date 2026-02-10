@@ -43,7 +43,11 @@ function getSentryConfig(): SentryConfig {
     return {
         dsn: import.meta.env.VITE_SENTRY_DSN,
         environment: import.meta.env.MODE || 'development',
-        release: import.meta.env.VITE_APP_VERSION,
+        release:
+            import.meta.env.VITE_SENTRY_RELEASE ||
+            import.meta.env.VITE_APP_VERSION ||
+            import.meta.env.VERCEL_GIT_COMMIT_SHA ||
+            'development',
         // Performance monitoring
         tracesSampleRate: 0.1, // 10% of transactions
         // Session replay
@@ -51,6 +55,14 @@ function getSentryConfig(): SentryConfig {
         replaysSessionSampleRate: 0.1 // 10% of sessions
     };
 }
+
+/**
+ * Project identification for multi-project Sentry organization
+ */
+const PROJECT_TAGS = {
+    project: import.meta.env.VITE_SENTRY_PROJECT || 'hospeda',
+    app_type: 'admin'
+};
 
 /**
  * Check if Sentry should be initialized
@@ -98,6 +110,11 @@ export function initSentry(): void {
         dsn: config.dsn,
         environment: config.environment,
         release: config.release,
+
+        // Project identification tags for multi-project filtering
+        initialScope: {
+            tags: PROJECT_TAGS
+        },
 
         // Performance Monitoring
         tracesSampleRate: config.tracesSampleRate,

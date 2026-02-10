@@ -222,7 +222,7 @@ describe('Create App Utility', () => {
                 notFound: vi.fn(),
                 route: vi.fn().mockReturnThis()
             };
-            mockOpenAPIHono.mockReturnValue(mockApp);
+            mockOpenAPIHono.mockReturnValue(mockApp as any);
 
             const result = module.createTestApp(mockRouter as any);
 
@@ -246,7 +246,7 @@ describe('Create App Utility', () => {
                 notFound: vi.fn(),
                 route: vi.fn().mockReturnThis()
             };
-            mockOpenAPIHono.mockReturnValue(mockApp);
+            mockOpenAPIHono.mockReturnValue(mockApp as any);
 
             module.createTestApp(mockRouter as any);
 
@@ -296,7 +296,7 @@ describe('Create App Utility', () => {
                 use: vi.fn().mockReturnThis(),
                 notFound: vi.fn()
             };
-            mockOpenAPIHono.mockReturnValue(mockApp);
+            mockOpenAPIHono.mockReturnValue(mockApp as any);
 
             module.default();
 
@@ -320,7 +320,7 @@ describe('Create App Utility', () => {
                 }),
                 notFound: vi.fn()
             };
-            mockOpenAPIHono.mockReturnValue(mockApp);
+            mockOpenAPIHono.mockReturnValue(mockApp as any);
 
             expect(() => module.default()).toThrow('Middleware error');
         });

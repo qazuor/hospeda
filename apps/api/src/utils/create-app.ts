@@ -16,6 +16,7 @@ import { rateLimitMiddleware } from '../middlewares/rate-limit';
 import { createErrorHandler, responseFormattingMiddleware } from '../middlewares/response';
 import { responseValidatorMiddleware } from '../middlewares/response-validator';
 import { originVerificationMiddleware, securityHeadersMiddleware } from '../middlewares/security';
+import { sentryMiddleware } from '../middlewares/sentry';
 import { trialMiddleware } from '../middlewares/trial';
 import { validationMiddleware } from '../middlewares/validation';
 import type { AppBindings, AppMiddleware, AppOpenAPI } from '../types';
@@ -66,6 +67,7 @@ export default function createApp() {
     // Early stage: Request setup and logging
     app.use(wrapMiddleware(requestId()))
         .use(serveEmojiFavicon('📝'))
+        .use(wrapMiddleware(sentryMiddleware()))
         .use(wrapMiddleware(loggerMiddleware))
 
         // Security and access control
