@@ -1,6 +1,5 @@
 import { ALL_PLANS } from '@repo/billing';
-import { billingPlans, getDb } from '@repo/db';
-import { eq } from 'drizzle-orm';
+import { billingPlans, eq, getDb } from '@repo/db';
 import { STATUS_ICONS } from '../utils/icons.js';
 import { logger } from '../utils/logger.js';
 import type { SeedContext } from '../utils/seedContext.js';
@@ -52,11 +51,11 @@ export async function seedBillingPlans(_context: SeedContext): Promise<void> {
 
         for (const plan of ALL_PLANS) {
             try {
-                // Check if plan already exists
+                // Check if plan already exists by name
                 const existing = await db
                     .select()
                     .from(billingPlans)
-                    .where(eq(billingPlans.slug, plan.slug))
+                    .where(eq(billingPlans.name, plan.name))
                     .limit(1);
 
                 if (existing.length > 0) {
@@ -67,13 +66,21 @@ export async function seedBillingPlans(_context: SeedContext): Promise<void> {
                     continue;
                 }
 
-                // Create plan with all metadata
+                // Build limits as key-value object for QZPay jsonb column
+                const limitsObj: Record<string, number> = {};
+                for (const l of plan.limits) {
+                    limitsObj[l.key] = l.value;
+                }
+
+                // Create plan using QZPay-compatible schema
                 await db.insert(billingPlans).values({
-                    slug: plan.slug,
                     name: plan.name,
                     description: plan.description,
-                    isActive: plan.isActive,
+                    active: plan.isActive,
+                    entitlements: plan.entitlements as string[],
+                    limits: limitsObj,
                     metadata: {
+                        slug: plan.slug,
                         category: plan.category,
                         isDefault: plan.isDefault,
                         sortOrder: plan.sortOrder,
@@ -81,25 +88,24 @@ export async function seedBillingPlans(_context: SeedContext): Promise<void> {
                         hasTrial: plan.hasTrial,
                         monthlyPriceArs: plan.monthlyPriceArs,
                         annualPriceArs: plan.annualPriceArs,
-                        monthlyPriceUsdRef: plan.monthlyPriceUsdRef,
-                        entitlements: plan.entitlements,
-                        limits: plan.limits.map((l) => ({
-                            key: l.key,
-                            value: l.value
-                        }))
+                        monthlyPriceUsdRef: plan.monthlyPriceUsdRef
                     }
                 });
 
-                logger.success(
-                    `${STATUS_ICONS.Success}  Created plan: "${plan.name}" (${plan.slug}) - ${plan.entitlements.length} entitlements, ${plan.limits.length} limits`
-                );
+                logger.success({
+                    msg: `${STATUS_ICONS.Success}  Created plan: "${plan.name}" (${plan.slug}) - ${plan.entitlements.length} entitlements, ${plan.limits.length} limits`
+                });
                 seedCount++;
                 summaryTracker.trackSuccess(entityName);
             } catch (error) {
                 logger.error(
                     `${STATUS_ICONS.Error}  Failed to create plan "${plan.name}": ${error instanceof Error ? error.message : String(error)}`
                 );
-                summaryTracker.trackFailure(entityName);
+                summaryTracker.trackError(
+                    entityName,
+                    plan.name,
+                    error instanceof Error ? error.message : String(error)
+                );
             }
         }
 

@@ -1,6 +1,5 @@
 import { LIMIT_METADATA, LimitKey } from '@repo/billing';
-import { billingLimits, getDb } from '@repo/db';
-import { eq } from 'drizzle-orm';
+import { billingLimits, eq, getDb } from '@repo/db';
 import { STATUS_ICONS } from '../utils/icons.js';
 import { logger } from '../utils/logger.js';
 import type { SeedContext } from '../utils/seedContext.js';
@@ -72,7 +71,9 @@ export async function seedBillingLimits(_context: SeedContext): Promise<void> {
                     defaultValue: 0 // Default value, will be overridden by plans
                 });
 
-                logger.success(`${STATUS_ICONS.Success}  Created limit: "${meta.name}" (${key})`);
+                logger.success({
+                    msg: `${STATUS_ICONS.Success}  Created limit: "${meta.name}" (${key})`
+                });
                 seedCount++;
                 summaryTracker.trackSuccess(entityName);
             } catch (error) {
@@ -80,7 +81,11 @@ export async function seedBillingLimits(_context: SeedContext): Promise<void> {
                 logger.error(
                     `${STATUS_ICONS.Error}  Failed to create limit "${meta.name}": ${error instanceof Error ? error.message : String(error)}`
                 );
-                summaryTracker.trackFailure(entityName);
+                summaryTracker.trackError(
+                    entityName,
+                    key,
+                    error instanceof Error ? error.message : String(error)
+                );
             }
         }
 

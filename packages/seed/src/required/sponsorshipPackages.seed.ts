@@ -49,7 +49,10 @@ export const seedSponsorshipPackages = createSeedFactory({
                 try {
                     // Update the package with the real eventLevelId
                     const model = new SponsorshipPackageModel();
-                    await model.update(serviceResult.data.id, { eventLevelId: realEventLevelId });
+                    await model.update(
+                        { id: serviceResult.data.id },
+                        { eventLevelId: realEventLevelId }
+                    );
                     logger.info(
                         `${STATUS_ICONS.Info}    Linked event level: ${context.idMapper.getDisplayName('sponsorship levels', seedEventLevelId)}`
                     );

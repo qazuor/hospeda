@@ -503,6 +503,16 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.ACCESS_API_PUBLIC
     ],
 
+    [RoleEnum.SPONSOR]: [
+        // SPONSORSHIP: Manage own sponsorships
+        PermissionEnum.POST_SPONSORSHIP_VIEW,
+        PermissionEnum.POST_SPONSORSHIP_CREATE,
+        PermissionEnum.POST_SPONSORSHIP_MANAGE,
+
+        // ACCESS: Public API only
+        PermissionEnum.ACCESS_API_PUBLIC
+    ],
+
     [RoleEnum.GUEST]: [
         // ACCESS: Public API only
         PermissionEnum.ACCESS_API_PUBLIC

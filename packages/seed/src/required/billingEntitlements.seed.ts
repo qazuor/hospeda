@@ -1,6 +1,5 @@
 import { ENTITLEMENT_DEFINITIONS } from '@repo/billing';
-import { billingEntitlements, getDb } from '@repo/db';
-import { eq } from 'drizzle-orm';
+import { billingEntitlements, eq, getDb } from '@repo/db';
 import { STATUS_ICONS } from '../utils/icons.js';
 import { logger } from '../utils/logger.js';
 import type { SeedContext } from '../utils/seedContext.js';
@@ -65,16 +64,20 @@ export async function seedBillingEntitlements(_context: SeedContext): Promise<vo
                     description: entitlement.description
                 });
 
-                logger.success(
-                    `${STATUS_ICONS.Success}  Created entitlement: "${entitlement.name}" (${entitlement.key})`
-                );
+                logger.success({
+                    msg: `${STATUS_ICONS.Success}  Created entitlement: "${entitlement.name}" (${entitlement.key})`
+                });
                 seedCount++;
                 summaryTracker.trackSuccess(entityName);
             } catch (error) {
                 logger.error(
                     `${STATUS_ICONS.Error}  Failed to create entitlement "${entitlement.name}": ${error instanceof Error ? error.message : String(error)}`
                 );
-                summaryTracker.trackFailure(entityName);
+                summaryTracker.trackError(
+                    entityName,
+                    entitlement.key,
+                    error instanceof Error ? error.message : String(error)
+                );
             }
         }
 

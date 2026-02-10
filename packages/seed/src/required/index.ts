@@ -8,6 +8,7 @@ import { seedBillingAddons } from './billingAddons.seed.js';
 import { seedBillingEntitlements } from './billingEntitlements.seed.js';
 import { seedBillingLimits } from './billingLimits.seed.js';
 import { seedBillingPlans } from './billingPlans.seed.js';
+import { seedBillingPromoCodes } from './billingPromoCodes.seed.js';
 import { seedDestinations } from './destinations.seed.js';
 import { seedFeatures } from './features.seed.js';
 import { seedRolePermissions } from './rolePermissions.seed.js';
@@ -99,6 +100,9 @@ export async function runRequiredSeeds(context: SeedContext): Promise<void> {
 
         // 12. Load billing add-ons (after plans, uses entitlements and limits)
         await seedBillingAddons(context);
+
+        // 13. Load billing promo codes (default discount codes)
+        await seedBillingPromoCodes(context);
 
         logger.info(`${separator}`);
         // biome-ignore lint/suspicious/noConsoleLog: <explanation>

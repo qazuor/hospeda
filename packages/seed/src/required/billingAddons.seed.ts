@@ -1,6 +1,5 @@
 import { ALL_ADDONS } from '@repo/billing';
-import { billingAddons, getDb } from '@repo/db';
-import { eq } from 'drizzle-orm';
+import { billingAddons, eq, getDb } from '@repo/db';
 import { STATUS_ICONS } from '../utils/icons.js';
 import { logger } from '../utils/logger.js';
 import type { SeedContext } from '../utils/seedContext.js';
@@ -48,11 +47,11 @@ export async function seedBillingAddons(_context: SeedContext): Promise<void> {
 
         for (const addon of ALL_ADDONS) {
             try {
-                // Check if add-on already exists
+                // Check if add-on already exists by name
                 const existing = await db
                     .select()
                     .from(billingAddons)
-                    .where(eq(billingAddons.slug, addon.slug))
+                    .where(eq(billingAddons.name, addon.name))
                     .limit(1);
 
                 if (existing.length > 0) {
@@ -63,19 +62,31 @@ export async function seedBillingAddons(_context: SeedContext): Promise<void> {
                     continue;
                 }
 
-                // Create add-on with metadata
+                // Build entitlements array from granted entitlement
+                const entitlements: string[] = addon.grantsEntitlement
+                    ? [addon.grantsEntitlement]
+                    : [];
+
+                // Build limits object from affected limit key
+                const limits: Record<string, number> =
+                    addon.affectsLimitKey && addon.limitIncrease
+                        ? { [addon.affectsLimitKey]: addon.limitIncrease }
+                        : {};
+
+                // Create add-on using QZPay-compatible schema
                 await db.insert(billingAddons).values({
-                    slug: addon.slug,
                     name: addon.name,
                     description: addon.description,
-                    isActive: addon.isActive,
+                    active: addon.isActive,
+                    unitAmount: addon.priceArs,
+                    currency: 'ARS',
+                    billingInterval: addon.billingType === 'one_time' ? 'one_time' : 'month',
+                    billingIntervalCount: 1,
+                    entitlements,
+                    limits,
                     metadata: {
-                        billingType: addon.billingType,
-                        priceArs: addon.priceArs,
+                        slug: addon.slug,
                         durationDays: addon.durationDays,
-                        affectsLimitKey: addon.affectsLimitKey,
-                        limitIncrease: addon.limitIncrease,
-                        grantsEntitlement: addon.grantsEntitlement,
                         targetCategories: addon.targetCategories,
                         sortOrder: addon.sortOrder
                     }
@@ -84,16 +95,20 @@ export async function seedBillingAddons(_context: SeedContext): Promise<void> {
                 const typeLabel = addon.billingType === 'one_time' ? 'one-time' : 'recurring';
                 const priceLabel = `ARS ${(addon.priceArs / 100).toLocaleString('es-AR')}`;
 
-                logger.success(
-                    `${STATUS_ICONS.Success}  Created add-on: "${addon.name}" (${addon.slug}) - ${typeLabel}, ${priceLabel}`
-                );
+                logger.success({
+                    msg: `${STATUS_ICONS.Success}  Created add-on: "${addon.name}" (${addon.slug}) - ${typeLabel}, ${priceLabel}`
+                });
                 seedCount++;
                 summaryTracker.trackSuccess(entityName);
             } catch (error) {
                 logger.error(
                     `${STATUS_ICONS.Error}  Failed to create add-on "${addon.name}": ${error instanceof Error ? error.message : String(error)}`
                 );
-                summaryTracker.trackFailure(entityName);
+                summaryTracker.trackError(
+                    entityName,
+                    addon.name,
+                    error instanceof Error ? error.message : String(error)
+                );
             }
         }
 
