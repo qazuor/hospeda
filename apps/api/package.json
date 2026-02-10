@@ -20,6 +20,8 @@
         "test:cache": "node test-cache.js",
         "test:e2e": "pnpm run build:deps && vitest run --config vitest.config.e2e.ts",
         "test:e2e:watch": "vitest --config vitest.config.e2e.ts",
+        "test:sandbox": "vitest run --config test/e2e/sandbox/vitest.config.sandbox.ts",
+        "test:sandbox:watch": "vitest --config test/e2e/sandbox/vitest.config.sandbox.ts",
         "build:deps": "turbo run build --filter=@repo/db --filter=@repo/service-core --filter=@repo/schemas --filter=@repo/logger --filter=@repo/config --filter=@repo/billing --filter=@repo/notifications --filter=@repo/utils"
     },
     "dependencies": {
@@ -53,6 +55,8 @@
     },
     "devDependencies": {
         "@repo/typescript-config": "workspace:*",
+        "@sentry/node": "^10.38.0",
+        "@sentry/profiling-node": "^10.38.0",
         "@types/lru-cache": "^7.10.10",
         "@types/node": "^22.15.3",
         "@types/node-cron": "^3.0.11",

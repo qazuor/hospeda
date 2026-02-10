@@ -61,6 +61,7 @@ yarn-error.log*
 .env.development.local
 .env.test.local
 .env.production.local
+.env.sandbox
 
 # =========================
 # Hosting / Integraciones
@@ -110,3 +111,9 @@ docs/dev
 .claude/.telemetry.json
 
 logs/
+
+# =========================
+# Ralph Loop (autonomous dev)
+# =========================
+scripts/ralph/runs/
+scripts/ralph/snapshots/
