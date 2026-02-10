@@ -15,7 +15,6 @@
  */
 
 import { and, billingNotificationLog, getDb, isNotNull, isNull, sql } from '@repo/db';
-// @ts-expect-error - drizzle-orm is a transitive dependency
 import { lt } from 'drizzle-orm';
 import { apiLogger } from '../utils/logger';
 
@@ -24,6 +23,22 @@ import { apiLogger } from '../utils/logger';
  */
 const DEFAULT_RETENTION_DAYS = 90;
 const DEFAULT_GRACE_DAYS = 30;
+
+/** Maximum allowed value for days parameters (10 years) */
+const MAX_DAYS = 3650;
+
+/**
+ * Validates that a days parameter is a positive integer within bounds
+ *
+ * @param value - The value to validate
+ * @param paramName - Parameter name for error messages
+ * @throws {Error} If value is not a positive integer or exceeds MAX_DAYS
+ */
+function validateDaysParam(value: number, paramName: string): void {
+    if (!Number.isInteger(value) || value < 1 || value > MAX_DAYS) {
+        throw new Error(`${paramName} must be a positive integer between 1 and ${MAX_DAYS}`);
+    }
+}
 
 /**
  * Retention policy execution summary
@@ -50,6 +65,8 @@ export class NotificationRetentionService {
      * @returns Count of records marked as expired
      */
     async markExpired(retentionDays: number = DEFAULT_RETENTION_DAYS): Promise<number> {
+        validateDaysParam(retentionDays, 'retentionDays');
+
         const db = getDb();
 
         try {
@@ -62,7 +79,7 @@ export class NotificationRetentionService {
                     and(
                         lt(
                             billingNotificationLog.createdAt,
-                            sql`NOW() - INTERVAL '${sql.raw(retentionDays.toString())} days'`
+                            sql`NOW() - ${retentionDays} * INTERVAL '1 day'`
                         ),
                         isNull(billingNotificationLog.expiredAt)
                     )
@@ -99,6 +116,8 @@ export class NotificationRetentionService {
      * @returns Count of records permanently deleted
      */
     async purgeExpired(graceDays: number = DEFAULT_GRACE_DAYS): Promise<number> {
+        validateDaysParam(graceDays, 'graceDays');
+
         const db = getDb();
 
         try {
@@ -111,7 +130,7 @@ export class NotificationRetentionService {
                         isNotNull(billingNotificationLog.expiredAt),
                         lt(
                             billingNotificationLog.expiredAt,
-                            sql`NOW() - INTERVAL '${sql.raw(graceDays.toString())} days'`
+                            sql`NOW() - ${graceDays} * INTERVAL '1 day'`
                         )
                     )
                 );

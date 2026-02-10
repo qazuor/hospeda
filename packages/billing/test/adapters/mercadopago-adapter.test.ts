@@ -571,6 +571,7 @@ describe('MercadoPago Adapter - Sandbox vs Production Mode', () => {
         // Arrange
         vi.stubEnv('MERCADO_PAGO_ACCESS_TOKEN', 'APP_USR-production-token');
         vi.stubEnv('MERCADO_PAGO_SANDBOX', 'false');
+        vi.stubEnv('MERCADO_PAGO_WEBHOOK_SECRET', 'prod-webhook-secret');
 
         // Act
         const adapter = createMercadoPagoAdapter();

@@ -100,15 +100,66 @@ describe('MercadoPago Adapter Configuration', () => {
             expect(adapter.provider).toBe('mercadopago');
         });
 
-        it('should handle optional webhook secret', () => {
+        it('should allow empty webhook secret in sandbox mode with warning', () => {
             // Arrange
             vi.stubEnv('MERCADO_PAGO_WEBHOOK_SECRET', '');
+            const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
             // Act
             const adapter = createMercadoPagoAdapter();
 
             // Assert
             expect(adapter).toBeDefined();
+            expect(warnSpy).toHaveBeenCalledWith(
+                expect.stringContaining('webhook secret is not configured')
+            );
+
+            warnSpy.mockRestore();
+        });
+
+        it('should throw error when webhook secret is missing in production mode', () => {
+            // Arrange & Act & Assert
+            expect(() => {
+                createMercadoPagoAdapter({
+                    accessToken: 'APP_USR-production-token-1234567890',
+                    webhookSecret: '',
+                    sandbox: false
+                });
+            }).toThrow('Webhook secret is required in production mode');
+        });
+
+        it('should throw error when webhook secret is undefined in production mode', () => {
+            // Arrange
+            vi.stubEnv('MERCADO_PAGO_WEBHOOK_SECRET', '');
+
+            // Act & Assert
+            expect(() => {
+                createMercadoPagoAdapter({
+                    accessToken: 'APP_USR-production-token-1234567890',
+                    sandbox: false
+                });
+            }).toThrow('Webhook secret is required in production mode');
+        });
+
+        it('should succeed in production mode with valid webhook secret', () => {
+            // Arrange & Act
+            const adapter = createMercadoPagoAdapter({
+                accessToken: 'APP_USR-production-token-1234567890',
+                webhookSecret: 'valid-secret-123',
+                sandbox: false
+            });
+
+            // Assert
+            expect(adapter).toBeDefined();
+        });
+
+        it('should throw error when accessToken is empty string', () => {
+            // Arrange & Act & Assert
+            expect(() => {
+                createMercadoPagoAdapter({
+                    accessToken: ''
+                });
+            }).toThrow('MercadoPago access token is required');
         });
 
         it('should use default retry configuration', () => {

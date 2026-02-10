@@ -25,3 +25,6 @@ export const DEFAULT_CURRENCY = 'ARS';
 
 /** Reference currency for USD equivalents */
 export const REFERENCE_CURRENCY = 'USD';
+
+/** Default timeout for MercadoPago API requests in milliseconds */
+export const MERCADO_PAGO_DEFAULT_TIMEOUT_MS = 5000;

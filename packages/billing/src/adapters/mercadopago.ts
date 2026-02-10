@@ -11,6 +11,7 @@ import {
     createQZPayMercadoPagoAdapter
 } from '@qazuor/qzpay-mercadopago';
 import { getEnv, getEnvBoolean, getEnvNumber } from '@repo/config';
+import { MERCADO_PAGO_DEFAULT_TIMEOUT_MS } from '../constants/billing.constants.js';
 
 /**
  * Configuration options for creating the MercadoPago adapter
@@ -87,7 +88,7 @@ export interface MercadoPagoAdapterConfig {
 const DEFAULT_CONFIG = {
     currency: 'ARS',
     country: 'AR',
-    timeout: 5000,
+    timeout: MERCADO_PAGO_DEFAULT_TIMEOUT_MS,
     retry: {
         enabled: true,
         maxAttempts: 3,
@@ -137,6 +138,13 @@ export function createMercadoPagoAdapter(
     const platformId = config.platformId ?? getEnv('MERCADO_PAGO_PLATFORM_ID', '');
     const integratorId = config.integratorId ?? getEnv('MERCADO_PAGO_INTEGRATOR_ID', '');
 
+    // Validate access token is not empty
+    if (!accessToken) {
+        throw new Error(
+            'MercadoPago access token is required. Set MERCADO_PAGO_ACCESS_TOKEN environment variable.'
+        );
+    }
+
     // Validate access token format
     const isTestToken = accessToken.startsWith('TEST-');
     const isProdToken = accessToken.startsWith('APP_USR-');
@@ -154,6 +162,21 @@ export function createMercadoPagoAdapter(
 
     if (!sandbox && !isProdToken) {
         throw new Error('Production mode requires an APP_USR- access token. Received test token.');
+    }
+
+    // Validate webhook secret based on environment
+    if (!sandbox && !webhookSecret) {
+        throw new Error(
+            'Webhook secret is required in production mode. Set MERCADO_PAGO_WEBHOOK_SECRET environment variable. ' +
+                'Without it, attackers could forge payment webhooks and manipulate subscription states.'
+        );
+    }
+
+    if (sandbox && !webhookSecret) {
+        console.warn(
+            '[billing] MercadoPago webhook secret is not configured in sandbox mode. ' +
+                'Webhook signature verification will be skipped. Set MERCADO_PAGO_WEBHOOK_SECRET for proper testing.'
+        );
     }
 
     // Build adapter configuration
