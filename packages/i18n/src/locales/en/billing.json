@@ -1,0 +1,246 @@
+{
+    "common": {
+        "retry": "Retry",
+        "cancel": "Cancel",
+        "close": "Close",
+        "closeMessage": "Close message",
+        "loading": "Loading",
+        "error": "Error",
+        "success": "Success",
+        "warning": "Warning",
+        "viewPlans": "View plans",
+        "monthly": "Monthly",
+        "annual": "Annual",
+        "perMonth": "/month",
+        "perYear": "/year",
+        "price": "Price",
+        "default": "Default",
+        "processing": "Processing..."
+    },
+    "subscription": {
+        "title": "Subscription",
+        "loadingLabel": "Loading subscription information",
+        "status": {
+            "trialing": "Trial",
+            "active": "Active",
+            "pastDue": "Past due",
+            "canceled": "Canceled",
+            "paused": "Paused"
+        },
+        "statusAria": {
+            "trialing": "Subscription in trial period",
+            "active": "Active subscription",
+            "pastDue": "Subscription with past due payment",
+            "canceled": "Canceled subscription",
+            "paused": "Paused subscription",
+            "unknown": "Subscription status: {{status}}"
+        },
+        "planLabels": {
+            "trial": "Trial plan",
+            "active": "Active plan"
+        },
+        "nextRenewal": "Next renewal",
+        "changePlan": "Change plan",
+        "cancelSubscription": "Cancel subscription",
+        "error": {
+            "loadTitle": "We couldn't load your subscription",
+            "loadMessage": "An error occurred while loading your subscription data. Please try again."
+        },
+        "empty": {
+            "title": "No active subscription",
+            "titleIcon": "No subscription",
+            "description": "Choose a plan to start publishing your accommodations"
+        },
+        "trial": {
+            "daysRemaining": "You have {{count}} days left in your trial",
+            "dayRemaining": "You have 1 day left in your trial",
+            "noCharge": "No charges have been made",
+            "subscribeNow": "Subscribe now"
+        },
+        "cancelled": {
+            "title": "Subscription canceled",
+            "willCancelOn": "Your plan will be canceled on {{date}}",
+            "useUntilDate": "You can continue using it until that date.",
+            "reactivating": "Reactivating...",
+            "reactivate": "Reactivate subscription",
+            "reactivateError": "We couldn't reactivate your subscription. Please try again."
+        }
+    },
+    "addons": {
+        "title": "Active Add-ons",
+        "status": {
+            "active": "Active",
+            "expiringSoon": "Expiring soon",
+            "expired": "Expired"
+        },
+        "quantity": "Quantity:",
+        "expiredOn": "Expired on:",
+        "expiresOn": "Expires on:",
+        "expiredWarning": "This add-on has expired. Renew it to continue enjoying its benefits.",
+        "empty": {
+            "title": "No active add-ons",
+            "description": "Add add-ons to enhance your plan"
+        },
+        "viewAvailable": "View available add-ons",
+        "buyMore": "Buy more add-ons"
+    },
+    "payment": {
+        "title": "Payment methods",
+        "setDefault": "Set as default",
+        "updating": "Updating...",
+        "addMethod": "Add payment method",
+        "method": "Payment method",
+        "empty": {
+            "title": "No payment methods configured",
+            "description": "Add a payment method to facilitate your future transactions. You can add credit and debit cards.",
+            "noSavedMethods": "No saved payment methods",
+            "addToContinue": "Add a payment method to continue"
+        },
+        "error": {
+            "loadTitle": "Error loading payment methods",
+            "loadFallback": "Error loading payment methods",
+            "paymentFallback": "Error processing payment"
+        }
+    },
+    "invoices": {
+        "title": "Invoice history",
+        "status": {
+            "paid": "Paid",
+            "pending": "Pending",
+            "overdue": "Overdue"
+        },
+        "columns": {
+            "date": "Date",
+            "description": "Description",
+            "amount": "Amount",
+            "status": "Status",
+            "actions": "Actions"
+        },
+        "pay": "Pay",
+        "download": "Download",
+        "showingOf": "Showing {{limit}} of {{total}} invoices",
+        "error": {
+            "loadTitle": "Error loading invoices",
+            "loadFallback": "Could not load invoices"
+        },
+        "empty": {
+            "title": "No invoices available yet",
+            "description": "Your invoices will appear here when you make transactions. You can download them and pay pending ones from this panel."
+        },
+        "payDialog": {
+            "title": "Pay invoice",
+            "amountToPay": "Amount to pay",
+            "payAmount": "Pay {{amount}}"
+        }
+    },
+    "plans": {
+        "changeTitle": "Change plan",
+        "changeDescription": "Select the plan that best fits your needs",
+        "loadingPlans": "Loading available plans...",
+        "currentPlan": "Current plan",
+        "noPlansAvailable": "No plans available at this time",
+        "selected": "Selected",
+        "success": {
+            "title": "Plan changed successfully",
+            "message": "Your new plan will be applied immediately"
+        },
+        "error": {
+            "loadPlans": "We couldn't load the available plans",
+            "changeFallback": "We couldn't change your plan. Please try again."
+        },
+        "downgradeWarning": {
+            "title": "Important: Plan change",
+            "appliedAtEnd": "The change will be applied at the end of the current period",
+            "loseFeatures": "You may lose access to some features of your current plan",
+            "dataPreserved": "Your data will be preserved"
+        },
+        "changing": "Changing plan...",
+        "confirmChange": "Confirm change"
+    },
+    "cancel": {
+        "dialogTitle": "Cancel subscription?",
+        "warningIntro": "If you cancel your {{planName}}:",
+        "warningIntroDefault": "If you cancel your subscription:",
+        "warningItems": {
+            "losePremium": "You will lose access to all premium features",
+            "unpublish": "Your listings will be unpublished automatically",
+            "dataPreserved": "Your data will be preserved if you reactivate your plan",
+            "effectiveAtEnd": "The change will take effect at the end of the current period"
+        },
+        "errorFallback": "We couldn't cancel your subscription. Please try again.",
+        "goBack": "Go back",
+        "cancelling": "Cancelling...",
+        "confirm": "Confirm cancellation",
+        "success": {
+            "title": "Subscription canceled",
+            "message": "Your subscription will be canceled at the end of the current period"
+        }
+    },
+    "checkout": {
+        "success": {
+            "title": "Thank you for your purchase!",
+            "message": "Your subscription is active."
+        },
+        "cancelled": {
+            "title": "Your purchase was cancelled",
+            "message": "You can try again whenever you want."
+        }
+    },
+    "limits": {
+        "reached": "Limit reached",
+        "reachedMessage": "You have reached the limit of {{maxValue}} {{limitName}} on your {{currentPlan}} plan.",
+        "currentUsage": "Current usage",
+        "usageAriaLabel": "{{currentValue}} of {{maxValue}} {{limitName}} used",
+        "upgradeCta": "Upgrade plan for more {{limitName}}"
+    },
+    "usage": {
+        "title": "Resource Usage",
+        "authRequired": "You need to be authenticated to view resource usage",
+        "unlimited": {
+            "title": "Unlimited Resources",
+            "description": "Your plan includes unlimited usage of all resources"
+        },
+        "percentUsed": "{{percentage}}% used",
+        "atLimit": {
+            "title": "Limit reached",
+            "message": "You have reached your plan's limit.",
+            "cta": "Upgrade your plan",
+            "ctaSuffix": "to increase your capacity."
+        },
+        "nearLimit": {
+            "title": "Approaching limit",
+            "message": "You are using {{percentage}}% of your capacity.",
+            "cta": "Consider upgrading your plan",
+            "ctaSuffix": "to avoid interruptions."
+        },
+        "needMore": {
+            "title": "Need more capacity?",
+            "description": "Upgrade your plan and get access to more resources"
+        }
+    },
+    "upgrade": {
+        "unavailableAria": "Feature not available: {{featureName}}",
+        "availableInPlan": "This feature is available on the {{requiredPlan}} plan.",
+        "viewPlansAria": "View plans to access {{featureName}}"
+    },
+    "vip": {
+        "featureName": "Exclusive VIP promotions",
+        "description": "Access exclusive discounts and deals on accommodations only for VIP members.",
+        "available": {
+            "title": "VIP Promotions Available",
+            "cta": "View promotions"
+        }
+    },
+    "errorBoundary": {
+        "title": "Something went wrong",
+        "message": "We encountered an error while processing your billing information. Please try again or contact support if the problem persists.",
+        "tryAgain": "Try again"
+    },
+    "errorState": {
+        "defaultTitle": "Error loading data",
+        "defaultRetry": "Retry"
+    },
+    "island": {
+        "loadingAria": "Loading billing..."
+    }
+}

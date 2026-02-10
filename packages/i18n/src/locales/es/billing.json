@@ -1,0 +1,246 @@
+{
+    "common": {
+        "retry": "Reintentar",
+        "cancel": "Cancelar",
+        "close": "Cerrar",
+        "closeMessage": "Cerrar mensaje",
+        "loading": "Cargando",
+        "error": "Error",
+        "success": "Éxito",
+        "warning": "Advertencia",
+        "viewPlans": "Ver planes",
+        "monthly": "Mensual",
+        "annual": "Anual",
+        "perMonth": "/mes",
+        "perYear": "/año",
+        "price": "Precio",
+        "default": "Predeterminado",
+        "processing": "Procesando..."
+    },
+    "subscription": {
+        "title": "Suscripción",
+        "loadingLabel": "Cargando información de suscripción",
+        "status": {
+            "trialing": "En prueba",
+            "active": "Activa",
+            "pastDue": "Pago pendiente",
+            "canceled": "Cancelada",
+            "paused": "Pausada"
+        },
+        "statusAria": {
+            "trialing": "Suscripción en período de prueba",
+            "active": "Suscripción activa",
+            "pastDue": "Suscripción con pago pendiente",
+            "canceled": "Suscripción cancelada",
+            "paused": "Suscripción pausada",
+            "unknown": "Suscripción en estado: {{status}}"
+        },
+        "planLabels": {
+            "trial": "Plan de prueba",
+            "active": "Plan activo"
+        },
+        "nextRenewal": "Próxima renovación",
+        "changePlan": "Cambiar de plan",
+        "cancelSubscription": "Cancelar suscripción",
+        "error": {
+            "loadTitle": "No pudimos cargar tu suscripción",
+            "loadMessage": "Ocurrió un error al cargar los datos de tu suscripción. Por favor, intentá nuevamente."
+        },
+        "empty": {
+            "title": "No tenés suscripción activa",
+            "titleIcon": "Sin suscripción",
+            "description": "Elegí un plan para comenzar a publicar tus alojamientos"
+        },
+        "trial": {
+            "daysRemaining": "Te quedan {{count}} días de prueba",
+            "dayRemaining": "Te quedan 1 día de prueba",
+            "noCharge": "No se realizó ningún cobro",
+            "subscribeNow": "Suscribirse ahora"
+        },
+        "cancelled": {
+            "title": "Suscripción cancelada",
+            "willCancelOn": "Tu plan se cancelará el {{date}}",
+            "useUntilDate": "Podés seguir usándolo hasta esa fecha.",
+            "reactivating": "Reactivando...",
+            "reactivate": "Reactivar suscripción",
+            "reactivateError": "No pudimos reactivar tu suscripción. Por favor, intentá nuevamente."
+        }
+    },
+    "addons": {
+        "title": "Complementos Activos",
+        "status": {
+            "active": "Activo",
+            "expiringSoon": "Por vencer",
+            "expired": "Vencido"
+        },
+        "quantity": "Cantidad:",
+        "expiredOn": "Venció el:",
+        "expiresOn": "Vence el:",
+        "expiredWarning": "Este complemento ha vencido. Renovalo para seguir disfrutando sus beneficios.",
+        "empty": {
+            "title": "No tenés complementos activos",
+            "description": "Agregá complementos para potenciar tu plan"
+        },
+        "viewAvailable": "Ver complementos disponibles",
+        "buyMore": "Comprar más complementos"
+    },
+    "payment": {
+        "title": "Métodos de pago",
+        "setDefault": "Establecer como predeterminado",
+        "updating": "Actualizando...",
+        "addMethod": "Agregar método de pago",
+        "method": "Método de pago",
+        "empty": {
+            "title": "No tenés métodos de pago configurados",
+            "description": "Agregá un método de pago para facilitar tus futuras transacciones. Podés agregar tarjetas de crédito y débito.",
+            "noSavedMethods": "No tenés métodos de pago guardados",
+            "addToContinue": "Agregá un método de pago para continuar"
+        },
+        "error": {
+            "loadTitle": "Error al cargar métodos de pago",
+            "loadFallback": "Error al cargar los métodos de pago",
+            "paymentFallback": "Error al procesar el pago"
+        }
+    },
+    "invoices": {
+        "title": "Historial de facturas",
+        "status": {
+            "paid": "Pagado",
+            "pending": "Pendiente",
+            "overdue": "Vencido"
+        },
+        "columns": {
+            "date": "Fecha",
+            "description": "Descripción",
+            "amount": "Monto",
+            "status": "Estado",
+            "actions": "Acciones"
+        },
+        "pay": "Pagar",
+        "download": "Descargar",
+        "showingOf": "Mostrando {{limit}} de {{total}} facturas",
+        "error": {
+            "loadTitle": "Error al cargar facturas",
+            "loadFallback": "No se pudieron cargar las facturas"
+        },
+        "empty": {
+            "title": "No hay facturas disponibles aún",
+            "description": "Tus facturas aparecerán aquí cuando realices transacciones. Podrás descargarlas y pagar las pendientes desde este panel."
+        },
+        "payDialog": {
+            "title": "Pagar factura",
+            "amountToPay": "Monto a pagar",
+            "payAmount": "Pagar {{amount}}"
+        }
+    },
+    "plans": {
+        "changeTitle": "Cambiar de plan",
+        "changeDescription": "Seleccioná el plan que mejor se ajuste a tus necesidades",
+        "loadingPlans": "Cargando planes disponibles...",
+        "currentPlan": "Plan actual",
+        "noPlansAvailable": "No hay planes disponibles en este momento",
+        "selected": "Seleccionado",
+        "success": {
+            "title": "Plan cambiado exitosamente",
+            "message": "Tu nuevo plan se aplicará inmediatamente"
+        },
+        "error": {
+            "loadPlans": "No pudimos cargar los planes disponibles",
+            "changeFallback": "No pudimos cambiar tu plan. Por favor, intentá nuevamente."
+        },
+        "downgradeWarning": {
+            "title": "Importante: Cambio de plan",
+            "appliedAtEnd": "El cambio se aplicará al final del período actual",
+            "loseFeatures": "Podrías perder acceso a algunas funcionalidades del plan actual",
+            "dataPreserved": "Tus datos se conservarán"
+        },
+        "changing": "Cambiando plan...",
+        "confirmChange": "Confirmar cambio"
+    },
+    "cancel": {
+        "dialogTitle": "¿Cancelar suscripción?",
+        "warningIntro": "Si cancelás tu {{planName}}:",
+        "warningIntroDefault": "Si cancelás tu suscripción:",
+        "warningItems": {
+            "losePremium": "Perderás acceso a todas las funciones premium",
+            "unpublish": "Tus publicaciones se despublicarán automáticamente",
+            "dataPreserved": "Los datos se conservarán si reactivás tu plan",
+            "effectiveAtEnd": "El cambio será efectivo al final del período actual"
+        },
+        "errorFallback": "No pudimos cancelar tu suscripción. Por favor, intentá nuevamente.",
+        "goBack": "Volver",
+        "cancelling": "Cancelando...",
+        "confirm": "Confirmar cancelación",
+        "success": {
+            "title": "Suscripción cancelada",
+            "message": "Tu suscripción se cancelará al final del período actual"
+        }
+    },
+    "checkout": {
+        "success": {
+            "title": "¡Gracias por tu compra!",
+            "message": "Tu suscripción está activa."
+        },
+        "cancelled": {
+            "title": "Tu compra fue cancelada",
+            "message": "Podés intentar nuevamente cuando quieras."
+        }
+    },
+    "limits": {
+        "reached": "Límite alcanzado",
+        "reachedMessage": "Has alcanzado el límite de {{maxValue}} {{limitName}} de tu plan {{currentPlan}}.",
+        "currentUsage": "Uso actual",
+        "usageAriaLabel": "{{currentValue}} de {{maxValue}} {{limitName}} utilizados",
+        "upgradeCta": "Mejorar plan para más {{limitName}}"
+    },
+    "usage": {
+        "title": "Uso de Recursos",
+        "authRequired": "Necesitás estar autenticado para ver el uso de recursos",
+        "unlimited": {
+            "title": "Recursos Ilimitados",
+            "description": "Tu plan incluye uso ilimitado de todos los recursos"
+        },
+        "percentUsed": "{{percentage}}% usado",
+        "atLimit": {
+            "title": "Límite alcanzado",
+            "message": "Alcanzaste el límite de tu plan.",
+            "cta": "Mejorá tu plan",
+            "ctaSuffix": "para aumentar tu capacidad."
+        },
+        "nearLimit": {
+            "title": "Acercándose al límite",
+            "message": "Estás usando el {{percentage}}% de tu capacidad.",
+            "cta": "Considerá mejorar tu plan",
+            "ctaSuffix": "para evitar interrupciones."
+        },
+        "needMore": {
+            "title": "¿Necesitás más capacidad?",
+            "description": "Mejorá tu plan y obtené acceso a más recursos"
+        }
+    },
+    "upgrade": {
+        "unavailableAria": "Función no disponible: {{featureName}}",
+        "availableInPlan": "Esta función está disponible en el plan {{requiredPlan}}.",
+        "viewPlansAria": "Ver planes para acceder a {{featureName}}"
+    },
+    "vip": {
+        "featureName": "Promociones VIP exclusivas",
+        "description": "Accedé a descuentos y ofertas exclusivas de alojamientos solo para miembros VIP.",
+        "available": {
+            "title": "Promociones VIP Disponibles",
+            "cta": "Ver promociones"
+        }
+    },
+    "errorBoundary": {
+        "title": "Algo salió mal",
+        "message": "Encontramos un error al procesar tu información de facturación. Por favor, intentá nuevamente o contactá a soporte si el problema persiste.",
+        "tryAgain": "Intentar de nuevo"
+    },
+    "errorState": {
+        "defaultTitle": "Error al cargar los datos",
+        "defaultRetry": "Reintentar"
+    },
+    "island": {
+        "loadingAria": "Cargando facturación..."
+    }
+}
