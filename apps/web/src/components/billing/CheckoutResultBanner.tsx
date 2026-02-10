@@ -19,6 +19,7 @@
 
 'use client';
 
+import { useTranslations } from '@repo/i18n';
 import { useEffect, useState } from 'react';
 
 /**
@@ -52,6 +53,8 @@ export interface CheckoutResultBannerProps {
 export function CheckoutResultBanner({ result: propResult }: CheckoutResultBannerProps) {
     const [result, setResult] = useState<'success' | 'cancelled' | null>(null);
     const [isVisible, setIsVisible] = useState(false);
+
+    const { t } = useTranslations();
 
     useEffect(() => {
         // Use prop override if provided (for testing), otherwise read from URL
@@ -130,14 +133,18 @@ export function CheckoutResultBanner({ result: propResult }: CheckoutResultBanne
                     </svg>
                 </div>
                 <div className="flex-1">
-                    <h3 className="mb-1 font-semibold text-green-800">¡Gracias por tu compra!</h3>
-                    <p className="text-green-700 text-sm">Tu suscripción está activa.</p>
+                    <h3 className="mb-1 font-semibold text-green-800">
+                        {t('billing.checkout.success.title')}
+                    </h3>
+                    <p className="text-green-700 text-sm">
+                        {t('billing.checkout.success.message')}
+                    </p>
                 </div>
                 <button
                     type="button"
                     onClick={handleDismiss}
                     className="flex-shrink-0 text-green-600 transition-colors hover:text-green-800"
-                    aria-label="Cerrar mensaje"
+                    aria-label={t('billing.common.closeMessage')}
                 >
                     <svg
                         className="h-5 w-5"
@@ -182,16 +189,18 @@ export function CheckoutResultBanner({ result: propResult }: CheckoutResultBanne
                     </svg>
                 </div>
                 <div className="flex-1">
-                    <h3 className="mb-1 font-semibold text-yellow-800">Tu compra fue cancelada</h3>
+                    <h3 className="mb-1 font-semibold text-yellow-800">
+                        {t('billing.checkout.cancelled.title')}
+                    </h3>
                     <p className="text-sm text-yellow-700">
-                        Podés intentar nuevamente cuando quieras.
+                        {t('billing.checkout.cancelled.message')}
                     </p>
                 </div>
                 <button
                     type="button"
                     onClick={handleDismiss}
                     className="flex-shrink-0 text-yellow-600 transition-colors hover:text-yellow-800"
-                    aria-label="Cerrar mensaje"
+                    aria-label={t('billing.common.closeMessage')}
                 >
                     <svg
                         className="h-5 w-5"

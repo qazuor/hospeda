@@ -15,6 +15,7 @@
 
 import { type QZPayCustomer, createQZPayBilling } from '@qazuor/qzpay-core';
 import { QZPayProvider, QZPayThemeProvider } from '@qazuor/qzpay-react';
+import { useTranslations } from '@repo/i18n';
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import { createHttpBillingAdapter } from '../../lib/billing-http-adapter';
 import { hospedaQzpayTheme } from '../../lib/qzpay-theme';
@@ -104,6 +105,8 @@ export function BillingIsland({
     children,
     getAuthToken
 }: BillingIslandProps) {
+    const { t } = useTranslations();
+
     // SSR-safe hydration detection
     const [isHydrated, setIsHydrated] = useState(false);
 
@@ -138,7 +141,7 @@ export function BillingIsland({
                 className="billing-island-skeleton animate-pulse"
                 // biome-ignore lint/a11y/useSemanticElements: loading indicator pattern used in tests
                 role="status"
-                aria-label="Loading billing..."
+                aria-label={t('billing.island.loadingAria')}
             >
                 <div className="mb-4 h-4 w-3/4 rounded bg-gray-200" />
                 <div className="h-4 w-1/2 rounded bg-gray-200" />

@@ -9,6 +9,7 @@
 'use client';
 
 import { useInvoices } from '@qazuor/qzpay-react';
+import { useTranslations } from '@repo/i18n';
 import { BillingEmptyState } from './BillingEmptyState';
 import { BillingErrorState } from './BillingErrorState';
 
@@ -70,27 +71,13 @@ function formatCurrency(amount: number, currency: string): string {
 }
 
 /**
- * Get status badge styling and label
+ * Status badge class names by status
  */
-function getStatusBadge(status: Invoice['status']) {
-    switch (status) {
-        case 'paid':
-            return {
-                className: 'bg-green-100 text-green-700',
-                label: 'Pagado'
-            };
-        case 'pending':
-            return {
-                className: 'bg-yellow-100 text-yellow-700',
-                label: 'Pendiente'
-            };
-        case 'overdue':
-            return {
-                className: 'bg-red-100 text-red-700',
-                label: 'Vencido'
-            };
-    }
-}
+const STATUS_CLASSES: Record<Invoice['status'], string> = {
+    paid: 'bg-green-100 text-green-700',
+    pending: 'bg-yellow-100 text-yellow-700',
+    overdue: 'bg-red-100 text-red-700'
+};
 
 /**
  * InvoiceListSection Component
@@ -102,7 +89,7 @@ function getStatusBadge(status: Invoice['status']) {
  * Features:
  * - Fetches invoices using useInvoices hook
  * - Displays table with date, description, amount, status
- * - Status badges (Pagado/Pendiente/Vencido)
+ * - Status badges (Paid/Pending/Overdue)
  * - Pay button for unpaid invoices
  * - Download button for all invoices
  * - Loading skeleton states
@@ -126,12 +113,15 @@ export function InvoiceListSection({
     onPayInvoice
 }: InvoiceListSectionProps) {
     const { data, isLoading, error, refetch } = useInvoices();
+    const { t } = useTranslations();
 
     // Loading state
     if (isLoading) {
         return (
             <div className="rounded-xl bg-white p-8 shadow-lg">
-                <h2 className="mb-6 font-bold text-2xl text-gray-900">Historial de facturas</h2>
+                <h2 className="mb-6 font-bold text-2xl text-gray-900">
+                    {t('billing.invoices.title')}
+                </h2>
                 <div
                     className="flex items-center justify-center py-12"
                     // biome-ignore lint/a11y/useSemanticElements: loading indicator pattern used in tests
@@ -149,10 +139,12 @@ export function InvoiceListSection({
     if (error) {
         return (
             <div className="rounded-xl bg-white p-8 shadow-lg">
-                <h2 className="mb-6 font-bold text-2xl text-gray-900">Historial de facturas</h2>
+                <h2 className="mb-6 font-bold text-2xl text-gray-900">
+                    {t('billing.invoices.title')}
+                </h2>
                 <BillingErrorState
-                    title="Error al cargar facturas"
-                    message={error.message || 'No se pudieron cargar las facturas'}
+                    title={t('billing.invoices.error.loadTitle')}
+                    message={error.message || t('billing.invoices.error.loadFallback')}
                     onRetry={refetch}
                 />
             </div>
@@ -165,10 +157,12 @@ export function InvoiceListSection({
     if (invoices.length === 0) {
         return (
             <div className="rounded-xl bg-white p-8 shadow-lg">
-                <h2 className="mb-6 font-bold text-2xl text-gray-900">Historial de facturas</h2>
+                <h2 className="mb-6 font-bold text-2xl text-gray-900">
+                    {t('billing.invoices.title')}
+                </h2>
                 <BillingEmptyState
-                    title="No hay facturas disponibles aún"
-                    description="Tus facturas aparecerán aquí cuando realices transacciones. Podrás descargarlas y pagar las pendientes desde este panel."
+                    title={t('billing.invoices.empty.title')}
+                    description={t('billing.invoices.empty.description')}
                     icon={
                         <svg
                             className="h-16 w-16 text-gray-400"
@@ -193,32 +187,32 @@ export function InvoiceListSection({
     // Invoices table
     return (
         <div className="rounded-xl bg-white p-8 shadow-lg">
-            <h2 className="mb-6 font-bold text-2xl text-gray-900">Historial de facturas</h2>
+            <h2 className="mb-6 font-bold text-2xl text-gray-900">{t('billing.invoices.title')}</h2>
 
             <div className="overflow-x-auto">
                 <table className="w-full">
                     <thead>
                         <tr className="border-gray-200 border-b">
                             <th className="pr-4 pb-3 text-left font-semibold text-gray-700 text-sm">
-                                Fecha
+                                {t('billing.invoices.columns.date')}
                             </th>
                             <th className="px-4 pb-3 text-left font-semibold text-gray-700 text-sm">
-                                Descripción
+                                {t('billing.invoices.columns.description')}
                             </th>
                             <th className="px-4 pb-3 text-right font-semibold text-gray-700 text-sm">
-                                Monto
+                                {t('billing.invoices.columns.amount')}
                             </th>
                             <th className="px-4 pb-3 text-center font-semibold text-gray-700 text-sm">
-                                Estado
+                                {t('billing.invoices.columns.status')}
                             </th>
                             <th className="pb-3 pl-4 text-right font-semibold text-gray-700 text-sm">
-                                Acciones
+                                {t('billing.invoices.columns.actions')}
                             </th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                         {invoices.map((invoice) => {
-                            const statusBadge = getStatusBadge(invoice.status);
+                            const statusClass = STATUS_CLASSES[invoice.status];
                             const isPaid = invoice.status === 'paid';
 
                             return (
@@ -244,9 +238,9 @@ export function InvoiceListSection({
                                     {/* Status */}
                                     <td className="px-4 py-4 text-center">
                                         <span
-                                            className={`inline-block rounded-full px-3 py-1 font-medium text-xs ${statusBadge.className}`}
+                                            className={`inline-block rounded-full px-3 py-1 font-medium text-xs ${statusClass}`}
                                         >
-                                            {statusBadge.label}
+                                            {t(`billing.invoices.status.${invoice.status}`)}
                                         </span>
                                     </td>
 
@@ -261,9 +255,9 @@ export function InvoiceListSection({
                                                         onPayInvoice(invoice.id, invoice.amount)
                                                     }
                                                     className="rounded-lg bg-blue-600 px-4 py-2 font-medium text-sm text-white transition-colors hover:bg-blue-700"
-                                                    aria-label="Pagar"
+                                                    aria-label={t('billing.invoices.pay')}
                                                 >
-                                                    Pagar
+                                                    {t('billing.invoices.pay')}
                                                 </button>
                                             )}
 
@@ -273,7 +267,7 @@ export function InvoiceListSection({
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 font-medium text-gray-700 text-sm transition-colors hover:bg-gray-50"
-                                                aria-label="Descargar"
+                                                aria-label={t('billing.invoices.download')}
                                             >
                                                 <svg
                                                     className="h-4 w-4"
@@ -289,7 +283,7 @@ export function InvoiceListSection({
                                                         d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                                                     />
                                                 </svg>
-                                                Descargar
+                                                {t('billing.invoices.download')}
                                             </a>
                                         </div>
                                     </td>
@@ -303,7 +297,10 @@ export function InvoiceListSection({
             {/* Total count */}
             {Array.isArray(data) && data.length > limit && (
                 <div className="mt-4 text-center text-gray-600 text-sm">
-                    Mostrando {limit} de {data.length} facturas
+                    {t('billing.invoices.showingOf', {
+                        limit: String(limit),
+                        total: String(data.length)
+                    })}
                 </div>
             )}
         </div>

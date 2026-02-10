@@ -10,7 +10,8 @@
 
 'use client';
 
-import { type ReactElement, useEffect, useState } from 'react';
+import { useTranslations } from '@repo/i18n';
+import { type ReactElement, useEffect, useMemo, useState } from 'react';
 
 /**
  * Props for PlanChangeDialog component
@@ -91,6 +92,85 @@ function calculatePriceDifference(
 }
 
 /**
+ * Plan type for display
+ */
+interface DisplayPlan {
+    id: string;
+    name: string;
+    description: string;
+    slug: string;
+    prices: Array<{ amount: number }>;
+    interval: string;
+    metadata?: { category?: string };
+}
+
+/**
+ * Result type for usePlans hook
+ */
+interface UsePlansResult {
+    plans: DisplayPlan[];
+    isLoading: boolean;
+    error: Error | null;
+    refetch: () => Promise<void>;
+}
+
+/**
+ * Hook wrapper to safely use usePlans with fallback
+ * Returns empty data if not in QZPayProvider context
+ */
+function usePlansOrFallback(): UsePlansResult {
+    try {
+        // Dynamic require for conditional hook import with graceful degradation
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { usePlans } = require('@qazuor/qzpay-react');
+        return usePlans({ activeOnly: true });
+    } catch {
+        // Not in QZPayProvider context - return empty result
+        return {
+            plans: [],
+            isLoading: false,
+            error: null,
+            refetch: async () => {}
+        };
+    }
+}
+
+/**
+ * Result type for useSubscription hook
+ */
+interface UseSubscriptionResult {
+    update: (subscriptionId: string, data: { planId: string }) => Promise<void>;
+    cancel: (subscriptionId: string, options?: { cancelAtPeriodEnd?: boolean }) => Promise<void>;
+    resume: (subscriptionId: string) => Promise<void>;
+}
+
+/**
+ * Hook wrapper to safely use useSubscription with fallback
+ * Returns no-op functions if not in QZPayProvider context
+ */
+function useSubscriptionOrFallback(customerId: string): UseSubscriptionResult {
+    try {
+        // Dynamic require for conditional hook import
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { useSubscription } = require('@qazuor/qzpay-react');
+        return useSubscription({ customerId });
+    } catch {
+        // Not in QZPayProvider context - return no-op result
+        return {
+            update: async () => {
+                throw new Error('Billing context not available');
+            },
+            cancel: async () => {
+                throw new Error('Billing context not available');
+            },
+            resume: async () => {
+                throw new Error('Billing context not available');
+            }
+        };
+    }
+}
+
+/**
  * PlanChangeDialog Component
  *
  * Displays a modal dialog for changing subscription plans.
@@ -108,7 +188,7 @@ function calculatePriceDifference(
  *
  *   return (
  *     <>
- *       <button onClick={() => setIsOpen(true)}>Cambiar de plan</button>
+ *       <button onClick={() => setIsOpen(true)}>Change plan</button>
  *       <PlanChangeDialog
  *         isOpen={isOpen}
  *         onClose={() => setIsOpen(false)}
@@ -128,9 +208,9 @@ export function PlanChangeDialog({
     onClose,
     currentPlanId,
     currentPlanPrice,
-    subscriptionId: _subscriptionId,
-    customerId: _customerId,
-    category: _category,
+    subscriptionId,
+    customerId,
+    category,
     onSuccess
 }: PlanChangeDialogProps): ReactElement | null {
     const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
@@ -138,19 +218,37 @@ export function PlanChangeDialog({
     const [error, setError] = useState<string | null>(null);
     const [showSuccess, setShowSuccess] = useState(false);
 
-    // Fetch available plans (simplified - will use static data for now as API integration needs backend endpoint)
-    const plansData: Array<{
-        id: string;
-        name: string;
-        description: string;
-        prices: Array<{ amount: number }>;
-        interval: string;
-    }> = [];
-    const plansLoading = false;
-    const plansError: Error | null = null;
-    const refetchPlans = async () => {
-        /* no-op for now */
-    };
+    const { t } = useTranslations();
+
+    // Fetch available plans using QZPay hook with graceful fallback
+    const {
+        plans: rawPlans,
+        isLoading: plansLoading,
+        error: plansError,
+        refetch: refetchPlans
+    } = usePlansOrFallback();
+
+    // Get subscription mutation for updating plan with graceful fallback
+    const { update: updateSubscription } = useSubscriptionOrFallback(customerId);
+
+    // Filter and map plans based on category
+    const plansData: DisplayPlan[] = useMemo(() => {
+        if (!rawPlans || !Array.isArray(rawPlans)) return [];
+
+        const filtered = category
+            ? rawPlans.filter((p) => p.metadata?.category === category)
+            : rawPlans;
+
+        return filtered.map((p) => ({
+            id: p.id,
+            name: p.name || '',
+            description: p.description || '',
+            slug: p.slug || p.id,
+            prices: p.prices || [{ amount: 0 }],
+            interval: p.interval || 'month',
+            metadata: p.metadata
+        }));
+    }, [rawPlans, category]);
 
     // Reset state when dialog closes
     useEffect(() => {
@@ -166,22 +264,27 @@ export function PlanChangeDialog({
         return null;
     }
 
+    // Find the selected plan to get its slug for the API call
+    const selectedPlan = useMemo(
+        () => plansData.find((p) => p.id === selectedPlanId),
+        [plansData, selectedPlanId]
+    );
+
     /**
      * Handle plan change confirmation
-     * TODO: Implement actual API call to change subscription plan
+     * Calls the QZPay subscription update API to change the plan
      */
     const handleConfirm = async () => {
-        if (!selectedPlanId) return;
+        if (!selectedPlanId || !selectedPlan) return;
 
         setIsChanging(true);
         setError(null);
 
         try {
-            // Placeholder for actual API call - will be implemented when backend endpoint is ready
-            // await changePlanAPI(subscriptionId, selectedPlanId);
-
-            // Simulate success for now
-            await new Promise((resolve) => setTimeout(resolve, 1000));
+            // Call the QZPay hook to update the subscription plan
+            await updateSubscription(subscriptionId, {
+                planId: selectedPlanId
+            });
 
             setShowSuccess(true);
 
@@ -192,11 +295,7 @@ export function PlanChangeDialog({
                 onClose();
             }, 2000);
         } catch (err) {
-            setError(
-                err instanceof Error
-                    ? err.message
-                    : 'No pudimos cambiar tu plan. Por favor, intentá nuevamente.'
-            );
+            setError(err instanceof Error ? err.message : t('billing.plans.error.changeFallback'));
         } finally {
             setIsChanging(false);
         }
@@ -231,8 +330,7 @@ export function PlanChangeDialog({
     // Extract plans array from response
     const plans = Array.isArray(plansData) ? plansData : [];
 
-    // Find selected plan details
-    const selectedPlan = plans.find((p) => p.id === selectedPlanId);
+    // Calculate selected plan price and differences (selectedPlan is already defined via useMemo above)
     const selectedPlanPrice = selectedPlan?.prices?.[0]?.amount || 0;
     const priceDiff = selectedPlan
         ? calculatePriceDifference(currentPlanPrice, selectedPlanPrice)
@@ -269,7 +367,7 @@ export function PlanChangeDialog({
                                 xmlns="http://www.w3.org/2000/svg"
                                 aria-hidden="true"
                             >
-                                <title>Éxito</title>
+                                <title>{t('billing.common.success')}</title>
                                 <path
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
@@ -279,11 +377,9 @@ export function PlanChangeDialog({
                             </svg>
 
                             <h3 className="mb-2 font-semibold text-gray-900 text-xl">
-                                Plan cambiado exitosamente
+                                {t('billing.plans.success.title')}
                             </h3>
-                            <p className="text-gray-600">
-                                Tu nuevo plan se aplicará inmediatamente
-                            </p>
+                            <p className="text-gray-600">{t('billing.plans.success.message')}</p>
                         </div>
                     ) : (
                         <>
@@ -293,10 +389,10 @@ export function PlanChangeDialog({
                                     id="plan-change-dialog-title"
                                     className="mb-2 font-bold text-2xl text-gray-900"
                                 >
-                                    Cambiar de plan
+                                    {t('billing.plans.changeTitle')}
                                 </h2>
                                 <p className="text-gray-600">
-                                    Seleccioná el plan que mejor se ajuste a tus necesidades
+                                    {t('billing.plans.changeDescription')}
                                 </p>
                             </div>
 
@@ -310,7 +406,7 @@ export function PlanChangeDialog({
                                         viewBox="0 0 24 24"
                                         aria-hidden="true"
                                     >
-                                        <title>Cargando</title>
+                                        <title>{t('billing.common.loading')}</title>
                                         <circle
                                             className="opacity-25"
                                             cx="12"
@@ -325,7 +421,9 @@ export function PlanChangeDialog({
                                             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                                         />
                                     </svg>
-                                    <p className="text-gray-600">Cargando planes disponibles...</p>
+                                    <p className="text-gray-600">
+                                        {t('billing.plans.loadingPlans')}
+                                    </p>
                                 </div>
                             )}
 
@@ -344,7 +442,7 @@ export function PlanChangeDialog({
                                             xmlns="http://www.w3.org/2000/svg"
                                             aria-hidden="true"
                                         >
-                                            <title>Error</title>
+                                            <title>{t('billing.common.error')}</title>
                                             <path
                                                 strokeLinecap="round"
                                                 strokeLinejoin="round"
@@ -354,14 +452,14 @@ export function PlanChangeDialog({
                                         </svg>
                                         <div className="flex-1">
                                             <p className="text-red-800 text-sm">
-                                                No pudimos cargar los planes disponibles
+                                                {t('billing.plans.error.loadPlans')}
                                             </p>
                                             <button
                                                 type="button"
                                                 onClick={() => void refetchPlans()}
                                                 className="mt-2 font-medium text-red-600 text-sm underline hover:text-red-700"
                                             >
-                                                Reintentar
+                                                {t('billing.common.retry')}
                                             </button>
                                         </div>
                                     </div>
@@ -400,7 +498,7 @@ export function PlanChangeDialog({
                                                             </h3>
                                                             {isCurrentPlan && (
                                                                 <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 font-medium text-blue-700 text-xs">
-                                                                    Plan actual
+                                                                    {t('billing.plans.currentPlan')}
                                                                 </span>
                                                             )}
                                                         </div>
@@ -414,7 +512,7 @@ export function PlanChangeDialog({
                                                                 {formatCurrency(planPrice)}
                                                             </span>
                                                             <span className="text-gray-600">
-                                                                /mes
+                                                                {t('billing.common.perMonth')}
                                                             </span>
 
                                                             {/* Price difference */}
@@ -430,7 +528,7 @@ export function PlanChangeDialog({
                                                                     {formatCurrency(
                                                                         diff.difference
                                                                     )}
-                                                                    /mes
+                                                                    {t('billing.common.perMonth')}
                                                                 </span>
                                                             )}
                                                         </div>
@@ -445,7 +543,9 @@ export function PlanChangeDialog({
                                                             xmlns="http://www.w3.org/2000/svg"
                                                             aria-hidden="true"
                                                         >
-                                                            <title>Seleccionado</title>
+                                                            <title>
+                                                                {t('billing.plans.selected')}
+                                                            </title>
                                                             <path
                                                                 fillRule="evenodd"
                                                                 d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z"
@@ -464,7 +564,7 @@ export function PlanChangeDialog({
                             {!plansLoading && !plansError && plans.length === 0 && (
                                 <div className="py-8 text-center">
                                     <p className="text-gray-600">
-                                        No hay planes disponibles en este momento
+                                        {t('billing.plans.noPlansAvailable')}
                                     </p>
                                 </div>
                             )}
@@ -481,7 +581,7 @@ export function PlanChangeDialog({
                                             xmlns="http://www.w3.org/2000/svg"
                                             aria-hidden="true"
                                         >
-                                            <title>Advertencia</title>
+                                            <title>{t('billing.common.warning')}</title>
                                             <path
                                                 strokeLinecap="round"
                                                 strokeLinejoin="round"
@@ -491,18 +591,24 @@ export function PlanChangeDialog({
                                         </svg>
                                         <div className="flex-1">
                                             <p className="mb-1 font-medium text-sm text-yellow-800">
-                                                Importante: Cambio de plan
+                                                {t('billing.plans.downgradeWarning.title')}
                                             </p>
                                             <ul className="list-inside list-disc space-y-1 text-sm text-yellow-700">
                                                 <li>
-                                                    El cambio se aplicará al final del período
-                                                    actual
+                                                    {t(
+                                                        'billing.plans.downgradeWarning.appliedAtEnd'
+                                                    )}
                                                 </li>
                                                 <li>
-                                                    Podrías perder acceso a algunas funcionalidades
-                                                    del plan actual
+                                                    {t(
+                                                        'billing.plans.downgradeWarning.loseFeatures'
+                                                    )}
                                                 </li>
-                                                <li>Tus datos se conservarán</li>
+                                                <li>
+                                                    {t(
+                                                        'billing.plans.downgradeWarning.dataPreserved'
+                                                    )}
+                                                </li>
                                             </ul>
                                         </div>
                                     </div>
@@ -524,7 +630,7 @@ export function PlanChangeDialog({
                                             xmlns="http://www.w3.org/2000/svg"
                                             aria-hidden="true"
                                         >
-                                            <title>Error</title>
+                                            <title>{t('billing.common.error')}</title>
                                             <path
                                                 strokeLinecap="round"
                                                 strokeLinejoin="round"
@@ -539,7 +645,7 @@ export function PlanChangeDialog({
                                                 onClick={handleRetry}
                                                 className="mt-2 font-medium text-red-600 text-sm underline hover:text-red-700"
                                             >
-                                                Reintentar
+                                                {t('billing.common.retry')}
                                             </button>
                                         </div>
                                     </div>
@@ -554,7 +660,7 @@ export function PlanChangeDialog({
                                     disabled={isChanging}
                                     className="flex-1 rounded-lg bg-gray-100 px-4 py-2 font-medium text-gray-700 transition-colors hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
-                                    Cancelar
+                                    {t('billing.common.cancel')}
                                 </button>
                                 <button
                                     type="button"
@@ -571,7 +677,7 @@ export function PlanChangeDialog({
                                                 viewBox="0 0 24 24"
                                                 aria-hidden="true"
                                             >
-                                                <title>Cargando</title>
+                                                <title>{t('billing.common.loading')}</title>
                                                 <circle
                                                     className="opacity-25"
                                                     cx="12"
@@ -586,10 +692,10 @@ export function PlanChangeDialog({
                                                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                                                 />
                                             </svg>
-                                            Cambiando plan...
+                                            {t('billing.plans.changing')}
                                         </span>
                                     ) : (
-                                        'Confirmar cambio'
+                                        t('billing.plans.confirmChange')
                                     )}
                                 </button>
                             </div>

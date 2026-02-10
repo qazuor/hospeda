@@ -27,7 +27,6 @@ export type { PlanChangeDialogProps } from './PlanChangeDialog';
 export { VipPromotionsBanner } from './VipPromotionsBanner';
 
 export { ActiveAddons } from './ActiveAddons';
-export type { ActiveAddonsProps } from './ActiveAddons';
 
 export { UsageMeters } from './UsageMeters';
 export type { UsageMetersProps } from './UsageMeters';
@@ -42,10 +41,11 @@ export { InvoicePaymentDialog } from './InvoicePaymentDialog';
 export type { InvoicePaymentDialogProps } from './InvoicePaymentDialog';
 
 export { PaymentMethodSection } from './PaymentMethodSection';
-export type { PaymentMethodSectionProps } from './PaymentMethodSection';
 
 export { InvoiceListSection } from './InvoiceListSection';
 export type { InvoiceListSectionProps } from './InvoiceListSection';
 
 export { CheckoutResultBanner } from './CheckoutResultBanner';
 export type { CheckoutResultBannerProps } from './CheckoutResultBanner';
+
+export { BillingErrorBoundary } from './BillingErrorBoundary';

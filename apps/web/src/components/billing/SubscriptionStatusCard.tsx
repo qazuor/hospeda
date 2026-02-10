@@ -12,6 +12,8 @@
 
 import type { QZPaySubscription } from '@qazuor/qzpay-core';
 import { useSubscription } from '@qazuor/qzpay-react';
+import type { TranslationKey } from '@repo/i18n';
+import { useTranslations } from '@repo/i18n';
 import { type ReactElement, useEffect, useState } from 'react';
 import { updateBillingSubscription } from '../../store/billing';
 import { CancelSubscriptionDialog } from './CancelSubscriptionDialog';
@@ -40,7 +42,7 @@ export interface SubscriptionStatusCardProps {
 }
 
 /**
- * Map subscription status to Spanish labels and colors
+ * Map subscription status to labels and colors
  */
 interface StatusConfig {
     label: string;
@@ -50,12 +52,18 @@ interface StatusConfig {
 }
 
 /**
+ * Translation function type for helper functions
+ */
+type TFn = (key: TranslationKey, params?: Record<string, unknown>) => string;
+
+/**
  * Get status configuration based on subscription status
  *
  * @param subscription - QZPay subscription object
+ * @param t - Translation function
  * @returns Status configuration with label and color classes
  */
-function getStatusConfig(subscription: SubscriptionWithPlanDetails): StatusConfig {
+function getStatusConfig(subscription: SubscriptionWithPlanDetails, t: TFn): StatusConfig {
     // Check if in trial
     if (subscription.status === 'trialing' || subscription.trialEnd) {
         const now = Date.now();
@@ -63,10 +71,10 @@ function getStatusConfig(subscription: SubscriptionWithPlanDetails): StatusConfi
 
         if (trialEnd > now) {
             return {
-                label: 'En prueba',
+                label: t('billing.subscription.status.trialing'),
                 colorClass: 'text-blue-700',
                 bgColorClass: 'bg-blue-100',
-                ariaLabel: 'Suscripción en período de prueba'
+                ariaLabel: t('billing.subscription.statusAria.trialing')
             };
         }
     }
@@ -74,28 +82,28 @@ function getStatusConfig(subscription: SubscriptionWithPlanDetails): StatusConfi
     // Map status to config
     const statusMap: Record<string, StatusConfig> = {
         active: {
-            label: 'Activa',
+            label: t('billing.subscription.status.active'),
             colorClass: 'text-green-700',
             bgColorClass: 'bg-green-100',
-            ariaLabel: 'Suscripción activa'
+            ariaLabel: t('billing.subscription.statusAria.active')
         },
         past_due: {
-            label: 'Pago pendiente',
+            label: t('billing.subscription.status.pastDue'),
             colorClass: 'text-yellow-700',
             bgColorClass: 'bg-yellow-100',
-            ariaLabel: 'Suscripción con pago pendiente'
+            ariaLabel: t('billing.subscription.statusAria.pastDue')
         },
         canceled: {
-            label: 'Cancelada',
+            label: t('billing.subscription.status.canceled'),
             colorClass: 'text-red-700',
             bgColorClass: 'bg-red-100',
-            ariaLabel: 'Suscripción cancelada'
+            ariaLabel: t('billing.subscription.statusAria.canceled')
         },
         paused: {
-            label: 'Pausada',
+            label: t('billing.subscription.status.paused'),
             colorClass: 'text-gray-700',
             bgColorClass: 'bg-gray-100',
-            ariaLabel: 'Suscripción pausada'
+            ariaLabel: t('billing.subscription.statusAria.paused')
         }
     };
 
@@ -104,7 +112,9 @@ function getStatusConfig(subscription: SubscriptionWithPlanDetails): StatusConfi
             label: subscription.status,
             colorClass: 'text-gray-700',
             bgColorClass: 'bg-gray-100',
-            ariaLabel: `Suscripción en estado: ${subscription.status}`
+            ariaLabel: t('billing.subscription.statusAria.unknown', {
+                status: subscription.status
+            })
         }
     );
 }
@@ -186,6 +196,8 @@ function isCancelledButActive(subscription: SubscriptionWithPlanDetails): boolea
  * Displays a loading skeleton matching the card layout
  */
 function LoadingSkeleton(): ReactElement {
+    const { t } = useTranslations();
+
     return (
         <>
             <div
@@ -193,7 +205,7 @@ function LoadingSkeleton(): ReactElement {
                 // biome-ignore lint/a11y/useSemanticElements: loading indicator pattern used in tests
                 role="status"
                 aria-busy="true"
-                aria-label="Cargando información de suscripción"
+                aria-label={t('billing.subscription.loadingLabel')}
             >
                 <div className="mb-4 flex items-start justify-between">
                     <div className="flex-1">
@@ -221,6 +233,8 @@ function LoadingSkeleton(): ReactElement {
  * Displays error state with retry button
  */
 function ErrorState(props: { onRetry: () => void }): ReactElement {
+    const { t } = useTranslations();
+
     return (
         <div
             className="rounded-xl border-red-400 border-l-4 bg-white p-6 shadow-md"
@@ -236,7 +250,7 @@ function ErrorState(props: { onRetry: () => void }): ReactElement {
                     xmlns="http://www.w3.org/2000/svg"
                     aria-hidden="true"
                 >
-                    <title>Error</title>
+                    <title>{t('billing.common.error')}</title>
                     <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -247,18 +261,17 @@ function ErrorState(props: { onRetry: () => void }): ReactElement {
 
                 <div className="flex-1">
                     <h3 className="mb-2 font-semibold text-gray-900 text-lg">
-                        No pudimos cargar tu suscripción
+                        {t('billing.subscription.error.loadTitle')}
                     </h3>
                     <p className="mb-4 text-gray-600">
-                        Ocurrió un error al cargar los datos de tu suscripción. Por favor, intentá
-                        nuevamente.
+                        {t('billing.subscription.error.loadMessage')}
                     </p>
                     <button
                         type="button"
                         onClick={props.onRetry}
                         className="rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                     >
-                        Reintentar
+                        {t('billing.common.retry')}
                     </button>
                 </div>
             </div>
@@ -272,6 +285,8 @@ function ErrorState(props: { onRetry: () => void }): ReactElement {
  * Displays empty state when user has no subscription
  */
 function EmptyState(): ReactElement {
+    const { t } = useTranslations();
+
     return (
         <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-md">
             <div className="py-8 text-center">
@@ -284,7 +299,7 @@ function EmptyState(): ReactElement {
                     xmlns="http://www.w3.org/2000/svg"
                     aria-hidden="true"
                 >
-                    <title>Sin suscripción</title>
+                    <title>{t('billing.subscription.empty.titleIcon')}</title>
                     <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -294,17 +309,15 @@ function EmptyState(): ReactElement {
                 </svg>
 
                 <h3 className="mb-2 font-semibold text-gray-900 text-xl">
-                    No tenés suscripción activa
+                    {t('billing.subscription.empty.title')}
                 </h3>
-                <p className="mb-6 text-gray-600">
-                    Elegí un plan para comenzar a publicar tus alojamientos
-                </p>
+                <p className="mb-6 text-gray-600">{t('billing.subscription.empty.description')}</p>
 
                 <a
                     href="/precios/propietarios"
                     className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 >
-                    Ver planes
+                    {t('billing.common.viewPlans')}
                     <svg
                         className="ml-2 h-5 w-5"
                         fill="none"
@@ -334,11 +347,12 @@ function EmptyState(): ReactElement {
  */
 function TrialState(props: { subscription: SubscriptionWithPlanDetails }): ReactElement {
     const { subscription } = props;
+    const { t } = useTranslations();
     const daysRemaining = subscription.trialEnd
         ? getDaysRemainingInTrial(subscription.trialEnd)
         : 0;
 
-    const statusConfig = getStatusConfig(subscription);
+    const statusConfig = getStatusConfig(subscription, t);
 
     return (
         <div className="rounded-xl border-blue-400 border-l-4 bg-white p-6 shadow-md">
@@ -346,7 +360,7 @@ function TrialState(props: { subscription: SubscriptionWithPlanDetails }): React
             <div className="mb-4 flex items-start justify-between">
                 <div className="flex-1">
                     <h3 className="mb-1 font-bold text-2xl text-gray-900">
-                        {subscription.planName || 'Plan de prueba'}
+                        {subscription.planName || t('billing.subscription.planLabels.trial')}
                     </h3>
                 </div>
                 <span
@@ -360,13 +374,15 @@ function TrialState(props: { subscription: SubscriptionWithPlanDetails }): React
             {/* Trial countdown */}
             <div className="mb-4">
                 <p className="text-gray-700 text-lg">
-                    Te quedan{' '}
-                    <span className="font-bold text-blue-600">
-                        {daysRemaining} {daysRemaining === 1 ? 'día' : 'días'}
-                    </span>{' '}
-                    de prueba
+                    {daysRemaining === 1
+                        ? t('billing.subscription.trial.dayRemaining')
+                        : t('billing.subscription.trial.daysRemaining', {
+                              count: String(daysRemaining)
+                          })}
                 </p>
-                <p className="mt-1 text-gray-500 text-sm">No se realizó ningún cobro</p>
+                <p className="mt-1 text-gray-500 text-sm">
+                    {t('billing.subscription.trial.noCharge')}
+                </p>
             </div>
 
             {/* CTA */}
@@ -374,7 +390,7 @@ function TrialState(props: { subscription: SubscriptionWithPlanDetails }): React
                 href="/precios/propietarios"
                 className="inline-flex w-full items-center justify-center rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             >
-                Suscribirse ahora
+                {t('billing.subscription.trial.subscribeNow')}
             </a>
         </div>
     );
@@ -393,17 +409,19 @@ function ActiveSubscriptionState(props: {
     const { subscription, customerId, onCancelSuccess } = props;
     const [showCancelDialog, setShowCancelDialog] = useState(false);
     const [showPlanChangeDialog, setShowPlanChangeDialog] = useState(false);
-    const statusConfig = getStatusConfig(subscription);
+    const { t } = useTranslations();
+    const statusConfig = getStatusConfig(subscription, t);
 
     // Get subscription ID from subscription object
     const subscriptionId = subscription.id;
 
     // Determine billing interval
-    const billingInterval = subscription.interval === 'year' ? 'Anual' : 'Mensual';
+    const billingInterval =
+        subscription.interval === 'year' ? t('billing.common.annual') : t('billing.common.monthly');
 
     // Format price
     const priceText = subscription.price
-        ? `${formatCurrency(subscription.price)}/${subscription.interval === 'year' ? 'año' : 'mes'}`
+        ? `${formatCurrency(subscription.price)}${subscription.interval === 'year' ? t('billing.common.perYear') : t('billing.common.perMonth')}`
         : '';
 
     return (
@@ -413,7 +431,7 @@ function ActiveSubscriptionState(props: {
                 <div className="mb-6 flex items-start justify-between">
                     <div className="flex-1">
                         <h3 className="mb-1 font-bold text-2xl text-gray-900">
-                            {subscription.planName || 'Plan activo'}
+                            {subscription.planName || t('billing.subscription.planLabels.active')}
                         </h3>
                         <p className="text-gray-600">{billingInterval}</p>
                     </div>
@@ -430,7 +448,7 @@ function ActiveSubscriptionState(props: {
                     {/* Price */}
                     {priceText && (
                         <div className="flex items-center justify-between">
-                            <span className="text-gray-600">Precio</span>
+                            <span className="text-gray-600">{t('billing.common.price')}</span>
                             <span className="font-semibold text-gray-900 text-lg">{priceText}</span>
                         </div>
                     )}
@@ -438,7 +456,9 @@ function ActiveSubscriptionState(props: {
                     {/* Next renewal */}
                     {subscription.currentPeriodEnd && (
                         <div className="flex items-center justify-between">
-                            <span className="text-gray-600">Próxima renovación</span>
+                            <span className="text-gray-600">
+                                {t('billing.subscription.nextRenewal')}
+                            </span>
                             <span className="font-medium text-gray-900">
                                 {formatDate(subscription.currentPeriodEnd)}
                             </span>
@@ -453,14 +473,14 @@ function ActiveSubscriptionState(props: {
                         onClick={() => setShowPlanChangeDialog(true)}
                         className="flex-1 rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                     >
-                        Cambiar de plan
+                        {t('billing.subscription.changePlan')}
                     </button>
                     <button
                         type="button"
                         onClick={() => setShowCancelDialog(true)}
                         className="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 font-medium text-gray-700 transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
                     >
-                        Cancelar suscripción
+                        {t('billing.subscription.cancelSubscription')}
                     </button>
                 </div>
             </div>
@@ -508,6 +528,7 @@ function CancelledState(props: {
     const { subscription, customerId, onReactivateSuccess } = props;
     const [isReactivating, setIsReactivating] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const { t } = useTranslations();
 
     const { resume } = useSubscription({ customerId });
 
@@ -528,7 +549,7 @@ function CancelledState(props: {
             setError(
                 err instanceof Error
                     ? err.message
-                    : 'No pudimos reactivar tu suscripción. Por favor, intentá nuevamente.'
+                    : t('billing.subscription.cancelled.reactivateError')
             );
         } finally {
             setIsReactivating(false);
@@ -547,7 +568,7 @@ function CancelledState(props: {
                     xmlns="http://www.w3.org/2000/svg"
                     aria-hidden="true"
                 >
-                    <title>Advertencia</title>
+                    <title>{t('billing.common.warning')}</title>
                     <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -558,16 +579,15 @@ function CancelledState(props: {
 
                 <div className="flex-1">
                     <h3 className="mb-2 font-semibold text-gray-900 text-xl">
-                        Suscripción cancelada
+                        {t('billing.subscription.cancelled.title')}
                     </h3>
                     <p className="mb-4 text-gray-700">
-                        Tu plan se cancelará el{' '}
-                        {subscription.currentPeriodEnd && (
-                            <span className="font-medium">
-                                {formatDate(subscription.currentPeriodEnd)}
-                            </span>
-                        )}
-                        . Podés seguir usándolo hasta esa fecha.
+                        {subscription.currentPeriodEnd
+                            ? t('billing.subscription.cancelled.willCancelOn', {
+                                  date: formatDate(subscription.currentPeriodEnd)
+                              })
+                            : t('billing.subscription.cancelled.title')}{' '}
+                        {t('billing.subscription.cancelled.useUntilDate')}
                     </p>
 
                     {/* Error message */}
@@ -595,7 +615,7 @@ function CancelledState(props: {
                                     viewBox="0 0 24 24"
                                     aria-hidden="true"
                                 >
-                                    <title>Cargando</title>
+                                    <title>{t('billing.common.loading')}</title>
                                     <circle
                                         className="opacity-25"
                                         cx="12"
@@ -610,10 +630,10 @@ function CancelledState(props: {
                                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                                     />
                                 </svg>
-                                Reactivando...
+                                {t('billing.subscription.cancelled.reactivating')}
                             </span>
                         ) : (
-                            'Reactivar suscripción'
+                            t('billing.subscription.cancelled.reactivate')
                         )}
                     </button>
                 </div>

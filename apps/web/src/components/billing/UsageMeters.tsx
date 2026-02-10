@@ -9,6 +9,7 @@
 'use client';
 
 import { useCurrentCustomer, useLimits } from '@qazuor/qzpay-react';
+import { useTranslations } from '@repo/i18n';
 
 /**
  * Component props
@@ -92,6 +93,7 @@ function isUnlimited(maxValue: number): boolean {
 export function UsageMeters({ customerId: customerIdProp }: UsageMetersProps) {
     const [currentCustomer] = useCurrentCustomer();
     const customerId = customerIdProp || currentCustomer?.id;
+    const { t } = useTranslations();
 
     const {
         data: limits,
@@ -104,11 +106,11 @@ export function UsageMeters({ customerId: customerIdProp }: UsageMetersProps) {
     if (!customerId) {
         return (
             <div className="rounded-xl bg-white p-8 shadow-lg">
-                <h2 className="mb-6 font-bold text-2xl text-gray-900">Uso de Recursos</h2>
+                <h2 className="mb-6 font-bold text-2xl text-gray-900">
+                    {t('billing.usage.title')}
+                </h2>
                 <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-6 text-center">
-                    <p className="text-yellow-700">
-                        Necesitás estar autenticado para ver el uso de recursos
-                    </p>
+                    <p className="text-yellow-700">{t('billing.usage.authRequired')}</p>
                 </div>
             </div>
         );
@@ -117,7 +119,9 @@ export function UsageMeters({ customerId: customerIdProp }: UsageMetersProps) {
     if (isLoading) {
         return (
             <div className="rounded-xl bg-white p-8 shadow-lg">
-                <h2 className="mb-6 font-bold text-2xl text-gray-900">Uso de Recursos</h2>
+                <h2 className="mb-6 font-bold text-2xl text-gray-900">
+                    {t('billing.usage.title')}
+                </h2>
                 <div
                     className="flex items-center justify-center py-12"
                     // biome-ignore lint/a11y/useSemanticElements: loading indicator pattern used in tests
@@ -132,7 +136,9 @@ export function UsageMeters({ customerId: customerIdProp }: UsageMetersProps) {
     if (error) {
         return (
             <div className="rounded-xl bg-white p-8 shadow-lg">
-                <h2 className="mb-6 font-bold text-2xl text-gray-900">Uso de Recursos</h2>
+                <h2 className="mb-6 font-bold text-2xl text-gray-900">
+                    {t('billing.usage.title')}
+                </h2>
                 <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
                     <svg
                         className="mx-auto mb-3 h-12 w-12 text-red-400"
@@ -162,7 +168,9 @@ export function UsageMeters({ customerId: customerIdProp }: UsageMetersProps) {
     if (activeLimits.length === 0) {
         return (
             <div className="rounded-xl bg-white p-8 shadow-lg">
-                <h2 className="mb-6 font-bold text-2xl text-gray-900">Uso de Recursos</h2>
+                <h2 className="mb-6 font-bold text-2xl text-gray-900">
+                    {t('billing.usage.title')}
+                </h2>
                 <div className="rounded-lg bg-gradient-to-r from-green-50 to-blue-50 p-8 text-center">
                     <svg
                         className="mx-auto mb-4 h-16 w-16 text-green-500"
@@ -178,10 +186,10 @@ export function UsageMeters({ customerId: customerIdProp }: UsageMetersProps) {
                             d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
                         />
                     </svg>
-                    <h3 className="mb-2 font-bold text-gray-900 text-xl">Recursos Ilimitados</h3>
-                    <p className="text-gray-600">
-                        Tu plan incluye uso ilimitado de todos los recursos
-                    </p>
+                    <h3 className="mb-2 font-bold text-gray-900 text-xl">
+                        {t('billing.usage.unlimited.title')}
+                    </h3>
+                    <p className="text-gray-600">{t('billing.usage.unlimited.description')}</p>
                 </div>
             </div>
         );
@@ -189,7 +197,7 @@ export function UsageMeters({ customerId: customerIdProp }: UsageMetersProps) {
 
     return (
         <div className="rounded-xl bg-white p-8 shadow-lg">
-            <h2 className="mb-6 font-bold text-2xl text-gray-900">Uso de Recursos</h2>
+            <h2 className="mb-6 font-bold text-2xl text-gray-900">{t('billing.usage.title')}</h2>
 
             <div className="space-y-6">
                 {activeLimits.map((limit) => {
@@ -214,7 +222,9 @@ export function UsageMeters({ customerId: customerIdProp }: UsageMetersProps) {
                                         {formatUsage(limit.maxValue)}
                                     </span>
                                     <p className="text-gray-500 text-xs">
-                                        {percentage.toFixed(0)}% usado
+                                        {t('billing.usage.percentUsed', {
+                                            percentage: percentage.toFixed(0)
+                                        })}
                                     </p>
                                 </div>
                             </div>
@@ -222,7 +232,7 @@ export function UsageMeters({ customerId: customerIdProp }: UsageMetersProps) {
                             {/* Progress bar */}
                             <div
                                 className="h-3 overflow-hidden rounded-full bg-gray-100"
-                                aria-label={`${limitName}: ${percentage.toFixed(0)}% usado`}
+                                aria-label={`${limitName}: ${t('billing.usage.percentUsed', { percentage: percentage.toFixed(0) })}`}
                             >
                                 <div
                                     className={`h-full rounded-full transition-all duration-500 ${colors.bg}`}
@@ -252,17 +262,17 @@ export function UsageMeters({ customerId: customerIdProp }: UsageMetersProps) {
                                         </svg>
                                         <div className="flex-1">
                                             <p className="font-medium text-red-800 text-sm">
-                                                Límite alcanzado
+                                                {t('billing.usage.atLimit.title')}
                                             </p>
                                             <p className="mt-1 text-red-700 text-sm">
-                                                Alcanzaste el límite de tu plan.{' '}
+                                                {t('billing.usage.atLimit.message')}{' '}
                                                 <a
                                                     href="/precios/propietarios"
                                                     className="font-semibold underline hover:no-underline"
                                                 >
-                                                    Mejorá tu plan
+                                                    {t('billing.usage.atLimit.cta')}
                                                 </a>{' '}
-                                                para aumentar tu capacidad.
+                                                {t('billing.usage.atLimit.ctaSuffix')}
                                             </p>
                                         </div>
                                     </div>
@@ -290,18 +300,19 @@ export function UsageMeters({ customerId: customerIdProp }: UsageMetersProps) {
                                         </svg>
                                         <div className="flex-1">
                                             <p className="font-medium text-sm text-yellow-800">
-                                                Acercándose al límite
+                                                {t('billing.usage.nearLimit.title')}
                                             </p>
                                             <p className="mt-1 text-sm text-yellow-700">
-                                                Estás usando el {percentage.toFixed(0)}% de tu
-                                                capacidad.{' '}
+                                                {t('billing.usage.nearLimit.message', {
+                                                    percentage: percentage.toFixed(0)
+                                                })}{' '}
                                                 <a
                                                     href="/precios/propietarios"
                                                     className="font-semibold underline hover:no-underline"
                                                 >
-                                                    Considerá mejorar tu plan
+                                                    {t('billing.usage.nearLimit.cta')}
                                                 </a>{' '}
-                                                para evitar interrupciones.
+                                                {t('billing.usage.nearLimit.ctaSuffix')}
                                             </p>
                                         </div>
                                     </div>
@@ -318,17 +329,17 @@ export function UsageMeters({ customerId: customerIdProp }: UsageMetersProps) {
                     <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
                         <div className="text-center sm:text-left">
                             <h3 className="mb-1 font-bold text-gray-900">
-                                ¿Necesitás más capacidad?
+                                {t('billing.usage.needMore.title')}
                             </h3>
                             <p className="text-gray-600 text-sm">
-                                Mejorá tu plan y obtené acceso a más recursos
+                                {t('billing.usage.needMore.description')}
                             </p>
                         </div>
                         <a
                             href="/precios/propietarios"
                             className="rounded-lg bg-primary px-6 py-3 font-semibold text-white transition-colors hover:bg-primary/90"
                         >
-                            Ver planes
+                            {t('billing.common.viewPlans')}
                         </a>
                     </div>
                 </div>

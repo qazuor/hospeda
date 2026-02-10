@@ -7,6 +7,10 @@
  * @module components/billing/UpgradeFallback
  */
 
+'use client';
+
+import { useTranslations } from '@repo/i18n';
+
 /**
  * Props for the UpgradeFallback component
  */
@@ -64,12 +68,14 @@ export function UpgradeFallback({
     upgradeLink,
     description
 }: UpgradeFallbackProps) {
+    const { t } = useTranslations();
+
     return (
         <div
             className="mx-auto max-w-2xl rounded-xl border-amber-400 border-l-4 bg-white p-6 shadow-md md:mx-0"
             // biome-ignore lint/a11y/useSemanticElements: custom upgrade prompt with CTA
             role="status"
-            aria-label={`Función no disponible: ${featureName}`}
+            aria-label={t('billing.upgrade.unavailableAria', { featureName })}
         >
             {/* Lock icon */}
             <div className="flex flex-col items-center gap-4 md:items-start">
@@ -97,8 +103,7 @@ export function UpgradeFallback({
                 <div className="w-full space-y-4">
                     {/* Plan availability message */}
                     <p className="text-center text-gray-600 md:text-left">
-                        Esta función está disponible en el plan{' '}
-                        <span className="font-semibold text-gray-900">{requiredPlan}</span>.
+                        {t('billing.upgrade.availableInPlan', { requiredPlan })}
                     </p>
 
                     {/* Optional description */}
@@ -111,9 +116,9 @@ export function UpgradeFallback({
                         <a
                             href={upgradeLink}
                             className="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-6 py-3 font-semibold text-white transition-colors duration-200 hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
-                            aria-label={`Ver planes para acceder a ${featureName}`}
+                            aria-label={t('billing.upgrade.viewPlansAria', { featureName })}
                         >
-                            Ver planes
+                            {t('billing.common.viewPlans')}
                             <svg
                                 className="h-5 w-5"
                                 fill="none"

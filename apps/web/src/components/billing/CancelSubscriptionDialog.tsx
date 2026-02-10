@@ -10,6 +10,7 @@
 'use client';
 
 import { useSubscription } from '@qazuor/qzpay-react';
+import { useTranslations } from '@repo/i18n';
 import { type ReactElement, useState } from 'react';
 
 /**
@@ -90,6 +91,7 @@ export function CancelSubscriptionDialog({
     const [showSuccess, setShowSuccess] = useState(false);
 
     const { cancel } = useSubscription({ customerId });
+    const { t } = useTranslations();
 
     // Don't render if not open
     if (!isOpen) {
@@ -114,11 +116,7 @@ export function CancelSubscriptionDialog({
                 onClose();
             }, 2000);
         } catch (err) {
-            setError(
-                err instanceof Error
-                    ? err.message
-                    : 'No pudimos cancelar tu suscripción. Por favor, intentá nuevamente.'
-            );
+            setError(err instanceof Error ? err.message : t('billing.cancel.errorFallback'));
         } finally {
             setIsCancelling(false);
         }
@@ -173,7 +171,7 @@ export function CancelSubscriptionDialog({
                                 xmlns="http://www.w3.org/2000/svg"
                                 aria-hidden="true"
                             >
-                                <title>Éxito</title>
+                                <title>{t('billing.common.success')}</title>
                                 <path
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
@@ -183,11 +181,9 @@ export function CancelSubscriptionDialog({
                             </svg>
 
                             <h3 className="mb-2 font-semibold text-gray-900 text-xl">
-                                Suscripción cancelada
+                                {t('billing.cancel.success.title')}
                             </h3>
-                            <p className="text-gray-600">
-                                Tu suscripción se cancelará al final del período actual
-                            </p>
+                            <p className="text-gray-600">{t('billing.cancel.success.message')}</p>
                         </div>
                     ) : (
                         <>
@@ -201,7 +197,7 @@ export function CancelSubscriptionDialog({
                                     xmlns="http://www.w3.org/2000/svg"
                                     aria-hidden="true"
                                 >
-                                    <title>Advertencia</title>
+                                    <title>{t('billing.common.warning')}</title>
                                     <path
                                         strokeLinecap="round"
                                         strokeLinejoin="round"
@@ -216,25 +212,21 @@ export function CancelSubscriptionDialog({
                                 id="cancel-dialog-title"
                                 className="mb-4 text-center font-bold text-2xl text-gray-900"
                             >
-                                ¿Cancelar suscripción?
+                                {t('billing.cancel.dialogTitle')}
                             </h2>
 
                             {/* Warning message */}
                             <div className="mb-6 rounded-lg border border-yellow-200 bg-yellow-50 p-4">
                                 <p className="mb-2 text-gray-700">
-                                    Si cancelás tu{' '}
-                                    {planName ? (
-                                        <span className="font-semibold">{planName}</span>
-                                    ) : (
-                                        'suscripción'
-                                    )}
-                                    :
+                                    {planName
+                                        ? t('billing.cancel.warningIntro', { planName })
+                                        : t('billing.cancel.warningIntroDefault')}
                                 </p>
                                 <ul className="list-inside list-disc space-y-1 text-gray-600 text-sm">
-                                    <li>Perderás acceso a todas las funciones premium</li>
-                                    <li>Tus publicaciones se despublicarán automáticamente</li>
-                                    <li>Los datos se conservarán si reactivás tu plan</li>
-                                    <li>El cambio será efectivo al final del período actual</li>
+                                    <li>{t('billing.cancel.warningItems.losePremium')}</li>
+                                    <li>{t('billing.cancel.warningItems.unpublish')}</li>
+                                    <li>{t('billing.cancel.warningItems.dataPreserved')}</li>
+                                    <li>{t('billing.cancel.warningItems.effectiveAtEnd')}</li>
                                 </ul>
                             </div>
 
@@ -253,7 +245,7 @@ export function CancelSubscriptionDialog({
                                             xmlns="http://www.w3.org/2000/svg"
                                             aria-hidden="true"
                                         >
-                                            <title>Error</title>
+                                            <title>{t('billing.common.error')}</title>
                                             <path
                                                 strokeLinecap="round"
                                                 strokeLinejoin="round"
@@ -268,7 +260,7 @@ export function CancelSubscriptionDialog({
                                                 onClick={handleRetry}
                                                 className="mt-2 font-medium text-red-600 text-sm underline hover:text-red-700"
                                             >
-                                                Reintentar
+                                                {t('billing.common.retry')}
                                             </button>
                                         </div>
                                     </div>
@@ -283,7 +275,7 @@ export function CancelSubscriptionDialog({
                                     disabled={isCancelling}
                                     className="flex-1 rounded-lg bg-gray-100 px-4 py-2 font-medium text-gray-700 transition-colors hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
-                                    Volver
+                                    {t('billing.cancel.goBack')}
                                 </button>
                                 <button
                                     type="button"
@@ -300,7 +292,7 @@ export function CancelSubscriptionDialog({
                                                 viewBox="0 0 24 24"
                                                 aria-hidden="true"
                                             >
-                                                <title>Cargando</title>
+                                                <title>{t('billing.common.loading')}</title>
                                                 <circle
                                                     className="opacity-25"
                                                     cx="12"
@@ -315,10 +307,10 @@ export function CancelSubscriptionDialog({
                                                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                                                 />
                                             </svg>
-                                            Cancelando...
+                                            {t('billing.cancel.cancelling')}
                                         </span>
                                     ) : (
-                                        'Confirmar cancelación'
+                                        t('billing.cancel.confirm')
                                     )}
                                 </button>
                             </div>

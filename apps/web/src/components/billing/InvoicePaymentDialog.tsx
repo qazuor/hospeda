@@ -10,6 +10,7 @@
 
 import type { PaymentMethod } from '@/lib/billing-api-client';
 import { getPaymentMethods } from '@/lib/billing-api-client';
+import { useTranslations } from '@repo/i18n';
 import { useEffect, useState } from 'react';
 
 /**
@@ -69,7 +70,7 @@ function formatCurrency(amount: number, currency: string): string {
  * - Pre-selects default payment method
  * - Processes payment through API
  * - Loading states during fetch and payment
- * - Error handling with Spanish messages
+ * - Error handling with translated messages
  * - Empty state when no payment methods available
  *
  * @param props - Component props
@@ -99,6 +100,8 @@ export function InvoicePaymentDialog({
     const [isPaymentLoading, setIsPaymentLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    const { t } = useTranslations();
+
     // Fetch payment methods when dialog opens
     useEffect(() => {
         if (!isOpen) return;
@@ -121,7 +124,7 @@ export function InvoicePaymentDialog({
             } catch (err) {
                 console.error('Error fetching payment methods:', err);
                 setError(
-                    err instanceof Error ? err.message : 'Error al cargar los métodos de pago'
+                    err instanceof Error ? err.message : t('billing.payment.error.loadFallback')
                 );
             } finally {
                 setIsLoadingMethods(false);
@@ -129,7 +132,7 @@ export function InvoicePaymentDialog({
         };
 
         fetchMethods();
-    }, [isOpen]);
+    }, [isOpen, t]);
 
     // Handle payment submission
     const handlePayment = async () => {
@@ -152,14 +155,18 @@ export function InvoicePaymentDialog({
 
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.error?.message || 'Error al procesar el pago');
+                throw new Error(
+                    errorData.error?.message || t('billing.payment.error.paymentFallback')
+                );
             }
 
             // Success - close dialog
             onClose();
         } catch (err) {
             console.error('Payment error:', err);
-            setError(err instanceof Error ? err.message : 'Error al procesar el pago');
+            setError(
+                err instanceof Error ? err.message : t('billing.payment.error.paymentFallback')
+            );
         } finally {
             setIsPaymentLoading(false);
         }
@@ -183,13 +190,13 @@ export function InvoicePaymentDialog({
                         id="payment-dialog-title"
                         className="font-bold text-gray-900 text-xl"
                     >
-                        Pagar factura
+                        {t('billing.invoices.payDialog.title')}
                     </h2>
                     <button
                         type="button"
                         onClick={onClose}
                         className="rounded-lg p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
-                        aria-label="Cerrar"
+                        aria-label={t('billing.common.close')}
                     >
                         <svg
                             className="h-6 w-6"
@@ -239,10 +246,10 @@ export function InvoicePaymentDialog({
                             />
                         </svg>
                         <p className="mb-2 font-medium text-gray-900">
-                            No tenés métodos de pago guardados
+                            {t('billing.payment.empty.noSavedMethods')}
                         </p>
                         <p className="text-gray-600 text-sm">
-                            Agregá un método de pago para continuar
+                            {t('billing.payment.empty.addToContinue')}
                         </p>
                     </div>
                 )}
@@ -252,7 +259,9 @@ export function InvoicePaymentDialog({
                     <div className="space-y-4">
                         {/* Amount display */}
                         <div className="rounded-lg bg-blue-50 p-4">
-                            <p className="mb-1 text-gray-600 text-sm">Monto a pagar</p>
+                            <p className="mb-1 text-gray-600 text-sm">
+                                {t('billing.invoices.payDialog.amountToPay')}
+                            </p>
                             <p className="font-bold text-2xl text-gray-900">
                                 {formatCurrency(amount, currency)}
                             </p>
@@ -261,7 +270,7 @@ export function InvoicePaymentDialog({
                         {/* Payment methods */}
                         <div className="space-y-3">
                             <p className="block font-medium text-gray-700 text-sm">
-                                Método de pago
+                                {t('billing.payment.method')}
                             </p>
 
                             {paymentMethods.map((method) => (
@@ -294,7 +303,7 @@ export function InvoicePaymentDialog({
                                             )}
                                             {method.isDefault && (
                                                 <span className="rounded-full bg-blue-100 px-2 py-1 font-medium text-blue-700 text-xs">
-                                                    Predeterminado
+                                                    {t('billing.common.default')}
                                                 </span>
                                             )}
                                         </div>
@@ -334,7 +343,7 @@ export function InvoicePaymentDialog({
                                 className="flex-1 rounded-lg border border-gray-300 px-4 py-3 font-medium text-gray-700 transition-colors hover:bg-gray-50"
                                 disabled={isPaymentLoading}
                             >
-                                Cancelar
+                                {t('billing.common.cancel')}
                             </button>
                             <button
                                 type="button"
@@ -343,8 +352,10 @@ export function InvoicePaymentDialog({
                                 className="flex-1 rounded-lg bg-blue-600 px-4 py-3 font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                             >
                                 {isPaymentLoading
-                                    ? 'Procesando...'
-                                    : `Pagar ${formatCurrency(amount, currency)}`}
+                                    ? t('billing.common.processing')
+                                    : t('billing.invoices.payDialog.payAmount', {
+                                          amount: formatCurrency(amount, currency)
+                                      })}
                             </button>
                         </div>
                     </div>

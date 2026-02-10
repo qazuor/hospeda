@@ -7,6 +7,9 @@
  * @module components/billing/BillingErrorState
  */
 
+'use client';
+
+import { useTranslations } from '@repo/i18n';
 import type { ReactElement } from 'react';
 
 /**
@@ -15,7 +18,7 @@ import type { ReactElement } from 'react';
 export interface BillingErrorStateProps {
     /**
      * Optional error title
-     * @default "Error al cargar los datos"
+     * @default Uses i18n key 'billing.errorState.defaultTitle'
      */
     title?: string;
 
@@ -33,7 +36,7 @@ export interface BillingErrorStateProps {
 
     /**
      * Optional retry button label
-     * @default "Reintentar"
+     * @default Uses i18n key 'billing.errorState.defaultRetry'
      */
     retryLabel?: string;
 }
@@ -92,16 +95,20 @@ function AlertIcon(): ReactElement {
  *   title="Error al cargar facturas"
  *   message="No se pudo conectar con el servidor. Por favor, intenta nuevamente."
  *   onRetry={() => refetch()}
- *   retryLabel="Reintentar"
  * />
  * ```
  */
 export function BillingErrorState({
-    title = 'Error al cargar los datos',
+    title: titleProp,
     message,
     onRetry,
-    retryLabel = 'Reintentar'
+    retryLabel: retryLabelProp
 }: BillingErrorStateProps): ReactElement {
+    const { t } = useTranslations();
+
+    const title = titleProp ?? t('billing.errorState.defaultTitle');
+    const retryLabel = retryLabelProp ?? t('billing.errorState.defaultRetry');
+
     return (
         <div
             className="mx-auto max-w-2xl rounded-xl border border-red-200 bg-red-50 p-6 shadow-sm"

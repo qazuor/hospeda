@@ -1,7 +1,7 @@
 /**
  * LimitFallback Component
  *
- * Spanish-language fallback component for LimitGate's `fallback` prop.
+ * Fallback component for LimitGate's `fallback` prop.
  * Displays the limit name, current usage vs max, and a CTA to upgrade.
  *
  * @module components/billing/LimitFallback
@@ -9,6 +9,7 @@
 
 'use client';
 
+import { useTranslations } from '@repo/i18n';
 import type { ReactElement } from 'react';
 
 /**
@@ -16,7 +17,7 @@ import type { ReactElement } from 'react';
  */
 export interface LimitFallbackProps {
     /**
-     * Human-readable name of the limit (in Spanish, e.g., "alojamientos", "eventos")
+     * Human-readable name of the limit (e.g., "alojamientos", "eventos")
      * @example "alojamientos"
      */
     limitName: string;
@@ -34,7 +35,7 @@ export interface LimitFallbackProps {
     maxValue: number;
 
     /**
-     * Name of the current plan (in Spanish)
+     * Name of the current plan
      * @example "Básico"
      */
     currentPlan: string;
@@ -146,6 +147,8 @@ export function LimitFallback({
     currentPlan,
     upgradeLink
 }: LimitFallbackProps): ReactElement {
+    const { t } = useTranslations();
+
     // Calculate usage percentage
     const percentage = Math.min((currentValue / maxValue) * 100, 100);
 
@@ -164,24 +167,28 @@ export function LimitFallback({
             <div className="mb-4 flex items-start gap-3">
                 <WarningIcon />
                 <div className="flex-1">
-                    <h3 className="font-bold text-gray-900 text-xl">Límite alcanzado</h3>
+                    <h3 className="font-bold text-gray-900 text-xl">
+                        {t('billing.limits.reached')}
+                    </h3>
                 </div>
             </div>
 
             {/* Message */}
             <p className="mb-4 text-gray-600">
-                Has alcanzado el límite de{' '}
-                <span className="font-semibold">
-                    {maxValue} {limitName}
-                </span>{' '}
-                de tu plan <span className="font-semibold">{currentPlan}</span>.
+                {t('billing.limits.reachedMessage', {
+                    maxValue: String(maxValue),
+                    limitName,
+                    currentPlan
+                })}
             </p>
 
             {/* Progress bar and counter */}
             <div className="mb-6">
                 {/* Counter */}
                 <div className="mb-2 flex items-center justify-between">
-                    <span className="text-gray-500 text-sm">Uso actual</span>
+                    <span className="text-gray-500 text-sm">
+                        {t('billing.limits.currentUsage')}
+                    </span>
                     <span className="font-medium text-gray-900 text-sm">
                         {currentValue}/{maxValue}
                     </span>
@@ -197,7 +204,11 @@ export function LimitFallback({
                         aria-valuenow={currentValue}
                         aria-valuemin={0}
                         aria-valuemax={maxValue}
-                        aria-label={`${currentValue} de ${maxValue} ${limitName} utilizados`}
+                        aria-label={t('billing.limits.usageAriaLabel', {
+                            currentValue: String(currentValue),
+                            maxValue: String(maxValue),
+                            limitName
+                        })}
                         tabIndex={0}
                     />
                 </div>
@@ -208,7 +219,7 @@ export function LimitFallback({
                 href={upgradeLink}
                 className="inline-flex w-full items-center justify-center rounded-lg bg-blue-600 px-6 py-3 font-medium text-base text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             >
-                Mejorar plan para más {limitName}
+                {t('billing.limits.upgradeCta', { limitName })}
                 <ArrowRightIcon />
             </a>
         </div>
