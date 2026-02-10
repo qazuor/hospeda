@@ -1120,6 +1120,25 @@ function createAddOnStorage(config: HttpAdapterConfig): QZPayAddOnStorage {
                 {},
                 getAuthToken
             );
+        },
+
+        findSubscriptionAddOn: async (
+            subscriptionId: string,
+            addOnId: string
+        ): Promise<QZPaySubscriptionAddOn | null> => {
+            try {
+                return await fetchAPI<QZPaySubscriptionAddOn>(
+                    apiUrl,
+                    `/api/v1/billing/subscriptions/${subscriptionId}/addons/${addOnId}`,
+                    {},
+                    getAuthToken
+                );
+            } catch (error) {
+                if ((error as Error).message.includes('not found')) {
+                    return null;
+                }
+                throw error;
+            }
         }
     };
 }
