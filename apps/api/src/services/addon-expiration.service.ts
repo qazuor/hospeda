@@ -15,7 +15,6 @@
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { getDb } from '@repo/db';
 import { billingAddonPurchases } from '@repo/db/schemas';
-// @ts-expect-error - drizzle-orm is a transitive dependency
 import { and, eq, gte, isNotNull, lte } from 'drizzle-orm';
 import { apiLogger } from '../utils/logger';
 import { AddonEntitlementService } from './addon-entitlement.service';

@@ -36,6 +36,16 @@ vi.mock('../../src/utils/notification-helper', () => ({
     sendNotification: vi.fn()
 }));
 
+// Mock notification retry service
+vi.mock('../../src/services/notification-retry.service', () => ({
+    processDbNotificationRetries: vi.fn().mockResolvedValue({
+        processed: 0,
+        succeeded: 0,
+        failed: 0,
+        permanentlyFailed: 0
+    })
+}));
+
 // Mock @repo/notifications
 vi.mock('@repo/notifications', async () => {
     const actual = await vi.importActual('@repo/notifications');
@@ -47,6 +57,7 @@ vi.mock('@repo/notifications', async () => {
 
 // Import mocked modules after mocking
 import { getQZPayBilling } from '../../src/middlewares/billing';
+import { processDbNotificationRetries } from '../../src/services/notification-retry.service';
 import { TrialService } from '../../src/services/trial.service';
 import { sendNotification } from '../../src/utils/notification-helper';
 
@@ -286,25 +297,23 @@ describe('Notification Schedule Cron Job', () => {
     });
 
     describe('Notification Retries', () => {
-        it('should process notification retry queue', async () => {
+        it('should process database-based notification retry queue', async () => {
             // Arrange
             const ctx = createMockContext();
             const mockBilling = {};
             const mockTrialService = {
                 findTrialsEndingSoon: vi.fn().mockResolvedValue([])
             };
-            const mockRetryService = {
-                processRetries: vi.fn().mockResolvedValue({
-                    processed: 5,
-                    succeeded: 3,
-                    failed: 1,
-                    permanentlyFailed: 1
-                })
-            };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
             vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
-            vi.mocked(RetryService).mockImplementation(() => mockRetryService as any);
+            // Mock database-based retry to return stats
+            vi.mocked(processDbNotificationRetries).mockResolvedValue({
+                processed: 5,
+                succeeded: 3,
+                failed: 1,
+                permanentlyFailed: 1
+            });
 
             // Act
             const result = await notificationScheduleJob.handler(ctx);
@@ -321,7 +330,8 @@ describe('Notification Schedule Cron Job', () => {
                 failed: 1,
                 permanentlyFailed: 1
             });
-            expect(mockRetryService.processRetries).toHaveBeenCalledTimes(1);
+            expect(processDbNotificationRetries).toHaveBeenCalledTimes(1);
+            expect(processDbNotificationRetries).toHaveBeenCalledWith(false); // Not dry run
         });
 
         it('should continue job execution even if retry processing fails', async () => {
@@ -342,14 +352,14 @@ describe('Notification Schedule Cron Job', () => {
                     }
                 ])
             };
-            const mockRetryService = {
-                processRetries: vi.fn().mockRejectedValue(new Error('Redis connection failed'))
-            };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
             vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
             vi.mocked(sendNotification).mockResolvedValue(undefined);
-            vi.mocked(RetryService).mockImplementation(() => mockRetryService as any);
+            // Mock database-based retry to fail
+            vi.mocked(processDbNotificationRetries).mockRejectedValue(
+                new Error('Database connection failed')
+            );
 
             // Act
             const result = await notificationScheduleJob.handler(ctx);
@@ -360,7 +370,7 @@ describe('Notification Schedule Cron Job', () => {
             expect(ctx.logger.error).toHaveBeenCalledWith(
                 'Failed to process notification retries',
                 expect.objectContaining({
-                    error: 'Redis connection failed'
+                    error: 'Database connection failed'
                 })
             );
         });

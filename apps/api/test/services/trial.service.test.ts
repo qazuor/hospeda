@@ -49,8 +49,7 @@ describe('TrialService', () => {
             const customerId = 'customer-123';
             const mockPlan = {
                 id: 'plan-owner-basico',
-                slug: 'owner-basico',
-                name: 'Basico',
+                name: 'owner-basico', // QZPay uses name as identifier
                 monthlyPriceArs: 1500000
             };
             const mockSubscription = {
@@ -95,8 +94,7 @@ describe('TrialService', () => {
             const customerId = 'customer-456';
             const mockPlan = {
                 id: 'plan-complex-basico',
-                slug: 'complex-basico',
-                name: 'Complejo Basico',
+                name: 'complex-basico', // QZPay uses name as identifier
                 monthlyPriceArs: 5000000
             };
             const mockSubscription = {
@@ -146,7 +144,7 @@ describe('TrialService', () => {
             };
 
             vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
-                data: [{ id: 'plan-1', slug: 'owner-basico' }]
+                data: [{ id: 'plan-1', name: 'owner-basico' }]
             } as never);
             vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
                 existingSubscription

@@ -17,7 +17,6 @@ import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { type EntitlementKey, type LimitKey, getAddonBySlug } from '@repo/billing';
 import { getDb } from '@repo/db';
 import { billingAddonPurchases } from '@repo/db/schemas';
-// @ts-expect-error - drizzle-orm is a transitive dependency
 import { and, eq } from 'drizzle-orm';
 import { clearEntitlementCache } from '../middlewares/entitlement';
 import { apiLogger } from '../utils/logger';

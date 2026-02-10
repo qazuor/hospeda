@@ -18,6 +18,7 @@
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { COMPLEX_TRIAL_DAYS, OWNER_TRIAL_DAYS } from '@repo/billing';
 import { NotificationType, type TrialEventPayload } from '@repo/notifications';
+import { clearEntitlementCache } from '../middlewares/entitlement';
 import { apiLogger } from '../utils/logger';
 
 /**
@@ -127,7 +128,8 @@ export class TrialService {
                 throw new Error('Failed to fetch plans list');
             }
 
-            const plan = plansResult.data.find((p: { slug?: string }) => p.slug === planSlug);
+            // QZPay plans use 'name' not 'slug'
+            const plan = plansResult.data.find((p) => p.name === planSlug);
 
             if (!plan) {
                 apiLogger.error({ planSlug }, 'Trial plan not found');
@@ -353,6 +355,9 @@ export class TrialService {
 
                         // Update subscription to cancel (QZPay doesn't support 'expired' status)
                         await this.billing.subscriptions.cancel(subscription.id);
+
+                        // Clear entitlement cache to reflect trial expiry immediately
+                        clearEntitlementCache(subscription.customerId);
 
                         blockedCount++;
 

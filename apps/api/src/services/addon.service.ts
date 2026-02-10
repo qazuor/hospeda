@@ -16,7 +16,6 @@
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { ALL_ADDONS, type AddonDefinition, getAddonBySlug } from '@repo/billing';
-// @ts-expect-error - drizzle-orm is a transitive dependency
 import { and, eq } from 'drizzle-orm';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 import { z } from 'zod';

@@ -23,6 +23,30 @@ import type { QZPayBillingPromoCode } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+// Hoist mock variables so they're available when vi.mock() factories execute
+const { mockDb, mockWithTransaction } = vi.hoisted(() => {
+    const mockDb = {
+        select: vi.fn(),
+        insert: vi.fn(),
+        update: vi.fn(),
+        from: vi.fn(),
+        where: vi.fn(),
+        limit: vi.fn(),
+        set: vi.fn(),
+        returning: vi.fn(),
+        values: vi.fn(),
+        execute: vi.fn(),
+        transaction: vi.fn()
+    };
+
+    // withTransaction mock that executes the callback with mockDb as the transaction
+    const mockWithTransaction = vi.fn(async <T>(callback: (tx: typeof mockDb) => Promise<T>) => {
+        return callback(mockDb);
+    });
+
+    return { mockDb, mockWithTransaction };
+});
+
 // Mock logger
 vi.mock('../../src/utils/logger', () => ({
     apiLogger: {
@@ -41,46 +65,18 @@ vi.mock('../../src/middlewares/billing', () => ({
     }))
 }));
 
-// Mock database
-const mockDb = {
-    select: vi.fn(),
-    insert: vi.fn(),
-    update: vi.fn(),
-    from: vi.fn(),
-    where: vi.fn(),
-    limit: vi.fn(),
-    set: vi.fn(),
-    returning: vi.fn(),
-    values: vi.fn()
-};
-
 vi.mock('@repo/db', async () => {
     const actual = await vi.importActual('@repo/db');
     return {
         ...actual,
         getDb: vi.fn(() => mockDb),
+        withTransaction: mockWithTransaction,
         eq: vi.fn((field, value) => ({ field, value, type: 'eq' })),
         sql: vi.fn((strings, ...values) => ({ strings, values, type: 'sql' }))
     };
 });
 
-// Mock DEFAULT_PROMO_CODES
-vi.mock('@repo/billing', () => ({
-    DEFAULT_PROMO_CODES: [
-        {
-            code: 'LOCAL_WELCOME10',
-            discountPercent: 10,
-            isActive: true,
-            description: 'Welcome discount',
-            expiresAt: new Date('2099-12-31'),
-            maxRedemptions: null,
-            isPermanent: true,
-            durationCycles: null,
-            restrictedToPlans: null,
-            newUserOnly: false
-        }
-    ]
-}));
+// No local promo code fallback - all codes come from database
 
 import { PromoCodeService } from '../../src/services/promo-code.service';
 
@@ -101,6 +97,7 @@ describe('Promo Code Apply Functionality', () => {
         mockDb.set.mockReturnValue(mockDb);
         mockDb.returning.mockReturnValue(mockDb);
         mockDb.values.mockReturnValue(mockDb);
+        mockDb.execute.mockReturnValue(mockDb);
     });
 
     describe('Valid Discount Calculations', () => {
@@ -127,6 +124,8 @@ describe('Promo Code Apply Functionality', () => {
             };
 
             mockDb.limit.mockResolvedValue([mockPromoCode]);
+            // Mock for atomic redemption (SELECT FOR UPDATE and increment)
+            mockDb.execute.mockResolvedValue({ rows: [mockPromoCode] });
             mockDb.returning.mockResolvedValue([{ ...mockPromoCode, usedCount: 1 }]);
 
             const checkoutId = '550e8400-e29b-41d4-a716-446655440000';
@@ -170,6 +169,8 @@ describe('Promo Code Apply Functionality', () => {
             };
 
             mockDb.limit.mockResolvedValue([mockPromoCode]);
+            // Mock for atomic redemption
+            mockDb.execute.mockResolvedValue({ rows: [mockPromoCode] });
             mockDb.returning.mockResolvedValue([{ ...mockPromoCode, usedCount: 1 }]);
 
             const checkoutId = '550e8400-e29b-41d4-a716-446655440000';
@@ -213,6 +214,8 @@ describe('Promo Code Apply Functionality', () => {
             };
 
             mockDb.limit.mockResolvedValue([mockPromoCode]);
+            // Mock for atomic redemption
+            mockDb.execute.mockResolvedValue({ rows: [mockPromoCode] });
             mockDb.returning.mockResolvedValue([{ ...mockPromoCode, usedCount: 1 }]);
 
             const checkoutId = '550e8400-e29b-41d4-a716-446655440000';
@@ -252,6 +255,8 @@ describe('Promo Code Apply Functionality', () => {
             };
 
             mockDb.limit.mockResolvedValue([mockPromoCode]);
+            // Mock for atomic redemption
+            mockDb.execute.mockResolvedValue({ rows: [mockPromoCode] });
             mockDb.returning.mockResolvedValue([{ ...mockPromoCode, usedCount: 1 }]);
 
             const checkoutId = '550e8400-e29b-41d4-a716-446655440000';
@@ -370,6 +375,8 @@ describe('Promo Code Apply Functionality', () => {
             };
 
             mockDb.limit.mockResolvedValue([mockPromoCode]);
+            // Mock for atomic redemption - will detect max uses
+            mockDb.execute.mockResolvedValue({ rows: [mockPromoCode] });
 
             const checkoutId = '550e8400-e29b-41d4-a716-446655440000';
 
@@ -426,7 +433,9 @@ describe('Promo Code Apply Functionality', () => {
             };
 
             mockDb.limit.mockResolvedValue([mockPromoCode]);
-            mockDb.returning.mockResolvedValueOnce([{ ...mockPromoCode, usedCount: 6 }]); // For increment
+            // Mock for atomic redemption (SELECT FOR UPDATE)
+            mockDb.execute.mockResolvedValue({ rows: [mockPromoCode] });
+            mockDb.returning.mockResolvedValueOnce([{ ...mockPromoCode, usedCount: 6 }]); // For atomic increment
             mockDb.returning.mockResolvedValueOnce([
                 {
                     id: 'usage-1',
@@ -448,30 +457,28 @@ describe('Promo Code Apply Functionality', () => {
             // Assert
             expect(result.success).toBe(true);
 
-            // Verify update was called for incrementing usage
-            expect(mockDb.update).toHaveBeenCalled();
-            expect(mockDb.set).toHaveBeenCalled();
+            // Verify atomic redemption was used
+            expect(mockDb.execute).toHaveBeenCalled();
 
             // Verify insert was called for usage record
             expect(mockDb.insert).toHaveBeenCalled();
             expect(mockDb.values).toHaveBeenCalled();
         });
 
-        it('should NOT increment usage for local config codes', async () => {
+        it('should return not found for code not in database', async () => {
             // Arrange
-            mockDb.limit.mockResolvedValue([]); // Not in DB, will fall back to DEFAULT_PROMO_CODES
+            mockDb.limit.mockResolvedValue([]); // Not in DB
 
             const checkoutId = '550e8400-e29b-41d4-a716-446655440000';
 
             // Act
-            const result = await service.apply('LOCAL_WELCOME10', checkoutId, 1000);
+            const result = await service.apply('NONEXISTENT', checkoutId, 1000);
 
             // Assert
-            expect(result.success).toBe(true);
-
-            // Verify NO database updates for local codes
-            expect(mockDb.update).not.toHaveBeenCalled();
-            expect(mockDb.insert).not.toHaveBeenCalled();
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error.code).toBe(ServiceErrorCode.NOT_FOUND);
+            }
         });
 
         it('should record usage with correct data', async () => {
@@ -497,6 +504,8 @@ describe('Promo Code Apply Functionality', () => {
             };
 
             mockDb.limit.mockResolvedValue([mockPromoCode]);
+            // Mock for atomic redemption
+            mockDb.execute.mockResolvedValue({ rows: [mockPromoCode] });
 
             let recordedUsage: any = null;
             mockDb.values.mockImplementation((values) => {
@@ -551,7 +560,7 @@ describe('Promo Code Apply Functionality', () => {
             }
         });
 
-        it('should handle database error during incrementUsage', async () => {
+        it('should handle database error during atomic redemption', async () => {
             // Arrange
             const mockPromoCode: QZPayBillingPromoCode = {
                 id: 'promo-error',
@@ -574,10 +583,8 @@ describe('Promo Code Apply Functionality', () => {
             };
 
             mockDb.limit.mockResolvedValue([mockPromoCode]);
-            // Mock successful increment (first returning call)
-            mockDb.returning.mockResolvedValueOnce([{ ...mockPromoCode, usedCount: 1 }]);
-            // Mock failed usage recording (second returning call)
-            mockDb.returning.mockRejectedValueOnce(new Error('Insert failed'));
+            // Mock for atomic redemption - will fail
+            mockDb.execute.mockRejectedValue(new Error('Transaction failed'));
 
             const checkoutId = '550e8400-e29b-41d4-a716-446655440000';
 
@@ -585,13 +592,10 @@ describe('Promo Code Apply Functionality', () => {
             const result = await service.apply('ERROR', checkoutId, 1000);
 
             // Assert
-            // Note: incrementUsage and recordUsage errors are logged but don't fail the apply operation.
-            // The discount is still calculated and returned. This is working as designed to provide
-            // better UX - the user gets their discount even if usage tracking fails.
-            // Usage tracking failures should be monitored via logs/alerts.
-            expect(result.success).toBe(true);
-            if (result.success) {
-                expect(result.data.discountAmount).toBe(100);
+            // The atomic redemption failure should propagate as VALIDATION_ERROR
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
             }
         });
 
@@ -639,6 +643,8 @@ describe('Promo Code Apply Functionality', () => {
             };
 
             mockDb.limit.mockResolvedValue([mockPromoCode]);
+            // Mock for atomic redemption
+            mockDb.execute.mockResolvedValue({ rows: [mockPromoCode] });
             mockDb.returning.mockResolvedValue([{ ...mockPromoCode, usedCount: 1 }]);
 
             const checkoutId = '550e8400-e29b-41d4-a716-446655440000';
@@ -678,6 +684,8 @@ describe('Promo Code Apply Functionality', () => {
             };
 
             mockDb.limit.mockResolvedValue([mockPromoCode]);
+            // Mock for atomic redemption
+            mockDb.execute.mockResolvedValue({ rows: [mockPromoCode] });
             mockDb.returning.mockResolvedValue([{ ...mockPromoCode, usedCount: 1 }]);
 
             const checkoutId = '550e8400-e29b-41d4-a716-446655440000';
@@ -716,6 +724,8 @@ describe('Promo Code Apply Functionality', () => {
             };
 
             mockDb.limit.mockResolvedValue([mockPromoCode]);
+            // Mock for atomic redemption
+            mockDb.execute.mockResolvedValue({ rows: [mockPromoCode] });
             mockDb.returning.mockResolvedValue([{ ...mockPromoCode, usedCount: 51 }]);
 
             const checkoutId = '550e8400-e29b-41d4-a716-446655440000';
@@ -756,6 +766,8 @@ describe('Promo Code Apply Functionality', () => {
             };
 
             mockDb.limit.mockResolvedValue([mockPromoCode]);
+            // Mock for atomic redemption
+            mockDb.execute.mockResolvedValue({ rows: [mockPromoCode] });
             mockDb.returning.mockResolvedValue([{ ...mockPromoCode, usedCount: 1 }]);
 
             const checkoutId = '550e8400-e29b-41d4-a716-446655440000';
@@ -793,6 +805,8 @@ describe('Promo Code Apply Functionality', () => {
             };
 
             mockDb.limit.mockResolvedValue([mockPromoCode]);
+            // Mock for atomic redemption
+            mockDb.execute.mockResolvedValue({ rows: [mockPromoCode] });
             mockDb.returning.mockResolvedValue([{ ...mockPromoCode, usedCount: 1 }]);
 
             const checkoutId = '550e8400-e29b-41d4-a716-446655440000';
