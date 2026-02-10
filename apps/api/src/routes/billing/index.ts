@@ -26,12 +26,14 @@ import { createBillingRoutes } from '@qazuor/qzpay-hono';
 import type { MiddlewareHandler } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { getQZPayBilling, requireBilling } from '../../middlewares/billing';
+import { sentryBillingMiddleware } from '../../middlewares/sentry';
 import type { AppOpenAPI } from '../../types';
 import { createRouter } from '../../utils/create-app';
 import { apiLogger } from '../../utils/logger';
 import addonsRouter from './addons';
 import metricsRouter from './metrics';
 import notificationsRouter from './notifications';
+import planChangeRouter from './plan-change';
 import promoCodesRouter from './promo-codes';
 import settingsRouter from './settings';
 import trialRouter from './trial';
@@ -136,11 +138,15 @@ function createBillingRouter(): AppOpenAPI {
  * All routes require:
  * - Authentication (via billingAuthMiddleware from QZPay config)
  * - Billing to be enabled (via requireBilling middleware)
+ * - Sentry billing context (via sentryBillingMiddleware)
  */
 export const billingRoutes = createRouter();
 
 // Apply billing requirement middleware
 billingRoutes.use('*', requireBilling);
+
+// Apply Sentry billing context middleware
+billingRoutes.use('*', sentryBillingMiddleware());
 
 // Mount QZPay billing routes
 const qzpayRoutes = createBillingRouter();
@@ -155,6 +161,9 @@ billingRoutes.route('/addons', addonsRouter);
 // Mount custom trial routes
 billingRoutes.route('/trial', trialRouter);
 
+// Mount custom plan change routes
+billingRoutes.route('/subscriptions', planChangeRouter);
+
 // Mount custom metrics routes
 billingRoutes.route('/metrics', metricsRouter);
 
@@ -168,5 +177,5 @@ billingRoutes.route('/usage', usageRouter);
 billingRoutes.route('/notifications', notificationsRouter);
 
 apiLogger.debug(
-    'Billing routes configured with custom promo code, add-on, trial, metrics, settings, usage, and notification routes'
+    'Billing routes configured with custom promo code, add-on, trial, plan-change, metrics, settings, usage, and notification routes'
 );
