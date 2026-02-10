@@ -3,8 +3,10 @@
  * Starts the Hono.js server with all configured middleware and routes
  */
 import { serve } from '@hono/node-server';
+import { validateBillingConfigOrThrow } from '@repo/billing';
 import { initApp } from './app';
 import { startCronScheduler } from './cron';
+import { closeSentry, initializeSentry } from './lib/sentry';
 import { ensureDefaultPromoCodes } from './services/promo-code-defaults';
 import { closeDatabase, initializeDatabase } from './utils/database';
 import { env, validateApiEnv } from './utils/env';
@@ -13,6 +15,9 @@ import { apiLogger } from './utils/logger';
 
 // Validate environment variables before starting the server
 validateApiEnv();
+
+// Initialize Sentry for error tracking (if DSN is configured)
+initializeSentry();
 
 const port = env.API_PORT;
 
@@ -25,6 +30,9 @@ const startServer = async (): Promise<void> => {
 
         // Initialize database connection before starting the server
         await initializeDatabase();
+
+        // Validate billing configuration
+        validateBillingConfigOrThrow();
 
         // Ensure default promo codes exist (HOSPEDA_FREE, etc.)
         await ensureDefaultPromoCodes();
@@ -62,6 +70,9 @@ const startServer = async (): Promise<void> => {
             apiLogger.info(`Received ${signal}, shutting down gracefully...`);
 
             try {
+                // Flush Sentry events
+                await closeSentry(2000);
+
                 // Close database connection
                 await closeDatabase();
 
@@ -118,6 +129,14 @@ process.on('uncaughtException', (error) => {
         `🚨 UNCAUGHT EXCEPTION - Process state may be corrupted: ${error.message}`,
         error.stack || ''
     );
+
+    // Capture in Sentry if enabled
+    import('./lib/sentry').then(({ Sentry }) => {
+        if (Sentry.isEnabled()) {
+            Sentry.captureException(error);
+        }
+    });
+
     // Log but do NOT terminate - allow the server to continue
     // In production, monitor these closely via observability tools
 });
@@ -132,6 +151,14 @@ process.on('unhandledRejection', (reason, promise) => {
         promise: String(promise),
         stack: stack || undefined
     });
+
+    // Capture in Sentry if enabled
+    import('./lib/sentry').then(({ Sentry }) => {
+        if (Sentry.isEnabled()) {
+            Sentry.captureException(reason instanceof Error ? reason : new Error(reasonStr));
+        }
+    });
+
     // Log but do NOT terminate - allow the server to continue
     // In production, monitor these via observability tools
 });
