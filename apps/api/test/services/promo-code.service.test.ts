@@ -7,7 +7,7 @@
  * - Validation with multiple contexts (expiry, plan restrictions, min amount, etc.)
  * - Apply to checkout session
  * - Usage tracking (increment, record)
- * - Fallback to DEFAULT_PROMO_CODES
+ * - All codes from database (no local fallback)
  *
  * @module test/services/promo-code.service
  */
@@ -17,7 +17,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PromoCodeService } from '../../src/services/promo-code.service';
 
 // Hoist mock variables so they're available when vi.mock() factories execute
-const { mockDb, mockGetDb, mockGetQZPayBilling } = vi.hoisted(() => {
+const { mockDb, mockGetDb, mockGetQZPayBilling, mockWithTransaction } = vi.hoisted(() => {
     const mockDb = {
         insert: vi.fn(),
         select: vi.fn(),
@@ -29,47 +29,26 @@ const { mockDb, mockGetDb, mockGetQZPayBilling } = vi.hoisted(() => {
         values: vi.fn(),
         set: vi.fn(),
         orderBy: vi.fn(),
-        offset: vi.fn()
+        offset: vi.fn(),
+        execute: vi.fn(),
+        transaction: vi.fn()
     };
+
+    // withTransaction mock that executes the callback with mockDb as the transaction
+    const mockWithTransaction = vi.fn(async <T>(callback: (tx: typeof mockDb) => Promise<T>) => {
+        return callback(mockDb);
+    });
 
     return {
         mockDb,
         mockGetDb: vi.fn(() => mockDb),
-        mockGetQZPayBilling: vi.fn()
+        mockGetQZPayBilling: vi.fn(),
+        mockWithTransaction
     };
 });
 
 // Mock modules
 vi.mock('@qazuor/qzpay-core');
-
-vi.mock('@repo/billing', () => ({
-    DEFAULT_PROMO_CODES: [
-        {
-            code: 'HOSPEDA_FREE',
-            discountPercent: 100,
-            isActive: true,
-            isPermanent: true,
-            description: 'Free account',
-            expiresAt: null,
-            maxRedemptions: null,
-            durationCycles: null,
-            restrictedToPlans: null,
-            newUserOnly: false
-        },
-        {
-            code: 'TEST10',
-            discountPercent: 10,
-            isActive: true,
-            isPermanent: false,
-            description: 'Test discount',
-            expiresAt: new Date('2030-01-01'),
-            maxRedemptions: 100,
-            durationCycles: 1,
-            restrictedToPlans: ['owner-basico'],
-            newUserOnly: true
-        }
-    ]
-}));
 
 vi.mock('../../src/middlewares/billing', () => ({
     getQZPayBilling: mockGetQZPayBilling
@@ -77,6 +56,7 @@ vi.mock('../../src/middlewares/billing', () => ({
 
 vi.mock('@repo/db', () => ({
     getDb: mockGetDb,
+    withTransaction: mockWithTransaction,
     billingPromoCodes: {
         id: 'id',
         code: 'code',
@@ -245,7 +225,7 @@ describe('PromoCodeService', () => {
             expect(mockDb.select).toHaveBeenCalled();
         });
 
-        it('should fallback to DEFAULT_PROMO_CODES when not in DB', async () => {
+        it('should return not found when code is not in database', async () => {
             // Arrange
             mockDb.limit.mockResolvedValue([]);
 
@@ -253,11 +233,9 @@ describe('PromoCodeService', () => {
             const result = await service.getByCode('HOSPEDA_FREE');
 
             // Assert
-            expect(result.success).toBe(true);
-            expect(result.data?.code).toBe('HOSPEDA_FREE');
-            expect(result.data?.id).toBe('local_HOSPEDA_FREE');
-            expect(result.data?.type).toBe('percentage');
-            expect(result.data?.value).toBe(100);
+            expect(result.success).toBe(false);
+            expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+            expect(result.error?.message).toBe('Promo code not found');
         });
 
         it('should return not found when code does not exist anywhere', async () => {
@@ -568,20 +546,19 @@ describe('PromoCodeService', () => {
 
         it('should return invalid for plan restriction mismatch', async () => {
             // Arrange
-            const _restrictedCode = {
+            const restrictedCode = {
                 ...mockDbPromoCode,
                 id: 'pc_restricted',
-                code: 'TEST10',
-                metadata: {
+                code: 'RESTRICTED10',
+                config: {
                     restrictedToPlans: ['owner-basico']
                 }
             };
 
-            // Mock getByCode to return local config code
-            mockDb.limit.mockResolvedValue([]);
+            mockDb.limit.mockResolvedValue([restrictedCode]);
 
             // Act
-            const result = await service.validate('TEST10', {
+            const result = await service.validate('RESTRICTED10', {
                 userId: 'user_123',
                 planId: 'owner-premium' // Doesn't match restriction
             });
@@ -677,6 +654,9 @@ describe('PromoCodeService', () => {
         it('should return success with promo code details', async () => {
             // Arrange
             mockDb.limit.mockResolvedValue([mockDbPromoCode]);
+            // Mock the atomic redemption: execute returns locked row (QueryResult format), returning returns updated row
+            mockDb.execute.mockResolvedValue({ rows: [mockDbPromoCode] });
+            mockDb.returning.mockResolvedValue([{ ...mockDbPromoCode, usedCount: 6 }]);
 
             // Act
             const result = await service.apply('WELCOME20', 'checkout_123');
@@ -717,6 +697,84 @@ describe('PromoCodeService', () => {
             expect(result.success).toBe(false);
             expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
             expect(result.error?.message).toBe('This promo code has expired');
+        });
+
+        it('should return error when max uses exceeded (atomic check)', async () => {
+            // Arrange
+            const maxedOutCode = {
+                ...mockDbPromoCode,
+                usedCount: 100, // Equal to maxUses
+                maxUses: 100
+            };
+            mockDb.limit.mockResolvedValue([maxedOutCode]);
+            // The atomic redemption will catch this (QueryResult format)
+            mockDb.execute.mockResolvedValue({ rows: [maxedOutCode] });
+
+            // Act
+            const result = await service.apply('WELCOME20', 'checkout_123');
+
+            // Assert
+            expect(result.success).toBe(false);
+            expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+            expect(result.error?.message).toBe(
+                'This promo code has reached its maximum number of uses'
+            );
+        });
+    });
+
+    describe('tryRedeemAtomically', () => {
+        it('should successfully redeem when under max uses', async () => {
+            // Arrange
+            const codeUnderLimit = { ...mockDbPromoCode, usedCount: 5, maxUses: 100 };
+            mockDb.execute.mockResolvedValue({ rows: [codeUnderLimit] });
+            mockDb.returning.mockResolvedValue([{ ...codeUnderLimit, usedCount: 6 }]);
+
+            // Act
+            const result = await service.tryRedeemAtomically('pc_123');
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(result.data?.usedCount).toBe(6);
+            expect(mockWithTransaction).toHaveBeenCalled();
+        });
+
+        it('should fail when max uses exceeded', async () => {
+            // Arrange
+            const maxedOutCode = { ...mockDbPromoCode, usedCount: 100, maxUses: 100 };
+            mockDb.execute.mockResolvedValue({ rows: [maxedOutCode] });
+
+            // Act
+            const result = await service.tryRedeemAtomically('pc_123');
+
+            // Assert
+            expect(result.success).toBe(false);
+            expect(result.error?.code).toBe('PROMO_CODE_MAX_USES');
+        });
+
+        it('should fail when promo code not found', async () => {
+            // Arrange
+            mockDb.execute.mockResolvedValue({ rows: [] });
+
+            // Act
+            const result = await service.tryRedeemAtomically('pc_nonexistent');
+
+            // Assert
+            expect(result.success).toBe(false);
+            expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+        });
+
+        it('should allow redemption when maxUses is null (unlimited)', async () => {
+            // Arrange
+            const unlimitedCode = { ...mockDbPromoCode, usedCount: 1000, maxUses: null };
+            mockDb.execute.mockResolvedValue({ rows: [unlimitedCode] });
+            mockDb.returning.mockResolvedValue([{ ...unlimitedCode, usedCount: 1001 }]);
+
+            // Act
+            const result = await service.tryRedeemAtomically('pc_123');
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(result.data?.usedCount).toBe(1001);
         });
     });
 

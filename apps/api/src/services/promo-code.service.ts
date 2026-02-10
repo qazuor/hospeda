@@ -7,13 +7,11 @@
  * - Validation (expiry, max uses, plan restrictions, first-purchase condition, min amount)
  * - Application of promo codes to checkout sessions
  * - Atomic usage count increment
- * - Fallback to DEFAULT_PROMO_CODES for backward compatibility
  *
  * @module services/promo-code
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
-import { DEFAULT_PROMO_CODES } from '@repo/billing';
 import {
     type QZPayBillingPromoCode,
     and,
@@ -27,7 +25,8 @@ import {
     isNull,
     lte,
     or,
-    sql
+    sql,
+    withTransaction
 } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
 import { getQZPayBilling } from '../middlewares/billing';
@@ -257,9 +256,7 @@ export class PromoCodeService {
      * Get promo code by code string
      *
      * @param code - Promo code string
-     * @returns Promo code or null
-     *
-     * @note Checks database first, falls back to DEFAULT_PROMO_CODES for backward compatibility
+     * @returns Promo code or not found error
      */
     async getByCode(code: string) {
         try {
@@ -268,7 +265,6 @@ export class PromoCodeService {
 
             apiLogger.debug({ code: normalizedCode }, 'Looking up promo code in database');
 
-            // Try database first
             const [dbPromoCode] = await db
                 .select()
                 .from(billingPromoCodes)
@@ -283,50 +279,13 @@ export class PromoCodeService {
                 };
             }
 
-            // Fallback to DEFAULT_PROMO_CODES for backward compatibility
-            apiLogger.debug({ code: normalizedCode }, 'Falling back to local config');
-
-            const promoCodeDef = DEFAULT_PROMO_CODES.find((pc) => pc.code === normalizedCode);
-
-            if (!promoCodeDef) {
-                apiLogger.info({ code: normalizedCode }, 'Promo code not found');
-                return {
-                    success: false,
-                    error: {
-                        code: ServiceErrorCode.NOT_FOUND,
-                        message: 'Promo code not found'
-                    }
-                };
-            }
-
-            // Convert PromoCodeDefinition to PromoCode response format
-            const promoCode: PromoCode = {
-                id: `local_${normalizedCode}`,
-                code: promoCodeDef.code,
-                type: 'percentage',
-                value: promoCodeDef.discountPercent,
-                active: promoCodeDef.isActive,
-                expiresAt: promoCodeDef.expiresAt
-                    ? promoCodeDef.expiresAt.toISOString()
-                    : undefined,
-                maxUses: promoCodeDef.maxRedemptions ?? undefined,
-                timesRedeemed: 0, // Local config doesn't track usage
-                metadata: {
-                    description: promoCodeDef.description,
-                    isPermanent: promoCodeDef.isPermanent,
-                    durationCycles: promoCodeDef.durationCycles,
-                    restrictedToPlans: promoCodeDef.restrictedToPlans,
-                    newUserOnly: promoCodeDef.newUserOnly
-                },
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
-            };
-
-            apiLogger.info({ code: normalizedCode }, 'Promo code found in local config');
-
+            apiLogger.info({ code: normalizedCode }, 'Promo code not found');
             return {
-                success: true,
-                data: promoCode
+                success: false,
+                error: {
+                    code: ServiceErrorCode.NOT_FOUND,
+                    message: 'Promo code not found'
+                }
             };
         } catch (error) {
             apiLogger.error(
@@ -655,21 +614,16 @@ export class PromoCodeService {
             const dbResult = await this.getByCode(normalizedCode);
 
             let promoData: PromoCode | null = null;
-            let isLocalConfig = false;
 
             if (dbResult.success && dbResult.data) {
                 promoData = dbResult.data;
             } else {
-                // Already checked DEFAULT_PROMO_CODES in getByCode
                 return {
                     valid: false,
                     errorCode: 'PROMO_CODE_NOT_FOUND',
                     errorMessage: 'Promo code not found'
                 };
             }
-
-            // Check if from local config (ID starts with 'local_')
-            isLocalConfig = promoData.id.startsWith('local_');
 
             // Check if code is active
             if (!promoData.active) {
@@ -694,12 +648,8 @@ export class PromoCodeService {
                 };
             }
 
-            // Check max uses (only for DB codes, not local config)
-            if (
-                !isLocalConfig &&
-                promoData.maxUses &&
-                promoData.timesRedeemed >= promoData.maxUses
-            ) {
+            // Check max uses
+            if (promoData.maxUses && promoData.timesRedeemed >= promoData.maxUses) {
                 apiLogger.info(
                     {
                         code: normalizedCode,
@@ -801,6 +751,8 @@ export class PromoCodeService {
     /**
      * Apply promo code to a checkout session
      *
+     * Uses atomic redemption with row locking to prevent race conditions.
+     *
      * @param code - Promo code string
      * @param checkoutId - Checkout session ID
      * @param amount - Optional amount to apply discount to
@@ -814,7 +766,7 @@ export class PromoCodeService {
         apiLogger.info({ code: normalizedCode, checkoutId }, 'Applying promo code to checkout');
 
         try {
-            // Get promo code (checks DB first, then DEFAULT_PROMO_CODES)
+            // Get promo code from database
             const result = await this.getByCode(normalizedCode);
 
             if (!result.success || !result.data) {
@@ -851,18 +803,7 @@ export class PromoCodeService {
                 };
             }
 
-            // Check max uses
-            if (promoCode.maxUses && promoCode.timesRedeemed >= promoCode.maxUses) {
-                return {
-                    success: false as const,
-                    error: {
-                        code: ServiceErrorCode.VALIDATION_ERROR,
-                        message: 'This promo code has reached its maximum number of uses'
-                    }
-                };
-            }
-
-            // Calculate discount
+            // Calculate discount first (needed for both DB and local codes)
             let discountAmount = 0;
             const effectiveAmount = amount || 0;
 
@@ -876,17 +817,28 @@ export class PromoCodeService {
 
             const finalAmount = Math.max(0, effectiveAmount - discountAmount);
 
-            // Record usage and increment counter (only for DB promo codes, not local config)
-            if (!promoCode.id.startsWith('local_')) {
-                await this.incrementUsage(promoCode.id);
+            // Use atomic redemption with row locking to prevent race conditions
+            const redeemResult = await this.tryRedeemAtomically(promoCode.id);
 
-                await this.recordUsage({
-                    promoCodeId: promoCode.id,
-                    customerId: checkoutId, // Using checkoutId as reference
-                    discountAmount,
-                    currency: 'ARS'
-                });
+            if (!redeemResult.success) {
+                return {
+                    success: false as const,
+                    error: {
+                        code: ServiceErrorCode.VALIDATION_ERROR,
+                        message:
+                            redeemResult.error?.message ||
+                            'This promo code has reached its maximum number of uses'
+                    }
+                };
             }
+
+            // Record usage (separate from the atomic increment)
+            await this.recordUsage({
+                promoCodeId: promoCode.id,
+                customerId: checkoutId,
+                discountAmount,
+                currency: 'ARS'
+            });
 
             apiLogger.info(
                 {
@@ -978,6 +930,112 @@ export class PromoCodeService {
                 error: {
                     code: ServiceErrorCode.INTERNAL_ERROR,
                     message: 'Failed to increment usage count'
+                }
+            };
+        }
+    }
+
+    /**
+     * Atomically try to redeem a promo code with row locking.
+     *
+     * This method prevents race conditions by:
+     * 1. Selecting the promo code row with FOR UPDATE (row lock)
+     * 2. Checking if max_uses limit allows another redemption
+     * 3. Incrementing used_count atomically within the same transaction
+     *
+     * @param promoCodeId - Promo code ID to redeem
+     * @returns Result with the updated promo code or error if max uses exceeded
+     */
+    async tryRedeemAtomically(promoCodeId: string): Promise<{
+        success: boolean;
+        data?: QZPayBillingPromoCode;
+        error?: { code: string; message: string };
+    }> {
+        try {
+            apiLogger.info({ promoCodeId }, 'Attempting atomic promo code redemption');
+
+            const result = await withTransaction(async (tx) => {
+                // Step 1: Lock the row with FOR UPDATE to prevent concurrent modifications
+                const queryResult = await tx.execute<QZPayBillingPromoCode>(
+                    sql`SELECT * FROM ${billingPromoCodes}
+                        WHERE id = ${promoCodeId}
+                        FOR UPDATE`
+                );
+                const lockedPromoCode = queryResult.rows?.[0];
+
+                if (!lockedPromoCode) {
+                    return {
+                        success: false,
+                        error: {
+                            code: ServiceErrorCode.NOT_FOUND,
+                            message: 'Promo code not found'
+                        }
+                    };
+                }
+
+                // Step 2: Check if we can still redeem (max_uses check with locked data)
+                const currentUsed = lockedPromoCode.usedCount ?? 0;
+                const maxUses = lockedPromoCode.maxUses;
+
+                if (maxUses !== null && currentUsed >= maxUses) {
+                    apiLogger.warn(
+                        {
+                            promoCodeId,
+                            currentUsed,
+                            maxUses
+                        },
+                        'Promo code max uses exceeded (detected with lock)'
+                    );
+                    return {
+                        success: false,
+                        error: {
+                            code: 'PROMO_CODE_MAX_USES',
+                            message: 'This promo code has reached its maximum number of uses'
+                        }
+                    };
+                }
+
+                // Step 3: Increment usage atomically within the transaction
+                const [updated] = await tx
+                    .update(billingPromoCodes)
+                    .set({
+                        usedCount: sql`${billingPromoCodes.usedCount} + 1`
+                    })
+                    .where(eq(billingPromoCodes.id, promoCodeId))
+                    .returning();
+
+                if (!updated) {
+                    throw new Error('Failed to update promo code usage count');
+                }
+
+                apiLogger.info(
+                    {
+                        promoCodeId,
+                        previousUsed: currentUsed,
+                        newUsed: updated.usedCount,
+                        maxUses
+                    },
+                    'Promo code redeemed atomically'
+                );
+
+                return {
+                    success: true,
+                    data: updated
+                };
+            });
+
+            return result;
+        } catch (error) {
+            apiLogger.error(
+                'Failed to atomically redeem promo code',
+                error instanceof Error ? error.message : String(error)
+            );
+
+            return {
+                success: false,
+                error: {
+                    code: ServiceErrorCode.INTERNAL_ERROR,
+                    message: 'Failed to redeem promo code'
                 }
             };
         }
