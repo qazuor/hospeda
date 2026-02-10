@@ -17,6 +17,7 @@
 
 import { type NotificationPayload, NotificationType, RetryService } from '@repo/notifications';
 import { getQZPayBilling } from '../../middlewares/billing.js';
+import { processDbNotificationRetries } from '../../services/notification-retry.service.js';
 import { TrialService } from '../../services/trial.service.js';
 import { lookupCustomerDetails } from '../../utils/customer-lookup.js';
 import { sendNotification } from '../../utils/notification-helper.js';
@@ -419,7 +420,8 @@ export const notificationScheduleJob: CronJobDefinition = {
                 }
             }
 
-            // 4. Process notification retries from Redis queue
+            // 4. Process notification retries
+            // Try Redis-based retry first, fall back to database-based retry
             logger.info('Processing notification retries');
 
             let retriesProcessed = 0;
@@ -431,36 +433,53 @@ export const notificationScheduleJob: CronJobDefinition = {
                 logger.info('Dry run mode - skipping notification retries');
             } else {
                 try {
-                    // Create retry service (will handle null Redis gracefully)
+                    // First try Redis-based retry (if Redis is configured)
                     // TODO: When Redis is configured, pass actual Redis client here
-                    const retryService = new RetryService(null);
+                    const redisClient = null; // Replace with actual Redis client when available
+                    const retryService = new RetryService(redisClient);
 
-                    // Process retries using sendNotification helper
-                    const retryStats = await retryService.processRetries(
-                        async (payload: unknown) => {
-                            try {
-                                // Cast payload to NotificationPayload type
-                                const notificationPayload = payload as NotificationPayload;
-
-                                // Send notification (fire-and-forget, but we await for retry tracking)
-                                await sendNotification(notificationPayload);
-
-                                // Return success (sendNotification doesn't throw on failure)
-                                return { success: true };
-                            } catch (error) {
-                                // Return failure with error message
-                                return {
-                                    success: false,
-                                    error: error instanceof Error ? error.message : String(error)
-                                };
+                    if (redisClient) {
+                        // Process Redis-based retries
+                        const retryStats = await retryService.processRetries(
+                            async (payload: unknown) => {
+                                try {
+                                    const notificationPayload = payload as NotificationPayload;
+                                    await sendNotification(notificationPayload);
+                                    return { success: true };
+                                } catch (error) {
+                                    return {
+                                        success: false,
+                                        error:
+                                            error instanceof Error ? error.message : String(error)
+                                    };
+                                }
                             }
-                        }
-                    );
+                        );
 
-                    retriesProcessed = retryStats.processed;
-                    retriesSucceeded = retryStats.succeeded;
-                    retriesFailed = retryStats.failed;
-                    retriesPermanentlyFailed = retryStats.permanentlyFailed;
+                        retriesProcessed = retryStats.processed;
+                        retriesSucceeded = retryStats.succeeded;
+                        retriesFailed = retryStats.failed;
+                        retriesPermanentlyFailed = retryStats.permanentlyFailed;
+
+                        logger.info('Redis-based notification retry complete', {
+                            processed: retriesProcessed,
+                            succeeded: retriesSucceeded,
+                            failed: retriesFailed,
+                            permanentlyFailed: retriesPermanentlyFailed
+                        });
+                    }
+
+                    // Fall back to database-based retry for critical notifications
+                    // This works even when Redis is not available
+                    logger.info('Processing database-based notification retries (fallback)');
+
+                    const dbRetryStats = await processDbNotificationRetries(dryRun);
+
+                    // Combine stats
+                    retriesProcessed += dbRetryStats.processed;
+                    retriesSucceeded += dbRetryStats.succeeded;
+                    retriesFailed += dbRetryStats.failed;
+                    retriesPermanentlyFailed += dbRetryStats.permanentlyFailed;
 
                     logger.info('Notification retry processing complete', {
                         processed: retriesProcessed,

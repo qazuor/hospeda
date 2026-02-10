@@ -12,7 +12,6 @@
 
 import { billingWebhookEvents, getDb } from '@repo/db';
 import type { PermissionEnum } from '@repo/schemas';
-// @ts-expect-error - drizzle-orm is a transitive dependency
 import { type SQL, and, count, desc, eq, gte, lte } from 'drizzle-orm';
 import { HTTPException } from 'hono/http-exception';
 import { ListWebhookEventsQuerySchema, WebhookEventsListResponseSchema } from '../../../schemas';
@@ -41,19 +40,35 @@ export const listWebhookEventsRoute = createAdminRoute({
             const conditions: SQL[] = [];
 
             if (query?.status) {
-                conditions.push(eq(billingWebhookEvents.status, query.status));
+                conditions.push(
+                    eq(
+                        billingWebhookEvents.status,
+                        query.status as typeof billingWebhookEvents.status.dataType
+                    )
+                );
             }
 
             if (query?.type) {
-                conditions.push(eq(billingWebhookEvents.type, query.type));
+                conditions.push(
+                    eq(
+                        billingWebhookEvents.type,
+                        query.type as typeof billingWebhookEvents.type.dataType
+                    )
+                );
             }
 
             if (query?.provider) {
-                conditions.push(eq(billingWebhookEvents.provider, query.provider));
+                conditions.push(
+                    eq(
+                        billingWebhookEvents.provider,
+                        query.provider as typeof billingWebhookEvents.provider.dataType
+                    )
+                );
             }
 
             if (query?.livemode !== undefined) {
-                conditions.push(eq(billingWebhookEvents.livemode, query.livemode));
+                const livemodeValue = query.livemode === 'true';
+                conditions.push(eq(billingWebhookEvents.livemode, livemodeValue));
             }
 
             if (query?.startDate) {

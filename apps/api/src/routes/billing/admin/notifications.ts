@@ -13,7 +13,6 @@
 import { getDb } from '@repo/db';
 import { billingNotificationLog } from '@repo/db';
 import type { PermissionEnum } from '@repo/schemas';
-// @ts-expect-error - drizzle-orm is a transitive dependency
 import { type SQL, and, count, desc, eq, gte, lte } from 'drizzle-orm';
 import { HTTPException } from 'hono/http-exception';
 import {

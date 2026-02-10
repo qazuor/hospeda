@@ -22,6 +22,7 @@ import type { QZPayWebhookHandler } from '@qazuor/qzpay-hono';
 import { createMercadoPagoAdapter, getAddonBySlug } from '@repo/billing';
 import { billingWebhookEvents, eq, getDb } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
+import { captureWebhookError } from '../../lib/sentry';
 import { getQZPayBilling } from '../../middlewares/billing';
 import { AddonService } from '../../services/addon.service';
 import type { AppOpenAPI } from '../../types';
@@ -34,7 +35,7 @@ import { sendNotification } from '../../utils/notification-helper';
  *
  * @deprecated Use database-only approach for idempotency
  */
-const webhookEventIds = new Map<string, string>();
+export const webhookEventIds = new Map<string, string>();
 
 /**
  * Sanitize error message for notification to admin
@@ -50,7 +51,7 @@ const webhookEventIds = new Map<string, string>();
  * @param maxLength - Maximum length to truncate (default: 500 chars)
  * @returns Sanitized error message safe for notifications
  */
-function sanitizeErrorForNotification(error: string, maxLength = 500): string {
+export function sanitizeErrorForNotification(error: string, maxLength = 500): string {
     let sanitized = error;
 
     // Remove stack traces (lines starting with "at ")
@@ -92,7 +93,7 @@ function sanitizeErrorForNotification(error: string, maxLength = 500): string {
  * @param webhookEventId - Webhook event ID to mark as processed
  * @throws Error if all retry attempts fail
  */
-async function markWebhookEventProcessed(webhookEventId: string): Promise<void> {
+export async function markWebhookEventProcessed(webhookEventId: string): Promise<void> {
     const MAX_RETRIES = 3;
     let lastError: Error | null = null;
 
@@ -155,7 +156,7 @@ async function markWebhookEventProcessed(webhookEventId: string): Promise<void> 
  *
  * @returns Billing instance and adapter, or null if not configured
  */
-function getWebhookDependencies() {
+export function getWebhookDependencies() {
     const billing = getQZPayBilling();
 
     if (!billing) {
@@ -180,7 +181,7 @@ function getWebhookDependencies() {
  * Logs new payment creation for monitoring.
  * Updates webhook event status after successful processing.
  */
-const handlePaymentCreated: QZPayWebhookHandler = async (c, event) => {
+export const handlePaymentCreated: QZPayWebhookHandler = async (c, event) => {
     apiLogger.info(
         {
             eventId: event.id,
@@ -208,7 +209,7 @@ const handlePaymentCreated: QZPayWebhookHandler = async (c, event) => {
  * @param metadata - Payment metadata object
  * @returns Add-on slug and customer ID if found
  */
-function extractAddonMetadata(metadata: unknown): {
+export function extractAddonMetadata(metadata: unknown): {
     addonSlug: string;
     customerId: string;
 } | null {
@@ -240,7 +241,7 @@ function extractAddonMetadata(metadata: unknown): {
  * @param externalReference - External reference string
  * @returns Add-on slug if pattern matches
  */
-function extractAddonFromReference(externalReference: unknown): string | null {
+export function extractAddonFromReference(externalReference: unknown): string | null {
     if (typeof externalReference !== 'string') {
         return null;
     }
@@ -261,7 +262,7 @@ function extractAddonFromReference(externalReference: unknown): string | null {
  * @param data - Payment event data
  * @returns Payment details or null
  */
-function extractPaymentInfo(data: Record<string, unknown>): {
+export function extractPaymentInfo(data: Record<string, unknown>): {
     amount: number;
     currency: string;
     status: string;
@@ -508,7 +509,7 @@ function sendPaymentFailureNotifications(
  * If the payment is for an add-on, confirms the purchase and applies entitlements.
  * Sends payment success/failure notifications.
  */
-const handlePaymentUpdated: QZPayWebhookHandler = async (c, event) => {
+export const handlePaymentUpdated: QZPayWebhookHandler = async (c, event) => {
     apiLogger.info(
         {
             eventId: event.id,
@@ -748,7 +749,7 @@ const handlePaymentUpdated: QZPayWebhookHandler = async (c, event) => {
  * Logs subscription status changes for monitoring.
  * Updates webhook event status after successful processing.
  */
-const handleSubscriptionUpdated: QZPayWebhookHandler = async (c, event) => {
+export const handleSubscriptionUpdated: QZPayWebhookHandler = async (c, event) => {
     apiLogger.info(
         {
             eventId: event.id,
@@ -781,7 +782,7 @@ const handleSubscriptionUpdated: QZPayWebhookHandler = async (c, event) => {
  * 2. On duplicate, SELECT with status check
  * 3. Race condition window is minimized by checking status immediately
  */
-const handleWebhookEvent: QZPayWebhookHandler = async (c, event) => {
+export const handleWebhookEvent: QZPayWebhookHandler = async (c, event) => {
     apiLogger.debug(
         {
             eventId: event.id,
@@ -843,7 +844,7 @@ const handleWebhookEvent: QZPayWebhookHandler = async (c, event) => {
 
             // Duplicate detected - check existing event status
             // Use a short retry loop to minimize race condition window
-            let existingEvent: typeof billingWebhookEvents.$inferSelect | null = null;
+            let existingEvent: typeof billingWebhookEvents.$inferSelect | null | undefined = null;
             const MAX_STATUS_CHECK_ATTEMPTS = 3;
 
             for (let attempt = 1; attempt <= MAX_STATUS_CHECK_ATTEMPTS; attempt++) {
@@ -966,20 +967,29 @@ const handleWebhookEvent: QZPayWebhookHandler = async (c, event) => {
  * Logs errors but still returns 200 OK to MercadoPago to prevent retries
  * for non-recoverable errors.
  * Updates webhook event status to failed if event was persisted.
+ * Captures errors in Sentry for monitoring.
  */
-const handleWebhookError = async (error: Error, c: Parameters<QZPayWebhookHandler>[0]) => {
+export const handleWebhookError = async (error: Error, c: Parameters<QZPayWebhookHandler>[0]) => {
+    const requestId = String(c.get('requestId'));
+
     apiLogger.error(
         {
             error: error.message,
             stack: error.stack,
-            requestId: c.get('requestId')
+            requestId
         },
         'MercadoPago webhook: Processing failed'
     );
 
+    // Capture error in Sentry with webhook context
+    captureWebhookError(error, {
+        provider: 'mercadopago',
+        eventType: 'unknown', // Will be enriched by context if available
+        retryCount: 0
+    });
+
     // Update webhook event status to failed if it was persisted
     try {
-        const requestId = String(c.get('requestId'));
         const webhookEventId = webhookEventIds.get(requestId);
 
         if (webhookEventId) {
