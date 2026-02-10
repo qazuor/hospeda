@@ -1,7 +1,7 @@
 /**
  * ActiveAddons Component
  *
- * Displays user's active add-ons using direct API fetching
+ * Displays user's active add-ons using the useAddons hook
  * Simplified version for dashboard display
  *
  * @module components/billing/ActiveAddons
@@ -9,31 +9,14 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useTranslations } from '@repo/i18n';
+import { useAddons } from '../../hooks/useAddons';
+import type { ActiveAddonPurchase } from '../../hooks/useAddons';
 
 /**
- * Active addon purchase data structure
+ * Re-export type for backward compatibility
  */
-export interface ActiveAddonPurchase {
-    id: string;
-    addonId: string;
-    name: string;
-    description: string | null;
-    status: 'active' | 'expiring_soon' | 'expired';
-    expiresAt: string | null;
-    quantity: number;
-}
-
-/**
- * Component props
- */
-export interface ActiveAddonsProps {
-    /**
-     * API base URL
-     * @default import.meta.env.PUBLIC_API_URL || '/api/v1'
-     */
-    apiUrl?: string;
-}
+export type { ActiveAddonPurchase };
 
 /**
  * Format date in Spanish locale
@@ -47,82 +30,43 @@ function formatDate(date: Date): string {
 }
 
 /**
- * Get status badge styling
+ * Status badge class names by status
  */
-function getStatusBadge(status: ActiveAddonPurchase['status']) {
-    switch (status) {
-        case 'active':
-            return {
-                className: 'bg-green-100 text-green-700',
-                label: 'Activo'
-            };
-        case 'expiring_soon':
-            return {
-                className: 'bg-yellow-100 text-yellow-700',
-                label: 'Por vencer'
-            };
-        case 'expired':
-            return {
-                className: 'bg-gray-100 text-gray-700',
-                label: 'Vencido'
-            };
-    }
-}
+const STATUS_CLASSES: Record<ActiveAddonPurchase['status'], string> = {
+    active: 'bg-green-100 text-green-700',
+    expiring_soon: 'bg-yellow-100 text-yellow-700',
+    expired: 'bg-gray-100 text-gray-700'
+};
 
 /**
  * ActiveAddons Component
  *
- * Displays active addon purchases with status, expiry, and quantity
+ * Displays active addon purchases with status, expiry, and quantity.
+ * Uses the useAddons hook for data fetching.
  *
  * @example
  * ```tsx
- * <ActiveAddons apiUrl="/api/v1" />
+ * <ActiveAddons />
+ * ```
+ *
+ * @example
+ * ```tsx
+ * // Within BillingIsland with QZPayProvider
+ * <BillingIsland client:load apiUrl="/api/v1">
+ *   <ActiveAddons />
+ * </BillingIsland>
  * ```
  */
-export function ActiveAddons({ apiUrl }: ActiveAddonsProps) {
-    const [addons, setAddons] = useState<ActiveAddonPurchase[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<Error | null>(null);
-
-    useEffect(() => {
-        const fetchAddons = async () => {
-            try {
-                const baseUrl = apiUrl || import.meta.env.PUBLIC_API_URL || '/api/v1';
-                const response = await fetch(`${baseUrl}/billing/addons/mine`, {
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    credentials: 'include'
-                });
-
-                if (!response.ok) {
-                    throw new Error('Error al cargar los complementos');
-                }
-
-                const result = await response.json();
-
-                if (result.success && result.data) {
-                    setAddons(result.data);
-                } else {
-                    throw new Error(result.error?.message || 'Error desconocido');
-                }
-            } catch (err) {
-                console.error('Error fetching addons:', err);
-                setError(
-                    err instanceof Error ? err : new Error('Error al cargar los complementos')
-                );
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchAddons();
-    }, [apiUrl]);
+export function ActiveAddons() {
+    const { data: addons, isLoading, error } = useAddons();
+    const { t } = useTranslations();
 
     if (isLoading) {
         return (
             <div className="rounded-xl bg-white p-8 shadow-lg">
-                <h2 className="mb-6 font-bold text-2xl text-gray-900">Complementos Activos</h2>
+                <h2 className="mb-6 font-bold text-2xl text-gray-900">
+                    {t('billing.addons.title')}
+                </h2>
                 <div
                     className="flex items-center justify-center py-12"
                     // biome-ignore lint/a11y/useSemanticElements: loading indicator pattern used in tests
@@ -137,8 +81,13 @@ export function ActiveAddons({ apiUrl }: ActiveAddonsProps) {
     if (error) {
         return (
             <div className="rounded-xl bg-white p-8 shadow-lg">
-                <h2 className="mb-6 font-bold text-2xl text-gray-900">Complementos Activos</h2>
-                <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
+                <h2 className="mb-6 font-bold text-2xl text-gray-900">
+                    {t('billing.addons.title')}
+                </h2>
+                <div
+                    className="rounded-lg border border-red-200 bg-red-50 p-6 text-center"
+                    role="alert"
+                >
                     <svg
                         className="mx-auto mb-3 h-12 w-12 text-red-400"
                         fill="none"
@@ -159,10 +108,12 @@ export function ActiveAddons({ apiUrl }: ActiveAddonsProps) {
         );
     }
 
-    if (addons.length === 0) {
+    if (!addons || addons.length === 0) {
         return (
             <div className="rounded-xl bg-white p-8 shadow-lg">
-                <h2 className="mb-6 font-bold text-2xl text-gray-900">Complementos Activos</h2>
+                <h2 className="mb-6 font-bold text-2xl text-gray-900">
+                    {t('billing.addons.title')}
+                </h2>
                 <div className="py-12 text-center">
                     <svg
                         className="mx-auto mb-4 h-16 w-16 text-gray-400"
@@ -179,14 +130,14 @@ export function ActiveAddons({ apiUrl }: ActiveAddonsProps) {
                         />
                     </svg>
                     <h3 className="mb-2 font-bold text-gray-900 text-xl">
-                        No tenés complementos activos
+                        {t('billing.addons.empty.title')}
                     </h3>
-                    <p className="mb-6 text-gray-600">Agregá complementos para potenciar tu plan</p>
+                    <p className="mb-6 text-gray-600">{t('billing.addons.empty.description')}</p>
                     <a
                         href="/mi-cuenta/addons"
                         className="inline-block rounded-lg bg-primary px-6 py-3 font-semibold text-white transition-colors hover:bg-primary/90"
                     >
-                        Ver complementos disponibles
+                        {t('billing.addons.viewAvailable')}
                     </a>
                 </div>
             </div>
@@ -195,11 +146,11 @@ export function ActiveAddons({ apiUrl }: ActiveAddonsProps) {
 
     return (
         <div className="rounded-xl bg-white p-8 shadow-lg">
-            <h2 className="mb-6 font-bold text-2xl text-gray-900">Complementos Activos</h2>
+            <h2 className="mb-6 font-bold text-2xl text-gray-900">{t('billing.addons.title')}</h2>
 
             <div className="grid gap-6 md:grid-cols-2">
                 {addons.map((addon) => {
-                    const statusBadge = getStatusBadge(addon.status);
+                    const statusClass = STATUS_CLASSES[addon.status];
                     const isExpired = addon.status === 'expired';
 
                     return (
@@ -213,9 +164,11 @@ export function ActiveAddons({ apiUrl }: ActiveAddonsProps) {
                                         {addon.name}
                                     </h3>
                                     <span
-                                        className={`inline-block rounded-full px-3 py-1 font-medium text-sm ${statusBadge.className}`}
+                                        className={`inline-block rounded-full px-3 py-1 font-medium text-sm ${statusClass}`}
                                     >
-                                        {statusBadge.label}
+                                        {t(
+                                            `billing.addons.status.${addon.status === 'expiring_soon' ? 'expiringSoon' : addon.status}`
+                                        )}
                                     </span>
                                 </div>
                             </div>
@@ -227,7 +180,9 @@ export function ActiveAddons({ apiUrl }: ActiveAddonsProps) {
                             <div className="mb-4 space-y-2 text-sm">
                                 {addon.quantity > 1 && (
                                     <div className="flex justify-between">
-                                        <span className="text-gray-600">Cantidad:</span>
+                                        <span className="text-gray-600">
+                                            {t('billing.addons.quantity')}
+                                        </span>
                                         <span className="font-medium text-gray-900">
                                             {addon.quantity}
                                         </span>
@@ -236,7 +191,9 @@ export function ActiveAddons({ apiUrl }: ActiveAddonsProps) {
                                 {addon.expiresAt && (
                                     <div className="flex justify-between">
                                         <span className="text-gray-600">
-                                            {isExpired ? 'Venció el:' : 'Vence el:'}
+                                            {isExpired
+                                                ? t('billing.addons.expiredOn')
+                                                : t('billing.addons.expiresOn')}
                                         </span>
                                         <span
                                             className={`font-medium ${isExpired ? 'text-red-600' : 'text-gray-900'}`}
@@ -249,8 +206,7 @@ export function ActiveAddons({ apiUrl }: ActiveAddonsProps) {
 
                             {isExpired && (
                                 <div className="rounded-lg bg-yellow-50 p-3 text-sm text-yellow-800">
-                                    Este complemento ha vencido. Renovalo para seguir disfrutando
-                                    sus beneficios.
+                                    {t('billing.addons.expiredWarning')}
                                 </div>
                             )}
                         </div>
@@ -277,7 +233,7 @@ export function ActiveAddons({ apiUrl }: ActiveAddonsProps) {
                             d="M12 4v16m8-8H4"
                         />
                     </svg>
-                    Comprar más complementos
+                    {t('billing.addons.buyMore')}
                 </a>
             </div>
         </div>

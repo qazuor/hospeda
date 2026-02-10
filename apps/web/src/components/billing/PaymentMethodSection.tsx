@@ -8,32 +8,19 @@
 
 'use client';
 
-import type { PaymentMethod } from '@/lib/billing-api-client';
-import { getPaymentMethods, updateDefaultPaymentMethod } from '@/lib/billing-api-client';
-import { useEffect, useState } from 'react';
+import { usePaymentMethods } from '@/hooks/usePaymentMethods';
+import { useTranslations } from '@repo/i18n';
 import { BillingEmptyState } from './BillingEmptyState';
 import { BillingErrorState } from './BillingErrorState';
-
-/**
- * Props for the PaymentMethodSection component
- */
-export interface PaymentMethodSectionProps {
-    /**
-     * Optional API base URL
-     * @default import.meta.env.PUBLIC_API_URL || '/api/v1'
-     */
-    apiUrl?: string;
-}
 
 /**
  * PaymentMethodSection Component
  *
  * Displays user's saved payment methods with ability to set default.
- * Fetches payment methods, displays cards with type/brand/last4,
- * and allows setting default payment method.
+ * Now uses the usePaymentMethods hook for state management.
  *
  * Features:
- * - Fetches payment methods from API
+ * - Fetches payment methods via usePaymentMethods hook
  * - Displays payment method cards
  * - Default badge on primary method
  * - Set as default action
@@ -46,55 +33,31 @@ export interface PaymentMethodSectionProps {
  *
  * @example
  * ```tsx
- * <PaymentMethodSection apiUrl="/api/v1" />
+ * <PaymentMethodSection />
  * ```
  */
-export function PaymentMethodSection({ apiUrl: _apiUrl }: PaymentMethodSectionProps) {
-    const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<Error | null>(null);
-    const [updatingMethodId, setUpdatingMethodId] = useState<string | null>(null);
+export function PaymentMethodSection() {
+    const {
+        data: paymentMethods,
+        isLoading,
+        error,
+        refetch,
+        setDefault,
+        isSettingDefault
+    } = usePaymentMethods();
+    const { t } = useTranslations();
 
-    // Fetch payment methods
-    const fetchPaymentMethods = async () => {
-        try {
-            setIsLoading(true);
-            setError(null);
-
-            const methods = await getPaymentMethods();
-            setPaymentMethods(methods);
-        } catch (err) {
-            console.error('Error fetching payment methods:', err);
-            setError(err instanceof Error ? err : new Error('Error al cargar los métodos de pago'));
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    // Initial fetch
-    // biome-ignore lint/correctness/useExhaustiveDependencies: fetchPaymentMethods is stable, apiUrl not needed
-    useEffect(() => {
-        fetchPaymentMethods();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-
-    // Handle set as default
+    /**
+     * Handle set as default
+     *
+     * @param methodId - Payment method ID to set as default
+     */
     const handleSetDefault = async (methodId: string) => {
         try {
-            setUpdatingMethodId(methodId);
-            setError(null);
-
-            await updateDefaultPaymentMethod(methodId);
-
-            // Refetch to get updated state
-            await fetchPaymentMethods();
+            await setDefault(methodId);
         } catch (err) {
+            // Error is already set in the hook's state
             console.error('Error setting default payment method:', err);
-            setError(
-                err instanceof Error ? err : new Error('Error al establecer método predeterminado')
-            );
-        } finally {
-            setUpdatingMethodId(null);
         }
     };
 
@@ -102,7 +65,9 @@ export function PaymentMethodSection({ apiUrl: _apiUrl }: PaymentMethodSectionPr
     if (isLoading) {
         return (
             <div className="rounded-xl bg-white p-8 shadow-lg">
-                <h2 className="mb-6 font-bold text-2xl text-gray-900">Métodos de pago</h2>
+                <h2 className="mb-6 font-bold text-2xl text-gray-900">
+                    {t('billing.payment.title')}
+                </h2>
                 <div
                     className="flex items-center justify-center py-12"
                     // biome-ignore lint/a11y/useSemanticElements: loading indicator pattern used in tests
@@ -120,24 +85,28 @@ export function PaymentMethodSection({ apiUrl: _apiUrl }: PaymentMethodSectionPr
     if (error) {
         return (
             <div className="rounded-xl bg-white p-8 shadow-lg">
-                <h2 className="mb-6 font-bold text-2xl text-gray-900">Métodos de pago</h2>
+                <h2 className="mb-6 font-bold text-2xl text-gray-900">
+                    {t('billing.payment.title')}
+                </h2>
                 <BillingErrorState
-                    title="Error al cargar métodos de pago"
+                    title={t('billing.payment.error.loadTitle')}
                     message={error.message}
-                    onRetry={fetchPaymentMethods}
+                    onRetry={refetch}
                 />
             </div>
         );
     }
 
     // Empty state
-    if (paymentMethods.length === 0) {
+    if (!paymentMethods || paymentMethods.length === 0) {
         return (
             <div className="rounded-xl bg-white p-8 shadow-lg">
-                <h2 className="mb-6 font-bold text-2xl text-gray-900">Métodos de pago</h2>
+                <h2 className="mb-6 font-bold text-2xl text-gray-900">
+                    {t('billing.payment.title')}
+                </h2>
                 <BillingEmptyState
-                    title="No tenés métodos de pago configurados"
-                    description="Agregá un método de pago para facilitar tus futuras transacciones. Tus datos estarán seguros y encriptados."
+                    title={t('billing.payment.empty.title')}
+                    description={t('billing.payment.empty.description')}
                     icon={
                         <svg
                             className="h-16 w-16 text-gray-400"
@@ -162,12 +131,10 @@ export function PaymentMethodSection({ apiUrl: _apiUrl }: PaymentMethodSectionPr
     // Payment methods list
     return (
         <div className="rounded-xl bg-white p-8 shadow-lg">
-            <h2 className="mb-6 font-bold text-2xl text-gray-900">Métodos de pago</h2>
+            <h2 className="mb-6 font-bold text-2xl text-gray-900">{t('billing.payment.title')}</h2>
 
             <div className="grid gap-4 md:grid-cols-2">
                 {paymentMethods.map((method) => {
-                    const isUpdating = updatingMethodId === method.id;
-
                     return (
                         <div
                             key={method.id}
@@ -209,7 +176,7 @@ export function PaymentMethodSection({ apiUrl: _apiUrl }: PaymentMethodSectionPr
                                 {/* Default badge */}
                                 {method.isDefault && (
                                     <span className="rounded-full bg-green-100 px-3 py-1 font-medium text-green-700 text-xs">
-                                        Predeterminado
+                                        {t('billing.common.default')}
                                     </span>
                                 )}
                             </div>
@@ -219,13 +186,13 @@ export function PaymentMethodSection({ apiUrl: _apiUrl }: PaymentMethodSectionPr
                                 <button
                                     type="button"
                                     onClick={() => handleSetDefault(method.id)}
-                                    disabled={isUpdating}
+                                    disabled={isSettingDefault}
                                     className="mt-2 w-full rounded-lg border border-blue-600 px-4 py-2 font-medium text-blue-600 text-sm transition-colors hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
-                                    aria-label="Establecer como predeterminado"
+                                    aria-label={t('billing.payment.setDefault')}
                                 >
-                                    {isUpdating
-                                        ? 'Actualizando...'
-                                        : 'Establecer como predeterminado'}
+                                    {isSettingDefault
+                                        ? t('billing.payment.updating')
+                                        : t('billing.payment.setDefault')}
                                 </button>
                             )}
                         </div>
@@ -253,7 +220,7 @@ export function PaymentMethodSection({ apiUrl: _apiUrl }: PaymentMethodSectionPr
                             d="M12 4v16m8-8H4"
                         />
                     </svg>
-                    Agregar método de pago
+                    {t('billing.payment.addMethod')}
                 </a>
             </div>
         </div>
