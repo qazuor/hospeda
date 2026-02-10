@@ -71,8 +71,36 @@ const DEFAULT_SETTINGS: BillingSettings = {
     sendSubscriptionCancelledNotification: true
 };
 
+/** Module-level singleton instance */
+let instance: BillingSettingsService | null = null;
+
 /**
- * Service for managing billing settings
+ * Get the singleton instance of BillingSettingsService.
+ *
+ * Creates the instance on first call (lazy initialization).
+ *
+ * @returns The singleton BillingSettingsService instance
+ */
+export function getBillingSettingsService(): BillingSettingsService {
+    if (!instance) {
+        instance = new BillingSettingsService();
+    }
+    return instance;
+}
+
+/**
+ * Reset the singleton instance.
+ * Intended for testing only.
+ */
+export function resetBillingSettingsService(): void {
+    instance = null;
+}
+
+/**
+ * Service for managing billing settings.
+ *
+ * Stateless service that accesses the database via getDb() per call.
+ * Use getBillingSettingsService() to get the singleton instance.
  */
 export class BillingSettingsService {
     /**

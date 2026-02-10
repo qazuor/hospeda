@@ -15,7 +15,7 @@
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 import { getActorFromContext } from '../../middlewares/actor';
-import { BillingSettingsService } from '../../services/billing-settings.service';
+import { getBillingSettingsService } from '../../services/billing-settings.service';
 import { createRouter } from '../../utils/create-app';
 import { apiLogger } from '../../utils/logger';
 import { createAdminRoute } from '../../utils/route-factory';
@@ -72,7 +72,7 @@ export const getBillingSettingsRoute = createAdminRoute({
             });
         }
 
-        const settingsService = new BillingSettingsService();
+        const settingsService = getBillingSettingsService();
         const settings = await settingsService.getSettings();
 
         return settings;
@@ -104,7 +104,7 @@ export const updateBillingSettingsRoute = createAdminRoute({
         const actor = getActorFromContext(c);
         const actorId = actor?.id || undefined;
 
-        const settingsService = new BillingSettingsService();
+        const settingsService = getBillingSettingsService();
 
         try {
             const updatedSettings = await settingsService.updateSettings(body, actorId);
@@ -161,7 +161,7 @@ export const resetBillingSettingsRoute = createAdminRoute({
         const actor = getActorFromContext(c);
         const actorId = actor?.id || undefined;
 
-        const settingsService = new BillingSettingsService();
+        const settingsService = getBillingSettingsService();
 
         try {
             const defaultSettings = await settingsService.resetSettings(actorId);

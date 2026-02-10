@@ -43,14 +43,19 @@ vi.mock('../../src/utils/logger', () => ({
 }));
 
 // Import after mocks
-import { BillingMetricsService } from '../../src/services/billing-metrics.service';
+import {
+    BillingMetricsService,
+    getBillingMetricsService,
+    resetBillingMetricsService
+} from '../../src/services/billing-metrics.service';
 
 describe('BillingMetricsService', () => {
     let service: BillingMetricsService;
 
     beforeEach(() => {
         vi.clearAllMocks();
-        service = new BillingMetricsService();
+        resetBillingMetricsService();
+        service = new BillingMetricsService({ cacheTtlMs: 0 });
     });
 
     describe('getOverviewMetrics', () => {
@@ -656,6 +661,178 @@ describe('BillingMetricsService', () => {
             expect(result.data![1]!.activeCount).toBeGreaterThanOrEqual(
                 result.data![2]!.activeCount || 0
             );
+        });
+    });
+
+    describe('getBillingMetricsService (singleton)', () => {
+        beforeEach(() => {
+            resetBillingMetricsService();
+        });
+
+        it('should return the same instance on multiple calls', () => {
+            // Act
+            const instance1 = getBillingMetricsService();
+            const instance2 = getBillingMetricsService();
+
+            // Assert
+            expect(instance1).toBe(instance2);
+        });
+
+        it('should return a new instance after reset', () => {
+            // Arrange
+            const instance1 = getBillingMetricsService();
+
+            // Act
+            resetBillingMetricsService();
+            const instance2 = getBillingMetricsService();
+
+            // Assert
+            expect(instance1).not.toBe(instance2);
+        });
+
+        it('should return an instance of BillingMetricsService', () => {
+            // Act
+            const instance = getBillingMetricsService();
+
+            // Assert
+            expect(instance).toBeInstanceOf(BillingMetricsService);
+        });
+    });
+
+    describe('overview metrics cache', () => {
+        it('should return cached result on second call within TTL', async () => {
+            // Arrange - service with long TTL
+            const cachedService = new BillingMetricsService({ cacheTtlMs: 60_000 });
+            mockExecute
+                .mockResolvedValueOnce({ rows: [{ count: '10' }] })
+                .mockResolvedValueOnce({ rows: [{ count: '3' }] })
+                .mockResolvedValueOnce({ rows: [{ mrr_total: '8000' }] })
+                .mockResolvedValueOnce({ rows: [{ churned: '2' }] })
+                .mockResolvedValueOnce({ rows: [{ converted: '5', total_trials: '10' }] })
+                .mockResolvedValueOnce({ rows: [{ count: '50' }] })
+                .mockResolvedValueOnce({ rows: [{ total: '100000' }] });
+
+            // Act - first call hits DB
+            const result1 = await cachedService.getOverviewMetrics(true);
+            // Second call should use cache
+            const result2 = await cachedService.getOverviewMetrics(true);
+
+            // Assert
+            expect(result1.success).toBe(true);
+            expect(result2.success).toBe(true);
+            expect(result2.data).toEqual(result1.data);
+            // DB should only be called 7 times (first call), not 14
+            expect(mockExecute).toHaveBeenCalledTimes(7);
+        });
+
+        it('should use separate cache keys for different livemode values', async () => {
+            // Arrange - service with long TTL
+            const cachedService = new BillingMetricsService({ cacheTtlMs: 60_000 });
+            // First call with livemode=true (7 queries)
+            mockExecute
+                .mockResolvedValueOnce({ rows: [{ count: '10' }] })
+                .mockResolvedValueOnce({ rows: [{ count: '3' }] })
+                .mockResolvedValueOnce({ rows: [{ mrr_total: '8000' }] })
+                .mockResolvedValueOnce({ rows: [{ churned: '2' }] })
+                .mockResolvedValueOnce({ rows: [{ converted: '5', total_trials: '10' }] })
+                .mockResolvedValueOnce({ rows: [{ count: '50' }] })
+                .mockResolvedValueOnce({ rows: [{ total: '100000' }] })
+                // Second call with livemode=false (7 more queries)
+                .mockResolvedValueOnce({ rows: [{ count: '5' }] })
+                .mockResolvedValueOnce({ rows: [{ count: '1' }] })
+                .mockResolvedValueOnce({ rows: [{ mrr_total: '2000' }] })
+                .mockResolvedValueOnce({ rows: [{ churned: '0' }] })
+                .mockResolvedValueOnce({ rows: [{ converted: '1', total_trials: '2' }] })
+                .mockResolvedValueOnce({ rows: [{ count: '10' }] })
+                .mockResolvedValueOnce({ rows: [{ total: '20000' }] });
+
+            // Act
+            const liveResult = await cachedService.getOverviewMetrics(true);
+            const testResult = await cachedService.getOverviewMetrics(false);
+
+            // Assert
+            expect(liveResult.data?.activeSubscriptions).toBe(10);
+            expect(testResult.data?.activeSubscriptions).toBe(5);
+            expect(mockExecute).toHaveBeenCalledTimes(14);
+        });
+
+        it('should fetch fresh data after cache TTL expires', async () => {
+            // Arrange - service with 0ms TTL (expires immediately)
+            const expiredService = new BillingMetricsService({ cacheTtlMs: 0 });
+            const mockData = () => {
+                mockExecute
+                    .mockResolvedValueOnce({ rows: [{ count: '10' }] })
+                    .mockResolvedValueOnce({ rows: [{ count: '3' }] })
+                    .mockResolvedValueOnce({ rows: [{ mrr_total: '8000' }] })
+                    .mockResolvedValueOnce({ rows: [{ churned: '2' }] })
+                    .mockResolvedValueOnce({ rows: [{ converted: '5', total_trials: '10' }] })
+                    .mockResolvedValueOnce({ rows: [{ count: '50' }] })
+                    .mockResolvedValueOnce({ rows: [{ total: '100000' }] });
+            };
+
+            // Act
+            mockData();
+            await expiredService.getOverviewMetrics(true);
+            mockData();
+            await expiredService.getOverviewMetrics(true);
+
+            // Assert - both calls should hit DB (14 total)
+            expect(mockExecute).toHaveBeenCalledTimes(14);
+        });
+
+        it('should clear cache when clearCache is called', async () => {
+            // Arrange - service with long TTL
+            const cachedService = new BillingMetricsService({ cacheTtlMs: 60_000 });
+            mockExecute
+                .mockResolvedValueOnce({ rows: [{ count: '10' }] })
+                .mockResolvedValueOnce({ rows: [{ count: '3' }] })
+                .mockResolvedValueOnce({ rows: [{ mrr_total: '8000' }] })
+                .mockResolvedValueOnce({ rows: [{ churned: '2' }] })
+                .mockResolvedValueOnce({ rows: [{ converted: '5', total_trials: '10' }] })
+                .mockResolvedValueOnce({ rows: [{ count: '50' }] })
+                .mockResolvedValueOnce({ rows: [{ total: '100000' }] })
+                // After cache clear
+                .mockResolvedValueOnce({ rows: [{ count: '20' }] })
+                .mockResolvedValueOnce({ rows: [{ count: '5' }] })
+                .mockResolvedValueOnce({ rows: [{ mrr_total: '16000' }] })
+                .mockResolvedValueOnce({ rows: [{ churned: '1' }] })
+                .mockResolvedValueOnce({ rows: [{ converted: '8', total_trials: '10' }] })
+                .mockResolvedValueOnce({ rows: [{ count: '60' }] })
+                .mockResolvedValueOnce({ rows: [{ total: '200000' }] });
+
+            // Act
+            const result1 = await cachedService.getOverviewMetrics(true);
+            cachedService.clearCache();
+            const result2 = await cachedService.getOverviewMetrics(true);
+
+            // Assert
+            expect(result1.data?.activeSubscriptions).toBe(10);
+            expect(result2.data?.activeSubscriptions).toBe(20);
+            expect(mockExecute).toHaveBeenCalledTimes(14);
+        });
+
+        it('should not cache failed results', async () => {
+            // Arrange - service with long TTL
+            const cachedService = new BillingMetricsService({ cacheTtlMs: 60_000 });
+            mockExecute
+                .mockRejectedValueOnce(new Error('DB down'))
+                // Second call succeeds
+                .mockResolvedValueOnce({ rows: [{ count: '10' }] })
+                .mockResolvedValueOnce({ rows: [{ count: '3' }] })
+                .mockResolvedValueOnce({ rows: [{ mrr_total: '8000' }] })
+                .mockResolvedValueOnce({ rows: [{ churned: '2' }] })
+                .mockResolvedValueOnce({ rows: [{ converted: '5', total_trials: '10' }] })
+                .mockResolvedValueOnce({ rows: [{ count: '50' }] })
+                .mockResolvedValueOnce({ rows: [{ total: '100000' }] });
+
+            // Act
+            const failedResult = await cachedService.getOverviewMetrics(true);
+            const successResult = await cachedService.getOverviewMetrics(true);
+
+            // Assert
+            expect(failedResult.success).toBe(false);
+            expect(successResult.success).toBe(true);
+            expect(successResult.data?.activeSubscriptions).toBe(10);
         });
     });
 });

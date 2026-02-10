@@ -5,12 +5,52 @@
  * Aggregates data from subscriptions, payments, invoices, and customers
  * for dashboard and reporting purposes.
  *
+ * Uses a singleton pattern to avoid per-request instantiation and includes
+ * an in-memory cache with configurable TTL for dashboard overview queries.
+ *
  * @module services/billing-metrics
  */
 
 import { getDb, sql } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
 import { apiLogger } from '../utils/logger';
+
+/** Cache entry with expiration timestamp */
+interface CacheEntry<T> {
+    readonly data: T;
+    readonly expiresAt: number;
+}
+
+/** Default cache TTL in milliseconds (5 minutes) */
+const DEFAULT_CACHE_TTL_MS = 5 * 60 * 1000;
+
+/** Module-level singleton instance */
+let instance: BillingMetricsService | null = null;
+
+/**
+ * Get the singleton instance of BillingMetricsService.
+ *
+ * Creates the instance on first call (lazy initialization).
+ *
+ * @returns The singleton BillingMetricsService instance
+ */
+export function getBillingMetricsService(): BillingMetricsService {
+    if (!instance) {
+        instance = new BillingMetricsService();
+    }
+    return instance;
+}
+
+/**
+ * Reset the singleton instance and clear cache.
+ * Intended for testing only.
+ */
+export function resetBillingMetricsService(): void {
+    if (instance) {
+        instance.clearCache();
+    }
+    instance = null;
+}
 
 /**
  * Service result pattern
@@ -90,15 +130,46 @@ export interface PlanBreakdown {
  * Billing Metrics Service
  *
  * Handles all billing analytics and metrics calculations.
+ * Uses in-memory caching for overview metrics to reduce database load.
  */
 export class BillingMetricsService {
+    private readonly overviewCache = new Map<string, CacheEntry<BillingOverviewMetrics>>();
+    private readonly cacheTtlMs: number;
+
     /**
-     * Get overview metrics for dashboard
+     * @param options - Configuration options
+     * @param options.cacheTtlMs - Cache TTL in milliseconds (default: 5 minutes)
+     */
+    constructor({ cacheTtlMs }: { readonly cacheTtlMs?: number } = {}) {
+        this.cacheTtlMs = cacheTtlMs ?? DEFAULT_CACHE_TTL_MS;
+    }
+
+    /**
+     * Clear the overview metrics cache.
+     */
+    clearCache(): void {
+        this.overviewCache.clear();
+    }
+
+    /**
+     * Get overview metrics for dashboard.
+     *
+     * Results are cached with a configurable TTL (default: 5 minutes).
+     * Cache is keyed by livemode to prevent mixing test/live data.
      *
      * @param livemode - Whether to fetch live or test mode data
      * @returns Overview metrics
      */
     async getOverviewMetrics(livemode = true): Promise<ServiceResult<BillingOverviewMetrics>> {
+        // Check cache first
+        const cacheKey = `overview:${String(livemode)}`;
+        const cached = this.overviewCache.get(cacheKey);
+
+        if (cached && Date.now() < cached.expiresAt) {
+            apiLogger.debug({ cacheKey }, 'Returning cached overview metrics');
+            return { success: true, data: cached.data };
+        }
+
         try {
             const db = getDb();
 
@@ -205,6 +276,12 @@ export class BillingMetricsService {
             };
 
             apiLogger.debug({ metrics }, 'Overview metrics calculated');
+
+            // Store in cache
+            this.overviewCache.set(cacheKey, {
+                data: metrics,
+                expiresAt: Date.now() + this.cacheTtlMs
+            });
 
             return {
                 success: true,

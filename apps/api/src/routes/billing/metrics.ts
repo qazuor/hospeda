@@ -12,7 +12,7 @@
  */
 
 import { z } from 'zod';
-import { BillingMetricsService } from '../../services/billing-metrics.service';
+import { getBillingMetricsService } from '../../services/billing-metrics.service';
 import { createRouter } from '../../utils/create-app';
 import { apiLogger } from '../../utils/logger';
 import { createAdminRoute } from '../../utils/route-factory';
@@ -108,7 +108,7 @@ export const getDashboardMetricsRoute = createAdminRoute({
     requestQuery: MetricsQuerySchema.shape,
     responseSchema: DashboardMetricsResponseSchema,
     handler: async (_c, _params, _body, query) => {
-        const service = new BillingMetricsService();
+        const service = getBillingMetricsService();
         const livemode = query?.livemode === 'true';
         const months = (query?.months as number) ?? 12;
 
@@ -149,12 +149,13 @@ export const getDashboardMetricsRoute = createAdminRoute({
             if (overviewResult.value.success && overviewResult.value.data) {
                 overview = overviewResult.value.data;
             } else {
-                apiLogger.warn('Overview metrics failed', {
-                    error: overviewResult.value.error?.message
-                });
+                apiLogger.warn(
+                    { error: overviewResult.value.error?.message },
+                    'Overview metrics failed'
+                );
             }
         } else {
-            apiLogger.warn('Overview metrics rejected', { reason: overviewResult.reason });
+            apiLogger.warn({ reason: overviewResult.reason }, 'Overview metrics rejected');
         }
 
         // Extract revenue time series with fallback
@@ -163,12 +164,13 @@ export const getDashboardMetricsRoute = createAdminRoute({
             if (revenueResult.value.success && revenueResult.value.data) {
                 revenueTimeSeries = revenueResult.value.data;
             } else {
-                apiLogger.warn('Revenue time series failed', {
-                    error: revenueResult.value.error?.message
-                });
+                apiLogger.warn(
+                    { error: revenueResult.value.error?.message },
+                    'Revenue time series failed'
+                );
             }
         } else {
-            apiLogger.warn('Revenue time series rejected', { reason: revenueResult.reason });
+            apiLogger.warn({ reason: revenueResult.reason }, 'Revenue time series rejected');
         }
 
         // Extract subscription breakdown with fallback
@@ -177,12 +179,13 @@ export const getDashboardMetricsRoute = createAdminRoute({
             if (breakdownResult.value.success && breakdownResult.value.data) {
                 subscriptionBreakdown = breakdownResult.value.data;
             } else {
-                apiLogger.warn('Subscription breakdown failed', {
-                    error: breakdownResult.value.error?.message
-                });
+                apiLogger.warn(
+                    { error: breakdownResult.value.error?.message },
+                    'Subscription breakdown failed'
+                );
             }
         } else {
-            apiLogger.warn('Subscription breakdown rejected', { reason: breakdownResult.reason });
+            apiLogger.warn({ reason: breakdownResult.reason }, 'Subscription breakdown rejected');
         }
 
         return {
@@ -207,7 +210,7 @@ export const getRecentActivityRoute = createAdminRoute({
     requestQuery: ActivityQuerySchema.shape,
     responseSchema: z.array(RecentActivityItemSchema),
     handler: async (_c, _params, _body, query) => {
-        const service = new BillingMetricsService();
+        const service = getBillingMetricsService();
         const livemode = query?.livemode === 'true';
         const limit = (query?.limit as number) ?? 20;
 

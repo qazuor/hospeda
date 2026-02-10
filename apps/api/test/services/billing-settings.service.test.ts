@@ -3,7 +3,11 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { BillingSettingsService } from '../../src/services/billing-settings.service';
+import {
+    BillingSettingsService,
+    getBillingSettingsService,
+    resetBillingSettingsService
+} from '../../src/services/billing-settings.service';
 
 // Hoist shared mock functions for drizzle operators
 const { mockDesc, mockEq, mockAnd } = vi.hoisted(() => ({
@@ -655,6 +659,41 @@ describe('BillingSettingsService', () => {
             expect(result.currency).toBe('USD');
             expect(result.taxRate).toBe(15);
             expect(result.complexTrialDays).toBe(DEFAULT_SETTINGS.complexTrialDays);
+        });
+    });
+
+    describe('getBillingSettingsService (singleton)', () => {
+        beforeEach(() => {
+            resetBillingSettingsService();
+        });
+
+        it('should return the same instance on multiple calls', () => {
+            // Act
+            const instance1 = getBillingSettingsService();
+            const instance2 = getBillingSettingsService();
+
+            // Assert
+            expect(instance1).toBe(instance2);
+        });
+
+        it('should return a new instance after reset', () => {
+            // Arrange
+            const instance1 = getBillingSettingsService();
+
+            // Act
+            resetBillingSettingsService();
+            const instance2 = getBillingSettingsService();
+
+            // Assert
+            expect(instance1).not.toBe(instance2);
+        });
+
+        it('should return an instance of BillingSettingsService', () => {
+            // Act
+            const instance = getBillingSettingsService();
+
+            // Assert
+            expect(instance).toBeInstanceOf(BillingSettingsService);
         });
     });
 });
