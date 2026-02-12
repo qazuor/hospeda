@@ -211,7 +211,7 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
         );
 
         throw new HTTPException(500, {
-            message: `Failed to change plan: ${errorMessage}`
+            message: 'Failed to change plan. Please try again or contact support.'
         });
     }
 };
