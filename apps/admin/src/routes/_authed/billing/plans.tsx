@@ -20,6 +20,7 @@ import {
     useTogglePlanActiveMutation,
     useUpdatePlanMutation
 } from '@/features/billing-plans';
+import { useTranslations } from '@/hooks/use-translations';
 import { ALL_PLANS } from '@repo/billing';
 import { createFileRoute } from '@tanstack/react-router';
 import { Plus } from 'lucide-react';
@@ -32,6 +33,7 @@ export const Route = createFileRoute('/_authed/billing/plans')({
 type PlanCategory = 'all' | 'owner' | 'complex' | 'tourist';
 
 function BillingPlansPage() {
+    const { t } = useTranslations();
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(20);
     const [categoryFilter, setCategoryFilter] = useState<PlanCategory>('all');
@@ -88,26 +90,25 @@ function BillingPlansPage() {
 
     const handleToggleActive = (id: string, isActive: boolean) => {
         if (!data?.items) {
-            alert('Esta función requiere la API de facturación activa.');
+            alert(t('admin-billing.plans.apiRequired'));
             return;
         }
 
-        if (confirm(`¿Estás seguro de ${isActive ? 'activar' : 'desactivar'} este plan?`)) {
+        const message = isActive
+            ? t('admin-billing.plans.confirmActivate')
+            : t('admin-billing.plans.confirmDeactivate');
+        if (confirm(message)) {
             toggleActiveMutation.mutate({ id, isActive });
         }
     };
 
     const handleDelete = (id: string) => {
         if (!data?.items) {
-            alert('Esta función requiere la API de facturación activa.');
+            alert(t('admin-billing.plans.apiRequired'));
             return;
         }
 
-        if (
-            confirm(
-                '¿Estás seguro de eliminar este plan? Esta acción no se puede deshacer y afectará a los usuarios con este plan.'
-            )
-        ) {
+        if (confirm(t('admin-billing.plans.confirmDelete'))) {
             deleteMutation.mutate(id);
         }
     };
@@ -125,9 +126,11 @@ function BillingPlansPage() {
             <SidebarPageLayout>
                 <div className="space-y-6">
                     <div>
-                        <h2 className="mb-2 font-bold text-2xl">Planes de Suscripción</h2>
+                        <h2 className="mb-2 font-bold text-2xl">
+                            {t('admin-billing.plans.title')}
+                        </h2>
                         <p className="text-muted-foreground">
-                            Gestiona los planes de suscripción disponibles para los usuarios
+                            {t('admin-billing.plans.description')}
                         </p>
                     </div>
 
@@ -135,11 +138,11 @@ function BillingPlansPage() {
                         <CardContent className="py-8">
                             <div className="text-center">
                                 <p className="text-muted-foreground">
-                                    No se pudieron cargar los planes desde la API.
+                                    {t('admin-billing.plans.apiLoadError')}
                                 </p>
                                 <p className="mt-2 text-red-600 text-sm">{error.message}</p>
                                 <p className="mt-4 text-muted-foreground text-sm">
-                                    Mostrando datos estáticos de configuración como fallback.
+                                    {t('admin-billing.plans.staticFallback')}
                                 </p>
                             </div>
                         </CardContent>
@@ -176,9 +179,11 @@ function BillingPlansPage() {
             <div className="space-y-6">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h2 className="mb-2 font-bold text-2xl">Planes de Suscripción</h2>
+                        <h2 className="mb-2 font-bold text-2xl">
+                            {t('admin-billing.plans.title')}
+                        </h2>
                         <p className="text-muted-foreground">
-                            Gestiona los planes de suscripción disponibles para los usuarios
+                            {t('admin-billing.plans.description')}
                         </p>
                     </div>
                 </div>
@@ -187,9 +192,8 @@ function BillingPlansPage() {
                     <Card className="border-yellow-200 bg-yellow-50">
                         <CardContent className="py-4">
                             <p className="text-sm text-yellow-800">
-                                <strong>Nota:</strong> La API de facturación no está disponible.
-                                Mostrando datos estáticos de configuración. Las funciones de
-                                creación, edición y eliminación están deshabilitadas.
+                                <strong>{t('admin-billing.plans.noteLabel')}</strong>{' '}
+                                {t('admin-billing.plans.apiUnavailable')}
                             </p>
                         </CardContent>
                     </Card>
@@ -248,6 +252,8 @@ function PlansTable({
     onCategoryFilterChange,
     onCreateNew
 }: PlansTableProps) {
+    const { t } = useTranslations();
+
     return (
         <div className="space-y-4">
             {/* Filters */}
@@ -258,16 +264,16 @@ function PlansTable({
                         value={categoryFilter}
                         onChange={(e) => onCategoryFilterChange(e.target.value as PlanCategory)}
                     >
-                        <option value="all">Todas las categorías</option>
-                        <option value="owner">Propietario</option>
-                        <option value="complex">Complejo</option>
-                        <option value="tourist">Turista</option>
+                        <option value="all">{t('admin-billing.plans.allCategories')}</option>
+                        <option value="owner">{t('admin-billing.plans.categoryOwner')}</option>
+                        <option value="complex">{t('admin-billing.plans.categoryComplex')}</option>
+                        <option value="tourist">{t('admin-billing.plans.categoryTourist')}</option>
                     </select>
                 </div>
 
                 <Button onClick={onCreateNew}>
                     <Plus className="mr-2 h-4 w-4" />
-                    Crear plan
+                    {t('admin-billing.plans.createPlan')}
                 </Button>
             </div>
 

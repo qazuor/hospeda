@@ -18,6 +18,7 @@ import {
     useCustomerUsageQuery,
     useSystemUsageStatsQuery
 } from '@/features/billing-metrics';
+import { useTranslations } from '@/hooks/use-translations';
 import { createFileRoute } from '@tanstack/react-router';
 import { Search, User, X } from 'lucide-react';
 import { useState } from 'react';
@@ -27,6 +28,7 @@ export const Route = createFileRoute('/_authed/billing/metrics')({
 });
 
 function BillingMetricsPage() {
+    const { t } = useTranslations();
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCustomer, setSelectedCustomer] = useState<CustomerSearchResult | null>(null);
 
@@ -73,9 +75,9 @@ function BillingMetricsPage() {
             <div className="space-y-6">
                 {/* Header */}
                 <div>
-                    <h2 className="mb-2 font-bold text-2xl">Analíticas de Uso</h2>
+                    <h2 className="mb-2 font-bold text-2xl">{t('admin-billing.metrics.title')}</h2>
                     <p className="text-muted-foreground">
-                        Estadísticas del sistema y uso de límites por cliente
+                        {t('admin-billing.metrics.description')}
                     </p>
                 </div>
 
@@ -85,7 +87,7 @@ function BillingMetricsPage() {
                         <CardContent className="py-8 text-center">
                             <div className="mx-auto h-6 w-6 animate-spin rounded-full border-4 border-primary border-t-transparent" />
                             <p className="mt-2 text-muted-foreground text-sm">
-                                Cargando estadísticas...
+                                {t('admin-billing.metrics.loadingStats')}
                             </p>
                         </CardContent>
                     </Card>
@@ -93,7 +95,7 @@ function BillingMetricsPage() {
                     <Card className="border-destructive">
                         <CardContent className="py-8 text-center">
                             <p className="text-destructive text-sm">
-                                Error al cargar estadísticas del sistema
+                                {t('admin-billing.metrics.errorStats')}
                             </p>
                             <p className="mt-1 text-muted-foreground text-xs">
                                 {statsError.message}
@@ -113,7 +115,7 @@ function BillingMetricsPage() {
                         <CardContent className="py-8 text-center">
                             <div className="mx-auto h-6 w-6 animate-spin rounded-full border-4 border-primary border-t-transparent" />
                             <p className="mt-2 text-muted-foreground text-sm">
-                                Cargando clientes cerca del límite...
+                                {t('admin-billing.metrics.loadingLimits')}
                             </p>
                         </CardContent>
                     </Card>
@@ -121,7 +123,7 @@ function BillingMetricsPage() {
                     <Card className="border-destructive">
                         <CardContent className="py-8 text-center">
                             <p className="text-destructive text-sm">
-                                Error al cargar clientes cerca del límite
+                                {t('admin-billing.metrics.errorLimits')}
                             </p>
                             <p className="mt-1 text-muted-foreground text-xs">
                                 {limitsError.message}
@@ -135,9 +137,9 @@ function BillingMetricsPage() {
                 {/* Customer Search */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>Buscar Cliente</CardTitle>
+                        <CardTitle>{t('admin-billing.metrics.searchTitle')}</CardTitle>
                         <CardDescription>
-                            Ingresa el email del cliente para ver sus analíticas de uso
+                            {t('admin-billing.metrics.searchDescription')}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -146,7 +148,7 @@ function BillingMetricsPage() {
                             <div className="relative">
                                 <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
                                 <Input
-                                    placeholder="Buscar por email..."
+                                    placeholder={t('admin-billing.metrics.searchPlaceholder')}
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     disabled={!!selectedCustomer}
@@ -205,13 +207,13 @@ function BillingMetricsPage() {
                                     <div className="py-4 text-center">
                                         <div className="mx-auto h-6 w-6 animate-spin rounded-full border-4 border-primary border-t-transparent" />
                                         <p className="mt-2 text-muted-foreground text-sm">
-                                            Buscando...
+                                            {t('admin-billing.metrics.searching')}
                                         </p>
                                     </div>
                                 ) : searchError ? (
                                     <div className="rounded-lg border border-destructive bg-destructive/10 p-4">
                                         <p className="text-destructive text-sm">
-                                            Error al buscar clientes
+                                            {t('admin-billing.metrics.searchError')}
                                         </p>
                                         <p className="mt-1 text-muted-foreground text-xs">
                                             {searchError.message}
@@ -257,7 +259,7 @@ function BillingMetricsPage() {
                                 ) : (
                                     <div className="py-4 text-center">
                                         <p className="text-muted-foreground text-sm">
-                                            No se encontraron clientes
+                                            {t('admin-billing.metrics.noCustomers')}
                                         </p>
                                     </div>
                                 ))}
@@ -265,7 +267,7 @@ function BillingMetricsPage() {
                             {/* Hint */}
                             {!selectedCustomer && searchQuery.length < 2 && (
                                 <p className="text-muted-foreground text-sm">
-                                    Ingresa al menos 2 caracteres para buscar
+                                    {t('admin-billing.metrics.searchHint')}
                                 </p>
                             )}
                         </div>
@@ -279,14 +281,16 @@ function BillingMetricsPage() {
                             <CardContent className="py-12 text-center">
                                 <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
                                 <p className="mt-4 text-muted-foreground text-sm">
-                                    Cargando analíticas de uso...
+                                    {t('admin-billing.metrics.loadingUsage')}
                                 </p>
                             </CardContent>
                         </Card>
                     ) : usageError ? (
                         <Card className="border-destructive">
                             <CardContent className="py-12 text-center">
-                                <p className="text-destructive">Error al cargar analíticas</p>
+                                <p className="text-destructive">
+                                    {t('admin-billing.metrics.errorUsage')}
+                                </p>
                                 <p className="mt-2 text-muted-foreground text-sm">
                                     {usageError.message}
                                 </p>
@@ -304,10 +308,10 @@ function BillingMetricsPage() {
                                 <Search className="h-8 w-8 text-muted-foreground" />
                             </div>
                             <p className="text-muted-foreground">
-                                Busca un cliente para ver sus analíticas de uso
+                                {t('admin-billing.metrics.emptyTitle')}
                             </p>
                             <p className="mt-2 text-muted-foreground text-sm">
-                                Utiliza el campo de búsqueda para encontrar un cliente por email
+                                {t('admin-billing.metrics.emptyDescription')}
                             </p>
                         </CardContent>
                     </Card>
