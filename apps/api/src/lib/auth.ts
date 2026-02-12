@@ -21,6 +21,9 @@ import { compare, hash } from 'bcryptjs';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { admin } from 'better-auth/plugins';
+import { getQZPayBilling } from '../middlewares/billing';
+import { BillingCustomerSyncService } from '../services/billing-customer-sync';
+import { TrialService } from '../services/trial.service';
 
 const logger = createLogger('auth');
 
@@ -220,7 +223,59 @@ export function getAuth(): ReturnType<typeof betterAuth> {
                             { userId: user.id, email: user.email },
                             'New user created via Better Auth'
                         );
-                        // TODO (T-015): Trigger billing customer sync here
+
+                        // Billing customer sync (non-blocking)
+                        try {
+                            const billing = getQZPayBilling();
+                            const syncService = new BillingCustomerSyncService(billing);
+                            const customerId = await syncService.ensureCustomerExists({
+                                userId: user.id,
+                                email: user.email,
+                                name: user.name || undefined
+                            });
+
+                            if (customerId && user.role === 'HOST') {
+                                const trialService = new TrialService(billing);
+                                await trialService.startTrial({
+                                    customerId,
+                                    userType: 'owner'
+                                });
+                                logger.info(
+                                    { userId: user.id, customerId },
+                                    'Trial started for new HOST user'
+                                );
+                            }
+                        } catch (error) {
+                            logger.error(
+                                {
+                                    userId: user.id,
+                                    error: error instanceof Error ? error.message : String(error)
+                                },
+                                'Failed to sync billing customer on user creation'
+                            );
+                        }
+                    }
+                },
+                update: {
+                    after: async (user) => {
+                        // Sync billing customer data when user is updated
+                        try {
+                            const billing = getQZPayBilling();
+                            const syncService = new BillingCustomerSyncService(billing);
+                            await syncService.syncCustomerData({
+                                userId: user.id,
+                                email: user.email,
+                                name: user.name || undefined
+                            });
+                        } catch (error) {
+                            logger.error(
+                                {
+                                    userId: user.id,
+                                    error: error instanceof Error ? error.message : String(error)
+                                },
+                                'Failed to sync billing customer on user update'
+                            );
+                        }
                     }
                 }
             }

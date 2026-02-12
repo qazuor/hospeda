@@ -1,12 +1,12 @@
 /**
  * Billing Customer Sync Service
  *
- * Ensures authenticated users from Clerk have corresponding billing customers.
+ * Ensures authenticated users have corresponding billing customers.
  * Handles automatic customer creation, updates, and deletions with caching.
  *
- * This service bridges the gap between Clerk authentication and QZPay billing,
- * ensuring every authenticated user has a billing customer record for subscriptions,
- * payments, and entitlements.
+ * This service bridges authentication and QZPay billing, ensuring every
+ * authenticated user has a billing customer record for subscriptions,
+ * payments, and entitlements. Called from Better Auth database hooks.
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
@@ -38,7 +38,7 @@ export interface BillingCustomerSyncConfig {
 }
 
 /**
- * Service for syncing Clerk users with billing customers
+ * Service for syncing authenticated users with billing customers
  */
 export class BillingCustomerSyncService {
     private readonly billing: QZPayBilling | null;
@@ -107,7 +107,7 @@ export class BillingCustomerSyncService {
                 email,
                 name: name || null,
                 metadata: {
-                    source: 'clerk',
+                    source: 'better-auth',
                     createdBy: 'billing-customer-sync-service'
                 }
             });

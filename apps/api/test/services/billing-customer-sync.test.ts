@@ -120,7 +120,7 @@ describe('BillingCustomerSyncService', () => {
                 email: 'new@example.com',
                 name: 'New User',
                 metadata: {
-                    source: 'clerk',
+                    source: 'better-auth',
                     createdBy: 'billing-customer-sync-service'
                 }
             });
