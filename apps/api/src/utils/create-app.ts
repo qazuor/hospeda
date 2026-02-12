@@ -3,7 +3,7 @@ import type { Context, MiddlewareHandler, Schema } from 'hono';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { requestId } from 'hono/request-id';
 import { actorMiddleware } from '../middlewares/actor';
-import { clerkAuth } from '../middlewares/auth';
+import { authMiddleware } from '../middlewares/auth';
 import { billingMiddleware } from '../middlewares/billing';
 import { billingCustomerMiddleware } from '../middlewares/billing-customer';
 import { cacheMiddleware } from '../middlewares/cache';
@@ -98,7 +98,7 @@ export default function createApp() {
     }
 
     // Authentication and authorization
-    app.use(wrapMiddleware(clerkAuth())).use(wrapMiddleware(actorMiddleware()));
+    app.use(wrapMiddleware(authMiddleware())).use(wrapMiddleware(actorMiddleware()));
 
     // Billing context (after authentication)
     app.use(wrapMiddleware(billingMiddleware));
@@ -146,7 +146,7 @@ export function createDocApp() {
     // - metricsMiddleware (not needed for docs)
     // - validationMiddleware (not needed for static content)
     // - responseFormattingMiddleware (can interfere with HTML responses)
-    // - clerkAuth (documentation should be public)
+    // - authMiddleware (documentation should be public)
     // - actorMiddleware (documentation should be public)
 
     app.notFound(notFound);

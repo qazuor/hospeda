@@ -1,10 +1,14 @@
 /**
- * Universal Actor Middleware
- * Automatically creates and injects actor into context for all routes
- * Handles both authenticated users and guest users
- * Uses high-performance user cache to minimize database queries
+ * Universal Actor Middleware.
+ *
+ * Creates and injects an Actor into the Hono context for all routes.
+ * Reads the authenticated user from context (set by auth middleware)
+ * and resolves permissions from the database. Unauthenticated requests
+ * receive a guest actor with minimal public access.
+ *
+ * @module actor-middleware
  */
-import { getAuth } from '@hono/clerk-auth';
+
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import type { MiddlewareHandler } from 'hono';
@@ -15,14 +19,14 @@ import { apiLogger } from '../utils/logger';
 import { userCache } from '../utils/user-cache';
 
 /**
- * Schema for validating mock actor permissions
+ * Schema for validating mock actor permissions.
  * @internal TEST-ONLY
  */
 const MockPermissionsSchema = z.array(z.nativeEnum(PermissionEnum));
 
 /**
- * Check if mock actor headers are allowed
- * @internal TEST-ONLY - Never enable in production!
+ * Check if mock actor headers are allowed.
+ * @internal TEST-ONLY .. Never enable in production!
  *
  * Mock actor headers are ONLY accepted when:
  * - NODE_ENV === 'test'
@@ -38,15 +42,23 @@ const isMockActorAllowed = (): boolean => {
 };
 
 /**
- * Universal actor middleware that runs on all routes
- * Automatically detects authentication and creates appropriate actor
+ * Universal actor middleware that runs on all routes.
+ * Reads the authenticated user from context (set by auth middleware)
+ * and builds the appropriate Actor with permissions.
  *
- * @returns {MiddlewareHandler} Middleware that injects actor into context
+ * For authenticated users:
+ * - SUPER_ADMIN gets all permissions without DB lookup
+ * - Other roles get permissions from the database via UserCache
+ *
+ * For unauthenticated requests:
+ * - Creates a guest actor with public access only
+ *
+ * @returns Middleware that injects actor into context
  */
 export const actorMiddleware = (): MiddlewareHandler => {
     return async (c, next) => {
         /**
-         * @internal TEST-ONLY: Mock actor headers for E2E tests
+         * @internal TEST-ONLY: Mock actor headers for E2E tests.
          * These headers are ONLY processed when:
          * - NODE_ENV === 'test'
          * - ALLOW_MOCK_ACTOR === 'true'
@@ -106,48 +118,49 @@ export const actorMiddleware = (): MiddlewareHandler => {
             }
         }
 
-        const auth = getAuth(c);
+        // Read authenticated user from context (set by auth middleware)
+        const user = c.get('user');
         let actor: Actor;
 
-        // Handle case where Clerk returns undefined after sign-out
-        if (auth?.userId) {
-            // User is authenticated - get user from cache (or database if cache miss)
+        if (user?.id) {
             try {
-                const dbUser = await userCache.getUser(auth.userId);
+                const userRole = (user.role as RoleEnum) || RoleEnum.USER;
 
-                if (dbUser) {
-                    // Ensure SUPER_ADMIN has all permissions
-                    let permissions = dbUser.permissions || [];
-                    if (dbUser.role === RoleEnum.SUPER_ADMIN) {
-                        permissions = Object.values(PermissionEnum);
-                    }
-
-                    // Get entitlements from context and convert to Set<string>
-                    const userEntitlements = c.get('userEntitlements');
-                    const entitlements = new Set<string>(
-                        Array.from(userEntitlements || []).map((e) => String(e))
-                    );
-
+                // SUPER_ADMIN gets all permissions without a DB lookup
+                if (userRole === RoleEnum.SUPER_ADMIN) {
                     actor = {
-                        id: dbUser.id,
-                        role: dbUser.role,
-                        permissions,
-                        entitlements
+                        id: user.id,
+                        role: RoleEnum.SUPER_ADMIN,
+                        permissions: Object.values(PermissionEnum)
                     };
                 } else {
-                    // Fallback to GUEST if user not found
-                    apiLogger.warn(`User ${auth.userId} not found in database, using guest actor`);
-                    actor = createGuestActor();
+                    // Look up full user data from DB to resolve permissions
+                    const dbUser = await userCache.getUser(user.id);
+                    const permissions = dbUser?.permissions || [];
+
+                    actor = {
+                        id: user.id,
+                        role: userRole,
+                        permissions
+                    };
+                }
+
+                // Attach billing entitlements if available
+                const userEntitlements = c.get('userEntitlements');
+                if (userEntitlements) {
+                    actor.entitlements = new Set<string>(
+                        Array.from(userEntitlements || []).map((e) => String(e))
+                    );
                 }
             } catch (error) {
                 apiLogger.error(
-                    'Error getting user actor:',
+                    'Error building user actor:',
                     error instanceof Error ? error.message : String(error)
                 );
                 actor = createGuestActor();
             }
         } else {
-            // User is not authenticated - use GUEST actor
+            // Unauthenticated request .. use GUEST actor
             actor = createGuestActor();
         }
 
@@ -159,14 +172,14 @@ export const actorMiddleware = (): MiddlewareHandler => {
 };
 
 /**
- * Get actor from context
+ * Get actor from context.
  *
  * Retrieves the actor that was injected by actorMiddleware.
- * Throws if actor is not available (should never happen if middleware is properly configured).
+ * Throws if actor is not available (should never happen if middleware is configured).
  *
  * @param c - Hono context
  * @returns Actor object
- * @throws Error if actor is not in context
+ * @throws HTTPException if actor is not in context
  */
 export const getActorFromContext = (c: Parameters<MiddlewareHandler>[0]): Actor => {
     const actor = c.get('actor');

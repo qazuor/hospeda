@@ -1,5 +1,4 @@
 import type { User } from '@repo/schemas';
-import { AuthProviderEnum } from '@repo/schemas';
 import { UserService } from '@repo/service-core';
 import { LRUCache } from 'lru-cache';
 import { createSystemActor } from './actor.js';
@@ -83,25 +82,25 @@ export class UserCache {
     }
 
     /**
-     * Get user by Clerk user ID, using cache when possible
+     * Get user by database user ID (UUID), using cache when possible.
      *
-     * @param clerkUserId - Clerk user ID (e.g., "user_31HTUXqo9ZFzgAfNCFhPlBVXbA1")
+     * @param userId - Database user UUID
      * @returns User object or null if not found
      */
-    async getUser(clerkUserId: string): Promise<User | null> {
+    async getUser(userId: string): Promise<User | null> {
         // Check cache first
-        const cached = this.cache.get(clerkUserId);
+        const cached = this.cache.get(userId);
         if (cached) {
             this.stats.hitCount++;
             cached.hitCount++;
-            apiLogger.debug(`🎯 Cache HIT for user ${clerkUserId} (hit #${cached.hitCount})`);
+            apiLogger.debug(`Cache HIT for user ${userId} (hit #${cached.hitCount})`);
             return cached.user;
         }
 
         // Check if query is already in progress (deduplication)
-        if (this.pendingQueries.has(clerkUserId)) {
-            apiLogger.debug(`⏳ Cache WAIT for user ${clerkUserId} (query in progress)`);
-            const pendingQuery = this.pendingQueries.get(clerkUserId);
+        if (this.pendingQueries.has(userId)) {
+            apiLogger.debug(`Cache WAIT for user ${userId} (query in progress)`);
+            const pendingQuery = this.pendingQueries.get(userId);
             if (pendingQuery) {
                 return pendingQuery;
             }
@@ -110,51 +109,51 @@ export class UserCache {
         // Start new DB query
         this.stats.missCount++;
         apiLogger.debug(
-            `💾 Cache MISS for user ${clerkUserId}, querying DB (miss #${this.stats.missCount})`
+            `Cache MISS for user ${userId}, querying DB (miss #${this.stats.missCount})`
         );
 
-        const queryPromise = this.queryDatabase(clerkUserId);
-        this.pendingQueries.set(clerkUserId, queryPromise);
+        const queryPromise = this.queryDatabase(userId);
+        this.pendingQueries.set(userId, queryPromise);
 
         try {
             const user = await queryPromise;
 
             if (user) {
                 // Cache the result
-                this.cache.set(clerkUserId, {
+                this.cache.set(userId, {
                     user,
                     timestamp: Date.now(),
                     hitCount: 0
                 });
-                apiLogger.debug(`✅ User ${clerkUserId} cached successfully`);
+                apiLogger.debug(`User ${userId} cached successfully`);
             } else {
-                apiLogger.debug(`❌ User ${clerkUserId} not found in DB`);
+                apiLogger.debug(`User ${userId} not found in DB`);
             }
 
             return user;
         } catch (error) {
             apiLogger.error(
-                `🚨 Cache query error for user ${clerkUserId}: ${error instanceof Error ? error.message : String(error)}`
+                `Cache query error for user ${userId}: ${error instanceof Error ? error.message : String(error)}`
             );
             return null;
         } finally {
             // Always clean up pending query
-            this.pendingQueries.delete(clerkUserId);
+            this.pendingQueries.delete(userId);
         }
     }
 
     /**
-     * Manually invalidate a user from cache
-     * Call this when user data is updated
+     * Manually invalidate a user from cache.
+     * Call this when user data is updated.
      *
-     * @param clerkUserId - Clerk user ID to invalidate
+     * @param userId - Database user UUID to invalidate
      */
-    invalidate(clerkUserId: string): void {
-        const wasInCache = this.cache.has(clerkUserId);
-        this.cache.delete(clerkUserId);
+    invalidate(userId: string): void {
+        const wasInCache = this.cache.has(userId);
+        this.cache.delete(userId);
 
         if (wasInCache) {
-            apiLogger.debug(`🗑️ Cache invalidated for user ${clerkUserId}`);
+            apiLogger.debug(`Cache invalidated for user ${userId}`);
         }
     }
 
@@ -193,24 +192,21 @@ export class UserCache {
     }
 
     /**
-     * Query user from database
-     * Private method that handles the actual DB interaction
+     * Query user from database by ID.
+     * Private method that handles the actual DB interaction.
      *
-     * @note Uses SYSTEM actor for internal cache operations
+     * @note Uses SYSTEM actor for internal cache operations.
      * This is safe because the cache only returns user data to the actor middleware,
-     * which then creates the appropriate actor context for the request
+     * which then creates the appropriate actor context for the request.
      */
-    private async queryDatabase(clerkUserId: string): Promise<User | null> {
+    private async queryDatabase(userId: string): Promise<User | null> {
         // Use SYSTEM actor for internal cache operations
         // This ensures the cache can access user data regardless of permission restrictions
         const systemActor = createSystemActor();
 
-        const result = await this.userService.getByAuthProviderId(systemActor, {
-            provider: AuthProviderEnum.CLERK,
-            providerUserId: clerkUserId
-        });
+        const result = await this.userService.getById(systemActor, userId);
 
-        return result.data?.user || null;
+        return result.data || null;
     }
 }
 

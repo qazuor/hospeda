@@ -1,3 +1,7 @@
+/**
+ * Actor Middleware Tests
+ * Tests the universal actor middleware that builds Actor from Better Auth session user
+ */
 import {
     LifecycleStatusEnum,
     PermissionEnum,
@@ -6,48 +10,28 @@ import {
     type UserIdType,
     VisibilityEnum
 } from '@repo/schemas';
-/**
- * Actor Middleware Tests
- * Tests the universal actor middleware functionality
- */
 import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { actorMiddleware } from '../../src/middlewares/actor';
-
-// Mock Clerk auth
-vi.mock('@hono/clerk-auth');
-
-// Mock service-core
-vi.mock('@repo/service-core');
+import type { AppBindings, AuthUser } from '../../src/types';
 
 // Mock utils
 vi.mock('../../src/utils/actor');
-
-// Mock logger
 vi.mock('../../src/utils/logger');
-
-// Mock user-cache
 vi.mock('../../src/utils/user-cache');
 
 // Import mocked modules
-import { getAuth } from '@hono/clerk-auth';
-import { UserService } from '@repo/service-core';
+import { actorMiddleware } from '../../src/middlewares/actor';
 import { createGuestActor } from '../../src/utils/actor';
 import { apiLogger } from '../../src/utils/logger';
 import { userCache } from '../../src/utils/user-cache';
 
-// Create mock references
-const mockGetAuth = vi.mocked(getAuth);
-const mockUserService = {
-    getById: vi.fn()
-};
 const mockUserCache = vi.mocked(userCache);
 const mockCreateGuestActor = vi.mocked(createGuestActor);
-const mockApiLogger = vi.mocked(apiLogger);
+const _mockApiLogger = vi.mocked(apiLogger);
 
-// Helper function to create a complete User mock
-const createMockUser = (overrides: Partial<User> = {}): User => ({
-    id: 'user-123' as UserIdType,
+/** Helper to create a complete User mock from the database */
+const createMockDbUser = (overrides: Partial<User> = {}): User => ({
+    id: 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee' as UserIdType,
     slug: 'test-user',
     role: RoleEnum.USER,
     permissions: [PermissionEnum.ACCESS_API_PUBLIC],
@@ -60,104 +44,59 @@ const createMockUser = (overrides: Partial<User> = {}): User => ({
     ...overrides
 });
 
-// Helper functions for creating auth objects
-const createSignedInAuth = (userId: string) =>
-    ({
-        userId,
-        sessionClaims: {
-            iss: 'https://clerk.dev',
-            sub: userId,
-            aud: 'test-app',
-            exp: Math.floor(Date.now() / 1000) + 3600,
-            iat: Math.floor(Date.now() / 1000),
-            nbf: Math.floor(Date.now() / 1000),
-            __raw: 'test-raw-token',
-            sid: 'session-123',
-            v: 2
-        },
-        sessionId: 'session-123',
-        sessionStatus: 'active' as const,
-        actor: null,
-        orgId: null,
-        orgRole: null,
-        orgSlug: null,
-        hasVerifiedEmailAddress: true,
-        hasVerifiedPhoneNumber: false,
-        orgPermissions: [],
-        factorVerificationAge: [null, null]
-    }) as any;
+/** Helper to create an AuthUser (from Better Auth session) */
+const createAuthUser = (overrides: Partial<AuthUser> = {}): AuthUser => ({
+    id: 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee',
+    name: 'Test User',
+    email: 'test@example.com',
+    emailVerified: true,
+    image: null,
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-01'),
+    role: 'USER',
+    banned: false,
+    banReason: null,
+    banExpires: null,
+    ...overrides
+});
 
-const createSignedOutAuth = () =>
-    ({
-        userId: null,
-        sessionClaims: null,
-        sessionId: null,
-        sessionStatus: null,
-        actor: null,
-        orgId: null,
-        orgRole: null,
-        orgSlug: null,
-        hasVerifiedEmailAddress: false,
-        hasVerifiedPhoneNumber: false,
-        tokenType: 'email' as const,
-        orgPermissions: [],
-        factorVerificationAge: [null, null],
-        getToken: vi.fn(),
-        experimental_hasImage: false,
-        __experimental_factorVerificationAge: [null, null],
-        signOut: vi.fn(),
-        has: vi.fn(),
-        debug: vi.fn(),
-        isAuthenticated: false
-    }) as any;
+/**
+ * Creates a test app that sets the user on context before actor middleware.
+ * This simulates what the auth middleware does in production.
+ */
+const createTestApp = (authUser: AuthUser | null) => {
+    const app = new Hono<AppBindings>();
+
+    // Simulate auth middleware setting user on context
+    app.use(async (c, next) => {
+        if (authUser) {
+            c.set('user', authUser);
+        }
+        await next();
+    });
+
+    app.use(actorMiddleware());
+
+    return app;
+};
 
 describe('Actor Middleware', () => {
-    let app: Hono;
-
     beforeEach(() => {
-        app = new Hono();
-        app.use(actorMiddleware());
         vi.clearAllMocks();
 
-        // Setup UserService mock after clearing mocks
-        vi.mocked(UserService).mockImplementation(() => mockUserService as any);
-
-        // Setup userCache mock
         mockUserCache.getUser = vi.fn();
 
-        // Default mock implementations
         mockCreateGuestActor.mockReturnValue({
-            id: 'guest-actor-id',
+            id: '00000000-0000-4000-8000-000000000000',
             role: RoleEnum.GUEST,
-            permissions: []
+            permissions: [PermissionEnum.ACCESS_API_PUBLIC]
         });
     });
 
     describe('Guest User Handling', () => {
         it('should create guest actor for unauthenticated users', async () => {
-            mockGetAuth.mockReturnValue(null);
-
-            app.get('/test', (c: any) => {
-                const actor = c.get('actor');
-                return c.json({ actor });
-            });
-
-            const res = await app.request('/test');
-
-            expect(res.status).toBe(200);
-            const data = await res.json();
-            expect(data.actor).toEqual({
-                id: 'guest-actor-id',
-                role: 'GUEST',
-                permissions: []
-            });
-            expect(mockCreateGuestActor).toHaveBeenCalled();
-        });
-
-        it('should create guest actor when auth has no userId', async () => {
-            mockGetAuth.mockReturnValue(createSignedOutAuth());
-
-            app.get('/test', (c: any) => {
+            const app = createTestApp(null);
+            app.get('/test', (c) => {
                 const actor = c.get('actor');
                 return c.json({ actor });
             });
@@ -172,17 +111,16 @@ describe('Actor Middleware', () => {
     });
 
     describe('Authenticated User Handling', () => {
-        it('should create user actor for authenticated users', async () => {
-            const mockUser = createMockUser({
-                id: 'user-123' as UserIdType,
-                role: RoleEnum.USER,
+        it('should create user actor with permissions from DB', async () => {
+            const authUser = createAuthUser({ role: 'USER' });
+            const dbUser = createMockDbUser({
                 permissions: [PermissionEnum.ACCESS_API_PUBLIC, PermissionEnum.USER_UPDATE_PROFILE]
             });
 
-            mockGetAuth.mockReturnValue(createSignedInAuth('user-123'));
-            mockUserCache.getUser.mockResolvedValue(mockUser);
+            mockUserCache.getUser.mockResolvedValue(dbUser);
 
-            app.get('/test', (c: any) => {
+            const app = createTestApp(authUser);
+            app.get('/test', (c) => {
                 const actor = c.get('actor');
                 return c.json({ actor });
             });
@@ -191,20 +129,46 @@ describe('Actor Middleware', () => {
 
             expect(res.status).toBe(200);
             const data = await res.json();
-            expect(data.actor).toEqual({
-                id: 'user-123',
-                role: RoleEnum.USER,
-                permissions: [PermissionEnum.ACCESS_API_PUBLIC, PermissionEnum.USER_UPDATE_PROFILE],
-                entitlements: expect.any(Object) // Entitlements can be empty or populated
-            });
-            expect(mockUserCache.getUser).toHaveBeenCalledWith('user-123');
+            expect(data.actor.id).toBe('aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee');
+            expect(data.actor.role).toBe(RoleEnum.USER);
+            expect(data.actor.permissions).toEqual([
+                PermissionEnum.ACCESS_API_PUBLIC,
+                PermissionEnum.USER_UPDATE_PROFILE
+            ]);
+            expect(mockUserCache.getUser).toHaveBeenCalledWith(
+                'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee'
+            );
         });
 
-        it('should fallback to guest actor when user not found in database', async () => {
-            mockGetAuth.mockReturnValue(createSignedInAuth('user-123'));
+        it('should grant all permissions to SUPER_ADMIN without DB lookup', async () => {
+            const authUser = createAuthUser({
+                id: 'admin-uuid',
+                role: 'SUPER_ADMIN'
+            });
+
+            const app = createTestApp(authUser);
+            app.get('/test', (c) => {
+                const actor = c.get('actor');
+                return c.json({ actor });
+            });
+
+            const res = await app.request('/test');
+
+            expect(res.status).toBe(200);
+            const data = await res.json();
+            expect(data.actor.id).toBe('admin-uuid');
+            expect(data.actor.role).toBe(RoleEnum.SUPER_ADMIN);
+            expect(data.actor.permissions).toEqual(Object.values(PermissionEnum));
+            // SUPER_ADMIN should NOT trigger a DB lookup
+            expect(mockUserCache.getUser).not.toHaveBeenCalled();
+        });
+
+        it('should use empty permissions when user not found in DB', async () => {
+            const authUser = createAuthUser();
             mockUserCache.getUser.mockResolvedValue(null);
 
-            app.get('/test', (c: any) => {
+            const app = createTestApp(authUser);
+            app.get('/test', (c) => {
                 const actor = c.get('actor');
                 return c.json({ actor });
             });
@@ -213,17 +177,17 @@ describe('Actor Middleware', () => {
 
             expect(res.status).toBe(200);
             const data = await res.json();
-            expect(data.actor.role).toBe(RoleEnum.GUEST);
-            expect(mockApiLogger.warn).toHaveBeenCalledWith(
-                'User user-123 not found in database, using guest actor'
-            );
+            expect(data.actor.id).toBe('aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee');
+            expect(data.actor.role).toBe(RoleEnum.USER);
+            expect(data.actor.permissions).toEqual([]);
         });
 
-        it('should fallback to guest actor when database query fails', async () => {
-            mockGetAuth.mockReturnValue(createSignedInAuth('user-123'));
+        it('should fallback to guest actor when DB query fails', async () => {
+            const authUser = createAuthUser();
             mockUserCache.getUser.mockRejectedValue(new Error('Database error'));
 
-            app.get('/test', (c: any) => {
+            const app = createTestApp(authUser);
+            app.get('/test', (c) => {
                 const actor = c.get('actor');
                 return c.json({ actor });
             });
@@ -233,17 +197,16 @@ describe('Actor Middleware', () => {
             expect(res.status).toBe(200);
             const data = await res.json();
             expect(data.actor.role).toBe(RoleEnum.GUEST);
-            expect(mockApiLogger.error).toHaveBeenCalledWith(
-                'Error getting user actor:',
-                'Database error'
-            );
+            expect(mockCreateGuestActor).toHaveBeenCalled();
         });
 
-        it('should handle non-Error exceptions gracefully', async () => {
-            mockGetAuth.mockReturnValue(createSignedInAuth('user-123'));
-            mockUserCache.getUser.mockRejectedValue('String error');
+        it('should default role to USER when auth user has no role', async () => {
+            const authUser = createAuthUser({ role: null });
+            const dbUser = createMockDbUser({ permissions: [] });
+            mockUserCache.getUser.mockResolvedValue(dbUser);
 
-            app.get('/test', (c: any) => {
+            const app = createTestApp(authUser);
+            app.get('/test', (c) => {
                 const actor = c.get('actor');
                 return c.json({ actor });
             });
@@ -252,47 +215,37 @@ describe('Actor Middleware', () => {
 
             expect(res.status).toBe(200);
             const data = await res.json();
-            expect(data.actor.role).toBe(RoleEnum.GUEST);
-            expect(mockApiLogger.error).toHaveBeenCalledWith(
-                'Error getting user actor:',
-                'String error'
-            );
+            expect(data.actor.role).toBe(RoleEnum.USER);
         });
     });
 
     describe('Actor Injection', () => {
         it('should inject actor into context for all routes', async () => {
-            mockGetAuth.mockReturnValue(null);
+            const app = createTestApp(null);
 
-            app.get('/route1', (c: any) => {
+            app.get('/route1', (c) => {
                 const actor = c.get('actor');
-                return c.json({ route: 'route1', actor });
+                return c.json({ route: 'route1', hasActor: !!actor });
             });
 
-            app.post('/route2', (c: any) => {
+            app.post('/route2', (c) => {
                 const actor = c.get('actor');
-                return c.json({ route: 'route2', actor });
+                return c.json({ route: 'route2', hasActor: !!actor });
             });
 
             const res1 = await app.request('/route1');
             const res2 = await app.request('/route2', { method: 'POST' });
 
-            expect(res1.status).toBe(200);
-            expect(res2.status).toBe(200);
-
             const data1 = await res1.json();
             const data2 = await res2.json();
 
-            expect(data1.actor).toBeDefined();
-            expect(data2.actor).toBeDefined();
-            expect(data1.actor.role).toBe('GUEST');
-            expect(data2.actor.role).toBe('GUEST');
+            expect(data1.hasActor).toBe(true);
+            expect(data2.hasActor).toBe(true);
         });
 
-        it('should inject actor with correct properties', async () => {
-            mockGetAuth.mockReturnValue(null);
-
-            app.get('/test', (c: any) => {
+        it('should inject actor with required properties', async () => {
+            const app = createTestApp(null);
+            app.get('/test', (c) => {
                 const actor = c.get('actor');
                 return c.json({
                     hasId: 'id' in actor,
@@ -302,36 +255,22 @@ describe('Actor Middleware', () => {
             });
 
             const res = await app.request('/test');
-
-            expect(res.status).toBe(200);
             const data = await res.json();
+
             expect(data.hasId).toBe(true);
             expect(data.hasRole).toBe(true);
             expect(data.hasPermissions).toBe(true);
         });
     });
 
-    describe('Error Handling', () => {
-        it('should handle middleware errors gracefully', async () => {
-            mockGetAuth.mockImplementation(() => {
-                throw new Error('Auth error');
-            });
+    describe('Edge Cases', () => {
+        it('should handle user with empty permissions array', async () => {
+            const authUser = createAuthUser();
+            const dbUser = createMockDbUser({ permissions: [] });
+            mockUserCache.getUser.mockResolvedValue(dbUser);
 
-            app.get('/test', (c: any) => {
-                const actor = c.get('actor');
-                return c.json({ actor });
-            });
-
-            const res = await app.request('/test');
-
-            expect(res.status).toBe(500);
-        });
-
-        it('should handle userCache errors gracefully', async () => {
-            mockGetAuth.mockReturnValue(createSignedInAuth('user-123'));
-            mockUserCache.getUser.mockRejectedValue(new Error('Cache error'));
-
-            app.get('/test', (c: any) => {
+            const app = createTestApp(authUser);
+            app.get('/test', (c) => {
                 const actor = c.get('actor');
                 return c.json({ actor });
             });
@@ -340,50 +279,12 @@ describe('Actor Middleware', () => {
 
             expect(res.status).toBe(200);
             const data = await res.json();
-            expect(data.actor.role).toBe(RoleEnum.GUEST);
-            expect(mockApiLogger.error).toHaveBeenCalledWith(
-                'Error getting user actor:',
-                'Cache error'
-            );
-        });
-    });
-
-    describe('Integration with Other Middlewares', () => {
-        it('should work with error handler middleware', async () => {
-            mockGetAuth.mockReturnValue(null);
-
-            app.get('/error', () => {
-                throw new Error('Test error');
-            });
-
-            const res = await app.request('/error');
-
-            expect(res.status).toBe(500);
+            expect(data.actor.permissions).toEqual([]);
         });
 
-        it('should work with response formatting middleware', async () => {
-            mockGetAuth.mockReturnValue(null);
-
-            app.get('/test', (c: any) => {
-                const actor = c.get('actor');
-                return c.json({ message: 'success', actor });
-            });
-
-            const res = await app.request('/test');
-
-            expect(res.status).toBe(200);
-            const data = await res.json();
-            expect(data.message).toBe('success');
-            expect(data.actor).toBeDefined();
-            expect(data.actor.role).toBe(RoleEnum.GUEST);
-        });
-    });
-
-    describe('Performance and Caching', () => {
-        it('should create new actor for each request', async () => {
-            mockGetAuth.mockReturnValue(null);
-
-            app.get('/test', (c: any) => {
+        it('should create fresh actor for each request', async () => {
+            const app = createTestApp(null);
+            app.get('/test', (c) => {
                 const actor = c.get('actor');
                 return c.json({ actorId: actor.id });
             });
@@ -391,66 +292,70 @@ describe('Actor Middleware', () => {
             await app.request('/test');
             await app.request('/test');
 
-            // Each request should get a fresh actor
             expect(mockCreateGuestActor).toHaveBeenCalledTimes(2);
         });
     });
 
-    describe('Edge Cases', () => {
-        it('should handle empty auth object', async () => {
-            mockGetAuth.mockReturnValue(createSignedOutAuth());
+    describe('Mock Actor Headers (Test Mode)', () => {
+        it('should process mock actor headers when ALLOW_MOCK_ACTOR is true', async () => {
+            const originalAllowMock = process.env.ALLOW_MOCK_ACTOR;
+            process.env.ALLOW_MOCK_ACTOR = 'true';
+            process.env.NODE_ENV = 'test';
 
-            app.get('/test', (c: any) => {
-                const actor = c.get('actor');
-                return c.json({ actor });
-            });
+            try {
+                const app = createTestApp(null);
+                app.get('/test', (c) => {
+                    const actor = c.get('actor');
+                    return c.json({ actor });
+                });
 
-            const res = await app.request('/test');
+                const res = await app.request('/test', {
+                    headers: {
+                        'x-mock-actor-id': 'mock-user-id',
+                        'x-mock-actor-role': RoleEnum.ADMIN,
+                        'x-mock-actor-permissions': JSON.stringify([
+                            PermissionEnum.ACCESS_API_PUBLIC
+                        ])
+                    }
+                });
 
-            expect(res.status).toBe(200);
-            const data = await res.json();
-            expect(data.actor.role).toBe(RoleEnum.GUEST);
+                expect(res.status).toBe(200);
+                const data = await res.json();
+                expect(data.actor.id).toBe('mock-user-id');
+                expect(data.actor.role).toBe(RoleEnum.ADMIN);
+                expect(data.actor.permissions).toEqual([PermissionEnum.ACCESS_API_PUBLIC]);
+            } finally {
+                process.env.ALLOW_MOCK_ACTOR = originalAllowMock;
+            }
         });
 
-        it('should handle auth with undefined userId', async () => {
-            mockGetAuth.mockReturnValue(createSignedOutAuth());
+        it('should reject invalid mock actor role', async () => {
+            const originalAllowMock = process.env.ALLOW_MOCK_ACTOR;
+            process.env.ALLOW_MOCK_ACTOR = 'true';
+            process.env.NODE_ENV = 'test';
 
-            app.get('/test', (c: any) => {
-                const actor = c.get('actor');
-                return c.json({ actor });
-            });
+            try {
+                const app = createTestApp(null);
+                app.onError((err, c) => {
+                    if ('status' in err) {
+                        return c.json({ error: err.message }, err.status as 400);
+                    }
+                    return c.json({ error: 'Internal error' }, 500);
+                });
+                app.get('/test', (c) => c.json({ ok: true }));
 
-            const res = await app.request('/test');
+                const res = await app.request('/test', {
+                    headers: {
+                        'x-mock-actor-id': 'mock-user-id',
+                        'x-mock-actor-role': 'INVALID_ROLE',
+                        'x-mock-actor-permissions': '[]'
+                    }
+                });
 
-            expect(res.status).toBe(200);
-            const data = await res.json();
-            expect(data.actor.role).toBe(RoleEnum.GUEST);
-        });
-
-        it('should handle user with minimal permissions', async () => {
-            // Create a user with minimal permissions to test edge cases
-            const mockUser = createMockUser({
-                id: 'user-123' as UserIdType,
-                role: RoleEnum.USER,
-                permissions: [] // Empty permissions array
-            });
-
-            mockGetAuth.mockReturnValue(createSignedInAuth('user-123'));
-            mockUserCache.getUser.mockResolvedValue(mockUser);
-
-            app.get('/test', (c: any) => {
-                const actor = c.get('actor');
-                return c.json({ actor });
-            });
-
-            const res = await app.request('/test');
-
-            expect(res.status).toBe(200);
-            const data = await res.json();
-            expect(data.actor.id).toBe('user-123');
-            expect(data.actor.role).toBe(RoleEnum.USER);
-            expect(data.actor.permissions).toEqual([]); // Empty array instead of undefined
-            expect(mockUserCache.getUser).toHaveBeenCalledWith('user-123');
+                expect(res.status).toBe(400);
+            } finally {
+                process.env.ALLOW_MOCK_ACTOR = originalAllowMock;
+            }
         });
     });
 });

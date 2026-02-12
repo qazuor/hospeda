@@ -34,15 +34,9 @@ vi.mock('../../src/utils/logger', () => ({
     }
 }));
 
-// Mock Clerk auth
-vi.mock('@hono/clerk-auth', () => ({
-    clerkMiddleware: vi.fn(() => async (_c: any, next: any) => next()),
-    getAuth: vi.fn(() => ({ userId: null, sessionId: null }))
-}));
-
-// Mock all other middlewares
+// Mock auth middleware
 vi.mock('../../src/middlewares/auth', () => ({
-    clerkAuth: vi.fn(() => async (_c: any, next: any) => next()),
+    authMiddleware: vi.fn(() => async (_c: any, next: any) => next()),
     requireAuth: vi.fn(async (_c: any, next: any) => next())
 }));
 

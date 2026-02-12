@@ -10,7 +10,7 @@ vi.mock('../../src/middlewares/actor', () => ({
 }));
 
 vi.mock('../../src/middlewares/auth', () => ({
-    clerkAuth: vi.fn(() => vi.fn())
+    authMiddleware: vi.fn(() => vi.fn())
 }));
 
 vi.mock('../../src/middlewares/cache', () => ({
@@ -163,7 +163,7 @@ describe('Create App Utility', () => {
             // Verify middleware registration order
             // 21 middlewares: requestId, favicon, sentry, logger, cors, originVerification,
             // securityHeaders, rateLimit, compression, validation, cache, metrics,
-            // responseFormatting, responseValidator, mockAuth (test env), clerkAuth, actor,
+            // responseFormatting, responseValidator, mockAuth (test env), authMiddleware, actor,
             // billing, billingCustomer, entitlement, trial
             expect(mockApp.use).toHaveBeenCalledTimes(21);
         });
