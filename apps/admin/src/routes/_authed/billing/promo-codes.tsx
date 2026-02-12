@@ -41,6 +41,7 @@ import {
     useTogglePromoCodeActiveMutation,
     useUpdatePromoCodeMutation
 } from '@/features/promo-codes';
+import { useTranslations } from '@/hooks/use-translations';
 import { createFileRoute } from '@tanstack/react-router';
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
@@ -63,6 +64,7 @@ function PromoCodeFormDialog({
     readonly onClose: () => void;
     readonly onSubmit: (data: CreatePromoCodePayload) => void;
 }) {
+    const { t } = useTranslations();
     const isEdit = !!promoCode;
 
     const [formData, setFormData] = useState<CreatePromoCodePayload>({
@@ -112,12 +114,14 @@ function PromoCodeFormDialog({
             <DialogContent className="max-w-2xl">
                 <DialogHeader>
                     <DialogTitle>
-                        {isEdit ? 'Editar código promocional' : 'Crear código promocional'}
+                        {isEdit
+                            ? t('admin-billing.promoCodes.form.editTitle')
+                            : t('admin-billing.promoCodes.form.createTitle')}
                     </DialogTitle>
                     <DialogDescription>
                         {isEdit
-                            ? 'Modifica los datos del código promocional'
-                            : 'Completa los datos para crear un nuevo código'}
+                            ? t('admin-billing.promoCodes.form.editDescription')
+                            : t('admin-billing.promoCodes.form.createDescription')}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -127,14 +131,14 @@ function PromoCodeFormDialog({
                 >
                     {/* Code */}
                     <div className="space-y-2">
-                        <Label htmlFor="code">Código *</Label>
+                        <Label htmlFor="code">{t('admin-billing.promoCodes.form.codeLabel')}</Label>
                         <Input
                             id="code"
                             value={formData.code}
                             onChange={(e) =>
                                 setFormData({ ...formData, code: e.target.value.toUpperCase() })
                             }
-                            placeholder="LANZAMIENTO50"
+                            placeholder={t('admin-billing.promoCodes.form.codePlaceholder')}
                             className="font-mono uppercase"
                             required
                             disabled={isEdit}
@@ -143,14 +147,16 @@ function PromoCodeFormDialog({
 
                     {/* Description */}
                     <div className="space-y-2">
-                        <Label htmlFor="description">Descripción *</Label>
+                        <Label htmlFor="description">
+                            {t('admin-billing.promoCodes.form.descriptionLabel')}
+                        </Label>
                         <Input
                             id="description"
                             value={formData.description}
                             onChange={(e) =>
                                 setFormData({ ...formData, description: e.target.value })
                             }
-                            placeholder="50% de descuento por lanzamiento"
+                            placeholder={t('admin-billing.promoCodes.form.descriptionPlaceholder')}
                             required
                         />
                     </div>
@@ -158,7 +164,9 @@ function PromoCodeFormDialog({
                     {/* Type and Value */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="type">Tipo de descuento *</Label>
+                            <Label htmlFor="type">
+                                {t('admin-billing.promoCodes.form.discountTypeLabel')}
+                            </Label>
                             <Select
                                 value={formData.type}
                                 onValueChange={(value) =>
@@ -169,16 +177,22 @@ function PromoCodeFormDialog({
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="percentage">Porcentaje</SelectItem>
-                                    <SelectItem value="fixed">Monto Fijo (ARS)</SelectItem>
+                                    <SelectItem value="percentage">
+                                        {t('admin-billing.promoCodes.form.typePercentage')}
+                                    </SelectItem>
+                                    <SelectItem value="fixed">
+                                        {t('admin-billing.promoCodes.form.typeFixed')}
+                                    </SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
 
                         <div className="space-y-2">
                             <Label htmlFor="discountValue">
-                                Valor *{' '}
-                                {formData.type === 'percentage' ? '(%)' : '(ARS, en centavos)'}
+                                {t('admin-billing.promoCodes.form.valueLabel')}{' '}
+                                {formData.type === 'percentage'
+                                    ? t('admin-billing.promoCodes.form.valuePercentageSuffix')
+                                    : t('admin-billing.promoCodes.form.valueFixedSuffix')}
                             </Label>
                             <Input
                                 id="discountValue"
@@ -200,7 +214,9 @@ function PromoCodeFormDialog({
                     {/* Usage limits */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="maxUses">Usos máximos totales</Label>
+                            <Label htmlFor="maxUses">
+                                {t('admin-billing.promoCodes.form.maxUsesLabel')}
+                            </Label>
                             <Input
                                 id="maxUses"
                                 type="number"
@@ -211,13 +227,17 @@ function PromoCodeFormDialog({
                                         maxUses: e.target.value ? Number(e.target.value) : null
                                     })
                                 }
-                                placeholder="Ilimitado"
+                                placeholder={t(
+                                    'admin-billing.promoCodes.form.unlimitedPlaceholder'
+                                )}
                                 min={1}
                             />
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="maxUsesPerUser">Usos máximos por usuario</Label>
+                            <Label htmlFor="maxUsesPerUser">
+                                {t('admin-billing.promoCodes.form.maxUsesPerUserLabel')}
+                            </Label>
                             <Input
                                 id="maxUsesPerUser"
                                 type="number"
@@ -230,7 +250,9 @@ function PromoCodeFormDialog({
                                             : null
                                     })
                                 }
-                                placeholder="Ilimitado"
+                                placeholder={t(
+                                    'admin-billing.promoCodes.form.unlimitedPlaceholder'
+                                )}
                                 min={1}
                             />
                         </div>
@@ -239,7 +261,9 @@ function PromoCodeFormDialog({
                     {/* Validity dates */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="validFrom">Válido desde *</Label>
+                            <Label htmlFor="validFrom">
+                                {t('admin-billing.promoCodes.form.validFromLabel')}
+                            </Label>
                             <Input
                                 id="validFrom"
                                 type="date"
@@ -259,7 +283,9 @@ function PromoCodeFormDialog({
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="validUntil">Válido hasta</Label>
+                            <Label htmlFor="validUntil">
+                                {t('admin-billing.promoCodes.form.validUntilLabel')}
+                            </Label>
                             <Input
                                 id="validUntil"
                                 type="date"
@@ -274,14 +300,16 @@ function PromoCodeFormDialog({
                                         validUntil: e.target.value ? new Date(e.target.value) : null
                                     })
                                 }
-                                placeholder="Sin fecha límite"
+                                placeholder={t('admin-billing.promoCodes.form.noDateLimit')}
                             />
                         </div>
                     </div>
 
                     {/* Minimum amount */}
                     <div className="space-y-2">
-                        <Label htmlFor="minimumAmount">Monto mínimo (ARS, en centavos)</Label>
+                        <Label htmlFor="minimumAmount">
+                            {t('admin-billing.promoCodes.form.minimumAmountLabel')}
+                        </Label>
                         <Input
                             id="minimumAmount"
                             type="number"
@@ -292,14 +320,14 @@ function PromoCodeFormDialog({
                                     minimumAmount: e.target.value ? Number(e.target.value) : null
                                 })
                             }
-                            placeholder="Sin mínimo"
+                            placeholder={t('admin-billing.promoCodes.form.noMinimum')}
                             min={0}
                         />
                     </div>
 
                     {/* Applicable plans */}
                     <div className="space-y-2">
-                        <Label>Planes aplicables *</Label>
+                        <Label>{t('admin-billing.promoCodes.form.applicablePlansLabel')}</Label>
                         <div className="flex gap-4">
                             <label className="flex items-center gap-2">
                                 <input
@@ -308,7 +336,9 @@ function PromoCodeFormDialog({
                                     onChange={() => handlePlanToggle('owner')}
                                     className="h-4 w-4"
                                 />
-                                <span className="text-sm">Propietario</span>
+                                <span className="text-sm">
+                                    {t('admin-billing.promoCodes.form.planOwner')}
+                                </span>
                             </label>
                             <label className="flex items-center gap-2">
                                 <input
@@ -317,7 +347,9 @@ function PromoCodeFormDialog({
                                     onChange={() => handlePlanToggle('complex')}
                                     className="h-4 w-4"
                                 />
-                                <span className="text-sm">Complejo</span>
+                                <span className="text-sm">
+                                    {t('admin-billing.promoCodes.form.planComplex')}
+                                </span>
                             </label>
                             <label className="flex items-center gap-2">
                                 <input
@@ -326,7 +358,9 @@ function PromoCodeFormDialog({
                                     onChange={() => handlePlanToggle('tourist')}
                                     className="h-4 w-4"
                                 />
-                                <span className="text-sm">Turista</span>
+                                <span className="text-sm">
+                                    {t('admin-billing.promoCodes.form.planTourist')}
+                                </span>
                             </label>
                         </div>
                     </div>
@@ -334,7 +368,9 @@ function PromoCodeFormDialog({
                     {/* Switches */}
                     <div className="space-y-3">
                         <div className="flex items-center justify-between">
-                            <Label htmlFor="isActive">Activo</Label>
+                            <Label htmlFor="isActive">
+                                {t('admin-billing.promoCodes.form.isActiveLabel')}
+                            </Label>
                             <Switch
                                 id="isActive"
                                 checked={formData.isActive}
@@ -345,7 +381,9 @@ function PromoCodeFormDialog({
                         </div>
 
                         <div className="flex items-center justify-between">
-                            <Label htmlFor="isStackable">Acumulable con otros códigos</Label>
+                            <Label htmlFor="isStackable">
+                                {t('admin-billing.promoCodes.form.isStackableLabel')}
+                            </Label>
                             <Switch
                                 id="isStackable"
                                 checked={formData.isStackable}
@@ -356,7 +394,9 @@ function PromoCodeFormDialog({
                         </div>
 
                         <div className="flex items-center justify-between">
-                            <Label htmlFor="requiresFirstPurchase">Solo para primera compra</Label>
+                            <Label htmlFor="requiresFirstPurchase">
+                                {t('admin-billing.promoCodes.form.requiresFirstPurchaseLabel')}
+                            </Label>
                             <Switch
                                 id="requiresFirstPurchase"
                                 checked={formData.requiresFirstPurchase}
@@ -373,9 +413,13 @@ function PromoCodeFormDialog({
                             variant="outline"
                             onClick={onClose}
                         >
-                            Cancelar
+                            {t('admin-billing.promoCodes.form.cancelButton')}
                         </Button>
-                        <Button type="submit">{isEdit ? 'Guardar cambios' : 'Crear código'}</Button>
+                        <Button type="submit">
+                            {isEdit
+                                ? t('admin-billing.promoCodes.form.editSubmit')
+                                : t('admin-billing.promoCodes.form.createSubmit')}
+                        </Button>
                     </DialogFooter>
                 </form>
             </DialogContent>
@@ -397,6 +441,7 @@ function DeleteConfirmDialog({
     readonly onClose: () => void;
     readonly onConfirm: () => void;
 }) {
+    const { t } = useTranslations();
     if (!promoCode) return null;
 
     return (
@@ -406,17 +451,16 @@ function DeleteConfirmDialog({
         >
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Eliminar código promocional</DialogTitle>
+                    <DialogTitle>{t('admin-billing.promoCodes.deleteDialog.title')}</DialogTitle>
                     <DialogDescription>
-                        ¿Estás seguro de que deseas eliminar el código{' '}
+                        {t('admin-billing.promoCodes.deleteDialog.description')}{' '}
                         <code className="font-bold font-mono">{promoCode.code}</code>?
                     </DialogDescription>
                 </DialogHeader>
 
                 <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3">
                     <p className="text-destructive text-sm">
-                        ⚠️ Esta acción no se puede deshacer. Los usuarios que ya hayan usado este
-                        código no se verán afectados, pero no se podrán realizar nuevos usos.
+                        ⚠️ {t('admin-billing.promoCodes.deleteDialog.warning')}
                     </p>
                 </div>
 
@@ -425,13 +469,13 @@ function DeleteConfirmDialog({
                         variant="outline"
                         onClick={onClose}
                     >
-                        Cancelar
+                        {t('admin-billing.promoCodes.deleteDialog.cancelButton')}
                     </Button>
                     <Button
                         variant="destructive"
                         onClick={onConfirm}
                     >
-                        Eliminar código
+                        {t('admin-billing.promoCodes.deleteDialog.confirmButton')}
                     </Button>
                 </DialogFooter>
             </DialogContent>
@@ -443,6 +487,7 @@ function DeleteConfirmDialog({
  * Main Page Component
  */
 function BillingPromoCodesPage() {
+    const { t } = useTranslations();
     const { addToast } = useToast();
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(20);
@@ -489,7 +534,7 @@ function BillingPromoCodesPage() {
                 {
                     onSuccess: () => {
                         addToast({
-                            message: 'Código promocional actualizado correctamente',
+                            message: t('admin-billing.promoCodes.toasts.updated'),
                             variant: 'success'
                         });
                         setFormDialogOpen(false);
@@ -497,7 +542,8 @@ function BillingPromoCodesPage() {
                     },
                     onError: (error) => {
                         addToast({
-                            message: error.message || 'Error al actualizar código',
+                            message:
+                                error.message || t('admin-billing.promoCodes.toasts.updateError'),
                             variant: 'error'
                         });
                     }
@@ -508,14 +554,14 @@ function BillingPromoCodesPage() {
             createMutation.mutate(formData, {
                 onSuccess: () => {
                     addToast({
-                        message: 'Código promocional creado correctamente',
+                        message: t('admin-billing.promoCodes.toasts.created'),
                         variant: 'success'
                     });
                     setFormDialogOpen(false);
                 },
                 onError: (error) => {
                     addToast({
-                        message: error.message || 'Error al crear código',
+                        message: error.message || t('admin-billing.promoCodes.toasts.createError'),
                         variant: 'error'
                     });
                 }
@@ -526,7 +572,7 @@ function BillingPromoCodesPage() {
     const handleToggleActive = (id: string, isActive: boolean) => {
         if (!data?.items) {
             addToast({
-                message: 'Esta función requiere la API de facturación activa',
+                message: t('admin-billing.promoCodes.toasts.apiRequired'),
                 variant: 'error'
             });
             return;
@@ -537,13 +583,15 @@ function BillingPromoCodesPage() {
             {
                 onSuccess: () => {
                     addToast({
-                        message: `Código ${isActive ? 'activado' : 'desactivado'} correctamente`,
+                        message: isActive
+                            ? t('admin-billing.promoCodes.toasts.activated')
+                            : t('admin-billing.promoCodes.toasts.deactivated'),
                         variant: 'success'
                     });
                 },
                 onError: (error) => {
                     addToast({
-                        message: error.message || 'Error al cambiar estado',
+                        message: error.message || t('admin-billing.promoCodes.toasts.toggleError'),
                         variant: 'error'
                     });
                 }
@@ -562,7 +610,7 @@ function BillingPromoCodesPage() {
         deleteMutation.mutate(selectedPromoCode.id, {
             onSuccess: () => {
                 addToast({
-                    message: 'Código promocional eliminado correctamente',
+                    message: t('admin-billing.promoCodes.toasts.deleted'),
                     variant: 'success'
                 });
                 setDeleteDialogOpen(false);
@@ -570,7 +618,7 @@ function BillingPromoCodesPage() {
             },
             onError: (error) => {
                 addToast({
-                    message: error.message || 'Error al eliminar código',
+                    message: error.message || t('admin-billing.promoCodes.toasts.deleteError'),
                     variant: 'error'
                 });
             }
@@ -590,9 +638,11 @@ function BillingPromoCodesPage() {
             <SidebarPageLayout>
                 <div className="space-y-6">
                     <div>
-                        <h2 className="mb-2 font-bold text-2xl">Códigos Promocionales</h2>
+                        <h2 className="mb-2 font-bold text-2xl">
+                            {t('admin-billing.promoCodes.title')}
+                        </h2>
                         <p className="text-muted-foreground">
-                            Gestiona códigos de descuento y promociones para suscripciones
+                            {t('admin-billing.promoCodes.description')}
                         </p>
                     </div>
 
@@ -600,11 +650,11 @@ function BillingPromoCodesPage() {
                         <CardContent className="py-8">
                             <div className="text-center">
                                 <p className="text-muted-foreground">
-                                    No se pudieron cargar los códigos desde la API.
+                                    {t('admin-billing.promoCodes.apiLoadError')}
                                 </p>
                                 <p className="mt-2 text-red-600 text-sm">{error.message}</p>
                                 <p className="mt-4 text-muted-foreground text-sm">
-                                    Mostrando datos de ejemplo como fallback.
+                                    {t('admin-billing.promoCodes.staticFallback')}
                                 </p>
                             </div>
                         </CardContent>
@@ -620,9 +670,11 @@ function BillingPromoCodesPage() {
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div>
-                        <h2 className="mb-2 font-bold text-2xl">Códigos Promocionales</h2>
+                        <h2 className="mb-2 font-bold text-2xl">
+                            {t('admin-billing.promoCodes.title')}
+                        </h2>
                         <p className="text-muted-foreground">
-                            Gestiona códigos de descuento y promociones para suscripciones
+                            {t('admin-billing.promoCodes.description')}
                         </p>
                     </div>
                 </div>
@@ -632,9 +684,8 @@ function BillingPromoCodesPage() {
                     <Card className="border-yellow-200 bg-yellow-50">
                         <CardContent className="py-4">
                             <p className="text-sm text-yellow-800">
-                                <strong>Nota:</strong> La API de facturación no está disponible.
-                                Mostrando datos de ejemplo. Las funciones de creación, edición y
-                                eliminación están disponibles pero los cambios no se persistirán.
+                                <strong>{t('admin-billing.promoCodes.noteLabel')}</strong>{' '}
+                                {t('admin-billing.promoCodes.apiUnavailable')}
                             </p>
                         </CardContent>
                     </Card>
@@ -645,7 +696,7 @@ function BillingPromoCodesPage() {
                     <div className="flex flex-1 items-center gap-4">
                         <Input
                             type="search"
-                            placeholder="Buscar por código..."
+                            placeholder={t('admin-billing.promoCodes.searchPlaceholder')}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="max-w-sm"
@@ -658,10 +709,18 @@ function BillingPromoCodesPage() {
                                 setStatusFilter(e.target.value as PromoCodeStatus | 'all')
                             }
                         >
-                            <option value="all">Todos los estados</option>
-                            <option value="active">Activos</option>
-                            <option value="expired">Expirados</option>
-                            <option value="inactive">Inactivos</option>
+                            <option value="all">
+                                {t('admin-billing.promoCodes.filters.allStatuses')}
+                            </option>
+                            <option value="active">
+                                {t('admin-billing.promoCodes.filters.active')}
+                            </option>
+                            <option value="expired">
+                                {t('admin-billing.promoCodes.filters.expired')}
+                            </option>
+                            <option value="inactive">
+                                {t('admin-billing.promoCodes.filters.inactive')}
+                            </option>
                         </select>
 
                         <select
@@ -669,15 +728,21 @@ function BillingPromoCodesPage() {
                             value={typeFilter}
                             onChange={(e) => setTypeFilter(e.target.value as DiscountType | 'all')}
                         >
-                            <option value="all">Todos los tipos</option>
-                            <option value="percentage">Porcentaje</option>
-                            <option value="fixed">Monto Fijo</option>
+                            <option value="all">
+                                {t('admin-billing.promoCodes.filters.allTypes')}
+                            </option>
+                            <option value="percentage">
+                                {t('admin-billing.promoCodes.filters.percentage')}
+                            </option>
+                            <option value="fixed">
+                                {t('admin-billing.promoCodes.filters.fixed')}
+                            </option>
                         </select>
                     </div>
 
                     <Button onClick={handleCreateNew}>
                         <Plus className="mr-2 h-4 w-4" />
-                        Crear código
+                        {t('admin-billing.promoCodes.createButton')}
                     </Button>
                 </div>
 
@@ -685,18 +750,19 @@ function BillingPromoCodesPage() {
                 <Card>
                     <CardHeader>
                         <CardTitle>
-                            Códigos Promocionales ({total})
+                            {t('admin-billing.promoCodes.tableTitle')} ({total})
                             {searchQuery && (
                                 <Badge
                                     variant="secondary"
                                     className="ml-2"
                                 >
-                                    Filtrados: {promoCodes.length}
+                                    {t('admin-billing.promoCodes.filteredLabel')}{' '}
+                                    {promoCodes.length}
                                 </Badge>
                             )}
                         </CardTitle>
                         <CardDescription>
-                            Gestiona descuentos y promociones para planes de suscripción
+                            {t('admin-billing.promoCodes.tableDescription')}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>

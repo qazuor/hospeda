@@ -28,6 +28,7 @@ import {
     useUpdateOwnerPromotionMutation
 } from '@/features/owner-promotions/hooks';
 import type { CreateOwnerPromotionInput, OwnerPromotion } from '@/features/owner-promotions/types';
+import { useTranslations } from '@/hooks/use-translations';
 import { EntitlementGate, LimitGate } from '@qazuor/qzpay-react';
 import { createFileRoute } from '@tanstack/react-router';
 import { Plus } from 'lucide-react';
@@ -38,6 +39,7 @@ export const Route = createFileRoute('/_authed/billing/owner-promotions')({
 });
 
 function BillingOwnerPromotionsPage() {
+    const { t } = useTranslations();
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(20);
     const [filters, setFilters] = useState<{
@@ -71,7 +73,7 @@ function BillingOwnerPromotionsPage() {
     };
 
     const handleDelete = (promotion: OwnerPromotion) => {
-        if (confirm(`¿Estás seguro de eliminar la promoción "${promotion.title}"?`)) {
+        if (confirm(`${t('admin-billing.ownerPromotions.confirmDelete')} "${promotion.title}"?`)) {
             deleteMutation.mutate(promotion.id);
         }
     };
@@ -84,73 +86,91 @@ function BillingOwnerPromotionsPage() {
     const columns: DataTableColumn<OwnerPromotion>[] = [
         {
             id: 'title',
-            header: 'Título',
+            header: t('admin-billing.ownerPromotions.columns.title'),
             accessorKey: 'title',
             enableSorting: true,
             columnType: ColumnType.STRING
         },
         {
             id: 'ownerId',
-            header: 'Propietario',
+            header: t('admin-billing.ownerPromotions.columns.owner'),
             accessorKey: 'ownerId',
             enableSorting: false,
             columnType: ColumnType.STRING
         },
         {
             id: 'accommodationId',
-            header: 'Alojamiento',
+            header: t('admin-billing.ownerPromotions.columns.accommodation'),
             accessorKey: 'accommodationId',
             enableSorting: false,
             columnType: ColumnType.STRING
         },
         {
             id: 'discountType',
-            header: 'Tipo',
+            header: t('admin-billing.ownerPromotions.columns.type'),
             accessorKey: 'discountType',
             enableSorting: true,
             columnType: ColumnType.BADGE,
             badgeOptions: [
-                { value: 'PERCENTAGE', label: 'Porcentaje', color: BadgeColor.BLUE },
-                { value: 'FIXED_AMOUNT', label: 'Monto fijo', color: BadgeColor.GREEN },
-                { value: 'FREE_NIGHT', label: 'Noche gratis', color: BadgeColor.PURPLE },
-                { value: 'SPECIAL_PRICE', label: 'Precio especial', color: BadgeColor.ORANGE }
+                {
+                    value: 'PERCENTAGE',
+                    label: t('admin-billing.ownerPromotions.discountTypes.percentage'),
+                    color: BadgeColor.BLUE
+                },
+                {
+                    value: 'FIXED_AMOUNT',
+                    label: t('admin-billing.ownerPromotions.discountTypes.fixedAmount'),
+                    color: BadgeColor.GREEN
+                },
+                {
+                    value: 'FREE_NIGHT',
+                    label: t('admin-billing.ownerPromotions.discountTypes.freeNight'),
+                    color: BadgeColor.PURPLE
+                },
+                {
+                    value: 'SPECIAL_PRICE',
+                    label: t('admin-billing.ownerPromotions.discountTypes.specialPrice'),
+                    color: BadgeColor.ORANGE
+                }
             ]
         },
         {
             id: 'discountValue',
-            header: 'Valor',
+            header: t('admin-billing.ownerPromotions.columns.value'),
             accessorKey: 'discountValue',
             enableSorting: true,
             columnType: ColumnType.NUMBER
         },
         {
             id: 'status',
-            header: 'Estado',
+            header: t('admin-billing.ownerPromotions.columns.status'),
             accessorKey: 'isActive',
             enableSorting: true,
             cell: ({ row }) => (
                 <Badge variant={row.isActive ? 'success' : 'secondary'}>
-                    {row.isActive ? 'Activo' : 'Inactivo'}
+                    {row.isActive
+                        ? t('admin-billing.ownerPromotions.statusActive')
+                        : t('admin-billing.ownerPromotions.statusInactive')}
                 </Badge>
             )
         },
         {
             id: 'validFrom',
-            header: 'Inicio',
+            header: t('admin-billing.ownerPromotions.columns.validFrom'),
             accessorKey: 'validFrom',
             enableSorting: true,
             columnType: ColumnType.DATE
         },
         {
             id: 'validUntil',
-            header: 'Fin',
+            header: t('admin-billing.ownerPromotions.columns.validUntil'),
             accessorKey: 'validUntil',
             enableSorting: true,
             columnType: ColumnType.DATE
         },
         {
             id: 'redemptions',
-            header: 'Uso',
+            header: t('admin-billing.ownerPromotions.columns.usage'),
             enableSorting: false,
             cell: ({ row }) => (
                 <span className="text-sm">
@@ -160,7 +180,7 @@ function BillingOwnerPromotionsPage() {
         },
         {
             id: 'actions',
-            header: 'Acciones',
+            header: t('admin-billing.ownerPromotions.columns.actions'),
             enableSorting: false,
             enableHiding: false,
             cell: ({ row }) => (
@@ -170,7 +190,7 @@ function BillingOwnerPromotionsPage() {
                         size="sm"
                         onClick={() => handleViewDetails(row)}
                     >
-                        Ver
+                        {t('admin-billing.ownerPromotions.actions.view')}
                     </Button>
                     <Button
                         variant="outline"
@@ -178,14 +198,16 @@ function BillingOwnerPromotionsPage() {
                         onClick={() => handleToggleActive(row)}
                         disabled={toggleActiveMutation.isPending}
                     >
-                        {row.isActive ? 'Desactivar' : 'Activar'}
+                        {row.isActive
+                            ? t('admin-billing.ownerPromotions.actions.deactivate')
+                            : t('admin-billing.ownerPromotions.actions.activate')}
                     </Button>
                     <Button
                         variant="outline"
                         size="sm"
                         onClick={() => handleEdit(row)}
                     >
-                        Editar
+                        {t('admin-billing.ownerPromotions.actions.edit')}
                     </Button>
                     <Button
                         variant="destructive"
@@ -193,7 +215,7 @@ function BillingOwnerPromotionsPage() {
                         onClick={() => handleDelete(row)}
                         disabled={deleteMutation.isPending}
                     >
-                        Eliminar
+                        {t('admin-billing.ownerPromotions.actions.delete')}
                     </Button>
                 </div>
             )
@@ -207,8 +229,7 @@ function BillingOwnerPromotionsPage() {
                     <CardContent className="py-8">
                         <div className="text-center">
                             <p className="text-muted-foreground">
-                                No se pudieron cargar las promociones. Verifica que la API esté
-                                funcionando.
+                                {t('admin-billing.ownerPromotions.loadError')}
                             </p>
                             <p className="mt-2 text-red-600 text-sm">{error.message}</p>
                         </div>
@@ -226,9 +247,11 @@ function BillingOwnerPromotionsPage() {
             <div className="space-y-6">
                 {/* Page header */}
                 <div>
-                    <h2 className="mb-2 font-bold text-2xl">Promociones de Propietarios</h2>
+                    <h2 className="mb-2 font-bold text-2xl">
+                        {t('admin-billing.ownerPromotions.title')}
+                    </h2>
                     <p className="text-muted-foreground">
-                        Gestiona promociones especiales ofrecidas por propietarios de alojamientos
+                        {t('admin-billing.ownerPromotions.description')}
                     </p>
                 </div>
 
@@ -245,9 +268,15 @@ function BillingOwnerPromotionsPage() {
                                 }))
                             }
                         >
-                            <option value="all">Todos los estados</option>
-                            <option value="active">Activo</option>
-                            <option value="inactive">Inactivo</option>
+                            <option value="all">
+                                {t('admin-billing.ownerPromotions.filters.allStatuses')}
+                            </option>
+                            <option value="active">
+                                {t('admin-billing.ownerPromotions.filters.active')}
+                            </option>
+                            <option value="inactive">
+                                {t('admin-billing.ownerPromotions.filters.inactive')}
+                            </option>
                         </select>
 
                         <select
@@ -261,11 +290,21 @@ function BillingOwnerPromotionsPage() {
                                 }))
                             }
                         >
-                            <option value="all">Todos los tipos</option>
-                            <option value="PERCENTAGE">Porcentaje</option>
-                            <option value="FIXED_AMOUNT">Monto fijo</option>
-                            <option value="FREE_NIGHT">Noche gratis</option>
-                            <option value="SPECIAL_PRICE">Precio especial</option>
+                            <option value="all">
+                                {t('admin-billing.ownerPromotions.filters.allTypes')}
+                            </option>
+                            <option value="PERCENTAGE">
+                                {t('admin-billing.ownerPromotions.discountTypes.percentage')}
+                            </option>
+                            <option value="FIXED_AMOUNT">
+                                {t('admin-billing.ownerPromotions.discountTypes.fixedAmount')}
+                            </option>
+                            <option value="FREE_NIGHT">
+                                {t('admin-billing.ownerPromotions.discountTypes.freeNight')}
+                            </option>
+                            <option value="SPECIAL_PRICE">
+                                {t('admin-billing.ownerPromotions.discountTypes.specialPrice')}
+                            </option>
                         </select>
                     </div>
 
@@ -274,7 +313,7 @@ function BillingOwnerPromotionsPage() {
                         fallback={
                             <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm">
                                 <p className="font-medium text-amber-900">
-                                    Crear promociones está disponible en planes Pro y Premium
+                                    {t('admin-billing.ownerPromotions.entitlementGate')}
                                 </p>
                             </div>
                         }
@@ -284,18 +323,17 @@ function BillingOwnerPromotionsPage() {
                             fallback={
                                 <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm">
                                     <p className="font-medium text-amber-900">
-                                        Límite de promociones activas alcanzado
+                                        {t('admin-billing.ownerPromotions.limitGateTitle')}
                                     </p>
                                     <p className="mt-1 text-amber-800 text-xs">
-                                        Has alcanzado el límite máximo de promociones activas de tu
-                                        plan
+                                        {t('admin-billing.ownerPromotions.limitGateDescription')}
                                     </p>
                                 </div>
                             }
                         >
                             <Button onClick={() => setCreateDialogOpen(true)}>
                                 <Plus className="mr-2 h-4 w-4" />
-                                Crear promoción
+                                {t('admin-billing.ownerPromotions.createButton')}
                             </Button>
                         </LimitGate>
                     </EntitlementGate>
@@ -357,6 +395,7 @@ function PromotionFormDialog({
     promotion: OwnerPromotion | null;
     mode: 'create' | 'edit';
 }) {
+    const { t } = useTranslations();
     const [formData, setFormData] = useState<CreateOwnerPromotionInput>({
         ownerId: promotion?.ownerId || '',
         accommodationId: promotion?.accommodationId || '',
@@ -403,19 +442,23 @@ function PromotionFormDialog({
             <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>
-                        {mode === 'create' ? 'Crear promoción' : 'Editar promoción'}
+                        {mode === 'create'
+                            ? t('admin-billing.ownerPromotions.form.createTitle')
+                            : t('admin-billing.ownerPromotions.form.editTitle')}
                     </DialogTitle>
                     <DialogDescription>
                         {mode === 'create'
-                            ? 'Completa los datos para crear una nueva promoción'
-                            : 'Modifica los datos de la promoción'}
+                            ? t('admin-billing.ownerPromotions.form.createDescription')
+                            : t('admin-billing.ownerPromotions.form.editDescription')}
                     </DialogDescription>
                 </DialogHeader>
 
                 <form onSubmit={handleSubmit}>
                     <div className="grid gap-4">
                         <div className="grid gap-2">
-                            <Label htmlFor="title">Título *</Label>
+                            <Label htmlFor="title">
+                                {t('admin-billing.ownerPromotions.form.titleLabel')}
+                            </Label>
                             <Input
                                 id="title"
                                 value={formData.title}
@@ -423,12 +466,16 @@ function PromotionFormDialog({
                                     setFormData((prev) => ({ ...prev, title: e.target.value }))
                                 }
                                 required
-                                placeholder="Nombre de la promoción"
+                                placeholder={t(
+                                    'admin-billing.ownerPromotions.form.titlePlaceholder'
+                                )}
                             />
                         </div>
 
                         <div className="grid gap-2">
-                            <Label htmlFor="description">Descripción</Label>
+                            <Label htmlFor="description">
+                                {t('admin-billing.ownerPromotions.form.descriptionLabel')}
+                            </Label>
                             <Textarea
                                 id="description"
                                 value={formData.description}
@@ -439,13 +486,17 @@ function PromotionFormDialog({
                                     }))
                                 }
                                 rows={3}
-                                placeholder="Descripción opcional de la promoción"
+                                placeholder={t(
+                                    'admin-billing.ownerPromotions.form.descriptionPlaceholder'
+                                )}
                             />
                         </div>
 
                         <div className="grid gap-2 md:grid-cols-2">
                             <div>
-                                <Label htmlFor="discountType">Tipo de descuento *</Label>
+                                <Label htmlFor="discountType">
+                                    {t('admin-billing.ownerPromotions.form.discountTypeLabel')}
+                                </Label>
                                 <select
                                     id="discountType"
                                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
@@ -461,15 +512,31 @@ function PromotionFormDialog({
                                         }))
                                     }
                                 >
-                                    <option value="PERCENTAGE">Porcentaje</option>
-                                    <option value="FIXED_AMOUNT">Monto fijo</option>
-                                    <option value="FREE_NIGHT">Noche gratis</option>
-                                    <option value="SPECIAL_PRICE">Precio especial</option>
+                                    <option value="PERCENTAGE">
+                                        {t(
+                                            'admin-billing.ownerPromotions.discountTypes.percentage'
+                                        )}
+                                    </option>
+                                    <option value="FIXED_AMOUNT">
+                                        {t(
+                                            'admin-billing.ownerPromotions.discountTypes.fixedAmount'
+                                        )}
+                                    </option>
+                                    <option value="FREE_NIGHT">
+                                        {t('admin-billing.ownerPromotions.discountTypes.freeNight')}
+                                    </option>
+                                    <option value="SPECIAL_PRICE">
+                                        {t(
+                                            'admin-billing.ownerPromotions.discountTypes.specialPrice'
+                                        )}
+                                    </option>
                                 </select>
                             </div>
 
                             <div>
-                                <Label htmlFor="discountValue">Valor *</Label>
+                                <Label htmlFor="discountValue">
+                                    {t('admin-billing.ownerPromotions.form.valueLabel')}
+                                </Label>
                                 <Input
                                     id="discountValue"
                                     type="number"
@@ -487,7 +554,9 @@ function PromotionFormDialog({
 
                         <div className="grid gap-2 md:grid-cols-2">
                             <div>
-                                <Label htmlFor="validFrom">Válido desde *</Label>
+                                <Label htmlFor="validFrom">
+                                    {t('admin-billing.ownerPromotions.form.validFromLabel')}
+                                </Label>
                                 <Input
                                     id="validFrom"
                                     type="date"
@@ -503,7 +572,9 @@ function PromotionFormDialog({
                             </div>
 
                             <div>
-                                <Label htmlFor="validUntil">Válido hasta *</Label>
+                                <Label htmlFor="validUntil">
+                                    {t('admin-billing.ownerPromotions.form.validUntilLabel')}
+                                </Label>
                                 <Input
                                     id="validUntil"
                                     type="date"
@@ -526,9 +597,13 @@ function PromotionFormDialog({
                             variant="outline"
                             onClick={() => onOpenChange(false)}
                         >
-                            Cancelar
+                            {t('admin-billing.ownerPromotions.form.cancelButton')}
                         </Button>
-                        <Button type="submit">{mode === 'create' ? 'Crear' : 'Guardar'}</Button>
+                        <Button type="submit">
+                            {mode === 'create'
+                                ? t('admin-billing.ownerPromotions.form.createSubmit')
+                                : t('admin-billing.ownerPromotions.form.editSubmit')}
+                        </Button>
                     </DialogFooter>
                 </form>
             </DialogContent>
@@ -548,6 +623,7 @@ function PromotionDetailDialog({
     onOpenChange: (open: boolean) => void;
     promotion: OwnerPromotion | null;
 }) {
+    const { t } = useTranslations();
     if (!promotion) return null;
 
     return (
@@ -558,32 +634,46 @@ function PromotionDetailDialog({
             <DialogContent className="max-w-2xl">
                 <DialogHeader>
                     <DialogTitle>{promotion.title}</DialogTitle>
-                    <DialogDescription>Detalles de la promoción</DialogDescription>
+                    <DialogDescription>
+                        {t('admin-billing.ownerPromotions.detail.subtitle')}
+                    </DialogDescription>
                 </DialogHeader>
 
                 <div className="grid gap-4">
                     <Card>
                         <CardHeader>
-                            <CardTitle className="text-base">Información general</CardTitle>
+                            <CardTitle className="text-base">
+                                {t('admin-billing.ownerPromotions.detail.generalInfo')}
+                            </CardTitle>
                         </CardHeader>
                         <CardContent className="grid gap-2 text-sm">
                             <div className="flex justify-between">
-                                <span className="text-muted-foreground">Estado:</span>
+                                <span className="text-muted-foreground">
+                                    {t('admin-billing.ownerPromotions.detail.statusLabel')}
+                                </span>
                                 <Badge variant={promotion.isActive ? 'success' : 'secondary'}>
-                                    {promotion.isActive ? 'Activo' : 'Inactivo'}
+                                    {promotion.isActive
+                                        ? t('admin-billing.ownerPromotions.statusActive')
+                                        : t('admin-billing.ownerPromotions.statusInactive')}
                                 </Badge>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-muted-foreground">Tipo de descuento:</span>
+                                <span className="text-muted-foreground">
+                                    {t('admin-billing.ownerPromotions.detail.discountTypeLabel')}
+                                </span>
                                 <span>{promotion.discountType}</span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-muted-foreground">Valor:</span>
+                                <span className="text-muted-foreground">
+                                    {t('admin-billing.ownerPromotions.detail.valueLabel')}
+                                </span>
                                 <span>{promotion.discountValue}</span>
                             </div>
                             {promotion.description && (
                                 <div>
-                                    <p className="mb-1 text-muted-foreground">Descripción:</p>
+                                    <p className="mb-1 text-muted-foreground">
+                                        {t('admin-billing.ownerPromotions.detail.descriptionLabel')}
+                                    </p>
                                     <p>{promotion.description}</p>
                                 </div>
                             )}
@@ -592,16 +682,25 @@ function PromotionDetailDialog({
 
                     <Card>
                         <CardHeader>
-                            <CardTitle className="text-base">Estadísticas de uso</CardTitle>
+                            <CardTitle className="text-base">
+                                {t('admin-billing.ownerPromotions.detail.usageStats')}
+                            </CardTitle>
                         </CardHeader>
                         <CardContent className="grid gap-2 text-sm">
                             <div className="flex justify-between">
-                                <span className="text-muted-foreground">Canjes actuales:</span>
+                                <span className="text-muted-foreground">
+                                    {t('admin-billing.ownerPromotions.detail.currentRedemptions')}
+                                </span>
                                 <span>{promotion.currentRedemptions}</span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-muted-foreground">Canjes máximos:</span>
-                                <span>{promotion.maxRedemptions || 'Ilimitado'}</span>
+                                <span className="text-muted-foreground">
+                                    {t('admin-billing.ownerPromotions.detail.maxRedemptions')}
+                                </span>
+                                <span>
+                                    {promotion.maxRedemptions ||
+                                        t('admin-billing.ownerPromotions.detail.unlimited')}
+                                </span>
                             </div>
                         </CardContent>
                     </Card>
@@ -612,7 +711,7 @@ function PromotionDetailDialog({
                         variant="outline"
                         onClick={() => onOpenChange(false)}
                     >
-                        Cerrar
+                        {t('admin-billing.common.close')}
                     </Button>
                 </DialogFooter>
             </DialogContent>
