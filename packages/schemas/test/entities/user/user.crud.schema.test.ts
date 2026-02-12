@@ -8,9 +8,6 @@ import {
     UserCreateOutputSchema,
     UserDeactivateInputSchema,
     UserDeleteInputSchema,
-    UserEnsureFromAuthProviderInputSchema,
-    UserGetByAuthProviderInputSchema,
-    UserGetByAuthProviderOutputSchema,
     UserPasswordChangeInputSchema,
     UserPasswordOutputSchema,
     UserPasswordResetInputSchema,
@@ -205,76 +202,6 @@ describe('User CRUD Schemas', () => {
         });
     });
 
-    describe('Auth Provider Schemas', () => {
-        describe('UserGetByAuthProviderInputSchema', () => {
-            it('should validate auth provider lookup input', () => {
-                const validInput = {
-                    provider: 'google',
-                    providerUserId: 'google-user-123'
-                };
-
-                expect(() => UserGetByAuthProviderInputSchema.parse(validInput)).not.toThrow();
-            });
-
-            it('should require provider and providerUserId', () => {
-                const invalidInput = {
-                    provider: 'google'
-                    // Missing providerUserId
-                };
-
-                expect(() => UserGetByAuthProviderInputSchema.parse(invalidInput)).toThrow(
-                    ZodError
-                );
-            });
-
-            it('should reject empty strings', () => {
-                const invalidInput = {
-                    provider: '',
-                    providerUserId: 'google-user-123'
-                };
-
-                expect(() => UserGetByAuthProviderInputSchema.parse(invalidInput)).toThrow(
-                    ZodError
-                );
-            });
-        });
-
-        describe('UserEnsureFromAuthProviderInputSchema', () => {
-            it('should validate complete auth provider input', () => {
-                const validInput = {
-                    provider: 'google',
-                    providerUserId: 'google-user-123',
-                    profile: {
-                        firstName: 'John',
-                        lastName: 'Doe',
-                        displayName: 'John Doe',
-                        contactInfo: {
-                            personalEmail: 'john@example.com'
-                        }
-                    },
-                    identities: [
-                        {
-                            provider: 'google',
-                            providerUserId: 'google-user-123',
-                            email: 'john@example.com'
-                        }
-                    ]
-                };
-
-                expect(() => UserEnsureFromAuthProviderInputSchema.parse(validInput)).not.toThrow();
-            });
-
-            it('should work with minimal input', () => {
-                const validInput = {
-                    provider: 'github',
-                    providerUserId: 'github-user-456'
-                };
-
-                expect(() => UserEnsureFromAuthProviderInputSchema.parse(validInput)).not.toThrow();
-            });
-        });
-    });
-
     describe('Role & Permission Management Schemas', () => {
         describe('UserAssignRoleInputSchema', () => {
             it('should validate role assignment input', () => {
@@ -361,21 +288,6 @@ describe('User CRUD Schemas', () => {
                 }
 
                 expect(() => UserCreateOutputSchema.parse(user)).not.toThrow();
-            });
-        });
-
-        describe('UserGetByAuthProviderOutputSchema', () => {
-            it('should validate auth provider lookup output with user', () => {
-                const user = createUserFixture();
-                const validOutput = { user };
-
-                expect(() => UserGetByAuthProviderOutputSchema.parse(validOutput)).not.toThrow();
-            });
-
-            it('should validate auth provider lookup output with null user', () => {
-                const validOutput = { user: null };
-
-                expect(() => UserGetByAuthProviderOutputSchema.parse(validOutput)).not.toThrow();
             });
         });
 
