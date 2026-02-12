@@ -16,6 +16,7 @@ import {
     useUpdateBillingSettingsMutation
 } from '@/features/billing-settings';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslations } from '@/hooks/use-translations';
 import { useForm } from '@tanstack/react-form';
 import { createFileRoute } from '@tanstack/react-router';
 import { AlertCircle, Loader2, Save } from 'lucide-react';
@@ -26,6 +27,7 @@ export const Route = createFileRoute('/_authed/billing/settings')({
 });
 
 function BillingSettingsPage() {
+    const { t } = useTranslations();
     const { addToast } = useToast();
     const [hasChanges, setHasChanges] = useState(false);
 
@@ -57,17 +59,19 @@ function BillingSettingsPage() {
                 await updateMutation.mutateAsync(payload);
 
                 addToast({
-                    title: 'Configuración guardada',
-                    message: 'Los cambios se guardaron correctamente',
+                    title: t('admin-billing.settings.toastSavedTitle'),
+                    message: t('admin-billing.settings.toastSavedMessage'),
                     variant: 'success'
                 });
 
                 setHasChanges(false);
             } catch (err) {
                 addToast({
-                    title: 'Error',
+                    title: t('admin-billing.settings.toastErrorTitle'),
                     message:
-                        err instanceof Error ? err.message : 'Error al guardar la configuración',
+                        err instanceof Error
+                            ? err.message
+                            : t('admin-billing.settings.toastErrorMessage'),
                     variant: 'error'
                 });
             }
@@ -124,9 +128,11 @@ function BillingSettingsPage() {
             <SidebarPageLayout>
                 <div className="space-y-6">
                     <div>
-                        <h2 className="mb-2 font-bold text-2xl">Configuración de Facturación</h2>
+                        <h2 className="mb-2 font-bold text-2xl">
+                            {t('admin-billing.settings.title')}
+                        </h2>
                         <p className="text-muted-foreground">
-                            Configura parámetros y opciones del sistema de facturación
+                            {t('admin-billing.settings.description')}
                         </p>
                     </div>
 
@@ -136,11 +142,11 @@ function BillingSettingsPage() {
                                 <AlertCircle className="mt-0.5 h-5 w-5 text-red-600" />
                                 <div>
                                     <p className="font-medium text-red-900">
-                                        Error al cargar la configuración
+                                        {t('admin-billing.settings.loadError')}
                                     </p>
                                     <p className="mt-1 text-red-700 text-sm">{error.message}</p>
                                     <p className="mt-2 text-red-700 text-sm">
-                                        Mostrando configuración por defecto.
+                                        {t('admin-billing.settings.defaultFallback')}
                                     </p>
                                 </div>
                             </div>
@@ -165,9 +171,11 @@ function BillingSettingsPage() {
             >
                 <div className="flex items-center justify-between">
                     <div>
-                        <h2 className="mb-2 font-bold text-2xl">Configuración de Facturación</h2>
+                        <h2 className="mb-2 font-bold text-2xl">
+                            {t('admin-billing.settings.title')}
+                        </h2>
                         <p className="text-muted-foreground">
-                            Configura parámetros y opciones del sistema de facturación
+                            {t('admin-billing.settings.description')}
                         </p>
                     </div>
 
@@ -179,7 +187,7 @@ function BillingSettingsPage() {
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         )}
                         <Save className="mr-2 h-4 w-4" />
-                        Guardar cambios
+                        {t('admin-billing.settings.saveChanges')}
                     </Button>
                 </div>
 
@@ -187,9 +195,8 @@ function BillingSettingsPage() {
                     <Card className="border-yellow-200 bg-yellow-50">
                         <CardContent className="py-4">
                             <p className="text-sm text-yellow-800">
-                                <strong>Nota:</strong> La API de facturación no está disponible. Los
-                                cambios no se guardarán hasta que se implemente el endpoint
-                                correspondiente.
+                                <strong>{t('admin-billing.settings.noteLabel')}</strong>{' '}
+                                {t('admin-billing.settings.apiUnavailable')}
                             </p>
                         </CardContent>
                     </Card>
@@ -198,9 +205,9 @@ function BillingSettingsPage() {
                 {/* Trial Settings */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>Configuración de Períodos de Prueba</CardTitle>
+                        <CardTitle>{t('admin-billing.settings.trial.title')}</CardTitle>
                         <CardDescription>
-                            Define la duración y comportamiento de los períodos de prueba
+                            {t('admin-billing.settings.trial.description')}
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
@@ -209,7 +216,7 @@ function BillingSettingsPage() {
                                 {(field) => (
                                     <div>
                                         <Label htmlFor="trial.trialDurationDays">
-                                            Duración de Prueba (días)
+                                            {t('admin-billing.settings.trial.durationLabel')}
                                         </Label>
                                         <Input
                                             id="trial.trialDurationDays"
@@ -222,7 +229,7 @@ function BillingSettingsPage() {
                                             onBlur={field.handleBlur}
                                         />
                                         <p className="mt-1 text-muted-foreground text-xs">
-                                            Para planes de Propietario y Complejo
+                                            {t('admin-billing.settings.trial.durationHint')}
                                         </p>
                                         {field.state.meta.errors && (
                                             <p className="mt-1 text-destructive text-xs">
@@ -238,10 +245,10 @@ function BillingSettingsPage() {
                                     <div className="flex items-center justify-between">
                                         <div>
                                             <Label htmlFor="trial.autoBlockOnExpiry">
-                                                Bloqueo Automático
+                                                {t('admin-billing.settings.trial.autoBlockLabel')}
                                             </Label>
                                             <p className="text-muted-foreground text-xs">
-                                                Bloquear funciones al vencer el período
+                                                {t('admin-billing.settings.trial.autoBlockHint')}
                                             </p>
                                         </div>
                                         <Switch
@@ -259,9 +266,9 @@ function BillingSettingsPage() {
                 {/* Payment Settings */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>Configuración de Pagos</CardTitle>
+                        <CardTitle>{t('admin-billing.settings.payment.title')}</CardTitle>
                         <CardDescription>
-                            Configura reintentos, períodos de gracia y moneda predeterminada
+                            {t('admin-billing.settings.payment.description')}
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
@@ -270,7 +277,7 @@ function BillingSettingsPage() {
                                 {(field) => (
                                     <div>
                                         <Label htmlFor="payment.gracePeriodDays">
-                                            Período de Gracia (días)
+                                            {t('admin-billing.settings.payment.graceLabel')}
                                         </Label>
                                         <Input
                                             id="payment.gracePeriodDays"
@@ -283,7 +290,7 @@ function BillingSettingsPage() {
                                             onBlur={field.handleBlur}
                                         />
                                         <p className="mt-1 text-muted-foreground text-xs">
-                                            Antes de bloquear funcionalidades
+                                            {t('admin-billing.settings.payment.graceHint')}
                                         </p>
                                         {field.state.meta.errors && (
                                             <p className="mt-1 text-destructive text-xs">
@@ -298,7 +305,7 @@ function BillingSettingsPage() {
                                 {(field) => (
                                     <div>
                                         <Label htmlFor="payment.paymentRetryAttempts">
-                                            Reintentos de Pago
+                                            {t('admin-billing.settings.payment.retryLabel')}
                                         </Label>
                                         <Input
                                             id="payment.paymentRetryAttempts"
@@ -312,7 +319,7 @@ function BillingSettingsPage() {
                                             onBlur={field.handleBlur}
                                         />
                                         <p className="mt-1 text-muted-foreground text-xs">
-                                            Número de reintentos automáticos
+                                            {t('admin-billing.settings.payment.retryHint')}
                                         </p>
                                         {field.state.meta.errors && (
                                             <p className="mt-1 text-destructive text-xs">
@@ -327,7 +334,7 @@ function BillingSettingsPage() {
                                 {(field) => (
                                     <div>
                                         <Label htmlFor="payment.retryIntervalHours">
-                                            Intervalo de Reintentos (horas)
+                                            {t('admin-billing.settings.payment.intervalLabel')}
                                         </Label>
                                         <Input
                                             id="payment.retryIntervalHours"
@@ -340,7 +347,7 @@ function BillingSettingsPage() {
                                             onBlur={field.handleBlur}
                                         />
                                         <p className="mt-1 text-muted-foreground text-xs">
-                                            Tiempo entre reintentos de pago
+                                            {t('admin-billing.settings.payment.intervalHint')}
                                         </p>
                                         {field.state.meta.errors && (
                                             <p className="mt-1 text-destructive text-xs">
@@ -355,7 +362,7 @@ function BillingSettingsPage() {
                                 {(field) => (
                                     <div>
                                         <Label htmlFor="payment.defaultCurrency">
-                                            Moneda Predeterminada
+                                            {t('admin-billing.settings.payment.currencyLabel')}
                                         </Label>
                                         <Input
                                             id="payment.defaultCurrency"
@@ -369,7 +376,7 @@ function BillingSettingsPage() {
                                             placeholder="ARS"
                                         />
                                         <p className="mt-1 text-muted-foreground text-xs">
-                                            Código de moneda ISO (3 letras)
+                                            {t('admin-billing.settings.payment.currencyHint')}
                                         </p>
                                         {field.state.meta.errors && (
                                             <p className="mt-1 text-destructive text-xs">
@@ -386,14 +393,16 @@ function BillingSettingsPage() {
                 {/* Webhook Settings */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>Configuración de Webhooks</CardTitle>
+                        <CardTitle>{t('admin-billing.settings.webhook.title')}</CardTitle>
                         <CardDescription>
-                            Información sobre la integración de webhooks con Mercado Pago
+                            {t('admin-billing.settings.webhook.description')}
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div>
-                            <Label htmlFor="webhook.webhookUrl">Webhook URL</Label>
+                            <Label htmlFor="webhook.webhookUrl">
+                                {t('admin-billing.settings.webhook.urlLabel')}
+                            </Label>
                             <Input
                                 id="webhook.webhookUrl"
                                 type="text"
@@ -401,11 +410,15 @@ function BillingSettingsPage() {
                                 disabled
                                 className="mt-2"
                             />
-                            <p className="mt-1 text-muted-foreground text-xs">Solo lectura</p>
+                            <p className="mt-1 text-muted-foreground text-xs">
+                                {t('admin-billing.settings.webhook.readOnly')}
+                            </p>
                         </div>
 
                         <div>
-                            <Label htmlFor="webhook.webhookSecret">Webhook Secret</Label>
+                            <Label htmlFor="webhook.webhookSecret">
+                                {t('admin-billing.settings.webhook.secretLabel')}
+                            </Label>
                             <Input
                                 id="webhook.webhookSecret"
                                 type="password"
@@ -414,18 +427,18 @@ function BillingSettingsPage() {
                                 className="mt-2"
                             />
                             <p className="mt-1 text-muted-foreground text-xs">
-                                Valor enmascarado por seguridad
+                                {t('admin-billing.settings.webhook.secretHint')}
                             </p>
                         </div>
 
                         <div>
-                            <Label>Último Webhook Recibido</Label>
+                            <Label>{t('admin-billing.settings.webhook.lastReceivedLabel')}</Label>
                             <p className="mt-2 text-sm">
                                 {settings?.webhook.lastWebhookReceivedAt
                                     ? new Date(
                                           settings.webhook.lastWebhookReceivedAt
                                       ).toLocaleString('es-AR')
-                                    : 'Ninguno'}
+                                    : t('admin-billing.settings.webhook.none')}
                             </p>
                         </div>
                     </CardContent>
@@ -434,9 +447,9 @@ function BillingSettingsPage() {
                 {/* Notification Settings */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>Notificaciones</CardTitle>
+                        <CardTitle>{t('admin-billing.settings.notification.title')}</CardTitle>
                         <CardDescription>
-                            Configura las notificaciones automáticas del sistema de facturación
+                            {t('admin-billing.settings.notification.description')}
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
@@ -446,10 +459,14 @@ function BillingSettingsPage() {
                                     <div className="flex items-center justify-between">
                                         <div>
                                             <Label htmlFor="notification.sendPaymentReminders">
-                                                Recordatorios de Pago
+                                                {t(
+                                                    'admin-billing.settings.notification.remindersLabel'
+                                                )}
                                             </Label>
                                             <p className="text-muted-foreground text-xs">
-                                                Enviar recordatorios antes del vencimiento
+                                                {t(
+                                                    'admin-billing.settings.notification.remindersHint'
+                                                )}
                                             </p>
                                         </div>
                                         <Switch
@@ -465,7 +482,7 @@ function BillingSettingsPage() {
                                 {(field) => (
                                     <div className="pl-6">
                                         <Label htmlFor="notification.reminderDaysBeforeDue">
-                                            Días de Anticipación
+                                            {t('admin-billing.settings.notification.daysLabel')}
                                         </Label>
                                         <Input
                                             id="notification.reminderDaysBeforeDue"
@@ -479,7 +496,7 @@ function BillingSettingsPage() {
                                             className="mt-2"
                                         />
                                         <p className="mt-1 text-muted-foreground text-xs">
-                                            Enviar recordatorio X días antes del vencimiento
+                                            {t('admin-billing.settings.notification.daysHint')}
                                         </p>
                                         {field.state.meta.errors && (
                                             <p className="mt-1 text-destructive text-xs">
@@ -495,10 +512,14 @@ function BillingSettingsPage() {
                                     <div className="flex items-center justify-between">
                                         <div>
                                             <Label htmlFor="notification.sendReceiptOnPayment">
-                                                Recibo de Pago
+                                                {t(
+                                                    'admin-billing.settings.notification.receiptLabel'
+                                                )}
                                             </Label>
                                             <p className="text-muted-foreground text-xs">
-                                                Enviar recibo automáticamente al procesar pago
+                                                {t(
+                                                    'admin-billing.settings.notification.receiptHint'
+                                                )}
                                             </p>
                                         </div>
                                         <Switch
@@ -524,7 +545,7 @@ function BillingSettingsPage() {
                         }}
                         disabled={!hasChanges || updateMutation.isPending}
                     >
-                        Descartar cambios
+                        {t('admin-billing.settings.discardChanges')}
                     </Button>
                     <Button
                         type="submit"
@@ -534,7 +555,7 @@ function BillingSettingsPage() {
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         )}
                         <Save className="mr-2 h-4 w-4" />
-                        Guardar configuración
+                        {t('admin-billing.settings.saveConfig')}
                     </Button>
                 </div>
             </form>

@@ -34,6 +34,7 @@ import {
     usePurchasedAddonsQuery
 } from '@/features/billing-addons';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslations } from '@/hooks/use-translations';
 import { createFileRoute } from '@tanstack/react-router';
 import { Search } from 'lucide-react';
 import { useState } from 'react';
@@ -45,6 +46,7 @@ export const Route = createFileRoute('/_authed/billing/addons')({
 type StatusFilter = 'all' | 'active' | 'expired' | 'cancelled';
 
 function BillingAddonsPage() {
+    const { t } = useTranslations();
     const { addToast } = useToast();
 
     const [page, setPage] = useState(1);
@@ -114,22 +116,25 @@ function BillingAddonsPage() {
             if (confirmAction.type === 'expire') {
                 await forceExpireMutation.mutateAsync(confirmAction.addon.id);
                 addToast({
-                    title: 'Add-on expirado',
-                    message: 'El add-on fue forzado a expirar correctamente',
+                    title: t('admin-billing.addons.toastExpiredTitle'),
+                    message: t('admin-billing.addons.toastExpiredMessage'),
                     variant: 'success'
                 });
             } else {
                 await forceActivateMutation.mutateAsync(confirmAction.addon.id);
                 addToast({
-                    title: 'Add-on activado',
-                    message: 'El add-on fue forzado a activar correctamente',
+                    title: t('admin-billing.addons.toastActivatedTitle'),
+                    message: t('admin-billing.addons.toastActivatedMessage'),
                     variant: 'success'
                 });
             }
         } catch (err) {
             addToast({
-                title: 'Error',
-                message: err instanceof Error ? err.message : 'Error al procesar la acción',
+                title: t('admin-billing.addons.toastErrorTitle'),
+                message:
+                    err instanceof Error
+                        ? err.message
+                        : t('admin-billing.addons.toastErrorMessage'),
                 variant: 'error'
             });
         } finally {
@@ -148,9 +153,11 @@ function BillingAddonsPage() {
             <SidebarPageLayout>
                 <div className="space-y-6">
                     <div>
-                        <h2 className="mb-2 font-bold text-2xl">Add-ons Comprados</h2>
+                        <h2 className="mb-2 font-bold text-2xl">
+                            {t('admin-billing.addons.title')}
+                        </h2>
                         <p className="text-muted-foreground">
-                            Visualiza todos los add-ons adquiridos por los clientes
+                            {t('admin-billing.addons.description')}
                         </p>
                     </div>
 
@@ -158,11 +165,11 @@ function BillingAddonsPage() {
                         <CardContent className="py-8">
                             <div className="text-center">
                                 <p className="text-destructive">
-                                    No se pudieron cargar los add-ons comprados
+                                    {t('admin-billing.addons.loadError')}
                                 </p>
                                 <p className="mt-2 text-red-600 text-sm">{error.message}</p>
                                 <p className="mt-4 text-muted-foreground text-sm">
-                                    Verifica que la API de facturación esté disponible.
+                                    {t('admin-billing.addons.apiCheckError')}
                                 </p>
                             </div>
                         </CardContent>
@@ -178,9 +185,11 @@ function BillingAddonsPage() {
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div>
-                        <h2 className="mb-2 font-bold text-2xl">Add-ons Comprados</h2>
+                        <h2 className="mb-2 font-bold text-2xl">
+                            {t('admin-billing.addons.title')}
+                        </h2>
                         <p className="text-muted-foreground">
-                            Visualiza todos los add-ons adquiridos por los clientes
+                            {t('admin-billing.addons.description')}
                         </p>
                     </div>
                 </div>
@@ -194,7 +203,7 @@ function BillingAddonsPage() {
                                 <div className="relative flex-1">
                                     <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
                                     <Input
-                                        placeholder="Buscar por email del cliente..."
+                                        placeholder={t('admin-billing.addons.searchPlaceholder')}
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
                                         onKeyDown={(e) => {
@@ -210,7 +219,7 @@ function BillingAddonsPage() {
                                     onClick={handleSearch}
                                     className="rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground text-sm hover:bg-primary/90"
                                 >
-                                    Buscar
+                                    {t('admin-billing.addons.searchButton')}
                                 </button>
                                 {customerEmailFilter && (
                                     <button
@@ -218,7 +227,7 @@ function BillingAddonsPage() {
                                         onClick={handleClearSearch}
                                         className="rounded-md border border-input bg-background px-4 py-2 text-sm hover:bg-accent"
                                     >
-                                        Limpiar
+                                        {t('admin-billing.addons.clearButton')}
                                     </button>
                                 )}
                             </div>
@@ -237,16 +246,24 @@ function BillingAddonsPage() {
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="all">Todos los estados</SelectItem>
-                                        <SelectItem value="active">Activos</SelectItem>
-                                        <SelectItem value="expired">Expirados</SelectItem>
-                                        <SelectItem value="cancelled">Cancelados</SelectItem>
+                                        <SelectItem value="all">
+                                            {t('admin-billing.addons.allStatuses')}
+                                        </SelectItem>
+                                        <SelectItem value="active">
+                                            {t('admin-billing.addons.statusActive')}
+                                        </SelectItem>
+                                        <SelectItem value="expired">
+                                            {t('admin-billing.addons.statusExpired')}
+                                        </SelectItem>
+                                        <SelectItem value="cancelled">
+                                            {t('admin-billing.addons.statusCancelled')}
+                                        </SelectItem>
                                     </SelectContent>
                                 </Select>
 
                                 {/* Add-on type filter */}
                                 <Input
-                                    placeholder="Filtrar por tipo de add-on..."
+                                    placeholder={t('admin-billing.addons.filterByType')}
                                     value={addonTypeFilter}
                                     onChange={(e) => {
                                         setAddonTypeFilter(e.target.value);
@@ -260,7 +277,7 @@ function BillingAddonsPage() {
                         {customerEmailFilter && (
                             <div className="mt-4">
                                 <p className="text-muted-foreground text-sm">
-                                    Mostrando resultados para:{' '}
+                                    {t('admin-billing.addons.showingResultsFor')}{' '}
                                     <span className="font-medium">{customerEmailFilter}</span>
                                 </p>
                             </div>
@@ -291,11 +308,11 @@ function BillingAddonsPage() {
                             <div className="text-center">
                                 <p className="text-muted-foreground">
                                     {customerEmailFilter
-                                        ? 'No se encontraron add-ons comprados para este cliente'
-                                        : 'No hay add-ons comprados aún'}
+                                        ? t('admin-billing.addons.emptyForCustomer')
+                                        : t('admin-billing.addons.emptyGeneral')}
                                 </p>
                                 <p className="mt-2 text-muted-foreground text-sm">
-                                    Los add-ons comprados por los clientes aparecerán aquí
+                                    {t('admin-billing.addons.emptyHint')}
                                 </p>
                             </div>
                         </CardContent>
@@ -319,31 +336,31 @@ function BillingAddonsPage() {
                     <AlertDialogHeader>
                         <AlertDialogTitle>
                             {confirmAction?.type === 'expire'
-                                ? '¿Forzar expiración del add-on?'
-                                : '¿Forzar activación del add-on?'}
+                                ? t('admin-billing.addons.confirmExpireTitle')
+                                : t('admin-billing.addons.confirmActivateTitle')}
                         </AlertDialogTitle>
                         <AlertDialogDescription>
                             {confirmAction?.type === 'expire' ? (
                                 <>
-                                    Vas a forzar la expiración del add-on{' '}
-                                    <strong>{confirmAction.addon.addonName}</strong> para el cliente{' '}
-                                    <strong>{confirmAction.addon.customerEmail}</strong>. Esta
-                                    acción cambiará el estado a &quot;expirado&quot; de forma
-                                    inmediata.
+                                    {t('admin-billing.addons.confirmExpireDesc')}{' '}
+                                    <strong>{confirmAction.addon.addonName}</strong>{' '}
+                                    {t('admin-billing.addons.confirmExpireDescSuffix')}{' '}
+                                    <strong>{confirmAction.addon.customerEmail}</strong>.{' '}
+                                    {t('admin-billing.addons.confirmExpireDescEnd')}
                                 </>
                             ) : (
                                 <>
-                                    Vas a forzar la activación del add-on{' '}
-                                    <strong>{confirmAction?.addon.addonName}</strong> para el
-                                    cliente <strong>{confirmAction?.addon.customerEmail}</strong>.
-                                    Esta acción cambiará el estado a &quot;activo&quot; de forma
-                                    inmediata.
+                                    {t('admin-billing.addons.confirmActivateDesc')}{' '}
+                                    <strong>{confirmAction?.addon.addonName}</strong>{' '}
+                                    {t('admin-billing.addons.confirmActivateDescSuffix')}{' '}
+                                    <strong>{confirmAction?.addon.customerEmail}</strong>.{' '}
+                                    {t('admin-billing.addons.confirmActivateDescEnd')}
                                 </>
                             )}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogCancel>{t('admin-billing.common.cancel')}</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleConfirmAction}
                             className={
@@ -353,8 +370,8 @@ function BillingAddonsPage() {
                             }
                         >
                             {confirmAction?.type === 'expire'
-                                ? 'Forzar expiración'
-                                : 'Forzar activación'}
+                                ? t('admin-billing.addons.forceExpire')
+                                : t('admin-billing.addons.forceActivate')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

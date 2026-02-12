@@ -22,6 +22,7 @@ import type {
     SponsorshipLevel,
     SponsorshipPackage
 } from '@/features/sponsorships/types';
+import { useTranslations } from '@/hooks/use-translations';
 import { SponsorshipStatusEnum } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
 import { Check, Plus, X } from 'lucide-react';
@@ -34,6 +35,7 @@ export const Route = createFileRoute('/_authed/billing/sponsorships')({
 type TabId = 'sponsorships' | 'levels' | 'packages';
 
 function BillingSponsorshipsPage() {
+    const { t } = useTranslations();
     const [activeTab, setActiveTab] = useState<TabId>('sponsorships');
 
     return (
@@ -41,9 +43,11 @@ function BillingSponsorshipsPage() {
             <div className="space-y-6">
                 {/* Page header */}
                 <div>
-                    <h2 className="mb-2 font-bold text-2xl">Patrocinios</h2>
+                    <h2 className="mb-2 font-bold text-2xl">
+                        {t('admin-billing.sponsorships.title')}
+                    </h2>
                     <p className="text-muted-foreground">
-                        Gestiona patrocinios, niveles y paquetes de suscripción
+                        {t('admin-billing.sponsorships.description')}
                     </p>
                 </div>
 
@@ -55,19 +59,19 @@ function BillingSponsorshipsPage() {
                     >
                         <TabButton
                             id="sponsorships"
-                            label="Patrocinios"
+                            label={t('admin-billing.sponsorships.tabs.sponsorships')}
                             isActive={activeTab === 'sponsorships'}
                             onClick={() => setActiveTab('sponsorships')}
                         />
                         <TabButton
                             id="levels"
-                            label="Niveles"
+                            label={t('admin-billing.sponsorships.tabs.levels')}
                             isActive={activeTab === 'levels'}
                             onClick={() => setActiveTab('levels')}
                         />
                         <TabButton
                             id="packages"
-                            label="Paquetes"
+                            label={t('admin-billing.sponsorships.tabs.packages')}
                             isActive={activeTab === 'packages'}
                             onClick={() => setActiveTab('packages')}
                         />
@@ -116,6 +120,7 @@ function TabButton({ id, label, isActive, onClick }: TabButtonProps) {
  * Sponsorships Tab
  */
 function SponsorshipsTab() {
+    const { t } = useTranslations();
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(20);
     const [filters, setFilters] = useState<{
@@ -134,66 +139,90 @@ function SponsorshipsTab() {
     const columns: DataTableColumn<Sponsorship>[] = [
         {
             id: 'sponsor',
-            header: 'Patrocinador',
+            header: t('admin-billing.sponsorships.columns.sponsor'),
             accessorKey: 'sponsorUserId',
             enableSorting: false,
             columnType: ColumnType.STRING
         },
         {
             id: 'targetType',
-            header: 'Tipo',
+            header: t('admin-billing.sponsorships.columns.type'),
             accessorKey: 'targetType',
             enableSorting: true,
             columnType: ColumnType.BADGE,
             badgeOptions: [
-                { value: 'EVENT', label: 'Evento', color: BadgeColor.BLUE },
-                { value: 'POST', label: 'Publicación', color: BadgeColor.PURPLE }
+                {
+                    value: 'EVENT',
+                    label: t('admin-billing.sponsorships.targetTypes.event'),
+                    color: BadgeColor.BLUE
+                },
+                {
+                    value: 'POST',
+                    label: t('admin-billing.sponsorships.targetTypes.post'),
+                    color: BadgeColor.PURPLE
+                }
             ]
         },
         {
             id: 'target',
-            header: 'Objetivo',
+            header: t('admin-billing.sponsorships.columns.target'),
             accessorKey: 'targetId',
             enableSorting: false,
             columnType: ColumnType.STRING
         },
         {
             id: 'level',
-            header: 'Nivel',
+            header: t('admin-billing.sponsorships.columns.level'),
             accessorKey: 'levelId',
             enableSorting: false,
             columnType: ColumnType.STRING
         },
         {
             id: 'status',
-            header: 'Estado',
+            header: t('admin-billing.sponsorships.columns.status'),
             accessorKey: 'status',
             enableSorting: true,
             columnType: ColumnType.BADGE,
             badgeOptions: [
-                { value: 'PENDING', label: 'Pendiente', color: BadgeColor.YELLOW },
-                { value: 'ACTIVE', label: 'Activo', color: BadgeColor.GREEN },
-                { value: 'EXPIRED', label: 'Expirado', color: BadgeColor.GRAY },
-                { value: 'CANCELLED', label: 'Cancelado', color: BadgeColor.RED }
+                {
+                    value: 'PENDING',
+                    label: t('admin-billing.sponsorships.statuses.pending'),
+                    color: BadgeColor.YELLOW
+                },
+                {
+                    value: 'ACTIVE',
+                    label: t('admin-billing.sponsorships.statuses.active'),
+                    color: BadgeColor.GREEN
+                },
+                {
+                    value: 'EXPIRED',
+                    label: t('admin-billing.sponsorships.statuses.expired'),
+                    color: BadgeColor.GRAY
+                },
+                {
+                    value: 'CANCELLED',
+                    label: t('admin-billing.sponsorships.statuses.cancelled'),
+                    color: BadgeColor.RED
+                }
             ]
         },
         {
             id: 'startsAt',
-            header: 'Inicio',
+            header: t('admin-billing.sponsorships.columns.startsAt'),
             accessorKey: 'startsAt',
             enableSorting: true,
             columnType: ColumnType.DATE
         },
         {
             id: 'endsAt',
-            header: 'Fin',
+            header: t('admin-billing.sponsorships.columns.endsAt'),
             accessorKey: 'endsAt',
             enableSorting: true,
             columnType: ColumnType.DATE
         },
         {
             id: 'actions',
-            header: 'Acciones',
+            header: t('admin-billing.sponsorships.columns.actions'),
             enableSorting: false,
             enableHiding: false,
             cell: ({ row }) => (
@@ -211,7 +240,7 @@ function SponsorshipsTab() {
                             disabled={updateStatusMutation.isPending}
                         >
                             <Check className="mr-1 h-3 w-3" />
-                            Aprobar
+                            {t('admin-billing.sponsorships.actions.approve')}
                         </Button>
                     )}
                     {(row.status === SponsorshipStatusEnum.PENDING ||
@@ -228,7 +257,7 @@ function SponsorshipsTab() {
                             disabled={updateStatusMutation.isPending}
                         >
                             <X className="mr-1 h-3 w-3" />
-                            Cancelar
+                            {t('admin-billing.sponsorships.actions.cancel')}
                         </Button>
                     )}
                 </div>
@@ -242,8 +271,7 @@ function SponsorshipsTab() {
                 <CardContent className="py-8">
                     <div className="text-center">
                         <p className="text-muted-foreground">
-                            No se pudieron cargar los patrocinios. Verifica que la API esté
-                            funcionando.
+                            {t('admin-billing.sponsorships.errors.loadSponsorships')}
                         </p>
                         <p className="mt-2 text-red-600 text-sm">{error.message}</p>
                     </div>
@@ -270,11 +298,21 @@ function SponsorshipsTab() {
                             }))
                         }
                     >
-                        <option value="all">Todos los estados</option>
-                        <option value={SponsorshipStatusEnum.PENDING}>Pendiente</option>
-                        <option value={SponsorshipStatusEnum.ACTIVE}>Activo</option>
-                        <option value={SponsorshipStatusEnum.EXPIRED}>Expirado</option>
-                        <option value={SponsorshipStatusEnum.CANCELLED}>Cancelado</option>
+                        <option value="all">
+                            {t('admin-billing.sponsorships.filters.allStatuses')}
+                        </option>
+                        <option value={SponsorshipStatusEnum.PENDING}>
+                            {t('admin-billing.sponsorships.statuses.pending')}
+                        </option>
+                        <option value={SponsorshipStatusEnum.ACTIVE}>
+                            {t('admin-billing.sponsorships.statuses.active')}
+                        </option>
+                        <option value={SponsorshipStatusEnum.EXPIRED}>
+                            {t('admin-billing.sponsorships.statuses.expired')}
+                        </option>
+                        <option value={SponsorshipStatusEnum.CANCELLED}>
+                            {t('admin-billing.sponsorships.statuses.cancelled')}
+                        </option>
                     </select>
 
                     <select
@@ -287,15 +325,21 @@ function SponsorshipsTab() {
                             }))
                         }
                     >
-                        <option value="all">Todos los tipos</option>
-                        <option value="EVENT">Evento</option>
-                        <option value="POST">Publicación</option>
+                        <option value="all">
+                            {t('admin-billing.sponsorships.filters.allTypes')}
+                        </option>
+                        <option value="EVENT">
+                            {t('admin-billing.sponsorships.targetTypes.event')}
+                        </option>
+                        <option value="POST">
+                            {t('admin-billing.sponsorships.targetTypes.post')}
+                        </option>
                     </select>
                 </div>
 
                 <Button>
                     <Plus className="mr-2 h-4 w-4" />
-                    Crear patrocinio
+                    {t('admin-billing.sponsorships.create.sponsorship')}
                 </Button>
             </div>
 
@@ -323,6 +367,7 @@ function SponsorshipsTab() {
  * Sponsorship Levels Tab
  */
 function SponsorshipLevelsTab() {
+    const { t } = useTranslations();
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(20);
 
@@ -343,56 +388,86 @@ function SponsorshipLevelsTab() {
     const columns: DataTableColumn<SponsorshipLevel>[] = [
         {
             id: 'name',
-            header: 'Nombre',
+            header: t('admin-billing.sponsorships.columns.name'),
             accessorKey: 'name',
             enableSorting: true,
             columnType: ColumnType.STRING
         },
         {
             id: 'targetType',
-            header: 'Tipo',
+            header: t('admin-billing.sponsorships.columns.type'),
             accessorKey: 'targetType',
             enableSorting: true,
             columnType: ColumnType.BADGE,
             badgeOptions: [
-                { value: 'EVENT', label: 'Evento', color: BadgeColor.BLUE },
-                { value: 'POST', label: 'Publicación', color: BadgeColor.PURPLE }
+                {
+                    value: 'EVENT',
+                    label: t('admin-billing.sponsorships.targetTypes.event'),
+                    color: BadgeColor.BLUE
+                },
+                {
+                    value: 'POST',
+                    label: t('admin-billing.sponsorships.targetTypes.post'),
+                    color: BadgeColor.PURPLE
+                }
             ]
         },
         {
             id: 'tier',
-            header: 'Nivel',
+            header: t('admin-billing.sponsorships.columns.level'),
             accessorKey: 'tier',
             enableSorting: true,
             columnType: ColumnType.BADGE,
             badgeOptions: [
-                { value: 'BRONZE', label: 'Bronce', color: BadgeColor.ORANGE },
-                { value: 'SILVER', label: 'Plata', color: BadgeColor.GRAY },
-                { value: 'GOLD', label: 'Oro', color: BadgeColor.YELLOW },
-                { value: 'STANDARD', label: 'Estándar', color: BadgeColor.BLUE },
-                { value: 'PREMIUM', label: 'Premium', color: BadgeColor.PURPLE }
+                {
+                    value: 'BRONZE',
+                    label: t('admin-billing.sponsorships.tiers.bronze'),
+                    color: BadgeColor.ORANGE
+                },
+                {
+                    value: 'SILVER',
+                    label: t('admin-billing.sponsorships.tiers.silver'),
+                    color: BadgeColor.GRAY
+                },
+                {
+                    value: 'GOLD',
+                    label: t('admin-billing.sponsorships.tiers.gold'),
+                    color: BadgeColor.YELLOW
+                },
+                {
+                    value: 'STANDARD',
+                    label: t('admin-billing.sponsorships.tiers.standard'),
+                    color: BadgeColor.BLUE
+                },
+                {
+                    value: 'PREMIUM',
+                    label: t('admin-billing.sponsorships.tiers.premium'),
+                    color: BadgeColor.PURPLE
+                }
             ]
         },
         {
             id: 'price',
-            header: 'Precio',
+            header: t('admin-billing.sponsorships.columns.price'),
             enableSorting: true,
             cell: ({ row }) => <span className="font-medium">{formatPrice(row.priceAmount)}</span>
         },
         {
             id: 'status',
-            header: 'Estado',
+            header: t('admin-billing.sponsorships.columns.status'),
             accessorKey: 'isActive',
             enableSorting: true,
             cell: ({ row }) => (
                 <Badge variant={row.isActive ? 'success' : 'secondary'}>
-                    {row.isActive ? 'Activo' : 'Inactivo'}
+                    {row.isActive
+                        ? t('admin-billing.sponsorships.statuses.active')
+                        : t('admin-billing.sponsorships.statuses.inactive')}
                 </Badge>
             )
         },
         {
             id: 'actions',
-            header: 'Acciones',
+            header: t('admin-billing.sponsorships.columns.actions'),
             enableSorting: false,
             enableHiding: false,
             cell: ({ row }) => (
@@ -405,13 +480,15 @@ function SponsorshipLevelsTab() {
                         }
                         disabled={toggleActiveMutation.isPending}
                     >
-                        {row.isActive ? 'Desactivar' : 'Activar'}
+                        {row.isActive
+                            ? t('admin-billing.sponsorships.actions.deactivate')
+                            : t('admin-billing.sponsorships.actions.activate')}
                     </Button>
                     <Button
                         variant="outline"
                         size="sm"
                     >
-                        Editar
+                        {t('admin-billing.sponsorships.actions.edit')}
                     </Button>
                 </div>
             )
@@ -424,7 +501,7 @@ function SponsorshipLevelsTab() {
                 <CardContent className="py-8">
                     <div className="text-center">
                         <p className="text-muted-foreground">
-                            No se pudieron cargar los niveles. Verifica que la API esté funcionando.
+                            {t('admin-billing.sponsorships.errors.loadLevels')}
                         </p>
                         <p className="mt-2 text-red-600 text-sm">{error.message}</p>
                     </div>
@@ -441,7 +518,7 @@ function SponsorshipLevelsTab() {
             <div className="flex justify-end">
                 <Button>
                     <Plus className="mr-2 h-4 w-4" />
-                    Crear nivel
+                    {t('admin-billing.sponsorships.create.level')}
                 </Button>
             </div>
 
@@ -468,6 +545,7 @@ function SponsorshipLevelsTab() {
  * Sponsorship Packages Tab
  */
 function SponsorshipPackagesTab() {
+    const { t } = useTranslations();
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(20);
 
@@ -488,52 +566,54 @@ function SponsorshipPackagesTab() {
     const columns: DataTableColumn<SponsorshipPackage>[] = [
         {
             id: 'name',
-            header: 'Nombre',
+            header: t('admin-billing.sponsorships.columns.name'),
             accessorKey: 'name',
             enableSorting: true,
             columnType: ColumnType.STRING
         },
         {
             id: 'price',
-            header: 'Precio/mes',
+            header: t('admin-billing.sponsorships.columns.pricePerMonth'),
             enableSorting: true,
             cell: ({ row }) => <span className="font-medium">{formatPrice(row.priceAmount)}</span>
         },
         {
             id: 'includedPosts',
-            header: 'Posts incluidos',
+            header: t('admin-billing.sponsorships.columns.includedPosts'),
             accessorKey: 'includedPosts',
             enableSorting: true,
             columnType: ColumnType.NUMBER
         },
         {
             id: 'includedEvents',
-            header: 'Eventos incluidos',
+            header: t('admin-billing.sponsorships.columns.includedEvents'),
             accessorKey: 'includedEvents',
             enableSorting: true,
             columnType: ColumnType.NUMBER
         },
         {
             id: 'eventLevel',
-            header: 'Nivel de evento',
+            header: t('admin-billing.sponsorships.columns.eventLevel'),
             accessorKey: 'eventLevelId',
             enableSorting: false,
-            cell: ({ row }) => (row.eventLevelId ? 'Configurado' : '-')
+            cell: ({ row }) => (row.eventLevelId ? t('admin-billing.sponsorships.configured') : '-')
         },
         {
             id: 'status',
-            header: 'Estado',
+            header: t('admin-billing.sponsorships.columns.status'),
             accessorKey: 'isActive',
             enableSorting: true,
             cell: ({ row }) => (
                 <Badge variant={row.isActive ? 'success' : 'secondary'}>
-                    {row.isActive ? 'Activo' : 'Inactivo'}
+                    {row.isActive
+                        ? t('admin-billing.sponsorships.statuses.active')
+                        : t('admin-billing.sponsorships.statuses.inactive')}
                 </Badge>
             )
         },
         {
             id: 'actions',
-            header: 'Acciones',
+            header: t('admin-billing.sponsorships.columns.actions'),
             enableSorting: false,
             enableHiding: false,
             cell: ({ row }) => (
@@ -546,13 +626,15 @@ function SponsorshipPackagesTab() {
                         }
                         disabled={toggleActiveMutation.isPending}
                     >
-                        {row.isActive ? 'Desactivar' : 'Activar'}
+                        {row.isActive
+                            ? t('admin-billing.sponsorships.actions.deactivate')
+                            : t('admin-billing.sponsorships.actions.activate')}
                     </Button>
                     <Button
                         variant="outline"
                         size="sm"
                     >
-                        Editar
+                        {t('admin-billing.sponsorships.actions.edit')}
                     </Button>
                 </div>
             )
@@ -565,8 +647,7 @@ function SponsorshipPackagesTab() {
                 <CardContent className="py-8">
                     <div className="text-center">
                         <p className="text-muted-foreground">
-                            No se pudieron cargar los paquetes. Verifica que la API esté
-                            funcionando.
+                            {t('admin-billing.sponsorships.errors.loadPackages')}
                         </p>
                         <p className="mt-2 text-red-600 text-sm">{error.message}</p>
                     </div>
@@ -583,7 +664,7 @@ function SponsorshipPackagesTab() {
             <div className="flex justify-end">
                 <Button>
                     <Plus className="mr-2 h-4 w-4" />
-                    Crear paquete
+                    {t('admin-billing.sponsorships.create.package')}
                 </Button>
             </div>
 
