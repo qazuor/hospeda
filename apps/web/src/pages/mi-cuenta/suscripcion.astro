@@ -4,7 +4,6 @@ export const prerender = false; // SSR for authenticated content
 import Layout from '@/layout/MainLayout.astro';
 import { BillingHistory } from '@/components/dashboard';
 import { BillingIsland, SubscriptionStatusCard, ActiveAddons, UsageMeters, CheckoutResultBanner, BillingErrorBoundary } from '@/components/billing';
-import { getAuth } from '@clerk/astro/server';
 
 /**
  * Subscription Management Page
@@ -13,8 +12,21 @@ import { getAuth } from '@clerk/astro/server';
  * Uses BillingIsland + SubscriptionStatusCard from qzpay-react integration
  */
 
-// Check authentication
-const { userId } = getAuth(Astro);
+// Check authentication via Better Auth session
+let userId: string | null = null;
+try {
+  const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:3001';
+  const cookieHeader = Astro.request.headers.get('cookie') || '';
+  const response = await fetch(`${apiUrl}/api/auth/get-session`, {
+    headers: { cookie: cookieHeader }
+  });
+  if (response.ok) {
+    const data = await response.json();
+    userId = data?.user?.id || null;
+  }
+} catch {
+  // Session check failed, treat as unauthenticated
+}
 
 if (!userId) {
   return Astro.redirect('/auth/sign-in?redirect=/mi-cuenta/suscripcion');

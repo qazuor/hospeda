@@ -1,4 +1,11 @@
-import { ClerkProvider } from '@clerk/clerk-react';
+/**
+ * Auth root provider for the web application.
+ *
+ * With Better Auth, no explicit provider wrapper is needed since
+ * authentication is cookie-based. This component is kept as a
+ * pass-through for backward compatibility with existing layouts.
+ */
+
 import type { ReactNode } from 'react';
 
 interface Props {
@@ -6,20 +13,9 @@ interface Props {
 }
 
 /**
- * ClerkRoot
- * Global Clerk provider that wraps the entire app.
- * This prevents multiple ClerkProvider instances in the React tree.
+ * AuthRoot wraps children without any auth provider.
+ * Better Auth uses cookies, so no client-side provider is needed.
  */
 export const ClerkRoot = ({ children }: Props): JSX.Element => {
-    const publishableKey = import.meta.env.PUBLIC_CLERK_PUBLISHABLE_KEY as string | undefined;
-
-    if (!publishableKey) {
-        return <>{children}</>;
-    }
-
-    // biome-ignore lint/suspicious/noExplicitAny: clerk type compatibility issue
-    const ClerkProviderComponent = ClerkProvider as any;
-    return (
-        <ClerkProviderComponent publishableKey={publishableKey}>{children}</ClerkProviderComponent>
-    );
+    return <>{children}</>;
 };

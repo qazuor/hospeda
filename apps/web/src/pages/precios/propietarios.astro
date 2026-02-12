@@ -6,10 +6,9 @@ import { BillingIsland, CheckoutResultBanner } from '@/components/billing';
 import { PricingSection } from '@/components/pricing/PricingSection';
 import { PLANS_BY_CATEGORY } from '@repo/billing';
 import type { PlanDefinition, EntitlementKey } from '@repo/billing';
-import { getAuth } from '@clerk/astro/server';
 
-const { userId } = getAuth(Astro);
-const isAuthenticated = !!userId;
+// Static page (prerender = true): auth state is resolved client-side
+const isAuthenticated = false;
 
 /**
  * Owner Pricing Page

@@ -72,9 +72,8 @@ export interface BillingIslandProps {
  * ---
  * import { BillingIsland } from '@/components/billing';
  * import { SubscriptionPlans } from '@/components/billing/SubscriptionPlans';
- * import { getAuth } from '@clerk/astro/server';
  *
- * const { userId } = getAuth(Astro);
+ * // Get userId from Better Auth session (see suscripcion.astro for pattern)
  * ---
  *
  * <BillingIsland
