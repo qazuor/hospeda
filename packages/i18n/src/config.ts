@@ -37,6 +37,7 @@ export const namespaces = [
     'fields',
     // Admin namespaces
     'admin-auth',
+    'admin-billing',
     'admin-nav',
     'admin-dashboard',
     'admin-menu',
@@ -93,6 +94,7 @@ import aboutEs from './locales/es/about.json';
 import accommodationsEs from './locales/es/accommodations.json';
 // Admin translations
 import adminAuthEs from './locales/es/admin-auth.json';
+import adminBillingEs from './locales/es/admin-billing.json';
 import adminCommonEs from './locales/es/admin-common.json';
 import adminDashboardEs from './locales/es/admin-dashboard.json';
 import adminEntitiesEs from './locales/es/admin-entities.json';
@@ -148,6 +150,7 @@ const rawTranslations = {
         fields: fieldsEs,
         // Admin translations
         'admin-auth': adminAuthEs,
+        'admin-billing': adminBillingEs,
         'admin-nav': adminNavEs,
         'admin-dashboard': adminDashboardEs,
         'admin-menu': adminMenuEs,
