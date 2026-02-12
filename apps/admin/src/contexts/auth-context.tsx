@@ -1,20 +1,17 @@
+/**
+ * Authentication context for the admin application.
+ *
+ * Provides centralized auth state using Better Auth's useSession hook,
+ * enriched with user role and permissions from the API. Replaces the
+ * previous Clerk-based auth context.
+ *
+ * @module auth-context
+ */
+
 import { fetchApi } from '@/lib/api/client';
-import { useAuth, useUser } from '@clerk/tanstack-react-start';
+import { signOut as authSignOut, useSession } from '@/lib/auth-client';
 import { type ReactNode, createContext, useCallback, useEffect, useState } from 'react';
 import { adminLogger } from '../utils/logger';
-
-/**
- * Clerk user interface for type safety
- */
-interface ClerkUser {
-    fullName?: string;
-    firstName?: string;
-    lastName?: string;
-    imageUrl?: string;
-    primaryEmailAddress?: {
-        emailAddress?: string;
-    };
-}
 
 /**
  * User session data stored in context and session storage
@@ -24,10 +21,8 @@ interface UserSession {
     role: string;
     permissions: string[];
     displayName?: string;
-    firstName?: string;
-    lastName?: string;
-    avatar?: string;
     email?: string;
+    avatar?: string;
 }
 
 /**
@@ -37,7 +32,6 @@ interface AuthState {
     isLoading: boolean;
     isAuthenticated: boolean;
     user: UserSession | null;
-    clerkUser: ClerkUser | null; // Clerk user object
     error: string | null;
 }
 
@@ -57,8 +51,7 @@ const HospedaAuthContext = createContext<AuthContextValue | null>(null);
  */
 const SESSION_KEYS = {
     USER: 'hospeda_user_session',
-    TIMESTAMP: 'hospeda_session_timestamp',
-    CLERK_STATE: 'hospeda_clerk_state'
+    TIMESTAMP: 'hospeda_session_timestamp'
 } as const;
 
 /**
@@ -70,7 +63,6 @@ const SESSION_TTL = 5 * 60 * 1000;
  * Get session from storage
  */
 function getStoredSession(): { user: UserSession | null; isValid: boolean } {
-    // Only access sessionStorage in the browser
     if (typeof window === 'undefined') {
         return { user: null, isValid: false };
     }
@@ -104,7 +96,6 @@ function getStoredSession(): { user: UserSession | null; isValid: boolean } {
  * Store session in storage
  */
 function storeSession(user: UserSession): void {
-    // Only access sessionStorage in the browser
     if (typeof window === 'undefined') {
         return;
     }
@@ -121,7 +112,6 @@ function storeSession(user: UserSession): void {
  * Clear stored session
  */
 function clearStoredSession(): void {
-    // Only access sessionStorage in the browser
     if (typeof window === 'undefined') {
         return;
     }
@@ -129,31 +119,26 @@ function clearStoredSession(): void {
     try {
         sessionStorage.removeItem(SESSION_KEYS.USER);
         sessionStorage.removeItem(SESSION_KEYS.TIMESTAMP);
-        sessionStorage.removeItem(SESSION_KEYS.CLERK_STATE);
     } catch (error) {
         adminLogger.warn('Failed to clear stored session', error);
     }
 }
 
 /**
- * Fetch user session from API
+ * Fetch user session enrichment from API (roles, permissions)
  */
 async function fetchUserSession(): Promise<UserSession | null> {
     try {
         adminLogger.debug('Fetching user session from API...');
-        const response = await fetchApi<UserSession>({
+        const response = await fetchApi<unknown>({
             path: '/api/v1/public/auth/me',
             method: 'GET'
         });
 
-        adminLogger.debug(`API response status: ${response.status}`);
-        adminLogger.debug('API response data', JSON.stringify(response.data));
-
         if (response.status < 200 || response.status >= 300) {
-            throw new Error(`HTTP ${response.status}`);
+            return null;
         }
 
-        // Check if response has the expected structure
         interface AuthMeResponse {
             success: boolean;
             data?: {
@@ -165,7 +150,7 @@ async function fetchUserSession(): Promise<UserSession | null> {
                 };
             };
         }
-        const responseData = response.data as unknown as AuthMeResponse;
+        const responseData = response.data as AuthMeResponse;
 
         if (
             responseData?.success &&
@@ -173,21 +158,13 @@ async function fetchUserSession(): Promise<UserSession | null> {
             responseData?.data?.actor
         ) {
             const actor = responseData.data.actor;
-            adminLogger.debug('User session fetched successfully:', JSON.stringify(actor));
             return {
                 id: actor.id,
                 role: actor.role,
-                permissions: actor.permissions || [],
-                // Additional user data would come from Clerk
-                displayName: undefined,
-                firstName: undefined,
-                lastName: undefined,
-                avatar: undefined,
-                email: undefined
+                permissions: actor.permissions || []
             };
         }
 
-        adminLogger.debug('API response does not indicate authenticated user');
         return null;
     } catch (error) {
         adminLogger.error(
@@ -200,71 +177,35 @@ async function fetchUserSession(): Promise<UserSession | null> {
 
 /**
  * AuthProvider component
+ *
+ * Uses Better Auth's useSession hook for authentication state,
+ * enriched with role/permissions from the API.
  */
 interface AuthProviderProps {
     children: ReactNode;
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-    // Safely get Clerk hooks with fallbacks
-    let clerkLoaded = false;
-    let isSignedIn = false;
-    let clerkSignOut: (() => Promise<void>) | undefined;
-    let clerkUser: ClerkUser | null = null;
-
-    try {
-        const authHook = useAuth();
-        const userHook = useUser();
-        clerkLoaded = authHook.isLoaded;
-        isSignedIn = authHook.isSignedIn || false;
-        clerkSignOut = authHook.signOut;
-        clerkUser = userHook.user as ClerkUser | null;
-    } catch (_error) {
-        // Clerk hooks not available, use defaults
-        adminLogger.warn('Clerk hooks not available, using defaults');
-    }
-
-    // Track if we're on the client side (after hydration)
-    const [isClient, setIsClient] = useState(false);
+    const { data: session, isPending: isSessionLoading } = useSession();
 
     const [authState, setAuthState] = useState<AuthState>(() => {
-        // During SSR, always start with no session
         if (typeof window === 'undefined') {
             return {
                 isLoading: true,
                 isAuthenticated: false,
                 user: null,
-                clerkUser: null,
                 error: null
             };
         }
 
-        // On client, initialize with stored session if available
         const stored = getStoredSession();
         return {
-            isLoading: !clerkLoaded,
+            isLoading: true,
             isAuthenticated: stored.isValid && !!stored.user,
             user: stored.user,
-            clerkUser: null,
             error: null
         };
     });
-
-    // Effect to handle client-side hydration
-    useEffect(() => {
-        if (typeof window !== 'undefined' && !isClient) {
-            setIsClient(true);
-
-            // Re-initialize state with stored session after hydration
-            const stored = getStoredSession();
-            setAuthState((prev) => ({
-                ...prev,
-                isAuthenticated: stored.isValid && !!stored.user,
-                user: stored.user,
-                isLoading: !clerkLoaded
-            }));
-        }
-    }, [isClient, clerkLoaded]);
 
     /**
      * Refresh session from API
@@ -275,15 +216,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
             const user = await fetchUserSession();
 
-            if (user) {
-                // Enrich with Clerk user data
+            if (user && session?.user) {
                 const enrichedUser: UserSession = {
                     ...user,
-                    displayName: clerkUser?.fullName || user.displayName,
-                    firstName: clerkUser?.firstName || user.firstName,
-                    lastName: clerkUser?.lastName || user.lastName,
-                    avatar: clerkUser?.imageUrl || user.avatar,
-                    email: clerkUser?.primaryEmailAddress?.emailAddress || user.email
+                    displayName: session.user.name || user.displayName,
+                    email: session.user.email || user.email,
+                    avatar: session.user.image || user.avatar
                 };
 
                 storeSession(enrichedUser);
@@ -291,7 +229,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
                     isLoading: false,
                     isAuthenticated: true,
                     user: enrichedUser,
-                    clerkUser,
                     error: null
                 });
             } else {
@@ -300,7 +237,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
                     isLoading: false,
                     isAuthenticated: false,
                     user: null,
-                    clerkUser,
                     error: null
                 });
             }
@@ -312,7 +248,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 error: errorMessage
             }));
         }
-    }, [clerkUser]);
+    }, [session]);
 
     /**
      * Clear session
@@ -323,7 +259,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
             isLoading: false,
             isAuthenticated: false,
             user: null,
-            clerkUser: null,
             error: null
         });
     }, []);
@@ -331,72 +266,51 @@ export function AuthProvider({ children }: AuthProviderProps) {
     /**
      * Sign out
      */
-    const signOut = async (): Promise<void> => {
+    const handleSignOut = async (): Promise<void> => {
         try {
-            // Clear local session storage
             clearSession();
-
-            // Sign out from Clerk if available
-            if (clerkSignOut) {
-                await clerkSignOut();
-            }
-
-            // Call backend to cleanup server-side state
-            // This helps ensure clean state for next sign-in
-            try {
-                await fetchApi({
-                    path: '/api/v1/public/auth/signout',
-                    method: 'POST'
-                });
-                adminLogger.info('✅ Server-side cleanup completed during sign out');
-            } catch (cleanupError) {
-                // Ignore cleanup errors - not critical for sign out
-                adminLogger.debug('Server cleanup during sign out (non-critical)', cleanupError);
-            }
+            await authSignOut();
         } catch (error) {
             adminLogger.error('Sign out error', error);
         }
     };
 
     /**
-     * Effect to sync with Clerk state
+     * Sync with Better Auth session state
      */
     useEffect(() => {
-        if (!clerkLoaded || !isClient) return;
+        if (isSessionLoading) return;
 
-        setAuthState((prev) => ({ ...prev, clerkUser, isLoading: false }));
+        const isSignedIn = !!session?.user;
 
-        // If Clerk says user is signed in but we don't have a session, fetch it
-        if (isSignedIn && !authState.isAuthenticated) {
+        if (isSignedIn && !authState.user) {
             const stored = getStoredSession();
-
-            if (stored.isValid) {
-                // Valid stored session exists, no need to refresh
+            if (stored.isValid && stored.user) {
+                setAuthState((prev) => ({
+                    ...prev,
+                    isLoading: false,
+                    isAuthenticated: true,
+                    user: stored.user
+                }));
             } else {
-                // Add a small delay to prevent multiple rapid calls
-                const timeoutId = setTimeout(() => {
-                    refreshSession();
-                }, 100);
-                return () => clearTimeout(timeoutId);
+                refreshSession();
             }
-        }
-
-        // If Clerk says user is signed out, clear our session
-        if (!isSignedIn && authState.isAuthenticated) {
+        } else if (!isSignedIn && authState.isAuthenticated) {
             clearSession();
+        } else {
+            setAuthState((prev) => ({ ...prev, isLoading: false }));
         }
     }, [
-        clerkLoaded,
-        isSignedIn,
-        clerkUser,
-        isClient,
+        isSessionLoading,
+        session,
+        authState.user,
         authState.isAuthenticated,
         clearSession,
         refreshSession
     ]);
 
     /**
-     * Effect to handle session expiration
+     * Handle session expiration
      */
     useEffect(() => {
         if (!authState.isAuthenticated) return;
@@ -404,12 +318,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const checkSessionExpiration = () => {
             const stored = getStoredSession();
             if (!stored.isValid && authState.isAuthenticated) {
-                // Session expired, refresh it
                 refreshSession();
             }
         };
 
-        // Check every minute
         const interval = setInterval(checkSessionExpiration, 60 * 1000);
         return () => clearInterval(interval);
     }, [authState.isAuthenticated, refreshSession]);
@@ -418,7 +330,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         ...authState,
         refreshSession,
         clearSession,
-        signOut
+        signOut: handleSignOut
     };
 
     return (
@@ -426,5 +338,4 @@ export function AuthProvider({ children }: AuthProviderProps) {
     );
 }
 
-// Export the context for use in hooks
 export { HospedaAuthContext as AuthContext };

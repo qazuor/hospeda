@@ -1,27 +1,7 @@
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useTranslations } from '@/hooks/use-translations';
-import { getAuth } from '@clerk/tanstack-react-start/server';
+import { fetchAuthSession } from '@/lib/auth-session';
 import { Link, Outlet, createFileRoute, redirect } from '@tanstack/react-router';
-import { createServerFn } from '@tanstack/react-start';
-import { getWebRequest } from '@tanstack/react-start/server';
-
-/**
- * Server function to check authentication
- * This runs on the server before the route loads
- */
-const fetchAuthState = createServerFn({ method: 'GET' }).handler(async () => {
-    const request = getWebRequest();
-    if (!request) {
-        throw new Error('No request found');
-    }
-
-    const { userId } = await getAuth(request);
-
-    return {
-        userId,
-        isAuthenticated: !!userId
-    };
-});
 
 /**
  * NotFoundComponent for authenticated routes
@@ -71,7 +51,7 @@ function AuthedNotFoundComponent() {
  */
 export const Route = createFileRoute('/_authed')({
     beforeLoad: async () => {
-        const authState = await fetchAuthState();
+        const authState = await fetchAuthSession();
 
         // If not authenticated, redirect to signin
         if (!authState.isAuthenticated) {

@@ -1,6 +1,6 @@
-import { SignUp } from '@clerk/tanstack-react-start';
+import { signUp } from '@/lib/auth-client';
 import { Link, createFileRoute } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
+import { type FormEvent, useEffect, useState } from 'react';
 import { useAuthSync } from '../../hooks/use-auth-sync';
 import { type AuthBackgroundImage, getRandomAuthImage } from '../../utils/auth-images';
 
@@ -14,7 +14,7 @@ function AutoRedirect() {
             if (typeof window !== 'undefined') {
                 window.location.href = '/dashboard';
             }
-        }, 3000); // 3 seconds delay
+        }, 3000);
 
         return () => clearTimeout(timer);
     }, []);
@@ -24,8 +24,7 @@ function AutoRedirect() {
 
 /**
  * SignUp Route
- * Uses Clerk's official SignUp component for TanStack Start
- * Following the official TanStack + Clerk pattern
+ * Uses Better Auth email/password sign-up
  */
 export const Route = createFileRoute('/auth/signup')({
     component: SignUpPage
@@ -40,12 +39,46 @@ function SignUpPage(): React.JSX.Element {
     const [backgroundImage, setBackgroundImage] = useState<AuthBackgroundImage | null>(null);
     const { isSyncing, shouldShowSignIn } = useAuthSync();
 
+    const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [formError, setFormError] = useState<string | null>(null);
+
     useEffect(() => {
         setIsClient(true);
         setBackgroundImage(getRandomAuthImage());
     }, []);
 
-    // Show loading state while syncing
+    const handleSubmit = async (e: FormEvent) => {
+        e.preventDefault();
+        setFormError(null);
+        setIsSubmitting(true);
+
+        try {
+            const result = await signUp.email({
+                email,
+                password,
+                name
+            });
+
+            if (result.error) {
+                setFormError(result.error.message || 'Sign up failed');
+                return;
+            }
+
+            // Redirect to dashboard on success
+            if (typeof window !== 'undefined') {
+                window.location.href = '/dashboard';
+            }
+        } catch (error) {
+            setFormError(error instanceof Error ? error.message : 'An unexpected error occurred');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    // Show loading state while checking session
     if (isSyncing) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-cyan-50 to-teal-100">
@@ -54,10 +87,7 @@ function SignUpPage(): React.JSX.Element {
                         <div className="mb-4">
                             <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-emerald-600 border-t-transparent" />
                         </div>
-                        <h2 className="font-semibold text-gray-900 text-xl">
-                            Sincronizando sesión...
-                        </h2>
-                        <p className="mt-2 text-gray-600">Verificando tu autenticación</p>
+                        <h2 className="font-semibold text-gray-900 text-xl">Checking session...</h2>
                     </div>
                 </div>
             </div>
@@ -73,22 +103,8 @@ function SignUpPage(): React.JSX.Element {
                         <div className="mb-4">
                             <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-emerald-600 border-t-transparent" />
                         </div>
-                        <h2 className="font-semibold text-gray-900 text-xl">Redirigiendo...</h2>
-                        <p className="mt-2 text-gray-600">Ya estás autenticado</p>
-                        <p className="mt-1 text-gray-500 text-sm">
-                            Si no redirige automáticamente, haz clic{' '}
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    if (typeof window !== 'undefined') {
-                                        window.location.href = '/dashboard';
-                                    }
-                                }}
-                                className="text-emerald-600 underline hover:text-emerald-500"
-                            >
-                                aquí
-                            </button>
-                        </p>
+                        <h2 className="font-semibold text-gray-900 text-xl">Redirecting...</h2>
+                        <p className="mt-2 text-gray-600">You are already authenticated</p>
                         <AutoRedirect />
                     </div>
                 </div>
@@ -100,62 +116,18 @@ function SignUpPage(): React.JSX.Element {
         return (
             <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-cyan-50 to-teal-100">
                 <div className="flex min-h-screen">
-                    {/* Left side - Image */}
                     <div className="relative hidden overflow-hidden lg:flex lg:w-1/2">
                         <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/50 to-cyan-600/30" />
                         <div className="h-full w-full animate-pulse bg-gradient-to-br from-emerald-200 to-cyan-200" />
-                        <div className="absolute bottom-8 left-8 text-white">
-                            <h2 className="mb-2 font-bold text-3xl">Join us today</h2>
-                            <p className="text-emerald-100">Start managing your accommodations</p>
-                        </div>
                     </div>
-
-                    {/* Right side - Form */}
                     <div className="flex w-full items-center justify-center px-6 py-12 lg:w-1/2">
-                        <div className="w-full max-w-md space-y-8">
-                            <div className="text-center">
-                                <div className="mb-6 flex justify-center">
-                                    <img
-                                        src="/logo.webp"
-                                        alt="Logo"
-                                        className="h-16 w-auto"
-                                    />
-                                </div>
-                                <h1 className="font-bold text-3xl text-gray-900">Create account</h1>
-                                <p className="mt-2 text-gray-600">
-                                    Get started with your free account today
-                                </p>
-                            </div>
-
+                        <div className="w-full max-w-md">
                             <div className="rounded-xl border border-gray-200 bg-white p-8 shadow-lg">
                                 <div className="animate-pulse space-y-4">
-                                    <div className="space-y-2">
-                                        <div className="h-10 rounded-md bg-gray-200" />
-                                        <div className="h-10 rounded-md bg-gray-200" />
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <div className="h-px flex-1 bg-gray-200" />
-                                        <span className="text-gray-400">or</span>
-                                        <div className="h-px flex-1 bg-gray-200" />
-                                    </div>
-                                    <div className="space-y-3">
-                                        <div className="h-10 rounded-md bg-gray-200" />
-                                        <div className="h-10 rounded-md bg-gray-200" />
-                                        <div className="h-10 rounded-md bg-gray-200" />
-                                    </div>
+                                    <div className="h-10 rounded-md bg-gray-200" />
+                                    <div className="h-10 rounded-md bg-gray-200" />
+                                    <div className="h-10 rounded-md bg-gray-200" />
                                 </div>
-                            </div>
-
-                            <div className="text-center">
-                                <p className="text-gray-600">
-                                    Already have an account?{' '}
-                                    <Link
-                                        to="/auth/signin"
-                                        className="font-medium text-emerald-600 transition-colors hover:text-emerald-500"
-                                    >
-                                        Sign in
-                                    </Link>
-                                </p>
                             </div>
                         </div>
                     </div>
@@ -206,13 +178,79 @@ function SignUpPage(): React.JSX.Element {
                         </div>
 
                         <div className="rounded-xl border border-gray-200 bg-white p-8 shadow-lg">
-                            <SignUp
-                                routing="path"
-                                path="/auth/signup"
-                                signInUrl="/auth/signin"
-                                fallbackRedirectUrl="/dashboard"
-                                forceRedirectUrl="/dashboard"
-                            />
+                            <form
+                                onSubmit={handleSubmit}
+                                className="space-y-4"
+                            >
+                                {formError && (
+                                    <div className="rounded-md bg-red-50 p-3 text-red-700 text-sm">
+                                        {formError}
+                                    </div>
+                                )}
+
+                                <div>
+                                    <label
+                                        htmlFor="name"
+                                        className="block font-medium text-gray-700 text-sm"
+                                    >
+                                        Full Name
+                                    </label>
+                                    <input
+                                        id="name"
+                                        type="text"
+                                        value={name}
+                                        onChange={(e) => setName(e.target.value)}
+                                        required
+                                        className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                                        placeholder="John Doe"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label
+                                        htmlFor="email"
+                                        className="block font-medium text-gray-700 text-sm"
+                                    >
+                                        Email
+                                    </label>
+                                    <input
+                                        id="email"
+                                        type="email"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        required
+                                        className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                                        placeholder="you@example.com"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label
+                                        htmlFor="password"
+                                        className="block font-medium text-gray-700 text-sm"
+                                    >
+                                        Password
+                                    </label>
+                                    <input
+                                        id="password"
+                                        type="password"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        required
+                                        minLength={8}
+                                        className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                                        placeholder="At least 8 characters"
+                                    />
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    disabled={isSubmitting}
+                                    className="w-full rounded-md bg-emerald-600 px-4 py-2 font-medium text-white transition-colors hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    {isSubmitting ? 'Creating account...' : 'Create account'}
+                                </button>
+                            </form>
                         </div>
 
                         <div className="text-center">

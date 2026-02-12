@@ -1,14 +1,13 @@
-import { clerkMiddleware } from '@clerk/astro/server';
+import { defineMiddleware } from 'astro:middleware';
 
 /**
- * Astro middleware that initializes Clerk authentication for every request.
+ * Astro middleware for Better Auth session handling.
  *
- * This injects `auth()` and `user()` helpers into `Astro.locals`, enabling
- * server-side aware components like `SignedIn` / `SignedOut` and UI widgets
- * such as `SignInButton` and `UserButton` to work correctly during SSR.
- *
- * Ensure the following environment variables are configured:
- * - PUBLIC_CLERK_PUBLISHABLE_KEY (client-side)
- * - CLERK_SECRET_KEY (server-side)
+ * Better Auth uses cookie-based sessions that are automatically
+ * sent with requests. Auth-protected pages validate sessions by
+ * calling the Better Auth API directly. This middleware is a
+ * pass-through that can be extended for session pre-loading.
  */
-export const onRequest = clerkMiddleware();
+export const onRequest = defineMiddleware(async (_context, next) => {
+    return next();
+});

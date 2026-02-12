@@ -1,29 +1,10 @@
-import { getAuth } from '@clerk/tanstack-react-start/server';
+import { fetchAuthSession } from '@/lib/auth-session';
 import { createFileRoute, isRedirect, redirect } from '@tanstack/react-router';
-import { createServerFn } from '@tanstack/react-start';
-import { getWebRequest } from '@tanstack/react-start/server';
-
-/**
- * Server function to check authentication
- */
-const fetchAuthState = createServerFn({ method: 'GET' }).handler(async () => {
-    const request = getWebRequest();
-    if (!request) {
-        return { userId: null, isAuthenticated: false };
-    }
-
-    const { userId } = await getAuth(request);
-
-    return {
-        userId,
-        isAuthenticated: !!userId
-    };
-});
 
 export const Route = createFileRoute('/')({
     beforeLoad: async () => {
         try {
-            const authState = await fetchAuthState();
+            const authState = await fetchAuthSession();
 
             // If authenticated, redirect to dashboard
             if (authState.isAuthenticated) {

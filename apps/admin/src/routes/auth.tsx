@@ -1,26 +1,6 @@
 import { useTranslations } from '@/hooks/use-translations';
-import { getAuth } from '@clerk/tanstack-react-start/server';
+import { fetchAuthSession } from '@/lib/auth-session';
 import { Link, Outlet, createFileRoute, redirect } from '@tanstack/react-router';
-import { createServerFn } from '@tanstack/react-start';
-import { getWebRequest } from '@tanstack/react-start/server';
-
-/**
- * Server function to check if user is already authenticated
- * If authenticated, they should be redirected to dashboard
- */
-const checkAlreadyAuthenticated = createServerFn({ method: 'GET' }).handler(async () => {
-    const request = getWebRequest();
-    if (!request) {
-        return { isAuthenticated: false };
-    }
-
-    const { userId } = await getAuth(request);
-
-    return {
-        userId,
-        isAuthenticated: !!userId
-    };
-});
 
 /**
  * NotFoundComponent for auth routes
@@ -70,7 +50,7 @@ function AuthNotFoundComponent() {
  */
 export const Route = createFileRoute('/auth')({
     beforeLoad: async () => {
-        const authState = await checkAlreadyAuthenticated();
+        const authState = await fetchAuthSession();
 
         // If already authenticated, redirect to dashboard
         if (authState.isAuthenticated) {
