@@ -33,7 +33,7 @@ export class SponsorshipLevelModel extends BaseModel<SponsorshipLevel> {
                 .limit(1);
 
             logQuery(this.entityName, 'findBySlug', { slug }, result);
-            return (result[0] as SponsorshipLevel) ?? null;
+            return (result[0] as unknown as SponsorshipLevel) ?? null;
         } catch (error) {
             logError(this.entityName, 'findBySlug', { slug }, error as Error);
             throw new DbError(this.entityName, 'findBySlug', { slug }, (error as Error).message);
@@ -92,7 +92,7 @@ export class SponsorshipLevelModel extends BaseModel<SponsorshipLevel> {
                 });
 
                 logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
-                return result as SponsorshipLevel | null;
+                return result as unknown as SponsorshipLevel | null;
             }
 
             const result = await this.findOne(where);

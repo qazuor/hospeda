@@ -1,8 +1,8 @@
 import type { AccommodationReview } from '@repo/schemas';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { BaseModel } from '../../base/base.model.ts';
+import type { schema } from '../../client.ts';
 import { accommodationReviews } from '../../schemas/accommodation/accommodation_review.dbschema.ts';
-import type * as schema from '../../schemas/index.ts';
 import { buildWhereClause } from '../../utils/drizzle-helpers.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
@@ -64,7 +64,10 @@ export class AccommodationReviewModel extends BaseModel<AccommodationReview> {
                     this.count(safeWhere, tx)
                 ]);
 
-                const result = { items: items as AccommodationReviewWithRelations[], total };
+                const result = {
+                    items: items as unknown as AccommodationReviewWithRelations[],
+                    total
+                };
                 try {
                     logQuery(this.entityName, 'findAllWithUser', logContext, result);
                 } catch {}
@@ -77,7 +80,7 @@ export class AccommodationReviewModel extends BaseModel<AccommodationReview> {
             });
 
             const result = {
-                items: items as AccommodationReviewWithRelations[],
+                items: items as unknown as AccommodationReviewWithRelations[],
                 total: items.length
             };
             try {

@@ -1,5 +1,5 @@
 import type { Destination, DestinationWithAttractionNames } from '@repo/schemas';
-import { type SQL, and, asc, count, desc, eq, ilike, or } from 'drizzle-orm';
+import { type AnyColumn, type SQL, and, asc, count, desc, eq, ilike, or } from 'drizzle-orm';
 import { BaseModel } from '../../base/base.model.ts';
 import { getDb } from '../../client.ts';
 import { attractions } from '../../schemas/destination/attraction.dbschema.ts';
@@ -47,7 +47,7 @@ export class DestinationModel extends BaseModel<Destination> {
                     with: withObj
                 });
                 logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
-                return result as Destination | null;
+                return result as unknown as Destination | null;
             }
             // Fallback to base findOne if there are no relations
             const result = await this.findOne(where);
@@ -76,11 +76,11 @@ export class DestinationModel extends BaseModel<Destination> {
         const db = getDb();
         try {
             const results = await db.query.destinations.findMany({
-                where: (fields, { eq }) => eq(fields.attractions.attractionId, attractionId),
+                where: (fields, { eq }) => eq(fields.id, attractionId),
                 with: { attractions: true }
             });
             logQuery(this.entityName, 'findAllByAttractionId', { attractionId }, results);
-            return results as Destination[];
+            return results as unknown as Destination[];
         } catch (error) {
             logError(this.entityName, 'findAllByAttractionId', { attractionId }, error as Error);
             throw new DbError(
@@ -126,17 +126,25 @@ export class DestinationModel extends BaseModel<Destination> {
 
             // Handle other filters (simple equality)
             for (const [key, value] of Object.entries(filters).filter(([key]) => key !== 'q')) {
-                if (value !== undefined && value !== null && destinations[key]) {
-                    whereClauses.push(eq(destinations[key], value));
+                const column = destinations[key as keyof typeof destinations];
+                if (
+                    value !== undefined &&
+                    value !== null &&
+                    column &&
+                    typeof column === 'object' &&
+                    'name' in column
+                ) {
+                    whereClauses.push(eq(column as AnyColumn, value));
                 }
             }
 
             const where = whereClauses.length > 0 ? and(...whereClauses) : undefined;
 
             // Build order array using Drizzle's asc/desc
-            const orderArr = Object.entries(orderBy).map(([field, dir]) =>
-                dir === 'asc' ? asc(destinations[field]) : desc(destinations[field])
-            );
+            const orderArr = Object.entries(orderBy).map(([field, dir]) => {
+                const column = destinations[field as keyof typeof destinations] as AnyColumn;
+                return dir === 'asc' ? asc(column) : desc(column);
+            });
 
             const offset = (page - 1) * pageSize;
 
@@ -218,17 +226,25 @@ export class DestinationModel extends BaseModel<Destination> {
 
             // Handle other filters (simple equality)
             for (const [key, value] of Object.entries(filters).filter(([key]) => key !== 'q')) {
-                if (value !== undefined && value !== null && destinations[key]) {
-                    whereClauses.push(eq(destinations[key], value));
+                const column = destinations[key as keyof typeof destinations];
+                if (
+                    value !== undefined &&
+                    value !== null &&
+                    column &&
+                    typeof column === 'object' &&
+                    'name' in column
+                ) {
+                    whereClauses.push(eq(column as AnyColumn, value));
                 }
             }
 
             const where = whereClauses.length > 0 ? and(...whereClauses) : undefined;
 
             // Build order array using Drizzle's asc/desc
-            const orderArr = Object.entries(orderBy).map(([field, dir]) =>
-                dir === 'asc' ? asc(destinations[field]) : desc(destinations[field])
-            );
+            const orderArr = Object.entries(orderBy).map(([field, dir]) => {
+                const column = destinations[field as keyof typeof destinations] as AnyColumn;
+                return dir === 'asc' ? asc(column) : desc(column);
+            });
 
             const offset = (page - 1) * pageSize;
             const items = await db
@@ -277,8 +293,15 @@ export class DestinationModel extends BaseModel<Destination> {
 
             // Handle other filters (simple equality)
             for (const [key, value] of Object.entries(filters).filter(([key]) => key !== 'q')) {
-                if (value !== undefined && value !== null && destinations[key]) {
-                    whereClauses.push(eq(destinations[key], value));
+                const column = destinations[key as keyof typeof destinations];
+                if (
+                    value !== undefined &&
+                    value !== null &&
+                    column &&
+                    typeof column === 'object' &&
+                    'name' in column
+                ) {
+                    whereClauses.push(eq(column as AnyColumn, value));
                 }
             }
 

@@ -4,8 +4,8 @@ import type {
     DestinationSummary,
     UserSummary
 } from '@repo/schemas';
-import type { SQL } from 'drizzle-orm';
-import { and, asc, count, desc, eq, gte, lte, ne } from 'drizzle-orm';
+import type { AnyColumn, SQL } from 'drizzle-orm';
+import { and, asc, count, desc, eq, ne, sql } from 'drizzle-orm';
 import { BaseModel } from '../../base/base.model.ts';
 import { getDb } from '../../client.ts';
 import { accommodations } from '../../schemas/accommodation/accommodation.dbschema.ts';
@@ -25,22 +25,22 @@ export class AccommodationModel extends BaseModel<Accommodation> {
 
         const whereClauses = [];
         if (params.ownerId) {
-            whereClauses.push(eq(this.table.ownerId, params.ownerId));
+            whereClauses.push(eq(accommodations.ownerId, params.ownerId));
         }
         if (params.type) {
-            whereClauses.push(eq(this.table.type, params.type));
+            whereClauses.push(eq(accommodations.type, params.type));
         }
         if (params.minPrice !== undefined) {
-            whereClauses.push(gte(this.table.price, params.minPrice));
+            whereClauses.push(sql`${accommodations.price} >= ${params.minPrice}`);
         }
         if (params.maxPrice !== undefined) {
-            whereClauses.push(lte(this.table.price, params.maxPrice));
+            whereClauses.push(sql`${accommodations.price} <= ${params.maxPrice}`);
         }
         if (params.destinationId) {
-            whereClauses.push(eq(this.table.destinationId, params.destinationId));
+            whereClauses.push(eq(accommodations.destinationId, params.destinationId));
         }
         if (params.excludeRestricted) {
-            whereClauses.push(ne(this.table.visibility, 'RESTRICTED'));
+            whereClauses.push(ne(accommodations.visibility, 'RESTRICTED'));
         }
 
         const where = and(...whereClauses);
@@ -57,22 +57,22 @@ export class AccommodationModel extends BaseModel<Accommodation> {
 
         const whereClauses = [];
         if (params.ownerId) {
-            whereClauses.push(eq(this.table.ownerId, params.ownerId));
+            whereClauses.push(eq(accommodations.ownerId, params.ownerId));
         }
         if (params.type) {
-            whereClauses.push(eq(this.table.type, params.type));
+            whereClauses.push(eq(accommodations.type, params.type));
         }
         if (params.minPrice !== undefined) {
-            whereClauses.push(gte(this.table.price, params.minPrice));
+            whereClauses.push(sql`${accommodations.price} >= ${params.minPrice}`);
         }
         if (params.maxPrice !== undefined) {
-            whereClauses.push(lte(this.table.price, params.maxPrice));
+            whereClauses.push(sql`${accommodations.price} <= ${params.maxPrice}`);
         }
         if (params.destinationId) {
-            whereClauses.push(eq(this.table.destinationId, params.destinationId));
+            whereClauses.push(eq(accommodations.destinationId, params.destinationId));
         }
         if (params.excludeRestricted) {
-            whereClauses.push(ne(this.table.visibility, 'RESTRICTED'));
+            whereClauses.push(ne(accommodations.visibility, 'RESTRICTED'));
         }
         // Note: Filtering by amenities would require a join and is more complex.
         // This is a simplified example.
@@ -82,8 +82,12 @@ export class AccommodationModel extends BaseModel<Accommodation> {
         const orderBy = [];
         if (params.sortBy) {
             const column = accommodations[params.sortBy as keyof typeof accommodations];
-            if (column) {
-                orderBy.push(params.sortOrder === 'desc' ? desc(column) : asc(column));
+            if (column && typeof column === 'object' && 'name' in column) {
+                orderBy.push(
+                    params.sortOrder === 'desc'
+                        ? desc(column as AnyColumn)
+                        : asc(column as AnyColumn)
+                );
             }
         }
 
@@ -103,7 +107,7 @@ export class AccommodationModel extends BaseModel<Accommodation> {
         const [items, totalResult] = await Promise.all([resultsQuery, totalQuery]);
         const total = totalResult[0]?.count ?? 0;
 
-        return { items: items as Accommodation[], total };
+        return { items: items as unknown as Accommodation[], total };
     }
 
     /**
@@ -124,22 +128,22 @@ export class AccommodationModel extends BaseModel<Accommodation> {
 
         const whereClauses = [];
         if (params.ownerId) {
-            whereClauses.push(eq(this.table.ownerId, params.ownerId));
+            whereClauses.push(eq(accommodations.ownerId, params.ownerId));
         }
         if (params.type) {
-            whereClauses.push(eq(this.table.type, params.type));
+            whereClauses.push(eq(accommodations.type, params.type));
         }
         if (params.minPrice !== undefined) {
-            whereClauses.push(gte(this.table.price, params.minPrice));
+            whereClauses.push(sql`${accommodations.price} >= ${params.minPrice}`);
         }
         if (params.maxPrice !== undefined) {
-            whereClauses.push(lte(this.table.price, params.maxPrice));
+            whereClauses.push(sql`${accommodations.price} <= ${params.maxPrice}`);
         }
         if (params.destinationId) {
-            whereClauses.push(eq(this.table.destinationId, params.destinationId));
+            whereClauses.push(eq(accommodations.destinationId, params.destinationId));
         }
         if (params.excludeRestricted) {
-            whereClauses.push(ne(this.table.visibility, 'RESTRICTED'));
+            whereClauses.push(ne(accommodations.visibility, 'RESTRICTED'));
         }
 
         const where = and(...whereClauses);
@@ -147,8 +151,12 @@ export class AccommodationModel extends BaseModel<Accommodation> {
         const orderBy = [];
         if (params.sortBy) {
             const column = accommodations[params.sortBy as keyof typeof accommodations];
-            if (column) {
-                orderBy.push(params.sortOrder === 'desc' ? desc(column) : asc(column));
+            if (column && typeof column === 'object' && 'name' in column) {
+                orderBy.push(
+                    params.sortOrder === 'desc'
+                        ? desc(column as AnyColumn)
+                        : asc(column as AnyColumn)
+                );
             }
         }
 
@@ -196,7 +204,7 @@ export class AccommodationModel extends BaseModel<Accommodation> {
         const totalResult = await totalQuery;
 
         return {
-            items: results as Array<
+            items: results as unknown as Array<
                 Accommodation & {
                     destination?: DestinationSummary;
                     owner?: UserSummary;

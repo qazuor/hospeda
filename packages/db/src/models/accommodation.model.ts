@@ -42,7 +42,7 @@ export class AccommodationModel extends BaseModel<Accommodation> {
                     with: { destination: true }
                 });
                 logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
-                return result as Accommodation | null;
+                return result as unknown as Accommodation | null;
             }
             // Fallback to base findOne if no relations requested
             const result = await this.findOne(where);

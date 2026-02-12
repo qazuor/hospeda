@@ -43,7 +43,7 @@ export class EventModel extends BaseModel<Event> {
                     with: withObj
                 });
                 logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
-                return result as Event | null;
+                return result as unknown as Event | null;
             }
             const result = await this.findOne(where);
             logQuery(this.entityName, 'findWithRelations', { where, relations }, result);

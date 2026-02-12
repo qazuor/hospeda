@@ -36,7 +36,7 @@ export class RDestinationAttractionModel extends BaseModel<DestinationAttraction
                     with: withObj
                 });
                 logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
-                return result as DestinationAttractionRelation | null;
+                return result as unknown as DestinationAttractionRelation | null;
             }
             const result = await this.findOne(where);
             logQuery(this.entityName, 'findWithRelations', { where, relations }, result);

@@ -36,7 +36,7 @@ export class RAccommodationFeatureModel extends BaseModel<AccommodationFeature> 
                     with: withObj
                 });
                 logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
-                return result as AccommodationFeature | null;
+                return result as unknown as AccommodationFeature | null;
             }
             const result = await this.findOne(where);
             logQuery(this.entityName, 'findWithRelations', { where, relations }, result);

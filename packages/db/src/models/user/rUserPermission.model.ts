@@ -1,7 +1,7 @@
 import type { UserPermissionAssignment } from '@repo/schemas';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { BaseModel } from '../../base/base.model.ts';
-import type * as schema from '../../schemas/index.ts';
+import type { schema } from '../../client.ts';
 import { userPermission } from '../../schemas/user/r_user_permission.dbschema.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
