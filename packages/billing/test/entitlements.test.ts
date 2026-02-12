@@ -33,7 +33,7 @@ describe('Entitlement Configuration', () => {
                 (e) => e.key === EntitlementKey.PUBLISH_ACCOMMODATIONS
             );
             expect(entitlement).toBeDefined();
-            expect(entitlement?.name).toBe('Publicar alojamientos');
+            expect(entitlement?.name).toBe('Publish accommodations');
         });
 
         it('should include VIEW_ADVANCED_STATS', () => {
@@ -50,7 +50,7 @@ describe('Entitlement Configuration', () => {
                 (e) => e.key === EntitlementKey.MULTI_PROPERTY_MANAGEMENT
             );
             expect(entitlement).toBeDefined();
-            expect(entitlement?.name).toBe('Gestion multi-propiedad');
+            expect(entitlement?.name).toBe('Multi-property management');
         });
 
         it('should include CONSOLIDATED_ANALYTICS', () => {
@@ -67,7 +67,7 @@ describe('Entitlement Configuration', () => {
                 (e) => e.key === EntitlementKey.SAVE_FAVORITES
             );
             expect(entitlement).toBeDefined();
-            expect(entitlement?.name).toBe('Guardar favoritos');
+            expect(entitlement?.name).toBe('Save favorites');
         });
 
         it('should include VIP_SUPPORT', () => {

@@ -76,7 +76,7 @@ describe('Plan Configuration', () => {
         it('should have required fields in owner-basico plan', () => {
             expect(OWNER_BASICO_PLAN).toMatchObject({
                 slug: 'owner-basico',
-                name: 'Basico',
+                name: 'Basic',
                 category: 'owner',
                 isActive: true,
                 isDefault: true
