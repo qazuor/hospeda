@@ -7,6 +7,13 @@
             "status": "completed",
             "progress": "34/34",
             "path": "SPEC-003-billing-production-readiness"
+        },
+        {
+            "specId": "SPEC-004",
+            "title": "Clerk to Better Auth Migration",
+            "status": "completed",
+            "progress": "38/38",
+            "path": "SPEC-004-clerk-to-better-auth-migration"
         }
     ],
     "standalone": {
