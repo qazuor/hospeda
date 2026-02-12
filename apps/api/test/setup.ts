@@ -21,11 +21,10 @@ beforeAll(async () => {
     // Mock environment variables for testing
     process.env.PORT = '3001';
     process.env.HOSPEDA_DATABASE_URL = 'postgresql://test:test@localhost:5432/test_db';
-    process.env.HOSPEDA_CLERK_SECRET_KEY = 'test_clerk_secret';
-    process.env.HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY = 'test_clerk_publishable';
-    process.env.API_VALIDATION_CLERK_AUTH_ENABLED = 'false';
+    process.env.HOSPEDA_BETTER_AUTH_SECRET = 'test_better_auth_secret_key_32chars!';
+    process.env.API_VALIDATION_AUTH_ENABLED = 'false';
     // Enable mock authentication for tests (required for isMockAuthAllowed())
-    process.env.DISABLE_CLERK_AUTH = 'true';
+    process.env.DISABLE_AUTH = 'true';
 
     // Initialize environment validation
     try {

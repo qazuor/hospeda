@@ -65,14 +65,22 @@ const ApiEnvSchema = z.object({
     HOSPEDA_API_URL: z.string().url('Must be a valid API URL'),
     HOSPEDA_DATABASE_URL: z.string().min(1, 'Database URL is required'),
 
-    // Authentication (Clerk) - Always required, no test defaults
-    // Use DISABLE_CLERK_AUTH=true in test environment to bypass authentication
-    HOSPEDA_CLERK_SECRET_KEY: z.string().min(1, 'Clerk secret key is required'),
-    HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().min(1, 'Clerk publishable key is required'),
-    HOSPEDA_CLERK_WEBHOOK_SECRET: z.string().optional(),
+    // Authentication (Better Auth) - Secret is required
+    // Use DISABLE_AUTH=true in test environment to bypass authentication
+    HOSPEDA_BETTER_AUTH_SECRET: z.string().min(1, 'Better Auth secret is required'),
+
+    // Social OAuth providers (optional)
+    HOSPEDA_GOOGLE_CLIENT_ID: z.string().optional(),
+    HOSPEDA_GOOGLE_CLIENT_SECRET: z.string().optional(),
+    HOSPEDA_FACEBOOK_CLIENT_ID: z.string().optional(),
+    HOSPEDA_FACEBOOK_CLIENT_SECRET: z.string().optional(),
+
+    // Trusted origins for auth
+    HOSPEDA_SITE_URL: z.string().url().optional(),
+    HOSPEDA_ADMIN_URL: z.string().url().optional(),
 
     // Test environment flags (explicit opt-in required)
-    DISABLE_CLERK_AUTH: z.coerce.boolean().default(false),
+    DISABLE_AUTH: z.coerce.boolean().default(false),
     ALLOW_MOCK_ACTOR: z.coerce.boolean().default(false),
 
     // Logging Configuration (API-specific)
@@ -201,8 +209,8 @@ const ApiEnvSchema = z.object({
         .string()
         .default('application/json,multipart/form-data'),
     API_VALIDATION_REQUIRED_HEADERS: z.string().default('user-agent'),
-    API_VALIDATION_CLERK_AUTH_ENABLED: z.coerce.boolean().default(true),
-    API_VALIDATION_CLERK_AUTH_HEADERS: z.string().default('authorization'),
+    API_VALIDATION_AUTH_ENABLED: z.coerce.boolean().default(true),
+    API_VALIDATION_AUTH_HEADERS: z.string().default('authorization'),
     API_VALIDATION_SANITIZE_ENABLED: z.coerce.boolean().default(true),
     API_VALIDATION_SANITIZE_MAX_STRING_LENGTH: z.coerce.number().default(1000),
     API_VALIDATION_SANITIZE_REMOVE_HTML_TAGS: z.coerce.boolean().default(true),
@@ -412,10 +420,8 @@ export const getValidationConfig = () => ({
     requiredHeaders: parseCommaSeparated(
         safeEnv.get('API_VALIDATION_REQUIRED_HEADERS', 'user-agent')
     ),
-    clerkAuthEnabled: safeEnv.getBoolean('API_VALIDATION_CLERK_AUTH_ENABLED', true),
-    clerkAuthHeaders: parseCommaSeparated(
-        safeEnv.get('API_VALIDATION_CLERK_AUTH_HEADERS', 'authorization')
-    ),
+    authEnabled: safeEnv.getBoolean('API_VALIDATION_AUTH_ENABLED', true),
+    authHeaders: parseCommaSeparated(safeEnv.get('API_VALIDATION_AUTH_HEADERS', 'authorization')),
     sanitizeEnabled: safeEnv.getBoolean('API_VALIDATION_SANITIZE_ENABLED', true),
     sanitizeMaxStringLength: safeEnv.getNumber('API_VALIDATION_SANITIZE_MAX_STRING_LENGTH', 1000),
     sanitizeRemoveHtmlTags: safeEnv.getBoolean('API_VALIDATION_SANITIZE_REMOVE_HTML_TAGS', true),

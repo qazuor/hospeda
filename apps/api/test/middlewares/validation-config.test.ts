@@ -13,8 +13,8 @@ vi.mock('../../src/utils/env', () => ({
         API_VALIDATION_MAX_REQUEST_TIME: 15000, // 15s
         API_VALIDATION_ALLOWED_CONTENT_TYPES: 'application/json,text/plain',
         API_VALIDATION_REQUIRED_HEADERS: 'user-agent,content-type',
-        API_VALIDATION_CLERK_AUTH_ENABLED: false,
-        API_VALIDATION_CLERK_AUTH_HEADERS: 'authorization,x-api-key',
+        API_VALIDATION_AUTH_ENABLED: false,
+        API_VALIDATION_AUTH_HEADERS: 'authorization,x-api-key',
         API_VALIDATION_SANITIZE_ENABLED: true,
         API_VALIDATION_SANITIZE_MAX_STRING_LENGTH: 500,
         API_VALIDATION_SANITIZE_REMOVE_HTML_TAGS: false,
@@ -36,8 +36,8 @@ describe('Validation Configuration', () => {
             expect(config.maxRequestTime).toBe(15000); // 15s
             expect(config.allowedContentTypes).toEqual(['application/json', 'text/plain']);
             expect(config.requiredHeaders).toEqual(['user-agent', 'content-type']);
-            expect(config.clerkAuth.enabled).toBe(false);
-            expect(config.clerkAuth.requiredHeaders).toEqual(['authorization', 'x-api-key']);
+            expect(config.auth.enabled).toBe(false);
+            expect(config.auth.requiredHeaders).toEqual(['authorization', 'x-api-key']);
             expect(config.sanitizeOptions.maxStringLength).toBe(500);
             expect(config.sanitizeOptions.removeHtmlTags).toBe(false);
             expect(config.sanitizeOptions.allowedCharacters).toBe('[a-zA-Z0-9]');
@@ -66,8 +66,8 @@ describe('Validation Configuration', () => {
                 'multipart/form-data'
             ]);
             expect(defaultValidationConfig.requiredHeaders).toEqual(['user-agent']);
-            expect(defaultValidationConfig.clerkAuth.enabled).toBe(true);
-            expect(defaultValidationConfig.clerkAuth.requiredHeaders).toEqual(['authorization']);
+            expect(defaultValidationConfig.auth.enabled).toBe(true);
+            expect(defaultValidationConfig.auth.requiredHeaders).toEqual(['authorization']);
         });
     });
 });

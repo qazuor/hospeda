@@ -17,7 +17,7 @@ export const ValidationConfigSchema = z.object({
         maxStringLength: z.number().positive().default(1000),
         allowedCharacters: z.string().default('/[\\w\\s\\-.,!?@#$%&*()+=]/g')
     }),
-    clerkAuth: z.object({
+    auth: z.object({
         enabled: z.boolean().default(true),
         requiredHeaders: z.array(z.string()).default(['authorization'])
     })
@@ -41,7 +41,7 @@ export const defaultValidationConfig: ValidationConfig = {
         maxStringLength: 1000,
         allowedCharacters: '/[\\w\\s\\-.,!?@#$%&*()+=]/g'
     },
-    clerkAuth: {
+    auth: {
         enabled: true,
         requiredHeaders: ['authorization']
     }
@@ -52,7 +52,7 @@ export const defaultValidationConfig: ValidationConfig = {
  */
 export const CRITICAL_HEADERS = {
     // Security
-    Authorization: 'Bearer token for Clerk authentication',
+    Authorization: 'Bearer token for authentication',
     'User-Agent': 'Client identification (used in rate limiting)',
 
     // Content
@@ -85,14 +85,14 @@ export const getValidationConfig = (): ValidationConfig => {
             typeof process.env.API_VALIDATION_REQUIRED_HEADERS === 'string'
                 ? process.env.API_VALIDATION_REQUIRED_HEADERS
                 : env.API_VALIDATION_REQUIRED_HEADERS;
-        const rawClerkHeaders =
-            typeof process.env.API_VALIDATION_CLERK_AUTH_HEADERS === 'string'
-                ? process.env.API_VALIDATION_CLERK_AUTH_HEADERS
-                : env.API_VALIDATION_CLERK_AUTH_HEADERS;
-        const clerkEnabled =
-            typeof process.env.API_VALIDATION_CLERK_AUTH_ENABLED === 'string'
-                ? process.env.API_VALIDATION_CLERK_AUTH_ENABLED === 'true'
-                : env.API_VALIDATION_CLERK_AUTH_ENABLED;
+        const rawAuthHeaders =
+            typeof process.env.API_VALIDATION_AUTH_HEADERS === 'string'
+                ? process.env.API_VALIDATION_AUTH_HEADERS
+                : env.API_VALIDATION_AUTH_HEADERS;
+        const authEnabled =
+            typeof process.env.API_VALIDATION_AUTH_ENABLED === 'string'
+                ? process.env.API_VALIDATION_AUTH_ENABLED === 'true'
+                : env.API_VALIDATION_AUTH_ENABLED;
 
         return {
             maxBodySize:
@@ -125,9 +125,9 @@ export const getValidationConfig = (): ValidationConfig => {
                         ? process.env.API_VALIDATION_SANITIZE_ALLOWED_CHARS
                         : env.API_VALIDATION_SANITIZE_ALLOWED_CHARS
             },
-            clerkAuth: {
-                enabled: clerkEnabled,
-                requiredHeaders: rawClerkHeaders
+            auth: {
+                enabled: authEnabled,
+                requiredHeaders: rawAuthHeaders
                     .split(',')
                     .map((s) => s.trim())
                     .filter(Boolean)

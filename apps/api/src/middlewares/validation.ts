@@ -74,11 +74,11 @@ export const createValidationMiddleware = (options: ValidationMiddlewareOptions 
                 }
             }
 
-            // 4. Validate Authorization header format (if Clerk is enabled)
-            if (config.clerkAuth.enabled) {
+            // 4. Validate Authorization header format (if auth validation is enabled)
+            if (config.auth.enabled) {
                 const authHeader = c.req.header('authorization');
                 if (authHeader) {
-                    // Validate Bearer token format for Clerk
+                    // Validate Bearer token format
                     if (!authHeader.startsWith('Bearer ')) {
                         throw new ValidationError(
                             ValidationErrorCode.INVALID_AUTHORIZATION_FORMAT,
@@ -86,7 +86,7 @@ export const createValidationMiddleware = (options: ValidationMiddlewareOptions 
                         );
                     }
 
-                    // Validate token length (Clerk tokens are typically long)
+                    // Validate token length
                     const token = authHeader.substring(7); // Remove 'Bearer ' prefix
                     if (token.length < 10) {
                         throw new ValidationError(

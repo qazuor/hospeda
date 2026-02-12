@@ -17,8 +17,7 @@ const createValidTestEnv = (overrides: Record<string, string | undefined> = {}) 
     NODE_ENV: 'test' as string | undefined,
     HOSPEDA_API_URL: 'http://localhost:3001',
     HOSPEDA_DATABASE_URL: 'postgresql://localhost:5432/hospeda_test',
-    HOSPEDA_CLERK_SECRET_KEY: 'YOUR_TEST_SECRET_HERE',
-    HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY: 'YOUR_TEST_PUBLISHABLE_HERE',
+    HOSPEDA_BETTER_AUTH_SECRET: 'test_better_auth_secret_key_32chars!',
     ...overrides
 });
 
@@ -143,8 +142,8 @@ describe('Environment Configuration', () => {
                 'application/json,multipart/form-data'
             );
             expect(envModule.env.API_VALIDATION_REQUIRED_HEADERS).toBe('user-agent');
-            expect(envModule.env.API_VALIDATION_CLERK_AUTH_ENABLED).toBe(true);
-            expect(envModule.env.API_VALIDATION_CLERK_AUTH_HEADERS).toBe('authorization');
+            expect(envModule.env.API_VALIDATION_AUTH_ENABLED).toBe(true);
+            expect(envModule.env.API_VALIDATION_AUTH_HEADERS).toBe('authorization');
             expect(envModule.env.API_VALIDATION_SANITIZE_ENABLED).toBe(true);
             expect(envModule.env.API_VALIDATION_SANITIZE_MAX_STRING_LENGTH).toBe(1000);
             expect(envModule.env.API_VALIDATION_SANITIZE_REMOVE_HTML_TAGS).toBe(true);
@@ -267,15 +266,13 @@ describe('Environment Configuration', () => {
             expect(envModule.env.HOSPEDA_API_URL).toBe('http://localhost:8080');
         });
 
-        it('should require CLERK keys', async () => {
+        it('should require Better Auth secret', async () => {
             process.env = createValidTestEnv({
-                HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY: 'pk_test_key',
-                HOSPEDA_CLERK_SECRET_KEY: 'sk_test_key'
+                HOSPEDA_BETTER_AUTH_SECRET: 'my_custom_auth_secret_key_32!'
             });
             const envModule = await import('../../src/utils/env');
             envModule.validateApiEnv();
-            expect(envModule.env.HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY).toBe('pk_test_key');
-            expect(envModule.env.HOSPEDA_CLERK_SECRET_KEY).toBe('sk_test_key');
+            expect(envModule.env.HOSPEDA_BETTER_AUTH_SECRET).toBe('my_custom_auth_secret_key_32!');
         });
     });
 
