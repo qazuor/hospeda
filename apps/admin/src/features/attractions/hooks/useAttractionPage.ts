@@ -72,7 +72,7 @@ export const useAttractionPage = (entityId: string) => {
     const switchToEdit = () => setMode('edit');
 
     // Navigation
-    const goToList = () => navigate({ to: '/attractions' });
+    const goToList = () => navigate({ to: '/content/destination-attractions' });
     const goToView = () => navigate({ to: `/attractions/${entityId}` });
     const goToEdit = () => navigate({ to: `/attractions/${entityId}/edit` });
 

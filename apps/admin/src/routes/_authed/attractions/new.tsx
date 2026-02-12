@@ -51,7 +51,7 @@ function AttractionCreatePage() {
                 viewSections: [],
                 editSections: createSections,
                 routes: {
-                    base: '/attractions',
+                    base: '/content/destination-attractions',
                     view: '/attractions/$id',
                     edit: '/attractions/$id/edit',
                     sections: {},
@@ -169,7 +169,7 @@ function AttractionCreatePage() {
     };
 
     const handleCancel = () => {
-        navigate({ to: '/attractions' });
+        navigate({ to: '/content/destination-attractions' });
     };
 
     return (

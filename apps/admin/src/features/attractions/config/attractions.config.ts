@@ -14,7 +14,7 @@ export const attractionsConfig: EntityConfig<Attraction> = {
     apiEndpoint: '/api/v1/public/attractions',
 
     // Routes
-    basePath: '/attractions',
+    basePath: '/content/destination-attractions',
     detailPath: '/attractions/[slug]',
 
     // Schemas - Use type assertion for Zod version compatibility
