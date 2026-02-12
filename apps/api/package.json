@@ -36,6 +36,7 @@
         "@repo/billing": "workspace:*",
         "@repo/config": "workspace:*",
         "@repo/db": "workspace:*",
+        "@repo/email": "workspace:*",
         "@repo/logger": "workspace:*",
         "@repo/notifications": "workspace:*",
         "@repo/schemas": "workspace:*",
