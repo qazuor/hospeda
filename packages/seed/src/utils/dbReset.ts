@@ -1,10 +1,11 @@
 import { getDb, schema } from '@repo/db';
+import type { Table } from 'drizzle-orm';
 import { STATUS_ICONS } from './icons.js';
 import { IdMapper } from './idMapper.js';
 import { logger } from './logger.js';
 
 // Define all tables in the correct order (children before parents)
-const allTables = [
+const allTables: Table[] = [
     // Relationship tables (children)
     schema.rDestinationAttraction,
     schema.rEntityTag,
@@ -35,7 +36,7 @@ const allTables = [
 ];
 
 // Table name mapping for logging
-const tableNameMap = new Map([
+const tableNameMap = new Map<Table, string>([
     [schema.rDestinationAttraction, 'r_destination_attraction'],
     [schema.rEntityTag, 'r_entity_tag'],
     [schema.rAccommodationAmenity, 'r_accommodation_amenity'],
