@@ -13,8 +13,8 @@ envConfig({
 export default {
     schema: ['./src/schemas', './src/billing/schemas.ts'],
     out: './src/migrations',
-    driver: 'pg',
+    dialect: 'postgresql',
     dbCredentials: {
-        connectionString: process.env.HOSPEDA_DATABASE_URL || ''
+        url: process.env.HOSPEDA_DATABASE_URL || ''
     }
 } satisfies Config;
