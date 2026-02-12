@@ -1,54 +1,16 @@
-import { UserModel } from '@repo/db';
-import { AuthProviderEnum, PermissionEnum, RoleEnum } from '@repo/schemas';
+import { randomUUID } from 'node:crypto';
+import { UserModel, accounts, getDb } from '@repo/db';
+import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
+import { hash } from 'bcryptjs';
+import { and, eq } from 'drizzle-orm';
 import superAdminInput from '../data/user/required/super-admin-user.json';
 import { STATUS_ICONS } from './icons.js';
 import { logger } from './logger.js';
 import { summaryTracker } from './summaryTracker.js';
 
-/**
- * Updates Clerk user metadata with the database user ID
- */
-const updateClerkMetadata = async (clerkUserId: string, dbUserId: string): Promise<void> => {
-    try {
-        const clerkSecretKey = process.env.CLERK_SECRET_KEY;
-        if (!clerkSecretKey) {
-            logger.warn(
-                `${STATUS_ICONS.Warning} CLERK_SECRET_KEY not found, skipping metadata update`
-            );
-            return;
-        }
-
-        const response = await fetch(`https://api.clerk.com/v1/users/${clerkUserId}/metadata`, {
-            method: 'PATCH',
-            headers: {
-                Authorization: `Bearer ${clerkSecretKey}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                private_metadata: {
-                    userId: dbUserId,
-                    role: 'SUPER_ADMIN',
-                    updatedAt: new Date().toISOString(),
-                    source: 'seed'
-                }
-            })
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Clerk API error: ${response.status} - ${errorText}`);
-        }
-
-        logger.success({
-            msg: `${STATUS_ICONS.Success} Clerk metadata updated for user ${clerkUserId}`
-        });
-    } catch (error) {
-        logger.warn(
-            `${STATUS_ICONS.Warning} Failed to update Clerk metadata: ${(error as Error).message}`
-        );
-    }
-};
+/** Default password for seed super admin (override via SEED_SUPER_ADMIN_PASSWORD env var) */
+const DEFAULT_SEED_PASSWORD = 'SuperAdmin123!';
 
 /**
  * Normalizes user data by removing schema and ID fields that shouldn't be sent to the service.
@@ -62,12 +24,51 @@ const normalizeUserData = (userData: Record<string, unknown>) => {
 };
 
 /**
+ * Creates a Better Auth credential account record for the super admin user.
+ * This allows the super admin to sign in with email/password via Better Auth.
+ */
+const ensureCredentialAccount = async (userId: string, email: string): Promise<void> => {
+    const db = getDb();
+
+    // Check if account already exists
+    const existing = await db
+        .select()
+        .from(accounts)
+        .where(and(eq(accounts.userId, userId), eq(accounts.providerId, 'credential')))
+        .limit(1);
+
+    if (existing.length > 0) {
+        logger.info(`${STATUS_ICONS.Success} Credential account already exists for super admin`);
+        return;
+    }
+
+    // Hash the password with bcrypt (matching Better Auth's expected format)
+    const password = process.env.SEED_SUPER_ADMIN_PASSWORD || DEFAULT_SEED_PASSWORD;
+    const hashedPassword = await hash(password, 10);
+
+    await db.insert(accounts).values({
+        id: randomUUID(),
+        accountId: userId,
+        providerId: 'credential',
+        userId,
+        password: hashedPassword,
+        createdAt: new Date(),
+        updatedAt: new Date()
+    });
+
+    logger.success({
+        msg: `${STATUS_ICONS.Success} Credential account created for super admin (email: ${email})`
+    });
+};
+
+/**
  * Loads the super admin user and returns its actor information.
  *
  * This function creates the super admin user directly using the model to bypass
  * foreign key validation issues during initial seeding. It ensures that:
  * - Only one super admin exists in the system
  * - The super admin has all available permissions
+ * - A credential account exists for Better Auth email/password login
  * - The actor is properly configured for subsequent operations
  *
  * The super admin is essential for the seeding process as it provides the
@@ -75,20 +76,11 @@ const normalizeUserData = (userData: Record<string, unknown>) => {
  *
  * @returns Promise that resolves to the super admin actor
  *
- * @example
- * ```typescript
- * const superAdminActor = await loadSuperAdminAndGetActor();
- * // Returns actor with:
- * // - id: super admin user ID
- * // - role: SUPER_ADMIN
- * // - permissions: all available permissions
- * ```
- *
  * @throws {Error} When super admin creation fails
  */
 export async function loadSuperAdminAndGetActor(): Promise<Actor> {
     const separator = '#'.repeat(90);
-    const subSeparator = '─'.repeat(90);
+    const subSeparator = '\u2500'.repeat(90);
 
     logger.info(`${separator}`);
     logger.info(`${STATUS_ICONS.UserSuperAdmin}  LOADING SUPER ADMINISTRATOR`);
@@ -96,11 +88,6 @@ export async function loadSuperAdminAndGetActor(): Promise<Actor> {
 
     try {
         const userModel = new UserModel();
-
-        const seedAuthProvider: AuthProviderEnum =
-            (process.env.SEED_AUTH_PROVIDER as AuthProviderEnum | undefined) ??
-            AuthProviderEnum.CLERK;
-        const seedSuperAdminAuthProviderUserId = process.env.SEED_SUPER_ADMIN_AUTH_PROVIDER_USER_ID;
 
         // Check if super admin already exists
         const existingSuperAdmin = await userModel.findOne({
@@ -115,36 +102,11 @@ export async function loadSuperAdminAndGetActor(): Promise<Actor> {
 
             summaryTracker.trackProcessStep('Super Admin', 'success', 'Existing super admin found');
 
-            // Optionally link auth provider id if provided and not already set
-            try {
-                if (
-                    seedSuperAdminAuthProviderUserId &&
-                    (!('authProviderUserId' in existingSuperAdmin) ||
-                        !existingSuperAdmin.authProviderUserId)
-                ) {
-                    await userModel.updateById(existingSuperAdmin.id, {
-                        authProvider: seedAuthProvider,
-                        authProviderUserId: seedSuperAdminAuthProviderUserId
-                    } as Record<string, unknown>);
-                    logger.info(
-                        `${STATUS_ICONS.Success} Linked super admin with auth provider (${seedAuthProvider})`
-                    );
-
-                    // Update Clerk metadata with the database user ID
-                    await updateClerkMetadata(
-                        seedSuperAdminAuthProviderUserId,
-                        existingSuperAdmin.id
-                    );
-                } else if (!seedSuperAdminAuthProviderUserId) {
-                    logger.warn(
-                        `${STATUS_ICONS.Warning} SEED_SUPER_ADMIN_AUTH_PROVIDER_USER_ID not set; super admin won't be linked to auth provider`
-                    );
-                }
-            } catch (e) {
-                logger.warn(
-                    `${STATUS_ICONS.Warning} Could not link super admin to auth provider: ${(e as Error).message}`
-                );
-            }
+            // Ensure credential account exists for Better Auth login
+            const email =
+                ((existingSuperAdmin as Record<string, unknown>).email as string) ||
+                superAdminInput.email;
+            await ensureCredentialAccount(existingSuperAdmin.id, email);
 
             return {
                 id: existingSuperAdmin.id,
@@ -156,13 +118,7 @@ export async function loadSuperAdminAndGetActor(): Promise<Actor> {
         // Create super admin user
         const normalizedSuperAdminInput = normalizeUserData(superAdminInput);
         const createdUser = await userModel.create({
-            ...(normalizedSuperAdminInput as Record<string, unknown>),
-            ...(seedSuperAdminAuthProviderUserId
-                ? {
-                      authProvider: seedAuthProvider,
-                      authProviderUserId: seedSuperAdminAuthProviderUserId
-                  }
-                : {})
+            ...(normalizedSuperAdminInput as Record<string, unknown>)
         });
 
         if (!createdUser) {
@@ -175,14 +131,8 @@ export async function loadSuperAdminAndGetActor(): Promise<Actor> {
             msg: `${STATUS_ICONS.UserSuperAdmin} Super admin created: "${createdUser.displayName || 'Super Admin'}" (ID: ${realSuperAdminId})`
         });
 
-        // Update Clerk metadata with the database user ID if authProviderUserId exists
-        const authProviderUserId =
-            createdUser.authProviderUserId ||
-            seedSuperAdminAuthProviderUserId ||
-            superAdminInput.authProviderUserId;
-        if (authProviderUserId) {
-            await updateClerkMetadata(authProviderUserId, realSuperAdminId);
-        }
+        // Create credential account for Better Auth email/password login
+        await ensureCredentialAccount(realSuperAdminId, superAdminInput.email);
 
         logger.info(`${subSeparator}`);
 

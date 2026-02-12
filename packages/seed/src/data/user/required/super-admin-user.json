@@ -2,8 +2,8 @@
     "$schema": "../../schemas/user.schema.json",
     "id": "super-admin-user",
     "slug": "super-admin-user",
-    "authProvider": "CLERK",
-    "authProviderUserId": "user_31HTUXqo9ZFzgAfNCFhPlBVXbA1",
+    "email": "superadmin@hospeda.com",
+    "emailVerified": true,
     "role": "SUPER_ADMIN",
     "permissions": [
         "accommodation.create",
@@ -145,7 +145,7 @@
     },
     "profile": {
         "avatar": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
-        "bio": "Super administrador del sistema con acceso completo a todas las funcionalidades. Responsable de la gestión general de la plataforma y configuraciones del sistema."
+        "bio": "Super administrador del sistema con acceso completo a todas las funcionalidades. Responsable de la gestion general de la plataforma y configuraciones del sistema."
     },
     "settings": {
         "language": "es",
