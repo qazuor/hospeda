@@ -20,7 +20,9 @@ import { posts } from '../post/post.dbschema.ts';
 import { postSponsors } from '../post/post_sponsor.dbschema.ts';
 import { postSponsorships } from '../post/post_sponsorship.dbschema.ts';
 import { tags } from '../tag/tag.dbschema.ts';
+import { accounts } from './account.dbschema.ts';
 import { userPermission } from './r_user_permission.dbschema.ts';
+import { sessions } from './session.dbschema.ts';
 import { userBookmarks } from './user_bookmark.dbschema.ts';
 import { userAuthIdentities } from './user_identity.dbschema.ts';
 
@@ -69,6 +71,8 @@ export const users = pgTable(
 );
 
 export const usersRelations = relations(users, ({ many }) => ({
+    sessions: many(sessions),
+    accounts: many(accounts),
     permissions: many(userPermission),
     bookmarks: many(userBookmarks),
     authIdentities: many(userAuthIdentities),
