@@ -28,7 +28,7 @@ describe('Admin App - Basic Tests', () => {
 
     it('should have correct environment setup', () => {
         expect(process.env.NODE_ENV).toBe('test');
-        expect(process.env.PUBLIC_CLERK_PUBLISHABLE_KEY).toBe('test_clerk_publishable');
+        expect(process.env.VITE_BETTER_AUTH_URL).toBeDefined();
     });
 
     it('should handle basic math operations', () => {
