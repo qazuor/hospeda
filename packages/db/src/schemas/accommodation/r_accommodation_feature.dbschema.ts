@@ -3,7 +3,7 @@ import { index, pgTable, primaryKey, text, uuid } from 'drizzle-orm/pg-core';
 import { accommodations } from './accommodation.dbschema.ts';
 import { features } from './feature.dbschema.ts';
 
-export const rAccommodationFeature: ReturnType<typeof pgTable> = pgTable(
+export const rAccommodationFeature = pgTable(
     'r_accommodation_feature',
     {
         accommodationId: uuid('accommodation_id')

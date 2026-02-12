@@ -12,7 +12,7 @@ import {
 import { accommodations } from './accommodation.dbschema.ts';
 import { amenities } from './amenity.dbschema.ts';
 
-export const rAccommodationAmenity: ReturnType<typeof pgTable> = pgTable(
+export const rAccommodationAmenity = pgTable(
     'r_accommodation_amenity',
     {
         accommodationId: uuid('accommodation_id')

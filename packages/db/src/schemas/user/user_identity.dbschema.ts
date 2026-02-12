@@ -3,7 +3,7 @@ import { jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/
 import { AuthProviderPgEnum } from '../enums.dbschema.ts';
 import { users } from './user.dbschema.ts';
 
-export const userAuthIdentities: ReturnType<typeof pgTable> = pgTable(
+export const userAuthIdentities = pgTable(
     'user_auth_identities',
     {
         id: uuid('id').primaryKey().defaultRandom(),
@@ -24,7 +24,7 @@ export const userAuthIdentities: ReturnType<typeof pgTable> = pgTable(
         deletedAt: timestamp('deleted_at', { withTimezone: true }),
         deletedById: uuid('deleted_by_id').references(() => users.id, { onDelete: 'set null' })
     },
-    (table: typeof userAuthIdentities) => ({
+    (table) => ({
         uniqueProviderIdentity: uniqueIndex('user_auth_identity_provider_user_id_key').on(
             table.provider,
             table.providerUserId

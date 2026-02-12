@@ -1,5 +1,6 @@
 import type { AdminInfoType, Media, Seo } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
+import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import {
     boolean,
     index,
@@ -23,7 +24,7 @@ import { rEntityTag } from '../tag/r_entity_tag.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
 import { postSponsorships } from './post_sponsorship.dbschema.ts';
 
-export const posts: ReturnType<typeof pgTable> = pgTable(
+export const posts = pgTable(
     'posts',
     {
         id: uuid('id').primaryKey().defaultRandom(),
@@ -36,7 +37,7 @@ export const posts: ReturnType<typeof pgTable> = pgTable(
         authorId: uuid('author_id')
             .notNull()
             .references(() => users.id, { onDelete: 'restrict' }),
-        sponsorshipId: uuid('sponsorship_id').references(() => postSponsorships.id, {
+        sponsorshipId: uuid('sponsorship_id').references((): AnyPgColumn => postSponsorships.id, {
             onDelete: 'set null'
         }),
         relatedAccommodationId: uuid('related_accommodation_id').references(

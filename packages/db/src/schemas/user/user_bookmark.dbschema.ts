@@ -4,7 +4,7 @@ import { jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { EntityTypePgEnum, LifecycleStatusPgEnum } from '../enums.dbschema.ts';
 import { users } from './user.dbschema.ts';
 
-export const userBookmarks: ReturnType<typeof pgTable> = pgTable('user_bookmarks', {
+export const userBookmarks = pgTable('user_bookmarks', {
     id: uuid('id').primaryKey().defaultRandom(),
     userId: uuid('user_id')
         .notNull()

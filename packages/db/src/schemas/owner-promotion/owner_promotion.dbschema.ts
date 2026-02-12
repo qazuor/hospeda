@@ -4,7 +4,7 @@ import { accommodations } from '../accommodation/accommodation.dbschema.ts';
 import { OwnerPromotionDiscountTypePgEnum } from '../enums.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
 
-export const ownerPromotions: ReturnType<typeof pgTable> = pgTable(
+export const ownerPromotions = pgTable(
     'owner_promotions',
     {
         id: uuid('id').primaryKey().defaultRandom(),

@@ -4,7 +4,7 @@ import { LifecycleStatusPgEnum, TagColorPgEnum } from '../enums.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
 import { rEntityTag } from './r_entity_tag.dbschema.ts';
 
-export const tags: ReturnType<typeof pgTable> = pgTable(
+export const tags = pgTable(
     'tags',
     {
         id: uuid('id').primaryKey().defaultRandom(),

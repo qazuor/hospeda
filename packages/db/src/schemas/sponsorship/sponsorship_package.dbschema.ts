@@ -4,7 +4,7 @@ import { PriceCurrencyPgEnum } from '../enums.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
 import { sponsorshipLevels } from './sponsorship_level.dbschema.ts';
 
-export const sponsorshipPackages: ReturnType<typeof pgTable> = pgTable(
+export const sponsorshipPackages = pgTable(
     'sponsorship_packages',
     {
         id: uuid('id').primaryKey().defaultRandom(),

@@ -8,13 +8,13 @@ import { sponsorshipPackages } from './sponsorship_package.dbschema.ts';
 /**
  * Analytics data stored as JSONB
  */
-interface SponsorshipAnalytics {
+export interface SponsorshipAnalytics {
     impressions?: number;
     clicks?: number;
     couponsUsed?: number;
 }
 
-export const sponsorships: ReturnType<typeof pgTable> = pgTable(
+export const sponsorships = pgTable(
     'sponsorships',
     {
         id: uuid('id').primaryKey().defaultRandom(),

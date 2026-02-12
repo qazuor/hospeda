@@ -28,7 +28,7 @@ import { users } from '../user/user.dbschema.ts';
 import { destinationReviews } from './destination_review.dbschema.ts';
 import { rDestinationAttraction } from './r_destination_attraction.dbschema.ts';
 
-export const destinations: ReturnType<typeof pgTable> = pgTable(
+export const destinations = pgTable(
     'destinations',
     {
         id: uuid('id').primaryKey().defaultRandom(),

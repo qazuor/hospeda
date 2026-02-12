@@ -5,7 +5,7 @@ import { AmenitiesTypePgEnum, LifecycleStatusPgEnum } from '../enums.dbschema.ts
 import { users } from '../user/user.dbschema.ts';
 import { rAccommodationAmenity } from './r_accommodation_amenity.dbschema.ts';
 
-export const amenities: ReturnType<typeof pgTable> = pgTable(
+export const amenities = pgTable(
     'amenities',
     {
         id: uuid('id').primaryKey().defaultRandom(),

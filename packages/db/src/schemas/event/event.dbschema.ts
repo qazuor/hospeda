@@ -12,7 +12,7 @@ import { users } from '../user/user.dbschema.ts';
 import { eventLocations } from './event_location.dbschema.ts';
 import { eventOrganizers } from './event_organizer.dbschema.ts';
 
-export const events: ReturnType<typeof pgTable> = pgTable(
+export const events = pgTable(
     'events',
     {
         id: uuid('id').primaryKey().defaultRandom(),

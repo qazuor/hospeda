@@ -5,7 +5,7 @@ import { billingAddons, billingCustomers, billingSubscriptions } from '../../bil
 /**
  * Limit adjustments stored as JSONB
  */
-interface LimitAdjustment {
+export interface LimitAdjustment {
     limitKey: string;
     increase: number;
     previousValue: number;
@@ -15,7 +15,7 @@ interface LimitAdjustment {
 /**
  * Entitlement adjustments stored as JSONB
  */
-interface EntitlementAdjustment {
+export interface EntitlementAdjustment {
     entitlementKey: string;
     granted: boolean;
 }
@@ -24,7 +24,7 @@ interface EntitlementAdjustment {
  * Billing add-on purchases table
  * Tracks customer purchases of add-ons with limit/entitlement adjustments
  */
-export const billingAddonPurchases: ReturnType<typeof pgTable> = pgTable(
+export const billingAddonPurchases = pgTable(
     'billing_addon_purchases',
     {
         id: uuid('id').primaryKey().defaultRandom(),

@@ -1,19 +1,20 @@
 import type { AdminInfoType, PriceType } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
+import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { boolean, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { LifecycleStatusPgEnum } from '../enums.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
 import { posts } from './post.dbschema.ts';
 import { postSponsors } from './post_sponsor.dbschema.ts';
 
-export const postSponsorships: ReturnType<typeof pgTable> = pgTable('post_sponsorships', {
+export const postSponsorships = pgTable('post_sponsorships', {
     id: uuid('id').primaryKey().defaultRandom(),
     sponsorId: uuid('sponsor_id')
         .notNull()
         .references(() => postSponsors.id, { onDelete: 'cascade' }),
     postId: uuid('post_id')
         .notNull()
-        .references(() => posts.id, { onDelete: 'cascade' }),
+        .references((): AnyPgColumn => posts.id, { onDelete: 'cascade' }),
     message: text('message'),
     description: text('description').notNull(),
     paid: jsonb('paid').$type<PriceType>().notNull(),

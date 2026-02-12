@@ -33,7 +33,7 @@ import { accommodationReviews } from './accommodation_review.dbschema.ts';
 import { rAccommodationAmenity } from './r_accommodation_amenity.dbschema.ts';
 import { rAccommodationFeature } from './r_accommodation_feature.dbschema.ts';
 
-export const accommodations: ReturnType<typeof pgTable> = pgTable(
+export const accommodations = pgTable(
     'accommodations',
     {
         id: uuid('id').primaryKey().defaultRandom(),

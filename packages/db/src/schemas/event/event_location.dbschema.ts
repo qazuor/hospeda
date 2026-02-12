@@ -5,7 +5,7 @@ import { LifecycleStatusPgEnum } from '../enums.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
 import { events } from './event.dbschema.ts';
 
-export const eventLocations: ReturnType<typeof pgTable> = pgTable(
+export const eventLocations = pgTable(
     'event_locations',
     {
         id: uuid('id').primaryKey().defaultRandom(),

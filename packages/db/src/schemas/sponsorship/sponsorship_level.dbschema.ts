@@ -16,7 +16,7 @@ import {
 } from '../enums.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
 
-export const sponsorshipLevels: ReturnType<typeof pgTable> = pgTable(
+export const sponsorshipLevels = pgTable(
     'sponsorship_levels',
     {
         id: uuid('id').primaryKey().defaultRandom(),

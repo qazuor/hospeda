@@ -5,7 +5,7 @@ import { billingCustomers } from '../../billing/index.ts';
  * Billing notification log table
  * Tracks all billing-related notifications sent to customers
  */
-export const billingNotificationLog: ReturnType<typeof pgTable> = pgTable(
+export const billingNotificationLog = pgTable(
     'billing_notification_log',
     {
         id: uuid('id').primaryKey().defaultRandom(),
