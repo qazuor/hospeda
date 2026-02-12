@@ -605,7 +605,7 @@ export class AddonService {
                     purchase.entitlementAdjustments.length > 0
                 ) {
                     const firstEntitlement = purchase.entitlementAdjustments[0];
-                    grantsEntitlement = firstEntitlement.entitlementKey;
+                    grantsEntitlement = firstEntitlement?.entitlementKey ?? null;
                 }
 
                 return {

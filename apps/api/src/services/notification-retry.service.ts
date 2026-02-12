@@ -49,7 +49,7 @@ interface FailedNotificationRecord {
     subject: string;
     status: string;
     errorMessage: string | null;
-    metadata: Record<string, unknown>;
+    metadata: Record<string, unknown> | null;
     createdAt: Date;
 }
 
@@ -150,7 +150,8 @@ export async function processDbNotificationRetries(dryRun = false): Promise<Retr
             }
 
             // Get retry count from metadata
-            const retryCount = (notification.metadata as Record<string, unknown>).retryCount ?? 0;
+            const retryCount =
+                (notification.metadata as Record<string, unknown> | null)?.retryCount ?? 0;
             const currentRetryCount = Number(retryCount);
 
             if (currentRetryCount >= RETRY_CONFIG.MAX_RETRIES) {
@@ -262,7 +263,7 @@ export async function processDbNotificationRetries(dryRun = false): Promise<Retr
  * @returns NotificationPayload or null if reconstruction fails
  */
 function reconstructPayload(record: FailedNotificationRecord): NotificationPayload | null {
-    const metadata = record.metadata as Record<string, unknown>;
+    const metadata = (record.metadata || {}) as Record<string, unknown>;
 
     // Base payload fields
     const basePayload = {

@@ -146,16 +146,17 @@ export async function seedTestData(
             displayName: 'Test User',
             firstName: 'Test',
             lastName: 'User',
-            role: RoleEnum.USER,
+            role: RoleEnum.USER as string,
             settings: {
                 language: 'es',
-                timezone: 'America/Argentina/Buenos_Aires',
                 notifications: {
-                    email: true,
-                    push: false
+                    enabled: true,
+                    allowEmails: true,
+                    allowSms: false,
+                    allowPush: false
                 }
             }
-        })
+        } as typeof users.$inferInsert)
         .returning();
 
     const createdUser = (createdUserResult as any[])[0];
@@ -254,7 +255,7 @@ export async function findTestUserById(
     return {
         id: user.id,
         slug: user.slug,
-        role: user.role,
+        role: user.role as unknown as RoleEnum,
         displayName: user.displayName || '',
         firstName: user.firstName || '',
         lastName: user.lastName || '',
@@ -315,17 +316,18 @@ export async function createTestUser(
             displayName: 'Test User',
             firstName: 'Test',
             lastName: 'User',
-            role,
+            role: role as string,
             settings: {
                 language: 'es',
-                timezone: 'America/Argentina/Buenos_Aires',
                 notifications: {
-                    email: true,
-                    push: false
+                    enabled: true,
+                    allowEmails: true,
+                    allowSms: false,
+                    allowPush: false
                 }
             },
             ...overrides
-        })
+        } as typeof users.$inferInsert)
         .returning();
 
     const createdUser = (createdUserResult as any[])[0];
@@ -333,7 +335,7 @@ export async function createTestUser(
     return {
         id: createdUser.id,
         slug: createdUser.slug,
-        role: createdUser.role,
+        role: createdUser.role as unknown as RoleEnum,
         displayName: createdUser.displayName || '',
         firstName: createdUser.firstName || '',
         lastName: createdUser.lastName || '',

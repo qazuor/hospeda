@@ -593,7 +593,7 @@ export class AddonEntitlementService {
                         purchase.entitlementAdjustments.length > 0
                     ) {
                         entitlement = purchase.entitlementAdjustments[0]
-                            .entitlementKey as EntitlementKey;
+                            ?.entitlementKey as EntitlementKey;
                     }
 
                     // Extract limit from limitAdjustments
@@ -604,8 +604,8 @@ export class AddonEntitlementService {
                         Array.isArray(purchase.limitAdjustments) &&
                         purchase.limitAdjustments.length > 0
                     ) {
-                        limitKey = purchase.limitAdjustments[0].limitKey as LimitKey;
-                        limitIncrease = purchase.limitAdjustments[0].increase;
+                        limitKey = purchase.limitAdjustments[0]?.limitKey as LimitKey;
+                        limitIncrease = purchase.limitAdjustments[0]?.increase;
                     }
 
                     adjustmentsFromTable.push({

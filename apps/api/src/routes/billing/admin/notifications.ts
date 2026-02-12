@@ -39,11 +39,11 @@ export const listNotificationLogsHandler = async (
         const conditions: SQL[] = [];
 
         if (query?.type) {
-            conditions.push(eq(billingNotificationLog.type, query.type));
+            conditions.push(eq(billingNotificationLog.type, query.type as string));
         }
 
         if (query?.status) {
-            conditions.push(eq(billingNotificationLog.status, query.status));
+            conditions.push(eq(billingNotificationLog.status, query.status as string));
         }
 
         if (query?.startDate) {
