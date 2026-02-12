@@ -5,21 +5,23 @@ import { AuthProviderEnum } from '../../src/enums/index.js';
 
 describe('AuthProviderEnumSchema', () => {
     it('should validate valid auth provider values', () => {
-        // Test each enum value
-        // biome-ignore lint/complexity/noForEach: <explanation>
-        Object.values(AuthProviderEnum).forEach((provider) => {
+        for (const provider of Object.values(AuthProviderEnum)) {
             expect(() => AuthProviderEnumSchema.parse(provider)).not.toThrow();
-        });
+        }
     });
 
-    it('should validate CLERK provider', () => {
+    it('should validate BETTER_AUTH provider', () => {
+        expect(() => AuthProviderEnumSchema.parse(AuthProviderEnum.BETTER_AUTH)).not.toThrow();
+    });
+
+    it('should validate legacy CLERK provider for backward compatibility', () => {
         expect(() => AuthProviderEnumSchema.parse(AuthProviderEnum.CLERK)).not.toThrow();
     });
 
     it('should reject invalid auth provider values', () => {
         const invalidProviders = [
             'invalid-provider',
-            'GOOGLE', // Assuming this is not in the enum
+            'GOOGLE',
             'FACEBOOK',
             '',
             null,
@@ -28,10 +30,9 @@ describe('AuthProviderEnumSchema', () => {
             {}
         ];
 
-        // biome-ignore lint/complexity/noForEach: <explanation>
-        invalidProviders.forEach((provider) => {
+        for (const provider of invalidProviders) {
             expect(() => AuthProviderEnumSchema.parse(provider)).toThrow(ZodError);
-        });
+        }
     });
 
     it('should provide appropriate error message for invalid values', () => {
@@ -45,10 +46,9 @@ describe('AuthProviderEnumSchema', () => {
     });
 
     it('should infer correct TypeScript type', () => {
-        const validProvider = AuthProviderEnumSchema.parse(AuthProviderEnum.CLERK);
+        const validProvider = AuthProviderEnumSchema.parse(AuthProviderEnum.BETTER_AUTH);
 
-        // TypeScript should infer this as AuthProviderEnum
         const _typeCheck: AuthProviderEnum = validProvider;
-        expect(validProvider).toBe(AuthProviderEnum.CLERK);
+        expect(validProvider).toBe(AuthProviderEnum.BETTER_AUTH);
     });
 });

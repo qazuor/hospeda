@@ -18,7 +18,7 @@ export const mockUser: InferredUser = {
     banned: false,
     banReason: null,
     banExpires: null,
-    authProvider: AuthProviderEnum.CLERK,
+    authProvider: AuthProviderEnum.BETTER_AUTH,
     authProviderUserId: 'auth-user-1',
     displayName: 'Test User',
     firstName: 'Test',

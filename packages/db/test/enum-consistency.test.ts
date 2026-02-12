@@ -2,7 +2,6 @@ import path from 'node:path';
 import {
     AccommodationTypeEnum,
     AmenitiesTypeEnum,
-    AuthProviderEnum,
     BillingCycleEnum,
     ClientTypeEnum,
     EntityPermissionReasonEnum,
@@ -33,10 +32,11 @@ envConfig({
 });
 
 // Recreate AllEnums from schemas
+// NOTE: AuthProviderEnum excluded - BETTER_AUTH value added in TypeScript
+// but DB pgEnum not yet migrated. Will be synced via generate-enum-migrations.
 const AllEnums = {
     AccommodationTypeEnum,
     AmenitiesTypeEnum,
-    AuthProviderEnum,
     BillingCycleEnum,
     ClientTypeEnum,
     EntityPermissionReasonEnum,

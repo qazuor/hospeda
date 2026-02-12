@@ -43,10 +43,13 @@ export const users = pgTable(
         banReason: text('ban_reason'),
         /** Better Auth Admin plugin: ban expiration date */
         banExpires: timestamp('ban_expires', { withTimezone: true }),
-        // --- Legacy Clerk fields (to be removed in cleanup phase T-036) ---
+        /**
+         * @deprecated Legacy field from Clerk migration. New users get BETTER_AUTH.
+         * Provider identity is now tracked in the `account` table (Better Auth).
+         */
         authProvider: text('auth_provider')
             .$type<AuthProviderEnum>()
-            .default(AuthProviderEnum.CLERK),
+            .default(AuthProviderEnum.BETTER_AUTH),
         authProviderUserId: text('auth_provider_user_id'),
         displayName: text('display_name'),
         firstName: text('first_name'),

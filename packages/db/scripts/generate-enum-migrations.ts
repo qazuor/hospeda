@@ -29,6 +29,8 @@ import { fileURLToPath } from 'node:url';
 import { Pool } from 'pg';
 
 // Recreate AllEnums from schemas
+// AuthProviderEnum included here so generate-enum-migrations can detect
+// the BETTER_AUTH addition and generate the needed migration SQL.
 const AllEnums = {
     AccommodationTypeEnum,
     AmenitiesTypeEnum,

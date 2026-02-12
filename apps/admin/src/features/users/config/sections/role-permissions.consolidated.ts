@@ -47,10 +47,10 @@ export const createRolePermissionsConsolidatedSection = (): ConsolidatedSectionC
             },
             typeConfig: {
                 options: [
-                    { value: 'CLERK', label: 'Clerk' },
-                    { value: 'LOCAL', label: 'Local' },
-                    { value: 'GOOGLE', label: 'Google' },
-                    { value: 'FACEBOOK', label: 'Facebook' }
+                    { value: 'BETTER_AUTH', label: 'Better Auth' },
+                    { value: 'CLERK', label: 'Clerk (Legacy)' },
+                    { value: 'AUTH0', label: 'Auth0' },
+                    { value: 'CUSTOM', label: 'Custom' }
                 ]
             }
         }

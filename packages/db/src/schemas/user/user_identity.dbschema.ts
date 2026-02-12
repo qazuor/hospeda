@@ -3,6 +3,11 @@ import { jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/
 import { AuthProviderPgEnum } from '../enums.dbschema.ts';
 import { users } from './user.dbschema.ts';
 
+/**
+ * @deprecated Legacy identity table from Clerk era.
+ * Better Auth uses the `account` table for provider identity tracking.
+ * Retained for backward compatibility with existing data.
+ */
 export const userAuthIdentities = pgTable(
     'user_auth_identities',
     {
