@@ -12,6 +12,7 @@ export const createMockEventOrganizer = (
 ): EventOrganizer => ({
     id: getMockId('event') as EventOrganizerIdType,
     name: 'Test Organizer',
+    slug: 'test-organizer',
     description: undefined,
     logo: 'https://example.com/logo.png',
     contactInfo: undefined,

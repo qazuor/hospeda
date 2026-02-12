@@ -83,6 +83,7 @@ export const createGalleryConsolidatedSection = (
                     view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
                     edit: [PermissionEnum.ACCOMMODATION_GALLERY_MANAGE]
                 },
+                limitKey: 'max_photos_per_accommodation',
                 typeConfig: {
                     type: 'GALLERY',
                     maxImages: 20,

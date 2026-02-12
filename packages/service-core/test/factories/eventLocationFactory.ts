@@ -17,6 +17,7 @@ export class EventLocationFactoryBuilder {
     constructor() {
         this.eventLocation = {
             id: getMockId('feature') as EventLocationIdType, // 'feature' is used for location-like entities
+            slug: 'test-venue-location',
             street: 'Main St',
             number: '123',
             floor: '1',
