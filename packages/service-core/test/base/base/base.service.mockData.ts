@@ -12,6 +12,12 @@ export type InferredUser = typeof users.$inferSelect;
 export const mockUser: InferredUser = {
     id: MOCK_USER_ID,
     slug: 'test-user',
+    email: 'test-user@example.com',
+    emailVerified: true,
+    image: null,
+    banned: false,
+    banReason: null,
+    banExpires: null,
     authProvider: AuthProviderEnum.CLERK,
     authProviderUserId: 'auth-user-1',
     displayName: 'Test User',

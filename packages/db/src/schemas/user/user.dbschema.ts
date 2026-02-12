@@ -9,7 +9,7 @@ import type {
 import { AuthProviderEnum } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
-import { jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import { boolean, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 import { accommodations } from '../accommodation/accommodation.dbschema.ts';
 import { destinations } from '../destination/destination.dbschema.ts';
 import { LifecycleStatusPgEnum, RolePgEnum, VisibilityPgEnum } from '../enums.dbschema.ts';
@@ -31,6 +31,19 @@ export const users = pgTable(
     {
         id: uuid('id').primaryKey().defaultRandom(),
         slug: text('slug').notNull().unique(),
+        /** Better Auth required: user email address */
+        email: text('email').notNull().unique(),
+        /** Better Auth required: email verification status */
+        emailVerified: boolean('email_verified').notNull().default(false),
+        /** Better Auth required: avatar/profile image URL */
+        image: text('image'),
+        /** Better Auth Admin plugin: whether user is banned */
+        banned: boolean('banned').default(false),
+        /** Better Auth Admin plugin: reason for ban */
+        banReason: text('ban_reason'),
+        /** Better Auth Admin plugin: ban expiration date */
+        banExpires: timestamp('ban_expires', { withTimezone: true }),
+        // --- Legacy Clerk fields (to be removed in cleanup phase T-036) ---
         authProvider: text('auth_provider')
             .$type<AuthProviderEnum>()
             .default(AuthProviderEnum.CLERK),

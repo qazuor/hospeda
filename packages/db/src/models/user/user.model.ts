@@ -70,11 +70,11 @@ export class UserModel extends BaseModel<User> {
 
             const total = totalResult[0]?.count || 0;
 
-            return { items: items as User[], total };
+            return { items: items as unknown as User[], total };
         }
 
         const items = (await db.select().from(this.table).where(finalWhereClause)) || [];
-        return { items: items as User[], total: items.length };
+        return { items: items as unknown as User[], total: items.length };
     }
 
     /**
@@ -168,19 +168,22 @@ export class UserModel extends BaseModel<User> {
                     .from(users)
                     .where(finalWhereClause)
                     .limit(pageSize)
-                    .offset(offset)) as User[];
+                    .offset(offset)) as unknown as User[];
             } else {
                 usersData = (await db
                     .select()
                     .from(users)
                     .limit(pageSize)
-                    .offset(offset)) as User[];
+                    .offset(offset)) as unknown as User[];
             }
         } else {
             if (finalWhereClause) {
-                usersData = (await db.select().from(users).where(finalWhereClause)) as User[];
+                usersData = (await db
+                    .select()
+                    .from(users)
+                    .where(finalWhereClause)) as unknown as User[];
             } else {
-                usersData = (await db.select().from(users)) as User[];
+                usersData = (await db.select().from(users)) as unknown as User[];
             }
         }
 
