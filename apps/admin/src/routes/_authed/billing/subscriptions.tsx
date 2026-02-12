@@ -20,7 +20,9 @@ import {
     usePaymentHistoryQuery,
     useSubscriptionsQuery
 } from '@/features/billing-subscriptions/hooks';
+import { useTranslations } from '@/hooks/use-translations';
 import { ALL_PLANS, type PlanDefinition } from '@repo/billing';
+import type { TranslationKey } from '@repo/i18n';
 import { createFileRoute } from '@tanstack/react-router';
 import { CalendarIcon, CreditCardIcon, Loader2, XCircleIcon } from 'lucide-react';
 import { useState } from 'react';
@@ -82,15 +84,15 @@ function getStatusVariant(
 }
 
 /**
- * Get status label in Spanish
+ * Get status label using i18n
  */
-function getStatusLabel(status: SubscriptionStatus): string {
+function getStatusLabel(status: SubscriptionStatus, t: (key: TranslationKey) => string): string {
     const labels: Record<SubscriptionStatus, string> = {
-        active: 'Activa',
-        trialing: 'En prueba',
-        cancelled: 'Cancelada',
-        past_due: 'Pago pendiente',
-        expired: 'Expirada'
+        active: t('admin-billing.subscriptions.statuses.active'),
+        trialing: t('admin-billing.subscriptions.statuses.trialing'),
+        cancelled: t('admin-billing.subscriptions.statuses.cancelled'),
+        past_due: t('admin-billing.subscriptions.statuses.pastDue'),
+        expired: t('admin-billing.subscriptions.statuses.expired')
     };
     return labels[status];
 }
@@ -139,6 +141,7 @@ function CancelSubscriptionDialog({
     readonly onClose: () => void;
     readonly onConfirm: (immediate: boolean, reason?: string) => void;
 }) {
+    const { t } = useTranslations();
     const [cancelImmediate, setCancelImmediate] = useState(false);
     const [cancelReason, setCancelReason] = useState('');
 
@@ -155,15 +158,18 @@ function CancelSubscriptionDialog({
         >
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Cancelar suscripción</DialogTitle>
+                    <DialogTitle>{t('admin-billing.subscriptions.cancelDialog.title')}</DialogTitle>
                     <DialogDescription>
-                        Confirma la cancelación de la suscripción de {subscription.userName}
+                        {t('admin-billing.subscriptions.cancelDialog.description')}{' '}
+                        {subscription.userName}
                     </DialogDescription>
                 </DialogHeader>
 
                 <div className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="cancel-timing">Momento de cancelación</Label>
+                        <Label htmlFor="cancel-timing">
+                            {t('admin-billing.subscriptions.cancelDialog.timingLabel')}
+                        </Label>
                         <select
                             id="cancel-timing"
                             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -171,36 +177,61 @@ function CancelSubscriptionDialog({
                             onChange={(e) => setCancelImmediate(e.target.value === 'immediate')}
                         >
                             <option value="end_of_period">
-                                Al finalizar el período actual (
+                                {t('admin-billing.subscriptions.cancelDialog.endOfPeriod')} (
                                 {formatDate(subscription.currentPeriodEnd)})
                             </option>
-                            <option value="immediate">Inmediatamente</option>
+                            <option value="immediate">
+                                {t('admin-billing.subscriptions.cancelDialog.immediate')}
+                            </option>
                         </select>
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="cancel-reason">Motivo (opcional)</Label>
+                        <Label htmlFor="cancel-reason">
+                            {t('admin-billing.subscriptions.cancelDialog.reasonLabel')}
+                        </Label>
                         <select
                             id="cancel-reason"
                             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                             value={cancelReason}
                             onChange={(e) => setCancelReason(e.target.value)}
                         >
-                            <option value="">Seleccionar motivo...</option>
-                            <option value="too_expensive">Muy costoso</option>
-                            <option value="missing_features">Faltan funcionalidades</option>
-                            <option value="technical_issues">Problemas técnicos</option>
-                            <option value="switching_competitor">Cambiando a competencia</option>
-                            <option value="business_closed">Negocio cerrado</option>
-                            <option value="other">Otro</option>
+                            <option value="">
+                                {t('admin-billing.subscriptions.cancelDialog.reasonPlaceholder')}
+                            </option>
+                            <option value="too_expensive">
+                                {t('admin-billing.subscriptions.cancelDialog.reasons.tooExpensive')}
+                            </option>
+                            <option value="missing_features">
+                                {t(
+                                    'admin-billing.subscriptions.cancelDialog.reasons.missingFeatures'
+                                )}
+                            </option>
+                            <option value="technical_issues">
+                                {t(
+                                    'admin-billing.subscriptions.cancelDialog.reasons.technicalIssues'
+                                )}
+                            </option>
+                            <option value="switching_competitor">
+                                {t(
+                                    'admin-billing.subscriptions.cancelDialog.reasons.switchingCompetitor'
+                                )}
+                            </option>
+                            <option value="business_closed">
+                                {t(
+                                    'admin-billing.subscriptions.cancelDialog.reasons.businessClosed'
+                                )}
+                            </option>
+                            <option value="other">
+                                {t('admin-billing.subscriptions.cancelDialog.reasons.other')}
+                            </option>
                         </select>
                     </div>
 
                     {cancelImmediate && (
                         <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3">
                             <p className="text-destructive text-sm">
-                                ⚠️ La cancelación inmediata desactivará el acceso del usuario de
-                                forma instantánea y no se emitirá reembolso.
+                                {t('admin-billing.subscriptions.cancelDialog.immediateWarning')}
                             </p>
                         </div>
                     )}
@@ -211,13 +242,13 @@ function CancelSubscriptionDialog({
                         variant="outline"
                         onClick={onClose}
                     >
-                        Volver
+                        {t('admin-billing.subscriptions.cancelDialog.backButton')}
                     </Button>
                     <Button
                         variant="destructive"
                         onClick={handleConfirm}
                     >
-                        Confirmar cancelación
+                        {t('admin-billing.subscriptions.cancelDialog.confirmButton')}
                     </Button>
                 </DialogFooter>
             </DialogContent>
@@ -239,6 +270,7 @@ function ChangePlanDialog({
     readonly onClose: () => void;
     readonly onConfirm: (newPlanSlug: string) => void;
 }) {
+    const { t } = useTranslations();
     const currentPlan = getPlanBySlug(subscription.planSlug);
     const [selectedPlan, setSelectedPlan] = useState<string>('');
 
@@ -266,38 +298,49 @@ function ChangePlanDialog({
         >
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Cambiar plan de suscripción</DialogTitle>
+                    <DialogTitle>
+                        {t('admin-billing.subscriptions.changePlanDialog.title')}
+                    </DialogTitle>
                     <DialogDescription>
-                        Selecciona el nuevo plan para {subscription.userName}
+                        {t('admin-billing.subscriptions.changePlanDialog.description')}{' '}
+                        {subscription.userName}
                     </DialogDescription>
                 </DialogHeader>
 
                 <div className="space-y-4">
                     <div>
-                        <p className="mb-2 font-medium text-sm">Plan actual</p>
+                        <p className="mb-2 font-medium text-sm">
+                            {t('admin-billing.subscriptions.changePlanDialog.currentPlan')}
+                        </p>
                         <div className="rounded-md border p-3">
                             <p className="font-medium">{currentPlan?.name}</p>
                             <p className="text-muted-foreground text-sm">
-                                {formatArs(currentPlan?.monthlyPriceArs ?? 0)}/mes
+                                {formatArs(currentPlan?.monthlyPriceArs ?? 0)}
+                                {t('admin-billing.subscriptions.changePlanDialog.perMonth')}
                             </p>
                         </div>
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="new-plan">Nuevo plan</Label>
+                        <Label htmlFor="new-plan">
+                            {t('admin-billing.subscriptions.changePlanDialog.newPlanLabel')}
+                        </Label>
                         <select
                             id="new-plan"
                             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                             value={selectedPlan}
                             onChange={(e) => setSelectedPlan(e.target.value)}
                         >
-                            <option value="">Seleccionar plan...</option>
+                            <option value="">
+                                {t('admin-billing.subscriptions.changePlanDialog.selectPlan')}
+                            </option>
                             {availablePlans.map((plan) => (
                                 <option
                                     key={plan.slug}
                                     value={plan.slug}
                                 >
-                                    {plan.name} - {formatArs(plan.monthlyPriceArs)}/mes
+                                    {plan.name} - {formatArs(plan.monthlyPriceArs)}
+                                    {t('admin-billing.subscriptions.changePlanDialog.perMonth')}
                                 </option>
                             ))}
                         </select>
@@ -305,23 +348,42 @@ function ChangePlanDialog({
 
                     {selectedPlanDef && (
                         <div className="rounded-md border bg-muted p-3">
-                            <p className="mb-2 font-medium text-sm">Prorrateo estimado</p>
+                            <p className="mb-2 font-medium text-sm">
+                                {t('admin-billing.subscriptions.changePlanDialog.prorationTitle')}
+                            </p>
                             <p className="text-muted-foreground text-sm">
                                 {proratedAmount > 0 && (
                                     <span>
-                                        Se cobrará aproximadamente {formatArs(proratedAmount)} hoy
+                                        {t(
+                                            'admin-billing.subscriptions.changePlanDialog.prorationCharge'
+                                        )}{' '}
+                                        {formatArs(proratedAmount)}{' '}
+                                        {t(
+                                            'admin-billing.subscriptions.changePlanDialog.prorationChargeToday'
+                                        )}
                                     </span>
                                 )}
                                 {proratedAmount < 0 && (
                                     <span>
-                                        Se acreditará aproximadamente{' '}
-                                        {formatArs(Math.abs(proratedAmount))} a la cuenta
+                                        {t(
+                                            'admin-billing.subscriptions.changePlanDialog.prorationCredit'
+                                        )}{' '}
+                                        {formatArs(Math.abs(proratedAmount))}{' '}
+                                        {t(
+                                            'admin-billing.subscriptions.changePlanDialog.prorationCreditToAccount'
+                                        )}
                                     </span>
                                 )}
-                                {proratedAmount === 0 && <span>Sin cargo adicional</span>}
+                                {proratedAmount === 0 && (
+                                    <span>
+                                        {t(
+                                            'admin-billing.subscriptions.changePlanDialog.prorationNone'
+                                        )}
+                                    </span>
+                                )}
                             </p>
                             <p className="mt-2 text-muted-foreground text-xs">
-                                El siguiente cobro completo será el{' '}
+                                {t('admin-billing.subscriptions.changePlanDialog.nextCharge')}{' '}
                                 {formatDate(subscription.currentPeriodEnd)}
                             </p>
                         </div>
@@ -333,13 +395,13 @@ function ChangePlanDialog({
                         variant="outline"
                         onClick={onClose}
                     >
-                        Cancelar
+                        {t('admin-billing.common.cancel')}
                     </Button>
                     <Button
                         onClick={handleConfirm}
                         disabled={!selectedPlan}
                     >
-                        Cambiar plan
+                        {t('admin-billing.subscriptions.changePlanDialog.confirmButton')}
                     </Button>
                 </DialogFooter>
             </DialogContent>
@@ -365,6 +427,7 @@ function SubscriptionDetailsDialog({
     readonly onChangePlan: (sub: Subscription) => void;
     readonly onExtendTrial: (sub: Subscription) => void;
 }) {
+    const { t } = useTranslations();
     const { data: paymentData, isLoading: isLoadingPayments } = usePaymentHistoryQuery(
         subscription?.id
     );
@@ -391,52 +454,69 @@ function SubscriptionDetailsDialog({
         >
             <DialogContent className="max-w-2xl">
                 <DialogHeader>
-                    <DialogTitle>Detalles de la suscripción</DialogTitle>
-                    <DialogDescription>Información completa de la suscripción</DialogDescription>
+                    <DialogTitle>
+                        {t('admin-billing.subscriptions.detailsDialog.title')}
+                    </DialogTitle>
+                    <DialogDescription>
+                        {t('admin-billing.subscriptions.detailsDialog.description')}
+                    </DialogDescription>
                 </DialogHeader>
 
                 <div className="space-y-4">
                     {/* User info */}
                     <div>
-                        <h3 className="mb-2 font-medium text-sm">Usuario</h3>
+                        <h3 className="mb-2 font-medium text-sm">
+                            {t('admin-billing.subscriptions.detailsDialog.userSection')}
+                        </h3>
                         <div className="rounded-md border p-3">
                             <p className="font-medium">{subscription.userName}</p>
                             <p className="text-muted-foreground text-sm">
                                 {subscription.userEmail}
                             </p>
                             <p className="mt-1 text-muted-foreground text-xs">
-                                ID: {subscription.userId}
+                                {t('admin-billing.subscriptions.detailsDialog.idLabel')}{' '}
+                                {subscription.userId}
                             </p>
                         </div>
                     </div>
 
                     {/* Subscription info */}
                     <div>
-                        <h3 className="mb-2 font-medium text-sm">Suscripción</h3>
+                        <h3 className="mb-2 font-medium text-sm">
+                            {t('admin-billing.subscriptions.detailsDialog.subscriptionSection')}
+                        </h3>
                         <div className="space-y-2 rounded-md border p-3">
                             <div className="flex justify-between">
-                                <span className="text-muted-foreground text-sm">ID:</span>
+                                <span className="text-muted-foreground text-sm">
+                                    {t('admin-billing.subscriptions.detailsDialog.idLabel')}
+                                </span>
                                 <span className="font-mono text-sm">{subscription.id}</span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-muted-foreground text-sm">Plan:</span>
+                                <span className="text-muted-foreground text-sm">
+                                    {t('admin-billing.subscriptions.detailsDialog.planLabel')}
+                                </span>
                                 <span className="text-sm">{plan?.name}</span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-muted-foreground text-sm">Estado:</span>
+                                <span className="text-muted-foreground text-sm">
+                                    {t('admin-billing.subscriptions.detailsDialog.statusLabel')}
+                                </span>
                                 <Badge variant={getStatusVariant(subscription.status)}>
-                                    {getStatusLabel(subscription.status)}
+                                    {getStatusLabel(subscription.status, t)}
                                 </Badge>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-muted-foreground text-sm">Inicio:</span>
+                                <span className="text-muted-foreground text-sm">
+                                    {t('admin-billing.subscriptions.detailsDialog.startLabel')}
+                                </span>
                                 <span className="text-sm">
                                     {formatDate(subscription.startDate)}
                                 </span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground text-sm">
-                                    Fin de período:
+                                    {t('admin-billing.subscriptions.detailsDialog.periodEndLabel')}
                                 </span>
                                 <span className="text-sm">
                                     {formatDate(subscription.currentPeriodEnd)}
@@ -444,7 +524,9 @@ function SubscriptionDetailsDialog({
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground text-sm">
-                                    Monto mensual:
+                                    {t(
+                                        'admin-billing.subscriptions.detailsDialog.monthlyAmountLabel'
+                                    )}
                                 </span>
                                 <span className="font-medium text-sm">
                                     {formatArs(subscription.monthlyAmount)}
@@ -453,7 +535,9 @@ function SubscriptionDetailsDialog({
                             {subscription.discountPercent && (
                                 <div className="flex justify-between">
                                     <span className="text-muted-foreground text-sm">
-                                        Descuento:
+                                        {t(
+                                            'admin-billing.subscriptions.detailsDialog.discountLabel'
+                                        )}
                                     </span>
                                     <span className="text-green-600 text-sm">
                                         {subscription.discountPercent}%
@@ -463,7 +547,9 @@ function SubscriptionDetailsDialog({
                             {subscription.trialEnd && (
                                 <div className="flex justify-between">
                                     <span className="text-muted-foreground text-sm">
-                                        Fin de prueba:
+                                        {t(
+                                            'admin-billing.subscriptions.detailsDialog.trialEndLabel'
+                                        )}
                                     </span>
                                     <span className="text-sm">
                                         {formatDate(subscription.trialEnd)}
@@ -476,7 +562,9 @@ function SubscriptionDetailsDialog({
                     {/* Entitlements */}
                     {plan && (
                         <div>
-                            <h3 className="mb-2 font-medium text-sm">Funcionalidades incluidas</h3>
+                            <h3 className="mb-2 font-medium text-sm">
+                                {t('admin-billing.subscriptions.detailsDialog.entitlementsTitle')}
+                            </h3>
                             <div className="rounded-md border p-3">
                                 <ul className="space-y-1 text-sm">
                                     {plan.entitlements.slice(0, 5).map((entitlement) => (
@@ -486,7 +574,10 @@ function SubscriptionDetailsDialog({
                                     ))}
                                     {plan.entitlements.length > 5 && (
                                         <li className="text-muted-foreground text-xs">
-                                            +{plan.entitlements.length - 5} más...
+                                            +{plan.entitlements.length - 5}{' '}
+                                            {t(
+                                                'admin-billing.subscriptions.detailsDialog.entitlementsMore'
+                                            )}
                                         </li>
                                     )}
                                 </ul>
@@ -496,21 +587,23 @@ function SubscriptionDetailsDialog({
 
                     {/* Payment history */}
                     <div>
-                        <h3 className="mb-2 font-medium text-sm">Historial de pagos</h3>
+                        <h3 className="mb-2 font-medium text-sm">
+                            {t('admin-billing.subscriptions.paymentHistory.title')}
+                        </h3>
                         {isLoadingPayments ? (
                             <div className="rounded-md border p-6 text-center">
                                 <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
                                 <p className="mt-2 text-muted-foreground text-xs">
-                                    Cargando historial de pagos...
+                                    {t('admin-billing.subscriptions.paymentHistory.loading')}
                                 </p>
                             </div>
                         ) : paymentHistory.length === 0 ? (
                             <div className="rounded-md border p-6 text-center">
                                 <p className="text-muted-foreground text-sm">
-                                    No hay historial de pagos disponible
+                                    {t('admin-billing.subscriptions.paymentHistory.empty')}
                                 </p>
                                 <p className="mt-1 text-muted-foreground text-xs">
-                                    El historial se mostrara cuando se procesen los pagos
+                                    {t('admin-billing.subscriptions.paymentHistory.emptyHint')}
                                 </p>
                             </div>
                         ) : (
@@ -519,13 +612,19 @@ function SubscriptionDetailsDialog({
                                     <thead className="bg-muted">
                                         <tr>
                                             <th className="px-3 py-2 text-left font-medium">
-                                                Fecha
+                                                {t(
+                                                    'admin-billing.subscriptions.paymentHistory.dateColumn'
+                                                )}
                                             </th>
                                             <th className="px-3 py-2 text-right font-medium">
-                                                Monto
+                                                {t(
+                                                    'admin-billing.subscriptions.paymentHistory.amountColumn'
+                                                )}
                                             </th>
                                             <th className="px-3 py-2 text-center font-medium">
-                                                Estado
+                                                {t(
+                                                    'admin-billing.subscriptions.paymentHistory.statusColumn'
+                                                )}
                                             </th>
                                         </tr>
                                     </thead>
@@ -552,10 +651,16 @@ function SubscriptionDetailsDialog({
                                                         }
                                                     >
                                                         {payment.status === 'paid'
-                                                            ? 'Pagado'
+                                                            ? t(
+                                                                  'admin-billing.subscriptions.paymentHistory.statusPaid'
+                                                              )
                                                             : payment.status === 'pending'
-                                                              ? 'Pendiente'
-                                                              : 'Fallido'}
+                                                              ? t(
+                                                                    'admin-billing.subscriptions.paymentHistory.statusPending'
+                                                                )
+                                                              : t(
+                                                                    'admin-billing.subscriptions.paymentHistory.statusFailed'
+                                                                )}
                                                     </Badge>
                                                 </td>
                                             </tr>
@@ -574,7 +679,7 @@ function SubscriptionDetailsDialog({
                             onClick={() => onChangePlan(subscription)}
                         >
                             <CreditCardIcon className="mr-2 h-4 w-4" />
-                            Cambiar plan
+                            {t('admin-billing.subscriptions.detailsDialog.changePlanButton')}
                         </Button>
                         {subscription.status === 'trialing' && (
                             <Button
@@ -583,7 +688,7 @@ function SubscriptionDetailsDialog({
                                 onClick={() => onExtendTrial(subscription)}
                             >
                                 <CalendarIcon className="mr-2 h-4 w-4" />
-                                Extender prueba
+                                {t('admin-billing.subscriptions.detailsDialog.extendTrialButton')}
                             </Button>
                         )}
                         {subscription.status === 'active' && !subscription.cancelAtPeriodEnd && (
@@ -593,7 +698,9 @@ function SubscriptionDetailsDialog({
                                 onClick={() => onCancel(subscription)}
                             >
                                 <XCircleIcon className="mr-2 h-4 w-4" />
-                                Cancelar suscripción
+                                {t(
+                                    'admin-billing.subscriptions.detailsDialog.cancelSubscriptionButton'
+                                )}
                             </Button>
                         )}
                     </div>
@@ -604,7 +711,7 @@ function SubscriptionDetailsDialog({
                         variant="outline"
                         onClick={onClose}
                     >
-                        Cerrar
+                        {t('admin-billing.common.close')}
                     </Button>
                 </DialogFooter>
             </DialogContent>
@@ -628,6 +735,7 @@ function ExtendTrialDialog({
     readonly onConfirm: (additionalDays: number) => void;
     readonly isPending: boolean;
 }) {
+    const { t } = useTranslations();
     const [additionalDays, setAdditionalDays] = useState(7);
 
     const currentTrialEnd = subscription.trialEnd ? new Date(subscription.trialEnd) : null;
@@ -646,15 +754,20 @@ function ExtendTrialDialog({
         >
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Extender periodo de prueba</DialogTitle>
+                    <DialogTitle>
+                        {t('admin-billing.subscriptions.extendTrialDialog.title')}
+                    </DialogTitle>
                     <DialogDescription>
-                        Extiende el periodo de prueba de {subscription.userName}
+                        {t('admin-billing.subscriptions.extendTrialDialog.description')}{' '}
+                        {subscription.userName}
                     </DialogDescription>
                 </DialogHeader>
 
                 <div className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="extend-days">Dias adicionales</Label>
+                        <Label htmlFor="extend-days">
+                            {t('admin-billing.subscriptions.extendTrialDialog.daysLabel')}
+                        </Label>
                         <Input
                             id="extend-days"
                             type="number"
@@ -664,14 +777,16 @@ function ExtendTrialDialog({
                             onChange={(e) => setAdditionalDays(Number(e.target.value))}
                         />
                         <p className="text-muted-foreground text-xs">
-                            Minimo 1 dia, maximo 90 dias
+                            {t('admin-billing.subscriptions.extendTrialDialog.daysHint')}
                         </p>
                     </div>
 
                     <div className="rounded-md border bg-muted p-3">
                         <div className="space-y-1 text-sm">
                             <div className="flex justify-between">
-                                <span className="text-muted-foreground">Fin actual:</span>
+                                <span className="text-muted-foreground">
+                                    {t('admin-billing.subscriptions.extendTrialDialog.currentEnd')}
+                                </span>
                                 <span>
                                     {currentTrialEnd
                                         ? formatDate(currentTrialEnd.toISOString())
@@ -679,7 +794,9 @@ function ExtendTrialDialog({
                                 </span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-muted-foreground">Nuevo fin:</span>
+                                <span className="text-muted-foreground">
+                                    {t('admin-billing.subscriptions.extendTrialDialog.newEnd')}
+                                </span>
                                 <span className="font-medium">
                                     {newTrialEnd ? formatDate(newTrialEnd.toISOString()) : 'N/A'}
                                 </span>
@@ -694,14 +811,14 @@ function ExtendTrialDialog({
                         onClick={onClose}
                         disabled={isPending}
                     >
-                        Cancelar
+                        {t('admin-billing.common.cancel')}
                     </Button>
                     <Button
                         onClick={handleConfirm}
                         disabled={additionalDays < 1 || additionalDays > 90 || isPending}
                     >
                         {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Extender prueba
+                        {t('admin-billing.subscriptions.extendTrialDialog.confirmButton')}
                     </Button>
                 </DialogFooter>
             </DialogContent>
@@ -713,6 +830,7 @@ function ExtendTrialDialog({
  * Main subscriptions page component
  */
 function BillingSubscriptionsPage() {
+    const { t } = useTranslations();
     const { addToast } = useToast();
     const [statusFilter, setStatusFilter] = useState<SubscriptionStatus | 'all'>('all');
     const [planFilter, setPlanFilter] = useState<string>('all');
@@ -773,7 +891,9 @@ function BillingSubscriptionsPage() {
             {
                 onSuccess: () => {
                     addToast({
-                        message: `Suscripción ${immediate ? 'cancelada inmediatamente' : 'programada para cancelación'}`,
+                        message: immediate
+                            ? t('admin-billing.subscriptions.toasts.cancelledImmediate')
+                            : t('admin-billing.subscriptions.toasts.cancelledScheduled'),
                         variant: 'success'
                     });
                     setCancelDialogOpen(false);
@@ -781,7 +901,7 @@ function BillingSubscriptionsPage() {
                 },
                 onError: (error) => {
                     addToast({
-                        message: `Error al cancelar suscripción: ${error.message}`,
+                        message: `${t('admin-billing.subscriptions.toasts.cancelError')} ${error.message}`,
                         variant: 'error'
                     });
                 }
@@ -807,7 +927,7 @@ function BillingSubscriptionsPage() {
                 onSuccess: () => {
                     const newPlan = getPlanBySlug(newPlanSlug);
                     addToast({
-                        message: `Plan cambiado a ${newPlan?.name}`,
+                        message: `${t('admin-billing.subscriptions.toasts.planChanged')} ${newPlan?.name}`,
                         variant: 'success'
                     });
                     setChangePlanDialogOpen(false);
@@ -815,7 +935,7 @@ function BillingSubscriptionsPage() {
                 },
                 onError: (error) => {
                     addToast({
-                        message: `Error al cambiar plan: ${error.message}`,
+                        message: `${t('admin-billing.subscriptions.toasts.planChangeError')} ${error.message}`,
                         variant: 'error'
                     });
                 }
@@ -840,7 +960,7 @@ function BillingSubscriptionsPage() {
             {
                 onSuccess: () => {
                     addToast({
-                        message: `Periodo de prueba extendido por ${additionalDays} dia(s)`,
+                        message: `${t('admin-billing.subscriptions.toasts.trialExtended')} ${additionalDays} ${t('admin-billing.subscriptions.toasts.trialExtendedDays')}`,
                         variant: 'success'
                     });
                     setExtendTrialDialogOpen(false);
@@ -848,7 +968,7 @@ function BillingSubscriptionsPage() {
                 },
                 onError: (error) => {
                     addToast({
-                        message: `Error al extender prueba: ${error.message}`,
+                        message: `${t('admin-billing.subscriptions.toasts.trialExtendError')} ${error.message}`,
                         variant: 'error'
                     });
                 }
@@ -863,31 +983,37 @@ function BillingSubscriptionsPage() {
         <SidebarPageLayout>
             <div className="space-y-6">
                 <div>
-                    <h2 className="mb-2 font-bold text-2xl">Suscripciones</h2>
+                    <h2 className="mb-2 font-bold text-2xl">
+                        {t('admin-billing.subscriptions.title')}
+                    </h2>
                     <p className="text-muted-foreground">
-                        Gestiona las suscripciones activas de los usuarios
+                        {t('admin-billing.subscriptions.description')}
                     </p>
                 </div>
 
                 {/* Filters */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>Filtros</CardTitle>
+                        <CardTitle>{t('admin-billing.subscriptions.filtersTitle')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="grid gap-4 md:grid-cols-3">
                             <div>
-                                <Label htmlFor="search">Buscar por usuario</Label>
+                                <Label htmlFor="search">
+                                    {t('admin-billing.subscriptions.searchLabel')}
+                                </Label>
                                 <Input
                                     id="search"
-                                    placeholder="Nombre o email..."
+                                    placeholder={t('admin-billing.subscriptions.searchPlaceholder')}
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     className="mt-2"
                                 />
                             </div>
                             <div>
-                                <Label htmlFor="status">Estado</Label>
+                                <Label htmlFor="status">
+                                    {t('admin-billing.subscriptions.statusFilter')}
+                                </Label>
                                 <select
                                     id="status"
                                     className="mt-2 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -898,33 +1024,51 @@ function BillingSubscriptionsPage() {
                                         )
                                     }
                                 >
-                                    <option value="all">Todos</option>
-                                    <option value="active">Activa</option>
-                                    <option value="trialing">En prueba</option>
-                                    <option value="past_due">Pago pendiente</option>
-                                    <option value="cancelled">Cancelada</option>
-                                    <option value="expired">Expirada</option>
+                                    <option value="all">
+                                        {t('admin-billing.subscriptions.allFilter')}
+                                    </option>
+                                    <option value="active">
+                                        {t('admin-billing.subscriptions.statuses.active')}
+                                    </option>
+                                    <option value="trialing">
+                                        {t('admin-billing.subscriptions.statuses.trialing')}
+                                    </option>
+                                    <option value="past_due">
+                                        {t('admin-billing.subscriptions.statuses.pastDue')}
+                                    </option>
+                                    <option value="cancelled">
+                                        {t('admin-billing.subscriptions.statuses.cancelled')}
+                                    </option>
+                                    <option value="expired">
+                                        {t('admin-billing.subscriptions.statuses.expired')}
+                                    </option>
                                 </select>
                             </div>
                             <div>
-                                <Label htmlFor="plan">Categoría de plan</Label>
+                                <Label htmlFor="plan">
+                                    {t('admin-billing.subscriptions.planCategoryFilter')}
+                                </Label>
                                 <select
                                     id="plan"
                                     className="mt-2 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                                     value={planFilter}
                                     onChange={(e) => setPlanFilter(e.target.value)}
                                 >
-                                    <option value="all">Todas</option>
+                                    <option value="all">
+                                        {t('admin-billing.subscriptions.allCategories')}
+                                    </option>
                                     {planCategories.map((category) => (
                                         <option
                                             key={category}
                                             value={category}
                                         >
                                             {category === 'owner'
-                                                ? 'Propietario'
+                                                ? t('admin-billing.subscriptions.categoryOwner')
                                                 : category === 'complex'
-                                                  ? 'Complejo'
-                                                  : 'Turista'}
+                                                  ? t('admin-billing.subscriptions.categoryComplex')
+                                                  : t(
+                                                        'admin-billing.subscriptions.categoryTourist'
+                                                    )}
                                         </option>
                                     ))}
                                 </select>
@@ -936,15 +1080,15 @@ function BillingSubscriptionsPage() {
                 {/* Subscriptions Table */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>Suscripciones</CardTitle>
+                        <CardTitle>{t('admin-billing.subscriptions.tableTitle')}</CardTitle>
                         <CardDescription>
                             {isLoading
-                                ? 'Cargando...'
+                                ? t('admin-billing.subscriptions.loadingSubscriptions')
                                 : isError
-                                  ? 'Error al cargar suscripciones'
+                                  ? t('admin-billing.subscriptions.errorLoading')
                                   : filteredSubscriptions.length === 0
-                                    ? 'No hay suscripciones'
-                                    : `${filteredSubscriptions.length} suscripción${filteredSubscriptions.length !== 1 ? 'es' : ''}`}
+                                    ? t('admin-billing.subscriptions.noSubscriptions')
+                                    : `${filteredSubscriptions.length} ${filteredSubscriptions.length !== 1 ? t('admin-billing.subscriptions.subscriptionCountPlural') : t('admin-billing.subscriptions.subscriptionCount')}`}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -952,26 +1096,25 @@ function BillingSubscriptionsPage() {
                             <div className="py-12 text-center">
                                 <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
                                 <p className="mt-4 text-muted-foreground text-sm">
-                                    Cargando suscripciones...
+                                    {t('admin-billing.subscriptions.loadingSubscriptions')}
                                 </p>
                             </div>
                         ) : isError ? (
                             <div className="py-12 text-center">
                                 <p className="text-destructive text-sm">
-                                    Error al cargar suscripciones
+                                    {t('admin-billing.subscriptions.errorLoading')}
                                 </p>
                                 <p className="mt-2 text-muted-foreground text-xs">
-                                    Verifica que la API esté disponible
+                                    {t('admin-billing.subscriptions.apiCheckError')}
                                 </p>
                             </div>
                         ) : filteredSubscriptions.length === 0 ? (
                             <div className="py-12 text-center">
                                 <p className="text-muted-foreground text-sm">
-                                    No hay suscripciones registradas aún.
+                                    {t('admin-billing.subscriptions.emptyTitle')}
                                 </p>
                                 <p className="mt-2 text-muted-foreground text-xs">
-                                    Las suscripciones aparecerán aquí cuando los usuarios se
-                                    suscriban a un plan.
+                                    {t('admin-billing.subscriptions.emptyHint')}
                                 </p>
                             </div>
                         ) : (
@@ -980,25 +1123,27 @@ function BillingSubscriptionsPage() {
                                     <thead>
                                         <tr className="border-b">
                                             <th className="px-4 py-3 text-left font-medium">
-                                                Usuario
+                                                {t('admin-billing.subscriptions.columns.user')}
                                             </th>
                                             <th className="px-4 py-3 text-left font-medium">
-                                                Plan
+                                                {t('admin-billing.subscriptions.columns.plan')}
                                             </th>
                                             <th className="px-4 py-3 text-center font-medium">
-                                                Estado
+                                                {t('admin-billing.subscriptions.columns.status')}
                                             </th>
                                             <th className="px-4 py-3 text-left font-medium">
-                                                Inicio
+                                                {t('admin-billing.subscriptions.columns.startDate')}
                                             </th>
                                             <th className="px-4 py-3 text-left font-medium">
-                                                Fin de período
+                                                {t('admin-billing.subscriptions.columns.periodEnd')}
                                             </th>
                                             <th className="px-4 py-3 text-right font-medium">
-                                                Monto mensual
+                                                {t(
+                                                    'admin-billing.subscriptions.columns.monthlyAmount'
+                                                )}
                                             </th>
                                             <th className="px-4 py-3 text-right font-medium">
-                                                Acciones
+                                                {t('admin-billing.subscriptions.columns.actions')}
                                             </th>
                                         </tr>
                                     </thead>
@@ -1027,10 +1172,16 @@ function BillingSubscriptionsPage() {
                                                             </div>
                                                             <div className="text-muted-foreground text-xs">
                                                                 {plan?.category === 'owner'
-                                                                    ? 'Propietario'
+                                                                    ? t(
+                                                                          'admin-billing.subscriptions.categoryOwner'
+                                                                      )
                                                                     : plan?.category === 'complex'
-                                                                      ? 'Complejo'
-                                                                      : 'Turista'}
+                                                                      ? t(
+                                                                            'admin-billing.subscriptions.categoryComplex'
+                                                                        )
+                                                                      : t(
+                                                                            'admin-billing.subscriptions.categoryTourist'
+                                                                        )}
                                                             </div>
                                                         </div>
                                                     </td>
@@ -1040,7 +1191,7 @@ function BillingSubscriptionsPage() {
                                                                 subscription.status
                                                             )}
                                                         >
-                                                            {getStatusLabel(subscription.status)}
+                                                            {getStatusLabel(subscription.status, t)}
                                                         </Badge>
                                                     </td>
                                                     <td className="px-4 py-3 text-muted-foreground text-xs">
@@ -1061,7 +1212,9 @@ function BillingSubscriptionsPage() {
                                                                     handleViewDetails(subscription)
                                                                 }
                                                             >
-                                                                Ver
+                                                                {t(
+                                                                    'admin-billing.subscriptions.viewButton'
+                                                                )}
                                                             </Button>
                                                             <Button
                                                                 variant="ghost"
@@ -1070,7 +1223,9 @@ function BillingSubscriptionsPage() {
                                                                     handleCancelClick(subscription)
                                                                 }
                                                             >
-                                                                Cancelar
+                                                                {t(
+                                                                    'admin-billing.subscriptions.cancelButton'
+                                                                )}
                                                             </Button>
                                                         </div>
                                                     </td>

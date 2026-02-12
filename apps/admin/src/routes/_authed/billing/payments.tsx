@@ -14,6 +14,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { usePaymentsQuery, useRefundPaymentMutation } from '@/features/billing-payments/hooks';
+import { useTranslations } from '@/hooks/use-translations';
+import type { TranslationKey } from '@repo/i18n';
 import { createFileRoute } from '@tanstack/react-router';
 import { CalendarIcon, DollarSignIcon, FilterIcon } from 'lucide-react';
 import { useState } from 'react';
@@ -55,12 +57,12 @@ function getStatusVariant(status: PaymentStatus) {
 /**
  * Get status label
  */
-function getStatusLabel(status: PaymentStatus): string {
+function getStatusLabel(status: PaymentStatus, t: (key: TranslationKey) => string): string {
     const labels = {
-        completed: 'Completado',
-        pending: 'Pendiente',
-        failed: 'Fallido',
-        refunded: 'Reembolsado'
+        completed: t('admin-billing.payments.statuses.completed'),
+        pending: t('admin-billing.payments.statuses.pending'),
+        failed: t('admin-billing.payments.statuses.failed'),
+        refunded: t('admin-billing.payments.statuses.refunded')
     };
     return labels[status];
 }
@@ -68,12 +70,12 @@ function getStatusLabel(status: PaymentStatus): string {
 /**
  * Get payment method label
  */
-function getPaymentMethodLabel(method: PaymentMethod): string {
+function getPaymentMethodLabel(method: PaymentMethod, t: (key: TranslationKey) => string): string {
     const labels = {
-        credit_card: 'Tarjeta de Crédito',
-        debit_card: 'Tarjeta de Débito',
-        mercado_pago: 'Mercado Pago',
-        bank_transfer: 'Transferencia Bancaria'
+        credit_card: t('admin-billing.payments.methods.creditCard'),
+        debit_card: t('admin-billing.payments.methods.debitCard'),
+        mercado_pago: t('admin-billing.payments.methods.mercadoPago'),
+        bank_transfer: t('admin-billing.payments.methods.bankTransfer')
     };
     return labels[method];
 }
@@ -115,6 +117,8 @@ function PaymentDetailDialog({
     open: boolean;
     onOpenChange: (open: boolean) => void;
 }) {
+    const { t } = useTranslations();
+
     if (!payment) return null;
 
     return (
@@ -124,21 +128,27 @@ function PaymentDetailDialog({
         >
             <DialogContent className="max-w-2xl">
                 <DialogHeader>
-                    <DialogTitle>Detalles del Pago</DialogTitle>
+                    <DialogTitle>{t('admin-billing.payments.dialog.title')}</DialogTitle>
                     <DialogDescription>ID: {payment.id}</DialogDescription>
                 </DialogHeader>
 
                 <div className="grid gap-4">
                     {/* User Information */}
                     <div className="grid gap-2">
-                        <h3 className="font-semibold text-sm">Información del Usuario</h3>
+                        <h3 className="font-semibold text-sm">
+                            {t('admin-billing.payments.dialog.userInfo')}
+                        </h3>
                         <div className="grid grid-cols-2 gap-2 rounded-md bg-muted p-3 text-sm">
                             <div>
-                                <p className="text-muted-foreground text-xs">Nombre</p>
+                                <p className="text-muted-foreground text-xs">
+                                    {t('admin-billing.payments.dialog.nameLabel')}
+                                </p>
                                 <p className="font-medium">{payment.userName}</p>
                             </div>
                             <div>
-                                <p className="text-muted-foreground text-xs">Email</p>
+                                <p className="text-muted-foreground text-xs">
+                                    {t('admin-billing.payments.dialog.emailLabel')}
+                                </p>
                                 <p className="font-medium">{payment.userEmail}</p>
                             </div>
                         </div>
@@ -146,34 +156,48 @@ function PaymentDetailDialog({
 
                     {/* Payment Information */}
                     <div className="grid gap-2">
-                        <h3 className="font-semibold text-sm">Información del Pago</h3>
+                        <h3 className="font-semibold text-sm">
+                            {t('admin-billing.payments.dialog.paymentInfo')}
+                        </h3>
                         <div className="grid grid-cols-2 gap-2 rounded-md bg-muted p-3 text-sm">
                             <div>
-                                <p className="text-muted-foreground text-xs">Monto</p>
+                                <p className="text-muted-foreground text-xs">
+                                    {t('admin-billing.payments.dialog.amountLabel')}
+                                </p>
                                 <p className="font-semibold text-lg">{formatArs(payment.amount)}</p>
                             </div>
                             <div>
-                                <p className="text-muted-foreground text-xs">Estado</p>
+                                <p className="text-muted-foreground text-xs">
+                                    {t('admin-billing.payments.dialog.statusLabel')}
+                                </p>
                                 <Badge variant={getStatusVariant(payment.status)}>
-                                    {getStatusLabel(payment.status)}
+                                    {getStatusLabel(payment.status, t)}
                                 </Badge>
                             </div>
                             <div>
-                                <p className="text-muted-foreground text-xs">Fecha</p>
+                                <p className="text-muted-foreground text-xs">
+                                    {t('admin-billing.payments.dialog.dateLabel')}
+                                </p>
                                 <p className="font-medium">{formatDate(payment.date)}</p>
                             </div>
                             <div>
-                                <p className="text-muted-foreground text-xs">Método</p>
+                                <p className="text-muted-foreground text-xs">
+                                    {t('admin-billing.payments.dialog.methodLabel')}
+                                </p>
                                 <p className="font-medium">
-                                    {getPaymentMethodLabel(payment.method)}
+                                    {getPaymentMethodLabel(payment.method, t)}
                                 </p>
                             </div>
                             <div>
-                                <p className="text-muted-foreground text-xs">Plan</p>
+                                <p className="text-muted-foreground text-xs">
+                                    {t('admin-billing.payments.dialog.planLabel')}
+                                </p>
                                 <p className="font-medium">{payment.planName}</p>
                             </div>
                             <div>
-                                <p className="text-muted-foreground text-xs">ID Transacción</p>
+                                <p className="text-muted-foreground text-xs">
+                                    {t('admin-billing.payments.dialog.transactionIdLabel')}
+                                </p>
                                 <p className="font-mono text-xs">{payment.transactionId}</p>
                             </div>
                         </div>
@@ -181,14 +205,20 @@ function PaymentDetailDialog({
 
                     {/* Related Information */}
                     <div className="grid gap-2">
-                        <h3 className="font-semibold text-sm">Referencias</h3>
+                        <h3 className="font-semibold text-sm">
+                            {t('admin-billing.payments.dialog.references')}
+                        </h3>
                         <div className="grid grid-cols-2 gap-2 rounded-md bg-muted p-3 text-sm">
                             <div>
-                                <p className="text-muted-foreground text-xs">Suscripción</p>
+                                <p className="text-muted-foreground text-xs">
+                                    {t('admin-billing.payments.dialog.subscriptionLabel')}
+                                </p>
                                 <p className="font-mono text-xs">{payment.subscriptionId}</p>
                             </div>
                             <div>
-                                <p className="text-muted-foreground text-xs">Factura</p>
+                                <p className="text-muted-foreground text-xs">
+                                    {t('admin-billing.payments.dialog.invoiceLabel')}
+                                </p>
                                 <Button
                                     variant="link"
                                     size="sm"
@@ -207,7 +237,7 @@ function PaymentDetailDialog({
                         variant="outline"
                         onClick={() => onOpenChange(false)}
                     >
-                        Cerrar
+                        {t('admin-billing.common.close')}
                     </Button>
                 </DialogFooter>
             </DialogContent>
@@ -231,6 +261,7 @@ function RefundDialog({
     refundMutation: ReturnType<typeof useRefundPaymentMutation>;
     addToast: ReturnType<typeof useToast>['addToast'];
 }) {
+    const { t } = useTranslations();
     const [refundType, setRefundType] = useState<'full' | 'partial'>('full');
     const [partialAmount, setPartialAmount] = useState('');
     const [reason, setReason] = useState('');
@@ -252,7 +283,7 @@ function RefundDialog({
             {
                 onSuccess: () => {
                     addToast({
-                        message: 'Reembolso procesado correctamente',
+                        message: t('admin-billing.payments.toasts.refundSuccess'),
                         variant: 'success'
                     });
                     onOpenChange(false);
@@ -262,7 +293,7 @@ function RefundDialog({
                 },
                 onError: (error) => {
                     addToast({
-                        message: `Error al procesar reembolso: ${error.message}`,
+                        message: `${t('admin-billing.payments.toasts.refundError')} ${error.message}`,
                         variant: 'error'
                     });
                 }
@@ -280,9 +311,9 @@ function RefundDialog({
         >
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Reembolsar Pago</DialogTitle>
+                    <DialogTitle>{t('admin-billing.payments.refundDialog.title')}</DialogTitle>
                     <DialogDescription>
-                        Procesar reembolso para el pago {payment.id}
+                        {t('admin-billing.payments.refundDialog.description')} {payment.id}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -305,7 +336,7 @@ function RefundDialog({
 
                     {/* Refund Type */}
                     <div className="grid gap-2">
-                        <Label>Tipo de Reembolso</Label>
+                        <Label>{t('admin-billing.payments.refundDialog.refundTypeLabel')}</Label>
                         <div className="flex gap-4">
                             <label className="flex cursor-pointer items-center gap-2">
                                 <input
@@ -317,7 +348,9 @@ function RefundDialog({
                                         setRefundType(e.target.value as 'full' | 'partial')
                                     }
                                 />
-                                <span className="text-sm">Reembolso Completo</span>
+                                <span className="text-sm">
+                                    {t('admin-billing.payments.refundDialog.fullRefund')}
+                                </span>
                             </label>
                             <label className="flex cursor-pointer items-center gap-2">
                                 <input
@@ -329,7 +362,9 @@ function RefundDialog({
                                         setRefundType(e.target.value as 'full' | 'partial')
                                     }
                                 />
-                                <span className="text-sm">Reembolso Parcial</span>
+                                <span className="text-sm">
+                                    {t('admin-billing.payments.refundDialog.partialRefund')}
+                                </span>
                             </label>
                         </div>
                     </div>
@@ -337,7 +372,9 @@ function RefundDialog({
                     {/* Partial Amount */}
                     {refundType === 'partial' && (
                         <div className="grid gap-2">
-                            <Label htmlFor="partialAmount">Monto a Reembolsar</Label>
+                            <Label htmlFor="partialAmount">
+                                {t('admin-billing.payments.refundDialog.partialAmountLabel')}
+                            </Label>
                             <Input
                                 id="partialAmount"
                                 type="number"
@@ -349,18 +386,21 @@ function RefundDialog({
                                 step="0.01"
                             />
                             <p className="text-muted-foreground text-xs">
-                                Máximo: {formatArs(payment.amount)}
+                                {t('admin-billing.payments.refundDialog.maxAmount')}{' '}
+                                {formatArs(payment.amount)}
                             </p>
                         </div>
                     )}
 
                     {/* Reason */}
                     <div className="grid gap-2">
-                        <Label htmlFor="reason">Motivo del Reembolso</Label>
+                        <Label htmlFor="reason">
+                            {t('admin-billing.payments.refundDialog.reasonLabel')}
+                        </Label>
                         <textarea
                             id="reason"
                             className="flex min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                            placeholder="Describe el motivo del reembolso..."
+                            placeholder={t('admin-billing.payments.refundDialog.reasonPlaceholder')}
                             value={reason}
                             onChange={(e) => setReason(e.target.value)}
                         />
@@ -369,7 +409,7 @@ function RefundDialog({
                     {/* Summary */}
                     <div className="rounded-md border bg-muted p-3">
                         <div className="flex items-center justify-between font-semibold text-sm">
-                            <span>Total a Reembolsar:</span>
+                            <span>{t('admin-billing.payments.refundDialog.totalToRefund')}</span>
                             <span className="text-lg">{formatArs(refundAmount)}</span>
                         </div>
                     </div>
@@ -381,7 +421,7 @@ function RefundDialog({
                         onClick={() => onOpenChange(false)}
                         disabled={refundMutation.isPending}
                     >
-                        Cancelar
+                        {t('admin-billing.common.cancel')}
                     </Button>
                     <Button
                         variant="destructive"
@@ -392,7 +432,9 @@ function RefundDialog({
                             !reason
                         }
                     >
-                        {refundMutation.isPending ? 'Procesando...' : 'Confirmar Reembolso'}
+                        {refundMutation.isPending
+                            ? t('admin-billing.payments.refundDialog.processingButton')
+                            : t('admin-billing.payments.refundDialog.confirmButton')}
                     </Button>
                 </DialogFooter>
             </DialogContent>
@@ -401,6 +443,7 @@ function RefundDialog({
 }
 
 function BillingPaymentsPage() {
+    const { t } = useTranslations();
     const { addToast } = useToast();
     const [statusFilter, setStatusFilter] = useState<PaymentStatus | 'all'>('all');
     const [methodFilter, setMethodFilter] = useState<PaymentMethod | 'all'>('all');
@@ -475,9 +518,9 @@ function BillingPaymentsPage() {
         <SidebarPageLayout>
             <div className="space-y-6">
                 <div>
-                    <h2 className="mb-2 font-bold text-2xl">Pagos</h2>
+                    <h2 className="mb-2 font-bold text-2xl">{t('admin-billing.payments.title')}</h2>
                     <p className="text-muted-foreground">
-                        Gestiona y monitorea todos los pagos del sistema
+                        {t('admin-billing.payments.description')}
                     </p>
                 </div>
 
@@ -485,14 +528,16 @@ function BillingPaymentsPage() {
                 <Card>
                     <CardHeader>
                         <div className="flex items-center justify-between">
-                            <CardTitle>Búsqueda</CardTitle>
+                            <CardTitle>{t('admin-billing.payments.searchTitle')}</CardTitle>
                             <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => setShowFilters(!showFilters)}
                             >
                                 <FilterIcon className="mr-2 size-4" />
-                                {showFilters ? 'Ocultar Filtros' : 'Más Filtros'}
+                                {showFilters
+                                    ? t('admin-billing.payments.hideFilters')
+                                    : t('admin-billing.payments.moreFilters')}
                             </Button>
                         </div>
                     </CardHeader>
@@ -503,11 +548,11 @@ function BillingPaymentsPage() {
                                     htmlFor="payment-search"
                                     className="mb-2 block font-medium text-sm"
                                 >
-                                    Buscar por ID o usuario
+                                    {t('admin-billing.payments.searchLabel')}
                                 </label>
                                 <Input
                                     id="payment-search"
-                                    placeholder="ID, nombre o email..."
+                                    placeholder={t('admin-billing.payments.searchPlaceholder')}
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                 />
@@ -517,7 +562,7 @@ function BillingPaymentsPage() {
                                     htmlFor="payment-status-filter"
                                     className="mb-2 block font-medium text-sm"
                                 >
-                                    Estado
+                                    {t('admin-billing.payments.statusFilter')}
                                 </label>
                                 <select
                                     id="payment-status-filter"
@@ -527,11 +572,21 @@ function BillingPaymentsPage() {
                                         setStatusFilter(e.target.value as PaymentStatus | 'all')
                                     }
                                 >
-                                    <option value="all">Todos</option>
-                                    <option value="completed">Completado</option>
-                                    <option value="pending">Pendiente</option>
-                                    <option value="failed">Fallido</option>
-                                    <option value="refunded">Reembolsado</option>
+                                    <option value="all">
+                                        {t('admin-billing.payments.allFilter')}
+                                    </option>
+                                    <option value="completed">
+                                        {t('admin-billing.payments.statuses.completed')}
+                                    </option>
+                                    <option value="pending">
+                                        {t('admin-billing.payments.statuses.pending')}
+                                    </option>
+                                    <option value="failed">
+                                        {t('admin-billing.payments.statuses.failed')}
+                                    </option>
+                                    <option value="refunded">
+                                        {t('admin-billing.payments.statuses.refunded')}
+                                    </option>
                                 </select>
                             </div>
                             <div>
@@ -539,7 +594,7 @@ function BillingPaymentsPage() {
                                     htmlFor="payment-method-filter"
                                     className="mb-2 block font-medium text-sm"
                                 >
-                                    Método de Pago
+                                    {t('admin-billing.payments.methodFilter')}
                                 </label>
                                 <select
                                     id="payment-method-filter"
@@ -549,11 +604,21 @@ function BillingPaymentsPage() {
                                         setMethodFilter(e.target.value as PaymentMethod | 'all')
                                     }
                                 >
-                                    <option value="all">Todos</option>
-                                    <option value="credit_card">Tarjeta de Crédito</option>
-                                    <option value="debit_card">Tarjeta de Débito</option>
-                                    <option value="mercado_pago">Mercado Pago</option>
-                                    <option value="bank_transfer">Transferencia Bancaria</option>
+                                    <option value="all">
+                                        {t('admin-billing.payments.allFilter')}
+                                    </option>
+                                    <option value="credit_card">
+                                        {t('admin-billing.payments.methods.creditCard')}
+                                    </option>
+                                    <option value="debit_card">
+                                        {t('admin-billing.payments.methods.debitCard')}
+                                    </option>
+                                    <option value="mercado_pago">
+                                        {t('admin-billing.payments.methods.mercadoPago')}
+                                    </option>
+                                    <option value="bank_transfer">
+                                        {t('admin-billing.payments.methods.bankTransfer')}
+                                    </option>
                                 </select>
                             </div>
                         </div>
@@ -562,7 +627,7 @@ function BillingPaymentsPage() {
                         {showFilters && (
                             <div className="mt-4 grid gap-4 rounded-md border bg-muted/50 p-4 md:grid-cols-2">
                                 <div className="col-span-2 font-medium text-sm">
-                                    Filtros Avanzados
+                                    {t('admin-billing.payments.advancedFilters')}
                                 </div>
 
                                 {/* Date Range */}
@@ -572,7 +637,7 @@ function BillingPaymentsPage() {
                                         className="mb-2 flex items-center gap-2 font-medium text-sm"
                                     >
                                         <CalendarIcon className="size-4" />
-                                        Fecha Desde
+                                        {t('admin-billing.payments.dateFrom')}
                                     </label>
                                     <Input
                                         id="payment-start-date"
@@ -587,7 +652,7 @@ function BillingPaymentsPage() {
                                         className="mb-2 flex items-center gap-2 font-medium text-sm"
                                     >
                                         <CalendarIcon className="size-4" />
-                                        Fecha Hasta
+                                        {t('admin-billing.payments.dateTo')}
                                     </label>
                                     <Input
                                         id="payment-end-date"
@@ -604,7 +669,7 @@ function BillingPaymentsPage() {
                                         className="mb-2 flex items-center gap-2 font-medium text-sm"
                                     >
                                         <DollarSignIcon className="size-4" />
-                                        Monto Mínimo
+                                        {t('admin-billing.payments.minAmount')}
                                     </label>
                                     <Input
                                         id="payment-min-amount"
@@ -622,7 +687,7 @@ function BillingPaymentsPage() {
                                         className="mb-2 flex items-center gap-2 font-medium text-sm"
                                     >
                                         <DollarSignIcon className="size-4" />
-                                        Monto Máximo
+                                        {t('admin-billing.payments.maxAmount')}
                                     </label>
                                     <Input
                                         id="payment-max-amount"
@@ -647,7 +712,7 @@ function BillingPaymentsPage() {
                                             setMaxAmount('');
                                         }}
                                     >
-                                        Limpiar Filtros Avanzados
+                                        {t('admin-billing.payments.clearAdvancedFilters')}
                                     </Button>
                                 </div>
                             </div>
@@ -658,15 +723,15 @@ function BillingPaymentsPage() {
                 {/* Payments Table */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>Historial de Pagos</CardTitle>
+                        <CardTitle>{t('admin-billing.payments.tableTitle')}</CardTitle>
                         <CardDescription>
                             {isLoading
-                                ? 'Cargando...'
+                                ? t('admin-billing.payments.loadingPayments')
                                 : isError
-                                  ? 'Error al cargar pagos'
+                                  ? t('admin-billing.payments.errorLoading')
                                   : filteredPayments.length === 0
-                                    ? 'No hay pagos'
-                                    : `${filteredPayments.length} pago${filteredPayments.length !== 1 ? 's' : ''}`}
+                                    ? t('admin-billing.payments.noPayments')
+                                    : `${filteredPayments.length} ${filteredPayments.length !== 1 ? t('admin-billing.payments.paymentCountPlural') : t('admin-billing.payments.paymentCount')}`}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -674,24 +739,25 @@ function BillingPaymentsPage() {
                             <div className="py-12 text-center">
                                 <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
                                 <p className="mt-4 text-muted-foreground text-sm">
-                                    Cargando pagos...
+                                    {t('admin-billing.payments.loadingPayments')}
                                 </p>
                             </div>
                         ) : isError ? (
                             <div className="py-12 text-center">
-                                <p className="text-destructive text-sm">Error al cargar pagos</p>
+                                <p className="text-destructive text-sm">
+                                    {t('admin-billing.payments.errorLoading')}
+                                </p>
                                 <p className="mt-2 text-muted-foreground text-xs">
-                                    Verifica que la API esté disponible
+                                    {t('admin-billing.payments.apiCheckError')}
                                 </p>
                             </div>
                         ) : filteredPayments.length === 0 ? (
                             <div className="py-12 text-center">
                                 <p className="text-muted-foreground text-sm">
-                                    No hay pagos registrados aún.
+                                    {t('admin-billing.payments.emptyTitle')}
                                 </p>
                                 <p className="mt-2 text-muted-foreground text-xs">
-                                    Los pagos aparecerán aquí cuando los usuarios realicen
-                                    transacciones.
+                                    {t('admin-billing.payments.emptyHint')}
                                 </p>
                             </div>
                         ) : (
@@ -699,27 +765,29 @@ function BillingPaymentsPage() {
                                 <table className="w-full text-sm">
                                     <thead>
                                         <tr className="border-b">
-                                            <th className="px-4 py-3 text-left font-medium">ID</th>
                                             <th className="px-4 py-3 text-left font-medium">
-                                                Usuario
+                                                {t('admin-billing.payments.columns.id')}
+                                            </th>
+                                            <th className="px-4 py-3 text-left font-medium">
+                                                {t('admin-billing.payments.columns.user')}
                                             </th>
                                             <th className="px-4 py-3 text-right font-medium">
-                                                Monto
+                                                {t('admin-billing.payments.columns.amount')}
                                             </th>
                                             <th className="px-4 py-3 text-center font-medium">
-                                                Estado
+                                                {t('admin-billing.payments.columns.status')}
                                             </th>
                                             <th className="px-4 py-3 text-left font-medium">
-                                                Fecha
+                                                {t('admin-billing.payments.columns.date')}
                                             </th>
                                             <th className="px-4 py-3 text-left font-medium">
-                                                Método
+                                                {t('admin-billing.payments.columns.method')}
                                             </th>
                                             <th className="px-4 py-3 text-left font-medium">
-                                                Plan
+                                                {t('admin-billing.payments.columns.plan')}
                                             </th>
                                             <th className="px-4 py-3 text-right font-medium">
-                                                Acciones
+                                                {t('admin-billing.payments.columns.actions')}
                                             </th>
                                         </tr>
                                     </thead>
@@ -749,14 +817,14 @@ function BillingPaymentsPage() {
                                                     <Badge
                                                         variant={getStatusVariant(payment.status)}
                                                     >
-                                                        {getStatusLabel(payment.status)}
+                                                        {getStatusLabel(payment.status, t)}
                                                     </Badge>
                                                 </td>
                                                 <td className="px-4 py-3 text-muted-foreground text-xs">
                                                     {formatDate(payment.date)}
                                                 </td>
                                                 <td className="px-4 py-3 text-muted-foreground text-xs">
-                                                    {getPaymentMethodLabel(payment.method)}
+                                                    {getPaymentMethodLabel(payment.method, t)}
                                                 </td>
                                                 <td className="px-4 py-3 text-xs">
                                                     {payment.planName}
@@ -770,7 +838,7 @@ function BillingPaymentsPage() {
                                                                 handleViewDetails(payment)
                                                             }
                                                         >
-                                                            Ver
+                                                            {t('admin-billing.payments.viewButton')}
                                                         </Button>
                                                         <Button
                                                             variant="ghost"
@@ -781,11 +849,17 @@ function BillingPaymentsPage() {
                                                             }
                                                             title={
                                                                 payment.status !== 'completed'
-                                                                    ? 'Solo se pueden reembolsar pagos completados'
-                                                                    : 'Reembolsar pago'
+                                                                    ? t(
+                                                                          'admin-billing.payments.refundDisabledTitle'
+                                                                      )
+                                                                    : t(
+                                                                          'admin-billing.payments.refundEnabledTitle'
+                                                                      )
                                                             }
                                                         >
-                                                            Reembolsar
+                                                            {t(
+                                                                'admin-billing.payments.refundButton'
+                                                            )}
                                                         </Button>
                                                     </div>
                                                 </td>
