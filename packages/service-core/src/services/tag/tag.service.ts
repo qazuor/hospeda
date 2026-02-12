@@ -297,7 +297,9 @@ export class TagService extends BaseCrudRelatedService<
                     validated.entityId,
                     validated.entityType
                 );
-                const tags = relations.map((rel) => rel.tag).filter(Boolean);
+                const tags = relations
+                    .map((rel) => rel.tag)
+                    .filter(Boolean) as unknown as TagGetForEntityOutput['tags'];
                 return { tags };
             }
         });

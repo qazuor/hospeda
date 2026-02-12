@@ -1,5 +1,5 @@
 import type { users } from '@repo/db';
-import { PermissionEnum, RoleEnum, VisibilityEnum } from '@repo/schemas';
+import { AuthProviderEnum, PermissionEnum, RoleEnum, VisibilityEnum } from '@repo/schemas';
 import type { Actor } from '../../../src/types';
 import { ActorFactoryBuilder } from '../../factories/actorFactory';
 // import { AccommodationFactoryBuilder } from '../factories/accommodationFactory'; // Descomentar si mockEntity es de tipo Accommodation
@@ -11,16 +11,30 @@ export type InferredUser = typeof users.$inferSelect;
 
 export const mockUser: InferredUser = {
     id: MOCK_USER_ID,
-    authId: 'auth-user-1',
+    slug: 'test-user',
+    authProvider: AuthProviderEnum.CLERK,
+    authProviderUserId: 'auth-user-1',
+    displayName: 'Test User',
     firstName: 'Test',
     lastName: 'User',
-    email: 'test@example.com',
-    emailVerified: true,
-    avatar: null,
+    birthDate: null,
+    contactInfo: null,
+    location: null,
+    socialNetworks: null,
+    role: 'USER',
+    profile: null,
+    settings: {
+        notifications: { enabled: true, allowEmails: true, allowSms: false, allowPush: false }
+    },
+    visibility: VisibilityEnum.PUBLIC,
+    lifecycleState: 'ACTIVE',
+    adminInfo: null,
     createdAt: new Date(),
     updatedAt: new Date(),
-    status: 'ACTIVE',
-    bio: null
+    createdById: null,
+    updatedById: null,
+    deletedAt: null,
+    deletedById: null
 };
 
 export const mockActor: Actor = new ActorFactoryBuilder()
