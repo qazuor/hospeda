@@ -81,15 +81,6 @@ vi.mock('@repo/logger', () => {
     };
 });
 
-// Mock Clerk auth - simulate authenticated owner user
-vi.mock('@hono/clerk-auth', () => ({
-    getAuth: vi.fn(() => ({
-        userId: 'clerk_test_owner_addon',
-        sessionId: 'session_test_addon'
-    })),
-    clerkMiddleware: vi.fn(() => (_c: any, next: any) => next())
-}));
-
 // Mock service-core
 vi.mock('@repo/service-core');
 

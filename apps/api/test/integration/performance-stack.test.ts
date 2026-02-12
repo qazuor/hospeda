@@ -39,11 +39,6 @@ vi.mock('@repo/logger', () => {
     };
 });
 
-vi.mock('@hono/clerk-auth', () => ({
-    getAuth: vi.fn(() => ({ sessionId: null, userId: null })),
-    clerkMiddleware: vi.fn(() => (_c: any, next: any) => next())
-}));
-
 /**
  * Performance measurement utilities
  */

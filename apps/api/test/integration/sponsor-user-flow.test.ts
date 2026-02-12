@@ -73,12 +73,6 @@ vi.mock('@repo/logger', () => {
     };
 });
 
-// Mock Clerk auth - bypass real auth
-vi.mock('@hono/clerk-auth', () => ({
-    getAuth: vi.fn(() => ({ sessionId: null, userId: null })),
-    clerkMiddleware: vi.fn(() => (_c: unknown, next: () => Promise<void>) => next())
-}));
-
 /**
  * Mock @repo/service-core - import actual exports and override service classes
  * to return proper ServiceResult objects instead of undefined.

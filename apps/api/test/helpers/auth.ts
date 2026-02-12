@@ -187,8 +187,80 @@ export const createMockActor = (
 });
 
 /**
- * Creates request options with mock authentication headers
- * Simulates authenticated request by including actor data
+ * Mock session data matching Better Auth session shape.
+ * Used for testing middleware and route handlers that read session from context.
+ *
+ * @param overrides - Optional overrides for session properties
+ * @returns Mock session object
+ */
+export const createMockSession = (
+    overrides?: Partial<{
+        id: string;
+        userId: string;
+        token: string;
+        expiresAt: Date;
+        ipAddress: string | null;
+        userAgent: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+    }>
+) => {
+    const now = new Date();
+    return {
+        id: overrides?.id || `session-${crypto.randomUUID().slice(0, 8)}`,
+        userId: overrides?.userId || crypto.randomUUID(),
+        token: overrides?.token || `tok-${crypto.randomUUID().slice(0, 16)}`,
+        expiresAt: overrides?.expiresAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        ipAddress: overrides?.ipAddress ?? null,
+        userAgent: overrides?.userAgent ?? 'vitest',
+        createdAt: overrides?.createdAt || now,
+        updatedAt: overrides?.updatedAt || now
+    };
+};
+
+/**
+ * Mock user data matching Better Auth user shape.
+ * Used for testing middleware and route handlers that read user from context.
+ *
+ * @param overrides - Optional overrides for user properties
+ * @returns Mock user object
+ */
+export const createMockUser = (
+    overrides?: Partial<{
+        id: string;
+        name: string;
+        email: string;
+        emailVerified: boolean;
+        image: string | null;
+        role: string;
+        banned: boolean;
+        banReason: string | null;
+        banExpires: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+    }>
+) => {
+    const now = new Date();
+    return {
+        id: overrides?.id || crypto.randomUUID(),
+        name: overrides?.name || 'Test User',
+        email: overrides?.email || 'test@example.com',
+        emailVerified: overrides?.emailVerified ?? true,
+        image: overrides?.image ?? null,
+        role: overrides?.role || 'USER',
+        banned: overrides?.banned ?? false,
+        banReason: overrides?.banReason ?? null,
+        banExpires: overrides?.banExpires ?? null,
+        createdAt: overrides?.createdAt || now,
+        updatedAt: overrides?.updatedAt || now
+    };
+};
+
+/**
+ * Creates request options with mock authentication headers.
+ * Simulates authenticated request by including actor data via
+ * x-mock-actor-* headers processed by actorMiddleware in test mode.
+ *
  * @param actor - The actor to authenticate as
  * @param additionalHeaders - Additional headers to include
  * @returns Request options with authentication
@@ -201,7 +273,7 @@ export const createAuthenticatedRequest = (
         'content-type': 'application/json',
         'user-agent': 'vitest',
         accept: 'application/json',
-        // Mock Clerk authentication headers
+        // Mock actor headers (processed by actorMiddleware when ALLOW_MOCK_ACTOR=true)
         'x-mock-actor-id': actor.id,
         'x-mock-actor-role': actor.role,
         'x-mock-actor-permissions': JSON.stringify(actor.permissions),

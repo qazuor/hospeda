@@ -14,7 +14,7 @@ beforeAll(() => {
     process.env.NODE_ENV = 'test';
 
     // Mock environment variables for testing
-    process.env.PUBLIC_CLERK_PUBLISHABLE_KEY = 'test_clerk_publishable';
+    process.env.VITE_BETTER_AUTH_URL = 'http://localhost:3001';
 
     // Start MSW server to intercept HTTP requests
     server.listen({ onUnhandledRequest: 'warn' });
@@ -32,27 +32,46 @@ afterAll(() => {
     server.close();
 });
 
-// Mock Clerk authentication
-vi.mock('@clerk/tanstack-react-start', () => ({
-    useAuth: () => ({
-        isSignedIn: true,
-        userId: 'test_user_id',
-        sessionId: 'test_session_id',
-        getToken: vi.fn().mockResolvedValue('test_token')
-    }),
-    useUser: () => ({
+// Mock Better Auth React client
+vi.mock('better-auth/react', () => {
+    const mockSession = {
         user: {
             id: 'test_user_id',
-            firstName: 'Test',
-            lastName: 'User',
-            emailAddresses: [{ emailAddress: 'test@example.com' }]
+            name: 'Test User',
+            email: 'test@example.com',
+            emailVerified: true,
+            image: null,
+            role: 'USER',
+            createdAt: new Date(),
+            updatedAt: new Date()
+        },
+        session: {
+            id: 'test_session_id',
+            userId: 'test_user_id',
+            token: 'test-session-token',
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
         }
-    }),
-    ClerkProvider: ({ children }: { children: React.ReactNode }) => children,
-    SignInButton: ({ children }: { children: React.ReactNode }) => children,
-    SignOutButton: ({ children }: { children: React.ReactNode }) => children,
-    UserButton: () => null
-}));
+    };
+
+    return {
+        createAuthClient: vi.fn(() => ({
+            useSession: vi.fn(() => ({
+                data: mockSession,
+                isPending: false,
+                error: null
+            })),
+            signIn: {
+                email: vi.fn().mockResolvedValue({ data: mockSession, error: null }),
+                social: vi.fn().mockResolvedValue({})
+            },
+            signUp: {
+                email: vi.fn().mockResolvedValue({ data: mockSession, error: null })
+            },
+            signOut: vi.fn().mockResolvedValue({}),
+            getSession: vi.fn().mockResolvedValue(mockSession)
+        }))
+    };
+});
 
 // Mock TanStack Router
 vi.mock('@tanstack/react-router', () => ({

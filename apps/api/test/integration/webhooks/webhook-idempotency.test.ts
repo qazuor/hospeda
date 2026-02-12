@@ -74,12 +74,6 @@ vi.mock('@repo/logger', () => {
     };
 });
 
-// Mock Clerk auth - not needed for webhook endpoints (public)
-vi.mock('@hono/clerk-auth', () => ({
-    getAuth: vi.fn(() => ({ sessionId: null, userId: null })),
-    clerkMiddleware: vi.fn(() => (_c: any, next: any) => next())
-}));
-
 // Mock service-core
 vi.mock('@repo/service-core');
 

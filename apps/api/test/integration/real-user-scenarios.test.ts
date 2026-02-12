@@ -43,11 +43,6 @@ vi.mock('@repo/logger', () => {
     };
 });
 
-vi.mock('@hono/clerk-auth', () => ({
-    getAuth: vi.fn(() => ({ sessionId: null, userId: null })),
-    clerkMiddleware: vi.fn(() => (_c: any, next: any) => next())
-}));
-
 // Mock service-core for AccommodationService and DestinationService
 vi.mock('@repo/service-core', () => {
     const { z } = require('zod');

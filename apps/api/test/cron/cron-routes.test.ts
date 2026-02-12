@@ -33,7 +33,6 @@
  * Tech Stack:
  * - Hono app (via initApp)
  * - Mocked @repo/logger
- * - Mocked @hono/clerk-auth
  * - Mocked @repo/db and drizzle-orm
  * - Vitest (describe/it/expect patterns)
  *
@@ -106,15 +105,6 @@ vi.mock('@repo/logger', () => {
         apiLogger: createMockedLogger()
     };
 });
-
-// Mock Clerk auth - not used in cron routes but needed for app initialization
-vi.mock('@hono/clerk-auth', () => ({
-    getAuth: vi.fn(() => ({
-        userId: 'clerk_test_user',
-        sessionId: 'session_test'
-    })),
-    clerkMiddleware: vi.fn(() => (_c: any, next: any) => next())
-}));
 
 // Mock service-core (auto-mock all services)
 vi.mock('@repo/service-core');
