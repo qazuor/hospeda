@@ -42,6 +42,30 @@ export interface SignUpMethods {
 }
 
 /**
+ * Forgot password method provided by the auth client
+ */
+export type ForgotPasswordMethod = (params: { email: string; redirectTo: string }) => Promise<{
+    data?: unknown;
+    error?: { message?: string; code?: string } | null;
+}>;
+
+/**
+ * Reset password method provided by the auth client
+ */
+export type ResetPasswordMethod = (params: { newPassword: string; token: string }) => Promise<{
+    data?: unknown;
+    error?: { message?: string; code?: string } | null;
+}>;
+
+/**
+ * Verify email method provided by the auth client
+ */
+export type VerifyEmailMethod = (params: { token: string }) => Promise<{
+    data?: unknown;
+    error?: { message?: string; code?: string } | null;
+}>;
+
+/**
  * User data from a Better Auth session
  */
 export interface SessionUser {
