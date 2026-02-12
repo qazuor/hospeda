@@ -1,598 +1,418 @@
+---
+name: add-new-entity
+description: Interactive wizard for creating a new domain entity or feature, scaffolding model, service, routes, and tests following project conventions
+---
+
 # Add New Entity Command
 
 ## Purpose
 
-Structured workflow for adding a new domain entity following the established Hospeda architecture patterns. Ensures consistent implementation across all layers (Database → Service → API → Frontend).
+Interactive wizard for creating a new domain entity or feature. Scaffolds all
+required layers (model, service, routes, tests) following the project's
+established conventions and patterns. Ensures consistency across the codebase
+when adding new functionality.
 
 ## Usage
 
 ```bash
 /add-new-entity {entity_name}
-```text
+```
+
+### Examples
+
+```bash
+/add-new-entity user
+/add-new-entity product
+/add-new-entity booking
+/add-new-entity comment
+```
 
 ## Description
 
-Orchestrates the complete implementation of a new domain entity following the Four-Phase Workflow with TDD principles. Creates all necessary files, follows established patterns, and ensures comprehensive testing and documentation.
+Guides you through the creation of a complete domain entity by:
+
+1. Gathering entity requirements interactively
+2. Analyzing existing project patterns and conventions
+3. Scaffolding all required files across all layers
+4. Creating tests for each layer
+5. Updating relevant index/barrel files and registrations
 
 ---
 
 ## Execution Flow
 
-### Phase 1: Planning (Entity Design)
-
-#### Step 1: Domain Analysis
-
-**Agent**: `product-technical`
-
-**Process**:
-
-- Analyze entity requirements and relationships
-- Design database schema with proper relationships
-- Plan API endpoints and service methods
-- Define business rules and validation logic
-- Create implementation roadmap
-
-**Deliverable**: Entity design document with:
-
-- Database schema definition
-- Business rules specification
-- API endpoint design
-- Service method planning
-- Validation requirements
-
-#### Step 2: Architecture Validation
-
-**Agent**: `architecture-validator`
-
-**Process**:
-
-- Validate entity fits existing architecture
-- Review relationships with existing entities
-- Ensure pattern consistency
-- Validate naming conventions
-- Approve implementation approach
-
-### Phase 2: Implementation (TDD Workflow)
-
-#### Step 3: Database Layer Implementation
-
-**Agent**: `db-engineer`
-
-**Process**:
-
-1. **Create Database Schema**:
-
-   ```typescript
-   // packages/db/src/schemas/{entity}/{entity}.schema.ts
-   export const {entity}Schema = pgTable('{entity}', {
-     id: varchar('id').primaryKey().$defaultFn(() => nanoid()),
-     // ... entity fields
-     createdAt: timestamp('created_at').notNull().defaultNow(),
-     updatedAt: timestamp('updated_at').notNull().defaultNow(),
-   });
-   ```
-
-2. **Create Database Model**:
-
-   ```typescript
-   // packages/db/src/models/{entity}.model.ts
-   export class {Entity}Model extends BaseModel<{Entity}> {
-     protected table = {entity}Schema;
-     protected entityName = '{entity}';
-
-     // Custom methods if needed
-   }
-   ```
-
-3. **Write Model Tests**:
-
-   ```typescript
-   // packages/db/test/models/{entity}.model.test.ts
-   describe('{Entity}Model', () => {
-     // TDD: Write tests first
-   });
-   ```
-
-4. **Create Migration**:
-
-   ```sql
-   -- packages/db/migrations/{timestamp}_create_{entity}.sql
-   CREATE TABLE {entity} (
-     id VARCHAR PRIMARY KEY,
-     -- ... fields
-   );
-   ```
-
-#### Step 4: Service Layer Implementation
-
-**Agent**: `backend-reviewer` (service focus)
-
-**Process**:
-
-1. **Create Zod Schemas**:
-
-   ```typescript
-   // packages/schemas/src/{entity}/index.ts
-   export const create{Entity}Schema = z.object({
-     // validation rules
-   });
-   ```
-
-2. **Create Service**:
-
-   ```typescript
-   // packages/service-core/src/services/{entity}/{entity}.service.ts
-   export class {Entity}Service extends BaseCrudService<
-     {Entity}, {Entity}Model, Create{Entity}Schema, Update{Entity}Schema, Search{Entity}Schema
-   > {
-     constructor(ctx: ServiceContext, model?: {Entity}Model) {
-       super(ctx, model || new {Entity}Model(ctx.db));
-     }
-   }
-   ```
-
-3. **Write Service Tests**:
-
-   ```typescript
-   // packages/service-core/test/services/{entity}.service.test.ts
-   describe('{Entity}Service', () => {
-     // TDD: Business logic tests
-   });
-   ```
-
-#### Step 5: API Layer Implementation
-
-**Agent**: `hono-engineer`
-
-**Process**:
-
-1. **Create API Routes**:
-
-   ```typescript
-   // apps/api/src/routes/{entity}/index.ts
-   export const {entity}ListRoute = createListRoute({
-     path: '/{entity}s',
-     service: {Entity}Service,
-     // configuration
-   });
-
-   export const {entity}CrudRoute = createCRUDRoute({
-     path: '/{entity}s',
-     service: {Entity}Service,
-     // configuration
-   });
-   ```
-
-2. **Write API Tests**:
-
-   ```typescript
-   // apps/api/test/routes/{entity}.test.ts
-   describe('{Entity} API', () => {
-     // TDD: API endpoint tests
-   });
-   ```
-
-3. **Register Routes**:
-
-   ```typescript
-   // apps/api/src/app.ts
-   app.route('/api/{entity}s', {entity}ListRoute);
-   app.route('/api/{entity}s', {entity}CrudRoute);
-   ```
-
-#### Step 6: Frontend Implementation
-
-**Agent**: `react-dev` or `astro-engineer`
-
-**Process**:
-
-1. **Create Types**:
-
-   ```typescript
-   // packages/types/src/{entity}/index.ts
-   export type {Entity} = z.infer<typeof {entity}Schema>;
-   ```
-
-2. **Create Components**:
-
-   ```typescript
-   // apps/web/src/components/{entity}/{Entity}Card.tsx
-   // apps/web/src/components/{entity}/{Entity}List.tsx
-   // apps/web/src/components/{entity}/{Entity}Form.tsx
-   ```
-
-3. **Create API Hooks**:
-
-   ```typescript
-   // apps/web/src/hooks/use{Entity}.ts
-   export const use{Entity}List = () => {
-     return useQuery({
-       queryKey: ['{entity}s'],
-       queryFn: () => api.{entity}s.list()
-     });
-   };
-   ```
-
-4. **Write Component Tests**:
-
-   ```typescript
-   // apps/web/test/components/{entity}.test.tsx
-   describe('{Entity} Components', () => {
-     // Component behavior tests
-   });
-   ```
-
-### Phase 3: Validation
-
-#### Step 7: Quality Validation
-
-**Command**: `/quality-check`
-
-**Process**:
-
-- Code quality validation
-- Test coverage verification (≥ 90%)
-- Security review
-- Performance analysis
-
-#### Step 8: Integration Testing
-
-**Agent**: `qa-engineer`
-
-**Process**:
-
-- End-to-end workflow testing
-- Integration between layers
-- User acceptance criteria validation
-- Error scenario testing
-
-### Phase 4: Finalization
-
-#### Step 9: Documentation
-
-**Agent**: `tech-writer`
-
-**Process**:
-
-- API endpoint documentation
-- Database schema documentation
-- Component usage examples
-- Integration guide updates
-
-#### Step 10: Final Review
-
-**Agent**: `tech-lead`
-
-**Process**:
-
-- Architecture consistency review
-- Pattern compliance validation
-- Code quality approval
-- Documentation completeness
+### Step 1: Pattern Analysis
+
+**Process:**
+
+Before generating any files, analyze the existing project to understand
+conventions:
+
+- Scan existing entities/models for naming patterns
+- Identify project structure (monorepo, single app, etc.)
+- Detect ORM or database layer (Drizzle, Prisma, TypeORM, Mongoose, etc.)
+- Detect API framework (Express, Hono, Fastify, NestJS, etc.)
+- Detect frontend framework (React, Vue, Svelte, etc.)
+- Identify test framework (Vitest, Jest, etc.)
+- Detect validation library (Zod, Joi, Yup, etc.)
+- Map the layered architecture (schema -> model -> service -> route -> component)
+
+**Output:**
+
+```text
+Project Pattern Analysis
+
+Structure: Monorepo with packages
+Database: PostgreSQL with Drizzle ORM
+API Framework: Hono
+Frontend: React with Astro
+Test Runner: Vitest
+Validation: Zod
+Architecture: Schema -> Model -> Service -> Route -> Component
+
+Existing entities detected:
+  - User (full stack)
+  - Product (full stack)
+  - Category (backend only)
+```
 
 ---
 
-## Entity Implementation Patterns
+### Step 2: Entity Requirements Gathering (Interactive)
 
-### Database Layer Pattern
+**Process:**
 
-**Required Files**:
+Ask the user a series of questions to define the entity:
 
-```text
-packages/db/src/
-├── schemas/{entity}/
-│   ├── {entity}.schema.ts      # Drizzle schema definition
-│   └── index.ts                # Schema exports
-├── models/
-│   ├── {entity}.model.ts       # Model extending BaseModel
-│   └── index.ts                # Model exports
-└── migrations/
-    └── {timestamp}_create_{entity}.sql
-```text
+1. **Entity Name**: Confirm the entity name and derive singular/plural forms
+2. **Fields/Properties**: What fields does the entity have?
+3. **Relationships**: Does it relate to other entities? (belongs-to, has-many, etc.)
+4. **Validation Rules**: What validation rules apply to each field?
+5. **API Endpoints**: Which CRUD operations are needed?
+6. **Authentication**: Which endpoints require authentication?
+7. **Frontend**: Does it need frontend components? (list, detail, form views)
+8. **Special Behavior**: Any custom business logic?
 
-**Pattern Requirements**:
-
-- Extend `BaseModel<T>`
-- Include `id`, `createdAt`, `updatedAt` fields
-- Use proper TypeScript types
-- Implement custom search logic if needed
-
-### Service Layer Pattern
-
-**Required Files**:
+**Example Interaction:**
 
 ```text
-packages/service-core/src/services/{entity}/
-├── {entity}.service.ts         # Service extending BaseCrudService
-├── index.ts                    # Service exports
-└── types.ts                    # Service-specific types
+Creating new entity: "Booking"
 
-packages/schemas/src/{entity}/
-├── create.schema.ts            # Creation validation
-├── update.schema.ts            # Update validation
-├── search.schema.ts            # Search validation
-└── index.ts                    # Schema exports
-```text
+1. Entity Name
+   Singular: Booking
+   Plural: Bookings
+   Table name: bookings
+   Route prefix: /api/bookings
 
-**Pattern Requirements**:
+2. Fields (define each field):
+   - id: string (auto-generated UUID)
+   - userId: string (foreign key -> users)
+   - productId: string (foreign key -> products)
+   - startDate: date (required)
+   - endDate: date (required)
+   - status: enum [pending, confirmed, cancelled] (default: pending)
+   - totalPrice: number (required)
+   - notes: string (optional)
+   - createdAt: date (auto)
+   - updatedAt: date (auto)
 
-- Extend `BaseCrudService<T, TModel, TCreate, TUpdate, TSearch>`
-- Use RO-RO pattern for all methods
-- Implement proper error handling with `ServiceError`
-- Include comprehensive business logic validation
+3. Relationships:
+   - belongs-to: User (via userId)
+   - belongs-to: Product (via productId)
 
-### API Layer Pattern
+4. API Endpoints:
+   - POST /api/bookings (create) - authenticated
+   - GET /api/bookings (list own) - authenticated
+   - GET /api/bookings/:id (detail) - authenticated
+   - PATCH /api/bookings/:id (update) - authenticated, owner only
+   - DELETE /api/bookings/:id (cancel) - authenticated, owner only
+   - GET /api/admin/bookings (list all) - admin only
 
-**Required Files**:
+5. Frontend Views:
+   - BookingList component
+   - BookingDetail component
+   - BookingForm component (create/edit)
+   - BookingCard component (summary)
 
-```text
-apps/api/src/routes/{entity}/
-├── index.ts                    # Route definitions and exports
-├── create.ts                   # Custom create logic if needed
-├── update.ts                   # Custom update logic if needed
-└── search.ts                   # Custom search logic if needed
-```text
-
-**Pattern Requirements**:
-
-- Use route factory functions
-- Implement proper authentication/authorization
-- Add input validation with Zod schemas
-- Include rate limiting configuration
-
-### Frontend Layer Pattern
-
-**Required Files**:
-
-```text
-apps/web/src/
-├── components/{entity}/
-│   ├── {Entity}Card.tsx        # Display component
-│   ├── {Entity}List.tsx        # List component
-│   ├── {Entity}Form.tsx        # Form component
-│   └── index.ts                # Component exports
-├── hooks/
-│   ├── use{Entity}.ts          # API integration hooks
-│   └── use{Entity}Form.ts      # Form management hooks
-└── pages/{entity}/
-    ├── index.astro             # List page
-    ├── [id].astro              # Detail page
-    └── create.astro            # Creation page
-```text
-
-**Pattern Requirements**:
-
-- Use TanStack Query for data fetching
-- Implement proper loading and error states
-- Follow accessibility guidelines (WCAG AA)
-- Include responsive design
+Proceed with generation? (yes/no)
+```
 
 ---
 
-## Quality Standards
+### Step 3: File Generation
 
-### Code Quality Requirements
+**Process:**
 
-- ✅ **TypeScript**: Strict mode, no `any` types
-- ✅ **Testing**: ≥ 90% coverage across all layers
-- ✅ **Patterns**: Consistent with existing entities
-- ✅ **Documentation**: Complete API and component docs
+Generate all files following the patterns detected in Step 1. The exact files
+depend on the project structure, but typically include:
 
-### Architecture Requirements
+#### Database Layer
 
-- ✅ **Layer Separation**: Clear Model → Service → API → Frontend
-- ✅ **Error Handling**: Consistent error patterns
-- ✅ **Validation**: Comprehensive input validation
-- ✅ **Security**: Proper authentication and authorization
+- **Schema/Migration**: Database table definition
+- **Model**: Data access layer with CRUD operations
+- **Seed Data**: Optional sample data for development
 
-### Performance Requirements
+#### Validation Layer
 
-- ✅ **Database**: Proper indexing and query optimization
-- ✅ **API**: Response times < 200ms
-- ✅ **Frontend**: Component optimization and lazy loading
-- ✅ **Bundle**: Minimal impact on bundle size
+- **Schemas**: Input validation schemas (create, update, search/filter)
+- **Types**: TypeScript type definitions
+
+#### Service Layer
+
+- **Service**: Business logic with CRUD operations
+- **Service Tests**: Unit tests for the service
+
+#### API Layer
+
+- **Routes/Controller**: API endpoint definitions
+- **Route Tests**: Integration tests for endpoints
+- **Middleware**: Any entity-specific middleware
+
+#### Frontend Layer (if applicable)
+
+- **List Component**: Display collection of entities
+- **Detail Component**: Display single entity
+- **Form Component**: Create/edit entity
+- **Card Component**: Summary display
+- **Hooks**: Custom data fetching hooks
+
+#### Infrastructure
+
+- **Index/Barrel Files**: Update exports
+- **Router Registration**: Register new routes
+- **Type Exports**: Export new types
 
 ---
 
-## Output Format
+### Step 4: File Structure Preview
 
-### Success Case
+**Output Example:**
 
 ```text
-✅ NEW ENTITY IMPLEMENTATION COMPLETE
+Files to be created:
 
-Entity: Reservation Management
-Implementation: 4-layer architecture complete
+Database Layer:
+  src/db/schemas/booking.schema.ts
+  src/db/models/booking.model.ts
+  src/db/seed/booking.seed.ts
 
-📊 Implementation Summary:
-✅ Database Layer: Schema, model, and migration created
-✅ Service Layer: Business logic with 95% test coverage
-✅ API Layer: 5 endpoints with authentication
-✅ Frontend Layer: 4 components with responsive design
+Validation Layer:
+  src/schemas/booking/create-booking.schema.ts
+  src/schemas/booking/update-booking.schema.ts
+  src/schemas/booking/search-booking.schema.ts
+  src/schemas/booking/index.ts
 
-📋 Files Created:
-Database (4 files):
+Service Layer:
+  src/services/booking/booking.service.ts
+  src/services/booking/booking.service.test.ts
+  src/services/booking/index.ts
 
-- packages/db/src/schemas/reservation/reservation.schema.ts
-- packages/db/src/models/reservation.model.ts
-- packages/db/migrations/20241028_create_reservation.sql
-- packages/db/test/models/reservation.model.test.ts
+API Layer:
+  src/routes/bookings/index.ts
+  src/routes/bookings/bookings.test.ts
 
-Service (6 files):
+Frontend Layer:
+  src/components/booking/BookingList.tsx
+  src/components/booking/BookingDetail.tsx
+  src/components/booking/BookingForm.tsx
+  src/components/booking/BookingCard.tsx
+  src/hooks/useBookings.ts
 
-- packages/service-core/src/services/reservation/reservation.service.ts
-- packages/schemas/src/reservation/create.schema.ts
-- packages/schemas/src/reservation/update.schema.ts
-- packages/schemas/src/reservation/search.schema.ts
-- packages/service-core/test/services/reservation.service.test.ts
-- packages/types/src/reservation/index.ts
+Files to be updated:
+  src/db/schemas/index.ts (add export)
+  src/db/models/index.ts (add export)
+  src/services/index.ts (add export)
+  src/routes/index.ts (register routes)
 
-API (3 files):
+Total: 16 new files, 4 updated files
 
-- apps/api/src/routes/reservation/index.ts
-- apps/api/test/routes/reservation.test.ts
-- Updated apps/api/src/app.ts
+Proceed with file creation? (yes/no)
+```
 
-Frontend (8 files):
+---
 
-- apps/web/src/components/reservation/ReservationCard.tsx
-- apps/web/src/components/reservation/ReservationList.tsx
-- apps/web/src/components/reservation/ReservationForm.tsx
-- apps/web/src/hooks/useReservation.ts
-- apps/web/src/pages/reservation/index.astro
-- apps/web/src/pages/reservation/[id].astro
-- apps/web/test/components/reservation.test.tsx
+### Step 5: Generation and Validation
 
-📈 Quality Metrics:
-✅ Test Coverage: 94% (target: ≥90%)
-✅ Type Safety: 100% TypeScript strict mode
-✅ Performance: API responses avg 145ms
-✅ Security: Authentication and authorization implemented
+**Process:**
 
-🚀 Entity ready for production use
+1. Generate each file following detected patterns
+2. Ensure all imports are correct
+3. Update barrel/index files
+4. Register routes in the router
+5. Run `/code-check` to verify no type errors
+6. Run tests to verify generated tests pass
+
+**Output:**
+
 ```text
+Entity Generation Complete: Booking
+
+Files Created: 16
+Files Updated: 4
+
+Validation:
+  Type Check: PASSED
+  Lint: PASSED
+  Tests: 12/12 passed
+
+The Booking entity is ready for customization.
+
+Next Steps:
+1. Review generated files for correctness
+2. Customize business logic in booking.service.ts
+3. Add additional validation rules if needed
+4. Run /quality-check for full validation
+```
 
 ---
 
-## Common Entity Types
+## Generated Code Patterns
 
-### Business Entities
+### The command follows these principles when generating code
 
-**Examples**: Reservation, Review, Payment, Notification
+1. **Convention Over Configuration**: Follow existing project patterns exactly
+2. **Type Safety**: Full TypeScript types for all layers
+3. **Validation**: Input validation on all mutations
+4. **Testing**: Tests generated for every layer
+5. **Error Handling**: Consistent error handling patterns
+6. **Authentication**: Auth middleware where specified
+7. **Documentation**: JSDoc comments on public APIs
 
-**Characteristics**:
+### Example Generated Service
 
-- Complex business logic
-- Multiple relationships
-- Workflow states
-- Audit requirements
+```typescript
+// Following project conventions detected during analysis
+export class BookingService {
+  constructor(private readonly model: BookingModel) {}
 
-### Reference Entities
+  async create(data: CreateBookingInput): Promise<Booking> {
+    // Validate business rules
+    await this.validateAvailability(data);
 
-**Examples**: Location, Amenity, Category, Tag
+    // Create entity
+    return this.model.create(data);
+  }
 
-**Characteristics**:
+  async findById(id: string): Promise<Booking | null> {
+    return this.model.findById(id);
+  }
 
-- Simple structure
-- Mostly read operations
-- Caching beneficial
-- Admin-managed data
+  async findAll(filters: SearchBookingInput): Promise<PaginatedResult<Booking>> {
+    return this.model.findAll(filters);
+  }
 
-### System Entities
+  async update(id: string, data: UpdateBookingInput): Promise<Booking> {
+    return this.model.update(id, data);
+  }
 
-**Examples**: AuditLog, Configuration, UserSession
+  async delete(id: string): Promise<void> {
+    return this.model.delete(id);
+  }
+}
+```
 
-**Characteristics**:
+### Example Generated Test
 
-- System-level operations
-- Security-sensitive
-- Performance-critical
-- Limited user access
+```typescript
+describe('BookingService', () => {
+  let service: BookingService;
+  let model: MockBookingModel;
+
+  beforeEach(() => {
+    model = createMockBookingModel();
+    service = new BookingService(model);
+  });
+
+  describe('create', () => {
+    it('should create a booking with valid data', async () => {
+      const input = createValidBookingInput();
+      const result = await service.create(input);
+
+      expect(result).toBeDefined();
+      expect(result.status).toBe('pending');
+      expect(model.create).toHaveBeenCalledWith(input);
+    });
+
+    it('should throw on invalid data', async () => {
+      const input = createInvalidBookingInput();
+
+      await expect(service.create(input)).rejects.toThrow();
+    });
+  });
+
+  // Additional test cases...
+});
+```
 
 ---
 
-## Integration Considerations
+## Customization
 
-### Existing Entity Relationships
+### Skipping Layers
 
-**Common Relationships**:
+If you only need certain layers, specify during the interactive wizard:
 
-- User ↔ Entity (ownership)
-- Accommodation ↔ Entity (association)
-- Booking ↔ Entity (transaction relationship)
+```text
+Which layers do you need?
+  [x] Database (schema, model)
+  [x] Validation (schemas)
+  [x] Service (business logic)
+  [x] API (routes/controller)
+  [ ] Frontend (components, hooks)   <-- Skip
+  [x] Tests
+```
 
-**Implementation**:
+### Custom Templates
 
-- Foreign key constraints
-- Proper index creation
-- Cascade delete policies
-- Relationship validation
-
-### API Integration
-
-**Endpoint Patterns**:
-
-- `/api/{entity}s` - Collection operations
-- `/api/{entity}s/{id}` - Individual operations
-- `/api/users/{userId}/{entity}s` - User-scoped operations
-- `/api/accommodations/{accommodationId}/{entity}s` - Accommodation-scoped
-
-### Frontend Integration
-
-**Navigation Integration**:
-
-- Add to main navigation
-- Breadcrumb updates
-- Search integration
-- Filter/sort options
+If the project has custom templates or generators, the command will detect and
+use those instead of generating from scratch.
 
 ---
 
 ## Related Commands
 
-- `/quality-check` - Entity validation
-- `/review-code` - Code quality verification
-- `/update-docs` - Documentation updates
+- `/quality-check` - Run after entity creation to validate
+- `/code-check` - Quick validation of generated code
+- `/run-tests` - Verify generated tests pass
+- `/update-docs` - Update documentation for new entity
+- `/commit` - Commit the new entity files
 
 ---
 
 ## When to Use
 
-- **New Domain Concepts**: Adding new business entities
-- **Data Model Extension**: Expanding existing functionality
-- **Feature Development**: Entity-centric feature implementation
-- **System Enhancement**: Adding new data structures
+- **New Feature**: When adding a new domain concept to the application
+- **New Resource**: When adding a new API resource
+- **New Module**: When creating a new module in the system
+- **Consistency**: When you want to ensure new code follows project patterns
 
 ---
 
 ## Prerequisites
 
-- Entity requirements clearly defined
-- Relationships with existing entities identified
-- Business rules documented
-- UI/UX design for entity management
+- Project structure analyzed (first run)
+- Dependencies installed
+- Database accessible (for schema generation)
+- Understanding of entity requirements
 
 ---
 
 ## Post-Command Actions
 
-1. **Integration Testing**: Test entity with existing system
-2. **Documentation Review**: Ensure all documentation complete
-3. **Performance Testing**: Validate entity performance
-4. **User Acceptance**: Validate entity meets requirements
+1. **Review Generated Files**: Verify all generated code is correct
+2. **Customize Business Logic**: Add entity-specific business rules
+3. **Add Custom Validation**: Enhance validation as needed
+4. **Run Quality Check**: Execute `/quality-check` for full validation
+5. **Update Documentation**: Run `/update-docs` if needed
+6. **Commit Changes**: Run `/commit` to create proper commits
 
 ---
 
 ## Best Practices
 
-### Naming Conventions
-
-- **Entities**: PascalCase (e.g., `UserReservation`)
-- **Database Tables**: snake_case (e.g., `user_reservations`)
-- **API Endpoints**: kebab-case (e.g., `/user-reservations`)
-- **Files**: kebab-case (e.g., `user-reservation.service.ts`)
-
-### Implementation Order
-
-1. **Database Schema**: Foundation for all layers
-2. **Model Layer**: Data access patterns
-3. **Service Layer**: Business logic implementation
-4. **API Layer**: External interface
-5. **Frontend Layer**: User interface
-
-### Testing Strategy
-
-- **Unit Tests**: Each layer independently
-- **Integration Tests**: Layer interactions
-- **API Tests**: Endpoint behavior
-- **Component Tests**: UI functionality
-- **E2E Tests**: Complete workflows
-
-
----
-
-## Changelog
-
-| Version | Date | Changes | Author | Related |
-|---------|------|---------|--------|---------|
-| 1.0.0 | 2025-10-31 | Initial version | @tech-lead | P-004 |
+1. **Follow Existing Patterns**: The wizard analyzes existing code; do not
+   deviate from established patterns
+2. **Start Simple**: Begin with basic CRUD, add complexity incrementally
+3. **Test First**: Review and enhance generated tests before moving forward
+4. **One Entity at a Time**: Create one entity per command invocation
+5. **Review Before Committing**: Always review generated code before committing

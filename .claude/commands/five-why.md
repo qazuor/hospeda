@@ -1,18 +1,36 @@
+---
+name: five-why
+description: Root cause analysis using the Five Whys technique, systematically identifying underlying causes of problems and proposing solutions with tradeoffs via the debugger agent
+---
+
 # Five Why Command
 
 ## Purpose
 
-Root cause analysis using the Five Whys technique to systematically identify underlying causes of problems, bugs, or architectural decisions. Provides structured problem-solving approach.
+Root cause analysis using the Five Whys technique to systematically identify
+underlying causes of problems, bugs, or architectural decisions. Provides
+structured problem-solving with solution options and tradeoff analysis.
 
 ## Usage
 
 ```bash
 /five-why {problem_description}
-```text
+```
+
+### Examples
+
+```bash
+/five-why "Users experiencing slow search results"
+/five-why "API endpoint returning 500 errors intermittently"
+/five-why "Memory usage increasing over time in production"
+/five-why "Deploy pipeline failing on staging environment"
+```
 
 ## Description
 
-Conducts systematic Five Whys root cause analysis using the `debugger` agent. Iteratively asks "Why?" to drill down from symptoms to root causes, then proposes solutions with tradeoffs for user consideration.
+Conducts systematic Five Whys root cause analysis using the `debugger` agent.
+Iteratively asks "Why?" to drill down from symptoms to root causes, then
+proposes solutions with tradeoffs for user consideration.
 
 ---
 
@@ -125,122 +143,103 @@ Conducts systematic Five Whys root cause analysis using the `debugger` agent. It
 ### Complete Five Whys Analysis
 
 ```text
-🔍 FIVE WHYS ANALYSIS COMPLETE
+FIVE WHYS ANALYSIS COMPLETE
 
-Problem: Users experiencing slow search results on accommodation search page
+Problem: Users experiencing slow search results on the search page
 
-📋 Five Whys Analysis:
+Five Whys Analysis:
 
-❓ Why #1: Why are search results slow?
-💡 Answer: Database queries are taking 2-3 seconds to execute
-   Context: PostgreSQL query logs show high execution times
-   Evidence: Average query time increased from 200ms to 2.8s
+Why #1: Why are search results slow?
+  Answer: Database queries are taking 2-3 seconds to execute
+  Context: Database query logs show high execution times
+  Evidence: Average query time increased from 200ms to 2.8s
 
-❓ Why #2: Why are database queries slow?
-💡 Answer: Missing indexes on frequently queried columns
-   Context: Query execution plan shows table scans instead of index usage
-   Evidence: EXPLAIN ANALYZE shows sequential scans on 100k+ records
+Why #2: Why are database queries slow?
+  Answer: Missing indexes on frequently queried columns
+  Context: Query execution plan shows table scans instead of index usage
+  Evidence: EXPLAIN ANALYZE shows sequential scans on 100k+ records
 
-❓ Why #3: Why are indexes missing on frequently queried columns?
-💡 Answer: Recent schema changes added new search filters without corresponding indexes
-   Context: Location and price range filters added without index optimization
-   Evidence: Git history shows schema changes without index additions
+Why #3: Why are indexes missing on frequently queried columns?
+  Answer: Recent schema changes added new search filters without indexes
+  Context: Location and price range filters added without index optimization
+  Evidence: Git history shows schema changes without index additions
 
-❓ Why #4: Why weren't indexes added with schema changes?
-💡 Answer: Database migration process doesn't include performance review step
-   Context: Current process focuses on schema correctness, not performance
-   Evidence: Migration checklist lacks index and performance validation
+Why #4: Why were indexes not added with schema changes?
+  Answer: Database migration process does not include performance review
+  Context: Current process focuses on schema correctness, not performance
+  Evidence: Migration checklist lacks index and performance validation
 
-❓ Why #5: Why doesn't migration process include performance review?
-💡 Answer: Performance considerations weren't prioritized in development workflow
-   Context: Fast development was prioritized over database optimization
-   Evidence: No performance testing in CI/CD pipeline
+Why #5: Why does the migration process not include performance review?
+  Answer: Performance considerations were not prioritized in the workflow
+  Context: Fast development was prioritized over database optimization
+  Evidence: No performance testing in CI/CD pipeline
 
-🎯 ROOT CAUSE IDENTIFIED:
-Lack of performance-focused database migration process and performance testing integration
+ROOT CAUSE IDENTIFIED:
+Lack of performance-focused database migration process and performance testing
 
-📊 Impact Assessment:
+Impact Assessment:
+  Severity: High (affects all search operations)
+  Scope: All search functionality
+  Users Affected: 100% of search users
+  Business Impact: Potential user drop-off due to poor experience
 
-- Severity: High (affects all search operations)
-- Scope: All accommodation search functionality
-- Users Affected: 100% of search users
-- Business Impact: Potential user drop-off due to poor experience
-
-🔧 Solution Options with Tradeoffs:
+Solution Options with Tradeoffs:
 
 Option 1: Immediate Fix + Process Improvement
-✅ Pros:
-
-  - Quick resolution of current issue
-  - Prevents similar future issues
-  - Improves overall development quality
-
-❌ Cons:
-
-  - Requires immediate development time
-  - Need to update existing processes
-  - Team training required
-
-Implementation:
-
-1. Add missing indexes for current schema (2 hours)
-2. Update migration checklist with performance review (1 hour)
-3. Add database performance testing to CI/CD (4 hours)
-4. Create database optimization guidelines (2 hours)
+  Pros:
+    - Quick resolution of current issue
+    - Prevents similar future issues
+    - Improves overall development quality
+  Cons:
+    - Requires immediate development time
+    - Need to update existing processes
+    - Team training required
+  Implementation:
+    1. Add missing indexes for current schema (2 hours)
+    2. Update migration checklist with performance review (1 hour)
+    3. Add database performance testing to CI/CD (4 hours)
+    4. Create database optimization guidelines (2 hours)
 
 Option 2: Quick Fix Only
-✅ Pros:
-
-  - Fastest resolution (2 hours)
-  - No process changes required
-  - Immediate user experience improvement
-
-❌ Cons:
-
-  - Problem likely to recur
-  - No systematic improvement
-  - Technical debt accumulation
-
-Implementation:
-
-1. Add missing indexes immediately (2 hours)
+  Pros:
+    - Fastest resolution (2 hours)
+    - No process changes required
+    - Immediate user experience improvement
+  Cons:
+    - Problem likely to recur
+    - No systematic improvement
+    - Technical debt accumulation
+  Implementation:
+    1. Add missing indexes immediately (2 hours)
 
 Option 3: Comprehensive Database Optimization
-✅ Pros:
+  Pros:
+    - Complete database performance overhaul
+    - Long-term performance benefits
+    - Systematic approach to optimization
+  Cons:
+    - Significant time investment (40+ hours)
+    - Higher risk of introducing issues
+    - Delayed user experience fix
+  Implementation:
+    1. Complete database performance audit (16 hours)
+    2. Implement all optimization recommendations (20 hours)
+    3. Update all development processes (8 hours)
 
-  - Complete database performance overhaul
-  - Long-term performance benefits
-  - Systematic approach to optimization
-
-❌ Cons:
-
-  - Significant time investment (40+ hours)
-  - Higher risk of introducing issues
-  - Delayed user experience fix
-
-Implementation:
-
-1. Complete database performance audit (16 hours)
-2. Implement all optimization recommendations (20 hours)
-3. Update all development processes (8 hours)
-
-🎯 RECOMMENDED SOLUTION: Option 1 (Immediate Fix + Process Improvement)
+RECOMMENDED SOLUTION: Option 1 (Immediate Fix + Process Improvement)
 
 Rationale:
-
-- Balances immediate user needs with long-term quality
-- Prevents recurrence without over-engineering
-- Reasonable time investment with clear ROI
-- Addresses root cause systematically
+  - Balances immediate user needs with long-term quality
+  - Prevents recurrence without over-engineering
+  - Reasonable time investment with clear ROI
+  - Addresses root cause systematically
 
 Next Steps:
-
-1. Implement immediate database indexes
-2. Update migration process documentation
-3. Add performance testing to CI/CD pipeline
-4. Schedule team training on database performance
-
-```text
+  1. Implement immediate database indexes
+  2. Update migration process documentation
+  3. Add performance testing to CI/CD pipeline
+  4. Schedule team training on database performance
+```
 
 ---
 
@@ -259,27 +258,22 @@ Next Steps:
 
 ```text
 Technical Analysis:
-
-- Why is [system/component] behaving this way?
-- What changed that could cause this behavior?
-- Where in the process does the problem manifest?
-- When did this problem first appear?
+  - Why is [system/component] behaving this way?
+  - What changed that could cause this behavior?
+  - Where in the process does the problem manifest?
+  - When did this problem first appear?
 
 Process Analysis:
-
-- Why wasn't this caught earlier in the process?
-- What steps were skipped or inadequate?
-- Who was responsible for this validation?
-- How did the current process allow this to happen?
+  - Why was this not caught earlier in the process?
+  - What steps were skipped or inadequate?
+  - How did the current process allow this to happen?
 
 System Analysis:
-
-- Why does the system have this limitation?
-- What design decisions led to this constraint?
-- How does this relate to other system components?
-- What assumptions were made during design?
-
-```text
+  - Why does the system have this limitation?
+  - What design decisions led to this constraint?
+  - How does this relate to other system components?
+  - What assumptions were made during design?
+```
 
 ### Evidence Collection
 
@@ -304,78 +298,72 @@ System Analysis:
 
 ### Bug Investigation
 
-#### Symptoms to Root Cause
-
 ```text
 Problem: API endpoint returning 500 errors
 
 Why #1: Why are we getting 500 errors?
-→ Database connection is failing
+  -> Database connection is failing
 
 Why #2: Why is database connection failing?
-→ Connection pool is exhausted
+  -> Connection pool is exhausted
 
 Why #3: Why is connection pool exhausted?
-→ Connections aren't being properly released
+  -> Connections are not being properly released
 
-Why #4: Why aren't connections being released?
-→ Service methods aren't using try/finally blocks
+Why #4: Why are connections not being released?
+  -> Service methods are not using try/finally blocks
 
-Why #5: Why aren't proper connection patterns used?
-→ No code review checklist for database patterns
+Why #5: Why are proper connection patterns not used?
+  -> No code review checklist for database patterns
 
 Root Cause: Missing database connection management standards
-```text
+```
 
 ### Performance Issues
-
-#### Slow Response Investigation
 
 ```text
 Problem: Dashboard loading takes 15+ seconds
 
 Why #1: Why is dashboard slow?
-→ Multiple API calls block rendering
+  -> Multiple API calls block rendering
 
 Why #2: Why are multiple API calls blocking?
-→ Sequential API calls instead of parallel
+  -> Sequential API calls instead of parallel
 
 Why #3: Why are calls sequential instead of parallel?
-→ Component uses useEffect chains
+  -> Component uses chained async calls
 
-Why #4: Why does component use useEffect chains?
-→ Developer unfamiliar with Promise.all pattern
+Why #4: Why does component use chained calls?
+  -> Developer unfamiliar with parallel execution patterns
 
-Why #5: Why wasn't this caught in review?
-→ No performance testing in development process
+Why #5: Why was this not caught in review?
+  -> No performance testing in development process
 
 Root Cause: Lack of performance awareness in development workflow
-```text
+```
 
 ### Architecture Decisions
-
-#### Design Choice Analysis
 
 ```text
 Problem: Microservices causing deployment complexity
 
 Why #1: Why is deployment complex?
-→ Multiple services need coordinated releases
+  -> Multiple services need coordinated releases
 
 Why #2: Why do services need coordinated releases?
-→ Tight coupling between service APIs
+  -> Tight coupling between service APIs
 
 Why #3: Why are services tightly coupled?
-→ Shared database and synchronous communication
+  -> Shared database and synchronous communication
 
 Why #4: Why do services share database?
-→ Initial design prioritized development speed
+  -> Initial design prioritized development speed
 
 Why #5: Why was development speed prioritized over architecture?
-→ Pressure to deliver MVP quickly without architecture planning
+  -> Pressure to deliver MVP quickly without architecture planning
 
 Root Cause: Insufficient architecture planning in early development
-```text
+```
 
 ---
 
@@ -433,9 +421,9 @@ Root Cause: Insufficient architecture planning in early development
 
 ### Tradeoff Analysis
 
-#### Implementation Factors
+#### Factors Assessed
 
-**Effort Assessment**:
+**Effort**:
 
 - Development time required
 - Testing and validation time
@@ -443,7 +431,7 @@ Root Cause: Insufficient architecture planning in early development
 - Documentation updates
 - Team training needs
 
-**Risk Assessment**:
+**Risk**:
 
 - Technical implementation risk
 - User experience impact
@@ -451,7 +439,7 @@ Root Cause: Insufficient architecture planning in early development
 - Regression possibilities
 - Long-term maintenance burden
 
-**Benefit Assessment**:
+**Benefit**:
 
 - User experience improvement
 - System reliability gains
@@ -463,8 +451,11 @@ Root Cause: Insufficient architecture planning in early development
 
 ## Related Commands
 
-- `/review-code` - For code quality issue analysis
-- `/quality-check` - For systematic quality problems
+- `/code-check` - Validate fixes after root cause resolution
+- `/run-tests` - Verify fixes with tests
+- `/quality-check` - Full quality validation after implementing solution
+- `/security-audit` - If root cause involves security issues
+- `/performance-audit` - If root cause involves performance issues
 
 ---
 
@@ -505,21 +496,12 @@ Root Cause: Insufficient architecture planning in early development
 - Use evidence-based reasoning
 - Challenge assumptions at each level
 - Validate each "Why" with concrete evidence
-- Stop when you reach actionable root cause
+- Stop when you reach an actionable root cause
 
 ### Solution Development
 
-- Generate multiple solution options
+- Generate multiple solution options (minimum 2-3)
 - Consider short-term and long-term approaches
 - Assess implementation effort realistically
 - Include process improvements, not just technical fixes
 - Present clear tradeoffs for decision making
-
-
----
-
-## Changelog
-
-| Version | Date | Changes | Author | Related |
-|---------|------|---------|--------|---------|
-| 1.0.0 | 2025-10-31 | Initial version | @tech-lead | P-004 |

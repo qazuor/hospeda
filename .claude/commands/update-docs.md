@@ -1,18 +1,27 @@
+---
+name: update-docs
+description: Comprehensive documentation update and maintenance using tech-writer skill, covering API docs, component docs, architecture docs, and development guides
+---
+
 # Update Docs Command
 
 ## Purpose
 
-Comprehensive documentation update and maintenance for the Hospeda project. Ensures all documentation remains current, accurate, and useful for development and maintenance.
+Comprehensive documentation update and maintenance for the project. Ensures all
+documentation remains current, accurate, and useful for development and
+maintenance. Uses the `tech-writer` skill for professional documentation output.
 
 ## Usage
 
 ```bash
 /update-docs
-```text
+```
 
 ## Description
 
-Orchestrates complete documentation review and updates using the `tech-writer` agent. Covers API documentation, component guides, architecture documentation, and development guides to maintain comprehensive project knowledge base.
+Orchestrates complete documentation review and updates using the `tech-writer`
+skill. Covers API documentation, component guides, architecture documentation,
+and development guides to maintain a comprehensive project knowledge base.
 
 ---
 
@@ -20,7 +29,7 @@ Orchestrates complete documentation review and updates using the `tech-writer` a
 
 ### Step 1: Documentation Analysis
 
-**Agent**: `tech-writer`
+**Skill**: `tech-writer`
 
 **Process**:
 
@@ -43,73 +52,33 @@ Orchestrates complete documentation review and updates using the `tech-writer` a
 - Authentication guides
 - Rate limiting documentation
 - Error response documentation
-
-**Documentation Files**:
-
-```text
-docs/api/
-├── README.md                   # API overview and getting started
-├── authentication.md           # Auth setup and usage
-├── endpoints/                  # Individual endpoint docs
-│   ├── accommodations.md
-│   ├── bookings.md
-│   ├── users.md
-│   └── payments.md
-├── rate-limiting.md            # Rate limiting policies
-├── errors.md                   # Error codes and handling
-└── examples/                   # Request/response examples
-    ├── booking-flow.md
-    └── search-examples.md
-```text
+- Request/response examples
 
 **Update Requirements**:
 
-- ✅ **Current Endpoints**: All endpoints documented
-- ✅ **Request/Response**: Complete schemas and examples
-- ✅ **Authentication**: Current auth flow documentation
-- ✅ **Error Codes**: All error responses documented
-- ✅ **Rate Limits**: Current rate limiting policies
+- **Current Endpoints**: All endpoints documented
+- **Request/Response**: Complete schemas and examples
+- **Authentication**: Current auth flow documentation
+- **Error Codes**: All error responses documented
+- **Rate Limits**: Current rate limiting policies
 
 ### Component Documentation
 
 **Scope**:
 
-- React component documentation
-- Astro component guides
-- Component API references
+- UI component documentation
+- Component API references (props, events, slots)
 - Usage examples and patterns
 - Accessibility documentation
-
-**Documentation Files**:
-
-```text
-docs/components/
-├── README.md                   # Component library overview
-├── design-system/              # Design system documentation
-│   ├── tokens.md
-│   ├── typography.md
-│   └── colors.md
-├── accommodation/              # Accommodation components
-│   ├── AccommodationCard.md
-│   ├── AccommodationList.md
-│   └── AccommodationForm.md
-├── booking/                    # Booking components
-│   ├── BookingCard.md
-│   ├── BookingForm.md
-│   └── BookingStatus.md
-└── shared/                     # Shared components
-    ├── Button.md
-    ├── Input.md
-    └── Modal.md
-```text
+- Design system integration
 
 **Update Requirements**:
 
-- ✅ **Component APIs**: Props, events, and methods documented
-- ✅ **Usage Examples**: Code examples for each component
-- ✅ **Accessibility**: WCAG compliance documentation
-- ✅ **Design System**: Consistent design token usage
-- ✅ **Best Practices**: Component usage guidelines
+- **Component APIs**: Props, events, and methods documented
+- **Usage Examples**: Code examples for each component
+- **Accessibility**: WCAG compliance documentation
+- **Design System**: Consistent design token usage
+- **Best Practices**: Component usage guidelines
 
 ### Architecture Documentation
 
@@ -121,36 +90,13 @@ docs/components/
 - API design patterns
 - Frontend architecture
 
-**Documentation Files**:
-
-```text
-docs/architecture/
-├── README.md                   # Architecture overview
-├── database/                   # Database documentation
-│   ├── schema.md
-│   ├── relationships.md
-│   └── migrations.md
-├── services/                   # Service layer documentation
-│   ├── patterns.md
-│   ├── business-logic.md
-│   └── error-handling.md
-├── api/                        # API architecture
-│   ├── design-patterns.md
-│   ├── middleware.md
-│   └── route-factories.md
-└── frontend/                   # Frontend architecture
-    ├── state-management.md
-    ├── routing.md
-    └── component-architecture.md
-```text
-
 **Update Requirements**:
 
-- ✅ **Current Architecture**: Reflects actual system design
-- ✅ **Pattern Documentation**: All patterns clearly explained
-- ✅ **Decision Records**: Architecture decisions documented
-- ✅ **Migration Guides**: Instructions for major changes
-- ✅ **Best Practices**: Development guidelines current
+- **Current Architecture**: Reflects actual system design
+- **Pattern Documentation**: All patterns clearly explained
+- **Decision Records**: Architecture decisions documented
+- **Migration Guides**: Instructions for major changes
+- **Best Practices**: Development guidelines current
 
 ### Development Documentation
 
@@ -162,57 +108,13 @@ docs/architecture/
 - Deployment guides
 - Troubleshooting guides
 
-**Documentation Files**:
-
-```text
-docs/development/
-├── README.md                   # Development overview
-├── setup.md                    # Local development setup
-├── workflow.md                 # Development workflow
-├── testing.md                  # Testing guidelines
-├── deployment.md               # Deployment procedures
-├── cli-utilities.md            # CLI commands and utilities
-├── troubleshooting.md          # Common issues and solutions
-└── contributing.md             # Contribution guidelines
-```text
-
 **Update Requirements**:
 
-- ✅ **Setup Instructions**: Current and tested setup steps
-- ✅ **Workflow Guide**: Updated development processes
-- ✅ **Testing Guide**: Current testing practices
-- ✅ **Deployment**: Updated deployment procedures
-- ✅ **CLI Documentation**: All available commands documented
-
-### Package Documentation
-
-**Scope**:
-
-- Individual package README files
-- Package API documentation
-- Usage examples
-- Configuration guides
-- Integration documentation
-
-**Documentation Files**:
-
-```text
-packages/*/
-├── README.md                   # Package overview and usage
-├── CLAUDE.md                   # Claude-specific documentation
-└── docs/                       # Detailed package documentation
-    ├── api.md
-    ├── examples.md
-    └── configuration.md
-```text
-
-**Update Requirements**:
-
-- ✅ **Package Purpose**: Clear package descriptions
-- ✅ **API Documentation**: All exported functions documented
-- ✅ **Usage Examples**: Practical usage demonstrations
-- ✅ **Configuration**: All options documented
-- ✅ **Dependencies**: Dependency documentation current
+- **Setup Instructions**: Current and tested setup steps
+- **Workflow Guide**: Updated development processes
+- **Testing Guide**: Current testing practices
+- **Deployment**: Updated deployment procedures
+- **Troubleshooting**: Common issues and solutions
 
 ---
 
@@ -220,27 +122,27 @@ packages/*/
 
 ### Content Quality
 
-- ✅ **Accuracy**: All information current and correct
-- ✅ **Completeness**: No missing critical information
-- ✅ **Clarity**: Easy to understand and follow
-- ✅ **Examples**: Practical, working examples provided
-- ✅ **Structure**: Logical organization and navigation
+- **Accuracy**: All information current and correct
+- **Completeness**: No missing critical information
+- **Clarity**: Easy to understand and follow
+- **Examples**: Practical, working examples provided
+- **Structure**: Logical organization and navigation
 
 ### Technical Standards
 
-- ✅ **Markdown**: Consistent markdown formatting
-- ✅ **Code Blocks**: Proper syntax highlighting
-- ✅ **Links**: All internal and external links working
-- ✅ **Images**: Optimized and accessible images
-- ✅ **Formatting**: Consistent formatting patterns
+- **Markdown**: Consistent markdown formatting
+- **Code Blocks**: Proper syntax highlighting
+- **Links**: All internal and external links working
+- **Images**: Optimized and accessible images (alt text)
+- **Formatting**: Consistent formatting patterns
 
 ### Maintenance Standards
 
-- ✅ **Version Sync**: Documentation matches code version
-- ✅ **Regular Updates**: Documentation updated with code changes
-- ✅ **Review Process**: Documentation included in code reviews
-- ✅ **User Feedback**: Documentation improved based on feedback
-- ✅ **Search**: Documentation easily searchable
+- **Version Sync**: Documentation matches code version
+- **Regular Updates**: Documentation updated with code changes
+- **Review Process**: Documentation included in code reviews
+- **User Feedback**: Documentation improved based on feedback
+- **Search**: Documentation easily searchable
 
 ---
 
@@ -249,101 +151,91 @@ packages/*/
 ### Success Case
 
 ```text
-✅ DOCUMENTATION UPDATE COMPLETE
+DOCUMENTATION UPDATE COMPLETE
 
 Documentation Review Summary:
-📊 Files Reviewed: 87 documentation files
-✅ Updated Files: 23 files updated
-✅ New Files: 5 new documentation files created
-✅ Fixed Links: 12 broken links repaired
+  Files Reviewed: 87 documentation files
+  Updated Files: 23 files updated
+  New Files: 5 new documentation files created
+  Fixed Links: 12 broken links repaired
 
 API Documentation:
-✅ OpenAPI Spec: Updated with 3 new endpoints
-✅ Authentication Guide: Updated Clerk integration steps
-✅ Error Documentation: Added 8 new error codes
-✅ Examples: 15 new request/response examples
+  OpenAPI Spec: Updated with 3 new endpoints
+  Authentication Guide: Updated integration steps
+  Error Documentation: Added 8 new error codes
+  Examples: 15 new request/response examples
 
 Component Documentation:
-✅ React Components: 12 components documented
-✅ Astro Components: 8 components documented
-✅ Design System: Updated with new design tokens
-✅ Accessibility: WCAG AA compliance documented
+  Components: 12 components documented
+  Design System: Updated with new design tokens
+  Accessibility: WCAG AA compliance documented
 
 Architecture Documentation:
-✅ Database Schema: Updated with 3 new entities
-✅ Service Patterns: Documented new service methods
-✅ API Patterns: Updated route factory documentation
-✅ Migration Guide: Added v2.0 migration instructions
+  Database Schema: Updated with 3 new entities
+  Service Patterns: Documented new service methods
+  API Patterns: Updated route documentation
+  Migration Guide: Added upgrade instructions
 
 Development Documentation:
-✅ Setup Guide: Updated with Node.js 18+ requirements
-✅ Testing Guide: Added new testing patterns
-✅ CLI Documentation: 8 new commands documented
-✅ Troubleshooting: 12 new solutions added
+  Setup Guide: Updated with latest requirements
+  Testing Guide: Added new testing patterns
+  Troubleshooting: 12 new solutions added
 
-Package Documentation:
-✅ Package READMEs: All 15 packages updated
-✅ API References: Complete function documentation
-✅ Usage Examples: 25 new practical examples
-✅ Configuration: All options documented
+Quality Metrics:
+  Accuracy: 100% information verified
+  Completeness: 95% coverage (target met)
+  Link Health: 100% links working
+  Formatting: Consistent markdown formatting
 
-📈 Quality Metrics:
-✅ Accuracy: 100% information verified
-✅ Completeness: 95% coverage (target met)
-✅ Link Health: 100% links working
-✅ Formatting: Consistent markdown formatting
-
-🚀 Documentation ready for team and community use
-```text
+Documentation ready for team use
+```
 
 ### Issues Found Case
 
 ```text
-⚠️ DOCUMENTATION UPDATE - ISSUES IDENTIFIED
+DOCUMENTATION UPDATE - ISSUES IDENTIFIED
 
 Critical Issues:
-❌ API Documentation: 5 endpoints missing documentation
-   Missing: POST /api/payments/webhook, GET /api/admin/analytics
-   Impact: Developers cannot integrate new payment features
-   Fix: Create complete endpoint documentation with examples
+  API Documentation: 5 endpoints missing documentation
+    Missing: POST /api/payments/webhook, GET /api/admin/analytics
+    Impact: Developers cannot integrate new features
+    Fix: Create complete endpoint documentation with examples
 
-❌ Setup Guide: Outdated Node.js version requirements
-   Current Doc: Node.js 16+
-   Actual Requirement: Node.js 18+
-   Impact: Setup failures for new developers
-   Fix: Update all version references
+  Setup Guide: Outdated runtime version requirements
+    Current Doc: Node.js 16+
+    Actual Requirement: Node.js 20+
+    Impact: Setup failures for new developers
+    Fix: Update all version references
 
 High Priority Issues:
-⚠️ Component Documentation: 8 components missing docs
-   Components: PaymentForm, AnalyticsDashboard, NotificationBell
-   Impact: Frontend developers cannot use components effectively
-   Fix: Create component documentation with props and examples
+  Component Documentation: 8 components missing docs
+    Impact: Frontend developers cannot use components effectively
+    Fix: Create component documentation with props and examples
 
-⚠️ Database Schema: Outdated relationship diagrams
-   Issue: Missing 3 new entities added in last sprint
-   Impact: Architects cannot understand current system
-   Fix: Update ER diagrams and relationship documentation
+  Database Schema: Outdated relationship diagrams
+    Issue: Missing 3 new entities added in last sprint
+    Impact: Architects cannot understand current system
+    Fix: Update ER diagrams and relationship documentation
 
 Medium Priority Issues:
-ℹ️ Broken Links: 15 internal links not working
-   Cause: File reorganization in docs/api/
-   Impact: Navigation issues in documentation
-   Fix: Update link references
+  Broken Links: 15 internal links not working
+    Cause: File reorganization
+    Impact: Navigation issues in documentation
+    Fix: Update link references
 
-ℹ️ Example Code: 12 code examples outdated
-   Issue: Examples use old API format
-   Impact: Developers copy incorrect patterns
-   Fix: Update examples with current API format
+  Example Code: 12 code examples outdated
+    Issue: Examples use old API format
+    Impact: Developers copy incorrect patterns
+    Fix: Update examples with current API format
 
 Documentation Health Summary:
+  Critical Issues: 2 (fix immediately)
+  High Priority: 2 (fix this sprint)
+  Medium Priority: 2 (fix next sprint)
+  Coverage: 78% (target: 95%)
 
-- Critical Issues: 2 (fix immediately)
-- High Priority: 2 (fix this sprint)
-- Medium Priority: 2 (fix next sprint)
-- Coverage: 78% (target: 95%)
-
-🔧 Address critical issues before next release
-```text
+Address critical issues before next release
+```
 
 ---
 
@@ -380,7 +272,7 @@ Documentation Health Summary:
 
 **Quality Criteria**:
 
-- Interactive examples
+- Interactive examples (Storybook or similar)
 - Accessibility compliance notes
 - Mobile responsiveness documentation
 - Performance considerations
@@ -437,9 +329,9 @@ Documentation Health Summary:
 **Component Documentation**:
 
 - Props documentation from TypeScript
-- Usage examples from Storybook
-- Accessibility reports from axe
-- Performance metrics from Lighthouse
+- Usage examples from Storybook (if available)
+- Accessibility reports from testing tools
+- Performance metrics from audits
 
 ### Validation Automation
 
@@ -465,17 +357,16 @@ Documentation Health Summary:
 
 **Code Changes**:
 
-- API changes → Update API docs
-- Component changes → Update component docs
-- Architecture changes → Update architecture docs
-- Process changes → Update development docs
+- API changes -> Update API docs
+- Component changes -> Update component docs
+- Architecture changes -> Update architecture docs
+- Process changes -> Update development docs
 
 **Scheduled Reviews**:
 
 - Monthly documentation review
 - Quarterly comprehensive audit
 - Release-based documentation updates
-- Annual documentation restructuring
 
 ### Quality Monitoring
 
@@ -486,20 +377,13 @@ Documentation Health Summary:
 - User feedback and usage analytics
 - Documentation update frequency
 
-**Improvement Process**:
-
-- User feedback integration
-- Documentation gap analysis
-- Accessibility compliance review
-- Mobile documentation experience
-
 ---
 
 ## Related Commands
 
 - `/quality-check` - Includes documentation validation
-- `/add-new-entity` - Requires documentation updates
-- `/review-code` - Code review includes documentation
+- `/add-new-entity` - Requires documentation updates for new entities
+- `/commit` - Commit documentation changes
 
 ---
 
@@ -515,7 +399,7 @@ Documentation Health Summary:
 ## Prerequisites
 
 - Recent code changes understood
-- Access to all documentation repositories
+- Access to all documentation files
 - Current understanding of system architecture
 
 ---
@@ -554,12 +438,3 @@ Documentation Health Summary:
 - Collect and integrate user feedback
 - Monitor documentation usage metrics
 - Plan regular documentation audits
-
-
----
-
-## Changelog
-
-| Version | Date | Changes | Author | Related |
-|---------|------|---------|--------|---------|
-| 1.0.0 | 2025-10-31 | Initial version | @tech-lead | P-004 |

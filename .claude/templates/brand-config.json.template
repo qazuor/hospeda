@@ -1,0 +1,104 @@
+{
+  "$schema": "brand-config.schema.json",
+  "brand": {
+    "name": "{{BRAND_NAME}}",
+    "tagline": "{{BRAND_TAGLINE}}",
+    "description": "{{BRAND_DESCRIPTION}}"
+  },
+  "colors": {
+    "primary": {
+      "50": "{{PRIMARY_50}}",
+      "100": "{{PRIMARY_100}}",
+      "200": "{{PRIMARY_200}}",
+      "300": "{{PRIMARY_300}}",
+      "400": "{{PRIMARY_400}}",
+      "500": "{{PRIMARY_500}}",
+      "600": "{{PRIMARY_600}}",
+      "700": "{{PRIMARY_700}}",
+      "800": "{{PRIMARY_800}}",
+      "900": "{{PRIMARY_900}}"
+    },
+    "secondary": {
+      "50": "{{SECONDARY_50}}",
+      "100": "{{SECONDARY_100}}",
+      "200": "{{SECONDARY_200}}",
+      "300": "{{SECONDARY_300}}",
+      "400": "{{SECONDARY_400}}",
+      "500": "{{SECONDARY_500}}",
+      "600": "{{SECONDARY_600}}",
+      "700": "{{SECONDARY_700}}",
+      "800": "{{SECONDARY_800}}",
+      "900": "{{SECONDARY_900}}"
+    },
+    "semantic": {
+      "success": "{{COLOR_SUCCESS}}",
+      "warning": "{{COLOR_WARNING}}",
+      "error": "{{COLOR_ERROR}}",
+      "info": "{{COLOR_INFO}}"
+    }
+  },
+  "typography": {
+    "fontFamily": {
+      "heading": "{{FONT_HEADING}}",
+      "body": "{{FONT_BODY}}",
+      "code": "{{FONT_CODE}}"
+    },
+    "scale": {
+      "display": "{{SIZE_DISPLAY}}",
+      "h1": "{{SIZE_H1}}",
+      "h2": "{{SIZE_H2}}",
+      "h3": "{{SIZE_H3}}",
+      "h4": "{{SIZE_H4}}",
+      "body": "{{SIZE_BODY}}",
+      "small": "{{SIZE_SMALL}}",
+      "caption": "{{SIZE_CAPTION}}"
+    },
+    "weights": {
+      "regular": 400,
+      "medium": 500,
+      "semibold": 600,
+      "bold": 700
+    }
+  },
+  "spacing": {
+    "baseUnit": "{{SPACING_BASE_UNIT}}",
+    "scale": [0, 4, 8, 12, 16, 20, 24, 32, 40, 48, 64, 80]
+  },
+  "borderRadius": {
+    "small": "{{RADIUS_SMALL}}",
+    "medium": "{{RADIUS_MEDIUM}}",
+    "large": "{{RADIUS_LARGE}}",
+    "full": "9999px"
+  },
+  "shadows": {
+    "small": "{{SHADOW_SMALL}}",
+    "medium": "{{SHADOW_MEDIUM}}",
+    "large": "{{SHADOW_LARGE}}"
+  },
+  "tone": {
+    "voice": "{{BRAND_VOICE}}",
+    "personality": [
+      "{{PERSONALITY_TRAIT_1}}",
+      "{{PERSONALITY_TRAIT_2}}",
+      "{{PERSONALITY_TRAIT_3}}"
+    ],
+    "writingStyle": "{{WRITING_STYLE}}",
+    "formality": "{{FORMALITY_LEVEL}}"
+  },
+  "assets": {
+    "logo": {
+      "primary": "{{LOGO_PRIMARY_PATH}}",
+      "inverse": "{{LOGO_INVERSE_PATH}}",
+      "icon": "{{LOGO_ICON_PATH}}"
+    },
+    "favicon": "{{FAVICON_PATH}}",
+    "ogImage": "{{OG_IMAGE_PATH}}"
+  },
+  "breakpoints": {
+    "mobile": "0px",
+    "tablet": "640px",
+    "laptop": "768px",
+    "desktop": "1024px",
+    "wide": "1280px"
+  }
+}

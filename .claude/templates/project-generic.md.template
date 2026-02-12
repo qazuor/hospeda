@@ -1,0 +1,86 @@
+# {{PROJECT_NAME}} - Claude Code Instructions
+
+## Project Overview
+
+{{PROJECT_DESCRIPTION}}
+
+## Tech Stack
+
+- **Language**: {{LANGUAGE}} (e.g., TypeScript 5.x)
+- **Runtime**: {{RUNTIME}} (e.g., Node.js 20, Bun, Deno)
+- **Framework**: {{FRAMEWORK}} (e.g., Next.js, Astro, Express, Hono)
+- **Database**: {{DATABASE}} (e.g., PostgreSQL, MongoDB, SQLite)
+- **ORM**: {{ORM}} (e.g., Drizzle, Prisma, TypeORM)
+- **Testing**: {{TEST_FRAMEWORK}} (e.g., Vitest, Jest)
+- **Package Manager**: {{PACKAGE_MANAGER}} (e.g., pnpm, npm, yarn)
+- **Formatter/Linter**: {{FORMATTER}} (e.g., Biome, ESLint + Prettier)
+
+## Project Structure
+
+```
+{{PROJECT_STRUCTURE}}
+```
+
+## Coding Standards
+
+- Follow standards defined in `.claude/plugins/core/docs/code-standards.md`
+- TypeScript strict mode enabled
+- Named exports only (no default exports)
+- RO-RO pattern for all functions
+- Maximum 500 lines per file
+- JSDoc on all exported symbols
+
+## Naming Conventions
+
+- **Files (components)**: PascalCase (e.g., `UserProfile.tsx`)
+- **Files (other)**: kebab-case (e.g., `user-service.ts`)
+- **Variables/Functions**: camelCase
+- **Types/Classes**: PascalCase
+- **Constants**: UPPER_SNAKE_CASE
+- **Booleans**: Verb prefix (`is`, `has`, `can`, `should`)
+
+## Architecture
+
+- {{ARCHITECTURE_PATTERN}} (e.g., Layered, Clean Architecture, Feature-based)
+- Layers: {{LAYERS}} (e.g., Routes -> Controllers -> Services -> Repositories)
+- Dependencies flow inward only
+
+## Testing
+
+- Framework: {{TEST_FRAMEWORK}}
+- Minimum coverage: 90%
+- TDD workflow: Red -> Green -> Refactor
+- Test file location: {{TEST_LOCATION}} (e.g., `test/` directory mirroring `src/`)
+- Test naming: `{module}.test.ts`, `{module}.integration.test.ts`
+
+## Database
+
+- ORM: {{ORM}}
+- Migrations: {{MIGRATION_TOOL}} (e.g., `drizzle-kit`, `prisma migrate`)
+- Validation: Zod schemas for all input/output
+- Soft deletes: {{SOFT_DELETES}} (yes/no)
+
+## Git & Commits
+
+- Conventional Commits: `<type>(<scope>): <description>`
+- Atomic commits only (never `git add .`)
+- Scopes: {{COMMIT_SCOPES}} (e.g., db, api, ui, auth, config)
+- Branch naming: {{BRANCH_FORMAT}} (e.g., `feature/`, `fix/`, `chore/`)
+
+## Environment
+
+- Environment variables in `.env` files (never committed)
+- Required variables: {{REQUIRED_ENV_VARS}}
+- Configuration via: {{CONFIG_METHOD}} (e.g., environment variables, config files)
+
+## Deployment
+
+- Platform: {{DEPLOYMENT_PLATFORM}} (e.g., Vercel, AWS, Docker)
+- CI/CD: {{CI_CD}} (e.g., GitHub Actions, GitLab CI)
+- Environments: {{ENVIRONMENTS}} (e.g., development, staging, production)
+
+## Additional Rules
+
+- {{CUSTOM_RULE_1}}
+- {{CUSTOM_RULE_2}}
+- {{CUSTOM_RULE_3}}

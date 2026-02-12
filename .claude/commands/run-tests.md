@@ -1,66 +1,95 @@
+---
+name: run-tests
+description: Execute comprehensive test suite with coverage validation, auto-detecting test runner. STOPS at first test failure or insufficient coverage.
+---
+
 # Run Tests Command
 
 ## Purpose
 
-Execute comprehensive test suite across all packages and validate coverage requirements. STOPS at first test failure or insufficient coverage.
+Execute comprehensive test suite across all packages and validate coverage
+requirements. STOPS at first test failure or insufficient coverage.
 
 ## Usage
 
 ```bash
 /run-tests
-```text
+```
 
 ## Description
 
-Runs the complete test suite across all packages in the monorepo with strict quality requirements. Uses **STOP on first error** strategy to ensure immediate attention to test failures. Validates minimum 90% test coverage requirement.
+Runs the complete test suite across all packages with strict quality
+requirements. Uses **STOP on first error** strategy to ensure immediate
+attention to test failures. Validates minimum coverage requirement (default 90%).
+
+Auto-detects:
+
+- **Test runner**: Vitest, Jest, or other configured runner
+- **Package manager**: pnpm, npm, or yarn
+- **Coverage tool**: Built-in coverage from detected test runner
 
 ---
 
 ## Execution Flow
 
-### Step 1: Unit Test Execution
+### Step 0: Auto-Detection
 
-**Command**: `pnpm test`
+**Process:**
+
+1. **Test Runner Detection**:
+   - `vitest.config.*` present -> Vitest
+   - `jest.config.*` present -> Jest
+   - Check `package.json` for test framework dependencies
+   - Check `package.json` scripts for `test` command
+
+2. **Package Manager Detection**:
+   - `pnpm-lock.yaml` -> pnpm
+   - `yarn.lock` -> yarn
+   - `package-lock.json` -> npm
+
+3. **Coverage Configuration**:
+   - Read coverage thresholds from test runner config
+   - Default minimum: **90%** if not configured
+
+---
+
+### Step 1: Test Execution
+
+**Command**: `{package_manager} test` (or `{package_manager} run test`)
 
 **Process**:
 
-- Navigate to project root
-- Execute `pnpm test` (runs turbo test across all packages)
-- Run tests across:
-  - `apps/api/` - API endpoint tests, service tests, model tests
-  - `apps/web/` - Component tests, page tests, utility tests
-  - `apps/admin/` - Admin component tests, form tests
-  - All `packages/*` - Library unit tests
+- Execute test suite across all packages
+- Run all test categories:
+  - **Unit Tests**: Individual function/method testing
+  - **Integration Tests**: Service and component interaction testing
+  - **API Tests**: Endpoint behavior validation (if present)
+  - **Component Tests**: UI component functionality (if present)
 
 **STOP Condition**: First test failure encountered
 
-**Test Categories**:
-
-- **Unit Tests**: Individual function/method testing
-- **Integration Tests**: Service-to-model integration
-- **API Tests**: Endpoint behavior validation
-- **Component Tests**: React component functionality
+---
 
 ### Step 2: Coverage Validation
 
-**Command**: `pnpm test:coverage`
+**Command**: `{package_manager} test:coverage` (or equivalent)
 
 **Process**:
 
-- Execute coverage analysis with Vitest
+- Execute coverage analysis
 - Validate coverage thresholds:
-  - **Statements**: ≥ 90%
-  - **Branches**: ≥ 90%
-  - **Functions**: ≥ 90%
-  - **Lines**: ≥ 90%
+  - **Statements**: meets configured minimum (default 90%)
+  - **Branches**: meets configured minimum (default 90%)
+  - **Functions**: meets configured minimum (default 90%)
+  - **Lines**: meets configured minimum (default 90%)
 
-**STOP Condition**: Coverage below 90% in any category
+**STOP Condition**: Coverage below configured minimum in any category
 
 **Coverage Reporting**:
 
-- Generate HTML coverage reports
+- Generate coverage reports (HTML, text, lcov as configured)
 - Identify uncovered code paths
-- Report coverage by package
+- Report coverage by package/module
 
 ---
 
@@ -68,17 +97,17 @@ Runs the complete test suite across all packages in the monorepo with strict qua
 
 ### Test Quality Requirements
 
-- ✅ **Test Structure**: AAA pattern (Arrange, Act, Assert)
-- ✅ **Test Isolation**: No dependencies between tests
-- ✅ **Mocking**: Proper mocks for external dependencies
-- ✅ **Assertions**: Clear, specific assertions
+- **Test Structure**: AAA pattern (Arrange, Act, Assert)
+- **Test Isolation**: No dependencies between tests
+- **Mocking**: Proper mocks for external dependencies
+- **Assertions**: Clear, specific assertions
 
 ### Coverage Requirements
 
-- ✅ **Minimum 90%**: Across all packages
-- ✅ **Critical Paths**: 100% coverage for business logic
-- ✅ **Edge Cases**: Error conditions tested
-- ✅ **Integration**: Service-layer integration tested
+- **Minimum Threshold**: Configurable, default 90% across all packages
+- **Critical Paths**: Business logic should have highest coverage
+- **Edge Cases**: Error conditions tested
+- **Integration**: Service-layer integration tested
 
 ---
 
@@ -87,71 +116,64 @@ Runs the complete test suite across all packages in the monorepo with strict qua
 ### Success Case
 
 ```text
-✅ TESTS PASSED
+TESTS PASSED
 
 Test Results:
-✅ Unit Tests: 156/156 passed
-✅ Integration Tests: 43/43 passed
-✅ API Tests: 78/78 passed
-✅ Component Tests: 92/92 passed
+  Unit Tests: 156/156 passed
+  Integration Tests: 43/43 passed
+  API Tests: 78/78 passed
+  Component Tests: 92/92 passed
 
 Coverage Results:
-✅ Statements: 94.2% (target: ≥90%)
-✅ Branches: 91.8% (target: ≥90%)
-✅ Functions: 96.1% (target: ≥90%)
-✅ Lines: 93.7% (target: ≥90%)
+  Statements: 94.2% (target: >=90%)
+  Branches: 91.8% (target: >=90%)
+  Functions: 96.1% (target: >=90%)
+  Lines: 93.7% (target: >=90%)
 
-🚀 All tests passing with excellent coverage
-```text
+All tests passing with excellent coverage
+```
 
 ### Failure Case (Test Failure)
 
 ```text
-❌ TESTS FAILED
+TESTS FAILED
 
 Test Failure:
-❌ apps/api/src/services/accommodation/accommodation.service.test.ts
+  src/services/booking/booking.service.test.ts
 
-FAIL: should create accommodation with valid data
+FAIL: should create booking with valid data
 Expected: 201
 Received: 500
 
-  at AccommodationService.create (accommodation.service.ts:45:12)
-  at accommodation.service.test.ts:78:25
+  at BookingService.create (booking.service.ts:45:12)
+  at booking.service.test.ts:78:25
 
 Error: Cannot read property 'id' of undefined
 
-Stack Trace:
-  AccommodationService.create
-  → Model.create
-  → Database insert operation
-
-Fix Required: Check accommodation data validation before database insertion
-```text
+Fix Required: Check data validation before database insertion
+```
 
 ### Failure Case (Coverage)
 
 ```text
-❌ TESTS FAILED - Insufficient Coverage
+TESTS FAILED - Insufficient Coverage
 
 Coverage Results:
-❌ Statements: 87.3% (target: ≥90%) - BELOW THRESHOLD
-✅ Branches: 91.8% (target: ≥90%)
-✅ Functions: 96.1% (target: ≥90%)
-❌ Lines: 89.1% (target: ≥90%) - BELOW THRESHOLD
+  Statements: 87.3% (target: >=90%) - BELOW THRESHOLD
+  Branches: 91.8% (target: >=90%)
+  Functions: 96.1% (target: >=90%)
+  Lines: 89.1% (target: >=90%) - BELOW THRESHOLD
 
 Uncovered Files:
 
-- packages/service-core/src/services/booking/booking.service.ts
-
+- src/services/booking/booking.service.ts
   Lines: 45-52, 67-74 (error handling paths)
 
-- apps/api/src/routes/payments/webhook.ts
-
+- src/routes/payments/webhook.ts
   Lines: 23-31 (webhook validation)
 
 Fix Required: Add tests for uncovered code paths
-```text
+```
 
 ---
 
@@ -159,7 +181,7 @@ Fix Required: Add tests for uncovered code paths
 
 ### Test Framework Configuration
 
-**Vitest Configuration**:
+**Vitest Example**:
 
 ```javascript
 // vitest.config.ts
@@ -180,17 +202,27 @@ export default {
     }
   }
 }
-```text
+```
 
-### TurboRepo Integration
+**Jest Example**:
 
-**Parallel Test Execution**:
+```javascript
+// jest.config.js
+module.exports = {
+  coverageThreshold: {
+    global: {
+      statements: 90,
+      branches: 90,
+      functions: 90,
+      lines: 90
+    }
+  }
+}
+```
 
-- Tests run in parallel across packages
-- Dependency-aware execution order
-- Shared test utilities and mocks
+### Script Resolution
 
-**Test Scripts**:
+The command looks for these scripts in `package.json`:
 
 ```json
 {
@@ -200,38 +232,7 @@ export default {
     "test:coverage": "vitest run --coverage"
   }
 }
-```text
-
----
-
-## Test Categories by Package
-
-### API Package (`apps/api/`)
-
-- **Route Tests**: HTTP endpoint behavior
-- **Service Tests**: Business logic validation
-- **Model Tests**: Database interaction
-- **Middleware Tests**: Authentication, validation
-- **Integration Tests**: End-to-end request flows
-
-### Web Package (`apps/web/`)
-
-- **Component Tests**: React component rendering
-- **Page Tests**: Astro page functionality
-- **Hook Tests**: Custom React hooks
-- **Utility Tests**: Helper functions
-
-### Admin Package (`apps/admin/`)
-
-- **Form Tests**: TanStack form validation
-- **Table Tests**: Data display components
-- **Auth Tests**: Admin authentication flows
-
-### Shared Packages (`packages/*`)
-
-- **Unit Tests**: Pure function testing
-- **Mock Tests**: Mock implementations
-- **Type Tests**: TypeScript type validation
+```
 
 ---
 
@@ -240,7 +241,7 @@ export default {
 ### Critical Errors (STOP execution)
 
 - Test failures (assertions, exceptions)
-- Coverage below 90% threshold
+- Coverage below configured threshold
 - Test suite configuration errors
 - Database connection failures (for integration tests)
 
@@ -256,7 +257,7 @@ export default {
 
 - `/quality-check` - Includes run-tests + code check + reviews
 - `/code-check` - Code quality validation before tests
-- `/review-code` - Code quality analysis
+- `/commit` - Generate commit messages after tests pass
 
 ---
 
@@ -272,9 +273,9 @@ export default {
 ## Prerequisites
 
 - All code changes saved and compiled
-- Database available for integration tests
-- Test data fixtures prepared
-- Dependencies installed (`pnpm install`)
+- Dependencies installed
+- Test data fixtures prepared (if applicable)
+- External services available for integration tests (if applicable)
 
 ---
 
@@ -293,17 +294,27 @@ export default {
 
 ## Performance Notes
 
-- **Parallel Execution**: Tests run concurrently across packages
+- **Parallel Execution**: Tests run concurrently across packages (if supported)
 - **Test Isolation**: Each package's tests are isolated
-- **Cache**: Test results cached for unchanged files
-- **Typical Duration**: 2-5 minutes for full test suite
-- **Watch Mode**: Available for development (`pnpm test:watch`)
-
+- **Cache**: Test results cached for unchanged files (if supported)
+- **Typical Duration**: 30 seconds to 5 minutes depending on project size
+- **Watch Mode**: Available for development with most test runners
 
 ---
 
-## Changelog
+## Configuration
 
-| Version | Date | Changes | Author | Related |
-|---------|------|---------|--------|---------|
-| 1.0.0 | 2025-10-31 | Initial version | @tech-lead | P-004 |
+### Coverage Threshold
+
+The default coverage minimum is **90%**. Override this in your test runner
+configuration file. The command will read the configured thresholds
+automatically.
+
+If no thresholds are configured, the command applies these defaults:
+
+| Metric     | Default Minimum |
+| ---------- | --------------- |
+| Statements | 90%             |
+| Branches   | 90%             |
+| Functions  | 90%             |
+| Lines      | 90%             |

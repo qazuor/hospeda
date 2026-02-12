@@ -1,14 +1,22 @@
 # Glossary
 
-Comprehensive terminology reference for the Claude Code workflow system.
+Comprehensive terminology reference for the Claude Code plugin system.
 
 ---
 
-## Core Concepts
+## Plugin System Concepts
+
+### Plugin
+
+A self-contained package of agents, commands, skills, docs, and templates that extends Claude Code capabilities for a specific domain or purpose. Plugins are installed in the `.claude/plugins/` directory.
+
+### Core Plugin
+
+The foundational plugin included with every installation. Provides universal coding standards, templates, and workflows that apply to all projects regardless of tech stack.
 
 ### Agent
 
-A specialized AI assistant designed to perform specific tasks within the development workflow. Agents are defined in `.claude/agents/` and have expertise in particular domains (e.g., `product-functional`, `hono-engineer`, `qa-engineer`).
+A specialized AI assistant designed to perform specific tasks within the development workflow. Agents are defined in markdown files and have expertise in particular domains.
 
 **Key characteristics:**
 
@@ -17,24 +25,19 @@ A specialized AI assistant designed to perform specific tasks within the develop
 - Can be invoked via Task tool
 - Stateless (each invocation is independent)
 
-**Example:** The `db-drizzle-engineer` agent specializes in Drizzle ORM schemas and database operations.
-
 ### Command
 
-A predefined workflow or action that can be executed via slash commands (e.g., `/quality-check`, `/add-new-entity`). Commands are defined in `.claude/commands/` and provide standardized procedures for common tasks.
+A predefined workflow or action that can be executed via slash commands (e.g., `/quality-check`, `/commit`). Commands are defined in markdown files and provide standardized procedures for common tasks.
 
 **Key characteristics:**
 
 - User-invokable via `/command-name`
 - Can orchestrate multiple agents
-- Defined in markdown files
 - Supports parameters and options
-
-**Example:** `/quality-check` runs lint, typecheck, tests, and code review in sequence.
 
 ### Skill
 
-A reusable capability that can be invoked by agents to perform specialized operations. Skills are defined in `.claude/skills/` and provide focused functionality.
+A reusable capability that can be invoked by agents to perform specialized operations. Skills are defined in markdown files and provide focused functionality.
 
 **Key characteristics:**
 
@@ -43,150 +46,53 @@ A reusable capability that can be invoked by agents to perform specialized opera
 - Task-specific expertise
 - Stateless operations
 
-**Example:** The `git-commit-helper` skill assists with generating conventional commit messages.
+### Hook
 
-### MCP (Model Context Protocol)
-
-An integration protocol that allows Claude Code to interact with external services and tools. MCP servers provide access to databases, APIs, documentation, and other resources.
-
-**Available MCP servers:**
-
-- Context7 (library documentation)
-- Neon (PostgreSQL database)
-- Mercado Pago (payment processing)
-- GitHub (version control)
-- Vercel (deployment)
-
-**Configuration:** Defined in `.claude/mcp.json`
+A lifecycle event handler that runs automatically at specific points in the development workflow (e.g., pre-commit, post-build). Hooks enable automated checks and transformations.
 
 ---
 
-## Planning & Organization
-
-### Planning Code
-
-A unique identifier for planning sessions following the pattern `P-XXX` or `PF-XXX` for features, `PR-XXX` for refactors.
-
-**Format:**
-
-- `P-XXX`: Generic planning (e.g., `P-001`)
-- `PF-XXX`: Feature planning (e.g., `PF-004`)
-- `PR-XXX`: Refactor planning (e.g., `PR-002`)
-
-**Example:** `PF-004-workflow-optimization`
-
-### Task Code
-
-A unique identifier for individual tasks within a planning session following the pattern `PF004-X` or `PF004-X.Y` for subtasks.
-
-**Format:**
-
-- `PF004-1`: Main task
-- `PF004-1.1`: Subtask
-- `PF004-1.1.1`: Sub-subtask (if needed)
-
-**Constraints:**
-
-- Tasks must be atomized: 0.5-4 hours each
-- Sequential numbering within planning session
-- Hierarchical for subtasks
-
-**Example:** `PF004-5.2` = Planning PF-004, Task 5, Subtask 2
+## Planning and Organization
 
 ### PDR (Product Design Requirements)
 
-A comprehensive document that defines user stories, mockups, acceptance criteria, and functional specifications for a feature or initiative.
-
-**Location:** `.claude/sessions/planning/{session}/PDR.md`
+A comprehensive document that defines user stories, acceptance criteria, mockups, and functional specifications for a feature or initiative. Created during the planning phase.
 
 **Key sections:**
 
+- Problem statement and goals
 - User stories (As a... I want... So that...)
-- Mockups/wireframes
 - Acceptance criteria
-- Business rules
 - Technical constraints
-
-**Created by:** `product-functional` agent in Phase 1
+- Risks and mitigations
 
 ### Tech Analysis
 
-A technical planning document that outlines architecture, implementation approach, risks, and task breakdown.
-
-**Location:** `.claude/sessions/planning/{session}/tech-analysis.md`
+A technical planning document that outlines architecture, implementation approach, risks, and task breakdown. Complements the PDR with technical details.
 
 **Key sections:**
 
 - Architecture decisions
-- Technology stack
-- Implementation approach
-- Task breakdown
-- Risk assessment
+- Database design
+- API design
 - Testing strategy
-
-**Created by:** `product-technical` agent in Phase 1
+- Risk assessment
 
 ### TODOs
 
 The source of truth for task tracking within a planning session. Contains all tasks, priorities, dependencies, and status.
 
-**Location:** `.claude/sessions/planning/{session}/TODOs.md`
+### Planning Code
 
-**Format:**
+A unique identifier for planning sessions. Format: `PF-XXX` (feature), `PR-XXX` (refactor), `PB-XXX` (bugfix).
 
-```markdown
-### PF004-1: Task Title
+### Task Code
 
-- [ ] **[2h]** Task description
-  - **Priority**: P0 (Critical)
-  - **Dependencies**: None
-  - **Assignee**: @agent-name
-  - **Status**: Not Started
-```
+A unique identifier for individual tasks within a planning session. Format: `PF004-1` (main task), `PF004-1.1` (subtask).
 
----
+### Atomization
 
-## Workflow System
-
-### Workflow Level
-
-The complexity and formality level of a development workflow.
-
-**Levels:**
-
-1. **Level 1 (Quick Fix)**: Simple, single-file changes (<1 hour)
-2. **Level 2 (Feature/Refactor)**: Standard 4-phase workflow (1-40 hours)
-3. **Level 3 (Major Initiative)**: Multi-session, coordinated effort (40+ hours)
-
-**Selection criteria:** See `workflows/decision-tree.md`
-
-### Workflow Phase
-
-A stage in the Level 2 (standard) workflow.
-
-**Phases:**
-
-1. **Phase 1 - Planning**: PDR, tech analysis, task breakdown
-2. **Phase 2 - Implementation**: TDD, code, tests
-3. **Phase 3 - Validation**: QA, code review, security audit
-4. **Phase 4 - Finalization**: Documentation, commits, PRs
-
-**Checkpoint:** `.checkpoint.json` tracks current phase and progress
-
-### Checkpoint
-
-A JSON file that tracks workflow state across sessions, enabling cross-device continuity.
-
-**Location:** `.claude/sessions/planning/{session}/.checkpoint.json`
-
-**Key fields:**
-
-- `currentPhase`: 1-4
-- `currentTask`: Current task code (e.g., `PF004-5`)
-- `tasksCompleted`: Number of completed tasks
-- `lastUpdated`: ISO timestamp
-
-**Purpose:** Resume work from any device
+The practice of breaking tasks into small, well-defined units of 0.5-4 hours each. Ensures better estimation accuracy and easier progress tracking.
 
 ---
 
@@ -202,197 +108,143 @@ A development methodology where tests are written before implementation code.
 2. **GREEN**: Implement minimum code to pass
 3. **REFACTOR**: Improve while tests remain green
 
-**Requirements:**
-
-- 90% minimum test coverage
-- Unit + Integration + E2E tests
-- AAA pattern (Arrange, Act, Assert)
-
-### Atomization
-
-The practice of breaking tasks into small, well-defined units of 0.5-4 hours each.
-
-**Benefits:**
-
-- Better estimation accuracy
-- Easier progress tracking
-- Reduced context switching
-- Clear completion criteria
-
-**Validation:** Task hours are validated by `todos.schema.json`
-
 ### RO-RO Pattern
 
-"Receive Object, Return Object" - A function design pattern where functions accept a single object parameter and return a single object.
+"Receive Object, Return Object" - A function design pattern where functions accept a single object parameter and return a single object. Improves readability, extensibility, and type safety.
 
-**Example:**
+### AAA Pattern
 
-```typescript
-// Good: RO-RO
-function createUser({ name, email }: CreateUserInput): CreateUserResult {
-  return { user, token };
-}
+"Arrange, Act, Assert" - The standard structure for writing tests:
 
-// Bad: Multiple params and return
-function createUser(name: string, email: string): [User, string] {
-  return [user, token];
-}
-```
-
-**Benefits:**
-
-- Named parameters
-- Easy to extend
-- Type-safe
-- Self-documenting
-
----
-
-## Quality & Validation
-
-### Quality Check
-
-A comprehensive validation process that runs multiple checks in sequence.
-
-**Checks:**
-
-1. Lint (Biome)
-2. Type check (TypeScript)
-3. Tests (Vitest)
-4. Code review (automated)
-5. Security audit
-6. Performance analysis
-
-**Command:** `/quality-check`
-
-**Exit behavior:** Stops on first failure
-
----
-
-## Architecture Patterns
-
-### Base Model
-
-A foundational class that all data models extend, providing common CRUD operations.
-
-**Location:** `@repo/db/models/base.model.ts`
-
-**Features:**
-
-- Generic type parameter
-- findById, findAll methods
-- Database connection handling
-- Error standardization
-
-**Usage:** All models in `@repo/db/models/` extend `BaseModel<T>`
-
-### Base Service
-
-A foundational class that all business logic services extend, providing standard CRUD operations.
-
-**Location:** `@repo/service-core/base-crud.service.ts`
-
-**Features:**
-
-- create, read, update, delete methods
-- Model integration
-- Validation with Zod schemas
-- Transaction support
-
-**Usage:** All services in `@repo/service-core/` extend `BaseCrudService`
-
-### Factory Pattern
-
-A pattern used for creating consistent API routes with shared configuration.
-
-**Examples:**
-
-- `createCRUDRoute`: Full CRUD endpoints
-- `createListRoute`: List/search endpoints
-- `createAuthRoute`: Authentication endpoints
-
-**Benefits:**
-
-- Consistent error handling
-- Shared middleware
-- Standardized responses
-- Type safety
-
----
-
-## Conventions
-
-### Naming Conventions
-
-**Agents:** kebab-case, domain-descriptive (e.g., `hono-engineer`, `db-drizzle-engineer`)
-
-**Commands:** kebab-case, action-verb (e.g., `/quality-check`, `/add-new-entity`)
-
-**Skills:** kebab-case, noun-phrase (e.g., `git-commit-helper`, `qa-criteria-validator`)
-
-**Planning codes:** Uppercase with hyphens (e.g., `PF-004`, `PR-002`)
-
-**Task codes:** Uppercase, no hyphens in task number (e.g., `PF004-5`, `PF004-5.2`)
-
-### File Organization
-
-**Agents:** `.claude/agents/{category}/{agent-name}.md`
-
-**Commands:** `.claude/commands/{category}/{command-name}.md`
-
-**Skills:** `.claude/skills/{category}/{skill-name}.md`
-
-**Docs:** `.claude/docs/{topic}.md` or `.claude/docs/{category}/{topic}.md`
-
-**Schemas:** `.claude/schemas/{name}.schema.json`
-
-**Scripts:** `.claude/scripts/{name}.{sh|ts|cjs}`
-
-### Language Policy
-
-**Code/Comments/Docs:** English only
-
-**Chat responses:** Spanish only (when interacting with Spanish-speaking users)
-
-**Rationale:** Global collaboration, consistency, maintainability
-
----
-
-## Git & Version Control
+- **Arrange**: Set up test data and dependencies
+- **Act**: Execute the function being tested
+- **Assert**: Verify the result
 
 ### Conventional Commits
 
-A commit message format that provides semantic meaning to changes.
+A commit message format that provides semantic meaning to changes. Format: `<type>(<scope>): <description>`
 
-**Format:** `<type>(<scope>): <description>`
+**Types:** feat, fix, refactor, docs, test, chore, perf, style, ci, build
 
-**Types:**
+### Atomic Commit
 
-- `feat`: New feature
-- `fix`: Bug fix
-- `docs`: Documentation changes
-- `refactor`: Code refactoring
-- `test`: Test additions/changes
-- `chore`: Maintenance tasks
-
-**Example:** `feat(db): add user model with base CRUD operations`
+A commit that contains only the changes related to one specific task. Never mix unrelated changes in a single commit.
 
 ---
 
-## External References
+## Architecture Terms
 
-**Claude Code Docs:** <https://docs.claude.com/claude-code>
+### Clean Architecture
 
-**TurboRepo:** <https://turbo.build/repo/docs>
+An architecture pattern where source code dependencies point inward. The domain layer is at the center, free from infrastructure concerns.
 
-**Drizzle ORM:** <https://orm.drizzle.team/docs>
+### SOLID
 
-**Hono:** <https://hono.dev/>
+Five principles of object-oriented design:
 
-**TanStack:** <https://tanstack.com/>
+- **S**ingle Responsibility: One reason to change
+- **O**pen/Closed: Open for extension, closed for modification
+- **L**iskov Substitution: Subtypes substitutable for base types
+- **I**nterface Segregation: Many small interfaces over one large one
+- **D**ependency Inversion: Depend on abstractions, not concretions
 
-**Astro:** <https://astro.build/>
+### Repository Pattern
+
+Abstracts data access behind a consistent interface, hiding the details of the underlying data store from the business logic.
+
+### Service Layer
+
+A layer of the application that contains business logic and orchestrates operations between the data layer and the presentation layer.
+
+### ADR (Architecture Decision Record)
+
+A document that captures an important architectural decision made, along with its context and consequences.
 
 ---
 
-Last updated: 2025-10-31
+## Quality Terms
+
+### Code Coverage
+
+The percentage of code executed during test runs. Minimum target: 90%.
+
+### Core Web Vitals
+
+Google's metrics for measuring user experience on the web:
+
+- **LCP** (Largest Contentful Paint): Loading performance
+- **INP** (Interaction to Next Paint): Interactivity
+- **CLS** (Cumulative Layout Shift): Visual stability
+
+### OWASP Top 10
+
+The ten most critical web application security risks, as defined by the Open Web Application Security Project.
+
+### WCAG
+
+Web Content Accessibility Guidelines - standards for making web content accessible to people with disabilities.
+
+---
+
+## Workflow Terms
+
+### Workflow Level
+
+The complexity and formality level of a development workflow:
+
+1. **Level 1 (Quick Fix)**: Simple changes (< 30 minutes)
+2. **Level 2 (Atomic Task)**: Standard tasks (30 min - 3 hours)
+3. **Level 3 (Feature)**: Full feature development (> 3 hours, multi-day)
+
+### Workflow Phase
+
+A stage in the standard development workflow:
+
+1. **Planning**: PDR, tech analysis, task breakdown
+2. **Implementation**: TDD, code, tests
+3. **Validation**: QA, code review, security audit
+4. **Finalization**: Documentation, commits, PRs
+
+### Checkpoint
+
+A state file that tracks workflow progress, enabling session continuity. Tracks current phase, current task, and completion status.
+
+### Quality Check
+
+A comprehensive validation process that runs linting, type checking, tests, code review, security audit, and performance analysis in sequence.
+
+---
+
+## Integration Terms
+
+### MCP (Model Context Protocol)
+
+An integration protocol that allows Claude Code to interact with external services and tools. MCP servers provide access to databases, APIs, documentation, and other resources.
+
+### CI/CD
+
+Continuous Integration / Continuous Deployment - automated processes for building, testing, and deploying code changes.
+
+### GitHub Action
+
+An automated workflow defined in YAML that runs in response to GitHub events (push, PR, schedule, etc.).
+
+---
+
+## File Conventions
+
+### Barrel File
+
+An `index.ts` file that re-exports symbols from multiple files in a directory, providing a clean public API.
+
+### Template File
+
+A file with placeholder markers (e.g., `{{PLACEHOLDER}}`) that serves as a starting point for new documents or configurations.
+
+### Schema File
+
+A JSON Schema or Zod schema file used for validation of data structures, API inputs, or configuration files.
+
+---
+
+<!-- Last updated: 2025-01-29 -->

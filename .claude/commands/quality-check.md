@@ -1,8 +1,15 @@
+---
+name: quality-check
+description: Master quality validation orchestrating code checks, tests, code review, security review, and performance review with stop-on-error for critical checks and report-all for reviews
+---
+
 # Quality Check Command
 
 ## Purpose
 
-Comprehensive quality validation running lint, typecheck, tests, and all review commands. This is the **MASTER** validation command used in Phase 3 before finalization. Combines multiple quality gates into a single comprehensive check.
+Comprehensive quality validation running lint, typecheck, tests, and all review
+commands. This is the **MASTER** validation command combining multiple quality
+gates into a single comprehensive check.
 
 ## Usage
 
@@ -12,13 +19,18 @@ Comprehensive quality validation running lint, typecheck, tests, and all review 
 
 ## Description
 
-Executes a complete quality validation pipeline combining code quality checks (lint, typecheck), test execution, and comprehensive reviews (code, security, performance). Uses **STOP on error for critical checks** and **REPORT all for reviews** to ensure quality while providing complete feedback.
+Executes a complete quality validation pipeline combining code quality checks
+(lint, typecheck), test execution, and comprehensive reviews (code, security,
+performance). Uses **STOP on error for critical checks** and **REPORT all for
+reviews** to ensure quality while providing complete feedback.
 
 ---
 
 ## Execution Flow
 
-This command orchestrates multiple quality checks in a specific order, stopping at critical failures but continuing through reviews to provide complete feedback.
+This command orchestrates multiple quality checks in a specific order, stopping
+at critical failures but continuing through reviews to provide complete
+feedback.
 
 ### Step 1: Code Quality Checks (STOP on error)
 
@@ -26,32 +38,33 @@ This command orchestrates multiple quality checks in a specific order, stopping 
 
 **Process:**
 
-1. **TypeScript Validation** (`pnpm typecheck`)
-   - Compile all packages
-   - Verify type safety
-   - Check import resolution
-   - **STOPS** on first TypeScript error
-
-2. **Lint Validation** (`pnpm lint`)
-   - Run Biome linting
-   - Check code style
+1. **Lint Validation**
+   - Run project linter (auto-detected)
+   - Check code style and formatting
    - Verify import organization
    - **STOPS** on first linting error
 
-**STOP Condition**: Any TypeScript or linting error
+2. **Type Checking**
+   - Run type checker across all packages
+   - Verify type safety
+   - Check import resolution
+   - **STOPS** on first type error
 
-**Why Stop**: Code must compile and pass basic quality checks before proceeding to tests and reviews.
+**STOP Condition**: Any linting or type error
+
+**Why Stop**: Code must compile and pass basic quality checks before proceeding
+to tests and reviews.
 
 **Output on Error:**
 
 ```text
-L QUALITY CHECK FAILED - Code Quality Error
+QUALITY CHECK FAILED - Code Quality Error
 
-Step: TypeScript Validation
-File: apps/api/src/routes/accommodations/index.ts:45:12
-Error: Property 'id' does not exist on type 'CreateAccommodationRequest'
+Step: Type Checking
+File: src/services/user.service.ts:45:12
+Error: Property 'id' does not exist on type 'CreateUserRequest'
 
-=� Fix this error before proceeding with quality check.
+Fix this error before proceeding with quality check.
 Run /code-check again after fixing.
 ```
 
@@ -65,38 +78,33 @@ Run /code-check again after fixing.
 
 1. **Unit Tests** - Test individual functions and methods
 2. **Integration Tests** - Test component interactions
-3. **E2E Tests** - Test complete user flows
-4. **Coverage Check** - Verify e 90% coverage
+3. **E2E Tests** - Test complete user flows (if configured)
+4. **Coverage Check** - Verify coverage meets minimum threshold (default 90%)
 
-**Execution:**
+**STOP Condition**: Any test failure or coverage below configured minimum
 
-```bash
-pnpm test
-```
-
-**STOP Condition**: Any test failure or coverage below 90%
-
-**Why Stop**: Broken tests indicate broken functionality or insufficient coverage.
+**Why Stop**: Broken tests indicate broken functionality or insufficient
+coverage.
 
 **Output on Error:**
 
 ```text
-L QUALITY CHECK FAILED - Test Failure
+QUALITY CHECK FAILED - Test Failure
 
 Failed Tests: 3
 Coverage: 87% (below 90% minimum)
 
 Failed Test Details:
 
-1. packages/service-core/src/services/booking/booking.service.test.ts
+1. src/services/booking/booking.service.test.ts
    Test: "should check availability before creating booking"
    Error: Expected true to be false
 
-2. apps/api/src/routes/bookings/create.test.ts
+2. src/routes/bookings/create.test.ts
    Test: "should return 400 for invalid booking data"
    Error: Expected status 400 but got 500
 
-=� Fix failing tests and achieve 90% coverage before proceeding.
+Fix failing tests and achieve coverage minimum before proceeding.
 Run /run-tests again after fixing.
 ```
 
@@ -104,51 +112,54 @@ Run /run-tests again after fixing.
 
 ### Step 3: Code Quality Review (REPORT all findings)
 
-**Command**: `/review-code`
+**Process:**
 
-**Agents Invoked:**
+Review all source code for quality, patterns, and architecture adherence.
 
-1. **backend-reviewer**
+**Review Areas:**
+
+1. **Backend Review**
    - Review API routes, services, models
    - Check pattern compliance
    - Verify architecture adherence
 
-2. **frontend-reviewer**
+2. **Frontend Review**
    - Review components, pages, hooks
    - Check accessibility compliance
    - Verify UX patterns
 
-3. **architecture-validator**
+3. **Architecture Validation**
    - Validate layer separation
    - Check dependency management
    - Verify pattern consistency
 
 **Behavior**: **REPORTS all findings** but does NOT stop execution
 
-**Why Continue**: Code reviews provide valuable feedback but shouldn't block the pipeline. Critical issues can be addressed after seeing the full picture.
+**Why Continue**: Code reviews provide valuable feedback but should not block the
+pipeline. Critical issues can be addressed after seeing the full picture.
 
 **Output:**
 
 ```text
-=� CODE QUALITY REVIEW
+CODE QUALITY REVIEW
 
-Backend Review (backend-reviewer):
- API Routes: Excellent pattern compliance
- Service Layer: Clean business logic
-� MEDIUM: Missing error handling in BookingController
-   File: apps/api/src/routes/bookings/index.ts:78
-   Fix: Add try-catch around service call
+Backend Review:
+  API Routes: Excellent pattern compliance
+  Service Layer: Clean business logic
+  MEDIUM: Missing error handling in UserController
+    File: src/routes/users/index.ts:78
+    Fix: Add try-catch around service call
 
-Frontend Review (frontend-reviewer):
- Component Architecture: Well-structured
-� MEDIUM: Performance issue in AccommodationList
-   File: apps/web/src/components/accommodation/AccommodationList.tsx:67
-   Fix: Memoize filter function with useCallback
+Frontend Review:
+  Component Architecture: Well-structured
+  MEDIUM: Performance issue in ItemList
+    File: src/components/ItemList.tsx:67
+    Fix: Memoize filter function with useCallback
 
-Architecture Review (architecture-validator):
- Layer Separation: Clean boundaries
- Package Organization: Logical structure
- Pattern Consistency: SOLID principles followed
+Architecture Review:
+  Layer Separation: Clean boundaries
+  Package Organization: Logical structure
+  Pattern Consistency: SOLID principles followed
 
 Summary: 2 medium issues found (address soon)
 ```
@@ -157,9 +168,7 @@ Summary: 2 medium issues found (address soon)
 
 ### Step 4: Security Review (REPORT all findings)
 
-**Command**: `/review-security`
-
-**Coordinated by**: `tech-lead` using `security-audit` skill
+**Command**: `/security-audit`
 
 **Review Areas:**
 
@@ -176,20 +185,20 @@ Summary: 2 medium issues found (address soon)
 **Output:**
 
 ```text
-= SECURITY REVIEW
+SECURITY REVIEW
 
 Authentication & Authorization:
- JWT implementation secure
- Role-based access control properly implemented
-� MEDIUM: Consider adding rate limiting to auth endpoints
+  JWT implementation secure
+  Role-based access control properly implemented
+  MEDIUM: Consider adding rate limiting to auth endpoints
 
 Input Validation:
- Zod schemas used consistently
- All user input validated
+  Validation schemas used consistently
+  All user input validated
 
 Vulnerability Scan:
- No known dependency vulnerabilities
- No hardcoded secrets found
+  No known dependency vulnerabilities
+  No hardcoded secrets found
 
 Summary: 1 medium security recommendation
 ```
@@ -198,9 +207,7 @@ Summary: 1 medium security recommendation
 
 ### Step 5: Performance Review (REPORT all findings)
 
-**Command**: `/review-performance`
-
-**Coordinated by**: `tech-lead` using `performance-audit` skill
+**Command**: `/performance-audit`
 
 **Review Areas:**
 
@@ -216,22 +223,22 @@ Summary: 1 medium security recommendation
 **Output:**
 
 ```text
-� PERFORMANCE REVIEW
+PERFORMANCE REVIEW
 
 Backend Performance:
- Database queries optimized
- Proper indexing implemented
-9 LOW: Consider adding Redis cache for search results
+  Database queries optimized
+  Proper indexing implemented
+  LOW: Consider adding cache for search results
 
 Frontend Performance:
- Code splitting implemented
- Lazy loading configured
-� MEDIUM: Bundle size could be reduced by 15%
-   Suggestion: Analyze with bundle analyzer
+  Code splitting implemented
+  Lazy loading configured
+  MEDIUM: Bundle size could be reduced by 15%
+    Suggestion: Analyze with bundle analyzer
 
 API Performance:
- Response times within acceptable range
- Rate limiting configured
+  Response times within acceptable range
+  Rate limiting configured
 
 Summary: 1 medium optimization opportunity
 ```
@@ -243,31 +250,30 @@ Summary: 1 medium optimization opportunity
 ### Success Case (No Issues)
 
 ```text
- QUALITY CHECK COMPLETE - ALL CHECKS PASSED
+QUALITY CHECK COMPLETE - ALL CHECKS PASSED
 
-Step 1: Code Quality 
-  TypeScript: All packages compile successfully
+Step 1: Code Quality
   Lint: No violations found
+  Type Check: All packages compile successfully
 
-Step 2: Tests 
+Step 2: Tests
   Tests Passed: 247/247
   Coverage: 94.2%
 
-Step 3: Code Review 
+Step 3: Code Review
   Backend: High quality, pattern compliant
   Frontend: Accessible, performant, well-structured
   Architecture: Clean boundaries, SOLID principles
 
-Step 4: Security Review 
+Step 4: Security Review
   No vulnerabilities found
   All security best practices followed
 
-Step 5: Performance Review 
+Step 5: Performance Review
   Optimized queries and bundles
   Response times acceptable
 
-=� Code meets all quality standards!
-Ready for Phase 4: Finalization
+Code meets all quality standards!
 ```
 
 ---
@@ -275,14 +281,14 @@ Ready for Phase 4: Finalization
 ### Failure Case (Critical Issues)
 
 ```text
-L QUALITY CHECK FAILED
+QUALITY CHECK FAILED
 
-Step 1: Code Quality L
-  FAILED: TypeScript compilation error
-  File: apps/api/src/routes/bookings/index.ts:45:12
+Step 1: Code Quality FAILED
+  FAILED: Type checking error
+  File: src/routes/bookings/index.ts:45:12
   Error: Property 'id' does not exist
 
-=� PIPELINE STOPPED
+PIPELINE STOPPED
 
 Fix the above error and run /quality-check again.
 Remaining steps (tests, reviews) were not executed.
@@ -293,33 +299,33 @@ Remaining steps (tests, reviews) were not executed.
 ### Partial Success (All checks pass, but reviews find issues)
 
 ```text
-� QUALITY CHECK - ISSUES TO ADDRESS
+QUALITY CHECK - ISSUES TO ADDRESS
 
-Step 1: Code Quality 
-  TypeScript:  Passed
-  Lint:  Passed
+Step 1: Code Quality
+  Lint: Passed
+  Type Check: Passed
 
-Step 2: Tests 
-  Tests:  247/247 passed
-  Coverage:  94.2%
+Step 2: Tests
+  Tests: 247/247 passed
+  Coverage: 94.2%
 
-Step 3: Code Review �
+Step 3: Code Review
   Backend: 1 medium issue
   Frontend: 1 medium issue
-  Architecture:  Passed
+  Architecture: Passed
 
-Step 4: Security Review �
+Step 4: Security Review
   1 medium security recommendation
 
-Step 5: Performance Review �
+Step 5: Performance Review
   1 medium optimization opportunity
 
-=� Summary:
+Summary:
   Critical Issues: 0
   Medium Issues: 3
   Low Issues: 1
 
-� Address medium issues before merge.
+Address medium issues before merge.
 Consider addressing low issues during next refactor.
 ```
 
@@ -331,14 +337,14 @@ Consider addressing low issues during next refactor.
 
 These checks **STOP** execution on failure:
 
-1. **TypeScript Compilation** - No type errors
-2. **Linting** - No rule violations
+1. **Linting** - No rule violations
+2. **Type Checking** - No type errors
 3. **Tests** - All tests passing
-4. **Coverage** - e 90% code coverage
+4. **Coverage** - Meets minimum threshold (default 90%)
 
 ### Advisory Quality Checks (Report but Continue)
 
-These checks **REPORT** findings but don't stop:
+These checks **REPORT** findings but do not stop:
 
 1. **Code Quality Review** - Architecture and patterns
 2. **Security Review** - Security best practices
@@ -348,16 +354,16 @@ These checks **REPORT** findings but don't stop:
 
 ## Issue Severity Levels
 
-### Critical (=� Must Fix Before Merge)
+### Critical (Must Fix Before Merge)
 
-- TypeScript errors
+- Type errors
 - Linting violations
 - Test failures
 - Coverage below threshold
 - Security vulnerabilities
 - Accessibility violations
 
-### Medium (� Should Fix Soon)
+### Medium (Should Fix Soon)
 
 - Performance optimization opportunities
 - Inconsistent pattern usage
@@ -365,7 +371,7 @@ These checks **REPORT** findings but don't stop:
 - Documentation gaps
 - Code smell patterns
 
-### Low (9 Nice to Fix)
+### Low (Nice to Fix)
 
 - Code style suggestions
 - Minor refactoring opportunities
@@ -378,9 +384,9 @@ These checks **REPORT** findings but don't stop:
 
 ### Required Workflow Points
 
-1. **Phase 3: Validation**
+1. **Before Merge**
    - After implementing all features
-   - Before invoking `tech-lead` for final review
+   - Before creating pull request
    - Before user approval
 
 2. **Before Creating Pull Request**
@@ -393,7 +399,7 @@ These checks **REPORT** findings but don't stop:
 
 ### Recommended Workflow Points
 
-- After completing major feature
+- After completing a major feature
 - After significant refactoring
 - Before merging feature branch
 - Periodically during development
@@ -403,7 +409,7 @@ These checks **REPORT** findings but don't stop:
 ## Prerequisites
 
 - All code changes saved
-- Dependencies installed (`pnpm install`)
+- Dependencies installed
 - Database migrations applied (if applicable)
 - Environment variables configured
 
@@ -413,8 +419,8 @@ These checks **REPORT** findings but don't stop:
 
 ### If All Passed
 
-1. Proceed to **Phase 4: Finalization**
-2. Invoke `tech-writer` to update documentation
+1. Proceed to finalization
+2. Update documentation with `/update-docs`
 3. Run `/commit` to generate commit messages
 4. Present commits to user for approval
 
@@ -430,73 +436,8 @@ These checks **REPORT** findings but don't stop:
 1. Review all reported issues
 2. Create list of medium issues to address
 3. Discuss with user whether to fix now or later
-4. If approved, proceed to Phase 4
+4. If approved, proceed to finalization
 5. Consider creating follow-up tasks for improvements
-
----
-
-## Performance Notes
-
-**Typical Duration**: 2-5 minutes for full monorepo
-
-**Breakdown:**
-
-- Code Quality: 30-60 seconds
-- Tests: 60-120 seconds
-- Code Review: 30-60 seconds
-- Security Review: 20-40 seconds
-- Performance Review: 20-40 seconds
-
-**Optimization:**
-
-- TurboRepo caching speeds up repeated runs
-- Parallel execution where possible
-- Incremental checks for unchanged packages
-
----
-
-## Related Commands
-
-### Individual Component Commands
-
-- `/code-check` - Only lint and typecheck
-- `/run-tests` - Only test execution
-- `/review-code` - Only code quality review
-- `/review-security` - Only security review
-- `/review-performance` - Only performance review
-
-### Workflow Commands
-
-- `/commit` - Generate commit messages (after quality-check)
-- `/update-docs` - Update documentation
-
----
-
-## Integration with Development Workflow
-
-### Phase 1: Planning
-
-- Not required during planning phase
-
-### Phase 2: Implementation
-
-- Run `/code-check` frequently during development
-- Run `/run-tests` after completing features
-- Optional: Run individual review commands as needed
-
-### Phase 3: Validation (P REQUIRED)
-
-- **MUST** run `/quality-check` before Phase 4
-- Address all critical issues
-- Discuss medium/low issues with user
-- Get user approval before proceeding
-
-### Phase 4: Finalization
-
-- Run after quality check passes
-- Generate commits
-- Update documentation
-- Prepare for merge
 
 ---
 
@@ -506,43 +447,34 @@ Quality check behavior can be customized via project configuration:
 
 ### Coverage Threshold
 
+The default coverage minimum is **90%**. Override this in your test runner
+configuration (e.g., `vitest.config.ts`, `jest.config.js`):
+
 ```json
-// package.json or vitest.config.ts
 {
-  "test": {
-    "coverage": {
-      "lines": 90,
-      "functions": 90,
-      "branches": 90,
-      "statements": 90
-    }
+  "coverage": {
+    "lines": 90,
+    "functions": 90,
+    "branches": 90,
+    "statements": 90
   }
 }
 ```
 
 ### Lint Rules
 
-```json
-// biome.json
-{
-  "linter": {
-    "enabled": true,
-    "rules": {
-      "recommended": true
-    }
-  }
-}
-```
+Configure linting rules in your project linter configuration file (e.g.,
+`biome.json`, `.eslintrc`, `eslint.config.js`).
 
 ---
 
 ## Troubleshooting
 
-### "TypeScript errors but code works locally"
+### "Type errors but code works locally"
 
-- Ensure dependencies are installed: `pnpm install`
-- Clear cache: `rm -rf node_modules/.cache`
-- Rebuild packages: `pnpm build`
+- Ensure dependencies are installed
+- Clear cache (e.g., `rm -rf node_modules/.cache`)
+- Rebuild packages
 
 ### "Tests fail in quality-check but pass locally"
 
@@ -552,18 +484,28 @@ Quality check behavior can be customized via project configuration:
 
 ### "Quality check too slow"
 
-- Use TurboRepo cache: Enabled by default
+- Use build cache if available
 - Run individual checks during development
 - Only run full quality-check before merge
 
 ---
 
-**This command is the master quality gate ensuring code meets project standards before finalization and merge.**
+## Related Commands
+
+### Individual Component Commands
+
+- `/code-check` - Only lint and typecheck
+- `/run-tests` - Only test execution
+- `/security-audit` - Only security review
+- `/performance-audit` - Only performance review
+
+### Workflow Commands
+
+- `/commit` - Generate commit messages (after quality-check)
+- `/update-docs` - Update documentation
+- `/add-new-entity` - Begin new entity/feature creation
 
 ---
 
-## Changelog
-
-| Version | Date | Changes | Author | Related |
-|---------|------|---------|--------|---------|
-| 1.0.0 | 2025-10-31 | Initial version | @tech-lead | P-004 |
+**This command is the master quality gate ensuring code meets project standards
+before finalization and merge.**

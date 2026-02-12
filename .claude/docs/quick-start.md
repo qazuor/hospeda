@@ -1,258 +1,206 @@
 # Quick Start Guide
 
-Get up and running with the Claude Code workflow system in 15 minutes.
+Get up and running with the Claude Code plugin system in 15 minutes.
 
 ---
 
-## Prerequisites (2 min)
+## Prerequisites
 
 Before starting, ensure you have:
 
 - [x] Claude Code CLI installed
-- [x] Repository cloned: `git clone https://github.com/qazuor/hospeda.git`
-- [x] Node.js ≥18 installed
-- [x] pnpm ≥8.15.6 installed
-
-**Verify installation:**
-
-```bash
-cd hospeda
-pnpm install
-```
+- [x] Your project repository cloned
+- [x] Node.js >= 18 installed
+- [x] A package manager (npm, pnpm, or yarn)
 
 ---
 
-## Step 1: Understand the Structure (3 min)
+## Step 1: Understand the Structure
 
-### Directory Layout
+### Plugin Directory Layout
 
 ```
 .claude/
-├── agents/           # Specialized AI assistants (13 total)
-│   ├── product/      # Product & planning agents
-│   ├── engineering/  # Dev agents (Hono, DB, React, etc.)
-│   ├── quality/      # QA & debugging agents
-│   ├── design/       # UI/UX agents
-│   └── specialized/  # Niche expertise (i18n, tech-writer)
-├── commands/         # Slash commands (10 total)
-│   ├── audit/        # Audit commands (security, performance, accessibility)
-│   ├── meta/         # Meta commands (create-agent, create-command, etc.)
-│   ├── git/          # Git operations (/commit)
-│   └── formatting/   # Code formatting
-├── skills/           # Reusable capabilities (16 total)
-│   ├── testing/      # Testing methodologies
-│   ├── patterns/     # Development patterns (TDD, error handling)
-│   ├── tech/         # Tech specialists (Vercel, Shadcn, Mermaid)
-│   └── utils/        # Utilities (add-memory, JSON auditor, PDF)
-├── docs/             # Documentation (you are here!)
-│   └── standards/    # Code & architecture standards
-├── schemas/          # JSON schemas for validation (6 total)
-└── scripts/          # Automation scripts
+  plugins/
+    core/                   # Core plugin (always included)
+      agents/               # Specialized AI assistants
+      commands/             # Slash commands
+      skills/               # Reusable capabilities
+      docs/                 # Standards and guides
+      templates/            # Document and config templates
+    {tech-stack}/           # Tech-specific plugins (e.g., astro, react)
+      agents/
+      commands/
+      skills/
+      docs/
 ```
 
 ### Key Concepts
 
 | Term | Definition | Example |
-|------|------------|---------|
-| **Agent** | Specialized AI assistant | `hono-engineer`, `qa-engineer` |
-| **Command** | Slash-invokable workflow | `/quality-check`, `/add-new-entity` |
-| **Skill** | Reusable capability | `git-commit-helper` |
+|------|-----------|---------|
+| **Agent** | Specialized AI assistant | `qa-engineer`, `db-engineer` |
+| **Command** | Slash-invokable workflow | `/quality-check`, `/commit` |
+| **Skill** | Reusable capability | `git-commit-helper`, `tdd-workflow` |
+| **Template** | Starting point for new docs | `global.md.template`, `settings-template.json` |
 
 **Learn more:** See [glossary.md](glossary.md) for comprehensive terminology.
 
 ---
 
-## Step 2: Choose Your Workflow Level (2 min)
+## Step 2: Choose Your Workflow Level
 
 The system supports 3 workflow levels based on task complexity:
 
 ### Level 1: Quick Fix (< 30 minutes)
 
-**Use for:**
+**Use for:** Typo fixes, formatting, import organization, config tweaks
 
-- Typo fixes in code or docs
-- Formatting and style tweaks
-- Import organization
-- Documentation updates
-- Config adjustments (1-2 files)
+**Process:** Edit -> Quick Validation -> Commit
 
-**Process:** Edit → Quick Validation → Commit
+### Level 2: Atomic Task (30 min - 3 hours)
 
-**Example:** Fixing a typo in README.md or comment
+**Use for:** Bug fixes, small features, targeted refactoring
 
-### Level 2: Atomic Task / Bugfix-Small (30 min - 3 hours)
+**Process:** Simplified Planning -> TDD Implementation (Red-Green-Refactor) -> Quality Check -> Commit
 
-**Use for:**
+### Level 3: Full Feature (> 3 hours)
 
-- Bugfixes with logic changes
-- Small features (search, filters, sorting)
-- Targeted refactoring (2-10 files)
-- New validation rules
+**Use for:** Complete features, database changes, API changes, architecture changes
 
-**Process:** Simplified Planning → TDD Implementation → Quality Check → Commit
+**Process:** SDD + TDD workflow (Plan Mode -> Spec -> Tasks -> TDD Development -> Done)
 
-**Code:** `PB-XXX` (e.g., PB-042)
+**Methodology:** Combines **Spec Driven Development** (spec is the source of truth) with **Test Driven Development** (tests before code, Red-Green-Refactor).
 
-**Example:** Adding pagination to a table or fixing a calculation bug
-
-### Level 3: Large Feature (> 3 hours, multi-day)
-
-**Use for:**
-
-- Complete features requiring full design
-- Database schema changes
-- API contract changes
-- Architecture changes
-
-**Process:** 4-phase workflow (Planning → Implementation → Validation → Finalization)
-
-**Code:** `PF-XXX` (feature) or `PR-XXX` (refactor)
-
-**Example:** Building a complete booking system or adding authentication
+**See:** [development-workflow.md](development-workflow.md) for the full, detailed workflow.
 
 ---
 
-## Step 3: Start Your First Feature (5 min)
+## Step 3: Start Your First Task
 
-Let's walk through the typical workflow for implementing a feature.
+### For Quick Fixes (Level 1)
 
-### Planning
+1. Make the change
+2. Run tests: `npm test`
+3. Commit with conventional format: `fix(scope): description`
 
-Use the Task Master plugin to plan and break down your feature:
+### For Standard Tasks (Level 2)
 
-```bash
-# Create a spec for a new feature
-/spec "User profile page"
+Follow **TDD (Red-Green-Refactor):**
 
-# Generate tasks from the spec
-/tasks
+1. **Plan:** Define what you need to build
+2. **RED — Test first:** Write a failing test that defines expected behavior
+3. **GREEN — Implement:** Write the minimum code to make the test pass
+4. **REFACTOR:** Improve the code while tests stay green
+5. **Validate:** Run quality checks (lint, typecheck, ALL tests)
+6. **Commit:** Stage source files AND test files together, then commit
 
-# Start working on the next task
-/next-task
-```
+**No tests = Not done.** Every change must include tests.
 
-### Implementation
+### For Features (Level 3)
 
-Follow TDD (test first, then code) for each task:
+Follow the **Development Workflow** defined in [development-workflow.md](development-workflow.md):
 
-1. Write tests first (RED)
-2. Implement the solution (GREEN)
-3. Refactor (keep tests green)
-4. Commit incrementally
+1. **Plan Mode — Discuss and Clarify:**
+   - Enter Plan Mode immediately
+   - Ask the user many questions (functional, technical, scope, testing, risks)
+   - Leave nothing to free interpretation
+   - Get explicit plan approval from the user
 
-### Validation
+2. **Specification — Generate Detailed Spec:**
+   - Run `/spec` to generate a formal specification
+   - Spec must be super detailed: user stories, technical approach, code examples, testing strategy, edge cases, error handling
+   - Get explicit spec approval from the user
 
-Run quality checks:
+3. **Tasks — Generate Atomic Task Breakdown:**
+   - Task-master generates ultra-granular atomic tasks from the approved spec
+   - Tasks are organized by phases (setup → core → integration → testing → docs → cleanup)
+   - No limit on number of tasks — granularity is preferred over brevity
+   - Get explicit task breakdown approval from the user
 
-```bash
-/quality-check
-```
+4. **Development — Execute In Order with TDD:**
+   - Use `/next-task` to pick the next available task
+   - Write tests FIRST (RED), then implement (GREEN), then refactor
+   - Pass quality gates (lint, typecheck, ALL tests)
+   - Update task state after EVERY completed task
+   - Commit implementation + tests together atomically
+   - Pause between phases for user review
 
-This runs:
-
-- Lint (Biome)
-- Type check
-- Tests (90% coverage required)
-- Code review
-- Security audit
-- Performance analysis
-
-Fix any issues identified during validation.
-
-### Finalization
-
-Generate commits:
-
-```bash
-/commit
-```
-
-Claude will:
-
-- Analyze all changes
-- Group related files
-- Generate conventional commits
-- Present for your approval
+5. **Done — All Tasks Completed:**
+   - All phases complete, all quality gates passed
+   - Documentation updated
+   - PR ready
 
 ---
 
-## Step 4: Validate Your Setup (3 min)
+## Step 4: Use Templates
 
-Run validation scripts to ensure everything is configured correctly:
+Templates are available in the `templates/` directory:
 
-```bash
-# Validate documentation structure
-pnpm claude:validate:docs
+| Template | Purpose |
+|----------|---------|
+| `global.md.template` | Universal CLAUDE.md rules |
+| `project-generic.md.template` | Project-specific CLAUDE.md |
+| `settings-template.json` | Claude Code settings |
+| `brand-config.json.template` | Brand voice configuration |
+| `code-review.yml` | GitHub Action for code review |
+| `security-review.yml` | GitHub Action for security review |
 
-# Validate JSON schemas
-pnpm claude:validate:schemas
+### Using a Template
 
-# Run all validations
-pnpm claude:validate
-```
-
-**Expected output:**
-
-- Documentation validation: May show warnings (expected if READMEs not updated yet)
-- Schema validation: Should pass for .checkpoint.json files
+1. Copy the template to your project
+2. Replace all `{{PLACEHOLDER}}` markers with your values
+3. Remove any sections that do not apply
 
 ---
 
-## Common Tasks Reference
-
-### Starting Work
-
-| Task | Command/Action |
-|------|----------------|
-| New feature | `/spec` + `/tasks` (Task Master plugin) |
-| Next task | `/next-task` (Task Master plugin) |
-| Bug fix (small) | Edit directly (Level 1) |
+## Common Commands Reference
 
 ### During Development
 
-| Task | Command/Action |
-|------|----------------|
-| Run tests | `pnpm test` |
-| Type check | `pnpm typecheck` |
-| Lint code | `pnpm lint` |
-| Quality check | `/quality-check` |
-| Code review | `/review-code` |
+| Task | Action |
+|------|--------|
+| Run tests | `npm test` |
+| Type check | `npx tsc --noEmit` |
+| Lint code | `npx biome check .` |
+| Format code | `npx biome check --apply .` |
 
-### Finishing Work
+### Git Operations
 
-| Task | Command/Action |
-|------|----------------|
-| Create commits | `/commit` |
-| Update docs | `/update-docs` |
-
-### Validation & Maintenance
-
-| Task | Command/Action |
-|------|----------------|
-| Validate docs | `pnpm claude:validate:docs` |
-| Validate schemas | `pnpm claude:validate:schemas` |
-| Format markdown | `pnpm format:md` |
+| Task | Action |
+|------|--------|
+| Check status | `git status` |
+| Stage specific files | `git add <file>` |
+| Commit | `git commit -m "type(scope): description"` |
+| View changes | `git diff` |
 
 ---
 
 ## Best Practices
 
-### ✅ DO
+### DO
 
-- Follow TDD (test first, code second)
+- Follow SDD + TDD (spec first, tests second, code third)
+- Write tests BEFORE implementation (Red-Green-Refactor)
+- Include unit tests for every public function
+- Include integration tests for API endpoints and service interactions
+- Include E2E tests for critical user flows
 - Keep tasks atomic (0.5-4 hours)
-- Write all code/comments in English
-- Run `/quality-check` before finalizing
-- Update TODOs.md as source of truth
-- Commit incrementally per task
+- Write all code and comments in English
+- Run quality checks before finalizing
+- Commit implementation + tests together
+- Use schema validation for all inputs
 
-### ❌ DON'T
+### DON'T
 
-- Skip writing tests
-- Create tasks >4 hours (atomize them)
-- Use `any` type (use `unknown` instead)
-- Make commits without user approval
-- Write code/comments in Spanish
+- Consider work "done" without tests (no tests = not done)
+- Write implementation before tests
+- Skip writing tests (ever, for any reason)
+- Commit implementation without corresponding tests
+- Create tasks longer than 4 hours (break them down)
+- Use `any` type (use `unknown` with type guards)
+- Use `git add .` (stage files individually)
+- Commit without running all tests
 
 ---
 
@@ -261,44 +209,28 @@ pnpm claude:validate
 ### Documentation
 
 - **This guide:** Quick overview and common tasks
-- **[glossary.md](glossary.md):** Comprehensive terminology reference
-- **[standards/](standards/):** Code and architecture standards
-- **[INDEX.md](INDEX.md):** Master index to all documentation
+- **[glossary.md](glossary.md):** Terminology reference
+- **[code-standards.md](code-standards.md):** Coding standards
+- **[testing-standards.md](testing-standards.md):** Testing practices
+- **[architecture-patterns.md](architecture-patterns.md):** Architecture guide
+- **[atomic-commits.md](atomic-commits.md):** Git commit policy
+- **[development-workflow.md](development-workflow.md):** Full development workflow
 
 ### Agent Assistance
 
 Ask Claude to invoke specialized agents:
 
 ```
-"Invoke the tech-lead agent to review my architecture decisions"
-"Use the db-drizzle-engineer to help design my Drizzle schema"
-"Call the qa-engineer to validate my test coverage"
-```
-
-### Commands
-
-Explore available commands:
-
-```bash
-# List all commands
-ls .claude/commands/**/*.md
-
-# Read command documentation
-cat .claude/commands/git/commit.md
+"Use the qa-engineer agent to validate my test coverage"
+"Invoke the db-engineer agent to help design my schema"
+"Call the tech-lead agent to review my architecture"
 ```
 
 ---
 
 ## Next Steps
 
-Now that you're familiar with the basics:
-
-1. **Explore agents:** Browse `.claude/agents/` to see available expertise
-2. **Review standards:** Understand code patterns in `.claude/docs/standards/`
-3. **Try a feature:** Use `/spec` to plan a small feature with the Task Master plugin
-
-**Happy coding!**
-
----
-
-Last updated: 2026-01-29
+1. **Read the standards:** Review docs in `plugins/core/docs/`
+2. **Set up templates:** Copy relevant templates to your project
+3. **Configure settings:** Use `settings-template.json` as a starting point
+4. **Start coding:** Pick a task and follow the appropriate workflow level
