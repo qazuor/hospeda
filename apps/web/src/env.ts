@@ -62,16 +62,6 @@ const WebEnvSchema = z
         HOSPEDA_SITE_URL: z.string().url('Must be a valid site URL').optional(),
         PUBLIC_SITE_URL: z.string().url('Must be a valid site URL').optional(),
 
-        // Authentication (Clerk) - Support both formats
-        HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY: z
-            .string()
-            .min(1, 'Clerk publishable key is required')
-            .optional(),
-        PUBLIC_CLERK_PUBLISHABLE_KEY: z
-            .string()
-            .min(1, 'Clerk publishable key is required')
-            .optional(),
-
         // Internationalization
         PUBLIC_DEFAULT_LOCALE: z.string().default('es'),
         PUBLIC_SUPPORTED_LOCALES: z.string().default('es,en,pt'),
@@ -90,15 +80,7 @@ const WebEnvSchema = z
     .refine((data) => data.HOSPEDA_SITE_URL || data.PUBLIC_SITE_URL, {
         message: 'SITE_URL is required (either HOSPEDA_SITE_URL or PUBLIC_SITE_URL)',
         path: ['SITE_URL']
-    })
-    .refine(
-        (data) => data.HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY || data.PUBLIC_CLERK_PUBLISHABLE_KEY,
-        {
-            message:
-                'CLERK_PUBLISHABLE_KEY is required (either HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY or PUBLIC_CLERK_PUBLISHABLE_KEY)',
-            path: ['CLERK_PUBLISHABLE_KEY']
-        }
-    );
+    });
 
 /**
  * Helper to safely access process.env with defaults during module initialization
@@ -125,16 +107,6 @@ export const getApiUrl = (): string => {
 export const getSiteUrl = (): string => {
     return (
         safeEnv.get('HOSPEDA_SITE_URL') || safeEnv.get('PUBLIC_SITE_URL', 'http://localhost:4321')
-    );
-};
-
-/**
- * Get the Clerk publishable key from either format
- */
-export const getClerkPublishableKey = (): string => {
-    return (
-        safeEnv.get('HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY') ||
-        safeEnv.get('PUBLIC_CLERK_PUBLISHABLE_KEY', '')
     );
 };
 

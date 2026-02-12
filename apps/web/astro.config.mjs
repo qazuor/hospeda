@@ -3,7 +3,6 @@ import { resolve } from 'node:path';
 import react from '@astrojs/react';
 import sitemap from '@astrojs/sitemap';
 import vercel from '@astrojs/vercel';
-import clerk from '@clerk/astro';
 import tailwindcss from '@tailwindcss/vite';
 import devtoolBreakpoints from 'astro-devtool-breakpoints';
 import astroFontPicker from 'astro-font-picker';
@@ -53,14 +52,6 @@ const WebEnvSchema = z
         PUBLIC_API_URL: z.string().url('Must be a valid API URL').optional(),
         HOSPEDA_SITE_URL: z.string().url('Must be a valid site URL').optional(),
         PUBLIC_SITE_URL: z.string().url('Must be a valid site URL').optional(),
-        HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY: z
-            .string()
-            .min(1, 'Clerk publishable key is required')
-            .optional(),
-        PUBLIC_CLERK_PUBLISHABLE_KEY: z
-            .string()
-            .min(1, 'Clerk publishable key is required')
-            .optional()
     })
     .refine((data) => data.HOSPEDA_API_URL || data.PUBLIC_API_URL, {
         message: 'API_URL is required (either HOSPEDA_API_URL or PUBLIC_API_URL)',
@@ -69,15 +60,7 @@ const WebEnvSchema = z
     .refine((data) => data.HOSPEDA_SITE_URL || data.PUBLIC_SITE_URL, {
         message: 'SITE_URL is required (either HOSPEDA_SITE_URL or PUBLIC_SITE_URL)',
         path: ['SITE_URL']
-    })
-    .refine(
-        (data) => data.HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY || data.PUBLIC_CLERK_PUBLISHABLE_KEY,
-        {
-            message:
-                'CLERK_PUBLISHABLE_KEY is required (either HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY or PUBLIC_CLERK_PUBLISHABLE_KEY)',
-            path: ['CLERK_PUBLISHABLE_KEY']
-        }
-    );
+    });
 
 // biome-ignore lint/suspicious/noConsoleLog: <explanation>
 console.log('🔍 Validating Web App environment variables...');
@@ -129,7 +112,6 @@ export default defineConfig({
     envDir: new URL('../../', import.meta.url).pathname,
     integrations: [
         react(),
-        clerk(),
         sitemap(),
         astroFontPicker(),
         og(),
@@ -163,11 +145,6 @@ export default defineConfig({
                             ),
                             'import.meta.env.PUBLIC_SITE_URL': JSON.stringify(
                                 process.env.HOSPEDA_SITE_URL || process.env.PUBLIC_SITE_URL || ''
-                            ),
-                            'import.meta.env.PUBLIC_CLERK_PUBLISHABLE_KEY': JSON.stringify(
-                                process.env.HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY ||
-                                    process.env.PUBLIC_CLERK_PUBLISHABLE_KEY ||
-                                    ''
                             ),
                             'import.meta.env.PUBLIC_SUPPORTED_LOCALES': JSON.stringify(
                                 process.env.HOSPEDA_PUBLIC_SUPPORTED_LOCALES ||

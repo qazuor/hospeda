@@ -1,4 +1,3 @@
-import { createClerkHandler } from '@clerk/tanstack-react-start/server';
 import {
     createStartHandler,
     defaultStreamHandler,
@@ -6,17 +5,11 @@ import {
 } from '@tanstack/react-start/server';
 import { createRouter } from './router';
 
-const handlerFactory = createClerkHandler(
-    createStartHandler({
-        createRouter
-    }),
-    {
-        secretKey: process.env.CLERK_SECRET_KEY,
-        publishableKey: process.env.VITE_CLERK_PUBLISHABLE_KEY
-    }
-);
+const handler = createStartHandler({
+    createRouter
+});
 
 export default defineHandlerCallback(async (event) => {
-    const startHandler = await handlerFactory(defaultStreamHandler);
+    const startHandler = await handler(defaultStreamHandler);
     return startHandler(event);
 });

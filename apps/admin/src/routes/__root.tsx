@@ -1,4 +1,3 @@
-import { ClerkProvider } from '@clerk/tanstack-react-start';
 import { createQZPayBilling } from '@qazuor/qzpay-core';
 import { QZPayProvider, QZPayThemeProvider } from '@qazuor/qzpay-react';
 import { TanstackDevtools } from '@tanstack/react-devtools';
@@ -110,7 +109,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
     const [billing] = useState(() => {
         const adapter = createHttpBillingAdapter({
             apiUrl: import.meta.env.VITE_API_URL || 'http://localhost:3001'
-            // getAuthToken not provided - Clerk handles auth via cookies
+            // getAuthToken not provided - Better Auth handles auth via cookies
         });
 
         return createQZPayBilling({
@@ -121,29 +120,27 @@ function RootDocument({ children }: { children: React.ReactNode }) {
     });
 
     return (
-        <ClerkProvider>
-            <html lang="en">
-                <head>
-                    <HeadContent />
-                    <link
-                        rel="stylesheet"
-                        href={appCss}
-                    />
-                </head>
-                <body>
-                    <QZPayProvider billing={billing}>
-                        <QZPayThemeProvider theme={adminQzpayTheme}>
-                            <QueryClientProvider client={queryClient}>
-                                <ToastProvider>
-                                    <GlobalErrorBoundary>{children}</GlobalErrorBoundary>
-                                </ToastProvider>
-                            </QueryClientProvider>
-                        </QZPayThemeProvider>
-                    </QZPayProvider>
-                    {process.env.NODE_ENV === 'development' && <TanstackDevtools />}
-                    <Scripts />
-                </body>
-            </html>
-        </ClerkProvider>
+        <html lang="en">
+            <head>
+                <HeadContent />
+                <link
+                    rel="stylesheet"
+                    href={appCss}
+                />
+            </head>
+            <body>
+                <QZPayProvider billing={billing}>
+                    <QZPayThemeProvider theme={adminQzpayTheme}>
+                        <QueryClientProvider client={queryClient}>
+                            <ToastProvider>
+                                <GlobalErrorBoundary>{children}</GlobalErrorBoundary>
+                            </ToastProvider>
+                        </QueryClientProvider>
+                    </QZPayThemeProvider>
+                </QZPayProvider>
+                {process.env.NODE_ENV === 'development' && <TanstackDevtools />}
+                <Scripts />
+            </body>
+        </html>
     );
 }
