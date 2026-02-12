@@ -25,6 +25,8 @@ import {
     useRetryWebhookEventMutation,
     useWebhookEventsQuery
 } from '@/features/billing-webhook-events';
+import { useTranslations } from '@/hooks/use-translations';
+import type { TranslationKey } from '@repo/i18n';
 import { createFileRoute } from '@tanstack/react-router';
 import { AlertCircle, CalendarIcon, FilterIcon, RefreshCwIcon, WebhookIcon } from 'lucide-react';
 import { useState } from 'react';
@@ -55,11 +57,11 @@ function getStatusVariant(
 /**
  * Get status label
  */
-function getStatusLabel(status: WebhookEventStatus): string {
+function getStatusLabel(status: WebhookEventStatus, t: (key: TranslationKey) => string): string {
     const labels: Record<WebhookEventStatus, string> = {
-        processed: 'Procesado',
-        pending: 'Pendiente',
-        failed: 'Fallido'
+        processed: t('admin-billing.webhookEvents.statuses.processed'),
+        pending: t('admin-billing.webhookEvents.statuses.pending'),
+        failed: t('admin-billing.webhookEvents.statuses.failed')
     };
     return labels[status];
 }
@@ -67,16 +69,16 @@ function getStatusLabel(status: WebhookEventStatus): string {
 /**
  * Get event type label
  */
-function getTypeLabel(type: WebhookEventType): string {
+function getTypeLabel(type: WebhookEventType, t: (key: TranslationKey) => string): string {
     const labels: Record<WebhookEventType, string> = {
-        'payment.created': 'Pago Creado',
-        'payment.updated': 'Pago Actualizado',
-        'subscription.created': 'Suscripción Creada',
-        'subscription.updated': 'Suscripción Actualizada',
-        'subscription.cancelled': 'Suscripción Cancelada',
-        'invoice.created': 'Factura Creada',
-        'invoice.paid': 'Factura Pagada',
-        'invoice.failed': 'Factura Fallida'
+        'payment.created': t('admin-billing.webhookEvents.types.paymentCreated'),
+        'payment.updated': t('admin-billing.webhookEvents.types.paymentUpdated'),
+        'subscription.created': t('admin-billing.webhookEvents.types.subscriptionCreated'),
+        'subscription.updated': t('admin-billing.webhookEvents.types.subscriptionUpdated'),
+        'subscription.cancelled': t('admin-billing.webhookEvents.types.subscriptionCancelled'),
+        'invoice.created': t('admin-billing.webhookEvents.types.invoiceCreated'),
+        'invoice.paid': t('admin-billing.webhookEvents.types.invoicePaid'),
+        'invoice.failed': t('admin-billing.webhookEvents.types.invoiceFailed')
     };
     return labels[type] || type;
 }
@@ -107,6 +109,8 @@ function WebhookEventDetailDialog({
     open: boolean;
     onOpenChange: (open: boolean) => void;
 }) {
+    const { t } = useTranslations();
+
     if (!event) return null;
 
     return (
@@ -116,40 +120,54 @@ function WebhookEventDetailDialog({
         >
             <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Detalles del Evento Webhook</DialogTitle>
+                    <DialogTitle>{t('admin-billing.webhookEvents.dialog.title')}</DialogTitle>
                     <DialogDescription>ID: {event.id}</DialogDescription>
                 </DialogHeader>
 
                 <div className="grid gap-4">
                     {/* Basic Information */}
                     <div className="grid gap-2">
-                        <h3 className="font-semibold text-sm">Información Básica</h3>
+                        <h3 className="font-semibold text-sm">
+                            {t('admin-billing.webhookEvents.dialog.basicInfo')}
+                        </h3>
                         <div className="grid grid-cols-3 gap-2 rounded-md bg-muted p-3 text-sm">
                             <div>
-                                <p className="text-muted-foreground text-xs">Proveedor</p>
+                                <p className="text-muted-foreground text-xs">
+                                    {t('admin-billing.webhookEvents.dialog.providerLabel')}
+                                </p>
                                 <p className="font-medium">{event.provider}</p>
                             </div>
                             <div>
-                                <p className="text-muted-foreground text-xs">Tipo</p>
-                                <p className="font-medium">{getTypeLabel(event.type)}</p>
+                                <p className="text-muted-foreground text-xs">
+                                    {t('admin-billing.webhookEvents.dialog.typeLabel')}
+                                </p>
+                                <p className="font-medium">{getTypeLabel(event.type, t)}</p>
                             </div>
                             <div>
-                                <p className="text-muted-foreground text-xs">Estado</p>
+                                <p className="text-muted-foreground text-xs">
+                                    {t('admin-billing.webhookEvents.dialog.statusLabel')}
+                                </p>
                                 <Badge variant={getStatusVariant(event.status)}>
-                                    {getStatusLabel(event.status)}
+                                    {getStatusLabel(event.status, t)}
                                 </Badge>
                             </div>
                             <div>
-                                <p className="text-muted-foreground text-xs">ID Proveedor</p>
+                                <p className="text-muted-foreground text-xs">
+                                    {t('admin-billing.webhookEvents.dialog.providerIdLabel')}
+                                </p>
                                 <p className="font-mono text-xs">{event.providerEventId}</p>
                             </div>
                             <div>
-                                <p className="text-muted-foreground text-xs">Recibido</p>
+                                <p className="text-muted-foreground text-xs">
+                                    {t('admin-billing.webhookEvents.dialog.receivedLabel')}
+                                </p>
                                 <p className="text-xs">{formatDate(event.receivedAt)}</p>
                             </div>
                             {event.processedAt && (
                                 <div>
-                                    <p className="text-muted-foreground text-xs">Procesado</p>
+                                    <p className="text-muted-foreground text-xs">
+                                        {t('admin-billing.webhookEvents.dialog.processedLabel')}
+                                    </p>
                                     <p className="text-xs">{formatDate(event.processedAt)}</p>
                                 </div>
                             )}
@@ -159,10 +177,12 @@ function WebhookEventDetailDialog({
                     {/* Retry Information */}
                     {event.retryCount !== undefined && event.retryCount > 0 && (
                         <div className="grid gap-2">
-                            <h3 className="font-semibold text-sm">Reintentos</h3>
+                            <h3 className="font-semibold text-sm">
+                                {t('admin-billing.webhookEvents.dialog.retriesSection')}
+                            </h3>
                             <div className="rounded-md bg-muted p-3 text-sm">
                                 <p className="text-muted-foreground text-xs">
-                                    Número de reintentos:{' '}
+                                    {t('admin-billing.webhookEvents.dialog.retryCountLabel')}{' '}
                                     <span className="font-medium">{event.retryCount}</span>
                                 </p>
                             </div>
@@ -173,7 +193,7 @@ function WebhookEventDetailDialog({
                     {event.status === 'failed' && event.errorMessage && (
                         <div className="grid gap-2">
                             <h3 className="font-semibold text-destructive text-sm">
-                                Mensaje de Error
+                                {t('admin-billing.webhookEvents.dialog.errorMessage')}
                             </h3>
                             <div className="rounded-md border border-destructive bg-destructive/10 p-3">
                                 <p className="font-mono text-destructive text-xs">
@@ -185,7 +205,9 @@ function WebhookEventDetailDialog({
 
                     {/* Payload */}
                     <div className="grid gap-2">
-                        <h3 className="font-semibold text-sm">Payload JSON</h3>
+                        <h3 className="font-semibold text-sm">
+                            {t('admin-billing.webhookEvents.dialog.payloadJson')}
+                        </h3>
                         <div className="rounded-md bg-muted p-3">
                             <pre className="overflow-x-auto font-mono text-xs">
                                 {JSON.stringify(event.payload, null, 2)}
@@ -199,7 +221,7 @@ function WebhookEventDetailDialog({
                         variant="outline"
                         onClick={() => onOpenChange(false)}
                     >
-                        Cerrar
+                        {t('admin-billing.common.close')}
                     </Button>
                 </DialogFooter>
             </DialogContent>
@@ -208,6 +230,7 @@ function WebhookEventDetailDialog({
 }
 
 function WebhookEventsPage() {
+    const { t } = useTranslations();
     const { addToast } = useToast();
     const [activeTab, setActiveTab] = useState<TabValue>('events');
     const [typeFilter, setTypeFilter] = useState<WebhookEventType | 'all'>('all');
@@ -268,13 +291,13 @@ function WebhookEventsPage() {
         retryMutation.mutate(eventId, {
             onSuccess: () => {
                 addToast({
-                    message: 'Reintento de evento iniciado correctamente',
+                    message: t('admin-billing.webhookEvents.toasts.retrySuccess'),
                     variant: 'success'
                 });
             },
             onError: (error) => {
                 addToast({
-                    message: `Error al reintentar evento: ${error.message}`,
+                    message: `${t('admin-billing.webhookEvents.toasts.retryError')} ${error.message}`,
                     variant: 'error'
                 });
             }
@@ -289,10 +312,11 @@ function WebhookEventsPage() {
         <SidebarPageLayout>
             <div className="space-y-6">
                 <div>
-                    <h2 className="mb-2 font-bold text-2xl">Eventos Webhook</h2>
+                    <h2 className="mb-2 font-bold text-2xl">
+                        {t('admin-billing.webhookEvents.title')}
+                    </h2>
                     <p className="text-muted-foreground">
-                        Monitorea eventos webhook de proveedores de pago y gestiona la cola de
-                        reintentos
+                        {t('admin-billing.webhookEvents.description')}
                     </p>
                 </div>
 
@@ -309,7 +333,7 @@ function WebhookEventsPage() {
                                 }`}
                                 onClick={() => setActiveTab('events')}
                             >
-                                Eventos
+                                {t('admin-billing.webhookEvents.tabs.events')}
                                 {activeTab === 'events' && (
                                     <div className="absolute right-0 bottom-0 left-0 h-0.5 bg-primary" />
                                 )}
@@ -323,7 +347,7 @@ function WebhookEventsPage() {
                                 }`}
                                 onClick={() => setActiveTab('dead-letter')}
                             >
-                                Cola de Reintentos
+                                {t('admin-billing.webhookEvents.tabs.deadLetter')}
                                 {deadLetterEvents.length > 0 && (
                                     <Badge
                                         className="ml-2"
@@ -345,14 +369,18 @@ function WebhookEventsPage() {
                     <Card>
                         <CardHeader>
                             <div className="flex items-center justify-between">
-                                <CardTitle>Búsqueda y Filtros</CardTitle>
+                                <CardTitle>
+                                    {t('admin-billing.webhookEvents.searchAndFilters')}
+                                </CardTitle>
                                 <Button
                                     variant="outline"
                                     size="sm"
                                     onClick={() => setShowFilters(!showFilters)}
                                 >
                                     <FilterIcon className="mr-2 size-4" />
-                                    {showFilters ? 'Ocultar Filtros' : 'Más Filtros'}
+                                    {showFilters
+                                        ? t('admin-billing.webhookEvents.hideFilters')
+                                        : t('admin-billing.webhookEvents.moreFilters')}
                                 </Button>
                             </div>
                         </CardHeader>
@@ -363,11 +391,13 @@ function WebhookEventsPage() {
                                         htmlFor="webhook-search"
                                         className="mb-2 block font-medium text-sm"
                                     >
-                                        Buscar por ID o proveedor
+                                        {t('admin-billing.webhookEvents.searchLabel')}
                                     </label>
                                     <Input
                                         id="webhook-search"
-                                        placeholder="ID, proveedor..."
+                                        placeholder={t(
+                                            'admin-billing.webhookEvents.searchPlaceholder'
+                                        )}
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                     />
@@ -377,7 +407,7 @@ function WebhookEventsPage() {
                                         htmlFor="webhook-type-filter"
                                         className="mb-2 block font-medium text-sm"
                                     >
-                                        Tipo
+                                        {t('admin-billing.webhookEvents.typeFilter')}
                                     </label>
                                     <select
                                         id="webhook-type-filter"
@@ -389,21 +419,39 @@ function WebhookEventsPage() {
                                             )
                                         }
                                     >
-                                        <option value="all">Todos</option>
-                                        <option value="payment.created">Pago Creado</option>
-                                        <option value="payment.updated">Pago Actualizado</option>
+                                        <option value="all">
+                                            {t('admin-billing.webhookEvents.allFilter')}
+                                        </option>
+                                        <option value="payment.created">
+                                            {t('admin-billing.webhookEvents.types.paymentCreated')}
+                                        </option>
+                                        <option value="payment.updated">
+                                            {t('admin-billing.webhookEvents.types.paymentUpdated')}
+                                        </option>
                                         <option value="subscription.created">
-                                            Suscripción Creada
+                                            {t(
+                                                'admin-billing.webhookEvents.types.subscriptionCreated'
+                                            )}
                                         </option>
                                         <option value="subscription.updated">
-                                            Suscripción Actualizada
+                                            {t(
+                                                'admin-billing.webhookEvents.types.subscriptionUpdated'
+                                            )}
                                         </option>
                                         <option value="subscription.cancelled">
-                                            Suscripción Cancelada
+                                            {t(
+                                                'admin-billing.webhookEvents.types.subscriptionCancelled'
+                                            )}
                                         </option>
-                                        <option value="invoice.created">Factura Creada</option>
-                                        <option value="invoice.paid">Factura Pagada</option>
-                                        <option value="invoice.failed">Factura Fallida</option>
+                                        <option value="invoice.created">
+                                            {t('admin-billing.webhookEvents.types.invoiceCreated')}
+                                        </option>
+                                        <option value="invoice.paid">
+                                            {t('admin-billing.webhookEvents.types.invoicePaid')}
+                                        </option>
+                                        <option value="invoice.failed">
+                                            {t('admin-billing.webhookEvents.types.invoiceFailed')}
+                                        </option>
                                     </select>
                                 </div>
                                 <div>
@@ -411,7 +459,7 @@ function WebhookEventsPage() {
                                         htmlFor="webhook-status-filter"
                                         className="mb-2 block font-medium text-sm"
                                     >
-                                        Estado
+                                        {t('admin-billing.webhookEvents.statusFilter')}
                                     </label>
                                     <select
                                         id="webhook-status-filter"
@@ -423,10 +471,18 @@ function WebhookEventsPage() {
                                             )
                                         }
                                     >
-                                        <option value="all">Todos</option>
-                                        <option value="processed">Procesado</option>
-                                        <option value="pending">Pendiente</option>
-                                        <option value="failed">Fallido</option>
+                                        <option value="all">
+                                            {t('admin-billing.webhookEvents.allFilter')}
+                                        </option>
+                                        <option value="processed">
+                                            {t('admin-billing.webhookEvents.statuses.processed')}
+                                        </option>
+                                        <option value="pending">
+                                            {t('admin-billing.webhookEvents.statuses.pending')}
+                                        </option>
+                                        <option value="failed">
+                                            {t('admin-billing.webhookEvents.statuses.failed')}
+                                        </option>
                                     </select>
                                 </div>
                             </div>
@@ -435,7 +491,7 @@ function WebhookEventsPage() {
                             {showFilters && (
                                 <div className="mt-4 grid gap-4 rounded-md border bg-muted/50 p-4 md:grid-cols-2">
                                     <div className="col-span-2 font-medium text-sm">
-                                        Filtros Avanzados
+                                        {t('admin-billing.webhookEvents.advancedFilters')}
                                     </div>
 
                                     {/* Date Range */}
@@ -445,7 +501,7 @@ function WebhookEventsPage() {
                                             className="mb-2 flex items-center gap-2 font-medium text-sm"
                                         >
                                             <CalendarIcon className="size-4" />
-                                            Fecha Desde
+                                            {t('admin-billing.webhookEvents.dateFrom')}
                                         </label>
                                         <Input
                                             id="webhook-start-date"
@@ -460,7 +516,7 @@ function WebhookEventsPage() {
                                             className="mb-2 flex items-center gap-2 font-medium text-sm"
                                         >
                                             <CalendarIcon className="size-4" />
-                                            Fecha Hasta
+                                            {t('admin-billing.webhookEvents.dateTo')}
                                         </label>
                                         <Input
                                             id="webhook-end-date"
@@ -480,7 +536,7 @@ function WebhookEventsPage() {
                                                 setEndDate('');
                                             }}
                                         >
-                                            Limpiar Filtros Avanzados
+                                            {t('admin-billing.webhookEvents.clearAdvancedFilters')}
                                         </Button>
                                     </div>
                                 </div>
@@ -493,18 +549,20 @@ function WebhookEventsPage() {
                 <Card>
                     <CardHeader>
                         <CardTitle>
-                            {activeTab === 'events' ? 'Historial de Eventos' : 'Cola de Reintentos'}
+                            {activeTab === 'events'
+                                ? t('admin-billing.webhookEvents.eventsHistoryTitle')
+                                : t('admin-billing.webhookEvents.deadLetterTitle')}
                         </CardTitle>
                         <CardDescription>
                             {isLoading
-                                ? 'Cargando...'
+                                ? t('admin-billing.common.loading')
                                 : isError
-                                  ? 'Error al cargar eventos'
+                                  ? t('admin-billing.webhookEvents.errorLoading')
                                   : displayEvents.length === 0
                                     ? activeTab === 'events'
-                                        ? 'No hay eventos'
-                                        : 'No hay eventos en la cola de reintentos'
-                                    : `${displayEvents.length} evento${displayEvents.length !== 1 ? 's' : ''}`}
+                                        ? t('admin-billing.webhookEvents.noEvents')
+                                        : t('admin-billing.webhookEvents.noDeadLetterEvents')
+                                    : `${displayEvents.length} ${displayEvents.length !== 1 ? t('admin-billing.webhookEvents.eventCountPlural') : t('admin-billing.webhookEvents.eventCount')}`}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -512,14 +570,16 @@ function WebhookEventsPage() {
                             <div className="py-12 text-center">
                                 <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
                                 <p className="mt-4 text-muted-foreground text-sm">
-                                    Cargando eventos...
+                                    {t('admin-billing.webhookEvents.loadingEvents')}
                                 </p>
                             </div>
                         ) : isError ? (
                             <div className="py-12 text-center">
-                                <p className="text-destructive text-sm">Error al cargar eventos</p>
+                                <p className="text-destructive text-sm">
+                                    {t('admin-billing.webhookEvents.errorLoading')}
+                                </p>
                                 <p className="mt-2 text-muted-foreground text-xs">
-                                    Verifica que la API esté disponible
+                                    {t('admin-billing.webhookEvents.apiCheckError')}
                                 </p>
                             </div>
                         ) : displayEvents.length === 0 ? (
@@ -531,13 +591,13 @@ function WebhookEventsPage() {
                                 )}
                                 <p className="mt-4 text-muted-foreground text-sm">
                                     {activeTab === 'events'
-                                        ? 'No hay eventos registrados aún.'
-                                        : 'No hay eventos fallidos en la cola de reintentos.'}
+                                        ? t('admin-billing.webhookEvents.emptyEventsTitle')
+                                        : t('admin-billing.webhookEvents.emptyDeadLetterTitle')}
                                 </p>
                                 <p className="mt-2 text-muted-foreground text-xs">
                                     {activeTab === 'events'
-                                        ? 'Los eventos aparecerán aquí cuando se reciban webhooks.'
-                                        : 'Los eventos fallidos aparecerán aquí para poder reintentarlos.'}
+                                        ? t('admin-billing.webhookEvents.emptyEventsHint')
+                                        : t('admin-billing.webhookEvents.emptyDeadLetterHint')}
                                 </p>
                             </div>
                         ) : (
@@ -583,14 +643,14 @@ function WebhookEventsPage() {
                                                     {event.provider}
                                                 </td>
                                                 <td className="px-4 py-3 text-xs">
-                                                    {getTypeLabel(event.type)}
+                                                    {getTypeLabel(event.type, t)}
                                                 </td>
                                                 <td className="px-4 py-3 font-mono text-xs">
                                                     {event.providerEventId.slice(0, 12)}...
                                                 </td>
                                                 <td className="px-4 py-3 text-center">
                                                     <Badge variant={getStatusVariant(event.status)}>
-                                                        {getStatusLabel(event.status)}
+                                                        {getStatusLabel(event.status, t)}
                                                     </Badge>
                                                 </td>
                                                 {activeTab === 'dead-letter' && (

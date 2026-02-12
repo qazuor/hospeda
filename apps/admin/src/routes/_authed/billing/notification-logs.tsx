@@ -23,6 +23,8 @@ import {
     type NotificationType,
     useNotificationLogsQuery
 } from '@/features/billing-notification-logs';
+import { useTranslations } from '@/hooks/use-translations';
+import type { TranslationKey } from '@repo/i18n';
 import { createFileRoute } from '@tanstack/react-router';
 import { CalendarIcon, FilterIcon, MailIcon } from 'lucide-react';
 import { useState } from 'react';
@@ -51,11 +53,11 @@ function getStatusVariant(
 /**
  * Get status label
  */
-function getStatusLabel(status: NotificationStatus): string {
+function getStatusLabel(status: NotificationStatus, t: (key: TranslationKey) => string): string {
     const labels: Record<NotificationStatus, string> = {
-        sent: 'Enviado',
-        pending: 'Pendiente',
-        failed: 'Fallido'
+        sent: t('admin-billing.notificationLogs.statuses.sent'),
+        pending: t('admin-billing.notificationLogs.statuses.pending'),
+        failed: t('admin-billing.notificationLogs.statuses.failed')
     };
     return labels[status];
 }
@@ -63,15 +65,15 @@ function getStatusLabel(status: NotificationStatus): string {
 /**
  * Get notification type label
  */
-function getTypeLabel(type: NotificationType): string {
+function getTypeLabel(type: NotificationType, t: (key: TranslationKey) => string): string {
     const labels: Record<NotificationType, string> = {
-        payment_success: 'Pago Exitoso',
-        payment_failed: 'Pago Fallido',
-        trial_ending: 'Prueba Finalizando',
-        trial_expired: 'Prueba Expirada',
-        subscription_cancelled: 'Suscripción Cancelada',
-        payment_reminder: 'Recordatorio de Pago',
-        payment_receipt: 'Recibo de Pago'
+        payment_success: t('admin-billing.notificationLogs.types.paymentSuccess'),
+        payment_failed: t('admin-billing.notificationLogs.types.paymentFailed'),
+        trial_ending: t('admin-billing.notificationLogs.types.trialEnding'),
+        trial_expired: t('admin-billing.notificationLogs.types.trialExpired'),
+        subscription_cancelled: t('admin-billing.notificationLogs.types.subscriptionCancelled'),
+        payment_reminder: t('admin-billing.notificationLogs.types.paymentReminder'),
+        payment_receipt: t('admin-billing.notificationLogs.types.paymentReceipt')
     };
     return labels[type];
 }
@@ -79,11 +81,11 @@ function getTypeLabel(type: NotificationType): string {
 /**
  * Get channel label
  */
-function getChannelLabel(channel: NotificationChannel): string {
+function getChannelLabel(channel: NotificationChannel, t: (key: TranslationKey) => string): string {
     const labels: Record<NotificationChannel, string> = {
-        email: 'Email',
-        sms: 'SMS',
-        push: 'Push'
+        email: t('admin-billing.notificationLogs.channels.email'),
+        sms: t('admin-billing.notificationLogs.channels.sms'),
+        push: t('admin-billing.notificationLogs.channels.push')
     };
     return labels[channel];
 }
@@ -113,6 +115,8 @@ function NotificationDetailDialog({
     open: boolean;
     onOpenChange: (open: boolean) => void;
 }) {
+    const { t } = useTranslations();
+
     if (!notification) return null;
 
     return (
@@ -122,33 +126,43 @@ function NotificationDetailDialog({
         >
             <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Detalles de Notificación</DialogTitle>
+                    <DialogTitle>{t('admin-billing.notificationLogs.dialog.title')}</DialogTitle>
                     <DialogDescription>ID: {notification.id}</DialogDescription>
                 </DialogHeader>
 
                 <div className="grid gap-4">
                     {/* Basic Information */}
                     <div className="grid gap-2">
-                        <h3 className="font-semibold text-sm">Información Básica</h3>
+                        <h3 className="font-semibold text-sm">
+                            {t('admin-billing.notificationLogs.dialog.basicInfo')}
+                        </h3>
                         <div className="grid grid-cols-2 gap-2 rounded-md bg-muted p-3 text-sm">
                             <div>
-                                <p className="text-muted-foreground text-xs">Tipo</p>
-                                <p className="font-medium">{getTypeLabel(notification.type)}</p>
+                                <p className="text-muted-foreground text-xs">
+                                    {t('admin-billing.notificationLogs.dialog.typeLabel')}
+                                </p>
+                                <p className="font-medium">{getTypeLabel(notification.type, t)}</p>
                             </div>
                             <div>
-                                <p className="text-muted-foreground text-xs">Estado</p>
+                                <p className="text-muted-foreground text-xs">
+                                    {t('admin-billing.notificationLogs.dialog.statusLabel')}
+                                </p>
                                 <Badge variant={getStatusVariant(notification.status)}>
-                                    {getStatusLabel(notification.status)}
+                                    {getStatusLabel(notification.status, t)}
                                 </Badge>
                             </div>
                             <div>
-                                <p className="text-muted-foreground text-xs">Canal</p>
+                                <p className="text-muted-foreground text-xs">
+                                    {t('admin-billing.notificationLogs.dialog.channelLabel')}
+                                </p>
                                 <p className="font-medium">
-                                    {getChannelLabel(notification.channel)}
+                                    {getChannelLabel(notification.channel, t)}
                                 </p>
                             </div>
                             <div>
-                                <p className="text-muted-foreground text-xs">Fecha de Envío</p>
+                                <p className="text-muted-foreground text-xs">
+                                    {t('admin-billing.notificationLogs.dialog.sentDateLabel')}
+                                </p>
                                 <p className="font-medium">{formatDate(notification.sentAt)}</p>
                             </div>
                         </div>
@@ -156,15 +170,21 @@ function NotificationDetailDialog({
 
                     {/* Recipient Information */}
                     <div className="grid gap-2">
-                        <h3 className="font-semibold text-sm">Destinatario</h3>
+                        <h3 className="font-semibold text-sm">
+                            {t('admin-billing.notificationLogs.dialog.recipientSection')}
+                        </h3>
                         <div className="grid grid-cols-2 gap-2 rounded-md bg-muted p-3 text-sm">
                             <div>
-                                <p className="text-muted-foreground text-xs">Email/Teléfono</p>
+                                <p className="text-muted-foreground text-xs">
+                                    {t('admin-billing.notificationLogs.dialog.emailPhoneLabel')}
+                                </p>
                                 <p className="font-medium">{notification.recipient}</p>
                             </div>
                             {notification.userName && (
                                 <div>
-                                    <p className="text-muted-foreground text-xs">Usuario</p>
+                                    <p className="text-muted-foreground text-xs">
+                                        {t('admin-billing.notificationLogs.dialog.userLabel')}
+                                    </p>
                                     <p className="font-medium">{notification.userName}</p>
                                 </div>
                             )}
@@ -173,9 +193,13 @@ function NotificationDetailDialog({
 
                     {/* Message Content */}
                     <div className="grid gap-2">
-                        <h3 className="font-semibold text-sm">Contenido del Mensaje</h3>
+                        <h3 className="font-semibold text-sm">
+                            {t('admin-billing.notificationLogs.dialog.messageContent')}
+                        </h3>
                         <div className="rounded-md bg-muted p-3 text-sm">
-                            <p className="mb-1 text-muted-foreground text-xs">Asunto</p>
+                            <p className="mb-1 text-muted-foreground text-xs">
+                                {t('admin-billing.notificationLogs.dialog.subjectLabel')}
+                            </p>
                             <p className="font-medium">{notification.subject}</p>
                         </div>
                     </div>
@@ -184,7 +208,7 @@ function NotificationDetailDialog({
                     {notification.status === 'failed' && notification.errorMessage && (
                         <div className="grid gap-2">
                             <h3 className="font-semibold text-destructive text-sm">
-                                Mensaje de Error
+                                {t('admin-billing.notificationLogs.dialog.errorMessage')}
                             </h3>
                             <div className="rounded-md border border-destructive bg-destructive/10 p-3 text-sm">
                                 <p className="font-mono text-destructive text-xs">
@@ -197,7 +221,9 @@ function NotificationDetailDialog({
                     {/* Metadata */}
                     {notification.metadata && Object.keys(notification.metadata).length > 0 && (
                         <div className="grid gap-2">
-                            <h3 className="font-semibold text-sm">Metadata</h3>
+                            <h3 className="font-semibold text-sm">
+                                {t('admin-billing.notificationLogs.dialog.metadata')}
+                            </h3>
                             <div className="rounded-md bg-muted p-3">
                                 <pre className="overflow-x-auto font-mono text-xs">
                                     {JSON.stringify(notification.metadata, null, 2)}
@@ -212,7 +238,7 @@ function NotificationDetailDialog({
                         variant="outline"
                         onClick={() => onOpenChange(false)}
                     >
-                        Cerrar
+                        {t('admin-billing.common.close')}
                     </Button>
                 </DialogFooter>
             </DialogContent>
@@ -221,6 +247,7 @@ function NotificationDetailDialog({
 }
 
 function NotificationLogsPage() {
+    const { t } = useTranslations();
     const [typeFilter, setTypeFilter] = useState<NotificationType | 'all'>('all');
     const [statusFilter, setStatusFilter] = useState<NotificationStatus | 'all'>('all');
     const [channelFilter, setChannelFilter] = useState<NotificationChannel | 'all'>('all');
@@ -279,9 +306,11 @@ function NotificationLogsPage() {
         <SidebarPageLayout>
             <div className="space-y-6">
                 <div>
-                    <h2 className="mb-2 font-bold text-2xl">Registro de Notificaciones</h2>
+                    <h2 className="mb-2 font-bold text-2xl">
+                        {t('admin-billing.notificationLogs.title')}
+                    </h2>
                     <p className="text-muted-foreground">
-                        Monitorea todas las notificaciones enviadas por el sistema de facturación
+                        {t('admin-billing.notificationLogs.description')}
                     </p>
                 </div>
 
@@ -289,14 +318,18 @@ function NotificationLogsPage() {
                 <Card>
                     <CardHeader>
                         <div className="flex items-center justify-between">
-                            <CardTitle>Búsqueda y Filtros</CardTitle>
+                            <CardTitle>
+                                {t('admin-billing.notificationLogs.searchAndFilters')}
+                            </CardTitle>
                             <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => setShowFilters(!showFilters)}
                             >
                                 <FilterIcon className="mr-2 size-4" />
-                                {showFilters ? 'Ocultar Filtros' : 'Más Filtros'}
+                                {showFilters
+                                    ? t('admin-billing.notificationLogs.hideFilters')
+                                    : t('admin-billing.notificationLogs.moreFilters')}
                             </Button>
                         </div>
                     </CardHeader>
@@ -307,11 +340,13 @@ function NotificationLogsPage() {
                                     htmlFor="notification-search"
                                     className="mb-2 block font-medium text-sm"
                                 >
-                                    Buscar por destinatario
+                                    {t('admin-billing.notificationLogs.searchByRecipient')}
                                 </label>
                                 <Input
                                     id="notification-search"
-                                    placeholder="Email, ID o asunto..."
+                                    placeholder={t(
+                                        'admin-billing.notificationLogs.searchPlaceholder'
+                                    )}
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                 />
@@ -321,7 +356,7 @@ function NotificationLogsPage() {
                                     htmlFor="notification-type-filter"
                                     className="mb-2 block font-medium text-sm"
                                 >
-                                    Tipo
+                                    {t('admin-billing.notificationLogs.typeFilter')}
                                 </label>
                                 <select
                                     id="notification-type-filter"
@@ -331,16 +366,32 @@ function NotificationLogsPage() {
                                         setTypeFilter(e.target.value as NotificationType | 'all')
                                     }
                                 >
-                                    <option value="all">Todos</option>
-                                    <option value="payment_success">Pago Exitoso</option>
-                                    <option value="payment_failed">Pago Fallido</option>
-                                    <option value="trial_ending">Prueba Finalizando</option>
-                                    <option value="trial_expired">Prueba Expirada</option>
-                                    <option value="subscription_cancelled">
-                                        Suscripción Cancelada
+                                    <option value="all">
+                                        {t('admin-billing.notificationLogs.allFilter')}
                                     </option>
-                                    <option value="payment_reminder">Recordatorio de Pago</option>
-                                    <option value="payment_receipt">Recibo de Pago</option>
+                                    <option value="payment_success">
+                                        {t('admin-billing.notificationLogs.types.paymentSuccess')}
+                                    </option>
+                                    <option value="payment_failed">
+                                        {t('admin-billing.notificationLogs.types.paymentFailed')}
+                                    </option>
+                                    <option value="trial_ending">
+                                        {t('admin-billing.notificationLogs.types.trialEnding')}
+                                    </option>
+                                    <option value="trial_expired">
+                                        {t('admin-billing.notificationLogs.types.trialExpired')}
+                                    </option>
+                                    <option value="subscription_cancelled">
+                                        {t(
+                                            'admin-billing.notificationLogs.types.subscriptionCancelled'
+                                        )}
+                                    </option>
+                                    <option value="payment_reminder">
+                                        {t('admin-billing.notificationLogs.types.paymentReminder')}
+                                    </option>
+                                    <option value="payment_receipt">
+                                        {t('admin-billing.notificationLogs.types.paymentReceipt')}
+                                    </option>
                                 </select>
                             </div>
                             <div>
@@ -348,7 +399,7 @@ function NotificationLogsPage() {
                                     htmlFor="notification-status-filter"
                                     className="mb-2 block font-medium text-sm"
                                 >
-                                    Estado
+                                    {t('admin-billing.notificationLogs.statusFilter')}
                                 </label>
                                 <select
                                     id="notification-status-filter"
@@ -360,10 +411,18 @@ function NotificationLogsPage() {
                                         )
                                     }
                                 >
-                                    <option value="all">Todos</option>
-                                    <option value="sent">Enviado</option>
-                                    <option value="pending">Pendiente</option>
-                                    <option value="failed">Fallido</option>
+                                    <option value="all">
+                                        {t('admin-billing.notificationLogs.allFilter')}
+                                    </option>
+                                    <option value="sent">
+                                        {t('admin-billing.notificationLogs.statuses.sent')}
+                                    </option>
+                                    <option value="pending">
+                                        {t('admin-billing.notificationLogs.statuses.pending')}
+                                    </option>
+                                    <option value="failed">
+                                        {t('admin-billing.notificationLogs.statuses.failed')}
+                                    </option>
                                 </select>
                             </div>
                             <div>
@@ -371,7 +430,7 @@ function NotificationLogsPage() {
                                     htmlFor="notification-channel-filter"
                                     className="mb-2 block font-medium text-sm"
                                 >
-                                    Canal
+                                    {t('admin-billing.notificationLogs.channelFilter')}
                                 </label>
                                 <select
                                     id="notification-channel-filter"
@@ -383,10 +442,18 @@ function NotificationLogsPage() {
                                         )
                                     }
                                 >
-                                    <option value="all">Todos</option>
-                                    <option value="email">Email</option>
-                                    <option value="sms">SMS</option>
-                                    <option value="push">Push</option>
+                                    <option value="all">
+                                        {t('admin-billing.notificationLogs.allFilter')}
+                                    </option>
+                                    <option value="email">
+                                        {t('admin-billing.notificationLogs.channels.email')}
+                                    </option>
+                                    <option value="sms">
+                                        {t('admin-billing.notificationLogs.channels.sms')}
+                                    </option>
+                                    <option value="push">
+                                        {t('admin-billing.notificationLogs.channels.push')}
+                                    </option>
                                 </select>
                             </div>
                         </div>
@@ -395,7 +462,7 @@ function NotificationLogsPage() {
                         {showFilters && (
                             <div className="mt-4 grid gap-4 rounded-md border bg-muted/50 p-4 md:grid-cols-2">
                                 <div className="col-span-2 font-medium text-sm">
-                                    Filtros Avanzados
+                                    {t('admin-billing.notificationLogs.advancedFilters')}
                                 </div>
 
                                 {/* Date Range */}
@@ -405,7 +472,7 @@ function NotificationLogsPage() {
                                         className="mb-2 flex items-center gap-2 font-medium text-sm"
                                     >
                                         <CalendarIcon className="size-4" />
-                                        Fecha Desde
+                                        {t('admin-billing.notificationLogs.dateFrom')}
                                     </label>
                                     <Input
                                         id="notification-start-date"
@@ -420,7 +487,7 @@ function NotificationLogsPage() {
                                         className="mb-2 flex items-center gap-2 font-medium text-sm"
                                     >
                                         <CalendarIcon className="size-4" />
-                                        Fecha Hasta
+                                        {t('admin-billing.notificationLogs.dateTo')}
                                     </label>
                                     <Input
                                         id="notification-end-date"
@@ -440,7 +507,7 @@ function NotificationLogsPage() {
                                             setEndDate('');
                                         }}
                                     >
-                                        Limpiar Filtros Avanzados
+                                        {t('admin-billing.notificationLogs.clearAdvancedFilters')}
                                     </Button>
                                 </div>
                             </div>
@@ -451,15 +518,22 @@ function NotificationLogsPage() {
                 {/* Notifications Table */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>Historial de Notificaciones</CardTitle>
+                        <CardTitle>{t('admin-billing.notificationLogs.historyTitle')}</CardTitle>
                         <CardDescription>
                             {isLoading
-                                ? 'Cargando...'
+                                ? t('admin-billing.common.loading')
                                 : isError
-                                  ? 'Error al cargar notificaciones'
+                                  ? t('admin-billing.notificationLogs.errorLoading')
                                   : filteredNotifications.length === 0
-                                    ? 'No hay notificaciones'
-                                    : `${filteredNotifications.length} notificación${filteredNotifications.length !== 1 ? 'es' : ''}`}
+                                    ? t('admin-billing.notificationLogs.noNotifications')
+                                    : filteredNotifications.length === 1
+                                      ? t('admin-billing.notificationLogs.notificationCount')
+                                      : t(
+                                            'admin-billing.notificationLogs.notificationCountPlural'
+                                        ).replace(
+                                            '{count}',
+                                            filteredNotifications.length.toString()
+                                        )}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -467,26 +541,26 @@ function NotificationLogsPage() {
                             <div className="py-12 text-center">
                                 <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
                                 <p className="mt-4 text-muted-foreground text-sm">
-                                    Cargando notificaciones...
+                                    {t('admin-billing.notificationLogs.loadingNotifications')}
                                 </p>
                             </div>
                         ) : isError ? (
                             <div className="py-12 text-center">
                                 <p className="text-destructive text-sm">
-                                    Error al cargar notificaciones
+                                    {t('admin-billing.notificationLogs.errorLoading')}
                                 </p>
                                 <p className="mt-2 text-muted-foreground text-xs">
-                                    Verifica que la API esté disponible
+                                    {t('admin-billing.notificationLogs.apiCheckError')}
                                 </p>
                             </div>
                         ) : filteredNotifications.length === 0 ? (
                             <div className="py-12 text-center">
                                 <MailIcon className="mx-auto h-12 w-12 text-muted-foreground/50" />
                                 <p className="mt-4 text-muted-foreground text-sm">
-                                    No hay notificaciones registradas aún.
+                                    {t('admin-billing.notificationLogs.emptyTitle')}
                                 </p>
                                 <p className="mt-2 text-muted-foreground text-xs">
-                                    Las notificaciones aparecerán aquí cuando el sistema las envíe.
+                                    {t('admin-billing.notificationLogs.emptyHint')}
                                 </p>
                             </div>
                         ) : (
@@ -495,25 +569,33 @@ function NotificationLogsPage() {
                                     <thead>
                                         <tr className="border-b">
                                             <th className="px-4 py-3 text-left font-medium">
-                                                Fecha
+                                                {t('admin-billing.notificationLogs.columns.date')}
                                             </th>
                                             <th className="px-4 py-3 text-left font-medium">
-                                                Tipo
+                                                {t('admin-billing.notificationLogs.columns.type')}
                                             </th>
                                             <th className="px-4 py-3 text-left font-medium">
-                                                Destinatario
+                                                {t(
+                                                    'admin-billing.notificationLogs.columns.recipient'
+                                                )}
                                             </th>
                                             <th className="px-4 py-3 text-left font-medium">
-                                                Asunto
+                                                {t(
+                                                    'admin-billing.notificationLogs.columns.subject'
+                                                )}
                                             </th>
                                             <th className="px-4 py-3 text-center font-medium">
-                                                Estado
+                                                {t('admin-billing.notificationLogs.columns.status')}
                                             </th>
                                             <th className="px-4 py-3 text-center font-medium">
-                                                Canal
+                                                {t(
+                                                    'admin-billing.notificationLogs.columns.channel'
+                                                )}
                                             </th>
                                             <th className="px-4 py-3 text-right font-medium">
-                                                Acciones
+                                                {t(
+                                                    'admin-billing.notificationLogs.columns.actions'
+                                                )}
                                             </th>
                                         </tr>
                                     </thead>
@@ -528,7 +610,7 @@ function NotificationLogsPage() {
                                                         {formatDate(notification.sentAt)}
                                                     </td>
                                                     <td className="px-4 py-3 text-xs">
-                                                        {getTypeLabel(notification.type)}
+                                                        {getTypeLabel(notification.type, t)}
                                                     </td>
                                                     <td className="px-4 py-3">
                                                         <div className="font-medium text-sm">
@@ -549,11 +631,11 @@ function NotificationLogsPage() {
                                                                 notification.status
                                                             )}
                                                         >
-                                                            {getStatusLabel(notification.status)}
+                                                            {getStatusLabel(notification.status, t)}
                                                         </Badge>
                                                     </td>
                                                     <td className="px-4 py-3 text-center text-xs">
-                                                        {getChannelLabel(notification.channel)}
+                                                        {getChannelLabel(notification.channel, t)}
                                                     </td>
                                                     <td className="px-4 py-3 text-right">
                                                         <Button
@@ -563,7 +645,9 @@ function NotificationLogsPage() {
                                                                 handleViewDetails(notification)
                                                             }
                                                         >
-                                                            Ver Detalles
+                                                            {t(
+                                                                'admin-billing.notificationLogs.viewDetails'
+                                                            )}
                                                         </Button>
                                                     </td>
                                                 </tr>

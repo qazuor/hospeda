@@ -17,6 +17,8 @@ import {
     usePayInvoiceMutation,
     useVoidInvoiceMutation
 } from '@/features/billing-invoices/hooks';
+import { useTranslations } from '@/hooks/use-translations';
+import type { TranslationKey } from '@repo/i18n';
 import { createFileRoute } from '@tanstack/react-router';
 import { CalendarIcon, DownloadIcon, FileTextIcon, MailIcon } from 'lucide-react';
 import { useState } from 'react';
@@ -69,13 +71,13 @@ function getStatusVariant(status: InvoiceStatus) {
 /**
  * Get status label
  */
-function getStatusLabel(status: InvoiceStatus): string {
+function getStatusLabel(status: InvoiceStatus, t: (key: TranslationKey) => string): string {
     const labels = {
-        draft: 'Borrador',
-        open: 'Abierta',
-        paid: 'Pagada',
-        void: 'Anulada',
-        uncollectible: 'Incobrable'
+        draft: t('admin-billing.invoices.statuses.draft'),
+        open: t('admin-billing.invoices.statuses.open'),
+        paid: t('admin-billing.invoices.statuses.paid'),
+        void: t('admin-billing.invoices.statuses.void'),
+        uncollectible: t('admin-billing.invoices.statuses.uncollectible')
     };
     return labels[status];
 }
@@ -121,6 +123,8 @@ function InvoiceDetailDialog({
     onMarkAsVoid: (invoice: Invoice) => void;
     onSendReminder: (invoice: Invoice) => void;
 }) {
+    const { t } = useTranslations();
+
     if (!invoice) return null;
 
     const canMarkAsPaid = invoice.status === 'open';
@@ -136,10 +140,11 @@ function InvoiceDetailDialog({
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <FileTextIcon className="size-5" />
-                        Factura {invoice.invoiceNumber}
+                        {t('admin-billing.invoices.dialog.invoicePrefix')} {invoice.invoiceNumber}
                     </DialogTitle>
                     <DialogDescription>
-                        Emitida el {formatDate(invoice.issueDate)} • Vence el{' '}
+                        {t('admin-billing.invoices.dialog.issuedOn')}{' '}
+                        {formatDate(invoice.issueDate)} • {t('admin-billing.invoices.dialog.dueOn')}{' '}
                         {formatDate(invoice.dueDate)}
                     </DialogDescription>
                 </DialogHeader>
@@ -148,21 +153,26 @@ function InvoiceDetailDialog({
                     {/* Header Section */}
                     <div className="grid gap-4 rounded-md border p-4 md:grid-cols-2">
                         <div>
-                            <p className="mb-2 font-semibold text-sm">Cliente</p>
+                            <p className="mb-2 font-semibold text-sm">
+                                {t('admin-billing.invoices.dialog.client')}
+                            </p>
                             <p className="font-medium">{invoice.userName}</p>
                             <p className="text-muted-foreground text-sm">{invoice.userEmail}</p>
                         </div>
                         <div className="text-left md:text-right">
-                            <p className="mb-2 font-semibold text-sm">Estado</p>
+                            <p className="mb-2 font-semibold text-sm">
+                                {t('admin-billing.invoices.dialog.status')}
+                            </p>
                             <Badge
                                 variant={getStatusVariant(invoice.status)}
                                 className="text-sm"
                             >
-                                {getStatusLabel(invoice.status)}
+                                {getStatusLabel(invoice.status, t)}
                             </Badge>
                             {invoice.paidDate && (
                                 <p className="mt-1 text-muted-foreground text-xs">
-                                    Pagada el {formatDate(invoice.paidDate)}
+                                    {t('admin-billing.invoices.dialog.paidOn')}{' '}
+                                    {formatDate(invoice.paidDate)}
                                 </p>
                             )}
                         </div>
@@ -170,21 +180,25 @@ function InvoiceDetailDialog({
 
                     {/* Line Items */}
                     <div>
-                        <h3 className="mb-3 font-semibold text-sm">Detalle de Items</h3>
+                        <h3 className="mb-3 font-semibold text-sm">
+                            {t('admin-billing.invoices.dialog.lineItemsTitle')}
+                        </h3>
                         <div className="overflow-x-auto rounded-md border">
                             <table className="w-full text-sm">
                                 <thead className="bg-muted">
                                     <tr>
                                         <th className="px-4 py-2 text-left font-medium">
-                                            Descripción
+                                            {t('admin-billing.invoices.dialog.descriptionCol')}
                                         </th>
                                         <th className="px-4 py-2 text-center font-medium">
-                                            Cantidad
+                                            {t('admin-billing.invoices.dialog.quantityCol')}
                                         </th>
                                         <th className="px-4 py-2 text-right font-medium">
-                                            Precio Unitario
+                                            {t('admin-billing.invoices.dialog.unitPriceCol')}
                                         </th>
-                                        <th className="px-4 py-2 text-right font-medium">Total</th>
+                                        <th className="px-4 py-2 text-right font-medium">
+                                            {t('admin-billing.invoices.dialog.totalCol')}
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -214,16 +228,20 @@ function InvoiceDetailDialog({
                     <div className="rounded-md border bg-muted p-4">
                         <div className="space-y-2">
                             <div className="flex justify-between text-sm">
-                                <span className="text-muted-foreground">Subtotal</span>
+                                <span className="text-muted-foreground">
+                                    {t('admin-billing.invoices.dialog.subtotal')}
+                                </span>
                                 <span className="font-medium">{formatArs(invoice.subtotal)}</span>
                             </div>
                             <div className="flex justify-between text-sm">
-                                <span className="text-muted-foreground">IVA (21%)</span>
+                                <span className="text-muted-foreground">
+                                    {t('admin-billing.invoices.dialog.tax')}
+                                </span>
                                 <span className="font-medium">{formatArs(invoice.tax)}</span>
                             </div>
                             <div className="border-t pt-2">
                                 <div className="flex justify-between font-semibold text-lg">
-                                    <span>Total</span>
+                                    <span>{t('admin-billing.invoices.dialog.total')}</span>
                                     <span>{formatArs(invoice.total)}</span>
                                 </div>
                             </div>
@@ -234,14 +252,16 @@ function InvoiceDetailDialog({
                     {invoice.status === 'paid' && invoice.paymentMethod && (
                         <div className="rounded-md border bg-green-50 p-4">
                             <p className="mb-1 font-semibold text-green-900 text-sm">
-                                Información de Pago
+                                {t('admin-billing.invoices.dialog.paymentInfo')}
                             </p>
                             <p className="text-green-800 text-sm">
-                                Método: {invoice.paymentMethod}
+                                {t('admin-billing.invoices.dialog.paymentMethod')}:{' '}
+                                {invoice.paymentMethod}
                             </p>
                             {invoice.paidDate && (
                                 <p className="text-green-800 text-sm">
-                                    Fecha: {formatDate(invoice.paidDate)}
+                                    {t('admin-billing.invoices.dialog.paymentDate')}:{' '}
+                                    {formatDate(invoice.paidDate)}
                                 </p>
                             )}
                         </div>
@@ -250,7 +270,9 @@ function InvoiceDetailDialog({
                     {/* Notes */}
                     {invoice.notes && (
                         <div>
-                            <p className="mb-2 font-semibold text-sm">Notas</p>
+                            <p className="mb-2 font-semibold text-sm">
+                                {t('admin-billing.invoices.dialog.notes')}
+                            </p>
                             <p className="rounded-md border bg-muted p-3 text-sm">
                                 {invoice.notes}
                             </p>
@@ -268,7 +290,7 @@ function InvoiceDetailDialog({
                             }}
                         >
                             <DownloadIcon className="mr-2 size-4" />
-                            Descargar PDF
+                            {t('admin-billing.invoices.dialog.downloadPdf')}
                         </Button>
                         {canSendReminder && (
                             <Button
@@ -277,7 +299,7 @@ function InvoiceDetailDialog({
                                 onClick={() => onSendReminder(invoice)}
                             >
                                 <MailIcon className="mr-2 size-4" />
-                                Enviar Recordatorio
+                                {t('admin-billing.invoices.dialog.sendReminder')}
                             </Button>
                         )}
                     </div>
@@ -288,7 +310,7 @@ function InvoiceDetailDialog({
                                 size="sm"
                                 onClick={() => onMarkAsVoid(invoice)}
                             >
-                                Anular
+                                {t('admin-billing.invoices.dialog.voidInvoice')}
                             </Button>
                         )}
                         {canMarkAsPaid && (
@@ -297,14 +319,14 @@ function InvoiceDetailDialog({
                                 size="sm"
                                 onClick={() => onMarkAsPaid(invoice)}
                             >
-                                Marcar como Pagada
+                                {t('admin-billing.invoices.dialog.markAsPaid')}
                             </Button>
                         )}
                         <Button
                             variant="outline"
                             onClick={() => onOpenChange(false)}
                         >
-                            Cerrar
+                            {t('admin-billing.common.close')}
                         </Button>
                     </div>
                 </DialogFooter>
@@ -314,6 +336,7 @@ function InvoiceDetailDialog({
 }
 
 function BillingInvoicesPage() {
+    const { t } = useTranslations();
     const { addToast } = useToast();
     const [statusFilter, setStatusFilter] = useState<InvoiceStatus | 'all'>('all');
     const [searchQuery, setSearchQuery] = useState('');
@@ -364,14 +387,14 @@ function BillingInvoicesPage() {
         payMutation.mutate(invoice.id, {
             onSuccess: () => {
                 addToast({
-                    message: 'Factura marcada como pagada',
+                    message: t('admin-billing.invoices.toasts.markedAsPaid'),
                     variant: 'success'
                 });
                 setDetailDialogOpen(false);
             },
             onError: (error) => {
                 addToast({
-                    message: `Error al marcar factura: ${error.message}`,
+                    message: `${t('admin-billing.invoices.toasts.markError')} ${error.message}`,
                     variant: 'error'
                 });
             }
@@ -382,14 +405,14 @@ function BillingInvoicesPage() {
         voidMutation.mutate(invoice.id, {
             onSuccess: () => {
                 addToast({
-                    message: 'Factura anulada correctamente',
+                    message: t('admin-billing.invoices.toasts.voided'),
                     variant: 'success'
                 });
                 setDetailDialogOpen(false);
             },
             onError: (error) => {
                 addToast({
-                    message: `Error al anular factura: ${error.message}`,
+                    message: `${t('admin-billing.invoices.toasts.voidError')} ${error.message}`,
                     variant: 'error'
                 });
             }
@@ -398,14 +421,14 @@ function BillingInvoicesPage() {
 
     const handleSendReminder = (_invoice: Invoice) => {
         addToast({
-            message: 'Recordatorio enviado',
+            message: t('admin-billing.invoices.toasts.reminderSent'),
             variant: 'success'
         });
     };
 
     const handleDownloadPdf = (_invoice: Invoice) => {
         addToast({
-            message: 'Descargando PDF...',
+            message: t('admin-billing.invoices.toasts.downloadingPdf'),
             variant: 'success'
         });
     };
@@ -414,9 +437,9 @@ function BillingInvoicesPage() {
         <SidebarPageLayout>
             <div className="space-y-6">
                 <div>
-                    <h2 className="mb-2 font-bold text-2xl">Facturas</h2>
+                    <h2 className="mb-2 font-bold text-2xl">{t('admin-billing.invoices.title')}</h2>
                     <p className="text-muted-foreground">
-                        Gestiona y genera facturas del sistema de facturación
+                        {t('admin-billing.invoices.description')}
                     </p>
                 </div>
 
@@ -424,14 +447,17 @@ function BillingInvoicesPage() {
                 <Card>
                     <CardHeader>
                         <div className="flex items-center justify-between">
-                            <CardTitle>Filtros</CardTitle>
+                            <CardTitle>{t('admin-billing.invoices.filtersTitle')}</CardTitle>
                             <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => setShowDateFilters(!showDateFilters)}
                             >
                                 <CalendarIcon className="mr-2 size-4" />
-                                {showDateFilters ? 'Ocultar' : 'Filtrar por'} Fecha
+                                {showDateFilters
+                                    ? t('admin-billing.invoices.hideDateFilter')
+                                    : t('admin-billing.invoices.showDateFilter')}{' '}
+                                {t('admin-billing.invoices.dateFilterSuffix')}
                             </Button>
                         </div>
                     </CardHeader>
@@ -442,11 +468,11 @@ function BillingInvoicesPage() {
                                     htmlFor="invoice-search"
                                     className="mb-2 block font-medium text-sm"
                                 >
-                                    Buscar por número o usuario
+                                    {t('admin-billing.invoices.searchLabel')}
                                 </label>
                                 <Input
                                     id="invoice-search"
-                                    placeholder="Número de factura, nombre o email..."
+                                    placeholder={t('admin-billing.invoices.searchPlaceholder')}
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                 />
@@ -456,7 +482,7 @@ function BillingInvoicesPage() {
                                     htmlFor="invoice-status-filter"
                                     className="mb-2 block font-medium text-sm"
                                 >
-                                    Estado
+                                    {t('admin-billing.invoices.statusFilter')}
                                 </label>
                                 <select
                                     id="invoice-status-filter"
@@ -466,12 +492,24 @@ function BillingInvoicesPage() {
                                         setStatusFilter(e.target.value as InvoiceStatus | 'all')
                                     }
                                 >
-                                    <option value="all">Todos</option>
-                                    <option value="draft">Borrador</option>
-                                    <option value="open">Abierta</option>
-                                    <option value="paid">Pagada</option>
-                                    <option value="void">Anulada</option>
-                                    <option value="uncollectible">Incobrable</option>
+                                    <option value="all">
+                                        {t('admin-billing.invoices.allFilter')}
+                                    </option>
+                                    <option value="draft">
+                                        {t('admin-billing.invoices.statuses.draft')}
+                                    </option>
+                                    <option value="open">
+                                        {t('admin-billing.invoices.statuses.open')}
+                                    </option>
+                                    <option value="paid">
+                                        {t('admin-billing.invoices.statuses.paid')}
+                                    </option>
+                                    <option value="void">
+                                        {t('admin-billing.invoices.statuses.void')}
+                                    </option>
+                                    <option value="uncollectible">
+                                        {t('admin-billing.invoices.statuses.uncollectible')}
+                                    </option>
                                 </select>
                             </div>
                         </div>
@@ -617,7 +655,7 @@ function BillingInvoicesPage() {
                                                     <Badge
                                                         variant={getStatusVariant(invoice.status)}
                                                     >
-                                                        {getStatusLabel(invoice.status)}
+                                                        {getStatusLabel(invoice.status, t)}
                                                     </Badge>
                                                 </td>
                                                 <td className="px-4 py-3 text-muted-foreground text-xs">
