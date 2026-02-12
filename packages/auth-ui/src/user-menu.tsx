@@ -1,17 +1,45 @@
-import { useAuth, useUser } from '@clerk/clerk-react';
+/**
+ * User menu component for Better Auth.
+ *
+ * Displays user avatar with dropdown menu for navigation and sign-out.
+ * Receives session data and callbacks as props.
+ *
+ * @module user-menu
+ */
+
 import { useState } from 'react';
 import { authLogger } from './logger';
+import type { AuthSession } from './types';
 
-interface UserMenuProps {
-    apiBaseUrl?: string;
+/**
+ * UserMenu component props
+ */
+export interface UserMenuProps {
+    /** Current auth session (null if not authenticated) */
+    session: AuthSession | null;
+    /** Whether session is still loading */
+    isPending?: boolean;
+    /** Sign-out handler */
+    onSignOut: () => Promise<void>;
+    /** Dashboard link URL */
+    dashboardUrl?: string;
+    /** Profile link URL */
+    profileUrl?: string;
 }
 
-export const UserMenu = ({ apiBaseUrl }: UserMenuProps) => {
-    const { signOut } = useAuth();
-    const { isLoaded, user } = useUser();
+/**
+ * UserMenu renders a user avatar button with a dropdown menu
+ */
+export const UserMenu = ({
+    session,
+    isPending = false,
+    onSignOut,
+    dashboardUrl = '/dashboard/',
+    profileUrl = '/profile/'
+}: UserMenuProps) => {
     const [isOpen, setIsOpen] = useState(false);
 
-    if (!isLoaded) {
+    if (isPending) {
         return (
             <div className="flex items-center gap-2">
                 <div className="h-8 w-8 animate-pulse rounded-full bg-gray-200" />
@@ -20,28 +48,17 @@ export const UserMenu = ({ apiBaseUrl }: UserMenuProps) => {
         );
     }
 
-    if (!user) return null;
+    if (!session?.user) return null;
+
+    const { user } = session;
+    const displayName = user.name || user.email || 'User';
+    const initial = (user.name || user.email || 'U').charAt(0).toUpperCase();
 
     const handleSignOut = async () => {
         try {
-            // Call API signout endpoint if provided (for Astro app)
-            if (apiBaseUrl) {
-                try {
-                    await fetch(`${apiBaseUrl}/api/v1/public/auth/signout`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        credentials: 'include'
-                    });
-                } catch (apiError) {
-                    authLogger.warn('API signout failed', apiError);
-                }
-            }
-
-            // Use Clerk signOut for proper session management
-            await signOut();
-
-            // Clerk will handle redirect automatically, but fallback to home if needed
-            if (!window.location.pathname.includes('/auth')) {
+            setIsOpen(false);
+            await onSignOut();
+            if (typeof window !== 'undefined' && !window.location.pathname.includes('/auth')) {
                 window.location.href = '/';
             }
         } catch (error) {
@@ -58,23 +75,19 @@ export const UserMenu = ({ apiBaseUrl }: UserMenuProps) => {
                 aria-expanded={isOpen}
                 aria-haspopup="true"
             >
-                {user.imageUrl ? (
+                {user.image ? (
                     <img
-                        src={user.imageUrl}
-                        alt={user.fullName || 'Usuario'}
+                        src={user.image}
+                        alt={displayName}
                         className="h-8 w-8 rounded-full object-cover"
                     />
                 ) : (
                     <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-cyan-500 to-green-500">
-                        <span className="font-medium text-sm text-white">
-                            {(user.fullName || user.primaryEmailAddress?.emailAddress || 'U')
-                                .charAt(0)
-                                .toUpperCase()}
-                        </span>
+                        <span className="font-medium text-sm text-white">{initial}</span>
                     </div>
                 )}
                 <span className="hidden font-medium text-gray-700 text-sm sm:block">
-                    {user.fullName || user.primaryEmailAddress?.emailAddress}
+                    {displayName}
                 </span>
                 <svg
                     className={`h-4 w-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
@@ -108,43 +121,29 @@ export const UserMenu = ({ apiBaseUrl }: UserMenuProps) => {
                     <div className="absolute right-0 z-20 mt-2 w-56 rounded-lg border border-gray-200 bg-white shadow-lg">
                         <div className="border-gray-200 border-b p-4">
                             <div className="flex items-center gap-3">
-                                {user.imageUrl ? (
+                                {user.image ? (
                                     <img
-                                        src={user.imageUrl}
-                                        alt={user.fullName || 'Usuario'}
+                                        src={user.image}
+                                        alt={displayName}
                                         className="h-10 w-10 rounded-full object-cover"
                                     />
                                 ) : (
                                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-cyan-500 to-green-500">
-                                        <span className="font-medium text-white">
-                                            {(
-                                                user.fullName ||
-                                                user.primaryEmailAddress?.emailAddress ||
-                                                'U'
-                                            )
-                                                .charAt(0)
-                                                .toUpperCase()}
-                                        </span>
+                                        <span className="font-medium text-white">{initial}</span>
                                     </div>
                                 )}
                                 <div className="min-w-0 flex-1">
                                     <p className="truncate font-medium text-gray-900 text-sm">
-                                        {user.fullName || 'Usuario'}
+                                        {displayName}
                                     </p>
-                                    <p className="truncate text-gray-500 text-xs">
-                                        {user.primaryEmailAddress?.emailAddress}
-                                    </p>
+                                    <p className="truncate text-gray-500 text-xs">{user.email}</p>
                                 </div>
                             </div>
                         </div>
 
                         <div className="py-2">
                             <a
-                                href={
-                                    window.location.pathname.includes('/admin')
-                                        ? '/destinations'
-                                        : '/dashboard/'
-                                }
+                                href={dashboardUrl}
                                 className="flex items-center px-4 py-2 text-gray-700 text-sm transition-colors hover:bg-gray-50"
                                 onClick={() => setIsOpen(false)}
                             >
@@ -166,11 +165,7 @@ export const UserMenu = ({ apiBaseUrl }: UserMenuProps) => {
                             </a>
 
                             <a
-                                href={
-                                    window.location.pathname.includes('/admin')
-                                        ? '/me/profile'
-                                        : '/profile/'
-                                }
+                                href={profileUrl}
                                 className="flex items-center px-4 py-2 text-gray-700 text-sm transition-colors hover:bg-gray-50"
                                 onClick={() => setIsOpen(false)}
                             >
@@ -210,7 +205,7 @@ export const UserMenu = ({ apiBaseUrl }: UserMenuProps) => {
                                         d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
                                     />
                                 </svg>
-                                Cerrar Sesión
+                                Cerrar Sesion
                             </button>
                         </div>
                     </div>

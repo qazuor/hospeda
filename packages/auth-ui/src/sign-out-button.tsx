@@ -1,4 +1,11 @@
-import { useAuth } from '@clerk/clerk-react';
+/**
+ * Sign-out button component for Better Auth.
+ *
+ * A simple button that triggers sign-out and optional redirect.
+ *
+ * @module sign-out-button
+ */
+
 import type { FC } from 'react';
 import { authLogger } from './logger';
 
@@ -6,53 +13,33 @@ import { authLogger } from './logger';
  * Props for the SignOutButton component
  */
 export interface SignOutButtonProps {
-    /** Optional callback when sign out is completed */
-    onSignOut?: () => void;
+    /** Whether the user is currently authenticated */
+    isAuthenticated: boolean;
+    /** Sign-out handler */
+    onSignOut: () => Promise<void>;
+    /** Optional callback after sign-out completes */
+    onComplete?: () => void;
     /** Custom CSS classes */
     className?: string;
-    /** API base URL for sign out sync */
-    apiBaseUrl?: string;
-    /** Redirect URL after sign out */
+    /** Redirect URL after sign-out */
     redirectTo?: string;
 }
 
 /**
- * SignOutButton component for logging out users
- *
- * @param props - The component props
- * @returns A button that signs out the current user
+ * SignOutButton renders a button that signs out the current user
  */
 export const SignOutButton: FC<SignOutButtonProps> = ({
+    isAuthenticated,
     onSignOut,
+    onComplete,
     className = 'inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors',
-    apiBaseUrl,
     redirectTo
 }) => {
-    const { signOut, isSignedIn } = useAuth();
-
     const handleSignOut = async () => {
         try {
-            // Call API signout endpoint if provided
-            if (apiBaseUrl) {
-                try {
-                    await fetch(`${apiBaseUrl}/api/v1/public/auth/signout`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        credentials: 'include'
-                    });
-                } catch (apiError) {
-                    authLogger.warn('API signout failed, continuing with Clerk signout', apiError);
-                }
-            }
-
-            // Sign out from Clerk
-            await signOut();
-
-            // Call custom callback
-            onSignOut?.();
-
-            // Redirect if specified
-            if (redirectTo) {
+            await onSignOut();
+            onComplete?.();
+            if (redirectTo && typeof window !== 'undefined') {
                 window.location.href = redirectTo;
             }
         } catch (error) {
@@ -60,7 +47,7 @@ export const SignOutButton: FC<SignOutButtonProps> = ({
         }
     };
 
-    if (!isSignedIn) {
+    if (!isAuthenticated) {
         return null;
     }
 
@@ -70,38 +57,7 @@ export const SignOutButton: FC<SignOutButtonProps> = ({
             className={className}
             type="button"
         >
-            Cerrar sesión
-        </button>
-    );
-};
-
-/**
- * Debug component to clear Clerk session completely
- */
-export const ClearSessionButton: FC = () => {
-    const { signOut } = useAuth();
-
-    const handleClearSession = async () => {
-        try {
-            await signOut({ sessionId: 'all' });
-            // Also clear local storage
-            localStorage.clear();
-            sessionStorage.clear();
-            // Reload the page
-            window.location.reload();
-        } catch (error) {
-            authLogger.error('Clear session error', error);
-        }
-    };
-
-    return (
-        <button
-            onClick={handleClearSession}
-            className="rounded bg-yellow-500 px-2 py-1 text-white text-xs hover:bg-yellow-600"
-            type="button"
-            title="Clear all sessions and reload page"
-        >
-            Clear Session
+            Cerrar sesion
         </button>
     );
 };
