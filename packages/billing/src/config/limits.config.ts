@@ -7,27 +7,27 @@ import { LimitKey } from '../types/plan.types.js';
  */
 export const LIMIT_METADATA: Record<LimitKey, { name: string; description: string }> = {
     [LimitKey.MAX_ACCOMMODATIONS]: {
-        name: 'Alojamientos maximos',
-        description: 'Numero maximo de alojamientos que se pueden publicar'
+        name: 'Maximum accommodations',
+        description: 'Maximum number of accommodations that can be published'
     },
     [LimitKey.MAX_PHOTOS_PER_ACCOMMODATION]: {
-        name: 'Fotos por alojamiento',
-        description: 'Numero maximo de fotos por alojamiento'
+        name: 'Photos per accommodation',
+        description: 'Maximum number of photos per accommodation'
     },
     [LimitKey.MAX_ACTIVE_PROMOTIONS]: {
-        name: 'Promociones activas',
-        description: 'Numero maximo de promociones activas simultaneamente'
+        name: 'Active promotions',
+        description: 'Maximum number of active promotions simultaneously'
     },
     [LimitKey.MAX_FAVORITES]: {
-        name: 'Favoritos',
-        description: 'Numero maximo de alojamientos guardados como favoritos'
+        name: 'Favorites',
+        description: 'Maximum number of accommodations saved as favorites'
     },
     [LimitKey.MAX_PROPERTIES]: {
-        name: 'Propiedades',
-        description: 'Numero maximo de propiedades en un complejo'
+        name: 'Properties',
+        description: 'Maximum number of properties in a complex'
     },
     [LimitKey.MAX_STAFF_ACCOUNTS]: {
-        name: 'Cuentas de personal',
-        description: 'Numero maximo de cuentas de personal por complejo'
+        name: 'Staff accounts',
+        description: 'Maximum number of staff accounts per complex'
     }
 };

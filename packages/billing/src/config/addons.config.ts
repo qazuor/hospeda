@@ -6,10 +6,11 @@ import { LimitKey } from '../types/plan.types.js';
 
 export const VISIBILITY_BOOST_ADDON: AddonDefinition = {
     slug: 'visibility-boost-7d',
-    name: 'Boost de visibilidad (7 dias)',
-    description: 'Tu alojamiento aparece destacado en los resultados de busqueda durante 7 dias.',
+    name: 'Visibility Boost (7 days)',
+    description: 'Your accommodation appears featured in search results for 7 days.',
     billingType: 'one_time',
     priceArs: 500000, // ARS $5,000
+    annualPriceArs: null, // One-time purchase
     durationDays: 7,
     affectsLimitKey: null,
     limitIncrease: null,
@@ -21,10 +22,11 @@ export const VISIBILITY_BOOST_ADDON: AddonDefinition = {
 
 export const VISIBILITY_BOOST_30D_ADDON: AddonDefinition = {
     slug: 'visibility-boost-30d',
-    name: 'Boost de visibilidad (30 dias)',
-    description: 'Tu alojamiento aparece destacado en los resultados de busqueda durante 30 dias.',
+    name: 'Visibility Boost (30 days)',
+    description: 'Your accommodation appears featured in search results for 30 days.',
     billingType: 'one_time',
     priceArs: 1500000, // ARS $15,000
+    annualPriceArs: null, // One-time purchase
     durationDays: 30,
     affectsLimitKey: null,
     limitIncrease: null,
@@ -38,10 +40,11 @@ export const VISIBILITY_BOOST_30D_ADDON: AddonDefinition = {
 
 export const EXTRA_PHOTOS_ADDON: AddonDefinition = {
     slug: 'extra-photos-20',
-    name: 'Pack fotos extra (+20 fotos)',
-    description: 'Agrega 20 fotos adicionales a cada alojamiento. Se renueva mensualmente.',
+    name: 'Extra Photos Pack (+20 photos)',
+    description: 'Adds 20 additional photos to each accommodation. Renews monthly.',
     billingType: 'recurring',
     priceArs: 500000, // ARS $5,000/month
+    annualPriceArs: 4800000, // ARS $48,000/year (20% annual discount)
     durationDays: null,
     affectsLimitKey: LimitKey.MAX_PHOTOS_PER_ACCOMMODATION,
     limitIncrease: 20,
@@ -53,10 +56,11 @@ export const EXTRA_PHOTOS_ADDON: AddonDefinition = {
 
 export const EXTRA_ACCOMMODATIONS_ADDON: AddonDefinition = {
     slug: 'extra-accommodations-5',
-    name: 'Pack alojamientos extra (+5)',
-    description: 'Agrega 5 alojamientos adicionales a tu plan. Se renueva mensualmente.',
+    name: 'Extra Accommodations Pack (+5)',
+    description: 'Adds 5 additional accommodations to your plan. Renews monthly.',
     billingType: 'recurring',
     priceArs: 1000000, // ARS $10,000/month
+    annualPriceArs: 9600000, // ARS $96,000/year (20% annual discount)
     durationDays: null,
     affectsLimitKey: LimitKey.MAX_ACCOMMODATIONS,
     limitIncrease: 5,
@@ -68,10 +72,11 @@ export const EXTRA_ACCOMMODATIONS_ADDON: AddonDefinition = {
 
 export const EXTRA_PROPERTIES_ADDON: AddonDefinition = {
     slug: 'extra-properties-5',
-    name: 'Pack propiedades extra (+5)',
-    description: 'Agrega 5 propiedades adicionales a tu complejo. Se renueva mensualmente.',
+    name: 'Extra Properties Pack (+5)',
+    description: 'Adds 5 additional properties to your complex. Renews monthly.',
     billingType: 'recurring',
     priceArs: 2000000, // ARS $20,000/month
+    annualPriceArs: 19200000, // ARS $192,000/year (20% annual discount)
     durationDays: null,
     affectsLimitKey: LimitKey.MAX_PROPERTIES,
     limitIncrease: 5,
@@ -93,7 +98,18 @@ export const ALL_ADDONS: AddonDefinition[] = [
 ];
 
 /**
- * Get an add-on by its slug
+ * Retrieves an add-on definition by its unique slug identifier.
+ *
+ * @param slug - The unique slug of the add-on to find (e.g. 'visibility-boost-7d')
+ * @returns The matching AddonDefinition, or undefined if not found
+ *
+ * @example
+ * ```ts
+ * const addon = getAddonBySlug('visibility-boost-7d');
+ * if (addon) {
+ *     console.log(`Found: ${addon.name} - ${addon.priceArs / 100} ARS`);
+ * }
+ * ```
  */
 export function getAddonBySlug(slug: string): AddonDefinition | undefined {
     return ALL_ADDONS.find((addon) => addon.slug === slug);

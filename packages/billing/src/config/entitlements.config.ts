@@ -7,206 +7,205 @@ export const ENTITLEMENT_DEFINITIONS: EntitlementDefinition[] = [
     // Owner entitlements
     {
         key: EntitlementKey.PUBLISH_ACCOMMODATIONS,
-        name: 'Publicar alojamientos',
-        description: 'Permite publicar alojamientos en la plataforma'
+        name: 'Publish accommodations',
+        description: 'Allows publishing accommodations on the platform'
     },
     {
         key: EntitlementKey.EDIT_ACCOMMODATION_INFO,
-        name: 'Editar informacion de alojamiento',
-        description: 'Permite editar la informacion de alojamientos propios'
+        name: 'Edit accommodation info',
+        description: 'Allows editing information of owned accommodations'
     },
     {
         key: EntitlementKey.VIEW_BASIC_STATS,
-        name: 'Estadisticas basicas',
-        description: 'Acceso a estadisticas basicas de visitas y reservas'
+        name: 'Basic statistics',
+        description: 'Access to basic visit and booking statistics'
     },
     {
         key: EntitlementKey.VIEW_ADVANCED_STATS,
-        name: 'Estadisticas avanzadas',
-        description: 'Acceso a estadisticas avanzadas con graficos y tendencias'
+        name: 'Advanced statistics',
+        description: 'Access to advanced statistics with charts and trends'
     },
     {
         key: EntitlementKey.RESPOND_REVIEWS,
-        name: 'Responder resenas',
-        description: 'Permite responder a las resenas de huespedes'
+        name: 'Respond to reviews',
+        description: 'Allows responding to guest reviews'
     },
     {
         key: EntitlementKey.PRIORITY_SUPPORT,
-        name: 'Soporte prioritario',
-        description: 'Acceso a soporte prioritario con tiempos de respuesta reducidos'
+        name: 'Priority support',
+        description: 'Access to priority support with reduced response times'
     },
     {
         key: EntitlementKey.FEATURED_LISTING,
-        name: 'Listado destacado',
-        description: 'El alojamiento aparece destacado en los resultados de busqueda'
+        name: 'Featured listing',
+        description: 'Accommodation appears featured in search results'
     },
     {
         key: EntitlementKey.CUSTOM_BRANDING,
-        name: 'Marca personalizada',
-        description: 'Permite personalizar la apariencia del listado con marca propia'
+        name: 'Custom branding',
+        description: 'Allows customizing the listing appearance with own branding'
     },
     {
         key: EntitlementKey.API_ACCESS,
-        name: 'Acceso API',
-        description: 'Acceso a la API para integraciones con sistemas externos'
+        name: 'API access',
+        description: 'Access to the API for integrations with external systems'
     },
     {
         key: EntitlementKey.DEDICATED_MANAGER,
-        name: 'Gestor dedicado',
-        description: 'Un gestor de cuenta dedicado para asistencia personalizada'
+        name: 'Dedicated manager',
+        description: 'A dedicated account manager for personalized assistance'
     },
     {
         key: EntitlementKey.CREATE_PROMOTIONS,
-        name: 'Crear promociones',
-        description: 'Permite crear promociones exclusivas para turistas VIP'
+        name: 'Create promotions',
+        description: 'Allows creating exclusive promotions for VIP tourists'
     },
     {
         key: EntitlementKey.SOCIAL_MEDIA_INTEGRATION,
-        name: 'Integracion redes sociales',
-        description: 'Publicacion automatica en redes sociales'
+        name: 'Social media integration',
+        description: 'Automatic publishing to social media platforms'
     },
     // Accommodation feature entitlements
     {
         key: EntitlementKey.CAN_USE_RICH_DESCRIPTION,
-        name: 'Descripcion enriquecida',
-        description: 'Permite usar formato enriquecido en la descripcion del alojamiento'
+        name: 'Rich description',
+        description: 'Allows using rich text formatting in accommodation description'
     },
     {
         key: EntitlementKey.CAN_EMBED_VIDEO,
-        name: 'Insertar video',
-        description: 'Permite insertar videos en el listado del alojamiento'
+        name: 'Embed video',
+        description: 'Allows embedding videos in accommodation listing'
     },
     {
         key: EntitlementKey.CAN_USE_CALENDAR,
-        name: 'Calendario de disponibilidad',
-        description: 'Permite usar el calendario de disponibilidad en el listado'
+        name: 'Availability calendar',
+        description: 'Allows using the availability calendar in listing'
     },
     {
         key: EntitlementKey.CAN_SYNC_EXTERNAL_CALENDAR,
-        name: 'Sincronizacion de calendario externo',
-        description: 'Permite sincronizar con calendarios externos como Google Calendar o iCal'
+        name: 'External calendar sync',
+        description: 'Allows syncing with external calendars like Google Calendar or iCal'
     },
     {
         key: EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY,
-        name: 'Mostrar WhatsApp',
-        description: 'Permite mostrar el numero de WhatsApp en el listado'
+        name: 'Display WhatsApp',
+        description: 'Allows displaying WhatsApp number in listing'
     },
     {
         key: EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT,
-        name: 'Contacto directo por WhatsApp',
-        description: 'Permite que los turistas contacten directamente por WhatsApp'
+        name: 'Direct WhatsApp contact',
+        description: 'Allows tourists to contact directly via WhatsApp'
     },
     {
         key: EntitlementKey.HAS_VERIFICATION_BADGE,
-        name: 'Insignia de verificacion',
-        description: 'Muestra una insignia de verificacion en el listado del alojamiento'
+        name: 'Verification badge',
+        description: 'Displays a verification badge on the accommodation listing'
     },
     // Complex entitlements
     {
         key: EntitlementKey.MULTI_PROPERTY_MANAGEMENT,
-        name: 'Gestion multi-propiedad',
-        description: 'Permite gestionar multiples propiedades desde una sola cuenta'
+        name: 'Multi-property management',
+        description: 'Allows managing multiple properties from a single account'
     },
     {
         key: EntitlementKey.CONSOLIDATED_ANALYTICS,
-        name: 'Analiticas consolidadas',
-        description: 'Panel de analiticas unificado para todas las propiedades'
+        name: 'Consolidated analytics',
+        description: 'Unified analytics dashboard for all properties'
     },
     {
         key: EntitlementKey.CENTRALIZED_BOOKING,
-        name: 'Reservas centralizadas',
-        description: 'Sistema centralizado de reservas para todas las propiedades'
+        name: 'Centralized booking',
+        description: 'Centralized booking system for all properties'
     },
     {
         key: EntitlementKey.STAFF_MANAGEMENT,
-        name: 'Gestion de personal',
-        description: 'Permite crear y gestionar cuentas de personal'
+        name: 'Staff management',
+        description: 'Allows creating and managing staff accounts'
     },
     {
         key: EntitlementKey.WHITE_LABEL,
-        name: 'Marca blanca',
-        description: 'Experiencia de marca blanca completa'
+        name: 'White label',
+        description: 'Complete white label experience'
     },
     {
         key: EntitlementKey.MULTI_CHANNEL_INTEGRATION,
-        name: 'Integracion multi-canal',
-        description: 'Sincronizacion con OTAs y canales de venta externos'
+        name: 'Multi-channel integration',
+        description: 'Sync with OTAs and external sales channels'
     },
     // Tourist entitlements
     {
         key: EntitlementKey.SAVE_FAVORITES,
-        name: 'Guardar favoritos',
-        description: 'Permite guardar alojamientos como favoritos'
+        name: 'Save favorites',
+        description: 'Allows saving accommodations as favorites'
     },
     {
         key: EntitlementKey.WRITE_REVIEWS,
-        name: 'Escribir resenas',
-        description: 'Permite escribir resenas de alojamientos'
+        name: 'Write reviews',
+        description: 'Allows writing accommodation reviews'
     },
     {
         key: EntitlementKey.READ_REVIEWS,
-        name: 'Leer resenas',
-        description: 'Acceso a leer resenas de otros huespedes'
+        name: 'Read reviews',
+        description: 'Access to read reviews from other guests'
     },
     {
         key: EntitlementKey.AD_FREE,
-        name: 'Sin publicidad',
-        description: 'Experiencia sin anuncios publicitarios'
+        name: 'Ad-free',
+        description: 'Ad-free browsing experience'
     },
     {
         key: EntitlementKey.PRICE_ALERTS,
-        name: 'Alertas de precio',
-        description: 'Notificaciones cuando bajan los precios de alojamientos favoritos'
+        name: 'Price alerts',
+        description: 'Notifications when favorite accommodation prices drop'
     },
     {
         key: EntitlementKey.EARLY_ACCESS_EVENTS,
-        name: 'Acceso anticipado a eventos',
-        description: 'Acceso prioritario a entradas para eventos'
+        name: 'Early access to events',
+        description: 'Priority access to event tickets'
     },
     {
         key: EntitlementKey.EXCLUSIVE_DEALS,
-        name: 'Ofertas exclusivas',
-        description: 'Acceso a ofertas y descuentos exclusivos'
+        name: 'Exclusive deals',
+        description: 'Access to exclusive offers and discounts'
     },
     {
         key: EntitlementKey.VIP_SUPPORT,
-        name: 'Soporte VIP',
-        description: 'Canal de soporte VIP dedicado'
+        name: 'VIP support',
+        description: 'Dedicated VIP support channel'
     },
     {
         key: EntitlementKey.CONCIERGE_SERVICE,
-        name: 'Servicio de conserje',
-        description: 'Servicio de conserje personalizado para planificar viajes'
+        name: 'Concierge service',
+        description: 'Personalized concierge service for trip planning'
     },
     {
         key: EntitlementKey.AIRPORT_TRANSFERS,
-        name: 'Transfers aeropuerto',
-        description: 'Coordinacion de transfers al aeropuerto incluida'
+        name: 'Airport transfers',
+        description: 'Airport transfer coordination included'
     },
     {
         key: EntitlementKey.VIP_PROMOTIONS_ACCESS,
-        name: 'Acceso a promociones VIP',
-        description: 'Acceso a promociones exclusivas creadas por alojamientos'
+        name: 'VIP promotions access',
+        description: 'Access to exclusive promotions created by accommodations'
     },
     {
         key: EntitlementKey.CAN_COMPARE_ACCOMMODATIONS,
-        name: 'Comparar alojamientos',
-        description: 'Permite comparar multiples alojamientos lado a lado'
+        name: 'Compare accommodations',
+        description: 'Allows comparing multiple accommodations side by side'
     },
     {
         key: EntitlementKey.CAN_ATTACH_REVIEW_PHOTOS,
-        name: 'Adjuntar fotos a resenas',
-        description: 'Permite agregar fotografias a las resenas de alojamientos'
+        name: 'Attach photos to reviews',
+        description: 'Allows adding photos to accommodation reviews'
     },
     {
         key: EntitlementKey.CAN_VIEW_SEARCH_HISTORY,
-        name: 'Ver historial de busqueda',
-        description: 'Acceso al historial de busquedas realizadas'
+        name: 'View search history',
+        description: 'Access to past search history'
     },
     {
         key: EntitlementKey.CAN_VIEW_RECOMMENDATIONS,
-        name: 'Ver recomendaciones personalizadas',
-        description:
-            'Acceso a recomendaciones de alojamientos personalizadas basadas en preferencias'
+        name: 'Personalized recommendations',
+        description: 'Access to personalized accommodation recommendations based on preferences'
     }
 ];

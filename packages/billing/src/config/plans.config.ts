@@ -18,8 +18,8 @@ function limit(
 
 export const OWNER_BASICO_PLAN: PlanDefinition = {
     slug: 'owner-basico',
-    name: 'Basico',
-    description: 'Plan basico para propietarios individuales. Ideal para comenzar.',
+    name: 'Basic',
+    description: 'Basic plan for individual property owners. Ideal for getting started.',
     category: 'owner',
     monthlyPriceArs: 1500000, // ARS $15,000 (in cents)
     annualPriceArs: 15000000, // ARS $150,000/year (2 months free)
@@ -46,8 +46,8 @@ export const OWNER_BASICO_PLAN: PlanDefinition = {
 
 export const OWNER_PRO_PLAN: PlanDefinition = {
     slug: 'owner-pro',
-    name: 'Profesional',
-    description: 'Plan profesional con estadisticas avanzadas y soporte prioritario.',
+    name: 'Professional',
+    description: 'Professional plan with advanced analytics and priority support.',
     category: 'owner',
     monthlyPriceArs: 3500000, // ARS $35,000
     annualPriceArs: 35000000, // ARS $350,000/year
@@ -83,7 +83,7 @@ export const OWNER_PRO_PLAN: PlanDefinition = {
 export const OWNER_PREMIUM_PLAN: PlanDefinition = {
     slug: 'owner-premium',
     name: 'Premium',
-    description: 'Plan premium con todas las funcionalidades, gestor dedicado y API.',
+    description: 'Premium plan with all features, dedicated manager, and API access.',
     category: 'owner',
     monthlyPriceArs: 7500000, // ARS $75,000
     annualPriceArs: 75000000, // ARS $750,000/year
@@ -125,8 +125,8 @@ export const OWNER_PREMIUM_PLAN: PlanDefinition = {
 
 export const COMPLEX_BASICO_PLAN: PlanDefinition = {
     slug: 'complex-basico',
-    name: 'Complejo Basico',
-    description: 'Plan basico para complejos y hoteles. Gestion multi-propiedad.',
+    name: 'Complex Basic',
+    description: 'Basic plan for complexes and hotels. Multi-property management.',
     category: 'complex',
     monthlyPriceArs: 5000000, // ARS $50,000
     annualPriceArs: 50000000, // ARS $500,000/year
@@ -155,8 +155,8 @@ export const COMPLEX_BASICO_PLAN: PlanDefinition = {
 
 export const COMPLEX_PRO_PLAN: PlanDefinition = {
     slug: 'complex-pro',
-    name: 'Complejo Profesional',
-    description: 'Plan profesional para complejos con analiticas consolidadas.',
+    name: 'Complex Professional',
+    description: 'Professional plan for complexes with consolidated analytics.',
     category: 'complex',
     monthlyPriceArs: 10000000, // ARS $100,000
     annualPriceArs: 100000000, // ARS $1,000,000/year
@@ -196,8 +196,8 @@ export const COMPLEX_PRO_PLAN: PlanDefinition = {
 
 export const COMPLEX_PREMIUM_PLAN: PlanDefinition = {
     slug: 'complex-premium',
-    name: 'Complejo Premium',
-    description: 'Plan premium para grandes complejos con todas las funcionalidades.',
+    name: 'Complex Premium',
+    description: 'Premium plan for large complexes with all features.',
     category: 'complex',
     monthlyPriceArs: 20000000, // ARS $200,000
     annualPriceArs: 200000000, // ARS $2,000,000/year
@@ -246,8 +246,8 @@ export const COMPLEX_PREMIUM_PLAN: PlanDefinition = {
 
 export const TOURIST_FREE_PLAN: PlanDefinition = {
     slug: 'tourist-free',
-    name: 'Gratis',
-    description: 'Plan gratuito para turistas. Funcionalidades basicas incluidas.',
+    name: 'Free',
+    description: 'Free plan for tourists. Basic features included.',
     category: 'tourist',
     monthlyPriceArs: 0,
     annualPriceArs: null,
@@ -269,7 +269,7 @@ export const TOURIST_FREE_PLAN: PlanDefinition = {
 export const TOURIST_PLUS_PLAN: PlanDefinition = {
     slug: 'tourist-plus',
     name: 'Plus',
-    description: 'Plan Plus para turistas frecuentes. Sin publicidad y alertas de precio.',
+    description: 'Plus plan for frequent tourists. Ad-free experience and price alerts.',
     category: 'tourist',
     monthlyPriceArs: 500000, // ARS $5,000
     annualPriceArs: 5000000, // ARS $50,000/year
@@ -299,7 +299,7 @@ export const TOURIST_PLUS_PLAN: PlanDefinition = {
 export const TOURIST_VIP_PLAN: PlanDefinition = {
     slug: 'tourist-vip',
     name: 'VIP',
-    description: 'Plan VIP para turistas exigentes. Todas las funcionalidades premium.',
+    description: 'VIP plan for discerning tourists. All premium features included.',
     category: 'tourist',
     monthlyPriceArs: 1500000, // ARS $15,000
     annualPriceArs: 15000000, // ARS $150,000/year
@@ -356,14 +356,38 @@ export const PLANS_BY_CATEGORY = {
 } as const;
 
 /**
- * Get a plan by its slug
+ * Retrieves a plan definition by its unique slug identifier.
+ *
+ * @param slug - The unique slug of the plan to find (e.g. 'owner-basico')
+ * @returns The matching PlanDefinition, or undefined if not found
+ *
+ * @example
+ * ```ts
+ * const plan = getPlanBySlug('owner-basico');
+ * if (plan) {
+ *     console.log(`Plan: ${plan.name} - ${plan.monthlyPriceArs / 100} ARS/month`);
+ * }
+ * ```
  */
 export function getPlanBySlug(slug: string): PlanDefinition | undefined {
     return ALL_PLANS.find((plan) => plan.slug === slug);
 }
 
 /**
- * Get the default plan for a category
+ * Retrieves the default plan for a given plan category.
+ *
+ * Each category (owner, complex, tourist) has exactly one default plan
+ * that is automatically assigned to new users of that type.
+ *
+ * @param category - The plan category ('owner', 'complex', or 'tourist')
+ * @returns The default PlanDefinition for the specified category
+ * @throws {Error} If no default plan is found for the category (system misconfiguration)
+ *
+ * @example
+ * ```ts
+ * const defaultOwnerPlan = getDefaultPlan('owner');
+ * console.log(`Default: ${defaultOwnerPlan.name}`); // "Basic"
+ * ```
  */
 export function getDefaultPlan(category: PlanDefinition['category']): PlanDefinition {
     const plan = ALL_PLANS.find((p) => p.category === category && p.isDefault);

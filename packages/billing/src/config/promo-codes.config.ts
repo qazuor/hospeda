@@ -1,13 +1,4 @@
 /**
- * Promo code condition type
- */
-export type PromoCodeConditionType =
-    | 'plan_restriction'
-    | 'min_duration'
-    | 'new_user_only'
-    | 'category_restriction';
-
-/**
  * Promo code definition
  */
 export interface PromoCodeDefinition {
@@ -37,7 +28,7 @@ export interface PromoCodeDefinition {
 
 export const HOSPEDA_FREE_CODE: PromoCodeDefinition = {
     code: 'HOSPEDA_FREE',
-    description: 'Acceso gratuito permanente a la plataforma. Uso interno.',
+    description: 'Permanent free platform access. Internal use.',
     discountPercent: 100,
     isPermanent: true,
     durationCycles: null,
@@ -50,7 +41,7 @@ export const HOSPEDA_FREE_CODE: PromoCodeDefinition = {
 
 export const LANZAMIENTO_50_CODE: PromoCodeDefinition = {
     code: 'LANZAMIENTO50',
-    description: '50% de descuento por lanzamiento. Primeros 3 meses.',
+    description: '50% launch discount. First 3 months.',
     discountPercent: 50,
     isPermanent: false,
     durationCycles: 3,
@@ -63,7 +54,7 @@ export const LANZAMIENTO_50_CODE: PromoCodeDefinition = {
 
 export const BIENVENIDO_30_CODE: PromoCodeDefinition = {
     code: 'BIENVENIDO30',
-    description: '30% de descuento para nuevos usuarios. Primer mes.',
+    description: '30% discount for new users. First month.',
     discountPercent: 30,
     isPermanent: false,
     durationCycles: 1,

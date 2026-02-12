@@ -1,5 +1,5 @@
 import type { EntitlementKey } from './entitlement.types.js';
-import type { LimitKey } from './plan.types.js';
+import type { LimitKey, PlanCategory } from './plan.types.js';
 
 /**
  * Add-on billing type
@@ -18,8 +18,10 @@ export interface AddonDefinition {
     description: string;
     /** Billing type */
     billingType: AddonBillingType;
-    /** Price in ARS cents */
+    /** Monthly price in ARS cents */
     priceArs: number;
+    /** Annual price in ARS cents (null for one-time add-ons) */
+    annualPriceArs: number | null;
     /** Duration in days (for one-time add-ons, null for recurring) */
     durationDays: number | null;
     /** Limit key this add-on affects (if any) */
@@ -29,7 +31,7 @@ export interface AddonDefinition {
     /** Entitlement key this add-on grants (if any) */
     grantsEntitlement: EntitlementKey | null;
     /** Target plan categories that can purchase this add-on */
-    targetCategories: ('owner' | 'complex')[];
+    targetCategories: PlanCategory[];
     /** Whether the add-on is currently available */
     isActive: boolean;
     /** Sort order for display */
