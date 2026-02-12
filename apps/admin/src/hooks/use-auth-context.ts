@@ -19,7 +19,6 @@ export function useAuthContext(): AuthContextValue {
             isLoading: false,
             isAuthenticated: false,
             user: null,
-            clerkUser: null,
             error: null,
             refreshSession: async () => {
                 adminLogger.warn('refreshSession called on fallback context');

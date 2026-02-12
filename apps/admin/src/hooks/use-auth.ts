@@ -64,8 +64,7 @@ export function useUserDisplayName(): string {
 
     if (user.displayName) return user.displayName;
 
-    const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim();
-    if (fullName) return fullName;
+    if (user.email) return user.email.split('@')[0];
 
     return 'User';
 }
@@ -78,16 +77,16 @@ export function useUserInitials(): string {
 
     if (!user) return 'G';
 
-    if (user.firstName && user.lastName) {
-        return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
-    }
-
     if (user.displayName) {
         const parts = user.displayName.split(' ');
         if (parts.length >= 2) {
             return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
         }
         return parts[0][0].toUpperCase();
+    }
+
+    if (user.email) {
+        return user.email[0].toUpperCase();
     }
 
     return 'U';
