@@ -39,13 +39,21 @@ export const sponsorshipLevels: ReturnType<typeof pgTable> = pgTable(
         deletedById: uuid('deleted_by_id').references(() => users.id, { onDelete: 'set null' })
     },
     (table) => ({
+        sponsorshipLevels_slug_idx: index('sponsorshipLevels_slug_idx').on(table.slug),
         sponsorshipLevels_targetType_idx: index('sponsorshipLevels_targetType_idx').on(
             table.targetType
         ),
         sponsorshipLevels_tier_idx: index('sponsorshipLevels_tier_idx').on(table.tier),
+        sponsorshipLevels_sortOrder_idx: index('sponsorshipLevels_sortOrder_idx').on(
+            table.sortOrder
+        ),
         sponsorshipLevels_isActive_idx: index('sponsorshipLevels_isActive_idx').on(table.isActive),
         sponsorshipLevels_deletedAt_idx: index('sponsorshipLevels_deletedAt_idx').on(
             table.deletedAt
+        ),
+        sponsorshipLevels_targetType_tier_idx: index('sponsorshipLevels_targetType_tier_idx').on(
+            table.targetType,
+            table.tier
         )
     })
 );

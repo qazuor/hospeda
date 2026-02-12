@@ -29,12 +29,19 @@ export const sponsorshipPackages: ReturnType<typeof pgTable> = pgTable(
         deletedById: uuid('deleted_by_id').references(() => users.id, { onDelete: 'set null' })
     },
     (table) => ({
+        sponsorshipPackages_slug_idx: index('sponsorshipPackages_slug_idx').on(table.slug),
+        sponsorshipPackages_sortOrder_idx: index('sponsorshipPackages_sortOrder_idx').on(
+            table.sortOrder
+        ),
         sponsorshipPackages_isActive_idx: index('sponsorshipPackages_isActive_idx').on(
             table.isActive
         ),
         sponsorshipPackages_deletedAt_idx: index('sponsorshipPackages_deletedAt_idx').on(
             table.deletedAt
-        )
+        ),
+        sponsorshipPackages_isActive_deletedAt_idx: index(
+            'sponsorshipPackages_isActive_deletedAt_idx'
+        ).on(table.isActive, table.deletedAt)
     })
 );
 

@@ -1,14 +1,5 @@
 import { relations } from 'drizzle-orm';
-import {
-    boolean,
-    index,
-    integer,
-    numeric,
-    pgTable,
-    text,
-    timestamp,
-    uuid
-} from 'drizzle-orm/pg-core';
+import { boolean, index, integer, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { accommodations } from '../accommodation/accommodation.dbschema.ts';
 import { OwnerPromotionDiscountTypePgEnum } from '../enums.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
@@ -27,7 +18,7 @@ export const ownerPromotions: ReturnType<typeof pgTable> = pgTable(
         title: text('title').notNull(),
         description: text('description'),
         discountType: OwnerPromotionDiscountTypePgEnum('discount_type').notNull(),
-        discountValue: numeric('discount_value').notNull(),
+        discountValue: integer('discount_value').notNull(),
         minNights: integer('min_nights'),
         validFrom: timestamp('valid_from', { withTimezone: true }).notNull(),
         validUntil: timestamp('valid_until', { withTimezone: true }),
