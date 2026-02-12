@@ -51,8 +51,8 @@ export const adminPatchUserRoute = createAdminRoute({
         }
 
         // Invalidate cache for the updated user
-        if (result.data?.authProviderUserId) {
-            userCache.invalidate(result.data.authProviderUserId);
+        if (result.data?.id) {
+            userCache.invalidate(result.data.id);
         }
 
         return result.data;
