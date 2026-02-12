@@ -1,4 +1,3 @@
-import { getAuth } from '@hono/clerk-auth';
 /**
  * Authentication status route
  * Simple endpoint to check authentication status and actor information
@@ -29,14 +28,14 @@ export const authStatusOpenAPIRoute = createRoute({
 });
 
 app.openapi(authStatusOpenAPIRoute, (c) => {
-    const auth = getAuth(c);
+    const user = c.get('user');
     const actor = getActorFromContext(c);
 
     return c.json({
         success: true,
         data: {
-            isAuthenticated: !!auth?.userId,
-            userId: auth?.userId,
+            isAuthenticated: !!user?.id,
+            userId: user?.id,
             actor: {
                 id: actor.id,
                 role: actor.role,

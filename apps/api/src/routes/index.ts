@@ -14,6 +14,7 @@ apiLogger.debug('✅ Accommodation routes loaded successfully');
 import { cronRoutes } from '../cron';
 import { amenityRoutes } from './amenity';
 import { authRoutes } from './auth';
+import { betterAuthHandler } from './auth/handler';
 import { billingRoutes } from './billing';
 import { adminBillingRoutes } from './billing/admin';
 import { docsIndexRoutes, scalarRoutes, swaggerRoutes } from './docs';
@@ -64,8 +65,10 @@ export const setupRoutes = (app: AppOpenAPI) => {
     // Metrics routes
     app.route('/metrics', metricsRoutes);
 
-    // Auth routes - MUST be registered first to avoid conflicts with wildcard routes
-    // Routes mounted at /api/v1/public with /:id patterns would otherwise catch /auth/sync
+    // Better Auth handler - catch-all for /api/auth/* (sign-in, sign-up, session, etc.)
+    app.route('/api/auth', betterAuthHandler);
+
+    // Auth utility routes (status, me, signout, cache-stats)
     app.route('/api/v1/public/auth', authRoutes);
 
     // Public routes

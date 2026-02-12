@@ -1,4 +1,3 @@
-import { getAuth } from '@hono/clerk-auth';
 import { AuthSignOutResponseSchema } from '@repo/schemas';
 import { clearRateLimitStore } from '../../middlewares/rate-limit';
 import { apiLogger } from '../../utils/logger';
@@ -6,8 +5,10 @@ import { createSimpleRoute } from '../../utils/route-factory';
 import { userCache } from '../../utils/user-cache';
 
 /**
- * Sign out endpoint that cleans up server-side state
- * Invalidates user cache and performs cleanup
+ * Sign out cleanup endpoint.
+ * Invalidates user cache and clears rate limit store.
+ * The actual session invalidation is handled by Better Auth at /api/auth/sign-out.
+ * This endpoint handles Hospeda-specific server-side cleanup.
  */
 export const authSignOutRoute = createSimpleRoute({
     method: 'post',
@@ -15,28 +16,24 @@ export const authSignOutRoute = createSimpleRoute({
     summary: 'Sign out and cleanup server state',
     description: 'Invalidates user cache and performs server-side cleanup for sign out',
     tags: ['Auth'],
-    options: { skipAuth: true }, // Allow sign out without authentication
+    options: { skipAuth: true },
     responseSchema: AuthSignOutResponseSchema,
     handler: async (c) => {
         try {
-            // Get the current user ID from Clerk if available
-            const auth = getAuth(c);
-            const userId = auth?.userId;
+            const user = c.get('user');
+            const userId = user?.id;
             let cacheCleared = false;
 
             if (userId) {
-                // Invalidate the specific user from cache
                 userCache.invalidate(userId);
                 cacheCleared = true;
-                apiLogger.debug(`🗑️ Cache invalidated for user ${userId} during sign out`);
+                apiLogger.debug(`Cache invalidated for user ${userId} during sign out`);
             } else {
-                // If no user ID, just log that sign out was called
-                apiLogger.debug('🗑️ Sign out called without user ID - no cache to clear');
+                apiLogger.debug('Sign out called without user ID - no cache to clear');
             }
 
-            // Clear rate limit store to prevent rate limit issues after sign out
             clearRateLimitStore();
-            apiLogger.debug('🗑️ Rate limit store cleared during sign out');
+            apiLogger.debug('Rate limit store cleared during sign out');
 
             return {
                 message: 'Sign out successful',
