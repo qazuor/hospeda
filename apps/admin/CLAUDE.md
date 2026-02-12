@@ -6,7 +6,7 @@ This file provides guidance for working with the Hospeda Admin application (`app
 
 ## Overview
 
-TanStack Start-based admin dashboard for managing the Hospeda platform. Features file-based routing, React 19, Clerk authentication, Radix UI components, TanStack Table for data grids, and TanStack Query for server state.
+TanStack Start-based admin dashboard for managing the Hospeda platform. Features file-based routing, React 19, Better Auth authentication, Radix UI components, TanStack Table for data grids, and TanStack Query for server state.
 
 ## Key Commands
 
@@ -139,13 +139,13 @@ function AccommodationDetail() {
 ```tsx
 // routes/_authenticated/dashboard.tsx
 import { createFileRoute, redirect } from '@tanstack/react-router';
-import { useAuth } from '@clerk/tanstack-react-start';
+import { useSession } from 'better-auth/react';
 
 export const Route = createFileRoute('/_authenticated/dashboard')({
   beforeLoad: async ({ context }) => {
-    const { userId } = context.auth;
+    const { session } = context.auth;
 
-    if (!userId) {
+    if (!session) {
       throw redirect({ to: '/signin' });
     }
   },
@@ -471,13 +471,13 @@ export function MyComponent() {
 }
 ```
 
-## Authentication (Clerk)
+## Authentication (Better Auth)
 
 ### Setup in Root
 
 ```tsx
 // routes/__root.tsx
-import { ClerkProvider } from '@clerk/tanstack-react-start';
+import { AuthProvider } from 'better-auth/react';
 
 export const Route = createRootRoute({
   component: RootComponent,
@@ -485,9 +485,9 @@ export const Route = createRootRoute({
 
 function RootComponent() {
   return (
-    <ClerkProvider publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}>
+    <AuthProvider baseURL={import.meta.env.VITE_BETTER_AUTH_URL}>
       <Outlet />
-    </ClerkProvider>
+    </AuthProvider>
   );
 }
 ```
@@ -495,21 +495,21 @@ function RootComponent() {
 ### Using Auth Hooks
 
 ```tsx
-import { useAuth, useUser } from '@clerk/tanstack-react-start';
+import { useSession } from 'better-auth/react';
 
 export function UserProfile() {
-  const { isSignedIn, userId } = useAuth();
-  const { user } = useUser();
+  const { data: session, isPending } = useSession();
+  
 
-  if (!isSignedIn) {
+  if (!session) {
     return <div>Please sign in</div>;
   }
 
   return (
     <div>
-      <p>User ID: {userId}</p>
-      <p>Name: {user?.fullName}</p>
-      <p>Email: {user?.primaryEmailAddress?.emailAddress}</p>
+      <p>User ID: {session.user.id}</p>
+      <p>Name: {session.user.name}</p>
+      <p>Email: {session.user.email}</p>
     </div>
   );
 }
@@ -585,8 +585,8 @@ export function useTheme() {
 ## Environment Variables
 
 ```env
-# Clerk Authentication
-VITE_CLERK_PUBLISHABLE_KEY=pk_...
+# Better Auth
+VITE_BETTER_AUTH_URL=http://localhost:3001/api/auth
 
 # API Configuration
 VITE_API_URL=http://localhost:3001
@@ -665,7 +665,7 @@ export function Button({ variant, size, className, ...props }) {
 - `@tanstack/react-query` - Server state management
 - `@tanstack/react-table` - Data tables
 - `@tanstack/react-form` - Form handling
-- `@clerk/tanstack-react-start` - Authentication
+- `better-auth` - Authentication
 - `@radix-ui/*` - Unstyled UI primitives
 - `tailwindcss` - Utility-first CSS
 

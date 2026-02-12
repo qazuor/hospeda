@@ -13,7 +13,7 @@
 - **Linter/Formatter**: Biome
 - **Testing**: Vitest
 - **Database**: PostgreSQL with Drizzle ORM
-- **Authentication**: Clerk
+- **Authentication**: Better Auth
 - **Monitoring**: Sentry
 - **Deployment**: Fly.io (API), Vercel (Web/Admin)
 
@@ -153,7 +153,7 @@ pnpm deploy:api       # Build + deploy API to Fly.io
 - File-based routing in `src/routes/`
 - TanStack Query for server state
 - Shadcn UI components for consistent UI
-- Clerk authentication with `beforeLoad` guards
+- Better Auth authentication with `beforeLoad` guards
 
 ## Environment Configuration
 
@@ -163,10 +163,9 @@ Key environment variables (see `.env.example`):
 # Database
 HOSPEDA_DATABASE_URL=postgresql://...
 
-# Authentication (Clerk)
-HOSPEDA_CLERK_SECRET_KEY=sk_...
-HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_...
-HOSPEDA_CLERK_WEBHOOK_SECRET=whsec_...
+# Authentication (Better Auth)
+HOSPEDA_BETTER_AUTH_SECRET=your-secret-key
+HOSPEDA_BETTER_AUTH_URL=http://localhost:3001/api/auth
 
 # API
 HOSPEDA_API_URL=http://localhost:3001

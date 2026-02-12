@@ -6,7 +6,7 @@ This file provides guidance for working with the Hospeda API application (`apps/
 
 ## Overview
 
-Hono-based REST API server providing comprehensive endpoints for the Hospeda platform. Features include authentication (Clerk), rate limiting, metrics collection, OpenAPI documentation, and standardized error handling.
+Hono-based REST API server providing comprehensive endpoints for the Hospeda platform. Features include authentication (Better Auth), rate limiting, metrics collection, OpenAPI documentation, and standardized error handling.
 
 ## Key Commands
 
@@ -162,14 +162,14 @@ Middleware is applied in this order:
 3. **Logger** (`loggerMiddleware`)
 4. **Metrics** (`metricsMiddleware`)
 5. **Rate Limit** (`rateLimitMiddleware`)
-6. **Authentication** (`clerkMiddleware` - unless `skipAuth: true`)
+6. **Authentication** (`authMiddleware` (Better Auth) - unless `skipAuth: true`)
 7. **Actor Resolution** (`actorMiddleware`)
 8. **Validation** (`validationMiddleware` - unless `skipValidation: true`)
 
 Key middlewares:
 
-- `actor.ts` - Extract user/actor from Clerk auth
-- `auth.ts` - Clerk authentication
+- `actor.ts` - Extract user/actor from Better Auth session
+- `auth.ts` - Better Auth authentication
 - `cache.ts` - Response caching
 - `metrics.ts` - Request metrics collection
 - `rate-limit.ts` - Rate limiting
@@ -350,10 +350,9 @@ NODE_ENV=development
 # Database
 DATABASE_URL=postgresql://...
 
-# Clerk Authentication
-CLERK_PUBLISHABLE_KEY=pk_...
-CLERK_SECRET_KEY=sk_...
-CLERK_WEBHOOK_SECRET=whsec_...
+# Better Auth
+HOSPEDA_BETTER_AUTH_SECRET=your-secret-key
+HOSPEDA_BETTER_AUTH_URL=http://localhost:3001/api/auth
 
 # CORS
 CORS_ORIGIN=http://localhost:4321,http://localhost:3000
@@ -449,7 +448,7 @@ handler: async (c, params, body) => {
 
 - `hono` - Web framework
 - `@hono/zod-openapi` - OpenAPI + Zod validation
-- `@hono/clerk-auth` - Clerk authentication
+- `better-auth` - Better Auth authentication
 - `@repo/service-core` - Business logic services
 - `@repo/schemas` - Zod validation schemas
 - `@repo/db` - Database models

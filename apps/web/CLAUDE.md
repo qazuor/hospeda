@@ -6,7 +6,7 @@ This file provides guidance for working with the Hospeda Web application (`apps/
 
 ## Overview
 
-Astro-based frontend application with React components for the Hospeda tourism platform. Features SSR/SSG, i18n support, Clerk authentication, and Tailwind CSS styling.
+Astro-based frontend application with React components for the Hospeda tourism platform. Features SSR/SSG, i18n support, Better Auth authentication, and Tailwind CSS styling.
 
 ## Key Commands
 
@@ -297,22 +297,22 @@ export function Greeting() {
 }
 ```
 
-## Authentication (Clerk)
+## Authentication (Better Auth)
 
 ### Server-side (in pages)
 
 ```astro
 ---
 // pages/profile.astro
-import { getAuth } from '@clerk/astro/server';
+import { getSession } from '../lib/auth';
 
-const { userId } = getAuth(Astro);
+const session = await getSession(Astro);
 
-if (!userId) {
+if (!session) {
   return Astro.redirect('/auth/signin');
 }
 
-const user = await getUserById(userId);
+const user = session.user;
 ---
 
 <MainLayout>
@@ -323,19 +323,19 @@ const user = await getUserById(userId);
 ### Client-side (React components)
 
 ```tsx
-import { useUser, SignInButton, UserButton } from '@clerk/clerk-react';
+import { useSession } from 'better-auth/react';
 
 export function AuthStatus() {
-  const { isSignedIn, user } = useUser();
+  const { data: session } = useSession();
 
-  if (!isSignedIn) {
-    return <SignInButton />;
+  if (!session) {
+    return <a href="/auth/signin">Sign In</a>;
   }
 
   return (
     <div>
-      <span>Hello, {user.firstName}</span>
-      <UserButton />
+      <span>Hello, {session.user.name}</span>
+      <a href="/auth/signout">Sign Out</a>
     </div>
   );
 }
@@ -386,11 +386,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
 ```ts
 // src/middleware.ts
 import { defineMiddleware } from 'astro:middleware';
-import { clerkMiddleware } from '@clerk/astro/server';
+import { authMiddleware } from '../lib/auth';
 
 export const onRequest = defineMiddleware(async (context, next) => {
-  // Apply Clerk auth
-  await clerkMiddleware()(context, next);
+  // Apply Better Auth
+  await authMiddleware(context, next);
 
   // Custom logic
   console.log(`Request to: ${context.url.pathname}`);
@@ -500,10 +500,10 @@ PUBLIC_API_URL=http://localhost:3001
 
 # Server-only variables
 DATABASE_URL=postgresql://...
-CLERK_SECRET_KEY=sk_...
+HOSPEDA_BETTER_AUTH_SECRET=your-secret-key
 
-# Clerk (public keys are safe to expose)
-PUBLIC_CLERK_PUBLISHABLE_KEY=pk_...
+# Better Auth
+PUBLIC_BETTER_AUTH_URL=http://localhost:3001/api/auth
 ```
 
 Access in code:
@@ -578,7 +578,7 @@ const { title, description, image } = Astro.props;
 
 - `astro` - Framework
 - `@astrojs/react` - React integration
-- `@clerk/astro` - Authentication
+- `better-auth` - Authentication
 - `@repo/i18n` - Internationalization
 - `@repo/service-core` - Business logic
 - `@repo/icons` - Icon components
