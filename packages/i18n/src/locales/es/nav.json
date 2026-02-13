@@ -6,6 +6,8 @@
     "blog": "Blog",
     "search": "Búsqueda",
     "contact": "Contacto",
+    "pricing": "Precios",
+    "myAccount": "Mi Cuenta",
     "about": "Quiénes somos",
     "legal": "Condiciones de uso",
     "benefits": {
@@ -13,5 +15,8 @@
         "guests": "Para huéspedes",
         "hosts": "Para anfitriones",
         "merchants": "Para comercios"
+    },
+    "breadcrumb": {
+        "home": "Inicio"
     }
 }

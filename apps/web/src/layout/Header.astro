@@ -10,6 +10,7 @@ import {
     getBlogIndexUrl,
     getSearchUrl,
     getContactUrl,
+    getPricingUrl,
 } from '@/utils';
 import { normalizeTrailingSlash } from '@reunmedia/astro-normalize-trailing-slash';
 import { UserNav } from '@/components/auth/UserNav';
@@ -20,6 +21,27 @@ interface Props {
 
 const { lang } = Astro.props;
 const t = useTranslations(lang);
+
+const currentPath = Astro.url.pathname;
+
+/**
+ * Checks if a nav link is the active page.
+ * Uses exact match for home, startsWith for sections.
+ */
+const isActive = (href: string): boolean => {
+    const normalizedHref = normalizeTrailingSlash(href);
+    const normalizedPath = normalizeTrailingSlash(currentPath);
+    if (normalizedHref === '/' || normalizedHref === '') {
+        return normalizedPath === '/' || normalizedPath === '';
+    }
+    return normalizedPath.startsWith(normalizedHref);
+};
+
+const navLinkClass = (href: string): string =>
+    isActive(href) ? 'nav-link nav-link-active' : 'nav-link';
+
+const mobileLinkClass = (href: string): string =>
+    isActive(href) ? 'mobile-link mobile-link-active' : 'mobile-link';
 ---
 
 <header class='sticky top-0 z-50 w-full bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800'>
@@ -32,13 +54,14 @@ const t = useTranslations(lang);
         </a>
 
         <nav class='hidden md:flex items-center space-x-6' aria-label='Main Navigation'>
-            <a href={getHomeUrl()} class='nav-link'>{t('nav.home')}</a>
-            <a href={getAccommodationsIndexUrl()} class='nav-link'>{t('nav.accommodations')}</a>
-            <a href={getDestinationsIndexUrl()} class='nav-link'>{t('nav.destinations')}</a>
-            <a href={getEventsIndexUrl()} class='nav-link'>{t('nav.events')}</a>
-            <a href={getBlogIndexUrl()} class='nav-link'>{t('nav.blog')}</a>
-            <a href={getSearchUrl()} class='nav-link'>{t('nav.search')}</a>
-            <a href={getContactUrl()} class='nav-link'>{t('nav.contact')}</a>
+            <a href={getHomeUrl()} class={navLinkClass(getHomeUrl())} aria-current={isActive(getHomeUrl()) ? 'page' : undefined}>{t('nav.home')}</a>
+            <a href={getAccommodationsIndexUrl()} class={navLinkClass(getAccommodationsIndexUrl())} aria-current={isActive(getAccommodationsIndexUrl()) ? 'page' : undefined}>{t('nav.accommodations')}</a>
+            <a href={getDestinationsIndexUrl()} class={navLinkClass(getDestinationsIndexUrl())} aria-current={isActive(getDestinationsIndexUrl()) ? 'page' : undefined}>{t('nav.destinations')}</a>
+            <a href={getEventsIndexUrl()} class={navLinkClass(getEventsIndexUrl())} aria-current={isActive(getEventsIndexUrl()) ? 'page' : undefined}>{t('nav.events')}</a>
+            <a href={getBlogIndexUrl()} class={navLinkClass(getBlogIndexUrl())} aria-current={isActive(getBlogIndexUrl()) ? 'page' : undefined}>{t('nav.blog')}</a>
+            <a href={getSearchUrl()} class={navLinkClass(getSearchUrl())} aria-current={isActive(getSearchUrl()) ? 'page' : undefined}>{t('nav.search')}</a>
+            <a href={getContactUrl()} class={navLinkClass(getContactUrl())} aria-current={isActive(getContactUrl()) ? 'page' : undefined}>{t('nav.contact')}</a>
+            <a href={getPricingUrl()} class={navLinkClass(getPricingUrl())} aria-current={isActive(getPricingUrl()) ? 'page' : undefined}>{t('nav.pricing')}</a>
         </nav>
 
         <div class='flex items-center space-x-4'>
@@ -69,17 +92,14 @@ const t = useTranslations(lang);
         <div class='container py-3'>
             <nav aria-label='Mobile Navigation'>
                 <ul class='space-y-3'>
-                    <li><a href={getHomeUrl()} class='mobile-link'>{t('nav.home')}</a></li>
-                    <li>
-                        <a href={getAccommodationsIndexUrl()} class='mobile-link'>{t('nav.accommodations')}</a>
-                    </li>
-                    <li>
-                        <a href={getDestinationsIndexUrl()} class='mobile-link'>{t('nav.destinations')}</a>
-                    </li>
-                    <li><a href={getEventsIndexUrl()} class='mobile-link'>{t('nav.events')}</a></li>
-                    <li><a href={getBlogIndexUrl()} class='mobile-link'>{t('nav.blog')}</a></li>
-                    <li><a href={getSearchUrl()} class='mobile-link'>{t('nav.search')}</a></li>
-                    <li><a href={getContactUrl()} class='mobile-link'>{t('nav.contact')}</a></li>
+                    <li><a href={getHomeUrl()} class={mobileLinkClass(getHomeUrl())} aria-current={isActive(getHomeUrl()) ? 'page' : undefined}>{t('nav.home')}</a></li>
+                    <li><a href={getAccommodationsIndexUrl()} class={mobileLinkClass(getAccommodationsIndexUrl())} aria-current={isActive(getAccommodationsIndexUrl()) ? 'page' : undefined}>{t('nav.accommodations')}</a></li>
+                    <li><a href={getDestinationsIndexUrl()} class={mobileLinkClass(getDestinationsIndexUrl())} aria-current={isActive(getDestinationsIndexUrl()) ? 'page' : undefined}>{t('nav.destinations')}</a></li>
+                    <li><a href={getEventsIndexUrl()} class={mobileLinkClass(getEventsIndexUrl())} aria-current={isActive(getEventsIndexUrl()) ? 'page' : undefined}>{t('nav.events')}</a></li>
+                    <li><a href={getBlogIndexUrl()} class={mobileLinkClass(getBlogIndexUrl())} aria-current={isActive(getBlogIndexUrl()) ? 'page' : undefined}>{t('nav.blog')}</a></li>
+                    <li><a href={getSearchUrl()} class={mobileLinkClass(getSearchUrl())} aria-current={isActive(getSearchUrl()) ? 'page' : undefined}>{t('nav.search')}</a></li>
+                    <li><a href={getContactUrl()} class={mobileLinkClass(getContactUrl())} aria-current={isActive(getContactUrl()) ? 'page' : undefined}>{t('nav.contact')}</a></li>
+                    <li><a href={getPricingUrl()} class={mobileLinkClass(getPricingUrl())} aria-current={isActive(getPricingUrl()) ? 'page' : undefined}>{t('nav.pricing')}</a></li>
                 </ul>
             </nav>
         </div>

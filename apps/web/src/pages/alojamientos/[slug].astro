@@ -5,9 +5,12 @@ import AccommodationContactForm from '@/components/accommodations/AccommodationC
 import AccommodationFaq from '@/components/accommodations/AccommodationFaq.astro';
 import AccommodationGallery from '@/components/accommodations/AccommodationGallery.astro';
 import AccommodationRating from '@/components/accommodations/AccommodationRating.astro';
+import Breadcrumb from '@/components/shared/Breadcrumb.astro';
+import FavoriteButton from '@/components/shared/FavoriteButton.client';
 import { getAccommodationBySlug, getAllAccommodations } from '@/data/db';
 import Layout from '@/layout/MainLayout.astro';
 import { getLangFromUrl, useTranslations } from '@/utils/i18n';
+import { getAccommodationsIndexUrl } from '@/utils/urls';
 import type { Accommodation } from '@repo/schemas';
 import logger from '@repo/logger';
 import type { GetStaticPaths } from 'astro';
@@ -57,6 +60,13 @@ const faqs = accommodation.faqs ?? [];
 ---
 
 <Layout>
+    <Breadcrumb
+        items={[
+            { label: t('nav.accommodations'), href: getAccommodationsIndexUrl() },
+            { label: accommodation.name },
+        ]}
+        colorScheme="orange"
+    />
     <section class='bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 py-8'>
         <div class='container mx-auto px-4'>
             <div class='flex flex-col md:flex-row justify-between items-start gap-4 mb-6'>
@@ -66,7 +76,7 @@ const faqs = accommodation.faqs ?? [];
                         {accommodation.location?.city}, {accommodation.location?.state}
                     </p>
                 </div>
-                <!-- <FavoriteButton entityId={accommodation.id} entityType='ACCOMMODATION' client:load /> -->
+                <FavoriteButton entityId={accommodation.id} entityType='ACCOMMODATION' client:load />
             </div>
 
             {accommodation.media?.gallery && <AccommodationGallery images={accommodation.media?.gallery} />}

@@ -48,6 +48,8 @@ export const getEventsIndexUrl = (): string => getUrl('/eventos');
 export const getBlogIndexUrl = (): string => getUrl('/publicaciones');
 export const getSearchUrl = (): string => getUrl('/busqueda');
 export const getContactUrl = (): string => getUrl('/contacto');
+export const getPricingUrl = (): string => getUrl('/precios/propietarios');
+export const getAccountUrl = (): string => getUrl('/mi-cuenta');
 
 /**
  * Returns the URL for accommodations index with pagination.

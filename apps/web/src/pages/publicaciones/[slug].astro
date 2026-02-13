@@ -1,8 +1,10 @@
 ---
 export const prerender = true;
 
+import Breadcrumb from '@/components/shared/Breadcrumb.astro';
 import { getAllPosts, getPostBySlug } from '@/data/db/posts';
 import MainLayout from '@/layout/MainLayout.astro';
+import { getLangFromUrl, useTranslations } from '@/utils/i18n';
 import { getBlogIndexUrl } from '@/utils/urls';
 
 export async function getStaticPaths() {
@@ -26,6 +28,9 @@ const { post } = await getPostBySlug({
 if (!post) {
     return Astro.redirect('/publicaciones');
 }
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
 
 const title = `${post.title} - Blog`;
 const description = post.summary || `Lee ${post.title}, un artículo interesante en nuestro blog.`;
@@ -110,30 +115,13 @@ const getReadingTime = (content: string) => {
             </div>
         </section>
 
-        <!-- Breadcrumb -->
-        <nav class='bg-white dark:bg-gray-900 py-4 border-b border-gray-200 dark:border-gray-700'>
-            <div class='container mx-auto px-4'>
-                <ol class='flex items-center space-x-2 text-sm'>
-                    <li>
-                        <a
-                            href='/'
-                            class='text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300'
-                            >Inicio</a
-                        >
-                    </li>
-                    <li class='text-gray-500 dark:text-gray-400'>/</li>
-                    <li>
-                        <a
-                            href={getBlogIndexUrl()}
-                            class='text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300'
-                            >Publicaciones</a
-                        >
-                    </li>
-                    <li class='text-gray-500 dark:text-gray-400'>/</li>
-                    <li class='text-gray-900 dark:text-white font-medium'>{post.title}</li>
-                </ol>
-            </div>
-        </nav>
+        <Breadcrumb
+            items={[
+                { label: t('nav.blog'), href: getBlogIndexUrl() },
+                { label: post.title },
+            ]}
+            colorScheme="emerald"
+        />
 
         <!-- Content -->
         <div class='container mx-auto px-4 py-12'>

@@ -1,8 +1,10 @@
 ---
 export const prerender = true;
 
+import Breadcrumb from '@/components/shared/Breadcrumb.astro';
 import { getAllDestinations, getDestinationBySlug } from '@/data/db/destinations';
 import MainLayout from '@/layout/MainLayout.astro';
+import { getLangFromUrl, useTranslations } from '@/utils/i18n';
 import { getAccommodationsIndexUrl, getDestinationsIndexUrl } from '@/utils/urls';
 
 export async function getStaticPaths() {
@@ -26,6 +28,9 @@ const { destination } = await getDestinationBySlug({
 if (!destination) {
     return Astro.redirect('/destinos');
 }
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
 
 const title = `${destination.name} - Destino Turístico`;
 const description = destination.description || `Descubre ${destination.name}, un increíble destino turístico.`;
@@ -57,30 +62,13 @@ const description = destination.description || `Descubre ${destination.name}, un
             </div>
         </section>
 
-        <!-- Breadcrumb -->
-        <nav class='bg-gray-50 dark:bg-gray-800 py-4 border-b border-gray-200 dark:border-gray-700'>
-            <div class='container mx-auto px-4'>
-                <ol class='flex items-center space-x-2 text-sm'>
-                    <li>
-                        <a
-                            href='/'
-                            class='text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300'
-                            >Inicio</a
-                        >
-                    </li>
-                    <li class='text-gray-500 dark:text-gray-400'>/</li>
-                    <li>
-                        <a
-                            href={getDestinationsIndexUrl()}
-                            class='text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300'
-                            >Destinos</a
-                        >
-                    </li>
-                    <li class='text-gray-500 dark:text-gray-400'>/</li>
-                    <li class='text-gray-900 dark:text-white font-medium'>{destination.name}</li>
-                </ol>
-            </div>
-        </nav>
+        <Breadcrumb
+            items={[
+                { label: t('nav.destinations'), href: getDestinationsIndexUrl() },
+                { label: destination.name },
+            ]}
+            colorScheme="teal"
+        />
 
         <!-- Content -->
         <div class='container mx-auto px-4 py-12'>

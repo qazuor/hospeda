@@ -1,8 +1,10 @@
 ---
 export const prerender = true;
 
+import Breadcrumb from '@/components/shared/Breadcrumb.astro';
 import { getAllEvents, getEventBySlug } from '@/data/db/events';
 import MainLayout from '@/layout/MainLayout.astro';
+import { getLangFromUrl, useTranslations } from '@/utils/i18n';
 import { getEventsIndexUrl } from '@/utils/urls';
 
 export async function getStaticPaths() {
@@ -26,6 +28,9 @@ const { event } = await getEventBySlug({
 if (!event) {
     return Astro.redirect('/eventos');
 }
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
 
 const title = `${event.name} - Evento`;
 const description = event.description || `Únete a ${event.name}, un evento increíble que no te puedes perder.`;
@@ -83,30 +88,13 @@ const formatDateTime = (date: Date | string) => {
             </div>
         </section>
 
-        <!-- Breadcrumb -->
-        <nav class='bg-gray-50 dark:bg-gray-800 py-4 border-b border-gray-200 dark:border-gray-700'>
-            <div class='container mx-auto px-4'>
-                <ol class='flex items-center space-x-2 text-sm'>
-                    <li>
-                        <a
-                            href='/'
-                            class='text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300'
-                            >Inicio</a
-                        >
-                    </li>
-                    <li class='text-gray-500 dark:text-gray-400'>/</li>
-                    <li>
-                        <a
-                            href={getEventsIndexUrl()}
-                            class='text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300'
-                            >Eventos</a
-                        >
-                    </li>
-                    <li class='text-gray-500 dark:text-gray-400'>/</li>
-                    <li class='text-gray-900 dark:text-white font-medium'>{event.name}</li>
-                </ol>
-            </div>
-        </nav>
+        <Breadcrumb
+            items={[
+                { label: t('nav.events'), href: getEventsIndexUrl() },
+                { label: event.name },
+            ]}
+            colorScheme="purple"
+        />
 
         <!-- Content -->
         <div class='container mx-auto px-4 py-12'>
