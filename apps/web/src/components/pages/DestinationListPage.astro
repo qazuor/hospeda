@@ -89,10 +89,12 @@ const description = page === 1
                                                 </svg>
                                             </div>
                                         )}
-                                        <div class="absolute top-2 right-2">
-                                            <span class="bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
-                                                {destination.country || 'Destino'}
-                                            </span>
+                                        <div class="absolute top-2 right-2 flex gap-1">
+                                            {destination.destinationType && (
+                                                <span class="bg-teal-600 bg-opacity-80 text-white text-xs px-2 py-1 rounded">
+                                                    {t(`destination.types.${destination.destinationType}` as any) || destination.destinationType}
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
                                     <div class="p-4">

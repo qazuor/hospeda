@@ -2,31 +2,35 @@
 export const prerender = true;
 
 import Breadcrumb from '@/components/shared/Breadcrumb.astro';
-import { getAllDestinations, getDestinationBreadcrumb, getDestinationBySlug } from '@/data/db/destinations';
+import { getAllDestinations, getDestinationBreadcrumb, getDestinationByPath } from '@/data/db/destinations';
 import MainLayout from '@/layout/MainLayout.astro';
 import { getLangFromUrl, useTranslations } from '@/utils/i18n';
 import { getAccommodationsIndexUrl, getDestinationUrl, getDestinationsIndexUrl } from '@/utils/urls';
 
 export async function getStaticPaths() {
     const destinations = await getAllDestinations();
-    return destinations.map((destination) => ({
-        params: { slug: destination.slug },
-    }));
+
+    return destinations
+        .filter((d) => d.path && d.path.split('/').filter(Boolean).length > 1)
+        .map((destination) => {
+            // path is like "/argentina/litoral/entre-rios/concepcion-del-uruguay"
+            // We need to strip the leading "/" for the Astro param
+            const pathSegments = destination.path.split('/').filter(Boolean).join('/');
+            return {
+                params: { path: pathSegments },
+                props: { destination },
+            };
+        });
 }
 
-const { slug } = Astro.params;
+type Props = {
+    destination: Awaited<ReturnType<typeof getAllDestinations>>[number];
+};
 
-if (!slug) {
-    return Astro.redirect(getDestinationsIndexUrl());
-}
-
-const { destination } = await getDestinationBySlug({
-    locals: Astro.locals,
-    slug,
-});
+const { destination } = Astro.props;
 
 if (!destination) {
-    return Astro.redirect('/destinos');
+    return Astro.redirect(getDestinationsIndexUrl());
 }
 
 // Build hierarchy breadcrumb from ancestors
@@ -94,7 +98,7 @@ const description = destination.description || `Descubre ${destination.name}, un
                             <p class='text-gray-700 dark:text-gray-300 leading-relaxed'>
                                 {
                                     destination.description ||
-                                        `${destination.name} es un destino turístico increíble que ofrece experiencias únicas para todos los visitantes. 
+                                        `${destination.name} es un destino turístico increíble que ofrece experiencias únicas para todos los visitantes.
                                 Con su rica cultura, paisajes espectaculares y hospitalidad excepcional, este lugar te cautivará desde el primer momento.`
                                 }
                             </p>

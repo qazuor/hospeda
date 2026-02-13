@@ -11,9 +11,18 @@ export function getPostUrl(post: Pick<Post, 'slug'>): string {
 
 /**
  * Returns the public URL for a given destination.
- * Default: `/destinos/[slug]`
+ * Uses the materialized hierarchy path when available for SEO-friendly URLs,
+ * falls back to slug-based URL.
+ * Examples:
+ *   - With path: `/destinos/argentina/litoral/entre-rios/concepcion-del-uruguay`
+ *   - Without path: `/destinos/concepcion-del-uruguay`
  */
-export function getDestinationUrl(destination: Pick<Destination, 'slug'>): string {
+export function getDestinationUrl(
+    destination: Pick<Destination, 'slug'> & { path?: string | null }
+): string {
+    if (destination.path) {
+        return normalizeTrailingSlash(`/destinos${destination.path}`);
+    }
     return normalizeTrailingSlash(`/destinos/${destination.slug}`);
 }
 

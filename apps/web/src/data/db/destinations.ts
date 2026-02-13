@@ -1,6 +1,6 @@
 import { ensureDatabase } from '@/server/db';
 import logger from '@repo/logger';
-import type { Destination } from '@repo/schemas';
+import type { BreadcrumbItem, Destination } from '@repo/schemas';
 import { DestinationService } from '@repo/service-core';
 
 import { getCurrentUser } from '@/data/user';
@@ -100,6 +100,54 @@ export const getFeaturedDestinations = async ({
 
     return {
         destinations: (result.data?.items as Destination[]) ?? []
+    };
+};
+
+/**
+ * Returns a destination by its materialized hierarchy path.
+ */
+export const getDestinationByPath = async ({
+    locals,
+    path
+}: {
+    locals?: { auth?: LocalsAuth };
+    path: string;
+}): Promise<{
+    destination: Destination | null;
+}> => {
+    ensureDatabase();
+    const { actor } = await getCurrentUser({ locals });
+
+    const destinationService = new DestinationService({});
+
+    const result = await destinationService.getByPath(actor, { path });
+
+    return {
+        destination: (result.data as Destination) ?? null
+    };
+};
+
+/**
+ * Returns breadcrumb items for a destination (ancestors + current).
+ */
+export const getDestinationBreadcrumb = async ({
+    locals,
+    destinationId
+}: {
+    locals?: { auth?: LocalsAuth };
+    destinationId: string;
+}): Promise<{
+    breadcrumb: BreadcrumbItem[];
+}> => {
+    ensureDatabase();
+    const { actor } = await getCurrentUser({ locals });
+
+    const destinationService = new DestinationService({});
+
+    const result = await destinationService.getBreadcrumb(actor, { destinationId });
+
+    return {
+        breadcrumb: result.data?.breadcrumb ?? []
     };
 };
 
