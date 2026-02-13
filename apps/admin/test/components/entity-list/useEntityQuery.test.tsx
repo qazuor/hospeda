@@ -64,21 +64,31 @@ function useTestEntityQuery<TData>(
     const [data, setData] = React.useState<EntityQueryResponse<TData> | null>(null);
     const [isLoading, setIsLoading] = React.useState(true);
     const [error, setError] = React.useState<Error | null>(null);
-
+    const paramsKey = JSON.stringify(params);
+    // biome-ignore lint/correctness/useExhaustiveDependencies: paramsKey serializes params for stable identity comparison
     React.useEffect(() => {
+        let cancelled = false;
         setIsLoading(true);
         setError(null);
 
         queryFn(params)
             .then((result) => {
-                setData(result);
-                setIsLoading(false);
+                if (!cancelled) {
+                    setData(result);
+                    setIsLoading(false);
+                }
             })
             .catch((err) => {
-                setError(err instanceof Error ? err : new Error('Unknown error'));
-                setIsLoading(false);
+                if (!cancelled) {
+                    setError(err instanceof Error ? err : new Error('Unknown error'));
+                    setIsLoading(false);
+                }
             });
-    }, [queryFn, params]);
+
+        return () => {
+            cancelled = true;
+        };
+    }, [queryFn, paramsKey]);
 
     return { data, isLoading, error };
 }
@@ -457,12 +467,17 @@ describe('useEntityQuery', () => {
             rerender({ page: 3 });
             rerender({ page: 4 });
 
-            await waitFor(() => {
-                expect(result.current.isLoading).toBe(false);
-            });
+            await waitFor(
+                () => {
+                    expect(result.current.isLoading).toBe(false);
+                },
+                { timeout: 2000 }
+            );
 
-            // Should have made multiple calls
+            // Should have made multiple calls (one per distinct params change)
             expect(queryFn).toHaveBeenCalled();
+            // Final resolved data should be for page 4
+            expect(result.current.data?.page).toBe(4);
         });
     });
 });

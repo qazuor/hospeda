@@ -45,34 +45,11 @@ const AdminEnvSchema = z
     .object({
         // Check both HOSPEDA_ (monorepo) and VITE_ (deployment) formats
         HOSPEDA_API_URL: z.string().url('Must be a valid API URL').optional(),
-        VITE_API_URL: z.string().url('Must be a valid API URL').optional(),
-        HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY: z
-            .string()
-            .min(1, 'Clerk publishable key is required')
-            .optional(),
-        VITE_CLERK_PUBLISHABLE_KEY: z
-            .string()
-            .min(1, 'Clerk publishable key is required')
-            .optional(),
-        HOSPEDA_CLERK_SECRET_KEY: z.string().min(1, 'Clerk secret key is required').optional(),
-        CLERK_SECRET_KEY: z.string().min(1, 'Clerk secret key is required').optional()
+        VITE_API_URL: z.string().url('Must be a valid API URL').optional()
     })
     .refine((data) => data.HOSPEDA_API_URL || data.VITE_API_URL, {
         message: 'API_URL is required (either HOSPEDA_API_URL or VITE_API_URL)',
         path: ['API_URL']
-    })
-    .refine(
-        (data) => data.HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY || data.VITE_CLERK_PUBLISHABLE_KEY,
-        {
-            message:
-                'CLERK_PUBLISHABLE_KEY is required (either HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY or VITE_CLERK_PUBLISHABLE_KEY)',
-            path: ['CLERK_PUBLISHABLE_KEY']
-        }
-    )
-    .refine((data) => data.CLERK_SECRET_KEY || data.HOSPEDA_CLERK_SECRET_KEY, {
-        message:
-            'CLERK_SECRET_KEY is required for server-side authentication (either CLERK_SECRET_KEY or HOSPEDA_CLERK_SECRET_KEY)',
-        path: ['CLERK_SECRET_KEY']
     });
 
 try {
@@ -98,17 +75,50 @@ export default defineConfig({
         tailwindcss(),
         tanstackStart({ customViteReactPlugin: true }),
         react(),
+        // Fix better-auth esbuild conflict: "entry point cannot be marked as external".
+        // crawlFrameworkPkgs marks better-auth as both ssr.noExternal (framework pkg)
+        // AND optimizeDeps.exclude, causing esbuild to receive it as both entry point
+        // and external simultaneously. Fix by removing it from optimizeDeps.exclude.
+        // See: https://github.com/better-auth/better-auth/issues/7386
+        {
+            name: 'fix-better-auth-ssr-optimize',
+            enforce: 'post' as const,
+            configResolved(config) {
+                // Remove better-auth from optimizeDeps.exclude in all environments
+                const envs = (config as Record<string, unknown>).environments as
+                    | Record<string, Record<string, unknown>>
+                    | undefined;
+                if (envs) {
+                    for (const env of Object.values(envs)) {
+                        const exclude = (env?.optimizeDeps as Record<string, unknown>)?.exclude as
+                            | string[]
+                            | undefined;
+                        if (Array.isArray(exclude)) {
+                            const idx = exclude.indexOf('better-auth');
+                            if (idx !== -1) {
+                                exclude.splice(idx, 1);
+                            }
+                        }
+                    }
+                }
+                // Also check top-level optimizeDeps
+                const topExclude = (
+                    (config as Record<string, unknown>).optimizeDeps as Record<string, unknown>
+                )?.exclude as string[] | undefined;
+                if (Array.isArray(topExclude)) {
+                    const idx = topExclude.indexOf('better-auth');
+                    if (idx !== -1) {
+                        topExclude.splice(idx, 1);
+                    }
+                }
+            }
+        },
         // Environment variable mapping plugin
         {
             name: 'hospeda-env-mapping',
             config() {
                 return {
                     define: {
-                        'import.meta.env.VITE_CLERK_PUBLISHABLE_KEY': JSON.stringify(
-                            process.env.HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY ||
-                                process.env.VITE_CLERK_PUBLISHABLE_KEY ||
-                                ''
-                        ),
                         'import.meta.env.VITE_API_URL': JSON.stringify(
                             process.env.HOSPEDA_API_URL || process.env.VITE_API_URL || ''
                         ),
@@ -156,7 +166,6 @@ export default defineConfig({
             '@repo/config',
             '@repo/service-core',
             '@repo/icons'
-            // '@repo/auth-ui' // Removido del exclude para permitir optimización
         ]
     },
     server: {
@@ -203,11 +212,6 @@ export default defineConfig({
                                 return 'vendor-tanstack-form';
                             }
                             return 'vendor-tanstack-other';
-                        }
-
-                        // Clerk authentication
-                        if (id.includes('@clerk')) {
-                            return 'vendor-clerk';
                         }
 
                         // Radix UI components
@@ -278,7 +282,6 @@ export default defineConfig({
         sourcemap: process.env.NODE_ENV === 'production' ? 'hidden' : true
     },
     define: {
-        'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production'),
-        'process.env.CLERK_SECRET_KEY': JSON.stringify(process.env.CLERK_SECRET_KEY || '')
+        'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production')
     }
 });

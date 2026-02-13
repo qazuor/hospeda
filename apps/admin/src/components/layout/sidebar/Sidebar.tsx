@@ -69,7 +69,6 @@ export function Sidebar({ userPermissions, className }: SidebarProps) {
                     'h-[calc(100vh-3.5rem)]',
                     className
                 )}
-                aria-label="Secondary navigation"
             >
                 {/* Header - mobile only */}
                 <div className="flex h-12 items-center justify-between border-b px-4 md:hidden">
@@ -90,7 +89,10 @@ export function Sidebar({ userPermissions, className }: SidebarProps) {
                 </div>
 
                 {/* Navigation items */}
-                <nav className="flex-1 overflow-y-auto p-3">
+                <nav
+                    className="flex-1 overflow-y-auto p-3"
+                    aria-label="Secondary navigation"
+                >
                     <div className="space-y-0.5">
                         {filteredItems.map((item) => {
                             if (item.type === 'group') {

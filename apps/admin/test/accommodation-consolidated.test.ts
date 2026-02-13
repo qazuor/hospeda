@@ -40,7 +40,7 @@ describe('AccommodationConsolidatedConfig', () => {
 
             expect(basicInfoSection.id).toBe('basic-info');
             expect(basicInfoSection.modes).toEqual(['view', 'edit', 'create']);
-            expect(basicInfoSection.fields).toHaveLength(6); // name, description, type, isFeatured, destinationId, ownerId
+            expect(basicInfoSection.fields).toHaveLength(7); // name, description, richDescription, type, isFeatured, destinationId, ownerId
         });
 
         it('should have all required fields in basic-info section', () => {
@@ -71,8 +71,8 @@ describe('AccommodationConsolidatedConfig', () => {
             expect(viewSections).toHaveLength(7);
             expect(viewSections[0].id).toBe('basic-info');
 
-            // Todos los campos deben estar presentes en view mode
-            expect(viewSections[0].fields).toHaveLength(6);
+            // All fields must be present in view mode
+            expect(viewSections[0].fields).toHaveLength(7);
         });
 
         it('should filter sections correctly for edit mode', () => {
@@ -85,8 +85,8 @@ describe('AccommodationConsolidatedConfig', () => {
             expect(editSections).toHaveLength(6);
             expect(editSections[0].id).toBe('basic-info');
 
-            // Todos los campos deben estar presentes en edit mode
-            expect(editSections[0].fields).toHaveLength(6);
+            // All fields must be present in edit mode
+            expect(editSections[0].fields).toHaveLength(7);
         });
 
         it('should filter sections correctly for create mode', () => {
@@ -99,10 +99,10 @@ describe('AccommodationConsolidatedConfig', () => {
             expect(createSections).toHaveLength(5);
             expect(createSections[0].id).toBe('basic-info');
 
-            // isFeatured no debe estar presente en create mode
+            // isFeatured must not be present in create mode
             const fieldIds = createSections[0].fields.map((field) => field.id);
             expect(fieldIds).not.toContain('isFeatured');
-            expect(createSections[0].fields).toHaveLength(5);
+            expect(createSections[0].fields).toHaveLength(6);
         });
     });
 

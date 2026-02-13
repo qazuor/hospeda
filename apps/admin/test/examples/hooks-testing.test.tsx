@@ -230,9 +230,49 @@ describe('Hook Testing Examples', () => {
     });
 
     describe('Testing Debounced Hooks', () => {
-        it('should test debounced search hook', async () => {
+        it('should test debounce logic without network', async () => {
             vi.useFakeTimers();
 
+            function useDebounce<T>(value: T, delay = 300): T {
+                const [debouncedValue, setDebouncedValue] = useState(value);
+
+                useEffect(() => {
+                    const timer = setTimeout(() => {
+                        setDebouncedValue(value);
+                    }, delay);
+                    return () => clearTimeout(timer);
+                }, [value, delay]);
+
+                return debouncedValue;
+            }
+
+            const { result, rerender } = renderHook(({ query }) => useDebounce(query), {
+                initialProps: { query: 'test' }
+            });
+
+            // Value shouldn't update immediately
+            expect(result.current).toBe('test'); // initial state from useState
+
+            // Type more quickly than debounce
+            rerender({ query: 'te' });
+            rerender({ query: 'tes' });
+            rerender({ query: 'test2' });
+
+            // Before debounce triggers, value should still be initial
+            expect(result.current).toBe('test');
+
+            // Fast-forward past debounce
+            act(() => {
+                vi.advanceTimersByTime(300);
+            });
+
+            // Only the final value should be set
+            expect(result.current).toBe('test2');
+
+            vi.useRealTimers();
+        });
+
+        it('should test debounced search with network', async () => {
             let lastQuery = '';
             server.use(
                 http.get(`${API_BASE}/public/accommodations`, ({ request }) => {
@@ -242,61 +282,27 @@ describe('Hook Testing Examples', () => {
                 })
             );
 
-            function useDebouncedSearch(query: string, delay = 300) {
-                const [debouncedQuery, setDebouncedQuery] = useState(query);
+            function useDebouncedSearch(query: string) {
                 const [results, setResults] = useState<unknown[]>([]);
 
                 useEffect(() => {
-                    const timer = setTimeout(() => {
-                        setDebouncedQuery(query);
-                    }, delay);
-                    return () => clearTimeout(timer);
-                }, [query, delay]);
-
-                useEffect(() => {
-                    if (debouncedQuery) {
-                        fetch(`${API_BASE}/public/accommodations?q=${debouncedQuery}`)
+                    if (query) {
+                        fetch(`${API_BASE}/public/accommodations?q=${query}`)
                             .then((res) => res.json())
                             .then((data) => setResults(data.data?.items || []));
                     }
-                }, [debouncedQuery]);
+                }, [query]);
 
-                return { results, debouncedQuery };
+                return { results, query };
             }
 
-            const { result, rerender } = renderHook(({ query }) => useDebouncedSearch(query), {
-                initialProps: { query: 'test' }
-            });
-
-            // Query shouldn't fire immediately
-            expect(lastQuery).toBe('');
-
-            // Fast-forward past debounce
-            await act(async () => {
-                vi.advanceTimersByTime(300);
-            });
+            const { result } = renderHook(() => useDebouncedSearch('test'));
 
             await waitFor(() => {
-                expect(result.current.debouncedQuery).toBe('test');
+                expect(result.current.results).toHaveLength(1);
             });
 
             expect(lastQuery).toBe('test');
-
-            // Type more quickly than debounce
-            rerender({ query: 'te' });
-            rerender({ query: 'tes' });
-            rerender({ query: 'test2' });
-
-            // Only the final query should be sent after debounce
-            await act(async () => {
-                vi.advanceTimersByTime(300);
-            });
-
-            await waitFor(() => {
-                expect(lastQuery).toBe('test2');
-            });
-
-            vi.useRealTimers();
         });
     });
 

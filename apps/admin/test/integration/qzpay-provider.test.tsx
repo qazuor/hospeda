@@ -56,22 +56,22 @@ vi.mock('@qazuor/qzpay-react', () => ({
     useSubscription: vi.fn(() => ({ data: null, isLoading: false, error: null }))
 }));
 
-vi.mock('@/lib/billing-http-adapter', () => ({
+vi.mock('../../src/lib/billing-http-adapter', () => ({
     createHttpBillingAdapter: mockCreateHttpBillingAdapter
 }));
 
-vi.mock('@/lib/qzpay-theme', () => ({
+vi.mock('../../src/lib/qzpay-theme', () => ({
     adminQzpayTheme: {
         colors: { primary: '#1e293b' },
         typography: { fontFamily: 'system-ui' }
     }
 }));
 
-import { createHttpBillingAdapter } from '@/lib/billing-http-adapter';
-import { adminQzpayTheme } from '@/lib/qzpay-theme';
 import { createQZPayBilling } from '@qazuor/qzpay-core';
 // Import after mocks to get mocked versions
 import { QZPayProvider, QZPayThemeProvider, usePlans } from '@qazuor/qzpay-react';
+import { createHttpBillingAdapter } from '../../src/lib/billing-http-adapter';
+import { adminQzpayTheme } from '../../src/lib/qzpay-theme';
 
 describe('QZPayProvider Integration - Admin App', () => {
     beforeEach(() => {
