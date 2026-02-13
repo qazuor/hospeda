@@ -35,6 +35,7 @@ export const namespaces = [
     'terms',
     'ui',
     'fields',
+    'exchange-rate',
     // Admin namespaces
     'admin-auth',
     'admin-billing',
@@ -112,6 +113,7 @@ import contactEs from './locales/es/contact.json';
 import destinationEs from './locales/es/destination.json';
 import errorEs from './locales/es/error.json';
 import eventEs from './locales/es/event.json';
+import exchangeRateEs from './locales/es/exchange-rate.json';
 import fieldsEs from './locales/es/fields.json';
 import footerEs from './locales/es/footer.json';
 import homeEs from './locales/es/home.json';
@@ -139,6 +141,7 @@ const rawTranslations = {
         destination: destinationEs,
         error: errorEs,
         event: eventEs,
+        'exchange-rate': exchangeRateEs,
         footer: footerEs,
         home: homeEs,
         nav: navEs,

@@ -1,0 +1,63 @@
+{
+    "title": "Tipos de Cambio",
+    "subtitle": "Cotizaciones actualizadas",
+    "labels": {
+        "rate": "Tasa",
+        "inverseRate": "Tasa inversa",
+        "currency": "Moneda",
+        "fromCurrency": "Moneda origen",
+        "toCurrency": "Moneda destino",
+        "amount": "Monto",
+        "convertedAmount": "Monto convertido",
+        "lastUpdated": "Última actualización",
+        "source": "Fuente",
+        "rateType": "Tipo de tasa",
+        "expiresAt": "Expira el",
+        "manualOverride": "Sobreescritura manual"
+    },
+    "rateTypes": {
+        "oficial": "Oficial",
+        "blue": "Blue",
+        "mep": "MEP",
+        "ccl": "CCL",
+        "tarjeta": "Tarjeta",
+        "standard": "Estándar"
+    },
+    "sources": {
+        "dolarapi": "DolarAPI",
+        "exchangerate-api": "ExchangeRate-API",
+        "manual": "Manual"
+    },
+    "conversion": {
+        "disclaimer": "Los valores son referenciales y pueden variar. Consulte con su entidad financiera para valores exactos.",
+        "convert": "Convertir",
+        "result": "Resultado"
+    },
+    "admin": {
+        "config": "Configuración",
+        "fetchInterval": "Intervalo de actualización",
+        "fetchIntervalMinutes": "Intervalo DolarAPI (minutos)",
+        "fetchIntervalHours": "Intervalo ExchangeRate-API (horas)",
+        "enableAutoFetch": "Actualización automática",
+        "showDisclaimer": "Mostrar aviso legal",
+        "disclaimerText": "Texto del aviso",
+        "defaultRateType": "Tipo de tasa por defecto",
+        "fetchNow": "Actualizar ahora",
+        "fetchSuccess": "Tasas actualizadas correctamente",
+        "addOverride": "Agregar sobreescritura manual",
+        "removeOverride": "Eliminar sobreescritura",
+        "history": "Historial de tasas"
+    },
+    "errors": {
+        "rateNotAvailable": "Tasa de cambio no disponible",
+        "conversionError": "Error al realizar la conversión",
+        "fetchError": "Error al obtener las cotizaciones",
+        "invalidCurrencyPair": "Par de monedas inválido",
+        "staleRate": "Tasa desactualizada"
+    },
+    "status": {
+        "fresh": "Actualizada",
+        "stale": "Desactualizada",
+        "manual": "Manual"
+    }
+}

@@ -1,0 +1,63 @@
+{
+    "title": "Exchange Rates",
+    "subtitle": "Updated quotes",
+    "labels": {
+        "rate": "Rate",
+        "inverseRate": "Inverse rate",
+        "currency": "Currency",
+        "fromCurrency": "From currency",
+        "toCurrency": "To currency",
+        "amount": "Amount",
+        "convertedAmount": "Converted amount",
+        "lastUpdated": "Last updated",
+        "source": "Source",
+        "rateType": "Rate type",
+        "expiresAt": "Expires at",
+        "manualOverride": "Manual override"
+    },
+    "rateTypes": {
+        "oficial": "Official",
+        "blue": "Blue",
+        "mep": "MEP",
+        "ccl": "CCL",
+        "tarjeta": "Card",
+        "standard": "Standard"
+    },
+    "sources": {
+        "dolarapi": "DolarAPI",
+        "exchangerate-api": "ExchangeRate-API",
+        "manual": "Manual"
+    },
+    "conversion": {
+        "disclaimer": "Values are for reference only and may vary. Consult your financial institution for exact values.",
+        "convert": "Convert",
+        "result": "Result"
+    },
+    "admin": {
+        "config": "Configuration",
+        "fetchInterval": "Fetch interval",
+        "fetchIntervalMinutes": "DolarAPI interval (minutes)",
+        "fetchIntervalHours": "ExchangeRate-API interval (hours)",
+        "enableAutoFetch": "Automatic updates",
+        "showDisclaimer": "Show disclaimer",
+        "disclaimerText": "Disclaimer text",
+        "defaultRateType": "Default rate type",
+        "fetchNow": "Fetch now",
+        "fetchSuccess": "Rates updated successfully",
+        "addOverride": "Add manual override",
+        "removeOverride": "Remove override",
+        "history": "Rate history"
+    },
+    "errors": {
+        "rateNotAvailable": "Exchange rate not available",
+        "conversionError": "Error performing conversion",
+        "fetchError": "Error fetching quotes",
+        "invalidCurrencyPair": "Invalid currency pair",
+        "staleRate": "Stale rate"
+    },
+    "status": {
+        "fresh": "Fresh",
+        "stale": "Stale",
+        "manual": "Manual"
+    }
+}
