@@ -438,6 +438,48 @@ const results = await db
 - `@repo/utils` - Utility functions
 - `@repo/logger` - Logging
 
+## Destination Hierarchy
+
+The destinations table uses a **materialized path pattern** for hierarchical geographic organization (Country > Region > Province > Department > City > Town > Neighborhood).
+
+### Hierarchy Columns
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `parentDestinationId` | uuid (self-ref FK) | Parent destination, uses `AnyPgColumn` for circular reference |
+| `destinationType` | enum | COUNTRY, REGION, PROVINCE, DEPARTMENT, CITY, TOWN, NEIGHBORHOOD |
+| `level` | integer | 0-based depth (COUNTRY=0, NEIGHBORHOOD=6) |
+| `path` | text (unique) | Materialized path: `/argentina/litoral/entre-rios` |
+| `pathIds` | text | Ancestor UUID chain: `uuid1/uuid2/uuid3` |
+
+### Hierarchy Model Methods
+
+```ts
+const model = new DestinationModel();
+
+// Direct children of a destination
+await model.findChildren(parentId);
+
+// All descendants with optional filters
+await model.findDescendants(destinationId, { maxDepth: 2, destinationType: 'CITY' });
+
+// Ancestors ordered root-to-parent
+await model.findAncestors(destinationId);
+
+// Lookup by materialized path
+await model.findByPath('/argentina/litoral/entre-rios');
+
+// Cycle detection for reparenting
+await model.isDescendant(potentialDescendantId, ancestorId);
+
+// Cascade path updates after reparenting
+await model.updateDescendantPaths(parentId, oldPath, newPath);
+```
+
+### Hierarchy Indexes
+
+5 indexes optimize hierarchy queries: `parentDestinationId`, `destinationType`, `level`, `path` (unique), `pathIds`.
+
 ## Common Patterns
 
 ### Model with Custom Methods

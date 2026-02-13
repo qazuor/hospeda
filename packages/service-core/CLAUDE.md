@@ -712,6 +712,47 @@ export enum PermissionEnum {
 }
 ```
 
+## Destination Hierarchy
+
+`DestinationService` provides hierarchy traversal, path-based lookups, and automatic hierarchy field computation.
+
+### Hierarchy Methods
+
+```ts
+const service = new DestinationService(ctx);
+
+// Direct children
+await service.getChildren(actor, { destinationId });
+
+// All descendants with optional filters
+await service.getDescendants(actor, { destinationId, maxDepth: 2, destinationType: 'CITY' });
+
+// Ancestors ordered root-to-parent
+await service.getAncestors(actor, { destinationId });
+
+// Breadcrumb for navigation UI
+await service.getBreadcrumb(actor, { destinationId });
+
+// Resolve destination by materialized path
+await service.getByPath(actor, { path: '/argentina/litoral/entre-rios' });
+```
+
+### Hierarchy Hooks
+
+- `_beforeCreate`: Auto-computes `slug`, `path`, `pathIds`, `level` from parent. Validates parent-child type relationship.
+- `_beforeUpdate`: Detects cycles via `isDescendant`, cascades path updates to all descendants on reparenting.
+
+### Helper Functions (in `destination.hierarchy.helpers.ts`)
+
+| Function | Purpose |
+|----------|---------|
+| `validateDestinationTypeLevel` | Validates type is valid for the level |
+| `getExpectedParentType` | Returns expected parent type for a given type |
+| `computeHierarchyPath` | Builds path: `parent.path + '/' + slug` |
+| `computeHierarchyPathIds` | Builds ancestor UUID chain |
+| `computeHierarchyLevel` | Calculates `parentLevel + 1` |
+| `isValidParentChildRelation` | Validates parent-child type pairing |
+
 ## Service Composition
 
 Services can use other services:

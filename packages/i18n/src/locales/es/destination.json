@@ -12,6 +12,15 @@
         "mountain": "Montaña",
         "city": "Ciudad"
     },
+    "types": {
+        "COUNTRY": "País",
+        "REGION": "Región",
+        "PROVINCE": "Provincia",
+        "DEPARTMENT": "Departamento",
+        "CITY": "Ciudad",
+        "TOWN": "Pueblo",
+        "NEIGHBORHOOD": "Barrio"
+    },
     "card": {
         "seeMore": "Ver más",
         "location": "Ubicación"

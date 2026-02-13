@@ -436,6 +436,20 @@ handler: async (c, params, body) => {
 }
 ```
 
+## Destination Hierarchy Routes
+
+Public API routes for destination hierarchy traversal. All routes are unauthenticated, cached, and rate-limited.
+
+| Route | Method | Description | Cache TTL | Rate Limit |
+|-------|--------|-------------|-----------|------------|
+| `/destinations/{id}/children` | GET | Direct children | 300s | 200 req/min |
+| `/destinations/{id}/descendants` | GET | All descendants (maxDepth, destinationType params) | 300s | 100 req/min |
+| `/destinations/{id}/ancestors` | GET | Ancestor chain | 600s | 200 req/min |
+| `/destinations/{id}/breadcrumb` | GET | Navigation breadcrumb | 600s | 200 req/min |
+| `/destinations/by-path` | GET | Resolve by path (`?path=/argentina/litoral`) | 300s | 200 req/min |
+
+Route files are in `routes/destination/public/`. The `by-path` route is registered before `:id` routes to avoid conflicts.
+
 ## Performance Considerations
 
 - Use `cacheTTL` for static/slow-changing data

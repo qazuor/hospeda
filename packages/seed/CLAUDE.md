@@ -270,12 +270,18 @@ Seeds run in specific order to respect foreign key constraints:
 
 1. Required system data (roles, categories)
 2. Users
-3. Destinations
+3. Destinations (hierarchy nodes first: countries, regions, provinces, then cities)
 4. Accommodations
 5. Events
 6. Posts
 7. Reviews
 8. Amenities/Features (many-to-many)
+
+### Destination Hierarchy Seeds
+
+Destination seeds include hierarchy fields (`parentDestinationId`, `destinationType`, `level`, `path`, `pathIds`). Parent nodes (Argentina, Litoral, Entre Rios, Departamento Uruguay) are seeded before cities.
+
+The seed script uses `preProcess` to resolve `parentDestinationId` references from seed IDs to real UUIDs via `context.idMapper.getRealId('destinations', seedId)`. Hierarchy nodes must be seeded in order from root (COUNTRY) to leaf (CITY/TOWN).
 
 ## Best Practices
 

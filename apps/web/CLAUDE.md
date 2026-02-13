@@ -565,6 +565,23 @@ const { title, description, image } = Astro.props;
 </head>
 ```
 
+## Destination Hierarchy
+
+Destinations use path-based URLs instead of slug-based URLs for SEO-friendly hierarchical navigation.
+
+### Dynamic Hierarchy Route
+
+`pages/destinos/[...path].astro` is a catch-all route that resolves destinations by their materialized path:
+
+- URL: `/destinos/argentina/litoral/entre-rios`
+- Uses `getStaticPaths()` for static generation
+- Renders breadcrumb navigation from `getDestinationBreadcrumb()`
+- Filters destinations with multiple path segments (hierarchy nodes)
+
+### Breadcrumb Component
+
+Renders accessible breadcrumb navigation using the destination's ancestor chain. Excludes the current destination from the breadcrumb links.
+
 ## Performance Optimization
 
 1. **Use static generation** when possible (`export const prerender = true`)

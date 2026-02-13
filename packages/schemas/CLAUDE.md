@@ -475,6 +475,30 @@ const accommodationWithoutAudit = accommodationSchema.omit({
 });
 ```
 
+## Destination Hierarchy Schemas
+
+Hierarchy-specific schemas for geographic destination organization.
+
+### Enum
+
+- `DestinationTypeEnum` - COUNTRY, REGION, PROVINCE, DEPARTMENT, CITY, TOWN, NEIGHBORHOOD
+- `DESTINATION_TYPE_LEVELS` - Maps each type to numeric level (COUNTRY=0 .. NEIGHBORHOOD=6)
+
+### Input Schemas (in `destination.hierarchy.schema.ts`)
+
+| Schema | Purpose | Key Validations |
+|--------|---------|-----------------|
+| `GetDestinationChildrenInputSchema` | Direct children | UUID id |
+| `GetDestinationDescendantsInputSchema` | All descendants | maxDepth (1-10), destinationType filter |
+| `GetDestinationAncestorsInputSchema` | Ancestor chain | UUID id |
+| `GetDestinationByPathInputSchema` | Path lookup | Regex: `/^\/[a-z0-9-/]+$/` |
+| `GetDestinationBreadcrumbInputSchema` | Navigation breadcrumb | UUID id |
+
+### Response Types
+
+- `BreadcrumbItem` - `{ id, slug, name, level, destinationType, path }`
+- `BreadcrumbResponse` - Array of `BreadcrumbItem`
+
 ## Best Practices
 
 1. **One schema per file** - keep schemas focused and modular

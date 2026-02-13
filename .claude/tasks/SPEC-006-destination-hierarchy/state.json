@@ -1,0 +1,1107 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-006",
+    "title": "Destination Hierarchy System",
+    "created": "2026-02-13T12:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Create DestinationType Zod enum and DESTINATION_TYPE_LEVELS constant",
+            "description": "Create the DestinationType Zod enum in `packages/schemas/src/enums/destination-type.enum.ts` and its corresponding schema file `packages/schemas/src/enums/destination-type.schema.ts`. Define the enum values: COUNTRY, REGION, PROVINCE, DEPARTMENT, CITY, TOWN, NEIGHBORHOOD. Create the `DESTINATION_TYPE_LEVELS` constant mapping each type to its numeric level (0-6). Export both from `packages/schemas/src/enums/index.ts`.\n\n**Files to create/modify:**\n- `packages/schemas/src/enums/destination-type.enum.ts` (new)\n- `packages/schemas/src/enums/destination-type.schema.ts` (new)\n- `packages/schemas/src/enums/index.ts` (add exports)\n\n**Test requirements:**\n- Unit test: `packages/schemas/test/enums/destination-type.test.ts`\n- Test all enum values are valid\n- Test DESTINATION_TYPE_LEVELS maps correctly\n- Test Zod schema validates valid values and rejects invalid ones\n\n**Acceptance criteria:**\n- DestinationTypeEnum has 7 values matching spec\n- DESTINATION_TYPE_LEVELS maps COUNTRY=0, REGION=1, ..., NEIGHBORHOOD=6\n- Follows existing enum pattern (see role.enum.ts, visibility.enum.ts for reference)",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-005", "T-006", "T-007", "T-008", "T-017"],
+            "subtasks": [
+                {
+                    "title": "Create destination-type.enum.ts with TypeScript enum",
+                    "completed": false
+                },
+                {
+                    "title": "Create destination-type.schema.ts with Zod schema",
+                    "completed": false
+                },
+                { "title": "Add DESTINATION_TYPE_LEVELS constant", "completed": false },
+                { "title": "Export from enums/index.ts", "completed": false },
+                { "title": "Write unit tests", "completed": false }
+            ],
+            "tags": ["schemas", "enum"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-02-13T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Create DestinationTypePgEnum in database schema",
+            "description": "Create the PostgreSQL enum `DestinationTypePgEnum` in `packages/db/src/schemas/destination/destination.dbschema.ts` using `pgEnum('destination_type', [...])`. Values must match the Zod enum: COUNTRY, REGION, PROVINCE, DEPARTMENT, CITY, TOWN, NEIGHBORHOOD.\n\n**Files to modify:**\n- `packages/db/src/schemas/destination/destination.dbschema.ts` (add enum definition)\n\n**Test requirements:**\n- Verify enum is exported correctly\n- TypeScript compilation check (typecheck)\n\n**Acceptance criteria:**\n- PgEnum created with 7 values matching Zod enum\n- Exported from the schema file\n- No TypeScript errors",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-003"],
+            "subtasks": [
+                { "title": "Add pgEnum import if not present", "completed": false },
+                { "title": "Create DestinationTypePgEnum with 7 values", "completed": false },
+                { "title": "Verify export", "completed": false }
+            ],
+            "tags": ["database", "enum"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-02-13T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Add hierarchy columns to destinations table",
+            "description": "Add 5 new columns to the `destinations` table in `packages/db/src/schemas/destination/destination.dbschema.ts`:\n1. `parentDestinationId` (UUID, self-referencing FK, ON DELETE RESTRICT)\n2. `destinationType` (DestinationTypePgEnum, NOT NULL)\n3. `level` (integer, NOT NULL, default 0)\n4. `path` (text, NOT NULL, UNIQUE) - materialized path e.g. '/argentina/entre-rios/concepcion-del-uruguay'\n5. `pathIds` (text, NOT NULL) - ancestor IDs e.g. 'uuid1/uuid2/uuid3'\n\n**Files to modify:**\n- `packages/db/src/schemas/destination/destination.dbschema.ts` (add columns)\n\n**Test requirements:**\n- TypeScript compilation check\n- Verify column types and constraints match spec\n\n**Acceptance criteria:**\n- All 5 columns added with correct types\n- parentDestinationId references destinations.id with ON DELETE RESTRICT\n- path has UNIQUE constraint\n- destinationType uses DestinationTypePgEnum\n- level defaults to 0",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-004"],
+            "subtasks": [
+                {
+                    "title": "Add parentDestinationId column with self-referencing FK",
+                    "completed": false
+                },
+                { "title": "Add destinationType column using PgEnum", "completed": false },
+                { "title": "Add level column (integer, default 0)", "completed": false },
+                { "title": "Add path column (text, unique)", "completed": false },
+                { "title": "Add pathIds column (text)", "completed": false }
+            ],
+            "tags": ["database", "schema"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-02-13T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Add hierarchy indexes and self-referencing relations",
+            "description": "Add indexes and Drizzle relations for hierarchy queries in `packages/db/src/schemas/destination/destination.dbschema.ts`.\n\n**Indexes to add:**\n- `destinations_parentDestinationId_idx` on parentDestinationId\n- `destinations_destinationType_idx` on destinationType\n- `destinations_level_idx` on level\n- `destinations_path_idx` on path\n- `destinations_pathIds_idx` on pathIds\n\n**Relations to add:**\n- `parent`: one(destinations) using parentDestinationId -> destinations.id (relationName: 'destination_hierarchy')\n- `children`: many(destinations) with relationName: 'destination_hierarchy'\n\n**Files to modify:**\n- `packages/db/src/schemas/destination/destination.dbschema.ts` (indexes + relations)\n\n**Test requirements:**\n- TypeScript compilation check\n- Verify relations are correctly typed\n\n**Acceptance criteria:**\n- 5 new indexes created\n- Self-referencing parent/children relations work\n- No conflicts with existing indexes or relations",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-005"],
+            "subtasks": [
+                { "title": "Add 5 hierarchy indexes to table definition", "completed": false },
+                { "title": "Add parent relation (one) with relationName", "completed": false },
+                { "title": "Add children relation (many) with relationName", "completed": false },
+                {
+                    "title": "Verify no conflicts with existing indexes/relations",
+                    "completed": false
+                }
+            ],
+            "tags": ["database", "indexes", "relations"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-02-13T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Generate and validate database migration",
+            "description": "Generate a Drizzle migration from the schema changes (T-002 through T-004). Validate the SQL matches the expected changes from the spec. Test the migration applies cleanly to a development database.\n\n**Commands:**\n- `pnpm db:generate` to generate migration\n- `pnpm db:migrate` to apply migration\n- Verify with `pnpm db:studio` or SQL queries\n\n**Files created:**\n- `packages/db/src/migrations/XXXX_add_destination_hierarchy.sql` (auto-generated)\n\n**Test requirements:**\n- Migration applies without errors\n- Existing data (if any) is preserved\n- New columns exist with correct types\n- Indexes are created\n- Rollback path exists (document rollback SQL)\n\n**Acceptance criteria:**\n- Migration generated successfully\n- Migration applies to clean database\n- Migration applies to database with existing destination data\n- All new columns, indexes, and constraints present",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-013", "T-014", "T-015", "T-027"],
+            "subtasks": [
+                { "title": "Run pnpm db:generate to create migration", "completed": false },
+                { "title": "Review generated SQL matches spec expectations", "completed": false },
+                { "title": "Apply migration to development database", "completed": false },
+                { "title": "Verify columns, indexes, constraints exist", "completed": false },
+                { "title": "Document rollback SQL", "completed": false }
+            ],
+            "tags": ["database", "migration"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-02-13T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Update DestinationSchema with hierarchy fields",
+            "description": "Add hierarchy fields to the main `DestinationSchema` in `packages/schemas/src/entities/destination/destination.schema.ts`.\n\n**Fields to add:**\n- `parentDestinationId`: z.string().uuid().nullable()\n- `destinationType`: DestinationTypeEnum (from T-001)\n- `level`: z.number().int().min(0).max(6)\n- `path`: z.string().min(1).max(500).regex(/^\\/[a-z0-9\\-\\/]+$/)\n- `pathIds`: z.string().max(500)\n\n**Files to modify:**\n- `packages/schemas/src/entities/destination/destination.schema.ts`\n\n**Test requirements:**\n- Unit test: Verify schema validates objects with hierarchy fields\n- Unit test: Verify schema rejects invalid path formats\n- Unit test: Verify level range validation (0-6)\n\n**Acceptance criteria:**\n- All 5 hierarchy fields present in DestinationSchema\n- Path regex validates correctly (only lowercase, numbers, hyphens, slashes)\n- Type inference includes hierarchy fields",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-007", "T-008", "T-009", "T-010", "T-011"],
+            "subtasks": [
+                { "title": "Import DestinationTypeEnum", "completed": false },
+                { "title": "Add parentDestinationId field", "completed": false },
+                { "title": "Add destinationType, level, path, pathIds fields", "completed": false },
+                { "title": "Verify type inference", "completed": false }
+            ],
+            "tags": ["schemas", "entity"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-02-13T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Update destination CRUD schemas for hierarchy",
+            "description": "Update Create and Update input schemas in `packages/schemas/src/entities/destination/destination.crud.schema.ts`.\n\n**CreateInputSchema changes:**\n- Omit auto-computed fields: `path`, `pathIds`, `level`\n- Add `parentDestinationId`: z.string().uuid().nullable().optional()\n- Add `destinationType`: DestinationTypeEnum (required)\n\n**UpdateInputSchema changes:**\n- Add `parentDestinationId` to picked fields (allow reparenting)\n- Add `destinationType` to picked fields (allow type change with validation)\n\n**Files to modify:**\n- `packages/schemas/src/entities/destination/destination.crud.schema.ts`\n\n**Test requirements:**\n- Unit test: CreateInput accepts valid hierarchy data\n- Unit test: CreateInput rejects missing destinationType\n- Unit test: UpdateInput accepts parentDestinationId change\n- Unit test: Verify path/pathIds/level are NOT in CreateInput\n\n**Acceptance criteria:**\n- CreateInput omits computed fields, requires destinationType\n- UpdateInput allows reparenting\n- Types are correctly inferred",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-006"],
+            "blocks": ["T-011", "T-012"],
+            "subtasks": [
+                {
+                    "title": "Update DestinationCreateInputSchema to omit path, pathIds, level",
+                    "completed": false
+                },
+                {
+                    "title": "Add parentDestinationId and destinationType to CreateInput",
+                    "completed": false
+                },
+                {
+                    "title": "Update DestinationUpdateInputSchema with hierarchy fields",
+                    "completed": false
+                },
+                { "title": "Verify type exports", "completed": false }
+            ],
+            "tags": ["schemas", "crud"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-02-13T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Update destination search/query schemas with hierarchy filters",
+            "description": "Update search and query schemas in `packages/schemas/src/entities/destination/destination.query.schema.ts` to support hierarchy filters.\n\n**DestinationFiltersSchema - add:**\n- `parentDestinationId`: z.string().uuid().optional()\n- `destinationType`: DestinationTypeEnum.optional()\n- `level`: z.number().int().min(0).max(6).optional()\n- `ancestorId`: z.string().uuid().optional()\n\n**DestinationSearchSchema - add hierarchy filters.**\n\n**Files to modify:**\n- `packages/schemas/src/entities/destination/destination.query.schema.ts`\n\n**Test requirements:**\n- Unit test: Search schema accepts hierarchy filter params\n- Unit test: Validates destinationType values\n- Unit test: Validates level range\n\n**Acceptance criteria:**\n- 4 new filter fields available in search schema\n- Backward compatible (all new fields optional)\n- Existing search functionality unaffected",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-006"],
+            "blocks": ["T-009", "T-011"],
+            "subtasks": [
+                {
+                    "title": "Add hierarchy filters to DestinationFiltersSchema",
+                    "completed": false
+                },
+                { "title": "Add hierarchy filters to DestinationSearchSchema", "completed": false },
+                { "title": "Update DestinationListItemSchema if needed", "completed": false }
+            ],
+            "tags": ["schemas", "search"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-02-13T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Update destination HTTP schemas with hierarchy coercion",
+            "description": "Update HTTP schema in `packages/schemas/src/entities/destination/destination.http.schema.ts` to handle hierarchy query parameters with proper coercion.\n\n**DestinationSearchHttpSchema - add:**\n- `parentDestinationId`: z.string().uuid().optional()\n- `destinationType`: DestinationTypeEnum.optional()\n- `level`: z.coerce.number().int().min(0).max(6).optional()\n- `ancestorId`: z.string().uuid().optional()\n\n**Update conversion functions:**\n- `httpToDomainDestinationSearch()`: Map new HTTP params to domain search\n- `httpToDomainDestinationCreate()`: Map destinationType and parentDestinationId\n- `httpToDomainDestinationUpdate()`: Map reparenting fields\n\n**Files to modify:**\n- `packages/schemas/src/entities/destination/destination.http.schema.ts`\n\n**Test requirements:**\n- Unit test: HTTP schema coerces level from string to number\n- Unit test: Conversion functions map hierarchy params correctly\n\n**Acceptance criteria:**\n- HTTP query params correctly coerced\n- Conversion functions handle new fields",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-008"],
+            "blocks": ["T-011"],
+            "subtasks": [
+                {
+                    "title": "Add hierarchy params to DestinationSearchHttpSchema",
+                    "completed": false
+                },
+                { "title": "Update httpToDomainDestinationSearch conversion", "completed": false },
+                { "title": "Update httpToDomainDestinationCreate conversion", "completed": false },
+                { "title": "Update httpToDomainDestinationUpdate conversion", "completed": false }
+            ],
+            "tags": ["schemas", "http"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-02-13T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Create hierarchy-specific Zod schemas",
+            "description": "Create a new file `packages/schemas/src/entities/destination/destination.hierarchy.schema.ts` with schemas for hierarchy operations.\n\n**Schemas to create:**\n1. `GetDestinationChildrenInputSchema` - { destinationId: UUID }\n2. `GetDestinationDescendantsInputSchema` - { destinationId: UUID, maxDepth?: int(1-10), destinationType?: enum }\n3. `GetDestinationAncestorsInputSchema` - { destinationId: UUID }\n4. `GetDestinationByPathInputSchema` - { path: string regex }\n5. `BreadcrumbItemSchema` - { id, slug, name, level, destinationType, path }\n6. `GetDestinationBreadcrumbInputSchema` - { destinationId: UUID }\n\n**Export types for each schema.**\n\n**Files to create:**\n- `packages/schemas/src/entities/destination/destination.hierarchy.schema.ts` (new)\n\n**Test requirements:**\n- Unit test: `packages/schemas/test/entities/destination/destination.hierarchy.test.ts`\n- Test each schema validates correct input\n- Test each schema rejects invalid input\n- Test path regex validation\n- Test maxDepth bounds (1-10)\n\n**Acceptance criteria:**\n- 6 schemas created with correct validation\n- Types exported for each schema\n- BreadcrumbItemSchema matches spec structure",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-006"],
+            "blocks": ["T-011", "T-022"],
+            "subtasks": [
+                { "title": "Create GetDestinationChildrenInputSchema", "completed": false },
+                { "title": "Create GetDestinationDescendantsInputSchema", "completed": false },
+                { "title": "Create GetDestinationAncestorsInputSchema", "completed": false },
+                { "title": "Create GetDestinationByPathInputSchema", "completed": false },
+                {
+                    "title": "Create BreadcrumbItemSchema and GetDestinationBreadcrumbInputSchema",
+                    "completed": false
+                },
+                { "title": "Export types for all schemas", "completed": false }
+            ],
+            "tags": ["schemas", "hierarchy"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-02-13T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Update destination access schemas and barrel exports",
+            "description": "Update access-level schemas and ensure all new schemas are properly exported.\n\n**Access schemas to update** (`destination.access.schema.ts`):\n- `DestinationPublicSchema`: Add path, destinationType, level fields\n- `DestinationProtectedSchema`: Add parentDestinationId, path, pathIds, destinationType, level\n- `DestinationAdminSchema`: Add all hierarchy fields\n\n**Barrel exports to update:**\n- `packages/schemas/src/entities/destination/index.ts`: Add export for destination.hierarchy.schema.ts\n- Verify all new types are accessible via `@repo/schemas`\n\n**Files to modify:**\n- `packages/schemas/src/entities/destination/destination.access.schema.ts`\n- `packages/schemas/src/entities/destination/index.ts`\n\n**Test requirements:**\n- TypeScript compilation check\n- Verify all schemas importable from @repo/schemas\n\n**Acceptance criteria:**\n- Public schema exposes path, destinationType, level\n- Admin schema exposes all hierarchy fields\n- All new schemas exported from barrel file",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-007", "T-008", "T-009", "T-010"],
+            "blocks": ["T-012", "T-018", "T-019", "T-020", "T-021", "T-023"],
+            "subtasks": [
+                {
+                    "title": "Update DestinationPublicSchema with hierarchy fields",
+                    "completed": false
+                },
+                {
+                    "title": "Update DestinationProtectedSchema with hierarchy fields",
+                    "completed": false
+                },
+                {
+                    "title": "Update DestinationAdminSchema with hierarchy fields",
+                    "completed": false
+                },
+                { "title": "Add hierarchy schema export to index.ts", "completed": false },
+                { "title": "Verify imports from @repo/schemas work", "completed": false }
+            ],
+            "tags": ["schemas", "exports"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-02-13T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Write unit tests for new and updated Zod schemas",
+            "description": "Write comprehensive unit tests for all schema changes from T-001 through T-011.\n\n**Test files to create/modify:**\n- `packages/schemas/test/enums/destination-type.test.ts` (new)\n- `packages/schemas/test/entities/destination/destination.hierarchy.test.ts` (new)\n- `packages/schemas/test/entities/destination/destination.schema.test.ts` (update)\n- `packages/schemas/test/entities/destination/destination.crud.test.ts` (update)\n\n**Test cases:**\n- DestinationTypeEnum: validates all 7 values, rejects invalid\n- DESTINATION_TYPE_LEVELS: correct mapping for all types\n- DestinationSchema: accepts/rejects hierarchy fields, path regex\n- CreateInput: omits computed fields, requires destinationType\n- UpdateInput: allows reparenting fields\n- Search: accepts hierarchy filters\n- Hierarchy schemas: validates each input/output schema\n- BreadcrumbItemSchema: correct structure\n- Path regex: tests edge cases ('/', '/a', '/a-b/c', invalid chars)\n\n**Acceptance criteria:**\n- All schema tests pass\n- Coverage >= 90% for new schema files",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-011"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Write DestinationTypeEnum tests", "completed": false },
+                { "title": "Write DestinationSchema hierarchy field tests", "completed": false },
+                { "title": "Write CRUD schema tests for hierarchy", "completed": false },
+                { "title": "Write hierarchy-specific schema tests", "completed": false },
+                { "title": "Write path regex edge case tests", "completed": false }
+            ],
+            "tags": ["schemas", "testing"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-02-13T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Add findDescendants method to DestinationModel",
+            "description": "Add the `findDescendants` method to `packages/db/src/models/destination/destination.model.ts`. This method uses the materialized path (pathIds) to find all descendants of a given destination.\n\n**Method signature:**\n```ts\npublic async findDescendants(\n    destinationId: string,\n    options?: { maxDepth?: number; destinationType?: DestinationType }\n): Promise<Destination[]>\n```\n\n**Implementation:**\n1. Find parent destination by ID\n2. Query WHERE pathIds LIKE parent.pathIds + '/' + parent.id + '%'\n3. Filter by deletedAt IS NULL\n4. Apply maxDepth filter (level <= parent.level + maxDepth)\n5. Apply destinationType filter if provided\n6. Return results ordered by level ASC\n\n**Files to modify:**\n- `packages/db/src/models/destination/destination.model.ts`\n\n**Test requirements:**\n- Unit test: Returns all descendants\n- Unit test: Respects maxDepth filter\n- Unit test: Filters by destinationType\n- Unit test: Returns empty for leaf nodes\n- Unit test: Excludes soft-deleted descendants\n\n**Acceptance criteria:**\n- SQL uses LIKE on pathIds for efficient querying\n- Respects soft delete filter\n- maxDepth and destinationType filters work correctly",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-015", "T-016"],
+            "subtasks": [
+                {
+                    "title": "Implement findDescendants with pathIds LIKE query",
+                    "completed": false
+                },
+                { "title": "Add maxDepth filter logic", "completed": false },
+                { "title": "Add destinationType filter logic", "completed": false },
+                { "title": "Add soft delete exclusion", "completed": false },
+                { "title": "Order results by level", "completed": false }
+            ],
+            "tags": ["database", "model"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-02-13T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Add findAncestors method to DestinationModel",
+            "description": "Add the `findAncestors` method to `packages/db/src/models/destination/destination.model.ts`. This method uses pathIds to efficiently fetch all ancestors.\n\n**Method signature:**\n```ts\npublic async findAncestors(destinationId: string): Promise<Destination[]>\n```\n\n**Implementation:**\n1. Find destination by ID\n2. Split pathIds by '/' to get ancestor IDs\n3. Fetch all ancestors in single query using WHERE id = ANY(ancestorIds)\n4. Filter by deletedAt IS NULL\n5. Order by level ASC (root first)\n\n**Files to modify:**\n- `packages/db/src/models/destination/destination.model.ts`\n\n**Test requirements:**\n- Unit test: Returns ancestors in correct order (root to parent)\n- Unit test: Returns empty array for top-level destination (country)\n- Unit test: Handles empty pathIds\n- Unit test: Excludes soft-deleted ancestors\n\n**Acceptance criteria:**\n- Single query fetches all ancestors (no N+1)\n- Results ordered root-to-parent (level ASC)\n- Empty array for root-level destinations",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-015", "T-016"],
+            "subtasks": [
+                { "title": "Implement findAncestors with pathIds split", "completed": false },
+                { "title": "Single query with WHERE id = ANY", "completed": false },
+                { "title": "Order by level ASC", "completed": false },
+                { "title": "Handle empty pathIds edge case", "completed": false }
+            ],
+            "tags": ["database", "model"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-02-13T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Add isDescendant and updateDescendantPaths methods to DestinationModel",
+            "description": "Add two utility methods to `packages/db/src/models/destination/destination.model.ts`.\n\n**isDescendant method:**\n```ts\npublic async isDescendant(potentialDescendantId: string, ancestorId: string): Promise<boolean>\n```\nChecks if potentialDescendantId's pathIds contains ancestorId. Used for cycle detection.\n\n**updateDescendantPaths method:**\n```ts\npublic async updateDescendantPaths(parentId: string, oldPath: string, newPath: string): Promise<void>\n```\nFinds all descendants and replaces oldPath prefix with newPath in each descendant's path. Used during reparenting.\n\n**Files to modify:**\n- `packages/db/src/models/destination/destination.model.ts`\n\n**Test requirements:**\n- Unit test: isDescendant returns true for actual descendants\n- Unit test: isDescendant returns false for non-descendants\n- Unit test: isDescendant returns false for self\n- Unit test: updateDescendantPaths updates all paths correctly\n- Unit test: updateDescendantPaths handles nested descendants\n\n**Acceptance criteria:**\n- isDescendant is O(1) lookup using pathIds.includes()\n- updateDescendantPaths correctly replaces path prefixes\n- No orphaned paths after update",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-013", "T-014"],
+            "blocks": ["T-016", "T-019"],
+            "subtasks": [
+                { "title": "Implement isDescendant using pathIds.includes()", "completed": false },
+                {
+                    "title": "Implement updateDescendantPaths using findDescendants + batch update",
+                    "completed": false
+                },
+                { "title": "Handle edge cases (empty pathIds, self-reference)", "completed": false }
+            ],
+            "tags": ["database", "model"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-02-13T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Write unit tests for hierarchy model methods",
+            "description": "Write comprehensive unit tests for all 4 hierarchy methods added to DestinationModel (T-013 through T-015).\n\n**Test file:**\n- `packages/db/test/models/destination/destination.hierarchy.test.ts` (new)\n\n**Test cases for findDescendants:**\n- Returns all descendants for a parent\n- Respects maxDepth filter\n- Filters by destinationType\n- Returns empty for leaf node\n- Excludes soft-deleted\n\n**Test cases for findAncestors:**\n- Returns ancestors root-to-parent\n- Returns empty for country\n- Handles missing destination\n\n**Test cases for isDescendant:**\n- True for actual descendant\n- False for non-descendant\n- False for self\n- False for non-existent ID\n\n**Test cases for updateDescendantPaths:**\n- Updates single level of descendants\n- Updates multi-level descendants\n- Handles no descendants\n\n**Acceptance criteria:**\n- All model tests pass\n- Coverage >= 90% for new model methods\n- Tests use proper test fixtures (mock or test DB)",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-015"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Write findDescendants test suite", "completed": false },
+                { "title": "Write findAncestors test suite", "completed": false },
+                { "title": "Write isDescendant test suite", "completed": false },
+                { "title": "Write updateDescendantPaths test suite", "completed": false },
+                { "title": "Create test fixtures for hierarchy data", "completed": false }
+            ],
+            "tags": ["database", "testing"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-02-13T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Create destination hierarchy helper functions",
+            "description": "Create helper functions in `packages/service-core/src/services/destination/destination.helpers.ts` (or a new file `destination.hierarchy.helpers.ts`).\n\n**Functions to create:**\n1. `validateDestinationTypeLevel({ destinationType, level })`: Returns boolean if type matches expected level\n2. `getExpectedParentType({ destinationType })`: Returns expected parent DestinationType or null for COUNTRY\n3. `computeHierarchyPath({ parentPath, slug })`: Computes materialized path\n4. `computeHierarchyPathIds({ parentPathIds, parentId })`: Computes pathIds chain\n\n**All functions follow RO-RO pattern.**\n\n**Files to create/modify:**\n- `packages/service-core/src/services/destination/destination.helpers.ts` (add functions)\n\n**Test requirements:**\n- Unit test for each helper function\n- Test validateDestinationTypeLevel with valid/invalid combos\n- Test getExpectedParentType returns correct parent types\n- Test computeHierarchyPath builds correct paths\n- Test computeHierarchyPathIds builds correct ID chains\n\n**Acceptance criteria:**\n- All helper functions exported\n- RO-RO pattern followed\n- JSDoc documentation on each function",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-018", "T-019"],
+            "subtasks": [
+                { "title": "Create validateDestinationTypeLevel helper", "completed": false },
+                { "title": "Create getExpectedParentType helper", "completed": false },
+                { "title": "Create computeHierarchyPath helper", "completed": false },
+                { "title": "Create computeHierarchyPathIds helper", "completed": false },
+                { "title": "Write unit tests for all helpers", "completed": false }
+            ],
+            "tags": ["service", "helpers"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-02-13T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Update _beforeCreate hook for hierarchy auto-computation",
+            "description": "Override `_beforeCreate` in `packages/service-core/src/services/destination/destination.service.ts` to auto-compute hierarchy fields when creating a destination.\n\n**Logic:**\n1. If `parentDestinationId` provided:\n   - Fetch parent destination\n   - Validate parent exists\n   - Validate destinationType matches expected level (parent.level + 1)\n   - Compute level = parent.level + 1\n   - Compute path = parent.path + '/' + slug\n   - Compute pathIds = parent.pathIds + '/' + parent.id (or parent.pathIds/parent.id)\n2. If no parent (top-level):\n   - Validate destinationType is COUNTRY\n   - Set level = 0\n   - Set path = '/' + slug\n   - Set pathIds = ''\n\n**Files to modify:**\n- `packages/service-core/src/services/destination/destination.service.ts`\n\n**Test requirements:**\n- See T-026 for comprehensive tests\n\n**Acceptance criteria:**\n- Path auto-computed correctly for all hierarchy levels\n- pathIds chain built correctly\n- Level matches parent.level + 1\n- COUNTRY validation for parentless destinations\n- ServiceError thrown for invalid parent/type combinations",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-011", "T-017"],
+            "blocks": ["T-019", "T-026"],
+            "subtasks": [
+                {
+                    "title": "Add parent lookup and validation in _beforeCreate",
+                    "completed": false
+                },
+                { "title": "Implement type-level validation", "completed": false },
+                { "title": "Compute path, pathIds, level from parent", "completed": false },
+                { "title": "Handle top-level (COUNTRY) case", "completed": false },
+                { "title": "Preserve existing slug generation logic", "completed": false }
+            ],
+            "tags": ["service", "hooks"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-02-13T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Update _beforeUpdate hook for reparenting logic",
+            "description": "Override `_beforeUpdate` in `packages/service-core/src/services/destination/destination.service.ts` to handle reparenting (changing parentDestinationId) and slug changes.\n\n**Logic:**\n1. If `parentDestinationId` or `slug` changed:\n   - Fetch current destination\n   - Determine new parent ID and slug\n   - **Cycle detection**: If new parent, check isDescendant(newParentId, currentId)\n   - Validate parent exists and type/level are compatible\n   - Compute new path, pathIds, level\n   - If path changed: call updateDescendantPaths(id, oldPath, newPath) to cascade\n2. If neither changed, return empty (no hierarchy updates)\n\n**Files to modify:**\n- `packages/service-core/src/services/destination/destination.service.ts`\n\n**Test requirements:**\n- See T-026 for comprehensive tests\n\n**Acceptance criteria:**\n- Cycle detection prevents setting descendant as parent\n- Path recalculated on parent change\n- All descendants updated recursively on path change\n- Slug change updates path for self and all descendants\n- ServiceError for cycle detection with clear message",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-015", "T-017", "T-018"],
+            "blocks": ["T-026"],
+            "subtasks": [
+                { "title": "Implement parent/slug change detection", "completed": false },
+                { "title": "Add cycle detection via isDescendant", "completed": false },
+                { "title": "Compute new hierarchy fields", "completed": false },
+                { "title": "Cascade path updates to descendants", "completed": false },
+                { "title": "Handle edge cases (same parent, null parent)", "completed": false }
+            ],
+            "tags": ["service", "hooks"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-02-13T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Add getChildren method to DestinationService",
+            "description": "Add the `getChildren` method to `packages/service-core/src/services/destination/destination.service.ts`.\n\n**Method signature:**\n```ts\npublic async getChildren(actor: Actor, params: GetDestinationChildrenInput): Promise<ServiceOutput<{ children: Destination[] }>>\n```\n\n**Implementation:**\n1. Use `runWithLoggingAndValidation` wrapper\n2. Validate input with `GetDestinationChildrenInputSchema`\n3. Find parent destination, check it exists\n4. Check permission: `checkCanViewDestination(actor, parent)`\n5. Query model.findAll({ parentDestinationId: id, deletedAt: null })\n6. Return { children: items }\n\n**Files to modify:**\n- `packages/service-core/src/services/destination/destination.service.ts`\n\n**Test requirements:**\n- See T-025 for comprehensive tests\n\n**Acceptance criteria (US-008):**\n- Returns only immediate children (not grandchildren)\n- Returns empty array for leaf destinations\n- Permission check enforced\n- 404 for non-existent parent ID",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-011"],
+            "blocks": ["T-025", "T-030"],
+            "subtasks": [
+                {
+                    "title": "Implement getChildren with runWithLoggingAndValidation",
+                    "completed": false
+                },
+                { "title": "Add parent existence check", "completed": false },
+                { "title": "Add permission check", "completed": false },
+                {
+                    "title": "Query for children using parentDestinationId filter",
+                    "completed": false
+                }
+            ],
+            "tags": ["service", "hierarchy"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-02-13T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Add getDescendants method to DestinationService",
+            "description": "Add the `getDescendants` method to `packages/service-core/src/services/destination/destination.service.ts`.\n\n**Method signature:**\n```ts\npublic async getDescendants(actor: Actor, params: GetDestinationDescendantsInput): Promise<ServiceOutput<{ descendants: Destination[] }>>\n```\n\n**Implementation:**\n1. Use `runWithLoggingAndValidation` wrapper\n2. Validate input with `GetDestinationDescendantsInputSchema`\n3. Find parent destination, check it exists\n4. Check permission: `checkCanViewDestination(actor, parent)`\n5. Call `model.findDescendants(id, { maxDepth, destinationType })`\n6. Return { descendants }\n\n**Files to modify:**\n- `packages/service-core/src/services/destination/destination.service.ts`\n\n**Test requirements:**\n- See T-025 for comprehensive tests\n\n**Acceptance criteria (US-009):**\n- Returns all descendants recursively\n- Respects maxDepth filter\n- Filters by destinationType\n- Query completes in < 100ms using materialized path\n- Default limit of 1000 items",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-011", "T-013"],
+            "blocks": ["T-025"],
+            "subtasks": [
+                {
+                    "title": "Implement getDescendants with runWithLoggingAndValidation",
+                    "completed": false
+                },
+                { "title": "Add parent existence and permission checks", "completed": false },
+                { "title": "Delegate to model.findDescendants", "completed": false },
+                { "title": "Add default limit of 1000 items", "completed": false }
+            ],
+            "tags": ["service", "hierarchy"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-02-13T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Add getAncestors and getBreadcrumb methods to DestinationService",
+            "description": "Add two related methods to `packages/service-core/src/services/destination/destination.service.ts`.\n\n**getAncestors:**\n```ts\npublic async getAncestors(actor, params: GetDestinationAncestorsInput): Promise<ServiceOutput<{ ancestors: Destination[] }>>\n```\nFetches all ancestors via model.findAncestors(). Returns ordered root-to-parent.\n\n**getBreadcrumb:**\n```ts\npublic async getBreadcrumb(actor, params: GetDestinationBreadcrumbInput): Promise<ServiceOutput<{ breadcrumb: BreadcrumbItem[] }>>\n```\nFetches ancestors + current destination, maps to BreadcrumbItem array.\n\n**Files to modify:**\n- `packages/service-core/src/services/destination/destination.service.ts`\n\n**Test requirements:**\n- See T-025 for comprehensive tests\n\n**Acceptance criteria (US-010):**\n- getAncestors returns [Argentina, Litoral, Entre Rios, Depto Uruguay] for CdU\n- getAncestors returns empty for country\n- getBreadcrumb includes ancestors + current destination\n- Each breadcrumb item has: id, slug, name, level, destinationType, path",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-010", "T-011", "T-014"],
+            "blocks": ["T-025", "T-033"],
+            "subtasks": [
+                { "title": "Implement getAncestors", "completed": false },
+                {
+                    "title": "Implement getBreadcrumb with BreadcrumbItem mapping",
+                    "completed": false
+                },
+                { "title": "Add existence and permission checks", "completed": false },
+                { "title": "Handle top-level destination (empty ancestors)", "completed": false }
+            ],
+            "tags": ["service", "hierarchy"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-02-13T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Add getByPath method to DestinationService",
+            "description": "Add the `getByPath` method to `packages/service-core/src/services/destination/destination.service.ts`.\n\n**Method signature:**\n```ts\npublic async getByPath(actor, params: GetDestinationByPathInput): Promise<ServiceOutput<{ destination: Destination }>>\n```\n\n**Implementation:**\n1. Use `runWithLoggingAndValidation` wrapper\n2. Validate input with `GetDestinationByPathInputSchema`\n3. Query model.findOne({ path, deletedAt: null })\n4. Return 404 if not found\n5. Check permission: `checkCanViewDestination(actor, destination)`\n6. Return { destination }\n\n**Files to modify:**\n- `packages/service-core/src/services/destination/destination.service.ts`\n\n**Test requirements:**\n- See T-025 for comprehensive tests\n\n**Acceptance criteria (US-011):**\n- Resolves destination by exact path match\n- Returns 404 for non-existent path\n- Uses path index for fast lookup\n- Permission check enforced",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-011"],
+            "blocks": ["T-025", "T-034"],
+            "subtasks": [
+                {
+                    "title": "Implement getByPath with runWithLoggingAndValidation",
+                    "completed": false
+                },
+                { "title": "Query by path with soft delete filter", "completed": false },
+                { "title": "Add permission check", "completed": false }
+            ],
+            "tags": ["service", "hierarchy"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-02-13T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Update destination search/list to support hierarchy filters",
+            "description": "Update the `_executeSearch` and `list` methods in DestinationService to support hierarchy filter parameters.\n\n**Filters to support:**\n- `parentDestinationId`: Filter by direct parent\n- `destinationType`: Filter by type (CITY, PROVINCE, etc.)\n- `level`: Filter by hierarchy level number\n- `ancestorId`: Filter all descendants of a given ancestor\n\n**The `ancestorId` filter** requires special handling: use model.findDescendants() or pathIds LIKE query.\n\n**Files to modify:**\n- `packages/service-core/src/services/destination/destination.service.ts`\n- `packages/db/src/models/destination/destination.model.ts` (update search method if needed)\n\n**Test requirements:**\n- Unit test: Filter by parentDestinationId\n- Unit test: Filter by destinationType\n- Unit test: Filter by level\n- Unit test: Filter by ancestorId\n- Unit test: Combined filters work\n\n**Acceptance criteria (US-001, US-002, US-007):**\n- All 4 filters work individually and combined\n- Backward compatible (existing search unaffected)\n- Pagination still works with hierarchy filters",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-011", "T-013"],
+            "blocks": ["T-025", "T-035"],
+            "subtasks": [
+                { "title": "Add parentDestinationId filter to search", "completed": false },
+                { "title": "Add destinationType filter to search", "completed": false },
+                { "title": "Add level filter to search", "completed": false },
+                { "title": "Add ancestorId filter with pathIds query", "completed": false },
+                { "title": "Test combined filters with pagination", "completed": false }
+            ],
+            "tags": ["service", "search"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-02-13T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Write unit tests for service hierarchy methods",
+            "description": "Write comprehensive unit tests for all hierarchy service methods: getChildren, getDescendants, getAncestors, getBreadcrumb, getByPath, and updated search.\n\n**Test file:**\n- `packages/service-core/test/services/destination/destination.hierarchy.test.ts` (new)\n\n**Test suites:**\n1. getChildren: returns only immediate children, empty for leaf, 404 for missing parent, permission check\n2. getDescendants: returns all levels, maxDepth filter, destinationType filter, empty for leaf\n3. getAncestors: correct order, empty for country, 404 for missing\n4. getBreadcrumb: includes ancestors + current, correct BreadcrumbItem shape\n5. getByPath: exact match, 404 for missing, permission check\n6. search with hierarchy: parentDestinationId, destinationType, level, ancestorId filters\n\n**Acceptance criteria:**\n- All service hierarchy tests pass\n- Coverage >= 90% for new methods\n- Tests mock model layer appropriately\n- Error cases covered (404, permission denied, invalid input)",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-020", "T-021", "T-022", "T-023", "T-024"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Write getChildren test suite", "completed": false },
+                { "title": "Write getDescendants test suite", "completed": false },
+                { "title": "Write getAncestors test suite", "completed": false },
+                { "title": "Write getBreadcrumb test suite", "completed": false },
+                { "title": "Write getByPath test suite", "completed": false },
+                { "title": "Write search hierarchy filter tests", "completed": false }
+            ],
+            "tags": ["service", "testing"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-02-13T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Write unit tests for _beforeCreate and _beforeUpdate hooks",
+            "description": "Write comprehensive unit tests for the hierarchy auto-computation in _beforeCreate and the reparenting logic in _beforeUpdate.\n\n**Test file:**\n- `packages/service-core/test/services/destination/destination.hooks.test.ts` (new)\n\n**_beforeCreate tests:**\n- Auto-computes path, pathIds, level from parent\n- Sets level=0, path=/slug for COUNTRY without parent\n- Rejects non-COUNTRY type without parent\n- Rejects mismatched destinationType/level\n- Preserves slug generation when slug not provided\n- Validates parent exists\n\n**_beforeUpdate tests:**\n- Recalculates path when parent changes\n- Updates all descendant paths recursively\n- Detects cycles (cannot set descendant as parent)\n- Handles slug change with path update\n- No-op when parent/slug unchanged\n- Validates new parent exists\n- Rejects invalid parent level\n\n**Acceptance criteria:**\n- All hook tests pass\n- Coverage >= 90% for hook logic\n- Edge cases covered (null parent, self-reference, deep nesting)",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-018", "T-019"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Write _beforeCreate auto-computation tests", "completed": false },
+                { "title": "Write _beforeCreate validation tests", "completed": false },
+                { "title": "Write _beforeUpdate reparenting tests", "completed": false },
+                { "title": "Write _beforeUpdate cycle detection tests", "completed": false },
+                { "title": "Write _beforeUpdate descendant cascade tests", "completed": false }
+            ],
+            "tags": ["service", "testing", "hooks"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-02-13T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "Create hierarchy node seed files",
+            "description": "Create 4 new seed JSON files for hierarchy nodes in `packages/seed/src/data/destination/hierarchy/`.\n\n**Files to create:**\n1. `000-country-argentina.json` - Country node (level 0)\n2. `001-region-litoral.json` - Region node (level 1, parent: argentina)\n3. `002-province-entre-rios.json` - Province node (level 2, parent: litoral)\n4. `003-department-uruguay.json` - Department node (level 3, parent: entre-rios)\n\n**Each file must include:**\n- Standard destination fields (id, slug, name, summary, description)\n- Hierarchy fields (destinationType, level, path, pathIds, parentDestinationId)\n- Location, media, SEO metadata\n- Proper pathIds chains reflecting parent hierarchy\n- moderationState: APPROVED, visibility: PUBLIC, lifecycleState: ACTIVE\n\n**Follow spec section 5.1 for exact data.**\n\n**Files to create:**\n- `packages/seed/src/data/destination/hierarchy/` directory (new)\n- 4 JSON files as described above\n\n**Acceptance criteria:**\n- All 4 files follow existing destination seed format\n- Hierarchy fields are consistent (path matches slug chain, level matches type)\n- parentDestinationId references correct parent seed ID",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-028", "T-029"],
+            "subtasks": [
+                { "title": "Create hierarchy/ directory", "completed": false },
+                { "title": "Create 000-country-argentina.json", "completed": false },
+                { "title": "Create 001-region-litoral.json", "completed": false },
+                { "title": "Create 002-province-entre-rios.json", "completed": false },
+                { "title": "Create 003-department-uruguay.json", "completed": false }
+            ],
+            "tags": ["seed", "data"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-02-13T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "Update existing 11 city seed files with hierarchy fields",
+            "description": "Update all 11 existing destination seed files to include hierarchy fields. All cities belong under the 'Departamento Uruguay' hierarchy node.\n\n**Files to modify (all in `packages/seed/src/data/destination/`):**\n- 001-destination-chajari.json\n- 002-destination-colon.json\n- 003-destination-concordia.json\n- 004-destination-federacion.json\n- 005-destination-gualeguaychu.json\n- 006-destination-ibicuy.json\n- 007-destination-liebig.json\n- 008-destination-paranacito.json\n- 009-destination-san-jose.json\n- 010-destination-ubajay.json\n- 011-destination-concepcion-del-uruguay.json\n\n**Fields to add to each:**\n- `destinationType`: \"CITY\"\n- `level`: 4\n- `path`: \"/argentina/litoral/entre-rios/depto-uruguay/{slug}\"\n- `pathIds`: \"/000-country-argentina/001-region-litoral/002-province-entre-rios/003-department-uruguay\"\n- `parentDestinationId`: \"003-department-uruguay\"\n\n**Note:** Some cities may belong to different departments. For now, assign all to Depto. Uruguay per the spec. Future specs may refine this.\n\n**Acceptance criteria:**\n- All 11 files updated with consistent hierarchy fields\n- Paths match slug pattern\n- pathIds reference correct hierarchy chain",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-027"],
+            "blocks": ["T-029"],
+            "subtasks": [
+                {
+                    "title": "Add hierarchy fields to Chajari, Colon, Concordia, Federacion",
+                    "completed": false
+                },
+                {
+                    "title": "Add hierarchy fields to Gualeguaychu, Ibicuy, Liebig, Paranacito",
+                    "completed": false
+                },
+                { "title": "Add hierarchy fields to San Jose, Ubajay, CdU", "completed": false },
+                { "title": "Verify path consistency across all files", "completed": false }
+            ],
+            "tags": ["seed", "data"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-02-13T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-029",
+            "title": "Update seed script and manifest for hierarchy order",
+            "description": "Update the seed script and manifest to process hierarchy nodes BEFORE cities, respecting parent-child insertion order.\n\n**Changes needed:**\n1. Update `packages/seed/src/manifest-required.json`:\n   - Add hierarchy files before city files\n   - Order: argentina -> litoral -> entre-rios -> depto-uruguay -> cities\n2. Update `packages/seed/src/required/destinations.seed.ts`:\n   - Handle hierarchy fields in normalizer (exclude pathIds, path, level from normalizer exclusion if service computes them, or include them if seed data provides them directly)\n   - Ensure parentDestinationId is mapped through idMapper\n3. Verify seed script handles the self-referencing FK correctly\n\n**Files to modify:**\n- `packages/seed/src/manifest-required.json`\n- `packages/seed/src/required/destinations.seed.ts`\n\n**Test requirements:**\n- Run `pnpm db:fresh` and verify all destinations seeded correctly\n- Verify hierarchy relationships are correct in DB\n\n**Acceptance criteria:**\n- Seed runs without FK constraint errors\n- Hierarchy nodes created before cities\n- parentDestinationId correctly mapped via idMapper\n- All 15 destinations (4 hierarchy + 11 cities) seeded",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-027", "T-028"],
+            "blocks": ["T-037"],
+            "subtasks": [
+                {
+                    "title": "Update manifest-required.json with hierarchy files",
+                    "completed": false
+                },
+                { "title": "Update seed normalizer for hierarchy fields", "completed": false },
+                { "title": "Add parentDestinationId to idMapper resolution", "completed": false },
+                { "title": "Test with pnpm db:fresh", "completed": false }
+            ],
+            "tags": ["seed", "script"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-02-13T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-030",
+            "title": "Create GET /destinations/:id/children API route",
+            "description": "Create a new API route for fetching immediate children of a destination.\n\n**Endpoint:** `GET /api/v1/public/destinations/{id}/children`\n\n**Implementation:**\n- Use `createCRUDRoute` factory\n- Request params: { id: DestinationIdSchema }\n- Response schema: array of DestinationListItemSchema\n- Handler: call `destinationService.getChildren(actor, { destinationId: id })`\n- Public route (skipAuth: true)\n\n**Files to create:**\n- `apps/api/src/routes/destination/children.ts` (new)\n\n**Test requirements:**\n- See T-037 for integration tests\n\n**Acceptance criteria (US-008):**\n- Returns 200 with array of children\n- Returns 200 with empty array for leaf destination\n- Returns 404 for non-existent parent ID\n- Response matches DestinationListItemSchema",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-020"],
+            "blocks": ["T-036", "T-037"],
+            "subtasks": [
+                { "title": "Create children.ts route file", "completed": false },
+                { "title": "Implement handler using service.getChildren", "completed": false },
+                { "title": "Configure as public route", "completed": false }
+            ],
+            "tags": ["api", "routes"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-02-13T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-031",
+            "title": "Create GET /destinations/:id/descendants API route",
+            "description": "Create a new API route for fetching all descendants of a destination.\n\n**Endpoint:** `GET /api/v1/public/destinations/{id}/descendants`\n\n**Implementation:**\n- Use `createCRUDRoute` factory\n- Request params: { id: DestinationIdSchema }\n- Request query: { maxDepth?: number, destinationType?: DestinationType }\n- Response schema: array of DestinationListItemSchema\n- Handler: call `destinationService.getDescendants(actor, { destinationId, maxDepth, destinationType })`\n- Public route (skipAuth: true)\n\n**Files to create:**\n- `apps/api/src/routes/destination/descendants.ts` (new)\n\n**Test requirements:**\n- See T-037 for integration tests\n\n**Acceptance criteria (US-009):**\n- Returns all descendants in flat array\n- Respects maxDepth and destinationType query params\n- Returns 200 with empty array for leaf destination\n- Returns 404 for non-existent parent ID",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-021"],
+            "blocks": ["T-036", "T-037"],
+            "subtasks": [
+                { "title": "Create descendants.ts route file", "completed": false },
+                { "title": "Parse maxDepth and destinationType from query", "completed": false },
+                { "title": "Implement handler using service.getDescendants", "completed": false },
+                { "title": "Configure as public route", "completed": false }
+            ],
+            "tags": ["api", "routes"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-02-13T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-032",
+            "title": "Create GET /destinations/:id/ancestors API route",
+            "description": "Create a new API route for fetching all ancestors of a destination.\n\n**Endpoint:** `GET /api/v1/public/destinations/{id}/ancestors`\n\n**Implementation:**\n- Use `createCRUDRoute` factory\n- Request params: { id: DestinationIdSchema }\n- Response schema: array of destinations (id, slug, name, level, destinationType, path)\n- Handler: call `destinationService.getAncestors(actor, { destinationId: id })`\n- Public route (skipAuth: true)\n\n**Files to create:**\n- `apps/api/src/routes/destination/ancestors.ts` (new)\n\n**Test requirements:**\n- See T-037 for integration tests\n\n**Acceptance criteria (US-010):**\n- Returns ancestors ordered root-to-parent\n- Returns 200 with empty array for country\n- Returns 404 for non-existent destination",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-022"],
+            "blocks": ["T-036", "T-037"],
+            "subtasks": [
+                { "title": "Create ancestors.ts route file", "completed": false },
+                { "title": "Implement handler using service.getAncestors", "completed": false },
+                { "title": "Configure as public route", "completed": false }
+            ],
+            "tags": ["api", "routes"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-02-13T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-033",
+            "title": "Create GET /destinations/:id/breadcrumb API route",
+            "description": "Create a new API route for fetching breadcrumb trail of a destination.\n\n**Endpoint:** `GET /api/v1/public/destinations/{id}/breadcrumb`\n\n**Implementation:**\n- Use `createCRUDRoute` factory\n- Request params: { id: DestinationIdSchema }\n- Response schema: array of BreadcrumbItemSchema\n- Handler: call `destinationService.getBreadcrumb(actor, { destinationId: id })`\n- Public route (skipAuth: true)\n- cacheTTL: 3600 (breadcrumbs rarely change)\n\n**Files to create:**\n- `apps/api/src/routes/destination/breadcrumb.ts` (new)\n\n**Test requirements:**\n- See T-037 for integration tests\n\n**Acceptance criteria (US-004, US-010):**\n- Returns breadcrumb including ancestors + current destination\n- Each item matches BreadcrumbItemSchema\n- Returns only current destination for country\n- Returns 404 for non-existent destination",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-022"],
+            "blocks": ["T-036", "T-037"],
+            "subtasks": [
+                { "title": "Create breadcrumb.ts route file", "completed": false },
+                { "title": "Implement handler using service.getBreadcrumb", "completed": false },
+                { "title": "Configure with high cache TTL", "completed": false }
+            ],
+            "tags": ["api", "routes"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-02-13T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-034",
+            "title": "Create GET /destinations/by-path API route",
+            "description": "Create a new API route for resolving a destination by its materialized path.\n\n**Endpoint:** `GET /api/v1/public/destinations/by-path`\n\n**Implementation:**\n- Use `createCRUDRoute` factory\n- Request query: { path: string }\n- Response schema: DestinationSchema\n- Handler: call `destinationService.getByPath(actor, { path })`\n- Public route (skipAuth: true)\n- cacheTTL: 300\n\n**IMPORTANT:** This route must be registered BEFORE the `:id` route to avoid path conflicts. The path '/by-path' would be matched as an ID otherwise.\n\n**Files to create:**\n- `apps/api/src/routes/destination/byPath.ts` (new)\n\n**Test requirements:**\n- See T-037 for integration tests\n\n**Acceptance criteria (US-011):**\n- Resolves destination by exact path match\n- Returns 404 for non-existent path\n- Uses path index for performance\n- Query param `path` is required",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-023"],
+            "blocks": ["T-036", "T-037"],
+            "subtasks": [
+                { "title": "Create byPath.ts route file", "completed": false },
+                { "title": "Implement handler using service.getByPath", "completed": false },
+                { "title": "Handle route ordering (before :id)", "completed": false },
+                { "title": "Configure as public with cache", "completed": false }
+            ],
+            "tags": ["api", "routes"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-02-13T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-035",
+            "title": "Update GET /destinations (list/search) with hierarchy filters",
+            "description": "Update the existing destination list route to accept and pass hierarchy filter parameters.\n\n**Files to modify:**\n- `apps/api/src/routes/destination/list.ts`\n\n**Changes:**\n1. Add hierarchy query params to route definition (requestQuery)\n2. Extract hierarchy params from query: parentDestinationId, destinationType, level, ancestorId\n3. Pass hierarchy params to service.list() or service.search()\n\n**Test requirements:**\n- See T-037 for integration tests\n\n**Acceptance criteria (US-001, US-002, US-007):**\n- `GET /destinations?destinationType=CITY` returns only cities\n- `GET /destinations?level=2` returns only provinces\n- `GET /destinations?parentDestinationId=X` returns direct children\n- `GET /destinations?ancestorId=X` returns all descendants\n- Existing pagination and sorting still work\n- Backward compatible (no filters = existing behavior)",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-024"],
+            "blocks": ["T-036", "T-037"],
+            "subtasks": [
+                {
+                    "title": "Add hierarchy params to route requestQuery schema",
+                    "completed": false
+                },
+                { "title": "Extract and pass hierarchy filters to service", "completed": false },
+                { "title": "Verify backward compatibility", "completed": false }
+            ],
+            "tags": ["api", "search"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-02-13T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-036",
+            "title": "Register new hierarchy routes in destination router",
+            "description": "Register all 5 new hierarchy routes in the destination router index file.\n\n**Files to modify:**\n- `apps/api/src/routes/destination/index.ts`\n\n**Routes to register (in correct order):**\n1. `GET /by-path` (BEFORE /:id routes to avoid path conflicts)\n2. `GET /:id/children`\n3. `GET /:id/descendants`\n4. `GET /:id/ancestors`\n5. `GET /:id/breadcrumb`\n\n**IMPORTANT:** The `/by-path` route must be registered before routes that match `/:id` to prevent 'by-path' being interpreted as an ID.\n\n**Test requirements:**\n- Verify routes are accessible via OpenAPI docs\n- No conflicts with existing routes\n\n**Acceptance criteria:**\n- All 5 new routes registered and accessible\n- No route conflicts\n- Route ordering prevents path/ID ambiguity",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-030", "T-031", "T-032", "T-033", "T-034", "T-035"],
+            "blocks": ["T-037"],
+            "subtasks": [
+                { "title": "Import all new route files", "completed": false },
+                { "title": "Register by-path BEFORE :id routes", "completed": false },
+                {
+                    "title": "Register children, descendants, ancestors, breadcrumb routes",
+                    "completed": false
+                },
+                { "title": "Verify no route conflicts", "completed": false }
+            ],
+            "tags": ["api", "router"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-02-13T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-037",
+            "title": "Write integration tests for hierarchy API routes",
+            "description": "Write comprehensive integration tests for all hierarchy API endpoints.\n\n**Test file:**\n- `apps/api/test/routes/destination/hierarchy.test.ts` (new)\n\n**Test suites:**\n1. GET /destinations/:id/children:\n   - Returns immediate children, empty for leaf, 404 for missing\n2. GET /destinations/:id/descendants:\n   - Returns all descendants, maxDepth filter, destinationType filter\n3. GET /destinations/:id/ancestors:\n   - Returns path to root, empty for country\n4. GET /destinations/:id/breadcrumb:\n   - Returns full breadcrumb trail with correct shape\n5. GET /destinations/by-path:\n   - Resolves by path, 404 for missing\n6. GET /destinations?hierarchy_filters:\n   - Filter by destinationType, level, parentDestinationId, ancestorId\n   - Pagination with filters\n\n**Setup:** Use seeded hierarchy data (depends on T-029)\n\n**Acceptance criteria:**\n- All integration tests pass\n- Tests cover success and error cases\n- Response shapes validated against schemas",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-029", "T-036"],
+            "blocks": ["T-042"],
+            "subtasks": [
+                { "title": "Set up test fixtures with hierarchy data", "completed": false },
+                { "title": "Write children endpoint tests", "completed": false },
+                { "title": "Write descendants endpoint tests", "completed": false },
+                { "title": "Write ancestors endpoint tests", "completed": false },
+                { "title": "Write breadcrumb endpoint tests", "completed": false },
+                { "title": "Write by-path endpoint tests", "completed": false },
+                { "title": "Write search with hierarchy filter tests", "completed": false }
+            ],
+            "tags": ["api", "testing", "integration"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-02-13T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-038",
+            "title": "Update getDestinationUrl utility for hierarchical URLs",
+            "description": "Update the URL generation utility in the web app to support hierarchical destination URLs using the `path` field.\n\n**Files to modify:**\n- `apps/web/src/utils/urls.ts` (or create if not exists)\n\n**Function to create/update:**\n```ts\nexport function getDestinationUrl(params: { destination?: { path: string }; path?: string }): string\n```\n- Takes destination object or path string\n- Returns `/destinos${path}` (e.g., `/destinos/argentina/entre-rios/concepcion-del-uruguay`)\n- Throws if no path provided\n\n**Update all existing references** to destination URL generation to use the new path-based function.\n\n**Test requirements:**\n- Unit test: Correct URL for various hierarchy depths\n- Unit test: Error for missing path\n\n**Acceptance criteria (US-003):**\n- URLs reflect geographic hierarchy\n- Old slug-based URLs can redirect to new hierarchical URLs (if applicable)\n- Function is reusable across all components",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-006"],
+            "blocks": ["T-040"],
+            "subtasks": [
+                { "title": "Create/update getDestinationUrl function", "completed": false },
+                {
+                    "title": "Find and update all existing destination URL references",
+                    "completed": false
+                },
+                { "title": "Write unit tests", "completed": false }
+            ],
+            "tags": ["frontend", "urls"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-02-13T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-039",
+            "title": "Create Breadcrumb Astro component",
+            "description": "Create or update the Breadcrumb component to display hierarchical destination navigation.\n\n**Files to create/modify:**\n- `apps/web/src/components/shared/Breadcrumb.astro` (new or update)\n\n**Component props:**\n- `breadcrumb: BreadcrumbItem[]` from @repo/schemas\n\n**Rendering:**\n1. `<nav aria-label=\"Breadcrumb\">` wrapper\n2. `<ol>` with list items for each breadcrumb segment\n3. First items: 'Inicio' (/) and 'Destinos' (/destinos)\n4. Each ancestor: link to `/destinos{item.path}`\n5. Last item: `<span aria-current=\"page\">` (no link)\n6. Separator character '>' between items\n\n**Styling:** Use existing design system (Tailwind classes per project conventions)\n\n**Accessibility:**\n- `aria-label=\"Breadcrumb\"` on nav\n- `aria-current=\"page\"` on current item\n- Keyboard navigable links\n\n**Test requirements:**\n- Visual verification\n- Accessibility check (semantic HTML, ARIA)\n\n**Acceptance criteria (US-004):**\n- Displays full hierarchy path\n- Each segment clickable (except current)\n- Accessible markup\n- Responsive (wraps on mobile)",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-040"],
+            "subtasks": [
+                { "title": "Create Breadcrumb.astro component", "completed": false },
+                { "title": "Add Inicio and Destinos base items", "completed": false },
+                { "title": "Render ancestor links from breadcrumb prop", "completed": false },
+                { "title": "Add aria-label and aria-current attributes", "completed": false },
+                { "title": "Style with Tailwind", "completed": false }
+            ],
+            "tags": ["frontend", "component"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-02-13T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-040",
+            "title": "Create dynamic destination route [...path].astro",
+            "description": "Create a catch-all Astro route that handles hierarchical destination URLs.\n\n**Files to create:**\n- `apps/web/src/pages/destinos/[...path].astro` (new)\n\n**Implementation:**\n1. Extract `path` from Astro.params\n2. Build full path: `/${path}` (ensure leading slash)\n3. Call API to fetch destination by path (getByPath)\n4. If not found, redirect to 404\n5. Call API to fetch breadcrumb for destination\n6. Call API to fetch children of destination\n7. Render:\n   - Breadcrumb component at top\n   - Destination details (name, summary, description)\n   - If children exist: 'Explore sub-destinations' section with links\n   - If leaf (CITY): show existing destination page content (accommodations, etc.)\n\n**Consider:** Different templates for different destination types (country overview vs city detail)\n\n**Test requirements:**\n- Manual test: Navigate to /destinos/argentina/litoral/entre-rios/depto-uruguay/concepcion-del-uruguay\n- Verify breadcrumb renders correctly\n- Verify children section for non-leaf destinations\n- Verify 404 for invalid paths\n\n**Acceptance criteria (US-003, US-004):**\n- Hierarchical URLs resolve correctly\n- Breadcrumb displays full path\n- Non-leaf destinations show children navigation\n- Leaf destinations show full destination content",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-038", "T-039"],
+            "blocks": ["T-041", "T-042"],
+            "subtasks": [
+                { "title": "Create [...path].astro page", "completed": false },
+                { "title": "Fetch destination by path from API", "completed": false },
+                { "title": "Fetch breadcrumb and children from API", "completed": false },
+                { "title": "Render breadcrumb component", "completed": false },
+                {
+                    "title": "Render children navigation for non-leaf destinations",
+                    "completed": false
+                },
+                { "title": "Handle 404 for invalid paths", "completed": false }
+            ],
+            "tags": ["frontend", "routing"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-02-13T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-041",
+            "title": "Update destination search/filter UI with hierarchy support",
+            "description": "Update the destination search and listing pages in the web app to support hierarchy filters.\n\n**Changes needed:**\n1. Add destination type filter dropdown (Country, Region, Province, etc.)\n2. Add region/province filter based on hierarchy (optional)\n3. Update destination cards to show hierarchy info (type badge, parent name)\n4. Update search results to use hierarchical URLs\n\n**Files to modify:**\n- `apps/web/src/pages/destinos/index.astro` or search page\n- Related React island components if interactive filters exist\n\n**Test requirements:**\n- Manual test: Filter by destination type\n- Verify destination cards link to hierarchical URLs\n- Verify empty states for filtered results\n\n**Acceptance criteria (US-001, US-002):**\n- Users can filter by province or region\n- Destination cards show hierarchy context\n- Search URLs include hierarchy filter params\n- Empty state message when no results for a filter",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-040"],
+            "blocks": ["T-042"],
+            "subtasks": [
+                { "title": "Add hierarchy filter UI controls", "completed": false },
+                { "title": "Update destination cards with type badge", "completed": false },
+                { "title": "Update card links to use hierarchical URLs", "completed": false },
+                { "title": "Add empty state for filtered results", "completed": false }
+            ],
+            "tags": ["frontend", "search", "ui"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-02-13T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-042",
+            "title": "End-to-end validation and quality assurance",
+            "description": "Comprehensive end-to-end validation of the entire hierarchy system.\n\n**Validation checklist:**\n1. Database:\n   - All hierarchy columns populated correctly\n   - Indexes exist and are used (EXPLAIN ANALYZE)\n2. Seeds:\n   - `pnpm db:fresh` creates all hierarchy data\n   - 15 destinations (4 hierarchy + 11 cities)\n3. API:\n   - All 5 hierarchy endpoints return correct data\n   - Search filters work correctly\n   - Performance: all queries < 100ms\n4. Frontend:\n   - Hierarchical URLs resolve correctly\n   - Breadcrumb renders on all destination pages\n   - Children navigation works for non-leaf\n   - Search filters functional\n5. Regression:\n   - Existing destination CRUD still works\n   - Existing tests pass\n   - No TypeScript errors (`pnpm typecheck`)\n   - Lint passes (`pnpm lint`)\n\n**Commands to run:**\n- `pnpm typecheck`\n- `pnpm lint`\n- `pnpm test`\n- `pnpm build`\n\n**Acceptance criteria:**\n- All checks pass\n- No regressions\n- Performance within spec requirements",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-037", "T-040", "T-041"],
+            "blocks": ["T-043"],
+            "subtasks": [
+                { "title": "Run typecheck across all packages", "completed": false },
+                { "title": "Run lint across all packages", "completed": false },
+                { "title": "Run full test suite", "completed": false },
+                { "title": "Build all packages", "completed": false },
+                { "title": "Manual smoke test of hierarchy flows", "completed": false },
+                { "title": "Performance spot check on hierarchy queries", "completed": false }
+            ],
+            "tags": ["qa", "testing"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-02-13T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-043",
+            "title": "Update CLAUDE.md documentation for affected packages",
+            "description": "Update CLAUDE.md files for all packages affected by the hierarchy feature.\n\n**Files to update:**\n- `packages/db/CLAUDE.md`: Document new columns, indexes, relations, model methods\n- `packages/schemas/CLAUDE.md`: Document new enum, hierarchy schemas\n- `packages/service-core/CLAUDE.md`: Document new service methods, hooks, helpers\n- `apps/api/CLAUDE.md`: Document new routes, hierarchy endpoints\n- `apps/web/CLAUDE.md`: Document hierarchical URLs, Breadcrumb component, [...path] route\n- `packages/seed/CLAUDE.md`: Document hierarchy seed files and ordering\n\n**Content to add per file:**\n- New types/schemas/methods available\n- Usage examples\n- Key patterns (materialized path, auto-computation)\n\n**Acceptance criteria:**\n- All affected CLAUDE.md files updated\n- Documentation is accurate and helpful\n- Examples provided for key operations",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-042"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Update packages/db/CLAUDE.md", "completed": false },
+                { "title": "Update packages/schemas/CLAUDE.md", "completed": false },
+                { "title": "Update packages/service-core/CLAUDE.md", "completed": false },
+                { "title": "Update apps/api/CLAUDE.md", "completed": false },
+                { "title": "Update apps/web/CLAUDE.md", "completed": false },
+                { "title": "Update packages/seed/CLAUDE.md", "completed": false }
+            ],
+            "tags": ["docs"],
+            "phase": "docs",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-02-13T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 43,
+        "pending": 43,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 3.0
+    }
+}
