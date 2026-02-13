@@ -26,6 +26,8 @@ describe('User CRUD Schemas', () => {
         it('should validate valid user creation input', () => {
             const user = createUserFixture();
             const validInput = {
+                email: user.email,
+                emailVerified: user.emailVerified,
                 displayName: user.displayName,
                 firstName: user.firstName,
                 lastName: user.lastName,

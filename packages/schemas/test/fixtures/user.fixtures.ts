@@ -17,6 +17,10 @@ export const createUserFixture = (overrides: Partial<UserType> = {}): UserType =
         lifecycleState: LifecycleStatusEnum.ACTIVE,
         visibility: VisibilityEnum.PUBLIC,
 
+        // Better Auth required fields
+        email: 'john.doe@example.com',
+        emailVerified: true,
+
         // Basic info
         displayName: 'John Doe',
         firstName: 'John',
@@ -96,6 +100,8 @@ export const createMinimalUserFixture = (overrides: Partial<UserType> = {}): Par
     const minimalUser: Partial<UserType> = {
         id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479' as UserId,
         slug: 'jane-doe',
+        email: 'jane.doe@example.com',
+        emailVerified: true,
         displayName: 'Jane Doe',
         lifecycleState: LifecycleStatusEnum.ACTIVE,
         visibility: VisibilityEnum.PUBLIC,
@@ -121,6 +127,7 @@ export const createMinimalUserFixture = (overrides: Partial<UserType> = {}): Par
  */
 export const createAdminUserFixture = (overrides: Partial<UserType> = {}): UserType => {
     return createUserFixture({
+        email: 'admin.user@example.com',
         displayName: 'Admin User',
         role: RoleEnum.ADMIN,
         permissions: [
@@ -138,6 +145,7 @@ export const createAdminUserFixture = (overrides: Partial<UserType> = {}): UserT
  */
 export const createSuperAdminUserFixture = (overrides: Partial<UserType> = {}): UserType => {
     return createUserFixture({
+        email: 'super.admin@example.com',
         displayName: 'Super Admin',
         role: RoleEnum.SUPER_ADMIN,
         permissions: Object.values(PermissionEnum),
@@ -171,6 +179,7 @@ export const createInvalidUser = (): Partial<UserType> => {
 export const createUserEdgeCases = (overrides: Partial<UserType> = {}): UserType => {
     return createUserFixture({
         // Edge case values that are still valid
+        email: 'edge.user@example.com',
         displayName: 'AB', // Minimum length (2 chars)
         slug: 'edge-user-123',
         profile: {
@@ -190,6 +199,7 @@ export const createUserEdgeCases = (overrides: Partial<UserType> = {}): UserType
  */
 export const createUserWithComplexProfile = (overrides: Partial<UserType> = {}): UserType => {
     return createUserFixture({
+        email: 'complex.user@example.com',
         profile: {
             bio: 'Experienced travel blogger and digital nomad with over 10 years of experience exploring South America. Passionate about sustainable tourism and local culture.',
             avatar: 'https://example.com/complex-avatar.jpg',

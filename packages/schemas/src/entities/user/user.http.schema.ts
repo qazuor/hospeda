@@ -148,6 +148,10 @@ export const httpToDomainUserSearch = (httpParams: UserSearchHttp): UserSearch =
  * Maps HTTP form/JSON data to domain object with required fields and proper structure
  */
 export const httpToDomainUserCreate = (httpData: UserCreateHttp): UserCreateInput => ({
+    // Better Auth required fields
+    email: httpData.email,
+    emailVerified: false,
+
     // Basic fields that exist in domain schema
     firstName: httpData.firstName,
     lastName: httpData.lastName,

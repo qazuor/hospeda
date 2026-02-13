@@ -34,6 +34,33 @@ export const UserSchema = z.object({
         })
         .min(1, { message: 'zodError.common.slug.min' }),
 
+    /** Better Auth required: user email address */
+    email: z
+        .string({
+            message: 'zodError.user.email.required'
+        })
+        .email({ message: 'zodError.user.email.invalid' })
+        .min(1, { message: 'zodError.user.email.min' }),
+
+    /** Better Auth required: email verification status */
+    emailVerified: z
+        .boolean({
+            message: 'zodError.user.emailVerified.invalid'
+        })
+        .default(false),
+
+    /** Better Auth required: avatar/profile image URL */
+    image: z.string().url({ message: 'zodError.user.image.invalidUrl' }).nullish(),
+
+    /** Better Auth Admin plugin: whether user is banned */
+    banned: z.boolean().default(false).optional(),
+
+    /** Better Auth Admin plugin: reason for ban */
+    banReason: z.string().nullish(),
+
+    /** Better Auth Admin plugin: ban expiration date */
+    banExpires: z.date().nullish(),
+
     // Authentication fields
     authProvider: AuthProviderEnumSchema.optional(),
 
