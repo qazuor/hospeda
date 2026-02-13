@@ -1,0 +1,62 @@
+---
+export const prerender = false; // SSR for authenticated content
+
+import Layout from '@/layout/MainLayout.astro';
+import { BugReportForm } from '@/components/reports/BugReportForm';
+
+/**
+ * Bug Report Page
+ * Allows authenticated beta testers to report bugs directly to Linear.
+ * Requires authentication via Better Auth session.
+ */
+
+// Check authentication via Better Auth session
+let userId: string | null = null;
+let userName = '';
+let userEmail = '';
+
+try {
+  const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:3001';
+  const cookieHeader = Astro.request.headers.get('cookie') || '';
+  const response = await fetch(`${apiUrl}/api/auth/get-session`, {
+    headers: { cookie: cookieHeader }
+  });
+  if (response.ok) {
+    const data = await response.json();
+    userId = data?.user?.id || null;
+    userName = data?.user?.name || '';
+    userEmail = data?.user?.email || '';
+  }
+} catch {
+  // Session check failed, treat as unauthenticated
+}
+
+if (!userId) {
+  return Astro.redirect('/auth/sign-in?redirect=/reportar');
+}
+
+const apiBaseUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:3001';
+const title = 'Reportar un Bug';
+const description = 'Ayudanos a mejorar Hospeda reportando cualquier problema que encuentres';
+---
+
+<Layout title={title} description={description}>
+  <section class="py-16 bg-gray-50 min-h-screen">
+    <div class="max-w-3xl mx-auto px-4">
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Reportar un Bug</h1>
+        <p class="text-gray-600">
+          Ayudanos a mejorar Hospeda. Completá el formulario con la mayor cantidad de
+          detalles posible para que podamos resolver el problema rapidamente.
+        </p>
+      </div>
+
+      <BugReportForm
+        client:load
+        apiBaseUrl={apiBaseUrl}
+        reporterName={userName}
+        reporterEmail={userEmail}
+      />
+    </div>
+  </section>
+</Layout>
