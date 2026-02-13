@@ -30,8 +30,25 @@ export const publicListDestinationsRoute = createPublicListRoute({
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
+        const safeQuery = query || {};
 
-        const result = await destinationService.list(actor, { page, pageSize });
+        // Extract hierarchy and other filters from query params
+        const searchParams: Record<string, unknown> = { page, pageSize };
+        if (safeQuery.q) searchParams.q = safeQuery.q;
+        if (safeQuery.isFeatured !== undefined) searchParams.isFeatured = safeQuery.isFeatured;
+        if (safeQuery.country) searchParams.country = safeQuery.country;
+        if (safeQuery.state) searchParams.state = safeQuery.state;
+        if (safeQuery.city) searchParams.city = safeQuery.city;
+        if (safeQuery.parentDestinationId)
+            searchParams.parentDestinationId = safeQuery.parentDestinationId;
+        if (safeQuery.destinationType) searchParams.destinationType = safeQuery.destinationType;
+        if (safeQuery.level !== undefined) searchParams.level = safeQuery.level;
+        if (safeQuery.ancestorId) searchParams.ancestorId = safeQuery.ancestorId;
+
+        const result = await destinationService.search(
+            actor,
+            searchParams as Parameters<typeof destinationService.search>[1]
+        );
 
         if (result.error) {
             throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
