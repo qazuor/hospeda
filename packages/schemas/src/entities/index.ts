@@ -8,6 +8,7 @@ export * from './destinationReview/index.js';
 export * from './event/index.js';
 export * from './eventLocation/index.js';
 export * from './eventOrganizer/index.js';
+export * from './exchange-rate/index.js';
 export * from './feature/index.js';
 export * from './owner-promotion/index.js';
 export * from './permission/index.js';
