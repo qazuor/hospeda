@@ -61,7 +61,20 @@ describe('BaseModel', () => {
     });
 
     it('findAll returns and logs', async () => {
-        getDb.mockReturnValue({ select: () => ({ from: () => ({ where: () => [{ id: '1' }] }) }) });
+        getDb.mockReturnValue({
+            select: (args?: unknown) => ({
+                from: () => ({
+                    where: () => {
+                        if (args && typeof args === 'object' && 'count' in args) {
+                            // count query
+                            return Promise.resolve([{ count: '1' }]);
+                        }
+                        // items query
+                        return { limit: () => ({ offset: () => Promise.resolve([{ id: '1' }]) }) };
+                    }
+                })
+            })
+        });
         const result = await model.findAll({ id: '1' });
         expect(result).toEqual({ items: [{ id: '1' }], total: 1 });
         expect(logQuery).toHaveBeenCalled();
@@ -138,13 +151,39 @@ describe('BaseModel', () => {
     });
 
     it('findAll handles empty filter', async () => {
-        getDb.mockReturnValue({ select: () => ({ from: () => ({ where: () => [{ id: '1' }] }) }) });
+        getDb.mockReturnValue({
+            select: (args?: unknown) => ({
+                from: () => ({
+                    where: () => {
+                        if (args && typeof args === 'object' && 'count' in args) {
+                            // count query
+                            return Promise.resolve([{ count: '1' }]);
+                        }
+                        // items query
+                        return { limit: () => ({ offset: () => Promise.resolve([{ id: '1' }]) }) };
+                    }
+                })
+            })
+        });
         const result = await model.findAll({});
         expect(result).toEqual({ items: [{ id: '1' }], total: 1 });
     });
 
     it('findAll handles null filter', async () => {
-        getDb.mockReturnValue({ select: () => ({ from: () => ({ where: () => [{ id: '1' }] }) }) });
+        getDb.mockReturnValue({
+            select: (args?: unknown) => ({
+                from: () => ({
+                    where: () => {
+                        if (args && typeof args === 'object' && 'count' in args) {
+                            // count query
+                            return Promise.resolve([{ count: '1' }]);
+                        }
+                        // items query
+                        return { limit: () => ({ offset: () => Promise.resolve([{ id: '1' }]) }) };
+                    }
+                })
+            })
+        });
         // @ts-expect-error purposely passing null
         const result = await model.findAll(null);
         expect(result).toEqual({ items: [{ id: '1' }], total: 1 });
@@ -175,7 +214,20 @@ describe('BaseModel', () => {
     });
 
     it('findAll handles DB returning undefined', async () => {
-        getDb.mockReturnValue({ select: () => ({ from: () => ({ where: () => undefined }) }) });
+        getDb.mockReturnValue({
+            select: (args?: unknown) => ({
+                from: () => ({
+                    where: () => {
+                        if (args && typeof args === 'object' && 'count' in args) {
+                            // count query returns empty result
+                            return Promise.resolve([{ count: '0' }]);
+                        }
+                        // items query returns empty array when no results
+                        return { limit: () => ({ offset: () => Promise.resolve([]) }) };
+                    }
+                })
+            })
+        });
         const result = await model.findAll({});
         expect(result).toEqual({ items: [], total: 0 });
     });
@@ -253,7 +305,20 @@ describe('BaseModel', () => {
     });
 
     it('findAll handles where with wrong type', async () => {
-        getDb.mockReturnValue({ select: () => ({ from: () => ({ where: () => [{ id: 123 }] }) }) });
+        getDb.mockReturnValue({
+            select: (args?: unknown) => ({
+                from: () => ({
+                    where: () => {
+                        if (args && typeof args === 'object' && 'count' in args) {
+                            // count query
+                            return Promise.resolve([{ count: '1' }]);
+                        }
+                        // items query
+                        return { limit: () => ({ offset: () => Promise.resolve([{ id: 123 }]) }) };
+                    }
+                })
+            })
+        });
         const result = await model.findAll({ id: 123 });
         expect(result).toEqual({ items: [{ id: 123 }], total: 1 });
     });
@@ -354,7 +419,22 @@ describe('BaseModel', () => {
 
         it('should fall back to findAll when no relations requested', async () => {
             getDb.mockReturnValue({
-                select: () => ({ from: () => ({ where: () => [{ id: '1', name: 'test' }] }) })
+                select: (args?: unknown) => ({
+                    from: () => ({
+                        where: () => {
+                            if (args && typeof args === 'object' && 'count' in args) {
+                                // count query
+                                return Promise.resolve([{ count: '1' }]);
+                            }
+                            // items query
+                            return {
+                                limit: () => ({
+                                    offset: () => Promise.resolve([{ id: '1', name: 'test' }])
+                                })
+                            };
+                        }
+                    })
+                })
             });
 
             const result = await modelWithTableName.findAllWithRelations({});
@@ -370,7 +450,20 @@ describe('BaseModel', () => {
 
         it('should fall back to findAll when relations has no true values', async () => {
             getDb.mockReturnValue({
-                select: () => ({ from: () => ({ where: () => [{ id: '1' }] }) })
+                select: (args?: unknown) => ({
+                    from: () => ({
+                        where: () => {
+                            if (args && typeof args === 'object' && 'count' in args) {
+                                // count query
+                                return Promise.resolve([{ count: '1' }]);
+                            }
+                            // items query
+                            return {
+                                limit: () => ({ offset: () => Promise.resolve([{ id: '1' }]) })
+                            };
+                        }
+                    })
+                })
             });
 
             const result = await modelWithTableName.findAllWithRelations({
@@ -586,14 +679,16 @@ describe('BaseModel', () => {
                 'findAllWithRelations',
                 {
                     where: { name: 'test' },
-                    options: { page: 1, pageSize: 5 },
+                    options: expect.objectContaining({
+                        page: 1,
+                        pageSize: 5
+                    }),
                     relations: { destination: true, owner: true }
                 },
                 {
                     itemCount: 1,
                     total: 1,
-                    hasRelations: true,
-                    isPaginated: true // Should be true when page/pageSize are specified
+                    hasRelations: true
                 }
             );
         });

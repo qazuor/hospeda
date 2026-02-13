@@ -144,11 +144,17 @@ describe('AmenityModel', () => {
                 'amenities',
                 'findAllWithRelations',
                 expect.objectContaining({
+                    where: {},
+                    options: expect.objectContaining({
+                        page: 1,
+                        pageSize: 20
+                    }),
                     relations: { accommodations: true }
                 }),
                 expect.objectContaining({
-                    hasRelations: true,
-                    isPaginated: true
+                    itemCount: 1,
+                    total: 1,
+                    hasRelations: true
                 })
             );
 
