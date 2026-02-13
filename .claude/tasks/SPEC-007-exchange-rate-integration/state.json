@@ -601,153 +601,153 @@
             "id": "T-016",
             "title": "Create ExchangeRateService basic CRUD",
             "description": "Create the ExchangeRateService extending BaseCrudService (not BaseCrudRelatedService since exchange rates don't have related entities). Implement standard CRUD operations plus exchange-rate-specific methods.\n\nService methods:\n- Standard CRUD: create, getById, update, softDelete, restore, search, count\n- getLatestRate({ fromCurrency, toCurrency, rateType }): Get most recent rate\n- getLatestRates(): Get all current rates\n- createManualOverride({ fromCurrency, toCurrency, rate, rateType, expiresAt }): Create manual rate\n- removeManualOverride(id): Remove a manual override\n\nPermission hooks:\n- _canCreate -> checkCanCreateExchangeRate\n- _canUpdate -> checkCanUpdateExchangeRate\n- _canDelete -> checkCanDeleteExchangeRate\n- _canRead -> checkCanViewExchangeRate\n\nFiles to create:\n- packages/service-core/src/services/exchange-rate/exchange-rate.service.ts\n- packages/service-core/src/services/exchange-rate/exchange-rate.normalizers.ts\n- packages/service-core/src/services/exchange-rate/index.ts\n\nFiles to modify:\n- packages/service-core/src/services/index.ts (add export)\n\nTest requirements:\n- Unit test: CRUD operations work correctly\n- Unit test: getLatestRate returns most recent rate\n- Unit test: createManualOverride sets isManualOverride=true and source='manual'\n- Unit test: removeManualOverride only removes manual overrides\n- Unit test: permission checks are called correctly\n- Test file: packages/service-core/src/services/exchange-rate/__tests__/exchange-rate.service.test.ts",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-007", "T-012", "T-015"],
             "blocks": ["T-020", "T-022", "T-023", "T-024", "T-025", "T-028"],
             "subtasks": [
                 {
                     "title": "Create ExchangeRateService extending BaseCrudService",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement permission hooks",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement getLatestRate method",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement getLatestRates method",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement createManualOverride method",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement removeManualOverride method",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Create normalizers",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Export from index files",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write comprehensive unit tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-02-13T13:40:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-02-13T21:00:00.000Z",
+                "completed": "2026-02-13T21:30:00.000Z"
             }
         },
         {
             "id": "T-017",
             "title": "Create ExchangeRateConfigService",
             "description": "Create the ExchangeRateConfigService for managing the singleton config. This doesn't extend BaseCrudService since it's not a standard CRUD entity.\n\nService methods:\n- getConfig(): Get current configuration (or defaults)\n- updateConfig(actor, data): Update configuration\n\nPermission hook:\n- updateConfig -> checkCanUpdateExchangeRateConfig\n\nFiles to create:\n- packages/service-core/src/services/exchange-rate/exchange-rate-config.service.ts\n\nFiles to modify:\n- packages/service-core/src/services/exchange-rate/index.ts (add export)\n\nTest requirements:\n- Unit test: getConfig returns defaults when no config exists\n- Unit test: updateConfig persists changes\n- Unit test: updateConfig requires permission\n- Test file: packages/service-core/src/services/exchange-rate/__tests__/exchange-rate-config.service.test.ts",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-009", "T-013", "T-015"],
             "blocks": ["T-026", "T-030"],
             "subtasks": [
                 {
                     "title": "Create ExchangeRateConfigService",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement getConfig with defaults",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement updateConfig with permissions",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Export from index",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write unit tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-02-13T13:40:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-02-13T21:00:00.000Z",
+                "completed": "2026-02-13T21:30:00.000Z"
             }
         },
         {
             "id": "T-018",
             "title": "Create DolarAPI client",
             "description": "Create an HTTP client for the DolarAPI.com service. This client fetches Argentine exchange rates (all types: oficial, blue, MEP, CCL, tarjeta, cripto) and BRL rates.\n\nEndpoints to implement:\n- GET https://dolarapi.com/v1/dolares/ -> All USD/ARS rates by type\n- GET https://dolarapi.com/v1/cotizaciones/ -> All currency rates including BRL\n\nClient features:\n- Typed response interfaces matching DolarAPI JSON format\n- Timeout handling (5 second default)\n- Error handling with proper error types\n- Response normalization to internal ExchangeRate format\n- Rate limiting awareness\n\nFiles to create:\n- packages/service-core/src/services/exchange-rate/clients/dolar-api.client.ts\n- packages/service-core/src/services/exchange-rate/clients/types.ts (shared client types)\n\nTest requirements:\n- Unit test: successful response parsing\n- Unit test: timeout handling\n- Unit test: error response handling\n- Unit test: response normalization to ExchangeRate format\n- Unit test: mock HTTP calls (do NOT call real API in tests)\n- Test file: packages/service-core/src/services/exchange-rate/clients/__tests__/dolar-api.client.test.ts",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-004"],
             "blocks": ["T-020"],
             "subtasks": [
                 {
                     "title": "Define DolarAPI response types",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Create shared client types (ExchangeRateFetchResult)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement fetchDolarRates method",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement fetchAllCotizaciones method",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add timeout and error handling",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add response normalization",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write tests with mocked HTTP",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "integration", "core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-02-13T13:40:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-02-13T21:00:00.000Z",
+                "completed": "2026-02-13T21:30:00.000Z"
             }
         },
         {
@@ -1609,9 +1609,9 @@
     ],
     "summary": {
         "total": 38,
-        "pending": 23,
+        "pending": 20,
         "inProgress": 0,
-        "completed": 15,
+        "completed": 18,
         "blocked": 0,
         "averageComplexity": 2.7
     }

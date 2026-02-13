@@ -1,6 +1,6 @@
 # SPEC-007: Exchange Rate Integration
 
-## Progress: 15/38 tasks (39%)
+## Progress: 18/38 tasks (47%)
 
 **Average Complexity:** 2.7/4 (max)
 **Critical Path:** T-001 -> T-006 -> T-007 -> T-016 -> T-020 -> T-027 -> T-029 -> T-033 -> T-034 -> T-038 (10 steps)
@@ -91,17 +91,17 @@
   - Blocked by: T-003
   - Blocks: T-016, T-017
 
-- [ ] **T-016** (complexity: 4) - Create ExchangeRateService basic CRUD
+- [x] **T-016** (complexity: 4) - Create ExchangeRateService basic CRUD
   - Service with CRUD + getLatestRate, createManualOverride, removeManualOverride
   - Blocked by: T-007, T-012, T-015
   - Blocks: T-020, T-022, T-023, T-024, T-025, T-028
 
-- [ ] **T-017** (complexity: 3) - Create ExchangeRateConfigService
+- [x] **T-017** (complexity: 3) - Create ExchangeRateConfigService
   - Singleton config service with getConfig and updateConfig
   - Blocked by: T-009, T-013, T-015
   - Blocks: T-026, T-030
 
-- [ ] **T-018** (complexity: 3) - Create DolarAPI client
+- [x] **T-018** (complexity: 3) - Create DolarAPI client
   - HTTP client for dolarapi.com with response normalization
   - Blocked by: T-004
   - Blocks: T-020

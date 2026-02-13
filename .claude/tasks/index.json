@@ -19,7 +19,7 @@
             "specId": "SPEC-005",
             "title": "Hospeda Public Web Application (web2) - Built from Scratch",
             "status": "in-progress",
-            "progress": "59/95",
+            "progress": "73/95",
             "path": "SPEC-005-web-public-ui"
         },
         {
@@ -33,14 +33,14 @@
             "specId": "SPEC-007",
             "title": "Exchange Rate Integration",
             "status": "in-progress",
-            "progress": "15/38",
+            "progress": "18/38",
             "path": "SPEC-007-exchange-rate-integration"
         },
         {
             "specId": "SPEC-008",
             "title": "Phosphor Icons Migration",
             "status": "in-progress",
-            "progress": "20/54",
+            "progress": "28/54",
             "path": "SPEC-008-phosphor-icons-migration"
         }
     ],
