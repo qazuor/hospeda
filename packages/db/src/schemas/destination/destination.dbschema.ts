@@ -6,6 +6,7 @@ import type {
     Seo
 } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
+import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import {
     boolean,
     index,
@@ -19,6 +20,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { accommodations } from '../accommodation/accommodation.dbschema.ts';
 import {
+    DestinationTypePgEnum,
     LifecycleStatusPgEnum,
     ModerationStatusPgEnum,
     VisibilityPgEnum
@@ -32,6 +34,18 @@ export const destinations = pgTable(
     'destinations',
     {
         id: uuid('id').primaryKey().defaultRandom(),
+        // Hierarchy fields
+        parentDestinationId: uuid('parent_destination_id').references(
+            (): AnyPgColumn => destinations.id,
+            {
+                onDelete: 'restrict'
+            }
+        ),
+        destinationType: DestinationTypePgEnum('destination_type').notNull(),
+        level: integer('level').notNull().default(0),
+        path: text('path').notNull().unique(),
+        pathIds: text('path_ids').notNull().default(''),
+        // Entity fields
         slug: text('slug').notNull().unique(),
         name: text('name').notNull(),
         summary: text('summary').notNull(),
@@ -71,11 +85,31 @@ export const destinations = pgTable(
         destinations_deletedAt_idx: index('destinations_deletedAt_idx').on(table.deletedAt),
         destinations_moderationState_idx: index('destinations_moderationState_idx').on(
             table.moderationState
-        )
+        ),
+        // Hierarchy indexes
+        destinations_parentDestinationId_idx: index('destinations_parentDestinationId_idx').on(
+            table.parentDestinationId
+        ),
+        destinations_destinationType_idx: index('destinations_destinationType_idx').on(
+            table.destinationType
+        ),
+        destinations_level_idx: index('destinations_level_idx').on(table.level),
+        destinations_path_idx: index('destinations_path_idx').on(table.path),
+        destinations_pathIds_idx: index('destinations_pathIds_idx').on(table.pathIds)
     })
 );
 
 export const destinationsRelations = relations(destinations, ({ one, many }) => ({
+    // Self-referencing hierarchy relations
+    parent: one(destinations, {
+        fields: [destinations.parentDestinationId],
+        references: [destinations.id],
+        relationName: 'destination_hierarchy'
+    }),
+    children: many(destinations, {
+        relationName: 'destination_hierarchy'
+    }),
+    // User relations
     createdBy: one(users, {
         fields: [destinations.createdById],
         references: [users.id]
@@ -88,6 +122,7 @@ export const destinationsRelations = relations(destinations, ({ one, many }) => 
         fields: [destinations.deletedById],
         references: [users.id]
     }),
+    // Entity relations
     accommodations: many(accommodations),
     reviews: many(destinationReviews),
     tags: many(rEntityTag),

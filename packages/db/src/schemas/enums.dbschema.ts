@@ -5,6 +5,7 @@ import {
     AuthProviderEnum,
     BillingIntervalEnum,
     ClientTypeEnum,
+    DestinationTypeEnum,
     EntityPermissionReasonEnum,
     EntityTypeEnum,
     EventCategoryEnum,
@@ -45,6 +46,11 @@ export const AccessRightScopePgEnum = pgEnum(
 export const AmenitiesTypePgEnum = pgEnum('amenities_type_enum', enumToTuple(AmenitiesTypeEnum));
 
 export const ClientTypePgEnum = pgEnum('client_type_enum', enumToTuple(ClientTypeEnum));
+
+export const DestinationTypePgEnum = pgEnum(
+    'destination_type_enum',
+    enumToTuple(DestinationTypeEnum)
+);
 
 export const PreferredContactPgEnum = pgEnum(
     'preferred_contact_enum',
