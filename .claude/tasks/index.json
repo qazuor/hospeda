@@ -19,7 +19,7 @@
             "specId": "SPEC-005",
             "title": "Hospeda Public Web Application (web2) - Built from Scratch",
             "status": "in-progress",
-            "progress": "73/95",
+            "progress": "77/95",
             "path": "SPEC-005-web-public-ui"
         },
         {
@@ -33,7 +33,7 @@
             "specId": "SPEC-007",
             "title": "Exchange Rate Integration",
             "status": "in-progress",
-            "progress": "18/38",
+            "progress": "20/38",
             "path": "SPEC-007-exchange-rate-integration"
         },
         {

@@ -1,6 +1,6 @@
 # SPEC-007: Exchange Rate Integration
 
-## Progress: 18/38 tasks (47%)
+## Progress: 20/38 tasks (53%)
 
 **Average Complexity:** 2.7/4 (max)
 **Critical Path:** T-001 -> T-006 -> T-007 -> T-016 -> T-020 -> T-027 -> T-029 -> T-033 -> T-034 -> T-038 (10 steps)
@@ -79,7 +79,7 @@
   - Blocked by: T-011
   - Blocks: T-017
 
-- [ ] **T-014** (complexity: 2) - Generate and verify database migration
+- [x] **T-014** (complexity: 2) - Generate and verify database migration
   - Generate Drizzle migration for both tables and apply
   - Blocked by: T-010, T-011
   - Blocks: T-031
@@ -106,7 +106,7 @@
   - Blocked by: T-004
   - Blocks: T-020
 
-- [ ] **T-019** (complexity: 3) - Create ExchangeRate-API client
+- [x] **T-019** (complexity: 3) - Create ExchangeRate-API client
   - HTTP client for exchangerate-api.com with API key auth
   - Blocked by: T-004
   - Blocks: T-020
