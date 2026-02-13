@@ -17,3 +17,9 @@ export {
     validateEnv,
     type EnvMapping
 } from './env.js';
+
+export {
+    ExchangeRateSchema,
+    parseExchangeRateSchema,
+    type ExchangeRateConfig
+} from './sections/exchange-rate.schema.js';

@@ -10,6 +10,7 @@ Complete list of all environment variables used in the Hospeda platform.
 - [Authentication (Clerk)](#authentication-clerk)
 - [Payments (Mercado Pago)](#payments-mercado-pago)
 - [Services](#services)
+  - [Exchange Rate APIs](#exchange-rate-apis)
 - [Feature Flags](#feature-flags)
 - [Development](#development)
 
@@ -433,6 +434,130 @@ MERCADOPAGO_PUBLIC_KEY=APP_USR-xxxxxxxxxxxxxxxxxxxxx
 
 External service integrations.
 
+### Exchange Rate APIs
+
+Configuration for exchange rate data providers.
+
+#### `HOSPEDA_EXCHANGE_RATE_API_KEY`
+
+ExchangeRate-API key for global currency exchange rates.
+
+| Property | Value |
+|----------|-------|
+| **Type** | `string` |
+| **Required** | No |
+| **Default** | None |
+| **Format** | API key string |
+| **Used In** | `apps/api` |
+
+**Example:**
+
+```bash
+# Optional for development (free tier works without key)
+HOSPEDA_EXCHANGE_RATE_API_KEY=
+
+# Production with API key
+HOSPEDA_EXCHANGE_RATE_API_KEY=your_api_key_here
+```
+
+**Notes:**
+
+- Optional for development (free tier available)
+- Recommended for production to avoid rate limits
+- Get your key at [https://www.exchangerate-api.com](https://www.exchangerate-api.com)
+
+**Usage:**
+
+```typescript
+import { parseExchangeRateSchema } from '@repo/config';
+
+const config = parseExchangeRateSchema(process.env);
+const apiKey = config.HOSPEDA_EXCHANGE_RATE_API_KEY;
+```
+
+---
+
+#### `HOSPEDA_DOLAR_API_BASE_URL`
+
+Base URL for DolarApi.com (Argentine peso exchange rates).
+
+| Property | Value |
+|----------|-------|
+| **Type** | `string` (URL) |
+| **Required** | No |
+| **Default** | `https://dolarapi.com/v1` |
+| **Format** | Valid URL |
+| **Used In** | `apps/api` |
+
+**Example:**
+
+```bash
+# Use default
+HOSPEDA_DOLAR_API_BASE_URL=https://dolarapi.com/v1
+
+# Custom endpoint
+HOSPEDA_DOLAR_API_BASE_URL=https://custom-dolar-api.example.com
+```
+
+**Notes:**
+
+- Provides Argentine peso (ARS) exchange rates
+- Free API, no key required
+- Default value works for most cases
+
+**Usage:**
+
+```typescript
+import { parseExchangeRateSchema } from '@repo/config';
+
+const config = parseExchangeRateSchema(process.env);
+const baseUrl = config.HOSPEDA_DOLAR_API_BASE_URL;
+const endpoint = `${baseUrl}/dolares`;
+```
+
+---
+
+#### `HOSPEDA_EXCHANGE_RATE_API_BASE_URL`
+
+Base URL for ExchangeRate-API (global exchange rates).
+
+| Property | Value |
+|----------|-------|
+| **Type** | `string` (URL) |
+| **Required** | No |
+| **Default** | `https://v6.exchangerate-api.com/v6` |
+| **Format** | Valid URL |
+| **Used In** | `apps/api` |
+
+**Example:**
+
+```bash
+# Use default
+HOSPEDA_EXCHANGE_RATE_API_BASE_URL=https://v6.exchangerate-api.com/v6
+
+# Custom endpoint
+HOSPEDA_EXCHANGE_RATE_API_BASE_URL=https://api.example.com/v1
+```
+
+**Notes:**
+
+- Provides global currency exchange rates
+- Works with or without API key
+- Default value works for most cases
+
+**Usage:**
+
+```typescript
+import { parseExchangeRateSchema } from '@repo/config';
+
+const config = parseExchangeRateSchema(process.env);
+const apiKey = config.HOSPEDA_EXCHANGE_RATE_API_KEY || '';
+const baseUrl = config.HOSPEDA_EXCHANGE_RATE_API_BASE_URL;
+const endpoint = `${baseUrl}/${apiKey}/latest/USD`;
+```
+
+---
+
 ### `CLOUDINARY_CLOUD_NAME`
 
 Cloudinary cloud name for image storage.
@@ -647,6 +772,11 @@ CLOUDINARY_CLOUD_NAME=hospeda-dev
 CLOUDINARY_API_KEY=123456789012345
 CLOUDINARY_API_SECRET=xxxxxxxxxxxxxxxxxxxxx
 
+# Exchange Rate APIs
+HOSPEDA_EXCHANGE_RATE_API_KEY=
+HOSPEDA_DOLAR_API_BASE_URL=https://dolarapi.com/v1
+HOSPEDA_EXCHANGE_RATE_API_BASE_URL=https://v6.exchangerate-api.com/v6
+
 # Feature Flags
 FEATURE_EMAIL_ENABLED=false
 FEATURE_PAYMENTS_ENABLED=false
@@ -687,6 +817,11 @@ MERCADOPAGO_PUBLIC_KEY=APP_USR-xxxxxxxxxxxxxxxxxxxxx
 CLOUDINARY_CLOUD_NAME=hospeda-prod
 CLOUDINARY_API_KEY=123456789012345
 CLOUDINARY_API_SECRET=xxxxxxxxxxxxxxxxxxxxx
+
+# Exchange Rate APIs
+HOSPEDA_EXCHANGE_RATE_API_KEY=your_api_key_here
+HOSPEDA_DOLAR_API_BASE_URL=https://dolarapi.com/v1
+HOSPEDA_EXCHANGE_RATE_API_BASE_URL=https://v6.exchangerate-api.com/v6
 
 # Feature Flags
 FEATURE_EMAIL_ENABLED=true

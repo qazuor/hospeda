@@ -316,5 +316,17 @@ export const commonEnvSchemas = {
         ENABLE_REQUEST_LOGGING: z.coerce.boolean().default(true),
         LOG_INCLUDE_TIMESTAMPS: z.coerce.boolean().default(true),
         LOG_USE_COLORS: z.coerce.boolean().default(true)
+    }),
+
+    /**
+     * Exchange rate API configuration
+     */
+    exchangeRate: z.object({
+        HOSPEDA_EXCHANGE_RATE_API_KEY: z.string().optional(),
+        HOSPEDA_DOLAR_API_BASE_URL: z.string().url().default('https://dolarapi.com/v1'),
+        HOSPEDA_EXCHANGE_RATE_API_BASE_URL: z
+            .string()
+            .url()
+            .default('https://v6.exchangerate-api.com/v6')
     })
 } as const;

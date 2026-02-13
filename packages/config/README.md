@@ -199,6 +199,19 @@ const config = loggerConfig();
 // }
 ```
 
+### Exchange Rate Configuration
+
+```typescript
+import { parseExchangeRateSchema } from '@repo/config';
+
+const config = parseExchangeRateSchema(process.env);
+// {
+//   HOSPEDA_EXCHANGE_RATE_API_KEY?: string;
+//   HOSPEDA_DOLAR_API_BASE_URL: string;
+//   HOSPEDA_EXCHANGE_RATE_API_BASE_URL: string;
+// }
+```
+
 ## Error Handling
 
 ### EnvValidationError
@@ -285,6 +298,12 @@ All environment variables used in Hospeda:
 - `CLOUDINARY_CLOUD_NAME` - Cloudinary cloud name (required)
 - `CLOUDINARY_API_KEY` - Cloudinary API key (required)
 - `CLOUDINARY_API_SECRET` - Cloudinary API secret (required)
+
+### Exchange Rate APIs
+
+- `HOSPEDA_EXCHANGE_RATE_API_KEY` - ExchangeRate-API key (optional for dev)
+- `HOSPEDA_DOLAR_API_BASE_URL` - DolarApi.com base URL (default: <https://dolarapi.com/v1>)
+- `HOSPEDA_EXCHANGE_RATE_API_BASE_URL` - ExchangeRate-API base URL (default: <https://v6.exchangerate-api.com/v6>)
 
 ## Testing
 
