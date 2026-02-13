@@ -7,6 +7,8 @@
     "description": "Villa Paranacito es una única ciudad insular ubicada en el Delta del Paraná, en el extremo sur de Entre Ríos. Conocida como la única ciudad insular de Argentina, ofrece una experiencia única rodeada de naturaleza salvaje, canales, islas y fauna autóctona. Es el destino perfecto para el turismo de naturaleza, pesca, avistamiento de aves y aventuras en el delta. Su paisaje único y su tranquilidad la convierten en un escape perfecto de la vida urbana.",
     "isFeatured": false,
     "moderationState": "PENDING",
+    "destinationType": "CITY",
+    "parentDestinationId": "103-destination-departamento-uruguay",
     "reviewsCount": 0,
     "averageRating": 0,
     "location": {

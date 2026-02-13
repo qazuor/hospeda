@@ -1,0 +1,42 @@
+{
+    "$schema": "../../schemas/destination.schema.json",
+    "id": "103-destination-departamento-uruguay",
+    "slug": "departamento-uruguay",
+    "name": "Departamento Uruguay",
+    "summary": "Departamento entrerriano sobre el rio Uruguay con rica historia y turismo consolidado",
+    "description": "El Departamento Uruguay es uno de los departamentos mas importantes de la provincia de Entre Rios, ubicado sobre la margen occidental del rio Uruguay. Su cabecera es Concepcion del Uruguay, primera capital historica de la provincia. El departamento ofrece una rica combinacion de patrimonio historico, playas fluviales, gastronomia regional y turismo cultural, siendo un punto de referencia para quienes visitan la costa del Uruguay entrerriana.",
+    "isFeatured": false,
+    "moderationState": "PENDING",
+    "reviewsCount": 0,
+    "averageRating": 0,
+    "destinationType": "DEPARTMENT",
+    "parentDestinationId": "102-destination-entre-rios",
+    "location": {
+        "state": "Entre Rios",
+        "zipCode": "",
+        "country": "Argentina",
+        "city": "",
+        "coordinates": {
+            "lat": "-32.4833",
+            "long": "-58.2333"
+        }
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.unsplash.com/photo-1583422409516-2895a77efded?w=800&h=600&fit=crop",
+            "caption": "Departamento Uruguay - Entre Rios",
+            "moderationState": "PENDING"
+        },
+        "gallery": []
+    },
+    "seo": {
+        "title": "Departamento Uruguay - Turismo y Alojamiento",
+        "description": "Descubre el Departamento Uruguay en Entre Rios: historia, rios y turismo.",
+        "keywords": ["Departamento Uruguay", "Entre Rios", "turismo", "historia"]
+    },
+    "tagIds": ["016-tag-entre-rios"],
+    "attractionIds": [],
+    "visibility": "PUBLIC",
+    "accommodationsCount": 0,
+    "lifecycleState": "ACTIVE"
+}

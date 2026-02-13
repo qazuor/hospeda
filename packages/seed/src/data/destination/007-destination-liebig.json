@@ -7,6 +7,8 @@
     "description": "Liebig es una histórica ciudad ubicada en el este de Entre Ríos, conocida por su importante patrimonio industrial relacionado con el antiguo frigorífico Liebig's. Esta ciudad conserva la memoria de la época dorada de la industria frigorífica argentina, con edificios históricos y testimonios del pasado industrial. Es un destino interesante para quienes buscan conocer la historia industrial argentina y disfrutar de un ambiente tranquilo junto al río Uruguay.",
     "isFeatured": false,
     "moderationState": "PENDING",
+    "destinationType": "CITY",
+    "parentDestinationId": "103-destination-departamento-uruguay",
     "reviewsCount": 0,
     "averageRating": 0,
     "location": {

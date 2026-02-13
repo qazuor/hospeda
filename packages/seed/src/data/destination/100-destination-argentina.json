@@ -1,0 +1,41 @@
+{
+    "$schema": "../../schemas/destination.schema.json",
+    "id": "100-destination-argentina",
+    "slug": "argentina",
+    "name": "Argentina",
+    "summary": "Pais sudamericano con diversidad geografica, cultural y turistica unica",
+    "description": "Argentina es un pais de America del Sur conocido por su increible diversidad geografica que abarca desde las cumbres andinas hasta las llanuras pampeanas, desde los glaciares patagonicos hasta las cataratas del Iguazu. Con una rica herencia cultural que mezcla influencias europeas e indigenas, Argentina ofrece experiencias turisticas unicas: tango en Buenos Aires, vinos en Mendoza, naturaleza en la Patagonia y termas en el Litoral.",
+    "isFeatured": true,
+    "moderationState": "PENDING",
+    "reviewsCount": 0,
+    "averageRating": 0,
+    "destinationType": "COUNTRY",
+    "location": {
+        "state": "",
+        "zipCode": "",
+        "country": "Argentina",
+        "city": "",
+        "coordinates": {
+            "lat": "-34.6037",
+            "long": "-58.3816"
+        }
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.unsplash.com/photo-1612294037637-ec328d0e075e?w=800&h=600&fit=crop",
+            "caption": "Argentina - Paisajes diversos",
+            "moderationState": "PENDING"
+        },
+        "gallery": []
+    },
+    "seo": {
+        "title": "Argentina - Turismo y Alojamiento",
+        "description": "Descubre Argentina: turismo, alojamiento y experiencias unicas en todo el pais.",
+        "keywords": ["Argentina", "turismo", "alojamiento", "viajes"]
+    },
+    "tagIds": [],
+    "attractionIds": [],
+    "visibility": "PUBLIC",
+    "accommodationsCount": 0,
+    "lifecycleState": "ACTIVE"
+}

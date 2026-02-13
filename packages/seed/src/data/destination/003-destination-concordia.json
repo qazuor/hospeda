@@ -7,6 +7,8 @@
     "description": "Concordia es una vibrante ciudad ubicada en el noreste de Entre Ríos, reconocida como la capital nacional de la citricultura. Esta hermosa ciudad combina historia, cultura y naturaleza, ofreciendo desde sus famosas termas hasta un rico patrimonio arquitectónico. Con su ubicación privilegiada sobre el río Uruguay, Concordia se destaca por sus parques, su producción citrícola, su festival nacional de la citricultura y su cálida hospitalidad. Es un destino perfecto para quienes buscan relajación en las termas, cultura urbana y contacto con la naturaleza.",
     "isFeatured": true,
     "moderationState": "PENDING",
+    "destinationType": "CITY",
+    "parentDestinationId": "103-destination-departamento-uruguay",
     "reviewsCount": 0,
     "averageRating": 0,
     "location": {

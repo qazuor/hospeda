@@ -7,6 +7,8 @@
     "description": "Federación es una pequeña pero encantadora ciudad ubicada en el norte de Entre Ríos, mundialmente reconocida por albergar el complejo termal más grande de Argentina. Con sus aguas termales naturales, modernas instalaciones y un entorno natural privilegiado, Federación se ha convertido en el destino termal más popular del país. La ciudad ofrece una perfecta combinación de relajación, entretenimiento y contacto con la naturaleza, con actividades para toda la familia en un ambiente tranquilo y revitalizante.",
     "isFeatured": true,
     "moderationState": "PENDING",
+    "destinationType": "CITY",
+    "parentDestinationId": "103-destination-departamento-uruguay",
     "reviewsCount": 0,
     "averageRating": 0,
     "location": {

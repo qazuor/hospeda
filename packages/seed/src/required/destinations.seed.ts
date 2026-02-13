@@ -28,6 +28,20 @@ export const seedDestinations = createSeedFactory({
     folder: 'src/data/destination',
     files: requiredManifest.destinations,
 
+    // Resolve parentDestinationId from seed ID to real database UUID
+    preProcess: async (item, context) => {
+        const data = item as Record<string, unknown>;
+        if (data.parentDestinationId && typeof data.parentDestinationId === 'string') {
+            const realId = context.idMapper.getRealId(
+                'destinations',
+                data.parentDestinationId as string
+            );
+            if (realId) {
+                data.parentDestinationId = realId;
+            }
+        }
+    },
+
     // Exclude metadata fields and slug field as it's auto-generated
     normalizer: (data) => {
         // First exclude metadata fields

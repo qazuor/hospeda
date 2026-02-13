@@ -7,6 +7,8 @@
     "description": "Colón es una encantadora ciudad histórica situada en el centro-este de Entre Ríos, famosa por su impresionante arquitectura colonial y su importancia como puerto fluvial. Con sus calles empedradas, edificios históricos y el majestuoso Palacio San José, Colón ofrece un viaje al pasado argentino. La ciudad es conocida por sus termas, su rica tradición gastronómica y como punto de partida para explorar las termas de la región. Su ubicación estratégica sobre el río Uruguay la convierte en un destino perfecto para quienes buscan historia, cultura y relajación.",
     "isFeatured": true,
     "moderationState": "PENDING",
+    "destinationType": "CITY",
+    "parentDestinationId": "103-destination-departamento-uruguay",
     "reviewsCount": 0,
     "averageRating": 0,
     "location": {

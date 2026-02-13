@@ -7,6 +7,8 @@
     "description": "San José es una apacible ciudad colonial ubicada en el centro de Entre Ríos, conocida por su arquitectura histórica y sus tradiciones bien preservadas. Con sus calles tranquilas, edificios coloniales y ambiente familiar, San José ofrece una experiencia auténtica de la vida en el interior argentino. Es ideal para quienes buscan tranquilidad, historia local y contacto con las tradiciones entrerrianas en un ambiente relajado.",
     "isFeatured": false,
     "moderationState": "PENDING",
+    "destinationType": "CITY",
+    "parentDestinationId": "103-destination-departamento-uruguay",
     "reviewsCount": 0,
     "averageRating": 0,
     "location": {

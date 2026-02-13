@@ -91,6 +91,10 @@
         "088-attraction-zona_comercial.json"
     ],
     "destinations": [
+        "100-destination-argentina.json",
+        "101-destination-litoral.json",
+        "102-destination-entre-rios.json",
+        "103-destination-departamento-uruguay.json",
         "001-destination-chajari.json",
         "002-destination-colon.json",
         "003-destination-concordia.json",

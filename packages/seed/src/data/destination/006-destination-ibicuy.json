@@ -7,6 +7,8 @@
     "description": "Ibicuy es una localidad ubicada en el extremo sur de Entre Ríos, conocida por su ubicación estratégica en el delta del Paraná. Rodeada de naturaleza exuberante, canales y fauna autóctona, Ibicuy es el destino perfecto para el turismo de aventura y naturaleza. Ofrece actividades como pesca, navegación, avistamiento de aves y ecoturismo en un entorno natural único y preservado.",
     "isFeatured": false,
     "moderationState": "PENDING",
+    "destinationType": "CITY",
+    "parentDestinationId": "103-destination-departamento-uruguay",
     "reviewsCount": 0,
     "averageRating": 0,
     "location": {

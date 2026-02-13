@@ -7,6 +7,8 @@
     "description": "Gualeguaychú es una hermosa ciudad ubicada en el sureste de Entre Ríos, famosa mundialmente por su espectacular Carnaval del País. Esta vibrante ciudad combina tradición y modernidad, ofreciendo desde el famoso Corsódromo hasta pintorescas costas sobre el río Gualeguaychú. Es conocida por sus termas, su rica historia, arquitectura colonial y como centro neurálgico del turismo entrerriano. La ciudad ofrece una amplia variedad de actividades culturales, gastronómicas y de entretenimiento, siendo un destino ideal tanto para familias como para jóvenes que buscan diversión y relax.",
     "isFeatured": true,
     "moderationState": "PENDING",
+    "destinationType": "CITY",
+    "parentDestinationId": "103-destination-departamento-uruguay",
     "reviewsCount": 0,
     "averageRating": 0,
     "location": {

@@ -7,6 +7,8 @@
     "description": "Concepción del Uruguay es una histórica ciudad situada en el centro-oeste de Entre Ríos, conocida por ser la primera capital histórica de la provincia. Esta hermosa ciudad combina historia, arquitectura y tradición, ofreciendo desde magníficos edificios coloniales hasta un rico patrimonio cultural. Con su ubicación privilegiada sobre el río Uruguay, la ciudad se destaca por sus instituciones educativas, su arquitectura histórica, sus tradicionales festivales y su importante papel en la historia argentina. Es un destino perfecto para quienes buscan cultura, historia y contacto con las tradiciones entrerrianas.",
     "isFeatured": false,
     "moderationState": "PENDING",
+    "destinationType": "CITY",
+    "parentDestinationId": "103-destination-departamento-uruguay",
     "reviewsCount": 0,
     "averageRating": 0,
     "location": {

@@ -7,6 +7,8 @@
     "description": "Chajarí es una encantadora ciudad ubicada en el nordeste de Entre Ríos, conocida por su producción citrícola y su fuerte tradición rural. Esta pintoresca ciudad combina el encanto del campo entrerriano con la calidez de su gente, ofreciendo una experiencia auténtica de la vida rural argentina. Con sus estancias, festivales folklóricos y paisajes rurales, Chajarí es el destino perfecto para quienes buscan tranquilidad, contacto con la naturaleza y conocer las tradiciones gauchas de Entre Ríos.",
     "isFeatured": false,
     "moderationState": "PENDING",
+    "destinationType": "CITY",
+    "parentDestinationId": "103-destination-departamento-uruguay",
     "reviewsCount": 0,
     "averageRating": 0,
     "location": {
