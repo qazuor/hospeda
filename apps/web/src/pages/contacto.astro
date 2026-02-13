@@ -1,6 +1,7 @@
 ---
 export const prerender = true;
 
+import { ContactForm } from '@/components/contact/ContactForm';
 import MainLayout from '@/layout/MainLayout.astro';
 import { getLangFromUrl, useTranslations } from '@/utils';
 
@@ -9,6 +10,22 @@ const t = useTranslations(lang);
 
 const title = t('contact.title');
 const description = t('contact.description');
+
+const apiBaseUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:3001';
+
+const formLabels = {
+    firstName: t('contact.form.firstName'),
+    lastName: t('contact.form.lastName'),
+    email: t('contact.form.email'),
+    message: t('contact.form.message'),
+    submit: t('contact.form.submit'),
+    placeholders: {
+        firstName: t('contact.form.placeholders.firstName'),
+        lastName: t('contact.form.placeholders.lastName'),
+        email: t('contact.form.placeholders.email'),
+        message: t('contact.form.placeholders.message'),
+    },
+};
 ---
 
 <MainLayout title={title} description={description}>
@@ -34,82 +51,7 @@ const description = t('contact.description');
                         class='bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 border border-gray-200 dark:border-gray-700'
                     >
                         <h2 class='text-2xl font-bold text-gray-900 dark:text-white mb-6'>{t('contact.form.title')}</h2>
-                        <form class='space-y-6'>
-                            <div class='grid grid-cols-1 md:grid-cols-2 gap-6'>
-                                <div>
-                                    <label
-                                        for='firstName'
-                                        class='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'
-                                    >
-                                        {t('contact.form.firstName')} *
-                                    </label>
-                                    <input
-                                        type='text'
-                                        id='firstName'
-                                        name='firstName'
-                                        required
-                                        class='w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white'
-                                        placeholder={t('contact.form.placeholders.firstName')}
-                                    />
-                                </div>
-                                <div>
-                                    <label
-                                        for='lastName'
-                                        class='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'
-                                    >
-                                        {t('contact.form.lastName')} *
-                                    </label>
-                                    <input
-                                        type='text'
-                                        id='lastName'
-                                        name='lastName'
-                                        required
-                                        class='w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white'
-                                        placeholder={t('contact.form.placeholders.lastName')}
-                                    />
-                                </div>
-                            </div>
-
-                            <div>
-                                <label
-                                    for='email'
-                                    class='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'
-                                >
-                                    {t('contact.form.email')} *
-                                </label>
-                                <input
-                                    type='email'
-                                    id='email'
-                                    name='email'
-                                    required
-                                    class='w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white'
-                                    placeholder={t('contact.form.placeholders.email')}
-                                />
-                            </div>
-
-                            <div>
-                                <label
-                                    for='message'
-                                    class='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'
-                                >
-                                    {t('contact.form.message')} *
-                                </label>
-                                <textarea
-                                    id='message'
-                                    name='message'
-                                    rows='5'
-                                    required
-                                    class='w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none'
-                                    placeholder={t('contact.form.placeholders.message')}></textarea>
-                            </div>
-
-                            <button
-                                type='submit'
-                                class='w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200'
-                            >
-                                {t('contact.form.submit')}
-                            </button>
-                        </form>
+                        <ContactForm client:load apiBaseUrl={apiBaseUrl} labels={formLabels} />
                     </div>
 
                     <!-- Contact Information -->

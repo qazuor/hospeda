@@ -24,9 +24,28 @@ export default function AccommodationContactForm({
         setError('');
 
         try {
-            // Simulación: reemplazar por fetch real a `/api/contact`
-            alert(`contact to: ${accommodationId} \n\n${name} \n${email} \n${message}`);
-            await new Promise((r) => setTimeout(r, 800));
+            const apiUrl =
+                typeof import.meta !== 'undefined' && import.meta.env?.PUBLIC_API_URL
+                    ? import.meta.env.PUBLIC_API_URL
+                    : 'http://localhost:3001';
+
+            const response = await fetch(`${apiUrl}/api/v1/public/contact`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    firstName: name.split(' ')[0] || name,
+                    lastName: name.split(' ').slice(1).join(' ') || '-',
+                    email,
+                    message,
+                    accommodationId,
+                    type: 'accommodation'
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Error al enviar');
+            }
+
             setSent(true);
         } catch (_err) {
             setError('Hubo un problema al enviar el mensaje.');
