@@ -190,7 +190,6 @@ describe('Logger', () => {
         logger.registerLogMethod('http', LogLevel.INFO, 'HTTP');
 
         // Use the custom method
-        // biome-ignore lint/suspicious/noExplicitAny: <explanation>
         (logger as any).http({ method: 'GET', url: '/api/users', status: 200 });
         const call1 = (console.info as ReturnType<typeof vi.fn>).mock.calls[0][0];
         expect(call1).toContain('[HTTP]');
@@ -204,7 +203,6 @@ describe('Logger', () => {
         dbLogger.registerLogMethod('query', LogLevel.DEBUG, 'SQL');
 
         // Use the custom method
-        // biome-ignore lint/suspicious/noExplicitAny: <explanation>
         (dbLogger as any).query({
             table: 'users',
             action: 'select',
@@ -244,7 +242,6 @@ describe('Logger', () => {
         };
 
         // Use the custom method
-        // biome-ignore lint/suspicious/noExplicitAny: <explanation>
         (dbLogger as any).query(queryParams);
 
         // Logger outputs a single formatted string containing all parameters
