@@ -1,5 +1,10 @@
 ---
-export const prerender = true;
+export const prerender = false;
+
+// Guard: Only available in development mode
+if (import.meta.env.PROD) {
+    return Astro.redirect('/404');
+}
 
 import { IconSearchAndFilter } from '@/components/IconSearchAndFilter';
 import MainLayout from '@/layout/MainLayout.astro';
