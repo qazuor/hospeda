@@ -6,5 +6,29 @@
         "complexity": "high",
         "status": "approved",
         "path": "SPEC-003-billing-production-readiness"
+    },
+    {
+        "specId": "SPEC-004",
+        "title": "Clerk to Better Auth Migration",
+        "type": "infrastructure",
+        "complexity": "high",
+        "status": "approved",
+        "path": "SPEC-004-clerk-to-better-auth-migration"
+    },
+    {
+        "specId": "SPEC-005",
+        "title": "Hospeda Public Web Application UI - Complete Redesign",
+        "type": "feature",
+        "complexity": "high",
+        "status": "draft",
+        "path": "SPEC-005-web-public-ui"
+    },
+    {
+        "specId": "SPEC-006",
+        "title": "Destination Hierarchy System",
+        "type": "feature",
+        "complexity": "high",
+        "status": "draft",
+        "path": "SPEC-006-destination-hierarchy"
     }
 ]

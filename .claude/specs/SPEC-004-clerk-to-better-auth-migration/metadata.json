@@ -1,0 +1,26 @@
+{
+    "specId": "SPEC-004",
+    "title": "Clerk to Better Auth Migration",
+    "type": "infrastructure",
+    "complexity": "high",
+    "status": "approved",
+    "created": "2026-02-11T23:30:00.000Z",
+    "approved": "2026-02-12T02:45:00.000Z",
+    "completed": null,
+    "planFileRef": null,
+    "tags": [
+        "authentication",
+        "better-auth",
+        "clerk-migration",
+        "hono",
+        "astro",
+        "tanstack-start",
+        "drizzle",
+        "resend",
+        "email",
+        "oauth",
+        "security",
+        "middleware",
+        "self-hosted"
+    ]
+}
