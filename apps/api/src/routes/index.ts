@@ -17,11 +17,13 @@ import { authRoutes } from './auth';
 import { betterAuthHandler } from './auth/handler';
 import { billingRoutes } from './billing';
 import { adminBillingRoutes } from './billing/admin';
+import { contactRoutes } from './contact';
 import { docsIndexRoutes, scalarRoutes, swaggerRoutes } from './docs';
 import { featureRoutes } from './feature';
 import { dbHealthRoutes, healthRoutes, liveRoutes, readyRoutes } from './health';
 import { metricsRoutes } from './metrics';
 import { ownerPromotionRoutes } from './owner-promotion';
+import { reportRoutes } from './reports';
 import { sponsorshipRoutes } from './sponsorship';
 import { sponsorshipLevelRoutes } from './sponsorship-level';
 import { sponsorshipPackageRoutes } from './sponsorship-package';
@@ -129,6 +131,14 @@ export const setupRoutes = (app: AppOpenAPI) => {
         apiLogger.debug('🔗 Registering owner promotion routes...');
         app.route('/api/v1/public/owner-promotions', ownerPromotionRoutes);
         apiLogger.debug('✅ Owner promotion routes registered successfully');
+
+        apiLogger.debug('🔗 Registering contact routes...');
+        app.route('/api/v1/public', contactRoutes);
+        apiLogger.debug('✅ Contact routes registered successfully');
+
+        apiLogger.debug('🔗 Registering report routes...');
+        app.route('/api/v1/reports', reportRoutes);
+        apiLogger.debug('✅ Report routes registered successfully');
 
         apiLogger.debug('🔗 Registering billing routes...');
         app.route('/api/v1/billing', billingRoutes);

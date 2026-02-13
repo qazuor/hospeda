@@ -226,6 +226,10 @@ const ApiEnvSchema = z.object({
     DB_POOL_IDLE_TIMEOUT_MS: z.coerce.number().default(30000),
     DB_POOL_CONNECTION_TIMEOUT_MS: z.coerce.number().default(2000),
 
+    // Linear Integration (Bug Reports)
+    HOSPEDA_LINEAR_API_KEY: z.string().optional(),
+    HOSPEDA_LINEAR_TEAM_ID: z.string().optional(),
+
     // Optional configurations
     HOSPEDA_REDIS_URL: z.string().optional(),
     TESTING_RATE_LIMIT: z.coerce.boolean().default(false),
