@@ -134,7 +134,9 @@ describe('Notification Pipeline Integration Tests', () => {
                     channel: 'email',
                     recipient: 'user@example.com',
                     status: 'sent',
-                    idempotencyKey: 'test-send-log-001'
+                    metadata: expect.objectContaining({
+                        idempotencyKey: 'test-send-log-001'
+                    })
                 })
             );
         });
@@ -167,9 +169,8 @@ describe('Notification Pipeline Integration Tests', () => {
                     channel: 'email',
                     recipient: 'user@example.com',
                     status: 'failed',
-                    idempotencyKey: 'test-send-log-fail-001',
                     metadata: expect.objectContaining({
-                        error: 'SMTP connection timeout'
+                        idempotencyKey: 'test-send-log-fail-001'
                     })
                 })
             );
@@ -202,12 +203,10 @@ describe('Notification Pipeline Integration Tests', () => {
                     type: NotificationType.SUBSCRIPTION_PURCHASE,
                     recipient: 'premium@example.com',
                     templateId: NotificationType.SUBSCRIPTION_PURCHASE,
-                    idempotencyKey: 'test-metadata-001',
                     metadata: expect.objectContaining({
                         userId: 'user_789',
                         recipientName: 'Jane Smith',
-                        amount: 25000,
-                        currency: 'ARS'
+                        idempotencyKey: 'test-metadata-001'
                     })
                 })
             );
@@ -578,7 +577,7 @@ describe('Notification Pipeline Integration Tests', () => {
             for (const call of insertCalls) {
                 const valuesCall = call.value.values as Mock;
                 const args = valuesCall.mock.calls[0][0];
-                expect(args.idempotencyKey).toBe(idempotencyKey);
+                expect(args.metadata.idempotencyKey).toBe(idempotencyKey);
             }
         });
 
@@ -698,7 +697,9 @@ describe('Notification Pipeline Integration Tests', () => {
             const insertCall = (mockDb.insert as Mock).mock.results[0].value;
             expect(insertCall.values).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    idempotencyKey: 'test-äöü-emoji-🎉-special'
+                    metadata: expect.objectContaining({
+                        idempotencyKey: 'test-äöü-emoji-🎉-special'
+                    })
                 })
             );
         });

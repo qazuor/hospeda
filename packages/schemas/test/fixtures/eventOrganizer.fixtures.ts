@@ -17,13 +17,23 @@ import {
 /**
  * Create event organizer-specific entity fields
  */
-const createEventOrganizerEntityFields = () => ({
-    name: faker.company.name().slice(0, 100),
-    description: faker.helpers.maybe(() => faker.lorem.paragraph().slice(0, 500), {
-        probability: 0.7
-    }),
-    logo: faker.helpers.maybe(() => faker.image.url(), { probability: 0.5 })
-});
+const createEventOrganizerEntityFields = () => {
+    const name = faker.company.name().slice(0, 100);
+    const slug = name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 100);
+
+    return {
+        name,
+        slug,
+        description: faker.helpers.maybe(() => faker.lorem.paragraph().slice(0, 500), {
+            probability: 0.7
+        }),
+        logo: faker.helpers.maybe(() => faker.image.url(), { probability: 0.5 })
+    };
+};
 
 export const createValidEventOrganizer = () => ({
     ...createBaseIdFields(),
@@ -35,13 +45,23 @@ export const createValidEventOrganizer = () => ({
     ...createBaseSocialFields()
 });
 
-export const createMinimalEventOrganizer = () => ({
-    ...createBaseIdFields(),
-    ...createBaseAuditFields(),
-    ...createBaseLifecycleFields(),
-    ...createBaseAdminFields(),
-    name: faker.company.name().slice(0, 100)
-});
+export const createMinimalEventOrganizer = () => {
+    const name = faker.company.name().slice(0, 100);
+    const slug = name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 100);
+
+    return {
+        ...createBaseIdFields(),
+        ...createBaseAuditFields(),
+        ...createBaseLifecycleFields(),
+        ...createBaseAdminFields(),
+        name,
+        slug
+    };
+};
 
 export const createComplexEventOrganizer = () => ({
     ...createValidEventOrganizer(),
@@ -77,15 +97,35 @@ export const createMinimalEventOrganizerCreateInput = () => {
     return input;
 };
 
-export const createValidEventOrganizerUpdateInput = () => ({
-    name: faker.company.name().slice(0, 100),
-    description: faker.lorem.paragraph().slice(0, 500),
-    logo: faker.image.url()
-});
+export const createValidEventOrganizerUpdateInput = () => {
+    const name = faker.company.name().slice(0, 100);
+    const slug = name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 100);
 
-export const createPartialEventOrganizerUpdateInput = () => ({
-    name: faker.company.name().slice(0, 100)
-});
+    return {
+        name,
+        slug,
+        description: faker.lorem.paragraph().slice(0, 500),
+        logo: faker.image.url()
+    };
+};
+
+export const createPartialEventOrganizerUpdateInput = () => {
+    const name = faker.company.name().slice(0, 100);
+    const slug = name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 100);
+
+    return {
+        name,
+        slug
+    };
+};
 
 // ============================================================================
 // INVALID CASES
@@ -95,12 +135,14 @@ export const createEventOrganizerInvalidCases = () => [
     // Name too short
     {
         ...createMinimalEventOrganizer(),
-        name: 'AB' // Too short (min 3)
+        name: 'AB', // Too short (min 3)
+        slug: 'ab' // Too short (min 3)
     },
     // Name too long
     {
         ...createMinimalEventOrganizer(),
-        name: createTooLongString(101) // Too long (max 100)
+        name: createTooLongString(101), // Too long (max 100)
+        slug: createTooLongString(101) // Too long (max 100)
     },
     // Description too short (if provided)
     {
@@ -120,7 +162,8 @@ export const createEventOrganizerInvalidCases = () => [
     // Empty name
     {
         ...createMinimalEventOrganizer(),
-        name: ''
+        name: '',
+        slug: ''
     }
 ];
 

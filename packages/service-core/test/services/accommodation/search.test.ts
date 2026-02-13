@@ -81,7 +81,8 @@ describe('AccommodationService.search', () => {
             page: 1,
             pageSize: 2,
             sortOrder: 'asc',
-            type: entities[0].type
+            type: entities[0].type,
+            excludeRestricted: true
         });
     });
 
@@ -164,7 +165,8 @@ describe('AccommodationService.search', () => {
         expect(model.search).toHaveBeenCalledWith({
             page: 99,
             pageSize: 10,
-            sortOrder: 'asc'
+            sortOrder: 'asc',
+            excludeRestricted: true
         });
     });
 });

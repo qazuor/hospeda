@@ -6,7 +6,6 @@
  * All test data, comments, and documentation are in English, following project guidelines.
  */
 import type { AccommodationModel } from '@repo/db';
-import * as db from '@repo/db';
 import type { AccommodationFaqListInput } from '@repo/schemas';
 import { ServiceErrorCode } from '@repo/schemas';
 import type { Mocked } from 'vitest';
@@ -34,13 +33,12 @@ import { createModelMock } from '../../utils/modelMockFactory';
  * - Validation and error codes for not found, forbidden, validation, and internal errors
  * - Robustness against errors in hooks and database operations
  *
- * The tests use mocks and spies to simulate model and service behavior, ensuring
- * all error paths and edge cases are covered in a type-safe, DRY, and robust manner.
+ * The implementation uses findWithRelations to load the accommodation with its FAQs
+ * embedded via relation loading, NOT a separate AccommodationFaqModel query.
  */
 describe('AccommodationService.getFaqs', () => {
     let service: AccommodationService;
     let modelMock: Mocked<AccommodationModel>;
-    let faqModelMock: ReturnType<typeof createModelMock>;
     let actor: ReturnType<typeof ActorFactoryBuilder.prototype.build>;
     let accommodation: ReturnType<typeof AccommodationFactoryBuilder.prototype.build>;
     let input: AccommodationFaqListInput;
@@ -49,77 +47,73 @@ describe('AccommodationService.getFaqs', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         modelMock = {
-            ...createModelMock(['findById']),
+            ...createModelMock(['findWithRelations']),
             table: 'accommodation',
             entityName: 'accommodation',
             countByFilters: vi.fn(),
             search: vi.fn(),
             create: vi.fn()
         } as unknown as Mocked<AccommodationModel>;
-        faqModelMock = createModelMock(['create', 'findById', 'update', 'findAll', 'hardDelete']);
         service = createServiceTestInstance(AccommodationService, modelMock);
         actor = new ActorFactoryBuilder().host().build();
         accommodation = new AccommodationFactoryBuilder().public().build();
-        input = { accommodationId: accommodation.id as any };
+        input = { accommodationId: accommodation.id as string };
         faqs = [
             {
                 id: 'faq-1',
                 question: 'What is the check-in time?',
                 answer: 'Check-in is from 2:00 PM.',
-                accommodationId: accommodation.id as any
+                accommodationId: accommodation.id as string
             },
             {
                 id: 'faq-2',
                 question: 'Are pets allowed?',
                 answer: 'Yes, pets are allowed upon request.',
-                accommodationId: accommodation.id as any
+                accommodationId: accommodation.id as string
             }
         ];
-        vi.spyOn(db, 'AccommodationFaqModel').mockImplementation(
-            () => faqModelMock as unknown as db.AccommodationFaqModel
-        );
     });
 
     it('should return faqs for an accommodation', async () => {
-        modelMock.findById.mockResolvedValue(accommodation);
-        faqModelMock.findAll.mockResolvedValue({ items: faqs });
+        const accommodationWithFaqs = { ...accommodation, faqs };
+        modelMock.findWithRelations.mockResolvedValue(accommodationWithFaqs);
         vi.spyOn(permissionHelpers, 'checkCanView').mockReturnValue();
         const result = await service.getFaqs(actor, input);
         expectSuccess(result);
         expect(result.data?.faqs).toEqual(faqs);
-        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any);
-        expect(faqModelMock.findAll).toHaveBeenCalledWith({
-            accommodationId: accommodation.id as any
-        });
-        expect(permissionHelpers.checkCanView).toHaveBeenCalledWith(actor, accommodation);
+        expect(modelMock.findWithRelations).toHaveBeenCalledWith(
+            { id: accommodation.id as string },
+            { faqs: true }
+        );
+        expect(permissionHelpers.checkCanView).toHaveBeenCalledWith(actor, accommodationWithFaqs);
     });
 
     it('should return NOT_FOUND if accommodation does not exist', async () => {
-        modelMock.findById.mockResolvedValue(null);
+        modelMock.findWithRelations.mockResolvedValue(null);
         const result = await service.getFaqs(actor, input);
         expectNotFoundError(result);
-        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any);
+        expect(modelMock.findWithRelations).toHaveBeenCalledWith(
+            { id: accommodation.id as string },
+            { faqs: true }
+        );
     });
 
     it('should return FORBIDDEN if actor cannot view', async () => {
-        modelMock.findById.mockResolvedValue(accommodation);
+        const accommodationWithFaqs = { ...accommodation, faqs };
+        modelMock.findWithRelations.mockResolvedValue(accommodationWithFaqs);
         vi.spyOn(permissionHelpers, 'checkCanView').mockImplementation(() => {
             throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'forbidden');
         });
         const result = await service.getFaqs(actor, input);
         expectForbiddenError(result);
-        expect(permissionHelpers.checkCanView).toHaveBeenCalledWith(actor, accommodation);
+        expect(permissionHelpers.checkCanView).toHaveBeenCalledWith(actor, accommodationWithFaqs);
     });
 
-    it('should return INTERNAL_ERROR if FAQ model fails', async () => {
-        modelMock.findById.mockResolvedValue(accommodation);
-        faqModelMock.findAll.mockRejectedValue(new Error('DB error'));
+    it('should return INTERNAL_ERROR if relation query fails', async () => {
+        modelMock.findWithRelations.mockRejectedValue(new Error('DB error'));
         vi.spyOn(permissionHelpers, 'checkCanView').mockReturnValue();
         const result = await service.getFaqs(actor, input);
         expectInternalError(result);
-        expect(faqModelMock.findAll).toHaveBeenCalledWith({
-            accommodationId: accommodation.id as any
-        });
     });
 
     it('should return VALIDATION_ERROR for invalid input', async () => {

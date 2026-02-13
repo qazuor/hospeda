@@ -106,7 +106,8 @@ describe('AccommodationService.searchWithRelations', () => {
             destinationId: undefined,
             amenities: undefined,
             isFeatured: undefined,
-            isAvailable: undefined
+            isAvailable: undefined,
+            excludeRestricted: true
         });
     });
 
@@ -175,7 +176,8 @@ describe('AccommodationService.searchWithRelations', () => {
             destinationId: undefined,
             amenities: undefined,
             isFeatured: undefined,
-            isAvailable: undefined
+            isAvailable: undefined,
+            excludeRestricted: true
         });
     });
 
@@ -215,7 +217,8 @@ describe('AccommodationService.searchWithRelations', () => {
             destinationId: undefined,
             amenities: undefined,
             isFeatured: undefined,
-            isAvailable: undefined
+            isAvailable: undefined,
+            excludeRestricted: true
         });
     });
 

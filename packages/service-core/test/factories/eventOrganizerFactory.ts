@@ -35,13 +35,19 @@ export const createMockEventOrganizer = (
 export const createMockEventOrganizerCreateInput = (
     overrides: Partial<EventOrganizerCreateInput> = {}
 ): EventOrganizerCreateInput => {
-    const baseInput = {
+    const baseInput: EventOrganizerCreateInput = {
         name: 'Test Organizer',
-        logo: 'https://example.com/logo.png'
+        slug: 'test-organizer',
+        description: undefined,
+        logo: 'https://example.com/logo.png',
+        contactInfo: undefined,
+        socialNetworks: undefined,
+        lifecycleState: LifecycleStatusEnum.ACTIVE,
+        adminInfo: undefined
     };
 
     return {
         ...baseInput,
         ...overrides
-    } as EventOrganizerCreateInput;
+    };
 };

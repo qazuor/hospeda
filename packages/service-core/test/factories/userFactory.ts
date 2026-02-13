@@ -9,6 +9,8 @@ import { getMockId } from './utilsFactory';
 const baseUser: User = {
     id: getMockId('user') as string,
     slug: 'test-user',
+    email: 'test@example.com',
+    emailVerified: true,
     displayName: 'Test User',
     firstName: 'Test',
     lastName: 'User',

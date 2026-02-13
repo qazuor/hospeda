@@ -2,14 +2,13 @@ import path from 'node:path';
 import {
     AccommodationTypeEnum,
     AmenitiesTypeEnum,
-    BillingCycleEnum,
+    BillingIntervalEnum,
     ClientTypeEnum,
     EntityPermissionReasonEnum,
     EntityTypeEnum,
     EventCategoryEnum,
     LifecycleStatusEnum,
     ModerationStatusEnum,
-    PaymentMethodEnum,
     PaymentStatusEnum,
     PermissionEnum,
     PostCategoryEnum,
@@ -34,17 +33,18 @@ envConfig({
 // Recreate AllEnums from schemas
 // NOTE: AuthProviderEnum excluded - BETTER_AUTH value added in TypeScript
 // but DB pgEnum not yet migrated. Will be synced via generate-enum-migrations.
+// NOTE: BillingCycleEnum and PaymentMethodEnum excluded - these exist in old
+// migration snapshots but are not currently implemented in TypeScript schemas.
 const AllEnums = {
     AccommodationTypeEnum,
     AmenitiesTypeEnum,
-    BillingCycleEnum,
+    BillingIntervalEnum,
     ClientTypeEnum,
     EntityPermissionReasonEnum,
     EntityTypeEnum,
     EventCategoryEnum,
     LifecycleStatusEnum,
     ModerationStatusEnum,
-    PaymentMethodEnum,
     PaymentStatusEnum,
     PermissionEnum,
     PostCategoryEnum,
