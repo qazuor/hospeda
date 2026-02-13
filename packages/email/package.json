@@ -1,0 +1,43 @@
+{
+    "name": "@repo/email",
+    "version": "0.0.1",
+    "private": true,
+    "type": "module",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "exports": {
+        ".": {
+            "import": "./dist/index.js",
+            "require": "./dist/index.cjs"
+        }
+    },
+    "files": ["dist"],
+    "scripts": {
+        "build": "tsup",
+        "dev": "echo 'Dev mode uses tsconfig paths (no build)'",
+        "typecheck": "tsc --noEmit --project ./tsconfig.json",
+        "test": "vitest run --passWithNoTests",
+        "test:watch": "vitest",
+        "lint": "biome check .",
+        "format": "biome format --write .",
+        "check": "biome check --write .",
+        "clean": "rm -rf node_modules dist"
+    },
+    "dependencies": {
+        "resend": "^4.0.0",
+        "@react-email/components": "^0.0.30"
+    },
+    "peerDependencies": {
+        "react": ">=18.2.0 || ^19"
+    },
+    "devDependencies": {
+        "@repo/typescript-config": "workspace:*",
+        "@repo/biome-config": "workspace:*",
+        "@types/node": "^22.15.3",
+        "@types/react": "^19.0.0",
+        "react": "^19.0.0",
+        "tsup": "^8.4.0",
+        "typescript": "^5.8.3",
+        "vitest": "^3.1.3"
+    }
+}

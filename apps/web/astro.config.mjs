@@ -51,7 +51,7 @@ const WebEnvSchema = z
         HOSPEDA_API_URL: z.string().url('Must be a valid API URL').optional(),
         PUBLIC_API_URL: z.string().url('Must be a valid API URL').optional(),
         HOSPEDA_SITE_URL: z.string().url('Must be a valid site URL').optional(),
-        PUBLIC_SITE_URL: z.string().url('Must be a valid site URL').optional(),
+        PUBLIC_SITE_URL: z.string().url('Must be a valid site URL').optional()
     })
     .refine((data) => data.HOSPEDA_API_URL || data.PUBLIC_API_URL, {
         message: 'API_URL is required (either HOSPEDA_API_URL or PUBLIC_API_URL)',
