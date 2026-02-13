@@ -5,6 +5,7 @@ export * from './attraction/attraction.service';
 export * from './destination/destination.service';
 export * from './destinationReview/destinationReview.service';
 export * from './event/event.service';
+export * from './exchange-rate';
 export * from './eventLocation/eventLocation.service';
 export * from './eventOrganizer/eventOrganizer.service';
 export * from './feature/feature.service';

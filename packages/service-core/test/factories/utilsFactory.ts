@@ -35,7 +35,9 @@ export type IdTypes =
     | 'professionalService'
     | 'professionalServiceOrder'
     | 'serviceOrder'
-    | 'file';
+    | 'file'
+    | 'exchangeRateConfig'
+    | 'exchangeRate';
 
 function generateValidUuidFromLabel(label: string): string {
     const hash = crypto.createHash('md5').update(label).digest('hex');

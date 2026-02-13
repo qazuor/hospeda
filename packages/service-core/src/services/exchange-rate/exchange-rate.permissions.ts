@@ -92,3 +92,48 @@ export const checkCanFetchExchangeRate = (actor: Actor): void => {
         );
     }
 };
+
+/**
+ * Checks if the actor can list exchange rates.
+ * Requires EXCHANGE_RATE_VIEW permission.
+ * @param actor - The actor performing the action.
+ * @throws {ServiceError} If not permitted.
+ */
+export const checkCanListExchangeRate = (actor: Actor): void => {
+    if (!hasPermission(actor, PermissionEnum.EXCHANGE_RATE_VIEW)) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Forbidden: missing EXCHANGE_RATE_VIEW permission'
+        );
+    }
+};
+
+/**
+ * Checks if the actor can search exchange rates.
+ * Requires EXCHANGE_RATE_VIEW permission.
+ * @param actor - The actor performing the action.
+ * @throws {ServiceError} If not permitted.
+ */
+export const checkCanSearchExchangeRate = (actor: Actor): void => {
+    if (!hasPermission(actor, PermissionEnum.EXCHANGE_RATE_VIEW)) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Forbidden: missing EXCHANGE_RATE_VIEW permission'
+        );
+    }
+};
+
+/**
+ * Checks if the actor can count exchange rates.
+ * Requires EXCHANGE_RATE_VIEW permission.
+ * @param actor - The actor performing the action.
+ * @throws {ServiceError} If not permitted.
+ */
+export const checkCanCountExchangeRate = (actor: Actor): void => {
+    if (!hasPermission(actor, PermissionEnum.EXCHANGE_RATE_VIEW)) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Forbidden: missing EXCHANGE_RATE_VIEW permission'
+        );
+    }
+};
