@@ -120,7 +120,13 @@ describe('Enum Schemas', () => {
                 'destination.create',
                 'destination.update',
                 'system.maintenanceMode',
-                'access.panelAdmin'
+                'access.panelAdmin',
+                'exchange_rate.view',
+                'exchange_rate.create',
+                'exchange_rate.update',
+                'exchange_rate.delete',
+                'exchange_rate.config.update',
+                'exchange_rate.fetch'
             ];
 
             for (const permission of validPermissions) {
@@ -209,7 +215,7 @@ describe('Enum Schemas', () => {
 
     describe('PriceCurrencyEnumSchema', () => {
         it('should accept all valid currencies', () => {
-            const validCurrencies = ['USD', 'ARS'];
+            const validCurrencies = ['USD', 'ARS', 'BRL'];
 
             for (const currency of validCurrencies) {
                 expect(() => PriceCurrencyEnumSchema.parse(currency)).not.toThrow();
@@ -217,7 +223,7 @@ describe('Enum Schemas', () => {
         });
 
         it('should reject invalid currencies', () => {
-            const invalidCurrencies = ['EUR', 'GBP', 'BRL', 'invalid', '', null, undefined];
+            const invalidCurrencies = ['EUR', 'GBP', 'JPY', 'invalid', '', null, undefined];
 
             for (const currency of invalidCurrencies) {
                 expect(() => PriceCurrencyEnumSchema.parse(currency)).toThrow(ZodError);

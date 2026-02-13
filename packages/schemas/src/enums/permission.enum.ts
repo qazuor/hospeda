@@ -13,6 +13,7 @@ export enum PermissionCategoryEnum {
     EVENT = 'EVENT',
     EVENT_LOCATION = 'EVENT_LOCATION',
     EVENT_ORGANIZER = 'EVENT_ORGANIZER',
+    EXCHANGE_RATE = 'EXCHANGE_RATE',
     INVOICE = 'INVOICE',
     INVOICE_LINE = 'INVOICE_LINE',
     PAYMENT = 'PAYMENT',
@@ -480,6 +481,14 @@ export enum PermissionEnum {
     EVENT_ORGANIZER_VIEW = 'eventOrganizer.view', // Allows viewing event organizer information.
     EVENT_ORGANIZER_RESTORE = 'eventOrganizer.restore', // Allows restoring a deleted event organizer.
     EVENT_ORGANIZER_HARD_DELETE = 'eventOrganizer.hardDelete', // Allows permanently deleting an event organizer.
+
+    // EXCHANGE_RATE: Permissions related to exchange rate management
+    EXCHANGE_RATE_VIEW = 'exchange_rate.view', // Allows viewing exchange rates.
+    EXCHANGE_RATE_CREATE = 'exchange_rate.create', // Allows creating manual rate overrides.
+    EXCHANGE_RATE_UPDATE = 'exchange_rate.update', // Allows updating exchange rates.
+    EXCHANGE_RATE_DELETE = 'exchange_rate.delete', // Allows deleting manual rate overrides.
+    EXCHANGE_RATE_CONFIG_UPDATE = 'exchange_rate.config.update', // Allows updating exchange rate configuration.
+    EXCHANGE_RATE_FETCH = 'exchange_rate.fetch', // Allows triggering manual rate fetches.
 
     // INVOICE: Permissions related to invoice management
     INVOICE_CREATE = 'invoice.create', // Allows creating a new invoice.

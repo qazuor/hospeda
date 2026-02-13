@@ -37,6 +37,12 @@ export * from './entity-type.schema.js';
 export * from './event-category.enum.js';
 export * from './event-category.schema.js';
 
+export * from './exchange-rate-source.enum.js';
+export * from './exchange-rate-source.schema.js';
+
+export * from './exchange-rate-type.enum.js';
+export * from './exchange-rate-type.schema.js';
+
 export * from './invoice-status.enum.js';
 export * from './invoice-status.schema.js';
 

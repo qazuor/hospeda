@@ -1,4 +1,5 @@
 export enum PriceCurrencyEnum {
     ARS = 'ARS',
-    USD = 'USD'
+    USD = 'USD',
+    BRL = 'BRL'
 }
