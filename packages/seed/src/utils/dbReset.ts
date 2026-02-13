@@ -22,6 +22,11 @@ const allTables: Table[] = [
     schema.accommodationReviews,
     schema.destinationReviews,
 
+    // Sponsorship tables (children before parents)
+    schema.sponsorships,
+    schema.sponsorshipPackages,
+    schema.sponsorshipLevels,
+
     // Main tables (parents)
     schema.accommodations,
     schema.attractions,
@@ -32,6 +37,12 @@ const allTables: Table[] = [
     schema.amenities,
     schema.features,
     schema.postSponsorships,
+
+    // Better Auth tables (before users due to FK)
+    schema.sessions,
+    schema.accounts,
+    schema.verifications,
+
     schema.users
 ];
 
@@ -49,6 +60,9 @@ const tableNameMap = new Map<Table, string>([
     [schema.rolePermission, 'role_permission'],
     [schema.accommodationReviews, 'accommodation_reviews'],
     [schema.destinationReviews, 'destination_reviews'],
+    [schema.sponsorships, 'sponsorships'],
+    [schema.sponsorshipPackages, 'sponsorship_packages'],
+    [schema.sponsorshipLevels, 'sponsorship_levels'],
     [schema.accommodations, 'accommodations'],
     [schema.attractions, 'attractions'],
     [schema.destinations, 'destinations'],
@@ -58,6 +72,9 @@ const tableNameMap = new Map<Table, string>([
     [schema.amenities, 'amenities'],
     [schema.features, 'features'],
     [schema.postSponsorships, 'post_sponsorships'],
+    [schema.sessions, 'session'],
+    [schema.accounts, 'account'],
+    [schema.verifications, 'verification'],
     [schema.users, 'users']
 ]);
 

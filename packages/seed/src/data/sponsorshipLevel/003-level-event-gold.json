@@ -4,17 +4,17 @@
     "slug": "event-gold",
     "name": "Gold Event",
     "description": "Premium event sponsorship with all benefits including newsletter mention and priority placement",
-    "targetType": "EVENT",
-    "tier": "GOLD",
+    "targetType": "event",
+    "tier": "gold",
     "priceAmount": 2000000,
     "priceCurrency": "ARS",
     "benefits": [
-        "Logo placement on event page",
-        "Clickable link to sponsor website",
-        "Exclusive discount coupon for event attendees",
-        "Featured mention in newsletter",
-        "Priority placement in sponsor list",
-        "Enhanced brand visibility"
+        { "key": "logo-placement", "label": "Logo placement on event page" },
+        { "key": "clickable-link", "label": "Clickable link to sponsor website" },
+        { "key": "discount-coupon", "label": "Exclusive discount coupon for event attendees" },
+        { "key": "newsletter-mention", "label": "Featured mention in newsletter" },
+        { "key": "priority-placement", "label": "Priority placement in sponsor list" },
+        { "key": "enhanced-visibility", "label": "Enhanced brand visibility" }
     ],
     "sortOrder": 3,
     "isActive": true

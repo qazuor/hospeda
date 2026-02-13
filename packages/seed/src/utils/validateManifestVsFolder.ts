@@ -20,7 +20,10 @@ const ENTITY_FOLDER_MAP: Record<string, string> = {
     postSponsors: 'postSponsor',
     eventOrganizers: 'eventOrganizer',
     eventLocations: 'eventLocation',
-    bookmarks: 'bookmark'
+    bookmarks: 'bookmark',
+    sponsorshipLevels: 'sponsorshipLevel',
+    sponsorshipPackages: 'sponsorshipPackage',
+    rolePermissions: 'rolePermission'
 };
 
 /**
@@ -36,6 +39,11 @@ export async function validateManifestVsFolder(
     declaredFiles: string[],
     type: 'required' | 'example'
 ): Promise<void> {
+    // Skip validation for entities with no declared files
+    if (declaredFiles.length === 0) {
+        return;
+    }
+
     // Determine folder path and whether to use recursive search
     const isRecursive = ['accommodations', 'attractions', 'events', 'posts'].includes(entityName);
     const folderName = ENTITY_FOLDER_MAP[entityName] || entityName;

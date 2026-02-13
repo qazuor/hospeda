@@ -8,8 +8,17 @@ import { createSeedFactory } from '../utils/seedFactory.js';
  * Normalizer for user data
  */
 const userNormalizer = (data: Record<string, unknown>) => {
+    // Derive email from contactInfo when not present at top level
+    const contactInfo = data.contactInfo as
+        | { personalEmail?: string; workEmail?: string }
+        | undefined;
+    const email =
+        (data.email as string) || contactInfo?.personalEmail || contactInfo?.workEmail || undefined;
+
     return {
         slug: data.slug as string,
+        email,
+        emailVerified: (data.emailVerified as boolean) ?? true,
         displayName: data.displayName as string | undefined,
         firstName: data.firstName as string | undefined,
         lastName: data.lastName as string | undefined,

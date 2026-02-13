@@ -2,6 +2,8 @@
     "$schema": "../../schemas/user.schema.json",
     "id": "admin-user",
     "slug": "admin-user",
+    "email": "admin@hospeda.com",
+    "emailVerified": true,
     "role": "ADMIN",
     "permissions": [
         "accommodation.create",

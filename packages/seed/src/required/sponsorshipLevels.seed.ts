@@ -14,13 +14,11 @@ export const seedSponsorshipLevels = createSeedFactory({
     folder: 'src/data/sponsorshipLevel',
     files: requiredManifest.sponsorshipLevels,
 
-    // Exclude metadata fields and slug field as it's auto-generated
+    // Exclude metadata fields only
     normalizer: (data) => {
-        // First exclude metadata fields
-        const { $schema, id, slug, eventLevelId, ...cleanData } = data as {
+        const { $schema, id, eventLevelId, ...cleanData } = data as {
             $schema?: string;
             id?: string;
-            slug?: string;
             eventLevelId?: string;
             [key: string]: unknown;
         };

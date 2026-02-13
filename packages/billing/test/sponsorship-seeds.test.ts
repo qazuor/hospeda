@@ -91,14 +91,14 @@ describe('Sponsorship Level Seeds', () => {
     });
 
     it('should have valid targetType values', () => {
-        const validTargetTypes = ['EVENT', 'POST'];
+        const validTargetTypes = ['event', 'post'];
         for (const level of levels) {
             expect(validTargetTypes).toContain(level.data.targetType);
         }
     });
 
     it('should have valid tier values', () => {
-        const validTiers = ['BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'STANDARD', 'PREMIUM'];
+        const validTiers = ['bronze', 'silver', 'gold', 'platinum', 'standard', 'premium'];
         for (const level of levels) {
             expect(validTiers).toContain(level.data.tier);
         }

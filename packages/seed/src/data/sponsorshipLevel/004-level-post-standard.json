@@ -4,14 +4,14 @@
     "slug": "post-standard",
     "name": "Standard Post",
     "description": "Standard post sponsorship with banner, link, and sponsored mention",
-    "targetType": "POST",
-    "tier": "SILVER",
+    "targetType": "post",
+    "tier": "standard",
     "priceAmount": 300000,
     "priceCurrency": "ARS",
     "benefits": [
-        "Banner placement on post",
-        "Clickable link to sponsor website",
-        "\"Sponsored by\" mention on post"
+        { "key": "banner-placement", "label": "Banner placement on post" },
+        { "key": "clickable-link", "label": "Clickable link to sponsor website" },
+        { "key": "sponsored-mention", "label": "\"Sponsored by\" mention on post" }
     ],
     "sortOrder": 4,
     "isActive": true

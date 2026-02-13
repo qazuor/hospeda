@@ -4,16 +4,16 @@
     "slug": "post-premium",
     "name": "Premium Post",
     "description": "Premium post sponsorship with all benefits including newsletter mention",
-    "targetType": "POST",
-    "tier": "GOLD",
+    "targetType": "post",
+    "tier": "premium",
     "priceAmount": 600000,
     "priceCurrency": "ARS",
     "benefits": [
-        "Banner placement on post",
-        "Clickable link to sponsor website",
-        "\"Sponsored by\" mention on post",
-        "Featured mention in newsletter",
-        "Enhanced brand visibility"
+        { "key": "banner-placement", "label": "Banner placement on post" },
+        { "key": "clickable-link", "label": "Clickable link to sponsor website" },
+        { "key": "sponsored-mention", "label": "\"Sponsored by\" mention on post" },
+        { "key": "newsletter-mention", "label": "Featured mention in newsletter" },
+        { "key": "enhanced-visibility", "label": "Enhanced brand visibility" }
     ],
     "sortOrder": 5,
     "isActive": true
