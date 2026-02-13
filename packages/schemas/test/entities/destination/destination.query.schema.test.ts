@@ -203,7 +203,10 @@ describe('Destination Query Schemas', () => {
                 summary: destination.summary,
                 media: destination.media,
                 averageRating: destination.averageRating,
-                reviewsCount: destination.reviewsCount
+                reviewsCount: destination.reviewsCount,
+                destinationType: destination.destinationType,
+                level: destination.level,
+                path: destination.path
             };
             expect(() => DestinationSummarySchema.parse(summary)).not.toThrow();
         });
@@ -267,6 +270,9 @@ describe('Destination Query Schemas', () => {
                 accommodationsCount: destination.accommodationsCount,
                 createdAt: destination.createdAt,
                 updatedAt: destination.updatedAt,
+                destinationType: destination.destinationType,
+                level: destination.level,
+                path: destination.path,
                 attractions: ['Beach', 'Museum', 'Park']
             };
             expect(() =>
@@ -287,7 +293,10 @@ describe('Destination Query Schemas', () => {
                 rating: destination.rating,
                 accommodationsCount: destination.accommodationsCount,
                 createdAt: destination.createdAt,
-                updatedAt: destination.updatedAt
+                updatedAt: destination.updatedAt,
+                destinationType: destination.destinationType,
+                level: destination.level,
+                path: destination.path
             };
             expect(() =>
                 DestinationListItemWithStringAttractionsSchema.parse(listItem)
@@ -311,6 +320,9 @@ describe('Destination Query Schemas', () => {
                 reviewsCount: destination.reviewsCount,
                 createdAt: destination.createdAt,
                 updatedAt: destination.updatedAt,
+                destinationType: destination.destinationType,
+                level: destination.level,
+                path: destination.path,
                 attractions: ['Beach', 'Museum']
             };
             const output = createPaginatedResponse([listItem], 1, 10, 1);

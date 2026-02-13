@@ -26,7 +26,9 @@ describe('Destination CRUD Schemas', () => {
                 moderationState: destination.moderationState,
                 visibility: destination.visibility,
                 location: destination.location,
-                accommodationsCount: destination.accommodationsCount
+                accommodationsCount: destination.accommodationsCount,
+                destinationType: destination.destinationType,
+                parentDestinationId: destination.parentDestinationId
             };
             expect(() => DestinationCreateInputSchema.parse(createInput)).not.toThrow();
         });
@@ -53,7 +55,8 @@ describe('Destination CRUD Schemas', () => {
                 description: destination.description,
                 moderationState: destination.moderationState,
                 visibility: destination.visibility,
-                location: destination.location
+                location: destination.location,
+                destinationType: destination.destinationType
             };
             expect(() => DestinationCreateInputSchema.parse(createInput)).not.toThrow();
         });

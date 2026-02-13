@@ -13,6 +13,9 @@ export * from './destination.http.schema.js'; // HTTP-compatible schemas with qu
 // Batch operations
 export * from './destination.batch.schema.js'; // Batch retrieval schemas
 
+// Hierarchy operations
+export * from './destination.hierarchy.schema.js'; // Children, Descendants, Ancestors, Breadcrumb schemas
+
 // Access control schemas
 export * from './destination.access.schema.js'; // Public, Protected, Admin schemas
 

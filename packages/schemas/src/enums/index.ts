@@ -25,6 +25,9 @@ export * from './contact-preference.schema.js';
 export * from './currency.enum.js';
 export * from './currency.schema.js';
 
+export * from './destination-type.enum.js';
+export * from './destination-type.schema.js';
+
 export * from './entity-permission-reason.enum.js';
 export * from './entity-permission-reason.schema.js';
 

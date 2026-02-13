@@ -14,27 +14,29 @@ export const DestinationPublicSchema = DestinationSchema.pick({
     id: true,
     slug: true,
     name: true,
-    type: true,
 
     // Content
     summary: true,
     description: true,
     isFeatured: true,
 
-    // Parent reference
-    parentId: true,
+    // Hierarchy (public safe)
+    destinationType: true,
+    level: true,
+    path: true,
 
     // Media (public safe)
     media: true,
 
     // Location (public safe)
-    city: true,
-    state: true,
-    country: true,
+    location: true,
 
     // Review aggregates (public)
     averageRating: true,
-    ratingCount: true,
+    reviewsCount: true,
+
+    // Statistics
+    accommodationsCount: true,
 
     // Visibility
     visibility: true,
@@ -45,8 +47,9 @@ export const DestinationPublicSchema = DestinationSchema.pick({
     // Tags (public)
     tags: true,
 
-    // Extra Info (public)
-    extraInfo: true
+    // Nested public data
+    attractions: true,
+    rating: true
 });
 
 export type DestinationPublic = z.infer<typeof DestinationPublicSchema>;
@@ -54,7 +57,7 @@ export type DestinationPublic = z.infer<typeof DestinationPublicSchema>;
 /**
  * PROTECTED ACCESS SCHEMA
  *
- * Contains data for authenticated users, including ownership.
+ * Contains data for authenticated users, including hierarchy details.
  * Used for user dashboards, contributor views, and authenticated interactions.
  *
  * Extends public schema with additional fields.
@@ -64,45 +67,42 @@ export const DestinationProtectedSchema = DestinationSchema.pick({
     id: true,
     slug: true,
     name: true,
-    type: true,
     summary: true,
     description: true,
     isFeatured: true,
-    parentId: true,
     media: true,
-    city: true,
-    state: true,
-    country: true,
+    location: true,
     averageRating: true,
-    ratingCount: true,
+    reviewsCount: true,
+    accommodationsCount: true,
     visibility: true,
     seo: true,
     tags: true,
-    extraInfo: true,
+    attractions: true,
+    rating: true,
 
-    // Protected fields - ownership
-    ownerId: true,
-
-    // Contact info (authenticated users only)
-    email: true,
-    phone: true,
-    website: true,
-    socialLinks: true,
-
-    // Full location (authenticated users)
-    zipCode: true,
-    latitude: true,
-    longitude: true,
+    // Full hierarchy (authenticated users)
+    parentDestinationId: true,
+    destinationType: true,
+    level: true,
+    path: true,
+    pathIds: true,
 
     // Lifecycle (for owners)
     lifecycleState: true,
+    moderationState: true,
 
-    // FAQs
-    faqs: true,
+    // Admin info
+    adminInfo: true,
+
+    // Reviews
+    reviews: true,
 
     // Basic audit (created/updated dates)
     createdAt: true,
-    updatedAt: true
+    updatedAt: true,
+    createdById: true,
+    updatedById: true
 });
 
 export type DestinationProtected = z.infer<typeof DestinationProtectedSchema>;

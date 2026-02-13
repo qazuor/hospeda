@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { DestinationIdSchema } from '../../common/id.schema.js';
+import { DestinationTypeEnumSchema } from '../../enums/destination-type.schema.js';
 import { DestinationSchema } from './destination.schema.js';
 
 /**
@@ -29,13 +30,21 @@ export const DestinationCreateInputSchema = DestinationSchema.omit({
     createdById: true,
     updatedById: true,
     deletedAt: true,
-    deletedById: true
+    deletedById: true,
+    // Hierarchy fields auto-computed by service from parent
+    path: true,
+    pathIds: true,
+    level: true
 }).extend({
     slug: z
         .string()
         .min(3, { message: 'zodError.destination.slug.min' })
         .max(50, { message: 'zodError.destination.slug.max' })
-        .optional()
+        .optional(),
+    // Parent is optional (null for top-level countries)
+    parentDestinationId: z.string().uuid().nullable().optional(),
+    // Destination type is required for hierarchy placement
+    destinationType: DestinationTypeEnumSchema
 });
 export type DestinationCreateInput = z.infer<typeof DestinationCreateInputSchema>;
 
@@ -61,7 +70,11 @@ export const DestinationUpdateInputSchema = DestinationSchema.omit({
     createdById: true,
     updatedById: true,
     deletedAt: true,
-    deletedById: true
+    deletedById: true,
+    // Hierarchy fields auto-computed by service
+    path: true,
+    pathIds: true,
+    level: true
 })
     .partial()
     .strict();

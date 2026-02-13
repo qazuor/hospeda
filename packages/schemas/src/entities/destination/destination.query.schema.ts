@@ -5,6 +5,7 @@ import {
     HttpSortingSchema
 } from '../../api/http/base-http.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
+import { DestinationTypeEnumSchema } from '../../enums/destination-type.schema.js';
 import { type OpenApiSchemaMetadata, applyOpenApiMetadata } from '../../utils/openapi.utils.js';
 import { DestinationSchema } from './destination.schema.js';
 
@@ -51,7 +52,13 @@ export const DestinationFiltersSchema = z.object({
     // Features
     hasAttractions: z.boolean().optional(),
     climate: z.string().min(1).max(50).optional(),
-    bestSeason: z.string().min(1).max(50).optional()
+    bestSeason: z.string().min(1).max(50).optional(),
+
+    // Hierarchy filters
+    parentDestinationId: z.string().uuid().optional(),
+    destinationType: DestinationTypeEnumSchema.optional(),
+    level: z.number().int().min(0).max(6).optional(),
+    ancestorId: z.string().uuid().optional()
 });
 export type DestinationFilters = z.infer<typeof DestinationFiltersSchema>;
 
@@ -96,7 +103,13 @@ export const DestinationSearchSchema = BaseSearchSchema.extend({
     // Features
     hasAttractions: z.boolean().optional(),
     climate: z.string().min(1).max(50).optional(),
-    bestSeason: z.string().min(1).max(50).optional()
+    bestSeason: z.string().min(1).max(50).optional(),
+
+    // Hierarchy filters
+    parentDestinationId: z.string().uuid().optional(),
+    destinationType: DestinationTypeEnumSchema.optional(),
+    level: z.number().int().min(0).max(6).optional(),
+    ancestorId: z.string().uuid().optional()
 });
 export type DestinationSearchInput = z.infer<typeof DestinationSearchSchema>;
 
@@ -117,7 +130,10 @@ export const DestinationListItemSchema = DestinationSchema.pick({
     media: true,
     accommodationsCount: true,
     createdAt: true,
-    updatedAt: true
+    updatedAt: true,
+    destinationType: true,
+    level: true,
+    path: true
 }).extend({
     // Explicitly make review fields optional since they might not be present in list responses
     reviewsCount: z.number().int().min(0).default(0).optional(),
@@ -179,7 +195,10 @@ export const DestinationSummarySchema = DestinationSchema.pick({
     media: true,
     location: true,
     isFeatured: true,
-    accommodationsCount: true
+    accommodationsCount: true,
+    destinationType: true,
+    level: true,
+    path: true
 }).extend({
     // Explicitly make review fields optional since they might not be present in summary responses
     reviewsCount: z.number().int().min(0).default(0).optional(),
@@ -328,7 +347,13 @@ export const HttpDestinationSearchSchema = HttpPaginationSchema.merge(HttpSortin
     tags: z
         .string()
         .transform((val) => val.split(',').filter(Boolean))
-        .optional()
+        .optional(),
+
+    // Hierarchy filters
+    parentDestinationId: z.string().uuid().optional(),
+    destinationType: DestinationTypeEnumSchema.optional(),
+    level: z.coerce.number().int().min(0).max(6).optional(),
+    ancestorId: z.string().uuid().optional()
 });
 
 export type HttpDestinationSearch = z.infer<typeof HttpDestinationSearchSchema>;

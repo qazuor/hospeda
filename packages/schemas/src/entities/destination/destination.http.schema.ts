@@ -11,6 +11,7 @@ import {
     createArrayQueryParam,
     createBooleanQueryParam
 } from '../../api/http/base-http.schema.js';
+import { DestinationTypeEnumSchema } from '../../enums/destination-type.schema.js';
 
 /**
  * HTTP-compatible destination search schema with automatic coercion
@@ -43,7 +44,13 @@ export const DestinationSearchHttpSchema = BaseHttpSearchSchema.extend({
     bestSeason: z.string().min(1).max(50).optional(),
 
     // Array filters with HTTP coercion
-    tags: createArrayQueryParam('Filter by tag UUIDs')
+    tags: createArrayQueryParam('Filter by tag UUIDs'),
+
+    // Hierarchy filters
+    parentDestinationId: z.string().uuid().optional(),
+    destinationType: DestinationTypeEnumSchema.optional(),
+    level: z.coerce.number().int().min(0).max(6).optional(),
+    ancestorId: z.string().uuid().optional()
 });
 
 export type DestinationSearchHttp = z.infer<typeof DestinationSearchHttpSchema>;
@@ -69,7 +76,11 @@ export const DestinationCreateHttpSchema = z.object({
     longitude: z.coerce.number().min(-180).max(180).optional(),
     isFeatured: z.coerce.boolean().default(false),
     climate: z.string().min(1).max(50).optional(),
-    bestSeason: z.string().min(1).max(50).optional()
+    bestSeason: z.string().min(1).max(50).optional(),
+
+    // Hierarchy fields
+    destinationType: DestinationTypeEnumSchema.optional(),
+    parentDestinationId: z.string().uuid().nullable().optional()
 });
 
 export type DestinationCreateHttp = z.infer<typeof DestinationCreateHttpSchema>;
@@ -86,6 +97,7 @@ export type DestinationUpdateHttp = z.infer<typeof DestinationUpdateHttpSchema>;
 // HTTP TO DOMAIN CONVERSION FUNCTIONS
 // ============================================================================
 
+import { DestinationTypeEnum } from '../../enums/destination-type.enum.js';
 import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
 import { ModerationStatusEnum } from '../../enums/moderation-status.enum.js';
 import { VisibilityEnum } from '../../enums/visibility.enum.js';
@@ -164,7 +176,11 @@ export const httpToDomainDestinationCreate = (
     moderationState: ModerationStatusEnum.PENDING,
     accommodationsCount: 0, // Start with 0 accommodations
     reviewsCount: 0, // Start with 0 reviews
-    averageRating: 0 // Start with 0 rating
+    averageRating: 0, // Start with 0 rating
+
+    // Hierarchy fields
+    destinationType: httpData.destinationType ?? DestinationTypeEnum.CITY,
+    parentDestinationId: httpData.parentDestinationId ?? null
 
     // Note: Fields like climate, bestSeason from HTTP schema don't exist
     // in the domain schema and should be handled by service layer extensions

@@ -24,6 +24,20 @@ export const createValidDestination = () => ({
     ...createBaseReviewFields(),
     ...createBaseSeoFields(),
     ...createBaseContactFields(),
+    // Hierarchy fields
+    parentDestinationId: null,
+    destinationType: faker.helpers.arrayElement([
+        'COUNTRY',
+        'REGION',
+        'PROVINCE',
+        'DEPARTMENT',
+        'CITY',
+        'TOWN',
+        'NEIGHBORHOOD'
+    ] as const),
+    level: faker.number.int({ min: 0, max: 6 }),
+    path: `/${faker.lorem.slug(3)}`,
+    pathIds: '',
     // Location (required for destinations)
     location: {
         state: faker.location.state(),
@@ -107,6 +121,12 @@ export const createMinimalDestination = () => ({
     name: faker.location.city(),
     summary: faker.lorem.paragraph({ min: 1, max: 2 }),
     description: faker.lorem.paragraphs(3, '\n\n'),
+    // Hierarchy fields
+    parentDestinationId: null,
+    destinationType: 'CITY' as const,
+    level: 4,
+    path: `/${faker.lorem.slug(3)}`,
+    pathIds: '',
     location: {
         address: faker.location.streetAddress(),
         city: faker.location.city(),

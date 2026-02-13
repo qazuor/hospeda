@@ -9,6 +9,7 @@ import { BaseModerationFields } from '../../common/moderation.schema.js';
 import { BaseReviewFields } from '../../common/review.schema.js';
 import { BaseSeoFields } from '../../common/seo.schema.js';
 import { BaseVisibilityFields } from '../../common/visibility.schema.js';
+import { DestinationTypeEnumSchema } from '../../enums/destination-type.schema.js';
 import { AttractionSchema } from '../attraction/attraction.schema.js';
 import { DestinationReviewSchema } from '../destinationReview/destinationReview.schema.js';
 import { TagSchema } from '../tag/tag.schema.js';
@@ -27,6 +28,17 @@ export const DestinationSchema = z.object({
     // Base fields
     id: DestinationIdSchema,
     ...BaseAuditFields,
+    // Hierarchy fields
+    parentDestinationId: z.string().uuid().nullable(),
+    destinationType: DestinationTypeEnumSchema,
+    level: z.number().int().min(0).max(6),
+    path: z
+        .string()
+        .min(1, { message: 'zodError.destination.path.min' })
+        .max(500, { message: 'zodError.destination.path.max' })
+        .regex(/^\/[a-z0-9-/]+$/, { message: 'zodError.destination.path.format' }),
+    pathIds: z.string().max(2000),
+
     // Entity fields - specific to destination
     slug: z
         .string()
