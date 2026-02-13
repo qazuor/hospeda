@@ -9,6 +9,8 @@ import {
     EntityPermissionReasonEnum,
     EntityTypeEnum,
     EventCategoryEnum,
+    ExchangeRateSourceEnum,
+    ExchangeRateTypeEnum,
     InvoiceStatusEnum,
     LifecycleStatusEnum,
     ModerationStatusEnum,
@@ -64,6 +66,16 @@ export const ProductTypePgEnum = pgEnum('product_type_enum', enumToTuple(Product
 export const EntityTypePgEnum = pgEnum('entity_type_enum', enumToTuple(EntityTypeEnum));
 
 export const EventCategoryPgEnum = pgEnum('event_category_enum', enumToTuple(EventCategoryEnum));
+
+export const ExchangeRateSourcePgEnum = pgEnum(
+    'exchange_rate_source_enum',
+    enumToTuple(ExchangeRateSourceEnum)
+);
+
+export const ExchangeRateTypePgEnum = pgEnum(
+    'exchange_rate_type_enum',
+    enumToTuple(ExchangeRateTypeEnum)
+);
 
 export const LifecycleStatusPgEnum = pgEnum(
     'lifecycle_status_enum',
