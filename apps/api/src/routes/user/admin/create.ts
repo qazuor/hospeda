@@ -41,6 +41,8 @@ export const adminCreateUserRoute = createAdminRoute({
         const actor = getActorFromContext(ctx);
 
         const result = await userService.create(actor, {
+            email: userData.email,
+            emailVerified: userData.emailVerified ?? false,
             firstName: userData.firstName,
             lastName: userData.lastName,
             displayName: userData.displayName,

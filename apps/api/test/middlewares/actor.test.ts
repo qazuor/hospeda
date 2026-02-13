@@ -33,6 +33,8 @@ const _mockApiLogger = vi.mocked(apiLogger);
 const createMockDbUser = (overrides: Partial<User> = {}): User => ({
     id: 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee' as UserIdType,
     slug: 'test-user',
+    email: 'test@example.com',
+    emailVerified: true,
     role: RoleEnum.USER,
     permissions: [PermissionEnum.ACCESS_API_PUBLIC],
     lifecycleState: LifecycleStatusEnum.ACTIVE,

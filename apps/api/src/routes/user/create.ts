@@ -35,6 +35,8 @@ export const createUserRoute = createCRUDRoute({
 
         // Call the real user service
         const result = await userService.create(actor, {
+            email: userData.email,
+            emailVerified: userData.emailVerified ?? false,
             firstName: userData.firstName,
             lastName: userData.lastName,
             displayName: userData.displayName,
