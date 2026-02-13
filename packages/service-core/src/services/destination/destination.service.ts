@@ -1,6 +1,7 @@
 import { AccommodationModel, DestinationModel } from '@repo/db';
 import type {
     AccommodationListItem,
+    BreadcrumbItem,
     Destination,
     DestinationCreateInput,
     DestinationRatingInput,
@@ -8,7 +9,13 @@ import type {
     DestinationSearchInput,
     DestinationStats,
     DestinationSummaryType,
+    DestinationUpdateInput,
     GetDestinationAccommodationsInput,
+    GetDestinationAncestorsInput,
+    GetDestinationBreadcrumbInput,
+    GetDestinationByPathInput,
+    GetDestinationChildrenInput,
+    GetDestinationDescendantsInput,
     GetDestinationStatsInput,
     GetDestinationSummaryInput
 } from '@repo/schemas';
@@ -17,6 +24,11 @@ import {
     DestinationSearchSchema,
     DestinationUpdateInputSchema,
     GetDestinationAccommodationsInputSchema,
+    GetDestinationAncestorsInputSchema,
+    GetDestinationBreadcrumbInputSchema,
+    GetDestinationByPathInputSchema,
+    GetDestinationChildrenInputSchema,
+    GetDestinationDescendantsInputSchema,
     GetDestinationStatsInputSchema,
     GetDestinationSummaryInputSchema,
     ServiceErrorCode
@@ -26,6 +38,12 @@ import type { Actor, ServiceContext, ServiceLogger, ServiceOutput } from '../../
 import { ServiceError } from '../../types';
 import { serviceLogger } from '../../utils';
 import { generateDestinationSlug } from './destination.helpers';
+import {
+    computeHierarchyLevel,
+    computeHierarchyPath,
+    computeHierarchyPathIds,
+    isValidParentChildRelation
+} from './destination.hierarchy.helpers';
 import {
     normalizeCreateInput,
     normalizeListInput,
@@ -60,6 +78,12 @@ export class DestinationService extends BaseCrudService<
     protected readonly entityName = DestinationService.ENTITY_NAME;
     protected readonly model: DestinationModel;
     protected readonly logger: ServiceLogger;
+
+    /**
+     * Temporarily stores the entity ID during update operations,
+     * so _beforeUpdate can access the current entity for reparenting logic.
+     */
+    private _updateId: string | undefined;
     protected readonly createSchema = DestinationCreateInputSchema;
     protected readonly updateSchema = DestinationUpdateInputSchema;
     protected readonly searchSchema = DestinationSearchSchema;
@@ -134,14 +158,41 @@ export class DestinationService extends BaseCrudService<
             state,
             city,
             isFeatured,
+            ancestorId,
             ...otherFilters
         } = params;
         // Build where clause from flat filters
+        // Note: parentDestinationId, destinationType, level pass through otherFilters
+        // and are handled by buildWhereClause as direct column matches
         const where: Record<string, unknown> = { ...otherFilters };
         if (country) where.country = country;
         if (state) where.state = state;
         if (city) where.city = city;
         if (isFeatured !== undefined) where.isFeatured = isFeatured;
+
+        // Special handling for ancestorId (requires LIKE query on pathIds)
+        if (ancestorId) {
+            const descendants = await this.model.findDescendants(ancestorId, {
+                destinationType: where.destinationType as
+                    | import('@repo/schemas').DestinationType
+                    | undefined
+            });
+            // Apply remaining equality filters manually
+            let filtered = descendants;
+            if (where.parentDestinationId) {
+                filtered = filtered.filter(
+                    (d) => d.parentDestinationId === where.parentDestinationId
+                );
+            }
+            if (where.level !== undefined) {
+                filtered = filtered.filter((d) => d.level === where.level);
+            }
+            // Manual pagination
+            const total = filtered.length;
+            const items = filtered.slice((page - 1) * pageSize, page * pageSize);
+            return { items, total };
+        }
+
         return this.model.findAll(where, { page, pageSize });
     }
 
@@ -326,7 +377,10 @@ export class DestinationService extends BaseCrudService<
                     isFeatured: destination.isFeatured,
                     averageRating: destination.averageRating ?? 0,
                     reviewsCount: destination.reviewsCount ?? 0,
-                    accommodationsCount: destination.accommodationsCount ?? 0
+                    accommodationsCount: destination.accommodationsCount ?? 0,
+                    destinationType: destination.destinationType,
+                    level: destination.level,
+                    path: destination.path
                 };
                 return { summary };
             }
@@ -334,23 +388,185 @@ export class DestinationService extends BaseCrudService<
     }
 
     /**
-     * Generates a unique slug for the destination before it is created.
-     * This hook ensures that every destination has a URL-friendly and unique identifier.
+     * Auto-computes hierarchy fields (path, pathIds, level) and generates a unique slug before creation.
+     * Validates parent-child relationship if parentDestinationId is provided.
      * @param data The original input data for creation.
-     * @param _actor The actor performing the action (unused in this normalization).
-     * @returns The normalized data with a unique slug.
+     * @param _actor The actor performing the action.
+     * @returns The normalized data with computed hierarchy fields and unique slug.
      */
     protected async _beforeCreate(
         data: DestinationCreateInput,
         _actor: Actor
     ): Promise<Partial<Destination>> {
-        // Only generate a slug if one is not already provided
-        if (!data.slug) {
-            const slug = await generateDestinationSlug(data.name);
-            return { slug };
+        const result: Partial<Destination> = {};
+
+        // Generate slug if not provided
+        const slug = data.slug || (await generateDestinationSlug(data.name));
+        result.slug = slug;
+
+        if (data.parentDestinationId) {
+            // Fetch parent destination
+            const parent = await this.model.findOne({ id: data.parentDestinationId });
+            if (!parent) {
+                throw new ServiceError(
+                    ServiceErrorCode.NOT_FOUND,
+                    `Parent destination not found: ${data.parentDestinationId}`
+                );
+            }
+
+            // Validate parent-child type relationship
+            if (
+                !isValidParentChildRelation({
+                    parentType: parent.destinationType,
+                    childType: data.destinationType
+                })
+            ) {
+                throw new ServiceError(
+                    ServiceErrorCode.VALIDATION_ERROR,
+                    `Invalid parent-child relationship: ${parent.destinationType} cannot be parent of ${data.destinationType}`
+                );
+            }
+
+            // Compute hierarchy fields
+            result.level = computeHierarchyLevel({ parentLevel: parent.level });
+            result.path = computeHierarchyPath({ parentPath: parent.path, slug });
+            result.pathIds = computeHierarchyPathIds({
+                parentPathIds: parent.pathIds,
+                parentId: parent.id
+            });
+        } else {
+            // Top-level destination (COUNTRY)
+            result.level = 0;
+            result.path = computeHierarchyPath({ parentPath: null, slug });
+            result.pathIds = '';
         }
-        // If slug is provided, return empty object to avoid overwriting
-        return {};
+
+        return result;
+    }
+
+    /**
+     * Overrides update to store the entity ID for the _beforeUpdate hook.
+     */
+    public async update(
+        actor: Actor,
+        id: string,
+        data: DestinationUpdateInput
+    ): Promise<ServiceOutput<Destination>> {
+        this._updateId = id;
+        try {
+            return await super.update(actor, id, data);
+        } finally {
+            this._updateId = undefined;
+        }
+    }
+
+    /**
+     * Handles reparenting and slug changes during destination updates.
+     * Recomputes path, pathIds, and level when parentDestinationId or slug changes.
+     * Includes cycle detection to prevent circular hierarchies.
+     * @param data The update input data.
+     * @param _actor The actor performing the update.
+     * @returns Partial destination with recomputed hierarchy fields.
+     */
+    protected async _beforeUpdate(
+        data: DestinationUpdateInput,
+        _actor: Actor
+    ): Promise<Partial<Destination>> {
+        const result: Partial<Destination> = {};
+
+        // Only process if hierarchy-related fields changed
+        const hasParentChange = data.parentDestinationId !== undefined;
+        const hasSlugChange = data.slug !== undefined;
+
+        if (!hasParentChange && !hasSlugChange) {
+            return result;
+        }
+
+        // Fetch current destination
+        const id = this._updateId;
+        if (!id) {
+            return result;
+        }
+
+        const current = await this.model.findOne({ id });
+        if (!current) {
+            throw new ServiceError(ServiceErrorCode.NOT_FOUND, `Destination not found: ${id}`);
+        }
+
+        const newSlug = data.slug || current.slug;
+        const newParentId = hasParentChange
+            ? data.parentDestinationId
+            : current.parentDestinationId;
+
+        if (newParentId) {
+            // Cycle detection: the new parent must not be a descendant of this destination
+            const wouldCycle = await this.model.isDescendant(newParentId, id);
+            if (wouldCycle) {
+                throw new ServiceError(
+                    ServiceErrorCode.VALIDATION_ERROR,
+                    'Cannot set parent: would create a circular hierarchy'
+                );
+            }
+
+            const parent = await this.model.findOne({ id: newParentId });
+            if (!parent) {
+                throw new ServiceError(
+                    ServiceErrorCode.NOT_FOUND,
+                    `Parent destination not found: ${newParentId}`
+                );
+            }
+
+            // Validate type relationship
+            if (
+                data.destinationType &&
+                !isValidParentChildRelation({
+                    parentType: parent.destinationType,
+                    childType: data.destinationType
+                })
+            ) {
+                throw new ServiceError(
+                    ServiceErrorCode.VALIDATION_ERROR,
+                    `Invalid parent-child relationship: ${parent.destinationType} cannot be parent of ${data.destinationType}`
+                );
+            }
+
+            const newLevel = computeHierarchyLevel({ parentLevel: parent.level });
+            const newPath = computeHierarchyPath({ parentPath: parent.path, slug: newSlug });
+            const newPathIds = computeHierarchyPathIds({
+                parentPathIds: parent.pathIds,
+                parentId: parent.id
+            });
+
+            result.level = newLevel;
+            result.path = newPath;
+            result.pathIds = newPathIds;
+
+            // Update descendants if path changed
+            if (current.path !== newPath) {
+                await this.model.updateDescendantPaths(id, current.path, newPath);
+            }
+        } else if (hasParentChange && newParentId === null) {
+            // Moving to top-level
+            result.level = 0;
+            result.path = computeHierarchyPath({ parentPath: null, slug: newSlug });
+            result.pathIds = '';
+
+            if (current.path !== result.path) {
+                await this.model.updateDescendantPaths(id, current.path, result.path);
+            }
+        } else if (hasSlugChange && !hasParentChange) {
+            // Only slug changed, update path
+            const parentPath = current.parentDestinationId
+                ? current.path.substring(0, current.path.lastIndexOf('/'))
+                : null;
+            result.path = computeHierarchyPath({ parentPath, slug: newSlug });
+
+            if (current.path !== result.path) {
+                await this.model.updateDescendantPaths(id, current.path, result.path);
+            }
+        }
+
+        return result;
     }
 
     /**
@@ -380,5 +596,135 @@ export class DestinationService extends BaseCrudService<
         const { items } = await this.accommodationModel.findAll({ destinationId, deletedAt: null });
         const count = items.length;
         await this.model.updateById(destinationId, { accommodationsCount: count });
+    }
+
+    // ========================================================================
+    // HIERARCHY QUERY METHODS
+    // ========================================================================
+
+    /**
+     * Gets direct children of a destination.
+     */
+    public async getChildren(
+        actor: Actor,
+        params: GetDestinationChildrenInput
+    ): Promise<ServiceOutput<{ children: Destination[] }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getChildren',
+            input: { actor, ...params },
+            schema: GetDestinationChildrenInputSchema,
+            execute: async (validData) => {
+                const children = await this.model.findChildren(validData.destinationId);
+                return { children };
+            }
+        });
+    }
+
+    /**
+     * Gets all descendants of a destination with optional depth and type filters.
+     */
+    public async getDescendants(
+        actor: Actor,
+        params: GetDestinationDescendantsInput
+    ): Promise<ServiceOutput<{ descendants: Destination[] }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getDescendants',
+            input: { actor, ...params },
+            schema: GetDestinationDescendantsInputSchema,
+            execute: async (validData) => {
+                const descendants = await this.model.findDescendants(validData.destinationId, {
+                    maxDepth: validData.maxDepth,
+                    destinationType: validData.destinationType
+                });
+                return { descendants };
+            }
+        });
+    }
+
+    /**
+     * Gets all ancestors of a destination ordered from root to parent.
+     */
+    public async getAncestors(
+        actor: Actor,
+        params: GetDestinationAncestorsInput
+    ): Promise<ServiceOutput<{ ancestors: Destination[] }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getAncestors',
+            input: { actor, ...params },
+            schema: GetDestinationAncestorsInputSchema,
+            execute: async (validData) => {
+                const ancestors = await this.model.findAncestors(validData.destinationId);
+                return { ancestors };
+            }
+        });
+    }
+
+    /**
+     * Gets breadcrumb navigation data for a destination.
+     * Returns minimal items ordered from root to current destination.
+     */
+    public async getBreadcrumb(
+        actor: Actor,
+        params: GetDestinationBreadcrumbInput
+    ): Promise<ServiceOutput<{ breadcrumb: BreadcrumbItem[] }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getBreadcrumb',
+            input: { actor, ...params },
+            schema: GetDestinationBreadcrumbInputSchema,
+            execute: async (validData) => {
+                const destination = await this.model.findOne({ id: validData.destinationId });
+                if (!destination) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `Destination not found: ${validData.destinationId}`
+                    );
+                }
+
+                const ancestors = await this.model.findAncestors(validData.destinationId);
+                const breadcrumb: BreadcrumbItem[] = [
+                    ...ancestors.map((a) => ({
+                        id: a.id,
+                        slug: a.slug,
+                        name: a.name,
+                        level: a.level,
+                        destinationType: a.destinationType,
+                        path: a.path
+                    })),
+                    {
+                        id: destination.id,
+                        slug: destination.slug,
+                        name: destination.name,
+                        level: destination.level,
+                        destinationType: destination.destinationType,
+                        path: destination.path
+                    }
+                ];
+                return { breadcrumb };
+            }
+        });
+    }
+
+    /**
+     * Finds a destination by its materialized path.
+     */
+    public async getByPath(
+        actor: Actor,
+        params: GetDestinationByPathInput
+    ): Promise<ServiceOutput<Destination>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getByPath',
+            input: { actor, ...params },
+            schema: GetDestinationByPathInputSchema,
+            execute: async (validData) => {
+                const destination = await this.model.findByPath(validData.path);
+                if (!destination) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `Destination not found at path: ${validData.path}`
+                    );
+                }
+                return destination;
+            }
+        });
     }
 }

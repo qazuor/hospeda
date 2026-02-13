@@ -4,7 +4,12 @@
  */
 
 import type { Destination, DestinationCreateInput, DestinationUpdateInput } from '@repo/schemas';
-import { LifecycleStatusEnum, ModerationStatusEnum, VisibilityEnum } from '@repo/schemas';
+import {
+    DestinationTypeEnum,
+    LifecycleStatusEnum,
+    ModerationStatusEnum,
+    VisibilityEnum
+} from '@repo/schemas';
 import { getMockId } from './utilsFactory';
 
 // ============================================================================
@@ -26,6 +31,13 @@ const baseDestination: Destination = {
 
     // Visibility fields
     visibility: VisibilityEnum.PUBLIC,
+
+    // Hierarchy fields
+    parentDestinationId: null,
+    destinationType: DestinationTypeEnum.CITY,
+    level: 4,
+    path: '/mock-destination',
+    pathIds: '',
 
     // Optional fields
     isFeatured: false,
@@ -104,6 +116,8 @@ export const createMockDestinationCreateInput = (
     accommodationsCount: 0,
     reviewsCount: 0,
     averageRating: 0,
+    destinationType: DestinationTypeEnum.CITY,
+    parentDestinationId: null,
     ...overrides
 });
 

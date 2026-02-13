@@ -1,6 +1,6 @@
 import type { DestinationModel } from '@repo/db';
 import { type DestinationCreateInput, DestinationCreateInputSchema } from '@repo/schemas';
-import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
+import { DestinationTypeEnum, PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ZodError } from 'zod';
 import * as helpers from '../../../src/services/destination/destination.helpers';
@@ -49,7 +49,9 @@ describe('DestinationService.create', () => {
                 state: 'Entre Ríos',
                 country: 'Argentina',
                 zipCode: '3265'
-            }
+            },
+            destinationType: DestinationTypeEnum.CITY,
+            parentDestinationId: null
         } as DestinationCreateInput;
 
         const created = { ...params, id: 'mock-id', slug: 'mock-slug' };
@@ -77,7 +79,9 @@ describe('DestinationService.create', () => {
                 state: 'Entre Ríos',
                 country: 'Argentina',
                 zipCode: '3265'
-            }
+            },
+            destinationType: DestinationTypeEnum.CITY,
+            parentDestinationId: null
         } as DestinationCreateInput;
 
         const result = await service.create(actor, params);
@@ -113,7 +117,9 @@ describe('DestinationService.create', () => {
                 state: 'Entre Ríos',
                 country: 'Argentina',
                 zipCode: '3265'
-            }
+            },
+            destinationType: DestinationTypeEnum.CITY,
+            parentDestinationId: null
         } as DestinationCreateInput;
 
         const result = await service.create(actor, params);
@@ -138,7 +144,9 @@ describe('DestinationService.create', () => {
                 state: 'Entre Ríos',
                 country: 'Argentina',
                 zipCode: '3265'
-            }
+            },
+            destinationType: DestinationTypeEnum.CITY,
+            parentDestinationId: null
         } as DestinationCreateInput;
 
         (model.create as Mock).mockRejectedValue(new Error('DB error'));

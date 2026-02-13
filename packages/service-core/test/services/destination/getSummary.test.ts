@@ -69,7 +69,10 @@ describe('DestinationService.getSummary', () => {
             isFeatured: destination.isFeatured,
             averageRating: destination.averageRating,
             reviewsCount: 0, // Service normalizes undefined to 0
-            accommodationsCount: 0 // Service normalizes undefined to 0
+            accommodationsCount: 0, // Service normalizes undefined to 0
+            destinationType: destination.destinationType,
+            level: destination.level,
+            path: destination.path
         });
     });
 
