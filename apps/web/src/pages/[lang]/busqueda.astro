@@ -16,6 +16,7 @@ import EventCard from '../../components/event/EventCard.astro';
 import BlogPostCard from '../../components/blog/BlogPostCard.astro';
 import { isValidLocale, type SupportedLocale } from '../../lib/i18n';
 import { accommodationsApi, destinationsApi, eventsApi, postsApi } from '../../lib/api/endpoints';
+import { SearchIcon } from '@repo/icons';
 
 const { lang } = Astro.params;
 
@@ -216,19 +217,9 @@ const breadcrumbItems = [
 				<article id="search-form" class="mb-12">
 					<form method="GET" action={`/${locale}/busqueda`} class="mx-auto max-w-3xl">
 						<div class="relative">
-							<svg
-								class="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-text-tertiary"
-								fill="none"
-								stroke="currentColor"
-								viewBox="0 0 24 24"
-								aria-hidden="true"
-							>
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									stroke-width="2"
-									d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-							</svg>
+							<div class="absolute left-4 top-1/2 -translate-y-1/2">
+								<SearchIcon size={20} className="text-text-tertiary" aria-hidden="true" />
+							</div>
 							<input
 								type="search"
 								name="q"

@@ -8,7 +8,8 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 import SEOHead from '../../../components/seo/SEOHead.astro';
 import Breadcrumb from '../../../components/ui/Breadcrumb.astro';
 import Container from '../../../components/ui/Container.astro';
-import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
+import { isValidLocale, SUPPORTED_LOCALES, type SupportedLocale } from '../../../lib/i18n';
+import { InfoIcon } from '@repo/icons';
 
 const { lang } = Astro.params;
 
@@ -17,6 +18,12 @@ if (!lang || !isValidLocale(lang)) {
 }
 
 const locale = lang as SupportedLocale;
+
+/** Auth guard: redirect unauthenticated users to sign in */
+const user = Astro.locals.user;
+if (!user) {
+	return Astro.redirect(`/${locale}/auth/signin`);
+}
 
 /**
  * Localized page titles
@@ -70,16 +77,17 @@ const settingsLabels = {
 		promotionalOffers: 'Ofertas promocionales',
 		promotionalOffersHint: 'Recibe ofertas especiales y descuentos',
 		languageSection: 'Idioma preferido',
-		languageDescription: 'El idioma se configura mediante la URL',
-		currentLanguage: 'Idioma actual',
-		languageHint: 'Cambia la URL para cambiar el idioma (es, en, pt)',
+		languageDescription: 'Seleccioná tu idioma preferido y guardá los cambios',
+		currentLanguage: 'Idioma',
+		languageHint: 'Al guardar, la página se recargará en el idioma seleccionado',
+		save: 'Guardar',
 		timezoneSection: 'Zona horaria',
 		timezoneDescription: 'Zona horaria utilizada para mostrar fechas y horarios',
 		currentTimezone: 'Zona horaria actual',
 		timezoneValue: 'America/Argentina/Buenos_Aires',
 		timezoneNote: 'La zona horaria se ajusta automáticamente según tu ubicación',
 		saveNote: 'Nota',
-		saveNoteDescription: 'Las preferencias se guardarán automáticamente en una próxima versión cuando se implemente la funcionalidad de guardado',
+		saveNoteDescription: 'Las notificaciones se guardarán automáticamente en una próxima versión',
 	},
 	en: {
 		heading: 'Preferences',
@@ -93,16 +101,17 @@ const settingsLabels = {
 		promotionalOffers: 'Promotional offers',
 		promotionalOffersHint: 'Receive special offers and discounts',
 		languageSection: 'Preferred language',
-		languageDescription: 'The language is set via URL',
-		currentLanguage: 'Current language',
-		languageHint: 'Change the URL to change the language (es, en, pt)',
+		languageDescription: 'Select your preferred language and save changes',
+		currentLanguage: 'Language',
+		languageHint: 'On save, the page will reload in the selected language',
+		save: 'Save',
 		timezoneSection: 'Timezone',
 		timezoneDescription: 'Timezone used to display dates and times',
 		currentTimezone: 'Current timezone',
 		timezoneValue: 'America/Argentina/Buenos_Aires',
 		timezoneNote: 'The timezone is automatically adjusted based on your location',
 		saveNote: 'Note',
-		saveNoteDescription: 'Preferences will be saved automatically in an upcoming version when the save functionality is implemented',
+		saveNoteDescription: 'Notification preferences will be saved automatically in an upcoming version',
 	},
 	pt: {
 		heading: 'Preferências',
@@ -116,16 +125,17 @@ const settingsLabels = {
 		promotionalOffers: 'Ofertas promocionais',
 		promotionalOffersHint: 'Receba ofertas especiais e descontos',
 		languageSection: 'Idioma preferido',
-		languageDescription: 'O idioma é configurado através da URL',
-		currentLanguage: 'Idioma atual',
-		languageHint: 'Altere a URL para mudar o idioma (es, en, pt)',
+		languageDescription: 'Selecione seu idioma preferido e salve as alterações',
+		currentLanguage: 'Idioma',
+		languageHint: 'Ao salvar, a página será recarregada no idioma selecionado',
+		save: 'Salvar',
 		timezoneSection: 'Fuso horário',
 		timezoneDescription: 'Fuso horário usado para exibir datas e horários',
 		currentTimezone: 'Fuso horário atual',
 		timezoneValue: 'America/Argentina/Buenos_Aires',
 		timezoneNote: 'O fuso horário é ajustado automaticamente com base em sua localização',
 		saveNote: 'Nota',
-		saveNoteDescription: 'As preferências serão salvas automaticamente em uma próxima versão quando a funcionalidade de salvamento for implementada',
+		saveNoteDescription: 'As preferências de notificação serão salvas automaticamente em uma próxima versão',
 	},
 };
 
@@ -275,21 +285,32 @@ const languageNames: Record<SupportedLocale, string> = {
 					</p>
 
 					<div class="rounded-lg bg-bg-secondary p-4">
-						<div class="mb-3 flex items-center justify-between">
-							<span class="text-sm font-medium text-text-primary">
+						<div class="mb-3 flex items-center gap-4">
+							<label for="language-select" class="text-sm font-medium text-text-primary">
 								{labels.currentLanguage}
-							</span>
-							<span
-								class="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-semibold text-primary"
-								role="status"
-								aria-label={`${labels.currentLanguage}: ${languageNames[locale]}`}
+							</label>
+							<select
+								id="language-select"
+								class="rounded-md border border-border bg-surface px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
 							>
-								{languageNames[locale]}
-							</span>
+								{SUPPORTED_LOCALES.map((loc) => (
+									<option value={loc} selected={loc === locale}>
+										{languageNames[loc]}
+									</option>
+								))}
+							</select>
 						</div>
-						<p class="text-sm text-text-tertiary">
+						<p class="mb-4 text-sm text-text-tertiary">
 							{labels.languageHint}
 						</p>
+						<button
+							type="button"
+							id="language-save-btn"
+							class="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50"
+							disabled
+						>
+							{labels.save}
+						</button>
 					</div>
 				</section>
 
@@ -327,19 +348,7 @@ const languageNames: Record<SupportedLocale, string> = {
 				<!-- Information note -->
 				<div class="rounded-lg border border-blue-200 bg-blue-50 p-4" role="note">
 					<div class="flex items-start gap-3">
-						<svg
-							class="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600"
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
-							aria-hidden="true"
-						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-						</svg>
+						<InfoIcon size={20} className="mt-0.5 flex-shrink-0 text-blue-600" aria-hidden="true" />
 						<div>
 							<h3 class="text-sm font-semibold text-blue-900">
 								{labels.saveNote}
@@ -354,3 +363,32 @@ const languageNames: Record<SupportedLocale, string> = {
 		</div>
 	</Container>
 </BaseLayout>
+
+<script>
+	/**
+	 * Language selector interactivity.
+	 * Enables save button when language changes, redirects on save.
+	 */
+	const select = document.getElementById('language-select') as HTMLSelectElement | null;
+	const saveBtn = document.getElementById('language-save-btn') as HTMLButtonElement | null;
+
+	if (select && saveBtn) {
+		const currentLocale = select.value;
+
+		select.addEventListener('change', () => {
+			saveBtn.disabled = select.value === currentLocale;
+		});
+
+		saveBtn.addEventListener('click', () => {
+			const newLocale = select.value;
+			if (newLocale !== currentLocale) {
+				const currentPath = window.location.pathname;
+				const newPath = currentPath.replace(
+					new RegExp(`^/${currentLocale}/`),
+					`/${newLocale}/`
+				);
+				window.location.href = newPath;
+			}
+		});
+	}
+</script>

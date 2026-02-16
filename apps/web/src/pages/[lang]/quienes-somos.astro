@@ -15,6 +15,7 @@ import Breadcrumb from '../../components/ui/Breadcrumb.astro';
 import Container from '../../components/ui/Container.astro';
 import Section from '../../components/ui/Section.astro';
 import { isValidLocale, type SupportedLocale } from '../../lib/i18n';
+import { CheckIcon, UsersIcon, CheckCircleIcon, GlobeIcon } from '@repo/icons';
 
 const { lang } = Astro.params;
 
@@ -114,19 +115,7 @@ const breadcrumbItems = [
 							<div
 								class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10"
 							>
-								<svg
-									class="h-8 w-8 text-primary"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24"
-									aria-hidden="true"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M5 13l4 4L19 7"></path>
-								</svg>
+								<CheckIcon size={32} className="text-primary" aria-hidden="true" />
 							</div>
 							<h3 class="mb-2 text-xl font-semibold text-text-primary">Autenticidad</h3>
 							<p class="text-text-secondary">
@@ -140,20 +129,7 @@ const breadcrumbItems = [
 							<div
 								class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10"
 							>
-								<svg
-									class="h-8 w-8 text-primary"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24"
-									aria-hidden="true"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-									></path>
-								</svg>
+								<UsersIcon size={32} className="text-primary" aria-hidden="true" />
 							</div>
 							<h3 class="mb-2 text-xl font-semibold text-text-primary">Comunidad</h3>
 							<p class="text-text-secondary">
@@ -167,19 +143,7 @@ const breadcrumbItems = [
 							<div
 								class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10"
 							>
-								<svg
-									class="h-8 w-8 text-primary"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24"
-									aria-hidden="true"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-								</svg>
+								<CheckCircleIcon size={32} className="text-primary" aria-hidden="true" />
 							</div>
 							<h3 class="mb-2 text-xl font-semibold text-text-primary">Calidad</h3>
 							<p class="text-text-secondary">
@@ -193,20 +157,7 @@ const breadcrumbItems = [
 							<div
 								class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10"
 							>
-								<svg
-									class="h-8 w-8 text-primary"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24"
-									aria-hidden="true"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
-									></path>
-								</svg>
+								<GlobeIcon size={32} className="text-primary" aria-hidden="true" />
 							</div>
 							<h3 class="mb-2 text-xl font-semibold text-text-primary">Sustentabilidad</h3>
 							<p class="text-text-secondary">

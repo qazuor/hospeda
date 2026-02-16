@@ -210,7 +210,9 @@ const mapMarkers = [
     <Breadcrumb items={breadcrumbItems} class="py-4" />
 
     <!-- Image Gallery -->
-    <ImageGallery client:visible images={(accommodation as any).images || []} />
+    <div transition:name={`entity-${slug}`}>
+      <ImageGallery client:visible images={(accommodation as any).images || []} />
+    </div>
 
     <!-- Main content grid -->
     <div class="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">

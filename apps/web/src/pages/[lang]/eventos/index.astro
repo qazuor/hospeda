@@ -9,6 +9,7 @@ import Container from '../../../components/ui/Container.astro';
 import Breadcrumb from '../../../components/ui/Breadcrumb.astro';
 import EventCard from '../../../components/event/EventCard.astro';
 import EmptyState from '../../../components/ui/EmptyState.astro';
+import Pagination from '../../../components/ui/Pagination.astro';
 import SEOHead from '../../../components/seo/SEOHead.astro';
 import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
 import { eventsApi } from '../../../lib/api/endpoints';
@@ -237,33 +238,14 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
     }
 
     <!-- Pagination -->
-    {
-      pagination && pagination.totalPages > 1 && (
-        <nav aria-label="Pagination" class="mt-8 flex items-center justify-center gap-2">
-          {pagination.hasPreviousPage && (
-            <a
-              href={`/${locale}/eventos/?page=${pagination.page - 1}${category ? `&category=${category}` : ''}${timeframe ? `&timeframe=${timeframe}` : ''}`}
-              class="rounded-md border border-border bg-bg px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-surface"
-            >
-              ← Anterior
-            </a>
-          )}
-
-          <span class="px-4 py-2 text-sm text-text-secondary">
-            Página {pagination.page} de {pagination.totalPages}
-          </span>
-
-          {pagination.hasNextPage && (
-            <a
-              href={`/${locale}/eventos/?page=${pagination.page + 1}${category ? `&category=${category}` : ''}${timeframe ? `&timeframe=${timeframe}` : ''}`}
-              class="rounded-md border border-border bg-bg px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-surface"
-            >
-              Siguiente →
-            </a>
-          )}
-        </nav>
-      )
-    }
+    {pagination && (
+      <Pagination
+        currentPage={pagination.page}
+        totalPages={pagination.totalPages}
+        baseUrl={`/${locale}/eventos`}
+        locale={locale}
+      />
+    )}
   </Container>
 </BaseLayout>
 

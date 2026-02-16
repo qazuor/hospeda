@@ -10,6 +10,7 @@ import Container from '../../../components/ui/Container.astro';
 import Breadcrumb from '../../../components/ui/Breadcrumb.astro';
 import Section from '../../../components/ui/Section.astro';
 import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
+import { FavoriteIcon, StarIcon, CheckCircleIcon } from '@repo/icons';
 
 const { lang } = Astro.params;
 
@@ -321,16 +322,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 									<h3 class="text-lg font-semibold text-text-primary">
 										{statsLabels[locale].favorites}
 									</h3>
-									<svg
-										class="h-6 w-6 text-primary"
-										fill="currentColor"
-										viewBox="0 0 24 24"
-										aria-hidden="true"
-									>
-										<path
-											d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-										></path>
-									</svg>
+									<FavoriteIcon size={24} className="text-primary" weight="fill" aria-hidden="true" />
 								</div>
 								<p class="mb-2 text-3xl font-bold text-text-primary">{stats.favorites}</p>
 								<p class="text-sm text-text-secondary">{statsDescriptions[locale].favorites}</p>
@@ -350,16 +342,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 									<h3 class="text-lg font-semibold text-text-primary">
 										{statsLabels[locale].reviews}
 									</h3>
-									<svg
-										class="h-6 w-6 text-primary"
-										fill="currentColor"
-										viewBox="0 0 24 24"
-										aria-hidden="true"
-									>
-										<path
-											d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
-										></path>
-									</svg>
+									<StarIcon size={24} className="text-primary" weight="fill" aria-hidden="true" />
 								</div>
 								<p class="mb-2 text-3xl font-bold text-text-primary">{stats.reviews}</p>
 								<p class="text-sm text-text-secondary">{statsDescriptions[locale].reviews}</p>
@@ -379,19 +362,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 									<h3 class="text-lg font-semibold text-text-primary">
 										{statsLabels[locale].subscription}
 									</h3>
-									<svg
-										class="h-6 w-6 text-primary"
-										fill="none"
-										stroke="currentColor"
-										viewBox="0 0 24 24"
-										aria-hidden="true"
-									>
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											stroke-width="2"
-											d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-									</svg>
+									<CheckCircleIcon size={24} className="text-primary" aria-hidden="true" />
 								</div>
 								<p class="mb-2 text-3xl font-bold text-text-primary">
 									{statsDescriptions[locale].subscription}

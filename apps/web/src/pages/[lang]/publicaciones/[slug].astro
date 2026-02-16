@@ -172,6 +172,7 @@ const canonicalUrl = new URL(pageUrl, Astro.site).href;
 				alt={(post as any).title}
 				class="mb-6 aspect-video w-full rounded-lg object-cover"
 				loading="eager"
+				transition:name={`entity-${slug}`}
 			/>
 
 			<!-- Category badge -->

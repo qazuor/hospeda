@@ -56,7 +56,7 @@ export interface Props {
    * Page locale for Open Graph and hreflang tags
    * @default 'es'
    */
-  locale?: 'es' | 'en';
+  locale?: 'es' | 'en' | 'pt';
 
   /**
    * Open Graph type
@@ -81,32 +81,38 @@ const {
 const fullTitle = `${title} | Hospeda`;
 
 /**
- * Generate alternate URLs for hreflang tags.
- * Replaces locale in canonical URL with other locale.
+ * Supported locales for hreflang generation.
  */
-const generateAlternateUrl = (targetLocale: 'es' | 'en'): string => {
+const SUPPORTED_LOCALES = ['es', 'en', 'pt'] as const;
+
+/**
+ * Generate alternate URLs for hreflang tags.
+ * Replaces locale in canonical URL with target locale.
+ */
+const generateAlternateUrl = (targetLocale: string): string => {
   const url = new URL(canonical);
   const pathParts = url.pathname.split('/').filter(Boolean);
 
   // Replace first path segment (locale) if it's a known locale
-  if (pathParts.length > 0 && (pathParts[0] === 'es' || pathParts[0] === 'en')) {
+  if (pathParts.length > 0 && SUPPORTED_LOCALES.includes(pathParts[0] as typeof SUPPORTED_LOCALES[number])) {
     pathParts[0] = targetLocale;
   } else {
     // Prepend locale if not present
     pathParts.unshift(targetLocale);
   }
 
-  url.pathname = `/${pathParts.join('/')}`;
+  url.pathname = `/${pathParts.join('/')}/`;
   return url.href;
 };
 
 const esUrl = generateAlternateUrl('es');
 const enUrl = generateAlternateUrl('en');
+const ptUrl = generateAlternateUrl('pt');
 
 /**
  * Map locale to Open Graph locale format
  */
-const ogLocale = locale === 'es' ? 'es_AR' : 'en_US';
+const ogLocale = locale === 'es' ? 'es_AR' : locale === 'pt' ? 'pt_BR' : 'en_US';
 ---
 
 <!-- Title and meta description -->
@@ -137,4 +143,5 @@ const ogLocale = locale === 'es' ? 'es_AR' : 'en_US';
 <!-- Hreflang tags for i18n -->
 <link rel="alternate" hreflang="es" href={esUrl} />
 <link rel="alternate" hreflang="en" href={enUrl} />
+<link rel="alternate" hreflang="pt" href={ptUrl} />
 <link rel="alternate" hreflang="x-default" href={esUrl} />

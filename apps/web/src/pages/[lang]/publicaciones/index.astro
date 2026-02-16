@@ -9,6 +9,7 @@ import Breadcrumb from '../../../components/ui/Breadcrumb.astro';
 import Container from '../../../components/ui/Container.astro';
 import Section from '../../../components/ui/Section.astro';
 import EmptyState from '../../../components/ui/EmptyState.astro';
+import Pagination from '../../../components/ui/Pagination.astro';
 import BlogPostCard from '../../../components/blog/BlogPostCard.astro';
 import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
 import { postsApi } from '../../../lib/api/endpoints';
@@ -339,48 +340,14 @@ const breadcrumbItems = [
 				</article>
 
 				<!-- Pagination -->
-				{
-					pagination && pagination.totalPages > 1 && (
-						<article id="pagination" class="mb-12">
-							<nav aria-label="Blog pagination" class="flex items-center justify-center gap-4">
-								{pagination.hasPreviousPage ? (
-									<a
-										href={`/${locale}/publicaciones/?page=${pagination.page - 1}${category ? `&categoria=${category}` : ''}`}
-										class="rounded-md border border-border bg-bg px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-surface"
-										aria-label={paginationLabels[locale].previous}
-									>
-										← {paginationLabels[locale].previous}
-									</a>
-								) : (
-									<span class="rounded-md border border-border bg-bg px-4 py-2 text-sm font-medium text-text-tertiary cursor-not-allowed opacity-50">
-										← {paginationLabels[locale].previous}
-									</span>
-								)}
-
-								<div class="flex items-center gap-2">
-									<span class="rounded-md bg-primary px-3 py-1 text-sm font-medium text-white" aria-current="page">
-										{pagination.page}
-									</span>
-									<span class="text-sm text-text-tertiary">de {pagination.totalPages}</span>
-								</div>
-
-								{pagination.hasNextPage ? (
-									<a
-										href={`/${locale}/publicaciones/?page=${pagination.page + 1}${category ? `&categoria=${category}` : ''}`}
-										class="rounded-md border border-border bg-bg px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-surface"
-										aria-label={paginationLabels[locale].next}
-									>
-										{paginationLabels[locale].next} →
-									</a>
-								) : (
-									<span class="rounded-md border border-border bg-bg px-4 py-2 text-sm font-medium text-text-tertiary cursor-not-allowed opacity-50">
-										{paginationLabels[locale].next} →
-									</span>
-								)}
-							</nav>
-						</article>
-					)
-				}
+				{pagination && (
+					<Pagination
+						currentPage={pagination.page}
+						totalPages={pagination.totalPages}
+						baseUrl={`/${locale}/publicaciones`}
+						locale={locale}
+					/>
+				)}
 			</div>
 		</Section>
 	</Container>

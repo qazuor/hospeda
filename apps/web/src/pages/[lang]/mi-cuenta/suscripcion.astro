@@ -9,6 +9,7 @@ import SEOHead from '../../../components/seo/SEOHead.astro';
 import Breadcrumb from '../../../components/ui/Breadcrumb.astro';
 import Container from '../../../components/ui/Container.astro';
 import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
+import { CheckIcon } from '@repo/icons';
 
 const { lang } = Astro.params;
 
@@ -17,6 +18,12 @@ if (!lang || !isValidLocale(lang)) {
 }
 
 const locale = lang as SupportedLocale;
+
+/** Auth guard: redirect unauthenticated users to sign in */
+const user = Astro.locals.user;
+if (!user) {
+	return Astro.redirect(`/${locale}/auth/signin`);
+}
 
 /**
  * Localized page titles
@@ -176,19 +183,7 @@ const labels = subscriptionLabels[locale];
 							<div
 								class="flex h-12 w-12 items-center justify-center rounded-full bg-green-100"
 							>
-								<svg
-									class="h-6 w-6 text-green-600"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24"
-									aria-hidden="true"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M5 13l4 4L19 7"></path>
-								</svg>
+								<CheckIcon size={24} className="text-green-600" aria-hidden="true" />
 							</div>
 						</div>
 
@@ -199,67 +194,19 @@ const labels = subscriptionLabels[locale];
 							</h4>
 							<ul class="space-y-2">
 								<li class="flex items-start gap-2">
-									<svg
-										class="mt-1 h-4 w-4 flex-shrink-0 text-green-600"
-										fill="none"
-										stroke="currentColor"
-										viewBox="0 0 24 24"
-										aria-hidden="true"
-									>
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											stroke-width="2"
-											d="M5 13l4 4L19 7"></path>
-									</svg>
+									<CheckIcon size={16} className="mt-1 flex-shrink-0 text-green-600" aria-hidden="true" />
 									<span class="text-sm text-text-secondary">{labels.feature1}</span>
 								</li>
 								<li class="flex items-start gap-2">
-									<svg
-										class="mt-1 h-4 w-4 flex-shrink-0 text-green-600"
-										fill="none"
-										stroke="currentColor"
-										viewBox="0 0 24 24"
-										aria-hidden="true"
-									>
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											stroke-width="2"
-											d="M5 13l4 4L19 7"></path>
-									</svg>
+									<CheckIcon size={16} className="mt-1 flex-shrink-0 text-green-600" aria-hidden="true" />
 									<span class="text-sm text-text-secondary">{labels.feature2}</span>
 								</li>
 								<li class="flex items-start gap-2">
-									<svg
-										class="mt-1 h-4 w-4 flex-shrink-0 text-green-600"
-										fill="none"
-										stroke="currentColor"
-										viewBox="0 0 24 24"
-										aria-hidden="true"
-									>
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											stroke-width="2"
-											d="M5 13l4 4L19 7"></path>
-									</svg>
+									<CheckIcon size={16} className="mt-1 flex-shrink-0 text-green-600" aria-hidden="true" />
 									<span class="text-sm text-text-secondary">{labels.feature3}</span>
 								</li>
 								<li class="flex items-start gap-2">
-									<svg
-										class="mt-1 h-4 w-4 flex-shrink-0 text-green-600"
-										fill="none"
-										stroke="currentColor"
-										viewBox="0 0 24 24"
-										aria-hidden="true"
-									>
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											stroke-width="2"
-											d="M5 13l4 4L19 7"></path>
-									</svg>
+									<CheckIcon size={16} className="mt-1 flex-shrink-0 text-green-600" aria-hidden="true" />
 									<span class="text-sm text-text-secondary">{labels.feature4}</span>
 								</li>
 							</ul>

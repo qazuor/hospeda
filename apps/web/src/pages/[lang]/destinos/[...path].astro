@@ -192,6 +192,7 @@ const mapMarkers = destinationLocation.lat && destinationLocation.lng
         src={destinationHeroImage}
         alt={destinationName}
         class="h-full w-full object-cover"
+        transition:name={`entity-${destinationSlug}`}
       />
       <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
       <div class="absolute bottom-0 left-0 right-0 p-6 md:p-8">

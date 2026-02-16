@@ -13,6 +13,7 @@ import Breadcrumb from '../../../components/ui/Breadcrumb.astro';
 import SEOHead from '../../../components/seo/SEOHead.astro';
 import AccommodationCard from '../../../components/accommodation/AccommodationCard.astro';
 import EmptyState from '../../../components/ui/EmptyState.astro';
+import Pagination from '../../../components/ui/Pagination.astro';
 import { ViewToggle } from '../../../components/ui/ViewToggle.client.tsx';
 import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
 import { accommodationsApi } from '../../../lib/api/endpoints';
@@ -214,46 +215,12 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
     )}
 
     <!-- Pagination -->
-    <nav class="mt-8 flex items-center justify-center gap-2" aria-label="Pagination">
-      {
-        page > 1 && (
-          <a
-            href={`/${locale}/alojamientos/?page=${page - 1}&sortBy=${sortBy}`}
-            class="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-          >
-            {t.previous}
-          </a>
-        )
-      }
-
-      {
-        Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-          <a
-            href={`/${locale}/alojamientos/?page=${p}&sortBy=${sortBy}`}
-            class:list={[
-              'rounded-md px-4 py-2 text-sm font-medium',
-              p === page
-                ? 'bg-primary text-white'
-                : 'border border-gray-300 text-gray-700 hover:bg-gray-50',
-            ]}
-            aria-current={p === page ? 'page' : undefined}
-          >
-            {p}
-          </a>
-        ))
-      }
-
-      {
-        page < totalPages && (
-          <a
-            href={`/${locale}/alojamientos/?page=${page + 1}&sortBy=${sortBy}`}
-            class="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-          >
-            {t.next}
-          </a>
-        )
-      }
-    </nav>
+    <Pagination
+      currentPage={page}
+      totalPages={totalPages}
+      baseUrl={`/${locale}/alojamientos`}
+      locale={locale}
+    />
   </Container>
 </BaseLayout>
 

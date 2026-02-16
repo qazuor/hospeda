@@ -11,6 +11,8 @@
  */
 import Container from '../components/ui/Container.astro';
 import AuthSection from '../components/auth/AuthSection.astro';
+import { ThemeToggle } from '../components/ui/ThemeToggle.client';
+import { MenuIcon } from '@repo/icons';
 
 interface Props {
   /** Current locale for localized navigation links */
@@ -58,8 +60,11 @@ function isLinkActive(href: string): boolean {
         })}
       </nav>
 
-      <!-- Right side: auth area + mobile menu button -->
+      <!-- Right side: theme toggle + auth area + mobile menu button -->
       <div class="flex items-center gap-4">
+        <!-- Theme Toggle -->
+        <ThemeToggle client:idle />
+
         <!-- Auth Section (Server Island: resolved at request time) -->
         <AuthSection server:defer locale={locale}>
           <!-- Skeleton fallback while the server island loads -->
@@ -73,9 +78,7 @@ function isLinkActive(href: string): boolean {
           aria-label="Open menu"
           data-mobile-menu-trigger
         >
-          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-          </svg>
+          <MenuIcon size={24} aria-hidden="true" />
         </button>
       </div>
     </div>
