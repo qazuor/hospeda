@@ -1,0 +1,112 @@
+---
+import { ViewTransitions } from 'astro:transitions';
+import Header from './Header.astro';
+import Footer from './Footer.astro';
+
+/**
+ * Base HTML layout for all pages.
+ * Provides the document shell with meta tags, fonts, and semantic structure.
+ * Renders Header and Footer automatically for all pages.
+ */
+interface Props {
+  title: string;
+  description: string;
+  image?: string;
+  noindex?: boolean;
+  locale?: string;
+}
+
+const { title, description, image, noindex = false, locale = 'es' } = Astro.props;
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
+const pageTitle = `${title} | Hospeda`;
+const ogLocale = locale === 'es' ? 'es_AR' : locale === 'pt' ? 'pt_BR' : 'en_US';
+---
+
+<html lang={locale}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalUrl.href} />
+
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+
+    <!-- Open Graph -->
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl.href} />
+    <meta property="og:locale" content={ogLocale} />
+    <meta property="og:type" content="website" />
+    {image && <meta property="og:image" content={image} />}
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Playfair+Display:wght@600;700&display=swap"
+      onload="this.onload=null;this.rel='stylesheet'"
+    />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Playfair+Display:wght@600;700&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
+
+    <!-- View Transitions -->
+    <ViewTransitions fallback="swap" />
+
+    <!-- Import Tailwind CSS -->
+    <style>
+      @import '../styles/tailwind.css';
+
+      /* Custom view transitions */
+      ::view-transition-old(root) {
+        animation: fade-out 0.3s ease-out;
+      }
+
+      ::view-transition-new(root) {
+        animation: fade-in 0.3s ease-in;
+      }
+
+      @keyframes fade-out {
+        from { opacity: 1; }
+        to { opacity: 0; }
+      }
+
+      @keyframes fade-in {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+
+      /* Hero image morph transition */
+      ::view-transition-old(hero-image) {
+        animation: fade-out 0.5s ease-out;
+      }
+
+      ::view-transition-new(hero-image) {
+        animation: fade-in 0.5s ease-in;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Skip to main content link for accessibility -->
+    <a
+      href="#main-content"
+      class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-white focus:outline-none"
+    >
+      Skip to content
+    </a>
+
+    <Header locale={locale} />
+
+    <main id="main-content">
+      <slot />
+    </main>
+
+    <Footer locale={locale} />
+  </body>
+</html>

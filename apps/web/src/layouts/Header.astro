@@ -1,0 +1,83 @@
+---
+/**
+ * Global site header with logo and main navigation.
+ * Sticky positioned with responsive layout.
+ *
+ * Auth section uses a Server Island (server:defer) so that the user's
+ * authentication state is resolved at request time on every page,
+ * including pre-rendered SSG pages. This avoids the problem where
+ * SSG pages always show "Iniciar Sesion" because they were built
+ * without a user session.
+ */
+import Container from '../components/ui/Container.astro';
+import AuthSection from '../components/auth/AuthSection.astro';
+
+interface Props {
+  /** Current locale for localized navigation links */
+  locale?: string;
+}
+
+const { locale = 'es' } = Astro.props;
+
+const navLinks = [
+  { label: 'Alojamientos', href: `/${locale}/alojamientos/` },
+  { label: 'Destinos', href: `/${locale}/destinos/` },
+  { label: 'Eventos', href: `/${locale}/eventos/` },
+  { label: 'Blog', href: `/${locale}/publicaciones/` },
+];
+
+/** Check if a navigation link matches the current route */
+function isLinkActive(href: string): boolean {
+  return Astro.url.pathname.startsWith(href);
+}
+---
+
+<header role="banner" class="sticky top-0 z-20 border-b border-border bg-surface">
+  <Container size="xl">
+    <div class="flex h-16 items-center justify-between">
+      <!-- Logo -->
+      <a href={`/${locale}/`} class="font-serif text-2xl font-bold text-primary no-underline hover:text-primary-dark">
+        Hospeda
+      </a>
+
+      <!-- Desktop Navigation -->
+      <nav role="navigation" aria-label="Main navigation" class="hidden items-center gap-8 md:flex">
+        {navLinks.map((link) => {
+          const isActive = isLinkActive(link.href);
+          return (
+            <a
+              href={link.href}
+              class={`text-sm font-medium transition-colors hover:text-primary ${
+                isActive ? 'text-primary font-semibold' : 'text-text-secondary'
+              }`}
+              aria-current={isActive ? 'page' : undefined}
+            >
+              {link.label}
+            </a>
+          );
+        })}
+      </nav>
+
+      <!-- Right side: auth area + mobile menu button -->
+      <div class="flex items-center gap-4">
+        <!-- Auth Section (Server Island: resolved at request time) -->
+        <AuthSection server:defer locale={locale}>
+          <!-- Skeleton fallback while the server island loads -->
+          <div slot="fallback" class="h-8 w-24 animate-pulse rounded-md bg-gray-200" aria-hidden="true" />
+        </AuthSection>
+
+        <!-- Mobile menu button -->
+        <button
+          type="button"
+          class="inline-flex items-center justify-center rounded-md p-2 text-text-secondary hover:bg-bg hover:text-text md:hidden"
+          aria-label="Open menu"
+          data-mobile-menu-trigger
+        >
+          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </Container>
+</header>
