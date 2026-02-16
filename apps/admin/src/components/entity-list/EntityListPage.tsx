@@ -71,7 +71,7 @@ export const createEntityListPage = <TData extends { id: string }>(
     const paginationConfig = { ...DEFAULT_PAGINATION_CONFIG, ...config.paginationConfig };
 
     // Create API client
-    const api = createEntityApi(config.apiEndpoint, config.listItemSchema);
+    const api = createEntityApi(config.apiEndpoint, config.listItemSchema, config.defaultFilters);
 
     // Generate row type from columns
     type Row = GenerateRowType<ReturnType<typeof config.createColumns>> & TData;

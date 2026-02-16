@@ -1,3 +1,4 @@
+import { LoaderIcon } from '@repo/icons';
 /**
  * Generic API Select Component
  *
@@ -5,7 +6,6 @@
  * and provides a consistent interface for selection.
  */
 import { useQuery } from '@tanstack/react-query';
-import { LoaderIcon } from 'lucide-react';
 import type { FC } from 'react';
 import { fetchApi } from '../../lib/api/client';
 

@@ -2,7 +2,7 @@ import type { FieldConfig } from '@/components/entity-form/types/field-config.ty
 import { Badge, Label } from '@/components/ui-wrapped';
 import { cn } from '@/lib/utils';
 
-import { Check, X } from 'lucide-react';
+import { CheckIcon, CloseIcon } from '@repo/icons';
 import * as React from 'react';
 
 /**
@@ -66,9 +66,9 @@ export const BooleanViewField = React.forwardRef<HTMLDivElement, BooleanViewFiel
                     return (
                         <div className="flex items-center gap-2">
                             {value ? (
-                                <Check className="h-4 w-4 text-green-600" />
+                                <CheckIcon className="h-4 w-4 text-green-600" />
                             ) : (
-                                <X className="h-4 w-4 text-gray-400" />
+                                <CloseIcon className="h-4 w-4 text-gray-400" />
                             )}
                             <span
                                 className={cn(

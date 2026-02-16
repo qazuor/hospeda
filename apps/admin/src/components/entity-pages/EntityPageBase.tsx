@@ -5,6 +5,7 @@ import { Icon } from '@/components/icons';
 import { Button } from '@/components/ui-wrapped/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui-wrapped/Card';
 import { adminLogger } from '@/utils/logger';
+import { LoaderIcon } from '@repo/icons';
 import type { PermissionEnum } from '@repo/schemas';
 
 import React, { Suspense, type ReactNode } from 'react';
@@ -119,7 +120,7 @@ export const EntityPageBase = <T = Record<string, unknown>>({
         return (
             <div className="flex min-h-[400px] items-center justify-center">
                 <div className="text-center">
-                    <div className="mx-auto h-8 w-8 animate-spin rounded-full border-blue-600 border-b-2" />
+                    <LoaderIcon className="mx-auto h-8 w-8 animate-spin text-blue-600" />
                     <p className="mt-2 text-gray-600 text-sm">Loading {entityType}...</p>
                 </div>
             </div>
@@ -271,7 +272,7 @@ export const EntityPageBase = <T = Record<string, unknown>>({
                         <Suspense
                             fallback={
                                 <div className="flex items-center justify-center p-8">
-                                    <div className="h-6 w-6 animate-spin rounded-full border-blue-600 border-b-2" />
+                                    <LoaderIcon className="h-6 w-6 animate-spin text-blue-600" />
                                 </div>
                             }
                         >

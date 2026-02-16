@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui-wrapped';
 import { cn } from '@/lib/utils';
-import { Eye, Loader2, RotateCcw, Save } from 'lucide-react';
+import { EyeIcon, LoaderIcon, RotateCcwIcon, SaveIcon } from '@repo/icons';
 import * as React from 'react';
 import { EntityFormSection } from './EntityFormSection';
 import { useEntityForm } from './hooks/useEntityForm';
@@ -103,7 +103,7 @@ export const EntityFormLayout = React.forwardRef<HTMLDivElement, EntityFormLayou
                             {/* Loading Indicator */}
                             {isLoading && (
                                 <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    <LoaderIcon className="h-4 w-4 animate-spin" />
                                     Loading...
                                 </div>
                             )}
@@ -129,7 +129,7 @@ export const EntityFormLayout = React.forwardRef<HTMLDivElement, EntityFormLayou
                                     onClick={switchToViewMode}
                                     disabled={isLoading || isSaving}
                                 >
-                                    <Eye className="mr-2 h-4 w-4" />
+                                    <EyeIcon className="mr-2 h-4 w-4" />
                                     Preview
                                 </Button>
                             )}
@@ -144,7 +144,7 @@ export const EntityFormLayout = React.forwardRef<HTMLDivElement, EntityFormLayou
                                         onClick={discard}
                                         disabled={!canDiscard || isLoading}
                                     >
-                                        <RotateCcw className="mr-2 h-4 w-4" />
+                                        <RotateCcwIcon className="mr-2 h-4 w-4" />
                                         Discard
                                     </Button>
 
@@ -155,9 +155,9 @@ export const EntityFormLayout = React.forwardRef<HTMLDivElement, EntityFormLayou
                                         disabled={!canSave || isLoading}
                                     >
                                         {isSaving ? (
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
                                         ) : (
-                                            <Save className="mr-2 h-4 w-4" />
+                                            <SaveIcon className="mr-2 h-4 w-4" />
                                         )}
                                         Save
                                     </Button>
@@ -171,9 +171,9 @@ export const EntityFormLayout = React.forwardRef<HTMLDivElement, EntityFormLayou
                                             disabled={!canSave || isLoading}
                                         >
                                             {isSaving ? (
-                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
                                             ) : (
-                                                <Save className="mr-2 h-4 w-4" />
+                                                <SaveIcon className="mr-2 h-4 w-4" />
                                             )}
                                             Save & Publish
                                         </Button>
@@ -265,7 +265,7 @@ export const EntityFormLayout = React.forwardRef<HTMLDivElement, EntityFormLayou
                             {/* Status Information */}
                             {isSaving && (
                                 <div className="flex items-center gap-2">
-                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    <LoaderIcon className="h-4 w-4 animate-spin" />
                                     Saving...
                                 </div>
                             )}
@@ -304,9 +304,9 @@ export const EntityFormLayout = React.forwardRef<HTMLDivElement, EntityFormLayou
                                         disabled={!canSave || isLoading}
                                     >
                                         {isSaving ? (
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
                                         ) : (
-                                            <Save className="mr-2 h-4 w-4" />
+                                            <SaveIcon className="mr-2 h-4 w-4" />
                                         )}
                                         Save Changes
                                     </Button>

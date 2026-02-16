@@ -5,7 +5,7 @@
  * This component provides a searchable dropdown for selecting entities from an API.
  */
 
-import { Check, ChevronsUpDown, Loader2, X } from 'lucide-react';
+import { CheckIcon, ChevronsUpDownIcon, CloseIcon, LoaderIcon } from '@repo/icons';
 import * as React from 'react';
 
 import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
@@ -440,7 +440,7 @@ export const EntitySelectField = React.forwardRef<HTMLButtonElement, EntitySelec
                             {...props}
                         >
                             <span className="truncate">{getDisplayText()}</span>
-                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                     </PopoverTrigger>
                     <PopoverContent
@@ -460,7 +460,7 @@ export const EntitySelectField = React.forwardRef<HTMLButtonElement, EntitySelec
                                 <CommandEmpty>
                                     {isSearching ? (
                                         <div className="flex items-center justify-center py-6">
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
                                             {t('ui.entitySelect.searching')}
                                         </div>
                                     ) : (
@@ -472,7 +472,7 @@ export const EntitySelectField = React.forwardRef<HTMLButtonElement, EntitySelec
                                     {isSearching && (
                                         <CommandItem disabled>
                                             <div className="flex w-full items-center justify-center py-2">
-                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
                                                 <span className="text-muted-foreground">
                                                     {t('ui.entitySelect.searching')}
                                                 </span>
@@ -514,7 +514,7 @@ export const EntitySelectField = React.forwardRef<HTMLButtonElement, EntitySelec
                                                 value={option.value}
                                                 onSelect={handleSelect}
                                             >
-                                                <Check
+                                                <CheckIcon
                                                     className={cn(
                                                         'mr-2 h-4 w-4',
                                                         (
@@ -552,7 +552,7 @@ export const EntitySelectField = React.forwardRef<HTMLButtonElement, EntitySelec
                                         className="rounded p-0.5 hover:bg-secondary-foreground/20"
                                         disabled={disabled}
                                     >
-                                        <X className="h-3 w-3" />
+                                        <CloseIcon className="h-3 w-3" />
                                     </button>
                                 </div>
                             ))}
@@ -562,7 +562,7 @@ export const EntitySelectField = React.forwardRef<HTMLButtonElement, EntitySelec
                 {/* Loading indicator */}
                 {loading && (
                     <div className="flex items-center justify-center py-2">
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <LoaderIcon className="h-4 w-4 animate-spin" />
                         <span className="ml-2 text-muted-foreground text-sm">
                             {t('ui.entitySelect.loading')}
                         </span>

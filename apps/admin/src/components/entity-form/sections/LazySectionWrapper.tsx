@@ -1,4 +1,5 @@
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
+import { LoaderIcon } from '@repo/icons';
 import React, { Suspense, useState } from 'react';
 
 /**
@@ -29,7 +30,7 @@ export interface LazySectionWrapperProps {
 const DefaultSectionLoader: React.FC<{ sectionId: string }> = () => (
     <div className="flex min-h-[200px] items-center justify-center rounded-lg border border-gray-200 bg-gray-50">
         <div className="text-center">
-            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-blue-600 border-b-2" />
+            <LoaderIcon className="mx-auto h-8 w-8 animate-spin text-blue-600" />
             <p className="mt-2 text-gray-600 text-sm">Loading section...</p>
         </div>
     </div>

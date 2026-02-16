@@ -1,5 +1,6 @@
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
+import { AlertTriangleIcon, ChevronDownIcon, ChevronUpIcon, LoaderIcon } from '@repo/icons';
 import type { VirtualItem } from '@tanstack/react-virtual';
 import type { ReactNode } from 'react';
 import React from 'react';
@@ -156,20 +157,10 @@ export const VirtualizedEntityList = <TData extends { id: string }>({
                         className="rounded bg-gray-800/80 p-1 text-white opacity-70 hover:opacity-100"
                         title={t('ui.actions.scrollToTop')}
                     >
-                        <svg
+                        <ChevronUpIcon
                             className="h-4 w-4"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                        >
-                            <title>{t('ui.actions.scrollToTop')}</title>
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M5 15l7-7 7 7"
-                            />
-                        </svg>
+                            aria-label={t('ui.actions.scrollToTop')}
+                        />
                     </button>
                     <button
                         type="button"
@@ -177,20 +168,10 @@ export const VirtualizedEntityList = <TData extends { id: string }>({
                         className="rounded bg-gray-800/80 p-1 text-white opacity-70 hover:opacity-100"
                         title={t('ui.actions.scrollToBottom')}
                     >
-                        <svg
+                        <ChevronDownIcon
                             className="h-4 w-4"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                        >
-                            <title>{t('ui.actions.scrollToBottom')}</title>
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M19 9l-7 7-7-7"
-                            />
-                        </svg>
+                            aria-label={t('ui.actions.scrollToBottom')}
+                        />
                     </button>
                 </div>
             )}
@@ -264,7 +245,7 @@ export const DefaultEmptyState: React.FC<{ message?: string }> = ({ message }) =
  */
 export const DefaultLoadingState: React.FC<{ message?: string }> = ({ message = 'Loading...' }) => (
     <div className="flex flex-col items-center justify-center py-12">
-        <div className="mb-4 h-8 w-8 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
+        <LoaderIcon className="mb-4 h-8 w-8 animate-spin text-blue-600" />
         <p className="text-gray-500 text-sm">{message}</p>
     </div>
 );
@@ -277,20 +258,10 @@ export const DefaultErrorState: React.FC<{ error?: Error; onRetry?: () => void }
     onRetry
 }) => (
     <div className="flex flex-col items-center justify-center py-12 text-red-500">
-        <svg
+        <AlertTriangleIcon
             className="mb-4 h-12 w-12"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-        >
-            <title>Error state</title>
-            <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-            />
-        </svg>
+            aria-label="Error state"
+        />
         <p className="mb-2 font-medium text-sm">Something went wrong</p>
         {error && <p className="mb-4 text-gray-600 text-xs">{error.message}</p>}
         {onRetry && (

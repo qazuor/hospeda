@@ -7,7 +7,7 @@ import { Button, Input, Label } from '@/components/ui-wrapped';
 import { cn } from '@/lib/utils';
 import { adminLogger } from '@/utils/logger';
 
-import { ImageIcon, Upload, X } from 'lucide-react';
+import { CloseIcon, ImageIcon, LoaderIcon, UploadIcon } from '@repo/icons';
 import * as React from 'react';
 
 /**
@@ -251,7 +251,7 @@ export const ImageField = React.forwardRef<HTMLInputElement, ImageFieldProps>(
                                     className="absolute top-2 right-2"
                                     onClick={handleRemove}
                                 >
-                                    <X className="h-4 w-4" />
+                                    <CloseIcon className="h-4 w-4" />
                                 </Button>
                             )}
                         </div>
@@ -330,7 +330,7 @@ export const ImageField = React.forwardRef<HTMLInputElement, ImageFieldProps>(
                     >
                         {isUploading ? (
                             <div className="flex flex-col items-center gap-2">
-                                <div className="h-8 w-8 animate-spin rounded-full border-primary border-b-2" />
+                                <LoaderIcon className="h-8 w-8 animate-spin text-primary" />
                                 <p className="text-muted-foreground text-sm">Uploading...</p>
                             </div>
                         ) : (
@@ -346,7 +346,7 @@ export const ImageField = React.forwardRef<HTMLInputElement, ImageFieldProps>(
                                 </div>
                                 {/* biome-ignore lint/nursery/useSortedClasses: Button-like styling */}
                                 <span className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
-                                    <Upload className="mr-2 h-4 w-4" />
+                                    <UploadIcon className="mr-2 h-4 w-4" />
                                     Select Image
                                 </span>
                             </div>

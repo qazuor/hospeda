@@ -1,18 +1,18 @@
 import { Button } from '@/components/ui-wrapped';
 import { cn } from '@/lib/utils';
 import {
-    Download,
-    Edit,
-    Eye,
-    EyeOff,
-    Grid3X3,
-    List,
-    Loader2,
-    Maximize2,
-    Printer,
-    RefreshCw,
-    Settings
-} from 'lucide-react';
+    DownloadIcon,
+    EditIcon,
+    EyeIcon,
+    EyeOffIcon,
+    FullscreenIcon,
+    GridIcon,
+    ListIcon,
+    LoaderIcon,
+    PrintIcon,
+    RefreshIcon,
+    SettingsIcon
+} from '@repo/icons';
 import * as React from 'react';
 import { EntityViewSection } from '../entity-form/EntityViewSection';
 import { TabsLayout } from '../entity-form/layouts';
@@ -145,7 +145,7 @@ export const EntityViewLayout = React.forwardRef<HTMLDivElement, EntityViewLayou
                             {/* Loading Indicator */}
                             {isLoading && (
                                 <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    <LoaderIcon className="h-4 w-4 animate-spin" />
                                     Loading...
                                 </div>
                             )}
@@ -171,7 +171,7 @@ export const EntityViewLayout = React.forwardRef<HTMLDivElement, EntityViewLayou
                                     onClick={() => handleDisplayModeChange('card')}
                                     className="rounded-r-none border-r"
                                 >
-                                    <Grid3X3 className="h-4 w-4" />
+                                    <GridIcon className="h-4 w-4" />
                                 </Button>
                                 <Button
                                     type="button"
@@ -180,7 +180,7 @@ export const EntityViewLayout = React.forwardRef<HTMLDivElement, EntityViewLayou
                                     onClick={() => handleDisplayModeChange('list')}
                                     className="rounded-none border-r"
                                 >
-                                    <List className="h-4 w-4" />
+                                    <ListIcon className="h-4 w-4" />
                                 </Button>
                                 <Button
                                     type="button"
@@ -189,7 +189,7 @@ export const EntityViewLayout = React.forwardRef<HTMLDivElement, EntityViewLayou
                                     onClick={() => handleDisplayModeChange('compact')}
                                     className="rounded-l-none"
                                 >
-                                    <Maximize2 className="h-4 w-4" />
+                                    <FullscreenIcon className="h-4 w-4" />
                                 </Button>
                             </div>
 
@@ -201,9 +201,9 @@ export const EntityViewLayout = React.forwardRef<HTMLDivElement, EntityViewLayou
                                 onClick={toggleShowEmptyFields}
                             >
                                 {showEmptyFields ? (
-                                    <EyeOff className="mr-2 h-4 w-4" />
+                                    <EyeOffIcon className="mr-2 h-4 w-4" />
                                 ) : (
-                                    <Eye className="mr-2 h-4 w-4" />
+                                    <EyeIcon className="mr-2 h-4 w-4" />
                                 )}
                                 {showEmptyFields ? 'Hide Empty' : 'Show Empty'}
                             </Button>
@@ -216,7 +216,7 @@ export const EntityViewLayout = React.forwardRef<HTMLDivElement, EntityViewLayou
                                     size="sm"
                                     onClick={toggleShowEditControls}
                                 >
-                                    <Settings className="mr-2 h-4 w-4" />
+                                    <SettingsIcon className="mr-2 h-4 w-4" />
                                     {showEditControls ? 'Hide Controls' : 'Show Controls'}
                                 </Button>
                             )}
@@ -229,7 +229,7 @@ export const EntityViewLayout = React.forwardRef<HTMLDivElement, EntityViewLayou
                                 onClick={refresh}
                                 disabled={isLoading}
                             >
-                                <RefreshCw
+                                <RefreshIcon
                                     className={cn('mr-2 h-4 w-4', isLoading && 'animate-spin')}
                                 />
                                 Refresh
@@ -241,7 +241,7 @@ export const EntityViewLayout = React.forwardRef<HTMLDivElement, EntityViewLayou
                                 size="sm"
                                 onClick={printView}
                             >
-                                <Printer className="mr-2 h-4 w-4" />
+                                <PrintIcon className="mr-2 h-4 w-4" />
                                 Print
                             </Button>
 
@@ -252,7 +252,7 @@ export const EntityViewLayout = React.forwardRef<HTMLDivElement, EntityViewLayou
                                 onClick={handleExport}
                                 disabled={isEmpty}
                             >
-                                <Download className="mr-2 h-4 w-4" />
+                                <DownloadIcon className="mr-2 h-4 w-4" />
                                 Export
                             </Button>
 
@@ -263,7 +263,7 @@ export const EntityViewLayout = React.forwardRef<HTMLDivElement, EntityViewLayou
                                     size="sm"
                                     onClick={onEditMode}
                                 >
-                                    <Edit className="mr-2 h-4 w-4" />
+                                    <EditIcon className="mr-2 h-4 w-4" />
                                     Edit
                                 </Button>
                             )}
@@ -290,7 +290,7 @@ export const EntityViewLayout = React.forwardRef<HTMLDivElement, EntityViewLayou
                                 onClick={refresh}
                                 className="mt-4"
                             >
-                                <RefreshCw className="mr-2 h-4 w-4" />
+                                <RefreshIcon className="mr-2 h-4 w-4" />
                                 Refresh
                             </Button>
                         </div>
@@ -375,7 +375,7 @@ export const EntityViewLayout = React.forwardRef<HTMLDivElement, EntityViewLayou
                             {/* Status Information */}
                             {isLoading && (
                                 <div className="flex items-center gap-2">
-                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    <LoaderIcon className="h-4 w-4 animate-spin" />
                                     Loading...
                                 </div>
                             )}

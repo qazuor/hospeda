@@ -9,7 +9,7 @@ import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
 import { adminLogger } from '@/utils/logger';
 
-import { Download, ExternalLink, ImageIcon, ZoomIn } from 'lucide-react';
+import { DownloadIcon, ExternalLinkIcon, ImageIcon, ZoomInIcon } from '@repo/icons';
 import * as React from 'react';
 
 /**
@@ -184,7 +184,7 @@ export const GalleryViewField = React.forwardRef<HTMLDivElement, GalleryViewFiel
                             className="rounded-full bg-white/20 p-2 transition-colors hover:bg-white/30"
                             title={t('ui.actions.previewImage')}
                         >
-                            <ZoomIn className="h-4 w-4 text-white" />
+                            <ZoomInIcon className="h-4 w-4 text-white" />
                         </button>
                     )}
 
@@ -195,7 +195,7 @@ export const GalleryViewField = React.forwardRef<HTMLDivElement, GalleryViewFiel
                             className="rounded-full bg-white/20 p-2 transition-colors hover:bg-white/30"
                             title={t('ui.actions.downloadImage')}
                         >
-                            <Download className="h-4 w-4 text-white" />
+                            <DownloadIcon className="h-4 w-4 text-white" />
                         </button>
                     )}
 
@@ -206,7 +206,7 @@ export const GalleryViewField = React.forwardRef<HTMLDivElement, GalleryViewFiel
                             className="rounded-full bg-white/20 p-2 transition-colors hover:bg-white/30"
                             title={t('ui.actions.openInNewTab')}
                         >
-                            <ExternalLink className="h-4 w-4 text-white" />
+                            <ExternalLinkIcon className="h-4 w-4 text-white" />
                         </button>
                     )}
                 </div>

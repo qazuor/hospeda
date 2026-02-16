@@ -8,6 +8,7 @@
  */
 
 import { cn } from '@/lib/utils';
+import { LoaderIcon } from '@repo/icons';
 import { forwardRef } from 'react';
 
 /**
@@ -122,7 +123,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                     {(rightIcon || loading) && (
                         <div className="-translate-y-1/2 absolute top-1/2 right-3 text-gray-400">
                             {loading ? (
-                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                <LoaderIcon className="h-4 w-4 animate-spin text-current" />
                             ) : (
                                 rightIcon
                             )}

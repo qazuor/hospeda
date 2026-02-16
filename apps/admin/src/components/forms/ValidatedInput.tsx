@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
 import { type AsyncValidator, useAsyncValidation } from '@/lib/validation/hooks/useAsyncValidation';
-import { LoaderIcon } from '@repo/icons';
+import { CheckIcon, CloseIcon, LoaderIcon } from '@repo/icons';
 import type React from 'react';
 import type { InputHTMLAttributes } from 'react';
 import { useEffect, useId } from 'react';
@@ -224,36 +224,16 @@ export const ValidatedInput: React.FC<ValidatedInputProps> = ({
                             <LoaderIcon className="h-4 w-4 animate-spin text-gray-400" />
                         )}
                         {isValid && !isValidating && (
-                            <svg
+                            <CheckIcon
                                 className="h-4 w-4 text-green-500"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                            >
-                                <title>Valid</title>
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M5 13l4 4L19 7"
-                                />
-                            </svg>
+                                aria-label="Valid"
+                            />
                         )}
                         {hasAnyError && !isValidating && (
-                            <svg
+                            <CloseIcon
                                 className="h-4 w-4 text-red-500"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                            >
-                                <title>Invalid</title>
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M6 18L18 6M6 6l12 12"
-                                />
-                            </svg>
+                                aria-label="Invalid"
+                            />
                         )}
                     </div>
                 )}

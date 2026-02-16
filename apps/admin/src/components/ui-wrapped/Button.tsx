@@ -13,6 +13,7 @@ import {
     type ButtonProps as ShadcnButtonProps
 } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { LoaderIcon } from '@repo/icons';
 import { forwardRef } from 'react';
 
 /**
@@ -70,9 +71,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
                 disabled={disabled || loading}
                 {...props}
             >
-                {loading && (
-                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                )}
+                {loading && <LoaderIcon className="mr-2 h-4 w-4 animate-spin text-current" />}
                 {!loading && leftIcon && <span className="mr-2 flex items-center">{leftIcon}</span>}
                 {children}
                 {!loading && rightIcon && (

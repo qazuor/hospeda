@@ -9,7 +9,14 @@ import type {
 import { Label, Textarea } from '@/components/ui-wrapped';
 import { cn } from '@/lib/utils';
 
-import { Bold, Italic, Link, List, ListOrdered, Underline } from 'lucide-react';
+import {
+    BoldIcon,
+    ItalicIcon,
+    LinkIcon,
+    ListIcon,
+    ListOrderedIcon,
+    UnderlineIcon
+} from '@repo/icons';
 import * as React from 'react';
 
 /**
@@ -187,12 +194,16 @@ export const RichTextField = React.forwardRef<HTMLTextAreaElement, RichTextField
 
         // Toolbar button configuration
         const toolbarButtons = [
-            { feature: RichTextFeatureEnum.BOLD, icon: Bold, label: 'Bold' },
-            { feature: RichTextFeatureEnum.ITALIC, icon: Italic, label: 'Italic' },
-            { feature: RichTextFeatureEnum.UNDERLINE, icon: Underline, label: 'Underline' },
-            { feature: RichTextFeatureEnum.LINK, icon: Link, label: 'Link' },
-            { feature: RichTextFeatureEnum.LIST, icon: List, label: 'Bullet List' },
-            { feature: RichTextFeatureEnum.ORDERED_LIST, icon: ListOrdered, label: 'Numbered List' }
+            { feature: RichTextFeatureEnum.BOLD, icon: BoldIcon, label: 'Bold' },
+            { feature: RichTextFeatureEnum.ITALIC, icon: ItalicIcon, label: 'Italic' },
+            { feature: RichTextFeatureEnum.UNDERLINE, icon: UnderlineIcon, label: 'Underline' },
+            { feature: RichTextFeatureEnum.LINK, icon: LinkIcon, label: 'Link' },
+            { feature: RichTextFeatureEnum.LIST, icon: ListIcon, label: 'Bullet List' },
+            {
+                feature: RichTextFeatureEnum.ORDERED_LIST,
+                icon: ListOrderedIcon,
+                label: 'Numbered List'
+            }
         ];
 
         const availableButtons = toolbarButtons.filter(

@@ -9,20 +9,36 @@
  */
 
 import { cn } from '@/lib/utils';
+import { ICON_SIZES as PACKAGE_ICON_SIZES } from '@repo/icons';
 import { forwardRef } from 'react';
 import { FallbackIcon, ICON_REGISTRY, type IconName, hasIcon } from './IconRegistry';
 
 /**
- * Icon size variants
+ * Tailwind CSS class mapping for icon sizing in admin layout.
+ * These classes set the rendered dimensions via CSS, overriding
+ * the SVG's intrinsic width/height from @repo/icons ICON_SIZES.
  */
-export const ICON_SIZES = {
-    xs: 'h-3 w-3',
-    sm: 'h-4 w-4',
-    md: 'h-5 w-5',
-    lg: 'h-6 w-6',
-    xl: 'h-8 w-8',
-    '2xl': 'h-10 w-10'
+export const ICON_SIZE_CLASSES = {
+    xs: 'h-3 w-3', // 12px
+    sm: 'h-4 w-4', // 16px
+    md: 'h-5 w-5', // 20px
+    lg: 'h-6 w-6', // 24px
+    xl: 'h-8 w-8', // 32px
+    '2xl': 'h-10 w-10' // 40px (admin-only)
 } as const;
+
+/**
+ * Maps admin size keys to pixel values for the underlying icon's
+ * SVG intrinsic dimensions. Uses @repo/icons ICON_SIZES where available.
+ */
+const ICON_SIZE_MAP: Record<keyof typeof ICON_SIZE_CLASSES, number> = {
+    xs: PACKAGE_ICON_SIZES.xs,
+    sm: PACKAGE_ICON_SIZES.sm,
+    md: PACKAGE_ICON_SIZES.md,
+    lg: PACKAGE_ICON_SIZES.lg,
+    xl: PACKAGE_ICON_SIZES.xl,
+    '2xl': 40
+};
 
 /**
  * Icon component props
@@ -31,7 +47,7 @@ export type IconProps = {
     /** Icon name from the registry */
     readonly name: IconName | string;
     /** Icon size */
-    readonly size?: keyof typeof ICON_SIZES;
+    readonly size?: keyof typeof ICON_SIZE_CLASSES;
     /** Additional CSS classes */
     readonly className?: string;
     /** Accessibility label */
@@ -90,11 +106,12 @@ export const Icon = forwardRef<SVGSVGElement, IconProps>(
         return (
             <IconComponent
                 ref={ref}
+                size={ICON_SIZE_MAP[size]}
                 className={cn(
                     // Base styles
                     'inline-block flex-shrink-0',
-                    // Size
-                    ICON_SIZES[size],
+                    // Size (Tailwind classes override SVG intrinsic dimensions)
+                    ICON_SIZE_CLASSES[size],
                     // Color variants
                     variant === 'default' && 'text-current',
                     variant === 'muted' && 'text-muted-foreground',

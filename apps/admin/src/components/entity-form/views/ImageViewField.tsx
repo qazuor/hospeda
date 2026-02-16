@@ -9,7 +9,7 @@ import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
 import { adminLogger } from '@/utils/logger';
 
-import { Download, ExternalLink, ImageIcon } from 'lucide-react';
+import { DownloadIcon, ExternalLinkIcon, ImageIcon } from '@repo/icons';
 import * as React from 'react';
 
 /**
@@ -175,7 +175,7 @@ export const ImageViewField = React.forwardRef<HTMLDivElement, ImageViewFieldPro
                                     className="rounded-full bg-white/20 p-2 transition-colors hover:bg-white/30"
                                     title={t('ui.actions.downloadImage')}
                                 >
-                                    <Download className="h-4 w-4 text-white" />
+                                    <DownloadIcon className="h-4 w-4 text-white" />
                                 </button>
                             )}
 
@@ -186,7 +186,7 @@ export const ImageViewField = React.forwardRef<HTMLDivElement, ImageViewFieldPro
                                     className="rounded-full bg-white/20 p-2 transition-colors hover:bg-white/30"
                                     title={t('ui.actions.openInNewTab')}
                                 >
-                                    <ExternalLink className="h-4 w-4 text-white" />
+                                    <ExternalLinkIcon className="h-4 w-4 text-white" />
                                 </button>
                             )}
                         </div>

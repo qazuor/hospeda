@@ -26,7 +26,7 @@ import {
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
 import { adminLogger } from '@/utils/logger';
-import { Edit, Eye } from 'lucide-react';
+import { EditIcon, EyeIcon } from '@repo/icons';
 import * as React from 'react';
 
 /**
@@ -375,7 +375,7 @@ const EntityViewSectionComponent = React.forwardRef<HTMLDivElement, EntityViewSe
                                         className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
                                         title={t('ui.actions.editField')}
                                     >
-                                        <Edit className="h-4 w-4" />
+                                        <EditIcon className="h-4 w-4" />
                                     </button>
                                 )}
                             </div>
@@ -457,9 +457,9 @@ const EntityViewSectionComponent = React.forwardRef<HTMLDivElement, EntityViewSe
 
                             {/* Section Actions */}
                             <div className="flex items-center gap-2">
-                                <Eye className="h-4 w-4 text-muted-foreground" />
+                                <EyeIcon className="h-4 w-4 text-muted-foreground" />
                                 {hasEditPermission && showEditControls && (
-                                    <Edit className="h-4 w-4 text-muted-foreground" />
+                                    <EditIcon className="h-4 w-4 text-muted-foreground" />
                                 )}
                             </div>
                         </div>

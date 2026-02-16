@@ -187,6 +187,8 @@ export type EntityConfig<TData = unknown> = {
 
     // API
     readonly apiEndpoint: string;
+    /** Default query parameters to always include in API requests */
+    readonly defaultFilters?: Readonly<Record<string, string>>;
 
     // Routes
     readonly basePath: string;

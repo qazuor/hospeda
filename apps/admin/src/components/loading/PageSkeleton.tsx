@@ -5,6 +5,8 @@
  * Used with React Suspense and TanStack Router lazy loading.
  */
 
+import { LoaderIcon } from '@repo/icons';
+
 /**
  * Skeleton for entity list pages (tables/grids)
  */
@@ -226,7 +228,7 @@ export const PageSkeleton = () => {
     return (
         <div className="flex min-h-[60vh] items-center justify-center">
             <div className="flex flex-col items-center gap-4">
-                <div className="h-12 w-12 animate-spin rounded-full border-4 border-cyan-600 border-t-transparent" />
+                <LoaderIcon className="h-12 w-12 animate-spin text-cyan-600" />
                 <div className="h-4 w-24 animate-pulse rounded bg-gray-200" />
             </div>
         </div>

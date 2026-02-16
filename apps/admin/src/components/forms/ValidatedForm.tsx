@@ -3,6 +3,7 @@ import {
     type CrossFieldRule,
     useCrossFieldValidation
 } from '@/lib/validation/hooks/useCrossFieldValidation';
+import { AlertCircleIcon, AlertTriangleIcon, CheckIcon, LoaderIcon } from '@repo/icons';
 import type React from 'react';
 import type { ReactNode } from 'react';
 import { useCallback, useEffect, useState } from 'react';
@@ -250,20 +251,10 @@ export const ValidatedForm = <TFormData extends Record<string, unknown>>({
             {validationState.globalErrors.length > 0 && (
                 <div className="rounded-md border border-red-200 bg-red-50 p-4">
                     <div className="flex">
-                        <svg
+                        <AlertTriangleIcon
                             className="h-5 w-5 text-red-400"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                        >
-                            <title>Error</title>
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-                            />
-                        </svg>
+                            aria-label="Error"
+                        />
                         <div className="ml-3">
                             <h3 className="font-medium text-red-800 text-sm">
                                 Form Validation Errors
@@ -284,20 +275,10 @@ export const ValidatedForm = <TFormData extends Record<string, unknown>>({
             {submissionState.submitError && (
                 <div className="rounded-md border border-red-200 bg-red-50 p-4">
                     <div className="flex">
-                        <svg
+                        <AlertCircleIcon
                             className="h-5 w-5 text-red-400"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                        >
-                            <title>Submission Error</title>
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                            />
-                        </svg>
+                            aria-label="Submission Error"
+                        />
                         <div className="ml-3">
                             <p className="text-red-700 text-sm">{submissionState.submitError}</p>
                         </div>
@@ -309,20 +290,10 @@ export const ValidatedForm = <TFormData extends Record<string, unknown>>({
             {submissionState.submitSuccess && successMessage && (
                 <div className="rounded-md border border-green-200 bg-green-50 p-4">
                     <div className="flex">
-                        <svg
+                        <CheckIcon
                             className="h-5 w-5 text-green-400"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                        >
-                            <title>Success</title>
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M5 13l4 4L19 7"
-                            />
-                        </svg>
+                            aria-label="Success"
+                        />
                         <div className="ml-3">
                             <p className="text-green-700 text-sm">{successMessage}</p>
                         </div>
@@ -354,26 +325,10 @@ export const ValidatedForm = <TFormData extends Record<string, unknown>>({
                                 )}
                             >
                                 {submissionState.isSubmitting && (
-                                    <svg
+                                    <LoaderIcon
                                         className="-ml-1 mr-2 h-4 w-4 animate-spin"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <title>Loading</title>
-                                        <circle
-                                            className="opacity-25"
-                                            cx="12"
-                                            cy="12"
-                                            r="10"
-                                            stroke="currentColor"
-                                            strokeWidth="4"
-                                        />
-                                        <path
-                                            className="opacity-75"
-                                            fill="currentColor"
-                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                        />
-                                    </svg>
+                                        aria-label="Loading"
+                                    />
                                 )}
                                 {submissionState.isSubmitting ? 'Submitting...' : submitText}
                             </button>

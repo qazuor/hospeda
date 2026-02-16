@@ -7,7 +7,7 @@ import type {
 import { Badge, Label } from '@/components/ui-wrapped';
 import { cn } from '@/lib/utils';
 
-import { ExternalLink } from 'lucide-react';
+import { ExternalLinkIcon } from '@repo/icons';
 import * as React from 'react';
 
 /**
@@ -94,7 +94,7 @@ export const EntitySelectViewField = React.forwardRef<HTMLDivElement, EntitySele
                     rel="noopener noreferrer"
                 >
                     {option.label}
-                    <ExternalLink className="h-3 w-3" />
+                    <ExternalLinkIcon className="h-3 w-3" />
                 </a>
             );
         };

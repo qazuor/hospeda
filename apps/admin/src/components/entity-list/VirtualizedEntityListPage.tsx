@@ -1,6 +1,7 @@
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
 import { adminLogger } from '@/utils/logger';
+import { LoaderIcon, RefreshIcon } from '@repo/icons';
 import type { ReactNode } from 'react';
 import {
     DefaultEmptyState,
@@ -145,7 +146,10 @@ export const VirtualizedEntityListPage = <TData extends { id: string }>({
     const defaultLoadingMoreIndicator = loadingMoreIndicator || (
         <div className="flex items-center justify-center py-4">
             <div className="flex items-center gap-2 text-gray-500 text-sm">
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
+                <LoaderIcon
+                    className="h-4 w-4 animate-spin text-blue-600"
+                    aria-label="Loading more"
+                />
                 {t('ui.loading.more')}
             </div>
         </div>
@@ -177,20 +181,10 @@ export const VirtualizedEntityListPage = <TData extends { id: string }>({
                         className="rounded bg-gray-100 px-3 py-1 text-gray-700 text-sm hover:bg-gray-200 disabled:opacity-50"
                         title={t('ui.actions.refresh')}
                     >
-                        <svg
+                        <RefreshIcon
                             className="h-4 w-4"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                        >
-                            <title>{t('ui.actions.refresh')}</title>
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                            />
-                        </svg>
+                            aria-label={t('ui.actions.refresh')}
+                        />
                     </button>
 
                     {/* Debug info toggle */}

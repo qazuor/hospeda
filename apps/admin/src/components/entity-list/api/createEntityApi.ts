@@ -9,7 +9,11 @@ import type { EntityQueryParams, EntityQueryResponse } from '../types';
  * ✅ Now using createPaginatedResponseSchema from @repo/schemas
  * after Zod v4 compatibility has been resolved
  */
-export const createEntityApi = <TData>(endpoint: string, itemSchema: z.ZodSchema<TData>) => {
+export const createEntityApi = <TData>(
+    endpoint: string,
+    itemSchema: z.ZodSchema<TData>,
+    defaultFilters?: Readonly<Record<string, string>>
+) => {
     // Use centralized schema from @repo/schemas
     const PaginatedResponseSchema = createPaginatedResponseSchema(itemSchema);
 
@@ -52,6 +56,13 @@ export const createEntityApi = <TData>(endpoint: string, itemSchema: z.ZodSchema
 
         if (sort && sort.length > 0) {
             params.set('sort', JSON.stringify(sort));
+        }
+
+        // Apply default filters
+        if (defaultFilters) {
+            for (const [key, value] of Object.entries(defaultFilters)) {
+                params.set(key, value);
+            }
         }
 
         const { data } = await fetchApi<unknown>({

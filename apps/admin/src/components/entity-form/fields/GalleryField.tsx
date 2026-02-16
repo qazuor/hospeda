@@ -7,7 +7,14 @@ import { Button, Input, Label } from '@/components/ui-wrapped';
 import { cn } from '@/lib/utils';
 import { adminLogger } from '@/utils/logger';
 
-import { GripVertical, ImageIcon, Plus, Trash2, Upload } from 'lucide-react';
+import {
+    AddIcon,
+    DeleteIcon,
+    GripVerticalIcon,
+    ImageIcon,
+    LoaderIcon,
+    UploadIcon
+} from '@repo/icons';
 import * as React from 'react';
 
 /**
@@ -301,7 +308,7 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
                                     <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
                                         {sortable && (
                                             <div className="absolute top-2 left-2">
-                                                <GripVertical className="h-4 w-4 text-white" />
+                                                <GripVerticalIcon className="h-4 w-4 text-white" />
                                             </div>
                                         )}
 
@@ -313,7 +320,7 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
                                                 onClick={() => handleRemoveImage(image.id)}
                                                 className="absolute top-2 right-2"
                                             >
-                                                <Trash2 className="h-4 w-4" />
+                                                <DeleteIcon className="h-4 w-4" />
                                             </Button>
                                         )}
                                     </div>
@@ -366,7 +373,7 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
                     >
                         {isUploading ? (
                             <div className="flex flex-col items-center gap-2">
-                                <div className="h-6 w-6 animate-spin rounded-full border-primary border-b-2" />
+                                <LoaderIcon className="h-6 w-6 animate-spin text-primary" />
                                 <p className="text-muted-foreground text-sm">Uploading...</p>
                             </div>
                         ) : (
@@ -374,7 +381,7 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
                                 <ImageIcon className="h-8 w-8 text-muted-foreground" />
                                 <div className="space-y-1">
                                     <p className="font-medium text-sm">
-                                        <Plus className="mr-1 inline h-4 w-4" />
+                                        <AddIcon className="mr-1 inline h-4 w-4" />
                                         Add images ({value.length}/{maxImages})
                                     </p>
                                     <p className="text-muted-foreground text-xs">
@@ -388,7 +395,7 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
                                     size="sm"
                                     disabled={disabled}
                                 >
-                                    <Upload className="mr-2 h-4 w-4" />
+                                    <UploadIcon className="mr-2 h-4 w-4" />
                                     Select Images
                                 </Button>
                             </div>

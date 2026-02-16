@@ -13,8 +13,11 @@ export type { IconProps } from './Icon';
 export { FallbackIcon, getAvailableIcons, getIcon, hasIcon, ICON_REGISTRY } from './IconRegistry';
 export type { IconName } from './IconRegistry';
 
-// Export icon sizes for external use
-export { ICON_SIZES } from './Icon';
+// Export icon size classes for external use
+export { ICON_SIZE_CLASSES } from './Icon';
+
+// Re-export package icon sizes (pixel values) for reference
+export { ICON_SIZES } from '@repo/icons';
 
 // Re-export commonly used icons for direct import when needed
 export {
