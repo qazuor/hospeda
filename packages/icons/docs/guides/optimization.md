@@ -1,5 +1,15 @@
 # Icon Optimization Guide
 
+> **OUTDATED DOCUMENTATION**: This guide describes manual SVG optimization techniques for the old implementation. The package has migrated to Phosphor Icons, which provides pre-optimized SVG components.
+>
+> **Current State**: All icons are Phosphor wrappers. Optimization is handled by `@phosphor-icons/react`. Focus on:
+>
+> - Tree-shaking (import only needed icons)
+> - Using appropriate weight variants
+> - Leveraging predefined sizes
+>
+> For current best practices, see `/home/qazuor/projects/WEBS/hospeda/packages/icons/README.md`
+
 Comprehensive guide for optimizing icon components for performance and bundle size in the `@repo/icons` package.
 
 ## Table of Contents

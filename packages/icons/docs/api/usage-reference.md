@@ -22,15 +22,36 @@ All icon components accept the `IconProps` interface, which provides a consisten
 interface IconProps {
   /**
    * Icon size - can be a number (pixels) or predefined size
-   * @default 24
+   * @default 'md' (24px)
    */
   size?: number | 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
   /**
    * Icon color - accepts any valid CSS color value
+   * Used for all non-duotone weights
    * @default 'currentColor'
    */
   color?: string;
+
+  /**
+   * Icon weight/style variant
+   * @default 'duotone'
+   */
+  weight?: 'thin' | 'light' | 'regular' | 'bold' | 'fill' | 'duotone';
+
+  /**
+   * Color used when weight is 'duotone'
+   * Phosphor renders duotone with primary layer at full opacity
+   * and secondary layer at 20% opacity, both using this color
+   * @default '#1A5FB4'
+   */
+  duotoneColor?: string;
+
+  /**
+   * Flip icon horizontally (useful for RTL layouts)
+   * @default false
+   */
+  mirrored?: boolean;
 
   /**
    * Additional CSS classes to apply to the icon
@@ -55,7 +76,7 @@ interface IconProps {
 
 **Type:** `number | 'xs' | 'sm' | 'md' | 'lg' | 'xl'`
 
-**Default:** `24` (pixels)
+**Default:** `'md'` (24 pixels)
 
 **Description:** Controls the icon's width and height. Can be specified as:
 
@@ -141,6 +162,157 @@ import { StarIcon } from '@repo/icons';
 
 // ❌ Avoid - Doesn't work with Tailwind modifiers
 <StarIcon color="yellow" />
+```
+
+#### weight
+
+**Type:** `'thin' | 'light' | 'regular' | 'bold' | 'fill' | 'duotone'`
+
+**Default:** `'duotone'`
+
+**Description:** Controls the visual style/weight of the icon. All icons support six weight variants from Phosphor Icons.
+
+**Weight Variants:**
+
+- `thin` - Thinnest stroke weight (minimalist UI)
+- `light` - Light stroke weight (subtle elements)
+- `regular` - Standard stroke weight (default single-color)
+- `bold` - Bold stroke weight (emphasis)
+- `fill` - Filled/solid variant (active states)
+- `duotone` - Two-tone variant with primary and secondary colors (default)
+
+**Examples:**
+
+```tsx
+import { HomeIcon } from '@repo/icons';
+
+// Default duotone
+<HomeIcon />
+
+// Thin weight
+<HomeIcon weight="thin" />
+
+// Bold weight
+<HomeIcon weight="bold" />
+
+// Fill variant (solid)
+<HomeIcon weight="fill" />
+
+// Regular weight (single color)
+<HomeIcon weight="regular" />
+```
+
+**Use Cases:**
+
+```tsx
+// Navigation (duotone for visual hierarchy)
+<HomeIcon weight="duotone" />
+
+// Active state (filled)
+<BookmarkIcon weight={isActive ? 'fill' : 'regular'} />
+
+// Minimal UI (light weight)
+<CloseIcon weight="light" />
+
+// Emphasis (bold)
+<AlertIcon weight="bold" />
+```
+
+#### duotoneColor
+
+**Type:** `string`
+
+**Default:** `'#1A5FB4'` (brand color)
+
+**Description:** Color used when `weight` is set to `'duotone'`. Phosphor renders duotone icons with a primary layer at full opacity and a secondary layer at 20% opacity, both using this color.
+
+**Note:** This prop only affects icons when `weight="duotone"`. For other weights, use the `color` prop.
+
+**Examples:**
+
+```tsx
+import { HomeIcon } from '@repo/icons';
+
+// Default duotone color (brand blue)
+<HomeIcon weight="duotone" />
+
+// Custom duotone color
+<HomeIcon weight="duotone" duotoneColor="#E53E3E" />
+
+// With Tailwind CSS variable
+<HomeIcon weight="duotone" duotoneColor="var(--color-primary)" />
+
+// Duotone color has no effect on non-duotone weights
+<HomeIcon weight="regular" duotoneColor="#E53E3E" />  // duotoneColor ignored
+<HomeIcon weight="regular" color="#E53E3E" />         // Use color prop instead
+```
+
+**Best Practice:**
+
+```tsx
+// ✅ Use duotoneColor for duotone weight
+<SearchIcon weight="duotone" duotoneColor="#10B981" />
+
+// ✅ Use color for other weights
+<SearchIcon weight="bold" color="#10B981" />
+
+// ❌ Don't mix inappropriately
+<SearchIcon weight="bold" duotoneColor="#10B981" />  // Won't work
+```
+
+#### mirrored
+
+**Type:** `boolean`
+
+**Default:** `false`
+
+**Description:** Flips the icon horizontally. Useful for right-to-left (RTL) layouts or directional icons.
+
+**Examples:**
+
+```tsx
+import { ArrowRightIcon, ChevronRightIcon } from '@repo/icons';
+
+// Default (left-to-right)
+<ArrowRightIcon />
+
+// Mirrored (right-to-left)
+<ArrowRightIcon mirrored />
+
+// RTL layout example
+<ChevronRightIcon mirrored={isRTL} />
+
+// Conditional mirroring
+const direction = 'rtl';
+<ArrowRightIcon mirrored={direction === 'rtl'} />
+```
+
+**Use Cases:**
+
+```tsx
+// RTL navigation
+function BackButton({ locale }: { locale: string }) {
+  const isRTL = locale === 'ar' || locale === 'he';
+  return (
+    <button>
+      <ArrowLeftIcon mirrored={isRTL} />
+      Back
+    </button>
+  );
+}
+
+// Directional icons
+<ChevronRightIcon mirrored={isOpen} />
+```
+
+**Best Practice:** Use `mirrored` prop instead of CSS transforms for better semantics and performance:
+
+```tsx
+// ✅ Recommended
+<ArrowRightIcon mirrored />
+
+// ❌ Avoid
+<ArrowRightIcon className="scale-x-[-1]" />
 ```
 
 #### className
@@ -252,9 +424,11 @@ import { SearchIcon, CloseIcon, EditIcon } from '@repo/icons';
 **Common Props:**
 
 - **Event Handlers**: `onClick`, `onMouseEnter`, `onMouseLeave`, `onFocus`, `onBlur`
-- **Styling**: `style`, `strokeWidth`, `strokeLinecap`, `strokeLinejoin`
+- **Styling**: `style`, custom data attributes
 - **Accessibility**: `role`, `aria-hidden`, `focusable`
 - **IDs**: `id`, `data-*` attributes
+
+**Note:** Props like `strokeWidth`, `strokeLinecap`, etc. are not applicable as icons are Phosphor wrappers. Use the `weight` prop to control visual style instead.
 
 **Examples:**
 
@@ -270,9 +444,6 @@ import { DownloadIcon } from '@repo/icons';
 
 // Data attributes
 <DownloadIcon data-testid="download-icon" />
-
-// Custom SVG props
-<DownloadIcon strokeWidth={3} />
 
 // Multiple props
 <DownloadIcon

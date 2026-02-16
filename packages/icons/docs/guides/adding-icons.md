@@ -1,5 +1,13 @@
 # Adding Icons Guide
 
+> **OUTDATED DOCUMENTATION**: This guide describes the old manual SVG implementation. The package has migrated to Phosphor Icons. For current implementation details, see:
+>
+> - `/home/qazuor/projects/WEBS/hospeda/packages/icons/CLAUDE.md` - Current implementation guide
+> - `/home/qazuor/projects/WEBS/hospeda/packages/icons/README.md` - API reference
+> - `/home/qazuor/projects/WEBS/hospeda/packages/icons/src/create-phosphor-icon.tsx` - Factory function
+>
+> **Quick Summary (Current)**: All icons are now Phosphor wrappers created via `createPhosphorIcon(PhosphorComponent, displayName, options)`. Import from `@phosphor-icons/react` and wrap instead of creating manual SVG components.
+
 Comprehensive guide for adding new icons to the `@repo/icons` package.
 
 ## Table of Contents

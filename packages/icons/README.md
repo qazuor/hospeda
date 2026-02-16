@@ -4,14 +4,16 @@ Universal SVG icon components for the Hospeda platform. Built for performance, a
 
 ## Features
 
-- 🎨 **386 Icons**: Comprehensive collection across 12 categories
-- ⚡ **Framework-Agnostic**: Works in React and Astro without hydration
-- 🎯 **Type-Safe**: Full TypeScript support with IconProps interface
-- 📦 **Tree-Shakeable**: Import only what you need
-- ♿ **Accessible**: Built-in aria-label and title support
-- 🚀 **Zero Runtime**: Pure SVG components, no JavaScript required
-- 🔧 **Customizable**: Configurable size, color, and className
-- 📏 **Predefined Sizes**: xs, sm, md, lg, xl for consistency
+- **396 Icons**: Comprehensive collection across 11 categories (434 component files)
+- **Phosphor Icons**: All icons are wrappers around @phosphor-icons/react
+- **Six Weight Variants**: thin, light, regular, bold, fill, duotone (default: duotone)
+- **Framework-Agnostic**: Works in React and Astro without hydration
+- **Type-Safe**: Full TypeScript support with IconProps interface
+- **Tree-Shakeable**: Import only what you need
+- **Accessible**: Built-in aria-label support
+- **Customizable**: Configurable size, color, weight, duotoneColor, and mirrored
+- **Predefined Sizes**: xs (16px), sm (20px), md (24px), lg (28px), xl (32px)
+- **Default Duotone Color**: Brand color #1A5FB4
 
 ## Installation
 
@@ -38,7 +40,7 @@ export function AmenitiesList() {
 ### Using Predefined Sizes
 
 ```tsx
-import { SearchIcon, ICON_SIZES } from '@repo/icons';
+import { SearchIcon } from '@repo/icons';
 
 export function SearchBar() {
   return (
@@ -46,6 +48,25 @@ export function SearchBar() {
       <SearchIcon size="sm" />
       <span>Search</span>
     </button>
+  );
+}
+```
+
+### Using Different Weights
+
+```tsx
+import { HomeIcon } from '@repo/icons';
+
+export function Navigation() {
+  return (
+    <nav>
+      <HomeIcon weight="thin" />
+      <HomeIcon weight="light" />
+      <HomeIcon weight="regular" />
+      <HomeIcon weight="bold" />
+      <HomeIcon weight="fill" />
+      <HomeIcon weight="duotone" duotoneColor="#E53E3E" />
+    </nav>
   );
 }
 ```
@@ -81,7 +102,7 @@ export function Modal() {
 }
 ```
 
-## 386 Icons Catalog
+## 396 Icons Catalog
 
 Our comprehensive icon library includes:
 
@@ -93,12 +114,11 @@ Our comprehensive icon library includes:
 - **Communication** (7 icons): PhoneIcon, EmailIcon, ChatIcon, WhatsappIcon, etc.
 - **Entities** (13 icons): AccommodationIcon, EventIcon, DestinationIcon, PostIcon, etc.
 - **Features** (70 icons): PetFriendlyIcon, EcologicalIcon, PanoramicViewIcon, SmartHomeIcon, etc.
-- **Navigation** (51 icons): HomeIcon, SearchIcon, MenuIcon, CloseIcon, BackIcon, NextIcon, etc.
 - **Social** (4 icons): FacebookIcon, InstagramIcon, WhatsappIcon, WebIcon
-- **System** (51 icons): UserIcon, SettingsIcon, NotificationIcon, LogoutIcon, etc.
-- **Utilities** (17 icons): CalendarIcon, ClockIcon, LocationIcon, MapIcon, etc.
+- **System** (65 icons): UserIcon, SettingsIcon, NotificationIcon, LogoutIcon, HomeIcon, etc.
+- **Utilities** (38 icons): CalendarIcon, ClockIcon, LocationIcon, MapIcon, FilterIcon, etc.
 
-**Total: 386 icons** organized for easy discovery and usage.
+**Total: 434 component files, 396 exported icons** organized for easy discovery and usage.
 
 For the complete catalog with visual previews and usage examples, see the [Icons Catalog](./docs/api/icons-catalog.md).
 
@@ -159,8 +179,17 @@ interface IconProps {
   /** Icon size - predefined size key or pixel value */
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | number;
 
-  /** Icon color - any valid CSS color value */
+  /** Icon color - any valid CSS color value (used for non-duotone weights) */
   color?: string;
+
+  /** Icon weight/style variant */
+  weight?: 'thin' | 'light' | 'regular' | 'bold' | 'fill' | 'duotone';
+
+  /** Color used when weight is 'duotone' */
+  duotoneColor?: string;
+
+  /** Flip icon horizontally (useful for RTL layouts) */
+  mirrored?: boolean;
 
   /** Additional CSS classes */
   className?: string;
@@ -177,7 +206,22 @@ interface IconProps {
 
 - **size**: `'md'` (24px)
 - **color**: `'currentColor'` (inherits parent text color)
+- **weight**: `'duotone'`
+- **duotoneColor**: `'#1A5FB4'` (brand color)
+- **mirrored**: `false`
 - **className**: `''`
+
+### ICON_SIZES Constant
+
+```tsx
+export const ICON_SIZES = {
+  xs: 16,
+  sm: 20,
+  md: 24,
+  lg: 28,
+  xl: 32
+} as const;
+```
 
 ## Development
 
@@ -209,11 +253,13 @@ pnpm format
 
 1. **Use Semantic Names**: Import `SearchIcon` not `MagnifyingGlassIcon`
 2. **Leverage Predefined Sizes**: Use size props (`xs`, `sm`, `md`, `lg`, `xl`)
-3. **Respect Color Inheritance**: Default `currentColor` inherits from parent
-4. **Add ARIA Labels**: Provide `aria-label` for icon-only buttons
-5. **Optimize Imports**: Import only needed icons for tree-shaking
-6. **Consistent Sizing**: Use predefined sizes for design system consistency
-7. **Test Accessibility**: Verify screen reader compatibility
+3. **Choose Appropriate Weight**: Use `duotone` for visual hierarchy, `fill` for active states, `regular` for minimal UI
+4. **Respect Color Inheritance**: Default `currentColor` inherits from parent
+5. **Use duotoneColor**: Customize duotone icons with brand colors
+6. **Add ARIA Labels**: Provide `aria-label` for icon-only buttons
+7. **Optimize Imports**: Import only needed icons for tree-shaking
+8. **Test Accessibility**: Verify screen reader compatibility
+9. **Leverage Mirrored Prop**: Use for RTL layouts instead of CSS transforms
 
 ## Framework Integration
 
@@ -248,39 +294,60 @@ import { WifiIcon, PoolIcon } from '@repo/icons';
 
 ## Architecture
 
-This package uses **pure SVG components** that render as static HTML:
+This package uses **Phosphor Icons wrappers** created via the `createPhosphorIcon` factory:
 
-- ✅ **Server-side rendering** (Astro, Next.js)
-- ✅ **Static site generation**
-- ✅ **Zero JavaScript runtime**
-- ✅ **Accessibility-first**
-- ✅ **Tree-shakeable exports**
+- **Icon Source**: All icons are React wrappers around `@phosphor-icons/react`
+- **Factory Pattern**: `createPhosphorIcon` bridges Phosphor's API with IconProps interface
+- **Weight System**: Six variants (thin, light, regular, bold, fill, duotone)
+- **Default Weight**: Duotone with brand color #1A5FB4
+- **Server-side rendering** (Astro, TanStack Start)
+- **Accessibility-first**
+- **Tree-shakeable exports**
 
-Each icon is a self-contained JSX component rendering an inline SVG with configurable props. Icons work identically in React and Astro environments.
+Each icon is created by importing a Phosphor component and wrapping it with `createPhosphorIcon(PhosphorComponent, displayName, options)`. The factory handles size mapping, weight defaults, and prop forwarding.
 
-## Migration from Lucide
+## Creating New Icons
 
-Replace direct `lucide-react` imports:
+All icons are created using the `createPhosphorIcon` factory function.
 
-```tsx
-// ❌ Old way
-import { Wifi, Home, User } from 'lucide-react';
-
-<Wifi size={24} />
-<Home className="text-blue-500" />
-<User color="#3B82F6" />
-```
-
-With `@repo/icons`:
+### Example: Adding a New Icon
 
 ```tsx
-// ✅ New way
-import { WifiIcon, HomeIcon, UserIcon } from '@repo/icons';
+// src/icons/system/NewIcon.tsx
+import { YourPhosphorIcon } from '@phosphor-icons/react';
+import { createPhosphorIcon } from '../../create-phosphor-icon';
 
-<WifiIcon size="md" />
-<HomeIcon className="text-blue-500" />
-<UserIcon color="#3B82F6" />
+/**
+ * Description of what this icon represents.
+ *
+ * @example
+ * ```tsx
+ * <NewIcon size="md" weight="duotone" />
+ * <NewIcon weight="bold" color="#E53E3E" />
+ * ```
+ */
+export const NewIcon = createPhosphorIcon(YourPhosphorIcon, 'New');
 ```
+
+### With Default Animation
+
+```tsx
+import { SpinnerGap } from '@phosphor-icons/react';
+import { createPhosphorIcon } from '../../create-phosphor-icon';
+
+export const LoaderIcon = createPhosphorIcon(
+  SpinnerGap,
+  'Loader',
+  { defaultClassName: 'animate-spin' }
+);
+```
+
+### Steps to Add
+
+1. Import Phosphor icon from `@phosphor-icons/react`
+2. Create wrapper using `createPhosphorIcon`
+3. Export from category index (e.g., `src/icons/system/index.ts`)
+4. Export from main index (`src/index.ts`)
 
 ## License
 

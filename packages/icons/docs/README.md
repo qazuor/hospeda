@@ -504,8 +504,8 @@ All icons follow WCAG 2.1 Level AA guidelines:
 // ✅ Correct
 import { WifiIcon } from '@repo/icons';
 
-// ❌ Wrong package
-import { Wifi } from 'lucide-react';
+// ❌ Wrong - direct Phosphor import
+import { Wifi } from '@phosphor-icons/react';
 ```
 
 ### Size Not Working

@@ -1,12 +1,12 @@
 # CLAUDE.md - Icons Package
 
-> **📚 Main Documentation**: For project-wide guidelines, workflows, and standards, see [CLAUDE.md](../../CLAUDE.md) in the project root.
+> Main Documentation: For project-wide guidelines, workflows, and standards, see [CLAUDE.md](../../CLAUDE.md) in the project root.
 
 This file provides guidance for working with the Icons package (`@repo/icons`).
 
 ## Overview
 
-Centralized icon components for consistent iconography across the Hospeda platform. Provides React components for SVG icons with customization options.
+Centralized icon components for consistent iconography across the Hospeda platform. All icons are React wrappers around Phosphor Icons (`@phosphor-icons/react`) created via the `createPhosphorIcon` factory function. Provides type-safe, customizable icon components with support for multiple weights, colors, and sizes.
 
 ## Key Commands
 
@@ -48,11 +48,33 @@ export function Navigation() {
 import { StarIcon } from '@repo/icons';
 
 <StarIcon
-  size={24}              // Size in pixels (default: 24)
-  color="currentColor"   // Color (default: currentColor)
-  className="icon-star"  // CSS class
-  strokeWidth={2}        // Stroke width (default: 2)
+  size={24}                        // Size in pixels or 'xs' | 'sm' | 'md' | 'lg' | 'xl' (default: 'md')
+  color="currentColor"             // Color (default: currentColor)
+  weight="duotone"                 // Icon weight: 'thin' | 'light' | 'regular' | 'bold' | 'fill' | 'duotone' (default: 'duotone')
+  duotoneColor="#1A5FB4"           // Color for duotone weight (default: #1A5FB4)
+  mirrored={false}                 // Flip icon horizontally (default: false)
+  className="icon-star"            // CSS class
 />
+```
+
+### Icon Weights
+
+All icons support six weight variants from Phosphor Icons:
+
+- `thin` - Thinnest stroke weight
+- `light` - Light stroke weight
+- `regular` - Default stroke weight
+- `bold` - Bold stroke weight
+- `fill` - Filled/solid variant
+- `duotone` - Two-tone variant with primary and secondary colors (default)
+
+```tsx
+import { HomeIcon } from '@repo/icons';
+
+<HomeIcon weight="thin" />
+<HomeIcon weight="bold" />
+<HomeIcon weight="fill" />
+<HomeIcon weight="duotone" duotoneColor="#E53E3E" />
 ```
 
 ### Using with Tailwind
@@ -114,46 +136,55 @@ Common icons include:
 
 ## Creating New Icons
 
-### Add SVG Icon
+All icons are wrappers around Phosphor Icons created via the `createPhosphorIcon` factory function.
 
-1. Create icon component file:
+### Adding a Phosphor Icon
+
+1. Import the Phosphor icon and create wrapper:
 
 ```tsx
-// src/icons/CustomIcon.tsx
-import type { IconProps } from '../types';
+// src/icons/system/CustomIcon.tsx
+import { YourPhosphorIcon } from '@phosphor-icons/react';
+import { createPhosphorIcon } from '../../create-phosphor-icon';
 
-export function CustomIcon({
-  size = 24,
-  color = 'currentColor',
-  strokeWidth = 2,
-  className,
-  ...props
-}: IconProps) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke={color}
-      strokeWidth={strokeWidth}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      {...props}
-    >
-      <path d="M..." />
-      {/* SVG paths */}
-    </svg>
-  );
-}
+/**
+ * Description of what this icon represents.
+ *
+ * @example
+ * ```tsx
+ * <CustomIcon size="md" weight="duotone" />
+ * ```
+ */
+export const CustomIcon = createPhosphorIcon(YourPhosphorIcon, 'Custom');
 ```
 
-2. Export from index:
+2. Export from category index:
+
+```ts
+// src/icons/system/index.ts
+export { CustomIcon } from './CustomIcon';
+```
+
+3. Export from main index:
 
 ```ts
 // src/index.ts
-export { CustomIcon } from './icons/CustomIcon';
+export { CustomIcon } from './icons/system';
+```
+
+### Optional: Default Animation
+
+For animated icons (like loaders), pass a `defaultClassName`:
+
+```tsx
+import { SpinnerGap } from '@phosphor-icons/react';
+import { createPhosphorIcon } from '../../create-phosphor-icon';
+
+export const LoaderIcon = createPhosphorIcon(
+  SpinnerGap,
+  'Loader',
+  { defaultClassName: 'animate-spin' }
+);
 ```
 
 ## Icon Sets
@@ -163,45 +194,84 @@ Icons are organized by category:
 ```
 src/
 ├── icons/
-│   ├── navigation/
-│   ├── ui/
-│   ├── content/
-│   ├── user/
-│   └── accommodation/
-├── types/
-│   └── IconProps.ts
+│   ├── actions/
+│   ├── admin/
+│   ├── amenities/
+│   ├── attractions/
+│   ├── booking/
+│   ├── communication/
+│   ├── entities/
+│   ├── features/
+│   ├── social/
+│   ├── system/
+│   └── utilities/
+├── types.ts
+├── create-phosphor-icon.tsx
 └── index.ts
 ```
 
 ## Type Definition
 
 ```ts
-export interface IconProps extends React.SVGProps<SVGSVGElement> {
-  size?: number;
+export interface IconProps {
+  /** Icon size - predefined size key or pixel value */
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | number;
+
+  /** Icon color - any valid CSS color value */
   color?: string;
-  strokeWidth?: number;
+
+  /** Icon weight/style variant */
+  weight?: 'thin' | 'light' | 'regular' | 'bold' | 'fill' | 'duotone';
+
+  /** Color used when weight is 'duotone' */
+  duotoneColor?: string;
+
+  /** Flip icon horizontally for RTL layouts */
+  mirrored?: boolean;
+
+  /** Additional CSS classes */
   className?: string;
+
+  /** Accessibility label */
+  'aria-label'?: string;
+
+  /** Additional SVG props */
+  [key: string]: unknown;
 }
+
+export const ICON_SIZES = {
+  xs: 16,
+  sm: 20,
+  md: 24,
+  lg: 28,
+  xl: 32
+} as const;
+
+export const DEFAULT_DUOTONE_COLOR = '#1A5FB4';
 ```
 
 ## Best Practices
 
 1. **Use semantic names** - `SearchIcon` not `MagnifyingGlassIcon`
-2. **Consistent sizing** - use size prop, not width/height directly
+2. **Consistent sizing** - use predefined size keys (`xs`, `sm`, `md`, `lg`, `xl`)
 3. **Respect color inheritance** - default to `currentColor`
-4. **Optimize SVGs** - minimize path data
-5. **Document usage** - add JSDoc for complex icons
+4. **Use duotone weight** - default weight provides visual hierarchy
+5. **Document usage** - add JSDoc for all icons
 6. **Test accessibility** - ensure proper ARIA labels when needed
-7. **Keep icons simple** - avoid overly complex designs
-8. **Use stroke icons** - for consistency (not fill)
+7. **Choose appropriate weight** - use `fill` for active states, `regular` for minimal UI
+8. **Leverage mirrored prop** - for RTL layouts instead of CSS transforms
 
 ## Icon Sizing Guide
 
-- `16px` - Small UI elements, inline text
-- `20px` - Standard UI icons
-- `24px` - Default size, navigation icons
-- `32px` - Large buttons, featured icons
-- `48px` - Hero sections, empty states
+Use predefined size keys for consistency:
+
+- `xs` (16px) - Small UI elements, inline text
+- `sm` (20px) - Standard UI icons, form inputs
+- `md` (24px) - Default size, navigation icons
+- `lg` (28px) - Large buttons, featured icons
+- `xl` (32px) - Hero sections, empty states
+
+Custom pixel values are also supported for special cases.
 
 ## Accessibility
 
@@ -276,25 +346,29 @@ export function FavoriteButton() {
 }
 ```
 
-## Icon Sources
+## Icon Source
 
-Icons are typically sourced from:
+All icons are wrappers around [Phosphor Icons](https://phosphoricons.com/):
 
-- [Lucide Icons](https://lucide.dev/) - Preferred source
-- Custom SVGs for brand-specific icons
-- [Heroicons](https://heroicons.com/) - Alternative
+- 434 icon component files
+- 396 exported icons
+- Organized in 11 categories
+- Wrapped via `createPhosphorIcon` factory
+- Full weight system support (thin, light, regular, bold, fill, duotone)
 
 ## Key Dependencies
 
 - `react` - For React components
-- `react-dom` - For DOM rendering
+- `@phosphor-icons/react` - Icon source library
 
 ## Notes
 
 - All icons are tree-shakeable - only imported icons are bundled
-- Icons are optimized SVGs for minimal bundle size
-- Use consistent stroke width (default: 2) across all icons
-- Icons inherit color from parent by default
+- Icons are Phosphor wrappers, not custom SVGs
+- Default weight is duotone with brand color #1A5FB4
+- Default size is 'md' (24px)
+- Icons inherit color from parent by default (currentColor)
+- Six weight variants available: thin, light, regular, bold, fill, duotone
 
 <claude-mem-context>
 # Recent Activity
