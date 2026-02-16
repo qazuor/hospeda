@@ -1,3 +1,4 @@
+import { CloseIcon, SearchIcon } from '@repo/icons';
 import type { JSX } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -131,21 +132,11 @@ export function SearchBar({
         <div className={`relative flex items-center gap-2 ${className}`}>
             {/* Search Icon */}
             <div className="pointer-events-none absolute left-3 flex items-center">
-                <svg
-                    className="h-5 w-5 text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
+                <SearchIcon
+                    size={20}
+                    className="text-gray-400"
                     aria-hidden="true"
-                >
-                    <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                    />
-                </svg>
+                />
             </div>
 
             {/* Search Input */}
@@ -167,21 +158,11 @@ export function SearchBar({
                     className="absolute right-14 flex h-5 w-5 items-center justify-center rounded-full bg-gray-300 text-gray-700 transition-colors hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50"
                     aria-label="Clear search"
                 >
-                    <svg
-                        className="h-3 w-3"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg"
+                    <CloseIcon
+                        size={12}
+                        className="text-gray-700"
                         aria-hidden="true"
-                    >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M6 18L18 6M6 6l12 12"
-                        />
-                    </svg>
+                    />
                 </button>
             )}
 
@@ -193,21 +174,11 @@ export function SearchBar({
                 className="absolute right-2 rounded-md bg-primary px-3 py-1 font-semibold text-sm text-white transition-colors hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50 disabled:cursor-not-allowed disabled:bg-gray-300"
                 aria-label="Search"
             >
-                <svg
-                    className="h-4 w-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
+                <SearchIcon
+                    size={16}
+                    className="text-white"
                     aria-hidden="true"
-                >
-                    <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                    />
-                </svg>
+                />
             </button>
         </div>
     );

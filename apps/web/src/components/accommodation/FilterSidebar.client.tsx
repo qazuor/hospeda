@@ -1,3 +1,4 @@
+import { ChevronDownIcon, CloseIcon, StarIcon } from '@repo/icons';
 import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
 
@@ -373,19 +374,12 @@ export function FilterSidebar({
                 aria-label={`${value} ${t.stars}`}
                 className="rounded p-1 transition-transform hover:scale-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
             >
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill={isFilled ? 'currentColor' : 'none'}
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className={`h-6 w-6 ${isFilled ? 'text-yellow-400' : 'text-gray-300'}`}
+                <StarIcon
+                    size={24}
+                    weight={isFilled ? 'fill' : 'regular'}
+                    className={isFilled ? 'text-yellow-400' : 'text-gray-300'}
                     aria-hidden="true"
-                >
-                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                </svg>
+                />
             </button>
         );
     };
@@ -421,15 +415,11 @@ export function FilterSidebar({
                                 aria-label={`Remove ${type} filter`}
                                 className="rounded hover:text-red-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
                             >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 20 20"
-                                    fill="currentColor"
-                                    className="h-4 w-4"
+                                <CloseIcon
+                                    size={16}
+                                    weight="bold"
                                     aria-hidden="true"
-                                >
-                                    <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
-                                </svg>
+                                />
                             </button>
                         </span>
                     ))}
@@ -442,15 +432,11 @@ export function FilterSidebar({
                                 aria-label="Remove minimum price filter"
                                 className="rounded hover:text-red-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
                             >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 20 20"
-                                    fill="currentColor"
-                                    className="h-4 w-4"
+                                <CloseIcon
+                                    size={16}
+                                    weight="bold"
                                     aria-hidden="true"
-                                >
-                                    <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
-                                </svg>
+                                />
                             </button>
                         </span>
                     )}
@@ -463,15 +449,11 @@ export function FilterSidebar({
                                 aria-label="Remove maximum price filter"
                                 className="rounded hover:text-red-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
                             >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 20 20"
-                                    fill="currentColor"
-                                    className="h-4 w-4"
+                                <CloseIcon
+                                    size={16}
+                                    weight="bold"
                                     aria-hidden="true"
-                                >
-                                    <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
-                                </svg>
+                                />
                             </button>
                         </span>
                     )}
@@ -484,15 +466,11 @@ export function FilterSidebar({
                                 aria-label="Remove destination filter"
                                 className="rounded hover:text-red-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
                             >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 20 20"
-                                    fill="currentColor"
-                                    className="h-4 w-4"
+                                <CloseIcon
+                                    size={16}
+                                    weight="bold"
                                     aria-hidden="true"
-                                >
-                                    <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
-                                </svg>
+                                />
                             </button>
                         </span>
                     )}
@@ -508,15 +486,11 @@ export function FilterSidebar({
                                 aria-label={`Remove ${amenity} filter`}
                                 className="rounded hover:text-red-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
                             >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 20 20"
-                                    fill="currentColor"
-                                    className="h-4 w-4"
+                                <CloseIcon
+                                    size={16}
+                                    weight="bold"
                                     aria-hidden="true"
-                                >
-                                    <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
-                                </svg>
+                                />
                             </button>
                         </span>
                     ))}
@@ -529,15 +503,11 @@ export function FilterSidebar({
                                 aria-label="Remove rating filter"
                                 className="rounded hover:text-red-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
                             >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 20 20"
-                                    fill="currentColor"
-                                    className="h-4 w-4"
+                                <CloseIcon
+                                    size={16}
+                                    weight="bold"
                                     aria-hidden="true"
-                                >
-                                    <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
-                                </svg>
+                                />
                             </button>
                         </span>
                     )}
@@ -565,19 +535,12 @@ export function FilterSidebar({
                         className="mb-3 flex w-full items-center justify-between rounded text-left font-semibold text-gray-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
                     >
                         {t.type}
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                            className={`h-5 w-5 transition-transform ${expandedSections.type ? 'rotate-180' : ''}`}
+                        <ChevronDownIcon
+                            size={20}
+                            weight="bold"
+                            className={`transition-transform ${expandedSections.type ? 'rotate-180' : ''}`}
                             aria-hidden="true"
-                        >
-                            <path
-                                fillRule="evenodd"
-                                d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
-                                clipRule="evenodd"
-                            />
-                        </svg>
+                        />
                     </button>
                     {expandedSections.type && (
                         <div className="space-y-2">
@@ -608,19 +571,12 @@ export function FilterSidebar({
                         className="mb-3 flex w-full items-center justify-between rounded text-left font-semibold text-gray-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
                     >
                         {t.priceRange}
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                            className={`h-5 w-5 transition-transform ${expandedSections.price ? 'rotate-180' : ''}`}
+                        <ChevronDownIcon
+                            size={20}
+                            weight="bold"
+                            className={`transition-transform ${expandedSections.price ? 'rotate-180' : ''}`}
                             aria-hidden="true"
-                        >
-                            <path
-                                fillRule="evenodd"
-                                d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
-                                clipRule="evenodd"
-                            />
-                        </svg>
+                        />
                     </button>
                     {expandedSections.price && (
                         <div className="space-y-3">
@@ -681,19 +637,12 @@ export function FilterSidebar({
                         className="mb-3 flex w-full items-center justify-between rounded text-left font-semibold text-gray-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
                     >
                         {t.destination}
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                            className={`h-5 w-5 transition-transform ${expandedSections.destination ? 'rotate-180' : ''}`}
+                        <ChevronDownIcon
+                            size={20}
+                            weight="bold"
+                            className={`transition-transform ${expandedSections.destination ? 'rotate-180' : ''}`}
                             aria-hidden="true"
-                        >
-                            <path
-                                fillRule="evenodd"
-                                d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
-                                clipRule="evenodd"
-                            />
-                        </svg>
+                        />
                     </button>
                     {expandedSections.destination && (
                         <select
@@ -724,19 +673,12 @@ export function FilterSidebar({
                         className="mb-3 flex w-full items-center justify-between rounded text-left font-semibold text-gray-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
                     >
                         {t.amenities}
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                            className={`h-5 w-5 transition-transform ${expandedSections.amenities ? 'rotate-180' : ''}`}
+                        <ChevronDownIcon
+                            size={20}
+                            weight="bold"
+                            className={`transition-transform ${expandedSections.amenities ? 'rotate-180' : ''}`}
                             aria-hidden="true"
-                        >
-                            <path
-                                fillRule="evenodd"
-                                d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
-                                clipRule="evenodd"
-                            />
-                        </svg>
+                        />
                     </button>
                     {expandedSections.amenities && (
                         <div className="space-y-2">
@@ -767,19 +709,12 @@ export function FilterSidebar({
                         className="mb-3 flex w-full items-center justify-between rounded text-left font-semibold text-gray-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
                     >
                         {t.rating}
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                            className={`h-5 w-5 transition-transform ${expandedSections.rating ? 'rotate-180' : ''}`}
+                        <ChevronDownIcon
+                            size={20}
+                            weight="bold"
+                            className={`transition-transform ${expandedSections.rating ? 'rotate-180' : ''}`}
                             aria-hidden="true"
-                        >
-                            <path
-                                fillRule="evenodd"
-                                d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
-                                clipRule="evenodd"
-                            />
-                        </svg>
+                        />
                     </button>
                     {expandedSections.rating && (
                         <div className="flex gap-1">

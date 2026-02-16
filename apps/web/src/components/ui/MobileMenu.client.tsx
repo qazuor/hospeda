@@ -1,3 +1,4 @@
+import { CloseIcon } from '@repo/icons';
 import { useEffect, useRef } from 'react';
 import type { ReactElement } from 'react';
 import { buildUrl } from '../../lib/urls';
@@ -118,31 +119,10 @@ export function MobileMenu({
                         aria-label="Close mobile menu"
                         className="rounded-md p-2 text-text-secondary transition-colors hover:bg-bg-secondary hover:text-text focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
                     >
-                        <svg
+                        <CloseIcon
+                            size="sm"
                             aria-hidden="true"
-                            width="20"
-                            height="20"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                        >
-                            <title>Close icon</title>
-                            <line
-                                x1="18"
-                                y1="6"
-                                x2="6"
-                                y2="18"
-                            />
-                            <line
-                                x1="6"
-                                y1="6"
-                                x2="18"
-                                y2="18"
-                            />
-                        </svg>
+                        />
                     </button>
                 </div>
 

@@ -1,4 +1,11 @@
-import { CheckIcon, CopyIcon, FacebookIcon, ShareIcon, WhatsappIcon } from '@repo/icons';
+import {
+    CheckIcon,
+    CopyIcon,
+    FacebookIcon,
+    ShareIcon,
+    TwitterIcon,
+    WhatsappIcon
+} from '@repo/icons';
 import { useState } from 'react';
 import type { ReactElement } from 'react';
 
@@ -160,15 +167,11 @@ export function ShareButtons(props: ShareButtonsProps): ReactElement {
                         className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-black text-white transition-colors hover:bg-gray-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-black focus-visible:outline-offset-2"
                     >
                         <span className="sr-only">Share on Twitter</span>
-                        <svg
-                            className="h-5 w-5"
-                            fill="currentColor"
-                            viewBox="0 0 24 24"
+                        <TwitterIcon
+                            size={20}
+                            weight="fill"
                             aria-hidden="true"
-                        >
-                            <title>Twitter icon</title>
-                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                        </svg>
+                        />
                     </a>
                 </>
             )}

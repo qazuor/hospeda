@@ -1,3 +1,4 @@
+import { ChevronDownIcon } from '@repo/icons';
 import type { JSX } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { signOut } from '../../lib/auth-client';
@@ -210,19 +211,12 @@ export function UserNav({ user, locale = 'es', className = '' }: UserNavProps): 
                 <span className="hidden sm:inline">{user.name}</span>
 
                 {/* Chevron Icon */}
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                <ChevronDownIcon
+                    size={16}
+                    weight="bold"
+                    className={`transition-transform ${isOpen ? 'rotate-180' : ''}`}
                     aria-hidden="true"
-                >
-                    <path d="M6 9l6 6 6-6" />
-                </svg>
+                />
             </button>
 
             {/* Dropdown Menu */}

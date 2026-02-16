@@ -1,3 +1,4 @@
+import { CloseIcon } from '@repo/icons';
 import type { JSX } from 'react';
 import { useEffect, useRef } from 'react';
 
@@ -137,20 +138,10 @@ export function Modal({ title, children, open, onClose, className = '' }: ModalP
                         aria-label="Close modal"
                         className="inline-flex items-center justify-center rounded-md p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
                     >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="h-5 w-5"
+                        <CloseIcon
+                            size="sm"
                             aria-hidden="true"
-                        >
-                            <path d="M18 6L6 18" />
-                            <path d="M6 6l12 12" />
-                        </svg>
+                        />
                     </button>
                 </div>
 

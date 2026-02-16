@@ -4,6 +4,7 @@
  * Supports highlighted state for featured plans with visual emphasis.
  */
 import Button from '../ui/Button.astro';
+import { CheckIcon } from '@repo/icons';
 
 interface Props {
   plan: {
@@ -72,20 +73,7 @@ const cardClasses = [
   <ul class="mb-8 space-y-3">
     {plan.features.map((feature) => (
       <li class="flex items-start gap-3">
-        <svg
-          class="mt-0.5 h-5 w-5 flex-shrink-0 text-primary"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M5 13l4 4L19 7"
-          />
-        </svg>
+        <CheckIcon size={20} weight="bold" className="mt-0.5 flex-shrink-0 text-primary" aria-hidden="true" />
         <span class="text-text">
           {feature}
         </span>

@@ -1,3 +1,4 @@
+import { CloseIcon, NextIcon, PreviousIcon } from '@repo/icons';
 import type { JSX } from 'react';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -199,30 +200,12 @@ export function ImageGallery({ images, className = '' }: ImageGalleryProps): JSX
                             aria-label="Close lightbox"
                             data-testid="close-button"
                         >
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                className="h-8 w-8"
+                            <CloseIcon
+                                size={32}
+                                weight="bold"
+                                className="text-white"
                                 aria-hidden="true"
-                            >
-                                <line
-                                    x1="18"
-                                    y1="6"
-                                    x2="6"
-                                    y2="18"
-                                />
-                                <line
-                                    x1="6"
-                                    y1="6"
-                                    x2="18"
-                                    y2="18"
-                                />
-                            </svg>
+                            />
                         </button>
 
                         {/* Image Counter */}
@@ -252,19 +235,12 @@ export function ImageGallery({ images, className = '' }: ImageGalleryProps): JSX
                                     aria-label="Previous image"
                                     data-testid="prev-button"
                                 >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        className="h-6 w-6"
+                                    <PreviousIcon
+                                        size={24}
+                                        weight="bold"
+                                        className="text-white"
                                         aria-hidden="true"
-                                    >
-                                        <polyline points="15 18 9 12 15 6" />
-                                    </svg>
+                                    />
                                 </button>
 
                                 {/* Next Button */}
@@ -275,19 +251,12 @@ export function ImageGallery({ images, className = '' }: ImageGalleryProps): JSX
                                     aria-label="Next image"
                                     data-testid="next-button"
                                 >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        className="h-6 w-6"
+                                    <NextIcon
+                                        size={24}
+                                        weight="bold"
+                                        className="text-white"
                                         aria-hidden="true"
-                                    >
-                                        <polyline points="9 18 15 12 9 6" />
-                                    </svg>
+                                    />
                                 </button>
                             </>
                         )}

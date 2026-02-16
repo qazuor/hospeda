@@ -1,5 +1,6 @@
 ---
 import Button from './Button.astro';
+import { SearchIcon } from '@repo/icons';
 
 /**
  * Empty state component for displaying when no content is available.
@@ -19,28 +20,10 @@ const { title, message, cta, class: className } = Astro.props;
 ---
 
 <div class:list={['flex flex-col items-center justify-center px-6 py-12 text-center max-w-md mx-auto', className]}>
-  <!-- SVG Illustration -->
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    class="w-24 h-24 mb-6 text-text-secondary"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    aria-hidden="true"
-  >
-    <path
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      stroke-width="1.5"
-      d="M9.172 7.828a4 4 0 015.656 0l3.172 3.172a4 4 0 010 5.656l-3.172 3.172a4 4 0 01-5.656 0l-3.172-3.172a4 4 0 010-5.656l3.172-3.172z"
-    />
-    <path
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      stroke-width="1.5"
-      d="M12 9v6m0 0v.01"
-    />
-  </svg>
+  <!-- Empty State Icon -->
+  <div class="mb-6">
+    <SearchIcon size={96} className="text-text-secondary" aria-hidden="true" />
+  </div>
 
   <!-- Title -->
   <h3 class="text-xl font-semibold text-text mb-3">

@@ -1,3 +1,4 @@
+import { FavoriteIcon } from '@repo/icons';
 import { useState } from 'react';
 import type { JSX } from 'react';
 import { addToast } from '../../store/toast-store';
@@ -152,21 +153,14 @@ export function FavoriteButton({
                 className={`inline-flex items-center justify-center rounded-full p-2 transition-colors hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 ${className}`.trim()}
             >
                 {/* Heart icon */}
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill={isFavorited ? 'currentColor' : 'none'}
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className={`h-6 w-6 transition-colors ${
+                <FavoriteIcon
+                    size={24}
+                    weight={isFavorited ? 'fill' : 'regular'}
+                    className={`transition-colors ${
                         isFavorited ? 'text-red-500' : 'text-gray-600'
                     }`}
                     aria-hidden="true"
-                >
-                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                </svg>
+                />
             </button>
 
             {/* Auth Required Popover */}
