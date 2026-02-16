@@ -22,8 +22,6 @@
             "@repo/logger/*": ["../../packages/logger/src/*"],
             "@repo/schemas": ["../../packages/schemas/src/index.ts"],
             "@repo/schemas/*": ["../../packages/schemas/src/*"],
-            "@repo/types": ["../../packages/types/src/index.ts"],
-            "@repo/types/*": ["../../packages/types/src/*"],
             "@repo/utils": ["../../packages/utils/src/index.ts"],
             "@repo/utils/*": ["../../packages/utils/src/*"],
             "@repo/i18n": ["../../packages/i18n/src/index.ts"],

@@ -1,23 +1,40 @@
+/// <reference path="../.astro/types.d.ts" />
 /// <reference types="astro/client" />
 
-interface ImportMetaEnv {
-    // Database (server-side only)
-    readonly HOSPEDA_DATABASE_URL: string;
+/**
+ * Augment Astro's App namespace with custom types for locals.
+ * This provides type safety for data stored in context.locals during requests.
+ */
+declare namespace App {
+    /**
+     * Data stored in context.locals, available in middleware and page components.
+     */
+    interface Locals {
+        /**
+         * The validated locale for the current request, extracted from the URL path.
+         * Guaranteed to be a supported locale (es, en, or pt).
+         */
+        locale: import('./lib/i18n.js').SupportedLocale;
 
-    // API Configuration (exposed by @repo/config plugin)
-    readonly PUBLIC_API_URL: string;
+        /**
+         * The authenticated user information, or null if not authenticated.
+         * Parsed from the Better Auth session cookie.
+         */
+        user: {
+            /**
+             * The unique user ID.
+             */
+            id: string;
 
-    // Site Configuration (exposed by @repo/config plugin)
-    readonly PUBLIC_SITE_URL: string;
-    readonly PUBLIC_DEFAULT_LOCALE: string;
-    readonly PUBLIC_SUPPORTED_LOCALES: string;
+            /**
+             * The user's display name.
+             */
+            name: string;
 
-    // Monitoring (optional)
-    readonly PUBLIC_SENTRY_DSN?: string;
-    readonly SENTRY_ENVIRONMENT?: string;
-    readonly SENTRY_RELEASE?: string;
-}
-
-interface ImportMeta {
-    readonly env: ImportMetaEnv;
+            /**
+             * The user's email address.
+             */
+            email: string;
+        } | null;
+    }
 }

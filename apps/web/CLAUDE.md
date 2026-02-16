@@ -6,24 +6,22 @@ This file provides guidance for working with the Hospeda Web application (`apps/
 
 ## Overview
 
-Astro-based frontend application with React components for the Hospeda tourism platform. Features SSR/SSG, i18n support, Better Auth authentication, and Tailwind CSS styling.
+Astro 5-based public-facing website for the Hospeda platform. Features include SSR with Vercel adapter, React islands for selective interactivity, Tailwind CSS v4 for styling, and comprehensive i18n support for multilingual content delivery.
 
 ## Key Commands
 
 ```bash
 # Development
-pnpm dev                # Start dev server (port 4321)
+pnpm dev               # Start dev server (port 4321)
 
-# Build & Preview
-pnpm build              # Production build
-pnpm build:preview      # Build for preview
-pnpm preview            # Preview production build
+# Build & Deploy
+pnpm build             # Production build (SSR)
+pnpm preview           # Preview production build
 
 # Testing
 pnpm test              # Run all tests
 pnpm test:watch        # Watch mode
 pnpm test:coverage     # Coverage report
-pnpm test:ui           # Interactive UI
 
 # Code Quality
 pnpm typecheck         # TypeScript validation
@@ -31,599 +29,608 @@ pnpm lint              # Biome linting
 pnpm format            # Format code
 
 # Utilities
-pnpm gen:translations-keys  # Generate i18n keys
-pnpm analyze               # Analyze bundle size
+pnpm clean             # Remove node_modules, dist, and .astro cache
 ```
 
 ## Project Structure
 
 ```
 src/
-├── pages/              # Astro pages (file-based routing)
-│   ├── index.astro         # Home page
-│   ├── alojamientos/       # Accommodations pages
-│   ├── destinos/           # Destinations pages
-│   ├── eventos/            # Events pages
-│   ├── publicaciones/      # Posts/news pages
-│   ├── auth/               # Authentication pages
-│   └── api/                # API endpoints (SSR)
-├── components/         # React & Astro components
-│   ├── accommodation/
-│   ├── destination/
-│   ├── event/
-│   ├── ui/                 # Reusable UI components
-│   └── forms/              # Form components
-├── layout/             # Layout components
-│   ├── MainLayout.astro
-│   ├── Header.astro
-│   └── Footer.astro
-├── styles/             # Global styles
-├── lib/                # Utility libraries
-├── hooks/              # React hooks
-├── store/              # Nanostores state management
-├── i18n/               # Internationalization
-├── contexts/           # React contexts
-├── middlewares/        # Astro middleware
-└── server/             # Server utilities
+├── components/        # Astro and React components
+│   ├── accommodation/ # Accommodation-specific components
+│   ├── blog/          # Blog post components
+│   ├── content/       # Content sections (hero, featured, testimonials)
+│   ├── destination/   # Destination-specific components
+│   ├── event/         # Event components
+│   ├── review/        # Review components
+│   └── ui/            # Reusable UI primitives (Button, Input, Badge, etc.)
+├── layouts/           # Page layouts
+│   ├── BaseLayout.astro   # HTML document shell
+│   ├── Header.astro       # Site header
+│   └── Footer.astro       # Site footer
+├── pages/             # File-based routing (SSR)
+│   └── index.astro        # Home page
+├── styles/            # Global styles
+│   ├── global.css         # Global CSS
+│   ├── tailwind.css       # Tailwind imports
+│   └── animations.css     # Animation utilities
+├── lib/               # Utility libraries
+│   └── env.ts             # Environment variable schemas
+└── env.ts             # Env validation and types
 ```
 
-## Routing
+## Architecture
 
-Astro uses file-based routing:
+### Rendering Strategy
+
+**SSR (Server-Side Rendering)** with Vercel adapter. All pages are server-rendered on-demand for:
+
+- Dynamic content per request
+- SEO optimization
+- Personalized content delivery
+- Real-time data from API
+
+### Islands Architecture
+
+Use Astro components by default. Use React islands only when interactivity is required:
+
+```astro
+---
+// pages/accommodations.astro
+import AccommodationCard from '@/components/accommodation/AccommodationCard.astro';
+import SearchFilters from '@/components/search/SearchFilters'; // React component
+
+const accommodations = await fetch(`${API_URL}/accommodations`).then(r => r.json());
+---
+
+<!-- Static component (no JavaScript) -->
+<AccommodationCard {...accommodation} />
+
+<!-- Interactive component (hydrated only when visible) -->
+<SearchFilters client:visible filters={initialFilters} />
+```
+
+### Client Directives
+
+| Directive | Use When | Example |
+|-----------|----------|---------|
+| `client:load` | Immediately interactive (above fold) | Search bar, navigation menu |
+| `client:visible` | Below the fold, lazy hydrate | Filter panels, testimonials |
+| `client:idle` | Low priority, hydrate when idle | Newsletter signup, analytics |
+| `client:media` | Responsive components | `client:media="(max-width: 768px)"` for mobile menu |
+| `client:only` | Cannot be server-rendered | Map components, chart libraries |
+
+## Styling
+
+### Tailwind CSS v4
+
+Uses Tailwind CSS v4 with CSS variables for theming:
+
+```css
+/* styles/tailwind.css */
+@import 'tailwindcss';
+
+@theme {
+  --color-primary: #1e40af;
+  --color-secondary: #64748b;
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-display: 'Playfair Display', serif;
+}
+```
+
+### Component Styling
+
+```astro
+---
+// components/ui/Button.astro
+interface Props {
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
+  size?: 'sm' | 'md' | 'lg';
+  disabled?: boolean;
+  loading?: boolean;
+}
+
+const { variant = 'primary', size = 'md', disabled, loading } = Astro.props;
+
+const baseClasses = 'inline-flex items-center justify-center font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2';
+
+const variantClasses = {
+  primary: 'bg-primary text-white hover:bg-primary-dark disabled:bg-gray-300',
+  secondary: 'bg-secondary text-white hover:bg-secondary-dark',
+  outline: 'border-2 border-primary text-primary hover:bg-primary hover:text-white',
+  ghost: 'text-text hover:bg-bg',
+};
+
+const sizeClasses = {
+  sm: 'px-3 py-1.5 text-sm rounded',
+  md: 'px-4 py-2 text-base rounded-md',
+  lg: 'px-6 py-3 text-lg rounded-lg',
+};
+
+const classes = [baseClasses, variantClasses[variant], sizeClasses[size]].join(' ');
+---
+
+<button class={classes} disabled={disabled || loading} aria-busy={loading}>
+  {loading && <span class="animate-spin mr-2">...</span>}
+  <slot />
+</button>
+```
+
+## Internationalization (i18n)
+
+### Using @repo/i18n
+
+```astro
+---
+import { useI18n } from '@repo/i18n';
+
+const { locale } = Astro.params;
+const i18n = useI18n(locale || 'es');
+---
+
+<h1>{i18n.t('pages.home.title')}</h1>
+<p>{i18n.t('pages.home.description')}</p>
+```
+
+### Locale Detection
+
+Locales are detected from URL path:
+
+- `/es/` - Spanish (default)
+- `/en/` - English
+- `/pt/` - Portuguese
+
+## SEO Optimization
+
+### Meta Tags Pattern
+
+```astro
+---
+// layouts/BaseLayout.astro
+interface Props {
+  title: string;
+  description: string;
+  image?: string;
+  noindex?: boolean;
+  locale?: string;
+}
+
+const { title, description, image, noindex = false, locale = 'es' } = Astro.props;
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
+const pageTitle = `${title} | Hospeda`;
+const ogLocale = locale === 'es' ? 'es_AR' : locale === 'pt' ? 'pt_BR' : 'en_US';
+---
+
+<html lang={locale}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalUrl.href} />
+
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+
+    <!-- Open Graph -->
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl.href} />
+    <meta property="og:locale" content={ogLocale} />
+    <meta property="og:type" content="website" />
+    {image && <meta property="og:image" content={image} />}
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>
+```
+
+### Sitemap
+
+Automatically generated via `@astrojs/sitemap` integration. Configure in `astro.config.mjs`:
+
+```javascript
+integrations: [
+  sitemap(),
+],
+```
+
+## Data Fetching
+
+### Fetching from API
+
+```astro
+---
+// pages/accommodations/[id].astro
+const { id } = Astro.params;
+const API_URL = import.meta.env.PUBLIC_API_URL;
+
+const response = await fetch(`${API_URL}/api/v1/accommodations/${id}`);
+if (!response.ok) {
+  return Astro.redirect('/404');
+}
+
+const { data: accommodation } = await response.json();
+---
+
+<h1>{accommodation.name}</h1>
+<p>{accommodation.description}</p>
+```
+
+### Error Handling
+
+```astro
+---
+try {
+  const data = await fetchAccommodations();
+} catch (error) {
+  console.error('Failed to fetch accommodations:', error);
+  return Astro.redirect('/error');
+}
+---
+```
+
+## Testing
+
+### Component Testing Pattern
+
+Astro components are tested by reading the source file and verifying structure, props, and styling:
+
+```ts
+// test/components/ui/button.test.ts
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { describe, expect, it } from 'vitest';
+
+const componentPath = resolve(__dirname, '../../../src/components/ui/Button.astro');
+const content = readFileSync(componentPath, 'utf8');
+
+describe('Button.astro', () => {
+  describe('Props', () => {
+    it('should accept variant prop', () => {
+      expect(content).toContain("variant?: 'primary' | 'secondary' | 'outline' | 'ghost'");
+    });
+
+    it('should default variant to primary', () => {
+      expect(content).toContain("variant = 'primary'");
+    });
+  });
+
+  describe('Variants', () => {
+    it('should have primary variant styles', () => {
+      expect(content).toContain('bg-primary');
+      expect(content).toContain('text-white');
+      expect(content).toContain('hover:bg-primary-dark');
+    });
+  });
+
+  describe('Accessibility', () => {
+    it('should have focus-visible styles', () => {
+      expect(content).toContain('focus-visible:outline');
+    });
+
+    it('should support aria-busy for loading state', () => {
+      expect(content).toContain('aria-busy');
+    });
+  });
+});
+```
+
+### Test Organization
 
 ```
-pages/
-├── index.astro                    → /
-├── alojamientos/
-│   ├── [slug].astro              → /alojamientos/:slug
-│   └── page/
-│       └── [page].astro          → /alojamientos/page/:page
-├── destinos/
-│   └── [slug].astro              → /destinos/:slug
-└── api/
-    └── accommodations.ts         → /api/accommodations (endpoint)
+test/
+├── setup.tsx               # Vitest setup and configuration
+├── components/
+│   ├── ui/                 # UI component tests
+│   ├── accommodation/      # Accommodation component tests
+│   ├── blog/               # Blog component tests
+│   └── destination/        # Destination component tests
+├── layouts/                # Layout tests
+├── styles/                 # Style and design token tests
+└── env/                    # Environment variable tests
 ```
+
+### Running Tests
+
+```bash
+# Run all tests
+pnpm test
+
+# Watch mode
+pnpm test:watch
+
+# Coverage report
+pnpm test:coverage
+```
+
+## Environment Variables
+
+### Required Variables
+
+```env
+# API Configuration
+PUBLIC_API_URL=http://localhost:3001
+HOSPEDA_API_URL=http://localhost:3001  # Monorepo alternative
+
+# Site Configuration
+PUBLIC_SITE_URL=http://localhost:4321
+HOSPEDA_SITE_URL=http://localhost:4321  # Monorepo alternative
+
+# Environment
+NODE_ENV=development
+```
+
+### Environment Variable Validation
+
+```ts
+// src/env.ts
+import { z } from 'zod';
+
+const serverEnvSchema = z
+  .object({
+    HOSPEDA_API_URL: z.string().url().optional(),
+    PUBLIC_API_URL: z.string().url().optional(),
+    HOSPEDA_SITE_URL: z.string().url().optional(),
+    PUBLIC_SITE_URL: z.string().url().optional(),
+    NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  })
+  .refine((data) => data.HOSPEDA_API_URL || data.PUBLIC_API_URL, {
+    message: 'Either HOSPEDA_API_URL or PUBLIC_API_URL must be set',
+  });
+
+const clientEnvSchema = z.object({
+  PUBLIC_API_URL: z.string().url(),
+  PUBLIC_SITE_URL: z.string().url(),
+});
+```
+
+### Accessing Environment Variables
+
+```astro
+---
+// Server-side (Astro frontmatter)
+const apiUrl = import.meta.env.PUBLIC_API_URL;
+
+// Client-side (React components with client:* directive)
+const apiUrl = import.meta.env.PUBLIC_API_URL; // Only PUBLIC_* available
+---
+```
+
+## Performance Optimization
+
+### Image Optimization
+
+Use Astro's built-in image optimization:
+
+```astro
+---
+import { Image } from 'astro:assets';
+import heroImage from '@/assets/hero.jpg';
+---
+
+<Image
+  src={heroImage}
+  alt="Hero image"
+  width={1200}
+  height={630}
+  loading="lazy"
+  format="webp"
+/>
+```
+
+### Lazy Loading
+
+```astro
+<!-- Lazy load images below the fold -->
+<img src={imageUrl} alt="..." loading="lazy" />
+
+<!-- Lazy hydrate components below the fold -->
+<InteractiveComponent client:visible {...props} />
+```
+
+### Code Splitting
+
+Astro automatically code-splits JavaScript. Use React islands sparingly to minimize bundle size:
+
+```astro
+---
+// GOOD: Static component (no JavaScript)
+import AccommodationCard from '@/components/AccommodationCard.astro';
+
+// BAD: Everything as React (too much JavaScript)
+import AccommodationCard from '@/components/AccommodationCard.tsx';
+---
+```
+
+## Accessibility
+
+### Semantic HTML
+
+```astro
+<header>
+  <nav aria-label="Main navigation">
+    <ul>
+      <li><a href="/">Home</a></li>
+      <li><a href="/about">About</a></li>
+    </ul>
+  </nav>
+</header>
+
+<main id="main-content">
+  <h1>Page Title</h1>
+</main>
+
+<footer>
+  <p>&copy; 2026 Hospeda</p>
+</footer>
+```
+
+### Skip to Content Link
+
+```astro
+<!-- layouts/BaseLayout.astro -->
+<a
+  href="#main-content"
+  class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50"
+>
+  Skip to content
+</a>
+
+<main id="main-content">
+  <slot />
+</main>
+```
+
+### ARIA Attributes
+
+```astro
+<!-- Button with loading state -->
+<button aria-busy={loading} aria-label="Submit form">
+  Submit
+</button>
+
+<!-- Hidden decorative elements -->
+<span aria-hidden="true">...</span>
+```
+
+## Key Dependencies
+
+- `astro` - Astro framework
+- `@astrojs/react` - React integration for islands
+- `@astrojs/sitemap` - Sitemap generation
+- `@astrojs/vercel` - Vercel adapter for SSR
+- `tailwindcss` - Tailwind CSS v4
+- `@repo/i18n` - Internationalization utilities
+- `@repo/schemas` - Zod validation schemas
+- `@repo/service-core` - Business logic services
+- `@repo/icons` - Icon components
+- `@repo/utils` - Shared utilities
+
+## Best Practices
+
+1. **Use Astro components by default** - only use React when interactivity is needed
+2. **Minimize JavaScript** - leverage islands architecture for selective hydration
+3. **Use `client:visible`** as default hydration strategy for below-fold components
+4. **Validate environment variables** with Zod schemas at build time
+5. **Optimize images** with Astro's Image component
+6. **Use semantic HTML** for accessibility
+7. **Implement proper SEO** with meta tags, canonical URLs, and structured data
+8. **Test components** by verifying structure and props
+9. **Follow i18n patterns** from `@repo/i18n`
+10. **Keep bundle sizes small** - measure with Lighthouse
+
+## Common Patterns
 
 ### Dynamic Routes
 
 ```astro
 ---
-// pages/alojamientos/[slug].astro
-import { getAccommodationBySlug } from '@repo/service-core';
-
+// pages/blog/[slug].astro
 export async function getStaticPaths() {
-  const accommodations = await getAllAccommodations();
-
-  return accommodations.map(acc => ({
-    params: { slug: acc.slug },
-    props: { accommodation: acc }
+  const posts = await fetchBlogPosts();
+  return posts.map((post) => ({
+    params: { slug: post.slug },
+    props: { post },
   }));
 }
 
-const { accommodation } = Astro.props;
-const { slug } = Astro.params;
+const { post } = Astro.props;
 ---
 
-<MainLayout>
-  <h1>{accommodation.name}</h1>
-</MainLayout>
+<h1>{post.title}</h1>
+<div set:html={post.content} />
 ```
 
-## Component Patterns
-
-### Astro Components
+### Pagination
 
 ```astro
 ---
-// src/components/AccommodationCard.astro
-import type { Accommodation } from '@repo/types';
-
-interface Props {
-  accommodation: Accommodation;
-  featured?: boolean;
+// pages/blog/[...page].astro
+export async function getStaticPaths({ paginate }) {
+  const posts = await fetchBlogPosts();
+  return paginate(posts, { pageSize: 10 });
 }
 
-const { accommodation, featured = false } = Astro.props;
+const { page } = Astro.props;
 ---
 
-<article class="accommodation-card" data-featured={featured}>
-  <img src={accommodation.imageUrl} alt={accommodation.name} />
-  <h3>{accommodation.name}</h3>
-  <p>{accommodation.description}</p>
-</article>
+{page.data.map((post) => <BlogCard {...post} />)}
 
-<style>
-  .accommodation-card {
-    @apply rounded-lg shadow-md p-4;
-  }
-
-  [data-featured="true"] {
-    @apply ring-2 ring-primary;
-  }
-</style>
+<!-- Pagination controls -->
+{page.url.prev && <a href={page.url.prev}>Previous</a>}
+{page.url.next && <a href={page.url.next}>Next</a>}
 ```
 
-### React Components (with Island Architecture)
-
-```tsx
-// src/components/SearchForm.tsx
-import { useState } from 'react';
-import type { SearchFilters } from '@repo/types';
-
-interface SearchFormProps {
-  initialFilters?: SearchFilters;
-  onSearch: (filters: SearchFilters) => void;
-}
-
-export function SearchForm({ initialFilters, onSearch }: SearchFormProps) {
-  const [filters, setFilters] = useState(initialFilters ?? {});
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSearch(filters);
-  };
-
-  return (
-    <form onSubmit={handleSubmit}>
-      {/* Form fields */}
-    </form>
-  );
-}
-```
-
-Use in Astro with `client:*` directive:
+### Conditional Rendering
 
 ```astro
 ---
-import { SearchForm } from '../components/SearchForm';
+const { items } = Astro.props;
 ---
 
-<SearchForm
-  client:load
-  onSearch={(filters) => console.log(filters)}
-/>
+{items.length > 0 ? (
+  <ul>
+    {items.map((item) => <li>{item.name}</li>)}
+  </ul>
+) : (
+  <p>No items found</p>
+)}
 ```
 
-### Client Directives
-
-- `client:load` - Hydrate immediately on page load
-- `client:idle` - Hydrate when browser is idle
-- `client:visible` - Hydrate when component is visible
-- `client:media="{query}"` - Hydrate on media query match
-- `client:only="{framework}"` - No SSR, client-side only
-
-## State Management (Nanostores)
-
-```ts
-// src/store/search.ts
-import { atom, map } from 'nanostores';
-import type { SearchFilters } from '@repo/types';
-
-export const searchFilters = map<SearchFilters>({
-  query: '',
-  destination: null,
-  priceRange: null
-});
-
-export const isSearching = atom(false);
-
-// Actions
-export function updateSearchFilters(filters: Partial<SearchFilters>) {
-  searchFilters.set({ ...searchFilters.get(), ...filters });
-}
-
-export function clearSearchFilters() {
-  searchFilters.set({ query: '', destination: null, priceRange: null });
-}
-```
-
-Use in React:
-
-```tsx
-import { useStore } from '@nanostores/react';
-import { searchFilters, updateSearchFilters } from '../store/search';
-
-export function SearchComponent() {
-  const filters = useStore(searchFilters);
-
-  return (
-    <button onClick={() => updateSearchFilters({ query: 'hotel' })}>
-      Search Hotels
-    </button>
-  );
-}
-```
-
-Use in Astro:
+### Using Services
 
 ```astro
 ---
-import { searchFilters } from '../store/search';
-const filters = searchFilters.get();
----
-
-<div>{filters.query}</div>
-
-<script>
-  import { searchFilters } from '../store/search';
-
-  searchFilters.subscribe(filters => {
-    console.log('Filters changed:', filters);
-  });
-</script>
-```
-
-## Internationalization (i18n)
-
-```ts
-// src/i18n/index.ts
-import { createI18n } from '@repo/i18n';
-
-export const { t, locale, setLocale } = createI18n({
-  defaultLocale: 'es',
-  locales: ['es', 'en'],
-  translations: {
-    es: () => import('./es.json'),
-    en: () => import('./en.json')
-  }
-});
-```
-
-Use in Astro:
-
-```astro
----
-import { t } from '../i18n';
----
-
-<h1>{t('home.welcome')}</h1>
-<p>{t('home.description', { name: 'Hospeda' })}</p>
-```
-
-Use in React:
-
-```tsx
-import { useStore } from '@nanostores/react';
-import { t, locale } from '../i18n';
-
-export function Greeting() {
-  const currentLocale = useStore(locale);
-
-  return (
-    <div>
-      <h1>{t('greeting', { locale: currentLocale })}</h1>
-    </div>
-  );
-}
-```
-
-## Authentication (Better Auth)
-
-### Server-side (in pages)
-
-```astro
----
-// pages/profile.astro
-import { getSession } from '../lib/auth';
-
-const session = await getSession(Astro);
-
-if (!session) {
-  return Astro.redirect('/auth/signin');
-}
-
-const user = session.user;
----
-
-<MainLayout>
-  <h1>Welcome, {user.name}</h1>
-</MainLayout>
-```
-
-### Client-side (React components)
-
-```tsx
-import { useSession } from 'better-auth/react';
-
-export function AuthStatus() {
-  const { data: session } = useSession();
-
-  if (!session) {
-    return <a href="/auth/signin">Sign In</a>;
-  }
-
-  return (
-    <div>
-      <span>Hello, {session.user.name}</span>
-      <a href="/auth/signout">Sign Out</a>
-    </div>
-  );
-}
-```
-
-## API Routes (Endpoints)
-
-```ts
-// pages/api/accommodations.ts
-import type { APIRoute } from 'astro';
 import { AccommodationService } from '@repo/service-core';
 
-export const GET: APIRoute = async ({ request, locals }) => {
-  const url = new URL(request.url);
-  const page = Number(url.searchParams.get('page')) || 1;
+const service = new AccommodationService();
+const result = await service.findAll({ isActive: true });
 
-  const service = new AccommodationService({ userId: locals.userId });
-  const result = await service.findAll({ page, pageSize: 10 });
-
-  if (!result.success) {
-    return new Response(JSON.stringify({ error: result.error }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' }
-    });
-  }
-
-  return new Response(JSON.stringify(result.data), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' }
-  });
-};
-
-export const POST: APIRoute = async ({ request, locals }) => {
-  const body = await request.json();
-
-  const service = new AccommodationService({ userId: locals.userId });
-  const result = await service.create(body);
-
-  return new Response(JSON.stringify(result), {
-    status: result.success ? 201 : 400,
-    headers: { 'Content-Type': 'application/json' }
-  });
-};
-```
-
-## Middleware
-
-```ts
-// src/middleware.ts
-import { defineMiddleware } from 'astro:middleware';
-import { authMiddleware } from '../lib/auth';
-
-export const onRequest = defineMiddleware(async (context, next) => {
-  // Apply Better Auth
-  await authMiddleware(context, next);
-
-  // Custom logic
-  console.log(`Request to: ${context.url.pathname}`);
-
-  return next();
-});
-```
-
-## Styling with Tailwind
-
-### In Astro Components
-
-```astro
-<div class="container mx-auto px-4">
-  <h1 class="text-4xl font-bold text-primary">Title</h1>
-  <p class="mt-4 text-gray-600">Description</p>
-</div>
-
-<style>
-  /* Scoped styles with @apply */
-  .custom-class {
-    @apply flex items-center gap-4;
-  }
-</style>
-```
-
-### Custom Tailwind Config
-
-Extends from `@repo/tailwind-config`:
-
-```js
-// tailwind.config.mjs
-import baseConfig from '@repo/tailwind-config';
-
-export default {
-  ...baseConfig,
-  content: ['./src/**/*.{astro,html,js,jsx,md,mdx,svelte,ts,tsx,vue}'],
-  theme: {
-    extend: {
-      ...baseConfig.theme.extend,
-      // App-specific customizations
-    }
-  }
-};
-```
-
-## Data Fetching
-
-### Static (Build Time)
-
-```astro
----
-// Runs at build time
-const accommodations = await getAllAccommodations();
----
-
-<ul>
-  {accommodations.map(acc => (
-    <li>{acc.name}</li>
-  ))}
-</ul>
-```
-
-### Server-side (Request Time)
-
-```astro
----
-export const prerender = false; // Enable SSR for this page
-
-const { slug } = Astro.params;
-const accommodation = await getAccommodationBySlug(slug);
----
-
-<div>{accommodation.name}</div>
-```
-
-### Client-side (Hydration)
-
-```tsx
-import { useEffect, useState } from 'react';
-
-export function AccommodationList() {
-  const [accommodations, setAccommodations] = useState([]);
-
-  useEffect(() => {
-    fetch('/api/accommodations')
-      .then(res => res.json())
-      .then(data => setAccommodations(data));
-  }, []);
-
-  return (
-    <ul>
-      {accommodations.map(acc => (
-        <li key={acc.id}>{acc.name}</li>
-      ))}
-    </ul>
-  );
+if (!result.success) {
+  return Astro.redirect('/error');
 }
+
+const accommodations = result.data;
+---
+
+{accommodations.map((acc) => <AccommodationCard {...acc} />)}
 ```
 
-## Environment Variables
+## Deployment
 
-```env
-# Public variables (exposed to client)
-PUBLIC_SITE_URL=http://localhost:4321
-PUBLIC_API_URL=http://localhost:3001
+### Vercel Configuration
 
-# Server-only variables
-DATABASE_URL=postgresql://...
-HOSPEDA_BETTER_AUTH_SECRET=your-secret-key
+Deployed via `@astrojs/vercel` adapter with SSR:
 
-# Better Auth
-PUBLIC_BETTER_AUTH_URL=http://localhost:3001/api/auth
-```
+```javascript
+// astro.config.mjs
+import vercel from '@astrojs/vercel';
 
-Access in code:
-
-```ts
-// Server-side (all vars)
-import.meta.env.DATABASE_URL
-
-// Client-side (only PUBLIC_ vars)
-import.meta.env.PUBLIC_SITE_URL
-```
-
-## Testing
-
-### Component Testing
-
-```tsx
-import { render, screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
-import { AccommodationCard } from './AccommodationCard';
-
-describe('AccommodationCard', () => {
-  it('should render accommodation name', () => {
-    const mockAccommodation = {
-      id: '1',
-      name: 'Hotel Test',
-      slug: 'hotel-test'
-    };
-
-    render(<AccommodationCard accommodation={mockAccommodation} />);
-
-    expect(screen.getByText('Hotel Test')).toBeInTheDocument();
-  });
+export default defineConfig({
+  output: 'server',
+  adapter: vercel(),
 });
 ```
 
-## SEO & Meta Tags
+### Build Command
 
-```astro
----
-import { ViewTransitions } from 'astro:transitions';
-
-const { title, description, image } = Astro.props;
----
-
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{title} | Hospeda</title>
-  <meta name="description" content={description} />
-
-  <!-- Open Graph -->
-  <meta property="og:title" content={title} />
-  <meta property="og:description" content={description} />
-  <meta property="og:image" content={image} />
-
-  <!-- View Transitions -->
-  <ViewTransitions />
-</head>
+```bash
+pnpm build
 ```
 
-## Destination Hierarchy
+### Environment Variables (Vercel)
 
-Destinations use path-based URLs instead of slug-based URLs for SEO-friendly hierarchical navigation.
+Set these in Vercel project settings:
 
-### Dynamic Hierarchy Route
-
-`pages/destinos/[...path].astro` is a catch-all route that resolves destinations by their materialized path:
-
-- URL: `/destinos/argentina/litoral/entre-rios`
-- Uses `getStaticPaths()` for static generation
-- Renders breadcrumb navigation from `getDestinationBreadcrumb()`
-- Filters destinations with multiple path segments (hierarchy nodes)
-
-### Breadcrumb Component
-
-Renders accessible breadcrumb navigation using the destination's ancestor chain. Excludes the current destination from the breadcrumb links.
-
-## Performance Optimization
-
-1. **Use static generation** when possible (`export const prerender = true`)
-2. **Lazy load images**: Use Astro's `<Image>` component
-3. **Defer non-critical JS**: Use `client:idle` or `client:visible`
-4. **Minimize client JS**: Keep React islands small
-5. **Code split**: Dynamic imports for large components
-6. **Optimize images**: Use modern formats (WebP, AVIF)
-
-## Key Dependencies
-
-- `astro` - Framework
-- `@astrojs/react` - React integration
-- `better-auth` - Authentication
-- `@repo/i18n` - Internationalization
-- `@repo/service-core` - Business logic
-- `@repo/icons` - Icon components
-- `nanostores` - State management
-- `tailwindcss` - Styling
-
-## Best Practices
-
-1. **Use Astro components by default** - only use React when needed (interactivity)
-2. **Minimize client-side JavaScript** - leverage SSR/SSG
-3. **Use `client:*` directives wisely** - defer hydration when possible
-4. **Import types correctly**: `import type { ... }`
-5. **Validate props with Zod** when accepting user input
-6. **Use semantic HTML** and proper heading hierarchy
-7. **Optimize images** - use Astro's `<Image>` component
-8. **Test accessibility** - use semantic elements and ARIA
-9. **Keep components small** - single responsibility
-10. **Use i18n for all user-facing text** - no hardcoded strings
+- `PUBLIC_API_URL` - Production API URL
+- `PUBLIC_SITE_URL` - Production site URL
+- `NODE_ENV=production`
 
 <claude-mem-context>
 # Recent Activity
 
 <!-- This section is auto-generated by claude-mem. Edit content outside the tags. -->
 
-### Feb 7, 2026
-
-| ID | Time | T | Title | Read |
-|----|------|---|-------|------|
-| #1593 | 11:19 AM | 🔵 | Hospeda Monorepo Workspace Structure | ~274 |
-
+*No recent activity*
 </claude-mem-context>
