@@ -401,6 +401,7 @@ export { UnavailableIcon } from './icons/booking/UnavailableIcon';
 export { FacebookIcon } from './icons/social/FacebookIcon';
 export { InstagramIcon } from './icons/social/InstagramIcon';
 export { WebIcon } from './icons/social/WebIcon';
+export { TwitterIcon } from './icons/social/TwitterIcon';
 export { WhatsappIcon } from './icons/social/WhatsappIcon';
 
 // Export communication icons
