@@ -82,10 +82,10 @@ describe('UserNav.client.tsx', () => {
         });
 
         it('should render chevron icon in trigger button', () => {
-            const { container } = render(<UserNav user={mockUser} />);
-            const chevron = container.querySelector('svg[viewBox="0 0 24 24"]');
+            render(<UserNav user={mockUser} />);
+            const button = screen.getByRole('button', { name: /user menu/i });
+            const chevron = button.querySelector('svg');
             expect(chevron).toBeInTheDocument();
-            expect(chevron).toHaveAttribute('aria-hidden', 'true');
         });
 
         it('should not render dropdown menu by default', () => {
@@ -332,10 +332,11 @@ describe('UserNav.client.tsx', () => {
             expect(initialsCircle).toHaveAttribute('aria-hidden', 'true');
         });
 
-        it('should have aria-hidden="true" on chevron icon', () => {
-            const { container } = render(<UserNav user={mockUser} />);
-            const chevron = container.querySelector('svg[viewBox="0 0 24 24"]');
-            expect(chevron).toHaveAttribute('aria-hidden', 'true');
+        it('should have aria-label on chevron icon', () => {
+            render(<UserNav user={mockUser} />);
+            const button = screen.getByRole('button', { name: /user menu/i });
+            const chevron = button.querySelector('svg');
+            expect(chevron).toHaveAttribute('aria-label');
         });
 
         it('should have focus-visible styles on trigger button', () => {
@@ -483,16 +484,16 @@ describe('UserNav.client.tsx', () => {
         });
 
         it('should rotate chevron icon when menu is open', () => {
-            const { container } = render(<UserNav user={mockUser} />);
+            render(<UserNav user={mockUser} />);
             const button = screen.getByRole('button', { name: /user menu/i });
 
-            const chevronBefore = container.querySelector('svg[viewBox="0 0 24 24"]');
+            const chevronBefore = button.querySelector('svg');
             const classNameBefore = chevronBefore?.getAttribute('class') || '';
             expect(classNameBefore).not.toContain('rotate-180');
 
             fireEvent.click(button);
 
-            const chevronAfter = container.querySelector('svg[viewBox="0 0 24 24"]');
+            const chevronAfter = button.querySelector('svg');
             const classNameAfter = chevronAfter?.getAttribute('class') || '';
             expect(classNameAfter).toContain('rotate-180');
         });

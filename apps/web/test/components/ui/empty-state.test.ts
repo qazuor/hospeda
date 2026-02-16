@@ -37,9 +37,9 @@ describe('EmptyState.astro', () => {
             expect(content).toContain('{message}');
         });
 
-        it('should render SVG illustration', () => {
-            expect(content).toContain('<svg');
-            expect(content).toContain('xmlns="http://www.w3.org/2000/svg"');
+        it('should import SearchIcon from @repo/icons', () => {
+            expect(content).toContain("from '@repo/icons'");
+            expect(content).toContain('SearchIcon');
         });
     });
 
@@ -78,7 +78,7 @@ describe('EmptyState.astro', () => {
             expect(content).toContain('text-text-secondary');
         });
 
-        it('should style SVG with text-text-secondary', () => {
+        it('should style icon with text-text-secondary', () => {
             expect(content).toContain('text-text-secondary');
         });
 
@@ -88,18 +88,18 @@ describe('EmptyState.astro', () => {
         });
     });
 
-    describe('SVG Illustration', () => {
-        it('should have proper width and height', () => {
-            expect(content).toContain('w-24');
-            expect(content).toContain('h-24');
+    describe('Icon Illustration', () => {
+        it('should use SearchIcon component with size prop', () => {
+            expect(content).toContain('SearchIcon');
+            expect(content).toContain('size={96}');
         });
 
         it('should be hidden from screen readers', () => {
             expect(content).toContain('aria-hidden="true"');
         });
 
-        it('should use stroke for icon style', () => {
-            expect(content).toContain('stroke="currentColor"');
+        it('should pass className to icon', () => {
+            expect(content).toContain('className="text-text-secondary"');
         });
     });
 

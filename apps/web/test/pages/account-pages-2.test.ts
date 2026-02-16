@@ -299,8 +299,9 @@ describe('preferencias.astro', () => {
             expect(preferenciasContent).toContain('{labels.languageSection}');
         });
 
-        it('should display current language', () => {
-            expect(preferenciasContent).toContain('{languageNames[locale]}');
+        it('should display language options in select', () => {
+            expect(preferenciasContent).toContain('id="language-select"');
+            expect(preferenciasContent).toContain('{languageNames[loc]}');
         });
 
         it('should have timezone section', () => {
@@ -436,8 +437,9 @@ describe('suscripcion.astro', () => {
             expect(suscripcionContent).toContain('{labels.feature4}');
         });
 
-        it('should have checkmark icons for features', () => {
-            expect(suscripcionContent).toContain('d="M5 13l4 4L19 7"');
+        it('should import CheckIcon from @repo/icons for features', () => {
+            expect(suscripcionContent).toContain("from '@repo/icons'");
+            expect(suscripcionContent).toContain('CheckIcon');
         });
     });
 

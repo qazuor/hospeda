@@ -40,9 +40,13 @@ describe('View Transitions Configuration', () => {
             expect(content).toContain('@keyframes fade-in');
         });
 
-        it('should have hero-image transition name', () => {
-            expect(content).toContain('::view-transition-old(hero-image)');
-            expect(content).toContain('::view-transition-new(hero-image)');
+        it('should have entity-image transition group for card-to-detail morph', () => {
+            expect(content).toContain('::view-transition-group(entity-image)');
+        });
+
+        it('should have entity-image old/new transition rules', () => {
+            expect(content).toContain('::view-transition-old(entity-image)');
+            expect(content).toContain('::view-transition-new(entity-image)');
         });
 
         it('should have default transition duration of 0.3s', () => {
@@ -59,18 +63,40 @@ describe('View Transitions Configuration', () => {
             expect(rootNewMatch?.[1]).toBe('0.3s');
         });
 
-        it('should have hero transition duration of 0.5s', () => {
-            const heroOldMatch = content.match(
-                /::view-transition-old\(hero-image\)\s*{[^}]*animation:\s*fade-out\s+([\d.]+s)/
+        it('should have entity-image transition duration of 0.4s', () => {
+            const entityOldMatch = content.match(
+                /::view-transition-old\(entity-image\)\s*{[^}]*animation:\s*fade-out\s+([\d.]+s)/
             );
-            const heroNewMatch = content.match(
-                /::view-transition-new\(hero-image\)\s*{[^}]*animation:\s*fade-in\s+([\d.]+s)/
+            const entityNewMatch = content.match(
+                /::view-transition-new\(entity-image\)\s*{[^}]*animation:\s*fade-in\s+([\d.]+s)/
             );
 
-            expect(heroOldMatch).toBeTruthy();
-            expect(heroNewMatch).toBeTruthy();
-            expect(heroOldMatch?.[1]).toBe('0.5s');
-            expect(heroNewMatch?.[1]).toBe('0.5s');
+            expect(entityOldMatch).toBeTruthy();
+            expect(entityNewMatch).toBeTruthy();
+            expect(entityOldMatch?.[1]).toBe('0.4s');
+            expect(entityNewMatch?.[1]).toBe('0.4s');
+        });
+
+        it('should use ease-in-out for entity-image group', () => {
+            expect(content).toContain('animation-timing-function: ease-in-out');
+        });
+    });
+
+    describe('Dark Mode FOUC Prevention', () => {
+        it('should have inline script for dark mode initialization', () => {
+            expect(content).toContain('<script is:inline>');
+        });
+
+        it('should read theme from localStorage', () => {
+            expect(content).toContain("localStorage.getItem('hospeda-theme')");
+        });
+
+        it('should check prefers-color-scheme media query', () => {
+            expect(content).toContain('prefers-color-scheme:dark');
+        });
+
+        it('should set data-theme attribute on document element', () => {
+            expect(content).toContain("document.documentElement.setAttribute('data-theme'");
         });
     });
 });

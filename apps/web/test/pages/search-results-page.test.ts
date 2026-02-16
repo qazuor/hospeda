@@ -172,8 +172,9 @@ describe('busqueda.astro', () => {
             expect(content).toContain('value={query}');
         });
 
-        it('should have search icon', () => {
-            expect(content).toContain('M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z');
+        it('should import SearchIcon from @repo/icons', () => {
+            expect(content).toContain("from '@repo/icons'");
+            expect(content).toContain('SearchIcon');
         });
 
         it('should have required attribute on input', () => {

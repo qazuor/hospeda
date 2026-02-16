@@ -206,40 +206,30 @@ describe('Accommodation List Page', () => {
     });
 
     describe('Pagination', () => {
-        it('should have pagination nav with aria-label', () => {
-            expect(content).toContain('<nav class="mt-8');
-            expect(content).toContain('aria-label="Pagination"');
-        });
-
-        it('should show previous link when not on page 1', () => {
-            expect(content).toContain('page > 1 &&');
+        it('should import Pagination component', () => {
             expect(content).toContain(
-                'href={`/${locale}/alojamientos/?page=${page - 1}&sortBy=${sortBy}`}'
-            );
-            expect(content).toContain('{t.previous}');
-        });
-
-        it('should show next link when not on last page', () => {
-            expect(content).toContain('page < totalPages &&');
-            expect(content).toContain(
-                'href={`/${locale}/alojamientos/?page=${page + 1}&sortBy=${sortBy}`}'
-            );
-            expect(content).toContain('{t.next}');
-        });
-
-        it('should render page numbers', () => {
-            expect(content).toContain(
-                'Array.from({ length: totalPages }, (_, i) => i + 1).map((p) =>'
+                "import Pagination from '../../../components/ui/Pagination.astro'"
             );
         });
 
-        it('should highlight current page with aria-current', () => {
-            expect(content).toContain("aria-current={p === page ? 'page' : undefined}");
+        it('should render Pagination component', () => {
+            expect(content).toContain('<Pagination');
         });
 
-        it('should have different styles for active page', () => {
-            expect(content).toContain("p === page\n                ? 'bg-primary text-white'");
-            expect(content).toContain(": 'border border-gray-300 text-gray-700 hover:bg-gray-50'");
+        it('should pass currentPage prop', () => {
+            expect(content).toContain('currentPage={page}');
+        });
+
+        it('should pass totalPages prop', () => {
+            expect(content).toContain('totalPages={totalPages}');
+        });
+
+        it('should pass baseUrl prop', () => {
+            expect(content).toContain('baseUrl=');
+        });
+
+        it('should pass locale prop', () => {
+            expect(content).toContain('locale={locale}');
         });
     });
 
@@ -382,17 +372,12 @@ describe('Accommodation List Page', () => {
     });
 
     describe('Accessibility', () => {
-        it('should have semantic nav for pagination', () => {
-            expect(content).toContain('<nav class="mt-8');
-            expect(content).toContain('aria-label="Pagination"');
+        it('should use Pagination component for accessible navigation', () => {
+            expect(content).toContain('<Pagination');
         });
 
         it('should have label for sort select', () => {
             expect(content).toContain('<label for="sort-select"');
-        });
-
-        it('should use aria-current for active page', () => {
-            expect(content).toContain("aria-current={p === page ? 'page' : undefined}");
         });
     });
 
@@ -409,12 +394,8 @@ describe('Accommodation List Page', () => {
             );
         });
 
-        it('should style pagination with flexbox', () => {
-            expect(content).toContain('class="mt-8 flex items-center justify-center gap-2"');
-        });
-
-        it('should have hover styles for links', () => {
-            expect(content).toContain('hover:bg-gray-50');
+        it('should use Pagination component for pagination styling', () => {
+            expect(content).toContain('<Pagination');
         });
 
         it('should have focus styles for select', () => {

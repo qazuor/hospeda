@@ -363,11 +363,9 @@ describe('mi-cuenta/favoritos.astro', () => {
             expect(favoritosContent).toContain('{labels.emptyState}');
         });
 
-        it('should have heart icon', () => {
-            expect(favoritosContent).toContain('h-12 w-12');
-            expect(favoritosContent).toContain('text-text-tertiary');
-            expect(favoritosContent).toContain('<svg');
-            expect(favoritosContent).toContain('M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364');
+        it('should import FavoriteIcon from @repo/icons', () => {
+            expect(favoritosContent).toContain("from '@repo/icons'");
+            expect(favoritosContent).toContain('FavoriteIcon');
         });
 
         it('should have placeholder comment for future card grid', () => {
@@ -503,11 +501,9 @@ describe('mi-cuenta/resenas.astro', () => {
             expect(resenasContent).toContain('max-w-2xl');
         });
 
-        it('should have star icon', () => {
-            expect(resenasContent).toContain('h-16 w-16');
-            expect(resenasContent).toContain('text-text-tertiary');
-            expect(resenasContent).toContain('<svg');
-            expect(resenasContent).toContain('M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519');
+        it('should import StarIcon from @repo/icons', () => {
+            expect(resenasContent).toContain("from '@repo/icons'");
+            expect(resenasContent).toContain('StarIcon');
         });
 
         it('should have CTA button', () => {

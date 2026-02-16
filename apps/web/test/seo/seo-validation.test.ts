@@ -564,7 +564,7 @@ describe('Canonical URL Validation', () => {
 
         it('should include locale in hreflang URLs', () => {
             expect(seoHeadContent).toContain('generateAlternateUrl');
-            expect(seoHeadContent).toContain("targetLocale: 'es' | 'en'");
+            expect(seoHeadContent).toContain('targetLocale: string');
         });
     });
 

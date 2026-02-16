@@ -51,7 +51,6 @@ describe('FavoriteButton.client.tsx', () => {
             );
 
             const svg = screen.getByRole('button').querySelector('svg');
-            expect(svg).toHaveAttribute('fill', 'none');
             expect(svg?.getAttribute('class')).toContain('text-gray-600');
         });
 
@@ -66,7 +65,6 @@ describe('FavoriteButton.client.tsx', () => {
             );
 
             const svg = screen.getByRole('button').querySelector('svg');
-            expect(svg).toHaveAttribute('fill', 'currentColor');
             expect(svg?.getAttribute('class')).toContain('text-red-500');
         });
 
@@ -193,7 +191,6 @@ describe('FavoriteButton.client.tsx', () => {
             let svg = button.querySelector('svg');
 
             // Initially not favorited (outline heart)
-            expect(svg).toHaveAttribute('fill', 'none');
             expect(svg?.getAttribute('class')).toContain('text-gray-600');
 
             // Click to favorite
@@ -201,7 +198,6 @@ describe('FavoriteButton.client.tsx', () => {
 
             // Immediately updated (filled heart) - optimistic
             svg = button.querySelector('svg');
-            expect(svg).toHaveAttribute('fill', 'currentColor');
             expect(svg?.getAttribute('class')).toContain('text-red-500');
 
             await waitFor(() => {
@@ -321,13 +317,13 @@ describe('FavoriteButton.client.tsx', () => {
             const svg = button.querySelector('svg');
 
             // Initially not favorited
-            expect(svg).toHaveAttribute('fill', 'none');
+            expect(svg?.getAttribute('class')).toContain('text-gray-600');
 
             // Click without authentication
             fireEvent.click(button);
 
             // State should not change
-            expect(svg).toHaveAttribute('fill', 'none');
+            expect(svg?.getAttribute('class')).toContain('text-gray-600');
         });
 
         it('should use English locale in AuthRequiredPopover when locale is en', () => {
@@ -365,14 +361,14 @@ describe('FavoriteButton.client.tsx', () => {
             let svg = button.querySelector('svg');
 
             // Initially not favorited
-            expect(svg).toHaveAttribute('fill', 'none');
+            expect(svg?.getAttribute('class')).toContain('text-gray-600');
 
             // Click to favorite
             fireEvent.click(button);
 
             // Immediately favorited (optimistic)
             svg = button.querySelector('svg');
-            expect(svg).toHaveAttribute('fill', 'currentColor');
+            expect(svg?.getAttribute('class')).toContain('text-red-500');
 
             // Wait for API call to fail and state to revert
             await waitFor(() => {
@@ -381,7 +377,7 @@ describe('FavoriteButton.client.tsx', () => {
 
             await waitFor(() => {
                 svg = button.querySelector('svg');
-                expect(svg).toHaveAttribute('fill', 'none');
+                expect(svg?.getAttribute('class')).toContain('text-gray-600');
             });
         });
 
@@ -455,14 +451,14 @@ describe('FavoriteButton.client.tsx', () => {
             let svg = button.querySelector('svg');
 
             // Initially not favorited
-            expect(svg).toHaveAttribute('fill', 'none');
+            expect(svg?.getAttribute('class')).toContain('text-gray-600');
 
             // Click to favorite
             fireEvent.click(button);
 
             // Immediately favorited (optimistic)
             svg = button.querySelector('svg');
-            expect(svg).toHaveAttribute('fill', 'currentColor');
+            expect(svg?.getAttribute('class')).toContain('text-red-500');
 
             // Wait for API call to fail and state to revert
             await waitFor(() => {
@@ -471,7 +467,7 @@ describe('FavoriteButton.client.tsx', () => {
 
             await waitFor(() => {
                 svg = button.querySelector('svg');
-                expect(svg).toHaveAttribute('fill', 'none');
+                expect(svg?.getAttribute('class')).toContain('text-gray-600');
             });
         });
     });
@@ -638,9 +634,10 @@ describe('FavoriteButton.client.tsx', () => {
             let svg = button.querySelector('svg');
 
             // First toggle (favorite)
-            expect(svg).toHaveAttribute('fill', 'none');
+            expect(svg?.getAttribute('class')).toContain('text-gray-600');
             fireEvent.click(button);
-            expect(svg).toHaveAttribute('fill', 'currentColor');
+            svg = button.querySelector('svg');
+            expect(svg?.getAttribute('class')).toContain('text-red-500');
 
             await waitFor(() => {
                 expect(mockFetch).toHaveBeenCalledTimes(1);
@@ -649,7 +646,8 @@ describe('FavoriteButton.client.tsx', () => {
             // Second toggle (unfavorite)
             svg = button.querySelector('svg');
             fireEvent.click(button);
-            expect(svg).toHaveAttribute('fill', 'none');
+            svg = button.querySelector('svg');
+            expect(svg?.getAttribute('class')).toContain('text-gray-600');
 
             await waitFor(() => {
                 expect(mockFetch).toHaveBeenCalledTimes(2);

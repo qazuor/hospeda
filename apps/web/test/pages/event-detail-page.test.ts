@@ -336,21 +336,24 @@ describe('[slug].astro (Event Detail)', () => {
     });
 
     describe('Icons and SVG', () => {
-        it('should have SVG icons for meta information', () => {
-            expect(content).toContain('<svg');
-            expect(content).toContain('aria-hidden="true"');
+        it('should import icon components from @repo/icons', () => {
+            expect(content).toContain("from '@repo/icons'");
         });
 
-        it('should have calendar icon for date', () => {
-            expect(content).toContain('M8 7V3m8 4V3m-9 8h10M5 21h14');
+        it('should import CalendarIcon for date', () => {
+            expect(content).toContain('CalendarIcon');
         });
 
-        it('should have clock icon for time', () => {
-            expect(content).toContain('M12 8v4l3 3m6-3a9 9 0 11-18 0');
+        it('should import ClockIcon for time', () => {
+            expect(content).toContain('ClockIcon');
         });
 
-        it('should have location marker icon', () => {
-            expect(content).toContain('M17.657 16.657L13.414 20.9');
+        it('should import LocationIcon for location', () => {
+            expect(content).toContain('LocationIcon');
+        });
+
+        it('should import ImageIcon for images', () => {
+            expect(content).toContain('ImageIcon');
         });
     });
 

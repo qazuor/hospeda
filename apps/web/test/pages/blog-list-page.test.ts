@@ -176,9 +176,8 @@ describe('publicaciones/index.astro', () => {
             expect(content).toContain('aria-label="Blog posts"');
         });
 
-        it('should have pagination section', () => {
-            expect(content).toContain('id="pagination"');
-            expect(content).toContain('aria-label="Blog pagination"');
+        it('should have pagination component', () => {
+            expect(content).toContain('<Pagination');
         });
     });
 
@@ -235,7 +234,7 @@ describe('publicaciones/index.astro', () => {
 
         it('should have all categories link', () => {
             expect(content).toContain('{categoryLabels[locale].all}');
-            expect(content).toContain('aria-current="page"');
+            expect(content).toContain("aria-current={!category ? 'page' : undefined}");
         });
 
         it('should have destinations category link', () => {
@@ -290,37 +289,26 @@ describe('publicaciones/index.astro', () => {
     });
 
     describe('Pagination', () => {
-        it('should have pagination navigation', () => {
-            expect(content).toContain('<nav');
-            expect(content).toContain('aria-label="Blog pagination"');
+        it('should import Pagination component', () => {
+            expect(content).toContain(
+                "import Pagination from '../../../components/ui/Pagination.astro'"
+            );
         });
 
-        it('should conditionally render pagination', () => {
-            expect(content).toContain('pagination && pagination.totalPages > 1');
+        it('should conditionally render Pagination component', () => {
+            expect(content).toContain('{pagination && (');
+            expect(content).toContain('<Pagination');
         });
 
-        it('should have previous button', () => {
-            expect(content).toContain('{paginationLabels[locale].previous}');
+        it('should pass currentPage from pagination data', () => {
+            expect(content).toContain('currentPage={pagination.page}');
         });
 
-        it('should have next button', () => {
-            expect(content).toContain('{paginationLabels[locale].next}');
+        it('should pass totalPages from pagination data', () => {
+            expect(content).toContain('totalPages={pagination.totalPages}');
         });
 
-        it('should show previous link when available', () => {
-            expect(content).toContain('pagination.hasPreviousPage');
-        });
-
-        it('should show next link when available', () => {
-            expect(content).toContain('pagination.hasNextPage');
-        });
-
-        it('should have current page indicator', () => {
-            expect(content).toContain('aria-current="page"');
-            expect(content).toContain('bg-primary');
-        });
-
-        it('should display page numbers', () => {
+        it('should extract pagination from API response', () => {
             expect(content).toContain('pagination.page');
             expect(content).toContain('pagination.totalPages');
         });
@@ -358,16 +346,14 @@ describe('publicaciones/index.astro', () => {
         it('should have proper ARIA labels', () => {
             expect(content).toContain('aria-label="Category filter"');
             expect(content).toContain('aria-label="Blog posts"');
-            expect(content).toContain('aria-label="Blog pagination"');
         });
 
-        it('should have aria-current for active elements', () => {
-            expect(content).toContain('aria-current="page"');
+        it('should have aria-current for active category', () => {
+            expect(content).toContain("aria-current={!category ? 'page' : undefined}");
         });
 
-        it('should have proper button labels', () => {
-            expect(content).toContain('aria-label={paginationLabels[locale].previous}');
-            expect(content).toContain('aria-label={paginationLabels[locale].next}');
+        it('should use Pagination component for accessible page navigation', () => {
+            expect(content).toContain('<Pagination');
         });
     });
 

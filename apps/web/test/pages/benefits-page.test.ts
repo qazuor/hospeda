@@ -222,18 +222,44 @@ describe('beneficios.astro', () => {
     });
 
     describe('Icons and SVG', () => {
-        it('should have SVG icons for benefits', () => {
-            expect(content).toContain('<svg');
-            expect(content).toContain('aria-hidden="true"');
+        it('should import icon components from @repo/icons', () => {
+            expect(content).toContain("from '@repo/icons'");
+        });
+
+        it('should import HomeIcon for accommodations', () => {
+            expect(content).toContain('HomeIcon');
+        });
+
+        it('should import ShieldIcon for security', () => {
+            expect(content).toContain('ShieldIcon');
+        });
+
+        it('should import LocationIcon for locations', () => {
+            expect(content).toContain('LocationIcon');
+        });
+
+        it('should import StarIcon for reviews', () => {
+            expect(content).toContain('StarIcon');
+        });
+
+        it('should import InfoIcon for support', () => {
+            expect(content).toContain('InfoIcon');
+        });
+
+        it('should import UserIcon for user features', () => {
+            expect(content).toContain('UserIcon');
+        });
+
+        it('should import CheckIcon for features', () => {
+            expect(content).toContain('CheckIcon');
+        });
+
+        it('should import UsersIcon for community', () => {
+            expect(content).toContain('UsersIcon');
         });
 
         it('should have icon containers with proper styling', () => {
             expect(content).toContain('rounded-full bg-primary/10');
-        });
-
-        it('should have multiple SVG icons for different benefits', () => {
-            const svgCount = (content.match(/<svg/g) || []).length;
-            expect(svgCount).toBeGreaterThanOrEqual(10);
         });
     });
 

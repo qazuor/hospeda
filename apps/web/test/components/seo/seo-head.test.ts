@@ -27,8 +27,8 @@ describe('SEOHead.astro', () => {
             expect(content).toContain('noindex?: boolean');
         });
 
-        it('should accept locale prop with es or en values', () => {
-            expect(content).toContain("locale?: 'es' | 'en'");
+        it('should accept locale prop with es, en, or pt values', () => {
+            expect(content).toContain("locale?: 'es' | 'en' | 'pt'");
         });
 
         it('should accept type prop with website or article values', () => {
@@ -222,14 +222,33 @@ describe('SEOHead.astro', () => {
             expect(content).toContain('href={esUrl}');
         });
 
+        it('should render hreflang link for Portuguese', () => {
+            expect(content).toContain('<link rel="alternate" hreflang="pt"');
+        });
+
+        it('should use ptUrl for Portuguese hreflang', () => {
+            expect(content).toContain('hreflang="pt"');
+            expect(content).toContain('href={ptUrl}');
+        });
+
         it('should have generateAlternateUrl function', () => {
             expect(content).toContain('generateAlternateUrl');
+        });
+
+        it('should generate alternate URLs for all three locales', () => {
+            expect(content).toContain("generateAlternateUrl('es')");
+            expect(content).toContain("generateAlternateUrl('en')");
+            expect(content).toContain("generateAlternateUrl('pt')");
         });
     });
 
     describe('Locale mapping', () => {
         it('should map es locale to es_AR for Open Graph', () => {
             expect(content).toContain("locale === 'es' ? 'es_AR'");
+        });
+
+        it('should map pt locale to pt_BR for Open Graph', () => {
+            expect(content).toContain("'pt_BR'");
         });
 
         it('should map en locale to en_US for Open Graph', () => {
@@ -268,7 +287,7 @@ describe('SEOHead.astro', () => {
         });
 
         it('should use strict locale type', () => {
-            expect(content).toContain("'es' | 'en'");
+            expect(content).toContain("'es' | 'en' | 'pt'");
         });
 
         it('should use strict type for Open Graph type', () => {

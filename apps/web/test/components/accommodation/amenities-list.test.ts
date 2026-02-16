@@ -60,13 +60,14 @@ describe('AmenitiesList.astro', () => {
             expect(content).toContain('amenity.icon');
         });
 
-        it('should define default icon SVG', () => {
-            expect(content).toContain('defaultIcon');
-            expect(content).toContain('svg');
+        it('should import CheckIcon from @repo/icons', () => {
+            expect(content).toContain("import { CheckIcon } from '@repo/icons'");
         });
 
-        it('should use default icon when custom icon not provided', () => {
-            expect(content).toContain('defaultIcon');
+        it('should use CheckIcon as default when custom icon not provided', () => {
+            expect(content).toContain('CheckIcon');
+            expect(content).toContain('size={16}');
+            expect(content).toContain('weight="bold"');
         });
 
         it('should hide icons from screen readers', () => {

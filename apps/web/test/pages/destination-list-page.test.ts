@@ -255,13 +255,16 @@ describe('destinos/index.astro', () => {
     });
 
     describe('Icons and SVG', () => {
-        it('should have search icon', () => {
-            expect(content).toContain('<svg');
-            expect(content).toContain('M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z');
+        it('should import icon components from @repo/icons', () => {
+            expect(content).toContain("from '@repo/icons'");
         });
 
-        it('should have SVG icons for provinces', () => {
-            expect(content).toContain('aria-hidden="true"');
+        it('should import SearchIcon', () => {
+            expect(content).toContain('SearchIcon');
+        });
+
+        it('should import LocationIcon for destinations', () => {
+            expect(content).toContain('LocationIcon');
         });
 
         it('should have icon containers with proper styling', () => {

@@ -141,11 +141,11 @@ describe('ReviewForm.client.tsx', () => {
             const thirdStar = screen.getByLabelText('Rate 3 stars');
             fireEvent.click(thirdStar);
 
-            // Stars should be filled up to the clicked one
+            // Stars should be filled up to the clicked one (check for yellow color class)
             const stars = screen.getAllByLabelText(/Rate \d star/);
             const filledStars = stars.filter((star) => {
                 const svg = star.querySelector('svg');
-                return svg?.getAttribute('fill') === 'currentColor';
+                return svg?.getAttribute('class')?.includes('text-yellow-400');
             });
             expect(filledStars).toHaveLength(3);
         });
@@ -162,7 +162,7 @@ describe('ReviewForm.client.tsx', () => {
             const stars = screen.getAllByLabelText(/Rate \d star/);
             const filledStars = stars.filter((star) => {
                 const svg = star.querySelector('svg');
-                return svg?.getAttribute('fill') === 'currentColor';
+                return svg?.getAttribute('class')?.includes('text-yellow-400');
             });
             expect(filledStars).toHaveLength(5);
         });
@@ -176,7 +176,7 @@ describe('ReviewForm.client.tsx', () => {
             const stars = screen.getAllByLabelText(/Rate \d star/);
             const hoveredStars = stars.filter((star, index) => {
                 const svg = star.querySelector('svg');
-                return index < 4 && svg?.getAttribute('fill') === 'currentColor';
+                return index < 4 && svg?.getAttribute('class')?.includes('text-yellow-400');
             });
             expect(hoveredStars).toHaveLength(4);
         });
@@ -191,7 +191,7 @@ describe('ReviewForm.client.tsx', () => {
             const stars = screen.getAllByLabelText(/Rate \d star/);
             const filledStars = stars.filter((star) => {
                 const svg = star.querySelector('svg');
-                return svg?.getAttribute('fill') === 'currentColor';
+                return svg?.getAttribute('class')?.includes('text-yellow-400');
             });
             expect(filledStars).toHaveLength(0);
         });

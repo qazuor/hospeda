@@ -134,8 +134,9 @@ describe('PricingCard - File content', () => {
 
     describe('Features list', () => {
         it('should render checkmark icon for each feature', () => {
-            expect(content).toContain('<svg');
-            expect(content).toContain('M5 13l4 4L19 7');
+            expect(content).toContain('CheckIcon');
+            expect(content).toContain('size={20}');
+            expect(content).toContain('weight="bold"');
         });
 
         it('should render feature text', () => {

@@ -182,9 +182,24 @@ describe('quienes-somos.astro', () => {
     });
 
     describe('Icons and SVG', () => {
-        it('should have SVG icons for values', () => {
-            expect(content).toContain('<svg');
-            expect(content).toContain('aria-hidden="true"');
+        it('should have icon component imports from @repo/icons', () => {
+            expect(content).toContain("from '@repo/icons'");
+        });
+
+        it('should import CheckIcon for values', () => {
+            expect(content).toContain('CheckIcon');
+        });
+
+        it('should import UsersIcon for community', () => {
+            expect(content).toContain('UsersIcon');
+        });
+
+        it('should import CheckCircleIcon for quality', () => {
+            expect(content).toContain('CheckCircleIcon');
+        });
+
+        it('should import GlobeIcon for sustainability', () => {
+            expect(content).toContain('GlobeIcon');
         });
 
         it('should have icon containers with proper styling', () => {
