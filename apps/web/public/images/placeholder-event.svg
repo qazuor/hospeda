@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <rect width="800" height="600" fill="#fef3c7"/>
+  <g transform="translate(400,270)" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="-30" y="-30" width="60" height="60" rx="6"/>
+    <path d="M-20-30v-10M20-30v-10M-30-10h60"/>
+    <path d="M-10 5h5v5h-5zM5 5h5v5h-5zM-10 18h5v5h-5z"/>
+  </g>
+  <text x="400" y="340" text-anchor="middle" fill="#fbbf24" font-family="system-ui,sans-serif" font-size="14">Evento</text>
+</svg>

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <rect width="800" height="600" fill="#f0fdf4"/>
+  <g transform="translate(400,270)" fill="none" stroke="#86efac" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M0-40c-15 0-30 15-30 30s30 40 30 40 30-25 30-40-15-30-30-30z"/>
+    <circle cx="0" cy="-12" r="8"/>
+    <path d="M-50 30c10-5 25-8 50-8s40 3 50 8" stroke="#6ee7b7"/>
+  </g>
+  <text x="400" y="340" text-anchor="middle" fill="#86efac" font-family="system-ui,sans-serif" font-size="14">Destino</text>
+</svg>
