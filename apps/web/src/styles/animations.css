@@ -1,0 +1,113 @@
+/* Animation System - Hospeda web2 */
+/* One consistent animation language throughout the app */
+
+/* Keyframes */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -1000px 0;
+    }
+    100% {
+        background-position: 1000px 0;
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Utility classes */
+.animate-fade-in {
+    animation: fadeIn var(--transition-base) ease both;
+}
+
+.animate-slide-up {
+    animation: slideUp var(--transition-base) ease both;
+}
+
+.animate-scale-in {
+    animation: scaleIn var(--transition-base) ease both;
+}
+
+.animate-shimmer {
+    animation: shimmer 2s infinite linear;
+    background: linear-gradient(
+        90deg,
+        var(--color-border) 25%,
+        var(--color-surface) 50%,
+        var(--color-border) 75%
+    );
+    background-size: 2000px 100%;
+}
+
+.animate-slide-in-right {
+    animation: slideInRight 300ms ease both;
+}
+
+/* Stagger delay utilities for lists/grids */
+.animate-delay-1 {
+    animation-delay: 50ms;
+}
+.animate-delay-2 {
+    animation-delay: 100ms;
+}
+.animate-delay-3 {
+    animation-delay: 150ms;
+}
+.animate-delay-4 {
+    animation-delay: 200ms;
+}
+.animate-delay-5 {
+    animation-delay: 250ms;
+}
+.animate-delay-6 {
+    animation-delay: 300ms;
+}
+
+/* Respect user preferences for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}

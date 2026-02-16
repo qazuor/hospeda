@@ -1,0 +1,110 @@
+/* Design System Tokens - Hospeda web2 */
+/* Regional palette inspired by the Litoral argentino */
+
+/* Font fallback metrics to minimize CLS */
+@font-face {
+    font-family: "Inter Fallback";
+    src: local("Arial");
+    ascent-override: 90%;
+    descent-override: 22.43%;
+    line-gap-override: 0%;
+    size-adjust: 107.64%;
+}
+
+@font-face {
+    font-family: "Playfair Display Fallback";
+    src: local("Georgia");
+    ascent-override: 90.91%;
+    descent-override: 24.77%;
+    line-gap-override: 0%;
+    size-adjust: 110%;
+}
+
+:root {
+    /* Colors - Regional Palette */
+    --color-primary: #2196f3; /* River blue */
+    --color-primary-dark: #1565c0;
+    --color-primary-light: #64b5f6;
+    --color-secondary: #4caf50; /* Vegetation green */
+    --color-secondary-dark: #2e7d32;
+    --color-accent: #d7ccc8; /* Sand beige */
+    --color-accent-dark: #8d6e63; /* Earth brown */
+
+    /* Neutrals */
+    --color-text: #212121;
+    --color-text-secondary: #424242;
+    --color-text-tertiary: #757575;
+    --color-border: #eeeeee;
+    --color-bg: #fafafa;
+    --color-surface: #ffffff;
+
+    /* Semantic */
+    --color-success: #4caf50;
+    --color-warning: #ffc107;
+    --color-error: #f44336;
+    --color-info: #2196f3;
+
+    /* Spacing (8px grid) */
+    --space-xs: 0.25rem; /* 4px */
+    --space-sm: 0.5rem; /* 8px */
+    --space-md: 1rem; /* 16px */
+    --space-lg: 1.5rem; /* 24px */
+    --space-xl: 2rem; /* 32px */
+    --space-2xl: 3rem; /* 48px */
+    --space-3xl: 4rem; /* 64px */
+    --space-4xl: 6rem; /* 96px */
+
+    /* Border Radius */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-full: 9999px;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.15);
+    --shadow-xl: 0 8px 32px rgba(0, 0, 0, 0.2);
+
+    /* Typography */
+    --font-serif: "Playfair Display", "Playfair Display Fallback", Georgia, serif;
+    --font-sans: "Inter", "Inter Fallback", -apple-system, BlinkMacSystemFont, sans-serif;
+
+    --font-size-xs: 0.75rem; /* 12px */
+    --font-size-sm: 0.875rem; /* 14px */
+    --font-size-base: 1rem; /* 16px */
+    --font-size-lg: 1.125rem; /* 18px */
+    --font-size-xl: 1.25rem; /* 20px */
+    --font-size-2xl: 1.5rem; /* 24px */
+    --font-size-3xl: 2rem; /* 32px */
+    --font-size-4xl: 2.5rem; /* 40px */
+    --font-size-5xl: 3rem; /* 48px */
+
+    --line-height-tight: 1.2;
+    --line-height-normal: 1.5;
+    --line-height-relaxed: 1.6;
+
+    /* Transitions */
+    --transition-fast: 150ms ease;
+    --transition-base: 250ms ease;
+    --transition-slow: 350ms ease;
+
+    /* Z-index scale */
+    --z-base: 0;
+    --z-dropdown: 1000;
+    --z-sticky: 1020;
+    --z-modal-backdrop: 1040;
+    --z-modal: 1050;
+    --z-toast: 1060;
+}
+
+/* Dark mode prepared (not implemented yet) */
+[data-theme="dark"] {
+    --color-text: #e0e0e0;
+    --color-text-secondary: #b0b0b0;
+    --color-text-tertiary: #808080;
+    --color-border: #333333;
+    --color-bg: #121212;
+    --color-surface: #1e1e1e;
+}
