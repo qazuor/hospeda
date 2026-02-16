@@ -1,0 +1,356 @@
+---
+/**
+ * Preferences page - user settings and preferences configuration.
+ * Protected page under /mi-cuenta/ requiring authentication.
+ * Validates locale parameter and redirects invalid locales to Spanish (default).
+ */
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import SEOHead from '../../../components/seo/SEOHead.astro';
+import Breadcrumb from '../../../components/ui/Breadcrumb.astro';
+import Container from '../../../components/ui/Container.astro';
+import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
+
+const { lang } = Astro.params;
+
+if (!lang || !isValidLocale(lang)) {
+	return Astro.redirect('/es/');
+}
+
+const locale = lang as SupportedLocale;
+
+/**
+ * Localized page titles
+ */
+const titles: Record<SupportedLocale, string> = {
+	es: 'Preferencias',
+	en: 'Preferences',
+	pt: 'Preferências',
+};
+
+/**
+ * Localized meta descriptions
+ */
+const descriptions: Record<SupportedLocale, string> = {
+	es: 'Configura tus preferencias de cuenta en Hospeda',
+	en: 'Configure your account preferences on Hospeda',
+	pt: 'Configure suas preferências de conta no Hospeda',
+};
+
+/**
+ * Localized home breadcrumb labels
+ */
+const homeLabels: Record<SupportedLocale, string> = {
+	es: 'Inicio',
+	en: 'Home',
+	pt: 'Início',
+};
+
+/**
+ * Localized account breadcrumb labels
+ */
+const accountLabels: Record<SupportedLocale, string> = {
+	es: 'Mi Cuenta',
+	en: 'My Account',
+	pt: 'Minha Conta',
+};
+
+/**
+ * Localized settings labels
+ */
+const settingsLabels = {
+	es: {
+		heading: 'Preferencias',
+		description: 'Personaliza tu experiencia en Hospeda',
+		notificationsSection: 'Notificaciones',
+		notificationsDescription: 'Configura qué notificaciones deseas recibir',
+		emailNotifications: 'Notificaciones por correo electrónico',
+		emailNotificationsHint: 'Recibe actualizaciones importantes sobre tu cuenta',
+		newsletter: 'Boletín informativo',
+		newsletterHint: 'Recibe novedades y consejos de viaje',
+		promotionalOffers: 'Ofertas promocionales',
+		promotionalOffersHint: 'Recibe ofertas especiales y descuentos',
+		languageSection: 'Idioma preferido',
+		languageDescription: 'El idioma se configura mediante la URL',
+		currentLanguage: 'Idioma actual',
+		languageHint: 'Cambia la URL para cambiar el idioma (es, en, pt)',
+		timezoneSection: 'Zona horaria',
+		timezoneDescription: 'Zona horaria utilizada para mostrar fechas y horarios',
+		currentTimezone: 'Zona horaria actual',
+		timezoneValue: 'America/Argentina/Buenos_Aires',
+		timezoneNote: 'La zona horaria se ajusta automáticamente según tu ubicación',
+		saveNote: 'Nota',
+		saveNoteDescription: 'Las preferencias se guardarán automáticamente en una próxima versión cuando se implemente la funcionalidad de guardado',
+	},
+	en: {
+		heading: 'Preferences',
+		description: 'Customize your Hospeda experience',
+		notificationsSection: 'Notifications',
+		notificationsDescription: 'Configure which notifications you want to receive',
+		emailNotifications: 'Email notifications',
+		emailNotificationsHint: 'Receive important updates about your account',
+		newsletter: 'Newsletter',
+		newsletterHint: 'Receive news and travel tips',
+		promotionalOffers: 'Promotional offers',
+		promotionalOffersHint: 'Receive special offers and discounts',
+		languageSection: 'Preferred language',
+		languageDescription: 'The language is set via URL',
+		currentLanguage: 'Current language',
+		languageHint: 'Change the URL to change the language (es, en, pt)',
+		timezoneSection: 'Timezone',
+		timezoneDescription: 'Timezone used to display dates and times',
+		currentTimezone: 'Current timezone',
+		timezoneValue: 'America/Argentina/Buenos_Aires',
+		timezoneNote: 'The timezone is automatically adjusted based on your location',
+		saveNote: 'Note',
+		saveNoteDescription: 'Preferences will be saved automatically in an upcoming version when the save functionality is implemented',
+	},
+	pt: {
+		heading: 'Preferências',
+		description: 'Personalize sua experiência no Hospeda',
+		notificationsSection: 'Notificações',
+		notificationsDescription: 'Configure quais notificações você deseja receber',
+		emailNotifications: 'Notificações por e-mail',
+		emailNotificationsHint: 'Receba atualizações importantes sobre sua conta',
+		newsletter: 'Newsletter',
+		newsletterHint: 'Receba novidades e dicas de viagem',
+		promotionalOffers: 'Ofertas promocionais',
+		promotionalOffersHint: 'Receba ofertas especiais e descontos',
+		languageSection: 'Idioma preferido',
+		languageDescription: 'O idioma é configurado através da URL',
+		currentLanguage: 'Idioma atual',
+		languageHint: 'Altere a URL para mudar o idioma (es, en, pt)',
+		timezoneSection: 'Fuso horário',
+		timezoneDescription: 'Fuso horário usado para exibir datas e horários',
+		currentTimezone: 'Fuso horário atual',
+		timezoneValue: 'America/Argentina/Buenos_Aires',
+		timezoneNote: 'O fuso horário é ajustado automaticamente com base em sua localização',
+		saveNote: 'Nota',
+		saveNoteDescription: 'As preferências serão salvas automaticamente em uma próxima versão quando a funcionalidade de salvamento for implementada',
+	},
+};
+
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
+
+/**
+ * Breadcrumb navigation items
+ */
+const breadcrumbItems = [
+	{ label: homeLabels[locale], href: `/${locale}/` },
+	{ label: accountLabels[locale], href: `/${locale}/mi-cuenta/` },
+	{ label: titles[locale], href: `/${locale}/mi-cuenta/preferencias/` },
+];
+
+const labels = settingsLabels[locale];
+
+/**
+ * Language display names
+ */
+const languageNames: Record<SupportedLocale, string> = {
+	es: 'Español',
+	en: 'English',
+	pt: 'Português',
+};
+---
+
+<BaseLayout title={titles[locale]} description={descriptions[locale]} locale={locale}>
+	<SEOHead
+		slot="head"
+		title={titles[locale]}
+		description={descriptions[locale]}
+		canonical={canonicalUrl}
+		locale={locale === 'pt' ? 'es' : locale}
+		type="website"
+		noindex={true}
+	/>
+
+	<Container>
+		<Breadcrumb items={breadcrumbItems} />
+
+		<div class="mx-auto max-w-3xl py-8">
+			<div class="mb-8">
+				<h1 class="mb-2 text-3xl font-bold text-text-primary">
+					{labels.heading}
+				</h1>
+				<p class="text-text-secondary">
+					{labels.description}
+				</p>
+			</div>
+
+			<div class="space-y-8">
+				<!-- Notifications section -->
+				<section
+					class="rounded-lg border border-border bg-bg p-6"
+					aria-labelledby="notifications-heading"
+				>
+					<h2 id="notifications-heading" class="mb-2 text-lg font-semibold text-text-primary">
+						{labels.notificationsSection}
+					</h2>
+					<p class="mb-6 text-sm text-text-secondary">
+						{labels.notificationsDescription}
+					</p>
+
+					<div class="space-y-4">
+						<div class="flex items-start justify-between gap-4 rounded-lg bg-bg-secondary p-4">
+							<div class="flex-1">
+								<div class="flex items-center gap-2">
+									<input
+										type="checkbox"
+										id="email-notifications"
+										name="email-notifications"
+										checked
+										class="h-4 w-4 rounded border-border text-primary focus:ring-2 focus:ring-primary"
+										aria-describedby="email-notifications-desc"
+									/>
+									<label
+										for="email-notifications"
+										class="cursor-pointer text-sm font-medium text-text-primary"
+									>
+										{labels.emailNotifications}
+									</label>
+								</div>
+								<p id="email-notifications-desc" class="mt-1 pl-6 text-sm text-text-tertiary">
+									{labels.emailNotificationsHint}
+								</p>
+							</div>
+						</div>
+
+						<div class="flex items-start justify-between gap-4 rounded-lg bg-bg-secondary p-4">
+							<div class="flex-1">
+								<div class="flex items-center gap-2">
+									<input
+										type="checkbox"
+										id="newsletter"
+										name="newsletter"
+										class="h-4 w-4 rounded border-border text-primary focus:ring-2 focus:ring-primary"
+										aria-describedby="newsletter-desc"
+									/>
+									<label
+										for="newsletter"
+										class="cursor-pointer text-sm font-medium text-text-primary"
+									>
+										{labels.newsletter}
+									</label>
+								</div>
+								<p id="newsletter-desc" class="mt-1 pl-6 text-sm text-text-tertiary">
+									{labels.newsletterHint}
+								</p>
+							</div>
+						</div>
+
+						<div class="flex items-start justify-between gap-4 rounded-lg bg-bg-secondary p-4">
+							<div class="flex-1">
+								<div class="flex items-center gap-2">
+									<input
+										type="checkbox"
+										id="promotional-offers"
+										name="promotional-offers"
+										class="h-4 w-4 rounded border-border text-primary focus:ring-2 focus:ring-primary"
+										aria-describedby="promotional-offers-desc"
+									/>
+									<label
+										for="promotional-offers"
+										class="cursor-pointer text-sm font-medium text-text-primary"
+									>
+										{labels.promotionalOffers}
+									</label>
+								</div>
+								<p id="promotional-offers-desc" class="mt-1 pl-6 text-sm text-text-tertiary">
+									{labels.promotionalOffersHint}
+								</p>
+							</div>
+						</div>
+					</div>
+				</section>
+
+				<!-- Language section -->
+				<section
+					class="rounded-lg border border-border bg-bg p-6"
+					aria-labelledby="language-heading"
+				>
+					<h2 id="language-heading" class="mb-2 text-lg font-semibold text-text-primary">
+						{labels.languageSection}
+					</h2>
+					<p class="mb-6 text-sm text-text-secondary">
+						{labels.languageDescription}
+					</p>
+
+					<div class="rounded-lg bg-bg-secondary p-4">
+						<div class="mb-3 flex items-center justify-between">
+							<span class="text-sm font-medium text-text-primary">
+								{labels.currentLanguage}
+							</span>
+							<span
+								class="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-semibold text-primary"
+								role="status"
+								aria-label={`${labels.currentLanguage}: ${languageNames[locale]}`}
+							>
+								{languageNames[locale]}
+							</span>
+						</div>
+						<p class="text-sm text-text-tertiary">
+							{labels.languageHint}
+						</p>
+					</div>
+				</section>
+
+				<!-- Timezone section -->
+				<section
+					class="rounded-lg border border-border bg-bg p-6"
+					aria-labelledby="timezone-heading"
+				>
+					<h2 id="timezone-heading" class="mb-2 text-lg font-semibold text-text-primary">
+						{labels.timezoneSection}
+					</h2>
+					<p class="mb-6 text-sm text-text-secondary">
+						{labels.timezoneDescription}
+					</p>
+
+					<div class="rounded-lg bg-bg-secondary p-4">
+						<div class="mb-3 flex items-center justify-between">
+							<span class="text-sm font-medium text-text-primary">
+								{labels.currentTimezone}
+							</span>
+							<span
+								class="inline-flex items-center rounded-full bg-secondary/10 px-3 py-1 text-sm font-semibold text-secondary"
+								role="status"
+								aria-label={`${labels.currentTimezone}: ${labels.timezoneValue}`}
+							>
+								{labels.timezoneValue}
+							</span>
+						</div>
+						<p class="text-sm text-text-tertiary">
+							{labels.timezoneNote}
+						</p>
+					</div>
+				</section>
+
+				<!-- Information note -->
+				<div class="rounded-lg border border-blue-200 bg-blue-50 p-4" role="note">
+					<div class="flex items-start gap-3">
+						<svg
+							class="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+							aria-hidden="true"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+						</svg>
+						<div>
+							<h3 class="text-sm font-semibold text-blue-900">
+								{labels.saveNote}
+							</h3>
+							<p class="mt-1 text-sm text-blue-700">
+								{labels.saveNoteDescription}
+							</p>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</Container>
+</BaseLayout>

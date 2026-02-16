@@ -1,0 +1,171 @@
+---
+export const prerender = true;
+
+export function getStaticPaths() {
+	return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
+}
+
+/**
+ * Localized homepage for Hospeda platform.
+ * Static shell with Server Islands for dynamic featured content.
+ * Hero, search, and section wrappers are pre-rendered.
+ * Featured sections use server:defer with skeleton fallbacks.
+ *
+ * Rendering: SSG + Server Islands
+ * Route: /[lang]/
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import HeroSection from '../../components/content/HeroSection.astro';
+import FeaturedSection from '../../components/content/FeaturedSection.astro';
+import FeaturedAccommodations from '../../components/content/FeaturedAccommodations.astro';
+import FeaturedDestinations from '../../components/content/FeaturedDestinations.astro';
+import FeaturedEvents from '../../components/content/FeaturedEvents.astro';
+import FeaturedPosts from '../../components/content/FeaturedPosts.astro';
+import AccommodationCardSkeleton from '../../components/ui/AccommodationCardSkeleton.astro';
+import DestinationCardSkeleton from '../../components/ui/DestinationCardSkeleton.astro';
+import EventCardSkeleton from '../../components/ui/EventCardSkeleton.astro';
+import BlogPostCardSkeleton from '../../components/ui/BlogPostCardSkeleton.astro';
+import { SearchBar } from '../../components/search/SearchBar.client';
+import Container from '../../components/ui/Container.astro';
+import { isValidLocale, type SupportedLocale } from '../../lib/i18n';
+
+const { lang } = Astro.params;
+
+if (!lang || !isValidLocale(lang)) {
+	return Astro.redirect('/es/');
+}
+
+const locale = lang as SupportedLocale;
+
+/**
+ * Localized text content for all supported languages
+ */
+const texts: Record<SupportedLocale, {
+	heroTitle: string;
+	heroSubtitle: string;
+	featuredAccommodations: string;
+	featuredDestinations: string;
+	upcomingEvents: string;
+	latestBlog: string;
+	viewAll: string;
+	pageTitle: string;
+	pageDescription: string;
+}> = {
+	es: {
+		heroTitle: 'Descubrí el Litoral argentino',
+		heroSubtitle: 'Encontrá alojamientos únicos en Concepción del Uruguay y la región',
+		featuredAccommodations: 'Alojamientos destacados',
+		featuredDestinations: 'Destinos populares',
+		upcomingEvents: 'Próximos eventos',
+		latestBlog: 'Últimas publicaciones',
+		viewAll: 'Ver todos',
+		pageTitle: 'Inicio',
+		pageDescription: 'Descubre alojamientos únicos en Concepción del Uruguay y el Litoral argentino. Hoteles, cabañas, departamentos y más.',
+	},
+	en: {
+		heroTitle: 'Discover the Argentine Litoral',
+		heroSubtitle: 'Find unique accommodations in Concepción del Uruguay and the region',
+		featuredAccommodations: 'Featured Accommodations',
+		featuredDestinations: 'Popular Destinations',
+		upcomingEvents: 'Upcoming Events',
+		latestBlog: 'Latest Posts',
+		viewAll: 'View all',
+		pageTitle: 'Home',
+		pageDescription: 'Discover unique accommodations in Concepción del Uruguay and the Argentine Litoral. Hotels, cabins, apartments and more.',
+	},
+	pt: {
+		heroTitle: 'Descubra o Litoral argentino',
+		heroSubtitle: 'Encontre acomodações únicas em Concepción del Uruguay e a região',
+		featuredAccommodations: 'Acomodações em destaque',
+		featuredDestinations: 'Destinos populares',
+		upcomingEvents: 'Próximos eventos',
+		latestBlog: 'Últimas publicações',
+		viewAll: 'Ver todos',
+		pageTitle: 'Início',
+		pageDescription: 'Descubra acomodações únicas em Concepción del Uruguay e o Litoral argentino. Hotéis, cabanas, apartamentos e mais.',
+	},
+};
+
+const t = texts[locale];
+---
+
+<BaseLayout title={t.pageTitle} description={t.pageDescription} locale={locale}>
+	<!-- Hero Section (static) -->
+	<HeroSection
+		image="/images/hero-litoral.jpg"
+		title={t.heroTitle}
+		subtitle={t.heroSubtitle}
+	/>
+
+	<!-- Search Bar (static, hydrated on client) -->
+	<div class="relative z-20 -mt-8">
+		<Container>
+			<SearchBar client:load locale={locale} />
+		</Container>
+	</div>
+
+	<!-- Featured Accommodations (Server Island) -->
+	<FeaturedSection
+		title={t.featuredAccommodations}
+		viewAllHref={`/${locale}/alojamientos/`}
+		viewAllLabel={t.viewAll}
+	>
+		<FeaturedAccommodations server:defer locale={locale}>
+			<div slot="fallback" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+				<AccommodationCardSkeleton />
+				<AccommodationCardSkeleton />
+				<AccommodationCardSkeleton />
+				<AccommodationCardSkeleton class="hidden sm:block" />
+				<AccommodationCardSkeleton class="hidden lg:block" />
+				<AccommodationCardSkeleton class="hidden lg:block" />
+			</div>
+		</FeaturedAccommodations>
+	</FeaturedSection>
+
+	<!-- Featured Destinations (Server Island) -->
+	<FeaturedSection
+		title={t.featuredDestinations}
+		viewAllHref={`/${locale}/destinos/`}
+		viewAllLabel={t.viewAll}
+	>
+		<FeaturedDestinations server:defer locale={locale}>
+			<div slot="fallback" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+				<DestinationCardSkeleton />
+				<DestinationCardSkeleton />
+				<DestinationCardSkeleton class="hidden sm:block" />
+				<DestinationCardSkeleton class="hidden lg:block" />
+			</div>
+		</FeaturedDestinations>
+	</FeaturedSection>
+
+	<!-- Featured Events (Server Island) -->
+	<FeaturedSection
+		title={t.upcomingEvents}
+		viewAllHref={`/${locale}/eventos/`}
+		viewAllLabel={t.viewAll}
+	>
+		<FeaturedEvents server:defer locale={locale}>
+			<div slot="fallback" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+				<EventCardSkeleton />
+				<EventCardSkeleton />
+				<EventCardSkeleton class="hidden sm:block" />
+				<EventCardSkeleton class="hidden lg:block" />
+			</div>
+		</FeaturedEvents>
+	</FeaturedSection>
+
+	<!-- Featured Blog Posts (Server Island) -->
+	<FeaturedSection
+		title={t.latestBlog}
+		viewAllHref={`/${locale}/publicaciones/`}
+		viewAllLabel={t.viewAll}
+	>
+		<FeaturedPosts server:defer locale={locale}>
+			<div slot="fallback" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+				<BlogPostCardSkeleton />
+				<BlogPostCardSkeleton />
+				<BlogPostCardSkeleton class="hidden sm:block" />
+			</div>
+		</FeaturedPosts>
+	</FeaturedSection>
+</BaseLayout>

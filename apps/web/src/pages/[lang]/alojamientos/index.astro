@@ -1,0 +1,274 @@
+---
+/**
+ * Accommodation List page
+ * Displays a paginated, sortable grid of accommodation listings.
+ *
+ * @route /[lang]/alojamientos/
+ * @rendering SSR (Server-Side Rendering)
+ */
+
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import Container from '../../../components/ui/Container.astro';
+import Breadcrumb from '../../../components/ui/Breadcrumb.astro';
+import SEOHead from '../../../components/seo/SEOHead.astro';
+import AccommodationCard from '../../../components/accommodation/AccommodationCard.astro';
+import EmptyState from '../../../components/ui/EmptyState.astro';
+import { ViewToggle } from '../../../components/ui/ViewToggle.client.tsx';
+import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
+import { accommodationsApi } from '../../../lib/api/endpoints';
+
+const { lang } = Astro.params;
+
+if (!lang || !isValidLocale(lang)) {
+  return Astro.redirect('/es/');
+}
+
+const locale = lang as SupportedLocale;
+
+// Get query params for filtering/sorting
+const url = new URL(Astro.request.url);
+const sortBy = url.searchParams.get('sortBy') || 'name';
+const typeFilter = url.searchParams.get('type') || undefined;
+const page = Number.parseInt(url.searchParams.get('page') || '1', 10);
+const perPage = 12;
+
+/**
+ * Localized text strings for all supported locales.
+ */
+const texts: Record<
+  SupportedLocale,
+  {
+    title: string;
+    description: string;
+    home: string;
+    accommodations: string;
+    sortLabel: string;
+    sortFeatured: string;
+    sortPriceAsc: string;
+    sortPriceDesc: string;
+    sortRating: string;
+    sortRecent: string;
+    noResults: string;
+    showing: string;
+    of: string;
+    results: string;
+    previous: string;
+    next: string;
+  }
+> = {
+  es: {
+    title: 'Alojamientos',
+    description: 'Descubrí los mejores alojamientos en el Litoral argentino',
+    home: 'Inicio',
+    accommodations: 'Alojamientos',
+    sortLabel: 'Ordenar por',
+    sortFeatured: 'Destacados',
+    sortPriceAsc: 'Precio: menor a mayor',
+    sortPriceDesc: 'Precio: mayor a menor',
+    sortRating: 'Mejor calificados',
+    sortRecent: 'Más recientes',
+    noResults: 'No se encontraron alojamientos',
+    showing: 'Mostrando',
+    of: 'de',
+    results: 'resultados',
+    previous: 'Anterior',
+    next: 'Siguiente',
+  },
+  en: {
+    title: 'Accommodations',
+    description: 'Discover the best accommodations in the Argentine Litoral',
+    home: 'Home',
+    accommodations: 'Accommodations',
+    sortLabel: 'Sort by',
+    sortFeatured: 'Featured',
+    sortPriceAsc: 'Price: low to high',
+    sortPriceDesc: 'Price: high to low',
+    sortRating: 'Top rated',
+    sortRecent: 'Most recent',
+    noResults: 'No accommodations found',
+    showing: 'Showing',
+    of: 'of',
+    results: 'results',
+    previous: 'Previous',
+    next: 'Next',
+  },
+  pt: {
+    title: 'Acomodações',
+    description: 'Descubra as melhores acomodações no Litoral argentino',
+    home: 'Início',
+    accommodations: 'Acomodações',
+    sortLabel: 'Ordenar por',
+    sortFeatured: 'Destaques',
+    sortPriceAsc: 'Preço: menor para maior',
+    sortPriceDesc: 'Preço: maior para menor',
+    sortRating: 'Melhor avaliados',
+    sortRecent: 'Mais recentes',
+    noResults: 'Nenhuma acomodação encontrada',
+    showing: 'Mostrando',
+    of: 'de',
+    results: 'resultados',
+    previous: 'Anterior',
+    next: 'Próximo',
+  },
+};
+
+const t = texts[locale];
+
+/**
+ * Fetch accommodation data from API with pagination, sorting, and type filter.
+ */
+const result = await accommodationsApi.list({
+  page,
+  pageSize: perPage,
+  sortBy,
+  type: typeFilter,
+});
+
+const accommodations = result.ok ? result.data.items : [];
+const pagination = result.ok ? result.data.pagination : { page: 1, pageSize: perPage, total: 0, totalPages: 0, hasNextPage: false, hasPreviousPage: false };
+const totalResults = pagination.total;
+const totalPages = pagination.totalPages;
+
+/**
+ * Sort options for the select dropdown.
+ */
+const sortOptions = [
+  { value: 'featured', label: t.sortFeatured },
+  { value: 'price_asc', label: t.sortPriceAsc },
+  { value: 'price_desc', label: t.sortPriceDesc },
+  { value: 'rating', label: t.sortRating },
+  { value: 'recent', label: t.sortRecent },
+];
+
+/**
+ * Breadcrumb navigation items.
+ */
+const breadcrumbItems = [
+  { label: t.home, href: `/${locale}/` },
+  { label: t.accommodations, href: `/${locale}/alojamientos/` },
+];
+
+/**
+ * Canonical URL for SEO.
+ */
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
+---
+
+<BaseLayout title={t.title} description={t.description} locale={locale}>
+  <SEOHead
+    slot="head"
+    title={t.title}
+    description={t.description}
+    canonical={canonicalUrl}
+    locale={locale === 'pt' ? 'es' : locale}
+  />
+
+  <Container>
+    <Breadcrumb items={breadcrumbItems} class="py-4" />
+
+    <!-- Page Header with controls -->
+    <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h1 class="text-3xl font-bold">{t.title}</h1>
+        <p class="mt-1 text-gray-600">
+          {t.showing} {accommodations.length} {t.of} {totalResults} {t.results}
+        </p>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <!-- Sort dropdown -->
+        <div class="flex items-center gap-2">
+          <label for="sort-select" class="whitespace-nowrap text-sm font-medium text-gray-700">
+            {t.sortLabel}:
+          </label>
+          <select
+            id="sort-select"
+            class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+          >
+            {
+              sortOptions.map((opt) => (
+                <option value={opt.value} selected={opt.value === sortBy}>
+                  {opt.label}
+                </option>
+              ))
+            }
+          </select>
+        </div>
+
+        <!-- View Toggle -->
+        <ViewToggle client:idle />
+      </div>
+    </div>
+
+    <!-- Accommodation Grid -->
+    {accommodations.length > 0 ? (
+      <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {accommodations.map((acc) => <AccommodationCard accommodation={acc as Record<string, unknown> & { slug: string; name: string; summary: string; type: string; featuredImage: string; averageRating: number; reviewsCount: number; location: { city: string; state: string }; isFeatured: boolean }} locale={locale} />)}
+      </div>
+    ) : (
+      <EmptyState
+        title={t.noResults}
+        message={locale === 'es' ? 'Intenta ajustar los filtros o buscar de otra manera.' : 'Try adjusting the filters or searching differently.'}
+        cta={{ label: locale === 'es' ? 'Limpiar filtros' : 'Clear filters', href: `/${locale}/alojamientos/` }}
+      />
+    )}
+
+    <!-- Pagination -->
+    <nav class="mt-8 flex items-center justify-center gap-2" aria-label="Pagination">
+      {
+        page > 1 && (
+          <a
+            href={`/${locale}/alojamientos/?page=${page - 1}&sortBy=${sortBy}`}
+            class="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            {t.previous}
+          </a>
+        )
+      }
+
+      {
+        Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+          <a
+            href={`/${locale}/alojamientos/?page=${p}&sortBy=${sortBy}`}
+            class:list={[
+              'rounded-md px-4 py-2 text-sm font-medium',
+              p === page
+                ? 'bg-primary text-white'
+                : 'border border-gray-300 text-gray-700 hover:bg-gray-50',
+            ]}
+            aria-current={p === page ? 'page' : undefined}
+          >
+            {p}
+          </a>
+        ))
+      }
+
+      {
+        page < totalPages && (
+          <a
+            href={`/${locale}/alojamientos/?page=${page + 1}&sortBy=${sortBy}`}
+            class="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            {t.next}
+          </a>
+        )
+      }
+    </nav>
+  </Container>
+</BaseLayout>
+
+<script>
+  /**
+   * Sort dropdown change handler.
+   * Updates the URL with the new sort value and resets to page 1.
+   */
+  const sortSelect = document.getElementById('sort-select') as HTMLSelectElement;
+  if (sortSelect) {
+    sortSelect.addEventListener('change', () => {
+      const url = new URL(window.location.href);
+      url.searchParams.set('sortBy', sortSelect.value);
+      url.searchParams.set('page', '1');
+      window.location.href = url.toString();
+    });
+  }
+</script>

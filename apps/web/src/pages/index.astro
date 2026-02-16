@@ -1,52 +1,14 @@
 ---
 export const prerender = true;
 
-import Layout from '@/layout/MainLayout.astro';
-import { getLangFromUrl, useTranslations } from '@/utils';
+/**
+ * Root page - redirects to locale-specific homepage based on Accept-Language header.
+ * Implements automatic language detection for internationalized routing.
+ */
+import { parseAcceptLanguage } from '../lib/i18n';
 
-import HomeSearch from '@/components/hero/HomeSearch.astro';
-import CallToActions from '@/components/sections/CallToActions.astro';
-import FeaturedAccommodations from '@/components/sections/FeaturedAccommodations.astro';
-import FeaturedDestinations from '@/components/sections/FeaturedDestinations.astro';
-import LatestPosts from '@/components/sections/LatestPosts.astro';
-import Testimonials from '@/components/sections/Testimonials.astro';
-import UpcomingEvents from '@/components/sections/UpcomingEvents.astro';
-import { getHomeData } from '@/data/db';
+const acceptLanguage = Astro.request.headers.get('accept-language');
+const locale = parseAcceptLanguage(acceptLanguage);
 
-const lang = getLangFromUrl(Astro.url);
-const t = useTranslations(lang);
-
-const data = await getHomeData();
+return Astro.redirect(`/${locale}/`);
 ---
-
-<Layout title={t('home.title')} description={t('home.description')}>
-    <HomeSearch />
-
-    <FeaturedDestinations
-        title={t('home.featuredDestinations.title')}
-        subtitle={t('home.featuredDestinations.description')}
-        destinations={data.destinations}
-    />
-
-    <FeaturedAccommodations
-        title={t('home.featuredAccommodations.title')}
-        subtitle={t('home.featuredAccommodations.description')}
-        accommodations={data.accommodations}
-    />
-
-    <UpcomingEvents
-        title={t('home.upcomingEvents.title')}
-        subtitle={t('home.upcomingEvents.description')}
-        events={data.events}
-    />
-
-    <LatestPosts title={t('home.latestPosts.title')} subtitle={t('home.latestPosts.description')} posts={data.posts} />
-
-    <Testimonials
-        title={t('home.testimonials.title')}
-        subtitle={t('home.testimonials.description')}
-        testimonials={data.testimonials}
-    />
-
-    <CallToActions />
-</Layout>

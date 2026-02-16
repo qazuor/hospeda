@@ -1,0 +1,107 @@
+---
+export const prerender = true;
+
+/**
+ * 500 Internal Server Error page.
+ * Static page with Spanish default locale, minimal design, retry and home links.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SEOHead from '../components/seo/SEOHead.astro';
+
+const title = 'Error del servidor';
+const description =
+	'Lo sentimos, algo salio mal en nuestros servidores. Por favor intenta de nuevo mas tarde.';
+const locale = 'es';
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
+---
+
+<BaseLayout title={title} description={description} noindex={true} locale={locale}>
+	<SEOHead
+		slot="head"
+		title={title}
+		description={description}
+		canonical={canonicalUrl}
+		noindex={true}
+		locale={locale}
+		type="website"
+	/>
+
+	<div class="min-h-screen flex items-center justify-center px-4 py-16 bg-gradient-to-b from-bg to-bg-alt">
+		<div class="max-w-2xl w-full text-center">
+			<!-- Decorative 500 text -->
+			<div class="mb-8">
+				<span class="text-9xl font-bold text-error opacity-20" aria-hidden="true">500</span>
+			</div>
+
+			<!-- SVG illustration (server/technical error themed) -->
+			<div class="mb-8 flex justify-center" aria-hidden="true">
+				<svg
+					width="200"
+					height="120"
+					viewBox="0 0 200 120"
+					fill="none"
+					xmlns="http://www.w3.org/2000/svg"
+					class="text-error opacity-30"
+				>
+					<!-- Simple server/error illustration -->
+					<rect
+						x="60"
+						y="30"
+						width="80"
+						height="60"
+						rx="4"
+						stroke="currentColor"
+						stroke-width="3"
+						fill="none"
+					/>
+					<circle cx="75" cy="45" r="4" fill="currentColor" />
+					<circle cx="90" cy="45" r="4" fill="currentColor" />
+					<circle cx="105" cy="45" r="4" fill="currentColor" />
+					<circle cx="120" cy="45" r="4" fill="currentColor" />
+
+					<circle cx="75" cy="60" r="4" fill="currentColor" />
+					<circle cx="90" cy="60" r="4" fill="currentColor" />
+					<circle cx="105" cy="60" r="4" fill="currentColor" />
+					<circle cx="120" cy="60" r="4" fill="currentColor" />
+
+					<circle cx="75" cy="75" r="4" fill="currentColor" />
+					<circle cx="90" cy="75" r="4" fill="currentColor" />
+					<circle cx="105" cy="75" r="4" fill="currentColor" />
+					<circle cx="120" cy="75" r="4" fill="currentColor" />
+
+					<!-- Error symbol (X) -->
+					<line x1="155" y1="35" x2="175" y2="55" stroke="currentColor" stroke-width="4" />
+					<line x1="175" y1="35" x2="155" y2="55" stroke="currentColor" stroke-width="4" />
+				</svg>
+			</div>
+
+			<!-- Heading -->
+			<h1 class="text-4xl font-bold text-text mb-4">Error del servidor</h1>
+
+			<!-- Message -->
+			<p class="text-lg text-text-secondary mb-8 max-w-md mx-auto">
+				Lo sentimos, algo salio mal. Por favor intenta de nuevo mas tarde.
+			</p>
+
+			<!-- Action buttons -->
+			<div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+				<!-- Retry button -->
+				<button
+					type="button"
+					onclick="window.location.reload()"
+					class="inline-flex items-center justify-center px-6 py-3 text-base font-semibold text-text bg-bg-alt border-2 border-border rounded-lg hover:bg-bg-hover transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+				>
+					Reintentar
+				</button>
+
+				<!-- Home link -->
+				<a
+					href="/es/"
+					class="inline-flex items-center justify-center px-6 py-3 text-base font-semibold text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+				>
+					Volver al inicio
+				</a>
+			</div>
+		</div>
+	</div>
+</BaseLayout>

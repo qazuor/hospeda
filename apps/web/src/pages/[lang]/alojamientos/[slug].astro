@@ -1,0 +1,341 @@
+---
+export const prerender = true;
+
+/**
+ * Accommodation Detail Page
+ *
+ * Displays comprehensive information about a single accommodation including:
+ * - Image gallery with lightbox
+ * - Description, amenities, location map
+ * - Reviews and FAQ section
+ * - Similar accommodations recommendations
+ * - Booking sidebar with pricing and check-in/check-out times
+ *
+ * Rendering: SSG + ISR (24h revalidation)
+ * Route: /[lang]/alojamientos/[slug]
+ */
+
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import Container from '../../../components/ui/Container.astro';
+import Section from '../../../components/ui/Section.astro';
+import Badge from '../../../components/ui/Badge.astro';
+import Breadcrumb from '../../../components/ui/Breadcrumb.astro';
+import SEOHead from '../../../components/seo/SEOHead.astro';
+import LodgingBusinessJsonLd from '../../../components/seo/LodgingBusinessJsonLd.astro';
+import AccommodationCard from '../../../components/accommodation/AccommodationCard.astro';
+import AmenitiesList from '../../../components/accommodation/AmenitiesList.astro';
+import { ImageGallery } from '../../../components/ui/ImageGallery.client.tsx';
+import { ShareButtons } from '../../../components/ui/ShareButtons.client.tsx';
+import { FavoriteButton } from '../../../components/ui/FavoriteButton.client.tsx';
+import { AccordionFAQ } from '../../../components/ui/AccordionFAQ.client.tsx';
+import { MapView } from '../../../components/map/MapView.client.tsx';
+import { ReviewList } from '../../../components/review/ReviewList.client.tsx';
+import PriceDisplay from '../../../components/ui/PriceDisplay.astro';
+import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
+import { renderTiptapContent } from '../../../lib/tiptap-renderer';
+import { accommodationsApi } from '../../../lib/api/endpoints';
+
+const { lang, slug } = Astro.params;
+
+// Validate locale and redirect to default if invalid
+if (!lang || !isValidLocale(lang)) {
+  return Astro.redirect('/es/');
+}
+
+const locale = lang as SupportedLocale;
+
+/**
+ * getStaticPaths - Generate static paths for all accommodations
+ */
+export async function getStaticPaths() {
+  const locales = ['es', 'en', 'pt'];
+  const result = await accommodationsApi.list({ pageSize: 500 });
+  const accommodations = result.ok ? result.data.items : [];
+
+  return locales.flatMap((lang) =>
+    accommodations
+      .filter((a: any) => a.slug)
+      .map((a: any) => ({
+        params: { lang, slug: a.slug },
+        props: { accommodation: a },
+      }))
+  );
+}
+
+// Fetch accommodation from props (getStaticPaths) or API (fallback)
+let accommodation = Astro.props.accommodation as Record<string, unknown> | undefined;
+if (!accommodation) {
+  const result = await accommodationsApi.getBySlug({ slug: slug || '' });
+  if (!result.ok) {
+    return Astro.redirect(`/${locale}/alojamientos/`);
+  }
+  accommodation = result.data;
+}
+
+// Render TipTap content to HTML
+const renderedDescription = renderTiptapContent({ content: (accommodation as any).description });
+
+// Fetch similar accommodations from API
+const simResult = await accommodationsApi.list({ pageSize: 4 });
+const allAccommodations = simResult.ok ? simResult.data.items : [];
+const similarAccommodations = allAccommodations
+  .filter((a: any) => a.id !== (accommodation as any).id)
+  .slice(0, 3)
+  .map((a: any) => ({ accommodation: a }));
+
+// Reviews will be integrated later - use empty array for now
+const mockReviews: any[] = [];
+
+// Localized texts
+const texts: Record<SupportedLocale, {
+  home: string;
+  accommodations: string;
+  description: string;
+  amenities: string;
+  location: string;
+  reviews: string;
+  faq: string;
+  similar: string;
+  perNight: string;
+  share: string;
+  checkIn: string;
+  checkOut: string;
+  stars: string;
+  reviewsLabel: string;
+  bookNow: string;
+}> = {
+  es: {
+    home: 'Inicio',
+    accommodations: 'Alojamientos',
+    description: 'Descripción',
+    amenities: 'Servicios',
+    location: 'Ubicación',
+    reviews: 'Reseñas',
+    faq: 'Preguntas frecuentes',
+    similar: 'Alojamientos similares',
+    perNight: 'por noche',
+    share: 'Compartir',
+    checkIn: 'Check-in',
+    checkOut: 'Check-out',
+    stars: 'estrellas',
+    reviewsLabel: 'reseñas',
+    bookNow: 'Reservar ahora',
+  },
+  en: {
+    home: 'Home',
+    accommodations: 'Accommodations',
+    description: 'Description',
+    amenities: 'Amenities',
+    location: 'Location',
+    reviews: 'Reviews',
+    faq: 'Frequently Asked Questions',
+    similar: 'Similar Accommodations',
+    perNight: 'per night',
+    share: 'Share',
+    checkIn: 'Check-in',
+    checkOut: 'Check-out',
+    stars: 'stars',
+    reviewsLabel: 'reviews',
+    bookNow: 'Book now',
+  },
+  pt: {
+    home: 'Início',
+    accommodations: 'Acomodações',
+    description: 'Descrição',
+    amenities: 'Serviços',
+    location: 'Localização',
+    reviews: 'Avaliações',
+    faq: 'Perguntas frequentes',
+    similar: 'Acomodações similares',
+    perNight: 'por noite',
+    share: 'Compartilhar',
+    checkIn: 'Check-in',
+    checkOut: 'Check-out',
+    stars: 'estrelas',
+    reviewsLabel: 'avaliações',
+    bookNow: 'Reservar agora',
+  },
+};
+
+const t = texts[locale];
+
+// Breadcrumb navigation items
+const breadcrumbItems = [
+  { label: t.home, href: `/${locale}/` },
+  { label: t.accommodations, href: `/${locale}/alojamientos/` },
+  { label: (accommodation as any).name },
+];
+
+// Page URL for sharing and canonical
+const pageUrl = `/${locale}/alojamientos/${(accommodation as any).slug}/`;
+
+// Map markers for location
+const mapMarkers = [
+  {
+    id: (accommodation as any).id,
+    lat: (accommodation as any).location?.lat || -32.4833,
+    lng: (accommodation as any).location?.lng || -58.2333,
+    title: (accommodation as any).name,
+    popup: (accommodation as any).location?.address || ''
+  }
+];
+---
+
+<BaseLayout
+  title={(accommodation as any).name}
+  description={`${(accommodation as any).name} - ${(accommodation as any).location?.city || ''}`}
+  locale={locale}
+  image={(accommodation as any).images?.[0]?.src || '/images/placeholder-accommodation.svg'}
+>
+  <SEOHead
+    slot="head"
+    title={(accommodation as any).name}
+    description={`${(accommodation as any).name} en ${(accommodation as any).location?.city || ''}, ${(accommodation as any).location?.province || ''}`}
+    image={(accommodation as any).images?.[0]?.src || '/images/placeholder-accommodation.svg'}
+    locale={locale}
+  />
+  <LodgingBusinessJsonLd
+    slot="head"
+    name={(accommodation as any).name}
+    description={(accommodation as any).location?.address || ''}
+    image={(accommodation as any).images?.[0]?.src || '/images/placeholder-accommodation.svg'}
+    rating={(accommodation as any).rating || 0}
+    reviewCount={(accommodation as any).reviewCount || 0}
+    priceRange={`$${(accommodation as any).pricePerNight || 0}`}
+    address={(accommodation as any).location?.address || ''}
+    url={pageUrl}
+  />
+
+  <Container>
+    <Breadcrumb items={breadcrumbItems} class="py-4" />
+
+    <!-- Image Gallery -->
+    <ImageGallery client:visible images={(accommodation as any).images || []} />
+
+    <!-- Main content grid -->
+    <div class="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
+      <!-- Left column (2/3) -->
+      <div class="lg:col-span-2 space-y-8">
+        <!-- Header -->
+        <div>
+          <div class="flex items-start justify-between">
+            <div>
+              <Badge variant="primary" label={(accommodation as any).type || 'HOTEL'} />
+              <h1 class="mt-2 text-3xl font-bold">{(accommodation as any).name}</h1>
+              <p class="mt-1 text-gray-600">
+                {(accommodation as any).location?.address || ''}, {(accommodation as any).location?.city || ''}, {(accommodation as any).location?.province || ''}
+              </p>
+            </div>
+            <div class="flex items-center gap-2">
+              <FavoriteButton
+                client:visible
+                entityId={(accommodation as any).id}
+                entityType="accommodation"
+              />
+              <ShareButtons
+                client:visible
+                url={pageUrl}
+                title={(accommodation as any).name}
+              />
+            </div>
+          </div>
+          <!-- Rating -->
+          <div class="mt-3 flex items-center gap-2">
+            <span class="rounded-md bg-primary px-2 py-1 text-sm font-bold text-white">
+              {(accommodation as any).rating || 0}
+            </span>
+            <span class="text-sm text-gray-600">
+              ({(accommodation as any).reviewCount || 0} {t.reviewsLabel})
+            </span>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <section>
+          <h2 class="mb-4 text-2xl font-bold">{t.description}</h2>
+          <div class="prose max-w-none" set:html={renderedDescription} />
+        </section>
+
+        <!-- Amenities -->
+        <section>
+          <h2 class="mb-4 text-2xl font-bold">{t.amenities}</h2>
+          <AmenitiesList amenities={(accommodation as any).amenities || []} />
+        </section>
+
+        <!-- Location Map -->
+        <section>
+          <h2 class="mb-4 text-2xl font-bold">{t.location}</h2>
+          <MapView
+            client:visible
+            markers={mapMarkers}
+            center={[(accommodation as any).location?.lat || -32.4833, (accommodation as any).location?.lng || -58.2333]}
+            zoom={15}
+            height="400px"
+          />
+        </section>
+
+        <!-- Reviews -->
+        <section>
+          <h2 class="mb-4 text-2xl font-bold">{t.reviews}</h2>
+          <ReviewList
+            client:visible
+            reviews={mockReviews}
+            totalCount={(accommodation as any).reviewCount || 0}
+            locale={locale}
+            isAuthenticated={false}
+            hasMore={false}
+          />
+        </section>
+
+        <!-- FAQ -->
+        <section>
+          <h2 class="mb-4 text-2xl font-bold">{t.faq}</h2>
+          <AccordionFAQ
+            client:visible
+            items={(accommodation as any).faqs || []}
+          />
+        </section>
+      </div>
+
+      <!-- Right sidebar (1/3) -->
+      <aside class="lg:sticky lg:top-4 lg:self-start">
+        <div class="rounded-lg border border-gray-200 p-6 shadow-sm">
+          <!-- Price -->
+          <div class="mb-4">
+            <PriceDisplay amountARS={(accommodation as any).pricePerNight || 0} locale={locale} showDisclaimer={false} />
+            <span class="text-sm text-gray-600"> / {t.perNight}</span>
+          </div>
+
+          <!-- Check-in/out -->
+          <div class="mb-6 space-y-2 text-sm">
+            <div class="flex justify-between">
+              <span class="text-gray-600">{t.checkIn}</span>
+              <span class="font-medium">{(accommodation as any).checkIn || '14:00'}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-600">{t.checkOut}</span>
+              <span class="font-medium">{(accommodation as any).checkOut || '10:00'}</span>
+            </div>
+          </div>
+
+          <!-- CTA button -->
+          <a
+            href="#"
+            class="block w-full rounded-md bg-primary px-4 py-3 text-center font-semibold text-white transition-colors hover:bg-primary-dark"
+          >
+            {t.bookNow}
+          </a>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Similar Accommodations -->
+    <Section title={t.similar} class="mt-12">
+      <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {similarAccommodations.map((item) => (
+          <AccommodationCard accommodation={item.accommodation} locale={locale} />
+        ))}
+      </div>
+    </Section>
+  </Container>
+</BaseLayout>

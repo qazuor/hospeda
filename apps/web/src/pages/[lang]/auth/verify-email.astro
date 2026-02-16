@@ -1,0 +1,70 @@
+---
+/**
+ * Verify email page - handles email verification via token.
+ * Uses the VerifyEmailIsland React island for automatic verification via Better Auth.
+ * Validates locale parameter and redirects invalid locales to Spanish (default).
+ */
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import SEOHead from '../../../components/seo/SEOHead.astro';
+import Container from '../../../components/ui/Container.astro';
+import { VerifyEmailIsland } from '../../../components/auth/VerifyEmailIsland';
+import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
+
+const { lang } = Astro.params;
+
+if (!lang || !isValidLocale(lang)) {
+	return Astro.redirect('/es/');
+}
+
+const locale = lang as SupportedLocale;
+
+/**
+ * Localized page titles
+ */
+const titles: Record<SupportedLocale, string> = {
+	es: 'Verificar email',
+	en: 'Verify Email',
+	pt: 'Verificar email',
+};
+
+/**
+ * Localized meta descriptions
+ */
+const descriptions: Record<SupportedLocale, string> = {
+	es: 'Verificando tu dirección de correo electrónico en Hospeda',
+	en: 'Verifying your email address on Hospeda',
+	pt: 'Verificando seu endereço de email no Hospeda',
+};
+
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
+
+/** Extract the verification token from URL query params */
+const token = Astro.url.searchParams.get('token') || '';
+const redirectTo = `/${locale}/auth/signin`;
+---
+
+<BaseLayout title={titles[locale]} description={descriptions[locale]} locale={locale}>
+	<SEOHead
+		slot="head"
+		title={titles[locale]}
+		description={descriptions[locale]}
+		canonical={canonicalUrl}
+		locale={locale === 'pt' ? 'es' : locale}
+		type="website"
+		noindex={true}
+	/>
+
+	<Container>
+		<div class="flex min-h-screen items-center justify-center py-12">
+			<div class="w-full max-w-md">
+				<div class="rounded-lg border border-border bg-bg-secondary p-8 shadow-lg">
+					<VerifyEmailIsland
+						client:load
+						token={token}
+						redirectTo={redirectTo}
+					/>
+				</div>
+			</div>
+		</div>
+	</Container>
+</BaseLayout>

@@ -1,24 +1,89 @@
 ---
-import { getHomeUrl } from '@/utils';
-
 export const prerender = true;
 
-import Layout from '@/layout/MainLayout.astro';
-import { getLangFromUrl, useTranslations } from '@/utils';
+/**
+ * 404 Page Not Found error page.
+ * Static page with Spanish default locale, minimal design, and home link.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SEOHead from '../components/seo/SEOHead.astro';
 
-const lang = getLangFromUrl(Astro.url);
-const t = useTranslations(lang);
+const title = 'Pagina no encontrada';
+const description =
+	'Lo sentimos, la pagina que buscas no existe o fue movida. Por favor regresa al inicio.';
+const locale = 'es';
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 ---
 
-<Layout title={t('error.404.title')} description={t('error.404.description')}>
-    <section class='min-h-[70vh] py-20 flex items-center justify-center text-center'>
-        <div class='px-4 max-w-lg'>
-            <h1 class='text-6xl font-bold text-primary-500 mb-4'>404</h1>
-            <h2 class='text-2xl font-display font-semibold mb-4'>{t('error.404.heading')}</h2>
-            <p class='text-gray-600 dark:text-gray-400 mb-8'>
-                {t('error.404.message')}
-            </p>
-            <a href={getHomeUrl()} class='btn-primary'>{t('common.goHome')}</a>
-        </div>
-    </section>
-</Layout>
+<BaseLayout title={title} description={description} noindex={true} locale={locale}>
+	<SEOHead
+		slot="head"
+		title={title}
+		description={description}
+		canonical={canonicalUrl}
+		noindex={true}
+		locale={locale}
+		type="website"
+	/>
+
+	<div class="min-h-screen flex items-center justify-center px-4 py-16 bg-gradient-to-b from-bg to-bg-alt">
+		<div class="max-w-2xl w-full text-center">
+			<!-- Decorative 404 text -->
+			<div class="mb-8">
+				<span class="text-9xl font-bold text-primary opacity-20" aria-hidden="true">404</span>
+			</div>
+
+			<!-- SVG illustration (river/nature themed) -->
+			<div class="mb-8 flex justify-center" aria-hidden="true">
+				<svg
+					width="200"
+					height="120"
+					viewBox="0 0 200 120"
+					fill="none"
+					xmlns="http://www.w3.org/2000/svg"
+					class="text-primary opacity-30"
+				>
+					<!-- Simple river illustration -->
+					<path
+						d="M0 60 Q 50 40, 100 60 T 200 60 L 200 120 L 0 120 Z"
+						fill="currentColor"
+						opacity="0.3"
+					/>
+					<path
+						d="M0 70 Q 50 50, 100 70 T 200 70 L 200 120 L 0 120 Z"
+						fill="currentColor"
+						opacity="0.2"
+					/>
+					<path
+						d="M0 80 Q 50 60, 100 80 T 200 80 L 200 120 L 0 120 Z"
+						fill="currentColor"
+						opacity="0.1"
+					/>
+
+					<!-- Simple trees -->
+					<circle cx="30" cy="40" r="12" fill="currentColor" opacity="0.4" />
+					<rect x="26" y="45" width="8" height="20" fill="currentColor" opacity="0.3" />
+
+					<circle cx="170" cy="35" r="15" fill="currentColor" opacity="0.4" />
+					<rect x="165" y="42" width="10" height="25" fill="currentColor" opacity="0.3" />
+				</svg>
+			</div>
+
+			<!-- Heading -->
+			<h1 class="text-4xl font-bold text-text mb-4">Pagina no encontrada</h1>
+
+			<!-- Message -->
+			<p class="text-lg text-text-secondary mb-8 max-w-md mx-auto">
+				Lo sentimos, la pagina que buscas no existe o fue movida.
+			</p>
+
+			<!-- Home link -->
+			<a
+				href="/es/"
+				class="inline-flex items-center justify-center px-6 py-3 text-base font-semibold text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+			>
+				Volver al inicio
+			</a>
+		</div>
+	</div>
+</BaseLayout>

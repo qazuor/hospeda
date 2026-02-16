@@ -1,0 +1,246 @@
+---
+/**
+ * My Favorites page - user saved items (accommodations, destinations, events, blog).
+ * Validates locale parameter and redirects invalid locales to Spanish (default).
+ * Auth-protected (middleware handles authentication check).
+ */
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import SEOHead from '../../../components/seo/SEOHead.astro';
+import Breadcrumb from '../../../components/ui/Breadcrumb.astro';
+import Container from '../../../components/ui/Container.astro';
+import Section from '../../../components/ui/Section.astro';
+import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
+
+const { lang } = Astro.params;
+
+if (!lang || !isValidLocale(lang)) {
+	return Astro.redirect('/es/');
+}
+
+const locale = lang as SupportedLocale;
+
+/**
+ * Localized page titles
+ */
+const titles: Record<SupportedLocale, string> = {
+	es: 'Mis Favoritos',
+	en: 'My Favorites',
+	pt: 'Meus Favoritos',
+};
+
+/**
+ * Localized meta descriptions
+ */
+const descriptions: Record<SupportedLocale, string> = {
+	es: 'Gestiona tus alojamientos, destinos, eventos y artículos favoritos en Hospeda',
+	en: 'Manage your favorite accommodations, destinations, events and articles on Hospeda',
+	pt: 'Gerencie suas acomodações, destinos, eventos e artigos favoritos no Hospeda',
+};
+
+/**
+ * Localized home breadcrumb labels
+ */
+const homeLabels: Record<SupportedLocale, string> = {
+	es: 'Inicio',
+	en: 'Home',
+	pt: 'Início',
+};
+
+/**
+ * Localized account breadcrumb labels
+ */
+const accountLabels: Record<SupportedLocale, string> = {
+	es: 'Mi Cuenta',
+	en: 'My Account',
+	pt: 'Minha Conta',
+};
+
+/**
+ * Localized content labels
+ */
+const contentLabels = {
+	es: {
+		tabs: {
+			accommodations: 'Alojamientos',
+			destinations: 'Destinos',
+			events: 'Eventos',
+			blog: 'Blog',
+		},
+		emptyState: 'No tienes favoritos en esta categoría',
+	},
+	en: {
+		tabs: {
+			accommodations: 'Accommodations',
+			destinations: 'Destinations',
+			events: 'Events',
+			blog: 'Blog',
+		},
+		emptyState: 'You have no favorites in this category',
+	},
+	pt: {
+		tabs: {
+			accommodations: 'Acomodações',
+			destinations: 'Destinos',
+			events: 'Eventos',
+			blog: 'Blog',
+		},
+		emptyState: 'Você não tem favoritos nesta categoria',
+	},
+};
+
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
+
+/**
+ * Breadcrumb navigation items
+ */
+const breadcrumbItems = [
+	{ label: homeLabels[locale], href: `/${locale}/` },
+	{ label: accountLabels[locale], href: `/${locale}/mi-cuenta/` },
+	{ label: titles[locale], href: `/${locale}/mi-cuenta/favoritos/` },
+];
+
+const labels = contentLabels[locale];
+---
+
+<BaseLayout title={titles[locale]} description={descriptions[locale]} locale={locale}>
+	<SEOHead
+		slot="head"
+		title={titles[locale]}
+		description={descriptions[locale]}
+		canonical={canonicalUrl}
+		locale={locale === 'pt' ? 'es' : locale}
+		type="website"
+		noindex={true}
+	/>
+
+	<Container>
+		<Breadcrumb items={breadcrumbItems} />
+
+		<Section>
+			<div class="mx-auto max-w-7xl">
+				<h1 class="mb-8 text-4xl font-bold text-text-primary">
+					{titles[locale]}
+				</h1>
+
+				<!-- Tabs (static HTML, not React) -->
+				<div class="mb-8">
+					<div class="border-b border-border">
+						<nav class="-mb-px flex space-x-8" aria-label="Tabs">
+							<button
+								class="whitespace-nowrap border-b-2 border-primary px-1 py-4 text-sm font-medium text-primary"
+								aria-current="page"
+							>
+								{labels.tabs.accommodations}
+							</button>
+							<button
+								class="whitespace-nowrap border-b-2 border-transparent px-1 py-4 text-sm font-medium text-text-secondary hover:border-border hover:text-text-primary"
+							>
+								{labels.tabs.destinations}
+							</button>
+							<button
+								class="whitespace-nowrap border-b-2 border-transparent px-1 py-4 text-sm font-medium text-text-secondary hover:border-border hover:text-text-primary"
+							>
+								{labels.tabs.events}
+							</button>
+							<button
+								class="whitespace-nowrap border-b-2 border-transparent px-1 py-4 text-sm font-medium text-text-secondary hover:border-border hover:text-text-primary"
+							>
+								{labels.tabs.blog}
+							</button>
+						</nav>
+					</div>
+				</div>
+
+				<!-- Tab content - Accommodations (active by default) -->
+				<div class="mb-8">
+					<!-- Empty state -->
+					<div class="rounded-lg border border-border bg-bg p-12 text-center">
+						<svg
+							class="mx-auto mb-4 h-12 w-12 text-text-tertiary"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+							aria-hidden="true"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+							></path>
+						</svg>
+						<p class="text-text-secondary">{labels.emptyState}</p>
+					</div>
+
+					<!-- Placeholder for future card grid -->
+					<!-- <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+						AccommodationCard components will go here
+					</div> -->
+				</div>
+
+				<!-- Tab content - Destinations (hidden by default) -->
+				<div class="hidden">
+					<div class="rounded-lg border border-border bg-bg p-12 text-center">
+						<svg
+							class="mx-auto mb-4 h-12 w-12 text-text-tertiary"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+							aria-hidden="true"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+							></path>
+						</svg>
+						<p class="text-text-secondary">{labels.emptyState}</p>
+					</div>
+				</div>
+
+				<!-- Tab content - Events (hidden by default) -->
+				<div class="hidden">
+					<div class="rounded-lg border border-border bg-bg p-12 text-center">
+						<svg
+							class="mx-auto mb-4 h-12 w-12 text-text-tertiary"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+							aria-hidden="true"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+							></path>
+						</svg>
+						<p class="text-text-secondary">{labels.emptyState}</p>
+					</div>
+				</div>
+
+				<!-- Tab content - Blog (hidden by default) -->
+				<div class="hidden">
+					<div class="rounded-lg border border-border bg-bg p-12 text-center">
+						<svg
+							class="mx-auto mb-4 h-12 w-12 text-text-tertiary"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+							aria-hidden="true"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+							></path>
+						</svg>
+						<p class="text-text-secondary">{labels.emptyState}</p>
+					</div>
+				</div>
+			</div>
+		</Section>
+	</Container>
+</BaseLayout>

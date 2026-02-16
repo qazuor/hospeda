@@ -1,0 +1,413 @@
+---
+/**
+ * User Account Dashboard - authenticated SSR page.
+ * Shows user information, quick stats, and navigation to account sections.
+ * This page is protected by middleware - user is redirected to signin if not authenticated.
+ */
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import SEOHead from '../../../components/seo/SEOHead.astro';
+import Container from '../../../components/ui/Container.astro';
+import Breadcrumb from '../../../components/ui/Breadcrumb.astro';
+import Section from '../../../components/ui/Section.astro';
+import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
+
+const { lang } = Astro.params;
+
+if (!lang || !isValidLocale(lang)) {
+	return Astro.redirect('/es/');
+}
+
+const locale = lang as SupportedLocale;
+
+/**
+ * User is guaranteed to exist due to middleware auth protection
+ */
+const user = Astro.locals.user;
+if (!user) {
+	return Astro.redirect(`/${locale}/auth/signin`);
+}
+
+/**
+ * Generate user initials from name for avatar
+ */
+const initials = user.name
+	.split(' ')
+	.map((word) => word[0])
+	.slice(0, 2)
+	.join('')
+	.toUpperCase();
+
+/**
+ * Localized page titles
+ */
+const titles: Record<SupportedLocale, string> = {
+	es: 'Mi Cuenta',
+	en: 'My Account',
+	pt: 'Minha Conta',
+};
+
+/**
+ * Localized meta descriptions
+ */
+const descriptions: Record<SupportedLocale, string> = {
+	es: 'Administra tu cuenta, favoritos, reseñas y preferencias.',
+	en: 'Manage your account, favorites, reviews and preferences.',
+	pt: 'Gerencie sua conta, favoritos, avaliações e preferências.',
+};
+
+/**
+ * Localized home breadcrumb labels
+ */
+const homeLabels: Record<SupportedLocale, string> = {
+	es: 'Inicio',
+	en: 'Home',
+	pt: 'Início',
+};
+
+/**
+ * Localized greeting
+ */
+const greetings: Record<SupportedLocale, string> = {
+	es: 'Bienvenido',
+	en: 'Welcome',
+	pt: 'Bem-vindo',
+};
+
+/**
+ * Localized navigation items
+ */
+const navItems: Record<
+	SupportedLocale,
+	Array<{ label: string; href: string; description: string }>
+> = {
+	es: [
+		{
+			label: 'Editar Perfil',
+			href: `/${locale}/mi-cuenta/editar/`,
+			description: 'Actualiza tu información personal',
+		},
+		{
+			label: 'Mis Favoritos',
+			href: `/${locale}/mi-cuenta/favoritos/`,
+			description: 'Alojamientos que has guardado',
+		},
+		{
+			label: 'Mis Reseñas',
+			href: `/${locale}/mi-cuenta/resenas/`,
+			description: 'Reseñas que has escrito',
+		},
+		{
+			label: 'Preferencias',
+			href: `/${locale}/mi-cuenta/preferencias/`,
+			description: 'Configuración de notificaciones y privacidad',
+		},
+		{
+			label: 'Mi Suscripción',
+			href: `/${locale}/mi-cuenta/suscripcion/`,
+			description: 'Plan actual y facturación',
+		},
+	],
+	en: [
+		{
+			label: 'Edit Profile',
+			href: `/${locale}/mi-cuenta/editar/`,
+			description: 'Update your personal information',
+		},
+		{
+			label: 'My Favorites',
+			href: `/${locale}/mi-cuenta/favoritos/`,
+			description: 'Accommodations you have saved',
+		},
+		{
+			label: 'My Reviews',
+			href: `/${locale}/mi-cuenta/resenas/`,
+			description: 'Reviews you have written',
+		},
+		{
+			label: 'Preferences',
+			href: `/${locale}/mi-cuenta/preferencias/`,
+			description: 'Notification and privacy settings',
+		},
+		{
+			label: 'My Subscription',
+			href: `/${locale}/mi-cuenta/suscripcion/`,
+			description: 'Current plan and billing',
+		},
+	],
+	pt: [
+		{
+			label: 'Editar Perfil',
+			href: `/${locale}/mi-cuenta/editar/`,
+			description: 'Atualize suas informações pessoais',
+		},
+		{
+			label: 'Meus Favoritos',
+			href: `/${locale}/mi-cuenta/favoritos/`,
+			description: 'Acomodações que você salvou',
+		},
+		{
+			label: 'Minhas Avaliações',
+			href: `/${locale}/mi-cuenta/resenas/`,
+			description: 'Avaliações que você escreveu',
+		},
+		{
+			label: 'Preferências',
+			href: `/${locale}/mi-cuenta/preferencias/`,
+			description: 'Configurações de notificações e privacidade',
+		},
+		{
+			label: 'Minha Assinatura',
+			href: `/${locale}/mi-cuenta/suscripcion/`,
+			description: 'Plano atual e faturamento',
+		},
+	],
+};
+
+/**
+ * Localized quick stats section
+ */
+const statsLabels: Record<
+	SupportedLocale,
+	{ favorites: string; reviews: string; subscription: string }
+> = {
+	es: {
+		favorites: 'Mis Favoritos',
+		reviews: 'Mis Reseñas',
+		subscription: 'Mi Suscripción',
+	},
+	en: {
+		favorites: 'My Favorites',
+		reviews: 'My Reviews',
+		subscription: 'My Subscription',
+	},
+	pt: {
+		favorites: 'Meus Favoritos',
+		reviews: 'Minhas Avaliações',
+		subscription: 'Minha Assinatura',
+	},
+};
+
+const statsDescriptions: Record<
+	SupportedLocale,
+	{ favorites: string; reviews: string; subscription: string }
+> = {
+	es: {
+		favorites: 'Alojamientos guardados',
+		reviews: 'Reseñas publicadas',
+		subscription: 'Plan Gratuito',
+	},
+	en: {
+		favorites: 'Saved accommodations',
+		reviews: 'Published reviews',
+		subscription: 'Free Plan',
+	},
+	pt: {
+		favorites: 'Acomodações salvas',
+		reviews: 'Avaliações publicadas',
+		subscription: 'Plano Gratuito',
+	},
+};
+
+const viewLabels: Record<SupportedLocale, string> = {
+	es: 'Ver',
+	en: 'View',
+	pt: 'Ver',
+};
+
+const dashboardLabels: Record<SupportedLocale, string> = {
+	es: 'Dashboard',
+	en: 'Dashboard',
+	pt: 'Painel',
+};
+
+/**
+ * Breadcrumb navigation items
+ */
+const breadcrumbItems = [
+	{ label: homeLabels[locale], href: `/${locale}/` },
+	{ label: titles[locale], href: `/${locale}/mi-cuenta/` },
+];
+
+/**
+ * Placeholder stats (will be fetched from API in the future)
+ */
+const stats = {
+	favorites: 0,
+	reviews: 0,
+	subscription: 'free',
+};
+
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
+---
+
+<BaseLayout title={titles[locale]} description={descriptions[locale]} locale={locale}>
+	<SEOHead
+		slot="head"
+		title={titles[locale]}
+		description={descriptions[locale]}
+		canonical={canonicalUrl}
+		locale={locale === 'pt' ? 'es' : locale}
+		type="website"
+		noindex={true}
+	/>
+
+	<Container>
+		<Breadcrumb items={breadcrumbItems} />
+
+		<Section>
+			<div class="mx-auto max-w-6xl">
+				<!-- User Header Card -->
+				<article
+					id="user-header"
+					class="mb-8 overflow-hidden rounded-lg border border-border bg-surface shadow-sm"
+				>
+					<div class="flex flex-col items-center gap-6 p-8 sm:flex-row">
+						<!-- User Avatar with Initials -->
+						<div
+							class="flex h-24 w-24 flex-shrink-0 items-center justify-center rounded-full bg-primary text-3xl font-bold text-white"
+							aria-hidden="true"
+						>
+							{initials}
+						</div>
+
+						<!-- User Info -->
+						<div class="flex-1 text-center sm:text-left">
+							<h1 class="mb-2 text-3xl font-bold text-text-primary">
+								{greetings[locale]}, {user.name}
+							</h1>
+							<p class="text-lg text-text-secondary">{user.email}</p>
+						</div>
+					</div>
+				</article>
+
+				<div class="grid gap-8 lg:grid-cols-[300px_1fr]">
+					<!-- Navigation Sidebar -->
+					<aside
+						id="account-nav"
+						class="rounded-lg border border-border bg-surface p-6"
+						aria-label="Account navigation"
+					>
+						<nav>
+							<ul class="space-y-2" role="list">
+								{
+									navItems[locale].map((item) => (
+										<li>
+											<a
+												href={item.href}
+												class="group block rounded-md px-4 py-3 text-text-primary transition-colors hover:bg-bg focus-visible:bg-bg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+											>
+												<div class="font-semibold group-hover:text-primary">
+													{item.label}
+												</div>
+												<div class="text-sm text-text-tertiary">{item.description}</div>
+											</a>
+										</li>
+									))
+								}
+							</ul>
+						</nav>
+					</aside>
+
+					<!-- Main Content - Quick Stats -->
+					<div id="account-stats" class="space-y-6">
+						<h2 class="text-2xl font-bold text-text-primary">{dashboardLabels[locale]}</h2>
+
+						<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+							<!-- Favorites Card -->
+							<article
+								class="rounded-lg border border-border bg-surface p-6 shadow-sm transition-shadow hover:shadow-md"
+							>
+								<div class="mb-3 flex items-center justify-between">
+									<h3 class="text-lg font-semibold text-text-primary">
+										{statsLabels[locale].favorites}
+									</h3>
+									<svg
+										class="h-6 w-6 text-primary"
+										fill="currentColor"
+										viewBox="0 0 24 24"
+										aria-hidden="true"
+									>
+										<path
+											d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+										></path>
+									</svg>
+								</div>
+								<p class="mb-2 text-3xl font-bold text-text-primary">{stats.favorites}</p>
+								<p class="text-sm text-text-secondary">{statsDescriptions[locale].favorites}</p>
+								<a
+									href={`/${locale}/mi-cuenta/favoritos/`}
+									class="mt-4 inline-flex items-center text-sm font-medium text-primary hover:underline"
+								>
+									{viewLabels[locale]} {statsLabels[locale].favorites.toLowerCase()} →
+								</a>
+							</article>
+
+							<!-- Reviews Card -->
+							<article
+								class="rounded-lg border border-border bg-surface p-6 shadow-sm transition-shadow hover:shadow-md"
+							>
+								<div class="mb-3 flex items-center justify-between">
+									<h3 class="text-lg font-semibold text-text-primary">
+										{statsLabels[locale].reviews}
+									</h3>
+									<svg
+										class="h-6 w-6 text-primary"
+										fill="currentColor"
+										viewBox="0 0 24 24"
+										aria-hidden="true"
+									>
+										<path
+											d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
+										></path>
+									</svg>
+								</div>
+								<p class="mb-2 text-3xl font-bold text-text-primary">{stats.reviews}</p>
+								<p class="text-sm text-text-secondary">{statsDescriptions[locale].reviews}</p>
+								<a
+									href={`/${locale}/mi-cuenta/resenas/`}
+									class="mt-4 inline-flex items-center text-sm font-medium text-primary hover:underline"
+								>
+									{viewLabels[locale]} {statsLabels[locale].reviews.toLowerCase()} →
+								</a>
+							</article>
+
+							<!-- Subscription Card -->
+							<article
+								class="rounded-lg border border-border bg-surface p-6 shadow-sm transition-shadow hover:shadow-md"
+							>
+								<div class="mb-3 flex items-center justify-between">
+									<h3 class="text-lg font-semibold text-text-primary">
+										{statsLabels[locale].subscription}
+									</h3>
+									<svg
+										class="h-6 w-6 text-primary"
+										fill="none"
+										stroke="currentColor"
+										viewBox="0 0 24 24"
+										aria-hidden="true"
+									>
+										<path
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											stroke-width="2"
+											d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+									</svg>
+								</div>
+								<p class="mb-2 text-3xl font-bold text-text-primary">
+									{statsDescriptions[locale].subscription}
+								</p>
+								<p class="text-sm text-text-secondary">Estado activo</p>
+								<a
+									href={`/${locale}/mi-cuenta/suscripcion/`}
+									class="mt-4 inline-flex items-center text-sm font-medium text-primary hover:underline"
+								>
+									{viewLabels[locale]} {statsLabels[locale].subscription.toLowerCase()} →
+								</a>
+							</article>
+						</div>
+					</div>
+				</div>
+			</div>
+		</Section>
+	</Container>
+</BaseLayout>

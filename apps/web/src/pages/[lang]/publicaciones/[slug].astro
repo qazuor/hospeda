@@ -1,0 +1,239 @@
+---
+export const prerender = true;
+
+/**
+ * Blog post detail page.
+ * Displays full article content with metadata, author info, tags, and related posts.
+ *
+ * Rendering: SSG + ISR (24h revalidation)
+ * Route: /[lang]/publicaciones/[slug]
+ */
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import Container from '../../../components/ui/Container.astro';
+import Section from '../../../components/ui/Section.astro';
+import Badge from '../../../components/ui/Badge.astro';
+import Breadcrumb from '../../../components/ui/Breadcrumb.astro';
+import SEOHead from '../../../components/seo/SEOHead.astro';
+import ArticleJsonLd from '../../../components/seo/ArticleJsonLd.astro';
+import { ShareButtons } from '../../../components/ui/ShareButtons.client.tsx';
+import BlogPostCard from '../../../components/blog/BlogPostCard.astro';
+import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
+import { renderTiptapContent } from '../../../lib/tiptap-renderer';
+import { postsApi } from '../../../lib/api/endpoints';
+
+const { lang, slug } = Astro.params;
+
+if (!lang || !isValidLocale(lang)) {
+	return Astro.redirect('/es/');
+}
+
+const locale = lang as SupportedLocale;
+
+/**
+ * getStaticPaths - Generate static paths for all posts
+ */
+export async function getStaticPaths() {
+	const locales = ['es', 'en', 'pt'];
+	const result = await postsApi.list({ pageSize: 500 });
+	const posts = result.ok ? result.data.items : [];
+
+	return locales.flatMap((lang) =>
+		posts
+			.filter((p: any) => p.slug)
+			.map((p: any) => ({
+				params: { lang, slug: p.slug },
+				props: { post: p },
+			}))
+	);
+}
+
+// Fetch post from props (getStaticPaths) or API (fallback)
+let post = Astro.props.post as Record<string, unknown> | undefined;
+if (!post) {
+	const result = await postsApi.getBySlug({ slug: slug || '' });
+	if (!result.ok) {
+		return Astro.redirect(`/${locale}/publicaciones/`);
+	}
+	post = result.data;
+}
+
+// Fetch related posts from API
+const relResult = await postsApi.list({ pageSize: 4 });
+const allPosts = relResult.ok ? relResult.data.items : [];
+const relatedPosts = allPosts
+	.filter((p: any) => p.id !== (post as any).id)
+	.slice(0, 3)
+	.map((p: any) => ({ post: p }));
+
+/**
+ * Render TipTap content to HTML
+ */
+const renderedContent = renderTiptapContent({ content: (post as any).content });
+
+/**
+ * Localized texts for UI elements
+ */
+const texts: Record<
+	SupportedLocale,
+	{
+		blog: string;
+		relatedPosts: string;
+		share: string;
+		tags: string;
+		readingTime: string;
+		home: string;
+	}
+> = {
+	es: {
+		blog: 'Blog',
+		relatedPosts: 'Publicaciones relacionadas',
+		share: 'Compartir',
+		tags: 'Etiquetas',
+		readingTime: 'min de lectura',
+		home: 'Inicio',
+	},
+	en: {
+		blog: 'Blog',
+		relatedPosts: 'Related Posts',
+		share: 'Share',
+		tags: 'Tags',
+		readingTime: 'min read',
+		home: 'Home',
+	},
+	pt: {
+		blog: 'Blog',
+		relatedPosts: 'Publicações relacionadas',
+		share: 'Compartilhar',
+		tags: 'Tags',
+		readingTime: 'min de leitura',
+		home: 'Início',
+	},
+};
+
+const t = texts[locale];
+
+/**
+ * Format publication date according to locale
+ */
+const publishDate = new Date((post as any).publishedAt || Date.now());
+const formattedDate = publishDate.toLocaleDateString(
+	locale === 'es' ? 'es-AR' : locale === 'pt' ? 'pt-BR' : 'en-US',
+	{
+		year: 'numeric',
+		month: 'long',
+		day: 'numeric',
+	}
+);
+
+/**
+ * Breadcrumb navigation items
+ */
+const breadcrumbItems = [
+	{ label: t.home, href: `/${locale}/` },
+	{ label: t.blog, href: `/${locale}/publicaciones/` },
+	{ label: (post as any).category || 'Blog', href: `/${locale}/publicaciones/` },
+];
+
+/**
+ * Page URL for sharing and canonical
+ */
+const pageUrl = `/${locale}/publicaciones/${(post as any).slug}/`;
+const canonicalUrl = new URL(pageUrl, Astro.site).href;
+---
+
+<BaseLayout title={(post as any).title} description={(post as any).excerpt || ''} locale={locale}>
+	<SEOHead
+		slot="head"
+		title={(post as any).title}
+		description={(post as any).excerpt || ''}
+		canonical={canonicalUrl}
+		image={(post as any).coverImage || '/images/placeholder-blog.svg'}
+		type="article"
+		locale={locale === 'pt' ? 'es' : locale}
+	/>
+	<ArticleJsonLd
+		slot="head"
+		headline={(post as any).title}
+		description={(post as any).excerpt || ''}
+		url={canonicalUrl}
+		image={(post as any).coverImage || '/images/placeholder-blog.svg'}
+		datePublished={(post as any).publishedAt || new Date().toISOString()}
+		author={{ name: (post as any).author?.name || 'Anonymous' }}
+	/>
+
+	<Container>
+		<!-- Breadcrumbs -->
+		<Breadcrumb items={breadcrumbItems} />
+
+		<article class="mx-auto max-w-3xl">
+			<!-- Featured Image -->
+			<img
+				src={(post as any).coverImage || '/images/placeholder-blog.svg'}
+				alt={(post as any).title}
+				class="mb-6 aspect-video w-full rounded-lg object-cover"
+				loading="eager"
+			/>
+
+			<!-- Category badge -->
+			<Badge label={(post as any).category || 'Blog'} variant="primary" class="mb-3" />
+
+			<!-- Title -->
+			<h1 class="mb-4 text-3xl font-bold text-text-primary md:text-4xl">
+				{(post as any).title}
+			</h1>
+
+			<!-- Author info + meta -->
+			<div class="mb-8 flex items-center gap-4 text-gray-600">
+				<img
+					src={(post as any).author?.avatar || '/images/placeholder-avatar.svg'}
+					alt={(post as any).author?.name || 'Anonymous'}
+					class="h-10 w-10 rounded-full object-cover"
+					loading="lazy"
+				/>
+				<div>
+					<p class="font-medium text-gray-900">{(post as any).author?.name || 'Anonymous'}</p>
+					<p class="text-sm">
+						{formattedDate} · {(post as any).readingTime || 5}
+						{t.readingTime}
+					</p>
+				</div>
+			</div>
+
+			<!-- Content (TipTap rendered) -->
+			<div class="prose prose-lg max-w-none" set:html={renderedContent} />
+
+			<!-- Tags -->
+			<div class="mt-8 border-t pt-6">
+				<h3 class="mb-3 text-sm font-semibold uppercase text-gray-500">
+					{t.tags}
+				</h3>
+				<div class="flex flex-wrap gap-2">
+					{
+						((post as any).tags || []).map((tag: string) => (
+							<Badge label={tag} variant="outline" />
+						))
+					}
+				</div>
+			</div>
+
+			<!-- Share -->
+			<div class="mt-6 border-t pt-6">
+				<h3 class="mb-3 text-sm font-semibold uppercase text-gray-500">
+					{t.share}
+				</h3>
+				<ShareButtons client:visible url={canonicalUrl} title={(post as any).title} />
+			</div>
+		</article>
+
+		<!-- Related Posts -->
+		<Section title={t.relatedPosts} class="mt-12">
+			<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+				{
+					relatedPosts.map((rp) => (
+						<BlogPostCard {...rp} locale={locale} />
+					))
+				}
+			</div>
+		</Section>
+	</Container>
+</BaseLayout>

@@ -1,0 +1,372 @@
+---
+export const prerender = true;
+
+/**
+ * Destination Detail Page
+ *
+ * Displays comprehensive information about a destination including:
+ * - Hero image with destination name and province
+ * - Description, climate information, how to get there
+ * - Image gallery with lightbox
+ * - List of attractions and things to do
+ * - Accommodations in this destination
+ * - Events happening in this destination
+ * - Location map
+ * - Share and favorite buttons
+ *
+ * Rendering: SSG + ISR (24h revalidation)
+ * Route: /[lang]/destinos/[...path]
+ *
+ * Uses catch-all path parameter to support hierarchical paths like:
+ * - /es/destinos/entre-rios/colon/
+ * - /es/destinos/concepcion-del-uruguay/
+ */
+
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import Container from '../../../components/ui/Container.astro';
+import Section from '../../../components/ui/Section.astro';
+import Badge from '../../../components/ui/Badge.astro';
+import Breadcrumb from '../../../components/ui/Breadcrumb.astro';
+import SEOHead from '../../../components/seo/SEOHead.astro';
+import AccommodationCard from '../../../components/accommodation/AccommodationCard.astro';
+import EventCard from '../../../components/event/EventCard.astro';
+import EmptyState from '../../../components/ui/EmptyState.astro';
+import { ImageGallery } from '../../../components/ui/ImageGallery.client.tsx';
+import { ShareButtons } from '../../../components/ui/ShareButtons.client.tsx';
+import { FavoriteButton } from '../../../components/ui/FavoriteButton.client.tsx';
+import { MapView } from '../../../components/map/MapView.client.tsx';
+import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
+import { renderTiptapContent } from '../../../lib/tiptap-renderer';
+import { destinationsApi, accommodationsApi, eventsApi } from '../../../lib/api/endpoints';
+
+/**
+ * Generate static paths for all destinations in all locales
+ */
+export async function getStaticPaths() {
+	const locales = ['es', 'en', 'pt'];
+	const result = await destinationsApi.list({ pageSize: 500 });
+	const destinations = result.ok ? (result.data.items as Array<Record<string, unknown>>) : [];
+
+	return locales.flatMap((lang) =>
+		destinations
+			.filter((d) => d.path || d.slug)
+			.map((d) => ({
+				params: { lang, path: String(d.path || d.slug) },
+				props: { destinationData: d },
+			}))
+	);
+}
+
+const { lang, path } = Astro.params;
+const { destinationData } = Astro.props;
+
+// Validate locale and redirect to default if invalid
+if (!lang || !isValidLocale(lang)) {
+  return Astro.redirect('/es/');
+}
+
+const locale = lang as SupportedLocale;
+
+/**
+ * Fetch destination data from API
+ * Using the path parameter or fallback to destinationData from getStaticPaths
+ */
+let destination: Record<string, unknown> = destinationData || {};
+
+// If we have a path param, fetch fresh data (for ISR)
+if (path) {
+	const pathStr = Array.isArray(path) ? path.join('/') : String(path);
+	const destResult = await destinationsApi.getByPath({ path: pathStr });
+
+	if (!destResult.ok) {
+		// Fallback to destinationData or redirect to destinations list
+		if (!destinationData) {
+			return Astro.redirect(`/${locale}/destinos/`);
+		}
+	} else {
+		destination = destResult.data as Record<string, unknown>;
+	}
+}
+
+/**
+ * Fetch related data: accommodations and events
+ */
+const destinationId = String(destination.id || '');
+let accommodations: Array<Record<string, unknown>> = [];
+let events: Array<Record<string, unknown>> = [];
+
+if (destinationId) {
+	// Fetch accommodations for this destination
+	const accResult = await destinationsApi.getAccommodations({
+		id: destinationId,
+		pageSize: 6,
+	});
+	accommodations = accResult.ok ? (accResult.data.items as Array<Record<string, unknown>>) : [];
+
+	// Fetch events for this destination
+	// Note: eventsApi.list doesn't support destinationId filtering yet
+	// For now, we use empty array with a TODO comment
+	// TODO: Update when eventsApi.list supports destinationId parameter
+	const evtResult = await eventsApi.list({ pageSize: 4 });
+	events = evtResult.ok ? (evtResult.data.items as Array<Record<string, unknown>>) : [];
+}
+
+/**
+ * Render TipTap content to HTML
+ */
+const descriptionContent = destination.description || destination.summary || { type: 'doc', content: [] };
+const howToGetThereContent = destination.howToGetThere || { type: 'doc', content: [] };
+
+const renderedDescription = renderTiptapContent({ content: descriptionContent });
+const renderedHowToGetThere = renderTiptapContent({ content: howToGetThereContent });
+
+const texts = {
+  es: { home: 'Inicio', destinations: 'Destinos', description: 'Descripción', gallery: 'Galería', climate: 'Clima', howToGetThere: 'Cómo llegar', attractions: 'Qué hacer', accommodationsTitle: 'Alojamientos', eventsTitle: 'Eventos', viewAll: 'Ver todos', map: 'Mapa', summer: 'Verano', winter: 'Invierno', bestSeason: 'Mejor época', rainfall: 'Lluvias', noAccommodations: 'No hay alojamientos disponibles', noAccommodationsMessage: 'Próximamente agregaremos alojamientos en este destino.', noEvents: 'No hay eventos próximos', noEventsMessage: 'No hay eventos programados para este destino en este momento.', accommodationsIn: 'Alojamientos en', eventsIn: 'Eventos en' },
+  en: { home: 'Home', destinations: 'Destinations', description: 'Description', gallery: 'Gallery', climate: 'Climate', howToGetThere: 'How to get there', attractions: 'Things to do', accommodationsTitle: 'Accommodations', eventsTitle: 'Events', viewAll: 'View all', map: 'Map', summer: 'Summer', winter: 'Winter', bestSeason: 'Best season', rainfall: 'Rainfall', noAccommodations: 'No accommodations available', noAccommodationsMessage: 'We will soon add accommodations in this destination.', noEvents: 'No upcoming events', noEventsMessage: 'There are no events scheduled for this destination at this time.', accommodationsIn: 'Accommodations in', eventsIn: 'Events in' },
+  pt: { home: 'Início', destinations: 'Destinos', description: 'Descrição', gallery: 'Galeria', climate: 'Clima', howToGetThere: 'Como chegar', attractions: 'O que fazer', accommodationsTitle: 'Acomodações', eventsTitle: 'Eventos', viewAll: 'Ver todos', map: 'Mapa', summer: 'Verão', winter: 'Inverno', bestSeason: 'Melhor época', rainfall: 'Chuvas', noAccommodations: 'Nenhuma acomodação disponível', noAccommodationsMessage: 'Em breve adicionaremos acomodações neste destino.', noEvents: 'Nenhum evento próximo', noEventsMessage: 'Não há eventos programados para este destino no momento.', accommodationsIn: 'Acomodações em', eventsIn: 'Eventos em' },
+} as const;
+
+const t = texts[locale];
+
+/**
+ * Extract data from destination with fallbacks
+ */
+const destinationName = String(destination.name || 'Sin nombre');
+const destinationSlug = String(destination.slug || destination.path || '');
+const destinationHeroImage = String(destination.heroImage || destination.featuredImage || '/images/placeholder-destination.svg');
+const destinationProvince = String(destination.province || destination.state || '');
+const destinationCountry = String(destination.country || 'Argentina');
+const destinationLocation = (destination.location as { lat?: number; lng?: number }) || {};
+const destinationClimate = (destination.climate as Record<string, string>) || {};
+const destinationAttractions = (destination.attractions as Array<{ name: string; description: string }>) || [];
+const destinationImages = (destination.images as Array<{ url: string; alt: string }>) || [
+	{ url: destinationHeroImage, alt: destinationName }
+];
+const accommodationCount = Number(destination.accommodationsCount || destination.accommodationCount || 0);
+const eventCount = Number(destination.eventsCount || destination.eventCount || 0);
+
+// Breadcrumb navigation items
+const breadcrumbItems = [
+	{ label: t.home, href: `/${locale}/` },
+	{ label: t.destinations, href: `/${locale}/destinos/` },
+	{ label: destinationName },
+];
+
+// Page URL for sharing and canonical
+const pageUrl = `/${locale}/destinos/${destinationSlug}/`;
+
+// Map markers for destination location
+const mapMarkers = destinationLocation.lat && destinationLocation.lng
+	? [
+			{
+				id: destinationId,
+				lat: destinationLocation.lat,
+				lng: destinationLocation.lng,
+				title: destinationName,
+				popup: `${destinationName}, ${destinationProvince}`
+			}
+	  ]
+	: [];
+---
+
+<BaseLayout
+  title={destinationName}
+  description={`${destinationName} - ${destinationProvince}, ${destinationCountry}`}
+  locale={locale}
+  image={destinationHeroImage}
+>
+  <SEOHead
+    slot="head"
+    title={destinationName}
+    description={`Descubre ${destinationName} en ${destinationProvince}. Guía completa con alojamientos, eventos, atracciones y cómo llegar.`}
+    image={destinationHeroImage}
+    locale={locale}
+  />
+
+  <Container>
+    <Breadcrumb items={breadcrumbItems} class="py-4" />
+
+    <!-- Hero section -->
+    <div class="relative mb-8 overflow-hidden rounded-lg aspect-[21/9]">
+      <img
+        src={destinationHeroImage}
+        alt={destinationName}
+        class="h-full w-full object-cover"
+      />
+      <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+      <div class="absolute bottom-0 left-0 right-0 p-6 md:p-8">
+        <Badge variant="primary" label={destinationProvince} class="mb-3" />
+        <h1 class="text-3xl md:text-5xl font-bold text-white">{destinationName}</h1>
+      </div>
+    </div>
+
+    <!-- Action buttons -->
+    <div class="flex items-center justify-end gap-2 mb-8">
+      <FavoriteButton
+        client:visible
+        entityId={destinationId}
+        entityType="destination"
+      />
+      <ShareButtons
+        client:visible
+        url={pageUrl}
+        title={destinationName}
+      />
+    </div>
+
+    <!-- Main content grid -->
+    <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
+      <!-- Left column (2/3) -->
+      <div class="lg:col-span-2 space-y-8">
+        <!-- Description -->
+        <section>
+          <h2 class="mb-4 text-2xl font-bold">{t.description}</h2>
+          <div class="prose max-w-none text-text-secondary" set:html={renderedDescription} />
+        </section>
+
+        <!-- Image Gallery -->
+        {destinationImages.length > 0 && (
+          <section>
+            <h2 class="mb-4 text-2xl font-bold">{t.gallery}</h2>
+            <ImageGallery client:visible images={destinationImages} />
+          </section>
+        )}
+
+        <!-- Climate -->
+        {(destinationClimate.summer || destinationClimate.winter || destinationClimate.bestSeason || destinationClimate.rainfall) && (
+          <section>
+            <h2 class="mb-4 text-2xl font-bold">{t.climate}</h2>
+            <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
+              {destinationClimate.summer && (
+                <div class="rounded-lg border border-border bg-surface p-4">
+                  <div class="text-sm text-text-tertiary">{t.summer}</div>
+                  <div class="mt-1 font-semibold text-text">{destinationClimate.summer}</div>
+                </div>
+              )}
+              {destinationClimate.winter && (
+                <div class="rounded-lg border border-border bg-surface p-4">
+                  <div class="text-sm text-text-tertiary">{t.winter}</div>
+                  <div class="mt-1 font-semibold text-text">{destinationClimate.winter}</div>
+                </div>
+              )}
+              {destinationClimate.bestSeason && (
+                <div class="rounded-lg border border-border bg-surface p-4">
+                  <div class="text-sm text-text-tertiary">{t.bestSeason}</div>
+                  <div class="mt-1 font-semibold text-text">{destinationClimate.bestSeason}</div>
+                </div>
+              )}
+              {destinationClimate.rainfall && (
+                <div class="rounded-lg border border-border bg-surface p-4">
+                  <div class="text-sm text-text-tertiary">{t.rainfall}</div>
+                  <div class="mt-1 font-semibold text-text">{destinationClimate.rainfall}</div>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
+        <!-- How to get there -->
+        {renderedHowToGetThere && renderedHowToGetThere.trim() !== '' && (
+          <section>
+            <h2 class="mb-4 text-2xl font-bold">{t.howToGetThere}</h2>
+            <div class="prose max-w-none text-text-secondary" set:html={renderedHowToGetThere} />
+          </section>
+        )}
+
+        <!-- Attractions -->
+        {destinationAttractions.length > 0 && (
+          <section>
+            <h2 class="mb-4 text-2xl font-bold">{t.attractions}</h2>
+            <ul class="space-y-3">
+              {destinationAttractions.map((attraction) => (
+                <li class="rounded-lg border border-border bg-surface p-4">
+                  <h3 class="font-semibold text-text">{attraction.name}</h3>
+                  <p class="mt-1 text-sm text-text-secondary">{attraction.description}</p>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        <!-- Map -->
+        {mapMarkers.length > 0 && destinationLocation.lat && destinationLocation.lng && (
+          <section>
+            <h2 class="mb-4 text-2xl font-bold">{t.map}</h2>
+            <MapView
+              client:visible
+              markers={mapMarkers}
+              center={[destinationLocation.lat, destinationLocation.lng]}
+              zoom={13}
+              height="400px"
+            />
+          </section>
+        )}
+      </div>
+
+      <!-- Right sidebar (1/3) -->
+      <aside class="lg:sticky lg:top-4 lg:self-start space-y-6">
+        <!-- Accommodations count card -->
+        <div class="rounded-lg border border-border bg-surface p-6 shadow-sm">
+          <h3 class="text-lg font-semibold text-text">{t.accommodationsTitle}</h3>
+          <p class="mt-2 text-3xl font-bold text-primary">{accommodationCount}</p>
+          <p class="mt-1 text-sm text-text-tertiary">
+            {accommodationCount === 1 ? 'alojamiento disponible' : 'alojamientos disponibles'}
+          </p>
+          <a
+            href={`/${locale}/alojamientos/?destination=${destinationSlug}`}
+            class="mt-4 block text-center rounded-md bg-primary px-4 py-2 font-semibold text-white transition-colors hover:bg-primary-dark"
+          >
+            {t.viewAll}
+          </a>
+        </div>
+
+        <!-- Events count card -->
+        <div class="rounded-lg border border-border bg-surface p-6 shadow-sm">
+          <h3 class="text-lg font-semibold text-text">{t.eventsTitle}</h3>
+          <p class="mt-2 text-3xl font-bold text-primary">{eventCount}</p>
+          <p class="mt-1 text-sm text-text-tertiary">
+            {eventCount === 1 ? 'evento próximo' : 'eventos próximos'}
+          </p>
+          <a
+            href={`/${locale}/eventos/?destination=${destinationSlug}`}
+            class="mt-4 block text-center rounded-md bg-primary px-4 py-2 font-semibold text-white transition-colors hover:bg-primary-dark"
+          >
+            {t.viewAll}
+          </a>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Accommodations section -->
+    <Section title={`${t.accommodationsIn} ${destinationName}`} class="mt-12">
+      {accommodations.length > 0 ? (
+        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {accommodations.map((accommodation) => (
+            <AccommodationCard accommodation={accommodation} locale={locale} />
+          ))}
+        </div>
+      ) : (
+        <EmptyState
+          title={t.noAccommodations}
+          message={t.noAccommodationsMessage}
+        />
+      )}
+    </Section>
+
+    <!-- Events section -->
+    <Section title={`${t.eventsIn} ${destinationName}`} class="mt-12">
+      {events.length > 0 ? (
+        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {events.map((event) => (
+            <EventCard event={event} locale={locale} />
+          ))}
+        </div>
+      ) : (
+        <EmptyState
+          title={t.noEvents}
+          message={t.noEventsMessage}
+        />
+      )}
+    </Section>
+  </Container>
+</BaseLayout>
