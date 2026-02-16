@@ -8,9 +8,17 @@
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    EditIcon,
+    GlobeIcon,
+    HomeIcon,
+    ShieldAlertIcon,
+    ShieldIcon,
+    UserIcon,
+    UsersIcon
+} from '@repo/icons';
 import { RoleEnum } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
-import { Edit, Globe, Home, Shield, ShieldAlert, User, Users } from 'lucide-react';
 
 export const Route = createFileRoute('/_authed/access/roles')({
     component: RolesPage
@@ -20,7 +28,7 @@ interface RoleInfo {
     label: string;
     description: string;
     level: 'critical' | 'high' | 'medium' | 'low';
-    icon: typeof Shield;
+    icon: typeof ShieldIcon;
     capabilities: string[];
 }
 
@@ -30,7 +38,7 @@ const ROLE_INFO: Record<RoleEnum, RoleInfo> = {
         label: 'Super Admin',
         description: 'Full system access with all permissions including system-level actions',
         level: 'critical',
-        icon: ShieldAlert,
+        icon: ShieldAlertIcon,
         capabilities: [
             'Complete system control',
             'User and role management',
@@ -43,7 +51,7 @@ const ROLE_INFO: Record<RoleEnum, RoleInfo> = {
         label: 'Admin',
         description: 'Manages platform content, users, and most administrative functions',
         level: 'high',
-        icon: Shield,
+        icon: ShieldIcon,
         capabilities: [
             'Content moderation',
             'User management',
@@ -56,7 +64,7 @@ const ROLE_INFO: Record<RoleEnum, RoleInfo> = {
         label: 'Client Manager',
         description: 'Manages client accounts, billing, subscriptions, and business analytics',
         level: 'high',
-        icon: Users,
+        icon: UsersIcon,
         capabilities: [
             'Client account management',
             'Subscription management',
@@ -69,7 +77,7 @@ const ROLE_INFO: Record<RoleEnum, RoleInfo> = {
         label: 'Editor',
         description: 'Creates and edits events, posts, and editorial content',
         level: 'medium',
-        icon: Edit,
+        icon: EditIcon,
         capabilities: [
             'Create events',
             'Edit posts',
@@ -82,7 +90,7 @@ const ROLE_INFO: Record<RoleEnum, RoleInfo> = {
         label: 'Host',
         description: 'Accommodation owner who manages their own listings',
         level: 'medium',
-        icon: Home,
+        icon: HomeIcon,
         capabilities: [
             'Manage own accommodations',
             'Update availability',
@@ -95,7 +103,7 @@ const ROLE_INFO: Record<RoleEnum, RoleInfo> = {
         label: 'User',
         description: 'Registered user of the public portal with basic interaction capabilities',
         level: 'low',
-        icon: User,
+        icon: UserIcon,
         capabilities: [
             'View content',
             'Create reviews',
@@ -109,14 +117,14 @@ const ROLE_INFO: Record<RoleEnum, RoleInfo> = {
         description:
             'External business sponsor with access to sponsorship management and analytics',
         level: 'low',
-        icon: User,
+        icon: UserIcon,
         capabilities: ['Manage sponsorships', 'View sponsorship analytics', 'View invoices']
     },
     [RoleEnum.GUEST]: {
         label: 'Guest',
         description: 'Public visitor without authentication, limited to viewing public content',
         level: 'low',
-        icon: Globe,
+        icon: GlobeIcon,
         capabilities: [
             'View public content',
             'Browse accommodations',

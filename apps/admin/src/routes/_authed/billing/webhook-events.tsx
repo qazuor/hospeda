@@ -27,8 +27,15 @@ import {
 } from '@/features/billing-webhook-events';
 import { useTranslations } from '@/hooks/use-translations';
 import type { TranslationKey } from '@repo/i18n';
+import {
+    AlertCircleIcon,
+    CalendarIcon,
+    FilterIcon,
+    LoaderIcon,
+    RefreshIcon,
+    WebhookIcon
+} from '@repo/icons';
 import { createFileRoute } from '@tanstack/react-router';
-import { AlertCircle, CalendarIcon, FilterIcon, RefreshCwIcon, WebhookIcon } from 'lucide-react';
 import { useState } from 'react';
 
 export const Route = createFileRoute('/_authed/billing/webhook-events')({
@@ -568,7 +575,7 @@ function WebhookEventsPage() {
                     <CardContent>
                         {isLoading ? (
                             <div className="py-12 text-center">
-                                <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                                <LoaderIcon className="mx-auto h-8 w-8 animate-spin text-primary" />
                                 <p className="mt-4 text-muted-foreground text-sm">
                                     {t('admin-billing.webhookEvents.loadingEvents')}
                                 </p>
@@ -587,7 +594,7 @@ function WebhookEventsPage() {
                                 {activeTab === 'events' ? (
                                     <WebhookIcon className="mx-auto h-12 w-12 text-muted-foreground/50" />
                                 ) : (
-                                    <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground/50" />
+                                    <AlertCircleIcon className="mx-auto h-12 w-12 text-muted-foreground/50" />
                                 )}
                                 <p className="mt-4 text-muted-foreground text-sm">
                                     {activeTab === 'events'
@@ -678,7 +685,7 @@ function WebhookEventsPage() {
                                                                 }
                                                                 disabled={retryMutation.isPending}
                                                             >
-                                                                <RefreshCwIcon className="mr-1 h-3 w-3" />
+                                                                <RefreshIcon className="mr-1 h-3 w-3" />
                                                                 Reintentar
                                                             </Button>
                                                         )}

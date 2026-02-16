@@ -6,7 +6,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangleIcon } from '@repo/icons';
 import type { ApproachingLimitsResponse } from '../types';
 
 interface ApproachingLimitsTableProps {
@@ -19,7 +19,7 @@ export function ApproachingLimitsTable({ data }: ApproachingLimitsTableProps) {
             <Card className="border-dashed">
                 <CardContent className="py-8 text-center">
                     <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
-                        <AlertTriangle className="h-6 w-6 text-green-600" />
+                        <AlertTriangleIcon className="h-6 w-6 text-green-600" />
                     </div>
                     <p className="text-muted-foreground">
                         No hay clientes cerca de alcanzar sus límites
@@ -36,7 +36,7 @@ export function ApproachingLimitsTable({ data }: ApproachingLimitsTableProps) {
         <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                    <AlertTriangle className="h-5 w-5 text-orange-600" />
+                    <AlertTriangleIcon className="h-5 w-5 text-orange-600" />
                     Clientes Cerca del Límite
                 </CardTitle>
                 <CardDescription>

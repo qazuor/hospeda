@@ -8,9 +8,9 @@
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ChevronDownIcon, ChevronRightIcon } from '@repo/icons';
 import { PermissionCategoryEnum } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
-import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 
 export const Route = createFileRoute('/_authed/access/permissions')({
@@ -213,9 +213,9 @@ function PermissionsPage() {
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-3">
                                             {isExpanded ? (
-                                                <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                                                <ChevronDownIcon className="h-5 w-5 text-muted-foreground" />
                                             ) : (
-                                                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                                                <ChevronRightIcon className="h-5 w-5 text-muted-foreground" />
                                             )}
                                             <CardTitle className="text-lg">{groupName}</CardTitle>
                                         </div>

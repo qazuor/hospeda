@@ -4,7 +4,7 @@
  * Displays overview cards with system-wide metrics
  */
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle, TrendingUp, Users } from 'lucide-react';
+import { AlertTriangleIcon, TrendingUpIcon, UsersIcon } from '@repo/icons';
 import type { SystemUsageStats } from '../types';
 
 interface SystemStatsCardsProps {
@@ -25,7 +25,7 @@ export function SystemStatsCards({ stats, approachingLimitsCount }: SystemStatsC
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="font-medium text-sm">Total de Clientes</CardTitle>
-                    <Users className="h-4 w-4 text-muted-foreground" />
+                    <UsersIcon className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                     <div className="font-bold text-2xl">{stats.totalCustomers}</div>
@@ -49,7 +49,7 @@ export function SystemStatsCards({ stats, approachingLimitsCount }: SystemStatsC
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="font-medium text-sm">Planes Activos</CardTitle>
-                    <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                    <TrendingUpIcon className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                     <div className="font-bold text-2xl">{stats.planStats.length}</div>
@@ -73,7 +73,7 @@ export function SystemStatsCards({ stats, approachingLimitsCount }: SystemStatsC
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="font-medium text-sm">Cerca del Límite</CardTitle>
-                    <AlertTriangle className="h-4 w-4 text-orange-600" />
+                    <AlertTriangleIcon className="h-4 w-4 text-orange-600" />
                 </CardHeader>
                 <CardContent>
                     <div className="font-bold text-2xl text-orange-600">

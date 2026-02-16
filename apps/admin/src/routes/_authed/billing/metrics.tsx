@@ -19,8 +19,8 @@ import {
     useSystemUsageStatsQuery
 } from '@/features/billing-metrics';
 import { useTranslations } from '@/hooks/use-translations';
+import { CloseIcon, LoaderIcon, SearchIcon, UserIcon } from '@repo/icons';
 import { createFileRoute } from '@tanstack/react-router';
-import { Search, User, X } from 'lucide-react';
 import { useState } from 'react';
 
 export const Route = createFileRoute('/_authed/billing/metrics')({
@@ -85,7 +85,7 @@ function BillingMetricsPage() {
                 {isLoadingStats ? (
                     <Card>
                         <CardContent className="py-8 text-center">
-                            <div className="mx-auto h-6 w-6 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                            <LoaderIcon className="mx-auto h-6 w-6 animate-spin text-primary" />
                             <p className="mt-2 text-muted-foreground text-sm">
                                 {t('admin-billing.metrics.loadingStats')}
                             </p>
@@ -113,7 +113,7 @@ function BillingMetricsPage() {
                 {isLoadingLimits ? (
                     <Card>
                         <CardContent className="py-8 text-center">
-                            <div className="mx-auto h-6 w-6 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                            <LoaderIcon className="mx-auto h-6 w-6 animate-spin text-primary" />
                             <p className="mt-2 text-muted-foreground text-sm">
                                 {t('admin-billing.metrics.loadingLimits')}
                             </p>
@@ -146,7 +146,7 @@ function BillingMetricsPage() {
                         <div className="space-y-4">
                             {/* Search input */}
                             <div className="relative">
-                                <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+                                <SearchIcon className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
                                 <Input
                                     placeholder={t('admin-billing.metrics.searchPlaceholder')}
                                     value={searchQuery}
@@ -161,7 +161,7 @@ function BillingMetricsPage() {
                                         className="-translate-y-1/2 absolute top-1/2 right-2"
                                         onClick={handleClearSelection}
                                     >
-                                        <X className="h-4 w-4" />
+                                        <CloseIcon className="h-4 w-4" />
                                     </Button>
                                 )}
                             </div>
@@ -172,7 +172,7 @@ function BillingMetricsPage() {
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-3">
                                             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                                                <User className="h-5 w-5 text-primary" />
+                                                <UserIcon className="h-5 w-5 text-primary" />
                                             </div>
                                             <div>
                                                 <p className="font-medium">
@@ -205,7 +205,7 @@ function BillingMetricsPage() {
                                 searchQuery.length >= 2 &&
                                 (isSearching ? (
                                     <div className="py-4 text-center">
-                                        <div className="mx-auto h-6 w-6 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                                        <LoaderIcon className="mx-auto h-6 w-6 animate-spin text-primary" />
                                         <p className="mt-2 text-muted-foreground text-sm">
                                             {t('admin-billing.metrics.searching')}
                                         </p>
@@ -279,7 +279,7 @@ function BillingMetricsPage() {
                     (isLoadingUsage ? (
                         <Card>
                             <CardContent className="py-12 text-center">
-                                <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                                <LoaderIcon className="mx-auto h-8 w-8 animate-spin text-primary" />
                                 <p className="mt-4 text-muted-foreground text-sm">
                                     {t('admin-billing.metrics.loadingUsage')}
                                 </p>
@@ -305,7 +305,7 @@ function BillingMetricsPage() {
                     <Card className="border-dashed">
                         <CardContent className="py-12 text-center">
                             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-                                <Search className="h-8 w-8 text-muted-foreground" />
+                                <SearchIcon className="h-8 w-8 text-muted-foreground" />
                             </div>
                             <p className="text-muted-foreground">
                                 {t('admin-billing.metrics.emptyTitle')}

@@ -23,8 +23,8 @@ import {
 import { useTranslations } from '@/hooks/use-translations';
 import { ALL_PLANS, type PlanDefinition } from '@repo/billing';
 import type { TranslationKey } from '@repo/i18n';
+import { CalendarIcon, CreditCardIcon, LoaderIcon, XCircleIcon } from '@repo/icons';
 import { createFileRoute } from '@tanstack/react-router';
-import { CalendarIcon, CreditCardIcon, Loader2, XCircleIcon } from 'lucide-react';
 import { useState } from 'react';
 
 export const Route = createFileRoute('/_authed/billing/subscriptions')({
@@ -592,7 +592,7 @@ function SubscriptionDetailsDialog({
                         </h3>
                         {isLoadingPayments ? (
                             <div className="rounded-md border p-6 text-center">
-                                <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
+                                <LoaderIcon className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
                                 <p className="mt-2 text-muted-foreground text-xs">
                                     {t('admin-billing.subscriptions.paymentHistory.loading')}
                                 </p>
@@ -817,7 +817,7 @@ function ExtendTrialDialog({
                         onClick={handleConfirm}
                         disabled={additionalDays < 1 || additionalDays > 90 || isPending}
                     >
-                        {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {isPending && <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />}
                         {t('admin-billing.subscriptions.extendTrialDialog.confirmButton')}
                     </Button>
                 </DialogFooter>
@@ -1094,7 +1094,7 @@ function BillingSubscriptionsPage() {
                     <CardContent>
                         {isLoading ? (
                             <div className="py-12 text-center">
-                                <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                                <LoaderIcon className="mx-auto h-8 w-8 animate-spin text-primary" />
                                 <p className="mt-4 text-muted-foreground text-sm">
                                     {t('admin-billing.subscriptions.loadingSubscriptions')}
                                 </p>

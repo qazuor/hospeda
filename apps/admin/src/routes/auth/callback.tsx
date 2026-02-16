@@ -7,6 +7,7 @@
  */
 
 import { useSession } from '@/lib/auth-client';
+import { LoaderIcon } from '@repo/icons';
 import { createFileRoute, useRouter } from '@tanstack/react-router';
 import { useEffect } from 'react';
 
@@ -38,7 +39,7 @@ function AuthCallbackPage(): React.JSX.Element {
     return (
         <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-cyan-50 via-emerald-50 to-blue-100">
             <div className="text-center">
-                <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-cyan-500 border-t-transparent" />
+                <LoaderIcon className="mx-auto mb-4 h-8 w-8 animate-spin text-cyan-500" />
                 <p className="text-gray-600">Completing authentication...</p>
             </div>
         </div>

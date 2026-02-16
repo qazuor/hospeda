@@ -30,8 +30,8 @@ import {
 import type { CreateOwnerPromotionInput, OwnerPromotion } from '@/features/owner-promotions/types';
 import { useTranslations } from '@/hooks/use-translations';
 import { EntitlementGate, LimitGate } from '@qazuor/qzpay-react';
+import { AddIcon } from '@repo/icons';
 import { createFileRoute } from '@tanstack/react-router';
-import { Plus } from 'lucide-react';
 import { useState } from 'react';
 
 export const Route = createFileRoute('/_authed/billing/owner-promotions')({
@@ -332,7 +332,7 @@ function BillingOwnerPromotionsPage() {
                             }
                         >
                             <Button onClick={() => setCreateDialogOpen(true)}>
-                                <Plus className="mr-2 h-4 w-4" />
+                                <AddIcon className="mr-2 h-4 w-4" />
                                 {t('admin-billing.ownerPromotions.createButton')}
                             </Button>
                         </LimitGate>

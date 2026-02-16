@@ -10,8 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useEventQuery } from '@/features/events/hooks/useEventQuery';
 import { useTranslations } from '@/hooks/use-translations';
+import { DollarSignIcon, InfoIcon, UsersIcon } from '@repo/icons';
 import { createFileRoute } from '@tanstack/react-router';
-import { DollarSign, Info, Users } from 'lucide-react';
 
 export const Route = createFileRoute('/_authed/events/$id/tickets')({
     component: EventTicketsPage
@@ -67,7 +67,7 @@ function EventTicketsPage() {
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 <div className="flex items-center gap-3">
-                                    <DollarSign className="h-5 w-5 text-muted-foreground" />
+                                    <DollarSignIcon className="h-5 w-5 text-muted-foreground" />
                                     <div>
                                         <span className="mb-1 block font-medium text-sm">
                                             Event Type
@@ -99,7 +99,7 @@ function EventTicketsPage() {
                                 </CardHeader>
                                 <CardContent>
                                     <div className="flex items-center gap-3">
-                                        <Users className="h-5 w-5 text-muted-foreground" />
+                                        <UsersIcon className="h-5 w-5 text-muted-foreground" />
                                         <div>
                                             <span className="mb-1 block font-medium text-sm">
                                                 Maximum Attendees
@@ -115,7 +115,7 @@ function EventTicketsPage() {
 
                         {/* Coming Soon Note */}
                         <div className="flex gap-3 rounded-md border border-blue-200 bg-blue-50 p-4">
-                            <Info className="mt-0.5 h-5 w-5 shrink-0 text-blue-600" />
+                            <InfoIcon className="mt-0.5 h-5 w-5 shrink-0 text-blue-600" />
                             <div>
                                 <p className="font-medium text-blue-900 text-sm">Coming Soon</p>
                                 <p className="mt-1 text-blue-800 text-sm">

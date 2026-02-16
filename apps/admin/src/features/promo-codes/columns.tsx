@@ -1,7 +1,7 @@
 import { BadgeColor, ColumnType, type DataTableColumn } from '@/components/table/DataTable';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Pencil, Power, Trash2 } from 'lucide-react';
+import { DeleteIcon, EditIcon, PowerIcon } from '@repo/icons';
 import type { PlanCategory, PromoCode } from './types';
 
 /**
@@ -216,7 +216,7 @@ export function getPromoCodeColumns(
                             disabled={isTogglingActive}
                             title={row.isActive ? 'Desactivar' : 'Activar'}
                         >
-                            <Power className="mr-1 h-3 w-3" />
+                            <PowerIcon className="mr-1 h-3 w-3" />
                             {row.isActive ? 'Desactivar' : 'Activar'}
                         </Button>
                     )}
@@ -227,7 +227,7 @@ export function getPromoCodeColumns(
                             onClick={() => onEdit(row)}
                             title="Editar"
                         >
-                            <Pencil className="mr-1 h-3 w-3" />
+                            <EditIcon className="mr-1 h-3 w-3" />
                             Editar
                         </Button>
                     )}
@@ -239,7 +239,7 @@ export function getPromoCodeColumns(
                             disabled={isDeleting}
                             title="Eliminar"
                         >
-                            <Trash2 className="mr-1 h-3 w-3" />
+                            <DeleteIcon className="mr-1 h-3 w-3" />
                             Eliminar
                         </Button>
                     )}

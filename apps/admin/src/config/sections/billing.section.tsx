@@ -7,21 +7,26 @@
 import { createSection, sidebar } from '@/lib/sections';
 import {
     AddIcon,
+    ClockIcon,
     CouponsIcon,
+    CreditCardIcon,
+    DollarSignIcon,
+    FileTextIcon,
     ListIcon,
     MetricsIcon,
     OffersIcon,
     PriceIcon,
     PromotionsIcon,
-    SettingsIcon
+    ReceiptIcon,
+    SettingsIcon,
+    TagsIcon
 } from '@repo/icons';
-import { Clock, CreditCard, FileText, Receipt, Tags } from 'lucide-react';
 
 export const billingSection = createSection({
     id: 'billing',
     label: 'Facturación',
     labelKey: 'admin-menu.billing.title',
-    icon: <CreditCard className="h-5 w-5" />,
+    icon: <CreditCardIcon className="h-5 w-5" />,
     routes: ['/billing', '/billing/**'],
     defaultRoute: '/billing/plans',
     sidebar: {
@@ -42,7 +47,7 @@ export const billingSection = createSection({
                         'subscriptions',
                         'Suscripciones',
                         '/billing/subscriptions',
-                        <Receipt className="h-4 w-4" />
+                        <ReceiptIcon className="h-4 w-4" />
                     ),
                     sidebar.link(
                         'addons',
@@ -51,7 +56,7 @@ export const billingSection = createSection({
                         <AddIcon className="h-4 w-4" />
                     )
                 ],
-                <CreditCard className="h-4 w-4" />,
+                <CreditCardIcon className="h-4 w-4" />,
                 true // expanded by default
             ),
             sidebar.separator(),
@@ -69,10 +74,10 @@ export const billingSection = createSection({
                         'invoices',
                         'Facturas',
                         '/billing/invoices',
-                        <FileText className="h-4 w-4" />
+                        <FileTextIcon className="h-4 w-4" />
                     )
                 ],
-                <Receipt className="h-4 w-4" />
+                <ReceiptIcon className="h-4 w-4" />
             ),
             sidebar.separator(),
             sidebar.group(
@@ -98,7 +103,14 @@ export const billingSection = createSection({
                         <OffersIcon className="h-4 w-4" />
                     )
                 ],
-                <Tags className="h-4 w-4" />
+                <TagsIcon className="h-4 w-4" />
+            ),
+            sidebar.separator(),
+            sidebar.link(
+                'exchange-rates',
+                'Tasas de Cambio',
+                '/billing/exchange-rates',
+                <DollarSignIcon className="h-4 w-4" />
             ),
             sidebar.separator(),
             sidebar.link(
@@ -117,7 +129,7 @@ export const billingSection = createSection({
                 'cron',
                 'Tareas Programadas',
                 '/billing/cron',
-                <Clock className="h-4 w-4" />
+                <ClockIcon className="h-4 w-4" />
             )
         ]
     }

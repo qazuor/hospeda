@@ -26,8 +26,8 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { EntitlementKey, LimitKey } from '@repo/billing';
+import { LoaderIcon } from '@repo/icons';
 import { useForm } from '@tanstack/react-form';
-import { Loader2 } from 'lucide-react';
 import { useEffect } from 'react';
 import type { AddonDefinition, CreateAddonPayload } from '../types';
 
@@ -501,7 +501,7 @@ export function AddonDialog({
                             type="submit"
                             disabled={isSubmitting}
                         >
-                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {isSubmitting && <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />}
                             {addon ? 'Guardar cambios' : 'Crear add-on'}
                         </Button>
                     </DialogFooter>

@@ -7,7 +7,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
-import { Eye, MoreHorizontal, Power, PowerOff } from 'lucide-react';
+import { EyeIcon, MoreHorizontalIcon, PowerIcon, PowerOffIcon } from '@repo/icons';
 import type { PurchasedAddon } from './types';
 
 /**
@@ -149,12 +149,12 @@ export function getPurchasedAddonColumns(
                             className="h-8 w-8 p-0"
                         >
                             <span className="sr-only">Abrir menú</span>
-                            <MoreHorizontal className="h-4 w-4" />
+                            <MoreHorizontalIcon className="h-4 w-4" />
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => actions.onViewDetails(row)}>
-                            <Eye className="mr-2 h-4 w-4" />
+                            <EyeIcon className="mr-2 h-4 w-4" />
                             Ver detalles
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
@@ -163,7 +163,7 @@ export function getPurchasedAddonColumns(
                                 onClick={() => actions.onForceExpire(row)}
                                 className="text-orange-600 focus:text-orange-600"
                             >
-                                <PowerOff className="mr-2 h-4 w-4" />
+                                <PowerOffIcon className="mr-2 h-4 w-4" />
                                 Forzar expiración
                             </DropdownMenuItem>
                         )}
@@ -172,7 +172,7 @@ export function getPurchasedAddonColumns(
                                 onClick={() => actions.onForceActivate(row)}
                                 className="text-green-600 focus:text-green-600"
                             >
-                                <Power className="mr-2 h-4 w-4" />
+                                <PowerIcon className="mr-2 h-4 w-4" />
                                 Forzar activación
                             </DropdownMenuItem>
                         )}

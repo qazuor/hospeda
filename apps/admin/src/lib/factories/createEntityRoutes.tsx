@@ -19,7 +19,7 @@
  */
 
 import { Button } from '@/components/ui-wrapped';
-import { PreviousIcon } from '@repo/icons';
+import { LoaderIcon, PreviousIcon } from '@repo/icons';
 import type { ReactNode } from 'react';
 
 /**
@@ -38,7 +38,7 @@ const ERROR_STYLES = {
  */
 const PENDING_STYLES = {
     container: 'flex min-h-[400px] items-center justify-center',
-    spinner: 'h-8 w-8 animate-spin rounded-full border-blue-600 border-b-2'
+    spinner: 'h-8 w-8 animate-spin text-blue-600'
 } as const;
 
 /**
@@ -94,7 +94,7 @@ export function createPendingComponent(): () => ReactNode {
     return function EntityPendingComponent() {
         return (
             <div className={PENDING_STYLES.container}>
-                <div className={PENDING_STYLES.spinner} />
+                <LoaderIcon className={PENDING_STYLES.spinner} />
             </div>
         );
     };
@@ -127,7 +127,7 @@ export const RouteComponents = {
     /** Generic pending/loading component */
     Pending: () => (
         <div className={PENDING_STYLES.container}>
-            <div className={PENDING_STYLES.spinner} />
+            <LoaderIcon className={PENDING_STYLES.spinner} />
         </div>
     )
 } as const;

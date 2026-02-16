@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { AlertCircle, CheckCircle2, Clock, Loader2, Play } from 'lucide-react';
+import { AlertCircleIcon, CheckCircleIcon, ClockIcon, LoaderIcon, PlayIcon } from '@repo/icons';
 import { useState } from 'react';
 import { useTriggerCronJobMutation } from '../hooks';
 import type { CronJob, CronJobResult } from '../types';
@@ -73,7 +73,7 @@ export function CronJobCard({ job }: CronJobCardProps) {
             <CardContent className="space-y-4">
                 {/* Schedule info */}
                 <div className="flex items-center gap-2 text-sm">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <ClockIcon className="h-4 w-4 text-muted-foreground" />
                     <span className="text-muted-foreground">Programación:</span>
                     <span className="font-medium">{formatSchedule(job.schedule)}</span>
                 </div>
@@ -109,12 +109,12 @@ export function CronJobCard({ job }: CronJobCardProps) {
                         >
                             {isPending ? (
                                 <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
                                     Ejecutando...
                                 </>
                             ) : (
                                 <>
-                                    <Play className="mr-2 h-4 w-4" />
+                                    <PlayIcon className="mr-2 h-4 w-4" />
                                     Ejecutar ahora
                                 </>
                             )}
@@ -133,9 +133,9 @@ export function CronJobCard({ job }: CronJobCardProps) {
                     >
                         <div className="flex items-start gap-2">
                             {lastResult.success ? (
-                                <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-600" />
+                                <CheckCircleIcon className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-600" />
                             ) : (
-                                <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-600" />
+                                <AlertCircleIcon className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-600" />
                             )}
                             <div className="flex-1 space-y-1">
                                 <p
@@ -185,7 +185,7 @@ export function CronJobCard({ job }: CronJobCardProps) {
                 {isError && (
                     <div className="rounded-lg border border-red-200 bg-red-50 p-3">
                         <div className="flex items-start gap-2">
-                            <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-600" />
+                            <AlertCircleIcon className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-600" />
                             <div>
                                 <p className="font-medium text-red-900 text-sm">
                                     Error al ejecutar

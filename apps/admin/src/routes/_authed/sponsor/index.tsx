@@ -7,8 +7,14 @@ import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSponsorSummaryQuery } from '@/features/sponsor-dashboard/hooks';
+import {
+    ActivityIcon,
+    BarChartIcon,
+    MousePointerClickIcon,
+    PackageIcon,
+    TrendingUpIcon
+} from '@repo/icons';
 import { Link, createFileRoute } from '@tanstack/react-router';
-import { Activity, BarChart3, MousePointerClick, Package, TrendingUp } from 'lucide-react';
 
 export const Route = createFileRoute('/_authed/sponsor/')({
     component: SponsorDashboardPage
@@ -50,19 +56,19 @@ function SponsorDashboardPage() {
                     <SummaryCard
                         title="Patrocinios Activos"
                         value={summary?.activeSponsorships || 0}
-                        icon={<Package className="size-4 text-muted-foreground" />}
+                        icon={<PackageIcon className="size-4 text-muted-foreground" />}
                         loading={isLoading}
                     />
                     <SummaryCard
                         title="Impresiones Totales"
                         value={(summary?.totalImpressions || 0).toLocaleString('es-AR')}
-                        icon={<Activity className="size-4 text-muted-foreground" />}
+                        icon={<ActivityIcon className="size-4 text-muted-foreground" />}
                         loading={isLoading}
                     />
                     <SummaryCard
                         title="Clicks Totales"
                         value={(summary?.totalClicks || 0).toLocaleString('es-AR')}
-                        icon={<MousePointerClick className="size-4 text-muted-foreground" />}
+                        icon={<MousePointerClickIcon className="size-4 text-muted-foreground" />}
                         loading={isLoading}
                     />
                     <SummaryCard
@@ -72,7 +78,7 @@ function SponsorDashboardPage() {
                             currency: 'ARS',
                             minimumFractionDigits: 0
                         }).format(summary?.revenue || 0)}
-                        icon={<TrendingUp className="size-4 text-muted-foreground" />}
+                        icon={<TrendingUpIcon className="size-4 text-muted-foreground" />}
                         loading={isLoading}
                     />
                 </div>
@@ -92,7 +98,7 @@ function SponsorDashboardPage() {
                                     variant="outline"
                                     className="h-auto w-full flex-col items-start gap-2 p-4"
                                 >
-                                    <Package className="size-5" />
+                                    <PackageIcon className="size-5" />
                                     <div className="text-left">
                                         <div className="font-semibold">Mis Patrocinios</div>
                                         <div className="text-muted-foreground text-xs">
@@ -107,7 +113,7 @@ function SponsorDashboardPage() {
                                     variant="outline"
                                     className="h-auto w-full flex-col items-start gap-2 p-4"
                                 >
-                                    <BarChart3 className="size-5" />
+                                    <BarChartIcon className="size-5" />
                                     <div className="text-left">
                                         <div className="font-semibold">Analíticas</div>
                                         <div className="text-muted-foreground text-xs">
@@ -122,7 +128,7 @@ function SponsorDashboardPage() {
                                     variant="outline"
                                     className="h-auto w-full flex-col items-start gap-2 p-4"
                                 >
-                                    <Activity className="size-5" />
+                                    <ActivityIcon className="size-5" />
                                     <div className="text-left">
                                         <div className="font-semibold">Facturas</div>
                                         <div className="text-muted-foreground text-xs">

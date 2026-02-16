@@ -17,9 +17,9 @@ import {
 } from '@/features/billing-settings';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslations } from '@/hooks/use-translations';
+import { AlertCircleIcon, LoaderIcon, SaveIcon } from '@repo/icons';
 import { useForm } from '@tanstack/react-form';
 import { createFileRoute } from '@tanstack/react-router';
-import { AlertCircle, Loader2, Save } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 export const Route = createFileRoute('/_authed/billing/settings')({
@@ -117,7 +117,7 @@ function BillingSettingsPage() {
         return (
             <SidebarPageLayout>
                 <div className="flex items-center justify-center py-12">
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                    <LoaderIcon className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
             </SidebarPageLayout>
         );
@@ -139,7 +139,7 @@ function BillingSettingsPage() {
                     <Card className="border-red-200 bg-red-50">
                         <CardContent className="py-8">
                             <div className="flex items-start gap-3">
-                                <AlertCircle className="mt-0.5 h-5 w-5 text-red-600" />
+                                <AlertCircleIcon className="mt-0.5 h-5 w-5 text-red-600" />
                                 <div>
                                     <p className="font-medium text-red-900">
                                         {t('admin-billing.settings.loadError')}
@@ -184,9 +184,9 @@ function BillingSettingsPage() {
                         disabled={!hasChanges || updateMutation.isPending || !isApiAvailable}
                     >
                         {updateMutation.isPending && (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
                         )}
-                        <Save className="mr-2 h-4 w-4" />
+                        <SaveIcon className="mr-2 h-4 w-4" />
                         {t('admin-billing.settings.saveChanges')}
                     </Button>
                 </div>
@@ -552,9 +552,9 @@ function BillingSettingsPage() {
                         disabled={!hasChanges || updateMutation.isPending || !isApiAvailable}
                     >
                         {updateMutation.isPending && (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
                         )}
-                        <Save className="mr-2 h-4 w-4" />
+                        <SaveIcon className="mr-2 h-4 w-4" />
                         {t('admin-billing.settings.saveConfig')}
                     </Button>
                 </div>

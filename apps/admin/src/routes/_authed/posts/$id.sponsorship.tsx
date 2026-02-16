@@ -10,8 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { usePostQuery } from '@/features/posts/hooks/usePostQuery';
 import { useTranslations } from '@/hooks/use-translations';
+import { InfoIcon } from '@repo/icons';
 import { createFileRoute } from '@tanstack/react-router';
-import { Info } from 'lucide-react';
 
 export const Route = createFileRoute('/_authed/posts/$id/sponsorship')({
     component: PostSponsorshipPage
@@ -142,7 +142,7 @@ function PostSponsorshipPage() {
 
                             {/* Info Note */}
                             <div className="flex gap-3 rounded-md border border-blue-200 bg-blue-50 p-4">
-                                <Info className="mt-0.5 h-5 w-5 shrink-0 text-blue-600" />
+                                <InfoIcon className="mt-0.5 h-5 w-5 shrink-0 text-blue-600" />
                                 <div>
                                     <p className="font-medium text-blue-900 text-sm">Note</p>
                                     <p className="mt-1 text-blue-800 text-sm">
@@ -166,7 +166,7 @@ function PostSponsorshipPage() {
 
                             {/* Info Note */}
                             <div className="flex gap-3 rounded-md border border-blue-200 bg-blue-50 p-4">
-                                <Info className="mt-0.5 h-5 w-5 shrink-0 text-blue-600" />
+                                <InfoIcon className="mt-0.5 h-5 w-5 shrink-0 text-blue-600" />
                                 <div>
                                     <p className="font-medium text-blue-900 text-sm">Note</p>
                                     <p className="mt-1 text-blue-800 text-sm">

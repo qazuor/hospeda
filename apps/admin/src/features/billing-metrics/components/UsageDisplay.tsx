@@ -1,5 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertCircle, CheckCircle, Info } from 'lucide-react';
+import { AlertCircleIcon, CheckCircleIcon, InfoIcon } from '@repo/icons';
 import type { CustomerUsageSummary } from '../types';
 
 interface UsageDisplayProps {
@@ -30,9 +30,9 @@ function getProgressColor(percentage: number): string {
  * Get icon based on usage percentage
  */
 function getUsageIcon(percentage: number) {
-    if (percentage >= 90) return <AlertCircle className="h-4 w-4 text-red-600" />;
-    if (percentage >= 75) return <Info className="h-4 w-4 text-orange-600" />;
-    return <CheckCircle className="h-4 w-4 text-green-600" />;
+    if (percentage >= 90) return <AlertCircleIcon className="h-4 w-4 text-red-600" />;
+    if (percentage >= 75) return <InfoIcon className="h-4 w-4 text-orange-600" />;
+    return <CheckCircleIcon className="h-4 w-4 text-green-600" />;
 }
 
 export function UsageDisplay({ usage }: UsageDisplayProps) {
@@ -136,7 +136,7 @@ export function UsageDisplay({ usage }: UsageDisplayProps) {
                                     {/* Warning message for high usage */}
                                     {limit.percentage >= 90 && (
                                         <div className="flex items-center gap-2 rounded-md border border-red-200 bg-red-50 p-2 text-red-800 text-xs">
-                                            <AlertCircle className="h-3 w-3" />
+                                            <AlertCircleIcon className="h-3 w-3" />
                                             <span>
                                                 Este límite está cerca o ha alcanzado su capacidad
                                                 máxima

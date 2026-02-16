@@ -19,8 +19,8 @@ import {
 } from '@/features/billing-invoices/hooks';
 import { useTranslations } from '@/hooks/use-translations';
 import type { TranslationKey } from '@repo/i18n';
+import { CalendarIcon, DownloadIcon, FileTextIcon, LoaderIcon, MailIcon } from '@repo/icons';
 import { createFileRoute } from '@tanstack/react-router';
-import { CalendarIcon, DownloadIcon, FileTextIcon, MailIcon } from 'lucide-react';
 import { useState } from 'react';
 
 export const Route = createFileRoute('/_authed/billing/invoices')({
@@ -579,7 +579,7 @@ function BillingInvoicesPage() {
                     <CardContent>
                         {isLoading ? (
                             <div className="py-12 text-center">
-                                <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                                <LoaderIcon className="mx-auto h-8 w-8 animate-spin text-primary" />
                                 <p className="mt-4 text-muted-foreground text-sm">
                                     Cargando facturas...
                                 </p>

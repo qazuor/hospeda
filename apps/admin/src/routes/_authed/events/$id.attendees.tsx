@@ -9,8 +9,8 @@ import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { useEventQuery } from '@/features/events/hooks/useEventQuery';
 import { useTranslations } from '@/hooks/use-translations';
+import { InfoIcon, UsersIcon } from '@repo/icons';
 import { createFileRoute } from '@tanstack/react-router';
-import { Info, Users } from 'lucide-react';
 
 export const Route = createFileRoute('/_authed/events/$id/attendees')({
     component: EventAttendeesPage
@@ -58,7 +58,7 @@ function EventAttendeesPage() {
                         {/* Empty State */}
                         <div className="py-12 text-center">
                             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-                                <Users className="h-8 w-8 text-muted-foreground" />
+                                <UsersIcon className="h-8 w-8 text-muted-foreground" />
                             </div>
                             <h3 className="mb-2 font-semibold text-lg">Attendee Management</h3>
 
@@ -85,7 +85,7 @@ function EventAttendeesPage() {
 
                         {/* Info Card */}
                         <div className="flex gap-3 rounded-md border border-blue-200 bg-blue-50 p-4">
-                            <Info className="mt-0.5 h-5 w-5 shrink-0 text-blue-600" />
+                            <InfoIcon className="mt-0.5 h-5 w-5 shrink-0 text-blue-600" />
                             <div>
                                 <p className="font-medium text-blue-900 text-sm">Coming Soon</p>
                                 <p className="mt-1 text-blue-800 text-sm">

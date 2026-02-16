@@ -12,8 +12,8 @@ import { useAccommodationListQuery } from '@/features/accommodations/hooks/useAc
 import type { AccommodationCore } from '@/features/accommodations/schemas/accommodation-client.schema';
 import { useAuthContext } from '@/hooks/use-auth-context';
 import { useTranslations } from '@/hooks/use-translations';
+import { AddIcon, BuildingIcon, EditIcon, EyeIcon } from '@repo/icons';
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router';
-import { Building2, Eye, Pencil, Plus } from 'lucide-react';
 
 export const Route = createFileRoute('/_authed/me/accommodations/')({
     component: MyAccommodations
@@ -49,7 +49,7 @@ function MyAccommodations() {
                     </p>
                     <Link to="/accommodations/new">
                         <Button size="sm">
-                            <Plus className="mr-2 h-4 w-4" />
+                            <AddIcon className="mr-2 h-4 w-4" />
                             {t('admin-entities.list.new')}
                         </Button>
                     </Link>
@@ -87,7 +87,7 @@ function MyAccommodations() {
                 {!isLoading && !error && accommodations.length === 0 && (
                     <Card>
                         <CardContent className="flex flex-col items-center justify-center py-12">
-                            <Building2 className="mb-4 h-12 w-12 text-muted-foreground" />
+                            <BuildingIcon className="mb-4 h-12 w-12 text-muted-foreground" />
                             <h3 className="mb-2 font-semibold text-lg">
                                 {t('admin-entities.messages.empty.title')}
                             </h3>
@@ -96,7 +96,7 @@ function MyAccommodations() {
                             </p>
                             <Link to="/accommodations/new">
                                 <Button>
-                                    <Plus className="mr-2 h-4 w-4" />
+                                    <AddIcon className="mr-2 h-4 w-4" />
                                     {t('admin-entities.list.new')}
                                 </Button>
                             </Link>
@@ -158,7 +158,7 @@ function MyAccommodations() {
                                                 size="sm"
                                                 onClick={() => goToView(accId)}
                                             >
-                                                <Eye className="mr-1 h-3 w-3" />
+                                                <EyeIcon className="mr-1 h-3 w-3" />
                                                 {t('admin-entities.actions.view')}
                                             </Button>
                                             <Button
@@ -166,7 +166,7 @@ function MyAccommodations() {
                                                 size="sm"
                                                 onClick={() => goToEdit(accId)}
                                             >
-                                                <Pencil className="mr-1 h-3 w-3" />
+                                                <EditIcon className="mr-1 h-3 w-3" />
                                                 {t('admin-entities.actions.edit')}
                                             </Button>
                                         </div>

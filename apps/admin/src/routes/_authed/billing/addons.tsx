@@ -35,8 +35,8 @@ import {
 } from '@/features/billing-addons';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslations } from '@/hooks/use-translations';
+import { SearchIcon } from '@repo/icons';
 import { createFileRoute } from '@tanstack/react-router';
-import { Search } from 'lucide-react';
 import { useState } from 'react';
 
 export const Route = createFileRoute('/_authed/billing/addons')({
@@ -201,7 +201,7 @@ function BillingAddonsPage() {
                             {/* Search by email */}
                             <div className="flex flex-1 gap-2">
                                 <div className="relative flex-1">
-                                    <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+                                    <SearchIcon className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
                                     <Input
                                         placeholder={t('admin-billing.addons.searchPlaceholder')}
                                         value={searchTerm}

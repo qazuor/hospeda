@@ -10,8 +10,8 @@ import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUserQuery } from '@/features/users/hooks/useUserQuery';
+import { ActivityIcon, AlertCircleIcon, CalendarIcon, ClockIcon, LoaderIcon } from '@repo/icons';
 import { createFileRoute } from '@tanstack/react-router';
-import { Activity, AlertCircle, Calendar, Clock } from 'lucide-react';
 
 export const Route = createFileRoute('/_authed/access/users/$id/activity')({
     component: UserActivityPage
@@ -76,7 +76,7 @@ function UserActivityPage() {
                     />
                     <div className="flex items-center justify-center py-12">
                         <div className="flex flex-col items-center gap-3">
-                            <div className="h-8 w-8 animate-spin rounded-full border-primary border-b-2" />
+                            <LoaderIcon className="h-8 w-8 animate-spin text-primary" />
                             <p className="text-muted-foreground text-sm">Loading user data...</p>
                         </div>
                     </div>
@@ -95,7 +95,7 @@ function UserActivityPage() {
                     />
                     <div className="flex items-center justify-center py-12">
                         <div className="flex flex-col items-center gap-3 text-center">
-                            <AlertCircle className="h-12 w-12 text-destructive" />
+                            <AlertCircleIcon className="h-12 w-12 text-destructive" />
                             <div>
                                 <p className="font-semibold">Error loading user</p>
                                 <p className="text-muted-foreground text-sm">
@@ -125,7 +125,7 @@ function UserActivityPage() {
                             <CardHeader>
                                 <div className="flex items-center gap-3">
                                     <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-500/10">
-                                        <Calendar className="h-5 w-5 text-green-500" />
+                                        <CalendarIcon className="h-5 w-5 text-green-500" />
                                     </div>
                                     <div>
                                         <CardTitle className="text-lg">Account Created</CardTitle>
@@ -153,7 +153,7 @@ function UserActivityPage() {
                             <CardHeader>
                                 <div className="flex items-center gap-3">
                                     <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
-                                        <Clock className="h-5 w-5 text-blue-500" />
+                                        <ClockIcon className="h-5 w-5 text-blue-500" />
                                     </div>
                                     <div>
                                         <CardTitle className="text-lg">Last Updated</CardTitle>
@@ -182,7 +182,7 @@ function UserActivityPage() {
                         <CardHeader>
                             <div className="flex items-center gap-3">
                                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/10">
-                                    <Activity className="h-5 w-5 text-purple-500" />
+                                    <ActivityIcon className="h-5 w-5 text-purple-500" />
                                 </div>
                                 <div>
                                     <CardTitle className="text-lg">Activity History</CardTitle>
@@ -194,7 +194,7 @@ function UserActivityPage() {
                         </CardHeader>
                         <CardContent>
                             <div className="flex flex-col items-center justify-center py-12 text-center">
-                                <Activity className="mb-4 h-16 w-16 text-muted-foreground opacity-50" />
+                                <ActivityIcon className="mb-4 h-16 w-16 text-muted-foreground opacity-50" />
                                 <p className="mb-2 font-medium text-muted-foreground">
                                     No activity history available
                                 </p>

@@ -23,9 +23,9 @@ import type {
     SponsorshipPackage
 } from '@/features/sponsorships/types';
 import { useTranslations } from '@/hooks/use-translations';
+import { AddIcon, CheckIcon, CloseIcon } from '@repo/icons';
 import { SponsorshipStatusEnum } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
-import { Check, Plus, X } from 'lucide-react';
 import { useState } from 'react';
 
 export const Route = createFileRoute('/_authed/billing/sponsorships')({
@@ -239,7 +239,7 @@ function SponsorshipsTab() {
                             }
                             disabled={updateStatusMutation.isPending}
                         >
-                            <Check className="mr-1 h-3 w-3" />
+                            <CheckIcon className="mr-1 h-3 w-3" />
                             {t('admin-billing.sponsorships.actions.approve')}
                         </Button>
                     )}
@@ -256,7 +256,7 @@ function SponsorshipsTab() {
                             }
                             disabled={updateStatusMutation.isPending}
                         >
-                            <X className="mr-1 h-3 w-3" />
+                            <CloseIcon className="mr-1 h-3 w-3" />
                             {t('admin-billing.sponsorships.actions.cancel')}
                         </Button>
                     )}
@@ -338,7 +338,7 @@ function SponsorshipsTab() {
                 </div>
 
                 <Button>
-                    <Plus className="mr-2 h-4 w-4" />
+                    <AddIcon className="mr-2 h-4 w-4" />
                     {t('admin-billing.sponsorships.create.sponsorship')}
                 </Button>
             </div>
@@ -517,7 +517,7 @@ function SponsorshipLevelsTab() {
         <div className="space-y-4">
             <div className="flex justify-end">
                 <Button>
-                    <Plus className="mr-2 h-4 w-4" />
+                    <AddIcon className="mr-2 h-4 w-4" />
                     {t('admin-billing.sponsorships.create.level')}
                 </Button>
             </div>
@@ -663,7 +663,7 @@ function SponsorshipPackagesTab() {
         <div className="space-y-4">
             <div className="flex justify-end">
                 <Button>
-                    <Plus className="mr-2 h-4 w-4" />
+                    <AddIcon className="mr-2 h-4 w-4" />
                     {t('admin-billing.sponsorships.create.package')}
                 </Button>
             </div>

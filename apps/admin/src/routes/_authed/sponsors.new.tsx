@@ -13,6 +13,7 @@ import { useCreateSponsorMutation } from '@/features/sponsors/hooks/useSponsorQu
 import { useIntelligentNavigation, useLazySections } from '@/hooks';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 import { adminLogger } from '@/utils/logger';
+import { LoaderIcon } from '@repo/icons';
 import { PermissionEnum } from '@repo/schemas';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { Suspense, useMemo, useState } from 'react';
@@ -201,7 +202,7 @@ function SponsorCreatePage() {
                         <Suspense
                             fallback={
                                 <div className="flex items-center justify-center p-8">
-                                    <div className="h-6 w-6 animate-spin rounded-full border-blue-600 border-b-2" />
+                                    <LoaderIcon className="h-6 w-6 animate-spin text-blue-600" />
                                 </div>
                             }
                         >

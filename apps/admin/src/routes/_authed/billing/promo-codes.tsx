@@ -42,8 +42,8 @@ import {
     useUpdatePromoCodeMutation
 } from '@/features/promo-codes';
 import { useTranslations } from '@/hooks/use-translations';
+import { AddIcon } from '@repo/icons';
 import { createFileRoute } from '@tanstack/react-router';
-import { Plus } from 'lucide-react';
 import { useState } from 'react';
 
 export const Route = createFileRoute('/_authed/billing/promo-codes')({
@@ -741,7 +741,7 @@ function BillingPromoCodesPage() {
                     </div>
 
                     <Button onClick={handleCreateNew}>
-                        <Plus className="mr-2 h-4 w-4" />
+                        <AddIcon className="mr-2 h-4 w-4" />
                         {t('admin-billing.promoCodes.createButton')}
                     </Button>
                 </div>

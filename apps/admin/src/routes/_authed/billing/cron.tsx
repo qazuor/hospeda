@@ -6,8 +6,8 @@
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { CronJobsPanel } from '@/features/cron-jobs';
 import { useTranslations } from '@/hooks/use-translations';
+import { ClockIcon } from '@repo/icons';
 import { createFileRoute } from '@tanstack/react-router';
-import { Clock } from 'lucide-react';
 
 export const Route = createFileRoute('/_authed/billing/cron')({
     component: CronJobsPage
@@ -22,7 +22,7 @@ function CronJobsPage() {
                 {/* Header */}
                 <div className="flex items-start gap-4">
                     <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                        <Clock className="h-6 w-6 text-primary" />
+                        <ClockIcon className="h-6 w-6 text-primary" />
                     </div>
                     <div>
                         <h2 className="mb-2 font-bold text-2xl">{t('admin-billing.cron.title')}</h2>

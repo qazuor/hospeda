@@ -1,4 +1,5 @@
 import { signUp } from '@/lib/auth-client';
+import { LoaderIcon } from '@repo/icons';
 import { Link, createFileRoute } from '@tanstack/react-router';
 import { type FormEvent, useEffect, useState } from 'react';
 import { useAuthSync } from '../../hooks/use-auth-sync';
@@ -85,7 +86,7 @@ function SignUpPage(): React.JSX.Element {
                 <div className="flex min-h-screen items-center justify-center">
                     <div className="text-center">
                         <div className="mb-4">
-                            <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-emerald-600 border-t-transparent" />
+                            <LoaderIcon className="mx-auto h-12 w-12 animate-spin text-emerald-600" />
                         </div>
                         <h2 className="font-semibold text-gray-900 text-xl">Checking session...</h2>
                     </div>
@@ -101,7 +102,7 @@ function SignUpPage(): React.JSX.Element {
                 <div className="flex min-h-screen items-center justify-center">
                     <div className="text-center">
                         <div className="mb-4">
-                            <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-emerald-600 border-t-transparent" />
+                            <LoaderIcon className="mx-auto h-12 w-12 animate-spin text-emerald-600" />
                         </div>
                         <h2 className="font-semibold text-gray-900 text-xl">Redirecting...</h2>
                         <p className="mt-2 text-gray-600">You are already authenticated</p>

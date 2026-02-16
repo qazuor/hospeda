@@ -10,9 +10,9 @@ import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUserQuery } from '@/features/users/hooks/useUserQuery';
+import { AlertCircleIcon, InfoIcon, LoaderIcon, ShieldIcon } from '@repo/icons';
 import { RoleEnum } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
-import { AlertCircle, Info, Shield } from 'lucide-react';
 
 export const Route = createFileRoute('/_authed/access/users/$id/permissions')({
     component: UserPermissionsPage
@@ -70,7 +70,7 @@ function UserPermissionsPage() {
                     />
                     <div className="flex items-center justify-center py-12">
                         <div className="flex flex-col items-center gap-3">
-                            <div className="h-8 w-8 animate-spin rounded-full border-primary border-b-2" />
+                            <LoaderIcon className="h-8 w-8 animate-spin text-primary" />
                             <p className="text-muted-foreground text-sm">Loading user data...</p>
                         </div>
                     </div>
@@ -89,7 +89,7 @@ function UserPermissionsPage() {
                     />
                     <div className="flex items-center justify-center py-12">
                         <div className="flex flex-col items-center gap-3 text-center">
-                            <AlertCircle className="h-12 w-12 text-destructive" />
+                            <AlertCircleIcon className="h-12 w-12 text-destructive" />
                             <div>
                                 <p className="font-semibold">Error loading user</p>
                                 <p className="text-muted-foreground text-sm">
@@ -121,7 +121,7 @@ function UserPermissionsPage() {
                         <CardHeader>
                             <div className="flex items-center gap-3">
                                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                                    <Shield className="h-5 w-5 text-primary" />
+                                    <ShieldIcon className="h-5 w-5 text-primary" />
                                 </div>
                                 <div>
                                     <CardTitle className="text-lg">Current Role</CardTitle>
@@ -153,7 +153,7 @@ function UserPermissionsPage() {
                         <CardHeader>
                             <div className="flex items-center gap-3">
                                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
-                                    <Info className="h-5 w-5 text-blue-500" />
+                                    <InfoIcon className="h-5 w-5 text-blue-500" />
                                 </div>
                                 <div>
                                     <CardTitle className="text-lg">Inherited Permissions</CardTitle>
@@ -194,7 +194,7 @@ function UserPermissionsPage() {
                         <CardHeader>
                             <div className="flex items-center gap-3">
                                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/10">
-                                    <Shield className="h-5 w-5 text-amber-500" />
+                                    <ShieldIcon className="h-5 w-5 text-amber-500" />
                                 </div>
                                 <div>
                                     <CardTitle className="text-lg">
@@ -208,7 +208,7 @@ function UserPermissionsPage() {
                         </CardHeader>
                         <CardContent>
                             <div className="flex flex-col items-center justify-center py-8 text-center">
-                                <Shield className="mb-4 h-12 w-12 text-muted-foreground opacity-50" />
+                                <ShieldIcon className="mb-4 h-12 w-12 text-muted-foreground opacity-50" />
                                 <p className="mb-1 text-muted-foreground text-sm">
                                     No direct permission overrides
                                 </p>

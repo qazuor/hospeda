@@ -157,7 +157,7 @@ export default defineConfig({
     },
     optimizeDeps: {
         force: true,
-        include: ['react/jsx-runtime', 'react/jsx-dev-runtime'],
+        include: ['react/jsx-runtime', 'react/jsx-dev-runtime', '@phosphor-icons/react'],
         exclude: [
             '@repo/schemas',
             '@repo/db',

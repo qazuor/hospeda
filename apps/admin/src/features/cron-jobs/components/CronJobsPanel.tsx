@@ -4,7 +4,7 @@
  * Main panel for displaying and managing all cron jobs
  */
 import { Card, CardContent } from '@/components/ui/card';
-import { Activity, AlertCircle, Clock } from 'lucide-react';
+import { ActivityIcon, AlertCircleIcon, ClockIcon, LoaderIcon } from '@repo/icons';
 import { useCronJobsQuery } from '../hooks';
 import { CronJobCard } from './CronJobCard';
 
@@ -15,7 +15,7 @@ export function CronJobsPanel() {
         return (
             <Card>
                 <CardContent className="py-12 text-center">
-                    <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                    <LoaderIcon className="mx-auto h-8 w-8 animate-spin text-primary" />
                     <p className="mt-4 text-muted-foreground text-sm">
                         Cargando tareas programadas...
                     </p>
@@ -28,7 +28,7 @@ export function CronJobsPanel() {
         return (
             <Card className="border-destructive">
                 <CardContent className="py-12 text-center">
-                    <AlertCircle className="mx-auto h-8 w-8 text-destructive" />
+                    <AlertCircleIcon className="mx-auto h-8 w-8 text-destructive" />
                     <p className="mt-4 text-destructive">Error al cargar tareas programadas</p>
                     <p className="mt-2 text-muted-foreground text-sm">{error.message}</p>
                 </CardContent>
@@ -40,7 +40,7 @@ export function CronJobsPanel() {
         return (
             <Card className="border-dashed">
                 <CardContent className="py-12 text-center">
-                    <Clock className="mx-auto h-12 w-12 text-muted-foreground" />
+                    <ClockIcon className="mx-auto h-12 w-12 text-muted-foreground" />
                     <p className="mt-4 text-muted-foreground">
                         No hay tareas programadas registradas
                     </p>
@@ -60,7 +60,7 @@ export function CronJobsPanel() {
                                 <p className="text-muted-foreground text-sm">Total de tareas</p>
                                 <p className="mt-1 font-bold text-2xl">{data.totalJobs}</p>
                             </div>
-                            <Clock className="h-8 w-8 text-muted-foreground" />
+                            <ClockIcon className="h-8 w-8 text-muted-foreground" />
                         </div>
                     </CardContent>
                 </Card>
@@ -74,7 +74,7 @@ export function CronJobsPanel() {
                                     {data.enabledJobs}
                                 </p>
                             </div>
-                            <Activity className="h-8 w-8 text-green-600" />
+                            <ActivityIcon className="h-8 w-8 text-green-600" />
                         </div>
                     </CardContent>
                 </Card>
@@ -90,7 +90,7 @@ export function CronJobsPanel() {
                                     {data.totalJobs - data.enabledJobs}
                                 </p>
                             </div>
-                            <AlertCircle className="h-8 w-8 text-orange-600" />
+                            <AlertCircleIcon className="h-8 w-8 text-orange-600" />
                         </div>
                     </CardContent>
                 </Card>
@@ -99,7 +99,7 @@ export function CronJobsPanel() {
             {/* Auto-refresh indicator */}
             {isRefetching && (
                 <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm">
-                    <div className="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                    <LoaderIcon className="h-3 w-3 animate-spin text-primary" />
                     <span>Actualizando...</span>
                 </div>
             )}
@@ -118,7 +118,7 @@ export function CronJobsPanel() {
             <Card className="border-dashed bg-muted/50">
                 <CardContent className="py-4">
                     <div className="flex items-start gap-3">
-                        <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                        <AlertCircleIcon className="mt-0.5 h-4 w-4 flex-shrink-0 text-muted-foreground" />
                         <div className="space-y-1">
                             <p className="font-medium text-sm">
                                 Información sobre tareas programadas

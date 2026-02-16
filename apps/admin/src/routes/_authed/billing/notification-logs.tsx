@@ -25,8 +25,8 @@ import {
 } from '@/features/billing-notification-logs';
 import { useTranslations } from '@/hooks/use-translations';
 import type { TranslationKey } from '@repo/i18n';
+import { CalendarIcon, FilterIcon, LoaderIcon, MailIcon } from '@repo/icons';
 import { createFileRoute } from '@tanstack/react-router';
-import { CalendarIcon, FilterIcon, MailIcon } from 'lucide-react';
 import { useState } from 'react';
 
 export const Route = createFileRoute('/_authed/billing/notification-logs')({
@@ -539,7 +539,7 @@ function NotificationLogsPage() {
                     <CardContent>
                         {isLoading ? (
                             <div className="py-12 text-center">
-                                <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                                <LoaderIcon className="mx-auto h-8 w-8 animate-spin text-primary" />
                                 <p className="mt-4 text-muted-foreground text-sm">
                                     {t('admin-billing.notificationLogs.loadingNotifications')}
                                 </p>

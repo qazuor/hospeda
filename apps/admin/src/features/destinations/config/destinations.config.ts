@@ -16,6 +16,7 @@ export const destinationsConfig: EntityConfig<Destination> = {
 
     // API
     apiEndpoint: '/api/v1/public/destinations',
+    defaultFilters: { destinationType: 'CITY' },
 
     // Routes
     basePath: '/destinations',

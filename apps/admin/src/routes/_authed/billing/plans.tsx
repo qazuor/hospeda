@@ -22,8 +22,8 @@ import {
 } from '@/features/billing-plans';
 import { useTranslations } from '@/hooks/use-translations';
 import { ALL_PLANS } from '@repo/billing';
+import { AddIcon } from '@repo/icons';
 import { createFileRoute } from '@tanstack/react-router';
-import { Plus } from 'lucide-react';
 import { useState } from 'react';
 
 export const Route = createFileRoute('/_authed/billing/plans')({
@@ -272,7 +272,7 @@ function PlansTable({
                 </div>
 
                 <Button onClick={onCreateNew}>
-                    <Plus className="mr-2 h-4 w-4" />
+                    <AddIcon className="mr-2 h-4 w-4" />
                     {t('admin-billing.plans.createPlan')}
                 </Button>
             </div>

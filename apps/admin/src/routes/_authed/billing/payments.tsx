@@ -16,8 +16,8 @@ import { Label } from '@/components/ui/label';
 import { usePaymentsQuery, useRefundPaymentMutation } from '@/features/billing-payments/hooks';
 import { useTranslations } from '@/hooks/use-translations';
 import type { TranslationKey } from '@repo/i18n';
+import { CalendarIcon, DollarSignIcon, FilterIcon, LoaderIcon } from '@repo/icons';
 import { createFileRoute } from '@tanstack/react-router';
-import { CalendarIcon, DollarSignIcon, FilterIcon } from 'lucide-react';
 import { useState } from 'react';
 
 export const Route = createFileRoute('/_authed/billing/payments')({
@@ -737,7 +737,7 @@ function BillingPaymentsPage() {
                     <CardContent>
                         {isLoading ? (
                             <div className="py-12 text-center">
-                                <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                                <LoaderIcon className="mx-auto h-8 w-8 animate-spin text-primary" />
                                 <p className="mt-4 text-muted-foreground text-sm">
                                     {t('admin-billing.payments.loadingPayments')}
                                 </p>
