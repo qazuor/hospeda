@@ -17,8 +17,8 @@
  */
 
 import { spawn } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -141,9 +141,7 @@ function startServer(key) {
 
     proc.on('exit', (code) => {
         if (code !== null && code !== 0) {
-            console.log(
-                `${colors.yellow}${server.name} exited with code ${code}${colors.reset}`
-            );
+            console.log(`${colors.yellow}${server.name} exited with code ${code}${colors.reset}`);
         }
     });
 
