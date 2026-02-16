@@ -27,11 +27,9 @@ export const registerEntityFetchers = (): void => {
         };
     });
 
-    // Add more entity fetchers as needed:
-    // registerEntityFetcher('destination', async (actor, entityId) => {
-    //     const result = await destinationService.getById(actor, entityId);
-    //     return { data: result.data, error: result.error };
-    // });
+    // Note: User entity ownership is enforced by UserService._canView()/_canUpdate()
+    // directly in the handler, not via the ownership middleware, because the User
+    // entity uses 'id' (not 'userId'/'ownerId') for self-ownership checks.
 
     apiLogger.info('Entity fetchers registered for ownership middleware');
 };

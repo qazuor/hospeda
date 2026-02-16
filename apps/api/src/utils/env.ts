@@ -230,6 +230,9 @@ const ApiEnvSchema = z.object({
     HOSPEDA_LINEAR_API_KEY: z.string().optional(),
     HOSPEDA_LINEAR_TEAM_ID: z.string().optional(),
 
+    // Exchange Rate API Integration (optional, needed only for ExchangeRate-API source)
+    HOSPEDA_EXCHANGE_RATE_API_KEY: z.string().default(''),
+
     // Optional configurations
     HOSPEDA_REDIS_URL: z.string().optional(),
     TESTING_RATE_LIMIT: z.coerce.boolean().default(false),

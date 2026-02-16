@@ -105,6 +105,28 @@ export function getAuth(): ReturnType<typeof betterAuth> {
         user: {
             fields: {
                 name: 'displayName'
+            },
+            additionalFields: {
+                slug: {
+                    type: 'string',
+                    required: false
+                },
+                role: {
+                    type: 'string',
+                    required: false
+                },
+                settings: {
+                    type: 'string',
+                    required: false
+                },
+                visibility: {
+                    type: 'string',
+                    required: false
+                },
+                lifecycleState: {
+                    type: 'string',
+                    required: false
+                }
             }
         },
 

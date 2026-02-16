@@ -34,15 +34,20 @@ interface SentryConfig {
     appType?: string;
 }
 
+const isDev = process.env.NODE_ENV !== 'production';
+
 /**
  * Default Sentry configuration
+ *
+ * In development: profiling disabled, debug off, low trace rate to avoid console spam.
+ * In production: 10% sampling for traces and profiling.
  */
 const DEFAULT_CONFIG: SentryConfig = {
     environment: process.env.NODE_ENV || 'development',
     enableTracing: true,
-    tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0, // 10% in prod, 100% in dev
-    profilesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
-    debug: process.env.NODE_ENV !== 'production',
+    tracesSampleRate: isDev ? 0.0 : 0.1,
+    profilesSampleRate: isDev ? 0.0 : 0.1,
+    debug: false,
     project: process.env.SENTRY_PROJECT || 'hospeda',
     appType: 'api'
 };
@@ -84,11 +89,8 @@ export function initializeSentry(config: SentryConfig = {}): boolean {
                 }
             },
 
-            // Integrations
-            integrations: [
-                // Profiling (CPU and memory)
-                nodeProfilingIntegration()
-            ],
+            // Integrations - skip profiling in development to avoid console noise
+            integrations: isDev ? [] : [nodeProfilingIntegration()],
 
             // Before send hook - filter sensitive data
             beforeSend(event, _hint) {

@@ -25,6 +25,8 @@ beforeAll(async () => {
     process.env.API_VALIDATION_AUTH_ENABLED = 'false';
     // Enable mock authentication for tests (required for isMockAuthAllowed())
     process.env.DISABLE_AUTH = 'true';
+    // Mock exchange rate API key for tests
+    process.env.HOSPEDA_EXCHANGE_RATE_API_KEY = 'test_exchange_rate_api_key';
 
     // Initialize environment validation
     try {
@@ -170,6 +172,56 @@ vi.mock('@repo/db', () => ({
         protected entityName = 'mock';
         protected getTableName() {
             return 'mock_table';
+        }
+    },
+
+    // Mock ExchangeRateModel
+    ExchangeRateModel: class MockExchangeRateModel {
+        async create(_data: unknown) {
+            return {
+                id: 'rate_mock_id',
+                fromCurrency: 'USD',
+                toCurrency: 'ARS',
+                rate: 1180.5,
+                inverseRate: 0.000847,
+                rateType: 'blue',
+                source: 'MANUAL',
+                isManualOverride: true,
+                fetchedAt: new Date(),
+                createdAt: new Date(),
+                updatedAt: new Date()
+            };
+        }
+
+        async findAll(_filters: unknown) {
+            return {
+                items: [],
+                total: 0
+            };
+        }
+
+        async findById(_id: string) {
+            return null;
+        }
+
+        async update(_id: string, _data: unknown) {
+            return {
+                id: 'rate_mock_id',
+                fromCurrency: 'USD',
+                toCurrency: 'ARS',
+                rate: 1180.5,
+                inverseRate: 0.000847,
+                rateType: 'blue',
+                source: 'MANUAL',
+                isManualOverride: true,
+                fetchedAt: new Date(),
+                createdAt: new Date(),
+                updatedAt: new Date()
+            };
+        }
+
+        async delete(_id: string) {
+            return { id: _id, deletedAt: new Date() };
         }
     },
 
@@ -3492,6 +3544,153 @@ vi.mock('@repo/service-core', () => {
         }
     }
 
+    // Exchange Rate Service
+    class ExchangeRateService {
+        async create(_actor: unknown, _data: Record<string, unknown>) {
+            return {
+                data: {
+                    id: 'rate_mock_id',
+                    fromCurrency: 'USD',
+                    toCurrency: 'ARS',
+                    rate: 1180.5,
+                    inverseRate: 0.000847,
+                    rateType: 'blue',
+                    source: 'MANUAL',
+                    isManualOverride: true,
+                    fetchedAt: new Date().toISOString(),
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+    }
+
+    // Exchange Rate Config Service
+    class ExchangeRateConfigService {
+        async getConfig(_actor: unknown) {
+            return {
+                data: {
+                    id: 'config_mock_id',
+                    refreshIntervalMinutes: 60,
+                    staleThresholdMinutes: 120,
+                    enableDolarApi: true,
+                    enableExchangeRateApi: true,
+                    enableManualOverrides: true,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+
+        async updateConfig(_actor: unknown, _data: Record<string, unknown>) {
+            return {
+                data: {
+                    id: 'config_mock_id',
+                    refreshIntervalMinutes: 60,
+                    staleThresholdMinutes: 120,
+                    enableDolarApi: true,
+                    enableExchangeRateApi: true,
+                    enableManualOverrides: true,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+    }
+
+    // Exchange Rate Fetcher
+    class ExchangeRateFetcher {
+        async fetchAndStore() {
+            return {
+                stored: 7,
+                errors: [],
+                fromManualOverride: 1,
+                fromDolarApi: 5,
+                fromExchangeRateApi: 2,
+                fromDbFallback: 0
+            };
+        }
+
+        async getRate(_params: unknown) {
+            return {
+                id: 'rate_mock_id',
+                fromCurrency: 'USD',
+                toCurrency: 'ARS',
+                rate: 1180.5,
+                inverseRate: 0.000847,
+                rateType: 'blue',
+                source: 'DOLARAPI',
+                isManualOverride: false,
+                fetchedAt: new Date(),
+                createdAt: new Date(),
+                updatedAt: new Date()
+            };
+        }
+
+        async getRateWithFallback(_params: unknown) {
+            return {
+                rate: {
+                    id: 'rate_mock_id',
+                    fromCurrency: 'USD',
+                    toCurrency: 'ARS',
+                    rate: 1180.5,
+                    inverseRate: 0.000847,
+                    rateType: 'blue',
+                    source: 'DOLARAPI',
+                    isManualOverride: false,
+                    fetchedAt: new Date(),
+                    createdAt: new Date(),
+                    updatedAt: new Date()
+                },
+                quality: 'fresh' as const,
+                source: 'DOLARAPI' as const,
+                ageMinutes: 0
+            };
+        }
+
+        getFailureCount(_source: string) {
+            return 0;
+        }
+    }
+
+    // DolarAPI Client
+    class DolarApiClient {
+        async fetchAll() {
+            return {
+                rates: [],
+                errors: [],
+                fetchedAt: new Date()
+            };
+        }
+
+        async fetchDolarRates() {
+            return {
+                rates: [],
+                errors: [],
+                fetchedAt: new Date()
+            };
+        }
+
+        async fetchAllCotizaciones() {
+            return {
+                rates: [],
+                errors: [],
+                fetchedAt: new Date()
+            };
+        }
+    }
+
+    // ExchangeRate-API Client
+    class ExchangeRateApiClient {
+        async fetchLatestRates() {
+            return {
+                rates: [],
+                errors: [],
+                fetchedAt: new Date()
+            };
+        }
+    }
+
     return {
         PostService,
         AccommodationService,
@@ -3542,7 +3741,12 @@ vi.mock('@repo/service-core', () => {
         BenefitPartnerService,
         BenefitListingPlanService,
         BenefitListingService,
-        TouristServiceService
+        TouristServiceService,
+        ExchangeRateService,
+        ExchangeRateConfigService,
+        ExchangeRateFetcher,
+        DolarApiClient,
+        ExchangeRateApiClient
     };
 });
 

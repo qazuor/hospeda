@@ -2,12 +2,7 @@
  * Protected get user by ID endpoint
  * Allows users to view their own full profile or public info of others
  */
-import {
-    PermissionEnum,
-    type ServiceErrorCode,
-    UserIdSchema,
-    UserProtectedSchema
-} from '@repo/schemas';
+import { type ServiceErrorCode, UserIdSchema, UserProtectedSchema } from '@repo/schemas';
 import { ServiceError, UserService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -31,11 +26,8 @@ export const protectedGetUserByIdRoute = createProtectedRoute({
         id: UserIdSchema
     },
     responseSchema: UserProtectedSchema.nullable(),
-    ownership: {
-        entityType: 'user',
-        ownershipFields: ['userId'],
-        bypassPermission: PermissionEnum.USER_READ_ALL
-    },
+    // Ownership is enforced by UserService._canView() which checks actor.id === entity.id
+    // No ownership middleware needed here (the user entity has no 'userId' field to match on)
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const result = await userService.getById(actor, params.id as string);

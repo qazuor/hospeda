@@ -6,6 +6,7 @@ import { destinationRoutes } from './destination';
 import { eventRoutes } from './event';
 import { eventLocationRoutes } from './event-location';
 import { eventOrganizerRoutes } from './event-organizer';
+import { exchangeRateRoutes } from './exchange-rates';
 import { postRoutes } from './post';
 
 apiLogger.debug('🏠 Loading accommodation routes...');
@@ -28,6 +29,7 @@ import { sponsorshipRoutes } from './sponsorship';
 import { sponsorshipLevelRoutes } from './sponsorship-level';
 import { sponsorshipPackageRoutes } from './sponsorship-package';
 import { userRoutes } from './user';
+import { protectedUserRoutes } from './user/protected';
 import { mercadoPagoWebhookRoutes, webhookHealthRoutes } from './webhooks';
 import { adminWebhookRouter } from './webhooks/admin';
 
@@ -75,6 +77,9 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
     // Public routes
     app.route('/api/v1/public/users', userRoutes);
+
+    // Protected user routes (auth required)
+    app.route('/api/v1/protected/users', protectedUserRoutes);
 
     try {
         apiLogger.debug('🔗 Registering accommodation routes...');
@@ -135,6 +140,10 @@ export const setupRoutes = (app: AppOpenAPI) => {
         apiLogger.debug('🔗 Registering contact routes...');
         app.route('/api/v1/public', contactRoutes);
         apiLogger.debug('✅ Contact routes registered successfully');
+
+        apiLogger.debug('🔗 Registering exchange rate routes...');
+        app.route('/api/v1', exchangeRateRoutes);
+        apiLogger.debug('✅ Exchange rate routes registered successfully');
 
         apiLogger.debug('🔗 Registering report routes...');
         app.route('/api/v1/reports', reportRoutes);

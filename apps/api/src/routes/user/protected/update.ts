@@ -3,7 +3,6 @@
  * Allows users to update their own profile
  */
 import {
-    PermissionEnum,
     type ServiceErrorCode,
     UserIdSchema,
     UserProtectedSchema,
@@ -35,11 +34,7 @@ export const protectedUpdateUserRoute = createProtectedRoute({
     },
     requestBody: UserUpdateInputSchema,
     responseSchema: UserProtectedSchema,
-    ownership: {
-        entityType: 'user',
-        ownershipFields: ['userId'],
-        bypassPermission: PermissionEnum.MANAGE_USERS
-    },
+    // Ownership is enforced by UserService._canUpdate() which checks actor.id === entity.id
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
