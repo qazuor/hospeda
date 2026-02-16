@@ -160,7 +160,7 @@ describe('DolarApiClient', () => {
 
             // Should only include oficial, skip mayorista and cripto
             expect(result.rates).toHaveLength(1);
-            expect(result.rates[0].rateType).toBe(ExchangeRateTypeEnum.OFICIAL);
+            expect(result.rates[0]!.rateType).toBe(ExchangeRateTypeEnum.OFICIAL);
         });
 
         it('should handle HTTP error responses', async () => {
@@ -174,7 +174,7 @@ describe('DolarApiClient', () => {
 
             expect(result.rates).toHaveLength(0);
             expect(result.errors).toHaveLength(1);
-            expect(result.errors[0].error).toContain('HTTP 500');
+            expect(result.errors[0]!.error).toContain('HTTP 500');
         });
 
         it('should handle timeout errors', async () => {
@@ -184,7 +184,7 @@ describe('DolarApiClient', () => {
 
             expect(result.rates).toHaveLength(0);
             expect(result.errors).toHaveLength(1);
-            expect(result.errors[0].error).toContain('Aborted');
+            expect(result.errors[0]!.error).toContain('Aborted');
         });
 
         it('should handle JSON parse errors', async () => {
@@ -199,7 +199,7 @@ describe('DolarApiClient', () => {
 
             expect(result.rates).toHaveLength(0);
             expect(result.errors).toHaveLength(1);
-            expect(result.errors[0].error).toContain('Invalid JSON');
+            expect(result.errors[0]!.error).toContain('Invalid JSON');
         });
 
         it('should handle empty response', async () => {
@@ -238,7 +238,7 @@ describe('DolarApiClient', () => {
             expect(result.rates).toHaveLength(1);
             expect(result.errors).toHaveLength(0);
 
-            const brlRate = result.rates[0];
+            const brlRate = result.rates[0]!;
             expect(brlRate.fromCurrency).toBe(PriceCurrencyEnum.ARS);
             expect(brlRate.toCurrency).toBe(PriceCurrencyEnum.BRL);
             expect(brlRate.rate).toBe(185);
@@ -327,7 +327,7 @@ describe('DolarApiClient', () => {
 
             expect(result.rates).toHaveLength(0);
             expect(result.errors).toHaveLength(1);
-            expect(result.errors[0].error).toContain('HTTP 404');
+            expect(result.errors[0]!.error).toContain('HTTP 404');
         });
     });
 
@@ -401,8 +401,8 @@ describe('DolarApiClient', () => {
 
             expect(result.rates).toHaveLength(0);
             expect(result.errors).toHaveLength(2);
-            expect(result.errors[0].error).toContain('HTTP 500');
-            expect(result.errors[1].error).toContain('HTTP 503');
+            expect(result.errors[0]!.error).toContain('HTTP 500');
+            expect(result.errors[1]!.error).toContain('HTTP 503');
         });
 
         it('should handle partial failures', async () => {

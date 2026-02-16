@@ -141,11 +141,18 @@ export class ExchangeRateService extends BaseCrudService<
      * @returns A paginated list of exchange rates matching the criteria.
      */
     protected async _executeSearch(
-        params: z.infer<typeof ExchangeRateSearchInputSchema>,
+        params: z.infer<typeof ExchangeRateSearchInputSchema> & {
+            page?: number;
+            pageSize?: number;
+        },
         _actor: Actor
     ) {
-        const { ...filterParams } = params;
-        const results = await this.model.findAll(filterParams, { page: 1, pageSize: 10 });
+        const { page = 1, pageSize = 10, ...searchParams } = params;
+
+        const results = await this.model.findAllWithDateRange(searchParams, {
+            page,
+            pageSize
+        });
 
         return {
             items: results.items,
@@ -174,6 +181,7 @@ export class ExchangeRateService extends BaseCrudService<
 
     /**
      * Gets the latest exchange rate for a specific currency pair and rate type.
+     * Delegates to model's findLatestRate which orders by fetchedAt DESC.
      * @param actor - The actor performing the action.
      * @param params - Currency pair and rate type parameters.
      * @returns ServiceOutput with the latest ExchangeRate or null.
@@ -193,23 +201,18 @@ export class ExchangeRateService extends BaseCrudService<
             execute: async () => {
                 checkCanViewExchangeRate(actor);
 
-                // Query with filters, sorted by fetchedAt DESC
-                const results = await this.model.findAll(
-                    {
-                        fromCurrency: params.fromCurrency,
-                        toCurrency: params.toCurrency,
-                        rateType: params.rateType
-                    },
-                    { page: 1, pageSize: 1 }
-                );
-
-                return results.items[0] ?? null;
+                return this.model.findLatestRate({
+                    fromCurrency: params.fromCurrency,
+                    toCurrency: params.toCurrency,
+                    rateType: params.rateType
+                });
             }
         });
     }
 
     /**
      * Gets all latest exchange rates (one per currency pair/rate type combination).
+     * Delegates to model's findLatestRates which deduplicates by combination.
      * @param actor - The actor performing the action.
      * @returns ServiceOutput with an array of latest ExchangeRates.
      */
@@ -221,10 +224,7 @@ export class ExchangeRateService extends BaseCrudService<
             execute: async () => {
                 checkCanListExchangeRate(actor);
 
-                // Get all rates, would need custom query to get DISTINCT ON in production
-                const results = await this.model.findAll({}, { page: 1, pageSize: 100 });
-
-                return results.items;
+                return this.model.findLatestRates();
             }
         });
     }

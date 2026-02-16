@@ -21,7 +21,13 @@ describe('ExchangeRateConfigService', () => {
     let actor: Actor;
 
     beforeEach(() => {
-        modelMock = createTypedModelMock(ExchangeRateConfigModel, ['findAll', 'update', 'create']);
+        modelMock = createTypedModelMock(ExchangeRateConfigModel, [
+            'findAll',
+            'update',
+            'create',
+            'getConfig',
+            'updateConfig'
+        ]);
         loggerMock = createLoggerMock();
         service = new ExchangeRateConfigService({ logger: loggerMock }, modelMock);
         actor = createActor({ permissions: [PermissionEnum.EXCHANGE_RATE_VIEW] });
@@ -33,10 +39,7 @@ describe('ExchangeRateConfigService', () => {
                 defaultRateType: ExchangeRateTypeEnum.BLUE
             });
 
-            asMock(modelMock.findAll).mockResolvedValue({
-                items: [existingConfig],
-                total: 1
-            });
+            asMock(modelMock.getConfig).mockResolvedValue(existingConfig);
 
             const result = await service.getConfig({ actor });
 
@@ -46,10 +49,15 @@ describe('ExchangeRateConfigService', () => {
         });
 
         it('should return default config when no config exists', async () => {
-            asMock(modelMock.findAll).mockResolvedValue({
-                items: [],
-                total: 0
+            const defaultConfig = createExchangeRateConfig({
+                defaultRateType: ExchangeRateTypeEnum.OFICIAL,
+                dolarApiFetchIntervalMinutes: 15,
+                exchangeRateApiFetchIntervalHours: 6,
+                showConversionDisclaimer: true,
+                enableAutoFetch: true
             });
+
+            asMock(modelMock.getConfig).mockResolvedValue(defaultConfig);
 
             const result = await service.getConfig({ actor });
 
@@ -71,7 +79,7 @@ describe('ExchangeRateConfigService', () => {
         });
 
         it('should return INTERNAL_ERROR when model throws', async () => {
-            asMock(modelMock.findAll).mockRejectedValue(new Error('DB error'));
+            asMock(modelMock.getConfig).mockRejectedValue(new Error('DB error'));
 
             const result = await service.getConfig({ actor });
 
@@ -94,20 +102,15 @@ describe('ExchangeRateConfigService', () => {
         it('should update existing config successfully', async () => {
             const updatedConfig = { ...existingConfig, ...updateData };
 
-            asMock(modelMock.findAll).mockResolvedValue({
-                items: [existingConfig],
-                total: 1
-            });
-            asMock(modelMock.update).mockResolvedValue(updatedConfig);
+            asMock(modelMock.updateConfig).mockResolvedValue(updatedConfig);
 
             const result = await service.updateConfig({ actor, data: updateData });
 
             expectSuccess(result);
             expect(result.data).toMatchObject(updateData);
-            expect(asMock(modelMock.update)).toHaveBeenCalledWith(
-                { id: existingConfig.id },
+            expect(asMock(modelMock.updateConfig)).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    ...updateData,
+                    data: expect.objectContaining(updateData),
                     updatedById: actor.id
                 })
             );
@@ -116,48 +119,30 @@ describe('ExchangeRateConfigService', () => {
         it('should create new config when no config exists', async () => {
             const newConfig = createExchangeRateConfig(updateData);
 
-            asMock(modelMock.findAll).mockResolvedValue({
-                items: [],
-                total: 0
-            });
-            asMock(modelMock.create).mockResolvedValue(newConfig);
+            asMock(modelMock.updateConfig).mockResolvedValue(newConfig);
 
             const result = await service.updateConfig({ actor, data: updateData });
 
             expectSuccess(result);
             expect(result.data).toMatchObject(updateData);
-            expect(asMock(modelMock.create)).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    defaultRateType: ExchangeRateTypeEnum.BLUE,
-                    dolarApiFetchIntervalMinutes: 30,
-                    enableAutoFetch: false,
-                    updatedById: actor.id
-                })
-            );
         });
 
         it('should apply default values when creating new config with partial data', async () => {
             const partialData = { defaultRateType: ExchangeRateTypeEnum.BLUE };
-            const newConfig = createExchangeRateConfig(partialData);
-
-            asMock(modelMock.findAll).mockResolvedValue({
-                items: [],
-                total: 0
+            const newConfig = createExchangeRateConfig({
+                ...partialData,
+                dolarApiFetchIntervalMinutes: 15,
+                exchangeRateApiFetchIntervalHours: 6,
+                showConversionDisclaimer: true,
+                enableAutoFetch: true
             });
-            asMock(modelMock.create).mockResolvedValue(newConfig);
+
+            asMock(modelMock.updateConfig).mockResolvedValue(newConfig);
 
             const result = await service.updateConfig({ actor, data: partialData });
 
             expectSuccess(result);
-            expect(asMock(modelMock.create)).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    defaultRateType: ExchangeRateTypeEnum.BLUE,
-                    dolarApiFetchIntervalMinutes: 15, // Default
-                    exchangeRateApiFetchIntervalHours: 6, // Default
-                    showConversionDisclaimer: true, // Default
-                    enableAutoFetch: true // Default
-                })
-            );
+            expect(result.data?.defaultRateType).toBe(ExchangeRateTypeEnum.BLUE);
         });
 
         it('should return FORBIDDEN error when actor lacks EXCHANGE_RATE_CONFIG_UPDATE permission', async () => {
@@ -173,12 +158,6 @@ describe('ExchangeRateConfigService', () => {
                 dolarApiFetchIntervalMinutes: -5 // Invalid: must be positive
             };
 
-            // Mock findAll to avoid "cannot read property 'items'" error
-            asMock(modelMock.findAll).mockResolvedValue({
-                items: [],
-                total: 0
-            });
-
             const result = await service.updateConfig({ actor, data: invalidData });
 
             expectValidationError(result);
@@ -189,23 +168,13 @@ describe('ExchangeRateConfigService', () => {
                 dolarApiFetchIntervalMinutes: 15.5 // Invalid: must be integer
             };
 
-            // Mock findAll to avoid "cannot read property 'items'" error
-            asMock(modelMock.findAll).mockResolvedValue({
-                items: [],
-                total: 0
-            });
-
             const result = await service.updateConfig({ actor, data: invalidData });
 
             expectValidationError(result);
         });
 
         it('should return INTERNAL_ERROR when update fails', async () => {
-            asMock(modelMock.findAll).mockResolvedValue({
-                items: [existingConfig],
-                total: 1
-            });
-            asMock(modelMock.update).mockResolvedValue(null);
+            asMock(modelMock.updateConfig).mockResolvedValue(null);
 
             const result = await service.updateConfig({ actor, data: updateData });
 
@@ -214,11 +183,7 @@ describe('ExchangeRateConfigService', () => {
         });
 
         it('should return INTERNAL_ERROR when model throws', async () => {
-            asMock(modelMock.findAll).mockResolvedValue({
-                items: [existingConfig],
-                total: 1
-            });
-            asMock(modelMock.update).mockRejectedValue(new Error('DB error'));
+            asMock(modelMock.updateConfig).mockRejectedValue(new Error('DB error'));
 
             const result = await service.updateConfig({ actor, data: updateData });
 
@@ -231,11 +196,7 @@ describe('ExchangeRateConfigService', () => {
             };
             const updatedConfig = { ...existingConfig, ...disclaimerUpdate };
 
-            asMock(modelMock.findAll).mockResolvedValue({
-                items: [existingConfig],
-                total: 1
-            });
-            asMock(modelMock.update).mockResolvedValue(updatedConfig);
+            asMock(modelMock.updateConfig).mockResolvedValue(updatedConfig);
 
             const result = await service.updateConfig({ actor, data: disclaimerUpdate });
 
@@ -249,11 +210,7 @@ describe('ExchangeRateConfigService', () => {
             };
             const updatedConfig = { ...existingConfig, ...disclaimerUpdate };
 
-            asMock(modelMock.findAll).mockResolvedValue({
-                items: [existingConfig],
-                total: 1
-            });
-            asMock(modelMock.update).mockResolvedValue(updatedConfig);
+            asMock(modelMock.updateConfig).mockResolvedValue(updatedConfig);
 
             const result = await service.updateConfig({ actor, data: disclaimerUpdate });
 

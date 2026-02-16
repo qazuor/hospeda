@@ -150,10 +150,7 @@ describe('ExchangeRateService', () => {
                 updatedAt: new Date()
             };
 
-            vi.spyOn(mockModel, 'findAll').mockResolvedValue({
-                items: [mockRate],
-                total: 1
-            });
+            vi.spyOn(mockModel, 'findLatestRate').mockResolvedValue(mockRate);
 
             const result = await service.getLatestRate(mockActor, {
                 fromCurrency: PriceCurrencyEnum.USD,
@@ -170,10 +167,7 @@ describe('ExchangeRateService', () => {
         });
 
         it('should return null if no rate found', async () => {
-            vi.spyOn(mockModel, 'findAll').mockResolvedValue({
-                items: [],
-                total: 0
-            });
+            vi.spyOn(mockModel, 'findLatestRate').mockResolvedValue(null);
 
             const result = await service.getLatestRate(mockActor, {
                 fromCurrency: PriceCurrencyEnum.USD,
@@ -317,7 +311,7 @@ describe('ExchangeRateService', () => {
                 }
             ];
 
-            vi.spyOn(mockModel, 'findAll').mockResolvedValue({
+            vi.spyOn(mockModel, 'findAllWithDateRange').mockResolvedValue({
                 items: mockRates,
                 total: 1
             });

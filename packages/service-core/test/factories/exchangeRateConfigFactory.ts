@@ -13,7 +13,7 @@ import { getMockId } from './utilsFactory.js';
  * Base exchange rate config object with default values.
  */
 const baseExchangeRateConfig: ExchangeRateConfig = {
-    id: getMockId('exchange-rate-config'),
+    id: getMockId('exchangeRateConfig'),
     defaultRateType: ExchangeRateTypeEnum.OFICIAL,
     dolarApiFetchIntervalMinutes: 15,
     exchangeRateApiFetchIntervalHours: 6,

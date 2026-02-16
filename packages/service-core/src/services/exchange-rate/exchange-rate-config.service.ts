@@ -3,7 +3,6 @@ import {
     type ExchangeRateConfig,
     type ExchangeRateConfigUpdateInput,
     ExchangeRateConfigUpdateInputSchema,
-    ExchangeRateTypeEnum,
     ServiceErrorCode
 } from '@repo/schemas';
 import { z } from 'zod';
@@ -47,8 +46,8 @@ export class ExchangeRateConfigService extends BaseService {
     /**
      * Gets the exchange rate configuration.
      *
-     * Returns the singleton configuration row. If no configuration exists in the database,
-     * returns a default configuration object with sensible defaults.
+     * Delegates to model's getConfig() which handles singleton pattern
+     * (returns existing or creates default).
      *
      * @param input - Input parameters
      * @param input.actor - Actor performing the action
@@ -75,31 +74,9 @@ export class ExchangeRateConfigService extends BaseService {
             input: { actor },
             schema: ExchangeRateConfigUpdateInputSchema.pick({}), // Empty validation
             execute: async () => {
-                // 1. Check permission
                 checkCanViewExchangeRate(actor);
 
-                // 2. Get config from model
-                const result = await this.model.findAll({});
-                const config = result.items[0];
-
-                // 3. If no config exists, return default values
-                if (!config) {
-                    const defaultConfig: ExchangeRateConfig = {
-                        id: '00000000-0000-0000-0000-000000000000', // Placeholder ID
-                        defaultRateType: ExchangeRateTypeEnum.OFICIAL,
-                        dolarApiFetchIntervalMinutes: 15,
-                        exchangeRateApiFetchIntervalHours: 6,
-                        showConversionDisclaimer: true,
-                        disclaimerText: null,
-                        enableAutoFetch: true,
-                        updatedAt: new Date(),
-                        updatedById: null
-                    };
-                    return defaultConfig;
-                }
-
-                // 4. Return existing config
-                return config;
+                return this.model.getConfig();
             }
         });
     }
@@ -107,8 +84,8 @@ export class ExchangeRateConfigService extends BaseService {
     /**
      * Updates the exchange rate configuration.
      *
-     * Updates the singleton configuration row with new settings. If no configuration
-     * exists, creates a new one with the provided values merged with defaults.
+     * Delegates to model's updateConfig() which handles singleton pattern
+     * (updates existing or creates with defaults merged).
      *
      * @param input - Input parameters
      * @param input.actor - Actor performing the action
@@ -144,55 +121,20 @@ export class ExchangeRateConfigService extends BaseService {
             schema: UpdateConfigInputSchema,
             execute: async (validatedInput: { data: ExchangeRateConfigUpdateInput }) => {
                 const validatedData = validatedInput.data;
-                // 1. Check permission
                 checkCanUpdateExchangeRateConfig(actor);
 
-                // 2. Get existing config (or prepare default)
-                const result = await this.model.findAll({});
-                const existingConfig = result.items[0];
+                const updatedConfig = await this.model.updateConfig({
+                    data: validatedData,
+                    updatedById: actor.id
+                });
 
-                // 3. Update or create the config row
-                let updatedConfig: ExchangeRateConfig;
-
-                if (existingConfig) {
-                    // Update existing config
-                    const updateResult = await this.model.update(
-                        { id: existingConfig.id },
-                        {
-                            ...validatedData,
-                            updatedAt: new Date(),
-                            updatedById: actor.id
-                        }
+                if (!updatedConfig) {
+                    throw new ServiceError(
+                        ServiceErrorCode.INTERNAL_ERROR,
+                        'Failed to update exchange rate configuration'
                     );
-
-                    if (!updateResult) {
-                        throw new ServiceError(
-                            ServiceErrorCode.INTERNAL_ERROR,
-                            'Failed to update exchange rate configuration'
-                        );
-                    }
-
-                    updatedConfig = updateResult;
-                } else {
-                    // Create new config with defaults merged with provided data
-                    const newConfig = await this.model.create({
-                        defaultRateType:
-                            validatedData.defaultRateType ?? ExchangeRateTypeEnum.OFICIAL,
-                        dolarApiFetchIntervalMinutes:
-                            validatedData.dolarApiFetchIntervalMinutes ?? 15,
-                        exchangeRateApiFetchIntervalHours:
-                            validatedData.exchangeRateApiFetchIntervalHours ?? 6,
-                        showConversionDisclaimer: validatedData.showConversionDisclaimer ?? true,
-                        disclaimerText: validatedData.disclaimerText ?? null,
-                        enableAutoFetch: validatedData.enableAutoFetch ?? true,
-                        updatedAt: new Date(),
-                        updatedById: actor.id
-                    });
-
-                    updatedConfig = newConfig;
                 }
 
-                // 4. Return updated config
                 return updatedConfig;
             }
         });
