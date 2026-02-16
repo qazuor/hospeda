@@ -1,0 +1,30 @@
+---
+/**
+ * Paginated destinations listing route.
+ * Rewrites to the index page with the page query parameter.
+ * Page 1 redirects to the base URL (canonical).
+ *
+ * @route /[lang]/destinos/page/[page]/
+ */
+import { isValidLocale } from '../../../../lib/i18n';
+
+const { lang, page } = Astro.params;
+
+if (!lang || !isValidLocale(lang)) {
+  return Astro.redirect('/es/');
+}
+
+const pageNum = Number.parseInt(page || '1', 10);
+
+if (Number.isNaN(pageNum) || pageNum < 1) {
+  return Astro.redirect(`/${lang}/destinos/`);
+}
+
+/** Page 1 should use the canonical base URL without /page/ segment */
+if (pageNum === 1) {
+  return Astro.redirect(`/${lang}/destinos/`);
+}
+
+/** Rewrite to the index page with the page query parameter */
+return Astro.rewrite(`/${lang}/destinos/?page=${pageNum}`);
+---

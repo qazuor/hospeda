@@ -44,10 +44,7 @@ export default defineConfig({
         port: 4321
     },
     image: {
-        remotePatterns: [
-            { hostname: 'localhost' },
-            { hostname: '*.fly.dev' }
-        ]
+        remotePatterns: [{ hostname: 'localhost' }, { hostname: '*.fly.dev' }]
     },
     integrations: [
         react(),
