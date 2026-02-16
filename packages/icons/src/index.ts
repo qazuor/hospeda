@@ -6,8 +6,11 @@
  */
 
 // Export types and constants
-export { ICON_SIZES } from './types';
-export type { IconProps } from './types';
+export { DEFAULT_DUOTONE_COLOR, ICON_SIZES } from './types';
+export type { IconProps, IconWeight } from './types';
+
+// Export Phosphor icon factory
+export { createPhosphorIcon } from './create-phosphor-icon';
 
 // Export entity icons
 export { AccommodationIcon } from './icons/entities/AccommodationIcon';
@@ -323,6 +326,55 @@ export { VideoIcon } from './icons/system/VideoIcon';
 export { ZoomInIcon } from './icons/system/ZoomInIcon';
 export { ZoomOutIcon } from './icons/system/ZoomOutIcon';
 
+// Additional system icons (Phosphor-based)
+export { ActivityIcon } from './icons/system/ActivityIcon';
+export { AlertCircleIcon } from './icons/system/AlertCircleIcon';
+export { BarChartIcon } from './icons/system/BarChartIcon';
+export { BellIcon } from './icons/system/BellIcon';
+export { BoldIcon } from './icons/system/BoldIcon';
+export { BuildingIcon } from './icons/system/BuildingIcon';
+export { CheckCircleIcon } from './icons/system/CheckCircleIcon';
+export { CheckIcon } from './icons/system/CheckIcon';
+export { ChevronDownIcon } from './icons/system/ChevronDownIcon';
+export { ChevronRightIcon } from './icons/system/ChevronRightIcon';
+export { ChevronUpIcon } from './icons/system/ChevronUpIcon';
+export { ChevronsUpDownIcon } from './icons/system/ChevronsUpDownIcon';
+export { CircleIcon } from './icons/system/CircleIcon';
+export { CreditCardIcon } from './icons/system/CreditCardIcon';
+export { DollarSignIcon } from './icons/system/DollarSignIcon';
+export { ExternalLinkIcon } from './icons/system/ExternalLinkIcon';
+export { EyeIcon } from './icons/system/EyeIcon';
+export { EyeOffIcon } from './icons/system/EyeOffIcon';
+export { FileTextIcon } from './icons/system/FileTextIcon';
+export { GlobeIcon } from './icons/system/GlobeIcon';
+export { GridIcon } from './icons/system/GridIcon';
+export { GripVerticalIcon } from './icons/system/GripVerticalIcon';
+export { ImageIcon } from './icons/system/ImageIcon';
+export { InfoIcon } from './icons/system/InfoIcon';
+export { ItalicIcon } from './icons/system/ItalicIcon';
+export { LinkIcon } from './icons/system/LinkIcon';
+export { ListOrderedIcon } from './icons/system/ListOrderedIcon';
+export { MailIcon } from './icons/system/MailIcon';
+export { MonitorIcon } from './icons/system/MonitorIcon';
+export { MoonIcon } from './icons/system/MoonIcon';
+export { MoreHorizontalIcon } from './icons/system/MoreHorizontalIcon';
+export { MousePointerClickIcon } from './icons/system/MousePointerClickIcon';
+export { PackageIcon } from './icons/system/PackageIcon';
+export { PaletteIcon } from './icons/system/PaletteIcon';
+export { PlayIcon } from './icons/system/PlayIcon';
+export { PowerIcon } from './icons/system/PowerIcon';
+export { PowerOffIcon } from './icons/system/PowerOffIcon';
+export { ReceiptIcon } from './icons/system/ReceiptIcon';
+export { ShieldAlertIcon } from './icons/system/ShieldAlertIcon';
+export { ShieldIcon } from './icons/system/ShieldIcon';
+export { SunIcon } from './icons/system/SunIcon';
+export { ShoppingCartIcon } from './icons/system/ShoppingCartIcon';
+export { TrendingDownIcon } from './icons/system/TrendingDownIcon';
+export { TrendingUpIcon } from './icons/system/TrendingUpIcon';
+export { UnderlineIcon } from './icons/system/UnderlineIcon';
+export { WebhookIcon } from './icons/system/WebhookIcon';
+export { XCircleIcon } from './icons/system/XCircleIcon';
+
 // Export booking icons
 export { AvailableBookingIcon } from './icons/booking/AvailableBookingIcon';
 export { AvailableIcon } from './icons/booking/AvailableIcon';
@@ -375,4 +427,5 @@ export { PrintIcon } from './icons/actions/PrintIcon';
 export { SaveIcon } from './icons/actions/SaveIcon';
 export { ShareIcon } from './icons/actions/ShareIcon';
 export { SynchronizeIcon } from './icons/actions/SynchronizeIcon';
+export { RotateCcwIcon } from './icons/actions/RotateCcwIcon';
 export { UploadIcon } from './icons/actions/UploadIcon';

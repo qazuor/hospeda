@@ -1,5 +1,5 @@
-import type { IconProps } from '../../types';
-import { ICON_SIZES } from '../../types';
+import { PlusCircle } from '@phosphor-icons/react';
+import { createPhosphorIcon } from '../../create-phosphor-icon';
 
 /**
  * CreateIcon icon component
@@ -18,28 +18,4 @@ import { ICON_SIZES } from '../../types';
  * <CreateIcon className="text-blue-500 hover:text-blue-600" />
  * ```
  */
-export const CreateIcon = ({
-    size = 'md',
-    color = 'currentColor',
-    className = '',
-    'aria-label': ariaLabel,
-    ...props
-}: IconProps) => (
-    <svg
-        width={typeof size === 'string' ? ICON_SIZES[size] : size}
-        height={typeof size === 'string' ? ICON_SIZES[size] : size}
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke={color}
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className={className}
-        aria-label={ariaLabel}
-        {...props}
-    >
-        <title>{ariaLabel || 'Create'}</title>
-        <path d="M5 12h14" />
-        <path d="M12 5v14" />
-    </svg>
-);
+export const CreateIcon = createPhosphorIcon(PlusCircle, 'create');

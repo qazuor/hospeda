@@ -1,5 +1,5 @@
-import type { IconProps } from '../../types';
-import { ICON_SIZES } from '../../types';
+import { Record } from '@phosphor-icons/react';
+import { createPhosphorIcon } from '../../create-phosphor-icon';
 
 /**
  * RecordIcon icon component
@@ -18,36 +18,4 @@ import { ICON_SIZES } from '../../types';
  * <RecordIcon className="text-blue-500 hover:text-blue-600" />
  * ```
  */
-export const RecordIcon = ({
-    size = 'md',
-    color = 'currentColor',
-    className = '',
-    'aria-label': ariaLabel,
-    ...props
-}: IconProps) => (
-    <svg
-        width={typeof size === 'string' ? ICON_SIZES[size] : size}
-        height={typeof size === 'string' ? ICON_SIZES[size] : size}
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke={color}
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className={className}
-        aria-label={ariaLabel}
-        {...props}
-    >
-        <title>{ariaLabel || 'Record'}</title>
-        <circle
-            cx="12"
-            cy="12"
-            r="10"
-        />
-        <circle
-            cx="12"
-            cy="12"
-            r="3"
-        />
-    </svg>
-);
+export const RecordIcon = createPhosphorIcon(Record, 'record');

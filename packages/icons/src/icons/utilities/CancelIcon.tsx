@@ -1,5 +1,5 @@
-import type { IconProps } from '../../types';
-import { ICON_SIZES } from '../../types';
+import { XCircle } from '@phosphor-icons/react';
+import { createPhosphorIcon } from '../../create-phosphor-icon';
 
 /**
  * CancelIcon icon component
@@ -18,28 +18,4 @@ import { ICON_SIZES } from '../../types';
  * <CancelIcon className="text-blue-500 hover:text-blue-600" />
  * ```
  */
-export const CancelIcon = ({
-    size = 'md',
-    color = 'currentColor',
-    className = '',
-    'aria-label': ariaLabel,
-    ...props
-}: IconProps) => (
-    <svg
-        width={typeof size === 'string' ? ICON_SIZES[size] : size}
-        height={typeof size === 'string' ? ICON_SIZES[size] : size}
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke={color}
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className={className}
-        aria-label={ariaLabel}
-        {...props}
-    >
-        <title>{ariaLabel || 'Cancel'}</title>
-        <path d="m18 6-12 12" />
-        <path d="m6 6 12 12" />
-    </svg>
-);
+export const CancelIcon = createPhosphorIcon(XCircle, 'cancel');

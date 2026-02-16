@@ -1,44 +1,4 @@
-import type { IconProps } from '../../types';
-import { ICON_SIZES } from '../../types';
+import { Check } from '@phosphor-icons/react';
+import { createPhosphorIcon } from '../../create-phosphor-icon';
 
-/**
- * ConfirmIcon icon component
- *
- * @example
- * ```tsx
- * import { ConfirmIcon } from '@repo/icons';
- *
- * // Basic usage
- * <ConfirmIcon />
- *
- * // With custom size and color
- * <ConfirmIcon size="lg" color="#3B82F6" />
- *
- * // With Tailwind classes
- * <ConfirmIcon className="text-green-500 hover:text-green-600" />
- * ```
- */
-export const ConfirmIcon = ({
-    size = 'md',
-    color = 'currentColor',
-    className = '',
-    'aria-label': ariaLabel,
-    ...props
-}: IconProps) => (
-    <svg
-        width={typeof size === 'string' ? ICON_SIZES[size] : size}
-        height={typeof size === 'string' ? ICON_SIZES[size] : size}
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke={color}
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className={className}
-        aria-label={ariaLabel}
-        {...props}
-    >
-        <title>{ariaLabel || 'Confirm'}</title>
-        <path d="M20 6 9 17l-5-5" />
-    </svg>
-);
+export const ConfirmIcon = createPhosphorIcon(Check, 'Confirm');
