@@ -1,1234 +1,1234 @@
 {
-  "version": "1.0.0",
-  "records": [
-    {
-      "id": "track-950797dd-c7c5-4eec-97dd-9229a7b30b5c",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-615"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-04T23:59:55.999Z",
-      "updatedAt": "2025-11-04T23:59:55.999Z",
-      "taskSnapshot": {
-        "title": "PB-001: Infrastructure Setup",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1002,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1002",
-        "createdAt": "2025-11-04T23:59:55.999Z",
-        "updatedAt": "2025-11-04T23:59:55.999Z"
-      },
-      "lastSyncedAt": "2025-11-04T23:59:55.999Z"
-    },
-    {
-      "id": "track-ce24a6d3-036c-4e18-baf2-8b328f796496",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-616"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-04T23:59:56.740Z",
-      "updatedAt": "2025-11-04T23:59:56.741Z",
-      "taskSnapshot": {
-        "title": "PB-002: Main Portal",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1003,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1003",
-        "createdAt": "2025-11-04T23:59:56.741Z",
-        "updatedAt": "2025-11-04T23:59:56.741Z"
-      },
-      "lastSyncedAt": "2025-11-04T23:59:56.741Z"
-    },
-    {
-      "id": "track-808082cf-766b-41bc-8720-45f460f3a30d",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-617"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-04T23:59:57.182Z",
-      "updatedAt": "2025-11-04T23:59:57.182Z",
-      "taskSnapshot": {
-        "title": "PB-003: Getting Started (Prerequisites & Installation)",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1004,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1004",
-        "createdAt": "2025-11-04T23:59:57.182Z",
-        "updatedAt": "2025-11-04T23:59:57.182Z"
-      },
-      "lastSyncedAt": "2025-11-04T23:59:57.182Z"
-    },
-    {
-      "id": "track-58df1b29-6d8b-4f0c-94da-fbaed22a8105",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-618"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-04T23:59:57.658Z",
-      "updatedAt": "2025-11-04T23:59:57.658Z",
-      "taskSnapshot": {
-        "title": "PB-004: Getting Started (Dev Environment & First Contribution)",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1005,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1005",
-        "createdAt": "2025-11-04T23:59:57.658Z",
-        "updatedAt": "2025-11-04T23:59:57.658Z"
-      },
-      "lastSyncedAt": "2025-11-04T23:59:57.658Z"
-    },
-    {
-      "id": "track-2ebdd8d3-76ff-4c26-8452-dc0e416d7577",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-619"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-04T23:59:58.085Z",
-      "updatedAt": "2025-11-04T23:59:58.085Z",
-      "taskSnapshot": {
-        "title": "PB-005: Architecture (Overview & Monorepo)",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1006,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1006",
-        "createdAt": "2025-11-04T23:59:58.085Z",
-        "updatedAt": "2025-11-04T23:59:58.085Z"
-      },
-      "lastSyncedAt": "2025-11-04T23:59:58.085Z"
-    },
-    {
-      "id": "track-7418e607-b094-4af8-852d-feb7173f5821",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-620"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-04T23:59:58.512Z",
-      "updatedAt": "2025-11-04T23:59:58.512Z",
-      "taskSnapshot": {
-        "title": "PB-006: Architecture (Data Flow & Patterns)",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1007,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1007",
-        "createdAt": "2025-11-04T23:59:58.512Z",
-        "updatedAt": "2025-11-04T23:59:58.512Z"
-      },
-      "lastSyncedAt": "2025-11-04T23:59:58.512Z"
-    },
-    {
-      "id": "track-db653e6a-d401-4de5-9eaf-3bc430a6731b",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-621"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-04T23:59:58.992Z",
-      "updatedAt": "2025-11-04T23:59:58.992Z",
-      "taskSnapshot": {
-        "title": "PB-007: End-to-End Tutorial",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1008,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1008",
-        "createdAt": "2025-11-04T23:59:58.992Z",
-        "updatedAt": "2025-11-04T23:59:58.992Z"
-      },
-      "lastSyncedAt": "2025-11-04T23:59:58.992Z"
-    },
-    {
-      "id": "track-df5f21a6-0762-4fa7-87c5-277da3904c3a",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-622"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-04T23:59:59.612Z",
-      "updatedAt": "2025-11-04T23:59:59.612Z",
-      "taskSnapshot": {
-        "title": "PB-008: App Quick Entry Points",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1009,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1009",
-        "createdAt": "2025-11-04T23:59:59.612Z",
-        "updatedAt": "2025-11-04T23:59:59.612Z"
-      },
-      "lastSyncedAt": "2025-11-04T23:59:59.612Z"
-    },
-    {
-      "id": "track-676ad91c-2419-4e58-bcc0-5c7a91de4cf7",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-623"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-04T23:59:59.996Z",
-      "updatedAt": "2025-11-04T23:59:59.996Z",
-      "taskSnapshot": {
-        "title": "PB-009: API Portal & Setup",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1010,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1010",
-        "createdAt": "2025-11-04T23:59:59.996Z",
-        "updatedAt": "2025-11-04T23:59:59.996Z"
-      },
-      "lastSyncedAt": "2025-11-04T23:59:59.996Z"
-    },
-    {
-      "id": "track-96c0c9c1-e649-484b-aa0d-eeb9470143ef",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-624"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-05T00:00:00.401Z",
-      "updatedAt": "2025-11-05T00:00:00.401Z",
-      "taskSnapshot": {
-        "title": "PB-010: API Usage Guides",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1011,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1011",
-        "createdAt": "2025-11-05T00:00:00.401Z",
-        "updatedAt": "2025-11-05T00:00:00.401Z"
-      },
-      "lastSyncedAt": "2025-11-05T00:00:00.401Z"
-    },
-    {
-      "id": "track-c321d8c0-5c6d-46dc-9add-450b5a881c8d",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-625"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-05T00:00:00.956Z",
-      "updatedAt": "2025-11-05T00:00:00.956Z",
-      "taskSnapshot": {
-        "title": "PB-011: API Dev Guides (Part 1)",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1012,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1012",
-        "createdAt": "2025-11-05T00:00:00.956Z",
-        "updatedAt": "2025-11-05T00:00:00.956Z"
-      },
-      "lastSyncedAt": "2025-11-05T00:00:00.956Z"
-    },
-    {
-      "id": "track-958a7584-5991-4e47-a091-20e5e3fcc4d3",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-626"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-05T00:00:01.404Z",
-      "updatedAt": "2025-11-05T00:00:01.404Z",
-      "taskSnapshot": {
-        "title": "PB-012: API Dev Guides (Part 2) & Examples",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1013,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1013",
-        "createdAt": "2025-11-05T00:00:01.404Z",
-        "updatedAt": "2025-11-05T00:00:01.404Z"
-      },
-      "lastSyncedAt": "2025-11-05T00:00:01.404Z"
-    },
-    {
-      "id": "track-d3eb814c-f8f1-46ac-8ddf-26a756fcee91",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-627"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-05T00:00:01.866Z",
-      "updatedAt": "2025-11-05T00:00:01.866Z",
-      "taskSnapshot": {
-        "title": "PB-013: Web Portal & Setup",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1014,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1014",
-        "createdAt": "2025-11-05T00:00:01.866Z",
-        "updatedAt": "2025-11-05T00:00:01.866Z"
-      },
-      "lastSyncedAt": "2025-11-05T00:00:01.866Z"
-    },
-    {
-      "id": "track-3111824e-897c-4ae5-bef7-7e262b249e43",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-628"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-05T00:00:02.697Z",
-      "updatedAt": "2025-11-05T00:00:02.697Z",
-      "taskSnapshot": {
-        "title": "PB-014: Web Usage Guides",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1015,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1015",
-        "createdAt": "2025-11-05T00:00:02.697Z",
-        "updatedAt": "2025-11-05T00:00:02.697Z"
-      },
-      "lastSyncedAt": "2025-11-05T00:00:02.697Z"
-    },
-    {
-      "id": "track-c1b57cb6-d5b1-41d8-af23-852b8a9b3272",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-629"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-05T00:00:03.329Z",
-      "updatedAt": "2025-11-05T00:00:03.329Z",
-      "taskSnapshot": {
-        "title": "PB-015: Web Dev Guides (Part 1)",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1016,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1016",
-        "createdAt": "2025-11-05T00:00:03.329Z",
-        "updatedAt": "2025-11-05T00:00:03.329Z"
-      },
-      "lastSyncedAt": "2025-11-05T00:00:03.329Z"
-    },
-    {
-      "id": "track-205167d0-d386-494a-aade-307da1853ce4",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-630"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-05T00:00:03.873Z",
-      "updatedAt": "2025-11-05T00:00:03.873Z",
-      "taskSnapshot": {
-        "title": "PB-016: Web Dev Guides (Part 2) & Examples",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1017,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1017",
-        "createdAt": "2025-11-05T00:00:03.873Z",
-        "updatedAt": "2025-11-05T00:00:03.873Z"
-      },
-      "lastSyncedAt": "2025-11-05T00:00:03.873Z"
-    },
-    {
-      "id": "track-5b0d921a-ea27-45ea-8f81-48fa7bce53d8",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-631"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-05T00:00:04.313Z",
-      "updatedAt": "2025-11-05T00:00:04.313Z",
-      "taskSnapshot": {
-        "title": "PB-017: Admin Portal & Setup",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1018,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1018",
-        "createdAt": "2025-11-05T00:00:04.313Z",
-        "updatedAt": "2025-11-05T00:00:04.313Z"
-      },
-      "lastSyncedAt": "2025-11-05T00:00:04.313Z"
-    },
-    {
-      "id": "track-02b939bc-0d11-458e-9575-eb1a3b10dd35",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-632"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-05T00:00:04.835Z",
-      "updatedAt": "2025-11-05T00:00:04.835Z",
-      "taskSnapshot": {
-        "title": "PB-018: Admin Usage Guides",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1019,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1019",
-        "createdAt": "2025-11-05T00:00:04.835Z",
-        "updatedAt": "2025-11-05T00:00:04.835Z"
-      },
-      "lastSyncedAt": "2025-11-05T00:00:04.835Z"
-    },
-    {
-      "id": "track-c6d3c289-b1c8-4074-86be-b3b12b17041f",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-633"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-05T00:00:05.911Z",
-      "updatedAt": "2025-11-05T00:00:05.911Z",
-      "taskSnapshot": {
-        "title": "PB-019: Admin Dev Guides (Part 1)",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1020,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1020",
-        "createdAt": "2025-11-05T00:00:05.911Z",
-        "updatedAt": "2025-11-05T00:00:05.911Z"
-      },
-      "lastSyncedAt": "2025-11-05T00:00:05.911Z"
-    },
-    {
-      "id": "track-72e03eda-7d71-4ad0-85c1-114fea4da02b",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-634"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-05T00:00:06.365Z",
-      "updatedAt": "2025-11-05T00:00:06.365Z",
-      "taskSnapshot": {
-        "title": "PB-020: Admin Dev Guides (Part 2) & Examples",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1021,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1021",
-        "createdAt": "2025-11-05T00:00:06.365Z",
-        "updatedAt": "2025-11-05T00:00:06.365Z"
-      },
-      "lastSyncedAt": "2025-11-05T00:00:06.365Z"
-    },
-    {
-      "id": "track-a33d76e1-824c-443d-8b7c-253aa3605ba8",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-635"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-05T00:00:06.828Z",
-      "updatedAt": "2025-11-05T00:00:06.828Z",
-      "taskSnapshot": {
-        "title": "PB-021: service-core Portal & Quick Start",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1022,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1022",
-        "createdAt": "2025-11-05T00:00:06.828Z",
-        "updatedAt": "2025-11-05T00:00:06.828Z"
-      },
-      "lastSyncedAt": "2025-11-05T00:00:06.828Z"
-    },
-    {
-      "id": "track-191fd157-1a15-4391-8a1f-39ff12870958",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-636"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-05T00:00:07.264Z",
-      "updatedAt": "2025-11-05T00:00:07.264Z",
-      "taskSnapshot": {
-        "title": "PB-022: service-core API Reference",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1023,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1023",
-        "createdAt": "2025-11-05T00:00:07.264Z",
-        "updatedAt": "2025-11-05T00:00:07.264Z"
-      },
-      "lastSyncedAt": "2025-11-05T00:00:07.264Z"
-    },
-    {
-      "id": "track-ca5b9911-dd2f-4323-bee3-7a18b70fa7b7",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-637"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-05T00:00:08.347Z",
-      "updatedAt": "2025-11-05T00:00:08.347Z",
-      "taskSnapshot": {
-        "title": "PB-023: service-core Dev Guides & Examples",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1024,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1024",
-        "createdAt": "2025-11-05T00:00:08.347Z",
-        "updatedAt": "2025-11-05T00:00:08.347Z"
-      },
-      "lastSyncedAt": "2025-11-05T00:00:08.347Z"
-    },
-    {
-      "id": "track-2c0266f4-845c-4818-a5ef-985f6b00769f",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-638"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-05T00:00:08.786Z",
-      "updatedAt": "2025-11-05T00:00:08.786Z",
-      "taskSnapshot": {
-        "title": "PB-024: db Portal & Quick Start",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1025,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1025",
-        "createdAt": "2025-11-05T00:00:08.786Z",
-        "updatedAt": "2025-11-05T00:00:08.786Z"
-      },
-      "lastSyncedAt": "2025-11-05T00:00:08.786Z"
-    },
-    {
-      "id": "track-9ae40e4b-b149-45ca-9b93-073543d84e2c",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-639"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-05T00:00:09.272Z",
-      "updatedAt": "2025-11-05T00:00:09.272Z",
-      "taskSnapshot": {
-        "title": "PB-025: db API Reference",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1026,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1026",
-        "createdAt": "2025-11-05T00:00:09.272Z",
-        "updatedAt": "2025-11-05T00:00:09.272Z"
-      },
-      "lastSyncedAt": "2025-11-05T00:00:09.272Z"
-    },
-    {
-      "id": "track-9d8f3dad-b22e-4c03-80ff-93f3da78b6ac",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-640"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-05T00:00:09.725Z",
-      "updatedAt": "2025-11-05T00:00:09.725Z",
-      "taskSnapshot": {
-        "title": "PB-026: db Dev Guides & Examples",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1027,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1027",
-        "createdAt": "2025-11-05T00:00:09.725Z",
-        "updatedAt": "2025-11-05T00:00:09.725Z"
-      },
-      "lastSyncedAt": "2025-11-05T00:00:09.725Z"
-    },
-    {
-      "id": "track-6421b994-46ba-4630-936d-e29aada5c944",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-641"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-05T00:00:10.472Z",
-      "updatedAt": "2025-11-05T00:00:10.472Z",
-      "taskSnapshot": {
-        "title": "PB-027: schemas Portal & API Reference",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1028,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1028",
-        "createdAt": "2025-11-05T00:00:10.472Z",
-        "updatedAt": "2025-11-05T00:00:10.472Z"
-      },
-      "lastSyncedAt": "2025-11-05T00:00:10.472Z"
-    },
-    {
-      "id": "track-3f6fb249-fb3a-40c2-89d1-e21aa8377abc",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-642"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-05T00:00:10.972Z",
-      "updatedAt": "2025-11-05T00:00:10.972Z",
-      "taskSnapshot": {
-        "title": "PB-028: schemas Dev Guides & Examples",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1029,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1029",
-        "createdAt": "2025-11-05T00:00:10.972Z",
-        "updatedAt": "2025-11-05T00:00:10.972Z"
-      },
-      "lastSyncedAt": "2025-11-05T00:00:10.972Z"
-    },
-    {
-      "id": "track-3adc76d9-592f-4d16-9e13-8e0e27520cb6",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-643"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-05T00:00:11.375Z",
-      "updatedAt": "2025-11-05T00:00:11.375Z",
-      "taskSnapshot": {
-        "title": "PB-029: config Complete Documentation",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1030,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1030",
-        "createdAt": "2025-11-05T00:00:11.375Z",
-        "updatedAt": "2025-11-05T00:00:11.375Z"
-      },
-      "lastSyncedAt": "2025-11-05T00:00:11.375Z"
-    },
-    {
-      "id": "track-19ab2498-c356-4f60-bb33-b0f2940af7e6",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-644"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-05T00:00:11.816Z",
-      "updatedAt": "2025-11-05T00:00:11.816Z",
-      "taskSnapshot": {
-        "title": "PB-030: logger Complete Documentation",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1031,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1031",
-        "createdAt": "2025-11-05T00:00:11.816Z",
-        "updatedAt": "2025-11-05T00:00:11.816Z"
-      },
-      "lastSyncedAt": "2025-11-05T00:00:11.816Z"
-    },
-    {
-      "id": "track-977cf271-b6f0-4358-9dec-89ddd4f7c8a6",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-645"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-05T00:00:12.269Z",
-      "updatedAt": "2025-11-05T00:00:12.269Z",
-      "taskSnapshot": {
-        "title": "PB-031: icons Complete Documentation",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1032,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1032",
-        "createdAt": "2025-11-05T00:00:12.269Z",
-        "updatedAt": "2025-11-05T00:00:12.269Z"
-      },
-      "lastSyncedAt": "2025-11-05T00:00:12.269Z"
-    },
-    {
-      "id": "track-d104c8c5-37d4-4c9a-aaf1-ea45c823ff08",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-646"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-05T00:00:12.986Z",
-      "updatedAt": "2025-11-05T00:00:12.986Z",
-      "taskSnapshot": {
-        "title": "PB-032: seed Complete Documentation",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1033,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1033",
-        "createdAt": "2025-11-05T00:00:12.986Z",
-        "updatedAt": "2025-11-05T00:00:12.986Z"
-      },
-      "lastSyncedAt": "2025-11-05T00:00:12.986Z"
-    },
-    {
-      "id": "track-5405e95c-03a6-46ec-b1e9-8dcae4769fc4",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-647"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-05T00:00:13.727Z",
-      "updatedAt": "2025-11-05T00:00:13.727Z",
-      "taskSnapshot": {
-        "title": "PB-033: Deployment (Overview & Environments)",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1034,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1034",
-        "createdAt": "2025-11-05T00:00:13.727Z",
-        "updatedAt": "2025-11-05T00:00:13.727Z"
-      },
-      "lastSyncedAt": "2025-11-05T00:00:13.727Z"
-    },
-    {
-      "id": "track-c3c74164-71bf-4160-a9d0-a2aeb2d73c39",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-648"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-05T00:00:14.328Z",
-      "updatedAt": "2025-11-05T00:00:14.328Z",
-      "taskSnapshot": {
-        "title": "PB-034: Deployment (Apps & Database)",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1035,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1035",
-        "createdAt": "2025-11-05T00:00:14.328Z",
-        "updatedAt": "2025-11-05T00:00:14.328Z"
-      },
-      "lastSyncedAt": "2025-11-05T00:00:14.328Z"
-    },
-    {
-      "id": "track-33e83c00-9170-4a28-9961-fb4e85c16c2f",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-649"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-05T00:00:14.774Z",
-      "updatedAt": "2025-11-05T00:00:14.774Z",
-      "taskSnapshot": {
-        "title": "PB-035: Deployment (CI/CD)",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1036,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1036",
-        "createdAt": "2025-11-05T00:00:14.774Z",
-        "updatedAt": "2025-11-05T00:00:14.774Z"
-      },
-      "lastSyncedAt": "2025-11-05T00:00:14.774Z"
-    },
-    {
-      "id": "track-e0f75899-8b0f-4315-8e20-197bf41bbc91",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-650"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-05T00:00:15.230Z",
-      "updatedAt": "2025-11-05T00:00:15.230Z",
-      "taskSnapshot": {
-        "title": "PB-036: Security Documentation",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1037,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1037",
-        "createdAt": "2025-11-05T00:00:15.230Z",
-        "updatedAt": "2025-11-05T00:00:15.230Z"
-      },
-      "lastSyncedAt": "2025-11-05T00:00:15.230Z"
-    },
-    {
-      "id": "track-7b72dd62-03a9-46c9-a378-dfd1bfae076a",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-651"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-05T00:00:15.649Z",
-      "updatedAt": "2025-11-05T00:00:15.649Z",
-      "taskSnapshot": {
-        "title": "PB-037: Performance Documentation",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1038,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1038",
-        "createdAt": "2025-11-05T00:00:15.649Z",
-        "updatedAt": "2025-11-05T00:00:15.649Z"
-      },
-      "lastSyncedAt": "2025-11-05T00:00:15.649Z"
-    },
-    {
-      "id": "track-0224cc8e-111e-44b8-94d6-6fb272fc9a03",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-652"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-05T00:00:16.106Z",
-      "updatedAt": "2025-11-05T00:00:16.106Z",
-      "taskSnapshot": {
-        "title": "PB-038: Testing Documentation",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1039,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1039",
-        "createdAt": "2025-11-05T00:00:16.106Z",
-        "updatedAt": "2025-11-05T00:00:16.106Z"
-      },
-      "lastSyncedAt": "2025-11-05T00:00:16.106Z"
-    },
-    {
-      "id": "track-221ca3f5-341f-46f2-8e22-1098fba14bd1",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-653"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-05T00:00:16.670Z",
-      "updatedAt": "2025-11-05T00:00:16.670Z",
-      "taskSnapshot": {
-        "title": "PB-039: Claude Code Documentation",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1040,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1040",
-        "createdAt": "2025-11-05T00:00:16.670Z",
-        "updatedAt": "2025-11-05T00:00:16.670Z"
-      },
-      "lastSyncedAt": "2025-11-05T00:00:16.670Z"
-    },
-    {
-      "id": "track-fa14de1a-49aa-4dec-ada6-82e0b9aa3787",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-654"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-05T00:00:17.125Z",
-      "updatedAt": "2025-11-05T00:00:17.125Z",
-      "taskSnapshot": {
-        "title": "PB-040: Runbooks Documentation",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1041,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1041",
-        "createdAt": "2025-11-05T00:00:17.125Z",
-        "updatedAt": "2025-11-05T00:00:17.125Z"
-      },
-      "lastSyncedAt": "2025-11-05T00:00:17.125Z"
-    },
-    {
-      "id": "track-0fc14fe1-71ae-4c82-b24d-a1fde04a3081",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-655"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-05T00:00:17.698Z",
-      "updatedAt": "2025-11-05T00:00:17.698Z",
-      "taskSnapshot": {
-        "title": "PB-041: Contributing Documentation",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1042,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1042",
-        "createdAt": "2025-11-05T00:00:17.698Z",
-        "updatedAt": "2025-11-05T00:00:17.698Z"
-      },
-      "lastSyncedAt": "2025-11-05T00:00:17.698Z"
-    },
-    {
-      "id": "track-7f29b8ac-13f5-43d9-aa0c-d7520c251abd",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-656"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-05T00:00:18.304Z",
-      "updatedAt": "2025-11-05T00:00:18.304Z",
-      "taskSnapshot": {
-        "title": "PB-042: Other Packages (Batch 1)",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1043,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1043",
-        "createdAt": "2025-11-05T00:00:18.304Z",
-        "updatedAt": "2025-11-05T00:00:18.304Z"
-      },
-      "lastSyncedAt": "2025-11-05T00:00:18.304Z"
-    },
-    {
-      "id": "track-2f8fab0e-54cc-404b-b47b-ea6d589b9b1f",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-657"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-05T00:00:18.763Z",
-      "updatedAt": "2025-11-05T00:00:18.763Z",
-      "taskSnapshot": {
-        "title": "PB-043: Other Packages (Batch 2)",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1044,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1044",
-        "createdAt": "2025-11-05T00:00:18.763Z",
-        "updatedAt": "2025-11-05T00:00:18.763Z"
-      },
-      "lastSyncedAt": "2025-11-05T00:00:18.763Z"
-    },
-    {
-      "id": "track-fc402327-4e22-438e-a6e6-56402e3dd008",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-658"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-05T00:00:19.199Z",
-      "updatedAt": "2025-11-05T00:00:19.199Z",
-      "taskSnapshot": {
-        "title": "PB-044: Other Packages (Remaining)",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1045,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1045",
-        "createdAt": "2025-11-05T00:00:19.199Z",
-        "updatedAt": "2025-11-05T00:00:19.199Z"
-      },
-      "lastSyncedAt": "2025-11-05T00:00:19.199Z"
-    },
-    {
-      "id": "track-3919f955-50a7-4da7-9ce5-daf4ee68ec07",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-659"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-05T00:00:19.647Z",
-      "updatedAt": "2025-11-05T00:00:19.647Z",
-      "taskSnapshot": {
-        "title": "PB-045: Cross-cutting Guides (Batch 1)",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1046,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1046",
-        "createdAt": "2025-11-05T00:00:19.647Z",
-        "updatedAt": "2025-11-05T00:00:19.647Z"
-      },
-      "lastSyncedAt": "2025-11-05T00:00:19.647Z"
-    },
-    {
-      "id": "track-993d1acf-65ad-4f71-931d-1b11c7bfafdc",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-660"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-05T00:00:20.045Z",
-      "updatedAt": "2025-11-05T00:00:20.045Z",
-      "taskSnapshot": {
-        "title": "PB-046: Cross-cutting Guides (Batch 2)",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1047,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1047",
-        "createdAt": "2025-11-05T00:00:20.045Z",
-        "updatedAt": "2025-11-05T00:00:20.045Z"
-      },
-      "lastSyncedAt": "2025-11-05T00:00:20.045Z"
-    },
-    {
-      "id": "track-f7eb2a07-8c40-470f-bbe2-c66b2538df32",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-661"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-05T00:00:20.565Z",
-      "updatedAt": "2025-11-05T00:00:20.565Z",
-      "taskSnapshot": {
-        "title": "PB-047: Resources Documentation",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1048,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1048",
-        "createdAt": "2025-11-05T00:00:20.565Z",
-        "updatedAt": "2025-11-05T00:00:20.565Z"
-      },
-      "lastSyncedAt": "2025-11-05T00:00:20.565Z"
-    },
-    {
-      "id": "track-03322487-1870-4e69-8ec9-ac96787e1829",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-662"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-05T00:00:21.001Z",
-      "updatedAt": "2025-11-05T00:00:21.001Z",
-      "taskSnapshot": {
-        "title": "PB-048: Mermaid Diagrams (Batch 1)",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1049,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1049",
-        "createdAt": "2025-11-05T00:00:21.001Z",
-        "updatedAt": "2025-11-05T00:00:21.001Z"
-      },
-      "lastSyncedAt": "2025-11-05T00:00:21.001Z"
-    },
-    {
-      "id": "track-5ce2f01e-d9b1-4118-8cd8-b4d6a0a296bf",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-663"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-05T00:00:21.625Z",
-      "updatedAt": "2025-11-05T00:00:21.625Z",
-      "taskSnapshot": {
-        "title": "PB-049: Mermaid Diagrams (Batch 2)",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1050,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1050",
-        "createdAt": "2025-11-05T00:00:21.625Z",
-        "updatedAt": "2025-11-05T00:00:21.625Z"
-      },
-      "lastSyncedAt": "2025-11-05T00:00:21.625Z"
-    },
-    {
-      "id": "track-1bb676d2-4ad9-4ac6-b16b-1de1d70235f2",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-664"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-05T00:00:22.052Z",
-      "updatedAt": "2025-11-05T00:00:22.052Z",
-      "taskSnapshot": {
-        "title": "PB-050: Examples Repository",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1051,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1051",
-        "createdAt": "2025-11-05T00:00:22.052Z",
-        "updatedAt": "2025-11-05T00:00:22.052Z"
-      },
-      "lastSyncedAt": "2025-11-05T00:00:22.052Z"
-    },
-    {
-      "id": "track-af90f5c4-cabc-43ba-bf04-af870afaec3e",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-665"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-05T00:00:22.503Z",
-      "updatedAt": "2025-11-05T00:00:22.503Z",
-      "taskSnapshot": {
-        "title": "PB-051: Final Review & Quality Check",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1052,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1052",
-        "createdAt": "2025-11-05T00:00:22.503Z",
-        "updatedAt": "2025-11-05T00:00:22.503Z"
-      },
-      "lastSyncedAt": "2025-11-05T00:00:22.503Z"
-    },
-    {
-      "id": "track-a7faffb5-584b-4e50-97b8-e5e591060a86",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-666"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-05T00:00:23.002Z",
-      "updatedAt": "2025-11-05T00:00:23.003Z",
-      "taskSnapshot": {
-        "title": "PB-052: User Testing & Iteration",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1053,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1053",
-        "createdAt": "2025-11-05T00:00:23.003Z",
-        "updatedAt": "2025-11-05T00:00:23.003Z"
-      },
-      "lastSyncedAt": "2025-11-05T00:00:23.003Z"
-    },
-    {
-      "id": "track-164d99e9-7992-4c5e-bbf5-4b8dce625eb0",
-      "type": "planning-task",
-      "source": {
-        "sessionId": "P-002",
-        "taskId": "task-667"
-      },
-      "status": "synced",
-      "syncAttempts": 1,
-      "createdAt": "2025-11-05T00:00:23.491Z",
-      "updatedAt": "2025-11-05T00:00:23.491Z",
-      "taskSnapshot": {
-        "title": "PB-053: Documentation Completion & Celebration",
-        "status": "pending"
-      },
-      "github": {
-        "issueNumber": 1054,
-        "issueUrl": "https://github.com/qazuor/hospeda/issues/1054",
-        "createdAt": "2025-11-05T00:00:23.491Z",
-        "updatedAt": "2025-11-05T00:00:23.491Z"
-      },
-      "lastSyncedAt": "2025-11-05T00:00:23.491Z"
+    "version": "1.0.0",
+    "records": [
+        {
+            "id": "track-950797dd-c7c5-4eec-97dd-9229a7b30b5c",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-615"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-04T23:59:55.999Z",
+            "updatedAt": "2025-11-04T23:59:55.999Z",
+            "taskSnapshot": {
+                "title": "PB-001: Infrastructure Setup",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1002,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1002",
+                "createdAt": "2025-11-04T23:59:55.999Z",
+                "updatedAt": "2025-11-04T23:59:55.999Z"
+            },
+            "lastSyncedAt": "2025-11-04T23:59:55.999Z"
+        },
+        {
+            "id": "track-ce24a6d3-036c-4e18-baf2-8b328f796496",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-616"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-04T23:59:56.740Z",
+            "updatedAt": "2025-11-04T23:59:56.741Z",
+            "taskSnapshot": {
+                "title": "PB-002: Main Portal",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1003,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1003",
+                "createdAt": "2025-11-04T23:59:56.741Z",
+                "updatedAt": "2025-11-04T23:59:56.741Z"
+            },
+            "lastSyncedAt": "2025-11-04T23:59:56.741Z"
+        },
+        {
+            "id": "track-808082cf-766b-41bc-8720-45f460f3a30d",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-617"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-04T23:59:57.182Z",
+            "updatedAt": "2025-11-04T23:59:57.182Z",
+            "taskSnapshot": {
+                "title": "PB-003: Getting Started (Prerequisites & Installation)",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1004,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1004",
+                "createdAt": "2025-11-04T23:59:57.182Z",
+                "updatedAt": "2025-11-04T23:59:57.182Z"
+            },
+            "lastSyncedAt": "2025-11-04T23:59:57.182Z"
+        },
+        {
+            "id": "track-58df1b29-6d8b-4f0c-94da-fbaed22a8105",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-618"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-04T23:59:57.658Z",
+            "updatedAt": "2025-11-04T23:59:57.658Z",
+            "taskSnapshot": {
+                "title": "PB-004: Getting Started (Dev Environment & First Contribution)",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1005,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1005",
+                "createdAt": "2025-11-04T23:59:57.658Z",
+                "updatedAt": "2025-11-04T23:59:57.658Z"
+            },
+            "lastSyncedAt": "2025-11-04T23:59:57.658Z"
+        },
+        {
+            "id": "track-2ebdd8d3-76ff-4c26-8452-dc0e416d7577",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-619"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-04T23:59:58.085Z",
+            "updatedAt": "2025-11-04T23:59:58.085Z",
+            "taskSnapshot": {
+                "title": "PB-005: Architecture (Overview & Monorepo)",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1006,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1006",
+                "createdAt": "2025-11-04T23:59:58.085Z",
+                "updatedAt": "2025-11-04T23:59:58.085Z"
+            },
+            "lastSyncedAt": "2025-11-04T23:59:58.085Z"
+        },
+        {
+            "id": "track-7418e607-b094-4af8-852d-feb7173f5821",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-620"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-04T23:59:58.512Z",
+            "updatedAt": "2025-11-04T23:59:58.512Z",
+            "taskSnapshot": {
+                "title": "PB-006: Architecture (Data Flow & Patterns)",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1007,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1007",
+                "createdAt": "2025-11-04T23:59:58.512Z",
+                "updatedAt": "2025-11-04T23:59:58.512Z"
+            },
+            "lastSyncedAt": "2025-11-04T23:59:58.512Z"
+        },
+        {
+            "id": "track-db653e6a-d401-4de5-9eaf-3bc430a6731b",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-621"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-04T23:59:58.992Z",
+            "updatedAt": "2025-11-04T23:59:58.992Z",
+            "taskSnapshot": {
+                "title": "PB-007: End-to-End Tutorial",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1008,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1008",
+                "createdAt": "2025-11-04T23:59:58.992Z",
+                "updatedAt": "2025-11-04T23:59:58.992Z"
+            },
+            "lastSyncedAt": "2025-11-04T23:59:58.992Z"
+        },
+        {
+            "id": "track-df5f21a6-0762-4fa7-87c5-277da3904c3a",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-622"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-04T23:59:59.612Z",
+            "updatedAt": "2025-11-04T23:59:59.612Z",
+            "taskSnapshot": {
+                "title": "PB-008: App Quick Entry Points",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1009,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1009",
+                "createdAt": "2025-11-04T23:59:59.612Z",
+                "updatedAt": "2025-11-04T23:59:59.612Z"
+            },
+            "lastSyncedAt": "2025-11-04T23:59:59.612Z"
+        },
+        {
+            "id": "track-676ad91c-2419-4e58-bcc0-5c7a91de4cf7",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-623"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-04T23:59:59.996Z",
+            "updatedAt": "2025-11-04T23:59:59.996Z",
+            "taskSnapshot": {
+                "title": "PB-009: API Portal & Setup",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1010,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1010",
+                "createdAt": "2025-11-04T23:59:59.996Z",
+                "updatedAt": "2025-11-04T23:59:59.996Z"
+            },
+            "lastSyncedAt": "2025-11-04T23:59:59.996Z"
+        },
+        {
+            "id": "track-96c0c9c1-e649-484b-aa0d-eeb9470143ef",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-624"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-05T00:00:00.401Z",
+            "updatedAt": "2025-11-05T00:00:00.401Z",
+            "taskSnapshot": {
+                "title": "PB-010: API Usage Guides",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1011,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1011",
+                "createdAt": "2025-11-05T00:00:00.401Z",
+                "updatedAt": "2025-11-05T00:00:00.401Z"
+            },
+            "lastSyncedAt": "2025-11-05T00:00:00.401Z"
+        },
+        {
+            "id": "track-c321d8c0-5c6d-46dc-9add-450b5a881c8d",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-625"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-05T00:00:00.956Z",
+            "updatedAt": "2025-11-05T00:00:00.956Z",
+            "taskSnapshot": {
+                "title": "PB-011: API Dev Guides (Part 1)",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1012,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1012",
+                "createdAt": "2025-11-05T00:00:00.956Z",
+                "updatedAt": "2025-11-05T00:00:00.956Z"
+            },
+            "lastSyncedAt": "2025-11-05T00:00:00.956Z"
+        },
+        {
+            "id": "track-958a7584-5991-4e47-a091-20e5e3fcc4d3",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-626"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-05T00:00:01.404Z",
+            "updatedAt": "2025-11-05T00:00:01.404Z",
+            "taskSnapshot": {
+                "title": "PB-012: API Dev Guides (Part 2) & Examples",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1013,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1013",
+                "createdAt": "2025-11-05T00:00:01.404Z",
+                "updatedAt": "2025-11-05T00:00:01.404Z"
+            },
+            "lastSyncedAt": "2025-11-05T00:00:01.404Z"
+        },
+        {
+            "id": "track-d3eb814c-f8f1-46ac-8ddf-26a756fcee91",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-627"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-05T00:00:01.866Z",
+            "updatedAt": "2025-11-05T00:00:01.866Z",
+            "taskSnapshot": {
+                "title": "PB-013: Web Portal & Setup",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1014,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1014",
+                "createdAt": "2025-11-05T00:00:01.866Z",
+                "updatedAt": "2025-11-05T00:00:01.866Z"
+            },
+            "lastSyncedAt": "2025-11-05T00:00:01.866Z"
+        },
+        {
+            "id": "track-3111824e-897c-4ae5-bef7-7e262b249e43",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-628"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-05T00:00:02.697Z",
+            "updatedAt": "2025-11-05T00:00:02.697Z",
+            "taskSnapshot": {
+                "title": "PB-014: Web Usage Guides",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1015,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1015",
+                "createdAt": "2025-11-05T00:00:02.697Z",
+                "updatedAt": "2025-11-05T00:00:02.697Z"
+            },
+            "lastSyncedAt": "2025-11-05T00:00:02.697Z"
+        },
+        {
+            "id": "track-c1b57cb6-d5b1-41d8-af23-852b8a9b3272",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-629"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-05T00:00:03.329Z",
+            "updatedAt": "2025-11-05T00:00:03.329Z",
+            "taskSnapshot": {
+                "title": "PB-015: Web Dev Guides (Part 1)",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1016,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1016",
+                "createdAt": "2025-11-05T00:00:03.329Z",
+                "updatedAt": "2025-11-05T00:00:03.329Z"
+            },
+            "lastSyncedAt": "2025-11-05T00:00:03.329Z"
+        },
+        {
+            "id": "track-205167d0-d386-494a-aade-307da1853ce4",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-630"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-05T00:00:03.873Z",
+            "updatedAt": "2025-11-05T00:00:03.873Z",
+            "taskSnapshot": {
+                "title": "PB-016: Web Dev Guides (Part 2) & Examples",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1017,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1017",
+                "createdAt": "2025-11-05T00:00:03.873Z",
+                "updatedAt": "2025-11-05T00:00:03.873Z"
+            },
+            "lastSyncedAt": "2025-11-05T00:00:03.873Z"
+        },
+        {
+            "id": "track-5b0d921a-ea27-45ea-8f81-48fa7bce53d8",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-631"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-05T00:00:04.313Z",
+            "updatedAt": "2025-11-05T00:00:04.313Z",
+            "taskSnapshot": {
+                "title": "PB-017: Admin Portal & Setup",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1018,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1018",
+                "createdAt": "2025-11-05T00:00:04.313Z",
+                "updatedAt": "2025-11-05T00:00:04.313Z"
+            },
+            "lastSyncedAt": "2025-11-05T00:00:04.313Z"
+        },
+        {
+            "id": "track-02b939bc-0d11-458e-9575-eb1a3b10dd35",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-632"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-05T00:00:04.835Z",
+            "updatedAt": "2025-11-05T00:00:04.835Z",
+            "taskSnapshot": {
+                "title": "PB-018: Admin Usage Guides",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1019,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1019",
+                "createdAt": "2025-11-05T00:00:04.835Z",
+                "updatedAt": "2025-11-05T00:00:04.835Z"
+            },
+            "lastSyncedAt": "2025-11-05T00:00:04.835Z"
+        },
+        {
+            "id": "track-c6d3c289-b1c8-4074-86be-b3b12b17041f",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-633"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-05T00:00:05.911Z",
+            "updatedAt": "2025-11-05T00:00:05.911Z",
+            "taskSnapshot": {
+                "title": "PB-019: Admin Dev Guides (Part 1)",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1020,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1020",
+                "createdAt": "2025-11-05T00:00:05.911Z",
+                "updatedAt": "2025-11-05T00:00:05.911Z"
+            },
+            "lastSyncedAt": "2025-11-05T00:00:05.911Z"
+        },
+        {
+            "id": "track-72e03eda-7d71-4ad0-85c1-114fea4da02b",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-634"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-05T00:00:06.365Z",
+            "updatedAt": "2025-11-05T00:00:06.365Z",
+            "taskSnapshot": {
+                "title": "PB-020: Admin Dev Guides (Part 2) & Examples",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1021,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1021",
+                "createdAt": "2025-11-05T00:00:06.365Z",
+                "updatedAt": "2025-11-05T00:00:06.365Z"
+            },
+            "lastSyncedAt": "2025-11-05T00:00:06.365Z"
+        },
+        {
+            "id": "track-a33d76e1-824c-443d-8b7c-253aa3605ba8",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-635"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-05T00:00:06.828Z",
+            "updatedAt": "2025-11-05T00:00:06.828Z",
+            "taskSnapshot": {
+                "title": "PB-021: service-core Portal & Quick Start",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1022,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1022",
+                "createdAt": "2025-11-05T00:00:06.828Z",
+                "updatedAt": "2025-11-05T00:00:06.828Z"
+            },
+            "lastSyncedAt": "2025-11-05T00:00:06.828Z"
+        },
+        {
+            "id": "track-191fd157-1a15-4391-8a1f-39ff12870958",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-636"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-05T00:00:07.264Z",
+            "updatedAt": "2025-11-05T00:00:07.264Z",
+            "taskSnapshot": {
+                "title": "PB-022: service-core API Reference",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1023,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1023",
+                "createdAt": "2025-11-05T00:00:07.264Z",
+                "updatedAt": "2025-11-05T00:00:07.264Z"
+            },
+            "lastSyncedAt": "2025-11-05T00:00:07.264Z"
+        },
+        {
+            "id": "track-ca5b9911-dd2f-4323-bee3-7a18b70fa7b7",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-637"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-05T00:00:08.347Z",
+            "updatedAt": "2025-11-05T00:00:08.347Z",
+            "taskSnapshot": {
+                "title": "PB-023: service-core Dev Guides & Examples",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1024,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1024",
+                "createdAt": "2025-11-05T00:00:08.347Z",
+                "updatedAt": "2025-11-05T00:00:08.347Z"
+            },
+            "lastSyncedAt": "2025-11-05T00:00:08.347Z"
+        },
+        {
+            "id": "track-2c0266f4-845c-4818-a5ef-985f6b00769f",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-638"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-05T00:00:08.786Z",
+            "updatedAt": "2025-11-05T00:00:08.786Z",
+            "taskSnapshot": {
+                "title": "PB-024: db Portal & Quick Start",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1025,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1025",
+                "createdAt": "2025-11-05T00:00:08.786Z",
+                "updatedAt": "2025-11-05T00:00:08.786Z"
+            },
+            "lastSyncedAt": "2025-11-05T00:00:08.786Z"
+        },
+        {
+            "id": "track-9ae40e4b-b149-45ca-9b93-073543d84e2c",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-639"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-05T00:00:09.272Z",
+            "updatedAt": "2025-11-05T00:00:09.272Z",
+            "taskSnapshot": {
+                "title": "PB-025: db API Reference",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1026,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1026",
+                "createdAt": "2025-11-05T00:00:09.272Z",
+                "updatedAt": "2025-11-05T00:00:09.272Z"
+            },
+            "lastSyncedAt": "2025-11-05T00:00:09.272Z"
+        },
+        {
+            "id": "track-9d8f3dad-b22e-4c03-80ff-93f3da78b6ac",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-640"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-05T00:00:09.725Z",
+            "updatedAt": "2025-11-05T00:00:09.725Z",
+            "taskSnapshot": {
+                "title": "PB-026: db Dev Guides & Examples",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1027,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1027",
+                "createdAt": "2025-11-05T00:00:09.725Z",
+                "updatedAt": "2025-11-05T00:00:09.725Z"
+            },
+            "lastSyncedAt": "2025-11-05T00:00:09.725Z"
+        },
+        {
+            "id": "track-6421b994-46ba-4630-936d-e29aada5c944",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-641"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-05T00:00:10.472Z",
+            "updatedAt": "2025-11-05T00:00:10.472Z",
+            "taskSnapshot": {
+                "title": "PB-027: schemas Portal & API Reference",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1028,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1028",
+                "createdAt": "2025-11-05T00:00:10.472Z",
+                "updatedAt": "2025-11-05T00:00:10.472Z"
+            },
+            "lastSyncedAt": "2025-11-05T00:00:10.472Z"
+        },
+        {
+            "id": "track-3f6fb249-fb3a-40c2-89d1-e21aa8377abc",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-642"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-05T00:00:10.972Z",
+            "updatedAt": "2025-11-05T00:00:10.972Z",
+            "taskSnapshot": {
+                "title": "PB-028: schemas Dev Guides & Examples",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1029,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1029",
+                "createdAt": "2025-11-05T00:00:10.972Z",
+                "updatedAt": "2025-11-05T00:00:10.972Z"
+            },
+            "lastSyncedAt": "2025-11-05T00:00:10.972Z"
+        },
+        {
+            "id": "track-3adc76d9-592f-4d16-9e13-8e0e27520cb6",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-643"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-05T00:00:11.375Z",
+            "updatedAt": "2025-11-05T00:00:11.375Z",
+            "taskSnapshot": {
+                "title": "PB-029: config Complete Documentation",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1030,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1030",
+                "createdAt": "2025-11-05T00:00:11.375Z",
+                "updatedAt": "2025-11-05T00:00:11.375Z"
+            },
+            "lastSyncedAt": "2025-11-05T00:00:11.375Z"
+        },
+        {
+            "id": "track-19ab2498-c356-4f60-bb33-b0f2940af7e6",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-644"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-05T00:00:11.816Z",
+            "updatedAt": "2025-11-05T00:00:11.816Z",
+            "taskSnapshot": {
+                "title": "PB-030: logger Complete Documentation",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1031,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1031",
+                "createdAt": "2025-11-05T00:00:11.816Z",
+                "updatedAt": "2025-11-05T00:00:11.816Z"
+            },
+            "lastSyncedAt": "2025-11-05T00:00:11.816Z"
+        },
+        {
+            "id": "track-977cf271-b6f0-4358-9dec-89ddd4f7c8a6",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-645"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-05T00:00:12.269Z",
+            "updatedAt": "2025-11-05T00:00:12.269Z",
+            "taskSnapshot": {
+                "title": "PB-031: icons Complete Documentation",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1032,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1032",
+                "createdAt": "2025-11-05T00:00:12.269Z",
+                "updatedAt": "2025-11-05T00:00:12.269Z"
+            },
+            "lastSyncedAt": "2025-11-05T00:00:12.269Z"
+        },
+        {
+            "id": "track-d104c8c5-37d4-4c9a-aaf1-ea45c823ff08",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-646"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-05T00:00:12.986Z",
+            "updatedAt": "2025-11-05T00:00:12.986Z",
+            "taskSnapshot": {
+                "title": "PB-032: seed Complete Documentation",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1033,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1033",
+                "createdAt": "2025-11-05T00:00:12.986Z",
+                "updatedAt": "2025-11-05T00:00:12.986Z"
+            },
+            "lastSyncedAt": "2025-11-05T00:00:12.986Z"
+        },
+        {
+            "id": "track-5405e95c-03a6-46ec-b1e9-8dcae4769fc4",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-647"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-05T00:00:13.727Z",
+            "updatedAt": "2025-11-05T00:00:13.727Z",
+            "taskSnapshot": {
+                "title": "PB-033: Deployment (Overview & Environments)",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1034,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1034",
+                "createdAt": "2025-11-05T00:00:13.727Z",
+                "updatedAt": "2025-11-05T00:00:13.727Z"
+            },
+            "lastSyncedAt": "2025-11-05T00:00:13.727Z"
+        },
+        {
+            "id": "track-c3c74164-71bf-4160-a9d0-a2aeb2d73c39",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-648"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-05T00:00:14.328Z",
+            "updatedAt": "2025-11-05T00:00:14.328Z",
+            "taskSnapshot": {
+                "title": "PB-034: Deployment (Apps & Database)",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1035,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1035",
+                "createdAt": "2025-11-05T00:00:14.328Z",
+                "updatedAt": "2025-11-05T00:00:14.328Z"
+            },
+            "lastSyncedAt": "2025-11-05T00:00:14.328Z"
+        },
+        {
+            "id": "track-33e83c00-9170-4a28-9961-fb4e85c16c2f",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-649"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-05T00:00:14.774Z",
+            "updatedAt": "2025-11-05T00:00:14.774Z",
+            "taskSnapshot": {
+                "title": "PB-035: Deployment (CI/CD)",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1036,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1036",
+                "createdAt": "2025-11-05T00:00:14.774Z",
+                "updatedAt": "2025-11-05T00:00:14.774Z"
+            },
+            "lastSyncedAt": "2025-11-05T00:00:14.774Z"
+        },
+        {
+            "id": "track-e0f75899-8b0f-4315-8e20-197bf41bbc91",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-650"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-05T00:00:15.230Z",
+            "updatedAt": "2025-11-05T00:00:15.230Z",
+            "taskSnapshot": {
+                "title": "PB-036: Security Documentation",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1037,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1037",
+                "createdAt": "2025-11-05T00:00:15.230Z",
+                "updatedAt": "2025-11-05T00:00:15.230Z"
+            },
+            "lastSyncedAt": "2025-11-05T00:00:15.230Z"
+        },
+        {
+            "id": "track-7b72dd62-03a9-46c9-a378-dfd1bfae076a",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-651"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-05T00:00:15.649Z",
+            "updatedAt": "2025-11-05T00:00:15.649Z",
+            "taskSnapshot": {
+                "title": "PB-037: Performance Documentation",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1038,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1038",
+                "createdAt": "2025-11-05T00:00:15.649Z",
+                "updatedAt": "2025-11-05T00:00:15.649Z"
+            },
+            "lastSyncedAt": "2025-11-05T00:00:15.649Z"
+        },
+        {
+            "id": "track-0224cc8e-111e-44b8-94d6-6fb272fc9a03",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-652"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-05T00:00:16.106Z",
+            "updatedAt": "2025-11-05T00:00:16.106Z",
+            "taskSnapshot": {
+                "title": "PB-038: Testing Documentation",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1039,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1039",
+                "createdAt": "2025-11-05T00:00:16.106Z",
+                "updatedAt": "2025-11-05T00:00:16.106Z"
+            },
+            "lastSyncedAt": "2025-11-05T00:00:16.106Z"
+        },
+        {
+            "id": "track-221ca3f5-341f-46f2-8e22-1098fba14bd1",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-653"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-05T00:00:16.670Z",
+            "updatedAt": "2025-11-05T00:00:16.670Z",
+            "taskSnapshot": {
+                "title": "PB-039: Claude Code Documentation",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1040,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1040",
+                "createdAt": "2025-11-05T00:00:16.670Z",
+                "updatedAt": "2025-11-05T00:00:16.670Z"
+            },
+            "lastSyncedAt": "2025-11-05T00:00:16.670Z"
+        },
+        {
+            "id": "track-fa14de1a-49aa-4dec-ada6-82e0b9aa3787",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-654"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-05T00:00:17.125Z",
+            "updatedAt": "2025-11-05T00:00:17.125Z",
+            "taskSnapshot": {
+                "title": "PB-040: Runbooks Documentation",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1041,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1041",
+                "createdAt": "2025-11-05T00:00:17.125Z",
+                "updatedAt": "2025-11-05T00:00:17.125Z"
+            },
+            "lastSyncedAt": "2025-11-05T00:00:17.125Z"
+        },
+        {
+            "id": "track-0fc14fe1-71ae-4c82-b24d-a1fde04a3081",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-655"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-05T00:00:17.698Z",
+            "updatedAt": "2025-11-05T00:00:17.698Z",
+            "taskSnapshot": {
+                "title": "PB-041: Contributing Documentation",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1042,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1042",
+                "createdAt": "2025-11-05T00:00:17.698Z",
+                "updatedAt": "2025-11-05T00:00:17.698Z"
+            },
+            "lastSyncedAt": "2025-11-05T00:00:17.698Z"
+        },
+        {
+            "id": "track-7f29b8ac-13f5-43d9-aa0c-d7520c251abd",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-656"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-05T00:00:18.304Z",
+            "updatedAt": "2025-11-05T00:00:18.304Z",
+            "taskSnapshot": {
+                "title": "PB-042: Other Packages (Batch 1)",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1043,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1043",
+                "createdAt": "2025-11-05T00:00:18.304Z",
+                "updatedAt": "2025-11-05T00:00:18.304Z"
+            },
+            "lastSyncedAt": "2025-11-05T00:00:18.304Z"
+        },
+        {
+            "id": "track-2f8fab0e-54cc-404b-b47b-ea6d589b9b1f",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-657"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-05T00:00:18.763Z",
+            "updatedAt": "2025-11-05T00:00:18.763Z",
+            "taskSnapshot": {
+                "title": "PB-043: Other Packages (Batch 2)",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1044,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1044",
+                "createdAt": "2025-11-05T00:00:18.763Z",
+                "updatedAt": "2025-11-05T00:00:18.763Z"
+            },
+            "lastSyncedAt": "2025-11-05T00:00:18.763Z"
+        },
+        {
+            "id": "track-fc402327-4e22-438e-a6e6-56402e3dd008",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-658"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-05T00:00:19.199Z",
+            "updatedAt": "2025-11-05T00:00:19.199Z",
+            "taskSnapshot": {
+                "title": "PB-044: Other Packages (Remaining)",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1045,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1045",
+                "createdAt": "2025-11-05T00:00:19.199Z",
+                "updatedAt": "2025-11-05T00:00:19.199Z"
+            },
+            "lastSyncedAt": "2025-11-05T00:00:19.199Z"
+        },
+        {
+            "id": "track-3919f955-50a7-4da7-9ce5-daf4ee68ec07",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-659"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-05T00:00:19.647Z",
+            "updatedAt": "2025-11-05T00:00:19.647Z",
+            "taskSnapshot": {
+                "title": "PB-045: Cross-cutting Guides (Batch 1)",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1046,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1046",
+                "createdAt": "2025-11-05T00:00:19.647Z",
+                "updatedAt": "2025-11-05T00:00:19.647Z"
+            },
+            "lastSyncedAt": "2025-11-05T00:00:19.647Z"
+        },
+        {
+            "id": "track-993d1acf-65ad-4f71-931d-1b11c7bfafdc",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-660"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-05T00:00:20.045Z",
+            "updatedAt": "2025-11-05T00:00:20.045Z",
+            "taskSnapshot": {
+                "title": "PB-046: Cross-cutting Guides (Batch 2)",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1047,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1047",
+                "createdAt": "2025-11-05T00:00:20.045Z",
+                "updatedAt": "2025-11-05T00:00:20.045Z"
+            },
+            "lastSyncedAt": "2025-11-05T00:00:20.045Z"
+        },
+        {
+            "id": "track-f7eb2a07-8c40-470f-bbe2-c66b2538df32",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-661"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-05T00:00:20.565Z",
+            "updatedAt": "2025-11-05T00:00:20.565Z",
+            "taskSnapshot": {
+                "title": "PB-047: Resources Documentation",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1048,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1048",
+                "createdAt": "2025-11-05T00:00:20.565Z",
+                "updatedAt": "2025-11-05T00:00:20.565Z"
+            },
+            "lastSyncedAt": "2025-11-05T00:00:20.565Z"
+        },
+        {
+            "id": "track-03322487-1870-4e69-8ec9-ac96787e1829",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-662"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-05T00:00:21.001Z",
+            "updatedAt": "2025-11-05T00:00:21.001Z",
+            "taskSnapshot": {
+                "title": "PB-048: Mermaid Diagrams (Batch 1)",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1049,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1049",
+                "createdAt": "2025-11-05T00:00:21.001Z",
+                "updatedAt": "2025-11-05T00:00:21.001Z"
+            },
+            "lastSyncedAt": "2025-11-05T00:00:21.001Z"
+        },
+        {
+            "id": "track-5ce2f01e-d9b1-4118-8cd8-b4d6a0a296bf",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-663"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-05T00:00:21.625Z",
+            "updatedAt": "2025-11-05T00:00:21.625Z",
+            "taskSnapshot": {
+                "title": "PB-049: Mermaid Diagrams (Batch 2)",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1050,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1050",
+                "createdAt": "2025-11-05T00:00:21.625Z",
+                "updatedAt": "2025-11-05T00:00:21.625Z"
+            },
+            "lastSyncedAt": "2025-11-05T00:00:21.625Z"
+        },
+        {
+            "id": "track-1bb676d2-4ad9-4ac6-b16b-1de1d70235f2",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-664"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-05T00:00:22.052Z",
+            "updatedAt": "2025-11-05T00:00:22.052Z",
+            "taskSnapshot": {
+                "title": "PB-050: Examples Repository",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1051,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1051",
+                "createdAt": "2025-11-05T00:00:22.052Z",
+                "updatedAt": "2025-11-05T00:00:22.052Z"
+            },
+            "lastSyncedAt": "2025-11-05T00:00:22.052Z"
+        },
+        {
+            "id": "track-af90f5c4-cabc-43ba-bf04-af870afaec3e",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-665"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-05T00:00:22.503Z",
+            "updatedAt": "2025-11-05T00:00:22.503Z",
+            "taskSnapshot": {
+                "title": "PB-051: Final Review & Quality Check",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1052,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1052",
+                "createdAt": "2025-11-05T00:00:22.503Z",
+                "updatedAt": "2025-11-05T00:00:22.503Z"
+            },
+            "lastSyncedAt": "2025-11-05T00:00:22.503Z"
+        },
+        {
+            "id": "track-a7faffb5-584b-4e50-97b8-e5e591060a86",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-666"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-05T00:00:23.002Z",
+            "updatedAt": "2025-11-05T00:00:23.003Z",
+            "taskSnapshot": {
+                "title": "PB-052: User Testing & Iteration",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1053,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1053",
+                "createdAt": "2025-11-05T00:00:23.003Z",
+                "updatedAt": "2025-11-05T00:00:23.003Z"
+            },
+            "lastSyncedAt": "2025-11-05T00:00:23.003Z"
+        },
+        {
+            "id": "track-164d99e9-7992-4c5e-bbf5-4b8dce625eb0",
+            "type": "planning-task",
+            "source": {
+                "sessionId": "P-002",
+                "taskId": "task-667"
+            },
+            "status": "synced",
+            "syncAttempts": 1,
+            "createdAt": "2025-11-05T00:00:23.491Z",
+            "updatedAt": "2025-11-05T00:00:23.491Z",
+            "taskSnapshot": {
+                "title": "PB-053: Documentation Completion & Celebration",
+                "status": "pending"
+            },
+            "github": {
+                "issueNumber": 1054,
+                "issueUrl": "https://github.com/qazuor/hospeda/issues/1054",
+                "createdAt": "2025-11-05T00:00:23.491Z",
+                "updatedAt": "2025-11-05T00:00:23.491Z"
+            },
+            "lastSyncedAt": "2025-11-05T00:00:23.491Z"
+        }
+    ],
+    "metadata": {
+        "lastSync": "2025-11-05T00:00:23.494Z",
+        "totalRecords": 53,
+        "byStatus": {
+            "pending": 0,
+            "synced": 53,
+            "updated": 0,
+            "failed": 0
+        }
     }
-  ],
-  "metadata": {
-    "lastSync": "2025-11-05T00:00:23.494Z",
-    "totalRecords": 53,
-    "byStatus": {
-      "pending": 0,
-      "synced": 53,
-      "updated": 0,
-      "failed": 0
-    }
-  }
 }

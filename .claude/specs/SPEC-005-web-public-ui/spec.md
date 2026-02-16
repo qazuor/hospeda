@@ -5,10 +5,10 @@ type: feature
 complexity: high
 status: draft
 created: 2026-02-12T16:00:00.000Z
-updated: 2026-02-12T18:00:00.000Z
+updated: 2026-02-13T12:00:00.000Z
 ---
 
-## SPEC-005 v2: Hospeda Public Web Application (web2) - Built from Scratch
+## SPEC-005 v3: Hospeda Public Web Application (web2) - Built from Scratch
 
 ## Table of Contents
 
@@ -22,14 +22,15 @@ updated: 2026-02-12T18:00:00.000Z
 8. [Page Inventory with Rendering Strategy](#8-page-inventory-with-rendering-strategy)
 9. [Component Inventory](#9-component-inventory)
 10. [Icon & Illustration Strategy](#10-icon--illustration-strategy)
-11. [Animation & View Transitions](#11-animation--view-transitions)
+11. [Animation, View Transitions & UX Feedback](#11-animation-view-transitions--ux-feedback)
 12. [Accessibility Requirements](#12-accessibility-requirements)
 13. [SEO Strategy](#13-seo-strategy)
 14. [Performance Requirements](#14-performance-requirements)
-15. [Internationalization](#15-internationalization)
+15. [Internationalization & Currency](#15-internationalization--currency)
 16. [Interactive Features & Libraries](#16-interactive-features--libraries)
 17. [User Stories & Acceptance Criteria](#17-user-stories--acceptance-criteria)
 18. [Scope Definition](#18-scope-definition)
+19. [Related Specifications](#19-related-specifications)
 
 ---
 
@@ -80,7 +81,7 @@ This is a **COMPLETE REWRITE** creating a NEW app `apps/web2/` from scratch, NOT
   "framework": "Astro (latest)",
   "islands": "React 18+",
   "styling": "Tailwind CSS v4",
-  "icons": "Phosphor Icons (React)",
+  "icons": "@repo/icons (individual SVG components, Phosphor migration planned in SPEC-008)",
   "testing": "Vitest",
   "language": "TypeScript (strict mode)",
   "runtime": "Node.js >= 18"
@@ -105,12 +106,12 @@ This is a **COMPLETE REWRITE** creating a NEW app `apps/web2/` from scratch, NOT
 ```typescript
 {
   "maps": "Leaflet OR Mapbox GL JS (decide during implementation)",
-  "images": "@astrojs/image",
+  "images": "astro:assets (<Image /> with inferSize + image.remotePatterns for DB images)",
   "sitemap": "@astrojs/sitemap",
   "forms": "React Hook Form + Zod resolver",
   "state": "Zustand (minimal client state only)",
   "dates": "date-fns",
-  "markdown": "marked OR remark (for blog content)"
+  "richText": "TipTap/ProseMirror JSON (stored as JSONB in DB, rendered server-side)"
 }
 ```
 
@@ -311,66 +312,123 @@ For each interactive feature, choose based on:
 
 **Rules:**
 
-- URLs always in Spanish (default locale)
-- Optional language prefix for non-default: `/en/...`, `/pt/...`
-- Trailing slashes: ALWAYS `/alojamientos/`
-- Hierarchical for destinations: `/destinos/argentina/entre-rios/concepcion-del-uruguay/`
+- **ALL URLs include locale prefix**, including the default locale (ES)
+- Root `/` ONLY redirects to `/{detected-locale}/` based on browser/user preference
+- Trailing slashes: ALWAYS `/{lang}/alojamientos/`
+- Hierarchical for destinations: `/{lang}/destinos/argentina/entre-rios/concepcion-del-uruguay/`
 - Slugs: lowercase, kebab-case, URL-safe
+- Route paths remain in Spanish regardless of locale (only content translates)
 
 **Examples:**
 
 ```
-ES (default): /alojamientos/hotel-ejemplo/
-EN:           /en/alojamientos/hotel-ejemplo/
-PT:           /pt/alojamientos/hotel-exemplo/
+Root:   /                              → Redirect to /es/ (or /en/, /pt/ based on detection)
+ES:     /es/alojamientos/hotel-ejemplo/
+EN:     /en/alojamientos/hotel-ejemplo/
+PT:     /pt/alojamientos/hotel-exemplo/
 ```
+
+**Language Detection Flow (for root `/` redirect):**
+
+1. Check authenticated user's saved language preference
+2. Check `navigator.language` (client) or `Accept-Language` header (server)
+3. Match against supported locales (es, en, pt)
+4. Default to ES if no match
 
 ### 4.2 Route Structure
 
 ```
-/                                    → Homepage
-/busqueda/                          → Search results (?q=query)
+/                                            → Redirect to /{detected-locale}/
 
-/alojamientos/                      → Accommodation list
-/alojamientos/[slug]/               → Accommodation detail
-/alojamientos/tipo/[type]/          → Filtered by type
+/[lang]/                                     → Homepage
+/[lang]/busqueda/                            → Search results (?q=query)
 
-/destinos/                          → Destination list
-/destinos/[...path]/                → Destination detail (hierarchical)
-/destinos/[...path]/alojamientos/   → Accommodations in destination
-/destinos/[...path]/eventos/        → Events in destination
-/destinos/[...path]/publicaciones/  → Posts about destination
+/[lang]/alojamientos/                        → Accommodation list
+/[lang]/alojamientos/[slug]/                 → Accommodation detail
+/[lang]/alojamientos/tipo/[type]/            → Filtered by type
 
-/eventos/                           → Event list
-/eventos/[slug]/                    → Event detail
+/[lang]/destinos/                            → Destination list
+/[lang]/destinos/[...path]/                  → Destination detail (hierarchical)
+/[lang]/destinos/[...path]/alojamientos/     → Accommodations in destination
+/[lang]/destinos/[...path]/eventos/          → Events in destination
+/[lang]/destinos/[...path]/publicaciones/    → Posts about destination
 
-/publicaciones/                     → Blog list
-/publicaciones/[slug]/              → Blog post detail
+/[lang]/eventos/                             → Event list
+/[lang]/eventos/[slug]/                      → Event detail
 
-/auth/signin/                       → Sign in
-/auth/signup/                       → Sign up
-/auth/forgot-password/              → Forgot password
-/auth/reset-password/               → Reset password
-/auth/verify-email/                 → Email verification
+/[lang]/publicaciones/                       → Blog list
+/[lang]/publicaciones/[slug]/                → Blog post detail
 
-/mi-cuenta/                         → Account dashboard
-/mi-cuenta/editar/                  → Edit profile
-/mi-cuenta/favoritos/               → Favorites
-/mi-cuenta/resenas/                 → My reviews
-/mi-cuenta/preferencias/            → Preferences (language/theme selectors)
-/mi-cuenta/suscripcion/             → Subscription management
+/[lang]/auth/signin/                         → Sign in
+/[lang]/auth/signup/                         → Sign up
+/[lang]/auth/forgot-password/                → Forgot password
+/[lang]/auth/reset-password/                 → Reset password
+/[lang]/auth/verify-email/                   → Email verification
 
-/quienes-somos/                     → About us
-/beneficios/                        → Benefits
-/precios/turistas/                  → Tourist pricing
-/precios/propietarios/              → Owner pricing
-/contacto/                          → Contact
-/terminos-condiciones/              → Terms
-/privacidad/                        → Privacy
-/sitemap/                           → HTML sitemap
+/[lang]/mi-cuenta/                           → Account dashboard
+/[lang]/mi-cuenta/editar/                    → Edit profile
+/[lang]/mi-cuenta/favoritos/                 → Favorites
+/[lang]/mi-cuenta/resenas/                   → My reviews
+/[lang]/mi-cuenta/preferencias/              → Preferences (language/theme/currency)
+/[lang]/mi-cuenta/suscripcion/               → Subscription management
 
-/404                                → Not found
-/500                                → Server error
+/[lang]/quienes-somos/                       → About us
+/[lang]/beneficios/                          → Benefits
+/[lang]/precios/turistas/                    → Tourist pricing
+/[lang]/precios/propietarios/                → Owner pricing
+/[lang]/contacto/                            → Contact
+/[lang]/terminos-condiciones/                → Terms
+/[lang]/privacidad/                          → Privacy
+/[lang]/sitemap/                             → HTML sitemap
+
+/404                                         → Not found
+/500                                         → Server error
+```
+
+**Astro File Structure:**
+
+```
+pages/
+├── index.astro              → Redirect to /{detected-locale}/
+├── [lang]/
+│   ├── index.astro          → Homepage
+│   ├── alojamientos/
+│   │   ├── index.astro
+│   │   ├── [slug].astro
+│   │   └── tipo/[type].astro
+│   ├── destinos/
+│   │   └── [...path].astro
+│   ├── eventos/
+│   │   ├── index.astro
+│   │   └── [slug].astro
+│   ├── publicaciones/
+│   │   ├── index.astro
+│   │   └── [slug].astro
+│   ├── auth/
+│   │   ├── signin.astro
+│   │   ├── signup.astro
+│   │   ├── forgot-password.astro
+│   │   ├── reset-password.astro
+│   │   └── verify-email.astro
+│   ├── mi-cuenta/
+│   │   ├── index.astro
+│   │   ├── editar.astro
+│   │   ├── favoritos.astro
+│   │   ├── resenas.astro
+│   │   ├── preferencias.astro
+│   │   └── suscripcion.astro
+│   ├── precios/
+│   │   ├── turistas.astro
+│   │   └── propietarios.astro
+│   ├── busqueda.astro
+│   ├── quienes-somos.astro
+│   ├── beneficios.astro
+│   ├── contacto.astro
+│   ├── terminos-condiciones.astro
+│   ├── privacidad.astro
+│   └── sitemap.astro
+├── 404.astro
+└── 500.astro
 ```
 
 ---
@@ -410,10 +468,12 @@ All pages accessible without authentication:
 **Unauthenticated:**
 
 - Can browse all content
-- Clicking favorite → redirect to /auth/signin with return URL
-- Clicking "Write review" → redirect to signin
-- Clicking "Contact owner" → redirect to signin
-- See CTAs encouraging signup throughout
+- All authenticated features are **visible but not usable** until sign-in
+- Clicking any auth-required action (favorite, write review, contact owner, newsletter toggle, etc.) → **shows a contextual popover** explaining the feature requires authentication, with a CTA button to sign in/sign up
+- The popover does NOT redirect the user away from the current page
+- Popover includes: brief explanation, "Iniciar sesion" button, "Registrarse" link
+- Popover closes on click outside or Escape key
+- See subtle CTAs encouraging signup throughout
 
 **Authenticated (Free):**
 
@@ -570,7 +630,7 @@ Selectors ONLY in `/mi-cuenta/preferencias/` for authenticated users:
   slug: string,
   title: string,
   summary: string,
-  content: string, // markdown
+  content: JSONB, // TipTap/ProseMirror structured JSON (rendered to HTML server-side)
   media: { featuredImage: string },
   category: PostCategoryEnum,
   authorId: string,
@@ -759,13 +819,56 @@ For each page type, consider:
 | **Preferences** | `/mi-cuenta/preferencias/` | **SSR** | User settings. |
 | **Subscription** | `/mi-cuenta/suscripcion/` | **SSR** | User billing info. |
 
-### 8.3 ISR (Incremental Static Regeneration) Notes
+### 8.3 ISR & Cache Invalidation Strategy
 
-For SSG with ISR pages:
+**Approach: Hybrid ISR + On-Demand Revalidation + Cron** (details in SPEC-009)
 
-- Revalidation time: 1 hour for accommodations/destinations, 15 minutes for events
-- On-demand revalidation: Trigger from admin panel on edit/publish
-- Fallback: Show stale content while regenerating
+For SSG with ISR pages, a three-layer invalidation strategy:
+
+**Layer 1: On-Demand Revalidation (immediate)**
+Triggered from admin panel via webhook when content is edited/published.
+
+**Layer 2: ISR Time-Based Revalidation (fallback)**
+Default revalidation intervals per content type as safety net.
+
+**Layer 3: Scheduled Cron (safety net)**
+Daily batch regeneration of all stale pages.
+
+**Revalidation Categories:**
+
+| Change Type | Strategy | Trigger |
+|---|---|---|
+| Accommodation price/availability | Immediate (on-demand) | Admin edit webhook |
+| Accommodation description/photos | Immediate (on-demand) | Admin edit webhook |
+| New accommodation published | Immediate + regenerate listing pages | Admin publish webhook |
+| Accommodation deactivated/deleted | Immediate + regenerate listing pages | Admin action webhook |
+| Destination content edit | Immediate (on-demand) | Admin edit webhook |
+| New event published | Immediate + regenerate event listings | Admin publish webhook |
+| Event date/details changed | Immediate (on-demand) | Admin edit webhook |
+| Event expired (past date) | Cron (daily check) | Scheduled job |
+| Blog post published/edited | Immediate (on-demand) | Admin publish webhook |
+| New review posted | ISR (next interval, 1h) | Automatic |
+| Rating recalculated | ISR (next interval, 1h) | Automatic |
+| Tag/amenity changes | Cron (daily) | Scheduled job |
+| Pricing plan changes | Immediate (on-demand) | Admin config change |
+| SEO metadata changes | Immediate (on-demand) | Admin edit webhook |
+
+**Default ISR intervals:**
+
+- Accommodations/Destinations: 24h
+- Events: 6h (date-sensitive)
+- Blog posts: 24h
+- Listing/index pages: 1h
+
+**Note:** The admin panel regeneration management UI is specified in SPEC-009.
+
+> **IMPLEMENTATION NOTE (hardcoded/mocked for SPEC-005):**
+>
+> - DO NOT implement the `/api/revalidate` webhook endpoint. SPEC-009 owns that infrastructure.
+> - DO NOT create the `pageRegenerationRegistry`, `pageRegenerationConfig`, or `pageRegenerationLog` DB tables.
+> - Use Astro/Vercel's built-in ISR defaults (`revalidate` in `getStaticPaths`) with the intervals listed above.
+> - On-demand revalidation and the admin regeneration dashboard will be added by SPEC-009.
+> - For now, content freshness relies solely on ISR time-based intervals.
 
 ---
 
@@ -874,57 +977,70 @@ For SSG with ISR pages:
 
 ## 10. Icon & Illustration Strategy
 
-### 10.1 Phosphor Icons Wrapper
+### 10.1 Individual Icon Components (@repo/icons)
 
-**Create a wrapper component for easy library swap:**
+**Use the existing `@repo/icons` package** with 386+ individual SVG components organized by domain categories.
+
+**Import and usage pattern:**
 
 ```tsx
-// components/shared/Icon.tsx
-import { Icon as PhosphorIcon, IconProps } from '@phosphor-icons/react';
+import { MapPinIcon, HeartIcon, SearchIcon } from '@repo/icons';
 
-type IconName = 'heart' | 'map-pin' | 'calendar' | 'user' | 'search' | ...;
+// Default size (24px), inherits text color
+<MapPinIcon />
 
-interface CustomIconProps {
-  name: IconName;
-  size?: number | string;
-  weight?: 'thin' | 'light' | 'regular' | 'bold' | 'fill';
+// Custom size with numeric value
+<MapPinIcon size={20} />
+
+// Named sizes: xs(16), sm(20), md(24), lg(28), xl(32)
+<MapPinIcon size="sm" />
+
+// With color and accessibility
+<HeartIcon size={20} color="red" aria-label="Add to favorites" />
+
+// With Tailwind classes
+<SearchIcon className="w-6 h-6 text-blue-500" />
+```
+
+**Icon Props Interface:**
+
+```typescript
+interface IconProps {
+  size?: number | 'xs' | 'sm' | 'md' | 'lg' | 'xl'; // default: 'md' (24px)
+  color?: string; // default: 'currentColor'
   className?: string;
   'aria-label'?: string;
-}
-
-export function Icon({ name, size = 24, weight = 'regular', className, 'aria-label': ariaLabel }: CustomIconProps) {
-  const iconMap: Record<IconName, any> = {
-    'heart': PhosphorIcon.Heart,
-    'map-pin': PhosphorIcon.MapPin,
-    // ... map all icons
-  };
-
-  const IconComponent = iconMap[name];
-
-  return (
-    <IconComponent
-      size={size}
-      weight={weight}
-      className={className}
-      aria-label={ariaLabel}
-      aria-hidden={!ariaLabel}
-    />
-  );
+  [key: string]: unknown; // additional SVG props
 }
 ```
 
-**Usage:**
+**Icon Categories:**
 
-```tsx
-<Icon name="heart" size={20} weight="fill" aria-label="Add to favorites" />
-```
+- `system/` - UI controls (Menu, Close, Search, Home, Calendar, etc.)
+- `amenities/` - Accommodation features (Pool, WiFi, Parking, etc.)
+- `entities/` - Domain objects (Accommodation, Destination, Event, etc.)
+- `navigation/` - Navigation elements
+- `actions/` - Action buttons (Edit, Delete, Save, etc.)
+- `communication/` - Contact methods (Email, Phone, Chat, etc.)
+- `social/` - Social media (Facebook, Instagram, WhatsApp, etc.)
+- `attractions/` - Tourism features (Beach, Restaurant, etc.)
 
 **Benefits:**
 
-- Centralized icon management
-- Easy to swap icon library (change import, update iconMap)
-- Consistent sizing and styling
-- Built-in accessibility (aria-label)
+- Excellent tree-shaking (only imported icons included in bundle)
+- Full TypeScript type safety (non-existent icons cause import errors)
+- IDE autocomplete on import
+- Domain-organized categories specific to Hospeda
+- Built-in accessibility (aria-label + aria-hidden)
+
+**Note:** Migration from current custom SVGs to Phosphor Icons is planned in SPEC-008. The API interface will remain the same (individual component imports with same props).
+
+> **IMPLEMENTATION NOTE (hardcoded/mocked for SPEC-005):**
+>
+> - Use the current `@repo/icons` package AS-IS. Do not add Phosphor Icons or modify the icons package.
+> - Import icons with the existing API: `import { MapPinIcon } from '@repo/icons'`.
+> - When SPEC-008 runs, it will replace the SVG implementations behind the same import paths.
+> - Any icon that does not exist in `@repo/icons` should NOT be created. Use a similar existing icon or a text placeholder.
 
 ### 10.2 Illustration Strategy
 
@@ -956,7 +1072,7 @@ export function Icon({ name, size = 24, weight = 'regular', className, 'aria-lab
 
 ---
 
-## 11. Animation & View Transitions
+## 11. Animation, View Transitions & UX Feedback
 
 ### 11.1 Animation System
 
@@ -968,6 +1084,7 @@ export function Icon({ name, size = 24, weight = 'regular', className, 'aria-lab
 - **Subtle**: Not distracting, professional
 - **Fast**: 150-350ms, never sluggish
 - **Consistent**: Same easing, duration for similar actions
+- **Always visible**: Every user interaction MUST have visual feedback (see 11.4)
 
 **Animation Types:**
 
@@ -1076,6 +1193,81 @@ Progressive enhancement. If browser doesn't support View Transitions, normal pag
     transition-duration: 0.01ms !important;
   }
 }
+```
+
+### 11.4 Visual Feedback Directive
+
+**MANDATORY: Every user interaction MUST have immediate visual feedback.**
+
+Users must never be left wondering if their action was registered. If an operation takes time, the UI must show that something is happening.
+
+**Feedback patterns by interaction type:**
+
+| Interaction | Immediate Feedback | During Processing | On Complete |
+|---|---|---|---|
+| **Button click** | Button enters `loading` state (spinner + disabled) | Text changes ("Enviando..") | Toast notification + state reset |
+| **Form submit** | Submit button disabled + spinner | Form fields disabled, shimmer overlay | Success/error message |
+| **Favorite toggle** | Heart fills/unfills immediately (optimistic) | N/A (optimistic) | Toast if error (revert) |
+| **Navigation** | Progress bar at top of page (NProgress style) | View transition animation | Page renders |
+| **Filter apply** | Active filter badges appear | Skeleton loaders replace content | New results render |
+| **Search typing** | Input shows typing indicator | Debounced autocomplete dropdown | Results populate |
+| **Image loading** | Blur placeholder (LQIP) or skeleton | Progressive load | Sharp image |
+| **Infinite scroll** | Skeleton cards at bottom | Loading spinner | New cards render |
+| **Delete action** | Confirmation dialog | Item fades out (optimistic) | Toast confirmation |
+| **Review submit** | Submit button loading | Form disabled | Review appears in list + toast |
+| **Tab switch** | Active tab highlights | Content crossfade | New content |
+
+**Implementation requirements:**
+
+- All `<button>` components MUST support a `loading` prop
+- All forms MUST disable during submission
+- All async operations MUST show progress indicators
+- Toast notifications for all completed async actions (success and error)
+- Skeleton loaders for all content that loads asynchronously
+- Progress bar for page navigations (via View Transitions or NProgress)
+
+### 11.5 Optimistic Updates Directive
+
+**MANDATORY: Use optimistic updates wherever possible to improve perceived performance.**
+
+Optimistic updates show the expected result immediately, then sync with the server in the background. If the server request fails, the UI reverts to the previous state.
+
+**Where to apply optimistic updates:**
+
+| Action | Optimistic Behavior | On Error |
+|---|---|---|
+| **Favorite/Bookmark toggle** | Heart fills/unfills immediately | Revert + error toast |
+| **Review submission** | Review appears in list immediately | Remove from list + error toast |
+| **User preference changes** | Setting updates immediately | Revert + error toast |
+| **Newsletter toggle** | Toggle switches immediately | Revert + error toast |
+| **Profile edit save** | Updated info shows immediately | Revert to previous + error toast |
+| **Contact form submit** | Success message shown immediately | Show error state, re-enable form |
+
+**Implementation pattern (React):**
+
+```tsx
+// Use TanStack Query useMutation with onMutate for optimistic updates
+const mutation = useMutation({
+  mutationFn: toggleFavorite,
+  onMutate: async (newState) => {
+    // Cancel outgoing refetches
+    await queryClient.cancelQueries({ queryKey: ['favorites'] });
+    // Snapshot previous value
+    const previous = queryClient.getQueryData(['favorites']);
+    // Optimistically update
+    queryClient.setQueryData(['favorites'], (old) => /* update */);
+    return { previous };
+  },
+  onError: (_err, _variables, context) => {
+    // Revert on error
+    queryClient.setQueryData(['favorites'], context?.previous);
+    toast.error('Error al actualizar favoritos');
+  },
+  onSettled: () => {
+    // Always refetch to ensure consistency
+    queryClient.invalidateQueries({ queryKey: ['favorites'] });
+  },
+});
 ```
 
 ---
@@ -1296,11 +1488,13 @@ Sitemap: https://hospeda.com/sitemap.xml
 ### 13.4 hreflang Tags
 
 ```html
-<link rel="alternate" hreflang="es" href="https://hospeda.com/alojamientos/hotel" />
-<link rel="alternate" hreflang="en" href="https://hospeda.com/en/alojamientos/hotel" />
-<link rel="alternate" hreflang="pt" href="https://hospeda.com/pt/alojamientos/hotel" />
-<link rel="alternate" hreflang="x-default" href="https://hospeda.com/alojamientos/hotel" />
+<link rel="alternate" hreflang="es" href="https://hospeda.com/es/alojamientos/hotel/" />
+<link rel="alternate" hreflang="en" href="https://hospeda.com/en/alojamientos/hotel/" />
+<link rel="alternate" hreflang="pt" href="https://hospeda.com/pt/alojamientos/hotel/" />
+<link rel="alternate" hreflang="x-default" href="https://hospeda.com/es/alojamientos/hotel/" />
 ```
+
+**Note:** All URLs include the locale prefix, including the default locale (ES). The `x-default` points to the ES version.
 
 ---
 
@@ -1368,7 +1562,7 @@ Sitemap: https://hospeda.com/sitemap.xml
 
 ---
 
-## 15. Internationalization
+## 15. Internationalization & Currency
 
 ### 15.1 Supported Languages
 
@@ -1447,11 +1641,83 @@ const formatter = new Intl.DateTimeFormat(locale, {
 // Numbers
 const numberFormatter = new Intl.NumberFormat(locale);
 
-// Currency
+// Currency (see 15.5 for currency resolution)
 const currencyFormatter = new Intl.NumberFormat(locale, {
   style: 'currency',
-  currency: 'ARS'
+  currency: resolvedCurrency // ARS, BRL, or USD
 });
+```
+
+### 15.5 Currency Conversion
+
+**Prices in the platform (plans, subscriptions) must display in the user's preferred currency.**
+
+**Currency Resolution Logic:**
+
+1. Check authenticated user's `preferredCurrency` in profile settings
+2. If not set (or unauthenticated), derive from locale:
+   - `ES` → `ARS` (Pesos Argentinos)
+   - `PT` → `BRL` (Reales Brasileros)
+   - `EN` → `USD` (Dolares Estadounidenses)
+
+**Default currency mapping:**
+
+| Locale | Currency | Symbol | Format Example |
+|---|---|---|---|
+| ES | ARS | $ | $5.000,00 |
+| PT | BRL | R$ | R$5.000,00 |
+| EN | USD | US$ | US$5.00 |
+
+**User Preferences:**
+
+- Authenticated users can override currency in `/mi-cuenta/preferencias/`
+- Options: ARS, BRL, USD (extensible)
+- Stored as `preferredCurrency` field in user profile
+
+**Conversion Rates:**
+
+- Exchange rate data is stored in the DB (see `exchangeRate` table)
+- Base prices are stored in ARS in the platform
+- Conversion is applied at render time using the stored rates
+- When displaying converted prices, show a disclaimer: "Precio orientativo, sujeto a variacion del tipo de cambio"
+- The actual exchange rate integration (API fetching, auto-update, admin management) is defined in SPEC-007
+
+> **IMPLEMENTATION NOTE (hardcoded/mocked for SPEC-005):**
+>
+> - DO NOT create the `exchangeRates` DB table. SPEC-007 owns that table with a more complete schema.
+> - The `PriceDisplay` component MUST use hardcoded fallback rates (e.g. `{ ARS_USD: 0.00089, ARS_BRL: 0.0049 }`).
+> - Display all prices in ARS only as the primary currency. Show conversion as "approximate" with disclaimer.
+> - The `preferredCurrency` field on the user model CAN be added by SPEC-005 (it's a simple field addition).
+> - When SPEC-007 is implemented, it will provide a real `getExchangeRate()` service that replaces the hardcoded fallback.
+
+**DB Schema Addition (for this spec):**
+
+```typescript
+// User model addition
+{
+  preferredCurrency: "ARS" | "BRL" | "USD" | null // null = derive from locale
+}
+
+// Exchange rate table - DO NOT CREATE. Owned by SPEC-007.
+// Use hardcoded fallback rates in PriceDisplay until SPEC-007 is implemented.
+// {
+//   fromCurrency: string,  // e.g. "ARS"
+//   toCurrency: string,    // e.g. "USD"
+//   rate: number,          // e.g. 0.00089
+//   source: string,        // e.g. "dolarapi", "manual"
+//   updatedAt: DateTime
+// }
+```
+
+**Pricing Display Component:**
+
+```tsx
+interface PriceDisplayProps {
+  amountARS: number;       // Base price in ARS
+  locale: string;          // Current locale
+  userCurrency?: string;   // User's preferred currency override
+  showDisclaimer?: boolean; // Show conversion disclaimer
+}
 ```
 
 ---
@@ -1547,45 +1813,89 @@ export function ContactForm({ accommodationId }: { accommodationId: string }) {
 
 ```tsx
 // FavoriteButton.client.tsx
-export function FavoriteButton({ entityId, entityType, initialFavorited, requireAuth }: Props) {
+import { HeartIcon } from '@repo/icons';
+
+export function FavoriteButton({ entityId, entityType, initialFavorited }: Props) {
+  const { user } = useSession();
   const [isFavorited, setIsFavorited] = useState(initialFavorited);
-  const [isLoading, setIsLoading] = useState(false);
+  const [showAuthPopover, setShowAuthPopover] = useState(false);
 
-  const handleClick = async () => {
-    if (requireAuth && !user) {
-      // Redirect to signin with return URL
-      window.location.href = `/auth/signin?returnUrl=${window.location.pathname}`;
-      return;
-    }
-
-    setIsLoading(true);
-    // Optimistic update
-    setIsFavorited(!isFavorited);
-
-    try {
-      if (isFavorited) {
-        await api.delete(`/bookmarks/${entityId}`);
-      } else {
-        await api.post('/bookmarks', { entityId, entityType });
-      }
-      toast.success(isFavorited ? 'Removed from favorites' : 'Added to favorites');
-    } catch (error) {
+  const mutation = useMutation({
+    mutationFn: () => isFavorited
+      ? api.delete(`/bookmarks/${entityId}`)
+      : api.post('/bookmarks', { entityId, entityType }),
+    onMutate: () => {
+      // Optimistic update
+      setIsFavorited(!isFavorited);
+    },
+    onError: () => {
       // Revert on error
       setIsFavorited(isFavorited);
-      toast.error('Error updating favorites');
-    } finally {
-      setIsLoading(false);
+      toast.error('Error al actualizar favoritos');
+    },
+  });
+
+  const handleClick = () => {
+    if (!user) {
+      // Show auth popover instead of redirecting
+      setShowAuthPopover(true);
+      return;
     }
+    mutation.mutate();
   };
 
   return (
-    <button
-      onClick={handleClick}
-      disabled={isLoading}
-      aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
-    >
-      <Icon name="heart" weight={isFavorited ? 'fill' : 'regular'} />
-    </button>
+    <div className="relative">
+      <button
+        onClick={handleClick}
+        disabled={mutation.isPending}
+        aria-label={isFavorited ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+      >
+        <HeartIcon
+          size={20}
+          color={isFavorited ? 'red' : 'currentColor'}
+          className={isFavorited ? 'fill-red-500' : ''}
+        />
+      </button>
+
+      {/* Auth Required Popover (shown for all auth-required features) */}
+      {showAuthPopover && (
+        <AuthRequiredPopover
+          message="Para guardar favoritos necesitas una cuenta"
+          onClose={() => setShowAuthPopover(false)}
+          locale={locale}
+        />
+      )}
+    </div>
+  );
+}
+```
+
+**AuthRequiredPopover (shared component for all auth-gated features):**
+
+```tsx
+// components/shared/AuthRequiredPopover.client.tsx
+interface AuthRequiredPopoverProps {
+  message: string;
+  onClose: () => void;
+  locale: string;
+}
+
+export function AuthRequiredPopover({ message, onClose, locale }: AuthRequiredPopoverProps) {
+  // Close on Escape key
+  // Close on click outside
+  // Positioned relative to trigger element
+
+  return (
+    <div role="dialog" aria-label="Autenticacion requerida">
+      <p>{message}</p>
+      <a href={`/${locale}/auth/signin/?returnUrl=${window.location.pathname}`}>
+        Iniciar sesion
+      </a>
+      <a href={`/${locale}/auth/signup/`}>
+        Registrarse
+      </a>
+    </div>
   );
 }
 ```
@@ -1607,43 +1917,88 @@ export function FavoriteButton({ entityId, entityType, initialFavorited, require
 
 ### 16.5 Newsletter
 
+**Newsletter requires user authentication.** There is NO email-only subscription form.
+
+**How it works:**
+
+1. User must be authenticated to subscribe to the newsletter
+2. Newsletter subscription is managed as a toggle in `/mi-cuenta/preferencias/`
+3. Stored as `newsletterOptIn: boolean` field in the user profile
+4. Opt-in is explicit (GDPR/marketing compliance)
+5. User can unsubscribe at any time from preferences
+
+**Unauthenticated users:**
+
+- Footer/CTAs show a newsletter promotion section with a message like "Suscribite a nuestro newsletter para recibir novedades"
+- Clicking the CTA shows the `AuthRequiredPopover` (shared component)
+- No email input field for anonymous users
+
+**Authenticated users:**
+
+- Footer shows newsletter status (subscribed/not subscribed) with toggle
+- Full management in preferences page
+
 **Implementation:**
 
 ```tsx
-// NewsletterForm.client.tsx
-export function NewsletterForm({ locale }: { locale: string }) {
-  const [email, setEmail] = useState('');
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+// NewsletterCTA.client.tsx (for footer/promotional sections)
+export function NewsletterCTA({ locale }: { locale: string }) {
+  const { user } = useSession();
+  const [showAuthPopover, setShowAuthPopover] = useState(false);
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setStatus('loading');
-
-    try {
-      await api.post('/newsletter/subscribe', { email });
-      setStatus('success');
-      setEmail('');
-    } catch (error) {
-      setStatus('error');
-    }
-  };
+  if (user) {
+    // Show toggle for authenticated users
+    return <NewsletterToggle locale={locale} currentStatus={user.newsletterOptIn} />;
+  }
 
   return (
-    <form onSubmit={handleSubmit}>
-      <input
-        type="email"
-        value={email}
-        onChange={e => setEmail(e.target.value)}
-        placeholder={t('newsletter.placeholder')}
-        required
-      />
-      <button type="submit" disabled={status === 'loading'}>
-        {status === 'loading' ? t('newsletter.subscribing') : t('newsletter.subscribe')}
-      </button>
-      {status === 'success' && <p>{t('newsletter.success')}</p>}
-      {status === 'error' && <p>{t('newsletter.error')}</p>}
-    </form>
+    <div className="relative">
+      <div className="newsletter-promo">
+        <p>{t('newsletter.promoText')}</p>
+        <button onClick={() => setShowAuthPopover(true)}>
+          {t('newsletter.subscribe')}
+        </button>
+      </div>
+
+      {showAuthPopover && (
+        <AuthRequiredPopover
+          message="Para suscribirte al newsletter necesitas una cuenta"
+          onClose={() => setShowAuthPopover(false)}
+          locale={locale}
+        />
+      )}
+    </div>
   );
+}
+
+// NewsletterToggle.client.tsx (for preferences page and footer)
+export function NewsletterToggle({ locale, currentStatus }: Props) {
+  const mutation = useMutation({
+    mutationFn: (optIn: boolean) => api.patch('/users/me/preferences', { newsletterOptIn: optIn }),
+    onMutate: () => { /* optimistic toggle */ },
+    onError: () => { /* revert + error toast */ },
+  });
+
+  return (
+    <label className="flex items-center gap-2">
+      <input
+        type="checkbox"
+        checked={currentStatus}
+        onChange={(e) => mutation.mutate(e.target.checked)}
+        disabled={mutation.isPending}
+      />
+      {t('newsletter.subscribed')}
+    </label>
+  );
+}
+```
+
+**DB Schema Addition:**
+
+```typescript
+// User model addition
+{
+  newsletterOptIn: boolean // default: false
 }
 ```
 
@@ -1743,7 +2098,7 @@ export function NewsletterForm({ locale }: { locale: string }) {
 - Photo gallery (main image + thumbnails, lightbox on click)
 - Breadcrumbs: "Inicio > Alojamientos > {name}"
 - Name, type badge, location, rating, price
-- Description (formatted markdown)
+- Description (rich text rendered from TipTap JSON)
 - Amenities grid with icons
 - Location map with marker
 - Contact form
@@ -1761,7 +2116,10 @@ export function NewsletterForm({ locale }: { locale: string }) {
 
 **Given** an unauthenticated user
 **When** they click the favorite heart
-**Then** they're redirected to `/auth/signin?returnUrl=/alojamientos/[slug]/`
+**Then** a contextual popover appears explaining authentication is required
+**And** the popover shows "Iniciar sesion" and "Registrarse" buttons
+**And** the user is NOT redirected away from the current page
+**And** the popover closes on click outside or Escape key
 
 #### US-005: Write Review
 
@@ -1904,7 +2262,7 @@ export function NewsletterForm({ locale }: { locale: string }) {
 
 - Breadcrumbs: "Inicio > Blog > {category} > {title}"
 - Featured image, title, author, date, reading time
-- Full content with readable typography
+- Full content with readable typography (rendered from TipTap JSON)
 - Tags section
 - Share buttons
 - Related posts (3-6 items)
@@ -2004,16 +2362,19 @@ export function NewsletterForm({ locale }: { locale: string }) {
 **I want** to see pricing plans
 **So that** I can understand the cost
 
-**Given** a visitor navigates to `/precios/turistas/`
+**Given** a visitor navigates to `/{lang}/precios/turistas/`
 **When** the page loads
 **Then** the page shows:
 
 - Benefits section highlighting value
 - Pricing cards for Free, Plus, VIP plans
 - Features list per plan
-- CTA "Empezar ahora" or "Más información"
+- CTA "Empezar ahora" or "Mas informacion"
+- **Prices displayed in currency derived from locale** (ARS for ES, BRL for PT, USD for EN)
+- If user is authenticated and has a preferred currency set, use that instead
+- When showing converted prices, a disclaimer appears: "Precio orientativo, sujeto a variacion del tipo de cambio"
 
-**Given** a visitor navigates to `/precios/propietarios/`
+**Given** a visitor navigates to `/{lang}/precios/propietarios/`
 **When** the page loads
 **Then** the page shows:
 
@@ -2021,6 +2382,7 @@ export function NewsletterForm({ locale }: { locale: string }) {
 - Pricing cards for Basic, Professional, Premium plans
 - Testimonials from owners (if available)
 - Strong CTA to contact or sign up
+- **Prices in locale-derived or user-preferred currency** (same rules as tourist pricing)
 
 #### US-017: Contact Hospeda
 
@@ -2154,7 +2516,7 @@ export function NewsletterForm({ locale }: { locale: string }) {
 
 ## Approval & Next Steps
 
-**Status**: Draft - awaiting user review and approval
+**Status**: Draft v3 - under review
 
 **Next Steps:**
 
@@ -2163,15 +2525,56 @@ export function NewsletterForm({ locale }: { locale: string }) {
 3. `task-planner` agent creates task breakdown with TODOs
 4. Development begins with TDD approach
 
-**Questions for User:**
+---
 
-- Is the rendering strategy clear and justified for each page type?
-- Are the library vs vanilla JS decisions acceptable?
-- Is the design system comprehensive enough?
-- Are there any missing user stories or features?
-- Should any out-of-scope items be moved to in-scope?
-- Is the theming/CSS variables approach clear?
-- Are the tourist/owner plans accurately represented?
+## 19. Related Specifications
+
+This spec references and depends on features defined in separate specifications:
+
+| Spec ID | Title | Relationship |
+|---|---|---|
+| SPEC-006 | Destination Hierarchy System | Defines hierarchical destination structure used in routing |
+| SPEC-007 | Exchange Rate Integration | Defines API integration for currency conversion rates (this spec only adds DB fields) |
+| SPEC-008 | Phosphor Icons Migration | Migrates @repo/icons from custom SVGs to Phosphor Icons library |
+| SPEC-009 | Admin ISR/Regeneration Management | Defines admin panel UI for managing page regeneration, cron config, and revalidation |
+
+**Dependency notes:**
+
+- SPEC-005 can proceed without SPEC-007.. exchange rates can be manually set initially
+- SPEC-005 can proceed without SPEC-008.. current @repo/icons work as-is
+- SPEC-005 can proceed without SPEC-009.. ISR defaults work without admin UI
+- SPEC-006 affects destination routing structure but has its own implementation timeline
+
+**Hardcoded/Mocked areas (DO NOT implement fully in SPEC-005):**
+
+| Area | What SPEC-005 does | What is deferred | Owner Spec |
+|---|---|---|---|
+| Exchange Rates | Hardcoded fallback rates in `PriceDisplay`, `preferredCurrency` user field | `exchangeRates` table, API fetching, cron jobs, admin rate management | SPEC-007 |
+| Icons | Uses current `@repo/icons` SVG components as-is | Phosphor Icons migration, weight system, visual verification | SPEC-008 |
+| ISR Management | Astro/Vercel built-in ISR with time-based intervals | `/api/revalidate` endpoint, page registry tables, admin regeneration UI, webhook triggers | SPEC-009 |
+
+---
+
+## Changelog
+
+### v3 (2026-02-13) - User feedback integration
+
+- **Images**: Changed from `@astrojs/image` to `astro:assets` with `<Image />` + `inferSize` + `image.remotePatterns` for DB images
+- **Rich text**: Changed from Markdown to TipTap/ProseMirror JSON stored as JSONB, rendered server-side
+- **i18n URLs**: ALL URLs now include locale prefix (including default ES `/es/`), root `/` only redirects
+- **Currency**: Added currency conversion system (locale-derived + user preference override). DB fields added, API integration deferred to SPEC-007
+- **Auth popover**: All auth-required features show contextual popover instead of redirecting to signin page
+- **ISR strategy**: Changed to hybrid (ISR + on-demand revalidation + cron) with detailed change categorization table
+- **Icons**: Changed from Phosphor wrapper to existing `@repo/icons` individual components. Phosphor migration deferred to SPEC-008
+- **Visual feedback**: Added mandatory directive (Section 11.4) requiring visible feedback for ALL user interactions
+- **Optimistic updates**: Added mandatory directive (Section 11.5) requiring optimistic updates wherever applicable
+- **Newsletter**: Changed from email-only form to requiring user authentication, managed as toggle in user preferences
+- **Admin regeneration**: Deferred to SPEC-009 as separate feature
+- **Route structure**: Added Astro file structure showing `[lang]/` directory layout
+
+### v2 (2026-02-12) - Initial draft
+
+- Complete specification created
 
 ---
 

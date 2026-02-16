@@ -30,5 +30,29 @@
         "complexity": "high",
         "status": "draft",
         "path": "SPEC-006-destination-hierarchy"
+    },
+    {
+        "specId": "SPEC-007",
+        "title": "Exchange Rate Integration",
+        "type": "feature",
+        "complexity": "medium",
+        "status": "draft",
+        "path": "SPEC-007-exchange-rate-integration"
+    },
+    {
+        "specId": "SPEC-008",
+        "title": "Phosphor Icons Migration",
+        "type": "refactoring",
+        "complexity": "medium",
+        "status": "draft",
+        "path": "SPEC-008-phosphor-icons-migration"
+    },
+    {
+        "specId": "SPEC-009",
+        "title": "Admin ISR/Regeneration Management",
+        "type": "feature",
+        "complexity": "high",
+        "status": "draft",
+        "path": "SPEC-009-admin-isr-regeneration"
     }
 ]

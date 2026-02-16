@@ -1,0 +1,3852 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-005",
+    "title": "Hospeda Public Web Application (web2) - Built from Scratch",
+    "created": "2026-02-13T16:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Initialize Astro project scaffolding for apps/web2",
+            "description": "Create apps/web2 with package.json (name: hospeda-web2), astro.config.mjs (Astro 5, React integration, Vercel adapter, trailingSlash: always, port 4322), tsconfig.json (extends typescript-config/app-base.json), biome.json (extends biome-config). Add workspace dependencies: @repo/schemas, @repo/i18n, @repo/db, @repo/service-core, @repo/billing, @repo/auth-ui, @repo/icons, @repo/config, @repo/utils, @repo/logger. Create empty src/ directory structure: pages/, components/, layouts/, styles/, lib/, hooks/, store/, server/, assets/. Verify dev server starts. Tests: verify package.json has correct deps, astro config loads.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-003", "T-004", "T-005", "T-095"],
+            "subtasks": [
+                {
+                    "title": "Create package.json with all workspace deps",
+                    "completed": true
+                },
+                {
+                    "title": "Create astro.config.mjs with integrations",
+                    "completed": true
+                },
+                {
+                    "title": "Create tsconfig.json with path aliases",
+                    "completed": true
+                },
+                {
+                    "title": "Create biome.json extending shared config",
+                    "completed": true
+                },
+                {
+                    "title": "Create src/ directory structure",
+                    "completed": true
+                },
+                {
+                    "title": "Verify dev server starts",
+                    "completed": true
+                }
+            ],
+            "tags": ["setup", "astro"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T10:00:00.000Z",
+                "completed": "2026-02-13T13:50:00.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Configure Tailwind CSS v4 and design system CSS variables",
+            "description": "Set up Tailwind CSS v4 with @tailwindcss/vite plugin. Create src/styles/global.css with ALL CSS variables from SPEC-005 Section 3.1: colors (primary river blue #2196F3, secondary green #4CAF50, accent sand #D7CCC8, neutrals, semantics), spacing (8px grid), border-radius, shadows, typography (Playfair Display serif + Inter sans-serif), transitions, z-index scale. Set up Google Fonts loading with preconnect and font-display:swap. Create tailwind.config.ts with content globs. Prepare dark mode variables (not implemented). Tests: CSS variables render correctly, font loading configured.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": [
+                "T-005",
+                "T-006",
+                "T-007",
+                "T-008",
+                "T-012",
+                "T-013",
+                "T-014",
+                "T-015",
+                "T-016",
+                "T-017",
+                "T-030",
+                "T-032",
+                "T-034",
+                "T-035",
+                "T-036",
+                "T-037",
+                "T-038",
+                "T-040",
+                "T-041",
+                "T-062"
+            ],
+            "subtasks": [
+                {
+                    "title": "Create global.css with all CSS variables",
+                    "completed": true
+                },
+                {
+                    "title": "Configure Tailwind v4 with vite plugin",
+                    "completed": true
+                },
+                {
+                    "title": "Set up Google Fonts (Playfair Display + Inter)",
+                    "completed": true
+                },
+                {
+                    "title": "Create tailwind.config.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Prepare dark mode CSS variables",
+                    "completed": true
+                }
+            ],
+            "tags": ["setup", "design-system", "tailwind"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T10:00:00.000Z",
+                "completed": "2026-02-13T13:50:00.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Set up Vitest testing infrastructure",
+            "description": "Configure vitest.config.ts using Astro's getViteConfig. Set up jsdom environment. Create test/setup.tsx with testing-library/jest-dom. Add @testing-library/react, @testing-library/dom, @testing-library/user-event, @vitest/coverage-v8 as devDeps. Create test utility helpers (renderWithProviders, mockLocale). Verify test runner works with a smoke test. Tests: smoke test passes, coverage reports generate.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create vitest.config.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Create test/setup.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Create test utility helpers",
+                    "completed": true
+                },
+                {
+                    "title": "Add testing devDependencies",
+                    "completed": true
+                },
+                {
+                    "title": "Write and run smoke test",
+                    "completed": true
+                }
+            ],
+            "tags": ["setup", "testing"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T10:00:00.000Z",
+                "completed": "2026-02-13T13:50:00.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Configure environment variables and validation",
+            "description": "Create src/env.ts with Zod schema validation for HOSPEDA_API_URL, HOSPEDA_SITE_URL (with PUBLIC_ fallbacks). Create src/env.d.ts for Astro env type declarations. Set up Vite plugin for env variable mapping (HOSPEDA_* to PUBLIC_*). Handle monorepo .env.local loading. Tests: validation rejects invalid env, accepts valid env.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create env.ts with Zod validation",
+                    "completed": true
+                },
+                {
+                    "title": "Create env.d.ts type declarations",
+                    "completed": true
+                },
+                {
+                    "title": "Set up Vite env mapping plugin",
+                    "completed": true
+                },
+                {
+                    "title": "Handle .env.local loading from monorepo root",
+                    "completed": true
+                }
+            ],
+            "tags": ["setup", "config"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T10:00:00.000Z",
+                "completed": "2026-02-13T13:50:00.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Create animation system CSS",
+            "description": "Implement all keyframes from SPEC-005 Section 11.1: fadeIn, slideUp, scaleIn, shimmer. Add prefers-reduced-motion media query that disables animations. Create Tailwind animation utilities (animate-fadeIn, animate-slideUp, animate-scaleIn, animate-shimmer). Add transition utility classes. Tests: animations defined, reduced-motion disables them.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-006"],
+            "subtasks": [
+                {
+                    "title": "Create keyframe animations",
+                    "completed": true
+                },
+                {
+                    "title": "Add reduced-motion media query",
+                    "completed": true
+                },
+                {
+                    "title": "Create Tailwind animation utilities",
+                    "completed": true
+                },
+                {
+                    "title": "Add transition utility classes",
+                    "completed": true
+                }
+            ],
+            "tags": ["setup", "design-system", "animation"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T10:00:00.000Z",
+                "completed": "2026-02-13T13:50:00.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Create BaseLayout.astro",
+            "description": "Create layouts/BaseLayout.astro as the HTML shell. Props: { title, description, image?, noindex?, locale }. Include: DOCTYPE, html lang attribute from locale, head with charset/viewport, CSS variables import, Google Fonts links, View Transitions meta tag, slot for SEO component, slot for page content. Add skip link 'Skip to main content' targeting #main-content. Wrap content in header/main/footer slots. Tests: renders HTML structure, includes meta tags, skip link present, lang attribute set.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-002", "T-005"],
+            "blocks": ["T-009", "T-010", "T-011", "T-018", "T-021", "T-090"],
+            "subtasks": [
+                {
+                    "title": "Create BaseLayout.astro with HTML shell",
+                    "completed": true
+                },
+                {
+                    "title": "Add skip link for accessibility",
+                    "completed": true
+                },
+                {
+                    "title": "Configure View Transitions meta tag",
+                    "completed": true
+                },
+                {
+                    "title": "Add Google Fonts preconnect links",
+                    "completed": true
+                },
+                {
+                    "title": "Add slot for SEO/meta overrides",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "layout", "accessibility"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T10:00:00.000Z",
+                "completed": "2026-02-13T13:50:00.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Create Container.astro component",
+            "description": "Create components/ui/Container.astro. Props: { size?: 'sm'|'md'|'lg'|'xl', class? }. Renders a div with max-width based on size (sm:640px, md:768px, lg:1024px, xl:1280px) and horizontal auto margins. Default size: lg. Tests: renders with correct max-width class per size variant.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-002"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create Container.astro with size variants",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests for all size variants",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "layout", "ui"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T10:00:00.000Z",
+                "completed": "2026-02-13T13:50:00.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Create Section.astro component",
+            "description": "Create components/ui/Section.astro. Props: { title?, subtitle?, class?, id? }. Renders semantic section element with optional heading (h2) and subtitle paragraph. Uses spacing tokens. Tests: renders title/subtitle, renders without title, applies custom classes.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-002"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create Section.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "layout", "ui"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T10:00:00.000Z",
+                "completed": "2026-02-13T13:50:00.000Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Create Header.astro with navigation",
+            "description": "Create layouts/Header.astro. Props: { user?, locale }. Includes: logo (link to /[locale]/), main nav links (Alojamientos, Destinos, Eventos, Blog), search trigger, auth area (signin/signup or UserNav), mobile hamburger button. ARIA: header role='banner', nav role='navigation' aria-label='Main'. Responsive: full nav on desktop, hamburger on mobile. Tests: renders nav links, ARIA attributes present, responsive breakpoints.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-006"],
+            "blocks": ["T-037", "T-043", "T-045"],
+            "subtasks": [
+                {
+                    "title": "Create Header.astro with desktop nav",
+                    "completed": true
+                },
+                {
+                    "title": "Add logo and nav links",
+                    "completed": true
+                },
+                {
+                    "title": "Add auth area (user/guest states)",
+                    "completed": true
+                },
+                {
+                    "title": "Add mobile hamburger trigger",
+                    "completed": true
+                },
+                {
+                    "title": "Add ARIA landmarks",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "layout", "accessibility"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T10:00:00.000Z",
+                "completed": "2026-02-13T13:50:00.000Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Create Footer.astro",
+            "description": "Create layouts/Footer.astro. Props: { locale }. Includes: site links organized by category (Explorar, Informacion, Legal), social media links, newsletter CTA area (slot for NewsletterCTA component), copyright. ARIA: footer role='contentinfo'. Tests: renders link categories, ARIA attributes, social links.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-006"],
+            "blocks": ["T-045"],
+            "subtasks": [
+                {
+                    "title": "Create Footer.astro with link sections",
+                    "completed": true
+                },
+                {
+                    "title": "Add social media links",
+                    "completed": true
+                },
+                {
+                    "title": "Add newsletter CTA area",
+                    "completed": true
+                },
+                {
+                    "title": "Add ARIA landmarks",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "layout", "accessibility"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T10:00:00.000Z",
+                "completed": "2026-02-13T13:50:00.000Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Create Breadcrumb.astro component",
+            "description": "Create components/ui/Breadcrumb.astro. Props: { items: { label: string, href: string }[] }. Renders nav with aria-label='Breadcrumb', ordered list of links, last item has aria-current='page'. Generates JSON-LD BreadcrumbList structured data. Tests: renders items, ARIA attributes, JSON-LD output valid.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-006"],
+            "blocks": ["T-022"],
+            "subtasks": [
+                {
+                    "title": "Create Breadcrumb.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Add ARIA attributes",
+                    "completed": true
+                },
+                {
+                    "title": "Generate BreadcrumbList JSON-LD",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "navigation", "seo", "accessibility"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T10:00:00.000Z",
+                "completed": "2026-02-13T13:50:00.000Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Create Button.astro component",
+            "description": "Create components/ui/Button.astro. Props: { variant: 'primary'|'secondary'|'outline'|'ghost', size: 'sm'|'md'|'lg', disabled?: boolean, loading?: boolean, type?: 'button'|'submit', class? }. Uses CSS variables for theming. Loading state shows spinner + disabled. Focus visible outline. Tests: all variants render, loading state, disabled state, focus styles.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-023", "T-024", "T-025", "T-026", "T-027", "T-028", "T-029", "T-031"],
+            "subtasks": [
+                {
+                    "title": "Create Button.astro with variants",
+                    "completed": true
+                },
+                {
+                    "title": "Add loading spinner state",
+                    "completed": true
+                },
+                {
+                    "title": "Add focus-visible styles",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests for all variants",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "ui", "forms"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T10:00:00.000Z",
+                "completed": "2026-02-13T13:50:00.000Z"
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Create form input components",
+            "description": "Create components/ui/Input.astro (text input), components/ui/Textarea.astro (multi-line), components/ui/Select.astro (dropdown). All share pattern: label association via for attribute, required indicator, error state with aria-describedby linking to FormError, focus-visible styles. Props include label, required?, error?, name, id plus native input attrs. Tests: label association, error rendering, required indicator, ARIA attributes.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-002"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create Input.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Create Textarea.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Create Select.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Ensure ARIA error linking",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests for each component",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "ui", "forms", "accessibility"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T10:00:00.000Z",
+                "completed": "2026-02-13T13:50:00.000Z"
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Create Checkbox, Radio, Label, and FormError components",
+            "description": "Create components/ui/Checkbox.astro, Radio.astro, Label.astro (with required indicator), FormError.astro (with message and id for aria-describedby). Tests: renders correctly, label required indicator, error message with id.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-002"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create Checkbox.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Create Radio.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Create Label.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Create FormError.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "ui", "forms"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T10:00:00.000Z",
+                "completed": "2026-02-13T13:50:00.000Z"
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Create Badge.astro component",
+            "description": "Create components/ui/Badge.astro. Props: { label: string, variant: 'primary'|'secondary'|'outline', class? }. Small label/tag with color variants. Tests: renders variants correctly.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-023", "T-024", "T-025", "T-026"],
+            "subtasks": [
+                {
+                    "title": "Create Badge.astro with variants",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "ui"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T10:00:00.000Z",
+                "completed": "2026-02-13T13:50:00.000Z"
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Create Skeleton.astro loading component",
+            "description": "Create components/ui/Skeleton.astro. Props: { type: 'card'|'text'|'image', count?: number, class? }. Uses shimmer animation. Card skeleton includes image placeholder + text lines. Text skeleton shows line placeholders. Image skeleton shows rectangle. Tests: renders each type, count creates multiple, shimmer animation applied.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create Skeleton.astro with type variants",
+                    "completed": true
+                },
+                {
+                    "title": "Add shimmer animation",
+                    "completed": true
+                },
+                {
+                    "title": "Support count prop",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "ui", "loading"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T10:00:00.000Z",
+                "completed": "2026-02-13T13:50:00.000Z"
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Create EmptyState.astro component",
+            "description": "Create components/ui/EmptyState.astro. Props: { title: string, message: string, cta?: { label: string, href: string }, illustration?: string }. Centered layout with optional illustration, heading, description, CTA button. Tests: renders all parts, optional CTA.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-002"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create EmptyState.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "ui"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T10:00:00.000Z",
+                "completed": "2026-02-13T13:50:00.000Z"
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Set up [lang] routing with language detection",
+            "description": "Create pages/index.astro that redirects to /{detected-locale}/ based on Accept-Language header or default ES. Create pages/[lang]/ directory. Implement getStaticPaths for supported locales (es, en, pt). Validate lang param against supported locales. Tests: redirect from / to /es/ by default, language detection from headers, invalid locale handling.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-006"],
+            "blocks": [
+                "T-019",
+                "T-045",
+                "T-046",
+                "T-047",
+                "T-048",
+                "T-049",
+                "T-050",
+                "T-052",
+                "T-053",
+                "T-054",
+                "T-055",
+                "T-056",
+                "T-072",
+                "T-073",
+                "T-074",
+                "T-075",
+                "T-076"
+            ],
+            "subtasks": [
+                {
+                    "title": "Create pages/index.astro with redirect",
+                    "completed": true
+                },
+                {
+                    "title": "Create pages/[lang]/ directory",
+                    "completed": true
+                },
+                {
+                    "title": "Implement locale detection logic",
+                    "completed": true
+                },
+                {
+                    "title": "Validate lang parameter",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "routing", "i18n"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T16:05:00.000Z",
+                "completed": "2026-02-13T16:20:00.000Z"
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Create Astro middleware for locale and auth",
+            "description": "Create src/middleware.ts. Validate [lang] param against supported locales (es, en, pt), redirect invalid to /es/. Set locale in Astro.locals. For /mi-cuenta/ routes, check authentication and redirect to /[lang]/auth/signin/?returnUrl=... if not authenticated. Tests: locale validation, redirect for invalid locale, auth check for protected routes.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-018"],
+            "blocks": ["T-020", "T-077", "T-078", "T-079", "T-080", "T-081", "T-082", "T-092"],
+            "subtasks": [
+                {
+                    "title": "Create middleware.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Add locale validation",
+                    "completed": true
+                },
+                {
+                    "title": "Set Astro.locals.locale",
+                    "completed": true
+                },
+                {
+                    "title": "Add auth check for protected routes",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "routing", "middleware", "auth"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T17:45:00.000Z",
+                "completed": "2026-02-13T17:55:00.000Z"
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Integrate @repo/i18n package with Astro",
+            "description": "Create src/lib/i18n.ts with helper functions: getTranslations(locale, namespace), t(key) helper. Create React hook useTranslation(locale, namespace) for client components. Set up namespace loading (common, nav, auth, accommodations, destinations, events, blog, account). Handle fallback when translation missing (show ES + badge). Tests: translation loading, key lookup, fallback behavior, namespace loading.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-019"],
+            "blocks": ["T-033", "T-039", "T-042", "T-043", "T-044", "T-085"],
+            "subtasks": [
+                {
+                    "title": "Create i18n helper for Astro pages",
+                    "completed": true
+                },
+                {
+                    "title": "Create useTranslation React hook",
+                    "completed": true
+                },
+                {
+                    "title": "Set up namespace loading",
+                    "completed": true
+                },
+                {
+                    "title": "Implement fallback behavior",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "i18n"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T18:40:00.000Z",
+                "completed": "2026-02-13T18:55:00.000Z"
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Create SEO meta tags component",
+            "description": "Create components/seo/SEOHead.astro. Props: { title, description, canonical, image?, noindex?, locale, type?: 'website'|'article' }. Renders: title tag with ' | Hospeda' suffix, meta description, canonical link, OG tags (type, url, title, description, image, locale, site_name), Twitter card (summary_large_image), hreflang tags for all locales (es, en, pt + x-default pointing to ES). Tests: renders all meta tags, hreflang links correct, noindex when set.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-006"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create SEOHead.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Add OG and Twitter meta tags",
+                    "completed": true
+                },
+                {
+                    "title": "Add hreflang tags",
+                    "completed": true
+                },
+                {
+                    "title": "Add noindex support",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "seo"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T15:15:00.000Z",
+                "completed": "2026-02-13T15:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Create JSON-LD structured data components",
+            "description": "Create components/seo/JsonLd.astro generic wrapper. Create specific helpers: LodgingBusinessJsonLd(accommodation), EventJsonLd(event), ArticleJsonLd(post). Each generates valid schema.org JSON-LD. BreadcrumbList already handled by Breadcrumb component. Tests: valid JSON-LD output for each type, correct schema.org types.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-011"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create JsonLd.astro generic wrapper",
+                    "completed": true
+                },
+                {
+                    "title": "Create LodgingBusinessJsonLd helper",
+                    "completed": true
+                },
+                {
+                    "title": "Create EventJsonLd helper",
+                    "completed": true
+                },
+                {
+                    "title": "Create ArticleJsonLd helper",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "seo"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T15:35:00.000Z",
+                "completed": "2026-02-13T16:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Create AccommodationCard.astro",
+            "description": "Create components/accommodation/AccommodationCard.astro. Props: { accommodation, showFavorite?, locale }. Renders: featured image (lazy load, aspect ratio), name (h3), type badge, location with MapPin icon, star rating, price display, favorite button slot. Link wraps entire card to /[locale]/alojamientos/[slug]/. Responsive: vertical stack. Semantic heading hierarchy. Tests: renders all fields, link correct, image lazy loads, ARIA.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-012", "T-015"],
+            "blocks": ["T-057", "T-059", "T-060", "T-071"],
+            "subtasks": [
+                {
+                    "title": "Create AccommodationCard.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Add image with lazy loading",
+                    "completed": true
+                },
+                {
+                    "title": "Add rating display",
+                    "completed": true
+                },
+                {
+                    "title": "Add type badge",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "entity", "card"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T10:00:00.000Z",
+                "completed": "2026-02-13T13:50:00.000Z"
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Create DestinationCard.astro",
+            "description": "Create components/destination/DestinationCard.astro. Props: { destination, locale }. Renders: featured image, name (h3), summary text, accommodations count, 'Explorar' button. Link to /[locale]/destinos/[slug]/. Tests: renders all fields, link correct.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-012", "T-015"],
+            "blocks": ["T-063", "T-064", "T-071"],
+            "subtasks": [
+                {
+                    "title": "Create DestinationCard.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "entity", "card"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T10:00:00.000Z",
+                "completed": "2026-02-13T13:50:00.000Z"
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Create EventCard.astro",
+            "description": "Create components/event/EventCard.astro. Props: { event, locale }. Renders: featured image, name (h3), category badge, formatted date, location, price info, past event badge if expired. Link to /[locale]/eventos/[slug]/. Tests: renders all fields, past event badge, date formatting.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-012", "T-015"],
+            "blocks": ["T-065", "T-067", "T-071"],
+            "subtasks": [
+                {
+                    "title": "Create EventCard.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Add past event badge logic",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "entity", "card"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T10:00:00.000Z",
+                "completed": "2026-02-13T13:50:00.000Z"
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Create BlogPostCard.astro",
+            "description": "Create components/blog/BlogPostCard.astro. Props: { post, variant?: 'default'|'featured', locale }. Renders: featured image, title (h3), excerpt, author with avatar, date, reading time, category badge. Featured variant is larger. Link to /[locale]/publicaciones/[slug]/. Tests: renders all fields, featured variant larger.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-012", "T-015"],
+            "blocks": ["T-068", "T-069", "T-071"],
+            "subtasks": [
+                {
+                    "title": "Create BlogPostCard.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Add featured variant",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "entity", "card"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T10:00:00.000Z",
+                "completed": "2026-02-13T13:50:00.000Z"
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "Create ReviewCard.astro",
+            "description": "Create components/review/ReviewCard.astro. Props: { review, showEntity?: boolean }. Renders: user avatar + name, star rating (1-5 filled/empty stars), review title, content text, date, optional entity reference link. Tests: renders all fields, star rating display, optional entity.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-012"],
+            "blocks": ["T-084"],
+            "subtasks": [
+                {
+                    "title": "Create ReviewCard.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Add star rating display",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "entity", "card"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T10:00:00.000Z",
+                "completed": "2026-02-13T13:50:00.000Z"
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "Create HeroSection.astro",
+            "description": "Create components/content/HeroSection.astro. Props: { image: string, title: string, subtitle?: string, cta?: { label: string, href: string }, overlay?: boolean }. Full-width hero with background image, overlay gradient, title, subtitle, optional CTA button, optional search slot. Responsive image sizing. Tests: renders image/title/subtitle/CTA, responsive.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-012"],
+            "blocks": ["T-045"],
+            "subtasks": [
+                {
+                    "title": "Create HeroSection.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Add overlay gradient",
+                    "completed": true
+                },
+                {
+                    "title": "Add CTA support",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "content", "ui"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T10:00:00.000Z",
+                "completed": "2026-02-13T13:50:00.000Z"
+            }
+        },
+        {
+            "id": "T-029",
+            "title": "Create FeaturedSection.astro",
+            "description": "Create components/content/FeaturedSection.astro. Props: { title: string, viewAllHref?: string, viewAllLabel?: string, columns?: 2|3|4, class? }. Section with title, 'Ver mas' link, responsive grid slot for cards (3 cols desktop, 2 tablet, 1 mobile). Tests: renders title, grid layout, view all link.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-012"],
+            "blocks": ["T-045"],
+            "subtasks": [
+                {
+                    "title": "Create FeaturedSection.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Add responsive grid",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "content", "ui"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T10:00:00.000Z",
+                "completed": "2026-02-13T13:50:00.000Z"
+            }
+        },
+        {
+            "id": "T-030",
+            "title": "Create AmenitiesList.astro",
+            "description": "Create components/accommodation/AmenitiesList.astro. Props: { amenities: Array<{ name, icon, slug }> }. Grid of amenity icons with labels, using @repo/icons. Responsive grid (4 cols desktop, 3 tablet, 2 mobile). Tests: renders amenities with icons, responsive.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-059"],
+            "subtasks": [
+                {
+                    "title": "Create AmenitiesList.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Integrate @repo/icons",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "content"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T10:00:00.000Z",
+                "completed": "2026-02-13T13:50:00.000Z"
+            }
+        },
+        {
+            "id": "T-031",
+            "title": "Create PricingCard.astro",
+            "description": "Create components/content/PricingCard.astro. Props: { plan: { name, price, currency, features, cta }, highlighted?: boolean }. Card with plan name, price display, features checklist, CTA button. Highlighted variant has accent border/shadow. Tests: renders plan info, highlighted variant, features list.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-012"],
+            "blocks": ["T-052", "T-053"],
+            "subtasks": [
+                {
+                    "title": "Create PricingCard.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Add highlighted variant",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "content", "ui"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T10:00:00.000Z",
+                "completed": "2026-02-13T13:50:00.000Z"
+            }
+        },
+        {
+            "id": "T-032",
+            "title": "Create TestimonialCard.astro",
+            "description": "Create components/content/TestimonialCard.astro. Props: { quote: string, author: string, image?: string, role?: string }. Blockquote with decorative quotes, author info. Tests: renders quote and author.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-002"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create TestimonialCard.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "content", "ui"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T10:00:00.000Z",
+                "completed": "2026-02-13T13:50:00.000Z"
+            }
+        },
+        {
+            "id": "T-033",
+            "title": "Create Toast notification system",
+            "description": "Create store/toast-store.ts using Zustand with add/remove/clear actions. Toast types: success, error, warning, info. Auto-dismiss with configurable duration (default 5s). Create components/ui/Toast.client.tsx rendering toasts via portal, positioned top-right. aria-live='polite' for screen readers. Slide-in animation. Tests: store add/remove, auto-dismiss, rendering, ARIA.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-020"],
+            "blocks": ["T-039", "T-051"],
+            "subtasks": [
+                {
+                    "title": "Create Zustand toast store",
+                    "completed": true
+                },
+                {
+                    "title": "Create Toast.client.tsx with portal",
+                    "completed": true
+                },
+                {
+                    "title": "Add auto-dismiss logic",
+                    "completed": true
+                },
+                {
+                    "title": "Add slide-in animation",
+                    "completed": true
+                },
+                {
+                    "title": "Add ARIA live region",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "interactive", "ui"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T19:00:00.000Z",
+                "completed": "2026-02-13T19:10:00.000Z"
+            }
+        },
+        {
+            "id": "T-034",
+            "title": "Create Modal.client.tsx using native dialog",
+            "description": "Create components/ui/Modal.client.tsx. Props: { title, children, onClose, open }. Uses native <dialog> element with showModal()/close(). Focus trap (focus stays inside modal). Close on Escape key. Close on backdrop click. aria-modal='true', role='dialog'. Transitions for open/close. Tests: open/close, focus trap, Escape key, backdrop click, ARIA.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-061", "T-083"],
+            "subtasks": [
+                {
+                    "title": "Create Modal.client.tsx with dialog element",
+                    "completed": true
+                },
+                {
+                    "title": "Implement focus trap",
+                    "completed": true
+                },
+                {
+                    "title": "Add Escape and backdrop close",
+                    "completed": true
+                },
+                {
+                    "title": "Add ARIA attributes",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "interactive", "ui", "accessibility"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T14:40:00.000Z",
+                "completed": "2026-02-13T14:55:00.000Z"
+            }
+        },
+        {
+            "id": "T-035",
+            "title": "Create Tabs.client.tsx",
+            "description": "Create components/ui/Tabs.client.tsx. Props: { tabs: Array<{ id, label, content }>, defaultTab? }. ARIA pattern: role='tablist', role='tab' with aria-selected, role='tabpanel' with aria-labelledby. Keyboard nav: arrow keys switch tabs. Tests: tab switching, ARIA attributes, keyboard navigation.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-064"],
+            "subtasks": [
+                {
+                    "title": "Create Tabs.client.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Add ARIA tablist/tab/tabpanel",
+                    "completed": true
+                },
+                {
+                    "title": "Add keyboard arrow navigation",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "interactive", "ui", "accessibility"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T15:00:00.000Z",
+                "completed": "2026-02-13T15:10:00.000Z"
+            }
+        },
+        {
+            "id": "T-036",
+            "title": "Create AccordionFAQ.client.tsx using native details",
+            "description": "Create components/ui/AccordionFAQ.client.tsx. Props: { items: Array<{ question, answer }> }. Uses native <details>/<summary> elements. aria-expanded, aria-controls attributes. Only one open at a time (optional). Tests: expand/collapse, ARIA attributes.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-059"],
+            "subtasks": [
+                {
+                    "title": "Create AccordionFAQ.client.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Add ARIA attributes",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "interactive", "ui", "accessibility"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T14:15:00.000Z",
+                "completed": "2026-02-13T14:35:00.000Z"
+            }
+        },
+        {
+            "id": "T-037",
+            "title": "Create MobileMenu.client.tsx using native dialog",
+            "description": "Create components/ui/MobileMenu.client.tsx. Props: { navItems: Array<{ label, href }>, locale, user? }. Slide-in menu using <dialog>. Focus trap, Escape to close. Nav items with links. Auth section (signin/signup or user info). Tests: open/close, focus trap, renders nav items.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-002", "T-009"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create MobileMenu.client.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Add slide-in animation",
+                    "completed": true
+                },
+                {
+                    "title": "Add focus trap",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "interactive", "ui", "accessibility"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T15:00:00.000Z",
+                "completed": "2026-02-13T15:10:00.000Z"
+            }
+        },
+        {
+            "id": "T-038",
+            "title": "Create ShareButtons.client.tsx",
+            "description": "Create components/ui/ShareButtons.client.tsx. Props: { url, title, text }. Uses Web Share API when available, fallback to social links (WhatsApp, Facebook, Twitter). Copy to clipboard button. Tests: renders share buttons, copy to clipboard works.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create ShareButtons.client.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Implement Web Share API",
+                    "completed": true
+                },
+                {
+                    "title": "Add social link fallbacks",
+                    "completed": true
+                },
+                {
+                    "title": "Add copy to clipboard",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "interactive", "ui"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T14:15:00.000Z",
+                "completed": "2026-02-13T14:35:00.000Z"
+            }
+        },
+        {
+            "id": "T-039",
+            "title": "Create FavoriteButton.client.tsx with optimistic updates",
+            "description": "Create components/ui/FavoriteButton.client.tsx. Props: { entityId, entityType, initialFavorited?, locale }. Optimistic toggle (heart fills/unfills immediately). Auth check: if not authenticated, show AuthRequiredPopover. API call to toggle bookmark. Revert on error + error toast. Uses @repo/icons HeartIcon. Tests: toggle state, optimistic update, auth popover trigger, error revert.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-020", "T-033", "T-040"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create FavoriteButton.client.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Add optimistic toggle",
+                    "completed": true
+                },
+                {
+                    "title": "Add auth check with popover",
+                    "completed": true
+                },
+                {
+                    "title": "Add error revert",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "interactive", "auth"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-13T21:50:00.000Z"
+            }
+        },
+        {
+            "id": "T-040",
+            "title": "Create AuthRequiredPopover.client.tsx",
+            "description": "Create components/auth/AuthRequiredPopover.client.tsx. Props: { message, onClose, locale }. Contextual popover (not modal) positioned relative to trigger. Shows message, 'Iniciar sesion' link (with returnUrl), 'Registrarse' link. Close on Escape key, close on click outside. role='dialog', aria-label. Tests: renders message and links, close behaviors.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-039", "T-044"],
+            "subtasks": [
+                {
+                    "title": "Create AuthRequiredPopover.client.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Add close on Escape/outside click",
+                    "completed": true
+                },
+                {
+                    "title": "Add returnUrl in signin link",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "interactive", "auth", "accessibility"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T14:40:00.000Z",
+                "completed": "2026-02-13T14:55:00.000Z"
+            }
+        },
+        {
+            "id": "T-041",
+            "title": "Create ViewToggle.client.tsx",
+            "description": "Create components/ui/ViewToggle.client.tsx. Props: { defaultView: 'grid'|'map', onChange: (view) => void }. Two toggle buttons (grid icon, map icon). Accessible toggle group. Tests: toggle state, callback fires.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-057"],
+            "subtasks": [
+                {
+                    "title": "Create ViewToggle.client.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "interactive", "ui"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T14:00:00.000Z",
+                "completed": "2026-02-13T14:10:00.000Z"
+            }
+        },
+        {
+            "id": "T-042",
+            "title": "Create SearchBar.client.tsx",
+            "description": "Create components/search/SearchBar.client.tsx. Props: { onSearch, placeholder, locale }. Text input with search icon. Debounced input (300ms). On Enter or click search, navigates to /[locale]/busqueda/?q={query}. Optional autocomplete dropdown (grouped by entity type). Tests: input handling, debounce, submit navigation.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-020"],
+            "blocks": ["T-045"],
+            "subtasks": [
+                {
+                    "title": "Create SearchBar.client.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Add debounced input",
+                    "completed": true
+                },
+                {
+                    "title": "Add submit/navigate behavior",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "interactive", "search"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-13T21:43:00.000Z"
+            }
+        },
+        {
+            "id": "T-043",
+            "title": "Create UserNav.client.tsx",
+            "description": "Create components/auth/UserNav.client.tsx. Props: { user, locale }. Dropdown with user avatar, name, menu items (Mi Cuenta, Favoritos, Mis Resenas, Preferencias, Cerrar sesion). Accessible dropdown pattern with aria-expanded, keyboard nav. Tests: renders user info, dropdown open/close, menu items.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-009", "T-020"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create UserNav.client.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Add accessible dropdown",
+                    "completed": true
+                },
+                {
+                    "title": "Add menu items",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "interactive", "auth", "accessibility"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-13T21:43:00.000Z"
+            }
+        },
+        {
+            "id": "T-044",
+            "title": "Create NewsletterCTA.client.tsx",
+            "description": "Create components/newsletter/NewsletterCTA.client.tsx. Props: { locale }. For unauthenticated: promo text + subscribe button triggering AuthRequiredPopover. For authenticated: NewsletterToggle with checkbox to opt in/out. Optimistic toggle with API call. Tests: renders correct state for auth/unauth, toggle works.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-020", "T-040"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create NewsletterCTA.client.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Add auth/unauth states",
+                    "completed": true
+                },
+                {
+                    "title": "Create NewsletterToggle sub-component",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "interactive", "newsletter"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-13T21:50:00.000Z"
+            }
+        },
+        {
+            "id": "T-045",
+            "title": "Create Homepage",
+            "description": "Create pages/[lang]/index.astro. Uses BaseLayout. Hero section with regional imagery, tagline, SearchBar (client:load). FeaturedSection for accommodations (6 items, AccommodationCard), destinations (4 items, DestinationCard), events (4 items, EventCard), blog posts (3 items, BlogPostCard). Each section has 'Ver mas' link. Server Islands for dynamic 'recommended' section if authenticated. SEOHead with homepage meta. Tests: page renders, all sections present, responsive.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-009", "T-010", "T-018", "T-028", "T-029", "T-042"],
+            "blocks": ["T-086", "T-087", "T-088", "T-089", "T-093", "T-094"],
+            "subtasks": [
+                {
+                    "title": "Create pages/[lang]/index.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Add hero with SearchBar",
+                    "completed": true
+                },
+                {
+                    "title": "Add featured accommodations section",
+                    "completed": true
+                },
+                {
+                    "title": "Add featured destinations section",
+                    "completed": true
+                },
+                {
+                    "title": "Add featured events section",
+                    "completed": true
+                },
+                {
+                    "title": "Add featured blog posts section",
+                    "completed": true
+                },
+                {
+                    "title": "Add SEO meta tags",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "page", "homepage"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-13T23:26:00.000Z"
+            }
+        },
+        {
+            "id": "T-046",
+            "title": "Create About Us page",
+            "description": "Create pages/[lang]/quienes-somos.astro. SSG. Uses BaseLayout. Breadcrumbs. About content: mission, values, team section. Illustrations. SEOHead. Tests: page renders, breadcrumbs present.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-018"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create quienes-somos.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Add breadcrumbs and SEO",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "page", "static"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T16:45:00.000Z",
+                "completed": "2026-02-13T16:55:00.000Z"
+            }
+        },
+        {
+            "id": "T-047",
+            "title": "Create Benefits page",
+            "description": "Create pages/[lang]/beneficios.astro. SSG. Uses BaseLayout. Breadcrumbs. Benefits for tourists and owners with icons/illustrations. CTA to pricing. SEOHead. Tests: page renders.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-018"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create beneficios.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Add benefit sections",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "page", "static"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T16:55:00.000Z",
+                "completed": "2026-02-13T17:05:00.000Z"
+            }
+        },
+        {
+            "id": "T-048",
+            "title": "Create Terms & Conditions page",
+            "description": "Create pages/[lang]/terminos-condiciones.astro. SSG. Uses BaseLayout. Breadcrumbs. Legal content layout with sections. SEOHead. Tests: page renders.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-018"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create terminos-condiciones.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "page", "static", "legal"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T16:25:00.000Z",
+                "completed": "2026-02-13T16:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-049",
+            "title": "Create Privacy Policy page",
+            "description": "Create pages/[lang]/privacidad.astro. SSG. Uses BaseLayout. Breadcrumbs. Legal content layout. SEOHead. Tests: page renders.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-018"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create privacidad.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "page", "static", "legal"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T16:25:00.000Z",
+                "completed": "2026-02-13T16:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-050",
+            "title": "Create Contact page",
+            "description": "Create pages/[lang]/contacto.astro. SSG. Uses BaseLayout. Breadcrumbs. ContactForm (React island, client:idle). Contact info sidebar (email, social). SEOHead. Tests: page renders, form island present.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-018"],
+            "blocks": ["T-051"],
+            "subtasks": [
+                {
+                    "title": "Create contacto.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Add contact info sidebar",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "page", "static"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T16:45:00.000Z",
+                "completed": "2026-02-13T16:55:00.000Z"
+            }
+        },
+        {
+            "id": "T-051",
+            "title": "Create ContactForm.client.tsx",
+            "description": "Create components/forms/ContactForm.client.tsx. React Hook Form + Zod validation. Fields: name (min 2), email (valid email), subject, message (min 20). Submit to API endpoint. Loading state on submit button. Success toast on complete. Error handling. All fields disabled during submission. Tests: validation rules, submit flow, loading state, error handling.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-033", "T-050"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create ContactForm.client.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Add Zod validation schema",
+                    "completed": true
+                },
+                {
+                    "title": "Add submit with loading state",
+                    "completed": true
+                },
+                {
+                    "title": "Add success/error toasts",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "interactive", "forms"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-13T23:26:00.000Z"
+            }
+        },
+        {
+            "id": "T-052",
+            "title": "Create Tourist Pricing page",
+            "description": "Create pages/[lang]/precios/turistas.astro. SSG. Uses BaseLayout. Breadcrumbs. Benefits section. PricingCards for Free, Plus ($5k ARS/month), VIP ($15k ARS/month). Features comparison. CTA buttons. Currency display based on locale. SEOHead. Tests: page renders, plans display, currency formatting.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-018", "T-031"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create precios/turistas.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Add pricing cards with plans",
+                    "completed": true
+                },
+                {
+                    "title": "Add currency display",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "page", "pricing"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T17:25:00.000Z",
+                "completed": "2026-02-13T17:45:00.000Z"
+            }
+        },
+        {
+            "id": "T-053",
+            "title": "Create Owner Pricing page",
+            "description": "Create pages/[lang]/precios/propietarios.astro. SSG. Uses BaseLayout. Breadcrumbs. Owner benefits. PricingCards for Basic ($15k), Professional ($35k), Premium ($75k). Testimonials section. Strong CTA. Currency display. SEOHead. Tests: page renders, plans display.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-018", "T-031"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create precios/propietarios.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Add pricing cards",
+                    "completed": true
+                },
+                {
+                    "title": "Add testimonials section",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "page", "pricing"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T17:25:00.000Z",
+                "completed": "2026-02-13T17:45:00.000Z"
+            }
+        },
+        {
+            "id": "T-054",
+            "title": "Create HTML Sitemap page",
+            "description": "Create pages/[lang]/sitemap.astro. SSG. Uses BaseLayout. Breadcrumbs. Organized links to all main pages by section (Alojamientos, Destinos, Eventos, Blog, Informacion). SEOHead. Tests: page renders, links present.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-018"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create sitemap.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Organize links by section",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "page", "static", "seo"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T16:55:00.000Z",
+                "completed": "2026-02-13T17:05:00.000Z"
+            }
+        },
+        {
+            "id": "T-055",
+            "title": "Create 404 error page",
+            "description": "Create pages/404.astro. SSG. Uses BaseLayout (simplified). Custom illustration (regional theme). Friendly message. Link back to homepage. SEOHead with noindex. Tests: page renders, home link present.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-018"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create 404.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Add illustration and message",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "page", "error"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T16:35:00.000Z",
+                "completed": "2026-02-13T16:40:00.000Z"
+            }
+        },
+        {
+            "id": "T-056",
+            "title": "Create 500 error page",
+            "description": "Create pages/500.astro. SSG. Uses BaseLayout (simplified). Custom illustration. Error message. Retry/home links. SEOHead with noindex. Tests: page renders.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-018"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create 500.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Add illustration and message",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "page", "error"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T16:35:00.000Z",
+                "completed": "2026-02-13T16:40:00.000Z"
+            }
+        },
+        {
+            "id": "T-057",
+            "title": "Create Accommodation List page",
+            "description": "Create pages/[lang]/alojamientos/index.astro. SSR. Uses BaseLayout. Breadcrumbs. Grid of AccommodationCards (3 cols desktop, 2 tablet, 1 mobile). FilterSidebar React island (client:load). Sort dropdown (Featured, Price asc/desc, Rating, Recent). ViewToggle for grid/map. Pagination. URL query params for filters. SEOHead. Tests: page renders, grid layout, sort options.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-023", "T-041", "T-062"],
+            "blocks": ["T-058"],
+            "subtasks": [
+                {
+                    "title": "Create alojamientos/index.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Add card grid with responsive layout",
+                    "completed": true
+                },
+                {
+                    "title": "Add sort dropdown",
+                    "completed": true
+                },
+                {
+                    "title": "Add ViewToggle",
+                    "completed": true
+                },
+                {
+                    "title": "Add pagination",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "page", "accommodation"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-13T23:42:00.000Z"
+            }
+        },
+        {
+            "id": "T-058",
+            "title": "Create FilterSidebar.client.tsx",
+            "description": "Create components/accommodation/FilterSidebar.client.tsx. Props: { filters, onApply, locale }. Filter sections: Type (checkboxes), Price Range (min/max inputs), Destination (select), Amenities (checkboxes), Rating (min stars). URL query param sync (update URL on filter change). Active filter badges with individual clear buttons. Clear all filters button. Tests: filter apply, URL sync, clear individual/all, active badges.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-057"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create FilterSidebar.client.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Add filter sections",
+                    "completed": true
+                },
+                {
+                    "title": "Sync with URL query params",
+                    "completed": true
+                },
+                {
+                    "title": "Add active filter badges",
+                    "completed": true
+                },
+                {
+                    "title": "Add clear functionality",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "interactive", "accommodation", "filters"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-14T01:13:00.000Z"
+            }
+        },
+        {
+            "id": "T-059",
+            "title": "Create Accommodation Detail page",
+            "description": "Create pages/[lang]/alojamientos/[slug].astro. SSG with ISR. Breadcrumbs (Inicio > Alojamientos > {name}). Photo gallery (ImageGallery island, client:visible). Name, type badge, location, rating, price. Description (rich text from TipTap JSON). AmenitiesList. Location map slot (MapView, client:visible). Contact form slot. Reviews section slot. AccordionFAQ. Similar accommodations. ShareButtons + FavoriteButton. JSON-LD LodgingBusiness. SEOHead. Tests: page renders with data, breadcrumbs, SEO.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-023", "T-030", "T-036", "T-061"],
+            "blocks": ["T-088", "T-091", "T-093", "T-094"],
+            "subtasks": [
+                {
+                    "title": "Create alojamientos/[slug].astro",
+                    "completed": true
+                },
+                {
+                    "title": "Add breadcrumbs and SEO",
+                    "completed": true
+                },
+                {
+                    "title": "Add photo gallery slot",
+                    "completed": true
+                },
+                {
+                    "title": "Add description and amenities",
+                    "completed": true
+                },
+                {
+                    "title": "Add map and contact slots",
+                    "completed": true
+                },
+                {
+                    "title": "Add reviews and FAQ slots",
+                    "completed": true
+                },
+                {
+                    "title": "Add similar accommodations",
+                    "completed": true
+                },
+                {
+                    "title": "Add JSON-LD structured data",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "page", "accommodation"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-13T23:42:00.000Z"
+            }
+        },
+        {
+            "id": "T-060",
+            "title": "Create Accommodation by Type page",
+            "description": "Create pages/[lang]/alojamientos/tipo/[type].astro. SSR. Validates type against AccommodationType enum. Breadcrumbs (Inicio > Alojamientos > {type}). Reuses AccommodationCard grid. Filtered by type. Pagination. SEOHead with type-specific title. Tests: page renders, correct type filter, invalid type handling.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-023"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create tipo/[type].astro",
+                    "completed": true
+                },
+                {
+                    "title": "Validate type parameter",
+                    "completed": true
+                },
+                {
+                    "title": "Add filtered grid",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "page", "accommodation"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T18:10:00.000Z",
+                "completed": "2026-02-13T18:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-061",
+            "title": "Create ImageGallery.client.tsx",
+            "description": "Create components/ui/ImageGallery.client.tsx. Props: { images: Array<{ src, alt }> }. Main image display + thumbnail strip. Click thumbnail to change main image. Click main image opens lightbox (Modal). Lightbox has prev/next navigation, keyboard arrow keys. Touch swipe on mobile. Tests: thumbnail click, lightbox open/close, keyboard nav, renders images.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-034"],
+            "blocks": ["T-059"],
+            "subtasks": [
+                {
+                    "title": "Create ImageGallery.client.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Add thumbnail strip",
+                    "completed": true
+                },
+                {
+                    "title": "Add lightbox with Modal",
+                    "completed": true
+                },
+                {
+                    "title": "Add keyboard prev/next",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "interactive", "media"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T16:05:00.000Z",
+                "completed": "2026-02-13T16:20:00.000Z"
+            }
+        },
+        {
+            "id": "T-062",
+            "title": "Create MapView.client.tsx with Leaflet",
+            "description": "Create components/map/MapView.client.tsx. Props: { markers: Array<{ id, lat, lng, popup }>, center, zoom }. Integrates react-leaflet. TileLayer with OpenStreetMap tiles. Markers with popup content. Marker clustering for dense areas. Responsive height. Tests: map renders, markers display, popup opens on click.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-057"],
+            "subtasks": [
+                {
+                    "title": "Install react-leaflet and leaflet",
+                    "completed": true
+                },
+                {
+                    "title": "Create MapView.client.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Add markers with popups",
+                    "completed": true
+                },
+                {
+                    "title": "Add marker clustering",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "interactive", "maps"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T17:45:00.000Z",
+                "completed": "2026-02-13T17:55:00.000Z"
+            }
+        },
+        {
+            "id": "T-063",
+            "title": "Create Destination List page",
+            "description": "Create pages/[lang]/destinos/index.astro. SSG. Uses BaseLayout. Breadcrumbs. Grid of DestinationCards. Search bar for filtering by name. SEOHead. Tests: page renders, cards display.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-024"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create destinos/index.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Add card grid",
+                    "completed": true
+                },
+                {
+                    "title": "Add search filter",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "page", "destination"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T18:10:00.000Z",
+                "completed": "2026-02-13T18:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-064",
+            "title": "Create Destination Detail page",
+            "description": "Create pages/[lang]/destinos/[...path].astro. SSG with ISR. Breadcrumbs (Inicio > Destinos > {name}). Hero with image. Tabbed/sectioned content: Description, Gallery, Climate info, How to get there, Attractions (what to do), Accommodations in destination, Events in destination, Related posts. Map. ShareButtons + FavoriteButton. Empty states for missing sections. SEOHead. Tests: page renders, tabs work, empty states.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-024", "T-035"],
+            "blocks": ["T-093"],
+            "subtasks": [
+                {
+                    "title": "Create destinos/[...path].astro",
+                    "completed": true
+                },
+                {
+                    "title": "Add hero and breadcrumbs",
+                    "completed": true
+                },
+                {
+                    "title": "Add tabbed content sections",
+                    "completed": true
+                },
+                {
+                    "title": "Add accommodations/events/posts sub-sections",
+                    "completed": true
+                },
+                {
+                    "title": "Add empty states",
+                    "completed": true
+                },
+                {
+                    "title": "Add SEO and JSON-LD",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "page", "destination"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-14T00:50:00.000Z"
+            }
+        },
+        {
+            "id": "T-065",
+            "title": "Create Event List page",
+            "description": "Create pages/[lang]/eventos/index.astro. SSR. Uses BaseLayout. Breadcrumbs. CalendarView React island (client:visible). Event list below calendar. Filters: Date Range, Category, Location, Free/Paid. Upcoming/Past toggle. SEOHead. Tests: page renders, filter UI present.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-025"],
+            "blocks": ["T-066"],
+            "subtasks": [
+                {
+                    "title": "Create eventos/index.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Add CalendarView slot",
+                    "completed": true
+                },
+                {
+                    "title": "Add event list with filters",
+                    "completed": true
+                },
+                {
+                    "title": "Add upcoming/past toggle",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "page", "event"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-14T00:58:00.000Z"
+            }
+        },
+        {
+            "id": "T-066",
+            "title": "Create CalendarView.client.tsx",
+            "description": "Create components/event/CalendarView.client.tsx. Props: { events: Array<{ date, id, name }>, onDateSelect, locale }. Monthly calendar grid. Highlighted dates with events. Click date to filter event list. Prev/next month navigation. Accessible: aria-label on dates, keyboard navigation. Tests: calendar renders, date selection, month navigation, ARIA.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-065"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create CalendarView.client.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Add monthly grid with event highlights",
+                    "completed": true
+                },
+                {
+                    "title": "Add date selection callback",
+                    "completed": true
+                },
+                {
+                    "title": "Add month navigation",
+                    "completed": true
+                },
+                {
+                    "title": "Add accessibility",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "interactive", "event", "calendar"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-14T14:15:00.000Z",
+                "completed": "2026-02-14T14:55:00.000Z"
+            }
+        },
+        {
+            "id": "T-067",
+            "title": "Create Event Detail page",
+            "description": "Create pages/[lang]/eventos/[slug].astro. SSG with ISR. Breadcrumbs (Inicio > Eventos > {name}). Event info: name, category badge, date/time, location. Image/gallery. Description. Schedule/agenda. Ticket/pricing info with external link. Organizer info. Related events. Past event badge ('Evento finalizado'). ShareButtons + FavoriteButton. JSON-LD Event. SEOHead. Tests: page renders, past event handling.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-025"],
+            "blocks": ["T-093"],
+            "subtasks": [
+                {
+                    "title": "Create eventos/[slug].astro",
+                    "completed": true
+                },
+                {
+                    "title": "Add event info and dates",
+                    "completed": true
+                },
+                {
+                    "title": "Add past event badge",
+                    "completed": true
+                },
+                {
+                    "title": "Add organizer section",
+                    "completed": true
+                },
+                {
+                    "title": "Add JSON-LD Event",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "page", "event"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T18:20:00.000Z",
+                "completed": "2026-02-13T18:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-068",
+            "title": "Create Blog List page",
+            "description": "Create pages/[lang]/publicaciones/index.astro. SSR. Uses BaseLayout. Breadcrumbs. Featured post (large BlogPostCard). Grid of recent posts (2-3 cols). Category sidebar/filter. Pagination. SEOHead. Tests: page renders, featured post larger, category filter.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-026"],
+            "blocks": ["T-070"],
+            "subtasks": [
+                {
+                    "title": "Create publicaciones/index.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Add featured post section",
+                    "completed": true
+                },
+                {
+                    "title": "Add post grid",
+                    "completed": true
+                },
+                {
+                    "title": "Add category sidebar",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "page", "blog"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T18:20:00.000Z",
+                "completed": "2026-02-13T18:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-069",
+            "title": "Create Blog Post Detail page",
+            "description": "Create pages/[lang]/publicaciones/[slug].astro. SSG with ISR. Breadcrumbs (Inicio > Blog > {category} > {title}). Featured image. Title, author avatar+name, date, reading time. Full content rendered from TipTap JSON (uses TipTapRenderer). Tags section. ShareButtons. Related posts (3-6 items). JSON-LD Article. SEOHead. Tests: page renders, content renders, tags display.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-026", "T-070"],
+            "blocks": ["T-093"],
+            "subtasks": [
+                {
+                    "title": "Create publicaciones/[slug].astro",
+                    "completed": true
+                },
+                {
+                    "title": "Add article header info",
+                    "completed": true
+                },
+                {
+                    "title": "Add TipTap content rendering",
+                    "completed": true
+                },
+                {
+                    "title": "Add tags and share",
+                    "completed": true
+                },
+                {
+                    "title": "Add related posts",
+                    "completed": true
+                },
+                {
+                    "title": "Add JSON-LD Article",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "page", "blog"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-13T23:36:00.000Z"
+            }
+        },
+        {
+            "id": "T-070",
+            "title": "Create TipTap JSON to HTML renderer",
+            "description": "Create src/lib/tiptap-renderer.ts. Server-side function that converts TipTap/ProseMirror JSON to HTML. Support node types: heading (h1-h6), paragraph, bulletList, orderedList, listItem, blockquote, codeBlock, image, hardBreak. Support marks: bold, italic, link, code, underline. Tests: renders each node type, handles nested structures, handles empty/null input.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-068"],
+            "blocks": ["T-069"],
+            "subtasks": [
+                {
+                    "title": "Create tiptap-renderer.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Support block-level nodes",
+                    "completed": true
+                },
+                {
+                    "title": "Support inline marks",
+                    "completed": true
+                },
+                {
+                    "title": "Handle edge cases",
+                    "completed": true
+                },
+                {
+                    "title": "Write comprehensive tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "content", "rendering"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T18:40:00.000Z",
+                "completed": "2026-02-13T18:55:00.000Z"
+            }
+        },
+        {
+            "id": "T-071",
+            "title": "Create Search Results page",
+            "description": "Create pages/[lang]/busqueda.astro. SSR. Uses BaseLayout. Breadcrumbs. Reads ?q= query param. Results grouped by entity type (Alojamientos, Destinos, Eventos, Publicaciones) with counts. Each group shows entity cards. Empty state with illustration + popular search suggestions when no results. SEOHead with noindex. Tests: page renders, groups results, empty state.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-023", "T-024", "T-025", "T-026"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create busqueda.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Add results grouped by type",
+                    "completed": true
+                },
+                {
+                    "title": "Add empty state with suggestions",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "page", "search"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T18:30:00.000Z",
+                "completed": "2026-02-13T18:40:00.000Z"
+            }
+        },
+        {
+            "id": "T-072",
+            "title": "Create Sign In page",
+            "description": "Create pages/[lang]/auth/signin.astro. SSG, noindex. Uses BaseLayout. Email + password form. Social signin buttons (Google, Facebook). 'Olvidaste tu contrasena?' link. 'No tenes cuenta? Registrate' link. Handles returnUrl query param for post-login redirect. SEOHead with noindex. Tests: page renders, form fields present, links correct.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-018"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create auth/signin.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Add email/password form",
+                    "completed": true
+                },
+                {
+                    "title": "Add social signin buttons",
+                    "completed": true
+                },
+                {
+                    "title": "Add links to signup/forgot",
+                    "completed": true
+                },
+                {
+                    "title": "Handle returnUrl",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "page", "auth"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T17:25:00.000Z",
+                "completed": "2026-02-13T17:45:00.000Z"
+            }
+        },
+        {
+            "id": "T-073",
+            "title": "Create Sign Up page",
+            "description": "Create pages/[lang]/auth/signup.astro. SSG, noindex. Uses BaseLayout. Registration form: first name, last name, email, password. Social signup buttons. Password requirements displayed. Terms checkbox. Link to signin. SEOHead with noindex. Tests: page renders, form fields, terms checkbox.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-018"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create auth/signup.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Add registration form",
+                    "completed": true
+                },
+                {
+                    "title": "Add social signup",
+                    "completed": true
+                },
+                {
+                    "title": "Add terms checkbox",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "page", "auth"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T17:25:00.000Z",
+                "completed": "2026-02-13T17:45:00.000Z"
+            }
+        },
+        {
+            "id": "T-074",
+            "title": "Create Forgot Password page",
+            "description": "Create pages/[lang]/auth/forgot-password.astro. SSG, noindex. Email input form. Submit sends reset email. Success message. Link to signin. Tests: page renders, form present.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-018"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create forgot-password.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "page", "auth"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T17:10:00.000Z",
+                "completed": "2026-02-13T17:20:00.000Z"
+            }
+        },
+        {
+            "id": "T-075",
+            "title": "Create Reset Password page",
+            "description": "Create pages/[lang]/auth/reset-password.astro. SSR (token validation). New password + confirm password form. Token validation server-side. Success redirect to signin. Tests: page renders, token validation.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-018"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create reset-password.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Add token validation",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "page", "auth"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T17:10:00.000Z",
+                "completed": "2026-02-13T17:20:00.000Z"
+            }
+        },
+        {
+            "id": "T-076",
+            "title": "Create Verify Email page",
+            "description": "Create pages/[lang]/auth/verify-email.astro. SSR (token validation). Shows verification status (success/error/expired). Link to signin on success. Tests: page renders, status display.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-018"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create verify-email.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Add token validation",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "page", "auth"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T17:10:00.000Z",
+                "completed": "2026-02-13T17:20:00.000Z"
+            }
+        },
+        {
+            "id": "T-077",
+            "title": "Create Account Dashboard page",
+            "description": "Create pages/[lang]/mi-cuenta/index.astro. SSR, auth required. Uses BaseLayout. Profile summary (avatar, name, email, edit button). Stats (favorites count, reviews count). Recent activity. Navigation to sub-pages. SEOHead with noindex. Tests: page renders, auth redirect works.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-019"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create mi-cuenta/index.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Add profile summary",
+                    "completed": true
+                },
+                {
+                    "title": "Add stats and activity",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "page", "account"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T17:55:00.000Z",
+                "completed": "2026-02-13T18:10:00.000Z"
+            }
+        },
+        {
+            "id": "T-078",
+            "title": "Create Edit Profile page",
+            "description": "Create pages/[lang]/mi-cuenta/editar.astro. SSR, auth required. Profile edit form (React island): name, email (readonly), avatar upload. Save button with loading state. Success/error toast. Tests: page renders, form pre-filled.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-019"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create mi-cuenta/editar.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Add profile edit form island",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "page", "account"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T17:55:00.000Z",
+                "completed": "2026-02-13T18:10:00.000Z"
+            }
+        },
+        {
+            "id": "T-079",
+            "title": "Create Favorites page",
+            "description": "Create pages/[lang]/mi-cuenta/favoritos.astro. SSR, auth required. Tabs by entity type (Alojamientos, Destinos, Eventos, Publicaciones). Grid of favorited entity cards with remove button. Empty state per tab. Tests: page renders, tabs work, empty states.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-019"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create mi-cuenta/favoritos.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Add entity type tabs",
+                    "completed": true
+                },
+                {
+                    "title": "Add card grid with remove",
+                    "completed": true
+                },
+                {
+                    "title": "Add empty states",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "page", "account"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T17:55:00.000Z",
+                "completed": "2026-02-13T18:10:00.000Z"
+            }
+        },
+        {
+            "id": "T-080",
+            "title": "Create My Reviews page",
+            "description": "Create pages/[lang]/mi-cuenta/resenas.astro. SSR, auth required. List of user's ReviewCards. Empty state. Tests: page renders, reviews list.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-019"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create mi-cuenta/resenas.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Add reviews list",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "page", "account"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T17:55:00.000Z",
+                "completed": "2026-02-13T18:10:00.000Z"
+            }
+        },
+        {
+            "id": "T-081",
+            "title": "Create Preferences page",
+            "description": "Create pages/[lang]/mi-cuenta/preferencias.astro. SSR, auth required. Language selector dropdown (ES, EN, PT). Theme toggle (light only, dark 'Coming soon'). Currency selector (ARS, BRL, USD). Newsletter toggle. Save button persists to user profile. Tests: page renders, settings display, save works.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-019"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create mi-cuenta/preferencias.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Add language selector",
+                    "completed": true
+                },
+                {
+                    "title": "Add theme toggle (dark disabled)",
+                    "completed": true
+                },
+                {
+                    "title": "Add currency selector",
+                    "completed": true
+                },
+                {
+                    "title": "Add newsletter toggle",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "page", "account", "preferences"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T17:55:00.000Z",
+                "completed": "2026-02-13T18:10:00.000Z"
+            }
+        },
+        {
+            "id": "T-082",
+            "title": "Create Subscription page",
+            "description": "Create pages/[lang]/mi-cuenta/suscripcion.astro. SSR, auth required. Shows current plan (Free/Plus/VIP). Plan features. Upgrade/downgrade CTAs linking to pricing pages or payment flow. Billing info if subscribed. Tests: page renders, current plan displays.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-019"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create mi-cuenta/suscripcion.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Add current plan display",
+                    "completed": true
+                },
+                {
+                    "title": "Add upgrade/downgrade CTAs",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "page", "account", "billing"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T17:55:00.000Z",
+                "completed": "2026-02-13T18:10:00.000Z"
+            }
+        },
+        {
+            "id": "T-083",
+            "title": "Create ReviewForm.client.tsx",
+            "description": "Create components/review/ReviewForm.client.tsx. Props: { entityId, entityType, locale }. React Hook Form + Zod. Star rating selector (1-5, clickable stars). Title input. Textarea (min 20 chars). Photo upload section (max 5 images). Submit to API. Loading state. Success toast + review appears. Already reviewed check. Tests: validation, star selection, submit, photo limit, duplicate review error.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-034"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create ReviewForm.client.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Add star rating selector",
+                    "completed": true
+                },
+                {
+                    "title": "Add photo upload (max 5)",
+                    "completed": true
+                },
+                {
+                    "title": "Add Zod validation",
+                    "completed": true
+                },
+                {
+                    "title": "Add submit with loading",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "interactive", "review", "forms"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T17:10:00.000Z",
+                "completed": "2026-02-13T17:20:00.000Z"
+            }
+        },
+        {
+            "id": "T-084",
+            "title": "Create ReviewList.client.tsx",
+            "description": "Create components/review/ReviewList.client.tsx. Props: { entityId, entityType, locale }. Fetches reviews from API. Renders ReviewCards. Sort options (newest, highest, lowest). Pagination. Write review CTA (triggers ReviewForm modal for authenticated, AuthRequiredPopover for guests). Tests: renders reviews, pagination, sort.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-027"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create ReviewList.client.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Add sorting options",
+                    "completed": true
+                },
+                {
+                    "title": "Add pagination",
+                    "completed": true
+                },
+                {
+                    "title": "Add write review CTA",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "interactive", "review"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T15:35:00.000Z",
+                "completed": "2026-02-13T16:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-085",
+            "title": "Create PriceDisplay component",
+            "description": "Create components/ui/PriceDisplay.astro (and .client.tsx for interactive). Props: { amountARS: number, locale: string, userCurrency?: string, showDisclaimer?: boolean }. Currency resolution: 1) user preference, 2) locale-derived (ES->ARS, EN->USD, PT->BRL). Format with Intl.NumberFormat. Show disclaimer for converted prices. Tests: formatting per currency, conversion, disclaimer display.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-020"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create PriceDisplay component",
+                    "completed": true
+                },
+                {
+                    "title": "Add currency resolution logic",
+                    "completed": true
+                },
+                {
+                    "title": "Add Intl.NumberFormat formatting",
+                    "completed": true
+                },
+                {
+                    "title": "Add conversion disclaimer",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["core", "ui", "currency", "i18n"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T19:00:00.000Z",
+                "completed": "2026-02-13T19:10:00.000Z"
+            }
+        },
+        {
+            "id": "T-086",
+            "title": "Configure @astrojs/sitemap for XML sitemap",
+            "description": "Configure @astrojs/sitemap in astro.config.mjs. Include all public routes. Exclude /auth/ and /mi-cuenta/ paths. Set update frequencies (daily for dynamic, weekly for static). Set priorities (homepage 1.0, entity pages 0.8, static 0.6). Tests: sitemap generates, excludes private routes.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-045"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Configure sitemap integration",
+                    "completed": true
+                },
+                {
+                    "title": "Set exclusion rules",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["integration", "seo"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-13T23:32:00.000Z"
+            }
+        },
+        {
+            "id": "T-087",
+            "title": "Create robots.txt",
+            "description": "Create public/robots.txt. Allow all crawlers. Disallow /mi-cuenta/ and /auth/. Reference sitemap.xml. Tests: correct directives present.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-045"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create robots.txt",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["integration", "seo"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-13T23:32:00.000Z"
+            }
+        },
+        {
+            "id": "T-088",
+            "title": "Set up View Transitions for page navigation",
+            "description": "Configure Astro View Transitions in BaseLayout. Add view-transition-name to hero images for card-to-detail morphing. Customize transition duration (0.3s default, 0.5s hero). Add crossfade for tab content. Progressive enhancement fallback. Tests: transitions configured, fallback works.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-045", "T-059"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Configure View Transitions",
+                    "completed": true
+                },
+                {
+                    "title": "Add hero image transition names",
+                    "completed": true
+                },
+                {
+                    "title": "Add crossfade transitions",
+                    "completed": true
+                },
+                {
+                    "title": "Test progressive enhancement",
+                    "completed": true
+                }
+            ],
+            "tags": ["integration", "animation", "ux"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-14T00:50:00.000Z"
+            }
+        },
+        {
+            "id": "T-089",
+            "title": "Implement navigation progress indicator",
+            "description": "Add top-of-page progress bar during page navigation. Thin colored bar at top. Shows during View Transition navigation. Uses CSS animation. Accessible (aria-hidden since decorative). Tests: progress bar appears during navigation.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-045"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create progress bar CSS",
+                    "completed": true
+                },
+                {
+                    "title": "Integrate with View Transitions",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["integration", "ux", "animation"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-13T23:36:00.000Z"
+            }
+        },
+        {
+            "id": "T-090",
+            "title": "Optimize font loading",
+            "description": "Add preconnect links for Google Fonts in BaseLayout. Set font-display:swap on all font faces. Preload critical fonts (Inter 400, 600, 700). Add fallback font metrics to minimize CLS. Tests: preconnect present, font-display set, preload links.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-006"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add preconnect links",
+                    "completed": true
+                },
+                {
+                    "title": "Configure font-display:swap",
+                    "completed": true
+                },
+                {
+                    "title": "Add preload for critical fonts",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["integration", "performance"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T15:15:00.000Z",
+                "completed": "2026-02-13T15:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-091",
+            "title": "Configure image optimization with astro:assets",
+            "description": "Configure astro:assets Image component. Set up image.remotePatterns for DB images in astro.config. Create reusable OptimizedImage.astro wrapper with lazy loading, responsive srcset (320w, 640w, 1024w, 1920w), width/height for CLS prevention, WebP format. LQIP blur placeholders for hero images. Tests: images optimize, srcset generates.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-059"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Configure remotePatterns",
+                    "completed": true
+                },
+                {
+                    "title": "Create OptimizedImage.astro wrapper",
+                    "completed": true
+                },
+                {
+                    "title": "Add responsive srcset",
+                    "completed": true
+                },
+                {
+                    "title": "Add LQIP blur placeholders",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["integration", "performance", "images"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-14T00:58:00.000Z"
+            }
+        },
+        {
+            "id": "T-092",
+            "title": "Implement auth middleware for protected routes",
+            "description": "Enhance src/middleware.ts to check Better Auth session for /mi-cuenta/ routes. If not authenticated, redirect to /[lang]/auth/signin/?returnUrl={current path}. Pass user data to Astro.locals for use in pages. Tests: redirects unauthenticated, allows authenticated, sets locals.user.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-019"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add auth check in middleware",
+                    "completed": true
+                },
+                {
+                    "title": "Add redirect with returnUrl",
+                    "completed": true
+                },
+                {
+                    "title": "Pass user to Astro.locals",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["integration", "auth", "middleware"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T18:30:00.000Z",
+                "completed": "2026-02-13T18:40:00.000Z"
+            }
+        },
+        {
+            "id": "T-093",
+            "title": "Create accessibility automated tests",
+            "description": "Set up axe-core integration for automated accessibility testing. Create test suite that renders key pages and runs axe checks: homepage, accommodation detail, destination detail, event detail, blog post, auth pages. Verify ARIA landmarks, heading hierarchy, focus-visible, alt text. Target: 0 violations. Tests: axe passes on all tested pages.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-045", "T-059", "T-064", "T-067", "T-069"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Set up axe-core testing utility",
+                    "completed": true
+                },
+                {
+                    "title": "Test homepage accessibility",
+                    "completed": true
+                },
+                {
+                    "title": "Test entity detail pages",
+                    "completed": true
+                },
+                {
+                    "title": "Test auth pages",
+                    "completed": true
+                },
+                {
+                    "title": "Test form accessibility",
+                    "completed": true
+                },
+                {
+                    "title": "Verify heading hierarchy",
+                    "completed": true
+                }
+            ],
+            "tags": ["testing", "accessibility"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-14T14:15:00.000Z",
+                "completed": "2026-02-14T14:55:00.000Z"
+            }
+        },
+        {
+            "id": "T-094",
+            "title": "Create SEO validation tests",
+            "description": "Create test suite validating SEO across pages. Check: title format ('{Page} | Hospeda'), meta description length (150-160), canonical URLs, OG tags, hreflang tags, JSON-LD validity (parse and validate schema.org types). Tests: meta tags present and valid on key pages.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-045", "T-059"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create SEO test utilities",
+                    "completed": true
+                },
+                {
+                    "title": "Test meta tags on key pages",
+                    "completed": true
+                },
+                {
+                    "title": "Validate JSON-LD output",
+                    "completed": true
+                },
+                {
+                    "title": "Test hreflang links",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["testing", "seo"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-14T01:13:00.000Z"
+            }
+        },
+        {
+            "id": "T-095",
+            "title": "Create CLAUDE.md for apps/web2",
+            "description": "Create apps/web2/CLAUDE.md documenting: architecture overview, directory structure, key commands (dev, build, test), component patterns (Astro vs React), rendering strategy decisions, i18n usage, SEO patterns, testing patterns. Follow existing CLAUDE.md format from other apps. Tests: file exists and is well-structured.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create CLAUDE.md",
+                    "completed": true
+                },
+                {
+                    "title": "Document architecture",
+                    "completed": true
+                },
+                {
+                    "title": "Document key commands",
+                    "completed": true
+                },
+                {
+                    "title": "Document component patterns",
+                    "completed": true
+                }
+            ],
+            "tags": ["docs"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-02-13T16:00:00.000Z",
+                "started": "2026-02-13T14:00:00.000Z",
+                "completed": "2026-02-13T14:10:00.000Z"
+            }
+        }
+    ],
+    "summary": {
+        "total": 95,
+        "pending": 2,
+        "inProgress": 0,
+        "completed": 93,
+        "blocked": 0,
+        "averageComplexity": 4.0
+    }
+}
