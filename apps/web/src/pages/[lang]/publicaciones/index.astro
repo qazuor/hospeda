@@ -1,0 +1,387 @@
+---
+/**
+ * Blog list page - displays all blog posts with category filters.
+ * Validates locale parameter and redirects invalid locales to Spanish (default).
+ */
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import SEOHead from '../../../components/seo/SEOHead.astro';
+import Breadcrumb from '../../../components/ui/Breadcrumb.astro';
+import Container from '../../../components/ui/Container.astro';
+import Section from '../../../components/ui/Section.astro';
+import EmptyState from '../../../components/ui/EmptyState.astro';
+import BlogPostCard from '../../../components/blog/BlogPostCard.astro';
+import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
+import { postsApi } from '../../../lib/api/endpoints';
+
+const { lang } = Astro.params;
+
+if (!lang || !isValidLocale(lang)) {
+	return Astro.redirect('/es/');
+}
+
+const locale = lang as SupportedLocale;
+
+/**
+ * Localized page titles
+ */
+const titles: Record<SupportedLocale, string> = {
+	es: 'Blog',
+	en: 'Blog',
+	pt: 'Blog',
+};
+
+/**
+ * Localized meta descriptions
+ */
+const descriptions: Record<SupportedLocale, string> = {
+	es: 'Descubre historias, consejos de viaje y novedades sobre turismo en el Litoral argentino. Artículos sobre destinos, alojamientos, eventos y gastronomía.',
+	en: 'Discover stories, travel tips and news about tourism in the Argentine Litoral region. Articles about destinations, accommodations, events and gastronomy.',
+	pt: 'Descubra histórias, dicas de viagem e novidades sobre turismo no Litoral argentino. Artigos sobre destinos, acomodações, eventos e gastronomia.',
+};
+
+/**
+ * Localized home breadcrumb labels
+ */
+const homeLabels: Record<SupportedLocale, string> = {
+	es: 'Inicio',
+	en: 'Home',
+	pt: 'Início',
+};
+
+/**
+ * Localized hero heading
+ */
+const heroHeadings: Record<SupportedLocale, string> = {
+	es: 'Blog de Hospeda',
+	en: 'Hospeda Blog',
+	pt: 'Blog da Hospeda',
+};
+
+/**
+ * Localized hero description
+ */
+const heroDescriptions: Record<SupportedLocale, string> = {
+	es: 'Historias, consejos y novedades sobre turismo en el Litoral argentino. Descubre los mejores destinos, alojamientos, eventos y experiencias gastronómicas de la región.',
+	en: 'Stories, tips and news about tourism in the Argentine Litoral region. Discover the best destinations, accommodations, events and gastronomic experiences in the region.',
+	pt: 'Histórias, dicas e novidades sobre turismo no Litoral argentino. Descubra os melhores destinos, acomodações, eventos e experiências gastronômicas da região.',
+};
+
+/**
+ * Localized featured post section title
+ */
+const featuredTitles: Record<SupportedLocale, string> = {
+	es: 'Publicación Destacada',
+	en: 'Featured Post',
+	pt: 'Publicação em Destaque',
+};
+
+/**
+ * Localized category filter labels
+ */
+const categoryLabels: Record<SupportedLocale, Record<string, string>> = {
+	es: {
+		all: 'Todos',
+		destinations: 'Destinos',
+		accommodations: 'Alojamientos',
+		events: 'Eventos',
+		gastronomy: 'Gastronomía',
+		tips: 'Consejos',
+	},
+	en: {
+		all: 'All',
+		destinations: 'Destinations',
+		accommodations: 'Accommodations',
+		events: 'Events',
+		gastronomy: 'Gastronomy',
+		tips: 'Tips',
+	},
+	pt: {
+		all: 'Todos',
+		destinations: 'Destinos',
+		accommodations: 'Acomodações',
+		events: 'Eventos',
+		gastronomy: 'Gastronomia',
+		tips: 'Dicas',
+	},
+};
+
+/**
+ * Localized empty state text
+ */
+const emptyStateTexts: Record<SupportedLocale, string> = {
+	es: 'No hay publicaciones disponibles',
+	en: 'No posts available',
+	pt: 'Nenhuma publicação disponível',
+};
+
+/**
+ * Localized pagination labels
+ */
+const paginationLabels: Record<SupportedLocale, { previous: string; next: string }> = {
+	es: {
+		previous: 'Anterior',
+		next: 'Siguiente',
+	},
+	en: {
+		previous: 'Previous',
+		next: 'Next',
+	},
+	pt: {
+		previous: 'Anterior',
+		next: 'Próximo',
+	},
+};
+
+/**
+ * Get query parameters from URL
+ */
+const url = new URL(Astro.request.url);
+const q = url.searchParams.get('q') || '';
+const page = Number.parseInt(url.searchParams.get('page') || '1', 10);
+const pageSize = 12;
+const sortBy = url.searchParams.get('sortBy') || 'createdAt';
+const sortOrder = (url.searchParams.get('sortOrder') || 'desc') as 'asc' | 'desc';
+const category = url.searchParams.get('categoria') || '';
+
+/**
+ * Fetch posts from API
+ */
+const apiResult = await postsApi.list({ page, pageSize, q, sortBy, sortOrder, category: category || undefined });
+
+const posts = apiResult.ok ? apiResult.data.items : [];
+const pagination = apiResult.ok ? apiResult.data.pagination : null;
+
+/**
+ * Get featured post
+ */
+const featuredResult = await postsApi.getFeatured();
+const featuredPost = featuredResult.ok && featuredResult.data.items.length > 0 ? featuredResult.data.items[0] : null;
+
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
+
+/**
+ * Breadcrumb navigation items
+ */
+const breadcrumbItems = [
+	{ label: homeLabels[locale], href: `/${locale}/` },
+	{ label: titles[locale], href: `/${locale}/publicaciones/` },
+];
+---
+
+<BaseLayout title={titles[locale]} description={descriptions[locale]} locale={locale}>
+	<SEOHead
+		slot="head"
+		title={titles[locale]}
+		description={descriptions[locale]}
+		canonical={canonicalUrl}
+		locale={locale === 'pt' ? 'es' : locale}
+		type="website"
+	/>
+
+	<Container>
+		<Breadcrumb items={breadcrumbItems} />
+
+		<Section>
+			<div class="mx-auto max-w-6xl">
+				<!-- Hero Section -->
+				<article id="hero" class="mb-12 text-center">
+					<h1 class="mb-6 text-4xl font-bold text-text-primary md:text-5xl">
+						{heroHeadings[locale]}
+					</h1>
+					<p class="mx-auto max-w-3xl text-xl leading-relaxed text-text-secondary">
+						{heroDescriptions[locale]}
+					</p>
+				</article>
+
+				<!-- Featured Post Area -->
+				{
+					featuredPost && (
+						<article id="featured-post" class="mb-12">
+							<h2 class="mb-6 text-2xl font-semibold text-text-primary">
+								{featuredTitles[locale]}
+							</h2>
+
+							<div class="rounded-lg border border-border bg-bg p-8 shadow-sm transition-shadow hover:shadow-md">
+								<div class="grid gap-8 md:grid-cols-2">
+									{/* Featured Image */}
+									{(featuredPost as any).featuredImage && (
+										<div class="aspect-video rounded-md overflow-hidden">
+											<img
+												src={(featuredPost as any).featuredImage}
+												alt={(featuredPost as any).title || 'Featured post'}
+												class="h-full w-full object-cover"
+												loading="eager"
+											/>
+										</div>
+									)}
+
+									{/* Post Content */}
+									<div class="flex flex-col justify-between">
+										<div>
+											{(featuredPost as any).category && (
+												<div class="mb-3">
+													<span class="inline-block rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
+														{(featuredPost as any).category}
+													</span>
+												</div>
+											)}
+											<h3 class="mb-3 text-2xl font-bold text-text-primary">
+												<a href={`/${locale}/publicaciones/${(featuredPost as any).slug}/`} class="hover:text-primary">
+													{(featuredPost as any).title || 'Publicación destacada'}
+												</a>
+											</h3>
+											<p class="mb-4 text-text-secondary line-clamp-3">
+												{(featuredPost as any).summary || (featuredPost as any).content || ''}
+											</p>
+											{(featuredPost as any).publishedAt && (
+												<time datetime={(featuredPost as any).publishedAt} class="text-sm text-text-tertiary">
+													{new Date((featuredPost as any).publishedAt).toLocaleDateString(locale)}
+												</time>
+											)}
+										</div>
+									</div>
+								</div>
+							</div>
+						</article>
+					)
+				}
+
+				<!-- Category Filter -->
+				<article id="category-filter" class="mb-12">
+					<nav aria-label="Category filter">
+						<div class="flex flex-wrap justify-center gap-3">
+							<a
+								href={`/${locale}/publicaciones/`}
+								class={
+									!category
+										? 'rounded-full border border-primary bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2'
+										: 'rounded-full border border-border bg-bg px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:border-primary hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2'
+								}
+								aria-current={!category ? 'page' : undefined}
+							>
+								{categoryLabels[locale].all}
+							</a>
+							<a
+								href={`/${locale}/publicaciones/?categoria=destinos`}
+								class={
+									category === 'destinos'
+										? 'rounded-full border border-primary bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2'
+										: 'rounded-full border border-border bg-bg px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:border-primary hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2'
+								}
+								aria-current={category === 'destinos' ? 'page' : undefined}
+							>
+								{categoryLabels[locale].destinations}
+							</a>
+							<a
+								href={`/${locale}/publicaciones/?categoria=alojamientos`}
+								class={
+									category === 'alojamientos'
+										? 'rounded-full border border-primary bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2'
+										: 'rounded-full border border-border bg-bg px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:border-primary hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2'
+								}
+								aria-current={category === 'alojamientos' ? 'page' : undefined}
+							>
+								{categoryLabels[locale].accommodations}
+							</a>
+							<a
+								href={`/${locale}/publicaciones/?categoria=eventos`}
+								class={
+									category === 'eventos'
+										? 'rounded-full border border-primary bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2'
+										: 'rounded-full border border-border bg-bg px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:border-primary hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2'
+								}
+								aria-current={category === 'eventos' ? 'page' : undefined}
+							>
+								{categoryLabels[locale].events}
+							</a>
+							<a
+								href={`/${locale}/publicaciones/?categoria=gastronomia`}
+								class={
+									category === 'gastronomia'
+										? 'rounded-full border border-primary bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2'
+										: 'rounded-full border border-border bg-bg px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:border-primary hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2'
+								}
+								aria-current={category === 'gastronomia' ? 'page' : undefined}
+							>
+								{categoryLabels[locale].gastronomy}
+							</a>
+							<a
+								href={`/${locale}/publicaciones/?categoria=consejos`}
+								class={
+									category === 'consejos'
+										? 'rounded-full border border-primary bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2'
+										: 'rounded-full border border-border bg-bg px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:border-primary hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2'
+								}
+								aria-current={category === 'consejos' ? 'page' : undefined}
+							>
+								{categoryLabels[locale].tips}
+							</a>
+						</div>
+					</nav>
+				</article>
+
+				<!-- Posts Grid -->
+				<article id="posts-grid" class="mb-16">
+					{
+						posts.length > 0 ? (
+							<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" role="region" aria-label="Blog posts">
+								{posts.map((post) => (
+									<BlogPostCard
+										post={post as Record<string, unknown> & { slug: string; title: string; summary: string; featuredImage: string; category: string; publishedAt: string; readingTimeMinutes: number; authorName: string; isFeatured: boolean }}
+										locale={locale}
+									/>
+								))}
+							</div>
+						) : (
+							<EmptyState title={emptyStateTexts[locale]} message={emptyStateTexts[locale]} />
+						)
+					}
+				</article>
+
+				<!-- Pagination -->
+				{
+					pagination && pagination.totalPages > 1 && (
+						<article id="pagination" class="mb-12">
+							<nav aria-label="Blog pagination" class="flex items-center justify-center gap-4">
+								{pagination.hasPreviousPage ? (
+									<a
+										href={`/${locale}/publicaciones/?page=${pagination.page - 1}${category ? `&categoria=${category}` : ''}`}
+										class="rounded-md border border-border bg-bg px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-surface"
+										aria-label={paginationLabels[locale].previous}
+									>
+										← {paginationLabels[locale].previous}
+									</a>
+								) : (
+									<span class="rounded-md border border-border bg-bg px-4 py-2 text-sm font-medium text-text-tertiary cursor-not-allowed opacity-50">
+										← {paginationLabels[locale].previous}
+									</span>
+								)}
+
+								<div class="flex items-center gap-2">
+									<span class="rounded-md bg-primary px-3 py-1 text-sm font-medium text-white" aria-current="page">
+										{pagination.page}
+									</span>
+									<span class="text-sm text-text-tertiary">de {pagination.totalPages}</span>
+								</div>
+
+								{pagination.hasNextPage ? (
+									<a
+										href={`/${locale}/publicaciones/?page=${pagination.page + 1}${category ? `&categoria=${category}` : ''}`}
+										class="rounded-md border border-border bg-bg px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-surface"
+										aria-label={paginationLabels[locale].next}
+									>
+										{paginationLabels[locale].next} →
+									</a>
+								) : (
+									<span class="rounded-md border border-border bg-bg px-4 py-2 text-sm font-medium text-text-tertiary cursor-not-allowed opacity-50">
+										{paginationLabels[locale].next} →
+									</span>
+								)}
+							</nav>
+						</article>
+					)
+				}
+			</div>
+		</Section>
+	</Container>
+</BaseLayout>

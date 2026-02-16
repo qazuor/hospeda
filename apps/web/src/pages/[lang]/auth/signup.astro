@@ -1,0 +1,135 @@
+---
+export const prerender = true;
+
+export function getStaticPaths() {
+	return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
+}
+
+/**
+ * Sign up page - allows users to create a new account.
+ * Uses the SignUpIsland React island for interactive registration via Better Auth.
+ * Validates locale parameter and redirects invalid locales to Spanish (default).
+ */
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import SEOHead from '../../../components/seo/SEOHead.astro';
+import Container from '../../../components/ui/Container.astro';
+import { SignUpIsland } from '../../../components/auth/SignUpIsland';
+import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
+
+const { lang } = Astro.params;
+
+if (!lang || !isValidLocale(lang)) {
+	return Astro.redirect('/es/');
+}
+
+const locale = lang as SupportedLocale;
+
+/**
+ * Localized page titles
+ */
+const titles: Record<SupportedLocale, string> = {
+	es: 'Registrarse',
+	en: 'Sign Up',
+	pt: 'Registrar',
+};
+
+/**
+ * Localized meta descriptions
+ */
+const descriptions: Record<SupportedLocale, string> = {
+	es: 'Crea tu cuenta en Hospeda para gestionar tus reservas y descubrir nuevos alojamientos',
+	en: 'Create your Hospeda account to manage your bookings and discover new accommodations',
+	pt: 'Crie sua conta no Hospeda para gerenciar suas reservas e descobrir novas acomodações',
+};
+
+/**
+ * Localized labels
+ */
+const labels = {
+	es: {
+		haveAccount: '¿Ya tienes cuenta?',
+		signIn: 'Iniciar sesión',
+	},
+	en: {
+		haveAccount: 'Already have an account?',
+		signIn: 'Sign In',
+	},
+	pt: {
+		haveAccount: 'Já tem uma conta?',
+		signIn: 'Entrar',
+	},
+};
+
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
+const currentLabels = labels[locale];
+
+/**
+ * Build an absolute redirect URL so Better Auth OAuth redirects
+ * return to the web app instead of the API.
+ * Use Astro.site (configured in astro.config.mjs) for SSG pages.
+ */
+const siteOrigin = Astro.site?.origin || import.meta.env.PUBLIC_SITE_URL || import.meta.env.HOSPEDA_SITE_URL || 'http://localhost:4321';
+const redirectTo = new URL(`/${locale}/mi-cuenta`, siteOrigin).href;
+---
+
+<BaseLayout title={titles[locale]} description={descriptions[locale]} locale={locale}>
+	<SEOHead
+		slot="head"
+		title={titles[locale]}
+		description={descriptions[locale]}
+		canonical={canonicalUrl}
+		locale={locale === 'pt' ? 'es' : locale}
+		type="website"
+		noindex={true}
+	/>
+
+	<Container>
+		<div class="flex min-h-screen items-center justify-center py-12">
+			<div class="w-full max-w-md">
+				<div class="rounded-lg border border-border bg-bg-secondary p-8 shadow-lg">
+					<SignUpIsland
+						client:load
+						redirectTo={redirectTo}
+						showOAuth={true}
+					/>
+
+					<!-- Sign in link -->
+					<div class="mt-6 text-center">
+						<span class="text-sm text-text-secondary">{currentLabels.haveAccount}</span>
+						{' '}
+						<a
+							href={`/${locale}/auth/signin/`}
+							class="text-sm font-medium text-primary transition-colors hover:text-primary-dark"
+						>
+							{currentLabels.signIn}
+						</a>
+					</div>
+				</div>
+			</div>
+		</div>
+	</Container>
+</BaseLayout>
+
+<script>
+	/**
+	 * Client-side auth guard for SSG auth pages.
+	 * Checks if user is already authenticated and redirects to home.
+	 * Uses the Better Auth get-session endpoint via the API.
+	 */
+	async function redirectIfAuthenticated() {
+		try {
+			const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:3001';
+			const res = await fetch(`${apiUrl}/api/auth/get-session`, { credentials: 'include' });
+			if (res.ok) {
+				const data = await res.json();
+				if (data?.user?.id) {
+					const locale = window.location.pathname.split('/')[1] || 'es';
+					window.location.replace(`/${locale}/`);
+				}
+			}
+		} catch {
+			// Ignore - user is not authenticated or API is unreachable
+		}
+	}
+	void redirectIfAuthenticated();
+</script>

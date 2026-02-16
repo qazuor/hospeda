@@ -1,0 +1,416 @@
+---
+export const prerender = true;
+
+export function getStaticPaths() {
+	return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
+}
+
+/**
+ * Property owner pricing page - displays subscription plans for accommodation owners.
+ * Validates locale parameter and redirects invalid locales to Spanish (default).
+ */
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import SEOHead from '../../../components/seo/SEOHead.astro';
+import Breadcrumb from '../../../components/ui/Breadcrumb.astro';
+import Container from '../../../components/ui/Container.astro';
+import Section from '../../../components/ui/Section.astro';
+import PricingCard from '../../../components/content/PricingCard.astro';
+import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
+
+const { lang } = Astro.params;
+
+if (!lang || !isValidLocale(lang)) {
+	return Astro.redirect('/es/');
+}
+
+const locale = lang as SupportedLocale;
+
+/**
+ * Localized page titles
+ */
+const titles: Record<SupportedLocale, string> = {
+	es: 'Precios para Propietarios',
+	en: 'Owner Pricing',
+	pt: 'Precos para Proprietarios',
+};
+
+/**
+ * Localized meta descriptions
+ */
+const descriptions: Record<SupportedLocale, string> = {
+	es: 'Descubre nuestros planes de suscripción para propietarios de alojamientos. Desde básico hasta premium con gestor de cuenta dedicado.',
+	en: 'Discover our subscription plans for accommodation owners. From basic to premium with dedicated account manager.',
+	pt: 'Descubra nossos planos de assinatura para proprietários de acomodações. De básico a premium com gerente de conta dedicado.',
+};
+
+/**
+ * Localized home breadcrumb labels
+ */
+const homeLabels: Record<SupportedLocale, string> = {
+	es: 'Inicio',
+	en: 'Home',
+	pt: 'Início',
+};
+
+/**
+ * Localized breadcrumb labels for pricing
+ */
+const pricingLabels: Record<SupportedLocale, string> = {
+	es: 'Precios',
+	en: 'Pricing',
+	pt: 'Precos',
+};
+
+/**
+ * Localized hero section content
+ */
+const heroContent: Record<SupportedLocale, { title: string; description: string }> = {
+	es: {
+		title: 'Planes para Propietarios',
+		description: 'Elige el plan ideal para gestionar y promocionar tus alojamientos. Desde un listado básico hasta herramientas profesionales con gestor de cuenta dedicado.',
+	},
+	en: {
+		title: 'Owner Plans',
+		description: 'Choose the ideal plan to manage and promote your accommodations. From basic listing to professional tools with dedicated account manager.',
+	},
+	pt: {
+		title: 'Planos para Proprietários',
+		description: 'Escolha o plano ideal para gerenciar e promover suas acomodações. De listagem básica até ferramentas profissionais com gerente de conta dedicado.',
+	},
+};
+
+/**
+ * Localized FAQ section
+ */
+const faqContent: Record<SupportedLocale, { question: string; answer: string }[]> = {
+	es: [
+		{
+			question: '¿Qué está incluido en la prueba gratuita?',
+			answer: 'La prueba gratuita de 14 días incluye acceso completo a todas las funciones del plan seleccionado, sin necesidad de tarjeta de crédito.',
+		},
+		{
+			question: '¿Puedo cambiar de plan después?',
+			answer: 'Sí, puedes actualizar o cambiar tu plan en cualquier momento. Los cambios se reflejarán inmediatamente y se ajustará la facturación de forma proporcional.',
+		},
+		{
+			question: '¿Hay costos adicionales por reservas?',
+			answer: 'No cobramos comisiones por reserva. El precio del plan cubre todas las funcionalidades. Los pagos de huéspedes se procesan vía MercadoPago con sus tarifas estándar.',
+		},
+	],
+	en: [
+		{
+			question: 'What is included in the free trial?',
+			answer: 'The 14-day free trial includes full access to all features of the selected plan, with no credit card required.',
+		},
+		{
+			question: 'Can I change my plan later?',
+			answer: 'Yes, you can upgrade or change your plan at any time. Changes are reflected immediately and billing is adjusted proportionally.',
+		},
+		{
+			question: 'Are there additional costs per booking?',
+			answer: 'We do not charge booking commissions. The plan price covers all functionalities. Guest payments are processed via MercadoPago with their standard fees.',
+		},
+	],
+	pt: [
+		{
+			question: 'O que está incluído no teste gratuito?',
+			answer: 'O teste gratuito de 14 dias inclui acesso completo a todas as funcionalidades do plano selecionado, sem necessidade de cartão de crédito.',
+		},
+		{
+			question: 'Posso mudar de plano depois?',
+			answer: 'Sim, você pode atualizar ou mudar seu plano a qualquer momento. As alterações são refletidas imediatamente e o faturamento é ajustado proporcionalmente.',
+		},
+		{
+			question: 'Há custos adicionais por reservas?',
+			answer: 'Não cobramos comissões por reserva. O preço do plano cobre todas as funcionalidades. Os pagamentos de hóspedes são processados via MercadoPago com suas tarifas padrão.',
+		},
+	],
+};
+
+/**
+ * Localized CTA section
+ */
+const ctaContent: Record<SupportedLocale, { title: string; description: string; buttonText: string }> = {
+	es: {
+		title: '¿Listo para hacer crecer tu negocio?',
+		description: 'Comienza tu prueba gratuita de 14 días y descubre cómo Hospeda puede ayudarte a aumentar tus reservas.',
+		buttonText: 'Comenzar Prueba Gratuita',
+	},
+	en: {
+		title: 'Ready to grow your business?',
+		description: 'Start your 14-day free trial and discover how Hospeda can help you increase your bookings.',
+		buttonText: 'Start Free Trial',
+	},
+	pt: {
+		title: 'Pronto para fazer crescer seu negócio?',
+		description: 'Comece seu teste gratuito de 14 dias e descubra como a Hospeda pode ajudá-lo a aumentar suas reservas.',
+		buttonText: 'Começar Teste Gratuito',
+	},
+};
+
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
+
+/**
+ * Breadcrumb navigation items
+ */
+const breadcrumbItems = [
+	{ label: homeLabels[locale], href: `/${locale}/` },
+	{ label: pricingLabels[locale], href: `/${locale}/precios/` },
+	{ label: titles[locale], href: `/${locale}/precios/propietarios/` },
+];
+
+/**
+ * Pricing plans data with locale-specific content
+ */
+const plans = {
+	es: [
+		{
+			name: 'Basico',
+			price: 15000,
+			currency: 'ARS',
+			period: '/mes',
+			features: [
+				'1 propiedad en listado',
+				'Análisis básicos',
+				'Soporte por email',
+				'Galería de fotos (hasta 10)',
+			],
+			cta: {
+				label: 'Comenzar Basico',
+				href: `/${locale}/registro/propietario/?plan=basico`,
+			},
+		},
+		{
+			name: 'Profesional',
+			price: 35000,
+			currency: 'ARS',
+			period: '/mes',
+			features: [
+				'Hasta 5 propiedades',
+				'Análisis avanzados',
+				'Soporte prioritario',
+				'Fotos ilimitadas',
+				'Listado destacado',
+			],
+			cta: {
+				label: 'Comenzar Profesional',
+				href: `/${locale}/registro/propietario/?plan=profesional`,
+			},
+			highlighted: true,
+		},
+		{
+			name: 'Premium',
+			price: 75000,
+			currency: 'ARS',
+			period: '/mes',
+			features: [
+				'Propiedades ilimitadas',
+				'Análisis completos',
+				'Soporte 24/7',
+				'Acceso a API',
+				'Marca personalizada',
+				'Gestor de cuenta',
+			],
+			cta: {
+				label: 'Comenzar Premium',
+				href: `/${locale}/registro/propietario/?plan=premium`,
+			},
+		},
+	],
+	en: [
+		{
+			name: 'Basic',
+			price: 15,
+			currency: 'USD',
+			period: '/month',
+			features: [
+				'1 property listing',
+				'Basic analytics',
+				'Email support',
+				'Photo gallery (up to 10)',
+			],
+			cta: {
+				label: 'Start Basic',
+				href: `/${locale}/registro/propietario/?plan=basico`,
+			},
+		},
+		{
+			name: 'Professional',
+			price: 35,
+			currency: 'USD',
+			period: '/month',
+			features: [
+				'Up to 5 properties',
+				'Advanced analytics',
+				'Priority support',
+				'Unlimited photos',
+				'Featured listing',
+			],
+			cta: {
+				label: 'Start Professional',
+				href: `/${locale}/registro/propietario/?plan=profesional`,
+			},
+			highlighted: true,
+		},
+		{
+			name: 'Premium',
+			price: 75,
+			currency: 'USD',
+			period: '/month',
+			features: [
+				'Unlimited properties',
+				'Full analytics',
+				'24/7 support',
+				'API access',
+				'Custom branding',
+				'Account manager',
+			],
+			cta: {
+				label: 'Start Premium',
+				href: `/${locale}/registro/propietario/?plan=premium`,
+			},
+		},
+	],
+	pt: [
+		{
+			name: 'Básico',
+			price: 15000,
+			currency: 'ARS',
+			period: '/mês',
+			features: [
+				'1 propriedade em listagem',
+				'Análise básicas',
+				'Suporte por email',
+				'Galeria de fotos (até 10)',
+			],
+			cta: {
+				label: 'Começar Básico',
+				href: `/${locale}/registro/propietario/?plan=basico`,
+			},
+		},
+		{
+			name: 'Profissional',
+			price: 35000,
+			currency: 'ARS',
+			period: '/mês',
+			features: [
+				'Até 5 propriedades',
+				'Análise avançadas',
+				'Suporte prioritário',
+				'Fotos ilimitadas',
+				'Listagem destacada',
+			],
+			cta: {
+				label: 'Começar Profissional',
+				href: `/${locale}/registro/propietario/?plan=profesional`,
+			},
+			highlighted: true,
+		},
+		{
+			name: 'Premium',
+			price: 75000,
+			currency: 'ARS',
+			period: '/mês',
+			features: [
+				'Propriedades ilimitadas',
+				'Análise completas',
+				'Suporte 24/7',
+				'Acesso à API',
+				'Marca personalizada',
+				'Gerente de conta',
+			],
+			cta: {
+				label: 'Começar Premium',
+				href: `/${locale}/registro/propietario/?plan=premium`,
+			},
+		},
+	],
+};
+
+const currentPlans = plans[locale];
+---
+
+<BaseLayout title={titles[locale]} description={descriptions[locale]} locale={locale}>
+	<SEOHead
+		slot="head"
+		title={titles[locale]}
+		description={descriptions[locale]}
+		canonical={canonicalUrl}
+		locale={locale === 'pt' ? 'es' : locale}
+		type="website"
+	/>
+
+	<Container>
+		<Breadcrumb items={breadcrumbItems} />
+
+		<Section>
+			<div class="mx-auto max-w-6xl">
+				<!-- Hero Section -->
+				<article id="hero" class="mb-12 text-center">
+					<h1 class="mb-6 text-4xl font-bold text-text-primary md:text-5xl">
+						{heroContent[locale].title}
+					</h1>
+					<p class="text-xl leading-relaxed text-text-secondary">
+						{heroContent[locale].description}
+					</p>
+				</article>
+
+				<!-- Pricing Cards Section -->
+				<article id="pricing-plans" class="mb-16">
+					<div class="grid gap-8 md:grid-cols-3">
+						{currentPlans.map((plan) => (
+							<PricingCard
+								plan={{
+									name: plan.name,
+									price: plan.price,
+									currency: plan.currency,
+									period: plan.period,
+									features: plan.features,
+									cta: plan.cta,
+								}}
+								highlighted={plan.highlighted}
+							/>
+						))}
+					</div>
+				</article>
+
+				<!-- FAQ Section -->
+				<article id="faq" class="mb-16">
+					<h2 class="mb-8 text-center text-3xl font-semibold text-text-primary">
+						Preguntas Frecuentes
+					</h2>
+					<div class="mx-auto max-w-3xl space-y-6">
+						{faqContent[locale].map((faq) => (
+							<div class="rounded-lg bg-surface p-6 shadow-sm">
+								<h3 class="mb-3 text-lg font-semibold text-text-primary">
+									{faq.question}
+								</h3>
+								<p class="text-text-secondary">
+									{faq.answer}
+								</p>
+							</div>
+						))}
+					</div>
+				</article>
+
+				<!-- CTA Section -->
+				<article id="cta-section" class="mb-12">
+					<div class="rounded-lg bg-primary/10 p-8 text-center shadow-sm transition-shadow hover:shadow-md">
+						<h2 class="mb-4 text-3xl font-semibold text-text-primary">
+							{ctaContent[locale].title}
+						</h2>
+						<p class="mb-8 text-lg leading-relaxed text-text-secondary">
+							{ctaContent[locale].description}
+						</p>
+						<a
+							href={`/${locale}/registro/propietario/`}
+							class="inline-block rounded-lg bg-primary px-8 py-3 font-semibold text-white transition-colors hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+						>
+							{ctaContent[locale].buttonText}
+						</a>
+					</div>
+				</article>
+			</div>
+		</Section>
+	</Container>
+</BaseLayout>

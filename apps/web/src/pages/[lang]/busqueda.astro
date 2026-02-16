@@ -1,0 +1,422 @@
+---
+/**
+ * Search results page - displays search results grouped by entity type.
+ * Validates locale parameter and redirects invalid locales to Spanish (default).
+ * This page uses noindex to prevent search result pages from being indexed by search engines.
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SEOHead from '../../components/seo/SEOHead.astro';
+import Breadcrumb from '../../components/ui/Breadcrumb.astro';
+import Container from '../../components/ui/Container.astro';
+import Section from '../../components/ui/Section.astro';
+import EmptyState from '../../components/ui/EmptyState.astro';
+import AccommodationCard from '../../components/accommodation/AccommodationCard.astro';
+import DestinationCard from '../../components/destination/DestinationCard.astro';
+import EventCard from '../../components/event/EventCard.astro';
+import BlogPostCard from '../../components/blog/BlogPostCard.astro';
+import { isValidLocale, type SupportedLocale } from '../../lib/i18n';
+import { accommodationsApi, destinationsApi, eventsApi, postsApi } from '../../lib/api/endpoints';
+
+const { lang } = Astro.params;
+
+if (!lang || !isValidLocale(lang)) {
+	return Astro.redirect('/es/');
+}
+
+const locale = lang as SupportedLocale;
+
+/**
+ * Get search query from URL parameters
+ */
+const query = Astro.url.searchParams.get('q') || '';
+
+/**
+ * Localized page titles
+ */
+const titles: Record<SupportedLocale, string> = {
+	es: 'Resultados de búsqueda',
+	en: 'Search Results',
+	pt: 'Resultados da busca',
+};
+
+/**
+ * Localized meta descriptions
+ */
+const descriptions: Record<SupportedLocale, string> = {
+	es: 'Encuentra alojamientos, destinos, eventos y publicaciones en Hospeda.',
+	en: 'Find accommodations, destinations, events and posts on Hospeda.',
+	pt: 'Encontre acomodações, destinos, eventos e publicações no Hospeda.',
+};
+
+/**
+ * Localized home breadcrumb labels
+ */
+const homeLabels: Record<SupportedLocale, string> = {
+	es: 'Inicio',
+	en: 'Home',
+	pt: 'Início',
+};
+
+/**
+ * Localized search result heading
+ */
+const searchHeadings: Record<SupportedLocale, string> = {
+	es: 'Resultados para',
+	en: 'Results for',
+	pt: 'Resultados para',
+};
+
+/**
+ * Localized search input placeholder
+ */
+const searchPlaceholders: Record<SupportedLocale, string> = {
+	es: 'Buscar alojamientos, destinos, eventos...',
+	en: 'Search accommodations, destinations, events...',
+	pt: 'Pesquisar acomodações, destinos, eventos...',
+};
+
+/**
+ * Localized category labels
+ */
+const categoryLabels: Record<SupportedLocale, Record<string, string>> = {
+	es: {
+		accommodations: 'Alojamientos',
+		destinations: 'Destinos',
+		events: 'Eventos',
+		posts: 'Publicaciones',
+	},
+	en: {
+		accommodations: 'Accommodations',
+		destinations: 'Destinations',
+		events: 'Events',
+		posts: 'Posts',
+	},
+	pt: {
+		accommodations: 'Acomodações',
+		destinations: 'Destinos',
+		events: 'Eventos',
+		posts: 'Publicações',
+	},
+};
+
+/**
+ * Localized empty state text
+ */
+const emptyStateTexts: Record<SupportedLocale, string> = {
+	es: 'No se encontraron resultados',
+	en: 'No results found',
+	pt: 'Nenhum resultado encontrado',
+};
+
+/**
+ * Localized empty state suggestions
+ */
+const emptySuggestions: Record<SupportedLocale, string> = {
+	es: 'Intenta con otros términos de búsqueda',
+	en: 'Try other search terms',
+	pt: 'Tente outros termos de busca',
+};
+
+/**
+ * Localized popular searches heading
+ */
+const popularSearchesHeadings: Record<SupportedLocale, string> = {
+	es: 'Búsquedas populares',
+	en: 'Popular searches',
+	pt: 'Pesquisas populares',
+};
+
+/**
+ * Popular search terms (placeholder)
+ */
+const popularSearches: Record<SupportedLocale, Array<{ label: string; href: string }>> = {
+	es: [
+		{ label: 'Hoteles', href: `/${locale}/busqueda/?q=hoteles` },
+		{ label: 'Cabañas', href: `/${locale}/busqueda/?q=cabanas` },
+		{ label: 'Concepción del Uruguay', href: `/${locale}/busqueda/?q=concepcion` },
+		{ label: 'Eventos', href: `/${locale}/busqueda/?q=eventos` },
+	],
+	en: [
+		{ label: 'Hotels', href: `/${locale}/busqueda/?q=hotels` },
+		{ label: 'Cabins', href: `/${locale}/busqueda/?q=cabins` },
+		{ label: 'Concepción del Uruguay', href: `/${locale}/busqueda/?q=concepcion` },
+		{ label: 'Events', href: `/${locale}/busqueda/?q=events` },
+	],
+	pt: [
+		{ label: 'Hotéis', href: `/${locale}/busqueda/?q=hoteis` },
+		{ label: 'Cabanas', href: `/${locale}/busqueda/?q=cabanas` },
+		{ label: 'Concepción del Uruguay', href: `/${locale}/busqueda/?q=concepcion` },
+		{ label: 'Eventos', href: `/${locale}/busqueda/?q=eventos` },
+	],
+};
+
+/**
+ * Fetch search results from API when query is present
+ */
+let accommodations: Record<string, unknown>[] = [];
+let destinations: Record<string, unknown>[] = [];
+let events: Record<string, unknown>[] = [];
+let posts: Record<string, unknown>[] = [];
+
+if (query) {
+	const [accommodationsResult, destinationsResult, eventsResult, postsResult] = await Promise.all([
+		accommodationsApi.list({ q: query, pageSize: 6 }),
+		destinationsApi.list({ q: query, pageSize: 6 }),
+		eventsApi.list({ q: query, pageSize: 6 }),
+		postsApi.list({ q: query, pageSize: 6 }),
+	]);
+
+	accommodations = accommodationsResult.ok ? accommodationsResult.data.items : [];
+	destinations = destinationsResult.ok ? destinationsResult.data.items : [];
+	events = eventsResult.ok ? eventsResult.data.items : [];
+	posts = postsResult.ok ? postsResult.data.items : [];
+}
+
+const totalResults = accommodations.length + destinations.length + events.length + posts.length;
+
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
+
+/**
+ * Breadcrumb navigation items
+ */
+const breadcrumbItems = [
+	{ label: homeLabels[locale], href: `/${locale}/` },
+	{ label: titles[locale], href: `/${locale}/busqueda/` },
+];
+---
+
+<BaseLayout title={titles[locale]} description={descriptions[locale]} locale={locale}>
+	<SEOHead
+		slot="head"
+		title={titles[locale]}
+		description={descriptions[locale]}
+		canonical={canonicalUrl}
+		locale={locale === 'pt' ? 'es' : locale}
+		type="website"
+		noindex={true}
+	/>
+
+	<Container>
+		<Breadcrumb items={breadcrumbItems} />
+
+		<Section>
+			<div class="mx-auto max-w-6xl">
+				<!-- Search Header -->
+				{
+					query && (
+						<article id="search-header" class="mb-8">
+							<h1 class="text-3xl font-bold text-text-primary md:text-4xl">
+								{searchHeadings[locale]} <span class="text-primary">"{query}"</span>
+							</h1>
+						</article>
+					)
+				}
+
+				<!-- Search Input Form -->
+				<article id="search-form" class="mb-12">
+					<form method="GET" action={`/${locale}/busqueda`} class="mx-auto max-w-3xl">
+						<div class="relative">
+							<svg
+								class="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-text-tertiary"
+								fill="none"
+								stroke="currentColor"
+								viewBox="0 0 24 24"
+								aria-hidden="true"
+							>
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+							</svg>
+							<input
+								type="search"
+								name="q"
+								value={query}
+								placeholder={searchPlaceholders[locale]}
+								class="w-full rounded-lg border border-border bg-bg py-3 pl-12 pr-4 text-text-primary placeholder-text-tertiary transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+								aria-label={searchPlaceholders[locale]}
+								required
+							/>
+						</div>
+					</form>
+				</article>
+
+				{
+					query ? (
+						<>
+							{/* Show total results count */}
+							<div class="mb-8 text-center">
+								<p class="text-lg text-text-secondary">
+									{totalResults > 0
+										? `Se encontraron ${totalResults} resultado${totalResults === 1 ? '' : 's'}`
+										: 'No se encontraron resultados'
+									}
+								</p>
+							</div>
+
+							{/* Search Results */}
+							{totalResults > 0 ? (
+								<article id="search-results" class="space-y-12">
+									{/* Accommodations Results */}
+									{accommodations.length > 0 && (
+										<section id="accommodations-results">
+											<h2 class="mb-6 text-2xl font-semibold text-text-primary">
+												{categoryLabels[locale].accommodations}{' '}
+												<span class="text-text-tertiary">({accommodations.length})</span>
+											</h2>
+											<div
+												class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+												role="region"
+												aria-label={categoryLabels[locale].accommodations}
+											>
+												{accommodations.map((accommodation) => (
+													<AccommodationCard
+														accommodation={accommodation as any}
+														locale={locale}
+													/>
+												))}
+											</div>
+											<div class="mt-4 text-center">
+												<a
+													href={`/${locale}/alojamientos/?q=${encodeURIComponent(query)}`}
+													class="text-sm text-primary hover:underline"
+												>
+													Ver todos los alojamientos →
+												</a>
+											</div>
+										</section>
+									)}
+
+									{/* Destinations Results */}
+									{destinations.length > 0 && (
+										<section id="destinations-results">
+											<h2 class="mb-6 text-2xl font-semibold text-text-primary">
+												{categoryLabels[locale].destinations}{' '}
+												<span class="text-text-tertiary">({destinations.length})</span>
+											</h2>
+											<div
+												class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+												role="region"
+												aria-label={categoryLabels[locale].destinations}
+											>
+												{destinations.map((destination) => (
+													<DestinationCard
+														destination={destination as any}
+														locale={locale}
+													/>
+												))}
+											</div>
+											<div class="mt-4 text-center">
+												<a
+													href={`/${locale}/destinos/?q=${encodeURIComponent(query)}`}
+													class="text-sm text-primary hover:underline"
+												>
+													Ver todos los destinos →
+												</a>
+											</div>
+										</section>
+									)}
+
+									{/* Events Results */}
+									{events.length > 0 && (
+										<section id="events-results">
+											<h2 class="mb-6 text-2xl font-semibold text-text-primary">
+												{categoryLabels[locale].events}{' '}
+												<span class="text-text-tertiary">({events.length})</span>
+											</h2>
+											<div
+												class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+												role="region"
+												aria-label={categoryLabels[locale].events}
+											>
+												{events.map((event) => (
+													<EventCard
+														event={event as any}
+														locale={locale}
+													/>
+												))}
+											</div>
+											<div class="mt-4 text-center">
+												<a
+													href={`/${locale}/eventos/?q=${encodeURIComponent(query)}`}
+													class="text-sm text-primary hover:underline"
+												>
+													Ver todos los eventos →
+												</a>
+											</div>
+										</section>
+									)}
+
+									{/* Posts Results */}
+									{posts.length > 0 && (
+										<section id="posts-results">
+											<h2 class="mb-6 text-2xl font-semibold text-text-primary">
+												{categoryLabels[locale].posts}{' '}
+												<span class="text-text-tertiary">({posts.length})</span>
+											</h2>
+											<div
+												class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+												role="region"
+												aria-label={categoryLabels[locale].posts}
+											>
+												{posts.map((post) => (
+													<BlogPostCard
+														post={post as any}
+														locale={locale}
+													/>
+												))}
+											</div>
+											<div class="mt-4 text-center">
+												<a
+													href={`/${locale}/publicaciones/?q=${encodeURIComponent(query)}`}
+													class="text-sm text-primary hover:underline"
+												>
+													Ver todas las publicaciones →
+												</a>
+											</div>
+										</section>
+									)}
+								</article>
+							) : (
+								<EmptyState
+									title={emptyStateTexts[locale]}
+									message={emptySuggestions[locale]}
+								/>
+							)}
+						</>
+					) : (
+						<>
+							<!-- Empty State (no query) -->
+							<article id="empty-state" class="py-12 text-center">
+								<div class="mx-auto max-w-2xl">
+									<h1 class="mb-4 text-3xl font-bold text-text-primary">
+										{emptyStateTexts[locale]}
+									</h1>
+									<p class="mb-8 text-lg text-text-secondary">{emptySuggestions[locale]}</p>
+
+									<!-- Popular Searches -->
+									<div class="mt-12">
+										<h2 class="mb-6 text-xl font-semibold text-text-primary">
+											{popularSearchesHeadings[locale]}
+										</h2>
+										<div class="flex flex-wrap justify-center gap-3">
+											{popularSearches[locale].map((search) => (
+												<a
+													href={search.href}
+													class="rounded-full bg-bg px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-primary hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+												>
+													{search.label}
+												</a>
+											))}
+										</div>
+									</div>
+								</div>
+							</article>
+						</>
+					)
+				}
+			</div>
+		</Section>
+	</Container>
+</BaseLayout>

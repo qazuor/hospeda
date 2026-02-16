@@ -1,0 +1,150 @@
+---
+/**
+ * My Reviews page - user written reviews for accommodations.
+ * Validates locale parameter and redirects invalid locales to Spanish (default).
+ * Auth-protected (middleware handles authentication check).
+ */
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import SEOHead from '../../../components/seo/SEOHead.astro';
+import Breadcrumb from '../../../components/ui/Breadcrumb.astro';
+import Container from '../../../components/ui/Container.astro';
+import Section from '../../../components/ui/Section.astro';
+import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
+
+const { lang } = Astro.params;
+
+if (!lang || !isValidLocale(lang)) {
+	return Astro.redirect('/es/');
+}
+
+const locale = lang as SupportedLocale;
+
+/**
+ * Localized page titles
+ */
+const titles: Record<SupportedLocale, string> = {
+	es: 'Mis Reseñas',
+	en: 'My Reviews',
+	pt: 'Minhas Avaliações',
+};
+
+/**
+ * Localized meta descriptions
+ */
+const descriptions: Record<SupportedLocale, string> = {
+	es: 'Gestiona tus reseñas de alojamientos en Hospeda',
+	en: 'Manage your accommodation reviews on Hospeda',
+	pt: 'Gerencie suas avaliações de acomodações no Hospeda',
+};
+
+/**
+ * Localized home breadcrumb labels
+ */
+const homeLabels: Record<SupportedLocale, string> = {
+	es: 'Inicio',
+	en: 'Home',
+	pt: 'Início',
+};
+
+/**
+ * Localized account breadcrumb labels
+ */
+const accountLabels: Record<SupportedLocale, string> = {
+	es: 'Mi Cuenta',
+	en: 'My Account',
+	pt: 'Minha Conta',
+};
+
+/**
+ * Localized content labels
+ */
+const contentLabels = {
+	es: {
+		emptyTitle: 'No has escrito ninguna reseña todavía',
+		emptyDescription: 'Comparte tu experiencia con otros viajeros escribiendo reseñas de los alojamientos donde te has hospedado.',
+		ctaButton: 'Explorar alojamientos',
+	},
+	en: {
+		emptyTitle: 'You have not written any reviews yet',
+		emptyDescription: 'Share your experience with other travelers by writing reviews of the accommodations where you have stayed.',
+		ctaButton: 'Explore accommodations',
+	},
+	pt: {
+		emptyTitle: 'Você ainda não escreveu nenhuma avaliação',
+		emptyDescription: 'Compartilhe sua experiência com outros viajantes escrevendo avaliações das acomodações onde você se hospedou.',
+		ctaButton: 'Explorar acomodações',
+	},
+};
+
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
+
+/**
+ * Breadcrumb navigation items
+ */
+const breadcrumbItems = [
+	{ label: homeLabels[locale], href: `/${locale}/` },
+	{ label: accountLabels[locale], href: `/${locale}/mi-cuenta/` },
+	{ label: titles[locale], href: `/${locale}/mi-cuenta/resenas/` },
+];
+
+const labels = contentLabels[locale];
+---
+
+<BaseLayout title={titles[locale]} description={descriptions[locale]} locale={locale}>
+	<SEOHead
+		slot="head"
+		title={titles[locale]}
+		description={descriptions[locale]}
+		canonical={canonicalUrl}
+		locale={locale === 'pt' ? 'es' : locale}
+		type="website"
+		noindex={true}
+	/>
+
+	<Container>
+		<Breadcrumb items={breadcrumbItems} />
+
+		<Section>
+			<div class="mx-auto max-w-7xl">
+				<h1 class="mb-8 text-4xl font-bold text-text-primary">
+					{titles[locale]}
+				</h1>
+
+				<!-- Empty state -->
+				<div class="rounded-lg border border-border bg-bg p-12 text-center">
+					<svg
+						class="mx-auto mb-6 h-16 w-16 text-text-tertiary"
+						fill="none"
+						stroke="currentColor"
+						viewBox="0 0 24 24"
+						aria-hidden="true"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+						></path>
+					</svg>
+					<h2 class="mb-3 text-2xl font-semibold text-text-primary">
+						{labels.emptyTitle}
+					</h2>
+					<p class="mx-auto mb-6 max-w-2xl text-text-secondary">
+						{labels.emptyDescription}
+					</p>
+					<a
+						href={`/${locale}/alojamientos/`}
+						class="inline-flex items-center justify-center rounded-lg bg-primary px-6 py-3 text-base font-semibold text-white transition-colors hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+					>
+						{labels.ctaButton}
+					</a>
+				</div>
+
+				<!-- Placeholder for future ReviewCard list -->
+				<!-- <div class="space-y-6">
+					ReviewCard components will go here
+				</div> -->
+			</div>
+		</Section>
+	</Container>
+</BaseLayout>

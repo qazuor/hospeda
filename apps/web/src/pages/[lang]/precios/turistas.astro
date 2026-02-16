@@ -1,0 +1,413 @@
+---
+export const prerender = true;
+
+export function getStaticPaths() {
+	return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
+}
+
+/**
+ * Tourist pricing page - displays subscription plans for tourists.
+ * Validates locale parameter and redirects invalid locales to Spanish (default).
+ */
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import SEOHead from '../../../components/seo/SEOHead.astro';
+import Breadcrumb from '../../../components/ui/Breadcrumb.astro';
+import Container from '../../../components/ui/Container.astro';
+import Section from '../../../components/ui/Section.astro';
+import PricingCard from '../../../components/content/PricingCard.astro';
+import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
+
+const { lang } = Astro.params;
+
+if (!lang || !isValidLocale(lang)) {
+	return Astro.redirect('/es/');
+}
+
+const locale = lang as SupportedLocale;
+
+/**
+ * Localized page titles
+ */
+const titles: Record<SupportedLocale, string> = {
+	es: 'Precios para Turistas',
+	en: 'Tourist Pricing',
+	pt: 'Precos para Turistas',
+};
+
+/**
+ * Localized meta descriptions
+ */
+const descriptions: Record<SupportedLocale, string> = {
+	es: 'Descubre nuestros planes de suscripción para turistas. Desde gratis hasta VIP con servicio de conserjería.',
+	en: 'Discover our subscription plans for tourists. From free to VIP with concierge service.',
+	pt: 'Descubra nossos planos de assinatura para turistas. De grátis a VIP com serviço de concierge.',
+};
+
+/**
+ * Localized home breadcrumb labels
+ */
+const homeLabels: Record<SupportedLocale, string> = {
+	es: 'Inicio',
+	en: 'Home',
+	pt: 'Início',
+};
+
+/**
+ * Localized breadcrumb labels for pricing
+ */
+const pricingLabels: Record<SupportedLocale, string> = {
+	es: 'Precios',
+	en: 'Pricing',
+	pt: 'Precos',
+};
+
+/**
+ * Localized hero section content
+ */
+const heroContent: Record<SupportedLocale, { title: string; description: string }> = {
+	es: {
+		title: 'Planes para Turistas',
+		description: 'Encuentra el plan perfecto para tus aventuras en el Litoral argentino. Desde navegación básica hasta servicio VIP con conserjería personalizada.',
+	},
+	en: {
+		title: 'Tourist Plans',
+		description: 'Find the perfect plan for your adventures in the Argentine Litoral. From basic browsing to VIP service with personalized concierge.',
+	},
+	pt: {
+		title: 'Planos para Turistas',
+		description: 'Encontre o plano perfeito para suas aventuras no Litoral argentino. Desde navegação básica até serviço VIP com concierge personalizado.',
+	},
+};
+
+/**
+ * Localized FAQ section
+ */
+const faqContent: Record<SupportedLocale, { question: string; answer: string }[]> = {
+	es: [
+		{
+			question: '¿Puedo cambiar de plan en cualquier momento?',
+			answer: 'Sí, puedes actualizar o cambiar tu plan en cualquier momento desde tu cuenta. Los cambios se aplicarán en el siguiente ciclo de facturación.',
+		},
+		{
+			question: '¿Qué métodos de pago aceptan?',
+			answer: 'Aceptamos todos los métodos de pago a través de MercadoPago, incluyendo tarjetas de crédito, débito y transferencias bancarias.',
+		},
+		{
+			question: '¿Hay período de prueba?',
+			answer: 'El plan Gratis no requiere tarjeta de crédito. Los planes Plus y VIP ofrecen 7 días de prueba gratuita.',
+		},
+	],
+	en: [
+		{
+			question: 'Can I change my plan at any time?',
+			answer: 'Yes, you can upgrade or change your plan at any time from your account. Changes will be applied in the next billing cycle.',
+		},
+		{
+			question: 'What payment methods do you accept?',
+			answer: 'We accept all payment methods through MercadoPago, including credit cards, debit cards, and bank transfers.',
+		},
+		{
+			question: 'Is there a trial period?',
+			answer: 'The Free plan requires no credit card. Plus and VIP plans offer a 7-day free trial.',
+		},
+	],
+	pt: [
+		{
+			question: 'Posso mudar de plano a qualquer momento?',
+			answer: 'Sim, você pode atualizar ou mudar seu plano a qualquer momento da sua conta. As alterações serão aplicadas no próximo ciclo de faturamento.',
+		},
+		{
+			question: 'Que métodos de pagamento vocês aceitam?',
+			answer: 'Aceitamos todos os métodos de pagamento através do MercadoPago, incluindo cartões de crédito, débito e transferências bancárias.',
+		},
+		{
+			question: 'Há período de teste?',
+			answer: 'O plano Grátis não requer cartão de crédito. Os planos Plus e VIP oferecem 7 dias de teste gratuito.',
+		},
+	],
+};
+
+/**
+ * Localized CTA section
+ */
+const ctaContent: Record<SupportedLocale, { title: string; description: string; buttonText: string }> = {
+	es: {
+		title: '¿Listo para comenzar tu aventura?',
+		description: 'Registrate gratis y comienza a explorar los mejores alojamientos del Litoral argentino.',
+		buttonText: 'Registrate Gratis',
+	},
+	en: {
+		title: 'Ready to start your adventure?',
+		description: 'Sign up for free and start exploring the best accommodations in the Argentine Litoral.',
+		buttonText: 'Sign Up Free',
+	},
+	pt: {
+		title: 'Pronto para começar sua aventura?',
+		description: 'Cadastre-se gratuitamente e comece a explorar as melhores acomodações do Litoral argentino.',
+		buttonText: 'Cadastre-se Grátis',
+	},
+};
+
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
+
+/**
+ * Breadcrumb navigation items
+ */
+const breadcrumbItems = [
+	{ label: homeLabels[locale], href: `/${locale}/` },
+	{ label: pricingLabels[locale], href: `/${locale}/precios/` },
+	{ label: titles[locale], href: `/${locale}/precios/turistas/` },
+];
+
+/**
+ * Pricing plans data with locale-specific content
+ */
+const plans = {
+	es: [
+		{
+			name: 'Gratis',
+			price: 0,
+			currency: 'ARS',
+			period: '/mes',
+			features: [
+				'Navegar alojamientos',
+				'Leer reseñas',
+				'Guardar favoritos',
+				'Búsqueda básica',
+			],
+			cta: {
+				label: 'Comenzar Gratis',
+				href: `/${locale}/registro/`,
+			},
+		},
+		{
+			name: 'Plus',
+			price: 5000,
+			currency: 'ARS',
+			period: '/mes',
+			features: [
+				'Todo lo del plan Gratis',
+				'Reservas prioritarias',
+				'Ofertas exclusivas',
+				'Filtros avanzados',
+				'Planificador de viajes',
+			],
+			cta: {
+				label: 'Comenzar Plus',
+				href: `/${locale}/registro/?plan=plus`,
+			},
+		},
+		{
+			name: 'VIP',
+			price: 15000,
+			currency: 'ARS',
+			period: '/mes',
+			features: [
+				'Todo lo del plan Plus',
+				'Servicio de conserjería',
+				'Garantía de mejor precio',
+				'Cancelación gratuita',
+				'Soporte 24/7',
+			],
+			cta: {
+				label: 'Comenzar VIP',
+				href: `/${locale}/registro/?plan=vip`,
+			},
+			highlighted: true,
+		},
+	],
+	en: [
+		{
+			name: 'Free',
+			price: 0,
+			currency: 'USD',
+			period: '/month',
+			features: [
+				'Browse accommodations',
+				'Read reviews',
+				'Save favorites',
+				'Basic search',
+			],
+			cta: {
+				label: 'Start Free',
+				href: `/${locale}/registro/`,
+			},
+		},
+		{
+			name: 'Plus',
+			price: 5,
+			currency: 'USD',
+			period: '/month',
+			features: [
+				'All Free features',
+				'Priority booking',
+				'Exclusive deals',
+				'Advanced filters',
+				'Trip planner',
+			],
+			cta: {
+				label: 'Start Plus',
+				href: `/${locale}/registro/?plan=plus`,
+			},
+		},
+		{
+			name: 'VIP',
+			price: 15,
+			currency: 'USD',
+			period: '/month',
+			features: [
+				'All Plus features',
+				'Concierge service',
+				'Best price guarantee',
+				'Free cancellation',
+				'24/7 support',
+			],
+			cta: {
+				label: 'Start VIP',
+				href: `/${locale}/registro/?plan=vip`,
+			},
+			highlighted: true,
+		},
+	],
+	pt: [
+		{
+			name: 'Grátis',
+			price: 0,
+			currency: 'ARS',
+			period: '/mês',
+			features: [
+				'Navegar acomodações',
+				'Ler resenhas',
+				'Salvar favoritos',
+				'Pesquisa básica',
+			],
+			cta: {
+				label: 'Começar Grátis',
+				href: `/${locale}/registro/`,
+			},
+		},
+		{
+			name: 'Plus',
+			price: 5000,
+			currency: 'ARS',
+			period: '/mês',
+			features: [
+				'Tudo do plano Grátis',
+				'Reservas prioritárias',
+				'Ofertas exclusivas',
+				'Filtros avançados',
+				'Planejador de viagens',
+			],
+			cta: {
+				label: 'Começar Plus',
+				href: `/${locale}/registro/?plan=plus`,
+			},
+		},
+		{
+			name: 'VIP',
+			price: 15000,
+			currency: 'ARS',
+			period: '/mês',
+			features: [
+				'Tudo do plano Plus',
+				'Serviço de concierge',
+				'Garantia de melhor preço',
+				'Cancelamento gratuito',
+				'Suporte 24/7',
+			],
+			cta: {
+				label: 'Começar VIP',
+				href: `/${locale}/registro/?plan=vip`,
+			},
+			highlighted: true,
+		},
+	],
+};
+
+const currentPlans = plans[locale];
+---
+
+<BaseLayout title={titles[locale]} description={descriptions[locale]} locale={locale}>
+	<SEOHead
+		slot="head"
+		title={titles[locale]}
+		description={descriptions[locale]}
+		canonical={canonicalUrl}
+		locale={locale === 'pt' ? 'es' : locale}
+		type="website"
+	/>
+
+	<Container>
+		<Breadcrumb items={breadcrumbItems} />
+
+		<Section>
+			<div class="mx-auto max-w-6xl">
+				<!-- Hero Section -->
+				<article id="hero" class="mb-12 text-center">
+					<h1 class="mb-6 text-4xl font-bold text-text-primary md:text-5xl">
+						{heroContent[locale].title}
+					</h1>
+					<p class="text-xl leading-relaxed text-text-secondary">
+						{heroContent[locale].description}
+					</p>
+				</article>
+
+				<!-- Pricing Cards Section -->
+				<article id="pricing-plans" class="mb-16">
+					<div class="grid gap-8 md:grid-cols-3">
+						{currentPlans.map((plan) => (
+							<PricingCard
+								plan={{
+									name: plan.name,
+									price: plan.price,
+									currency: plan.currency,
+									period: plan.period,
+									features: plan.features,
+									cta: plan.cta,
+								}}
+								highlighted={plan.highlighted}
+							/>
+						))}
+					</div>
+				</article>
+
+				<!-- FAQ Section -->
+				<article id="faq" class="mb-16">
+					<h2 class="mb-8 text-center text-3xl font-semibold text-text-primary">
+						Preguntas Frecuentes
+					</h2>
+					<div class="mx-auto max-w-3xl space-y-6">
+						{faqContent[locale].map((faq) => (
+							<div class="rounded-lg bg-surface p-6 shadow-sm">
+								<h3 class="mb-3 text-lg font-semibold text-text-primary">
+									{faq.question}
+								</h3>
+								<p class="text-text-secondary">
+									{faq.answer}
+								</p>
+							</div>
+						))}
+					</div>
+				</article>
+
+				<!-- CTA Section -->
+				<article id="cta-section" class="mb-12">
+					<div class="rounded-lg bg-primary/10 p-8 text-center shadow-sm transition-shadow hover:shadow-md">
+						<h2 class="mb-4 text-3xl font-semibold text-text-primary">
+							{ctaContent[locale].title}
+						</h2>
+						<p class="mb-8 text-lg leading-relaxed text-text-secondary">
+							{ctaContent[locale].description}
+						</p>
+						<a
+							href={`/${locale}/registro/`}
+							class="inline-block rounded-lg bg-primary px-8 py-3 font-semibold text-white transition-colors hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+						>
+							{ctaContent[locale].buttonText}
+						</a>
+					</div>
+				</article>
+			</div>
+		</Section>
+	</Container>
+</BaseLayout>

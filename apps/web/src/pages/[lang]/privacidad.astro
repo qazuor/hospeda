@@ -1,0 +1,178 @@
+---
+export const prerender = true;
+
+export function getStaticPaths() {
+	return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
+}
+
+/**
+ * Privacy Policy page - legal information about data collection and usage.
+ * Validates locale parameter and redirects invalid locales to Spanish (default).
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SEOHead from '../../components/seo/SEOHead.astro';
+import Breadcrumb from '../../components/ui/Breadcrumb.astro';
+import Container from '../../components/ui/Container.astro';
+import Section from '../../components/ui/Section.astro';
+import { isValidLocale, type SupportedLocale } from '../../lib/i18n';
+
+const { lang } = Astro.params;
+
+if (!lang || !isValidLocale(lang)) {
+	return Astro.redirect('/es/');
+}
+
+const locale = lang as SupportedLocale;
+
+/**
+ * Localized page titles
+ */
+const titles: Record<SupportedLocale, string> = {
+	es: 'Política de Privacidad',
+	en: 'Privacy Policy',
+	pt: 'Política de Privacidade',
+};
+
+/**
+ * Localized meta descriptions
+ */
+const descriptions: Record<SupportedLocale, string> = {
+	es: 'Política de privacidad y protección de datos de Hospeda',
+	en: 'Privacy policy and data protection for Hospeda',
+	pt: 'Política de privacidade e proteção de dados da Hospeda',
+};
+
+/**
+ * Localized home breadcrumb labels
+ */
+const homeLabels: Record<SupportedLocale, string> = {
+	es: 'Inicio',
+	en: 'Home',
+	pt: 'Início',
+};
+
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
+
+/**
+ * Breadcrumb navigation items
+ */
+const breadcrumbItems = [
+	{ label: homeLabels[locale], href: `/${locale}/` },
+	{ label: titles[locale], href: `/${locale}/privacidad/` },
+];
+---
+
+<BaseLayout title={titles[locale]} description={descriptions[locale]} locale={locale}>
+	<SEOHead
+		slot="head"
+		title={titles[locale]}
+		description={descriptions[locale]}
+		canonical={canonicalUrl}
+		locale={locale === 'pt' ? 'es' : locale}
+		type="website"
+	/>
+
+	<Container>
+		<Breadcrumb items={breadcrumbItems} />
+
+		<Section>
+			<div class="prose prose-lg mx-auto max-w-4xl">
+				<h1 class="mb-8 text-4xl font-bold text-text-primary">
+					{titles[locale]}
+				</h1>
+
+				<div class="space-y-8">
+					<!-- Section 1: Información que recopilamos -->
+					<article id="section-1">
+						<h2 class="mb-4 text-2xl font-semibold text-text-primary">
+							1. Información que recopilamos
+						</h2>
+						<p class="text-text-secondary">
+							Recopilamos información personal que usted nos proporciona directamente, como
+							nombre, correo electrónico, teléfono y dirección. También recopilamos datos de
+							uso automáticamente cuando navega en nuestra plataforma, incluyendo dirección IP,
+							tipo de navegador y páginas visitadas.
+						</p>
+					</article>
+
+					<!-- Section 2: Uso de la información -->
+					<article id="section-2">
+						<h2 class="mb-4 text-2xl font-semibold text-text-primary">
+							2. Uso de la información
+						</h2>
+						<p class="text-text-secondary">
+							Utilizamos su información para proporcionar y mejorar nuestros servicios,
+							procesar transacciones, enviar notificaciones importantes y personalizar su
+							experiencia. También podemos usar sus datos para fines de análisis, marketing y
+							seguridad.
+						</p>
+					</article>
+
+					<!-- Section 3: Cookies -->
+					<article id="section-3">
+						<h2 class="mb-4 text-2xl font-semibold text-text-primary">3. Cookies</h2>
+						<p class="text-text-secondary">
+							Utilizamos cookies y tecnologías similares para mejorar la funcionalidad de
+							nuestro sitio web, analizar el tráfico y personalizar contenido. Puede
+							configurar su navegador para rechazar cookies, aunque esto puede afectar algunas
+							funcionalidades de la plataforma.
+						</p>
+					</article>
+
+					<!-- Section 4: Compartir datos -->
+					<article id="section-4">
+						<h2 class="mb-4 text-2xl font-semibold text-text-primary">
+							4. Compartir datos
+						</h2>
+						<p class="text-text-secondary">
+							No vendemos su información personal. Compartimos datos con proveedores de
+							servicios que nos ayudan a operar la plataforma, siempre bajo estrictos acuerdos
+							de confidencialidad. También podemos compartir información cuando sea requerido
+							por ley.
+						</p>
+					</article>
+
+					<!-- Section 5: Seguridad -->
+					<article id="section-5">
+						<h2 class="mb-4 text-2xl font-semibold text-text-primary">5. Seguridad</h2>
+						<p class="text-text-secondary">
+							Implementamos medidas de seguridad técnicas y organizativas para proteger su
+							información personal contra acceso no autorizado, pérdida o destrucción. Sin
+							embargo, ningún sistema de transmisión por internet es completamente seguro.
+						</p>
+					</article>
+
+					<!-- Section 6: Derechos del usuario -->
+					<article id="section-6">
+						<h2 class="mb-4 text-2xl font-semibold text-text-primary">
+							6. Derechos del usuario
+						</h2>
+						<p class="text-text-secondary">
+							Usted tiene derecho a acceder, rectificar, eliminar u oponerse al procesamiento
+							de sus datos personales. También puede solicitar la portabilidad de sus datos o
+							retirar su consentimiento en cualquier momento. Para ejercer estos derechos,
+							contáctenos a través de los canales disponibles.
+						</p>
+					</article>
+
+					<!-- Section 7: Contacto -->
+					<article id="section-7">
+						<h2 class="mb-4 text-2xl font-semibold text-text-primary">7. Contacto</h2>
+						<p class="text-text-secondary">
+							Si tiene preguntas o inquietudes sobre nuestra política de privacidad o el
+							tratamiento de sus datos personales, puede contactarnos a través de los canales
+							de comunicación disponibles en nuestra plataforma. Responderemos a sus consultas
+							a la brevedad.
+						</p>
+					</article>
+				</div>
+
+				<div class="mt-12 border-t border-border pt-6">
+					<p class="text-sm text-text-tertiary">
+						Última actualización: {new Date().toLocaleDateString(locale)}
+					</p>
+				</div>
+			</div>
+		</Section>
+	</Container>
+</BaseLayout>

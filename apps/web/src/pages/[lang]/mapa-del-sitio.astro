@@ -1,0 +1,321 @@
+---
+export const prerender = true;
+
+export function getStaticPaths() {
+	return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
+}
+
+/**
+ * HTML Sitemap page - organized list of all site pages by section.
+ * Validates locale parameter and redirects invalid locales to Spanish (default).
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SEOHead from '../../components/seo/SEOHead.astro';
+import Breadcrumb from '../../components/ui/Breadcrumb.astro';
+import Container from '../../components/ui/Container.astro';
+import Section from '../../components/ui/Section.astro';
+import { isValidLocale, type SupportedLocale } from '../../lib/i18n';
+
+const { lang } = Astro.params;
+
+if (!lang || !isValidLocale(lang)) {
+	return Astro.redirect('/es/');
+}
+
+const locale = lang as SupportedLocale;
+
+/**
+ * Localized page titles
+ */
+const titles: Record<SupportedLocale, string> = {
+	es: 'Mapa del Sitio',
+	en: 'Sitemap',
+	pt: 'Mapa do Site',
+};
+
+/**
+ * Localized meta descriptions
+ */
+const descriptions: Record<SupportedLocale, string> = {
+	es: 'Mapa del sitio de Hospeda. Encuentra rápidamente todas las páginas, alojamientos, destinos, eventos y recursos disponibles en nuestra plataforma',
+	en: 'Hospeda sitemap. Quickly find all pages, accommodations, destinations, events and resources available on our platform',
+	pt: 'Mapa do site da Hospeda. Encontre rapidamente todas as páginas, acomodações, destinos, eventos e recursos disponíveis em nossa plataforma',
+};
+
+/**
+ * Localized home breadcrumb labels
+ */
+const homeLabels: Record<SupportedLocale, string> = {
+	es: 'Inicio',
+	en: 'Home',
+	pt: 'Início',
+};
+
+/**
+ * Localized section headings
+ */
+const sectionHeadings = {
+	principal: {
+		es: 'Principal',
+		en: 'Main',
+		pt: 'Principal',
+	},
+	alojamientos: {
+		es: 'Alojamientos',
+		en: 'Accommodations',
+		pt: 'Acomodações',
+	},
+	destinos: {
+		es: 'Destinos',
+		en: 'Destinations',
+		pt: 'Destinos',
+	},
+	eventos: {
+		es: 'Eventos',
+		en: 'Events',
+		pt: 'Eventos',
+	},
+	blog: {
+		es: 'Blog',
+		en: 'Blog',
+		pt: 'Blog',
+	},
+	cuenta: {
+		es: 'Cuenta',
+		en: 'Account',
+		pt: 'Conta',
+	},
+	informacion: {
+		es: 'Información',
+		en: 'Information',
+		pt: 'Informação',
+	},
+};
+
+/**
+ * Localized link labels
+ */
+const linkLabels = {
+	home: {
+		es: 'Inicio',
+		en: 'Home',
+		pt: 'Início',
+	},
+	about: {
+		es: 'Quienes Somos',
+		en: 'About Us',
+		pt: 'Sobre Nós',
+	},
+	benefits: {
+		es: 'Beneficios',
+		en: 'Benefits',
+		pt: 'Benefícios',
+	},
+	contact: {
+		es: 'Contacto',
+		en: 'Contact',
+		pt: 'Contato',
+	},
+	browseAccommodations: {
+		es: 'Explorar Alojamientos',
+		en: 'Browse Accommodations',
+		pt: 'Explorar Acomodações',
+	},
+	searchAccommodations: {
+		es: 'Buscar Alojamientos',
+		en: 'Search Accommodations',
+		pt: 'Buscar Acomodações',
+	},
+	byType: {
+		es: 'Por Tipo',
+		en: 'By Type',
+		pt: 'Por Tipo',
+	},
+	browseDestinations: {
+		es: 'Explorar Destinos',
+		en: 'Browse Destinations',
+		pt: 'Explorar Destinos',
+	},
+	browseEvents: {
+		es: 'Explorar Eventos',
+		en: 'Browse Events',
+		pt: 'Explorar Eventos',
+	},
+	blogListing: {
+		es: 'Artículos del Blog',
+		en: 'Blog Articles',
+		pt: 'Artigos do Blog',
+	},
+	signIn: {
+		es: 'Iniciar Sesión',
+		en: 'Sign In',
+		pt: 'Entrar',
+	},
+	signUp: {
+		es: 'Registrarse',
+		en: 'Sign Up',
+		pt: 'Cadastrar',
+	},
+	forgotPassword: {
+		es: 'Olvidé mi Contraseña',
+		en: 'Forgot Password',
+		pt: 'Esqueci minha Senha',
+	},
+	terms: {
+		es: 'Términos y Condiciones',
+		en: 'Terms and Conditions',
+		pt: 'Termos e Condições',
+	},
+	privacy: {
+		es: 'Política de Privacidad',
+		en: 'Privacy Policy',
+		pt: 'Política de Privacidade',
+	},
+	sitemap: {
+		es: 'Mapa del Sitio',
+		en: 'Sitemap',
+		pt: 'Mapa do Site',
+	},
+};
+
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
+
+/**
+ * Breadcrumb navigation items
+ */
+const breadcrumbItems = [
+	{ label: homeLabels[locale], href: `/${locale}/` },
+	{ label: titles[locale], href: `/${locale}/mapa-del-sitio/` },
+];
+
+/**
+ * Sitemap sections with links
+ */
+const sitemapSections = [
+	{
+		id: 'principal',
+		heading: sectionHeadings.principal[locale],
+		links: [
+			{ label: linkLabels.home[locale], href: `/${locale}/` },
+			{ label: linkLabels.about[locale], href: `/${locale}/quienes-somos/` },
+			{ label: linkLabels.benefits[locale], href: `/${locale}/beneficios/` },
+			{ label: linkLabels.contact[locale], href: `/${locale}/contacto/` },
+		],
+	},
+	{
+		id: 'alojamientos',
+		heading: sectionHeadings.alojamientos[locale],
+		links: [
+			{
+				label: linkLabels.browseAccommodations[locale],
+				href: `/${locale}/alojamientos/`,
+			},
+			{
+				label: linkLabels.searchAccommodations[locale],
+				href: `/${locale}/alojamientos/buscar/`,
+			},
+			{ label: linkLabels.byType[locale], href: `/${locale}/alojamientos/tipo/` },
+		],
+	},
+	{
+		id: 'destinos',
+		heading: sectionHeadings.destinos[locale],
+		links: [
+			{
+				label: linkLabels.browseDestinations[locale],
+				href: `/${locale}/destinos/`,
+			},
+		],
+	},
+	{
+		id: 'eventos',
+		heading: sectionHeadings.eventos[locale],
+		links: [{ label: linkLabels.browseEvents[locale], href: `/${locale}/eventos/` }],
+	},
+	{
+		id: 'blog',
+		heading: sectionHeadings.blog[locale],
+		links: [{ label: linkLabels.blogListing[locale], href: `/${locale}/blog/` }],
+	},
+	{
+		id: 'cuenta',
+		heading: sectionHeadings.cuenta[locale],
+		links: [
+			{ label: linkLabels.signIn[locale], href: `/${locale}/auth/signin/` },
+			{ label: linkLabels.signUp[locale], href: `/${locale}/auth/signup/` },
+			{
+				label: linkLabels.forgotPassword[locale],
+				href: `/${locale}/auth/forgot-password/`,
+			},
+		],
+	},
+	{
+		id: 'informacion',
+		heading: sectionHeadings.informacion[locale],
+		links: [
+			{ label: linkLabels.terms[locale], href: `/${locale}/terminos-y-condiciones/` },
+			{
+				label: linkLabels.privacy[locale],
+				href: `/${locale}/politica-de-privacidad/`,
+			},
+			{ label: linkLabels.sitemap[locale], href: `/${locale}/mapa-del-sitio/` },
+		],
+	},
+];
+---
+
+<BaseLayout title={titles[locale]} description={descriptions[locale]} locale={locale}>
+	<SEOHead
+		slot="head"
+		title={titles[locale]}
+		description={descriptions[locale]}
+		canonical={canonicalUrl}
+		locale={locale === 'pt' ? 'es' : locale}
+		type="website"
+	/>
+
+	<Container>
+		<Breadcrumb items={breadcrumbItems} />
+
+		<Section>
+			<div class="mx-auto max-w-5xl">
+				<!-- Page Header -->
+				<header class="mb-12 text-center">
+					<h1 class="mb-4 text-4xl font-bold text-text-primary md:text-5xl">
+						{titles[locale]}
+					</h1>
+					<p class="text-lg text-text-secondary">
+						{descriptions[locale]}
+					</p>
+				</header>
+
+				<!-- Sitemap Grid -->
+				<div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+					{
+						sitemapSections.map((section) => (
+							<article class="rounded-lg bg-bg p-6 shadow-sm">
+								<h2 class="mb-4 text-xl font-semibold text-text-primary">
+									{section.heading}
+								</h2>
+								<nav aria-label={`${section.heading} navigation`}>
+									<ul class="space-y-2">
+										{section.links.map((link) => (
+											<li>
+												<a
+													href={link.href}
+													class="text-text-secondary transition-colors hover:text-primary hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+												>
+													{link.label}
+												</a>
+											</li>
+										))}
+									</ul>
+								</nav>
+							</article>
+						))
+					}
+				</div>
+			</div>
+		</Section>
+	</Container>
+</BaseLayout>

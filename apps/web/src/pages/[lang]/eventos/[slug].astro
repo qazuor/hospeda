@@ -1,0 +1,440 @@
+---
+export const prerender = true;
+
+/**
+ * Event detail page - displays comprehensive information about a specific event.
+ * Validates locale parameter and redirects invalid locales to Spanish (default).
+ *
+ * Rendering: SSG + ISR (6h revalidation)
+ * Route: /[lang]/eventos/[slug]
+ */
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import SEOHead from '../../../components/seo/SEOHead.astro';
+import EventJsonLd from '../../../components/seo/EventJsonLd.astro';
+import Breadcrumb from '../../../components/ui/Breadcrumb.astro';
+import Container from '../../../components/ui/Container.astro';
+import Section from '../../../components/ui/Section.astro';
+import EventCard from '../../../components/event/EventCard.astro';
+import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
+import { eventsApi } from '../../../lib/api/endpoints';
+
+/**
+ * Generate static paths for all events across all locales.
+ * Pre-renders event detail pages at build time for SSG.
+ */
+export async function getStaticPaths() {
+	const locales = ['es', 'en', 'pt'];
+	const result = await eventsApi.list({ pageSize: 500 });
+	const events = result.ok ? result.data.items : [];
+
+	return locales.flatMap((lang) =>
+		events
+			.filter((e: any) => e.slug)
+			.map((e: any) => ({
+				params: { lang, slug: e.slug },
+				props: { event: e },
+			}))
+	);
+}
+
+const { lang, slug } = Astro.params;
+
+if (!lang || !isValidLocale(lang)) {
+	return Astro.redirect('/es/');
+}
+
+const locale = lang as SupportedLocale;
+
+/**
+ * Fetch event data from API.
+ * Uses prop from getStaticPaths if available, otherwise fetches on-demand.
+ */
+let event = Astro.props.event as Record<string, unknown> | undefined;
+if (!event) {
+	const result = await eventsApi.getBySlug({ slug: slug || '' });
+	if (!result.ok) {
+		return Astro.redirect(`/${locale}/eventos/`);
+	}
+	event = result.data;
+}
+
+/**
+ * Calculate if event has ended based on actual end date
+ */
+const isPastEvent = (event as any).endDate ? new Date((event as any).endDate) < new Date() : false;
+
+/**
+ * Localized page title
+ */
+const pageTitle = (event as any).name;
+
+/**
+ * Localized meta descriptions
+ */
+const eventDescription = (event as any).description || (event as any).summary || '';
+const descriptions: Record<SupportedLocale, string> = {
+	es: eventDescription.substring(0, 155) + (eventDescription.length > 155 ? '...' : ''),
+	en: eventDescription.substring(0, 155) + (eventDescription.length > 155 ? '...' : ''),
+	pt: eventDescription.substring(0, 155) + (eventDescription.length > 155 ? '...' : ''),
+};
+
+/**
+ * Localized home breadcrumb labels
+ */
+const homeLabels: Record<SupportedLocale, string> = {
+	es: 'Inicio',
+	en: 'Home',
+	pt: 'Início',
+};
+
+/**
+ * Localized events breadcrumb labels
+ */
+const eventsLabels: Record<SupportedLocale, string> = {
+	es: 'Eventos',
+	en: 'Events',
+	pt: 'Eventos',
+};
+
+/**
+ * Localized section labels
+ */
+const labels = {
+	category: {
+		es: 'Categoría',
+		en: 'Category',
+		pt: 'Categoria',
+	},
+	date: {
+		es: 'Fecha',
+		en: 'Date',
+		pt: 'Data',
+	},
+	time: {
+		es: 'Horario',
+		en: 'Time',
+		pt: 'Horário',
+	},
+	location: {
+		es: 'Ubicación',
+		en: 'Location',
+		pt: 'Localização',
+	},
+	description: {
+		es: 'Descripción',
+		en: 'Description',
+		pt: 'Descrição',
+	},
+	agenda: {
+		es: 'Agenda del Evento',
+		en: 'Event Schedule',
+		pt: 'Programação do Evento',
+	},
+	pricing: {
+		es: 'Entradas y Precios',
+		en: 'Tickets and Pricing',
+		pt: 'Ingressos e Preços',
+	},
+	organizer: {
+		es: 'Organizado por',
+		en: 'Organized by',
+		pt: 'Organizado por',
+	},
+	getTickets: {
+		es: 'Obtener Entradas',
+		en: 'Get Tickets',
+		pt: 'Obter Ingressos',
+	},
+	relatedEvents: {
+		es: 'Eventos Relacionados',
+		en: 'Related Events',
+		pt: 'Eventos Relacionados',
+	},
+	shareEvent: {
+		es: 'Compartir Evento',
+		en: 'Share Event',
+		pt: 'Compartilhar Evento',
+	},
+	pastEvent: {
+		es: 'Evento Finalizado',
+		en: 'Past Event',
+		pt: 'Evento Encerrado',
+	},
+};
+
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
+
+/**
+ * Breadcrumb navigation items
+ */
+const breadcrumbItems = [
+	{ label: homeLabels[locale], href: `/${locale}/` },
+	{ label: eventsLabels[locale], href: `/${locale}/eventos/` },
+	{ label: pageTitle, href: `/${locale}/eventos/${slug}/` },
+];
+
+/**
+ * Fetch related/upcoming events for the related events section.
+ * Filter out the current event from the list.
+ */
+const relResult = await eventsApi.getUpcoming({ pageSize: 4 });
+const relatedEvents = relResult.ok
+	? relResult.data.items.filter((e: any) => e.slug !== slug).slice(0, 3)
+	: [];
+
+/**
+ * Format date for display
+ */
+const formatDate = (dateString: string): string => {
+	const date = new Date(dateString);
+	const options: Intl.DateTimeFormatOptions = {
+		year: 'numeric',
+		month: 'long',
+		day: 'numeric',
+	};
+	return date.toLocaleDateString(locale === 'es' ? 'es-AR' : locale === 'pt' ? 'pt-BR' : 'en-US', options);
+};
+
+/**
+ * Format time for display
+ */
+const formatTime = (dateString: string): string => {
+	const date = new Date(dateString);
+	return date.toLocaleTimeString(locale === 'es' ? 'es-AR' : locale === 'pt' ? 'pt-BR' : 'en-US', {
+		hour: '2-digit',
+		minute: '2-digit',
+	});
+};
+---
+
+<BaseLayout title={pageTitle} description={descriptions[locale]} locale={locale}>
+	<SEOHead
+		slot="head"
+		title={pageTitle}
+		description={descriptions[locale]}
+		canonical={canonicalUrl}
+		locale={locale === 'pt' ? 'es' : locale}
+		type="article"
+		image={(event as any).featuredImage || (event as any).image}
+	/>
+
+	<EventJsonLd
+		slot="head"
+		name={(event as any).name}
+		description={(event as any).description || (event as any).summary}
+		startDate={(event as any).startDate}
+		endDate={(event as any).endDate}
+		url={canonicalUrl}
+		image={(event as any).featuredImage || (event as any).image}
+		location={(event as any).location}
+		organizer={(event as any).organizer}
+	/>
+
+	<Container>
+		<Breadcrumb items={breadcrumbItems} />
+
+		<Section>
+			<div class="mx-auto max-w-6xl">
+				<!-- Event Header -->
+				<article id="event-header" class="mb-8">
+					<div class="flex flex-wrap items-center gap-3 mb-4">
+						<span class="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-semibold text-primary">
+							{(event as any).category}
+						</span>
+						{isPastEvent && (
+							<span id="past-event-badge" class="inline-flex items-center rounded-full bg-gray-500/10 px-3 py-1 text-sm font-semibold text-gray-600">
+								{labels.pastEvent[locale]}
+							</span>
+						)}
+					</div>
+
+					<h1 class="mb-6 text-4xl font-bold text-text-primary md:text-5xl">
+						{(event as any).name}
+					</h1>
+
+					<!-- Event Meta Information -->
+					<div id="event-meta" class="flex flex-wrap gap-6 text-text-secondary">
+						<!-- Date -->
+						<div class="flex items-center gap-2">
+							<svg class="h-5 w-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+							</svg>
+							<div>
+								<span class="font-semibold">{labels.date[locale]}:</span>
+								<span class="ml-1">{formatDate((event as any).startDate)}</span>
+							</div>
+						</div>
+
+						<!-- Time -->
+						<div class="flex items-center gap-2">
+							<svg class="h-5 w-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+							</svg>
+							<div>
+								<span class="font-semibold">{labels.time[locale]}:</span>
+								<span class="ml-1">{formatTime((event as any).startDate)}</span>
+							</div>
+						</div>
+
+						<!-- Location -->
+						{(event as any).location && (
+							<div class="flex items-center gap-2">
+								<svg class="h-5 w-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+								</svg>
+								<div>
+									<span class="font-semibold">{labels.location[locale]}:</span>
+									<span class="ml-1">{(event as any).location.name}</span>
+								</div>
+							</div>
+						)}
+					</div>
+				</article>
+
+				<!-- Event Image Area -->
+				<article id="event-image" class="mb-12">
+					{((event as any).featuredImage || (event as any).image) ? (
+						<div class="aspect-video w-full overflow-hidden rounded-lg bg-gray-200">
+							<img
+								src={(event as any).featuredImage || (event as any).image}
+								alt={(event as any).name}
+								class="h-full w-full object-cover"
+								loading="eager"
+							/>
+						</div>
+					) : (
+						<div class="aspect-video w-full overflow-hidden rounded-lg bg-gray-200">
+							<div class="flex h-full items-center justify-center text-text-tertiary">
+								<svg class="h-16 w-16" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+								</svg>
+							</div>
+						</div>
+					)}
+				</article>
+
+				<div class="grid gap-8 lg:grid-cols-3">
+					<!-- Main Content Column -->
+					<div class="lg:col-span-2 space-y-8">
+						<!-- Description Section -->
+						<article id="event-description" class="rounded-lg bg-bg p-6 shadow-sm">
+							<h2 class="mb-4 text-2xl font-semibold text-text-primary">
+								{labels.description[locale]}
+							</h2>
+							<p class="text-lg leading-relaxed text-text-secondary">
+								{(event as any).description || (event as any).summary}
+							</p>
+						</article>
+
+						<!-- Agenda Section -->
+						{(event as any).agenda && Array.isArray((event as any).agenda) && (event as any).agenda.length > 0 && (
+							<article id="event-schedule" class="rounded-lg bg-bg p-6 shadow-sm">
+								<h2 class="mb-6 text-2xl font-semibold text-text-primary">
+									{labels.agenda[locale]}
+								</h2>
+								<ol class="space-y-4">
+									{(event as any).agenda.map((item: any, index: number) => (
+										<li class="flex gap-4">
+											<div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary">
+												{index + 1}
+											</div>
+											<div class="flex-1">
+												<div class="mb-1 flex items-baseline gap-2">
+													<span class="text-sm font-semibold text-primary">{item.time}</span>
+													<h3 class="font-semibold text-text-primary">{item.title}</h3>
+												</div>
+												<p class="text-text-secondary">{item.description}</p>
+											</div>
+										</li>
+									))}
+								</ol>
+							</article>
+						)}
+
+						<!-- Share Buttons Placeholder -->
+						<article id="share-buttons" class="rounded-lg bg-bg p-6 shadow-sm">
+							<h3 class="mb-4 text-lg font-semibold text-text-primary">
+								{labels.shareEvent[locale]}
+							</h3>
+							<div class="flex gap-3">
+								<!-- Placeholder for social share buttons -->
+								<div class="h-10 w-10 rounded-full bg-gray-200"></div>
+								<div class="h-10 w-10 rounded-full bg-gray-200"></div>
+								<div class="h-10 w-10 rounded-full bg-gray-200"></div>
+							</div>
+						</article>
+					</div>
+
+					<!-- Sidebar Column -->
+					<div class="space-y-6">
+						<!-- Pricing Section -->
+						{((event as any).price || (event as any).ticketUrl) && (
+							<article id="event-pricing" class="rounded-lg bg-bg p-6 shadow-sm">
+								<h2 class="mb-4 text-xl font-semibold text-text-primary">
+									{labels.pricing[locale]}
+								</h2>
+								{(event as any).price && (
+									<p class="mb-4 text-2xl font-bold text-primary">
+										{(event as any).price}
+									</p>
+								)}
+								{!isPastEvent && (event as any).ticketUrl && (
+									<a
+										href={(event as any).ticketUrl}
+										class="inline-flex w-full items-center justify-center rounded-lg bg-primary px-6 py-3 font-semibold text-white transition-colors hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+										target="_blank"
+										rel="noopener noreferrer"
+									>
+										{labels.getTickets[locale]}
+									</a>
+								)}
+							</article>
+						)}
+
+						<!-- Organizer Info -->
+						{(event as any).organizer && (
+							<article id="event-organizer" class="rounded-lg bg-bg p-6 shadow-sm">
+								<h3 class="mb-2 text-sm font-semibold uppercase tracking-wide text-text-tertiary">
+									{labels.organizer[locale]}
+								</h3>
+								<p class="text-lg font-semibold text-text-primary">
+									{(event as any).organizer}
+								</p>
+							</article>
+						)}
+					</div>
+				</div>
+
+				<!-- Related Events Section -->
+				{relatedEvents.length > 0 && (
+					<article id="related-events" class="mt-12">
+						<h2 class="mb-6 text-center text-3xl font-semibold text-text-primary">
+							{labels.relatedEvents[locale]}
+						</h2>
+						<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" role="region" aria-label={labels.relatedEvents[locale]}>
+							{relatedEvents.map((relatedEvent: any) => (
+								<EventCard
+									event={{
+										slug: relatedEvent.slug,
+										name: relatedEvent.name,
+										summary: relatedEvent.summary || relatedEvent.description || '',
+										featuredImage: relatedEvent.featuredImage || relatedEvent.image || '/images/placeholder-event.svg',
+										category: relatedEvent.category,
+										date: {
+											start: relatedEvent.startDate,
+											end: relatedEvent.endDate,
+										},
+										isFeatured: relatedEvent.isFeatured || false,
+										location: relatedEvent.location,
+									}}
+									locale={locale}
+								/>
+							))}
+						</div>
+					</article>
+				)}
+			</div>
+		</Section>
+	</Container>
+</BaseLayout>

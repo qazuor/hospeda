@@ -1,0 +1,129 @@
+---
+/**
+ * Sign in page - allows users to log in to their account.
+ * NOTE: This page must NOT be prerendered because it reads `returnUrl` from query params.
+ * Uses the SignInIsland React island for interactive authentication via Better Auth.
+ * Validates locale parameter and redirects invalid locales to Spanish (default).
+ */
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import SEOHead from '../../../components/seo/SEOHead.astro';
+import Container from '../../../components/ui/Container.astro';
+import { SignInIsland } from '../../../components/auth/SignInIsland';
+import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
+
+const { lang } = Astro.params;
+
+if (!lang || !isValidLocale(lang)) {
+	return Astro.redirect('/es/');
+}
+
+const locale = lang as SupportedLocale;
+
+/**
+ * Redirect authenticated users to home page.
+ * Auth pages should not be accessible when already signed in.
+ */
+if (Astro.locals.user) {
+	return Astro.redirect(`/${locale}/`);
+}
+
+/**
+ * Localized page titles
+ */
+const titles: Record<SupportedLocale, string> = {
+	es: 'Iniciar sesión',
+	en: 'Sign In',
+	pt: 'Entrar',
+};
+
+/**
+ * Localized meta descriptions
+ */
+const descriptions: Record<SupportedLocale, string> = {
+	es: 'Inicia sesión en tu cuenta de Hospeda para acceder a tus reservas y favoritos',
+	en: 'Sign in to your Hospeda account to access your bookings and favorites',
+	pt: 'Entre na sua conta do Hospeda para acessar suas reservas e favoritos',
+};
+
+/**
+ * Localized labels
+ */
+const labels = {
+	es: {
+		noAccount: '¿No tienes cuenta?',
+		signUp: 'Registrarse',
+		forgotPassword: '¿Olvidaste tu contraseña?',
+	},
+	en: {
+		noAccount: "Don't have an account?",
+		signUp: 'Sign Up',
+		forgotPassword: 'Forgot password?',
+	},
+	pt: {
+		noAccount: 'Não tem uma conta?',
+		signUp: 'Registrar',
+		forgotPassword: 'Esqueceu a senha?',
+	},
+};
+
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
+const currentLabels = labels[locale];
+
+/**
+ * Build an absolute redirect URL so Better Auth OAuth redirects
+ * return to the web app (port 4321) instead of the API (port 3001).
+ * For email sign-in the client-side window.location.replace also works
+ * with absolute URLs.
+ */
+const returnPath = Astro.url.searchParams.get('returnUrl') || `/${locale}/mi-cuenta`;
+const siteOrigin = import.meta.env.PUBLIC_SITE_URL || import.meta.env.HOSPEDA_SITE_URL || Astro.url.origin;
+const redirectTo = new URL(returnPath, siteOrigin).href;
+---
+
+<BaseLayout title={titles[locale]} description={descriptions[locale]} locale={locale}>
+	<SEOHead
+		slot="head"
+		title={titles[locale]}
+		description={descriptions[locale]}
+		canonical={canonicalUrl}
+		locale={locale === 'pt' ? 'es' : locale}
+		type="website"
+		noindex={true}
+	/>
+
+	<Container>
+		<div class="flex min-h-screen items-center justify-center py-12">
+			<div class="w-full max-w-md">
+				<div class="rounded-lg border border-border bg-bg-secondary p-8 shadow-lg">
+					<SignInIsland
+						client:load
+						redirectTo={redirectTo}
+						showOAuth={true}
+					/>
+
+					<!-- Forgot password link -->
+					<div class="mt-4 text-center">
+						<a
+							href={`/${locale}/auth/forgot-password/`}
+							class="text-sm text-primary transition-colors hover:text-primary-dark"
+						>
+							{currentLabels.forgotPassword}
+						</a>
+					</div>
+
+					<!-- Sign up link -->
+					<div class="mt-4 text-center">
+						<span class="text-sm text-text-secondary">{currentLabels.noAccount}</span>
+						{' '}
+						<a
+							href={`/${locale}/auth/signup/`}
+							class="text-sm font-medium text-primary transition-colors hover:text-primary-dark"
+						>
+							{currentLabels.signUp}
+						</a>
+					</div>
+				</div>
+			</div>
+		</div>
+	</Container>
+</BaseLayout>

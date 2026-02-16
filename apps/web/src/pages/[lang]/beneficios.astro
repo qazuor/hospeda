@@ -1,0 +1,431 @@
+---
+export const prerender = true;
+
+export function getStaticPaths() {
+	return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
+}
+
+/**
+ * Benefits page - showcases benefits for tourists and property owners.
+ * Validates locale parameter and redirects invalid locales to Spanish (default).
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SEOHead from '../../components/seo/SEOHead.astro';
+import Breadcrumb from '../../components/ui/Breadcrumb.astro';
+import Container from '../../components/ui/Container.astro';
+import Section from '../../components/ui/Section.astro';
+import { isValidLocale, type SupportedLocale } from '../../lib/i18n';
+
+const { lang } = Astro.params;
+
+if (!lang || !isValidLocale(lang)) {
+	return Astro.redirect('/es/');
+}
+
+const locale = lang as SupportedLocale;
+
+/**
+ * Localized page titles
+ */
+const titles: Record<SupportedLocale, string> = {
+	es: 'Beneficios',
+	en: 'Benefits',
+	pt: 'Beneficios',
+};
+
+/**
+ * Localized meta descriptions
+ */
+const descriptions: Record<SupportedLocale, string> = {
+	es: 'Descubre los beneficios de usar Hospeda para turistas y propietarios de alojamientos en el Litoral argentino',
+	en: 'Discover the benefits of using Hospeda for tourists and accommodation owners in the Argentine Litoral region',
+	pt: 'Descubra os benefícios de usar a Hospeda para turistas e proprietários de acomodações no Litoral argentino',
+};
+
+/**
+ * Localized home breadcrumb labels
+ */
+const homeLabels: Record<SupportedLocale, string> = {
+	es: 'Inicio',
+	en: 'Home',
+	pt: 'Início',
+};
+
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
+
+/**
+ * Breadcrumb navigation items
+ */
+const breadcrumbItems = [
+	{ label: homeLabels[locale], href: `/${locale}/` },
+	{ label: titles[locale], href: `/${locale}/beneficios/` },
+];
+---
+
+<BaseLayout title={titles[locale]} description={descriptions[locale]} locale={locale}>
+	<SEOHead
+		slot="head"
+		title={titles[locale]}
+		description={descriptions[locale]}
+		canonical={canonicalUrl}
+		locale={locale === 'pt' ? 'es' : locale}
+		type="website"
+	/>
+
+	<Container>
+		<Breadcrumb items={breadcrumbItems} />
+
+		<Section>
+			<div class="mx-auto max-w-6xl">
+				<!-- Hero Section -->
+				<article id="hero" class="mb-12 text-center">
+					<h1 class="mb-6 text-4xl font-bold text-text-primary md:text-5xl">
+						{titles[locale]}
+					</h1>
+					<p class="text-xl leading-relaxed text-text-secondary">
+						Hospeda conecta viajeros con alojamientos auténticos y apoya a propietarios con
+						herramientas profesionales. Descubre los beneficios de formar parte de nuestra
+						comunidad.
+					</p>
+				</article>
+
+				<!-- Benefits for Tourists Section -->
+				<article id="tourist-benefits" class="mb-16">
+					<h2 class="mb-8 text-center text-3xl font-semibold text-text-primary">
+						Beneficios para Turistas
+					</h2>
+					<div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+						<!-- Benefit 1: Wide Selection -->
+						<div class="flex flex-col items-center text-center">
+							<div
+								class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10"
+							>
+								<svg
+									class="h-8 w-8 text-primary"
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+									aria-hidden="true"
+								>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+									></path>
+								</svg>
+							</div>
+							<h3 class="mb-2 text-xl font-semibold text-text-primary">
+								Amplia Selección Verificada
+							</h3>
+							<p class="text-text-secondary">
+								Accede a una variedad de alojamientos verificados y de calidad en Concepción
+								del Uruguay y la región del Litoral argentino.
+							</p>
+						</div>
+
+						<!-- Benefit 2: Secure Booking -->
+						<div class="flex flex-col items-center text-center">
+							<div
+								class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10"
+							>
+								<svg
+									class="h-8 w-8 text-primary"
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+									aria-hidden="true"
+								>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+									></path>
+								</svg>
+							</div>
+							<h3 class="mb-2 text-xl font-semibold text-text-primary">
+								Reservas y Pagos Seguros
+							</h3>
+							<p class="text-text-secondary">
+								Sistema de reservas confiable con pagos seguros a través de MercadoPago. Tu
+								información está protegida en todo momento.
+							</p>
+						</div>
+
+						<!-- Benefit 3: Authentic Experiences -->
+						<div class="flex flex-col items-center text-center">
+							<div
+								class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10"
+							>
+								<svg
+									class="h-8 w-8 text-primary"
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+									aria-hidden="true"
+								>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+									></path>
+								</svg>
+							</div>
+							<h3 class="mb-2 text-xl font-semibold text-text-primary">
+								Experiencias Locales Auténticas
+							</h3>
+							<p class="text-text-secondary">
+								Descubre alojamientos que reflejan la cultura y hospitalidad local. Vive
+								experiencias genuinas en cada estadía.
+							</p>
+						</div>
+
+						<!-- Benefit 4: Real Reviews -->
+						<div class="flex flex-col items-center text-center">
+							<div
+								class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10"
+							>
+								<svg
+									class="h-8 w-8 text-primary"
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+									aria-hidden="true"
+								>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+									></path>
+								</svg>
+							</div>
+							<h3 class="mb-2 text-xl font-semibold text-text-primary">
+								Reseñas Reales de Viajeros
+							</h3>
+							<p class="text-text-secondary">
+								Lee opiniones auténticas de otros viajeros. Toma decisiones informadas basadas
+								en experiencias reales.
+							</p>
+						</div>
+
+						<!-- Benefit 5: Customer Support -->
+						<div class="flex flex-col items-center text-center">
+							<div
+								class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10"
+							>
+								<svg
+									class="h-8 w-8 text-primary"
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+									aria-hidden="true"
+								>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"
+									></path>
+								</svg>
+							</div>
+							<h3 class="mb-2 text-xl font-semibold text-text-primary">Soporte al Cliente</h3>
+							<p class="text-text-secondary">
+								Equipo de soporte dedicado para ayudarte antes, durante y después de tu
+								estadía. Estamos aquí para ti.
+							</p>
+						</div>
+					</div>
+				</article>
+
+				<!-- Benefits for Property Owners Section -->
+				<article id="owner-benefits" class="mb-16">
+					<h2 class="mb-8 text-center text-3xl font-semibold text-text-primary">
+						Beneficios para Propietarios
+					</h2>
+					<div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+						<!-- Benefit 1: Increased Visibility -->
+						<div class="flex flex-col items-center text-center">
+							<div
+								class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10"
+							>
+								<svg
+									class="h-8 w-8 text-primary"
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+									aria-hidden="true"
+								>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+									></path>
+								</svg>
+							</div>
+							<h3 class="mb-2 text-xl font-semibold text-text-primary">
+								Mayor Visibilidad
+							</h3>
+							<p class="text-text-secondary">
+								Alcanza a miles de viajeros que buscan alojamientos en la región. Aumenta tus
+								reservas con nuestra plataforma optimizada.
+							</p>
+						</div>
+
+						<!-- Benefit 2: Easy Management -->
+						<div class="flex flex-col items-center text-center">
+							<div
+								class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10"
+							>
+								<svg
+									class="h-8 w-8 text-primary"
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+									aria-hidden="true"
+								>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
+									></path>
+								</svg>
+							</div>
+							<h3 class="mb-2 text-xl font-semibold text-text-primary">
+								Gestión Fácil de Propiedades
+							</h3>
+							<p class="text-text-secondary">
+								Panel de administración intuitivo para gestionar reservas, disponibilidad,
+								precios y comunicación con huéspedes.
+							</p>
+						</div>
+
+						<!-- Benefit 3: Secure Payments -->
+						<div class="flex flex-col items-center text-center">
+							<div
+								class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10"
+							>
+								<svg
+									class="h-8 w-8 text-primary"
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+									aria-hidden="true"
+								>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+									></path>
+								</svg>
+							</div>
+							<h3 class="mb-2 text-xl font-semibold text-text-primary">
+								Pagos Seguros vía MercadoPago
+							</h3>
+							<p class="text-text-secondary">
+								Recibe pagos de forma segura y confiable. Integración directa con MercadoPago
+								para transacciones protegidas.
+							</p>
+						</div>
+
+						<!-- Benefit 4: Analytics -->
+						<div class="flex flex-col items-center text-center">
+							<div
+								class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10"
+							>
+								<svg
+									class="h-8 w-8 text-primary"
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+									aria-hidden="true"
+								>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+									></path>
+								</svg>
+							</div>
+							<h3 class="mb-2 text-xl font-semibold text-text-primary">
+								Análisis e Informes
+							</h3>
+							<p class="text-text-secondary">
+								Accede a métricas detalladas sobre tus reservas, ocupación y rendimiento.
+								Toma decisiones basadas en datos.
+							</p>
+						</div>
+
+						<!-- Benefit 5: Growing Community -->
+						<div class="flex flex-col items-center text-center">
+							<div
+								class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10"
+							>
+								<svg
+									class="h-8 w-8 text-primary"
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+									aria-hidden="true"
+								>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+								</svg>
+							</div>
+							<h3 class="mb-2 text-xl font-semibold text-text-primary">
+								Comunidad en Crecimiento
+							</h3>
+							<p class="text-text-secondary">
+								Forma parte de una red en expansión de propietarios y viajeros. Participa en
+								eventos y capacitaciones exclusivas.
+							</p>
+						</div>
+					</div>
+				</article>
+
+				<!-- CTA Section -->
+				<article id="cta-section" class="mb-12">
+					<div
+						class="rounded-lg bg-primary/10 p-8 text-center shadow-sm transition-shadow hover:shadow-md"
+					>
+						<h2 class="mb-4 text-3xl font-semibold text-text-primary">
+							Descubre Nuestros Planes
+						</h2>
+						<p class="mb-8 text-lg leading-relaxed text-text-secondary">
+							Explora los planes y precios diseñados para turistas y propietarios. Encuentra
+							la opción perfecta para ti.
+						</p>
+						<div class="flex flex-col gap-4 sm:flex-row sm:justify-center">
+							<a
+								href={`/${locale}/precios-turistas/`}
+								class="inline-block rounded-lg bg-primary px-8 py-3 font-semibold text-white transition-colors hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+							>
+								Ver precios para turistas
+							</a>
+							<a
+								href={`/${locale}/precios-propietarios/`}
+								class="inline-block rounded-lg border-2 border-primary bg-white px-8 py-3 font-semibold text-primary transition-colors hover:bg-primary hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+							>
+								Ver precios para propietarios
+							</a>
+						</div>
+					</div>
+				</article>
+			</div>
+		</Section>
+	</Container>
+</BaseLayout>

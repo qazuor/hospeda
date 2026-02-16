@@ -1,0 +1,287 @@
+---
+/**
+ * Event List Page
+ * Displays filterable list of events with category and timeframe filters.
+ * Supports three locales: es, en, pt.
+ */
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import Container from '../../../components/ui/Container.astro';
+import Breadcrumb from '../../../components/ui/Breadcrumb.astro';
+import EventCard from '../../../components/event/EventCard.astro';
+import EmptyState from '../../../components/ui/EmptyState.astro';
+import SEOHead from '../../../components/seo/SEOHead.astro';
+import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
+import { eventsApi } from '../../../lib/api/endpoints';
+
+const { lang } = Astro.params;
+
+if (!lang || !isValidLocale(lang)) {
+  return Astro.redirect('/es/');
+}
+
+const locale = lang as SupportedLocale;
+
+/**
+ * Get query params for filtering events
+ */
+const url = new URL(Astro.request.url);
+const category = url.searchParams.get('category') || '';
+const timeframe = url.searchParams.get('timeframe') || 'upcoming';
+const q = url.searchParams.get('q') || '';
+const page = Number.parseInt(url.searchParams.get('page') || '1', 10);
+const pageSize = 12;
+const sortBy = url.searchParams.get('sortBy') || 'startDate';
+
+/**
+ * Localized texts for three supported locales
+ */
+const texts: Record<
+  SupportedLocale,
+  {
+    title: string;
+    description: string;
+    home: string;
+    events: string;
+    upcoming: string;
+    past: string;
+    all: string;
+    filterByCategory: string;
+    allCategories: string;
+    festival: string;
+    fair: string;
+    sport: string;
+    cultural: string;
+    gastronomy: string;
+    noEvents: string;
+    noEventsDescription: string;
+    date: string;
+    location: string;
+    free: string;
+    paid: string;
+  }
+> = {
+  es: {
+    title: 'Eventos',
+    description: 'Descubrí los próximos eventos en el Litoral argentino',
+    home: 'Inicio',
+    events: 'Eventos',
+    upcoming: 'Próximos',
+    past: 'Pasados',
+    all: 'Todos',
+    filterByCategory: 'Categoría',
+    allCategories: 'Todas',
+    festival: 'Festival',
+    fair: 'Feria',
+    sport: 'Deportivo',
+    cultural: 'Cultural',
+    gastronomy: 'Gastronomía',
+    noEvents: 'No hay eventos',
+    noEventsDescription: 'No se encontraron eventos con los filtros seleccionados.',
+    date: 'Fecha',
+    location: 'Ubicación',
+    free: 'Gratis',
+    paid: 'Pago',
+  },
+  en: {
+    title: 'Events',
+    description: 'Discover upcoming events in the Argentine Litoral',
+    home: 'Home',
+    events: 'Events',
+    upcoming: 'Upcoming',
+    past: 'Past',
+    all: 'All',
+    filterByCategory: 'Category',
+    allCategories: 'All',
+    festival: 'Festival',
+    fair: 'Fair',
+    sport: 'Sports',
+    cultural: 'Cultural',
+    gastronomy: 'Gastronomy',
+    noEvents: 'No events',
+    noEventsDescription: 'No events found with the selected filters.',
+    date: 'Date',
+    location: 'Location',
+    free: 'Free',
+    paid: 'Paid',
+  },
+  pt: {
+    title: 'Eventos',
+    description: 'Descubra os próximos eventos no Litoral argentino',
+    home: 'Início',
+    events: 'Eventos',
+    upcoming: 'Próximos',
+    past: 'Passados',
+    all: 'Todos',
+    filterByCategory: 'Categoria',
+    allCategories: 'Todas',
+    festival: 'Festival',
+    fair: 'Feira',
+    sport: 'Esportivo',
+    cultural: 'Cultural',
+    gastronomy: 'Gastronomia',
+    noEvents: 'Nenhum evento',
+    noEventsDescription: 'Nenhum evento encontrado com os filtros selecionados.',
+    date: 'Data',
+    location: 'Localização',
+    free: 'Grátis',
+    paid: 'Pago',
+  },
+};
+
+const t = texts[locale];
+
+/**
+ * Category filter options
+ */
+const categories = [
+  { value: '', label: t.allCategories },
+  { value: 'festival', label: t.festival },
+  { value: 'fair', label: t.fair },
+  { value: 'sport', label: t.sport },
+  { value: 'cultural', label: t.cultural },
+  { value: 'gastronomy', label: t.gastronomy },
+];
+
+/**
+ * Fetch events from API
+ */
+const apiResult = await eventsApi.list({ page, pageSize, q, sortBy, category: category || undefined });
+
+const events = apiResult.ok ? apiResult.data.items : [];
+const pagination = apiResult.ok ? apiResult.data.pagination : null;
+
+/**
+ * Breadcrumb navigation items
+ */
+const breadcrumbItems = [
+  { label: t.home, href: `/${locale}/` },
+  { label: t.events, href: `/${locale}/eventos/` },
+];
+
+/**
+ * Generate canonical URL for SEO
+ */
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
+---
+
+<BaseLayout title={t.title} description={t.description} locale={locale}>
+  <SEOHead
+    slot="head"
+    title={t.title}
+    description={t.description}
+    canonical={canonicalUrl}
+    locale={locale}
+  />
+
+  <Container>
+    <Breadcrumb items={breadcrumbItems} />
+
+    <h1 class="mb-6 text-3xl font-bold">{t.title}</h1>
+
+    <!-- Filters bar -->
+    <div
+      class="mb-8 flex flex-col gap-4 rounded-lg border border-gray-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between"
+    >
+      <!-- Timeframe toggle -->
+      <div class="flex gap-1 rounded-lg bg-gray-100 p-1" role="tablist">
+        {
+          ['upcoming', 'past', 'all'].map((tf) => (
+            <a
+              href={`/${locale}/eventos/?timeframe=${tf}${category ? `&category=${category}` : ''}`}
+              role="tab"
+              aria-selected={timeframe === tf}
+              class:list={[
+                'rounded-md px-4 py-2 text-sm font-medium transition-colors',
+                timeframe === tf
+                  ? 'bg-white text-primary shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900',
+              ]}
+            >
+              {tf === 'upcoming' ? t.upcoming : tf === 'past' ? t.past : t.all}
+            </a>
+          ))
+        }
+      </div>
+
+      <!-- Category filter -->
+      <div class="flex items-center gap-2">
+        <label for="category-filter" class="whitespace-nowrap text-sm font-medium text-gray-700">
+          {t.filterByCategory}:
+        </label>
+        <select
+          id="category-filter"
+          class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+        >
+          {
+            categories.map((cat) => (
+              <option value={cat.value} selected={cat.value === category}>
+                {cat.label}
+              </option>
+            ))
+          }
+        </select>
+      </div>
+    </div>
+
+    <!-- Events grid -->
+    {
+      events.length > 0 ? (
+        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {events.map((event) => (
+            <EventCard event={event as any} locale={locale} />
+          ))}
+        </div>
+      ) : (
+        <EmptyState title={t.noEvents} message={t.noEventsDescription} />
+      )
+    }
+
+    <!-- Pagination -->
+    {
+      pagination && pagination.totalPages > 1 && (
+        <nav aria-label="Pagination" class="mt-8 flex items-center justify-center gap-2">
+          {pagination.hasPreviousPage && (
+            <a
+              href={`/${locale}/eventos/?page=${pagination.page - 1}${category ? `&category=${category}` : ''}${timeframe ? `&timeframe=${timeframe}` : ''}`}
+              class="rounded-md border border-border bg-bg px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-surface"
+            >
+              ← Anterior
+            </a>
+          )}
+
+          <span class="px-4 py-2 text-sm text-text-secondary">
+            Página {pagination.page} de {pagination.totalPages}
+          </span>
+
+          {pagination.hasNextPage && (
+            <a
+              href={`/${locale}/eventos/?page=${pagination.page + 1}${category ? `&category=${category}` : ''}${timeframe ? `&timeframe=${timeframe}` : ''}`}
+              class="rounded-md border border-border bg-bg px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-surface"
+            >
+              Siguiente →
+            </a>
+          )}
+        </nav>
+      )
+    }
+  </Container>
+</BaseLayout>
+
+<script>
+  /**
+   * Category filter change handler
+   * Redirects to filtered URL when category is changed
+   */
+  const categoryFilter = document.getElementById('category-filter') as HTMLSelectElement;
+  if (categoryFilter) {
+    categoryFilter.addEventListener('change', () => {
+      const url = new URL(window.location.href);
+      if (categoryFilter.value) {
+        url.searchParams.set('category', categoryFilter.value);
+      } else {
+        url.searchParams.delete('category');
+      }
+      window.location.href = url.toString();
+    });
+  }
+</script>

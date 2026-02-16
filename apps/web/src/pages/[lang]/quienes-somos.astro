@@ -1,0 +1,263 @@
+---
+export const prerender = true;
+
+export function getStaticPaths() {
+	return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
+}
+
+/**
+ * About Us page - information about Hospeda platform, mission, values, and the region.
+ * Validates locale parameter and redirects invalid locales to Spanish (default).
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SEOHead from '../../components/seo/SEOHead.astro';
+import Breadcrumb from '../../components/ui/Breadcrumb.astro';
+import Container from '../../components/ui/Container.astro';
+import Section from '../../components/ui/Section.astro';
+import { isValidLocale, type SupportedLocale } from '../../lib/i18n';
+
+const { lang } = Astro.params;
+
+if (!lang || !isValidLocale(lang)) {
+	return Astro.redirect('/es/');
+}
+
+const locale = lang as SupportedLocale;
+
+/**
+ * Localized page titles
+ */
+const titles: Record<SupportedLocale, string> = {
+	es: 'Quienes Somos',
+	en: 'About Us',
+	pt: 'Sobre Nós',
+};
+
+/**
+ * Localized meta descriptions
+ */
+const descriptions: Record<SupportedLocale, string> = {
+	es: 'Descubre la misión, valores y propósito de Hospeda, la plataforma que conecta viajeros con alojamientos auténticos en el Litoral argentino',
+	en: 'Discover the mission, values and purpose of Hospeda, the platform connecting travelers with authentic accommodations in the Argentine Litoral region',
+	pt: 'Descubra a missão, valores e propósito da Hospeda, a plataforma que conecta viajantes com acomodações autênticas no Litoral argentino',
+};
+
+/**
+ * Localized home breadcrumb labels
+ */
+const homeLabels: Record<SupportedLocale, string> = {
+	es: 'Inicio',
+	en: 'Home',
+	pt: 'Início',
+};
+
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
+
+/**
+ * Breadcrumb navigation items
+ */
+const breadcrumbItems = [
+	{ label: homeLabels[locale], href: `/${locale}/` },
+	{ label: titles[locale], href: `/${locale}/quienes-somos/` },
+];
+---
+
+<BaseLayout title={titles[locale]} description={descriptions[locale]} locale={locale}>
+	<SEOHead
+		slot="head"
+		title={titles[locale]}
+		description={descriptions[locale]}
+		canonical={canonicalUrl}
+		locale={locale === 'pt' ? 'es' : locale}
+		type="website"
+	/>
+
+	<Container>
+		<Breadcrumb items={breadcrumbItems} />
+
+		<Section>
+			<div class="mx-auto max-w-4xl">
+				<!-- Hero Section -->
+				<article id="hero" class="mb-12 text-center">
+					<h1 class="mb-6 text-4xl font-bold text-text-primary md:text-5xl">
+						{titles[locale]}
+					</h1>
+					<p class="text-xl leading-relaxed text-text-secondary">
+						Hospeda es la plataforma que conecta viajeros con alojamientos auténticos y
+						experiencias únicas en Concepción del Uruguay y la región del Litoral
+						argentino. Creemos en el turismo responsable y en el valor de las conexiones
+						genuinas.
+					</p>
+				</article>
+
+				<!-- Mission Section -->
+				<article id="mission" class="mb-12">
+					<div class="rounded-lg bg-bg p-8 shadow-sm">
+						<h2 class="mb-4 text-3xl font-semibold text-text-primary">Nuestra Misión</h2>
+						<p class="text-lg leading-relaxed text-text-secondary">
+							Conectar viajeros con alojamientos auténticos en la región del Litoral
+							argentino, promoviendo el turismo responsable y sustentable. Facilitamos el
+							descubrimiento de experiencias únicas y fomentamos el desarrollo económico
+							local a través del turismo comunitario.
+						</p>
+					</div>
+				</article>
+
+				<!-- Values Section -->
+				<article id="values" class="mb-12">
+					<h2 class="mb-8 text-center text-3xl font-semibold text-text-primary">
+						Nuestros Valores
+					</h2>
+					<div class="grid gap-8 md:grid-cols-2">
+						<!-- Value 1: Authenticity -->
+						<div class="flex flex-col items-center text-center">
+							<div
+								class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10"
+							>
+								<svg
+									class="h-8 w-8 text-primary"
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+									aria-hidden="true"
+								>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M5 13l4 4L19 7"></path>
+								</svg>
+							</div>
+							<h3 class="mb-2 text-xl font-semibold text-text-primary">Autenticidad</h3>
+							<p class="text-text-secondary">
+								Promovemos experiencias genuinas que reflejan la cultura y hospitalidad
+								local del Litoral argentino.
+							</p>
+						</div>
+
+						<!-- Value 2: Community -->
+						<div class="flex flex-col items-center text-center">
+							<div
+								class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10"
+							>
+								<svg
+									class="h-8 w-8 text-primary"
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+									aria-hidden="true"
+								>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+									></path>
+								</svg>
+							</div>
+							<h3 class="mb-2 text-xl font-semibold text-text-primary">Comunidad</h3>
+							<p class="text-text-secondary">
+								Fortalecemos el tejido social local apoyando emprendimientos turísticos y
+								generando oportunidades económicas.
+							</p>
+						</div>
+
+						<!-- Value 3: Quality -->
+						<div class="flex flex-col items-center text-center">
+							<div
+								class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10"
+							>
+								<svg
+									class="h-8 w-8 text-primary"
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+									aria-hidden="true"
+								>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+								</svg>
+							</div>
+							<h3 class="mb-2 text-xl font-semibold text-text-primary">Calidad</h3>
+							<p class="text-text-secondary">
+								Nos comprometemos a ofrecer alojamientos verificados con altos estándares de
+								confort y servicio.
+							</p>
+						</div>
+
+						<!-- Value 4: Sustainability -->
+						<div class="flex flex-col items-center text-center">
+							<div
+								class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10"
+							>
+								<svg
+									class="h-8 w-8 text-primary"
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+									aria-hidden="true"
+								>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
+									></path>
+								</svg>
+							</div>
+							<h3 class="mb-2 text-xl font-semibold text-text-primary">Sustentabilidad</h3>
+							<p class="text-text-secondary">
+								Fomentamos prácticas turísticas responsables que preservan el patrimonio
+								natural y cultural de la región.
+							</p>
+						</div>
+					</div>
+				</article>
+
+				<!-- Region Section -->
+				<article id="region" class="mb-12">
+					<div class="rounded-lg bg-bg p-8 shadow-sm">
+						<h2 class="mb-4 text-3xl font-semibold text-text-primary">Nuestra Región</h2>
+						<p class="mb-4 text-lg leading-relaxed text-text-secondary">
+							Concepción del Uruguay y la región del Litoral argentino ofrecen una
+							combinación única de historia, naturaleza y cultura. Desde las costas del Río
+							Uruguay hasta los paisajes rurales, nuestra región es el escenario perfecto
+							para experiencias turísticas auténticas.
+						</p>
+						<p class="text-lg leading-relaxed text-text-secondary">
+							La región se caracteriza por su rica herencia cultural, arquitectura colonial,
+							festividades tradicionales, gastronomía local y la calidez de su gente.
+							Promovemos el descubrimiento de estos tesoros a través de alojamientos que
+							reflejan la identidad local.
+						</p>
+					</div>
+				</article>
+
+				<!-- Contact CTA Section -->
+				<article id="contact-cta" class="mb-12">
+					<div
+						class="rounded-lg bg-primary/10 p-8 text-center shadow-sm transition-shadow hover:shadow-md"
+					>
+						<h2 class="mb-4 text-3xl font-semibold text-text-primary">
+							Conectemos y Crezcamos Juntos
+						</h2>
+						<p class="mb-6 text-lg leading-relaxed text-text-secondary">
+							¿Tienes preguntas o deseas formar parte de nuestra red de alojamientos? Nos
+							encantaría conocerte y trabajar juntos para fortalecer el turismo en la
+							región.
+						</p>
+						<a
+							href={`/${locale}/contacto/`}
+							class="inline-block rounded-lg bg-primary px-8 py-3 font-semibold text-white transition-colors hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+						>
+							Contáctanos
+						</a>
+					</div>
+				</article>
+			</div>
+		</Section>
+	</Container>
+</BaseLayout>
