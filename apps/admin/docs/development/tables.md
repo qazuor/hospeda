@@ -374,7 +374,7 @@ Create reusable sortable header:
 ```tsx
 // components/SortableHeader.tsx
 import { Column } from '@tanstack/react-table';
-import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
+import { ChevronUpIcon, ChevronDownIcon, ChevronsUpDownIcon } from '@repo/icons';
 import { Button } from '@/components/ui/button';
 
 type SortableHeaderProps<T> = {
@@ -395,9 +395,9 @@ export function SortableHeader<T>({
       className="flex items-center gap-2"
     >
       {title}
-      {sorted === 'asc' && <ChevronUp className="h-4 w-4" />}
-      {sorted === 'desc' && <ChevronDown className="h-4 w-4" />}
-      {!sorted && <ChevronsUpDown className="h-4 w-4" />}
+      {sorted === 'asc' && <ChevronUpIcon className="h-4 w-4" />}
+      {sorted === 'desc' && <ChevronDownIcon className="h-4 w-4" />}
+      {!sorted && <ChevronsUpDownIcon className="h-4 w-4" />}
     </Button>
   );
 }

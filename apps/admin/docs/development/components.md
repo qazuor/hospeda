@@ -289,11 +289,11 @@ import {
 
 ```tsx
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, CheckCircle2, Info } from 'lucide-react';
+import { AlertCircleIcon, CheckCircleIcon, InfoIcon } from '@repo/icons';
 
 // Success
 <Alert variant="default">
-  <CheckCircle2 className="h-4 w-4" />
+  <CheckCircleIcon className="h-4 w-4" />
   <AlertTitle>Success!</AlertTitle>
   <AlertDescription>
     Your accommodation has been created successfully.
@@ -302,7 +302,7 @@ import { AlertCircle, CheckCircle2, Info } from 'lucide-react';
 
 // Error
 <Alert variant="destructive">
-  <AlertCircle className="h-4 w-4" />
+  <AlertCircleIcon className="h-4 w-4" />
   <AlertTitle>Error</AlertTitle>
   <AlertDescription>
     There was a problem with your request.
@@ -406,12 +406,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal } from 'lucide-react';
+import { MoreHorizontalIcon } from '@repo/icons';
 
 <DropdownMenu>
   <DropdownMenuTrigger asChild>
     <Button variant="ghost" size="sm">
-      <MoreHorizontal className="h-4 w-4" />
+      <MoreHorizontalIcon className="h-4 w-4" />
     </Button>
   </DropdownMenuTrigger>
   <DropdownMenuContent align="end">
@@ -641,7 +641,7 @@ const buttonVariants = cva(
 ```tsx
 // components/LoadingButton.tsx
 import { Button, type ButtonProps } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
+import { LoaderIcon } from '@repo/icons';
 
 type LoadingButtonProps = ButtonProps & {
   loading?: boolean;
@@ -657,7 +657,7 @@ export function LoadingButton({
 }: LoadingButtonProps) {
   return (
     <Button disabled={loading || disabled} {...props}>
-      {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+      {loading && <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />}
       {loading ? loadingText || 'Loading...' : children}
     </Button>
   );
