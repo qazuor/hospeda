@@ -30,7 +30,10 @@ export const users = pgTable(
     'users',
     {
         id: uuid('id').primaryKey().defaultRandom(),
-        slug: text('slug').notNull().unique(),
+        slug: text('slug')
+            .notNull()
+            .unique()
+            .$defaultFn(() => `user-${crypto.randomUUID().slice(0, 8)}`),
         /** Better Auth required: user email address */
         email: text('email').notNull().unique(),
         /** Better Auth required: email verification status */
@@ -58,9 +61,19 @@ export const users = pgTable(
         contactInfo: jsonb('contact_info').$type<ContactInfo>(),
         location: jsonb('location').$type<FullLocationType>(),
         socialNetworks: jsonb('social_networks').$type<SocialNetwork>(),
-        role: RolePgEnum('role').notNull(),
+        role: RolePgEnum('role').notNull().default('USER'),
         profile: jsonb('profile').$type<UserProfile>(),
-        settings: jsonb('settings').$type<UserSettings>().notNull(),
+        settings: jsonb('settings')
+            .$type<UserSettings>()
+            .notNull()
+            .default({
+                notifications: {
+                    enabled: true,
+                    allowEmails: true,
+                    allowSms: false,
+                    allowPush: false
+                }
+            }),
         visibility: VisibilityPgEnum('visibility').notNull().default('PUBLIC'),
         lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
         adminInfo: jsonb('admin_info').$type<AdminInfoType>(),

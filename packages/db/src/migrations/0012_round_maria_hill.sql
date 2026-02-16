@@ -1,0 +1,2 @@
+ALTER TABLE "users" ALTER COLUMN "role" SET DEFAULT 'USER';--> statement-breakpoint
+ALTER TABLE "users" ALTER COLUMN "settings" SET DEFAULT '{"notifications":{"enabled":true,"allowEmails":true,"allowSms":false,"allowPush":false}}'::jsonb;
