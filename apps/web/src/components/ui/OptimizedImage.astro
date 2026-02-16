@@ -1,0 +1,64 @@
+---
+/**
+ * OptimizedImage - Responsive image component with performance optimizations.
+ * Provides lazy loading, proper dimensions for CLS prevention,
+ * and responsive image attributes for optimal loading.
+ *
+ * For remote/API images where Astro's Image component cannot be used.
+ */
+
+interface Props {
+	/** Image source URL */
+	src: string;
+	/** Alt text for accessibility */
+	alt: string;
+	/** Intrinsic width for CLS prevention */
+	width: number;
+	/** Intrinsic height for CLS prevention */
+	height: number;
+	/** Loading strategy (defaults to 'lazy') */
+	loading?: 'lazy' | 'eager';
+	/** Additional CSS classes */
+	class?: string;
+	/** Responsive sizes attribute */
+	sizes?: string;
+	/** Fetch priority hint */
+	fetchpriority?: 'high' | 'low' | 'auto';
+	/** Decoding hint (defaults to 'async') */
+	decoding?: 'async' | 'sync' | 'auto';
+}
+
+const {
+	src,
+	alt,
+	width,
+	height,
+	loading = 'lazy',
+	class: className = '',
+	sizes = '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw',
+	fetchpriority,
+	decoding = 'async',
+} = Astro.props;
+
+// Generate srcset for responsive images
+// This assumes an image CDN or transformation service will handle resizing
+// For now, it serves as a pattern ready for CDN integration
+const widths = [320, 640, 1024, 1920];
+const srcset = widths
+	.filter((w) => w <= width * 2) // Don't upscale beyond 2x
+	.map((w) => `${src}?w=${w} ${w}w`)
+	.join(', ');
+---
+
+<img
+	src={src}
+	alt={alt}
+	width={width}
+	height={height}
+	loading={loading}
+	decoding={decoding}
+	sizes={sizes}
+	srcset={srcset}
+	class:list={['transition-opacity duration-300', className]}
+	{...(fetchpriority ? { fetchpriority } : {})}
+/>

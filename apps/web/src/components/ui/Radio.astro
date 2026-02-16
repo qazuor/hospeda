@@ -1,0 +1,46 @@
+---
+/**
+ * Custom styled radio button component with label.
+ * Provides accessible form input with primary accent color.
+ */
+interface Props {
+  name: string;
+  label: string;
+  value: string;
+  checked?: boolean;
+  disabled?: boolean;
+  id?: string;
+  class?: string;
+}
+
+const {
+  name,
+  label,
+  value,
+  checked = false,
+  disabled = false,
+  id,
+  class: className,
+} = Astro.props;
+
+const radioId = id || `radio-${name}-${value}-${Math.random().toString(36).slice(2, 9)}`;
+
+const baseClasses = 'inline-flex items-center gap-2';
+const radioClasses = 'h-4 w-4 border-border text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50';
+const labelClasses = 'text-sm font-medium text-text select-none cursor-pointer disabled:cursor-not-allowed disabled:opacity-50';
+---
+
+<div class:list={[baseClasses, className]}>
+  <input
+    type="radio"
+    id={radioId}
+    name={name}
+    value={value}
+    checked={checked}
+    disabled={disabled}
+    class={radioClasses}
+  />
+  <label for={radioId} class={labelClasses}>
+    {label}
+  </label>
+</div>

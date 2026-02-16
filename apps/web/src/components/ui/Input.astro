@@ -1,0 +1,71 @@
+---
+/**
+ * Text input component with label, error state, and validation.
+ * Supports various input types (text, email, password, etc.).
+ */
+interface Props {
+  name: string;
+  type?: 'text' | 'email' | 'password' | 'search' | 'tel' | 'url' | 'number';
+  label?: string;
+  placeholder?: string;
+  value?: string;
+  error?: string;
+  required?: boolean;
+  disabled?: boolean;
+  id?: string;
+  class?: string;
+  [key: string]: unknown;
+}
+
+const {
+  name,
+  type = 'text',
+  label,
+  placeholder,
+  value,
+  error,
+  required = false,
+  disabled = false,
+  id,
+  class: className,
+  ...rest
+} = Astro.props;
+
+const inputId = id || `input-${name}`;
+const errorId = `${inputId}-error`;
+
+const baseClasses = 'w-full px-3 py-2 text-base rounded-md border transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-surface/50';
+
+const stateClasses = error
+  ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+  : 'border-border bg-surface text-text hover:border-border/80';
+
+const classes = [baseClasses, stateClasses, className].filter(Boolean).join(' ');
+---
+
+<div class="w-full">
+  {label && (
+    <label for={inputId} class="block text-sm font-medium text-text mb-1.5">
+      {label}
+      {required && <span class="text-red-500 ml-1" aria-label="required">*</span>}
+    </label>
+  )}
+  <input
+    type={type}
+    name={name}
+    id={inputId}
+    placeholder={placeholder}
+    value={value}
+    required={required || undefined}
+    disabled={disabled}
+    aria-invalid={error ? 'true' : undefined}
+    aria-describedby={error ? errorId : undefined}
+    class={classes}
+    {...rest}
+  />
+  {error && (
+    <p id={errorId} class="mt-1.5 text-sm text-red-500" role="alert">
+      {error}
+    </p>
+  )}
+</div>

@@ -1,0 +1,31 @@
+---
+/**
+ * Skeleton loading state for DestinationCard.
+ * Mirrors the card layout with shimmer animation placeholders.
+ */
+interface Props {
+  class?: string;
+}
+
+const { class: className } = Astro.props;
+---
+
+<div class:list={['overflow-hidden rounded-lg bg-surface shadow-md', className]} role="status" aria-hidden="true">
+  <span class="sr-only">Loading...</span>
+
+  <!-- Image placeholder -->
+  <div class="aspect-[16/9] bg-border/50 animate-shimmer" />
+
+  <!-- Content placeholders -->
+  <div class="p-4 space-y-3">
+    <!-- Title -->
+    <div class="h-5 w-2/3 rounded bg-border/50 animate-shimmer" />
+    <!-- Count -->
+    <div class="h-4 w-28 rounded bg-border/50 animate-shimmer" />
+    <!-- Summary lines -->
+    <div class="space-y-2">
+      <div class="h-3 w-full rounded bg-border/50 animate-shimmer" />
+      <div class="h-3 w-3/4 rounded bg-border/50 animate-shimmer" />
+    </div>
+  </div>
+</div>

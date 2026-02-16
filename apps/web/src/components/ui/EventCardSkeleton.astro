@@ -1,0 +1,44 @@
+---
+/**
+ * Skeleton loading state for EventCard.
+ * Mirrors the card layout with shimmer animation placeholders.
+ */
+interface Props {
+  class?: string;
+}
+
+const { class: className } = Astro.props;
+---
+
+<div class:list={['overflow-hidden rounded-lg bg-surface shadow-md', className]} role="status" aria-hidden="true">
+  <span class="sr-only">Loading...</span>
+
+  <!-- Image placeholder -->
+  <div class="aspect-[4/3] bg-border/50 animate-shimmer">
+    <!-- Category badge placeholder -->
+    <div class="p-3">
+      <div class="h-5 w-20 rounded-full bg-surface/30" />
+    </div>
+  </div>
+
+  <!-- Content placeholders -->
+  <div class="p-4 space-y-3">
+    <!-- Title -->
+    <div class="h-5 w-3/4 rounded bg-border/50 animate-shimmer" />
+    <!-- Date -->
+    <div class="flex items-center gap-1.5">
+      <div class="h-4 w-4 rounded bg-border/50 animate-shimmer" />
+      <div class="h-4 w-32 rounded bg-border/50 animate-shimmer" />
+    </div>
+    <!-- Location -->
+    <div class="flex items-center gap-1.5">
+      <div class="h-4 w-4 rounded bg-border/50 animate-shimmer" />
+      <div class="h-4 w-40 rounded bg-border/50 animate-shimmer" />
+    </div>
+    <!-- Summary lines -->
+    <div class="space-y-2">
+      <div class="h-3 w-full rounded bg-border/50 animate-shimmer" />
+      <div class="h-3 w-2/3 rounded bg-border/50 animate-shimmer" />
+    </div>
+  </div>
+</div>

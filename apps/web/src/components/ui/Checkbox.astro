@@ -1,0 +1,46 @@
+---
+/**
+ * Custom styled checkbox component with label.
+ * Provides accessible form input with primary accent color.
+ */
+interface Props {
+  name: string;
+  label: string;
+  checked?: boolean;
+  value?: string;
+  disabled?: boolean;
+  id?: string;
+  class?: string;
+}
+
+const {
+  name,
+  label,
+  checked = false,
+  value,
+  disabled = false,
+  id,
+  class: className,
+} = Astro.props;
+
+const checkboxId = id || `checkbox-${name}-${Math.random().toString(36).slice(2, 9)}`;
+
+const baseClasses = 'inline-flex items-center gap-2';
+const checkboxClasses = 'h-4 w-4 rounded border-border text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50';
+const labelClasses = 'text-sm font-medium text-text select-none cursor-pointer disabled:cursor-not-allowed disabled:opacity-50';
+---
+
+<div class:list={[baseClasses, className]}>
+  <input
+    type="checkbox"
+    id={checkboxId}
+    name={name}
+    checked={checked}
+    value={value}
+    disabled={disabled}
+    class={checkboxClasses}
+  />
+  <label for={checkboxId} class={labelClasses}>
+    {label}
+  </label>
+</div>

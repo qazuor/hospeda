@@ -1,0 +1,25 @@
+---
+/**
+ * Small inline badge for categories, tags, and status labels.
+ * Provides visual distinction through color variants.
+ */
+interface Props {
+  label: string;
+  variant?: 'primary' | 'secondary' | 'outline';
+  class?: string;
+}
+
+const { label, variant = 'primary', class: className } = Astro.props;
+
+const variantClasses: Record<string, string> = {
+  primary: 'bg-primary/10 text-primary',
+  secondary: 'bg-secondary/10 text-secondary-dark',
+  outline: 'border border-border text-text-secondary',
+};
+
+const baseClasses = 'inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded-full';
+---
+
+<span class:list={[baseClasses, variantClasses[variant], className]}>
+  {label}
+</span>

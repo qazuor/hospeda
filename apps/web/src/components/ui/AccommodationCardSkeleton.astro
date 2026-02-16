@@ -1,0 +1,38 @@
+---
+/**
+ * Skeleton loading state for AccommodationCard.
+ * Mirrors the card layout with shimmer animation placeholders.
+ */
+interface Props {
+  class?: string;
+}
+
+const { class: className } = Astro.props;
+---
+
+<div class:list={['overflow-hidden rounded-lg bg-surface shadow-md', className]} role="status" aria-hidden="true">
+  <span class="sr-only">Loading...</span>
+
+  <!-- Image placeholder -->
+  <div class="aspect-[4/3] bg-border/50 animate-shimmer">
+    <!-- Type badge placeholder -->
+    <div class="p-3">
+      <div class="h-5 w-16 rounded-full bg-surface/30" />
+    </div>
+  </div>
+
+  <!-- Content placeholders -->
+  <div class="p-4 space-y-3">
+    <!-- Title -->
+    <div class="h-5 w-3/4 rounded bg-border/50 animate-shimmer" />
+    <!-- Rating -->
+    <div class="h-4 w-24 rounded bg-border/50 animate-shimmer" />
+    <!-- Location -->
+    <div class="h-4 w-1/2 rounded bg-border/50 animate-shimmer" />
+    <!-- Summary lines -->
+    <div class="space-y-2">
+      <div class="h-3 w-full rounded bg-border/50 animate-shimmer" />
+      <div class="h-3 w-2/3 rounded bg-border/50 animate-shimmer" />
+    </div>
+  </div>
+</div>

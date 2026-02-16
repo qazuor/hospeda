@@ -1,0 +1,37 @@
+---
+/**
+ * HeroImage - Image component optimized for hero/above-fold images.
+ * Uses eager loading and high fetch priority for immediate display.
+ * Includes a CSS-based blur placeholder while the image loads.
+ */
+
+interface Props {
+	/** Image source URL */
+	src: string;
+	/** Alt text for accessibility */
+	alt: string;
+	/** Additional CSS classes */
+	class?: string;
+}
+
+const { src, alt, class: className = '' } = Astro.props;
+---
+
+<div class:list={['relative overflow-hidden', className]}>
+	<!-- Blur placeholder background -->
+	<div
+		class="absolute inset-0 bg-gray-200 animate-pulse"
+		aria-hidden="true"
+	/>
+
+	<img
+		src={src}
+		alt={alt}
+		loading="eager"
+		decoding="async"
+		fetchpriority="high"
+		class="relative h-full w-full object-cover transition-opacity duration-500"
+		onload="this.style.opacity='1';this.previousElementSibling.style.display='none'"
+		style="opacity: 0;"
+	/>
+</div>
