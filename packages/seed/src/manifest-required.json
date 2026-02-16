@@ -296,5 +296,12 @@
     "billingEntitlements": [],
     "billingLimits": [],
     "billingPlans": [],
-    "billingAddons": []
+    "billingAddons": [],
+    "exchangeRateConfig": ["001-exchange-rate-config-default.json"],
+    "exchangeRates": [
+        "001-rate-usd-ars-oficial.json",
+        "002-rate-usd-ars-blue.json",
+        "003-rate-brl-ars-oficial.json",
+        "004-rate-usd-brl-standard.json"
+    ]
 }

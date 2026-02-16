@@ -12,10 +12,10 @@
     "destinationType": "REGION",
     "parentDestinationId": "100-destination-argentina",
     "location": {
-        "state": "",
-        "zipCode": "",
+        "state": null,
+        "zipCode": null,
         "country": "Argentina",
-        "city": "",
+        "city": null,
         "coordinates": {
             "lat": "-31.7413",
             "long": "-60.5115"

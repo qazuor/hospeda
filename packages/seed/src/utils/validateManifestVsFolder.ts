@@ -23,7 +23,9 @@ const ENTITY_FOLDER_MAP: Record<string, string> = {
     bookmarks: 'bookmark',
     sponsorshipLevels: 'sponsorshipLevel',
     sponsorshipPackages: 'sponsorshipPackage',
-    rolePermissions: 'rolePermission'
+    rolePermissions: 'rolePermission',
+    exchangeRates: 'exchangeRate',
+    exchangeRateConfig: 'exchangeRateConfig'
 };
 
 /**

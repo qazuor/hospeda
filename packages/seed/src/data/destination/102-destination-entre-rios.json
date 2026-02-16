@@ -13,9 +13,9 @@
     "parentDestinationId": "101-destination-litoral",
     "location": {
         "state": "Entre Rios",
-        "zipCode": "",
+        "zipCode": null,
         "country": "Argentina",
-        "city": "",
+        "city": null,
         "coordinates": {
             "lat": "-31.7413",
             "long": "-60.5115"

@@ -1,0 +1,12 @@
+{
+    "$schema": "../../schemas/exchange-rate.schema.json",
+    "id": "003-rate-brl-ars-oficial",
+    "fromCurrency": "BRL",
+    "toCurrency": "ARS",
+    "rate": 180.0,
+    "inverseRate": 0.005555556,
+    "rateType": "oficial",
+    "source": "manual",
+    "isManualOverride": false,
+    "fetchedAt": "2026-02-14T00:00:00.000Z"
+}

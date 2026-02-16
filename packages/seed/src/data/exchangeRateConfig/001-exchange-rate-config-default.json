@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/exchange-rate-config.schema.json",
+    "id": "001-exchange-rate-config-default",
+    "defaultRateType": "oficial",
+    "dolarApiFetchIntervalMinutes": 15,
+    "exchangeRateApiFetchIntervalHours": 6,
+    "showConversionDisclaimer": true,
+    "disclaimerText": "Los tipos de cambio son referenciales y pueden variar. Consulte con su entidad financiera para obtener tasas actualizadas.",
+    "enableAutoFetch": true
+}

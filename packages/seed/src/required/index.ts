@@ -10,6 +10,8 @@ import { seedBillingLimits } from './billingLimits.seed.js';
 import { seedBillingPlans } from './billingPlans.seed.js';
 import { seedBillingPromoCodes } from './billingPromoCodes.seed.js';
 import { seedDestinations } from './destinations.seed.js';
+import { seedExchangeRateConfig } from './exchangeRateConfig.seed.js';
+import { seedExchangeRates } from './exchangeRates.seed.js';
 import { seedFeatures } from './features.seed.js';
 import { seedRolePermissions } from './rolePermissions.seed.js';
 import { seedSponsorshipLevels } from './sponsorshipLevels.seed.js';
@@ -28,6 +30,7 @@ import { seedUsers } from './users.seed.js';
  * - Destinations with their relationships
  * - Sponsorship levels and packages
  * - Billing entitlements, limits, plans, and add-ons
+ * - Exchange rate configuration and initial rates
  *
  * The seeds are executed in a specific order to ensure that:
  * - Dependencies are available before they're needed
@@ -53,6 +56,9 @@ import { seedUsers } from './users.seed.js';
  * // 10. Billing limits
  * // 11. Billing plans
  * // 12. Billing add-ons
+ * // 13. Billing promo codes
+ * // 14. Exchange rate config
+ * // 15. Exchange rates
  * ```
  *
  * @throws {Error} When seeding fails and continueOnError is false
@@ -103,6 +109,12 @@ export async function runRequiredSeeds(context: SeedContext): Promise<void> {
 
         // 13. Load billing promo codes (default discount codes)
         await seedBillingPromoCodes(context);
+
+        // 14. Load exchange rate config (before rates to have config available)
+        await seedExchangeRateConfig(context);
+
+        // 15. Load exchange rates (initial reference rates)
+        await seedExchangeRates(context);
 
         logger.info(`${separator}`);
         // biome-ignore lint/suspicious/noConsoleLog: <explanation>

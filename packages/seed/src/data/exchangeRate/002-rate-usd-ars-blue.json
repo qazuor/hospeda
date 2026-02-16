@@ -1,0 +1,12 @@
+{
+    "$schema": "../../schemas/exchange-rate.schema.json",
+    "id": "002-rate-usd-ars-blue",
+    "fromCurrency": "USD",
+    "toCurrency": "ARS",
+    "rate": 1280.0,
+    "inverseRate": 0.00078125,
+    "rateType": "blue",
+    "source": "manual",
+    "isManualOverride": false,
+    "fetchedAt": "2026-02-14T00:00:00.000Z"
+}

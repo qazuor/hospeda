@@ -11,10 +11,10 @@
     "averageRating": 0,
     "destinationType": "COUNTRY",
     "location": {
-        "state": "",
-        "zipCode": "",
+        "state": null,
+        "zipCode": null,
         "country": "Argentina",
-        "city": "",
+        "city": null,
         "coordinates": {
             "lat": "-34.6037",
             "long": "-58.3816"

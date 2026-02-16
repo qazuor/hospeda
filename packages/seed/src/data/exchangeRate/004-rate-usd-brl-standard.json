@@ -1,0 +1,12 @@
+{
+    "$schema": "../../schemas/exchange-rate.schema.json",
+    "id": "004-rate-usd-brl-standard",
+    "fromCurrency": "USD",
+    "toCurrency": "BRL",
+    "rate": 5.85,
+    "inverseRate": 0.170940171,
+    "rateType": "standard",
+    "source": "manual",
+    "isManualOverride": false,
+    "fetchedAt": "2026-02-14T00:00:00.000Z"
+}
