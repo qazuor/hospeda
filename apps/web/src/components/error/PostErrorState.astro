@@ -1,0 +1,49 @@
+---
+/**
+ * Error state component for blog post pages.
+ * Wraps GenericErrorState with post-specific icon and default messages.
+ */
+import { PostIcon } from '@repo/icons';
+import GenericErrorState from './GenericErrorState.astro';
+
+interface Props {
+  /** Current locale */
+  locale?: 'es' | 'en' | 'pt';
+  /** URL to retry (defaults to blog listing) */
+  retryHref?: string;
+  /** Additional CSS classes */
+  class?: string;
+}
+
+const { locale = 'es', retryHref, class: className } = Astro.props;
+
+const messages: Record<string, { title: string; message: string }> = {
+  es: {
+    title: 'Error al cargar publicaciones',
+    message: 'No pudimos obtener las publicaciones del blog. Verificá tu conexión e intentá de nuevo.',
+  },
+  en: {
+    title: 'Error loading posts',
+    message: 'We could not load blog posts. Check your connection and try again.',
+  },
+  pt: {
+    title: 'Erro ao carregar publicações',
+    message: 'Não foi possível obter as publicações do blog. Verifique sua conexão e tente novamente.',
+  },
+};
+
+const t = messages[locale] ?? messages.es;
+---
+
+<GenericErrorState
+  title={t.title}
+  message={t.message}
+  retryHref={retryHref ?? `/${locale}/publicaciones/`}
+  homeHref={`/${locale}/`}
+  locale={locale}
+  class={className}
+>
+  <div slot="icon" class="flex h-16 w-16 items-center justify-center rounded-full bg-info/10 text-info">
+    <PostIcon size={32} weight="duotone" aria-hidden="true" />
+  </div>
+</GenericErrorState>

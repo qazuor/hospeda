@@ -1,0 +1,49 @@
+---
+/**
+ * Error state component for accommodation pages.
+ * Wraps GenericErrorState with accommodation-specific icon and default messages.
+ */
+import { AccommodationIcon } from '@repo/icons';
+import GenericErrorState from './GenericErrorState.astro';
+
+interface Props {
+  /** Current locale */
+  locale?: 'es' | 'en' | 'pt';
+  /** URL to retry (defaults to accommodation listing) */
+  retryHref?: string;
+  /** Additional CSS classes */
+  class?: string;
+}
+
+const { locale = 'es', retryHref, class: className } = Astro.props;
+
+const messages: Record<string, { title: string; message: string }> = {
+  es: {
+    title: 'Error al cargar alojamientos',
+    message: 'No pudimos obtener la información de alojamientos. Verificá tu conexión e intentá de nuevo.',
+  },
+  en: {
+    title: 'Error loading accommodations',
+    message: 'We could not load accommodation information. Check your connection and try again.',
+  },
+  pt: {
+    title: 'Erro ao carregar acomodações',
+    message: 'Não foi possível obter as informações de acomodações. Verifique sua conexão e tente novamente.',
+  },
+};
+
+const t = messages[locale] ?? messages.es;
+---
+
+<GenericErrorState
+  title={t.title}
+  message={t.message}
+  retryHref={retryHref ?? `/${locale}/alojamientos/`}
+  homeHref={`/${locale}/`}
+  locale={locale}
+  class={className}
+>
+  <div slot="icon" class="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
+    <AccommodationIcon size={32} weight="duotone" aria-hidden="true" />
+  </div>
+</GenericErrorState>

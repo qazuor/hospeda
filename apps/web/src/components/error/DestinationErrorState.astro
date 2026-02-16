@@ -1,0 +1,49 @@
+---
+/**
+ * Error state component for destination pages.
+ * Wraps GenericErrorState with destination-specific icon and default messages.
+ */
+import { DestinationIcon } from '@repo/icons';
+import GenericErrorState from './GenericErrorState.astro';
+
+interface Props {
+  /** Current locale */
+  locale?: 'es' | 'en' | 'pt';
+  /** URL to retry (defaults to destination listing) */
+  retryHref?: string;
+  /** Additional CSS classes */
+  class?: string;
+}
+
+const { locale = 'es', retryHref, class: className } = Astro.props;
+
+const messages: Record<string, { title: string; message: string }> = {
+  es: {
+    title: 'Error al cargar destinos',
+    message: 'No pudimos obtener la información de destinos. Verificá tu conexión e intentá de nuevo.',
+  },
+  en: {
+    title: 'Error loading destinations',
+    message: 'We could not load destination information. Check your connection and try again.',
+  },
+  pt: {
+    title: 'Erro ao carregar destinos',
+    message: 'Não foi possível obter as informações de destinos. Verifique sua conexão e tente novamente.',
+  },
+};
+
+const t = messages[locale] ?? messages.es;
+---
+
+<GenericErrorState
+  title={t.title}
+  message={t.message}
+  retryHref={retryHref ?? `/${locale}/destinos/`}
+  homeHref={`/${locale}/`}
+  locale={locale}
+  class={className}
+>
+  <div slot="icon" class="flex h-16 w-16 items-center justify-center rounded-full bg-secondary/10 text-secondary">
+    <DestinationIcon size={32} weight="duotone" aria-hidden="true" />
+  </div>
+</GenericErrorState>

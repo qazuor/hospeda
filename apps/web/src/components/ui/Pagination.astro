@@ -1,0 +1,160 @@
+---
+/**
+ * Accessible pagination component with URL-segment routing.
+ * Renders previous/next buttons, page numbers with ellipsis, and ARIA attributes.
+ * Mobile-responsive: shows 3 page buttons on mobile, 5 on desktop.
+ *
+ * @example
+ * ```astro
+ * <Pagination
+ *   currentPage={2}
+ *   totalPages={10}
+ *   baseUrl="/es/alojamientos"
+ *   locale="es"
+ * />
+ * ```
+ */
+
+interface Props {
+  /** Current active page (1-based) */
+  currentPage: number;
+  /** Total number of pages */
+  totalPages: number;
+  /** Base URL without page segment (e.g. "/es/alojamientos") */
+  baseUrl: string;
+  /** Current locale for localized labels */
+  locale?: 'es' | 'en' | 'pt';
+  /** Additional CSS classes */
+  class?: string;
+}
+
+const { currentPage, totalPages, baseUrl, locale = 'es', class: className } = Astro.props;
+
+/**
+ * Localized labels for pagination controls.
+ */
+const labels: Record<string, { previous: string; next: string; page: string; of: string }> = {
+  es: { previous: 'Anterior', next: 'Siguiente', page: 'Página', of: 'de' },
+  en: { previous: 'Previous', next: 'Next', page: 'Page', of: 'of' },
+  pt: { previous: 'Anterior', next: 'Próximo', page: 'Página', of: 'de' },
+};
+
+const t = labels[locale] ?? labels.es;
+
+/**
+ * Build the URL for a specific page number.
+ * Page 1 uses the base URL without /page/ segment.
+ */
+function buildPageUrl(page: number): string {
+  const normalizedBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+  if (page === 1) {
+    return `${normalizedBase}/`;
+  }
+  return `${normalizedBase}/page/${page}/`;
+}
+
+/**
+ * Generate the array of page numbers to display, with ellipsis markers.
+ * Desktop: show up to 5 page numbers.
+ * Uses -1 as a sentinel value for ellipsis.
+ */
+function getPageNumbers(current: number, total: number): number[] {
+  if (total <= 5) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+
+  const pages: number[] = [];
+
+  if (current <= 3) {
+    // Near start: show 1..4, ..., last
+    pages.push(1, 2, 3, 4, -1, total);
+  } else if (current >= total - 2) {
+    // Near end: show 1, ..., last-3..last
+    pages.push(1, -1, total - 3, total - 2, total - 1, total);
+  } else {
+    // Middle: show 1, ..., current-1, current, current+1, ..., last
+    pages.push(1, -1, current - 1, current, current + 1, -1, total);
+  }
+
+  return pages;
+}
+
+const pageNumbers = getPageNumbers(currentPage, totalPages);
+const hasPrevious = currentPage > 1;
+const hasNext = currentPage < totalPages;
+---
+
+{totalPages > 1 && (
+  <nav
+    class:list={['mt-8 flex items-center justify-center gap-1 sm:gap-2', className]}
+    aria-label={`${t.page} ${currentPage} ${t.of} ${totalPages}`}
+    role="navigation"
+  >
+    {/* Previous button */}
+    {hasPrevious ? (
+      <a
+        href={buildPageUrl(currentPage - 1)}
+        class="rounded-md border border-border px-3 py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-bg hover:text-text"
+        rel="prev"
+      >
+        <span class="hidden sm:inline">{t.previous}</span>
+        <span class="sm:hidden" aria-hidden="true">&lsaquo;</span>
+        <span class="sr-only sm:hidden">{t.previous}</span>
+      </a>
+    ) : (
+      <span class="cursor-not-allowed rounded-md border border-border px-3 py-2 text-sm font-medium text-text-tertiary opacity-50">
+        <span class="hidden sm:inline">{t.previous}</span>
+        <span class="sm:hidden" aria-hidden="true">&lsaquo;</span>
+      </span>
+    )}
+
+    {/* Page numbers */}
+    {pageNumbers.map((p) => {
+      if (p === -1) {
+        return (
+          <span class="hidden px-1 text-text-tertiary sm:inline" aria-hidden="true">
+            &hellip;
+          </span>
+        );
+      }
+
+      const isCurrent = p === currentPage;
+
+      return (
+        <a
+          href={buildPageUrl(p)}
+          class:list={[
+            'rounded-md px-3 py-2 text-sm font-medium transition-colors',
+            isCurrent
+              ? 'bg-primary text-white'
+              : 'border border-border text-text-secondary hover:bg-bg hover:text-text',
+            // On mobile, hide non-adjacent pages for space
+            p !== currentPage && Math.abs(p - currentPage) > 1 && 'hidden sm:inline-flex',
+          ]}
+          aria-current={isCurrent ? 'page' : undefined}
+          aria-label={`${t.page} ${p}`}
+        >
+          {p}
+        </a>
+      );
+    })}
+
+    {/* Next button */}
+    {hasNext ? (
+      <a
+        href={buildPageUrl(currentPage + 1)}
+        class="rounded-md border border-border px-3 py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-bg hover:text-text"
+        rel="next"
+      >
+        <span class="hidden sm:inline">{t.next}</span>
+        <span class="sm:hidden" aria-hidden="true">&rsaquo;</span>
+        <span class="sr-only sm:hidden">{t.next}</span>
+      </a>
+    ) : (
+      <span class="cursor-not-allowed rounded-md border border-border px-3 py-2 text-sm font-medium text-text-tertiary opacity-50">
+        <span class="hidden sm:inline">{t.next}</span>
+        <span class="sm:hidden" aria-hidden="true">&rsaquo;</span>
+      </span>
+    )}
+  </nav>
+)}
