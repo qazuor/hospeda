@@ -20,7 +20,6 @@
         "typecheck": "tsc --noEmit --project ./tsconfig.json"
     },
     "dependencies": {
-        "lucide-react": "^0.540.0",
         "@repo/i18n": "workspace:*"
     },
     "peerDependencies": {
