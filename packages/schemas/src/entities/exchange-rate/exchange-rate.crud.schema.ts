@@ -138,7 +138,13 @@ export const ExchangeRateSearchInputSchema = z.object({
         .boolean({
             message: 'zodError.exchangeRate.search.isManualOverride.invalidType'
         })
-        .optional()
+        .optional(),
+    /** Filter rates fetched on or after this date */
+    fromDate: z.coerce
+        .date({ message: 'zodError.exchangeRate.search.fromDate.invalidDate' })
+        .optional(),
+    /** Filter rates fetched on or before this date */
+    toDate: z.coerce.date({ message: 'zodError.exchangeRate.search.toDate.invalidDate' }).optional()
 });
 
 // ============================================================================
@@ -153,6 +159,23 @@ export const ExchangeRateConvertInputSchema = z.object({
     from: PriceCurrencyEnumSchema,
     to: PriceCurrencyEnumSchema,
     amount: z
+        .number({
+            message: 'zodError.exchangeRate.convert.amount.required'
+        })
+        .positive({
+            message: 'zodError.exchangeRate.convert.amount.positive'
+        }),
+    rateType: ExchangeRateTypeEnumSchema.optional()
+});
+
+/**
+ * Schema for currency conversion input from HTTP query parameters
+ * Uses coercion for numeric fields from query strings
+ */
+export const ExchangeRateConvertHttpInputSchema = z.object({
+    from: PriceCurrencyEnumSchema,
+    to: PriceCurrencyEnumSchema,
+    amount: z.coerce
         .number({
             message: 'zodError.exchangeRate.convert.amount.required'
         })
@@ -203,4 +226,5 @@ export type ExchangeRateRestoreInput = z.infer<typeof ExchangeRateRestoreInputSc
 export type ExchangeRateRestoreOutput = z.infer<typeof ExchangeRateRestoreOutputSchema>;
 export type ExchangeRateSearchInput = z.infer<typeof ExchangeRateSearchInputSchema>;
 export type ExchangeRateConvertInput = z.infer<typeof ExchangeRateConvertInputSchema>;
+export type ExchangeRateConvertHttpInput = z.infer<typeof ExchangeRateConvertHttpInputSchema>;
 export type ExchangeRateConvertOutput = z.infer<typeof ExchangeRateConvertOutputSchema>;
