@@ -1,0 +1,32 @@
+---
+/**
+ * Server Island: Featured destinations section for the homepage.
+ * Fetches featured destinations from the API and renders them as cards.
+ * Used with server:defer for dynamic content on a static shell.
+ */
+import DestinationCard from '../destination/DestinationCard.astro';
+import EmptyState from '../ui/EmptyState.astro';
+import { destinationsApi } from '../../lib/api/endpoints';
+
+interface Props {
+  locale?: string;
+}
+
+const { locale = 'es' } = Astro.props;
+
+const result = await destinationsApi.list({ isFeatured: true, pageSize: 4 });
+const destinations = result.ok ? result.data.items : [];
+---
+
+{destinations.length > 0 ? (
+  <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+    {destinations.map((dest) => (
+      <DestinationCard destination={dest as Record<string, unknown> & { slug: string; name: string; summary: string; featuredImage: string; accommodationsCount: number; isFeatured: boolean }} locale={locale} />
+    ))}
+  </div>
+) : (
+  <EmptyState
+    title="No hay destinos destacados"
+    message="Próximamente agregaremos destinos destacados."
+  />
+)}

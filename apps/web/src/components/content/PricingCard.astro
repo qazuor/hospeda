@@ -1,0 +1,106 @@
+---
+/**
+ * Pricing card component for displaying subscription plans with features and CTA.
+ * Supports highlighted state for featured plans with visual emphasis.
+ */
+import Button from '../ui/Button.astro';
+
+interface Props {
+  plan: {
+    name: string;
+    price: number;
+    currency?: string;
+    period?: string;
+    features: string[];
+    cta: {
+      label: string;
+      href: string;
+    };
+  };
+  highlighted?: boolean;
+  class?: string;
+}
+
+const { plan, highlighted = false, class: className } = Astro.props;
+
+const currency = plan.currency ?? 'ARS';
+const period = plan.period ?? '/mes';
+
+const cardClasses = [
+  'relative',
+  'rounded-lg',
+  'border',
+  'border-border',
+  'bg-surface',
+  'p-6',
+  'transition-all',
+  'hover:shadow-lg',
+  highlighted ? 'ring-2 ring-primary shadow-xl scale-105' : '',
+  className,
+].filter(Boolean).join(' ');
+---
+
+<div class={cardClasses}>
+  {highlighted && (
+    <div class="absolute -top-4 left-1/2 -translate-x-1/2">
+      <span class="inline-block rounded-full bg-primary px-4 py-1 text-sm font-semibold text-white">
+        Popular
+      </span>
+    </div>
+  )}
+
+  <div class="mb-6">
+    <h3 class="text-2xl font-bold text-text">
+      {plan.name}
+    </h3>
+  </div>
+
+  <div class="mb-6">
+    <div class="flex items-baseline gap-1">
+      <span class="text-sm font-medium text-text-muted">
+        {currency}
+      </span>
+      <span class="text-4xl font-bold text-text">
+        {plan.price}
+      </span>
+      <span class="text-sm text-text-muted">
+        {period}
+      </span>
+    </div>
+  </div>
+
+  <ul class="mb-8 space-y-3">
+    {plan.features.map((feature) => (
+      <li class="flex items-start gap-3">
+        <svg
+          class="mt-0.5 h-5 w-5 flex-shrink-0 text-primary"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M5 13l4 4L19 7"
+          />
+        </svg>
+        <span class="text-text">
+          {feature}
+        </span>
+      </li>
+    ))}
+  </ul>
+
+  <div>
+    <Button
+      href={plan.cta.href}
+      variant={highlighted ? 'primary' : 'outline'}
+      size="md"
+      class="w-full"
+    >
+      {plan.cta.label}
+    </Button>
+  </div>
+</div>

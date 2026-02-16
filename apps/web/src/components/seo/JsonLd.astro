@@ -1,0 +1,41 @@
+---
+/**
+ * Generic JSON-LD wrapper component.
+ * Renders structured data in JSON-LD format for search engines.
+ *
+ * @example
+ * ```astro
+ * ---
+ * import JsonLd from '@/components/seo/JsonLd.astro';
+ *
+ * const structuredData = {
+ *   '@context': 'https://schema.org',
+ *   '@type': 'Organization',
+ *   name: 'Hospeda',
+ *   url: 'https://hospeda.com',
+ * };
+ * ---
+ *
+ * <JsonLd data={structuredData} />
+ * ```
+ */
+
+/**
+ * Props interface for JsonLd component.
+ */
+export interface Props {
+  /**
+   * Structured data object to be serialized as JSON-LD
+   */
+  data: Record<string, unknown>;
+}
+
+const { data } = Astro.props;
+
+/**
+ * Serialize data to JSON string
+ */
+const jsonLdContent = JSON.stringify(data, null, 0);
+---
+
+<script type="application/ld+json" set:html={jsonLdContent} />

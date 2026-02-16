@@ -1,0 +1,104 @@
+---
+/**
+ * Review card component.
+ * Displays user review with rating, content, and optional entity reference.
+ * Data-source agnostic - receives typed props, not DB entities.
+ */
+interface ReviewCardData {
+  title: string;
+  content: string;
+  rating: number; // 1-5
+  userName: string;
+  userAvatar?: string;
+  createdAt: string; // ISO 8601
+  entityName?: string; // name of reviewed entity (accommodation/destination)
+  entitySlug?: string;
+  entityType?: string; // 'accommodation' | 'destination'
+}
+
+interface Props {
+  review: ReviewCardData;
+  showEntity?: boolean;
+  locale?: string;
+}
+
+const { review, showEntity = false, locale = 'es' } = Astro.props;
+
+// Format date
+const createdDate = new Date(review.createdAt);
+const formattedDate = createdDate.toLocaleDateString(locale === 'es' ? 'es-AR' : 'en-US', {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+});
+
+// Build entity URL if needed
+let entityUrl: string | undefined;
+if (showEntity && review.entitySlug && review.entityType) {
+  const basePath = review.entityType === 'accommodation' ? 'alojamientos' : 'destinos';
+  entityUrl = `/${locale}/${basePath}/${review.entitySlug}/`;
+}
+---
+
+<article class="rounded-lg border border-border bg-surface p-4 md:p-6">
+  <!-- User info and rating row -->
+  <div class="mb-3 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <!-- Avatar -->
+      {review.userAvatar ? (
+        <img
+          src={review.userAvatar}
+          alt=""
+          class="h-8 w-8 rounded-full object-cover"
+        />
+      ) : (
+        <div class="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-sm font-medium text-primary">
+          {review.userName.charAt(0).toUpperCase()}
+        </div>
+      )}
+
+      <!-- User name -->
+      <span class="font-medium text-text">{review.userName}</span>
+    </div>
+
+    <!-- Date -->
+    <time datetime={review.createdAt} class="text-sm text-text-tertiary">
+      {formattedDate}
+    </time>
+  </div>
+
+  <!-- Rating stars -->
+  <div class="mb-2 flex items-center gap-1" role="img" aria-label={`Rating: ${review.rating} out of 5`}>
+    {Array.from({ length: 5 }, (_, i) => (
+      <span
+        class={i < Math.round(review.rating) ? 'text-warning' : 'text-border'}
+        aria-hidden="true"
+      >
+        ★
+      </span>
+    ))}
+  </div>
+
+  <!-- Review title -->
+  <h3 class="mb-2 font-semibold text-text">
+    {review.title}
+  </h3>
+
+  <!-- Review content -->
+  <p class="line-clamp-4 text-sm text-text-secondary">
+    {review.content}
+  </p>
+
+  <!-- Optional entity reference -->
+  {showEntity && review.entityName && (
+    <div class="mt-3 text-sm text-text-tertiary">
+      Re: {entityUrl ? (
+        <a href={entityUrl} class="text-primary hover:underline">
+          {review.entityName}
+        </a>
+      ) : (
+        <span>{review.entityName}</span>
+      )}
+    </div>
+  )}
+</article>

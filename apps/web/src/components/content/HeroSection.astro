@@ -1,0 +1,52 @@
+---
+/**
+ * Full-width hero section with background image, overlay, title, subtitle, and CTA.
+ * Used as the main visual banner on key pages.
+ */
+import Button from '../ui/Button.astro';
+
+interface Props {
+  image: string;
+  title: string;
+  subtitle?: string;
+  cta?: {
+    label: string;
+    href: string;
+  };
+}
+
+const { image, title, subtitle, cta } = Astro.props;
+---
+
+<section class="relative flex min-h-[400px] items-center justify-center overflow-hidden md:min-h-[500px]">
+  <!-- Background image -->
+  <img
+    src={image}
+    alt=""
+    class="absolute inset-0 h-full w-full object-cover"
+    loading="eager"
+    aria-hidden="true"
+  />
+
+  <!-- Dark overlay -->
+  <div class="absolute inset-0 bg-black/50" aria-hidden="true"></div>
+
+  <!-- Content -->
+  <div class="relative z-10 mx-auto max-w-4xl px-4 py-16 text-center">
+    <h1 class="text-4xl font-bold text-white md:text-5xl lg:text-6xl" style="color: white;">
+      {title}
+    </h1>
+    {subtitle && (
+      <p class="mx-auto mt-4 max-w-2xl text-lg text-white/80 md:text-xl" style="color: rgba(255,255,255,0.8);">
+        {subtitle}
+      </p>
+    )}
+    {cta && (
+      <div class="mt-8">
+        <Button href={cta.href} variant="primary" size="lg">
+          {cta.label}
+        </Button>
+      </div>
+    )}
+  </div>
+</section>

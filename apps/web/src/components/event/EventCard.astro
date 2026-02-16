@@ -1,0 +1,151 @@
+---
+/**
+ * Preview card for event listings.
+ * Displays featured image, category badge, name, dates, location, and summary.
+ * Data-source agnostic - receives typed props, not DB entities.
+ */
+import Badge from '../ui/Badge.astro';
+
+interface EventCardData {
+  slug: string;
+  name: string;
+  summary: string;
+  featuredImage: string;
+  category: string;
+  date: { start: string; end?: string };
+  isFeatured: boolean;
+  location?: { name: string; city: string };
+}
+
+interface Props {
+  event: EventCardData;
+  /** Whether to show the favorite/bookmark button on the card */
+  showFavorite?: boolean;
+  locale?: string;
+}
+
+const { event, showFavorite = false, locale = 'es' } = Astro.props;
+const detailUrl = `/${locale}/eventos/${event.slug}/`;
+
+/**
+ * Format date range for display.
+ * Returns formatted start date and end date (if different).
+ */
+const formatDateRange = (start: string, end: string | undefined, locale: string): string => {
+  const startDate = new Date(start);
+  const startFormatted = startDate.toLocaleDateString(locale, {
+    month: 'short',
+    day: 'numeric',
+  });
+
+  if (!end) {
+    return startFormatted;
+  }
+
+  const endDate = new Date(end);
+  const endFormatted = endDate.toLocaleDateString(locale, {
+    month: 'short',
+    day: 'numeric',
+  });
+
+  // If same date, return only start date
+  if (startDate.toDateString() === endDate.toDateString()) {
+    return startFormatted;
+  }
+
+  return `${startFormatted} - ${endFormatted}`;
+};
+
+const dateDisplay = formatDateRange(event.date.start, event.date.end, locale);
+
+/** Format event category for display */
+const categoryLabels: Record<string, string> = {
+  FESTIVAL: 'Festival',
+  CONFERENCE: 'Conferencia',
+  WORKSHOP: 'Taller',
+  CONCERT: 'Concierto',
+  EXHIBITION: 'Exposición',
+  SPORTS: 'Deportes',
+  CULTURAL: 'Cultural',
+  GASTRONOMY: 'Gastronomía',
+  RELIGIOUS: 'Religioso',
+  OTHER: 'Otro',
+};
+const categoryLabel = categoryLabels[event.category] ?? event.category;
+---
+
+<article class="group relative overflow-hidden rounded-lg bg-surface shadow-md transition-shadow hover:shadow-lg">
+  <!-- Image container -->
+  <a href={detailUrl} class="relative block aspect-[4/3] overflow-hidden">
+    <img
+      src={event.featuredImage}
+      alt={event.name}
+      class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+      loading="lazy"
+    />
+    <!-- Category badge -->
+    <div class="absolute left-3 top-3">
+      <Badge label={categoryLabel} variant="primary" />
+    </div>
+    <!-- Featured badge -->
+    {event.isFeatured && (
+      <div class="absolute right-3 top-3">
+        <span class="rounded-full bg-warning/90 px-2.5 py-0.5 text-xs font-medium text-text backdrop-blur-sm">
+          Destacado
+        </span>
+      </div>
+    )}
+  </a>
+
+  <!-- Favorite button -->
+  {showFavorite && (
+    <div class="absolute right-3 bottom-3 z-10">
+      <button
+        type="button"
+        class="rounded-full bg-surface/80 p-1.5 shadow-sm backdrop-blur-sm transition-colors hover:bg-surface"
+        aria-label={`Agregar ${event.name} a favoritos`}
+      >
+        <svg class="h-5 w-5 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
+        </svg>
+      </button>
+    </div>
+  )}
+
+  <!-- Content -->
+  <div class="p-4">
+    <h3 class="text-lg font-semibold">
+      <a href={detailUrl} class="text-text no-underline hover:text-primary">
+        {event.name}
+      </a>
+    </h3>
+
+    <!-- Date -->
+    <div class="mt-1.5 flex items-center gap-1.5 text-sm text-text-tertiary">
+      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+      </svg>
+      <time datetime={event.date.start}>
+        {dateDisplay}
+      </time>
+    </div>
+
+    <!-- Location -->
+    {event.location && (
+      <div class="mt-1 flex items-center gap-1.5 text-sm text-text-tertiary">
+        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
+        </svg>
+        <span>
+          {event.location.name}, {event.location.city}
+        </span>
+      </div>
+    )}
+
+    <!-- Summary -->
+    <p class="mt-2 line-clamp-2 text-sm text-text-secondary">
+      {event.summary}
+    </p>
+  </div>
+</article>

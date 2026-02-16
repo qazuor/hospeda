@@ -1,0 +1,140 @@
+---
+/**
+ * SEO Head component for Hospeda web2 application.
+ * Renders essential meta tags, Open Graph tags, Twitter Card tags, and hreflang links.
+ *
+ * @example
+ * ```astro
+ * ---
+ * import SEOHead from '@/components/seo/SEOHead.astro';
+ * ---
+ *
+ * <head>
+ *   <SEOHead
+ *     title="Alojamientos en Concepción del Uruguay"
+ *     description="Descubre los mejores alojamientos turísticos en Concepción del Uruguay."
+ *     canonical="https://hospeda.com/es/alojamientos"
+ *     image="https://hospeda.com/images/og-accommodations.jpg"
+ *     locale="es"
+ *     type="website"
+ *   />
+ * </head>
+ * ```
+ */
+
+/**
+ * Props interface for SEOHead component.
+ */
+export interface Props {
+  /**
+   * Page title (will be suffixed with " | Hospeda")
+   */
+  title: string;
+
+  /**
+   * Meta description for the page
+   */
+  description: string;
+
+  /**
+   * Canonical URL of the page
+   */
+  canonical: string;
+
+  /**
+   * Open Graph and Twitter Card image URL
+   */
+  image?: string;
+
+  /**
+   * Whether to add noindex robots meta tag
+   * @default false
+   */
+  noindex?: boolean;
+
+  /**
+   * Page locale for Open Graph and hreflang tags
+   * @default 'es'
+   */
+  locale?: 'es' | 'en';
+
+  /**
+   * Open Graph type
+   * @default 'website'
+   */
+  type?: 'website' | 'article';
+}
+
+const {
+  title,
+  description,
+  canonical,
+  image,
+  noindex = false,
+  locale = 'es',
+  type = 'website',
+} = Astro.props;
+
+/**
+ * Generate full page title with site suffix
+ */
+const fullTitle = `${title} | Hospeda`;
+
+/**
+ * Generate alternate URLs for hreflang tags.
+ * Replaces locale in canonical URL with other locale.
+ */
+const generateAlternateUrl = (targetLocale: 'es' | 'en'): string => {
+  const url = new URL(canonical);
+  const pathParts = url.pathname.split('/').filter(Boolean);
+
+  // Replace first path segment (locale) if it's a known locale
+  if (pathParts.length > 0 && (pathParts[0] === 'es' || pathParts[0] === 'en')) {
+    pathParts[0] = targetLocale;
+  } else {
+    // Prepend locale if not present
+    pathParts.unshift(targetLocale);
+  }
+
+  url.pathname = `/${pathParts.join('/')}`;
+  return url.href;
+};
+
+const esUrl = generateAlternateUrl('es');
+const enUrl = generateAlternateUrl('en');
+
+/**
+ * Map locale to Open Graph locale format
+ */
+const ogLocale = locale === 'es' ? 'es_AR' : 'en_US';
+---
+
+<!-- Title and meta description -->
+<title>{fullTitle}</title>
+<meta name="description" content={description} />
+
+<!-- Canonical URL -->
+<link rel="canonical" href={canonical} />
+
+<!-- Robots meta tag (only when noindex is true) -->
+{noindex && <meta name="robots" content="noindex,nofollow" />}
+
+<!-- Open Graph tags -->
+<meta property="og:type" content={type} />
+<meta property="og:url" content={canonical} />
+<meta property="og:title" content={fullTitle} />
+<meta property="og:description" content={description} />
+<meta property="og:locale" content={ogLocale} />
+<meta property="og:site_name" content="Hospeda" />
+{image && <meta property="og:image" content={image} />}
+
+<!-- Twitter Card tags -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={fullTitle} />
+<meta name="twitter:description" content={description} />
+{image && <meta name="twitter:image" content={image} />}
+
+<!-- Hreflang tags for i18n -->
+<link rel="alternate" hreflang="es" href={esUrl} />
+<link rel="alternate" hreflang="en" href={enUrl} />
+<link rel="alternate" hreflang="x-default" href={esUrl} />

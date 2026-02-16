@@ -1,0 +1,42 @@
+---
+/**
+ * Displays a grid of amenities with icons and names.
+ * Compact layout for inline display within detail pages.
+ * Uses semantic list markup for accessibility.
+ */
+
+interface AmenityItem {
+  name: string;
+  icon?: string;
+  slug: string;
+}
+
+interface Props {
+  amenities: AmenityItem[];
+  class?: string;
+}
+
+const { amenities, class: className } = Astro.props;
+
+/**
+ * Default check icon SVG for amenities without custom icons
+ */
+const defaultIcon = `<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+  <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+</svg>`;
+---
+
+<ul class:list={['grid grid-cols-2 gap-3 sm:grid-cols-3', className]} role="list">
+  {amenities.map((amenity) => (
+    <li class="flex items-center gap-2 text-sm text-text-secondary">
+      <span class="flex-shrink-0 text-primary" aria-hidden="true">
+        {amenity.icon ? (
+          <Fragment set:html={amenity.icon} />
+        ) : (
+          <Fragment set:html={defaultIcon} />
+        )}
+      </span>
+      <span>{amenity.name}</span>
+    </li>
+  ))}
+</ul>

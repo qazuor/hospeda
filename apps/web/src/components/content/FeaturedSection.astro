@@ -1,0 +1,36 @@
+---
+/**
+ * Section wrapper for featured content with title and optional "View all" link.
+ * Content is provided via the default slot (typically a grid of entity cards).
+ */
+import Container from '../ui/Container.astro';
+
+interface Props {
+  title: string;
+  viewAllHref?: string;
+  viewAllLabel?: string;
+  class?: string;
+}
+
+const { title, viewAllHref, viewAllLabel = 'Ver todos', class: className } = Astro.props;
+---
+
+<section class:list={['py-12 md:py-16', className]}>
+  <Container>
+    <!-- Section header -->
+    <div class="mb-8 flex items-end justify-between">
+      <h2 class="text-2xl font-bold md:text-3xl">{title}</h2>
+      {viewAllHref && (
+        <a
+          href={viewAllHref}
+          class="text-sm font-medium text-primary transition-colors hover:text-primary-dark"
+        >
+          {viewAllLabel} &rarr;
+        </a>
+      )}
+    </div>
+
+    <!-- Content slot -->
+    <slot />
+  </Container>
+</section>

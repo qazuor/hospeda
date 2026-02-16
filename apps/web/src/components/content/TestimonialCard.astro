@@ -1,0 +1,57 @@
+---
+/**
+ * Testimonial card displaying a quote with author information and optional avatar.
+ * Features a quote mark decoration, italic text, and accessible semantic markup.
+ */
+interface Props {
+  quote: string;
+  author: string;
+  image?: string;
+  role?: string;
+  class?: string;
+}
+
+const { quote, author, image, role, class: className } = Astro.props;
+---
+
+<article class:list={['rounded-lg border border-border bg-surface p-6 shadow-sm', className]}>
+  <!-- Quote mark decoration -->
+  <div class="mb-4 text-5xl leading-none text-primary/20" aria-hidden="true">
+    &ldquo;
+  </div>
+
+  <!-- Quote content -->
+  <blockquote class="mb-6">
+    <p class="italic text-text" style="color: var(--color-text);">
+      {quote}
+    </p>
+  </blockquote>
+
+  <!-- Author section -->
+  <footer>
+    <cite class="not-italic">
+      <div class="flex items-center gap-3">
+        {image && (
+          <img
+            src={image}
+            alt={`${author} avatar`}
+            class="h-12 w-12 rounded-full object-cover"
+            loading="lazy"
+            width="48"
+            height="48"
+          />
+        )}
+        <div>
+          <div class="font-semibold text-text" style="color: var(--color-text);">
+            {author}
+          </div>
+          {role && (
+            <div class="text-sm text-text-tertiary" style="color: var(--color-text-tertiary);">
+              {role}
+            </div>
+          )}
+        </div>
+      </div>
+    </cite>
+  </footer>
+</article>

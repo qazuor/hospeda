@@ -1,0 +1,97 @@
+---
+/**
+ * Preview card for blog post listings.
+ * Displays featured image, category badge, title, author, reading time, date, and summary.
+ * Data-source agnostic - receives typed props, not DB entities.
+ */
+import Badge from '../ui/Badge.astro';
+
+interface BlogPostCardData {
+  slug: string;
+  title: string;
+  summary: string;
+  featuredImage: string;
+  category: string;
+  publishedAt: string;
+  readingTimeMinutes: number;
+  authorName: string;
+  isFeatured: boolean;
+}
+
+interface Props {
+  post: BlogPostCardData;
+  variant?: 'default' | 'featured';
+  locale?: string;
+}
+
+const { post, variant = 'default', locale = 'es' } = Astro.props;
+const detailUrl = `/${locale}/publicaciones/${post.slug}/`;
+
+/** Format date for display */
+const publishedDate = new Date(post.publishedAt).toLocaleDateString(locale === 'es' ? 'es-AR' : 'en-US', {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+});
+
+/** Category labels for display */
+const categoryLabels: Record<string, string> = {
+  GUIDE: 'Guía',
+  NEWS: 'Noticias',
+  TIPS: 'Consejos',
+  REVIEW: 'Reseña',
+  STORY: 'Historia',
+  DESTINATION: 'Destino',
+  CULTURE: 'Cultura',
+  FOOD: 'Gastronomía',
+  EVENTS: 'Eventos',
+};
+const categoryLabel = categoryLabels[post.category] ?? post.category;
+
+/** Variant-specific classes */
+const imageAspectClass = variant === 'featured' ? 'aspect-[16/9]' : 'aspect-[4/3]';
+const titleClass = variant === 'featured' ? 'text-2xl' : 'text-lg';
+const summaryClampClass = variant === 'featured' ? 'line-clamp-3' : 'line-clamp-2';
+---
+
+<article class="group overflow-hidden rounded-lg bg-surface shadow-md transition-shadow hover:shadow-lg">
+  <!-- Image container -->
+  <a href={detailUrl} class:list={['relative block overflow-hidden', imageAspectClass]}>
+    <img
+      src={post.featuredImage}
+      alt={post.title}
+      class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+      loading="lazy"
+    />
+    <!-- Category badge -->
+    <div class="absolute left-3 top-3">
+      <Badge label={categoryLabel} variant="primary" />
+    </div>
+  </a>
+
+  <!-- Content -->
+  <div class="p-4">
+    <h3 class:list={['font-semibold', titleClass]}>
+      <a href={detailUrl} class="text-text no-underline hover:text-primary">
+        {post.title}
+      </a>
+    </h3>
+
+    <!-- Metadata: Author and reading time -->
+    <div class="mt-1.5 flex items-center gap-2 text-sm text-text-tertiary">
+      <span>By {post.authorName}</span>
+      <span aria-hidden="true">·</span>
+      <span>{post.readingTimeMinutes} min read</span>
+    </div>
+
+    <!-- Published date -->
+    <time datetime={post.publishedAt} class="mt-1 block text-sm text-text-tertiary">
+      {publishedDate}
+    </time>
+
+    <!-- Summary -->
+    <p class:list={['mt-2 text-sm text-text-secondary', summaryClampClass]}>
+      {post.summary}
+    </p>
+  </div>
+</article>

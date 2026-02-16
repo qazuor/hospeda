@@ -1,0 +1,32 @@
+---
+/**
+ * Server Island: Featured blog posts section for the homepage.
+ * Fetches featured posts from the API and renders them as cards.
+ * Used with server:defer for dynamic content on a static shell.
+ */
+import BlogPostCard from '../blog/BlogPostCard.astro';
+import EmptyState from '../ui/EmptyState.astro';
+import { postsApi } from '../../lib/api/endpoints';
+
+interface Props {
+  locale?: string;
+}
+
+const { locale = 'es' } = Astro.props;
+
+const result = await postsApi.getFeatured();
+const posts = result.ok ? result.data.items : [];
+---
+
+{posts.length > 0 ? (
+  <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    {posts.map((post) => (
+      <BlogPostCard post={post as Record<string, unknown> & { slug: string; title: string; summary: string; featuredImage: string; category: string; publishedAt: string; readingTimeMinutes: number; authorName: string; isFeatured: boolean }} locale={locale} />
+    ))}
+  </div>
+) : (
+  <EmptyState
+    title="No hay publicaciones destacadas"
+    message="Próximamente agregaremos publicaciones."
+  />
+)}

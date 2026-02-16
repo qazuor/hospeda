@@ -1,0 +1,32 @@
+---
+/**
+ * Server Island: Featured/upcoming events section for the homepage.
+ * Fetches upcoming events from the API and renders them as cards.
+ * Used with server:defer for dynamic content on a static shell.
+ */
+import EventCard from '../event/EventCard.astro';
+import EmptyState from '../ui/EmptyState.astro';
+import { eventsApi } from '../../lib/api/endpoints';
+
+interface Props {
+  locale?: string;
+}
+
+const { locale = 'es' } = Astro.props;
+
+const result = await eventsApi.getUpcoming({ pageSize: 4 });
+const events = result.ok ? result.data.items : [];
+---
+
+{events.length > 0 ? (
+  <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+    {events.map((event) => (
+      <EventCard event={event as Record<string, unknown> & { slug: string; name: string; summary: string; featuredImage: string; category: string; date: { start: string; end?: string }; isFeatured: boolean; location?: { name: string; city: string } }} locale={locale} />
+    ))}
+  </div>
+) : (
+  <EmptyState
+    title="No hay eventos próximos"
+    message="No hay eventos programados por el momento."
+  />
+)}

@@ -1,0 +1,32 @@
+---
+/**
+ * Server Island: Featured accommodations section for the homepage.
+ * Fetches featured accommodations from the API and renders them as cards.
+ * Used with server:defer for dynamic content on a static shell.
+ */
+import AccommodationCard from '../accommodation/AccommodationCard.astro';
+import EmptyState from '../ui/EmptyState.astro';
+import { accommodationsApi } from '../../lib/api/endpoints';
+
+interface Props {
+  locale?: string;
+}
+
+const { locale = 'es' } = Astro.props;
+
+const result = await accommodationsApi.list({ isFeatured: true, pageSize: 6 });
+const accommodations = result.ok ? result.data.items : [];
+---
+
+{accommodations.length > 0 ? (
+  <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    {accommodations.map((acc) => (
+      <AccommodationCard accommodation={acc as Record<string, unknown> & { slug: string; name: string; summary: string; type: string; featuredImage: string; averageRating: number; reviewsCount: number; location: { city: string; state: string }; isFeatured: boolean }} locale={locale} />
+    ))}
+  </div>
+) : (
+  <EmptyState
+    title="No hay alojamientos destacados"
+    message="Próximamente agregaremos alojamientos destacados."
+  />
+)}
