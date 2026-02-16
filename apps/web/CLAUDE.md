@@ -38,23 +38,41 @@ pnpm clean             # Remove node_modules, dist, and .astro cache
 src/
 ├── components/        # Astro and React components
 │   ├── accommodation/ # Accommodation-specific components
+│   ├── auth/          # Authentication components (UserNav)
 │   ├── blog/          # Blog post components
 │   ├── content/       # Content sections (hero, featured, testimonials)
 │   ├── destination/   # Destination-specific components
+│   ├── error/         # Error state components (per entity type)
 │   ├── event/         # Event components
+│   ├── map/           # Map components
+│   ├── newsletter/    # Newsletter CTA (auth-gated)
 │   ├── review/        # Review components
+│   ├── search/        # Search bar
+│   ├── seo/           # SEOHead, JsonLd components
 │   └── ui/            # Reusable UI primitives (Button, Input, Badge, etc.)
 ├── layouts/           # Page layouts
-│   ├── BaseLayout.astro   # HTML document shell
-│   ├── Header.astro       # Site header
+│   ├── BaseLayout.astro   # HTML document shell (FOUC prevention, view transitions)
+│   ├── Header.astro       # Site header (dark mode toggle)
 │   └── Footer.astro       # Site footer
 ├── pages/             # File-based routing (SSR)
-│   └── index.astro        # Home page
+│   ├── [lang]/            # Locale-prefixed routes
+│   │   ├── alojamientos/  # Accommodation listing + detail + pagination
+│   │   ├── destinos/      # Destination listing + detail + pagination
+│   │   ├── eventos/       # Event listing + detail + pagination
+│   │   ├── publicaciones/ # Blog listing + detail + pagination
+│   │   ├── mi-cuenta/     # Auth-protected account pages (6 pages)
+│   │   └── auth/          # Sign in/up pages
+│   ├── 404.astro          # Not found page
+│   └── 500.astro          # Server error page
+├── store/             # Client-side stores
+│   └── toast-store.ts     # Toast notification store
 ├── styles/            # Global styles
-│   ├── global.css         # Global CSS
+│   ├── global.css         # Global CSS (includes dark mode variables)
 │   ├── tailwind.css       # Tailwind imports
 │   └── animations.css     # Animation utilities
 ├── lib/               # Utility libraries
+│   ├── api/               # API client and endpoint wrappers
+│   ├── i18n.ts            # Locale helpers (isValidLocale, SupportedLocale)
 │   └── env.ts             # Environment variable schemas
 └── env.ts             # Env validation and types
 ```
@@ -322,12 +340,20 @@ describe('Button.astro', () => {
 test/
 ├── setup.tsx               # Vitest setup and configuration
 ├── components/
-│   ├── ui/                 # UI component tests
+│   ├── ui/                 # UI component tests (Pagination, ThemeToggle, etc.)
 │   ├── accommodation/      # Accommodation component tests
+│   ├── auth/               # Auth component tests (UserNav)
 │   ├── blog/               # Blog component tests
-│   └── destination/        # Destination component tests
+│   ├── content/            # Content component tests (PricingCard)
+│   ├── destination/        # Destination component tests
+│   ├── error/              # Error state component tests
+│   ├── event/              # Event component tests
+│   └── review/             # Review component tests
+├── integration/            # Integration tests (auth guards, hreflang)
 ├── layouts/                # Layout tests
+├── pages/                  # Page structure tests
 ├── styles/                 # Style and design token tests
+├── config/                 # Sitemap and config tests
 └── env/                    # Environment variable tests
 ```
 
@@ -494,6 +520,83 @@ import AccommodationCard from '@/components/AccommodationCard.tsx';
 <span aria-hidden="true">...</span>
 ```
 
+## Icons
+
+All icons come from `@repo/icons` (Phosphor Icons wrappers). **No inline `<svg>` elements** in source code (except decorative illustrations in 404/500 pages).
+
+```astro
+---
+import { SearchIcon, FavoriteIcon, CalendarIcon } from '@repo/icons';
+---
+
+<!-- Icons work in .astro files without client directives (server-rendered) -->
+<SearchIcon size={20} weight="regular" aria-hidden="true" />
+<FavoriteIcon size={48} weight="fill" className="text-red-500" />
+<CalendarIcon size="sm" weight="duotone" />
+```
+
+Icon props: `size` (number or 'xs'|'sm'|'md'|'lg'|'xl'), `weight` ('thin'|'light'|'regular'|'bold'|'fill'|'duotone'), `className`, `aria-hidden`.
+
+## Dark Mode
+
+Dark mode is fully implemented with FOUC prevention:
+
+- **CSS variables**: `global.css` defines `[data-theme="dark"]` variables
+- **FOUC prevention**: Inline `<script is:inline>` in `BaseLayout.astro` `<head>` reads localStorage before paint
+- **Toggle**: `ThemeToggle.client.tsx` React island in Header (`client:idle`)
+- **Persistence**: localStorage key `theme`, falls back to `prefers-color-scheme`
+- **Default**: Light mode
+
+## hreflang Tags
+
+`SEOHead.astro` automatically generates hreflang alternate links for all three locales (es, en, pt) plus `x-default`. Every page with a `[lang]` parameter gets proper SEO alternate links.
+
+## Auth Guards (mi-cuenta)
+
+All 6 pages under `/[lang]/mi-cuenta/` are auth-protected:
+
+- `index.astro`, `editar.astro`, `favoritos.astro`, `resenas.astro`, `preferencias.astro`, `suscripcion.astro`
+
+Pattern: Check `Astro.locals.user`, redirect to `/${locale}/auth/signin` if not authenticated.
+
+## View Transitions
+
+Card-to-detail morphing transitions using `transition:name`:
+
+```astro
+<!-- Card component -->
+<img transition:name={`entity-${slug}`} src={image} />
+
+<!-- Detail page hero -->
+<img transition:name={`entity-${slug}`} src={heroImage} />
+```
+
+Applies to: AccommodationCard, DestinationCard, EventCard, BlogPostCard and their detail pages.
+
+## Error States
+
+Entity-specific error components in `src/components/error/`:
+
+- `GenericErrorState.astro` - Base component (AlertTriangleIcon)
+- `AccommodationErrorState.astro` - AccommodationIcon
+- `DestinationErrorState.astro` - DestinationIcon
+- `EventErrorState.astro` - EventIcon
+- `PostErrorState.astro` - PostIcon
+
+Props: `title`, `message`, `retryHref`, `homeHref`, `locale`.
+
+## Pagination
+
+`Pagination.astro` component with URL-segment routing pattern:
+
+- Page 1: `/[lang]/alojamientos/` (no page segment)
+- Page 2+: `/[lang]/alojamientos/page/[page]/`
+- Props: `currentPage`, `totalPages`, `baseUrl`, `locale`
+- Features: Previous/Next buttons, max 5 page numbers + ellipsis, ARIA attributes
+- Responsive: 3 pages on mobile, 5 on desktop
+
+Listing pages with pagination: alojamientos, eventos, publicaciones, destinos.
+
 ## Key Dependencies
 
 - `astro` - Astro framework
@@ -504,7 +607,7 @@ import AccommodationCard from '@/components/AccommodationCard.tsx';
 - `@repo/i18n` - Internationalization utilities
 - `@repo/schemas` - Zod validation schemas
 - `@repo/service-core` - Business logic services
-- `@repo/icons` - Icon components
+- `@repo/icons` - Icon components (Phosphor Icons wrappers)
 - `@repo/utils` - Shared utilities
 
 ## Best Practices
@@ -515,10 +618,14 @@ import AccommodationCard from '@/components/AccommodationCard.tsx';
 4. **Validate environment variables** with Zod schemas at build time
 5. **Optimize images** with Astro's Image component
 6. **Use semantic HTML** for accessibility
-7. **Implement proper SEO** with meta tags, canonical URLs, and structured data
+7. **Implement proper SEO** with meta tags, canonical URLs, hreflang, and structured data
 8. **Test components** by verifying structure and props
 9. **Follow i18n patterns** from `@repo/i18n`
 10. **Keep bundle sizes small** - measure with Lighthouse
+11. **Use `@repo/icons` for all icons** - never add inline `<svg>` elements
+12. **Use entity-specific error states** - not generic error pages for API failures
+13. **Add `transition:name`** on card images that link to detail pages
+14. **Auth-guard all mi-cuenta pages** - check `Astro.locals.user` in frontmatter
 
 ## Common Patterns
 
@@ -544,22 +651,23 @@ const { post } = Astro.props;
 
 ### Pagination
 
+URL-segment pattern with `Pagination.astro` component:
+
 ```astro
 ---
-// pages/blog/[...page].astro
-export async function getStaticPaths({ paginate }) {
-  const posts = await fetchBlogPosts();
-  return paginate(posts, { pageSize: 10 });
-}
+// pages/[lang]/alojamientos/page/[page].astro
+import Pagination from '../../../../components/ui/Pagination.astro';
 
-const { page } = Astro.props;
+const page = Number(Astro.params.page);
+const { items, pagination } = await accommodationsApi.list({ page, pageSize: 12 });
 ---
 
-{page.data.map((post) => <BlogCard {...post} />)}
-
-<!-- Pagination controls -->
-{page.url.prev && <a href={page.url.prev}>Previous</a>}
-{page.url.next && <a href={page.url.next}>Next</a>}
+<Pagination
+  currentPage={pagination.page}
+  totalPages={pagination.totalPages}
+  baseUrl={`/${locale}/alojamientos`}
+  locale={locale}
+/>
 ```
 
 ### Conditional Rendering
