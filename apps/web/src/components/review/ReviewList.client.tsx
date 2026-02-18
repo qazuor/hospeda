@@ -136,6 +136,7 @@ export function ReviewList({
     reviews,
     totalCount,
     locale = 'es',
+    isAuthenticated = false,
     onWriteReview,
     onLoadMore,
     hasMore = false,
@@ -248,7 +249,7 @@ export function ReviewList({
                     />
                     <h3 className="mt-4 font-semibold text-gray-900 text-lg">{t.noReviews}</h3>
                     <p className="mt-2 text-gray-500 text-sm">{t.noReviewsDescription}</p>
-                    {onWriteReview && (
+                    {isAuthenticated && onWriteReview && (
                         <button
                             type="button"
                             onClick={onWriteReview}
@@ -294,8 +295,8 @@ export function ReviewList({
                         </select>
                     </div>
 
-                    {/* Write Review Button */}
-                    {onWriteReview && (
+                    {/* Write Review Button - only shown to authenticated users */}
+                    {isAuthenticated && onWriteReview && (
                         <button
                             type="button"
                             onClick={onWriteReview}
