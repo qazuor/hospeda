@@ -16,6 +16,7 @@ import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 import { createGuestActor } from '../utils/actor';
 import { apiLogger } from '../utils/logger';
+import { getPermissionsForRole } from '../utils/role-permissions-cache';
 import { userCache } from '../utils/user-cache';
 
 /**
@@ -134,14 +135,22 @@ export const actorMiddleware = (): MiddlewareHandler => {
                         permissions: Object.values(PermissionEnum)
                     };
                 } else {
-                    // Look up full user data from DB to resolve permissions
+                    // Resolve permissions from role_permission table (cached)
+                    const rolePermissions = await getPermissionsForRole(userRole);
+
+                    // Also merge any user-specific permissions from the user record
                     const dbUser = await userCache.getUser(user.id);
-                    const permissions = dbUser?.permissions || [];
+                    const userPermissions = dbUser?.permissions || [];
+
+                    // Combine role-based and user-specific permissions (deduplicated)
+                    const allPermissions = [
+                        ...new Set([...rolePermissions, ...userPermissions])
+                    ] as PermissionEnum[];
 
                     actor = {
                         id: user.id,
                         role: userRole,
-                        permissions
+                        permissions: allPermissions
                     };
                 }
 
