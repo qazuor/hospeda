@@ -24,8 +24,8 @@ interface Bookmark {
     id: string;
     entityId: string;
     entityType: EntityType;
-    displayName: string;
-    notes: string | null;
+    name: string | null;
+    description: string | null;
     createdAt: string;
 }
 
@@ -272,11 +272,12 @@ export function UserFavoritesList({ locale }: UserFavoritesListProps) {
                                 <div className="flex items-start justify-between gap-4">
                                     <div className="min-w-0 flex-1">
                                         <h3 className="mb-1 truncate font-semibold text-base text-gray-900">
-                                            {bookmark.displayName}
+                                            {bookmark.name ||
+                                                `${tabLabels[bookmark.entityType]} #${bookmark.entityId.slice(0, 8)}`}
                                         </h3>
-                                        {bookmark.notes && (
+                                        {bookmark.description && (
                                             <p className="line-clamp-2 text-gray-600 text-sm">
-                                                {bookmark.notes}
+                                                {bookmark.description}
                                             </p>
                                         )}
                                         <p className="mt-2 text-gray-500 text-xs">
@@ -294,7 +295,7 @@ export function UserFavoritesList({ locale }: UserFavoritesListProps) {
                                         type="button"
                                         onClick={() => handleDelete(bookmark.id)}
                                         className="flex-shrink-0 rounded-md px-3 py-1.5 font-medium text-red-600 text-sm transition-colors hover:bg-red-50 hover:text-red-700"
-                                        aria-label={`${messages.delete} ${bookmark.displayName}`}
+                                        aria-label={`${messages.delete} ${bookmark.name || bookmark.entityId}`}
                                     >
                                         {messages.delete}
                                     </button>
