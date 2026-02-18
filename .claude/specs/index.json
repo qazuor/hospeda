@@ -16,43 +16,19 @@
         "path": "SPEC-004-clerk-to-better-auth-migration"
     },
     {
-        "specId": "SPEC-005",
-        "title": "Hospeda Public Web Application UI - Complete Redesign",
-        "type": "feature",
-        "complexity": "high",
-        "status": "draft",
-        "path": "SPEC-005-web-public-ui"
-    },
-    {
-        "specId": "SPEC-006",
-        "title": "Destination Hierarchy System",
-        "type": "feature",
-        "complexity": "high",
-        "status": "draft",
-        "path": "SPEC-006-destination-hierarchy"
-    },
-    {
-        "specId": "SPEC-007",
-        "title": "Exchange Rate Integration",
-        "type": "feature",
-        "complexity": "medium",
-        "status": "draft",
-        "path": "SPEC-007-exchange-rate-integration"
-    },
-    {
-        "specId": "SPEC-008",
-        "title": "Phosphor Icons Migration",
-        "type": "refactoring",
-        "complexity": "medium",
-        "status": "draft",
-        "path": "SPEC-008-phosphor-icons-migration"
-    },
-    {
         "specId": "SPEC-009",
         "title": "Admin ISR/Regeneration Management",
         "type": "feature",
         "complexity": "high",
         "status": "draft",
         "path": "SPEC-009-admin-isr-regeneration"
+    },
+    {
+        "specId": "SPEC-014",
+        "title": "i18n Complete Translations (EN/PT)",
+        "type": "feature",
+        "complexity": "high",
+        "status": "completed",
+        "path": "SPEC-014-i18n-complete-translations"
     }
 ]
