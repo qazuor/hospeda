@@ -1,7 +1,7 @@
 /**
  * Public API client - re-exports all API utilities and endpoints.
  */
-export { apiClient } from './client';
+export { apiClient, fetchAllPages } from './client';
 export {
     accommodationsApi,
     authApi,

@@ -189,3 +189,45 @@ export const apiClient = {
         return request<T>({ method: 'POST', path, body, withCredentials: true });
     }
 };
+
+/** Maximum page size allowed by the API validation layer */
+const MAX_PAGE_SIZE = 100;
+
+/**
+ * Fetch all items from a paginated list endpoint by iterating through pages.
+ * Used by getStaticPaths to collect every record when the total exceeds MAX_PAGE_SIZE.
+ *
+ * @returns All items collected across pages, or an empty array on failure.
+ */
+export async function fetchAllPages<T>({
+    fetcher,
+    params
+}: {
+    fetcher: (p: Record<string, unknown>) => Promise<ApiResult<PaginatedResponse<T>>>;
+    params?: Record<string, unknown>;
+}): Promise<readonly T[]> {
+    const baseParams = { ...params, pageSize: MAX_PAGE_SIZE, page: 1 };
+    const firstResult = await fetcher(baseParams);
+
+    if (!firstResult.ok) {
+        return [];
+    }
+
+    const { items, pagination } = firstResult.data;
+    const allItems: T[] = [...items];
+
+    // Fetch remaining pages in parallel
+    if (pagination.totalPages > 1) {
+        const pageNumbers = Array.from({ length: pagination.totalPages - 1 }, (_, i) => i + 2);
+        const results = await Promise.all(
+            pageNumbers.map((page) => fetcher({ ...baseParams, page }))
+        );
+        for (const result of results) {
+            if (result.ok) {
+                allItems.push(...result.data.items);
+            }
+        }
+    }
+
+    return allItems;
+}
