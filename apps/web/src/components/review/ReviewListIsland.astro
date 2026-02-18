@@ -1,0 +1,29 @@
+---
+/**
+ * Server Island wrapper for ReviewList.
+ * Used with `server:defer` so auth state is resolved at request time,
+ * even on pre-rendered (SSG) pages.
+ */
+import { ReviewList } from './ReviewList.client';
+
+interface Props {
+  readonly reviews: ReadonlyArray<unknown>;
+  readonly totalCount: number;
+  readonly locale?: 'es' | 'en';
+  readonly hasMore?: boolean;
+  readonly sortBy?: 'newest' | 'highest' | 'lowest';
+}
+
+const { reviews, totalCount, locale, hasMore, sortBy } = Astro.props;
+const isAuthenticated = !!Astro.locals.user;
+---
+
+<ReviewList
+  client:visible
+  reviews={reviews}
+  totalCount={totalCount}
+  locale={locale}
+  isAuthenticated={isAuthenticated}
+  hasMore={hasMore}
+  sortBy={sortBy}
+/>
