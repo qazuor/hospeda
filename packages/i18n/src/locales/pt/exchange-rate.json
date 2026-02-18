@@ -1,0 +1,63 @@
+{
+    "title": "Taxas de Câmbio",
+    "subtitle": "Cotações atualizadas",
+    "labels": {
+        "rate": "Taxa",
+        "inverseRate": "Taxa inversa",
+        "currency": "Moeda",
+        "fromCurrency": "Moeda de origem",
+        "toCurrency": "Moeda de destino",
+        "amount": "Valor",
+        "convertedAmount": "Valor convertido",
+        "lastUpdated": "Última atualização",
+        "source": "Fonte",
+        "rateType": "Tipo de taxa",
+        "expiresAt": "Expira em",
+        "manualOverride": "Substituição manual"
+    },
+    "rateTypes": {
+        "oficial": "Oficial",
+        "blue": "Blue",
+        "mep": "MEP",
+        "ccl": "CCL",
+        "tarjeta": "Cartão",
+        "standard": "Padrão"
+    },
+    "sources": {
+        "dolarapi": "DolarAPI",
+        "exchangerate-api": "ExchangeRate-API",
+        "manual": "Manual"
+    },
+    "conversion": {
+        "disclaimer": "Os valores são referenciais e podem variar. Consulte sua instituição financeira para valores exatos.",
+        "convert": "Converter",
+        "result": "Resultado"
+    },
+    "admin": {
+        "config": "Configuração",
+        "fetchInterval": "Intervalo de atualização",
+        "fetchIntervalMinutes": "Intervalo DolarAPI (minutos)",
+        "fetchIntervalHours": "Intervalo ExchangeRate-API (horas)",
+        "enableAutoFetch": "Atualização automática",
+        "showDisclaimer": "Mostrar aviso legal",
+        "disclaimerText": "Texto do aviso",
+        "defaultRateType": "Tipo de taxa padrão",
+        "fetchNow": "Atualizar agora",
+        "fetchSuccess": "Taxas atualizadas com sucesso",
+        "addOverride": "Adicionar substituição manual",
+        "removeOverride": "Remover substituição",
+        "history": "Histórico de taxas"
+    },
+    "errors": {
+        "rateNotAvailable": "Taxa de câmbio não disponível",
+        "conversionError": "Erro ao realizar a conversão",
+        "fetchError": "Erro ao obter as cotações",
+        "invalidCurrencyPair": "Par de moedas inválido",
+        "staleRate": "Taxa desatualizada"
+    },
+    "status": {
+        "fresh": "Atualizada",
+        "stale": "Desatualizada",
+        "manual": "Manual"
+    }
+}

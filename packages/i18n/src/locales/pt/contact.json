@@ -1,0 +1,33 @@
+{
+    "title": "Contato - Hospeda",
+    "description": "Entre em contato conosco. Estamos aqui para te ajudar com qualquer duvida sobre acomodacoes e viagens.",
+    "heading": "Fale Conosco",
+    "subheading": "Estamos aqui para te ajudar. Entre em contato conosco para qualquer consulta",
+    "form": {
+        "title": "Manda uma mensagem pra gente",
+        "firstName": "Nome",
+        "lastName": "Sobrenome",
+        "email": "Email",
+        "message": "Mensagem",
+        "submit": "Enviar mensagem",
+        "placeholders": {
+            "firstName": "Seu nome",
+            "lastName": "Seu sobrenome",
+            "email": "voce@email.com",
+            "message": "Escreva sua mensagem aqui..."
+        }
+    },
+    "info": {
+        "title": "Informacoes de contato",
+        "address": {
+            "label": "Endereco",
+            "value": "Rua Principal 123\nCidade, Pais 12345"
+        },
+        "email": {
+            "label": "Email",
+            "value": "contato@hospeda.com"
+        }
+    },
+    "success": "Obrigado por entrar em contato!",
+    "error": "Ocorreu um erro ao enviar a mensagem."
+}

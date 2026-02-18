@@ -1,0 +1,35 @@
+{
+    "title": "Painel de Controle",
+    "actions": {
+        "refresh": "Atualizar",
+        "create": "Criar"
+    },
+    "kpis": {
+        "visitors": "Visitantes",
+        "posts": "Publicações",
+        "accommodations": "Acomodações",
+        "events": "Eventos",
+        "destinations": "Destinos"
+    },
+    "charts": {
+        "traffic": "Tráfego (últimos 7 dias)",
+        "days": {
+            "mon": "Seg",
+            "tue": "Ter",
+            "wed": "Qua",
+            "thu": "Qui",
+            "fri": "Sex",
+            "sat": "Sáb",
+            "sun": "Dom"
+        }
+    },
+    "activity": {
+        "title": "Atividade recente",
+        "items": {
+            "newPost": "Nova publicação: Verão na Patagônia",
+            "accommodationUpdated": "Acomodação atualizada: Chalé Vista para a Montanha",
+            "newReview": "Nova avaliação em: Apartamento Loft Urbano",
+            "eventCreated": "Evento criado: Noite de Jazz na Baía"
+        }
+    }
+}

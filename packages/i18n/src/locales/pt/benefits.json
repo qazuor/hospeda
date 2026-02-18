@@ -1,0 +1,70 @@
+{
+    "title": "Beneficios - Hospeda",
+    "description": "Descubra todos os beneficios de usar a Hospeda nas suas viagens. Ofertas exclusivas, suporte 24/7 e muito mais.",
+    "heading": "Beneficios Exclusivos",
+    "subheading": "Aproveite vantagens unicas ao escolher a Hospeda para suas viagens",
+    "benefits": {
+        "bestPrices": {
+            "title": "Melhores Precos",
+            "description": "Garantimos os melhores precos do mercado. Se voce encontrar uma tarifa mais baixa, igualamos o preco e damos mais 5% de desconto."
+        },
+        "support247": {
+            "title": "Suporte 24/7",
+            "description": "Nossa equipe de suporte esta disponivel 24 horas por dia, 7 dias por semana para te ajudar com qualquer duvida ou emergencia durante a sua viagem."
+        },
+        "freeCancellation": {
+            "title": "Cancelamento Gratuito",
+            "description": "Cancele sua reserva sem custo ate 24 horas antes da chegada. Mudancas de planos nao sao problema com nossa politica flexivel."
+        },
+        "pointsProgram": {
+            "title": "Programa de Pontos",
+            "description": "Acumule pontos a cada reserva e troque por descontos em proximas estadias. Quanto mais voce viaja, mais voce economiza."
+        },
+        "exclusiveOffers": {
+            "title": "Ofertas Exclusivas",
+            "description": "Acesse ofertas especiais e descontos exclusivos para membros. Seja o primeiro a conhecer as melhores promocoes."
+        },
+        "verifiedAccommodations": {
+            "title": "Verificacao Garantida",
+            "description": "Todas as nossas acomodacoes passam por um rigoroso processo de verificacao para garantir qualidade e seguranca na sua estadia."
+        }
+    },
+    "membership": {
+        "title": "Niveis de Associacao",
+        "bronze": {
+            "title": "Bronze",
+            "subtitle": "Gratis",
+            "features": {
+                "basicSupport": "Suporte basico",
+                "freeCancellation": "Cancelamento gratuito",
+                "points": "1 ponto por R$1 gasto"
+            }
+        },
+        "silver": {
+            "title": "Prata",
+            "subtitle": "5+ reservas",
+            "features": {
+                "allBronze": "Tudo do Bronze",
+                "prioritySupport": "Suporte prioritario",
+                "points": "1,5 pontos por R$1 gasto",
+                "discount": "5% de desconto adicional"
+            }
+        },
+        "gold": {
+            "title": "Ouro",
+            "subtitle": "15+ reservas",
+            "features": {
+                "allSilver": "Tudo do Prata",
+                "vipSupport": "Suporte VIP 24/7",
+                "points": "2 pontos por R$1 gasto",
+                "discount": "10% de desconto adicional",
+                "exclusiveAccess": "Acesso a ofertas exclusivas"
+            }
+        }
+    },
+    "cta": {
+        "title": "Pronto para comecar a aproveitar esses beneficios?",
+        "description": "Cadastre-se hoje e comece a acumular pontos com sua primeira reserva.",
+        "button": "Fazer minha primeira reserva"
+    }
+}

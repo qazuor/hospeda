@@ -1,0 +1,113 @@
+{
+    "signIn": {
+        "title": "Sign In",
+        "subtitle": "Access your account",
+        "email": "Email address",
+        "password": "Password",
+        "emailPlaceholder": "you@email.com",
+        "passwordPlaceholder": "Your password",
+        "signInButton": "Sign In",
+        "signInWithGoogle": "Continue with Google",
+        "signInWithFacebook": "Continue with Facebook",
+        "or": "or",
+        "loading": "Signing in...",
+        "dontHaveAccount": "Don't have an account?",
+        "signUpLink": "Sign up here",
+        "forgotPassword": "Forgot your password?",
+        "errors": {
+            "invalidCredentials": "Invalid credentials",
+            "emailRequired": "Email address is required",
+            "passwordRequired": "Password is required",
+            "invalidEmail": "Invalid email address",
+            "accountNotFound": "Account not found",
+            "tooManyAttempts": "Too many attempts. Please try again later",
+            "networkError": "Connection error. Check your internet",
+            "unknownError": "Unknown error. Please try again"
+        }
+    },
+    "signUp": {
+        "title": "Create Account",
+        "subtitle": "Join our platform",
+        "firstName": "First name",
+        "lastName": "Last name",
+        "email": "Email address",
+        "password": "Password",
+        "confirmPassword": "Confirm password",
+        "firstNamePlaceholder": "Your first name",
+        "lastNamePlaceholder": "Your last name",
+        "emailPlaceholder": "you@email.com",
+        "passwordPlaceholder": "Minimum 8 characters",
+        "confirmPasswordPlaceholder": "Confirm your password",
+        "signUpButton": "Create Account",
+        "signUpWithGoogle": "Sign up with Google",
+        "signUpWithFacebook": "Sign up with Facebook",
+        "or": "or",
+        "loading": "Creating account...",
+        "alreadyHaveAccount": "Already have an account?",
+        "signInLink": "Sign in here",
+        "termsAcceptance": "By signing up, you agree to our {termsLink} and {privacyLink}",
+        "termsOfService": "Terms of Service",
+        "privacyPolicy": "Privacy Policy",
+        "emailVerification": {
+            "title": "Verify your email",
+            "description": "We've sent a verification code to {email}",
+            "codePlaceholder": "Verification code",
+            "verifyButton": "Verify",
+            "resendCode": "Resend code",
+            "changeEmail": "Change email"
+        },
+        "errors": {
+            "emailRequired": "Email address is required",
+            "passwordRequired": "Password is required",
+            "firstNameRequired": "First name is required",
+            "lastNameRequired": "Last name is required",
+            "invalidEmail": "Invalid email address",
+            "passwordTooShort": "Password must be at least 8 characters",
+            "passwordsDoNotMatch": "Passwords do not match",
+            "emailAlreadyExists": "An account with this email already exists",
+            "weakPassword": "Password is too weak",
+            "networkError": "Connection error. Check your internet",
+            "unknownError": "Unknown error. Please try again"
+        }
+    },
+    "userMenu": {
+        "welcome": "Welcome",
+        "profile": "My Profile",
+        "settings": "Settings",
+        "dashboard": "Dashboard",
+        "myAccommodations": "My Accommodations",
+        "notifications": "Notifications",
+        "help": "Help",
+        "signOut": "Sign Out",
+        "loading": "Loading...",
+        "errors": {
+            "loadingProfile": "Error loading profile",
+            "signOutError": "Error signing out"
+        }
+    },
+    "signOut": {
+        "button": "Sign Out",
+        "loading": "Signing out...",
+        "confirmation": {
+            "title": "Sign out?",
+            "description": "Are you sure you want to sign out?",
+            "confirm": "Yes, sign out",
+            "cancel": "Cancel"
+        },
+        "errors": {
+            "networkError": "Connection error while signing out",
+            "unknownError": "Unknown error while signing out"
+        }
+    },
+    "common": {
+        "loading": "Loading...",
+        "error": "Error",
+        "retry": "Retry",
+        "cancel": "Cancel",
+        "continue": "Continue",
+        "back": "Back",
+        "next": "Next",
+        "finish": "Finish",
+        "close": "Close"
+    }
+}

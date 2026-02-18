@@ -1,0 +1,257 @@
+{
+    "name": {
+        "title": "Nome",
+        "label": "Nome da acomodacao",
+        "description": "Nome descritivo da acomodacao",
+        "placeholder": "Digite o nome da acomodacao"
+    },
+    "slug": {
+        "title": "URL Amigavel",
+        "label": "Slug",
+        "description": "URL amigavel para a acomodacao",
+        "placeholder": "url-da-acomodacao",
+        "help": "teste de ajuda"
+    },
+    "description": {
+        "title": "Descricao",
+        "label": "Descricao completa",
+        "description": "Descricao detalhada da acomodacao",
+        "placeholder": "Descreva a acomodacao em detalhes"
+    },
+    "type": {
+        "title": "Tipo",
+        "label": "Tipo de acomodacao",
+        "description": "Categoria da acomodacao",
+        "placeholder": "Selecione o tipo"
+    },
+    "lifecycleState": {
+        "title": "Estado do Ciclo de Vida",
+        "label": "Estado",
+        "description": "Estado atual da acomodacao",
+        "placeholder": "Selecione o estado"
+    },
+    "visibility": {
+        "title": "Visibilidade",
+        "label": "Visibilidade",
+        "description": "Nivel de visibilidade da acomodacao",
+        "placeholder": "Selecione a visibilidade"
+    },
+    "shortDescription": {
+        "title": "Descricao Curta",
+        "label": "Resumo",
+        "description": "Descricao breve da acomodacao",
+        "placeholder": "Resumo breve da acomodacao"
+    },
+    "isFeatured": {
+        "title": "Destaque",
+        "label": "Acomodacao em destaque",
+        "description": "Marcar como acomodacao em destaque",
+        "placeholder": "E destaque?"
+    },
+    "email": {
+        "title": "Email",
+        "label": "Endereco de email",
+        "description": "Endereco de email de contato",
+        "placeholder": "exemplo@email.com"
+    },
+    "phone": {
+        "title": "Telefone",
+        "label": "Numero de telefone",
+        "description": "Numero de telefone de contato",
+        "placeholder": "+54 9 11 1234-5678"
+    },
+    "website": {
+        "title": "Site",
+        "label": "Pagina web",
+        "description": "URL do site oficial",
+        "placeholder": "https://exemplo.com"
+    },
+    "contactPersonName": {
+        "title": "Pessoa de Contato",
+        "label": "Nome do contato",
+        "description": "Nome da pessoa de contato",
+        "placeholder": "Joao Silva"
+    },
+    "contactPersonEmail": {
+        "title": "Email do Contato",
+        "label": "Email da pessoa de contato",
+        "description": "Endereco de email da pessoa de contato",
+        "placeholder": "contato@exemplo.com"
+    },
+    "contactPersonPhone": {
+        "title": "Telefone do Contato",
+        "label": "Telefone da pessoa de contato",
+        "description": "Numero de telefone da pessoa de contato",
+        "placeholder": "+54 9 11 1234-5678"
+    },
+    "whatsapp": {
+        "title": "WhatsApp",
+        "label": "Numero de WhatsApp",
+        "description": "Numero de WhatsApp para contato",
+        "placeholder": "+54 9 11 1234-5678"
+    },
+    "instagram": {
+        "title": "Instagram",
+        "label": "Usuario do Instagram",
+        "description": "Nome de usuario ou URL do Instagram",
+        "placeholder": "@usuario ou https://instagram.com/usuario"
+    },
+    "facebook": {
+        "title": "Facebook",
+        "label": "Pagina do Facebook",
+        "description": "URL da pagina do Facebook",
+        "placeholder": "https://facebook.com/pagina"
+    },
+    "destinationId": {
+        "title": "Destino",
+        "label": "Destino turistico",
+        "description": "Destino ao qual pertence a acomodacao",
+        "placeholder": "Selecione um destino"
+    },
+    "address": {
+        "title": "Endereco",
+        "label": "Endereco completo",
+        "description": "Endereco fisico da acomodacao",
+        "placeholder": "Rua 123, Cidade"
+    },
+    "city": {
+        "title": "Cidade",
+        "label": "Cidade",
+        "description": "Cidade onde esta localizada a acomodacao",
+        "placeholder": "Buenos Aires"
+    },
+    "state": {
+        "title": "Provincia/Estado",
+        "label": "Provincia ou estado",
+        "description": "Provincia ou estado da acomodacao",
+        "placeholder": "Buenos Aires"
+    },
+    "country": {
+        "title": "Pais",
+        "label": "Pais",
+        "description": "Pais onde esta localizada a acomodacao",
+        "placeholder": "Argentina"
+    },
+    "postalCode": {
+        "title": "CEP",
+        "label": "Codigo postal",
+        "description": "Codigo postal da acomodacao",
+        "placeholder": "1234"
+    },
+    "latitude": {
+        "title": "Latitude",
+        "label": "Coordenada de latitude",
+        "description": "Coordenada geografica de latitude",
+        "placeholder": "-34.6037"
+    },
+    "longitude": {
+        "title": "Longitude",
+        "label": "Coordenada de longitude",
+        "description": "Coordenada geografica de longitude",
+        "placeholder": "-58.3816"
+    },
+    "locationNotes": {
+        "title": "Notas de Localizacao",
+        "label": "Notas adicionais",
+        "description": "Informacoes adicionais sobre a localizacao",
+        "placeholder": "Instrucoes especiais para chegar"
+    },
+    "moderationState": {
+        "title": "Estado de Moderacao",
+        "label": "Estado de moderacao",
+        "description": "Estado atual da moderacao",
+        "placeholder": "Selecione o estado"
+    },
+    "moderationNotes": {
+        "title": "Notas de Moderacao",
+        "label": "Notas do moderador",
+        "description": "Comentarios do processo de moderacao",
+        "placeholder": "Notas internas de moderacao"
+    },
+    "assignedUserId": {
+        "title": "Usuario Atribuido",
+        "label": "Usuario responsavel",
+        "description": "Usuario atribuido para gerenciar esta acomodacao",
+        "placeholder": "Selecione um usuario"
+    },
+    "viewCount": {
+        "title": "Visualizacoes",
+        "label": "Numero de visualizacoes",
+        "description": "Quantidade de vezes que foi visualizado",
+        "placeholder": "0"
+    },
+    "bookingCount": {
+        "title": "Reservas",
+        "label": "Numero de reservas",
+        "description": "Quantidade total de reservas realizadas",
+        "placeholder": "0"
+    },
+    "internalNotes": {
+        "title": "Notas Internas",
+        "label": "Notas administrativas",
+        "description": "Notas internas para uso administrativo",
+        "placeholder": "Notas para uso interno"
+    },
+    "internalTags": {
+        "title": "Etiquetas Internas",
+        "label": "Etiquetas administrativas",
+        "description": "Etiquetas para classificacao interna",
+        "placeholder": "etiqueta1, etiqueta2"
+    },
+    "priority": {
+        "title": "Prioridade",
+        "label": "Nivel de prioridade",
+        "description": "Nivel de prioridade da acomodacao",
+        "placeholder": "1-10"
+    },
+    "ownerId": {
+        "title": "Proprietario",
+        "label": "Proprietario da acomodacao",
+        "description": "Usuario proprietario desta acomodacao",
+        "placeholder": "Buscar usuarios..."
+    },
+    "accommodation": {
+        "sections": {
+            "basicInfo": {
+                "title": "Informacoes Basicas",
+                "description": "Detalhes principais da acomodacao"
+            }
+        },
+        "name": {
+            "title": "Nome",
+            "label": "Nome da acomodacao",
+            "description": "Nome descritivo da acomodacao",
+            "placeholder": "Digite o nome da acomodacao"
+        },
+        "description": {
+            "title": "Descricao",
+            "label": "Descricao completa",
+            "description": "Descricao detalhada da acomodacao",
+            "placeholder": "Descreva a acomodacao em detalhes"
+        },
+        "type": {
+            "title": "Tipo",
+            "label": "Tipo de acomodacao",
+            "description": "Categoria da acomodacao",
+            "placeholder": "Selecione o tipo"
+        },
+        "isFeatured": {
+            "title": "Destaque",
+            "label": "Acomodacao em destaque",
+            "description": "Marcar como acomodacao em destaque",
+            "placeholder": "E destaque?"
+        },
+        "destinationId": {
+            "title": "Destino",
+            "label": "Destino turistico",
+            "description": "Destino ao qual pertence a acomodacao",
+            "placeholder": "Selecione um destino"
+        },
+        "ownerId": {
+            "title": "Proprietario",
+            "label": "Proprietario da acomodacao",
+            "description": "Usuario proprietario desta acomodacao",
+            "placeholder": "Buscar usuarios..."
+        }
+    }
+}

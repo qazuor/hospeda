@@ -1,0 +1,116 @@
+{
+    "slider": {
+        "previousImage": "Previous image",
+        "nextImage": "Next image",
+        "goToImage": "Go to image {number}"
+    },
+    "loading": {
+        "text": "Loading...",
+        "spinner": "Loading",
+        "items": "Loading items...",
+        "more": "Loading more..."
+    },
+    "errors": {
+        "general": "An error occurred",
+        "network": "Connection error",
+        "notFound": "Not found",
+        "pageNotFound": "Page not found",
+        "pageNotFoundDescription": "Sorry, we couldn't find the page you're looking for.",
+        "authenticationError": "Authentication error",
+        "failedToLoad": "Failed to load {resource}",
+        "unknownError": "Unknown error",
+        "noRecordsFound": "No records found",
+        "somethingWentWrong": "Something went wrong"
+    },
+    "actions": {
+        "backTo": "Back to",
+        "goTo": "Go to",
+        "viewAll": "View all",
+        "seeMore": "See more",
+        "readMore": "Read more",
+        "goBackHome": "Back to home",
+        "goBack": "Go back",
+        "retry": "Retry",
+        "clearSession": "Clear session",
+        "reload": "Reload",
+        "refresh": "Refresh",
+        "edit": "Edit",
+        "delete": "Delete",
+        "view": "View",
+        "viewDetails": "View details",
+        "scrollToTop": "Scroll to top",
+        "scrollToBottom": "Scroll to bottom",
+        "previewImage": "Preview image",
+        "downloadImage": "Download image",
+        "openInNewTab": "Open in new tab",
+        "editField": "Edit field",
+        "debugInfo": "Debug info"
+    },
+    "navigation": {
+        "navigation": "Navigation",
+        "home": "Home",
+        "formProgress": "Form progress",
+        "sectionsComplete": "sections complete",
+        "errors": "errors",
+        "fieldsComplete": "fields complete",
+        "readyToSubmit": "Ready to submit",
+        "incompleteForm": "Incomplete form",
+        "requiredFieldsMissing": "Required fields missing"
+    },
+    "accessibility": {
+        "logo": "Logo",
+        "closeMenu": "Close menu",
+        "closeSidebarOverlay": "Close sidebar overlay",
+        "primary": "Primary",
+        "breadcrumb": "Breadcrumb",
+        "sortColumn": "Sort column",
+        "rowsPerPage": "Rows per page",
+        "tableView": "Table view",
+        "gridView": "Grid view",
+        "search": "Search",
+        "closeToast": "Close notification",
+        "clearAllSessionsAndReload": "Clear all sessions and reload page"
+    },
+    "pages": {
+        "myProfile": "My Profile",
+        "mySettings": "My Settings",
+        "todoAddContent": "TODO: add content"
+    },
+    "grid": {
+        "noDisplayableFields": "No fields to display"
+    },
+    "table": {
+        "pageInfo": "Page {page} of {pageCount}",
+        "rows": "Rows",
+        "prev": "Previous",
+        "next": "Next",
+        "tableView": "Table",
+        "gridView": "Grid",
+        "searchPlaceholder": "Search (min. {minChars} characters)...",
+        "searchClear": "Clear search",
+        "searching": "Searching...",
+        "columns": "Columns"
+    },
+    "entitySelect": {
+        "clearSelection": "Clear selection",
+        "searching": "Searching...",
+        "noResultsFound": "No results found",
+        "loading": "Loading...",
+        "searchPlaceholder": "Search {entityType}...",
+        "selectItems": "Select items...",
+        "selectItem": "Select item...",
+        "selectedCount": "{count} selected",
+        "errors": {
+            "loadingSelection": "Error loading selection",
+            "loadingOptions": "Error loading options",
+            "searchFailed": "Search failed",
+            "failedToLoadSelected": "Failed to load selected items: {error}",
+            "failedToLoadOptions": "Failed to load {entityType}: {error}",
+            "searchError": "Search failed: {error}",
+            "unknownError": "Unknown error"
+        }
+    },
+    "breadcrumbs": {
+        "progress": "Progress"
+    }
+}

@@ -1,0 +1,32 @@
+{
+    "title": "Events & Activities",
+    "description": "Discover exciting events and unique activities. Don't miss the best experiences.",
+    "heading": "Events & Activities",
+    "subheading": "Discover unique experiences and exciting events that will make your trip unforgettable",
+    "found": "events found",
+    "emptyTitle": "No events available",
+    "emptyMessage": "We'll be adding exciting events for you soon.",
+    "filters": {
+        "all": "All",
+        "upcoming": "Upcoming",
+        "cultural": "Cultural",
+        "sports": "Sports",
+        "gastronomic": "Gastronomic"
+    },
+    "card": {
+        "free": "Free",
+        "checkPrice": "Check price",
+        "seeDetails": "See details"
+    },
+    "list": {
+        "title": "Events"
+    },
+    "details": {
+        "about": "About the event",
+        "date": "Date",
+        "location": "Location",
+        "organizer": "Organizer",
+        "contact": "Contact",
+        "price": "Price"
+    }
+}

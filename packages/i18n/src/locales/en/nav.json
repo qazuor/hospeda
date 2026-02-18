@@ -1,0 +1,22 @@
+{
+    "home": "Home",
+    "accommodations": "Accommodations",
+    "destinations": "Destinations",
+    "events": "Events",
+    "blog": "Blog",
+    "search": "Search",
+    "contact": "Contact",
+    "pricing": "Pricing",
+    "myAccount": "My Account",
+    "about": "About us",
+    "legal": "Terms of use",
+    "benefits": {
+        "title": "Benefits",
+        "guests": "For guests",
+        "hosts": "For hosts",
+        "merchants": "For merchants"
+    },
+    "breadcrumb": {
+        "home": "Home"
+    }
+}

@@ -1,0 +1,113 @@
+{
+    "signIn": {
+        "title": "Entrar",
+        "subtitle": "Acesse sua conta",
+        "email": "E-mail",
+        "password": "Senha",
+        "emailPlaceholder": "seu@email.com",
+        "passwordPlaceholder": "Sua senha",
+        "signInButton": "Entrar",
+        "signInWithGoogle": "Continuar com Google",
+        "signInWithFacebook": "Continuar com Facebook",
+        "or": "ou",
+        "loading": "Entrando...",
+        "dontHaveAccount": "Não tem conta?",
+        "signUpLink": "Cadastre-se aqui",
+        "forgotPassword": "Esqueceu sua senha?",
+        "errors": {
+            "invalidCredentials": "Credenciais inválidas",
+            "emailRequired": "O e-mail é obrigatório",
+            "passwordRequired": "A senha é obrigatória",
+            "invalidEmail": "E-mail inválido",
+            "accountNotFound": "Conta não encontrada",
+            "tooManyAttempts": "Muitas tentativas. Tente novamente mais tarde",
+            "networkError": "Erro de conexão. Verifique sua internet",
+            "unknownError": "Erro desconhecido. Tente novamente"
+        }
+    },
+    "signUp": {
+        "title": "Criar Conta",
+        "subtitle": "Junte-se à nossa plataforma",
+        "firstName": "Nome",
+        "lastName": "Sobrenome",
+        "email": "E-mail",
+        "password": "Senha",
+        "confirmPassword": "Confirmar senha",
+        "firstNamePlaceholder": "Seu nome",
+        "lastNamePlaceholder": "Seu sobrenome",
+        "emailPlaceholder": "seu@email.com",
+        "passwordPlaceholder": "Mínimo 8 caracteres",
+        "confirmPasswordPlaceholder": "Confirme sua senha",
+        "signUpButton": "Criar Conta",
+        "signUpWithGoogle": "Cadastrar com Google",
+        "signUpWithFacebook": "Cadastrar com Facebook",
+        "or": "ou",
+        "loading": "Criando conta...",
+        "alreadyHaveAccount": "Já tem conta?",
+        "signInLink": "Entre aqui",
+        "termsAcceptance": "Ao se cadastrar, você aceita nossos {termsLink} e {privacyLink}",
+        "termsOfService": "Termos de Serviço",
+        "privacyPolicy": "Política de Privacidade",
+        "emailVerification": {
+            "title": "Verifique seu e-mail",
+            "description": "Enviamos um código de verificação para {email}",
+            "codePlaceholder": "Código de verificação",
+            "verifyButton": "Verificar",
+            "resendCode": "Reenviar código",
+            "changeEmail": "Alterar e-mail"
+        },
+        "errors": {
+            "emailRequired": "O e-mail é obrigatório",
+            "passwordRequired": "A senha é obrigatória",
+            "firstNameRequired": "O nome é obrigatório",
+            "lastNameRequired": "O sobrenome é obrigatório",
+            "invalidEmail": "E-mail inválido",
+            "passwordTooShort": "A senha deve ter pelo menos 8 caracteres",
+            "passwordsDoNotMatch": "As senhas não coincidem",
+            "emailAlreadyExists": "Já existe uma conta com este e-mail",
+            "weakPassword": "A senha é muito fraca",
+            "networkError": "Erro de conexão. Verifique sua internet",
+            "unknownError": "Erro desconhecido. Tente novamente"
+        }
+    },
+    "userMenu": {
+        "welcome": "Bem-vindo",
+        "profile": "Meu Perfil",
+        "settings": "Configurações",
+        "dashboard": "Painel de Controle",
+        "myAccommodations": "Minhas Acomodações",
+        "notifications": "Notificações",
+        "help": "Ajuda",
+        "signOut": "Sair",
+        "loading": "Carregando...",
+        "errors": {
+            "loadingProfile": "Erro ao carregar perfil",
+            "signOutError": "Erro ao sair"
+        }
+    },
+    "signOut": {
+        "button": "Sair",
+        "loading": "Saindo...",
+        "confirmation": {
+            "title": "Sair da conta?",
+            "description": "Tem certeza que quer sair da sua conta?",
+            "confirm": "Sim, sair",
+            "cancel": "Cancelar"
+        },
+        "errors": {
+            "networkError": "Erro de conexão ao sair",
+            "unknownError": "Erro desconhecido ao sair"
+        }
+    },
+    "common": {
+        "loading": "Carregando...",
+        "error": "Erro",
+        "retry": "Tentar novamente",
+        "cancel": "Cancelar",
+        "continue": "Continuar",
+        "back": "Voltar",
+        "next": "Próximo",
+        "finish": "Finalizar",
+        "close": "Fechar"
+    }
+}

@@ -1,0 +1,58 @@
+{
+    "accommodations": "Acomodações",
+    "apply": "Aplicar",
+    "backHome": "Voltar ao início",
+    "backToHome": "Voltar ao início",
+    "clear": "Limpar",
+    "destinations": "Destinos",
+    "enums": {
+        "accommodationType": {
+            "apartment": "Apartamento",
+            "cabin": "Chalé",
+            "camping": "Camping",
+            "country_house": "Casa de Campo",
+            "hostel": "Hostel",
+            "hotel": "Hotel",
+            "house": "Casa",
+            "motel": "Motel",
+            "resort": "Resort",
+            "room": "Quarto"
+        },
+        "lifecycleStatus": {
+            "active": "Ativo",
+            "archived": "Arquivado",
+            "draft": "Rascunho"
+        },
+        "moderationStatus": {
+            "approved": "Aprovado",
+            "pending": "Pendente",
+            "rejected": "Rejeitado"
+        },
+        "visibility": {
+            "private": "Privado",
+            "public": "Público",
+            "restricted": "Restrito"
+        }
+    },
+    "error": {
+        "404": "Página não encontrada.",
+        "general": "Desculpe, algo deu errado."
+    },
+    "filters": "Filtros",
+    "goHome": "Voltar ao início",
+    "in": "em",
+    "loadMore": "Carregar mais",
+    "loading": "Carregando...",
+    "no": "Não",
+    "optional": "Opcional",
+    "pricePerNight": "por noite",
+    "readMore": "Ler mais",
+    "required": "Obrigatório",
+    "reviews": "avaliações",
+    "search": "Buscar",
+    "seeAll": "Ver todos →",
+    "sort": "Ordenar",
+    "submit": "Enviar",
+    "viewAll": "Ver tudo",
+    "yes": "Sim"
+}

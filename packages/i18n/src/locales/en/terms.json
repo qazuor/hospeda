@@ -1,0 +1,83 @@
+{
+    "title": "Terms and Conditions - Hospeda",
+    "description": "Read our terms and conditions of use to understand your rights and responsibilities when using Hospeda.",
+    "heading": "Terms and Conditions",
+    "lastUpdated": "Last updated: January 1, 2024",
+    "sections": {
+        "acceptance": {
+            "title": "1. Acceptance of Terms",
+            "content": "By accessing and using the Hospeda website, you agree to be bound by these terms and conditions of use. If you disagree with any part of these terms, you must not use our service."
+        },
+        "serviceDescription": {
+            "title": "2. Description of Service",
+            "content": "Hospeda is an online platform that connects guests with hosts offering short-term accommodations. We facilitate bookings but do not own or operate the accommodations listed on our platform."
+        },
+        "accountRegistration": {
+            "title": "3. Account Registration",
+            "intro": "To use certain services, you must create an account by providing accurate and complete information. You are responsible for:",
+            "responsibilities": {
+                "password": "Keeping your password confidential",
+                "activities": "All activity that occurs under your account",
+                "unauthorized": "Immediately reporting any unauthorized use",
+                "information": "Providing truthful and up-to-date information"
+            }
+        },
+        "bookingsPayments": {
+            "title": "4. Bookings and Payments",
+            "intro": "When making a booking through our platform:",
+            "conditions": {
+                "fees": "You agree to pay all applicable fees",
+                "cancellation": "You are subject to the host's cancellation policies",
+                "rules": "You must comply with the accommodation's house rules",
+                "payments": "Payments are processed securely through our payment providers"
+            }
+        },
+        "userResponsibilities": {
+            "title": "5. User Responsibilities",
+            "intro": "Users agree to:",
+            "commitments": {
+                "legal": "Use the service in a lawful and appropriate manner",
+                "rights": "Not infringe on the rights of other users",
+                "content": "Not post offensive or illegal content",
+                "property": "Respect the property of hosts",
+                "reviews": "Provide honest and constructive reviews"
+            }
+        },
+        "cancellationPolicies": {
+            "title": "6. Cancellation Policies",
+            "content": "Cancellation policies vary by host and are clearly displayed during the booking process. Hospeda may charge non-refundable service fees as specified at the time of booking."
+        },
+        "liabilityLimitation": {
+            "title": "7. Limitation of Liability",
+            "content": "Hospeda acts as an intermediary between guests and hosts. We are not responsible for the quality, safety, or legality of listed accommodations, the accuracy of descriptions, or the ability of users to complete transactions."
+        },
+        "intellectualProperty": {
+            "title": "8. Intellectual Property",
+            "content": "All content on the Hospeda platform, including text, graphics, logos, icons, images, and software, is the property of Hospeda or its licensors and is protected by copyright law."
+        },
+        "termsModifications": {
+            "title": "9. Modifications to Terms",
+            "content": "We reserve the right to modify these terms at any time. Changes take effect immediately upon publication on the website. Continued use of the service constitutes acceptance of the modified terms."
+        },
+        "termination": {
+            "title": "10. Termination",
+            "content": "We may suspend or terminate your account if you violate these terms or for any other reason, at our sole discretion, with or without prior notice."
+        },
+        "applicableLaw": {
+            "title": "11. Governing Law",
+            "content": "These terms are governed by the laws of the country where Hospeda has its principal place of business, without regard to conflict of law principles."
+        },
+        "contact": {
+            "title": "12. Contact",
+            "intro": "If you have questions about these terms and conditions, you can reach us at:",
+            "details": {
+                "email": "Email:",
+                "emailValue": "legal@hospeda.com",
+                "address": "Address:",
+                "addressValue": "123 Main Street, City, Country 12345",
+                "phone": "Phone:",
+                "phoneValue": "+1 (234) 567-890"
+            }
+        }
+    }
+}

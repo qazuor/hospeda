@@ -1,0 +1,41 @@
+{
+    "title": "Search - Hospeda",
+    "description": "Search and find the perfect accommodation for your next trip. Filter by location, price, and amenities.",
+    "heading": "Search Accommodations",
+    "subheading": "Find the perfect place for your next adventure",
+    "form": {
+        "destination": "Destination",
+        "destinationPlaceholder": "Where do you want to go?",
+        "checkin": "Check-in",
+        "checkout": "Check-out",
+        "search": "Search"
+    },
+    "filters": {
+        "title": "Filters",
+        "priceRange": "Price per night",
+        "propertyType": "Accommodation type",
+        "amenities": "Amenities",
+        "types": {
+            "hotel": "Hotel",
+            "apartment": "Apartment",
+            "house": "House"
+        },
+        "amenitiesList": {
+            "wifi": "Free WiFi",
+            "pool": "Pool",
+            "parking": "Parking"
+        }
+    },
+    "results": {
+        "title": "Search results",
+        "searchFor": "Search:",
+        "in": "in",
+        "perNight": "per night",
+        "reviews": "reviews",
+        "seeDetails": "See details",
+        "emptyTitle": "Start your search",
+        "emptyMessage": "Enter a destination to find amazing accommodations.",
+        "sampleDescription": "A comfortable, well-located accommodation with all the amenities you need.",
+        "sampleName": "Example Hotel"
+    }
+}

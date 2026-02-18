@@ -1,0 +1,246 @@
+{
+    "common": {
+        "retry": "Tentar novamente",
+        "cancel": "Cancelar",
+        "close": "Fechar",
+        "closeMessage": "Fechar mensagem",
+        "loading": "Carregando",
+        "error": "Erro",
+        "success": "Sucesso",
+        "warning": "Aviso",
+        "viewPlans": "Ver planos",
+        "monthly": "Mensal",
+        "annual": "Anual",
+        "perMonth": "/mês",
+        "perYear": "/ano",
+        "price": "Preço",
+        "default": "Padrão",
+        "processing": "Processando..."
+    },
+    "subscription": {
+        "title": "Assinatura",
+        "loadingLabel": "Carregando informações da assinatura",
+        "status": {
+            "trialing": "Em teste",
+            "active": "Ativa",
+            "pastDue": "Pagamento pendente",
+            "canceled": "Cancelada",
+            "paused": "Pausada"
+        },
+        "statusAria": {
+            "trialing": "Assinatura em período de teste",
+            "active": "Assinatura ativa",
+            "pastDue": "Assinatura com pagamento pendente",
+            "canceled": "Assinatura cancelada",
+            "paused": "Assinatura pausada",
+            "unknown": "Assinatura no estado: {{status}}"
+        },
+        "planLabels": {
+            "trial": "Plano de teste",
+            "active": "Plano ativo"
+        },
+        "nextRenewal": "Próxima renovação",
+        "changePlan": "Mudar de plano",
+        "cancelSubscription": "Cancelar assinatura",
+        "error": {
+            "loadTitle": "Não foi possível carregar sua assinatura",
+            "loadMessage": "Ocorreu um erro ao carregar os dados da sua assinatura. Por favor, tente novamente."
+        },
+        "empty": {
+            "title": "Você não tem assinatura ativa",
+            "titleIcon": "Sem assinatura",
+            "description": "Escolha um plano para começar a publicar suas acomodações"
+        },
+        "trial": {
+            "daysRemaining": "Você tem {{count}} dias de teste restantes",
+            "dayRemaining": "Você tem 1 dia de teste restante",
+            "noCharge": "Nenhuma cobrança foi realizada",
+            "subscribeNow": "Assinar agora"
+        },
+        "cancelled": {
+            "title": "Assinatura cancelada",
+            "willCancelOn": "Seu plano será cancelado em {{date}}",
+            "useUntilDate": "Você pode continuar utilizando até essa data.",
+            "reactivating": "Reativando...",
+            "reactivate": "Reativar assinatura",
+            "reactivateError": "Não foi possível reativar sua assinatura. Por favor, tente novamente."
+        }
+    },
+    "addons": {
+        "title": "Complementos Ativos",
+        "status": {
+            "active": "Ativo",
+            "expiringSoon": "Expirando em breve",
+            "expired": "Expirado"
+        },
+        "quantity": "Quantidade:",
+        "expiredOn": "Expirou em:",
+        "expiresOn": "Expira em:",
+        "expiredWarning": "Este complemento expirou. Renove-o para continuar aproveitando seus benefícios.",
+        "empty": {
+            "title": "Você não tem complementos ativos",
+            "description": "Adicione complementos para potencializar seu plano"
+        },
+        "viewAvailable": "Ver complementos disponíveis",
+        "buyMore": "Comprar mais complementos"
+    },
+    "payment": {
+        "title": "Métodos de pagamento",
+        "setDefault": "Definir como padrão",
+        "updating": "Atualizando...",
+        "addMethod": "Adicionar método de pagamento",
+        "method": "Método de pagamento",
+        "empty": {
+            "title": "Você não tem métodos de pagamento configurados",
+            "description": "Adicione um método de pagamento para facilitar suas futuras transações. Você pode adicionar cartões de crédito e débito.",
+            "noSavedMethods": "Você não tem métodos de pagamento salvos",
+            "addToContinue": "Adicione um método de pagamento para continuar"
+        },
+        "error": {
+            "loadTitle": "Erro ao carregar métodos de pagamento",
+            "loadFallback": "Erro ao carregar os métodos de pagamento",
+            "paymentFallback": "Erro ao processar o pagamento"
+        }
+    },
+    "invoices": {
+        "title": "Histórico de faturas",
+        "status": {
+            "paid": "Pago",
+            "pending": "Pendente",
+            "overdue": "Vencido"
+        },
+        "columns": {
+            "date": "Data",
+            "description": "Descrição",
+            "amount": "Valor",
+            "status": "Status",
+            "actions": "Ações"
+        },
+        "pay": "Pagar",
+        "download": "Baixar",
+        "showingOf": "Exibindo {{limit}} de {{total}} faturas",
+        "error": {
+            "loadTitle": "Erro ao carregar faturas",
+            "loadFallback": "Não foi possível carregar as faturas"
+        },
+        "empty": {
+            "title": "Ainda não há faturas disponíveis",
+            "description": "Suas faturas aparecerão aqui quando você realizar transações. Você poderá baixá-las e pagar as pendentes neste painel."
+        },
+        "payDialog": {
+            "title": "Pagar fatura",
+            "amountToPay": "Valor a pagar",
+            "payAmount": "Pagar {{amount}}"
+        }
+    },
+    "plans": {
+        "changeTitle": "Mudar de plano",
+        "changeDescription": "Selecione o plano que melhor se ajusta às suas necessidades",
+        "loadingPlans": "Carregando planos disponíveis...",
+        "currentPlan": "Plano atual",
+        "noPlansAvailable": "Não há planos disponíveis no momento",
+        "selected": "Selecionado",
+        "success": {
+            "title": "Plano alterado com sucesso",
+            "message": "Seu novo plano será aplicado imediatamente"
+        },
+        "error": {
+            "loadPlans": "Não foi possível carregar os planos disponíveis",
+            "changeFallback": "Não foi possível mudar seu plano. Por favor, tente novamente."
+        },
+        "downgradeWarning": {
+            "title": "Importante: Mudança de plano",
+            "appliedAtEnd": "A mudança será aplicada ao final do período atual",
+            "loseFeatures": "Você pode perder acesso a algumas funcionalidades do plano atual",
+            "dataPreserved": "Seus dados serão preservados"
+        },
+        "changing": "Mudando plano...",
+        "confirmChange": "Confirmar mudança"
+    },
+    "cancel": {
+        "dialogTitle": "Cancelar assinatura?",
+        "warningIntro": "Se você cancelar seu {{planName}}:",
+        "warningIntroDefault": "Se você cancelar sua assinatura:",
+        "warningItems": {
+            "losePremium": "Você perderá acesso a todas as funções premium",
+            "unpublish": "Suas publicações serão despublicadas automaticamente",
+            "dataPreserved": "Os dados serão preservados se você reativar seu plano",
+            "effectiveAtEnd": "A mudança será efetiva ao final do período atual"
+        },
+        "errorFallback": "Não foi possível cancelar sua assinatura. Por favor, tente novamente.",
+        "goBack": "Voltar",
+        "cancelling": "Cancelando...",
+        "confirm": "Confirmar cancelamento",
+        "success": {
+            "title": "Assinatura cancelada",
+            "message": "Sua assinatura será cancelada ao final do período atual"
+        }
+    },
+    "checkout": {
+        "success": {
+            "title": "Obrigado pela sua compra!",
+            "message": "Sua assinatura está ativa."
+        },
+        "cancelled": {
+            "title": "Sua compra foi cancelada",
+            "message": "Você pode tentar novamente quando quiser."
+        }
+    },
+    "limits": {
+        "reached": "Limite atingido",
+        "reachedMessage": "Você atingiu o limite de {{maxValue}} {{limitName}} do seu plano {{currentPlan}}.",
+        "currentUsage": "Uso atual",
+        "usageAriaLabel": "{{currentValue}} de {{maxValue}} {{limitName}} utilizados",
+        "upgradeCta": "Melhorar plano para mais {{limitName}}"
+    },
+    "usage": {
+        "title": "Uso de Recursos",
+        "authRequired": "Você precisa estar autenticado para ver o uso de recursos",
+        "unlimited": {
+            "title": "Recursos Ilimitados",
+            "description": "Seu plano inclui uso ilimitado de todos os recursos"
+        },
+        "percentUsed": "{{percentage}}% utilizado",
+        "atLimit": {
+            "title": "Limite atingido",
+            "message": "Você atingiu o limite do seu plano.",
+            "cta": "Melhore seu plano",
+            "ctaSuffix": "para aumentar sua capacidade."
+        },
+        "nearLimit": {
+            "title": "Aproximando-se do limite",
+            "message": "Você está usando {{percentage}}% da sua capacidade.",
+            "cta": "Considere melhorar seu plano",
+            "ctaSuffix": "para evitar interrupções."
+        },
+        "needMore": {
+            "title": "Precisa de mais capacidade?",
+            "description": "Melhore seu plano e obtenha acesso a mais recursos"
+        }
+    },
+    "upgrade": {
+        "unavailableAria": "Função não disponível: {{featureName}}",
+        "availableInPlan": "Esta função está disponível no plano {{requiredPlan}}.",
+        "viewPlansAria": "Ver planos para acessar {{featureName}}"
+    },
+    "vip": {
+        "featureName": "Promoções VIP exclusivas",
+        "description": "Acesse descontos e ofertas exclusivas de acomodações apenas para membros VIP.",
+        "available": {
+            "title": "Promoções VIP Disponíveis",
+            "cta": "Ver promoções"
+        }
+    },
+    "errorBoundary": {
+        "title": "Algo deu errado",
+        "message": "Encontramos um erro ao processar suas informações de faturamento. Por favor, tente novamente ou entre em contato com o suporte se o problema persistir.",
+        "tryAgain": "Tentar novamente"
+    },
+    "errorState": {
+        "defaultTitle": "Erro ao carregar os dados",
+        "defaultRetry": "Tentar novamente"
+    },
+    "island": {
+        "loadingAria": "Carregando faturamento..."
+    }
+}

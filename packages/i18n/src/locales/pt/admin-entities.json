@@ -1,0 +1,288 @@
+{
+    "entities": {
+        "accommodation": {
+            "singular": "Acomodação",
+            "plural": "Acomodações",
+            "description": "Gerencie hotéis, chalés, apartamentos e outras acomodações"
+        },
+        "destination": {
+            "singular": "Destino",
+            "plural": "Destinos",
+            "description": "Gerencie destinos turísticos e suas atrações"
+        },
+        "event": {
+            "singular": "Evento",
+            "plural": "Eventos",
+            "description": "Gerencie eventos culturais, festivais e atividades"
+        },
+        "post": {
+            "singular": "Publicação",
+            "plural": "Publicações",
+            "description": "Gerencie artigos do blog e notícias"
+        },
+        "user": {
+            "singular": "Usuário",
+            "plural": "Usuários",
+            "description": "Gerencie usuários e permissões"
+        },
+        "amenity": {
+            "singular": "Comodidade",
+            "plural": "Comodidades",
+            "description": "Gerencie comodidades de acomodações"
+        },
+        "feature": {
+            "singular": "Característica",
+            "plural": "Características",
+            "description": "Gerencie características de acomodações"
+        },
+        "attraction": {
+            "singular": "Atração",
+            "plural": "Atrações",
+            "description": "Gerencie atrações turísticas de destinos",
+            "list": "Lista de Atrações"
+        },
+        "eventOrganizer": {
+            "singular": "Organizador",
+            "plural": "Organizadores",
+            "description": "Gerencie organizadores de eventos"
+        },
+        "eventLocation": {
+            "singular": "Local",
+            "plural": "Locais",
+            "description": "Gerencie locais de eventos"
+        },
+        "sponsor": {
+            "singular": "Patrocinador",
+            "plural": "Patrocinadores",
+            "description": "Gerencie patrocinadores e anunciantes"
+        },
+        "tag": {
+            "singular": "Etiqueta",
+            "plural": "Etiquetas",
+            "description": "Gerencie etiquetas para categorização"
+        },
+        "review": {
+            "singular": "Avaliação",
+            "plural": "Avaliações",
+            "description": "Gerencie avaliações e classificações"
+        }
+    },
+    "columns": {
+        "id": "ID",
+        "name": "Nome",
+        "slug": "URL Amigável",
+        "description": "Descrição",
+        "shortDescription": "Descrição Curta",
+        "type": "Tipo",
+        "category": "Categoria",
+        "status": "Status",
+        "visibility": "Visibilidade",
+        "moderation": "Moderação",
+        "featured": "Destaque",
+        "price": "Preço",
+        "basePrice": "Preço Base",
+        "rating": "Classificação",
+        "averageRating": "Classificação Média",
+        "reviewsCount": "Avaliações",
+        "accommodationsCount": "Acomodações",
+        "attractionsCount": "Atrações",
+        "views": "Visualizações",
+        "viewCount": "Total de Visualizações",
+        "createdAt": "Criado em",
+        "updatedAt": "Atualizado em",
+        "createdBy": "Criado por",
+        "updatedBy": "Atualizado por",
+        "owner": "Proprietário",
+        "author": "Autor",
+        "destination": "Destino",
+        "location": "Local",
+        "address": "Endereço",
+        "city": "Cidade",
+        "state": "Estado",
+        "country": "País",
+        "coordinates": "Coordenadas",
+        "email": "Email",
+        "phone": "Telefone",
+        "website": "Site",
+        "whatsapp": "WhatsApp",
+        "socialNetworks": "Redes Sociais",
+        "featuredImage": "Imagem Destaque",
+        "gallery": "Galeria",
+        "logo": "Logo",
+        "tags": "Etiquetas",
+        "attractions": "Atrações",
+        "amenities": "Comodidades",
+        "features": "Características",
+        "organizer": "Organizador",
+        "startDate": "Data de Início",
+        "endDate": "Data de Fim",
+        "actions": "Ações"
+    },
+    "actions": {
+        "view": "Ver",
+        "edit": "Editar",
+        "delete": "Excluir",
+        "archive": "Arquivar",
+        "restore": "Restaurar",
+        "duplicate": "Duplicar",
+        "create": "Criar",
+        "save": "Salvar",
+        "cancel": "Cancelar",
+        "back": "Voltar",
+        "search": "Buscar",
+        "filter": "Filtrar",
+        "export": "Exportar",
+        "import": "Importar",
+        "refresh": "Atualizar",
+        "reset": "Redefinir",
+        "publish": "Publicar",
+        "unpublish": "Despublicar",
+        "approve": "Aprovar",
+        "reject": "Rejeitar",
+        "activate": "Ativar",
+        "deactivate": "Desativar"
+    },
+    "confirmations": {
+        "delete": {
+            "title": "Excluir {entity}",
+            "message": "Você tem certeza que deseja excluir este {entity}? Esta ação não pode ser desfeita.",
+            "confirm": "Sim, excluir",
+            "cancel": "Cancelar"
+        },
+        "archive": {
+            "title": "Arquivar {entity}",
+            "message": "Você tem certeza que deseja arquivar este {entity}?",
+            "confirm": "Sim, arquivar",
+            "cancel": "Cancelar"
+        },
+        "restore": {
+            "title": "Restaurar {entity}",
+            "message": "Deseja restaurar este {entity}?",
+            "confirm": "Sim, restaurar",
+            "cancel": "Cancelar"
+        },
+        "unsavedChanges": {
+            "title": "Alterações não salvas",
+            "message": "Você tem alterações não salvas. Deseja descartá-las?",
+            "confirm": "Sim, descartar",
+            "cancel": "Continuar editando"
+        }
+    },
+    "messages": {
+        "created": "{entity} criado com sucesso",
+        "updated": "{entity} atualizado com sucesso",
+        "deleted": "{entity} excluído com sucesso",
+        "archived": "{entity} arquivado com sucesso",
+        "restored": "{entity} restaurado com sucesso",
+        "published": "{entity} publicado com sucesso",
+        "unpublished": "{entity} despublicado com sucesso",
+        "approved": "{entity} aprovado com sucesso",
+        "rejected": "{entity} rejeitado com sucesso",
+        "error": {
+            "create": "Erro ao criar {entity}",
+            "update": "Erro ao atualizar {entity}",
+            "delete": "Erro ao excluir {entity}",
+            "load": "Erro ao carregar {entity}",
+            "notFound": "{entity} não encontrado"
+        },
+        "empty": {
+            "title": "Sem {entities}",
+            "description": "Nenhum {entities} encontrado. Crie um novo para começar."
+        },
+        "loading": "Carregando {entities}...",
+        "saving": "Salvando...",
+        "deleting": "Excluindo..."
+    },
+    "list": {
+        "title": "{entities} - Lista",
+        "new": "Novo {entity}",
+        "noResults": "Nenhum resultado encontrado",
+        "searchPlaceholder": "Buscar {entities}...",
+        "pagination": {
+            "showing": "Exibindo {start} a {end} de {total}",
+            "page": "Página {page} de {totalPages}",
+            "rowsPerPage": "Linhas por página"
+        }
+    },
+    "detail": {
+        "title": "{entity} - Detalhe",
+        "sections": {
+            "basicInfo": "Informações Básicas",
+            "contactInfo": "Informações de Contato",
+            "location": "Localização",
+            "media": "Mídia",
+            "settings": "Configurações",
+            "states": "Estados",
+            "relations": "Relações",
+            "metadata": "Metadados",
+            "audit": "Auditoria"
+        }
+    },
+    "form": {
+        "title": {
+            "create": "Criar {entity}",
+            "edit": "Editar {entity}"
+        },
+        "required": "Este campo é obrigatório",
+        "invalid": "Valor inválido",
+        "validation": {
+            "minLength": "Mínimo {min} caracteres",
+            "maxLength": "Máximo {max} caracteres",
+            "email": "Email inválido",
+            "url": "URL inválida",
+            "phone": "Telefone inválido",
+            "number": "Deve ser um número",
+            "positive": "Deve ser um número positivo",
+            "integer": "Deve ser um número inteiro",
+            "date": "Data inválida",
+            "unique": "Este valor já existe"
+        }
+    },
+    "states": {
+        "lifecycle": {
+            "draft": "Rascunho",
+            "active": "Ativo",
+            "archived": "Arquivado"
+        },
+        "moderation": {
+            "pending": "Pendente",
+            "approved": "Aprovado",
+            "rejected": "Rejeitado"
+        },
+        "visibility": {
+            "public": "Público",
+            "private": "Privado",
+            "restricted": "Restrito"
+        },
+        "publishStatus": {
+            "draft": "Rascunho",
+            "published": "Publicado",
+            "scheduled": "Agendado",
+            "unpublished": "Despublicado"
+        }
+    },
+    "types": {
+        "accommodation": {
+            "hotel": "Hotel",
+            "hostel": "Hostel",
+            "apartment": "Apartamento",
+            "house": "Casa",
+            "countryHouse": "Casa de Campo",
+            "cabin": "Chalé",
+            "camping": "Camping",
+            "room": "Quarto",
+            "motel": "Motel",
+            "resort": "Resort"
+        },
+        "event": {
+            "concert": "Show",
+            "festival": "Festival",
+            "exhibition": "Exposição",
+            "conference": "Conferência",
+            "workshop": "Oficina",
+            "sports": "Esportes",
+            "theater": "Teatro",
+            "other": "Outro"
+        }
+    }
+}

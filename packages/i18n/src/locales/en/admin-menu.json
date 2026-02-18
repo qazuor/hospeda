@@ -1,0 +1,51 @@
+{
+    "dashboard": "Dashboard",
+    "content": {
+        "title": "Content",
+        "destinationAttractions": "Destination Attractions",
+        "accommodationAmenities": "Accommodation Amenities",
+        "accommodationFeatures": "Accommodation Features"
+    },
+    "accommodations": {
+        "title": "Accommodations",
+        "add": "Add",
+        "list": "List",
+        "myAccommodations": "My Accommodations"
+    },
+    "destinations": {
+        "title": "Destinations",
+        "add": "Add",
+        "list": "List"
+    },
+    "events": {
+        "title": "Events",
+        "add": "Add",
+        "list": "List",
+        "organizers": "Organizers",
+        "locations": "Locations"
+    },
+    "posts": {
+        "title": "Posts",
+        "add": "Add",
+        "list": "List"
+    },
+    "users": {
+        "title": "Users",
+        "add": "Add",
+        "list": "List"
+    },
+    "admin": {
+        "title": "Administration",
+        "permissions": "Permissions",
+        "tags": "Tags",
+        "seo": "SEO",
+        "portalSettings": "Portal Settings"
+    },
+    "sponsors": "Sponsors",
+    "analytics": {
+        "title": "Analytics",
+        "usage": "Usage",
+        "debug": "Debug",
+        "business": "Business"
+    }
+}

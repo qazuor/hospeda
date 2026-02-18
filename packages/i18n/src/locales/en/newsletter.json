@@ -1,0 +1,8 @@
+{
+    "title": "Subscribe to the newsletter",
+    "description": "Get the latest news, featured destinations, and more.",
+    "email": "Your email address",
+    "submit": "Subscribe",
+    "success": "Thanks for subscribing!",
+    "error": "Something went wrong. Please try again."
+}

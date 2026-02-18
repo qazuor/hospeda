@@ -1,0 +1,58 @@
+{
+    "accommodations": "Accommodations",
+    "apply": "Apply",
+    "backHome": "Back to home",
+    "backToHome": "Back to home",
+    "clear": "Clear",
+    "destinations": "Destinations",
+    "enums": {
+        "accommodationType": {
+            "apartment": "Apartment",
+            "cabin": "Cabin",
+            "camping": "Camping",
+            "country_house": "Country House",
+            "hostel": "Hostel",
+            "hotel": "Hotel",
+            "house": "House",
+            "motel": "Motel",
+            "resort": "Resort",
+            "room": "Room"
+        },
+        "lifecycleStatus": {
+            "active": "Active",
+            "archived": "Archived",
+            "draft": "Draft"
+        },
+        "moderationStatus": {
+            "approved": "Approved",
+            "pending": "Pending",
+            "rejected": "Rejected"
+        },
+        "visibility": {
+            "private": "Private",
+            "public": "Public",
+            "restricted": "Restricted"
+        }
+    },
+    "error": {
+        "404": "Page not found.",
+        "general": "Sorry, something went wrong."
+    },
+    "filters": "Filters",
+    "goHome": "Back to home",
+    "in": "in",
+    "loadMore": "Load more",
+    "loading": "Loading...",
+    "no": "No",
+    "optional": "Optional",
+    "pricePerNight": "per night",
+    "readMore": "Read more",
+    "required": "Required",
+    "reviews": "reviews",
+    "search": "Search",
+    "seeAll": "See all →",
+    "sort": "Sort",
+    "submit": "Submit",
+    "viewAll": "View all",
+    "yes": "Yes"
+}

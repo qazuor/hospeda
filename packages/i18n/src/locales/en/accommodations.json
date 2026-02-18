@@ -1,0 +1,76 @@
+{
+    "title": "Accommodations",
+    "description": "Discover unique accommodations and find the perfect place for your next adventure.",
+    "emptyTitle": "No accommodations available",
+    "emptyMessage": "We'll be adding more lodging options for you soon.",
+    "heading": "Accommodations",
+    "subheading": "Discover unique accommodations and find the perfect place for your next adventure",
+    "found": "accommodations found",
+    "seeAll": "See all accommodations →",
+    "filters": {
+        "title": "Filters",
+        "all": "All",
+        "hotels": "Hotels",
+        "cabins": "Cabins",
+        "apartments": "Apartments",
+        "hostels": "Hostels"
+    },
+    "sort": {
+        "title": "Sort",
+        "default": "Recommended",
+        "price.asc": "Price: Low to high",
+        "price.desc": "Price: High to low"
+    },
+    "card": {
+        "guests": "Guests",
+        "bedrooms": "Bedrooms",
+        "bathrooms": "Bathrooms",
+        "per.night": "per night"
+    },
+    "details": {
+        "about": "Description",
+        "features": "Features",
+        "amenities": "Amenities",
+        "schedule": "Schedule",
+        "location": "Location",
+        "reviews": "Reviews"
+    },
+    "types": {
+        "apartment": "Apartment",
+        "house": "House",
+        "country_house": "Country house",
+        "cabin": "Cabin",
+        "hotel": "Hotel",
+        "hostel": "Hostel",
+        "camping": "Camping",
+        "room": "Room",
+        "motel": "Motel",
+        "resort": "Resort"
+    },
+    "faqs": "Frequently asked questions",
+    "contactTitle": "Contact",
+    "entity": {
+        "name": "Accommodation",
+        "namePlural": "Accommodations",
+        "title": "Accommodation Management",
+        "description": "Manage accommodation information"
+    },
+    "sections": {
+        "basicInfo": {
+            "title": "Basic Information",
+            "description": "Main accommodation details"
+        },
+        "contactInfo": {
+            "title": "Contact Information",
+            "description": "Contact details and social media"
+        },
+        "location": {
+            "title": "Location",
+            "description": "Address and geographic coordinates"
+        },
+        "states": {
+            "title": "Administrative Status",
+            "description": "Moderation and administration statuses"
+        }
+    }
+}

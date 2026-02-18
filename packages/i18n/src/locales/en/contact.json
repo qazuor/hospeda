@@ -1,0 +1,33 @@
+{
+    "title": "Contact - Hospeda",
+    "description": "Get in touch with us. We're here to help you with any questions about accommodations and travel.",
+    "heading": "Contact Us",
+    "subheading": "We're here to help. Reach out to us with any questions",
+    "form": {
+        "title": "Send us a message",
+        "firstName": "First name",
+        "lastName": "Last name",
+        "email": "Email",
+        "message": "Message",
+        "submit": "Send message",
+        "placeholders": {
+            "firstName": "Your first name",
+            "lastName": "Your last name",
+            "email": "you@email.com",
+            "message": "Write your message here..."
+        }
+    },
+    "info": {
+        "title": "Contact information",
+        "address": {
+            "label": "Address",
+            "value": "123 Main Street\nCity, Country 12345"
+        },
+        "email": {
+            "label": "Email",
+            "value": "contact@hospeda.com"
+        }
+    },
+    "success": "Thanks for reaching out!",
+    "error": "Something went wrong while sending your message."
+}

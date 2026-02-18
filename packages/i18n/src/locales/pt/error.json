@@ -1,0 +1,87 @@
+{
+    "404": {
+        "title": "Página não encontrada",
+        "heading": "A página que você está procurando não existe.",
+        "description": "A página que você está procurando não existe.",
+        "message": "A página que você está procurando não existe."
+    },
+    "form": {
+        "validation-failed": "A validação do formulário falhou. Por favor, corrija os erros e tente novamente.",
+        "save-failed": "Erro ao salvar",
+        "save-success": "Salvo com sucesso",
+        "save-success-message": "As alterações foram salvas corretamente",
+        "unexpected-error": "Ocorreu um erro inesperado",
+        "validation-failed-fields": "A validação falhou para {{count}} campo{{plural}}. Por favor, revise os campos destacados.",
+        "validation-failed-field": "A validação falhou para 1 campo. Por favor, revise o campo destacado.",
+        "validation-failed-fields-plural": "A validação falhou para {{count}} campos. Por favor, revise os campos destacados.",
+        "save-changes": "Salvar alterações",
+        "saving": "Salvando..."
+    },
+    "field": {
+        "required": "{{field}} é obrigatório",
+        "required-generic": "Este campo é obrigatório"
+    },
+    "boundary": {
+        "global": {
+            "title": "Ops! Algo deu errado",
+            "message": "Desculpe, mas ocorreu algo inesperado. Nossa equipe foi notificada e está trabalhando para resolver o problema.",
+            "tryAgain": "Tentar novamente",
+            "reloadPage": "Recarregar página",
+            "goToDashboard": "Ir ao painel",
+            "reportError": "Reportar este erro ao suporte",
+            "errorDetails": "Detalhes do erro (Somente desenvolvimento)",
+            "errorMessage": "Mensagem de erro:",
+            "stackTrace": "Rastreamento de pilha:",
+            "globalErrorIcon": "Erro global"
+        },
+        "entity": {
+            "notFoundTitle": "{{entity}} não encontrado",
+            "notFoundMessage": "O {{entity}} que você está procurando não existe ou foi removido.",
+            "accessDeniedTitle": "Acesso negado",
+            "accessDeniedMessage": "Você não tem permissão para {{operation}} este {{entity}}.",
+            "connectionErrorTitle": "Erro de conexão",
+            "connectionErrorMessage": "Não é possível conectar ao servidor. Por favor, verifique sua conexão com a internet e tente novamente.",
+            "validationErrorTitle": "Erro de validação",
+            "validationErrorMessage": "Os dados fornecidos não são válidos. Por favor, verifique suas entradas e tente novamente.",
+            "genericErrorTitle": "Algo deu errado",
+            "genericErrorMessage": "Ocorreu um erro ao {{operation}} {{entity}}. Por favor, tente novamente.",
+            "tryAgain": "Tentar novamente",
+            "goBack": "Voltar",
+            "showErrorDetails": "Mostrar detalhes do erro",
+            "retryCount": "({{count}}/{{max}})"
+        },
+        "toast": {
+            "errorCopied": "Erro copiado",
+            "errorCopiedMessage": "Detalhes do erro copiados para a área de transferência. Por favor, compartilhe com o suporte.",
+            "copyFailed": "Erro ao copiar",
+            "copyFailedMessage": "Não foi possível copiar os detalhes do erro. Por favor, tire uma captura de tela."
+        },
+        "operations": {
+            "view": "visualizar",
+            "edit": "editar",
+            "create": "criar",
+            "delete": "excluir",
+            "list": "listar",
+            "access": "acessar"
+        },
+        "route": {
+            "updateRequiredTitle": "Atualização necessária",
+            "updateRequiredMessage": "O aplicativo foi atualizado. Por favor, recarregue a página para continuar.",
+            "connectionProblemTitle": "Problema de conexão",
+            "connectionProblemMessage": "Não foi possível carregar a página. Por favor, verifique sua conexão com a internet e tente novamente.",
+            "accessDeniedTitle": "Acesso negado",
+            "accessDeniedMessage": "Você não tem permissão para acessar {{route}}.",
+            "accessDeniedMessageGeneric": "Você não tem permissão para acessar esta página.",
+            "genericErrorTitle": "Algo deu errado",
+            "genericErrorMessage": "Ocorreu um erro inesperado ao carregar {{route}}. Nossa equipe foi notificada.",
+            "genericErrorMessageGeneric": "Ocorreu um erro inesperado. Nossa equipe foi notificada.",
+            "refreshPage": "Recarregar página",
+            "tryAgain": "Tentar novamente",
+            "goHome": "Ir ao início",
+            "goBack": "Voltar",
+            "showTechnicalDetails": "Mostrar detalhes técnicos",
+            "errorMessage": "Mensagem de erro:",
+            "stackTrace": "Rastreamento de pilha:"
+        }
+    }
+}

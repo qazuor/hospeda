@@ -1,0 +1,28 @@
+{
+    "actions": {
+        "seeAll": "See all"
+    },
+    "notifications": {
+        "title": "Notifications",
+        "closeToast": "Close notification",
+        "noNew": "No new notifications"
+    },
+    "aria": {
+        "primary": "Primary",
+        "closeMenu": "Close menu",
+        "toggleMenu": "Toggle menu",
+        "notifications": "Notifications",
+        "profile": "Profile",
+        "settings": "Settings",
+        "breadcrumb": "Breadcrumb",
+        "refresh": "Refresh",
+        "create": "Create",
+        "sortColumn": "Sort column",
+        "tableView": "Table view",
+        "gridView": "Grid view",
+        "search": "Search",
+        "closeToast": "Close notification",
+        "closeSidebarOverlay": "Close sidebar overlay",
+        "clearAllSessions": "Clear all sessions and reload page"
+    }
+}

@@ -1,0 +1,38 @@
+{
+    "title": "Accommodations in Entre Rios",
+    "description": "Discover the best accommodations in Entre Rios, Argentina. From cabins to hotels, we have options for every taste and budget.",
+    "hero": {
+        "title": "Discover unique accommodations in Entre Rios",
+        "subtitle": "Find comfortable and affordable places to stay along the Uruguay River and enjoy your vacation.",
+        "destination": {
+            "title": "Destination",
+            "placeHolder": "Where are you going?"
+        },
+        "checkin": "Check-in",
+        "checkout": "Check-out",
+        "search": "Search"
+    },
+    "search": {
+        "placeholder": "Where are you going?"
+    },
+    "featuredAccommodations": {
+        "title": "Featured accommodations",
+        "description": "The best places to stay along the Uruguay River, selected by our users. "
+    },
+    "featuredDestinations": {
+        "title": "Popular destinations",
+        "description": "Explore the most attractive spots along the Uruguay River in Entre Rios and find the perfect accommodation for your vacation. "
+    },
+    "upcomingEvents": {
+        "title": "Upcoming events",
+        "description": "Don't miss the most important events in the region."
+    },
+    "latestPosts": {
+        "title": "Latest articles",
+        "description": "Learn more about Entre Rios and its surroundings."
+    },
+    "testimonials": {
+        "title": "What our users say",
+        "description": "Stories from people who have already enjoyed our accommodations."
+    }
+}

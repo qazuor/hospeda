@@ -1,0 +1,87 @@
+{
+    "404": {
+        "title": "Page not found",
+        "heading": "The page you're looking for doesn't exist.",
+        "description": "The page you're looking for doesn't exist.",
+        "message": "The page you're looking for doesn't exist."
+    },
+    "form": {
+        "validation-failed": "Form validation failed. Please fix the errors and try again.",
+        "save-failed": "Save failed",
+        "save-success": "Saved successfully",
+        "save-success-message": "Your changes were saved correctly",
+        "unexpected-error": "An unexpected error occurred",
+        "validation-failed-fields": "Validation failed for {{count}} field{{plural}}. Please check the highlighted fields.",
+        "validation-failed-field": "Validation failed for 1 field. Please check the highlighted field.",
+        "validation-failed-fields-plural": "Validation failed for {{count}} fields. Please check the highlighted fields.",
+        "save-changes": "Save changes",
+        "saving": "Saving..."
+    },
+    "field": {
+        "required": "{{field}} is required",
+        "required-generic": "This field is required"
+    },
+    "boundary": {
+        "global": {
+            "title": "Oops! Something went wrong",
+            "message": "Sorry, something unexpected happened. Our team has been notified and is working to fix the issue.",
+            "tryAgain": "Try again",
+            "reloadPage": "Reload page",
+            "goToDashboard": "Go to dashboard",
+            "reportError": "Report this error to support",
+            "errorDetails": "Error details (Development only)",
+            "errorMessage": "Error message:",
+            "stackTrace": "Stack trace:",
+            "globalErrorIcon": "Global error"
+        },
+        "entity": {
+            "notFoundTitle": "{{entity}} not found",
+            "notFoundMessage": "The {{entity}} you're looking for doesn't exist or has been deleted.",
+            "accessDeniedTitle": "Access denied",
+            "accessDeniedMessage": "You don't have permission to {{operation}} this {{entity}}.",
+            "connectionErrorTitle": "Connection error",
+            "connectionErrorMessage": "Unable to connect to the server. Please check your internet connection and try again.",
+            "validationErrorTitle": "Validation error",
+            "validationErrorMessage": "The data provided is not valid. Please check your inputs and try again.",
+            "genericErrorTitle": "Something went wrong",
+            "genericErrorMessage": "An error occurred while trying to {{operation}} {{entity}}. Please try again.",
+            "tryAgain": "Try again",
+            "goBack": "Go back",
+            "showErrorDetails": "Show error details",
+            "retryCount": "({{count}}/{{max}})"
+        },
+        "toast": {
+            "errorCopied": "Error copied",
+            "errorCopiedMessage": "Error details copied to clipboard. Please share it with support.",
+            "copyFailed": "Copy failed",
+            "copyFailedMessage": "Could not copy error details. Please take a screenshot instead."
+        },
+        "operations": {
+            "view": "view",
+            "edit": "edit",
+            "create": "create",
+            "delete": "delete",
+            "list": "list",
+            "access": "access"
+        },
+        "route": {
+            "updateRequiredTitle": "Update required",
+            "updateRequiredMessage": "The application has been updated. Please reload the page to continue.",
+            "connectionProblemTitle": "Connection problem",
+            "connectionProblemMessage": "Could not load the page. Please check your internet connection and try again.",
+            "accessDeniedTitle": "Access denied",
+            "accessDeniedMessage": "You don't have permission to access {{route}}.",
+            "accessDeniedMessageGeneric": "You don't have permission to access this page.",
+            "genericErrorTitle": "Something went wrong",
+            "genericErrorMessage": "An unexpected error occurred while loading {{route}}. Our team has been notified.",
+            "genericErrorMessageGeneric": "An unexpected error occurred. Our team has been notified.",
+            "refreshPage": "Reload page",
+            "tryAgain": "Try again",
+            "goHome": "Go to home",
+            "goBack": "Go back",
+            "showTechnicalDetails": "Show technical details",
+            "errorMessage": "Error message:",
+            "stackTrace": "Stack trace:"
+        }
+    }
+}

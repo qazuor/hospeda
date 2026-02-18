@@ -1,0 +1,45 @@
+{
+    "title": "Tourist Destinations",
+    "description": "Discover the best tourist destinations. Explore unique places and plan your next adventure.",
+    "heading": "Tourist Destinations",
+    "subheading": "Discover amazing places and live unique experiences at the world's best destinations",
+    "found": "destinations found",
+    "emptyTitle": "No destinations available",
+    "emptyMessage": "We'll be adding amazing destinations for you soon.",
+    "filters": {
+        "all": "All",
+        "beach": "Beach",
+        "mountain": "Mountain",
+        "city": "City"
+    },
+    "types": {
+        "COUNTRY": "Country",
+        "REGION": "Region",
+        "PROVINCE": "Province",
+        "DEPARTMENT": "Department",
+        "CITY": "City",
+        "TOWN": "Town",
+        "NEIGHBORHOOD": "Neighborhood"
+    },
+    "card": {
+        "seeMore": "See more",
+        "location": "Location"
+    },
+    "seeAll": "See all destinations",
+    "list": {
+        "title": "Tourist destinations"
+    },
+    "details": {
+        "about": "About",
+        "attractions": "Main attractions",
+        "accommodations": "Featured accommodations",
+        "location": "Location",
+        "rating": "Overall rating"
+    },
+    "tabs": {
+        "about": "Info",
+        "accommodations": "Accommodations",
+        "posts": "Blog posts",
+        "events": "Events"
+    }
+}

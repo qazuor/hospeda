@@ -1,0 +1,45 @@
+{
+    "title": "Destinos Turisticos",
+    "description": "Descubra os melhores destinos turisticos. Explore lugares unicos e planeje a sua proxima aventura.",
+    "heading": "Destinos Turisticos",
+    "subheading": "Descubra lugares incriveis e viva experiencias unicas nos melhores destinos do mundo",
+    "found": "destinos encontrados",
+    "emptyTitle": "Nenhum destino disponivel",
+    "emptyMessage": "Em breve adicionaremos destinos incriveis para voce.",
+    "filters": {
+        "all": "Todos",
+        "beach": "Praia",
+        "mountain": "Montanha",
+        "city": "Cidade"
+    },
+    "types": {
+        "COUNTRY": "Pais",
+        "REGION": "Regiao",
+        "PROVINCE": "Provincia",
+        "DEPARTMENT": "Departamento",
+        "CITY": "Cidade",
+        "TOWN": "Vila",
+        "NEIGHBORHOOD": "Bairro"
+    },
+    "card": {
+        "seeMore": "Ver mais",
+        "location": "Localizacao"
+    },
+    "seeAll": "Ver todos os destinos",
+    "list": {
+        "title": "Destinos turisticos"
+    },
+    "details": {
+        "about": "Sobre",
+        "attractions": "Principais atracoes",
+        "accommodations": "Hospedagens em destaque",
+        "location": "Localizacao",
+        "rating": "Avaliacao geral"
+    },
+    "tabs": {
+        "about": "Informacoes",
+        "accommodations": "Hospedagens",
+        "posts": "Publicacoes",
+        "events": "Eventos"
+    }
+}

@@ -1,0 +1,52 @@
+{
+    "title": "About Us - Hospeda",
+    "description": "Learn about our story, mission, and the team behind Hospeda. We've been connecting travelers with unique accommodations since 2020.",
+    "hero": {
+        "heading": "About Us",
+        "subheading": "Connecting travelers with unique accommodation experiences since 2020"
+    },
+    "story": {
+        "title": "Our Story",
+        "paragraph1": "Hospeda was born from a shared passion for travel and hospitality. Founded in 2020, our platform connects travelers from around the world with unique accommodations and authentic experiences.",
+        "paragraph2": "We believe every trip should be a memorable adventure, and that where you stay plays a key role in that experience. That's why we work tirelessly to offer a wide variety of accommodation options to suit every taste and budget."
+    },
+    "mission": {
+        "title": "Mission & Vision",
+        "mission": {
+            "title": "Our Mission",
+            "content": "To foster authentic connections between travelers and hosts, creating unique accommodation experiences that enrich the lives of both."
+        },
+        "vision": {
+            "title": "Our Vision",
+            "content": "To be the leading platform for alternative accommodations, promoting sustainable tourism and genuine cultural experiences."
+        }
+    },
+    "values": {
+        "title": "Our Values",
+        "authenticity": {
+            "title": "Authenticity",
+            "description": "We promote genuine experiences and real connections between travelers and local communities."
+        },
+        "sustainability": {
+            "title": "Sustainability",
+            "description": "We encourage responsible tourism practices that benefit both the environment and local communities."
+        },
+        "innovation": {
+            "title": "Innovation",
+            "description": "We use cutting-edge technology to continuously improve the experience for our users."
+        },
+        "community": {
+            "title": "Community",
+            "description": "We build a global community of travelers and hosts united by a passion for exploring and sharing."
+        }
+    },
+    "team": {
+        "title": "Our Team",
+        "description": "Meet the passionate people who make Hospeda possible",
+        "cta": {
+            "title": "Ready for your next adventure?",
+            "description": "Discover unique accommodations and start planning your perfect trip",
+            "button": "Explore accommodations"
+        }
+    }
+}

@@ -1,0 +1,28 @@
+{
+    "title": "Blog Posts",
+    "description": "Discover interesting articles, travel guides, and useful tips for your next adventure.",
+    "heading": "Blog Posts",
+    "subheading": "Discover inspiring stories, travel guides, and useful tips for your next adventure",
+    "found": "blog posts found",
+    "emptyTitle": "No blog posts available",
+    "emptyMessage": "We'll be sharing interesting content with you soon.",
+    "filters": {
+        "all": "All",
+        "guides": "Travel guides",
+        "tips": "Tips",
+        "experiences": "Experiences",
+        "news": "News"
+    },
+    "card": {
+        "readMore": "Read more",
+        "readingTime": "min read"
+    },
+    "list": {
+        "title": "Articles & blog posts"
+    },
+    "details": {
+        "related": "Related articles",
+        "share": "Share",
+        "author": "Author"
+    }
+}

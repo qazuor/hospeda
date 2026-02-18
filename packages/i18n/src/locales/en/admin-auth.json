@@ -1,0 +1,25 @@
+{
+    "signin": {
+        "title": "Sign In",
+        "heading": "Sign In",
+        "subtitle": "Welcome back! Please sign in to your account",
+        "welcomeBack": "Welcome back",
+        "manageAccommodations": "Manage your accommodations with ease",
+        "completingSignIn": "Completing sign in...",
+        "dontHaveAccount": "Don't have an account?",
+        "signUpLink": "Sign up",
+        "clearSession": "Clear Session"
+    },
+    "signup": {
+        "title": "Create Account",
+        "heading": "Create Account",
+        "subtitle": "Get started with your free account today",
+        "joinToday": "Join today",
+        "startManaging": "Start managing your accommodations",
+        "alreadyHaveAccount": "Already have an account?",
+        "signInLink": "Sign in"
+    },
+    "common": {
+        "logo": "Logo"
+    }
+}

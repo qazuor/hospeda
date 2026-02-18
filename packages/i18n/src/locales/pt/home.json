@@ -1,0 +1,38 @@
+{
+    "title": "Hospedagens em Entre Rios",
+    "description": "Descubra as melhores hospedagens em Entre Rios, Argentina. De cabanas a hoteis, temos opcoes para todos os gostos e orcamentos.",
+    "hero": {
+        "title": "Descubra hospedagens unicas em Entre Rios",
+        "subtitle": "Encontre hospedagens confortaveis e acessiveis na costa do rio Uruguay para aproveitar as suas ferias.",
+        "destination": {
+            "title": "Destino",
+            "placeHolder": "Para onde voce vai?"
+        },
+        "checkin": "Chegada",
+        "checkout": "Saida",
+        "search": "Buscar"
+    },
+    "search": {
+        "placeholder": "Para onde voce vai?"
+    },
+    "featuredAccommodations": {
+        "title": "Hospedagens em destaque",
+        "description": "Os melhores lugares para se hospedar na costa do rio Uruguay, selecionados pelos nossos usuarios. "
+    },
+    "featuredDestinations": {
+        "title": "Destinos populares",
+        "description": "Explore os lugares mais atrativos da costa do rio Uruguay em Entre Rios e encontre a hospedagem perfeita para as suas ferias. "
+    },
+    "upcomingEvents": {
+        "title": "Proximos eventos",
+        "description": "Nao perca os eventos mais importantes da regiao."
+    },
+    "latestPosts": {
+        "title": "Ultimos artigos",
+        "description": "Saiba mais sobre Entre Rios e seus arredores."
+    },
+    "testimonials": {
+        "title": "O que dizem nossos usuarios",
+        "description": "Historias de quem ja aproveitou nossas hospedagens."
+    }
+}

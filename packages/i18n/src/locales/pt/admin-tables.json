@@ -1,0 +1,12 @@
+{
+    "actions": {
+        "sortColumn": "Ordenar coluna",
+        "rowsPerPage": "Linhas por página",
+        "tableView": "Visualização em tabela",
+        "gridView": "Visualização em grade",
+        "search": "Buscar"
+    },
+    "headers": {
+        "updated": "Atualizado"
+    }
+}

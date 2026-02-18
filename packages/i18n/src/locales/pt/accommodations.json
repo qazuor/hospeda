@@ -1,0 +1,76 @@
+{
+    "title": "Hospedagens",
+    "description": "Descubra hospedagens unicas e encontre o lugar perfeito para a sua proxima aventura.",
+    "emptyTitle": "Nenhuma hospedagem disponivel",
+    "emptyMessage": "Em breve adicionaremos mais opcoes de hospedagem para voce.",
+    "heading": "Hospedagens",
+    "subheading": "Descubra hospedagens unicas e encontre o lugar perfeito para a sua proxima aventura",
+    "found": "hospedagens encontradas",
+    "seeAll": "Ver todas as hospedagens →",
+    "filters": {
+        "title": "Filtros",
+        "all": "Todos",
+        "hotels": "Hoteis",
+        "cabins": "Cabanas",
+        "apartments": "Apartamentos",
+        "hostels": "Hostels"
+    },
+    "sort": {
+        "title": "Ordenar",
+        "default": "Recomendados",
+        "price.asc": "Preco: Menor para maior",
+        "price.desc": "Preco: Maior para menor"
+    },
+    "card": {
+        "guests": "Hospedes",
+        "bedrooms": "Quartos",
+        "bathrooms": "Banheiros",
+        "per.night": "por noite"
+    },
+    "details": {
+        "about": "Descricao",
+        "features": "Caracteristicas",
+        "amenities": "Comodidades",
+        "schedule": "Horarios",
+        "location": "Localizacao",
+        "reviews": "Avaliacoes"
+    },
+    "types": {
+        "apartment": "Apartamento",
+        "house": "Casa",
+        "country_house": "Chacara",
+        "cabin": "Cabana",
+        "hotel": "Hotel",
+        "hostel": "Hostel",
+        "camping": "Camping",
+        "room": "Quarto",
+        "motel": "Motel",
+        "resort": "Resort"
+    },
+    "faqs": "Perguntas frequentes",
+    "contactTitle": "Contato",
+    "entity": {
+        "name": "Hospedagem",
+        "namePlural": "Hospedagens",
+        "title": "Gestao de Hospedagens",
+        "description": "Administre as informacoes das hospedagens"
+    },
+    "sections": {
+        "basicInfo": {
+            "title": "Informacoes Basicas",
+            "description": "Dados principais da hospedagem"
+        },
+        "contactInfo": {
+            "title": "Informacoes de Contato",
+            "description": "Dados de contato e redes sociais"
+        },
+        "location": {
+            "title": "Localizacao",
+            "description": "Endereco e coordenadas geograficas"
+        },
+        "states": {
+            "title": "Status Administrativos",
+            "description": "Status de moderacao e administracao"
+        }
+    }
+}

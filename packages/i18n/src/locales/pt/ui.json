@@ -1,0 +1,116 @@
+{
+    "slider": {
+        "previousImage": "Imagem anterior",
+        "nextImage": "Próxima imagem",
+        "goToImage": "Ir para imagem {number}"
+    },
+    "loading": {
+        "text": "Carregando...",
+        "spinner": "Carregando",
+        "items": "Carregando itens...",
+        "more": "Carregando mais..."
+    },
+    "errors": {
+        "general": "Ocorreu um erro",
+        "network": "Erro de conexão",
+        "notFound": "Não encontrado",
+        "pageNotFound": "Página não encontrada",
+        "pageNotFoundDescription": "Desculpe, não conseguimos encontrar a página que você está procurando.",
+        "authenticationError": "Erro de autenticação",
+        "failedToLoad": "Erro ao carregar {resource}",
+        "unknownError": "Erro desconhecido",
+        "noRecordsFound": "Nenhum registro encontrado",
+        "somethingWentWrong": "Algo deu errado"
+    },
+    "actions": {
+        "backTo": "Voltar a",
+        "goTo": "Ir a",
+        "viewAll": "Ver tudo",
+        "seeMore": "Ver mais",
+        "readMore": "Ler mais",
+        "goBackHome": "Voltar ao início",
+        "goBack": "Voltar",
+        "retry": "Tentar novamente",
+        "clearSession": "Limpar sessão",
+        "reload": "Recarregar",
+        "refresh": "Atualizar",
+        "edit": "Editar",
+        "delete": "Excluir",
+        "view": "Ver",
+        "viewDetails": "Ver detalhes",
+        "scrollToTop": "Ir ao início",
+        "scrollToBottom": "Ir ao final",
+        "previewImage": "Pré-visualização",
+        "downloadImage": "Baixar imagem",
+        "openInNewTab": "Abrir em nova aba",
+        "editField": "Editar campo",
+        "debugInfo": "Informações de depuração"
+    },
+    "navigation": {
+        "navigation": "Navegação",
+        "home": "Início",
+        "formProgress": "Progresso do formulário",
+        "sectionsComplete": "seções completas",
+        "errors": "erros",
+        "fieldsComplete": "campos completos",
+        "readyToSubmit": "Pronto para enviar",
+        "incompleteForm": "Formulário incompleto",
+        "requiredFieldsMissing": "Campos obrigatórios faltando"
+    },
+    "accessibility": {
+        "logo": "Logo",
+        "closeMenu": "Fechar menu",
+        "closeSidebarOverlay": "Fechar sobreposição do menu lateral",
+        "primary": "Principal",
+        "breadcrumb": "Caminho de navegação",
+        "sortColumn": "Ordenar coluna",
+        "rowsPerPage": "Linhas por página",
+        "tableView": "Visualização em tabela",
+        "gridView": "Visualização em grade",
+        "search": "Buscar",
+        "closeToast": "Fechar notificação",
+        "clearAllSessionsAndReload": "Limpar todas as sessões e recarregar página"
+    },
+    "pages": {
+        "myProfile": "Meu Perfil",
+        "mySettings": "Minhas Configurações",
+        "todoAddContent": "TODO: adicionar conteúdo"
+    },
+    "grid": {
+        "noDisplayableFields": "Sem campos para exibir"
+    },
+    "table": {
+        "pageInfo": "Página {page} de {pageCount}",
+        "rows": "Linhas",
+        "prev": "Anterior",
+        "next": "Próximo",
+        "tableView": "Tabela",
+        "gridView": "Grade",
+        "searchPlaceholder": "Buscar (mín. {minChars} caracteres)...",
+        "searchClear": "Limpar busca",
+        "searching": "Buscando...",
+        "columns": "Colunas"
+    },
+    "entitySelect": {
+        "clearSelection": "Limpar seleção",
+        "searching": "Buscando...",
+        "noResultsFound": "Nenhum resultado encontrado",
+        "loading": "Carregando...",
+        "searchPlaceholder": "Buscar {entityType}...",
+        "selectItems": "Selecionar itens...",
+        "selectItem": "Selecionar item...",
+        "selectedCount": "{count} selecionados",
+        "errors": {
+            "loadingSelection": "Erro ao carregar seleção",
+            "loadingOptions": "Erro ao carregar opções",
+            "searchFailed": "Erro na busca",
+            "failedToLoadSelected": "Erro ao carregar itens selecionados: {error}",
+            "failedToLoadOptions": "Erro ao carregar {entityType}: {error}",
+            "searchError": "A busca falhou: {error}",
+            "unknownError": "Erro desconhecido"
+        }
+    },
+    "breadcrumbs": {
+        "progress": "Progresso"
+    }
+}

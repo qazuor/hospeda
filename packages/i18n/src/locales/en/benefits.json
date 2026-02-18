@@ -1,0 +1,70 @@
+{
+    "title": "Benefits - Hospeda",
+    "description": "Discover all the benefits of using Hospeda for your travels. Exclusive deals, 24/7 support, and more.",
+    "heading": "Exclusive Benefits",
+    "subheading": "Enjoy unique perks when you choose Hospeda for your travels",
+    "benefits": {
+        "bestPrices": {
+            "title": "Best Prices",
+            "description": "We guarantee the best prices on the market. If you find a lower rate, we'll match it and give you an extra 5% discount."
+        },
+        "support247": {
+            "title": "24/7 Support",
+            "description": "Our support team is available 24 hours a day, 7 days a week to help you with any question or emergency during your trip."
+        },
+        "freeCancellation": {
+            "title": "Free Cancellation",
+            "description": "Cancel your booking at no cost up to 24 hours before arrival. Plans change, and our flexible policy has you covered."
+        },
+        "pointsProgram": {
+            "title": "Points Program",
+            "description": "Earn points with every booking and redeem them for discounts on future stays. The more you travel, the more you save."
+        },
+        "exclusiveOffers": {
+            "title": "Exclusive Offers",
+            "description": "Access special deals and member-only discounts. Be the first to know about the best promotions."
+        },
+        "verifiedAccommodations": {
+            "title": "Guaranteed Verification",
+            "description": "All our accommodations go through a rigorous verification process to ensure quality and safety during your stay."
+        }
+    },
+    "membership": {
+        "title": "Membership Levels",
+        "bronze": {
+            "title": "Bronze",
+            "subtitle": "Free",
+            "features": {
+                "basicSupport": "Basic support",
+                "freeCancellation": "Free cancellation",
+                "points": "1 point per $1 spent"
+            }
+        },
+        "silver": {
+            "title": "Silver",
+            "subtitle": "5+ bookings",
+            "features": {
+                "allBronze": "Everything in Bronze",
+                "prioritySupport": "Priority support",
+                "points": "1.5 points per $1 spent",
+                "discount": "5% extra discount"
+            }
+        },
+        "gold": {
+            "title": "Gold",
+            "subtitle": "15+ bookings",
+            "features": {
+                "allSilver": "Everything in Silver",
+                "vipSupport": "VIP 24/7 support",
+                "points": "2 points per $1 spent",
+                "discount": "10% extra discount",
+                "exclusiveAccess": "Access to exclusive offers"
+            }
+        }
+    },
+    "cta": {
+        "title": "Ready to start enjoying these benefits?",
+        "description": "Sign up today and start earning points with your first booking.",
+        "button": "Make my first booking"
+    }
+}

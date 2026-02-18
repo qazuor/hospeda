@@ -1,0 +1,257 @@
+{
+    "name": {
+        "title": "Name",
+        "label": "Accommodation name",
+        "description": "Descriptive name of the accommodation",
+        "placeholder": "Enter the accommodation name"
+    },
+    "slug": {
+        "title": "Friendly URL",
+        "label": "Slug",
+        "description": "Friendly URL for the accommodation",
+        "placeholder": "accommodation-url",
+        "help": "help text"
+    },
+    "description": {
+        "title": "Description",
+        "label": "Full description",
+        "description": "Detailed description of the accommodation",
+        "placeholder": "Describe the accommodation in detail"
+    },
+    "type": {
+        "title": "Type",
+        "label": "Accommodation type",
+        "description": "Accommodation category",
+        "placeholder": "Select a type"
+    },
+    "lifecycleState": {
+        "title": "Lifecycle State",
+        "label": "State",
+        "description": "Current state of the accommodation",
+        "placeholder": "Select a state"
+    },
+    "visibility": {
+        "title": "Visibility",
+        "label": "Visibility",
+        "description": "Visibility level of the accommodation",
+        "placeholder": "Select visibility"
+    },
+    "shortDescription": {
+        "title": "Short Description",
+        "label": "Summary",
+        "description": "Brief description of the accommodation",
+        "placeholder": "Brief summary of the accommodation"
+    },
+    "isFeatured": {
+        "title": "Featured",
+        "label": "Featured accommodation",
+        "description": "Mark as a featured accommodation",
+        "placeholder": "Is it featured?"
+    },
+    "email": {
+        "title": "Email",
+        "label": "Email address",
+        "description": "Contact email address",
+        "placeholder": "example@email.com"
+    },
+    "phone": {
+        "title": "Phone",
+        "label": "Phone number",
+        "description": "Contact phone number",
+        "placeholder": "+54 9 11 1234-5678"
+    },
+    "website": {
+        "title": "Website",
+        "label": "Website",
+        "description": "Official website URL",
+        "placeholder": "https://example.com"
+    },
+    "contactPersonName": {
+        "title": "Contact Person",
+        "label": "Contact name",
+        "description": "Name of the contact person",
+        "placeholder": "John Smith"
+    },
+    "contactPersonEmail": {
+        "title": "Contact Email",
+        "label": "Contact person's email",
+        "description": "Contact person's email address",
+        "placeholder": "contact@example.com"
+    },
+    "contactPersonPhone": {
+        "title": "Contact Phone",
+        "label": "Contact person's phone",
+        "description": "Contact person's phone number",
+        "placeholder": "+54 9 11 1234-5678"
+    },
+    "whatsapp": {
+        "title": "WhatsApp",
+        "label": "WhatsApp number",
+        "description": "WhatsApp contact number",
+        "placeholder": "+54 9 11 1234-5678"
+    },
+    "instagram": {
+        "title": "Instagram",
+        "label": "Instagram username",
+        "description": "Instagram username or URL",
+        "placeholder": "@username or https://instagram.com/username"
+    },
+    "facebook": {
+        "title": "Facebook",
+        "label": "Facebook page",
+        "description": "Facebook page URL",
+        "placeholder": "https://facebook.com/page"
+    },
+    "destinationId": {
+        "title": "Destination",
+        "label": "Tourist destination",
+        "description": "Destination the accommodation belongs to",
+        "placeholder": "Select a destination"
+    },
+    "address": {
+        "title": "Address",
+        "label": "Full address",
+        "description": "Physical address of the accommodation",
+        "placeholder": "123 Main St, City"
+    },
+    "city": {
+        "title": "City",
+        "label": "City",
+        "description": "City where the accommodation is located",
+        "placeholder": "Buenos Aires"
+    },
+    "state": {
+        "title": "Province/State",
+        "label": "Province or state",
+        "description": "Province or state of the accommodation",
+        "placeholder": "Buenos Aires"
+    },
+    "country": {
+        "title": "Country",
+        "label": "Country",
+        "description": "Country where the accommodation is located",
+        "placeholder": "Argentina"
+    },
+    "postalCode": {
+        "title": "Postal Code",
+        "label": "Postal code",
+        "description": "Postal code of the accommodation",
+        "placeholder": "1234"
+    },
+    "latitude": {
+        "title": "Latitude",
+        "label": "Latitude coordinate",
+        "description": "Geographic latitude coordinate",
+        "placeholder": "-34.6037"
+    },
+    "longitude": {
+        "title": "Longitude",
+        "label": "Longitude coordinate",
+        "description": "Geographic longitude coordinate",
+        "placeholder": "-58.3816"
+    },
+    "locationNotes": {
+        "title": "Location Notes",
+        "label": "Additional notes",
+        "description": "Additional information about the location",
+        "placeholder": "Special directions to reach the place"
+    },
+    "moderationState": {
+        "title": "Moderation State",
+        "label": "Moderation state",
+        "description": "Current moderation state",
+        "placeholder": "Select a state"
+    },
+    "moderationNotes": {
+        "title": "Moderation Notes",
+        "label": "Moderator notes",
+        "description": "Comments from the moderation process",
+        "placeholder": "Internal moderation notes"
+    },
+    "assignedUserId": {
+        "title": "Assigned User",
+        "label": "Responsible user",
+        "description": "User assigned to manage this accommodation",
+        "placeholder": "Select a user"
+    },
+    "viewCount": {
+        "title": "Views",
+        "label": "Number of views",
+        "description": "Number of times it has been viewed",
+        "placeholder": "0"
+    },
+    "bookingCount": {
+        "title": "Bookings",
+        "label": "Number of bookings",
+        "description": "Total number of bookings made",
+        "placeholder": "0"
+    },
+    "internalNotes": {
+        "title": "Internal Notes",
+        "label": "Administrative notes",
+        "description": "Internal notes for administrative use",
+        "placeholder": "Notes for internal use"
+    },
+    "internalTags": {
+        "title": "Internal Tags",
+        "label": "Administrative tags",
+        "description": "Tags for internal classification",
+        "placeholder": "tag1, tag2"
+    },
+    "priority": {
+        "title": "Priority",
+        "label": "Priority level",
+        "description": "Priority level of the accommodation",
+        "placeholder": "1-10"
+    },
+    "ownerId": {
+        "title": "Owner",
+        "label": "Accommodation owner",
+        "description": "User who owns this accommodation",
+        "placeholder": "Search users..."
+    },
+    "accommodation": {
+        "sections": {
+            "basicInfo": {
+                "title": "Basic Information",
+                "description": "Main details of the accommodation"
+            }
+        },
+        "name": {
+            "title": "Name",
+            "label": "Accommodation name",
+            "description": "Descriptive name of the accommodation",
+            "placeholder": "Enter the accommodation name"
+        },
+        "description": {
+            "title": "Description",
+            "label": "Full description",
+            "description": "Detailed description of the accommodation",
+            "placeholder": "Describe the accommodation in detail"
+        },
+        "type": {
+            "title": "Type",
+            "label": "Accommodation type",
+            "description": "Accommodation category",
+            "placeholder": "Select a type"
+        },
+        "isFeatured": {
+            "title": "Featured",
+            "label": "Featured accommodation",
+            "description": "Mark as a featured accommodation",
+            "placeholder": "Is it featured?"
+        },
+        "destinationId": {
+            "title": "Destination",
+            "label": "Tourist destination",
+            "description": "Destination the accommodation belongs to",
+            "placeholder": "Select a destination"
+        },
+        "ownerId": {
+            "title": "Owner",
+            "label": "Accommodation owner",
+            "description": "User who owns this accommodation",
+            "placeholder": "Search users..."
+        }
+    }
+}

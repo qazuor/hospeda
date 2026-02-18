@@ -1,0 +1,100 @@
+{
+    "title": "Politica de Privacidade - Hospeda",
+    "description": "Saiba como coletamos, usamos e protegemos suas informacoes pessoais na Hospeda.",
+    "heading": "Politica de Privacidade",
+    "lastUpdated": "Ultima atualizacao: 1 de janeiro de 2024",
+    "sections": {
+        "informationCollection": {
+            "title": "1. Informacoes que Coletamos",
+            "intro": "Coletamos informacoes que voce nos fornece diretamente, como:",
+            "items": {
+                "registration": "Informacoes de cadastro (nome, email, telefone)",
+                "profile": "Informacoes de perfil e preferencias",
+                "payment": "Informacoes de pagamento e faturamento",
+                "support": "Comunicacoes com nosso suporte",
+                "reviews": "Avaliacoes e comentarios"
+            }
+        },
+        "automaticCollection": {
+            "title": "2. Informacoes Coletadas Automaticamente",
+            "intro": "Tambem coletamos informacoes automaticamente quando voce usa nosso servico:",
+            "items": {
+                "device": "Informacoes do dispositivo e navegador",
+                "ip": "Endereco IP e localizacao geografica",
+                "navigation": "Paginas visitadas e tempo de navegacao",
+                "cookies": "Cookies e tecnologias similares"
+            }
+        },
+        "informationUse": {
+            "title": "3. Como Usamos Suas Informacoes",
+            "intro": "Utilizamos as informacoes coletadas para:",
+            "purposes": {
+                "services": "Fornecer e melhorar nossos servicos",
+                "bookings": "Processar reservas e pagamentos",
+                "communication": "Comunicar com voce sobre sua conta",
+                "personalization": "Personalizar sua experiencia",
+                "marketing": "Enviar atualizacoes e promocoes (com seu consentimento)",
+                "security": "Prevenir fraudes e garantir a seguranca"
+            }
+        },
+        "informationSharing": {
+            "title": "4. Compartilhamento de Informacoes",
+            "intro": "Podemos compartilhar suas informacoes nas seguintes circunstancias:",
+            "circumstances": {
+                "hosts": "Com anfitrioes para facilitar reservas",
+                "providers": "Com prestadores de servicos de confianca",
+                "legal": "Para cumprimento de obrigacoes legais",
+                "consent": "Com seu consentimento explicito",
+                "business": "Em caso de fusao ou aquisicao empresarial"
+            }
+        },
+        "cookiesTracking": {
+            "title": "5. Cookies e Tecnologias de Rastreamento",
+            "content": "Utilizamos cookies e tecnologias similares para melhorar sua experiencia, lembrar suas preferencias e analisar o uso do nosso site. Voce pode controlar os cookies por meio das configuracoes do seu navegador."
+        },
+        "dataSecurity": {
+            "title": "6. Seguranca dos Dados",
+            "content": "Implementamos medidas de seguranca tecnicas e organizacionais adequadas para proteger suas informacoes pessoais contra acesso nao autorizado, alteracao, divulgacao ou destruicao. No entanto, nenhum metodo de transmissao pela internet e 100% seguro."
+        },
+        "yourRights": {
+            "title": "7. Seus Direitos",
+            "intro": "Voce tem direito a:",
+            "rights": {
+                "access": "Acessar suas informacoes pessoais",
+                "correct": "Corrigir informacoes imprecisas",
+                "delete": "Solicitar a exclusao dos seus dados",
+                "object": "Se opor ao tratamento dos seus dados",
+                "portability": "Portabilidade de dados",
+                "withdraw": "Revogar seu consentimento a qualquer momento"
+            }
+        },
+        "dataRetention": {
+            "title": "8. Retencao de Dados",
+            "content": "Mantemos suas informacoes pessoais pelo tempo necessario para cumprir os propositos descritos nesta politica, salvo quando a lei exigir ou permitir um periodo de retencao maior."
+        },
+        "internationalTransfers": {
+            "title": "9. Transferencias Internacionais",
+            "content": "Suas informacoes podem ser transferidas e processadas em paises diferentes do seu. Garantimos que essas transferencias estejam em conformidade com as leis de protecao de dados aplicaveis."
+        },
+        "minors": {
+            "title": "10. Menores de Idade",
+            "content": "Nossos servicos nao sao destinados a menores de 18 anos. Nao coletamos intencionalmente informacoes pessoais de menores sem o consentimento verificavel dos responsaveis."
+        },
+        "policyChanges": {
+            "title": "11. Alteracoes nesta Politica",
+            "content": "Podemos atualizar esta politica de privacidade ocasionalmente. Vamos te notificar sobre mudancas significativas publicando a nova politica no nosso site."
+        },
+        "contact": {
+            "title": "12. Contato",
+            "intro": "Para exercer seus direitos ou se tiver duvidas sobre esta politica, entre em contato conosco:",
+            "details": {
+                "email": "Email:",
+                "emailValue": "privacidade@hospeda.com",
+                "address": "Endereco:",
+                "addressValue": "Rua Principal 123, Cidade, Pais 12345",
+                "phone": "Telefone:",
+                "phoneValue": "+1 (234) 567-890"
+            }
+        }
+    }
+}
