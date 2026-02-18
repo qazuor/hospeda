@@ -3,10 +3,13 @@ import {
     type DestinationReview,
     type DestinationReviewCreateInput,
     DestinationReviewCreateInputSchema,
+    type DestinationReviewListResponse,
     type DestinationReviewListWithUserOutput,
     type DestinationReviewSearchInput,
     DestinationReviewSearchInputSchema,
-    DestinationReviewUpdateInputSchema
+    DestinationReviewUpdateInputSchema,
+    type DestinationReviewsByUserInput,
+    DestinationReviewsByUserSchema
 } from '@repo/schemas';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, PaginatedListOutput, ServiceContext, ServiceOutput } from '../../types';
@@ -131,6 +134,49 @@ export class DestinationReviewService extends BaseCrudService<
     ): Promise<{ count: number }> {
         // TODO: Implement logic to update stats after delete if needed
         return result;
+    }
+
+    /**
+     * Gets paginated reviews for a specific user.
+     * Validates permissions via _canList and returns only non-deleted reviews.
+     * @param actor - The actor performing the action
+     * @param input - Object containing userId and optional pagination/filter params
+     * @returns Paginated list of reviews by user with pagination metadata
+     */
+    public async listByUser(
+        actor: Actor,
+        input: DestinationReviewsByUserInput
+    ): Promise<ServiceOutput<DestinationReviewListResponse>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'listByUser',
+            input: { ...input, actor },
+            schema: DestinationReviewsByUserSchema,
+            execute: async (validated, validatedActor) => {
+                await this._canList(validatedActor);
+                const { userId, page, pageSize, destinationId } = validated;
+                const filters: Record<string, unknown> = { userId, deletedAt: null };
+                if (destinationId) {
+                    filters.destinationId = destinationId;
+                }
+                const result = await this.model.findAll(filters, { page, pageSize });
+
+                const currentPage = page || 1;
+                const currentPageSize = pageSize || 10;
+                const totalPages = Math.ceil(result.total / currentPageSize);
+
+                return {
+                    data: result.items,
+                    pagination: {
+                        page: currentPage,
+                        pageSize: currentPageSize,
+                        total: result.total,
+                        totalPages,
+                        hasNextPage: currentPage < totalPages,
+                        hasPreviousPage: currentPage > 1
+                    }
+                } as DestinationReviewListResponse;
+            }
+        });
     }
 
     /**

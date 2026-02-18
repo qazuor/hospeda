@@ -12,6 +12,8 @@ import {
     AccommodationReviewSearchParamsSchema,
     AccommodationReviewUpdateInputSchema,
     type AccommodationReviewWithUserListWrapper,
+    type AccommodationReviewsByUserInput,
+    AccommodationReviewsByUserSchema,
     type CountResponse
 } from '@repo/schemas';
 import { BaseCrudService } from '../../base/base.crud.service';
@@ -176,6 +178,37 @@ export class AccommodationReviewService extends BaseCrudService<
                 );
 
                 // Wrap the result in consistent format with total for pagination
+                const accommodationReviews = Array.isArray(result.items) ? result.items : [];
+
+                return { accommodationReviews, total: result.total };
+            }
+        });
+    }
+
+    /**
+     * Gets paginated reviews for a specific user.
+     * Validates permissions via _canList and returns only non-deleted reviews.
+     * @param actor - The actor performing the action
+     * @param input - Object containing userId and optional pagination/filter params
+     * @returns Paginated list of reviews by user wrapped in consistent format
+     */
+    public async listByUser(
+        actor: Actor,
+        input: AccommodationReviewsByUserInput
+    ): Promise<ServiceOutput<AccommodationReviewListWrapper>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'listByUser',
+            input: { ...input, actor },
+            schema: AccommodationReviewsByUserSchema,
+            execute: async (validated, validatedActor) => {
+                await this._canList(validatedActor);
+                const { userId, page, pageSize, accommodationId } = validated;
+                const filters: Record<string, unknown> = { userId, deletedAt: null };
+                if (accommodationId) {
+                    filters.accommodationId = accommodationId;
+                }
+                const result = await this.model.findAll(filters, { page, pageSize });
+
                 const accommodationReviews = Array.isArray(result.items) ? result.items : [];
 
                 return { accommodationReviews, total: result.total };
