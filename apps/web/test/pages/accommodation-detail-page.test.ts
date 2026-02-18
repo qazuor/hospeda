@@ -54,9 +54,9 @@ describe('Accommodation Detail Page ([slug].astro)', () => {
             );
         });
 
-        it('should import FavoriteButton client component', () => {
+        it('should import FavoriteButtonIsland server island', () => {
             expect(content).toContain(
-                "import { FavoriteButton } from '../../../components/ui/FavoriteButton.client.tsx'"
+                "import FavoriteButtonIsland from '../../../components/ui/FavoriteButtonIsland.astro'"
             );
         });
 
@@ -72,9 +72,9 @@ describe('Accommodation Detail Page ([slug].astro)', () => {
             );
         });
 
-        it('should import ReviewList client component', () => {
+        it('should import ReviewListIsland server island', () => {
             expect(content).toContain(
-                "import { ReviewList } from '../../../components/review/ReviewList.client.tsx'"
+                "import ReviewListIsland from '../../../components/review/ReviewListIsland.astro'"
             );
         });
 
@@ -195,16 +195,16 @@ describe('Accommodation Detail Page ([slug].astro)', () => {
     });
 
     describe('Interactive Components', () => {
-        it('should render FavoriteButton with client:visible', () => {
-            expect(content).toContain('<FavoriteButton');
-            expect(content).toContain('client:visible');
+        it('should render FavoriteButtonIsland with server:defer', () => {
+            expect(content).toContain('<FavoriteButtonIsland');
+            expect(content).toContain('server:defer');
         });
 
-        it('should pass entityId to FavoriteButton', () => {
+        it('should pass entityId to FavoriteButtonIsland', () => {
             expect(content).toContain('entityId={accommodation.id}');
         });
 
-        it('should pass entityType to FavoriteButton', () => {
+        it('should pass entityType to FavoriteButtonIsland', () => {
             expect(content).toContain('entityType="accommodation"');
         });
 
@@ -223,21 +223,18 @@ describe('Accommodation Detail Page ([slug].astro)', () => {
     });
 
     describe('Authentication State', () => {
-        it('should derive isAuthenticated from Astro.locals.user', () => {
-            expect(content).toContain('const isAuthenticated = !!Astro.locals.user');
+        it('should use server:defer for FavoriteButtonIsland (auth resolved at request time)', () => {
+            expect(content).toContain('<FavoriteButtonIsland');
+            expect(content).toContain('server:defer');
         });
 
-        it('should pass dynamic isAuthenticated to ReviewList', () => {
-            expect(content).toContain('isAuthenticated={isAuthenticated}');
-            expect(content).not.toContain('isAuthenticated={false}');
+        it('should use server:defer for ReviewListIsland (auth resolved at request time)', () => {
+            expect(content).toContain('<ReviewListIsland');
+            expect(content).toContain('server:defer');
         });
 
-        it('should pass isAuthenticated to FavoriteButton', () => {
-            const favoriteSection = content.slice(
-                content.indexOf('<FavoriteButton'),
-                content.indexOf('/>', content.indexOf('<FavoriteButton')) + 2
-            );
-            expect(favoriteSection).toContain('isAuthenticated={isAuthenticated}');
+        it('should not derive isAuthenticated in the page (delegated to server islands)', () => {
+            expect(content).not.toContain('const isAuthenticated = !!Astro.locals.user');
         });
 
         it('should not have any hardcoded isAuthenticated={false}', () => {
@@ -276,20 +273,20 @@ describe('Accommodation Detail Page ([slug].astro)', () => {
             expect(content).toContain('t.reviews');
         });
 
-        it('should render ReviewList with client:visible', () => {
-            expect(content).toContain('<ReviewList');
-            expect(content).toContain('client:visible');
+        it('should render ReviewListIsland with server:defer', () => {
+            expect(content).toContain('<ReviewListIsland');
+            expect(content).toContain('server:defer');
         });
 
-        it('should pass reviews to ReviewList', () => {
+        it('should pass reviews to ReviewListIsland', () => {
             expect(content).toContain('reviews={mockReviews}');
         });
 
-        it('should pass totalCount to ReviewList', () => {
+        it('should pass totalCount to ReviewListIsland', () => {
             expect(content).toContain('totalCount={accommodation.reviewCount || 0}');
         });
 
-        it('should pass locale to ReviewList', () => {
+        it('should pass locale to ReviewListIsland', () => {
             expect(content).toContain('locale={locale}');
         });
 

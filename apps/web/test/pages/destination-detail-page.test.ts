@@ -74,9 +74,9 @@ describe('Destination Detail Page', () => {
             );
         });
 
-        it('should import FavoriteButton client component', () => {
+        it('should import FavoriteButtonIsland server island', () => {
             expect(content).toContain(
-                "import { FavoriteButton } from '../../../components/ui/FavoriteButton.client.tsx'"
+                "import FavoriteButtonIsland from '../../../components/ui/FavoriteButtonIsland.astro'"
             );
         });
 
@@ -180,12 +180,11 @@ describe('Destination Detail Page', () => {
             expect(content).toContain('<!-- Action buttons -->');
         });
 
-        it('should include FavoriteButton with client:visible and isAuthenticated', () => {
-            expect(content).toContain('<FavoriteButton');
-            expect(content).toContain('client:visible');
+        it('should include FavoriteButtonIsland with server:defer', () => {
+            expect(content).toContain('<FavoriteButtonIsland');
+            expect(content).toContain('server:defer');
             expect(content).toContain('entityId={destinationId}');
             expect(content).toContain('entityType="destination"');
-            expect(content).toContain('isAuthenticated={isAuthenticated}');
         });
 
         it('should include ShareButtons with client:visible', () => {
@@ -197,12 +196,13 @@ describe('Destination Detail Page', () => {
     });
 
     describe('Authentication State', () => {
-        it('should derive isAuthenticated from Astro.locals.user', () => {
-            expect(content).toContain('const isAuthenticated = !!Astro.locals.user');
+        it('should use server:defer for FavoriteButtonIsland (auth resolved at request time)', () => {
+            expect(content).toContain('<FavoriteButtonIsland');
+            expect(content).toContain('server:defer');
         });
 
-        it('should pass isAuthenticated to FavoriteButton', () => {
-            expect(content).toContain('isAuthenticated={isAuthenticated}');
+        it('should not derive isAuthenticated in the page (delegated to server islands)', () => {
+            expect(content).not.toContain('const isAuthenticated = !!Astro.locals.user');
         });
 
         it('should not have any hardcoded isAuthenticated={false}', () => {

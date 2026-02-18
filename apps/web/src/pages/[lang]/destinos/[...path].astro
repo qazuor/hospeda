@@ -33,7 +33,7 @@ import EventCard from '../../../components/event/EventCard.astro';
 import EmptyState from '../../../components/ui/EmptyState.astro';
 import { ImageGallery } from '../../../components/ui/ImageGallery.client.tsx';
 import { ShareButtons } from '../../../components/ui/ShareButtons.client.tsx';
-import { FavoriteButton } from '../../../components/ui/FavoriteButton.client.tsx';
+import FavoriteButtonIsland from '../../../components/ui/FavoriteButtonIsland.astro';
 import { MapView } from '../../../components/map/MapView.client.tsx';
 import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
 import { renderTiptapContent } from '../../../lib/tiptap-renderer';
@@ -228,9 +228,6 @@ const breadcrumbItems = [
 	{ label: destinationName },
 ];
 
-// Authentication state for interactive components
-const isAuthenticated = !!Astro.locals.user;
-
 // Page URL for sharing and canonical
 const pageUrl = `/${locale}/destinos/${destinationSlug}/`;
 
@@ -282,12 +279,14 @@ const mapMarkers = destinationLocation.lat && destinationLocation.lng
 
     <!-- Action buttons -->
     <div class="flex items-center justify-end gap-2 mb-8">
-      <FavoriteButton
-        client:visible
+      <FavoriteButtonIsland
+        server:defer
         entityId={destinationId}
         entityType="destination"
-        isAuthenticated={isAuthenticated}
-      />
+        entityName={destinationName}
+      >
+        <div slot="fallback" class="h-10 w-10 animate-pulse rounded-full bg-gray-200" />
+      </FavoriteButtonIsland>
       <ShareButtons
         client:visible
         url={pageUrl}

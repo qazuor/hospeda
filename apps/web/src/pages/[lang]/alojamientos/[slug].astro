@@ -26,10 +26,10 @@ import AccommodationCard from '../../../components/accommodation/AccommodationCa
 import AmenitiesList from '../../../components/accommodation/AmenitiesList.astro';
 import { ImageGallery } from '../../../components/ui/ImageGallery.client.tsx';
 import { ShareButtons } from '../../../components/ui/ShareButtons.client.tsx';
-import { FavoriteButton } from '../../../components/ui/FavoriteButton.client.tsx';
+import FavoriteButtonIsland from '../../../components/ui/FavoriteButtonIsland.astro';
 import { AccordionFAQ } from '../../../components/ui/AccordionFAQ.client.tsx';
 import { MapView } from '../../../components/map/MapView.client.tsx';
-import { ReviewList } from '../../../components/review/ReviewList.client.tsx';
+import ReviewListIsland from '../../../components/review/ReviewListIsland.astro';
 import PriceDisplay from '../../../components/ui/PriceDisplay.astro';
 import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
 import { renderTiptapContent } from '../../../lib/tiptap-renderer';
@@ -106,9 +106,6 @@ const similarCards = allAccommodations
       isFeatured: Boolean(a.isFeatured),
     };
   });
-
-// Derive authentication state from session
-const isAuthenticated = !!Astro.locals.user;
 
 // Reviews will be integrated later - use empty array for now
 const mockReviews: unknown[] = [];
@@ -256,12 +253,14 @@ const mapMarkers = [
               </p>
             </div>
             <div class="flex items-center gap-2">
-              <FavoriteButton
-                client:visible
+              <FavoriteButtonIsland
+                server:defer
                 entityId={accommodation.id}
                 entityType="accommodation"
-                isAuthenticated={isAuthenticated}
-              />
+                entityName={accommodation.name}
+              >
+                <div slot="fallback" class="h-10 w-10 animate-pulse rounded-full bg-gray-200" />
+              </FavoriteButtonIsland>
               <ShareButtons
                 client:visible
                 url={pageUrl}
@@ -307,14 +306,19 @@ const mapMarkers = [
         <!-- Reviews -->
         <section>
           <h2 class="mb-4 text-2xl font-bold">{t.reviews}</h2>
-          <ReviewList
-            client:visible
+          <ReviewListIsland
+            server:defer
             reviews={mockReviews}
             totalCount={accommodation.reviewCount || 0}
             locale={locale}
-            isAuthenticated={isAuthenticated}
             hasMore={false}
-          />
+          >
+            <div slot="fallback" class="space-y-4 animate-pulse">
+              <div class="h-4 w-3/4 rounded bg-gray-200" />
+              <div class="h-4 w-1/2 rounded bg-gray-200" />
+              <div class="h-4 w-2/3 rounded bg-gray-200" />
+            </div>
+          </ReviewListIsland>
         </section>
 
         <!-- FAQ -->
