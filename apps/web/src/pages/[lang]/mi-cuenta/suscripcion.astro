@@ -9,7 +9,7 @@ import SEOHead from '../../../components/seo/SEOHead.astro';
 import Breadcrumb from '../../../components/ui/Breadcrumb.astro';
 import Container from '../../../components/ui/Container.astro';
 import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
-import { CheckIcon } from '@repo/icons';
+import { SubscriptionCard } from '../../../components/account/SubscriptionCard.client';
 
 const { lang } = Astro.params;
 
@@ -62,70 +62,21 @@ const accountLabels: Record<SupportedLocale, string> = {
 };
 
 /**
- * Localized subscription labels
+ * Localized subscription page heading and subtitle.
+ * Plan details, features, billing info, and upgrade CTA are handled by SubscriptionCard.
  */
 const subscriptionLabels = {
 	es: {
 		heading: 'Mi Suscripción',
 		description: 'Administra tu plan y preferencias de pago',
-		currentPlanSection: 'Plan Actual',
-		planName: 'Plan Gratuito',
-		planPrice: 'Gratis para siempre',
-		featuresHeading: 'Características incluidas',
-		feature1: 'Búsqueda ilimitada de alojamientos',
-		feature2: 'Acceso a destinos y eventos',
-		feature3: 'Guardar favoritos (hasta 10)',
-		feature4: 'Soporte por correo electrónico',
-		upgradeSection: 'Mejorar Plan',
-		upgradeHeading: '¿Necesitas más funciones?',
-		upgradeDescription:
-			'Descubre nuestros planes premium para propietarios y gestores de alojamientos',
-		upgradeButton: 'Ver planes premium',
-		billingSection: 'Información de Facturación',
-		noBillingInfo: 'No hay información de facturación disponible',
-		billingHint:
-			'La información de facturación estará disponible cuando actualices a un plan de pago',
 	},
 	en: {
 		heading: 'My Subscription',
 		description: 'Manage your plan and payment preferences',
-		currentPlanSection: 'Current Plan',
-		planName: 'Free Plan',
-		planPrice: 'Free forever',
-		featuresHeading: 'Included features',
-		feature1: 'Unlimited accommodation search',
-		feature2: 'Access to destinations and events',
-		feature3: 'Save favorites (up to 10)',
-		feature4: 'Email support',
-		upgradeSection: 'Upgrade Plan',
-		upgradeHeading: 'Need more features?',
-		upgradeDescription:
-			'Discover our premium plans for accommodation owners and managers',
-		upgradeButton: 'View premium plans',
-		billingSection: 'Billing Information',
-		noBillingInfo: 'No billing information available',
-		billingHint: 'Billing information will be available when you upgrade to a paid plan',
 	},
 	pt: {
 		heading: 'Minha Assinatura',
 		description: 'Gerencie seu plano e preferências de pagamento',
-		currentPlanSection: 'Plano Atual',
-		planName: 'Plano Gratuito',
-		planPrice: 'Grátis para sempre',
-		featuresHeading: 'Recursos incluídos',
-		feature1: 'Busca ilimitada de acomodações',
-		feature2: 'Acesso a destinos e eventos',
-		feature3: 'Salvar favoritos (até 10)',
-		feature4: 'Suporte por e-mail',
-		upgradeSection: 'Melhorar Plano',
-		upgradeHeading: 'Precisa de mais recursos?',
-		upgradeDescription:
-			'Descubra nossos planos premium para proprietários e gestores de acomodações',
-		upgradeButton: 'Ver planos premium',
-		billingSection: 'Informações de Faturamento',
-		noBillingInfo: 'Nenhuma informação de faturamento disponível',
-		billingHint:
-			'As informações de faturamento estarão disponíveis quando você atualizar para um plano pago',
 	},
 };
 
@@ -141,6 +92,11 @@ const breadcrumbItems = [
 ];
 
 const labels = subscriptionLabels[locale];
+
+/**
+ * Subscription data will be enhanced client-side via API when billing is available.
+ * For now, shows "Free Plan" as the default.
+ */
 ---
 
 <BaseLayout title={titles[locale]} description={descriptions[locale]} locale={locale}>
@@ -167,80 +123,11 @@ const labels = subscriptionLabels[locale];
 				</p>
 			</div>
 
-			<div class="space-y-8">
-				<!-- Current plan card -->
-				<div class="rounded-lg border border-border bg-bg p-6">
-					<h2 class="mb-4 text-lg font-semibold text-text-primary">
-						{labels.currentPlanSection}
-					</h2>
-
-					<div class="mb-6 rounded-lg bg-bg-secondary p-6">
-						<div class="mb-4 flex items-center justify-between">
-							<div>
-								<h3 class="text-2xl font-bold text-text-primary">{labels.planName}</h3>
-								<p class="text-text-secondary">{labels.planPrice}</p>
-							</div>
-							<div
-								class="flex h-12 w-12 items-center justify-center rounded-full bg-green-100"
-							>
-								<CheckIcon size={24} className="text-green-600" aria-hidden="true" />
-							</div>
-						</div>
-
-						<!-- Plan features -->
-						<div class="border-t border-border pt-4">
-							<h4 class="mb-3 font-semibold text-text-primary">
-								{labels.featuresHeading}
-							</h4>
-							<ul class="space-y-2">
-								<li class="flex items-start gap-2">
-									<CheckIcon size={16} className="mt-1 flex-shrink-0 text-green-600" aria-hidden="true" />
-									<span class="text-sm text-text-secondary">{labels.feature1}</span>
-								</li>
-								<li class="flex items-start gap-2">
-									<CheckIcon size={16} className="mt-1 flex-shrink-0 text-green-600" aria-hidden="true" />
-									<span class="text-sm text-text-secondary">{labels.feature2}</span>
-								</li>
-								<li class="flex items-start gap-2">
-									<CheckIcon size={16} className="mt-1 flex-shrink-0 text-green-600" aria-hidden="true" />
-									<span class="text-sm text-text-secondary">{labels.feature3}</span>
-								</li>
-								<li class="flex items-start gap-2">
-									<CheckIcon size={16} className="mt-1 flex-shrink-0 text-green-600" aria-hidden="true" />
-									<span class="text-sm text-text-secondary">{labels.feature4}</span>
-								</li>
-							</ul>
-						</div>
-					</div>
-				</div>
-
-				<!-- Upgrade CTA section -->
-				<div class="rounded-lg border border-border bg-gradient-to-br from-primary from-10% to-primary-dark p-6 text-white">
-					<h2 class="mb-2 text-xl font-semibold">
-						{labels.upgradeHeading}
-					</h2>
-					<p class="mb-4 text-white text-opacity-90">
-						{labels.upgradeDescription}
-					</p>
-					<a
-						href={`/${locale}/precios/turistas/`}
-						class="inline-flex items-center justify-center rounded-lg bg-white px-6 py-2.5 font-semibold text-primary transition-colors hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
-					>
-						{labels.upgradeButton}
-					</a>
-				</div>
-
-				<!-- Billing information section -->
-				<div class="rounded-lg border border-border bg-bg p-6">
-					<h2 class="mb-4 text-lg font-semibold text-text-primary">
-						{labels.billingSection}
-					</h2>
-					<div class="rounded-lg bg-bg-secondary p-6 text-center">
-						<p class="mb-2 text-text-secondary">{labels.noBillingInfo}</p>
-						<p class="text-sm text-text-tertiary">{labels.billingHint}</p>
-					</div>
-				</div>
-			</div>
+			<SubscriptionCard
+				client:load
+				locale={locale}
+				upgradeHref={`/${locale}/precios/turistas/`}
+			/>
 		</div>
 	</Container>
 </BaseLayout>

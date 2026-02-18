@@ -1,8 +1,7 @@
 ---
 /**
  * Edit Profile Page - authenticated SSR page.
- * Allows users to update their profile information (name, bio).
- * Email is read-only. Form submission will be handled by a React island in the future.
+ * Uses ProfileEditForm React island for interactive form submission.
  * This page is protected by middleware - user is redirected to signin if not authenticated.
  */
 import BaseLayout from '../../../layouts/BaseLayout.astro';
@@ -10,9 +9,7 @@ import SEOHead from '../../../components/seo/SEOHead.astro';
 import Container from '../../../components/ui/Container.astro';
 import Breadcrumb from '../../../components/ui/Breadcrumb.astro';
 import Section from '../../../components/ui/Section.astro';
-import Input from '../../../components/ui/Input.astro';
-import Textarea from '../../../components/ui/Textarea.astro';
-import Button from '../../../components/ui/Button.astro';
+import { ProfileEditForm } from '../../../components/account/ProfileEditForm.client';
 import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
 
 const { lang } = Astro.params;
@@ -68,105 +65,6 @@ const accountLabels: Record<SupportedLocale, string> = {
 };
 
 /**
- * Localized form labels
- */
-const formLabels: Record<SupportedLocale, { name: string; email: string; bio: string }> = {
-	es: {
-		name: 'Nombre completo',
-		email: 'Correo electrónico',
-		bio: 'Biografía',
-	},
-	en: {
-		name: 'Full name',
-		email: 'Email address',
-		bio: 'Biography',
-	},
-	pt: {
-		name: 'Nome completo',
-		email: 'Endereço de e-mail',
-		bio: 'Biografia',
-	},
-};
-
-/**
- * Localized form placeholders
- */
-const formPlaceholders: Record<SupportedLocale, { name: string; bio: string }> = {
-	es: {
-		name: 'Ingresa tu nombre completo',
-		bio: 'Cuéntanos un poco sobre ti',
-	},
-	en: {
-		name: 'Enter your full name',
-		bio: 'Tell us a little about yourself',
-	},
-	pt: {
-		name: 'Digite seu nome completo',
-		bio: 'Conte-nos um pouco sobre você',
-	},
-};
-
-/**
- * Localized form helper text
- */
-const formHelpers: Record<SupportedLocale, { email: string; bio: string }> = {
-	es: {
-		email: 'El correo electrónico no puede ser modificado. Contacta soporte si necesitas cambiarlo.',
-		bio: 'Máximo 500 caracteres. Esta información será visible en tus reseñas públicas.',
-	},
-	en: {
-		email: 'Email cannot be changed. Contact support if you need to change it.',
-		bio: 'Maximum 500 characters. This information will be visible on your public reviews.',
-	},
-	pt: {
-		email: 'O e-mail não pode ser alterado. Entre em contato com o suporte se precisar alterá-lo.',
-		bio: 'Máximo 500 caracteres. Esta informação será visível em suas avaliações públicas.',
-	},
-};
-
-/**
- * Localized buttons
- */
-const buttonLabels: Record<SupportedLocale, { save: string; cancel: string }> = {
-	es: {
-		save: 'Guardar cambios',
-		cancel: 'Cancelar',
-	},
-	en: {
-		save: 'Save changes',
-		cancel: 'Cancel',
-	},
-	pt: {
-		save: 'Salvar alterações',
-		cancel: 'Cancelar',
-	},
-};
-
-/**
- * Localized section titles
- */
-const sectionTitles: Record<SupportedLocale, { personal: string }> = {
-	es: {
-		personal: 'Información Personal',
-	},
-	en: {
-		personal: 'Personal Information',
-	},
-	pt: {
-		personal: 'Informações Pessoais',
-	},
-};
-
-/**
- * Localized notes
- */
-const noteTexts: Record<SupportedLocale, string> = {
-	es: 'Nota: La funcionalidad de guardado estará disponible próximamente.',
-	en: 'Note: Save functionality will be available soon.',
-	pt: 'Nota: A funcionalidade de salvamento estará disponível em breve.',
-};
-
-/**
  * Breadcrumb navigation items
  */
 const breadcrumbItems = [
@@ -176,9 +74,11 @@ const breadcrumbItems = [
 ];
 
 /**
- * Placeholder user bio (will be fetched from API in the future)
+ * Extract user bio from profile if available
  */
-const userBio = '';
+const userBio = (user as Record<string, unknown>).profile
+	? ((user as Record<string, unknown>).profile as Record<string, unknown>)?.bio as string ?? ''
+	: '';
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 ---
@@ -205,91 +105,19 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 					<p class="text-lg text-text-secondary">{descriptions[locale]}</p>
 				</header>
 
-				<!-- Profile Edit Form -->
+				<!-- Profile Edit Form (React Island) -->
 				<article
 					id="profile-form"
 					class="rounded-lg border border-border bg-surface p-6 shadow-sm sm:p-8"
 				>
-					<form method="POST" action="/api/user/profile" class="space-y-8">
-						<!-- Personal Information Section -->
-						<section id="personal-info" class="space-y-6">
-							<h2 class="text-xl font-semibold text-text-primary">
-								{sectionTitles[locale].personal}
-							</h2>
-
-							<!-- Name Field -->
-							<div>
-								<Input
-									name="name"
-									type="text"
-									label={formLabels[locale].name}
-									placeholder={formPlaceholders[locale].name}
-									value={user.name}
-									required={true}
-									id="input-name"
-								/>
-							</div>
-
-							<!-- Email Field (Read-only) -->
-							<div>
-								<Input
-									name="email"
-									type="email"
-									label={formLabels[locale].email}
-									value={user.email}
-									disabled={true}
-									id="input-email"
-								/>
-								<p class="mt-2 text-sm text-text-tertiary" id="email-help">
-									{formHelpers[locale].email}
-								</p>
-							</div>
-
-							<!-- Bio Field -->
-							<div>
-								<Textarea
-									name="bio"
-									label={formLabels[locale].bio}
-									placeholder={formPlaceholders[locale].bio}
-									value={userBio}
-									rows={6}
-									id="input-bio"
-								/>
-								<p class="mt-2 text-sm text-text-tertiary" id="bio-help">
-									{formHelpers[locale].bio}
-								</p>
-							</div>
-						</section>
-
-						<!-- Form Actions -->
-						<div
-							class="flex flex-col gap-3 border-t border-border pt-6 sm:flex-row sm:justify-end"
-						>
-							<Button
-								variant="ghost"
-								size="md"
-								type="button"
-								href={`/${locale}/mi-cuenta/`}
-								class="w-full sm:w-auto"
-							>
-								{buttonLabels[locale].cancel}
-							</Button>
-							<Button
-								variant="primary"
-								size="md"
-								type="submit"
-								disabled={true}
-								class="w-full sm:w-auto"
-							>
-								{buttonLabels[locale].save}
-							</Button>
-						</div>
-
-						<!-- Note: Form submission is currently disabled -->
-						<p class="text-center text-sm text-text-tertiary" role="note">
-							{noteTexts[locale]}
-						</p>
-					</form>
+					<ProfileEditForm
+						client:visible
+						userId={user.id}
+						initialName={user.name}
+						initialBio={userBio}
+						email={user.email}
+						locale={locale}
+					/>
 				</article>
 			</div>
 		</Section>

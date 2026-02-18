@@ -1,7 +1,7 @@
 ---
 /**
- * My Reviews page - user written reviews for accommodations.
- * Validates locale parameter and redirects invalid locales to Spanish (default).
+ * My Reviews page - user written reviews for accommodations and destinations.
+ * Uses UserReviewsList React island for interactive data fetching and pagination.
  * Auth-protected (middleware handles authentication check).
  */
 import BaseLayout from '../../../layouts/BaseLayout.astro';
@@ -9,8 +9,8 @@ import SEOHead from '../../../components/seo/SEOHead.astro';
 import Breadcrumb from '../../../components/ui/Breadcrumb.astro';
 import Container from '../../../components/ui/Container.astro';
 import Section from '../../../components/ui/Section.astro';
+import { UserReviewsList } from '../../../components/account/UserReviewsList.client';
 import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
-import { StarIcon } from '@repo/icons';
 
 const { lang } = Astro.params;
 
@@ -30,18 +30,18 @@ if (!user) {
  * Localized page titles
  */
 const titles: Record<SupportedLocale, string> = {
-	es: 'Mis Reseñas',
+	es: 'Mis Resenas',
 	en: 'My Reviews',
-	pt: 'Minhas Avaliações',
+	pt: 'Minhas Avaliacoes',
 };
 
 /**
  * Localized meta descriptions
  */
 const descriptions: Record<SupportedLocale, string> = {
-	es: 'Gestiona tus reseñas de alojamientos en Hospeda',
-	en: 'Manage your accommodation reviews on Hospeda',
-	pt: 'Gerencie suas avaliações de acomodações no Hospeda',
+	es: 'Gestiona tus resenas de alojamientos y destinos en Hospeda',
+	en: 'Manage your accommodation and destination reviews on Hospeda',
+	pt: 'Gerencie suas avaliacoes de acomodacoes e destinos no Hospeda',
 };
 
 /**
@@ -50,7 +50,7 @@ const descriptions: Record<SupportedLocale, string> = {
 const homeLabels: Record<SupportedLocale, string> = {
 	es: 'Inicio',
 	en: 'Home',
-	pt: 'Início',
+	pt: 'Inicio',
 };
 
 /**
@@ -60,27 +60,6 @@ const accountLabels: Record<SupportedLocale, string> = {
 	es: 'Mi Cuenta',
 	en: 'My Account',
 	pt: 'Minha Conta',
-};
-
-/**
- * Localized content labels
- */
-const contentLabels = {
-	es: {
-		emptyTitle: 'No has escrito ninguna reseña todavía',
-		emptyDescription: 'Comparte tu experiencia con otros viajeros escribiendo reseñas de los alojamientos donde te has hospedado.',
-		ctaButton: 'Explorar alojamientos',
-	},
-	en: {
-		emptyTitle: 'You have not written any reviews yet',
-		emptyDescription: 'Share your experience with other travelers by writing reviews of the accommodations where you have stayed.',
-		ctaButton: 'Explore accommodations',
-	},
-	pt: {
-		emptyTitle: 'Você ainda não escreveu nenhuma avaliação',
-		emptyDescription: 'Compartilhe sua experiência com outros viajantes escrevendo avaliações das acomodações onde você se hospedou.',
-		ctaButton: 'Explorar acomodações',
-	},
 };
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
@@ -93,8 +72,6 @@ const breadcrumbItems = [
 	{ label: accountLabels[locale], href: `/${locale}/mi-cuenta/` },
 	{ label: titles[locale], href: `/${locale}/mi-cuenta/resenas/` },
 ];
-
-const labels = contentLabels[locale];
 ---
 
 <BaseLayout title={titles[locale]} description={descriptions[locale]} locale={locale}>
@@ -117,29 +94,8 @@ const labels = contentLabels[locale];
 					{titles[locale]}
 				</h1>
 
-				<!-- Empty state -->
-				<div class="rounded-lg border border-border bg-bg p-12 text-center">
-					<div class="mx-auto mb-6">
-						<StarIcon size={64} className="text-text-tertiary" weight="regular" aria-hidden="true" />
-					</div>
-					<h2 class="mb-3 text-2xl font-semibold text-text-primary">
-						{labels.emptyTitle}
-					</h2>
-					<p class="mx-auto mb-6 max-w-2xl text-text-secondary">
-						{labels.emptyDescription}
-					</p>
-					<a
-						href={`/${locale}/alojamientos/`}
-						class="inline-flex items-center justify-center rounded-lg bg-primary px-6 py-3 text-base font-semibold text-white transition-colors hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-					>
-						{labels.ctaButton}
-					</a>
-				</div>
-
-				<!-- Placeholder for future ReviewCard list -->
-				<!-- <div class="space-y-6">
-					ReviewCard components will go here
-				</div> -->
+				<!-- UserReviewsList React Island handles tabs, data fetching, and pagination -->
+				<UserReviewsList client:visible locale={locale} />
 			</div>
 		</Section>
 	</Container>

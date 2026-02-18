@@ -190,22 +190,42 @@ const statsLabels: Record<
 
 const statsDescriptions: Record<
 	SupportedLocale,
-	{ favorites: string; reviews: string; subscription: string }
+	{
+		favorites: string;
+		reviews: string;
+		subscription: string;
+		subscriptionStatus: string;
+		activeStatus: string;
+		trialStatus: string;
+		freeStatus: string;
+	}
 > = {
 	es: {
 		favorites: 'Alojamientos guardados',
 		reviews: 'Reseñas publicadas',
 		subscription: 'Plan Gratuito',
+		subscriptionStatus: 'Plan Gratuito',
+		activeStatus: 'Activo',
+		trialStatus: 'Periodo de prueba',
+		freeStatus: 'Plan Gratuito',
 	},
 	en: {
 		favorites: 'Saved accommodations',
 		reviews: 'Published reviews',
 		subscription: 'Free Plan',
+		subscriptionStatus: 'Free Plan',
+		activeStatus: 'Active',
+		trialStatus: 'Trial period',
+		freeStatus: 'Free Plan',
 	},
 	pt: {
 		favorites: 'Acomodações salvas',
 		reviews: 'Avaliações publicadas',
 		subscription: 'Plano Gratuito',
+		subscriptionStatus: 'Plano Gratuito',
+		activeStatus: 'Ativo',
+		trialStatus: 'Periodo de avaliacao',
+		freeStatus: 'Plano Gratuito',
 	},
 };
 
@@ -230,7 +250,8 @@ const breadcrumbItems = [
 ];
 
 /**
- * Placeholder stats (will be fetched from API in the future)
+ * Stats are fetched client-side via API calls to avoid SSR cookie forwarding issues.
+ * Default values are shown during loading.
  */
 const stats = {
 	favorites: 0,
@@ -324,7 +345,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 									</h3>
 									<FavoriteIcon size={24} className="text-primary" weight="fill" aria-hidden="true" />
 								</div>
-								<p class="mb-2 text-3xl font-bold text-text-primary">{stats.favorites}</p>
+								<p id="stat-favorites" class="mb-2 text-3xl font-bold text-text-primary">{stats.favorites}</p>
 								<p class="text-sm text-text-secondary">{statsDescriptions[locale].favorites}</p>
 								<a
 									href={`/${locale}/mi-cuenta/favoritos/`}
@@ -344,7 +365,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 									</h3>
 									<StarIcon size={24} className="text-primary" weight="fill" aria-hidden="true" />
 								</div>
-								<p class="mb-2 text-3xl font-bold text-text-primary">{stats.reviews}</p>
+								<p id="stat-reviews" class="mb-2 text-3xl font-bold text-text-primary">{stats.reviews}</p>
 								<p class="text-sm text-text-secondary">{statsDescriptions[locale].reviews}</p>
 								<a
 									href={`/${locale}/mi-cuenta/resenas/`}
@@ -364,10 +385,18 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 									</h3>
 									<CheckCircleIcon size={24} className="text-primary" aria-hidden="true" />
 								</div>
-								<p class="mb-2 text-3xl font-bold text-text-primary">
+								<p id="stat-subscription" class="mb-2 text-3xl font-bold text-text-primary">
 									{statsDescriptions[locale].subscription}
 								</p>
-								<p class="text-sm text-text-secondary">Estado activo</p>
+								<p
+									id="stat-subscription-status"
+									class="text-sm text-text-secondary"
+									data-label-active={statsDescriptions[locale].activeStatus}
+									data-label-trial={statsDescriptions[locale].trialStatus}
+									data-label-free={statsDescriptions[locale].freeStatus}
+								>
+									{statsDescriptions[locale].subscriptionStatus}
+								</p>
 								<a
 									href={`/${locale}/mi-cuenta/suscripcion/`}
 									class="mt-4 inline-flex items-center text-sm font-medium text-primary hover:underline"
@@ -382,3 +411,62 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 		</Section>
 	</Container>
 </BaseLayout>
+
+<script>
+	/**
+	 * Fetch user stats from API and update dashboard numbers.
+	 * Falls back gracefully to default values on error.
+	 */
+	async function loadStats() {
+		const apiUrl = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3001';
+		const base = `${apiUrl}/api/v1/protected`;
+
+		try {
+			const [statsRes, reviewsRes] = await Promise.all([
+				fetch(`${base}/users/me/stats`, { credentials: 'include' }),
+				fetch(`${base}/users/me/reviews?pageSize=1`, { credentials: 'include' }),
+			]);
+
+			if (statsRes.ok) {
+				const statsData = await statsRes.json();
+				const favEl = document.getElementById('stat-favorites');
+				if (favEl && statsData.data?.bookmarkCount !== undefined) {
+					favEl.textContent = String(statsData.data.bookmarkCount);
+				}
+				const subEl = document.getElementById('stat-subscription');
+				if (subEl && statsData.data?.plan?.name) {
+					subEl.textContent = statsData.data.plan.name;
+				}
+				const statusEl = document.getElementById('stat-subscription-status');
+				if (statusEl) {
+					const plan = statsData.data?.plan;
+					if (plan && plan.status) {
+						const labelKey = `data-label-${plan.status}`;
+						const label = statusEl.getAttribute(labelKey);
+						if (label) {
+							statusEl.textContent = label;
+						}
+					} else {
+						// No plan = free user, use free label
+						const freeLabel = statusEl.getAttribute('data-label-free');
+						if (freeLabel) {
+							statusEl.textContent = freeLabel;
+						}
+					}
+				}
+			}
+
+			if (reviewsRes.ok) {
+				const reviewsData = await reviewsRes.json();
+				const revEl = document.getElementById('stat-reviews');
+				if (revEl && reviewsData.data?.totals?.total !== undefined) {
+					revEl.textContent = String(reviewsData.data.totals.total);
+				}
+			}
+		} catch {
+			// Silently fail - default values are already displayed
+		}
+	}
+
+	loadStats();
+</script>
