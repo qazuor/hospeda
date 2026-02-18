@@ -20,6 +20,7 @@ import BlogPostCard from '../../../components/blog/BlogPostCard.astro';
 import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
 import { renderTiptapContent } from '../../../lib/tiptap-renderer';
 import { postsApi } from '../../../lib/api/endpoints';
+import { fetchAllPages } from '../../../lib/api/client';
 
 const { lang, slug } = Astro.params;
 
@@ -34,8 +35,9 @@ const locale = lang as SupportedLocale;
  */
 export async function getStaticPaths() {
 	const locales = ['es', 'en', 'pt'];
-	const result = await postsApi.list({ pageSize: 500 });
-	const posts = result.ok ? result.data.items : [];
+	const posts = await fetchAllPages({
+		fetcher: (p) => postsApi.list(p),
+	});
 
 	return locales.flatMap((lang) =>
 		posts
