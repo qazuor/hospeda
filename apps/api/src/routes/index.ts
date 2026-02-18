@@ -18,6 +18,7 @@ import { authRoutes } from './auth';
 import { betterAuthHandler } from './auth/handler';
 import { billingRoutes } from './billing';
 import { adminBillingRoutes } from './billing/admin';
+import { publicBillingRoutes } from './billing/public';
 import { contactRoutes } from './contact';
 import { docsIndexRoutes, scalarRoutes, swaggerRoutes } from './docs';
 import { featureRoutes } from './feature';
@@ -28,7 +29,9 @@ import { reportRoutes } from './reports';
 import { sponsorshipRoutes } from './sponsorship';
 import { sponsorshipLevelRoutes } from './sponsorship-level';
 import { sponsorshipPackageRoutes } from './sponsorship-package';
+import { publicTagRoutes } from './tag';
 import { userRoutes } from './user';
+import { protectedUserBookmarkRoutes } from './user-bookmark';
 import { protectedUserRoutes } from './user/protected';
 import { mercadoPagoWebhookRoutes, webhookHealthRoutes } from './webhooks';
 import { adminWebhookRouter } from './webhooks/admin';
@@ -80,6 +83,9 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
     // Protected user routes (auth required)
     app.route('/api/v1/protected/users', protectedUserRoutes);
+
+    // Protected user bookmark routes (auth required)
+    app.route('/api/v1/protected/user-bookmarks', protectedUserBookmarkRoutes);
 
     try {
         apiLogger.debug('🔗 Registering accommodation routes...');
@@ -140,6 +146,14 @@ export const setupRoutes = (app: AppOpenAPI) => {
         apiLogger.debug('🔗 Registering contact routes...');
         app.route('/api/v1/public', contactRoutes);
         apiLogger.debug('✅ Contact routes registered successfully');
+
+        apiLogger.debug('🔗 Registering tag public routes...');
+        app.route('/api/v1/public/tags', publicTagRoutes);
+        apiLogger.debug('✅ Tag public routes registered successfully');
+
+        apiLogger.debug('🔗 Registering plans public routes...');
+        app.route('/api/v1/public/plans', publicBillingRoutes);
+        apiLogger.debug('✅ Plans public routes registered successfully');
 
         apiLogger.debug('🔗 Registering exchange rate routes...');
         app.route('/api/v1', exchangeRateRoutes);
