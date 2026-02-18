@@ -1,3 +1,5 @@
+import type React from 'react';
+
 /**
  * Phosphor-aligned icon weight system.
  * Controls the visual weight/style of the icon.
@@ -19,8 +21,11 @@ export const DEFAULT_DUOTONE_COLOR = '#1A5FB4';
 /**
  * Base props for all icon components.
  * Designed for Phosphor Icons with duotone as the default weight.
+ * Extends React.SVGAttributes for full SVG prop support (onClick, style, etc.)
  */
-export interface IconProps {
+export interface IconProps
+    extends React.SVGAttributes<SVGSVGElement>,
+        React.RefAttributes<SVGSVGElement> {
     /**
      * Icon size - can be a number (pixels) or predefined size key
      * @default 'md' (24px)
@@ -53,21 +58,6 @@ export interface IconProps {
      * @default false
      */
     mirrored?: boolean;
-
-    /**
-     * Additional CSS classes to apply to the icon
-     */
-    className?: string;
-
-    /**
-     * Accessibility label for screen readers
-     */
-    'aria-label'?: string;
-
-    /**
-     * Additional SVG props (onClick, onMouseOver, style, etc.)
-     */
-    [key: string]: unknown;
 }
 
 /**
