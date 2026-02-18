@@ -5,7 +5,6 @@
 
 import { webcrypto } from 'node:crypto';
 import { ServiceErrorCode } from '@repo/schemas';
-import { ServiceError } from '@repo/service-core';
 import { afterAll, afterEach, beforeAll, beforeEach, vi } from 'vitest';
 
 // Polyfill crypto for Hono request-id middleware
@@ -175,6 +174,63 @@ vi.mock('@repo/db', () => ({
         }
     },
 
+    // Mock UserModel
+    UserModel: class MockUserModel {
+        async findById(_id: string) {
+            return null;
+        }
+        async findAll(_filters: unknown) {
+            return { items: [], total: 0 };
+        }
+        async create(_data: unknown) {
+            return { id: 'user_mock_id', email: 'mock@example.com', createdAt: new Date() };
+        }
+        async update(_id: string, _data: unknown) {
+            return { id: _id, updatedAt: new Date() };
+        }
+        async delete(_id: string) {
+            return { id: _id, deletedAt: new Date() };
+        }
+        async findByEmail(_email: string) {
+            return null;
+        }
+    },
+
+    // Mock TagModel
+    TagModel: class MockTagModel {
+        async findById(_id: string) {
+            return null;
+        }
+        async findAll(_filters: unknown) {
+            return { items: [], total: 0 };
+        }
+        async findBySlug(_slug: string) {
+            return null;
+        }
+        async create(_data: unknown) {
+            return { id: 'tag_mock_id', name: 'Mock Tag', slug: 'mock-tag', createdAt: new Date() };
+        }
+        async update(_id: string, _data: unknown) {
+            return { id: _id, updatedAt: new Date() };
+        }
+        async delete(_id: string) {
+            return { id: _id, deletedAt: new Date() };
+        }
+    },
+
+    // Mock REntityTagModel
+    REntityTagModel: class MockREntityTagModel {
+        async findAll(_filters: unknown) {
+            return { items: [], total: 0 };
+        }
+        async create(_data: unknown) {
+            return { id: 'r_entity_tag_mock_id', createdAt: new Date() };
+        }
+        async delete(_id: string) {
+            return { id: _id, deletedAt: new Date() };
+        }
+    },
+
     // Mock ExchangeRateModel
     ExchangeRateModel: class MockExchangeRateModel {
         async create(_data: unknown) {
@@ -296,6 +352,16 @@ vi.mock('@repo/db/schemas', () => ({
 // Mock @repo/service-core to force 2xx happy paths without DB/auth
 // This must be at the top level to ensure it's hoisted before module imports
 vi.mock('@repo/service-core', () => {
+    class ServiceError extends Error {
+        constructor(
+            public readonly code: string,
+            message: string
+        ) {
+            super(message);
+            this.name = 'ServiceError';
+        }
+    }
+
     class PostService {
         async create(_actor: unknown, body: Record<string, unknown>) {
             return {
@@ -1200,6 +1266,18 @@ vi.mock('@repo/service-core', () => {
             const pageSize = input.pageSize ?? 10;
             return { data: { items: [], total: 0, page, pageSize } } as any;
         }
+        async listByUser(
+            _actor: unknown,
+            _input: {
+                userId: string;
+                page?: number;
+                pageSize?: number;
+                sortBy?: string;
+                sortOrder?: string;
+            }
+        ) {
+            return { data: { accommodationReviews: [], total: 0 } };
+        }
     }
 
     class DestinationReviewService {
@@ -1217,6 +1295,48 @@ vi.mock('@repo/service-core', () => {
         }
         async list(_actor: unknown, _opts?: { page?: number; pageSize?: number }) {
             return { data: { items: [], total: 0 } };
+        }
+        async listByUser(
+            _actor: unknown,
+            _input: {
+                userId: string;
+                page?: number;
+                pageSize?: number;
+                sortBy?: string;
+                sortOrder?: string;
+            }
+        ) {
+            return { data: { data: [], pagination: { total: 0 } } };
+        }
+    }
+
+    class UserBookmarkService {
+        async create(_actor: unknown, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id: 'bookmark_mock_id',
+                    entityId: String((body as any).entityId || 'entity_mock_id'),
+                    entityType: String((body as any).entityType || 'ACCOMMODATION'),
+                    userId: String((body as any).userId || 'user_mock'),
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+        async listBookmarksByUser(
+            _actor: unknown,
+            _input: { userId: string; page?: number; pageSize?: number; entityType?: string }
+        ) {
+            return { data: { bookmarks: [], total: 0 } };
+        }
+        async countBookmarksForUser(
+            _actor: unknown,
+            _input: { userId: string; entityType?: string }
+        ) {
+            return { data: { count: 0 } };
+        }
+        async softDelete(_actor: unknown, _id: string) {
+            return { data: { count: 1 } };
         }
     }
 
@@ -3090,6 +3210,71 @@ vi.mock('@repo/service-core', () => {
         }
     }
 
+    class TagService {
+        async getBySlug(_actor: unknown, slug: string) {
+            if (slug === 'existing-tag') {
+                return {
+                    data: {
+                        id: 'tag-uuid-1234',
+                        name: 'Existing Tag',
+                        slug: 'existing-tag'
+                    },
+                    error: null
+                };
+            }
+            return { data: null, error: null };
+        }
+
+        async search(_actor: unknown, _opts?: unknown) {
+            return {
+                data: { items: [], pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 } }
+            };
+        }
+
+        async findById(_actor: unknown, params: { id: string }) {
+            return {
+                data: {
+                    id: params.id,
+                    name: 'Mock Tag',
+                    slug: 'mock-tag',
+                    createdAt: '2024-01-01T00:00:00.000Z',
+                    updatedAt: '2024-01-01T00:00:00.000Z'
+                }
+            };
+        }
+
+        async create(_actor: unknown, body: Record<string, unknown>) {
+            return {
+                data: {
+                    id: 'tag_mock_id',
+                    // biome-ignore lint/suspicious/noExplicitAny: test mock
+                    name: String((body as any).name || 'Mock Tag'),
+                    // biome-ignore lint/suspicious/noExplicitAny: test mock
+                    slug: String((body as any).slug || 'mock-tag'),
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+
+        async update(_actor: unknown, params: { id: string; data: Record<string, unknown> }) {
+            return {
+                data: {
+                    id: params.id,
+                    // biome-ignore lint/suspicious/noExplicitAny: test mock
+                    name: (params.data as any).name || 'Updated Tag',
+                    updatedAt: new Date().toISOString()
+                }
+            };
+        }
+
+        async delete(_actor: unknown, params: { id: string }) {
+            return {
+                data: { id: params.id, deletedAt: new Date().toISOString(), isDeleted: true }
+            };
+        }
+    }
+
     class SponsorshipLevelService {
         async create(_actor: unknown, body: Record<string, unknown>) {
             return {
@@ -3695,6 +3880,7 @@ vi.mock('@repo/service-core', () => {
         PostService,
         AccommodationService,
         DestinationService,
+        UserBookmarkService,
         EventService,
         EventLocationService,
         EventOrganizerService,
@@ -3735,6 +3921,7 @@ vi.mock('@repo/service-core', () => {
         SponsorshipLevelService,
         SponsorshipPackageService,
         OwnerPromotionService,
+        TagService,
         FeaturedAccommodationService,
         AccommodationListingPlanService,
         ServiceListingPlanService,
@@ -3746,7 +3933,8 @@ vi.mock('@repo/service-core', () => {
         ExchangeRateConfigService,
         ExchangeRateFetcher,
         DolarApiClient,
-        ExchangeRateApiClient
+        ExchangeRateApiClient,
+        ServiceError
     };
 });
 
