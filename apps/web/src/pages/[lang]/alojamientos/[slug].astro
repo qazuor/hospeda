@@ -34,6 +34,8 @@ import PriceDisplay from '../../../components/ui/PriceDisplay.astro';
 import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
 import { renderTiptapContent } from '../../../lib/tiptap-renderer';
 import { accommodationsApi } from '../../../lib/api/endpoints';
+import { fetchAllPages } from '../../../lib/api/client';
+import { extractFeaturedImageUrl, extractGalleryUrls } from '../../../lib/media';
 
 const { lang, slug } = Astro.params;
 
@@ -49,8 +51,9 @@ const locale = lang as SupportedLocale;
  */
 export async function getStaticPaths() {
   const locales = ['es', 'en', 'pt'];
-  const result = await accommodationsApi.list({ pageSize: 500 });
-  const accommodations = result.ok ? result.data.items : [];
+  const accommodations = await fetchAllPages({
+    fetcher: (p) => accommodationsApi.list(p),
+  });
 
   return locales.flatMap((lang) =>
     accommodations
@@ -72,16 +75,37 @@ if (!accommodation) {
   accommodation = result.data;
 }
 
+// Extract image URLs from nested media structure
+const accRecord = accommodation as Record<string, unknown>;
+const accommodationImage = extractFeaturedImageUrl(accRecord, '/images/placeholder-accommodation.svg');
+const accommodationGallery = extractGalleryUrls(accRecord);
+const galleryImages = accommodationGallery.length > 0
+  ? accommodationGallery.map((url) => ({ src: url, alt: String(accommodation.name || '') }))
+  : [{ src: accommodationImage, alt: String(accommodation.name || '') }];
+
 // Render TipTap content to HTML
 const renderedDescription = renderTiptapContent({ content: accommodation.description });
 
 // Fetch similar accommodations from API
 const simResult = await accommodationsApi.list({ pageSize: 4 });
 const allAccommodations = simResult.ok ? simResult.data.items : [];
-const similarAccommodations = allAccommodations
+const similarCards = allAccommodations
   .filter((a) => a.id !== accommodation.id)
   .slice(0, 3)
-  .map((a) => ({ accommodation: a }));
+  .map((item) => {
+    const a = item as Record<string, unknown>;
+    return {
+      slug: String(a.slug || ''),
+      name: String(a.name || ''),
+      summary: String(a.summary || a.description || ''),
+      type: String(a.type || a.accommodationType || ''),
+      featuredImage: extractFeaturedImageUrl(a, '/images/placeholder-accommodation.svg'),
+      averageRating: Number(a.averageRating || 0),
+      reviewsCount: Number(a.reviewsCount || 0),
+      location: (a.location as { city: string; state: string }) || { city: '', state: '' },
+      isFeatured: Boolean(a.isFeatured),
+    };
+  });
 
 // Derive authentication state from session
 const isAuthenticated = !!Astro.locals.user;
@@ -188,20 +212,20 @@ const mapMarkers = [
   title={accommodation.name}
   description={`${accommodation.name} - ${accommodation.location?.city || ''}`}
   locale={locale}
-  image={accommodation.images?.[0]?.src || '/images/placeholder-accommodation.svg'}
+  image={accommodationImage}
 >
   <SEOHead
     slot="head"
     title={accommodation.name}
     description={`${accommodation.name} en ${accommodation.location?.city || ''}, ${accommodation.location?.province || ''}`}
-    image={accommodation.images?.[0]?.src || '/images/placeholder-accommodation.svg'}
+    image={accommodationImage}
     locale={locale}
   />
   <LodgingBusinessJsonLd
     slot="head"
     name={accommodation.name}
     description={accommodation.location?.address || ''}
-    image={accommodation.images?.[0]?.src || '/images/placeholder-accommodation.svg'}
+    image={accommodationImage}
     rating={accommodation.rating || 0}
     reviewCount={accommodation.reviewCount || 0}
     priceRange={`$${accommodation.pricePerNight || 0}`}
@@ -214,7 +238,7 @@ const mapMarkers = [
 
     <!-- Image Gallery -->
     <div transition:name={`entity-${slug}`}>
-      <ImageGallery client:visible images={accommodation.images || []} />
+      <ImageGallery client:visible images={galleryImages} />
     </div>
 
     <!-- Main content grid -->
@@ -338,8 +362,11 @@ const mapMarkers = [
     <!-- Similar Accommodations -->
     <Section title={t.similar} class="mt-12">
       <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {similarAccommodations.map((item) => (
-          <AccommodationCard accommodation={item.accommodation} locale={locale} />
+        {similarCards.map((accommodation) => (
+          <AccommodationCard
+            accommodation={accommodation}
+            locale={locale}
+          />
         ))}
       </div>
     </Section>
