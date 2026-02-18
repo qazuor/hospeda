@@ -9,6 +9,13 @@ import type { Mock } from 'vitest';
 import { exchangeRateFetchJob } from '../../src/cron/jobs/exchange-rate-fetch.job.js';
 import type { CronJobContext } from '../../src/cron/types.js';
 
+// Mock env module
+vi.mock('../../src/utils/env.js', () => ({
+    env: {
+        HOSPEDA_EXCHANGE_RATE_API_KEY: 'test-api-key'
+    }
+}));
+
 // Mock modules
 vi.mock('@repo/db', () => ({
     ExchangeRateModel: vi.fn().mockImplementation(() => ({
@@ -65,8 +72,7 @@ describe('Exchange Rate Fetch Cron Job', () => {
             dryRun: false
         };
 
-        // Reset environment
-        process.env.EXCHANGERATE_API_KEY = 'test-api-key';
+        // Environment is mocked via vi.mock for env module
     });
 
     afterEach(() => {

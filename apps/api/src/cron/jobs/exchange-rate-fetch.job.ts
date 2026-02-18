@@ -16,6 +16,7 @@
 
 import { ExchangeRateModel } from '@repo/db';
 import { DolarApiClient, ExchangeRateApiClient, ExchangeRateFetcher } from '@repo/service-core';
+import { env } from '../../utils/env.js';
 import type { CronJobDefinition } from '../types.js';
 
 /**
@@ -43,7 +44,7 @@ export const exchangeRateFetchJob: CronJobDefinition = {
             // Initialize clients
             const dolarApiClient = new DolarApiClient();
             const exchangeRateApiClient = new ExchangeRateApiClient({
-                apiKey: process.env.EXCHANGERATE_API_KEY || ''
+                apiKey: env.HOSPEDA_EXCHANGE_RATE_API_KEY
             });
             const exchangeRateModel = new ExchangeRateModel();
 
