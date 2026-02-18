@@ -1,9 +1,10 @@
 ---
 /**
- * PriceDisplay component for Hospeda web2 app.
+ * PriceDisplay component for Hospeda web app.
  *
  * Displays a price in ARS with optional conversion to USD or BRL based on locale or user preference.
  * Shows a disclaimer for converted prices with the original ARS reference value.
+ * Fetches live exchange rates from the API, falling back to hardcoded rates on failure.
  *
  * @example
  * ```astro
@@ -12,6 +13,8 @@
  * <PriceDisplay amountARS={15000} locale="pt" showDisclaimer={true} />
  * ```
  */
+import { exchangeRatesApi } from '../../lib/api/endpoints';
+
 interface Props {
   /**
    * Amount in Argentine Pesos (ARS)
@@ -49,15 +52,54 @@ const {
 } = Astro.props;
 
 /**
- * Conversion rates (placeholders for actual exchange rate integration)
+ * Fallback hardcoded conversion rates (ARS per 1 unit of foreign currency).
+ * Used when the exchange-rate API is unavailable.
  * 1 USD = 1000 ARS
  * 1 BRL = 200 ARS
  */
-const CONVERSION_RATES = {
+const FALLBACK_RATES: Record<'ARS' | 'USD' | 'BRL', number> = {
   ARS: 1,
   USD: 1000,
   BRL: 200,
 };
+
+/**
+ * Fetch live exchange rates from the API.
+ * Returns rates as a map: currency -> ARS per 1 unit of that currency.
+ * Falls back to FALLBACK_RATES if the API call fails or returns no data.
+ */
+async function fetchConversionRates(): Promise<Record<'ARS' | 'USD' | 'BRL', number>> {
+  try {
+    const result = await exchangeRatesApi.list({ pageSize: 50 });
+
+    if (!result.ok || !result.data.items.length) {
+      return FALLBACK_RATES;
+    }
+
+    const rates: Record<'ARS' | 'USD' | 'BRL', number> = { ...FALLBACK_RATES };
+
+    for (const item of result.data.items) {
+      const { fromCurrency, toCurrency, rate } = item;
+
+      // We need: how many ARS = 1 unit of foreign currency.
+      // If fromCurrency=USD and toCurrency=ARS, rate = ARS per 1 USD -> that's what we want.
+      if (toCurrency === 'ARS' && (fromCurrency === 'USD' || fromCurrency === 'BRL')) {
+        rates[fromCurrency as 'USD' | 'BRL'] = rate;
+      }
+
+      // If fromCurrency=ARS and toCurrency=USD, inverseRate = ARS per 1 USD.
+      if (fromCurrency === 'ARS' && (toCurrency === 'USD' || toCurrency === 'BRL')) {
+        rates[toCurrency as 'USD' | 'BRL'] = item.inverseRate;
+      }
+    }
+
+    return rates;
+  } catch {
+    return FALLBACK_RATES;
+  }
+}
+
+const CONVERSION_RATES = await fetchConversionRates();
 
 /**
  * Locale to currency mapping
@@ -83,7 +125,9 @@ const formatters: Record<'ARS' | 'USD' | 'BRL', Intl.NumberFormat> = {
 };
 
 /**
- * Convert ARS to target currency and format
+ * Convert ARS to target currency and format.
+ * CONVERSION_RATES[currency] = ARS per 1 unit of currency.
+ * So: amount_in_currency = amountARS / CONVERSION_RATES[currency]
  */
 const convertedAmount = amountARS / CONVERSION_RATES[resolvedCurrency];
 const formattedPrice = formatters[resolvedCurrency].format(convertedAmount);
