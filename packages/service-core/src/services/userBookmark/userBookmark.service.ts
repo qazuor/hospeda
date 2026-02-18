@@ -14,6 +14,7 @@ import {
     UserBookmarkSearchSchema,
     UserBookmarkUpdateInputSchema
 } from '@repo/schemas';
+import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
@@ -105,6 +106,47 @@ export class UserBookmarkService extends BaseCrudService<
         canAccessBookmark(actor, entity);
     }
 
+    /** Schema for findExistingBookmark input validation */
+    private static readonly FindExistingBookmarkSchema = z.object({
+        userId: z.string().uuid(),
+        entityId: z.string().uuid(),
+        entityType: z.string().min(1)
+    });
+
+    /**
+     * Find an existing bookmark by userId, entityId, and entityType.
+     * Returns the bookmark if found, null otherwise.
+     */
+    public async findExistingBookmark(
+        actor: Actor,
+        params: {
+            readonly userId: string;
+            readonly entityId: string;
+            readonly entityType: string;
+        }
+    ): Promise<ServiceOutput<UserBookmark | null>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'findExistingBookmark',
+            input: { ...params, actor },
+            schema: UserBookmarkService.FindExistingBookmarkSchema,
+            execute: async (validated) => {
+                if (actor.id !== validated.userId) {
+                    throw new ServiceError(
+                        ServiceErrorCode.FORBIDDEN,
+                        'FORBIDDEN: Only owner can check bookmarks'
+                    );
+                }
+                const result = await this.model.findOne({
+                    userId: validated.userId,
+                    entityId: validated.entityId,
+                    entityType: validated.entityType,
+                    deletedAt: null
+                });
+                return result;
+            }
+        });
+    }
+
     /**
      * Lista todos los bookmarks de un usuario.
      */
@@ -125,7 +167,7 @@ export class UserBookmarkService extends BaseCrudService<
                 }
                 const { page, pageSize } = validated;
                 const { items } = await this.model.findAll(
-                    { userId: validated.userId },
+                    { userId: validated.userId, deletedAt: null },
                     { page, pageSize }
                 );
                 return { bookmarks: items };
@@ -148,7 +190,11 @@ export class UserBookmarkService extends BaseCrudService<
                 this._canList(actor);
                 const { page, pageSize } = validated;
                 const { items } = await this.model.findAll(
-                    { entityId: validated.entityId, entityType: validated.entityType },
+                    {
+                        entityId: validated.entityId,
+                        entityType: validated.entityType,
+                        deletedAt: null
+                    },
                     { page, pageSize }
                 );
                 return { bookmarks: items };
@@ -171,7 +217,8 @@ export class UserBookmarkService extends BaseCrudService<
                 this._canCount(actor);
                 const count = await this.model.count({
                     entityId: validated.entityId,
-                    entityType: validated.entityType
+                    entityType: validated.entityType,
+                    deletedAt: null
                 });
                 return { count };
             }
@@ -196,7 +243,7 @@ export class UserBookmarkService extends BaseCrudService<
                         'FORBIDDEN: Only owner can count bookmarks'
                     );
                 }
-                const count = await this.model.count({ userId: validated.userId });
+                const count = await this.model.count({ userId: validated.userId, deletedAt: null });
                 return { count };
             }
         });
@@ -205,17 +252,17 @@ export class UserBookmarkService extends BaseCrudService<
     protected async _executeSearch(params: UserBookmarkSearchInput, _actor: Actor) {
         const { page, pageSize, ...searchFilters } = params;
 
-        const { items, total } = await this.model.findAll(searchFilters, {
-            page,
-            pageSize
-        });
+        const { items, total } = await this.model.findAll(
+            { ...searchFilters, deletedAt: null },
+            { page, pageSize }
+        );
         return { items, total };
     }
 
     protected async _executeCount(params: UserBookmarkSearchInput, _actor: Actor) {
         const { page, pageSize, sortBy, sortOrder, ...searchFilters } = params;
 
-        const count = await this.model.count(searchFilters);
+        const count = await this.model.count({ ...searchFilters, deletedAt: null });
         return { count };
     }
 }

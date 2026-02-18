@@ -26,7 +26,7 @@ describe('UserBookmarkService.create', () => {
         bookmark = createUserBookmark();
         actor = createActor({
             id: bookmark.userId,
-            permissions: [PermissionEnum.USER_BOOKMARK_CREATE]
+            permissions: [PermissionEnum.FAVORITE_ENTITY]
         });
         service = new UserBookmarkService({ logger: loggerMock }, modelMock);
     });
