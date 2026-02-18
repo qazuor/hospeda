@@ -40,8 +40,8 @@ import trialRouter from './trial';
 import usageRouter from './usage';
 
 /**
- * Authentication middleware for billing routes
- * Compatible with QZPay's authMiddleware requirement
+ * Authentication middleware for billing routes.
+ * Compatible with QZPay's authMiddleware requirement.
  */
 const billingAuthMiddleware: MiddlewareHandler = async (c, next) => {
     const auth = c.get('auth');
@@ -56,7 +56,7 @@ const billingAuthMiddleware: MiddlewareHandler = async (c, next) => {
 };
 
 /**
- * Create billing routes with QZPay pre-built handlers
+ * Create the inner QZPay billing router with pre-built handlers.
  *
  * Routes provided:
  * - GET    /customers          - List customers
@@ -98,29 +98,28 @@ const billingAuthMiddleware: MiddlewareHandler = async (c, next) => {
  *
  * - POST   /webhooks           - Handle payment webhooks
  *
- * @returns Hono router with all billing routes
+ * @returns Hono router with QZPay billing routes
  */
-function createBillingRouter(): AppOpenAPI {
+function createQZPayBillingRouter(): AppOpenAPI {
     const billing = getQZPayBilling();
 
     if (!billing) {
-        // Billing not configured - return empty router
-        // The requireBilling middleware will handle the error
+        // Billing not configured - return empty router.
+        // The requireBilling middleware will handle the 503 response.
         apiLogger.warn('Billing routes created but billing is not configured');
         return createRouter();
     }
 
     try {
-        // Create QZPay billing routes with authentication
-        const billingRoutes = createBillingRoutes({
+        const routes = createBillingRoutes({
             billing,
-            prefix: '', // No prefix - will be added when mounting
-            authMiddleware: billingAuthMiddleware // Require authentication for all billing routes
+            prefix: '', // No prefix - added when mounting
+            authMiddleware: billingAuthMiddleware
         });
 
-        apiLogger.info('✅ Billing routes created successfully');
+        apiLogger.info('QZPay billing routes created successfully');
 
-        return billingRoutes as unknown as AppOpenAPI;
+        return routes as unknown as AppOpenAPI;
     } catch (error) {
         apiLogger.error(
             'Failed to create billing routes:',
@@ -133,49 +132,59 @@ function createBillingRouter(): AppOpenAPI {
 }
 
 /**
- * Billing routes router
+ * Factory function that assembles and returns the full billing router.
+ *
+ * Defers execution until call time so that the database and billing subsystem
+ * are fully initialized before any attempt to resolve dependencies via
+ * `getQZPayBilling()` / `getDb()`.
  *
  * All routes require:
  * - Authentication (via billingAuthMiddleware from QZPay config)
  * - Billing to be enabled (via requireBilling middleware)
  * - Sentry billing context (via sentryBillingMiddleware)
+ *
+ * @returns Configured Hono router with all billing sub-routes mounted.
  */
-export const billingRoutes = createRouter();
+export function createBillingRoutesHandler(): AppOpenAPI {
+    const router = createRouter();
 
-// Apply billing requirement middleware
-billingRoutes.use('*', requireBilling);
+    // Apply billing requirement middleware
+    router.use('*', requireBilling);
 
-// Apply Sentry billing context middleware
-billingRoutes.use('*', sentryBillingMiddleware());
+    // Apply Sentry billing context middleware
+    router.use('*', sentryBillingMiddleware());
 
-// Mount QZPay billing routes
-const qzpayRoutes = createBillingRouter();
-billingRoutes.route('/', qzpayRoutes);
+    // Mount QZPay pre-built billing routes
+    const qzpayRoutes = createQZPayBillingRouter();
+    router.route('/', qzpayRoutes);
 
-// Mount custom promo code routes
-billingRoutes.route('/promo-codes', promoCodesRouter);
+    // Mount custom promo code routes
+    router.route('/promo-codes', promoCodesRouter);
 
-// Mount custom add-on routes
-billingRoutes.route('/addons', addonsRouter);
+    // Mount custom add-on routes
+    router.route('/addons', addonsRouter);
 
-// Mount custom trial routes
-billingRoutes.route('/trial', trialRouter);
+    // Mount custom trial routes
+    router.route('/trial', trialRouter);
 
-// Mount custom plan change routes
-billingRoutes.route('/subscriptions', planChangeRouter);
+    // Mount custom plan change routes
+    router.route('/subscriptions', planChangeRouter);
 
-// Mount custom metrics routes
-billingRoutes.route('/metrics', metricsRouter);
+    // Mount custom metrics routes
+    router.route('/metrics', metricsRouter);
 
-// Mount custom settings routes
-billingRoutes.route('/settings', settingsRouter);
+    // Mount custom settings routes
+    router.route('/settings', settingsRouter);
 
-// Mount custom usage tracking routes
-billingRoutes.route('/usage', usageRouter);
+    // Mount custom usage tracking routes
+    router.route('/usage', usageRouter);
 
-// Mount custom notification management routes
-billingRoutes.route('/notifications', notificationsRouter);
+    // Mount custom notification management routes
+    router.route('/notifications', notificationsRouter);
 
-apiLogger.debug(
-    'Billing routes configured with custom promo code, add-on, trial, plan-change, metrics, settings, usage, and notification routes'
-);
+    apiLogger.debug(
+        'Billing routes configured with custom promo code, add-on, trial, plan-change, metrics, settings, usage, and notification routes'
+    );
+
+    return router;
+}

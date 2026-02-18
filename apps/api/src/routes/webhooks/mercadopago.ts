@@ -1098,8 +1098,14 @@ function createMercadoPagoWebhookRouter(): AppOpenAPI | null {
 }
 
 /**
- * MercadoPago webhook routes
+ * Factory function that creates MercadoPago webhook routes on demand.
  *
- * Public endpoint (no authentication) with signature verification
+ * Defers execution of `createMercadoPagoWebhookRouter()` until call time,
+ * ensuring the database and billing subsystem are fully initialized before
+ * any attempt to resolve dependencies.
+ *
+ * @returns Configured Hono router for MercadoPago webhooks, or `null` when
+ *   billing is not configured.
  */
-export const mercadoPagoWebhookRoutes = createMercadoPagoWebhookRouter();
+export const createMercadoPagoWebhookRoutes = (): AppOpenAPI | null =>
+    createMercadoPagoWebhookRouter();

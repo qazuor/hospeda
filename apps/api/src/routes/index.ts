@@ -16,7 +16,7 @@ import { cronRoutes } from '../cron';
 import { amenityRoutes } from './amenity';
 import { authRoutes } from './auth';
 import { betterAuthHandler } from './auth/handler';
-import { billingRoutes } from './billing';
+import { createBillingRoutesHandler } from './billing';
 import { adminBillingRoutes } from './billing/admin';
 import { publicBillingRoutes } from './billing/public';
 import { contactRoutes } from './contact';
@@ -33,7 +33,7 @@ import { publicTagRoutes } from './tag';
 import { userRoutes } from './user';
 import { protectedUserBookmarkRoutes } from './user-bookmark';
 import { protectedUserRoutes } from './user/protected';
-import { mercadoPagoWebhookRoutes, webhookHealthRoutes } from './webhooks';
+import { createMercadoPagoWebhookRoutes, webhookHealthRoutes } from './webhooks';
 import { adminWebhookRouter } from './webhooks/admin';
 
 import { ApiInfoSchema } from '@repo/schemas';
@@ -163,8 +163,10 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/reports', reportRoutes);
         apiLogger.debug('✅ Report routes registered successfully');
 
+        // Factory is called here (inside setupRoutes) to ensure the database
+        // and billing subsystem are initialized before dependency resolution.
         apiLogger.debug('🔗 Registering billing routes...');
-        app.route('/api/v1/billing', billingRoutes);
+        app.route('/api/v1/billing', createBillingRoutesHandler());
         apiLogger.debug('✅ Billing routes registered successfully');
 
         apiLogger.debug('🔗 Registering admin billing routes...');
@@ -177,6 +179,9 @@ export const setupRoutes = (app: AppOpenAPI) => {
         apiLogger.debug('✅ Cron routes registered successfully');
 
         // Webhook routes (public endpoints with signature verification)
+        // Factory is called here (inside setupRoutes) to ensure the database
+        // and billing subsystem are initialized before dependency resolution.
+        const mercadoPagoWebhookRoutes = createMercadoPagoWebhookRoutes();
         if (mercadoPagoWebhookRoutes) {
             apiLogger.debug('🔗 Registering MercadoPago webhook routes...');
             app.route('/api/v1/webhooks/mercadopago', mercadoPagoWebhookRoutes);
