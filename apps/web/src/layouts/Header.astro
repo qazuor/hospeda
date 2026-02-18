@@ -12,7 +12,7 @@
 import Container from '../components/ui/Container.astro';
 import AuthSection from '../components/auth/AuthSection.astro';
 import { ThemeToggle } from '../components/ui/ThemeToggle.client';
-import { MenuIcon } from '@repo/icons';
+import { MobileMenuWrapper } from '../components/ui/MobileMenuWrapper.client';
 
 interface Props {
   /** Current locale for localized navigation links */
@@ -21,11 +21,18 @@ interface Props {
 
 const { locale = 'es' } = Astro.props;
 
+const navLabels: Record<string, Record<string, string>> = {
+  accommodations: { es: 'Alojamientos', en: 'Accommodations', pt: 'Hospedagens' },
+  destinations: { es: 'Destinos', en: 'Destinations', pt: 'Destinos' },
+  events: { es: 'Eventos', en: 'Events', pt: 'Eventos' },
+  blog: { es: 'Blog', en: 'Blog', pt: 'Blog' },
+};
+
 const navLinks = [
-  { label: 'Alojamientos', href: `/${locale}/alojamientos/` },
-  { label: 'Destinos', href: `/${locale}/destinos/` },
-  { label: 'Eventos', href: `/${locale}/eventos/` },
-  { label: 'Blog', href: `/${locale}/publicaciones/` },
+  { label: navLabels.accommodations[locale] ?? navLabels.accommodations.es, href: `/${locale}/alojamientos/` },
+  { label: navLabels.destinations[locale] ?? navLabels.destinations.es, href: `/${locale}/destinos/` },
+  { label: navLabels.events[locale] ?? navLabels.events.es, href: `/${locale}/eventos/` },
+  { label: navLabels.blog[locale] ?? navLabels.blog.es, href: `/${locale}/publicaciones/` },
 ];
 
 /** Check if a navigation link matches the current route */
@@ -71,15 +78,12 @@ function isLinkActive(href: string): boolean {
           <div slot="fallback" class="h-8 w-24 animate-pulse rounded-md bg-gray-200" aria-hidden="true" />
         </AuthSection>
 
-        <!-- Mobile menu button -->
-        <button
-          type="button"
-          class="inline-flex items-center justify-center rounded-md p-2 text-text-secondary hover:bg-bg hover:text-text md:hidden"
-          aria-label="Open menu"
-          data-mobile-menu-trigger
-        >
-          <MenuIcon size={24} aria-hidden="true" />
-        </button>
+        <!-- Mobile menu (trigger + slide-in panel, hydrated only on mobile) -->
+        <MobileMenuWrapper
+          client:media="(max-width: 768px)"
+          navItems={navLinks}
+          locale={locale as 'es' | 'en' | 'pt'}
+        />
       </div>
     </div>
   </Container>

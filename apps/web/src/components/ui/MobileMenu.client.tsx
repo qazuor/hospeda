@@ -16,7 +16,7 @@ export interface NavItem {
  */
 export interface MobileMenuProps {
     readonly navItems: ReadonlyArray<NavItem>;
-    readonly locale?: 'es' | 'en';
+    readonly locale?: 'es' | 'en' | 'pt';
     readonly user?: { readonly name: string; readonly email: string } | null;
     readonly open: boolean;
     readonly onClose: () => void;
@@ -91,6 +91,10 @@ export function MobileMenu({
         en: {
             signIn: 'Sign in',
             signUp: 'Sign up'
+        },
+        pt: {
+            signIn: 'Entrar',
+            signUp: 'Cadastrar-se'
         }
     };
 
