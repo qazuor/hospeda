@@ -221,9 +221,20 @@ export const httpToDomainDestinationReviewCreate = (
         userId: httpData.userId,
         rating: complexRating,
         title: httpData.title,
-        content: httpData.content
-        // Note: visitDate, tripType, travelSeason, isBusinessTravel, isRecommended,
-        // wouldVisitAgain, language are HTTP-only fields not in domain schema
+        content: httpData.content,
+        visitDate: httpData.visitDate,
+        tripType: httpData.tripType,
+        travelSeason: httpData.travelSeason,
+        isBusinessTravel: httpData.isBusinessTravel ?? false,
+        isRecommended: httpData.isRecommended ?? true,
+        wouldVisitAgain: httpData.wouldVisitAgain ?? true,
+        language: httpData.language,
+        // System-managed fields: provide defaults for domain type compatibility
+        isVerified: false,
+        isPublished: false,
+        helpfulVotes: 0,
+        totalVotes: 0,
+        hasOwnerResponse: false
     };
 };
 

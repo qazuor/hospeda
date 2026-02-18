@@ -39,7 +39,15 @@ const baseInput: DestinationReview = {
     deletedById: undefined,
     rating: fullRating,
     title: 'Great place!',
-    content: 'Very nice experience.'
+    content: 'Very nice experience.',
+    isBusinessTravel: false,
+    isVerified: false,
+    isPublished: false,
+    isRecommended: true,
+    wouldVisitAgain: true,
+    helpfulVotes: 0,
+    totalVotes: 0,
+    hasOwnerResponse: false
 };
 
 describe('destinationReview.normalizers', () => {
