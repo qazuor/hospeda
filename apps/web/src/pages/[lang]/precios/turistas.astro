@@ -8,14 +8,17 @@ export function getStaticPaths() {
 /**
  * Tourist pricing page - displays subscription plans for tourists.
  * Validates locale parameter and redirects invalid locales to Spanish (default).
+ * Plan data is fetched from the API with graceful fallback to hardcoded data.
  */
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import SEOHead from '../../../components/seo/SEOHead.astro';
+import JsonLd from '../../../components/seo/JsonLd.astro';
 import Breadcrumb from '../../../components/ui/Breadcrumb.astro';
 import Container from '../../../components/ui/Container.astro';
 import Section from '../../../components/ui/Section.astro';
 import PricingCard from '../../../components/content/PricingCard.astro';
 import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
+import { fetchTouristPlans } from '../../../lib/pricing-plans';
 
 const { lang } = Astro.params;
 
@@ -77,6 +80,15 @@ const heroContent: Record<SupportedLocale, { title: string; description: string 
 		title: 'Planos para Turistas',
 		description: 'Encontre o plano perfeito para suas aventuras no Litoral argentino. Desde navegação básica até serviço VIP com concierge personalizado.',
 	},
+};
+
+/**
+ * Localized FAQ heading
+ */
+const faqHeadings: Record<SupportedLocale, string> = {
+	es: 'Preguntas Frecuentes',
+	en: 'Frequently Asked Questions',
+	pt: 'Perguntas Frequentes',
 };
 
 /**
@@ -160,171 +172,23 @@ const breadcrumbItems = [
 ];
 
 /**
- * Pricing plans data with locale-specific content
+ * Fetch tourist plans from the API, falling back to hardcoded data on failure.
  */
-const plans = {
-	es: [
-		{
-			name: 'Gratis',
-			price: 0,
-			currency: 'ARS',
-			period: '/mes',
-			features: [
-				'Navegar alojamientos',
-				'Leer reseñas',
-				'Guardar favoritos',
-				'Búsqueda básica',
-			],
-			cta: {
-				label: 'Comenzar Gratis',
-				href: `/${locale}/registro/`,
-			},
-		},
-		{
-			name: 'Plus',
-			price: 5000,
-			currency: 'ARS',
-			period: '/mes',
-			features: [
-				'Todo lo del plan Gratis',
-				'Reservas prioritarias',
-				'Ofertas exclusivas',
-				'Filtros avanzados',
-				'Planificador de viajes',
-			],
-			cta: {
-				label: 'Comenzar Plus',
-				href: `/${locale}/registro/?plan=plus`,
-			},
-		},
-		{
-			name: 'VIP',
-			price: 15000,
-			currency: 'ARS',
-			period: '/mes',
-			features: [
-				'Todo lo del plan Plus',
-				'Servicio de conserjería',
-				'Garantía de mejor precio',
-				'Cancelación gratuita',
-				'Soporte 24/7',
-			],
-			cta: {
-				label: 'Comenzar VIP',
-				href: `/${locale}/registro/?plan=vip`,
-			},
-			highlighted: true,
-		},
-	],
-	en: [
-		{
-			name: 'Free',
-			price: 0,
-			currency: 'USD',
-			period: '/month',
-			features: [
-				'Browse accommodations',
-				'Read reviews',
-				'Save favorites',
-				'Basic search',
-			],
-			cta: {
-				label: 'Start Free',
-				href: `/${locale}/registro/`,
-			},
-		},
-		{
-			name: 'Plus',
-			price: 5,
-			currency: 'USD',
-			period: '/month',
-			features: [
-				'All Free features',
-				'Priority booking',
-				'Exclusive deals',
-				'Advanced filters',
-				'Trip planner',
-			],
-			cta: {
-				label: 'Start Plus',
-				href: `/${locale}/registro/?plan=plus`,
-			},
-		},
-		{
-			name: 'VIP',
-			price: 15,
-			currency: 'USD',
-			period: '/month',
-			features: [
-				'All Plus features',
-				'Concierge service',
-				'Best price guarantee',
-				'Free cancellation',
-				'24/7 support',
-			],
-			cta: {
-				label: 'Start VIP',
-				href: `/${locale}/registro/?plan=vip`,
-			},
-			highlighted: true,
-		},
-	],
-	pt: [
-		{
-			name: 'Grátis',
-			price: 0,
-			currency: 'ARS',
-			period: '/mês',
-			features: [
-				'Navegar acomodações',
-				'Ler resenhas',
-				'Salvar favoritos',
-				'Pesquisa básica',
-			],
-			cta: {
-				label: 'Começar Grátis',
-				href: `/${locale}/registro/`,
-			},
-		},
-		{
-			name: 'Plus',
-			price: 5000,
-			currency: 'ARS',
-			period: '/mês',
-			features: [
-				'Tudo do plano Grátis',
-				'Reservas prioritárias',
-				'Ofertas exclusivas',
-				'Filtros avançados',
-				'Planejador de viagens',
-			],
-			cta: {
-				label: 'Começar Plus',
-				href: `/${locale}/registro/?plan=plus`,
-			},
-		},
-		{
-			name: 'VIP',
-			price: 15000,
-			currency: 'ARS',
-			period: '/mês',
-			features: [
-				'Tudo do plano Plus',
-				'Serviço de concierge',
-				'Garantia de melhor preço',
-				'Cancelamento gratuito',
-				'Suporte 24/7',
-			],
-			cta: {
-				label: 'Começar VIP',
-				href: `/${locale}/registro/?plan=vip`,
-			},
-			highlighted: true,
-		},
-	],
-};
+const currentPlans = await fetchTouristPlans(locale);
 
-const currentPlans = plans[locale];
+/**
+ * BreadcrumbList JSON-LD structured data
+ */
+const breadcrumbJsonLd = {
+	'@context': 'https://schema.org',
+	'@type': 'BreadcrumbList',
+	itemListElement: breadcrumbItems.map((item, index) => ({
+		'@type': 'ListItem',
+		position: index + 1,
+		name: item.label,
+		item: new URL(item.href, Astro.site).href,
+	})),
+};
 ---
 
 <BaseLayout title={titles[locale]} description={descriptions[locale]} locale={locale}>
@@ -336,6 +200,7 @@ const currentPlans = plans[locale];
 		locale={locale === 'pt' ? 'es' : locale}
 		type="website"
 	/>
+	<JsonLd slot="head" data={breadcrumbJsonLd} />
 
 	<Container>
 		<Breadcrumb items={breadcrumbItems} />
@@ -374,7 +239,7 @@ const currentPlans = plans[locale];
 				<!-- FAQ Section -->
 				<article id="faq" class="mb-16">
 					<h2 class="mb-8 text-center text-3xl font-semibold text-text-primary">
-						Preguntas Frecuentes
+						{faqHeadings[locale]}
 					</h2>
 					<div class="mx-auto max-w-3xl space-y-6">
 						{faqContent[locale].map((faq) => (

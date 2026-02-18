@@ -14,6 +14,7 @@ import SEOHead from '../../components/seo/SEOHead.astro';
 import Breadcrumb from '../../components/ui/Breadcrumb.astro';
 import Container from '../../components/ui/Container.astro';
 import Section from '../../components/ui/Section.astro';
+import { ContactForm } from '../../components/forms/ContactForm.client';
 import { isValidLocale, type SupportedLocale } from '../../lib/i18n';
 import { EmailIcon, LocationIcon, ClockIcon, InstagramIcon, FacebookIcon, TwitterIcon } from '@repo/icons';
 
@@ -53,47 +54,20 @@ const homeLabels: Record<SupportedLocale, string> = {
 };
 
 /**
- * Localized form labels
+ * Localized contact info labels (form handling moved to ContactForm.client.tsx)
  */
 const formLabels = {
 	es: {
-		name: 'Nombre',
-		namePlaceholder: 'Tu nombre completo',
-		email: 'Correo electrónico',
-		emailPlaceholder: 'tu@email.com',
-		subject: 'Asunto',
-		subjectPlaceholder: 'Motivo de tu consulta',
-		message: 'Mensaje',
-		messagePlaceholder: 'Escribe tu mensaje aquí...',
-		submit: 'Enviar mensaje',
 		contactInfo: 'Información de contacto',
 		officeHours: 'Horario de atención',
 		officeHoursValue: 'Lunes a Viernes, 9:00 - 18:00',
 	},
 	en: {
-		name: 'Name',
-		namePlaceholder: 'Your full name',
-		email: 'Email',
-		emailPlaceholder: 'your@email.com',
-		subject: 'Subject',
-		subjectPlaceholder: 'Reason for your inquiry',
-		message: 'Message',
-		messagePlaceholder: 'Write your message here...',
-		submit: 'Send message',
 		contactInfo: 'Contact information',
 		officeHours: 'Office hours',
 		officeHoursValue: 'Monday to Friday, 9:00 AM - 6:00 PM',
 	},
 	pt: {
-		name: 'Nome',
-		namePlaceholder: 'Seu nome completo',
-		email: 'E-mail',
-		emailPlaceholder: 'seu@email.com',
-		subject: 'Assunto',
-		subjectPlaceholder: 'Motivo de sua consulta',
-		message: 'Mensagem',
-		messagePlaceholder: 'Escreva sua mensagem aqui...',
-		submit: 'Enviar mensagem',
 		contactInfo: 'Informações de contato',
 		officeHours: 'Horário de atendimento',
 		officeHoursValue: 'Segunda a Sexta, 9:00 - 18:00',
@@ -133,89 +107,9 @@ const labels = formLabels[locale];
 				</h1>
 
 				<div class="grid gap-12 lg:grid-cols-2">
-					<!-- Left column: Contact form -->
+					<!-- Left column: Contact form (React island) -->
 					<div class="order-2 lg:order-1">
-						<form class="space-y-6" id="contact-form">
-							<!-- Name field -->
-							<div>
-								<label
-									for="name"
-									class="mb-2 block text-sm font-medium text-text-primary"
-								>
-									{labels.name}
-								</label>
-								<input
-									type="text"
-									id="name"
-									name="name"
-									required
-									placeholder={labels.namePlaceholder}
-									class="w-full rounded-lg border border-border bg-bg px-4 py-2.5 text-text-primary placeholder-text-tertiary transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-20"
-								/>
-							</div>
-
-							<!-- Email field -->
-							<div>
-								<label
-									for="email"
-									class="mb-2 block text-sm font-medium text-text-primary"
-								>
-									{labels.email}
-								</label>
-								<input
-									type="email"
-									id="email"
-									name="email"
-									required
-									placeholder={labels.emailPlaceholder}
-									class="w-full rounded-lg border border-border bg-bg px-4 py-2.5 text-text-primary placeholder-text-tertiary transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-20"
-								/>
-							</div>
-
-							<!-- Subject field -->
-							<div>
-								<label
-									for="subject"
-									class="mb-2 block text-sm font-medium text-text-primary"
-								>
-									{labels.subject}
-								</label>
-								<input
-									type="text"
-									id="subject"
-									name="subject"
-									required
-									placeholder={labels.subjectPlaceholder}
-									class="w-full rounded-lg border border-border bg-bg px-4 py-2.5 text-text-primary placeholder-text-tertiary transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-20"
-								/>
-							</div>
-
-							<!-- Message field -->
-							<div>
-								<label
-									for="message"
-									class="mb-2 block text-sm font-medium text-text-primary"
-								>
-									{labels.message}
-								</label>
-								<textarea
-									id="message"
-									name="message"
-									required
-									rows={6}
-									placeholder={labels.messagePlaceholder}
-									class="w-full rounded-lg border border-border bg-bg px-4 py-2.5 text-text-primary placeholder-text-tertiary transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-20"
-								></textarea>
-							</div>
-
-							<!-- Submit button -->
-							<button
-								type="submit"
-								class="w-full rounded-lg bg-primary px-6 py-3 font-semibold text-white transition-colors hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-gray-300"
-							>
-								{labels.submit}
-							</button>
-						</form>
+						<ContactForm client:visible locale={locale === 'pt' ? 'es' : locale} />
 					</div>
 
 					<!-- Right column: Contact information -->

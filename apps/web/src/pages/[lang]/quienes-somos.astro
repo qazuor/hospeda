@@ -61,6 +61,140 @@ const breadcrumbItems = [
 	{ label: homeLabels[locale], href: `/${locale}/` },
 	{ label: titles[locale], href: `/${locale}/quienes-somos/` },
 ];
+
+/**
+ * Localized body content for all sections
+ */
+const content: Record<
+	SupportedLocale,
+	{
+		heroText: string;
+		missionTitle: string;
+		missionText: string;
+		valuesTitle: string;
+		values: Array<{ title: string; text: string }>;
+		regionTitle: string;
+		regionText1: string;
+		regionText2: string;
+		ctaTitle: string;
+		ctaText: string;
+		ctaButton: string;
+	}
+> = {
+	es: {
+		heroText:
+			'Hospeda es la plataforma que conecta viajeros con alojamientos auténticos y experiencias únicas en Concepción del Uruguay y la región del Litoral argentino. Creemos en el turismo responsable y en el valor de las conexiones genuinas.',
+		missionTitle: 'Nuestra Misión',
+		missionText:
+			'Conectar viajeros con alojamientos auténticos en la región del Litoral argentino, promoviendo el turismo responsable y sustentable. Facilitamos el descubrimiento de experiencias únicas y fomentamos el desarrollo económico local a través del turismo comunitario.',
+		valuesTitle: 'Nuestros Valores',
+		values: [
+			{
+				title: 'Autenticidad',
+				text: 'Promovemos experiencias genuinas que reflejan la cultura y hospitalidad local del Litoral argentino.',
+			},
+			{
+				title: 'Comunidad',
+				text: 'Fortalecemos el tejido social local apoyando emprendimientos turísticos y generando oportunidades económicas.',
+			},
+			{
+				title: 'Calidad',
+				text: 'Nos comprometemos a ofrecer alojamientos verificados con altos estándares de confort y servicio.',
+			},
+			{
+				title: 'Sustentabilidad',
+				text: 'Fomentamos prácticas turísticas responsables que preservan el patrimonio natural y cultural de la región.',
+			},
+		],
+		regionTitle: 'Nuestra Región',
+		regionText1:
+			'Concepción del Uruguay y la región del Litoral argentino ofrecen una combinación única de historia, naturaleza y cultura. Desde las costas del Río Uruguay hasta los paisajes rurales, nuestra región es el escenario perfecto para experiencias turísticas auténticas.',
+		regionText2:
+			'La región se caracteriza por su rica herencia cultural, arquitectura colonial, festividades tradicionales, gastronomía local y la calidez de su gente. Promovemos el descubrimiento de estos tesoros a través de alojamientos que reflejan la identidad local.',
+		ctaTitle: 'Conectemos y Crezcamos Juntos',
+		ctaText:
+			'¿Tienes preguntas o deseas formar parte de nuestra red de alojamientos? Nos encantaría conocerte y trabajar juntos para fortalecer el turismo en la región.',
+		ctaButton: 'Contáctanos',
+	},
+	en: {
+		heroText:
+			'Hospeda is the platform that connects travelers with authentic accommodations and unique experiences in Concepcion del Uruguay and the Argentine Litoral region. We believe in responsible tourism and the value of genuine connections.',
+		missionTitle: 'Our Mission',
+		missionText:
+			'To connect travelers with authentic accommodations in the Argentine Litoral region, promoting responsible and sustainable tourism. We facilitate the discovery of unique experiences and foster local economic development through community tourism.',
+		valuesTitle: 'Our Values',
+		values: [
+			{
+				title: 'Authenticity',
+				text: 'We promote genuine experiences that reflect the culture and local hospitality of the Argentine Litoral.',
+			},
+			{
+				title: 'Community',
+				text: 'We strengthen the local social fabric by supporting tourism ventures and generating economic opportunities.',
+			},
+			{
+				title: 'Quality',
+				text: 'We are committed to offering verified accommodations with high standards of comfort and service.',
+			},
+			{
+				title: 'Sustainability',
+				text: 'We encourage responsible tourism practices that preserve the natural and cultural heritage of the region.',
+			},
+		],
+		regionTitle: 'Our Region',
+		regionText1:
+			'Concepcion del Uruguay and the Argentine Litoral region offer a unique combination of history, nature, and culture. From the shores of the Uruguay River to the rural landscapes, our region is the perfect setting for authentic tourism experiences.',
+		regionText2:
+			'The region is characterized by its rich cultural heritage, colonial architecture, traditional festivities, local cuisine, and the warmth of its people. We promote the discovery of these treasures through accommodations that reflect the local identity.',
+		ctaTitle: "Let's Connect and Grow Together",
+		ctaText:
+			"Have questions or want to be part of our accommodation network? We'd love to meet you and work together to strengthen tourism in the region.",
+		ctaButton: 'Contact Us',
+	},
+	pt: {
+		heroText:
+			'Hospeda e a plataforma que conecta viajantes com acomodacoes autenticas e experiencias unicas em Concepcion del Uruguay e na regiao do Litoral argentino. Acreditamos no turismo responsavel e no valor das conexoes genuinas.',
+		missionTitle: 'Nossa Missao',
+		missionText:
+			'Conectar viajantes com acomodacoes autenticas na regiao do Litoral argentino, promovendo o turismo responsavel e sustentavel. Facilitamos a descoberta de experiencias unicas e fomentamos o desenvolvimento economico local atraves do turismo comunitario.',
+		valuesTitle: 'Nossos Valores',
+		values: [
+			{
+				title: 'Autenticidade',
+				text: 'Promovemos experiencias genuinas que refletem a cultura e a hospitalidade local do Litoral argentino.',
+			},
+			{
+				title: 'Comunidade',
+				text: 'Fortalecemos o tecido social local apoiando empreendimentos turisticos e gerando oportunidades economicas.',
+			},
+			{
+				title: 'Qualidade',
+				text: 'Comprometemo-nos a oferecer acomodacoes verificadas com altos padroes de conforto e servico.',
+			},
+			{
+				title: 'Sustentabilidade',
+				text: 'Incentivamos praticas turisticas responsaveis que preservam o patrimonio natural e cultural da regiao.',
+			},
+		],
+		regionTitle: 'Nossa Regiao',
+		regionText1:
+			'Concepcion del Uruguay e a regiao do Litoral argentino oferecem uma combinacao unica de historia, natureza e cultura. Das margens do Rio Uruguai ate as paisagens rurais, nossa regiao e o cenario perfeito para experiencias turisticas autenticas.',
+		regionText2:
+			'A regiao se caracteriza por sua rica heranca cultural, arquitetura colonial, festividades tradicionais, gastronomia local e a calidez de seu povo. Promovemos a descoberta destes tesouros atraves de acomodacoes que refletem a identidade local.',
+		ctaTitle: 'Vamos Nos Conectar e Crescer Juntos',
+		ctaText:
+			'Tem perguntas ou deseja fazer parte da nossa rede de acomodacoes? Adorariamos conhece-lo e trabalhar juntos para fortalecer o turismo na regiao.',
+		ctaButton: 'Entre em Contato',
+	},
+};
+
+const c = content[locale];
+
+/**
+ * Icon components in order corresponding to values array entries:
+ * Authenticity, Community, Quality, Sustainability
+ */
+const valueIcons = [CheckIcon, UsersIcon, CheckCircleIcon, GlobeIcon];
 ---
 
 <BaseLayout title={titles[locale]} description={descriptions[locale]} locale={locale}>
@@ -84,22 +218,16 @@ const breadcrumbItems = [
 						{titles[locale]}
 					</h1>
 					<p class="text-xl leading-relaxed text-text-secondary">
-						Hospeda es la plataforma que conecta viajeros con alojamientos auténticos y
-						experiencias únicas en Concepción del Uruguay y la región del Litoral
-						argentino. Creemos en el turismo responsable y en el valor de las conexiones
-						genuinas.
+						{c.heroText}
 					</p>
 				</article>
 
 				<!-- Mission Section -->
 				<article id="mission" class="mb-12">
 					<div class="rounded-lg bg-bg p-8 shadow-sm">
-						<h2 class="mb-4 text-3xl font-semibold text-text-primary">Nuestra Misión</h2>
+						<h2 class="mb-4 text-3xl font-semibold text-text-primary">{c.missionTitle}</h2>
 						<p class="text-lg leading-relaxed text-text-secondary">
-							Conectar viajeros con alojamientos auténticos en la región del Litoral
-							argentino, promoviendo el turismo responsable y sustentable. Facilitamos el
-							descubrimiento de experiencias únicas y fomentamos el desarrollo económico
-							local a través del turismo comunitario.
+							{c.missionText}
 						</p>
 					</div>
 				</article>
@@ -107,82 +235,41 @@ const breadcrumbItems = [
 				<!-- Values Section -->
 				<article id="values" class="mb-12">
 					<h2 class="mb-8 text-center text-3xl font-semibold text-text-primary">
-						Nuestros Valores
+						{c.valuesTitle}
 					</h2>
 					<div class="grid gap-8 md:grid-cols-2">
-						<!-- Value 1: Authenticity -->
-						<div class="flex flex-col items-center text-center">
-							<div
-								class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10"
-							>
-								<CheckIcon size={32} className="text-primary" aria-hidden="true" />
-							</div>
-							<h3 class="mb-2 text-xl font-semibold text-text-primary">Autenticidad</h3>
-							<p class="text-text-secondary">
-								Promovemos experiencias genuinas que reflejan la cultura y hospitalidad
-								local del Litoral argentino.
-							</p>
-						</div>
-
-						<!-- Value 2: Community -->
-						<div class="flex flex-col items-center text-center">
-							<div
-								class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10"
-							>
-								<UsersIcon size={32} className="text-primary" aria-hidden="true" />
-							</div>
-							<h3 class="mb-2 text-xl font-semibold text-text-primary">Comunidad</h3>
-							<p class="text-text-secondary">
-								Fortalecemos el tejido social local apoyando emprendimientos turísticos y
-								generando oportunidades económicas.
-							</p>
-						</div>
-
-						<!-- Value 3: Quality -->
-						<div class="flex flex-col items-center text-center">
-							<div
-								class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10"
-							>
-								<CheckCircleIcon size={32} className="text-primary" aria-hidden="true" />
-							</div>
-							<h3 class="mb-2 text-xl font-semibold text-text-primary">Calidad</h3>
-							<p class="text-text-secondary">
-								Nos comprometemos a ofrecer alojamientos verificados con altos estándares de
-								confort y servicio.
-							</p>
-						</div>
-
-						<!-- Value 4: Sustainability -->
-						<div class="flex flex-col items-center text-center">
-							<div
-								class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10"
-							>
-								<GlobeIcon size={32} className="text-primary" aria-hidden="true" />
-							</div>
-							<h3 class="mb-2 text-xl font-semibold text-text-primary">Sustentabilidad</h3>
-							<p class="text-text-secondary">
-								Fomentamos prácticas turísticas responsables que preservan el patrimonio
-								natural y cultural de la región.
-							</p>
-						</div>
+						{
+							c.values.map((value, index) => {
+								const IconComponent = valueIcons[index];
+								return (
+									<div class="flex flex-col items-center text-center">
+										<div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+											<IconComponent
+												size={32}
+												className="text-primary"
+												aria-hidden="true"
+											/>
+										</div>
+										<h3 class="mb-2 text-xl font-semibold text-text-primary">
+											{value.title}
+										</h3>
+										<p class="text-text-secondary">{value.text}</p>
+									</div>
+								);
+							})
+						}
 					</div>
 				</article>
 
 				<!-- Region Section -->
 				<article id="region" class="mb-12">
 					<div class="rounded-lg bg-bg p-8 shadow-sm">
-						<h2 class="mb-4 text-3xl font-semibold text-text-primary">Nuestra Región</h2>
+						<h2 class="mb-4 text-3xl font-semibold text-text-primary">{c.regionTitle}</h2>
 						<p class="mb-4 text-lg leading-relaxed text-text-secondary">
-							Concepción del Uruguay y la región del Litoral argentino ofrecen una
-							combinación única de historia, naturaleza y cultura. Desde las costas del Río
-							Uruguay hasta los paisajes rurales, nuestra región es el escenario perfecto
-							para experiencias turísticas auténticas.
+							{c.regionText1}
 						</p>
 						<p class="text-lg leading-relaxed text-text-secondary">
-							La región se caracteriza por su rica herencia cultural, arquitectura colonial,
-							festividades tradicionales, gastronomía local y la calidez de su gente.
-							Promovemos el descubrimiento de estos tesoros a través de alojamientos que
-							reflejan la identidad local.
+							{c.regionText2}
 						</p>
 					</div>
 				</article>
@@ -193,18 +280,16 @@ const breadcrumbItems = [
 						class="rounded-lg bg-primary/10 p-8 text-center shadow-sm transition-shadow hover:shadow-md"
 					>
 						<h2 class="mb-4 text-3xl font-semibold text-text-primary">
-							Conectemos y Crezcamos Juntos
+							{c.ctaTitle}
 						</h2>
 						<p class="mb-6 text-lg leading-relaxed text-text-secondary">
-							¿Tienes preguntas o deseas formar parte de nuestra red de alojamientos? Nos
-							encantaría conocerte y trabajar juntos para fortalecer el turismo en la
-							región.
+							{c.ctaText}
 						</p>
 						<a
 							href={`/${locale}/contacto/`}
 							class="inline-block rounded-lg bg-primary px-8 py-3 font-semibold text-white transition-colors hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
 						>
-							Contáctanos
+							{c.ctaButton}
 						</a>
 					</div>
 				</article>
