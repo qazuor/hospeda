@@ -38,20 +38,23 @@ import { MapView } from '../../../components/map/MapView.client.tsx';
 import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
 import { renderTiptapContent } from '../../../lib/tiptap-renderer';
 import { destinationsApi, accommodationsApi, eventsApi } from '../../../lib/api/endpoints';
+import { fetchAllPages } from '../../../lib/api/client';
+import { extractFeaturedImageUrl, extractGalleryUrls } from '../../../lib/media';
 
 /**
  * Generate static paths for all destinations in all locales
  */
 export async function getStaticPaths() {
 	const locales = ['es', 'en', 'pt'];
-	const result = await destinationsApi.list({ pageSize: 500 });
-	const destinations = result.ok ? (result.data.items as Array<Record<string, unknown>>) : [];
+	const destinations = await fetchAllPages<Record<string, unknown>>({
+		fetcher: (p) => destinationsApi.list(p),
+	});
 
 	return locales.flatMap((lang) =>
 		destinations
 			.filter((d) => d.path || d.slug)
 			.map((d) => ({
-				params: { lang, path: String(d.path || d.slug) },
+				params: { lang, path: String(d.path || d.slug).replace(/^\//, '') },
 				props: { destinationData: d },
 			}))
 	);
@@ -89,6 +92,11 @@ if (path) {
 }
 
 /**
+ * Extract destination name early - needed for event city filtering below
+ */
+const destinationName = String(destination.name || 'Sin nombre');
+
+/**
  * Fetch related data: accommodations and events
  */
 const destinationId = String(destination.id || '');
@@ -101,14 +109,53 @@ if (destinationId) {
 		id: destinationId,
 		pageSize: 6,
 	});
-	accommodations = accResult.ok ? (accResult.data.items as Array<Record<string, unknown>>) : [];
+	if (accResult.ok) {
+		const accData = accResult.data as unknown as Record<string, unknown>;
+		const rawAccommodations = (accData.accommodations ?? accData.items ?? []) as Array<Record<string, unknown>>;
+		accommodations = rawAccommodations.map((a) => ({
+			...a,
+			slug: String(a.slug || ''),
+			name: String(a.name || ''),
+			summary: String(a.summary || a.description || ''),
+			type: String(a.type || a.accommodationType || ''),
+			featuredImage: extractFeaturedImageUrl(a, '/images/placeholder-accommodation.svg'),
+			averageRating: Number(a.averageRating || 0),
+			reviewsCount: Number(a.reviewsCount || 0),
+			location: (a.location as { city: string; state: string }) || { city: '', state: '' },
+			isFeatured: Boolean(a.isFeatured),
+		}));
+	}
 
-	// Fetch events for this destination
-	// Note: eventsApi.list doesn't support destinationId filtering yet
-	// For now, we use empty array with a TODO comment
-	// TODO: Update when eventsApi.list supports destinationId parameter
-	const evtResult = await eventsApi.list({ pageSize: 4 });
-	events = evtResult.ok ? (evtResult.data.items as Array<Record<string, unknown>>) : [];
+	// Fetch events filtered by destination city name.
+	// The events API does not support destinationId filtering, so we fetch a larger
+	// batch and filter client-side by matching the event location city.
+	const evtResult = await eventsApi.list({ pageSize: 100 });
+	if (evtResult.ok) {
+		const allMapped = evtResult.data.items.map((e) => {
+			const evt = e as Record<string, unknown>;
+			const evtDate = evt.date as { start?: string; end?: string } | undefined;
+			const evtLocation = evt.location as Record<string, unknown> | undefined;
+			return {
+				...evt,
+				slug: String(evt.slug || ''),
+				name: String(evt.name || ''),
+				summary: String(evt.summary || evt.description || ''),
+				featuredImage: extractFeaturedImageUrl(evt, '/images/placeholder-event.svg'),
+				category: String(evt.category || ''),
+				date: {
+					start: String(evtDate?.start || evt.startDate || ''),
+					end: evtDate?.end ? String(evtDate.end) : (evt.endDate ? String(evt.endDate) : undefined),
+				},
+				isFeatured: Boolean(evt.isFeatured),
+				location: evtLocation ? { name: String(evtLocation.placeName || evtLocation.name || ''), city: String(evtLocation.city || '') } : undefined,
+			};
+		});
+		// Filter events whose location city matches the destination name
+		events = allMapped.filter((e) => {
+			const evtCity = (e.location as { city?: string } | undefined)?.city;
+			return evtCity && evtCity.toLowerCase() === destinationName.toLowerCase();
+		});
+	}
 }
 
 // Fetch breadcrumb hierarchy
@@ -147,19 +194,26 @@ const t = texts[locale];
 /**
  * Extract data from destination with fallbacks
  */
-const destinationName = String(destination.name || 'Sin nombre');
 const destinationSlug = String(destination.slug || destination.path || '');
-const destinationHeroImage = String(destination.heroImage || destination.featuredImage || '/images/placeholder-destination.svg');
+const destinationHeroImage = extractFeaturedImageUrl(destination, '/images/placeholder-destination.svg');
 const destinationProvince = String(destination.province || destination.state || '');
 const destinationCountry = String(destination.country || 'Argentina');
 const destinationLocation = (destination.location as { lat?: number; lng?: number }) || {};
 const destinationClimate = (destination.climate as Record<string, string>) || {};
 const destinationAttractions = (destination.attractions as Array<{ name: string; description: string }>) || [];
-const destinationImages = (destination.images as Array<{ url: string; alt: string }>) || [
-	{ url: destinationHeroImage, alt: destinationName }
-];
-const accommodationCount = Number(destination.accommodationsCount || destination.accommodationCount || 0);
-const eventCount = Number(destination.eventsCount || destination.eventCount || 0);
+const galleryUrls = extractGalleryUrls(destination);
+const destinationImages = galleryUrls.length > 0
+	? galleryUrls.map((url) => ({ src: url, alt: destinationName }))
+	: [{ src: destinationHeroImage, alt: destinationName }];
+// Use DB totals for sidebar counts; fetched arrays are just the preview subset
+const accommodationCount = Number(destination.accommodationsCount || destination.accommodationCount || accommodations.length);
+const eventCount = events.length;
+// Limit preview cards shown on page; full list available via "View all" link
+const PREVIEW_LIMIT = 3;
+const previewAccommodations = accommodations.slice(0, PREVIEW_LIMIT);
+const previewEvents = events.slice(0, PREVIEW_LIMIT);
+const accommodationsListUrl = `/${locale}/alojamientos/?city=${encodeURIComponent(destinationName)}`;
+const eventsListUrl = `/${locale}/eventos/?city=${encodeURIComponent(destinationName)}`;
 
 // Breadcrumb navigation items (includes full hierarchy: Home > Destinations > Parent... > Current)
 const breadcrumbItems = [
@@ -340,7 +394,7 @@ const mapMarkers = destinationLocation.lat && destinationLocation.lng
             {accommodationCount === 1 ? 'alojamiento disponible' : 'alojamientos disponibles'}
           </p>
           <a
-            href={`/${locale}/alojamientos/?destination=${destinationSlug}`}
+            href={accommodationsListUrl}
             class="mt-4 block text-center rounded-md bg-primary px-4 py-2 font-semibold text-white transition-colors hover:bg-primary-dark"
           >
             {t.viewAll}
@@ -355,7 +409,7 @@ const mapMarkers = destinationLocation.lat && destinationLocation.lng
             {eventCount === 1 ? 'evento próximo' : 'eventos próximos'}
           </p>
           <a
-            href={`/${locale}/eventos/?destination=${destinationSlug}`}
+            href={eventsListUrl}
             class="mt-4 block text-center rounded-md bg-primary px-4 py-2 font-semibold text-white transition-colors hover:bg-primary-dark"
           >
             {t.viewAll}
@@ -366,12 +420,24 @@ const mapMarkers = destinationLocation.lat && destinationLocation.lng
 
     <!-- Accommodations section -->
     <Section title={`${t.accommodationsIn} ${destinationName}`} class="mt-12">
-      {accommodations.length > 0 ? (
-        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {accommodations.map((accommodation) => (
-            <AccommodationCard accommodation={accommodation} locale={locale} />
-          ))}
-        </div>
+      {previewAccommodations.length > 0 ? (
+        <>
+          <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {previewAccommodations.map((accommodation) => (
+              <AccommodationCard accommodation={accommodation} locale={locale} />
+            ))}
+          </div>
+          {accommodations.length > PREVIEW_LIMIT && (
+            <div class="mt-6 text-center">
+              <a
+                href={accommodationsListUrl}
+                class="inline-block rounded-md border-2 border-primary px-6 py-2 font-semibold text-primary transition-colors hover:bg-primary hover:text-white"
+              >
+                {t.viewAll} ({accommodationCount})
+              </a>
+            </div>
+          )}
+        </>
       ) : (
         <EmptyState
           title={t.noAccommodations}
@@ -382,12 +448,24 @@ const mapMarkers = destinationLocation.lat && destinationLocation.lng
 
     <!-- Events section -->
     <Section title={`${t.eventsIn} ${destinationName}`} class="mt-12">
-      {events.length > 0 ? (
-        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {events.map((event) => (
-            <EventCard event={event} locale={locale} />
-          ))}
-        </div>
+      {previewEvents.length > 0 ? (
+        <>
+          <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {previewEvents.map((event) => (
+              <EventCard event={event} locale={locale} />
+            ))}
+          </div>
+          {events.length > PREVIEW_LIMIT && (
+            <div class="mt-6 text-center">
+              <a
+                href={eventsListUrl}
+                class="inline-block rounded-md border-2 border-primary px-6 py-2 font-semibold text-primary transition-colors hover:bg-primary hover:text-white"
+              >
+                {t.viewAll} ({eventCount})
+              </a>
+            </div>
+          )}
+        </>
       ) : (
         <EmptyState
           title={t.noEvents}
