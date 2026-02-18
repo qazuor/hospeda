@@ -1,0 +1,48 @@
+---
+/**
+ * Paginated destination accommodations route.
+ * Rewrites to the accommodations index with the page query parameter.
+ * Page 1 redirects to the canonical base URL (no /page/ segment).
+ *
+ * @route /[lang]/destinos/[slug]/alojamientos/page/[page]/
+ * @rendering SSR (on-demand, no prerender)
+ */
+import { isValidLocale } from '../../../../../../lib/i18n';
+
+const { lang, slug, page } = Astro.params;
+
+/**
+ * Validate locale parameter.
+ */
+if (!lang || !isValidLocale(lang)) {
+  return Astro.redirect('/es/');
+}
+
+/**
+ * Validate slug parameter.
+ */
+if (!slug) {
+  return Astro.redirect(`/${lang}/destinos/`);
+}
+
+const pageNum = Number.parseInt(page || '1', 10);
+
+/**
+ * Reject invalid or negative page numbers.
+ */
+if (Number.isNaN(pageNum) || pageNum < 1) {
+  return Astro.redirect(`/${lang}/destinos/${slug}/alojamientos/`);
+}
+
+/**
+ * Page 1 should use the canonical base URL without /page/ segment.
+ */
+if (pageNum === 1) {
+  return Astro.redirect(`/${lang}/destinos/${slug}/alojamientos/`);
+}
+
+/**
+ * Rewrite to the accommodations index with the page query parameter.
+ */
+return Astro.rewrite(`/${lang}/destinos/${slug}/alojamientos/?page=${pageNum}`);
+---

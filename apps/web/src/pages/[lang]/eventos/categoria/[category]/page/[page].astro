@@ -1,0 +1,36 @@
+---
+/**
+ * Paginated event category listing route.
+ * Rewrites to the category index page with the page query parameter.
+ * Page 1 redirects to the base URL (canonical).
+ *
+ * @route /[lang]/eventos/categoria/[category]/page/[page]/
+ */
+import { isValidLocale } from '../../../../../../lib/i18n';
+
+const ALLOWED_CATEGORIES = ['festival', 'fair', 'sport', 'cultural', 'gastronomy'] as const;
+
+const { lang, category, page } = Astro.params;
+
+if (!lang || !isValidLocale(lang)) {
+  return Astro.redirect('/es/');
+}
+
+if (!category || !ALLOWED_CATEGORIES.includes(category as (typeof ALLOWED_CATEGORIES)[number])) {
+  return Astro.redirect(`/${lang}/eventos/`);
+}
+
+const pageNum = Number.parseInt(page || '1', 10);
+
+if (Number.isNaN(pageNum) || pageNum < 1) {
+  return Astro.redirect(`/${lang}/eventos/categoria/${category}/`);
+}
+
+/** Page 1 should use the canonical base URL without /page/ segment */
+if (pageNum === 1) {
+  return Astro.redirect(`/${lang}/eventos/categoria/${category}/`);
+}
+
+/** Rewrite to the category index page with the page query parameter */
+return Astro.rewrite(`/${lang}/eventos/categoria/${category}/?page=${pageNum}`);
+---

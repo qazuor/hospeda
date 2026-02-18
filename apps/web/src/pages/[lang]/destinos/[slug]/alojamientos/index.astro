@@ -1,0 +1,230 @@
+---
+/**
+ * Destination accommodations listing page.
+ * Displays paginated accommodations for a specific destination.
+ * Slug-based routing resolves destination server-side on each request.
+ *
+ * @route /[lang]/destinos/[slug]/alojamientos/
+ * @rendering SSR (on-demand, no prerender)
+ */
+import BaseLayout from '../../../../../layouts/BaseLayout.astro';
+import SEOHead from '../../../../../components/seo/SEOHead.astro';
+import JsonLd from '../../../../../components/seo/JsonLd.astro';
+import Breadcrumb from '../../../../../components/ui/Breadcrumb.astro';
+import Container from '../../../../../components/ui/Container.astro';
+import Section from '../../../../../components/ui/Section.astro';
+import EmptyState from '../../../../../components/ui/EmptyState.astro';
+import Pagination from '../../../../../components/ui/Pagination.astro';
+import AccommodationCard from '../../../../../components/accommodation/AccommodationCard.astro';
+import DestinationErrorState from '../../../../../components/error/DestinationErrorState.astro';
+import { isValidLocale, type SupportedLocale } from '../../../../../lib/i18n';
+import { destinationsApi } from '../../../../../lib/api/endpoints';
+
+const { lang, slug } = Astro.params;
+
+/**
+ * Validate locale parameter.
+ * Redirect to default locale if invalid.
+ */
+if (!lang || !isValidLocale(lang)) {
+	return Astro.redirect('/es/');
+}
+
+const locale = lang as SupportedLocale;
+
+/**
+ * Validate slug parameter.
+ */
+if (!slug) {
+	return Astro.redirect(`/${locale}/destinos/`);
+}
+
+/**
+ * Localized UI labels.
+ */
+const labels: Record<SupportedLocale, Record<string, string>> = {
+	es: {
+		home: 'Inicio',
+		destinations: 'Destinos',
+		accommodations: 'Alojamientos',
+		noResults: 'No hay alojamientos disponibles para este destino',
+		noResultsDetail: 'Todavía no tenemos alojamientos registrados para este destino. Explorá otros destinos.',
+		pageTitle: 'Alojamientos en',
+		pageDescription: 'Descubrí los mejores alojamientos en',
+	},
+	en: {
+		home: 'Home',
+		destinations: 'Destinations',
+		accommodations: 'Accommodations',
+		noResults: 'No accommodations available for this destination',
+		noResultsDetail: 'We do not have any accommodations listed for this destination yet. Explore other destinations.',
+		pageTitle: 'Accommodations in',
+		pageDescription: 'Discover the best accommodations in',
+	},
+	pt: {
+		home: 'Início',
+		destinations: 'Destinos',
+		accommodations: 'Acomodações',
+		noResults: 'Não há acomodações disponíveis para este destino',
+		noResultsDetail: 'Ainda não temos acomodações registradas para este destino. Explore outros destinos.',
+		pageTitle: 'Acomodações em',
+		pageDescription: 'Descubra as melhores acomodações em',
+	},
+};
+
+const t = labels[locale];
+
+/**
+ * Resolve destination by slug from the API.
+ */
+const destinationResult = await destinationsApi.getBySlug({ slug });
+
+/**
+ * Return 404 if destination is not found.
+ */
+if (!destinationResult.ok) {
+	Astro.response.status = 404;
+}
+
+/**
+ * Extract destination data with safe access.
+ * Data arrives as Record<string, unknown> from the public API.
+ */
+const destination = destinationResult.ok
+	? (destinationResult.data as Record<string, unknown>)
+	: null;
+
+const destinationId = destination?.id as string | undefined;
+const destinationName = (destination?.name as string | undefined) ?? slug;
+
+/**
+ * Get pagination page from query string.
+ */
+const page = Number.parseInt(Astro.url.searchParams.get('page') || '1', 10);
+const pageSize = 12;
+
+/**
+ * Fetch accommodations for the destination only when destination is found.
+ */
+const accommodationsResult = destinationId
+	? await destinationsApi.getAccommodations({ id: destinationId, page, pageSize })
+	: null;
+
+const accommodations = accommodationsResult?.ok ? accommodationsResult.data.items : [];
+const pagination = accommodationsResult?.ok ? accommodationsResult.data.pagination : null;
+
+/**
+ * SEO metadata.
+ */
+const pageTitle = `${t.pageTitle} ${destinationName}`;
+const pageDescription = `${t.pageDescription} ${destinationName}.`;
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
+const baseUrl = `/${locale}/destinos/${slug}/alojamientos`;
+
+/**
+ * Breadcrumb navigation items.
+ */
+const breadcrumbItems = [
+	{ label: t.home, href: `/${locale}/` },
+	{ label: t.destinations, href: `/${locale}/destinos/` },
+	{ label: destinationName, href: `/${locale}/destinos/${slug}/` },
+	{ label: t.accommodations, href: `${baseUrl}/` },
+];
+
+/**
+ * CollectionPage + BreadcrumbList JSON-LD structured data
+ */
+const collectionJsonLd = {
+	'@context': 'https://schema.org',
+	'@graph': [
+		{
+			'@type': 'CollectionPage',
+			name: pageTitle,
+			description: pageDescription,
+			url: canonicalUrl,
+		},
+		{
+			'@type': 'BreadcrumbList',
+			itemListElement: breadcrumbItems.map((item, index) => ({
+				'@type': 'ListItem',
+				position: index + 1,
+				name: item.label,
+				item: new URL(item.href, Astro.site).href,
+			})),
+		},
+	],
+};
+---
+
+<BaseLayout title={pageTitle} description={pageDescription} locale={locale}>
+	<SEOHead
+		slot="head"
+		title={pageTitle}
+		description={pageDescription}
+		canonical={canonicalUrl}
+		locale={locale === 'pt' ? 'es' : locale}
+		type="website"
+	/>
+	<JsonLd slot="head" data={collectionJsonLd} />
+
+	<Container>
+		<Breadcrumb items={breadcrumbItems} />
+
+		<Section>
+			<div class="mx-auto max-w-6xl">
+				{!destination ? (
+					/* Destination not found - error state */
+					<article id="destination-error">
+						<DestinationErrorState
+							locale={locale}
+							retryHref={`/${locale}/destinos/`}
+						/>
+					</article>
+				) : (
+					<>
+						<!-- Destination Header Section -->
+						<article id="destination-header" class="mb-12 text-center">
+							<h1 class="mb-4 text-4xl font-bold text-text-primary md:text-5xl">
+								{t.accommodations}
+							</h1>
+							<p class="text-xl text-text-secondary">
+								{t.pageDescription} <span class="font-semibold text-text-primary">{destinationName}</span>
+							</p>
+						</article>
+
+						<!-- Accommodation Grid Section -->
+						<article id="accommodation-grid" class="mb-12">
+							{accommodations.length > 0 ? (
+								<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+									{accommodations.map((accommodation) => (
+										<AccommodationCard
+											accommodation={accommodation}
+											locale={locale}
+										/>
+									))}
+								</div>
+							) : (
+								<EmptyState
+									title={t.noResults}
+									message={t.noResultsDetail}
+								/>
+							)}
+						</article>
+
+						<!-- Pagination Section -->
+						{pagination && pagination.totalPages > 1 && (
+							<article id="pagination" class="mb-12">
+								<Pagination
+									currentPage={pagination.page as number}
+									totalPages={pagination.totalPages as number}
+									baseUrl={baseUrl}
+									locale={locale}
+								/>
+							</article>
+						)}
+					</>
+				)}
+			</div>
+		</Section>
+	</Container>
+</BaseLayout>

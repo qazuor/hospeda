@@ -1,0 +1,43 @@
+---
+/**
+ * Paginated posts-by-tag route using URL segments.
+ * Rewrites to the tag index page with the page query parameter.
+ * Page 1 redirects to the base URL (canonical, avoids duplicate content).
+ *
+ * @route /[lang]/publicaciones/etiqueta/[tag]/page/[page]/
+ * @rendering SSR (on-demand, inherits from tag index rewrite target)
+ */
+import { isValidLocale } from '../../../../../../lib/i18n';
+
+const { lang, tag, page } = Astro.params;
+
+if (!lang || !isValidLocale(lang)) {
+  return Astro.redirect('/es/');
+}
+
+/**
+ * Validate tag param presence
+ */
+if (!tag || typeof tag !== 'string' || tag.trim() === '') {
+  return Astro.redirect(`/${lang}/publicaciones/`);
+}
+
+const tagSlug = tag.trim();
+
+/**
+ * Parse and validate page number
+ */
+const pageNum = Number.parseInt(page || '1', 10);
+
+if (Number.isNaN(pageNum) || pageNum < 1) {
+  return Astro.redirect(`/${lang}/publicaciones/etiqueta/${tagSlug}/`);
+}
+
+/** Page 1 should use the canonical base URL without /page/ segment */
+if (pageNum === 1) {
+  return Astro.redirect(`/${lang}/publicaciones/etiqueta/${tagSlug}/`);
+}
+
+/** Rewrite to the tag index page with the page query parameter */
+return Astro.rewrite(`/${lang}/publicaciones/etiqueta/${tagSlug}/?page=${pageNum}`);
+---

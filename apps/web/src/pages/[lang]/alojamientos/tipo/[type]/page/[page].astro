@@ -1,0 +1,36 @@
+---
+/**
+ * Paginated accommodation type listing route.
+ * Rewrites to the type index page with the page query parameter.
+ * Page 1 redirects to the base URL (canonical).
+ *
+ * @route /[lang]/alojamientos/tipo/[type]/page/[page]/
+ */
+import { isValidLocale } from '../../../../../../lib/i18n';
+
+const ALLOWED_TYPES = ['hotel', 'hostel', 'cabin', 'apartment', 'camping', 'estancia', 'posada'] as const;
+
+const { lang, type, page } = Astro.params;
+
+if (!lang || !isValidLocale(lang)) {
+  return Astro.redirect('/es/');
+}
+
+if (!type || !ALLOWED_TYPES.includes(type as (typeof ALLOWED_TYPES)[number])) {
+  return Astro.redirect(`/${lang}/alojamientos/`);
+}
+
+const pageNum = Number.parseInt(page || '1', 10);
+
+if (Number.isNaN(pageNum) || pageNum < 1) {
+  return Astro.redirect(`/${lang}/alojamientos/tipo/${type}/`);
+}
+
+/** Page 1 should use the canonical base URL without /page/ segment */
+if (pageNum === 1) {
+  return Astro.redirect(`/${lang}/alojamientos/tipo/${type}/`);
+}
+
+/** Rewrite to the type index page with the page query parameter */
+return Astro.rewrite(`/${lang}/alojamientos/tipo/${type}/?page=${pageNum}`);
+---

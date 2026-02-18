@@ -1,0 +1,252 @@
+---
+/**
+ * Posts by Tag page.
+ * Displays a filtered list of blog posts for a given tag slug.
+ * Tag slugs are dynamic and unknown at build time, so this page uses SSR.
+ *
+ * @route /[lang]/publicaciones/etiqueta/[tag]/
+ * @rendering SSR (on-demand, tags are unknown at build time)
+ */
+import BaseLayout from '../../../../../layouts/BaseLayout.astro';
+import SEOHead from '../../../../../components/seo/SEOHead.astro';
+import JsonLd from '../../../../../components/seo/JsonLd.astro';
+import Breadcrumb from '../../../../../components/ui/Breadcrumb.astro';
+import Container from '../../../../../components/ui/Container.astro';
+import Section from '../../../../../components/ui/Section.astro';
+import EmptyState from '../../../../../components/ui/EmptyState.astro';
+import Pagination from '../../../../../components/ui/Pagination.astro';
+import BlogPostCard from '../../../../../components/blog/BlogPostCard.astro';
+import { isValidLocale, type SupportedLocale } from '../../../../../lib/i18n';
+import { tagsApi } from '../../../../../lib/api/endpoints';
+import { apiClient } from '../../../../../lib/api/client';
+import type { PaginatedResponse } from '../../../../../lib/api/types';
+
+const { lang, tag } = Astro.params;
+
+if (!lang || !isValidLocale(lang)) {
+  return Astro.redirect('/es/');
+}
+
+const locale = lang as SupportedLocale;
+
+/**
+ * Validate tag param
+ */
+if (!tag || typeof tag !== 'string' || tag.trim() === '') {
+  return Astro.redirect(`/${locale}/publicaciones/`);
+}
+
+const tagSlug = tag.trim();
+
+/**
+ * Fetch tag metadata by slug.
+ * If not found, redirect to the posts listing page.
+ */
+const tagResult = await tagsApi.getBySlug({ slug: tagSlug });
+
+if (!tagResult.ok || !tagResult.data) {
+  return Astro.redirect(`/${locale}/publicaciones/`);
+}
+
+const tagData = tagResult.data as { id: string; name: string; slug: string };
+
+/**
+ * Get pagination parameter from URL query string.
+ * Supports ?page=N for both direct access and pagination rewrites.
+ */
+const page = Number.parseInt(Astro.url.searchParams.get('page') || '1', 10);
+const pageSize = 12;
+
+/**
+ * Fetch posts filtered by tag UUID.
+ * The posts API list endpoint accepts a `tags` query param (array of UUIDs).
+ * We pass the single tag id as a string; the API handles coercion.
+ */
+const postsResult = await apiClient.getList<Record<string, unknown>>({
+  path: '/api/v1/public/posts',
+  params: { page, pageSize, tags: tagData.id }
+});
+
+const posts = postsResult.ok ? postsResult.data.items : [];
+const pagination = postsResult.ok ? postsResult.data.pagination : null;
+
+/**
+ * Build canonical URL for SEO
+ */
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
+
+/**
+ * Localized page titles
+ */
+const pageTitles: Record<SupportedLocale, string> = {
+  es: `Publicaciones etiquetadas con "${tagData.name}"`,
+  en: `Posts tagged with "${tagData.name}"`,
+  pt: `Publicações com a etiqueta "${tagData.name}"`,
+};
+
+/**
+ * Localized meta descriptions for SEO
+ */
+const metaDescriptions: Record<SupportedLocale, string> = {
+  es: `Explora todas las publicaciones del blog de Hospeda etiquetadas con "${tagData.name}". Artículos sobre turismo en el Litoral argentino.`,
+  en: `Browse all Hospeda blog posts tagged with "${tagData.name}". Articles about tourism in the Argentine Litoral region.`,
+  pt: `Explore todas as publicações do blog da Hospeda com a etiqueta "${tagData.name}". Artigos sobre turismo no Litoral argentino.`,
+};
+
+/**
+ * Localized breadcrumb labels
+ */
+const breadcrumbLabels: Record<SupportedLocale, { home: string; posts: string; tag: string }> = {
+  es: { home: 'Inicio', posts: 'Publicaciones', tag: `Etiqueta: ${tagData.name}` },
+  en: { home: 'Home', posts: 'Posts', tag: `Tag: ${tagData.name}` },
+  pt: { home: 'Início', posts: 'Publicações', tag: `Etiqueta: ${tagData.name}` },
+};
+
+/**
+ * Localized heading
+ */
+const headings: Record<SupportedLocale, string> = {
+  es: `Etiqueta: ${tagData.name}`,
+  en: `Tag: ${tagData.name}`,
+  pt: `Etiqueta: ${tagData.name}`,
+};
+
+/**
+ * Localized sub-heading description
+ */
+const subHeadings: Record<SupportedLocale, string> = {
+  es: `Todas las publicaciones etiquetadas con "${tagData.name}"`,
+  en: `All posts tagged with "${tagData.name}"`,
+  pt: `Todas as publicações com a etiqueta "${tagData.name}"`,
+};
+
+/**
+ * Localized empty state message
+ */
+const emptyStateMessages: Record<SupportedLocale, string> = {
+  es: `No hay publicaciones disponibles para la etiqueta "${tagData.name}"`,
+  en: `No posts available for tag "${tagData.name}"`,
+  pt: `Não há publicações disponíveis para a etiqueta "${tagData.name}"`,
+};
+
+const pageTitle = pageTitles[locale];
+const metaDescription = metaDescriptions[locale];
+const labels = breadcrumbLabels[locale];
+
+/**
+ * Breadcrumb navigation items
+ */
+const breadcrumbItems = [
+  { label: labels.home, href: `/${locale}/` },
+  { label: labels.posts, href: `/${locale}/publicaciones/` },
+  { label: labels.tag, href: `/${locale}/publicaciones/etiqueta/${tagSlug}/` },
+];
+
+/**
+ * Type alias for BlogPostCard data shape
+ */
+type BlogPostCardData = {
+  slug: string;
+  title: string;
+  summary: string;
+  featuredImage: string;
+  category: string;
+  publishedAt: string;
+  readingTimeMinutes: number;
+  authorName: string;
+  isFeatured: boolean;
+};
+
+/**
+ * CollectionPage + BreadcrumbList JSON-LD structured data
+ */
+const collectionJsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'CollectionPage',
+      name: pageTitle,
+      description: metaDescription,
+      url: canonicalUrl,
+    },
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: breadcrumbItems.map((item, index) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        name: item.label,
+        item: new URL(item.href, Astro.site).href,
+      })),
+    },
+  ],
+};
+---
+
+<BaseLayout title={pageTitle} description={metaDescription} locale={locale}>
+  <SEOHead
+    slot="head"
+    title={pageTitle}
+    description={metaDescription}
+    canonical={canonicalUrl}
+    locale={locale === 'pt' ? 'es' : locale}
+    type="website"
+  />
+  <JsonLd slot="head" data={collectionJsonLd} />
+
+  <Container>
+    <Breadcrumb items={breadcrumbItems} />
+
+    <Section>
+      <div class="mx-auto max-w-6xl">
+        <!-- Tag Header Section -->
+        <article id="tag-header" class="mb-12 text-center">
+          <h1 class="mb-4 text-4xl font-bold text-text-primary md:text-5xl">
+            {headings[locale]}
+          </h1>
+          <p class="text-xl leading-relaxed text-text-secondary">
+            {subHeadings[locale]}
+          </p>
+        </article>
+
+        <!-- Posts Grid Section -->
+        <article id="posts-grid" class="mb-12">
+          {
+            posts.length > 0 ? (
+              <div
+                class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+                role="region"
+                aria-label={pageTitle}
+              >
+                {posts.map((post) => (
+                  <BlogPostCard
+                    post={post as BlogPostCardData}
+                    locale={locale}
+                  />
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                title={emptyStateMessages[locale]}
+                message={emptyStateMessages[locale]}
+              />
+            )
+          }
+        </article>
+
+        <!-- Pagination Section -->
+        {
+          pagination && pagination.totalPages > 1 && (
+            <article id="pagination" class="mb-12">
+              <Pagination
+                currentPage={pagination.page as number}
+                totalPages={pagination.totalPages as number}
+                baseUrl={`/${locale}/publicaciones/etiqueta/${tagSlug}`}
+                locale={locale}
+              />
+            </article>
+          )
+        }
+      </div>
+    </Section>
+  </Container>
+</BaseLayout>

@@ -1,18 +1,38 @@
 ---
+export const prerender = true;
+
+/**
+ * Returns static paths for all locale + type combinations.
+ * 3 locales x 7 types = 21 pre-rendered pages.
+ * Combined with ISR (configured globally), pages revalidate on-demand.
+ */
+export function getStaticPaths() {
+  const locales = ['es', 'en', 'pt'] as const;
+  const types = ['hotel', 'hostel', 'cabin', 'apartment', 'camping', 'estancia', 'posada'] as const;
+
+  return locales.flatMap((lang) =>
+    types.map((type) => ({ params: { lang, type } }))
+  );
+}
+
 /**
  * Accommodation by Type page.
  * Displays filtered list of accommodations by type (hotel, hostel, cabin, etc.).
  * Validates locale and type parameters, redirects if invalid.
+ *
+ * @route /[lang]/alojamientos/tipo/[type]/
+ * @rendering SSG + ISR (Static Site Generation with Incremental Static Regeneration)
  */
-import BaseLayout from '../../../../layouts/BaseLayout.astro';
-import SEOHead from '../../../../components/seo/SEOHead.astro';
-import Breadcrumb from '../../../../components/ui/Breadcrumb.astro';
-import Container from '../../../../components/ui/Container.astro';
-import Section from '../../../../components/ui/Section.astro';
-import EmptyState from '../../../../components/ui/EmptyState.astro';
-import AccommodationCard from '../../../../components/accommodation/AccommodationCard.astro';
-import { isValidLocale, type SupportedLocale } from '../../../../lib/i18n';
-import { accommodationsApi } from '../../../../lib/api/endpoints';
+import BaseLayout from '../../../../../layouts/BaseLayout.astro';
+import SEOHead from '../../../../../components/seo/SEOHead.astro';
+import Breadcrumb from '../../../../../components/ui/Breadcrumb.astro';
+import Container from '../../../../../components/ui/Container.astro';
+import Section from '../../../../../components/ui/Section.astro';
+import EmptyState from '../../../../../components/ui/EmptyState.astro';
+import Pagination from '../../../../../components/ui/Pagination.astro';
+import AccommodationCard from '../../../../../components/accommodation/AccommodationCard.astro';
+import { isValidLocale, type SupportedLocale } from '../../../../../lib/i18n';
+import { accommodationsApi } from '../../../../../lib/api/endpoints';
 
 const { lang, type } = Astro.params;
 
@@ -181,10 +201,10 @@ const breadcrumbItems = [
 ];
 
 /**
- * Get pagination parameters from URL
+ * Get pagination parameters from URL.
+ * Astro.url.searchParams works for both SSG and ISR modes.
  */
-const url = new URL(Astro.request.url);
-const page = Number.parseInt(url.searchParams.get('page') || '1', 10);
+const page = Number.parseInt(Astro.url.searchParams.get('page') || '1', 10);
 const pageSize = 12;
 
 /**
@@ -232,7 +252,7 @@ const emptyMessage = labels[locale].noResults.replace('{type}', typeName.toLower
 						accommodations.length > 0 ? (
 							<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 								{accommodations.map((accommodation) => (
-									<AccommodationCard accommodation={accommodation as any} locale={locale} />
+									<AccommodationCard accommodation={accommodation} locale={locale} />
 								))}
 							</div>
 						) : (
@@ -245,29 +265,12 @@ const emptyMessage = labels[locale].noResults.replace('{type}', typeName.toLower
 				{
 					pagination && pagination.totalPages > 1 && (
 						<article id="pagination" class="mb-12">
-							<nav aria-label="Pagination" class="flex items-center justify-center gap-2">
-								{pagination.hasPreviousPage && (
-									<a
-										href={`/${locale}/alojamientos/tipo/${accommodationType}/?page=${pagination.page - 1}`}
-										class="rounded-md border border-border bg-bg px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-surface"
-									>
-										← Anterior
-									</a>
-								)}
-
-								<span class="px-4 py-2 text-sm text-text-secondary">
-									Página {pagination.page} de {pagination.totalPages}
-								</span>
-
-								{pagination.hasNextPage && (
-									<a
-										href={`/${locale}/alojamientos/tipo/${accommodationType}/?page=${pagination.page + 1}`}
-										class="rounded-md border border-border bg-bg px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-surface"
-									>
-										Siguiente →
-									</a>
-								)}
-							</nav>
+							<Pagination
+								currentPage={pagination.page as number}
+								totalPages={pagination.totalPages as number}
+								baseUrl={`/${locale}/alojamientos/tipo/${accommodationType}`}
+								locale={locale}
+							/>
 						</article>
 					)
 				}
