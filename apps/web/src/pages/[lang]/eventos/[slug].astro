@@ -18,6 +18,7 @@ import EventCard from '../../../components/event/EventCard.astro';
 import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
 import { eventsApi } from '../../../lib/api/endpoints';
 import { CalendarIcon, ClockIcon, LocationIcon, ImageIcon } from '@repo/icons';
+import { ShareButtons } from '../../../components/ui/ShareButtons.client';
 
 /**
  * Generate static paths for all events across all locales.
@@ -30,8 +31,8 @@ export async function getStaticPaths() {
 
 	return locales.flatMap((lang) =>
 		events
-			.filter((e: any) => e.slug)
-			.map((e: any) => ({
+			.filter((e) => e.slug)
+			.map((e) => ({
 				params: { lang, slug: e.slug },
 				props: { event: e },
 			}))
@@ -62,17 +63,17 @@ if (!event) {
 /**
  * Calculate if event has ended based on actual end date
  */
-const isPastEvent = (event as any).endDate ? new Date((event as any).endDate) < new Date() : false;
+const isPastEvent = event.endDate ? new Date(event.endDate) < new Date() : false;
 
 /**
  * Localized page title
  */
-const pageTitle = (event as any).name;
+const pageTitle = event.name;
 
 /**
  * Localized meta descriptions
  */
-const eventDescription = (event as any).description || (event as any).summary || '';
+const eventDescription = event.description || event.summary || '';
 const descriptions: Record<SupportedLocale, string> = {
 	es: eventDescription.substring(0, 155) + (eventDescription.length > 155 ? '...' : ''),
 	en: eventDescription.substring(0, 155) + (eventDescription.length > 155 ? '...' : ''),
@@ -180,7 +181,7 @@ const breadcrumbItems = [
  */
 const relResult = await eventsApi.getUpcoming({ pageSize: 4 });
 const relatedEvents = relResult.ok
-	? relResult.data.items.filter((e: any) => e.slug !== slug).slice(0, 3)
+	? relResult.data.items.filter((e) => e.slug !== slug).slice(0, 3)
 	: [];
 
 /**
@@ -216,19 +217,19 @@ const formatTime = (dateString: string): string => {
 		canonical={canonicalUrl}
 		locale={locale === 'pt' ? 'es' : locale}
 		type="article"
-		image={(event as any).featuredImage || (event as any).image}
+		image={event.featuredImage || event.image}
 	/>
 
 	<EventJsonLd
 		slot="head"
-		name={(event as any).name}
-		description={(event as any).description || (event as any).summary}
-		startDate={(event as any).startDate}
-		endDate={(event as any).endDate}
+		name={event.name}
+		description={event.description || event.summary}
+		startDate={event.startDate}
+		endDate={event.endDate}
 		url={canonicalUrl}
-		image={(event as any).featuredImage || (event as any).image}
-		location={(event as any).location}
-		organizer={(event as any).organizer}
+		image={event.featuredImage || event.image}
+		location={event.location}
+		organizer={event.organizer}
 	/>
 
 	<Container>
@@ -240,7 +241,7 @@ const formatTime = (dateString: string): string => {
 				<article id="event-header" class="mb-8">
 					<div class="flex flex-wrap items-center gap-3 mb-4">
 						<span class="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-semibold text-primary">
-							{(event as any).category}
+							{event.category}
 						</span>
 						{isPastEvent && (
 							<span id="past-event-badge" class="inline-flex items-center rounded-full bg-gray-500/10 px-3 py-1 text-sm font-semibold text-gray-600">
@@ -250,7 +251,7 @@ const formatTime = (dateString: string): string => {
 					</div>
 
 					<h1 class="mb-6 text-4xl font-bold text-text-primary md:text-5xl">
-						{(event as any).name}
+						{event.name}
 					</h1>
 
 					<!-- Event Meta Information -->
@@ -260,7 +261,7 @@ const formatTime = (dateString: string): string => {
 							<CalendarIcon size={20} className="text-primary" aria-hidden="true" />
 							<div>
 								<span class="font-semibold">{labels.date[locale]}:</span>
-								<span class="ml-1">{formatDate((event as any).startDate)}</span>
+								<span class="ml-1">{formatDate(event.startDate)}</span>
 							</div>
 						</div>
 
@@ -269,17 +270,17 @@ const formatTime = (dateString: string): string => {
 							<ClockIcon size={20} className="text-primary" aria-hidden="true" />
 							<div>
 								<span class="font-semibold">{labels.time[locale]}:</span>
-								<span class="ml-1">{formatTime((event as any).startDate)}</span>
+								<span class="ml-1">{formatTime(event.startDate)}</span>
 							</div>
 						</div>
 
 						<!-- Location -->
-						{(event as any).location && (
+						{event.location && (
 							<div class="flex items-center gap-2">
 								<LocationIcon size={20} className="text-primary" aria-hidden="true" />
 								<div>
 									<span class="font-semibold">{labels.location[locale]}:</span>
-									<span class="ml-1">{(event as any).location.name}</span>
+									<span class="ml-1">{event.location.name}</span>
 								</div>
 							</div>
 						)}
@@ -288,11 +289,11 @@ const formatTime = (dateString: string): string => {
 
 				<!-- Event Image Area -->
 				<article id="event-image" class="mb-12">
-					{((event as any).featuredImage || (event as any).image) ? (
+					{(event.featuredImage || event.image) ? (
 						<div class="aspect-video w-full overflow-hidden rounded-lg bg-gray-200">
 							<img
-								src={(event as any).featuredImage || (event as any).image}
-								alt={(event as any).name}
+								src={event.featuredImage || event.image}
+								alt={event.name}
 								class="h-full w-full object-cover"
 								loading="eager"
 								transition:name={`entity-${slug}`}
@@ -316,18 +317,18 @@ const formatTime = (dateString: string): string => {
 								{labels.description[locale]}
 							</h2>
 							<p class="text-lg leading-relaxed text-text-secondary">
-								{(event as any).description || (event as any).summary}
+								{event.description || event.summary}
 							</p>
 						</article>
 
 						<!-- Agenda Section -->
-						{(event as any).agenda && Array.isArray((event as any).agenda) && (event as any).agenda.length > 0 && (
+						{event.agenda && Array.isArray(event.agenda) && event.agenda.length > 0 && (
 							<article id="event-schedule" class="rounded-lg bg-bg p-6 shadow-sm">
 								<h2 class="mb-6 text-2xl font-semibold text-text-primary">
 									{labels.agenda[locale]}
 								</h2>
 								<ol class="space-y-4">
-									{(event as any).agenda.map((item: any, index: number) => (
+									{event.agenda.map((item: { time?: string; title?: string; description?: string }, index: number) => (
 										<li class="flex gap-4">
 											<div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary">
 												{index + 1}
@@ -345,36 +346,36 @@ const formatTime = (dateString: string): string => {
 							</article>
 						)}
 
-						<!-- Share Buttons Placeholder -->
+						<!-- Share Buttons -->
 						<article id="share-buttons" class="rounded-lg bg-bg p-6 shadow-sm">
 							<h3 class="mb-4 text-lg font-semibold text-text-primary">
 								{labels.shareEvent[locale]}
 							</h3>
-							<div class="flex gap-3">
-								<!-- Placeholder for social share buttons -->
-								<div class="h-10 w-10 rounded-full bg-gray-200"></div>
-								<div class="h-10 w-10 rounded-full bg-gray-200"></div>
-								<div class="h-10 w-10 rounded-full bg-gray-200"></div>
-							</div>
+							<ShareButtons
+								client:visible
+								url={canonicalUrl}
+								title={pageTitle}
+								text={eventDescription.substring(0, 100)}
+							/>
 						</article>
 					</div>
 
 					<!-- Sidebar Column -->
 					<div class="space-y-6">
 						<!-- Pricing Section -->
-						{((event as any).price || (event as any).ticketUrl) && (
+						{(event.price || event.ticketUrl) && (
 							<article id="event-pricing" class="rounded-lg bg-bg p-6 shadow-sm">
 								<h2 class="mb-4 text-xl font-semibold text-text-primary">
 									{labels.pricing[locale]}
 								</h2>
-								{(event as any).price && (
+								{event.price && (
 									<p class="mb-4 text-2xl font-bold text-primary">
-										{(event as any).price}
+										{event.price}
 									</p>
 								)}
-								{!isPastEvent && (event as any).ticketUrl && (
+								{!isPastEvent && event.ticketUrl && (
 									<a
-										href={(event as any).ticketUrl}
+										href={event.ticketUrl}
 										class="inline-flex w-full items-center justify-center rounded-lg bg-primary px-6 py-3 font-semibold text-white transition-colors hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
 										target="_blank"
 										rel="noopener noreferrer"
@@ -386,13 +387,13 @@ const formatTime = (dateString: string): string => {
 						)}
 
 						<!-- Organizer Info -->
-						{(event as any).organizer && (
+						{event.organizer && (
 							<article id="event-organizer" class="rounded-lg bg-bg p-6 shadow-sm">
 								<h3 class="mb-2 text-sm font-semibold uppercase tracking-wide text-text-tertiary">
 									{labels.organizer[locale]}
 								</h3>
 								<p class="text-lg font-semibold text-text-primary">
-									{(event as any).organizer}
+									{event.organizer}
 								</p>
 							</article>
 						)}
@@ -406,7 +407,7 @@ const formatTime = (dateString: string): string => {
 							{labels.relatedEvents[locale]}
 						</h2>
 						<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" role="region" aria-label={labels.relatedEvents[locale]}>
-							{relatedEvents.map((relatedEvent: any) => (
+							{relatedEvents.map((relatedEvent) => (
 								<EventCard
 									event={{
 										slug: relatedEvent.slug,

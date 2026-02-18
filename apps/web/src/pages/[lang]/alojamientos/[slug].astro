@@ -54,8 +54,8 @@ export async function getStaticPaths() {
 
   return locales.flatMap((lang) =>
     accommodations
-      .filter((a: any) => a.slug)
-      .map((a: any) => ({
+      .filter((a) => a.slug)
+      .map((a) => ({
         params: { lang, slug: a.slug },
         props: { accommodation: a },
       }))
@@ -63,7 +63,7 @@ export async function getStaticPaths() {
 }
 
 // Fetch accommodation from props (getStaticPaths) or API (fallback)
-let accommodation = Astro.props.accommodation as Record<string, unknown> | undefined;
+let accommodation = Astro.props.accommodation;
 if (!accommodation) {
   const result = await accommodationsApi.getBySlug({ slug: slug || '' });
   if (!result.ok) {
@@ -73,18 +73,21 @@ if (!accommodation) {
 }
 
 // Render TipTap content to HTML
-const renderedDescription = renderTiptapContent({ content: (accommodation as any).description });
+const renderedDescription = renderTiptapContent({ content: accommodation.description });
 
 // Fetch similar accommodations from API
 const simResult = await accommodationsApi.list({ pageSize: 4 });
 const allAccommodations = simResult.ok ? simResult.data.items : [];
 const similarAccommodations = allAccommodations
-  .filter((a: any) => a.id !== (accommodation as any).id)
+  .filter((a) => a.id !== accommodation.id)
   .slice(0, 3)
-  .map((a: any) => ({ accommodation: a }));
+  .map((a) => ({ accommodation: a }));
+
+// Derive authentication state from session
+const isAuthenticated = !!Astro.locals.user;
 
 // Reviews will be integrated later - use empty array for now
-const mockReviews: any[] = [];
+const mockReviews: unknown[] = [];
 
 // Localized texts
 const texts: Record<SupportedLocale, {
@@ -163,46 +166,46 @@ const t = texts[locale];
 const breadcrumbItems = [
   { label: t.home, href: `/${locale}/` },
   { label: t.accommodations, href: `/${locale}/alojamientos/` },
-  { label: (accommodation as any).name },
+  { label: accommodation.name },
 ];
 
 // Page URL for sharing and canonical
-const pageUrl = `/${locale}/alojamientos/${(accommodation as any).slug}/`;
+const pageUrl = `/${locale}/alojamientos/${accommodation.slug}/`;
 
 // Map markers for location
 const mapMarkers = [
   {
-    id: (accommodation as any).id,
-    lat: (accommodation as any).location?.lat || -32.4833,
-    lng: (accommodation as any).location?.lng || -58.2333,
-    title: (accommodation as any).name,
-    popup: (accommodation as any).location?.address || ''
+    id: accommodation.id,
+    lat: accommodation.location?.lat || -32.4833,
+    lng: accommodation.location?.lng || -58.2333,
+    title: accommodation.name,
+    popup: accommodation.location?.address || ''
   }
 ];
 ---
 
 <BaseLayout
-  title={(accommodation as any).name}
-  description={`${(accommodation as any).name} - ${(accommodation as any).location?.city || ''}`}
+  title={accommodation.name}
+  description={`${accommodation.name} - ${accommodation.location?.city || ''}`}
   locale={locale}
-  image={(accommodation as any).images?.[0]?.src || '/images/placeholder-accommodation.svg'}
+  image={accommodation.images?.[0]?.src || '/images/placeholder-accommodation.svg'}
 >
   <SEOHead
     slot="head"
-    title={(accommodation as any).name}
-    description={`${(accommodation as any).name} en ${(accommodation as any).location?.city || ''}, ${(accommodation as any).location?.province || ''}`}
-    image={(accommodation as any).images?.[0]?.src || '/images/placeholder-accommodation.svg'}
+    title={accommodation.name}
+    description={`${accommodation.name} en ${accommodation.location?.city || ''}, ${accommodation.location?.province || ''}`}
+    image={accommodation.images?.[0]?.src || '/images/placeholder-accommodation.svg'}
     locale={locale}
   />
   <LodgingBusinessJsonLd
     slot="head"
-    name={(accommodation as any).name}
-    description={(accommodation as any).location?.address || ''}
-    image={(accommodation as any).images?.[0]?.src || '/images/placeholder-accommodation.svg'}
-    rating={(accommodation as any).rating || 0}
-    reviewCount={(accommodation as any).reviewCount || 0}
-    priceRange={`$${(accommodation as any).pricePerNight || 0}`}
-    address={(accommodation as any).location?.address || ''}
+    name={accommodation.name}
+    description={accommodation.location?.address || ''}
+    image={accommodation.images?.[0]?.src || '/images/placeholder-accommodation.svg'}
+    rating={accommodation.rating || 0}
+    reviewCount={accommodation.reviewCount || 0}
+    priceRange={`$${accommodation.pricePerNight || 0}`}
+    address={accommodation.location?.address || ''}
     url={pageUrl}
   />
 
@@ -211,7 +214,7 @@ const mapMarkers = [
 
     <!-- Image Gallery -->
     <div transition:name={`entity-${slug}`}>
-      <ImageGallery client:visible images={(accommodation as any).images || []} />
+      <ImageGallery client:visible images={accommodation.images || []} />
     </div>
 
     <!-- Main content grid -->
@@ -222,32 +225,33 @@ const mapMarkers = [
         <div>
           <div class="flex items-start justify-between">
             <div>
-              <Badge variant="primary" label={(accommodation as any).type || 'HOTEL'} />
-              <h1 class="mt-2 text-3xl font-bold">{(accommodation as any).name}</h1>
+              <Badge variant="primary" label={accommodation.type || 'HOTEL'} />
+              <h1 class="mt-2 text-3xl font-bold">{accommodation.name}</h1>
               <p class="mt-1 text-gray-600">
-                {(accommodation as any).location?.address || ''}, {(accommodation as any).location?.city || ''}, {(accommodation as any).location?.province || ''}
+                {accommodation.location?.address || ''}, {accommodation.location?.city || ''}, {accommodation.location?.province || ''}
               </p>
             </div>
             <div class="flex items-center gap-2">
               <FavoriteButton
                 client:visible
-                entityId={(accommodation as any).id}
+                entityId={accommodation.id}
                 entityType="accommodation"
+                isAuthenticated={isAuthenticated}
               />
               <ShareButtons
                 client:visible
                 url={pageUrl}
-                title={(accommodation as any).name}
+                title={accommodation.name}
               />
             </div>
           </div>
           <!-- Rating -->
           <div class="mt-3 flex items-center gap-2">
             <span class="rounded-md bg-primary px-2 py-1 text-sm font-bold text-white">
-              {(accommodation as any).rating || 0}
+              {accommodation.rating || 0}
             </span>
             <span class="text-sm text-gray-600">
-              ({(accommodation as any).reviewCount || 0} {t.reviewsLabel})
+              ({accommodation.reviewCount || 0} {t.reviewsLabel})
             </span>
           </div>
         </div>
@@ -261,7 +265,7 @@ const mapMarkers = [
         <!-- Amenities -->
         <section>
           <h2 class="mb-4 text-2xl font-bold">{t.amenities}</h2>
-          <AmenitiesList amenities={(accommodation as any).amenities || []} />
+          <AmenitiesList amenities={accommodation.amenities || []} />
         </section>
 
         <!-- Location Map -->
@@ -270,7 +274,7 @@ const mapMarkers = [
           <MapView
             client:visible
             markers={mapMarkers}
-            center={[(accommodation as any).location?.lat || -32.4833, (accommodation as any).location?.lng || -58.2333]}
+            center={[accommodation.location?.lat || -32.4833, accommodation.location?.lng || -58.2333]}
             zoom={15}
             height="400px"
           />
@@ -282,9 +286,9 @@ const mapMarkers = [
           <ReviewList
             client:visible
             reviews={mockReviews}
-            totalCount={(accommodation as any).reviewCount || 0}
+            totalCount={accommodation.reviewCount || 0}
             locale={locale}
-            isAuthenticated={false}
+            isAuthenticated={isAuthenticated}
             hasMore={false}
           />
         </section>
@@ -294,7 +298,7 @@ const mapMarkers = [
           <h2 class="mb-4 text-2xl font-bold">{t.faq}</h2>
           <AccordionFAQ
             client:visible
-            items={(accommodation as any).faqs || []}
+            items={accommodation.faqs || []}
           />
         </section>
       </div>
@@ -304,7 +308,7 @@ const mapMarkers = [
         <div class="rounded-lg border border-gray-200 p-6 shadow-sm">
           <!-- Price -->
           <div class="mb-4">
-            <PriceDisplay amountARS={(accommodation as any).pricePerNight || 0} locale={locale} showDisclaimer={false} />
+            <PriceDisplay amountARS={accommodation.pricePerNight || 0} locale={locale} showDisclaimer={false} />
             <span class="text-sm text-gray-600"> / {t.perNight}</span>
           </div>
 
@@ -312,11 +316,11 @@ const mapMarkers = [
           <div class="mb-6 space-y-2 text-sm">
             <div class="flex justify-between">
               <span class="text-gray-600">{t.checkIn}</span>
-              <span class="font-medium">{(accommodation as any).checkIn || '14:00'}</span>
+              <span class="font-medium">{accommodation.checkIn || '14:00'}</span>
             </div>
             <div class="flex justify-between">
               <span class="text-gray-600">{t.checkOut}</span>
-              <span class="font-medium">{(accommodation as any).checkOut || '10:00'}</span>
+              <span class="font-medium">{accommodation.checkOut || '10:00'}</span>
             </div>
           </div>
 

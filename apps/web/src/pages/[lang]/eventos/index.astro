@@ -229,7 +229,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
       events.length > 0 ? (
         <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {events.map((event) => (
-            <EventCard event={event as any} locale={locale} />
+            <EventCard event={event} locale={locale} />
           ))}
         </div>
       ) : (

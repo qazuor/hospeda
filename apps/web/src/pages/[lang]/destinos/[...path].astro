@@ -111,6 +111,22 @@ if (destinationId) {
 	events = evtResult.ok ? (evtResult.data.items as Array<Record<string, unknown>>) : [];
 }
 
+// Fetch breadcrumb hierarchy
+let hierarchyBreadcrumb: readonly {
+	id: string;
+	slug: string;
+	name: string;
+	level: number;
+	destinationType: string;
+	path: string;
+}[] = [];
+if (destinationId) {
+	const bcResult = await destinationsApi.getBreadcrumb({ id: destinationId });
+	if (bcResult.ok && bcResult.data.breadcrumb) {
+		hierarchyBreadcrumb = [...bcResult.data.breadcrumb];
+	}
+}
+
 /**
  * Render TipTap content to HTML
  */
@@ -145,12 +161,21 @@ const destinationImages = (destination.images as Array<{ url: string; alt: strin
 const accommodationCount = Number(destination.accommodationsCount || destination.accommodationCount || 0);
 const eventCount = Number(destination.eventsCount || destination.eventCount || 0);
 
-// Breadcrumb navigation items
+// Breadcrumb navigation items (includes full hierarchy: Home > Destinations > Parent... > Current)
 const breadcrumbItems = [
 	{ label: t.home, href: `/${locale}/` },
 	{ label: t.destinations, href: `/${locale}/destinos/` },
+	...hierarchyBreadcrumb
+		.filter((item) => item.id !== destinationId)
+		.map((item) => ({
+			label: item.name,
+			href: `/${locale}/destinos/${item.path}/`,
+		})),
 	{ label: destinationName },
 ];
+
+// Authentication state for interactive components
+const isAuthenticated = !!Astro.locals.user;
 
 // Page URL for sharing and canonical
 const pageUrl = `/${locale}/destinos/${destinationSlug}/`;
@@ -207,6 +232,7 @@ const mapMarkers = destinationLocation.lat && destinationLocation.lng
         client:visible
         entityId={destinationId}
         entityType="destination"
+        isAuthenticated={isAuthenticated}
       />
       <ShareButtons
         client:visible

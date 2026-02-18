@@ -263,7 +263,7 @@ const breadcrumbItems = [
 											>
 												{accommodations.map((accommodation) => (
 													<AccommodationCard
-														accommodation={accommodation as any}
+														accommodation={accommodation}
 														locale={locale}
 													/>
 												))}
@@ -293,7 +293,7 @@ const breadcrumbItems = [
 											>
 												{destinations.map((destination) => (
 													<DestinationCard
-														destination={destination as any}
+														destination={destination}
 														locale={locale}
 													/>
 												))}
@@ -323,7 +323,7 @@ const breadcrumbItems = [
 											>
 												{events.map((event) => (
 													<EventCard
-														event={event as any}
+														event={event}
 														locale={locale}
 													/>
 												))}
@@ -353,7 +353,7 @@ const breadcrumbItems = [
 											>
 												{posts.map((post) => (
 													<BlogPostCard
-														post={post as any}
+														post={post}
 														locale={locale}
 													/>
 												))}

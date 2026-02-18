@@ -205,11 +205,11 @@ const breadcrumbItems = [
 							<div class="rounded-lg border border-border bg-bg p-8 shadow-sm transition-shadow hover:shadow-md">
 								<div class="grid gap-8 md:grid-cols-2">
 									{/* Featured Image */}
-									{(featuredPost as any).featuredImage && (
+									{featuredPost.featuredImage && (
 										<div class="aspect-video rounded-md overflow-hidden">
 											<img
-												src={(featuredPost as any).featuredImage}
-												alt={(featuredPost as any).title || 'Featured post'}
+												src={featuredPost.featuredImage}
+												alt={featuredPost.title || 'Featured post'}
 												class="h-full w-full object-cover"
 												loading="eager"
 											/>
@@ -219,24 +219,24 @@ const breadcrumbItems = [
 									{/* Post Content */}
 									<div class="flex flex-col justify-between">
 										<div>
-											{(featuredPost as any).category && (
+											{featuredPost.category && (
 												<div class="mb-3">
 													<span class="inline-block rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
-														{(featuredPost as any).category}
+														{featuredPost.category}
 													</span>
 												</div>
 											)}
 											<h3 class="mb-3 text-2xl font-bold text-text-primary">
-												<a href={`/${locale}/publicaciones/${(featuredPost as any).slug}/`} class="hover:text-primary">
-													{(featuredPost as any).title || 'Publicación destacada'}
+												<a href={`/${locale}/publicaciones/${featuredPost.slug}/`} class="hover:text-primary">
+													{featuredPost.title || 'Publicación destacada'}
 												</a>
 											</h3>
 											<p class="mb-4 text-text-secondary line-clamp-3">
-												{(featuredPost as any).summary || (featuredPost as any).content || ''}
+												{featuredPost.summary || featuredPost.content || ''}
 											</p>
-											{(featuredPost as any).publishedAt && (
-												<time datetime={(featuredPost as any).publishedAt} class="text-sm text-text-tertiary">
-													{new Date((featuredPost as any).publishedAt).toLocaleDateString(locale)}
+											{featuredPost.publishedAt && (
+												<time datetime={featuredPost.publishedAt} class="text-sm text-text-tertiary">
+													{new Date(featuredPost.publishedAt).toLocaleDateString(locale)}
 												</time>
 											)}
 										</div>

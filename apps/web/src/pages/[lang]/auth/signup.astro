@@ -1,14 +1,11 @@
 ---
-export const prerender = true;
-
-export function getStaticPaths() {
-	return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
-}
-
 /**
  * Sign up page - allows users to create a new account.
  * Uses the SignUpIsland React island for interactive registration via Better Auth.
  * Validates locale parameter and redirects invalid locales to Spanish (default).
+ *
+ * @route /[lang]/auth/signup/
+ * @rendering SSR (Server-Side Rendering) - requires server-side auth guard
  */
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import SEOHead from '../../../components/seo/SEOHead.astro';
@@ -23,6 +20,14 @@ if (!lang || !isValidLocale(lang)) {
 }
 
 const locale = lang as SupportedLocale;
+
+/**
+ * Server-side auth guard: redirect authenticated users to home page.
+ * This prevents the flash of the signup form for already-logged-in users.
+ */
+if (Astro.locals.user) {
+	return Astro.redirect(`/${locale}/`);
+}
 
 /**
  * Localized page titles
@@ -66,9 +71,8 @@ const currentLabels = labels[locale];
 /**
  * Build an absolute redirect URL so Better Auth OAuth redirects
  * return to the web app instead of the API.
- * Use Astro.site (configured in astro.config.mjs) for SSG pages.
  */
-const siteOrigin = Astro.site?.origin || import.meta.env.PUBLIC_SITE_URL || import.meta.env.HOSPEDA_SITE_URL || 'http://localhost:4321';
+const siteOrigin = import.meta.env.PUBLIC_SITE_URL || import.meta.env.HOSPEDA_SITE_URL || Astro.url.origin;
 const redirectTo = new URL(`/${locale}/mi-cuenta`, siteOrigin).href;
 ---
 
@@ -109,27 +113,3 @@ const redirectTo = new URL(`/${locale}/mi-cuenta`, siteOrigin).href;
 		</div>
 	</Container>
 </BaseLayout>
-
-<script>
-	/**
-	 * Client-side auth guard for SSG auth pages.
-	 * Checks if user is already authenticated and redirects to home.
-	 * Uses the Better Auth get-session endpoint via the API.
-	 */
-	async function redirectIfAuthenticated() {
-		try {
-			const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:3001';
-			const res = await fetch(`${apiUrl}/api/auth/get-session`, { credentials: 'include' });
-			if (res.ok) {
-				const data = await res.json();
-				if (data?.user?.id) {
-					const locale = window.location.pathname.split('/')[1] || 'es';
-					window.location.replace(`/${locale}/`);
-				}
-			}
-		} catch {
-			// Ignore - user is not authenticated or API is unreachable
-		}
-	}
-	void redirectIfAuthenticated();
-</script>

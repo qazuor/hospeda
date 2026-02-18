@@ -15,6 +15,7 @@ export function getStaticPaths() {
  * Route: /[lang]/
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import SEOHead from '../../components/seo/SEOHead.astro';
 import HeroSection from '../../components/content/HeroSection.astro';
 import FeaturedSection from '../../components/content/FeaturedSection.astro';
 import FeaturedAccommodations from '../../components/content/FeaturedAccommodations.astro';
@@ -87,9 +88,17 @@ const texts: Record<SupportedLocale, {
 };
 
 const t = texts[locale];
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 ---
 
 <BaseLayout title={t.pageTitle} description={t.pageDescription} locale={locale}>
+	<SEOHead
+		slot="head"
+		title={t.pageTitle}
+		description={t.pageDescription}
+		canonical={canonicalUrl}
+		locale={locale}
+	/>
 	<!-- Hero Section (static) -->
 	<HeroSection
 		image="/images/hero-litoral.jpg"

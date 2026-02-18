@@ -1,10 +1,25 @@
 ---
+export const prerender = true;
+
+/**
+ * Returns static paths for all supported locales.
+ * Combined with ISR (configured globally in astro.config.mjs),
+ * pages are pre-rendered at build time and revalidated on-demand.
+ */
+export function getStaticPaths() {
+  return [
+    { params: { lang: 'es' } },
+    { params: { lang: 'en' } },
+    { params: { lang: 'pt' } },
+  ];
+}
+
 /**
  * Accommodation List page
  * Displays a paginated, sortable grid of accommodation listings.
  *
  * @route /[lang]/alojamientos/
- * @rendering SSR (Server-Side Rendering)
+ * @rendering SSG + ISR (Static Site Generation with Incremental Static Regeneration)
  */
 
 import BaseLayout from '../../../layouts/BaseLayout.astro';
@@ -27,10 +42,10 @@ if (!lang || !isValidLocale(lang)) {
 const locale = lang as SupportedLocale;
 
 // Get query params for filtering/sorting
-const url = new URL(Astro.request.url);
-const sortBy = url.searchParams.get('sortBy') || 'name';
-const typeFilter = url.searchParams.get('type') || undefined;
-const page = Number.parseInt(url.searchParams.get('page') || '1', 10);
+// Astro.url.searchParams works for both SSG and ISR modes
+const sortBy = Astro.url.searchParams.get('sortBy') || 'name';
+const typeFilter = Astro.url.searchParams.get('type') || undefined;
+const page = Number.parseInt(Astro.url.searchParams.get('page') || '1', 10);
 const perPage = 12;
 
 /**
