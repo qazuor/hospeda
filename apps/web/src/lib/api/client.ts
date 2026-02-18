@@ -72,12 +72,14 @@ async function request<T>({
     method,
     path,
     params,
-    body
+    body,
+    withCredentials
 }: {
-    method: 'GET' | 'POST' | 'PUT' | 'DELETE';
+    method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
     path: string;
     params?: Record<string, unknown>;
     body?: unknown;
+    withCredentials?: boolean;
 }): Promise<ApiResult<T>> {
     const url = `${config.baseUrl}${path}${serializeParams(params)}`;
     const controller = new AbortController();
@@ -95,7 +97,8 @@ async function request<T>({
             method,
             headers,
             body: body ? JSON.stringify(body) : undefined,
-            signal: controller.signal
+            signal: controller.signal,
+            ...(withCredentials ? { credentials: 'include' as RequestCredentials } : {})
         });
 
         const responseBody: unknown = await response.json().catch(() => null);
@@ -161,5 +164,28 @@ export const apiClient = {
     /** POST request */
     post<T>({ path, body }: { path: string; body?: unknown }): Promise<ApiResult<T>> {
         return request<T>({ method: 'POST', path, body });
+    },
+
+    /** PATCH request */
+    patch<T>({ path, body }: { path: string; body?: unknown }): Promise<ApiResult<T>> {
+        return request<T>({ method: 'PATCH', path, body, withCredentials: true });
+    },
+
+    /** DELETE request */
+    delete<T>({ path }: { path: string }): Promise<ApiResult<T>> {
+        return request<T>({ method: 'DELETE', path, withCredentials: true });
+    },
+
+    /** GET request with authentication credentials */
+    getProtected<T>({
+        path,
+        params
+    }: { path: string; params?: Record<string, unknown> }): Promise<ApiResult<T>> {
+        return request<T>({ method: 'GET', path, params, withCredentials: true });
+    },
+
+    /** POST request with authentication credentials */
+    postProtected<T>({ path, body }: { path: string; body?: unknown }): Promise<ApiResult<T>> {
+        return request<T>({ method: 'POST', path, body, withCredentials: true });
     }
 };
