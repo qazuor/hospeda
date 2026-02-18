@@ -13,6 +13,7 @@ import Pagination from '../../../components/ui/Pagination.astro';
 import BlogPostCard from '../../../components/blog/BlogPostCard.astro';
 import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
 import { postsApi } from '../../../lib/api/endpoints';
+import { extractFeaturedImageUrl } from '../../../lib/media';
 
 const { lang } = Astro.params;
 
@@ -156,7 +157,11 @@ const pagination = apiResult.ok ? apiResult.data.pagination : null;
  * Get featured post
  */
 const featuredResult = await postsApi.getFeatured();
-const featuredPost = featuredResult.ok && featuredResult.data.items.length > 0 ? featuredResult.data.items[0] : null;
+const featuredPostRaw = featuredResult.ok && featuredResult.data.items.length > 0 ? featuredResult.data.items[0] as Record<string, unknown> : null;
+const featuredPost = featuredPostRaw ? {
+	...featuredPostRaw,
+	featuredImage: extractFeaturedImageUrl(featuredPostRaw, ''),
+} : null;
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
@@ -167,6 +172,21 @@ const breadcrumbItems = [
 	{ label: homeLabels[locale], href: `/${locale}/` },
 	{ label: titles[locale], href: `/${locale}/publicaciones/` },
 ];
+
+const postCards = posts.map((post) => {
+	const p = post as Record<string, unknown>;
+	return {
+		slug: String(p.slug || ''),
+		title: String(p.title || ''),
+		summary: String(p.summary || p.content || ''),
+		featuredImage: extractFeaturedImageUrl(p, '/images/placeholder-post.svg'),
+		category: String(p.category || ''),
+		publishedAt: String(p.publishedAt || ''),
+		readingTimeMinutes: Number(p.readingTimeMinutes || 0),
+		authorName: String(p.authorName || ''),
+		isFeatured: Boolean(p.isFeatured),
+	};
+});
 ---
 
 <BaseLayout title={titles[locale]} description={descriptions[locale]} locale={locale}>
@@ -324,11 +344,11 @@ const breadcrumbItems = [
 				<!-- Posts Grid -->
 				<article id="posts-grid" class="mb-16">
 					{
-						posts.length > 0 ? (
+						postCards.length > 0 ? (
 							<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" role="region" aria-label="Blog posts">
-								{posts.map((post) => (
+								{postCards.map((post) => (
 									<BlogPostCard
-										post={post as Record<string, unknown> & { slug: string; title: string; summary: string; featuredImage: string; category: string; publishedAt: string; readingTimeMinutes: number; authorName: string; isFeatured: boolean }}
+										post={post}
 										locale={locale}
 									/>
 								))}

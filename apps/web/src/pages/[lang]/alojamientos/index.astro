@@ -32,6 +32,7 @@ import Pagination from '../../../components/ui/Pagination.astro';
 import { ViewToggle } from '../../../components/ui/ViewToggle.client.tsx';
 import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
 import { accommodationsApi } from '../../../lib/api/endpoints';
+import { extractFeaturedImageUrl } from '../../../lib/media';
 
 const { lang } = Astro.params;
 
@@ -168,6 +169,21 @@ const breadcrumbItems = [
  * Canonical URL for SEO.
  */
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
+
+const accommodationCards = accommodations.map((acc) => {
+  const a = acc as Record<string, unknown>;
+  return {
+    slug: String(a.slug || ''),
+    name: String(a.name || ''),
+    summary: String(a.summary || a.description || ''),
+    type: String(a.type || a.accommodationType || ''),
+    featuredImage: extractFeaturedImageUrl(a, '/images/placeholder-accommodation.svg'),
+    averageRating: Number(a.averageRating || 0),
+    reviewsCount: Number(a.reviewsCount || 0),
+    location: (a.location as { city: string; state: string }) || { city: '', state: '' },
+    isFeatured: Boolean(a.isFeatured),
+  };
+});
 ---
 
 <BaseLayout title={t.title} description={t.description} locale={locale}>
@@ -217,9 +233,14 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
     </div>
 
     <!-- Accommodation Grid -->
-    {accommodations.length > 0 ? (
+    {accommodationCards.length > 0 ? (
       <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {accommodations.map((acc) => <AccommodationCard accommodation={acc as Record<string, unknown> & { slug: string; name: string; summary: string; type: string; featuredImage: string; averageRating: number; reviewsCount: number; location: { city: string; state: string }; isFeatured: boolean }} locale={locale} />)}
+        {accommodationCards.map((accommodation) => (
+          <AccommodationCard
+            accommodation={accommodation}
+            locale={locale}
+          />
+        ))}
       </div>
     ) : (
       <EmptyState

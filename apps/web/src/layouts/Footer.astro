@@ -4,7 +4,7 @@
  * Provides organized access to main site sections, information, and legal pages.
  */
 import Container from '../components/ui/Container.astro';
-import { NewsletterCTA } from '../components/newsletter/NewsletterCTA.client';
+import NewsletterCTAIsland from '../components/newsletter/NewsletterCTAIsland.astro';
 import { InstagramIcon, FacebookIcon, WhatsappIcon } from '@repo/icons';
 
 interface Props {
@@ -12,10 +12,6 @@ interface Props {
 }
 
 const { locale = 'es' } = Astro.props;
-
-// Get authenticated user from middleware
-const authenticatedUser = Astro.locals.user;
-const isAuthenticated = !!authenticatedUser;
 
 // Localized labels
 const t = (labels: Record<string, string>) => labels[locale] ?? labels.es;
@@ -34,6 +30,14 @@ const linkGroups = [
       { label: t({ es: 'Destinos', en: 'Destinations', pt: 'Destinos' }), href: `/${locale}/destinos/` },
       { label: t({ es: 'Eventos', en: 'Events', pt: 'Eventos' }), href: `/${locale}/eventos/` },
       { label: 'Blog', href: `/${locale}/publicaciones/` },
+    ],
+  },
+  {
+    title: t({ es: 'Propietarios', en: 'Property Owners', pt: 'Proprietarios' }),
+    links: [
+      { label: t({ es: 'Publica tu alojamiento', en: 'List your property', pt: 'Publique seu alojamento' }), href: `/${locale}/propietarios/` },
+      { label: t({ es: 'Planes para propietarios', en: 'Owner plans', pt: 'Planos para proprietarios' }), href: `/${locale}/precios/propietarios/` },
+      { label: t({ es: 'Planes para turistas', en: 'Tourist plans', pt: 'Planos para turistas' }), href: `/${locale}/precios/turistas/` },
     ],
   },
   {
@@ -63,15 +67,16 @@ const currentYear = new Date().getFullYear();
       <!-- Newsletter Section -->
       <div class="mb-12">
         <h2 class="mb-6 text-2xl font-bold text-text">{newsletterTitle}</h2>
-        <NewsletterCTA
-          client:idle
+        <NewsletterCTAIsland
+          server:defer
           locale={locale}
-          isAuthenticated={isAuthenticated}
-        />
+        >
+          <div slot="fallback" class="h-12 w-full max-w-md animate-pulse rounded-lg bg-gray-200" />
+        </NewsletterCTAIsland>
       </div>
 
       <!-- Link columns -->
-      <div class="grid grid-cols-2 gap-8 md:grid-cols-3 lg:grid-cols-4">
+      <div class="grid grid-cols-2 gap-8 md:grid-cols-3 lg:grid-cols-5">
         <!-- Brand column -->
         <div class="col-span-2 md:col-span-1">
           <a href={`/${locale}/`} class="font-serif text-xl font-bold text-primary no-underline">

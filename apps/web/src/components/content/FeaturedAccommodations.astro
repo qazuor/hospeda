@@ -7,6 +7,7 @@
 import AccommodationCard from '../accommodation/AccommodationCard.astro';
 import EmptyState from '../ui/EmptyState.astro';
 import { accommodationsApi } from '../../lib/api/endpoints';
+import { extractFeaturedImageUrl } from '../../lib/media';
 
 interface Props {
   locale?: string;
@@ -16,12 +17,30 @@ const { locale = 'es' } = Astro.props;
 
 const result = await accommodationsApi.list({ isFeatured: true, pageSize: 6 });
 const accommodations = result.ok ? result.data.items : [];
+
+const accommodationCards = accommodations.map((acc) => {
+  const a = acc as Record<string, unknown>;
+  return {
+    slug: String(a.slug || ''),
+    name: String(a.name || ''),
+    summary: String(a.summary || a.description || ''),
+    type: String(a.type || a.accommodationType || ''),
+    featuredImage: extractFeaturedImageUrl(a, '/images/placeholder-accommodation.svg'),
+    averageRating: Number(a.averageRating || 0),
+    reviewsCount: Number(a.reviewsCount || 0),
+    location: (a.location as { city: string; state: string }) || { city: '', state: '' },
+    isFeatured: Boolean(a.isFeatured),
+  };
+});
 ---
 
-{accommodations.length > 0 ? (
+{accommodationCards.length > 0 ? (
   <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-    {accommodations.map((acc) => (
-      <AccommodationCard accommodation={acc as Record<string, unknown> & { slug: string; name: string; summary: string; type: string; featuredImage: string; averageRating: number; reviewsCount: number; location: { city: string; state: string }; isFeatured: boolean }} locale={locale} />
+    {accommodationCards.map((accommodation) => (
+        <AccommodationCard
+          accommodation={accommodation}
+          locale={locale}
+        />
     ))}
   </div>
 ) : (

@@ -21,6 +21,7 @@ import { destinationsApi } from '../../../lib/api/endpoints';
 import Pagination from '../../../components/ui/Pagination.astro';
 import { LocationIcon } from '@repo/icons';
 import { DestinationFilters } from '../../../components/destination/DestinationFilters.client.tsx';
+import { extractFeaturedImageUrl } from '../../../lib/media';
 
 const { lang } = Astro.params;
 
@@ -39,7 +40,7 @@ const pageSize = 12;
 /**
  * Fetch destinations from API
  */
-const result = await destinationsApi.list({ page, pageSize });
+const result = await destinationsApi.list({ page, pageSize, destinationType: 'CITY' });
 const destinations = result.ok ? (result.data.items as Array<Record<string, unknown>>) : [];
 const pagination = result.ok ? result.data.pagination : null;
 
@@ -205,7 +206,7 @@ const breadcrumbItems = [
 										slug: String(dest.slug || ''),
 										name: String(dest.name || 'Sin nombre'),
 										summary: String(dest.summary || dest.description || ''),
-										featuredImage: String(dest.featuredImage || dest.heroImage || '/images/placeholder-destination.svg'),
+										featuredImage: extractFeaturedImageUrl(dest, '/images/placeholder-destination.svg'),
 										accommodationsCount: Number(dest.accommodationsCount || 0),
 										isFeatured: Boolean(dest.isFeatured),
 										path: String(dest.path || dest.slug || ''),

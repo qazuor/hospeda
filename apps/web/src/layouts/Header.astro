@@ -28,6 +28,14 @@ const navLabels: Record<string, Record<string, string>> = {
   blog: { es: 'Blog', en: 'Blog', pt: 'Blog' },
 };
 
+const ownerCtaLabel: Record<string, string> = {
+  es: 'Publica tu alojamiento',
+  en: 'List your property',
+  pt: 'Publique seu alojamento',
+};
+
+const ownerCtaHref = `/${locale}/propietarios/`;
+
 const navLinks = [
   { label: navLabels.accommodations[locale] ?? navLabels.accommodations.es, href: `/${locale}/alojamientos/` },
   { label: navLabels.destinations[locale] ?? navLabels.destinations.es, href: `/${locale}/destinos/` },
@@ -65,6 +73,17 @@ function isLinkActive(href: string): boolean {
             </a>
           );
         })}
+        <a
+          href={ownerCtaHref}
+          class={`rounded-md border-2 border-primary px-3 py-1.5 text-sm font-semibold transition-colors ${
+            isLinkActive(ownerCtaHref)
+              ? 'bg-primary text-white'
+              : 'text-primary hover:bg-primary hover:text-white'
+          }`}
+          aria-current={isLinkActive(ownerCtaHref) ? 'page' : undefined}
+        >
+          {ownerCtaLabel[locale] ?? ownerCtaLabel.es}
+        </a>
       </nav>
 
       <!-- Right side: theme toggle + auth area + mobile menu button -->
@@ -81,7 +100,7 @@ function isLinkActive(href: string): boolean {
         <!-- Mobile menu (trigger + slide-in panel, hydrated only on mobile) -->
         <MobileMenuWrapper
           client:media="(max-width: 768px)"
-          navItems={navLinks}
+          navItems={[...navLinks, { label: ownerCtaLabel[locale] ?? ownerCtaLabel.es, href: ownerCtaHref }]}
           locale={locale as 'es' | 'en' | 'pt'}
         />
       </div>

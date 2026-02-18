@@ -15,6 +15,9 @@ export interface DestinationItem {
     readonly accommodationsCount?: number;
     readonly isFeatured?: boolean;
     readonly path?: string;
+    readonly media?: {
+        readonly featuredImage?: { readonly url?: string } | string;
+    };
 }
 
 /** Localized labels needed for card rendering */
@@ -40,8 +43,13 @@ export function DestinationCardClient({
 }) {
     const detailPath = destination.path ?? destination.slug;
     const detailUrl = `/${locale}/destinos/${detailPath}/`;
+    const mediaFeatured = destination.media?.featuredImage;
+    const mediaUrl = typeof mediaFeatured === 'string' ? mediaFeatured : mediaFeatured?.url;
     const image =
-        destination.featuredImage ?? destination.heroImage ?? '/images/placeholder-destination.svg';
+        mediaUrl ??
+        destination.featuredImage ??
+        destination.heroImage ??
+        '/images/placeholder-destination.svg';
     const summary = destination.summary ?? (destination.description as string | undefined) ?? '';
     const count = destination.accommodationsCount ?? 0;
     const t = (CARD_LABELS[locale] ?? CARD_LABELS.es) as CardLabels;

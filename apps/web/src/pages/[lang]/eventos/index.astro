@@ -13,6 +13,7 @@ import Pagination from '../../../components/ui/Pagination.astro';
 import SEOHead from '../../../components/seo/SEOHead.astro';
 import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
 import { eventsApi } from '../../../lib/api/endpoints';
+import { extractFeaturedImageUrl } from '../../../lib/media';
 
 const { lang } = Astro.params;
 
@@ -163,6 +164,23 @@ const breadcrumbItems = [
  * Generate canonical URL for SEO
  */
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
+
+const eventCards = events.map((evt) => {
+  const e = evt as Record<string, unknown>;
+  return {
+    slug: String(e.slug || ''),
+    name: String(e.name || ''),
+    summary: String(e.summary || e.description || ''),
+    featuredImage: extractFeaturedImageUrl(e, '/images/placeholder-event.svg'),
+    category: String(e.category || ''),
+    date: {
+      start: String(e.startDate || ''),
+      end: e.endDate ? String(e.endDate) : undefined,
+    },
+    isFeatured: Boolean(e.isFeatured),
+    location: e.location as { name: string; city: string } | undefined,
+  };
+});
 ---
 
 <BaseLayout title={t.title} description={t.description} locale={locale}>
@@ -226,10 +244,13 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
     <!-- Events grid -->
     {
-      events.length > 0 ? (
+      eventCards.length > 0 ? (
         <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {events.map((event) => (
-            <EventCard event={event} locale={locale} />
+          {eventCards.map((event) => (
+            <EventCard
+              event={event}
+              locale={locale}
+            />
           ))}
         </div>
       ) : (

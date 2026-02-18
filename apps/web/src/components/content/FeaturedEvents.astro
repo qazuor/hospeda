@@ -7,6 +7,7 @@
 import EventCard from '../event/EventCard.astro';
 import EmptyState from '../ui/EmptyState.astro';
 import { eventsApi } from '../../lib/api/endpoints';
+import { extractFeaturedImageUrl } from '../../lib/media';
 
 interface Props {
   locale?: string;
@@ -14,14 +15,34 @@ interface Props {
 
 const { locale = 'es' } = Astro.props;
 
-const result = await eventsApi.getUpcoming({ pageSize: 4 });
+const result = await eventsApi.list({ pageSize: 4, sortBy: 'startDate', sortOrder: 'asc' });
 const events = result.ok ? result.data.items : [];
+
+const eventCards = events.map((evt) => {
+  const e = evt as Record<string, unknown>;
+  return {
+    slug: String(e.slug || ''),
+    name: String(e.name || ''),
+    summary: String(e.summary || e.description || ''),
+    featuredImage: extractFeaturedImageUrl(e, '/images/placeholder-event.svg'),
+    category: String(e.category || ''),
+    date: {
+      start: String(e.startDate || ''),
+      end: e.endDate ? String(e.endDate) : undefined,
+    },
+    isFeatured: Boolean(e.isFeatured),
+    location: e.location as { name: string; city: string } | undefined,
+  };
+});
 ---
 
-{events.length > 0 ? (
+{eventCards.length > 0 ? (
   <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-    {events.map((event) => (
-      <EventCard event={event as Record<string, unknown> & { slug: string; name: string; summary: string; featuredImage: string; category: string; date: { start: string; end?: string }; isFeatured: boolean; location?: { name: string; city: string } }} locale={locale} />
+    {eventCards.map((event) => (
+        <EventCard
+          event={event}
+          locale={locale}
+        />
     ))}
   </div>
 ) : (
