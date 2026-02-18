@@ -1,6 +1,12 @@
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
-import { AlertTriangleIcon, ChevronDownIcon, ChevronUpIcon, LoaderIcon } from '@repo/icons';
+import {
+    AlertTriangleIcon,
+    ChevronDownIcon,
+    ChevronUpIcon,
+    LoaderIcon,
+    PackageIcon
+} from '@repo/icons';
 import type { VirtualItem } from '@tanstack/react-virtual';
 import type { ReactNode } from 'react';
 import React from 'react';
@@ -221,20 +227,12 @@ export const DefaultEmptyState: React.FC<{ message?: string }> = ({ message }) =
 
     return (
         <div className="flex flex-col items-center justify-center py-12 text-gray-500">
-            <svg
-                className="mb-4 h-12 w-12"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-            >
-                <title>{t('ui.accessibility.tableView')}</title>
-                <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1}
-                    d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
-                />
-            </svg>
+            <PackageIcon
+                size={48}
+                weight="light"
+                className="mb-4"
+                aria-label={t('ui.accessibility.tableView')}
+            />
             <p className="font-medium text-sm">{displayMessage}</p>
         </div>
     );

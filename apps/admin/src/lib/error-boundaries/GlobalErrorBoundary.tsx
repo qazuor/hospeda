@@ -1,5 +1,6 @@
 import { reportComponentError } from '@/lib/errors';
 import { showErrorToast, showInfoToast } from '@/lib/errors';
+import { AlertTriangleIcon } from '@repo/icons';
 import React from 'react';
 
 /**
@@ -65,21 +66,12 @@ const GlobalErrorFallback: React.FC<GlobalErrorFallbackProps> = ({ error, resetE
             <div className="w-full max-w-lg text-center">
                 {/* Error Icon */}
                 <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-red-100">
-                    <svg
-                        className="h-10 w-10 text-red-600"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
+                    <AlertTriangleIcon
+                        size={40}
+                        weight="bold"
+                        className="text-red-600"
                         aria-label="Global error icon"
-                    >
-                        <title>Global Error</title>
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-                        />
-                    </svg>
+                    />
                 </div>
 
                 {/* Error Title */}

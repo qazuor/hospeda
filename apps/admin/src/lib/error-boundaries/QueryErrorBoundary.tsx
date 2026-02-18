@@ -1,4 +1,5 @@
 import { reportComponentError } from '@/lib/errors';
+import { AlertTriangleIcon } from '@repo/icons';
 import { useQueryClient } from '@tanstack/react-query';
 import React from 'react';
 
@@ -98,21 +99,12 @@ const QueryErrorFallback: React.FC<QueryErrorFallbackProps> = ({
             <div className="w-full max-w-sm text-center">
                 {/* Error Icon */}
                 <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-orange-100">
-                    <svg
-                        className="h-6 w-6 text-orange-600"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
+                    <AlertTriangleIcon
+                        size={24}
+                        weight="bold"
+                        className="text-orange-600"
                         aria-label="Query error icon"
-                    >
-                        <title>Query Error</title>
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                    </svg>
+                    />
                 </div>
 
                 {/* Error Title */}

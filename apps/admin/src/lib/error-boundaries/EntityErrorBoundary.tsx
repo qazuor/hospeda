@@ -1,4 +1,5 @@
 import { reportComponentError } from '@/lib/errors';
+import { AlertTriangleIcon } from '@repo/icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import React from 'react';
@@ -94,21 +95,12 @@ const EntityErrorFallback: React.FC<EntityErrorFallbackProps> = ({
             <div className="w-full max-w-md text-center">
                 {/* Error Icon */}
                 <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
-                    <svg
-                        className="h-8 w-8 text-red-600"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
+                    <AlertTriangleIcon
+                        size={32}
+                        weight="bold"
+                        className="text-red-600"
                         aria-label="Error icon"
-                    >
-                        <title>Error</title>
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-                        />
-                    </svg>
+                    />
                 </div>
 
                 {/* Error Title */}
