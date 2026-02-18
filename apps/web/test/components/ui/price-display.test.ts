@@ -201,8 +201,8 @@ describe('PriceDisplay.client.tsx', () => {
     });
 
     describe('Conversion Rates', () => {
-        it('should define CONVERSION_RATES constant', () => {
-            expect(reactContent).toContain('const CONVERSION_RATES');
+        it('should define FALLBACK_RATES constant', () => {
+            expect(reactContent).toContain('const FALLBACK_RATES');
         });
 
         it('should define ARS rate as 1', () => {
@@ -219,6 +219,47 @@ describe('PriceDisplay.client.tsx', () => {
 
         it('should use as const for immutability', () => {
             expect(reactContent).toContain('as const');
+        });
+    });
+
+    describe('Exchange Rate Cache', () => {
+        it('should define CACHE_KEY constant', () => {
+            expect(reactContent).toContain('const CACHE_KEY');
+        });
+
+        it('should define CACHE_TTL_MS constant', () => {
+            expect(reactContent).toContain('const CACHE_TTL_MS');
+        });
+
+        it('should implement readCachedRates function', () => {
+            expect(reactContent).toContain('function readCachedRates');
+        });
+
+        it('should implement writeCachedRates function', () => {
+            expect(reactContent).toContain('function writeCachedRates');
+        });
+    });
+
+    describe('Dynamic Exchange Rate Fetching', () => {
+        it('should implement fetchExchangeRates function', () => {
+            expect(reactContent).toContain('async function fetchExchangeRates');
+        });
+
+        it('should implement resolveExchangeRates function', () => {
+            expect(reactContent).toContain('async function resolveExchangeRates');
+        });
+
+        it('should fall back to FALLBACK_RATES on error', () => {
+            expect(reactContent).toContain('return FALLBACK_RATES');
+        });
+
+        it('should use useEffect to load rates asynchronously', () => {
+            expect(reactContent).toContain('useEffect');
+            expect(reactContent).toContain('resolveExchangeRates');
+        });
+
+        it('should use useState to store conversion rates', () => {
+            expect(reactContent).toContain('useState<ConversionRates>');
         });
     });
 

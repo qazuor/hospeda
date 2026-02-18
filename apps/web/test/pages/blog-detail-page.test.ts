@@ -115,7 +115,7 @@ describe('Blog Detail Page ([slug].astro)', () => {
         });
 
         it('should include category in breadcrumb', () => {
-            expect(content).toContain('(post as any).category');
+            expect(content).toContain('post.category');
         });
 
         it('should render Breadcrumb component', () => {
@@ -129,28 +129,28 @@ describe('Blog Detail Page ([slug].astro)', () => {
         });
 
         it('should have featured image', () => {
-            expect(content).toContain('src={(post as any).coverImage');
-            expect(content).toContain('alt={(post as any).title}');
+            expect(content).toContain('src={post.coverImage');
+            expect(content).toContain('alt={post.title}');
             expect(content).toContain('aspect-video');
         });
 
         it('should display category badge', () => {
-            expect(content).toContain('<Badge label={(post as any).category');
+            expect(content).toContain('<Badge label={post.category');
         });
 
         it('should have h1 title', () => {
             expect(content).toContain('<h1');
-            expect(content).toContain('{(post as any).title}');
+            expect(content).toContain('{post.title}');
         });
 
         it('should display author avatar', () => {
-            expect(content).toContain('src={(post as any).author?.avatar');
-            expect(content).toContain('alt={(post as any).author?.name');
+            expect(content).toContain('src={post.author?.avatar');
+            expect(content).toContain('alt={post.author?.name');
             expect(content).toContain('rounded-full');
         });
 
         it('should display author name', () => {
-            expect(content).toContain('{(post as any).author?.name');
+            expect(content).toContain('{post.author?.name');
         });
 
         it('should display formatted date', () => {
@@ -158,7 +158,7 @@ describe('Blog Detail Page ([slug].astro)', () => {
         });
 
         it('should display reading time', () => {
-            expect(content).toContain('{(post as any).readingTime');
+            expect(content).toContain('{post.readingTime');
             expect(content).toContain('{t.readingTime}');
         });
 
@@ -173,7 +173,7 @@ describe('Blog Detail Page ([slug].astro)', () => {
         });
 
         it('should render tags with Badge components', () => {
-            expect(content).toContain('((post as any).tags || []).map((tag: string)');
+            expect(content).toContain('(post.tags || []).map((tag: string)');
             expect(content).toContain('<Badge label={tag}');
             expect(content).toContain('variant="outline"');
         });
@@ -197,7 +197,7 @@ describe('Blog Detail Page ([slug].astro)', () => {
         });
 
         it('should pass title to ShareButtons', () => {
-            expect(content).toContain('title={(post as any).title}');
+            expect(content).toContain('title={post.title}');
         });
     });
 
@@ -208,11 +208,11 @@ describe('Blog Detail Page ([slug].astro)', () => {
         });
 
         it('should pass title to SEOHead', () => {
-            expect(content).toContain('title={(post as any).title}');
+            expect(content).toContain('title={post.title}');
         });
 
         it('should pass description to SEOHead', () => {
-            expect(content).toContain('description={(post as any).excerpt');
+            expect(content).toContain('description={post.excerpt');
         });
 
         it('should set SEOHead type to article', () => {
@@ -225,7 +225,7 @@ describe('Blog Detail Page ([slug].astro)', () => {
         });
 
         it('should pass headline to ArticleJsonLd', () => {
-            expect(content).toContain('headline={(post as any).title}');
+            expect(content).toContain('headline={post.title}');
         });
 
         it('should pass url to ArticleJsonLd', () => {
@@ -233,11 +233,11 @@ describe('Blog Detail Page ([slug].astro)', () => {
         });
 
         it('should pass datePublished to ArticleJsonLd', () => {
-            expect(content).toContain('datePublished={(post as any).publishedAt');
+            expect(content).toContain('datePublished={post.publishedAt');
         });
 
         it('should pass author to ArticleJsonLd', () => {
-            expect(content).toContain('author={{ name: (post as any).author?.name');
+            expect(content).toContain('author={{ name: post.author?.name');
         });
     });
 

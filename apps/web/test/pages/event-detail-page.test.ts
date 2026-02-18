@@ -154,16 +154,14 @@ describe('[slug].astro (Event Detail)', () => {
         });
 
         it('should include image in SEO meta', () => {
-            expect(content).toContain(
-                'image={(event as any).featuredImage || (event as any).image}'
-            );
+            expect(content).toContain('image={event.featuredImage || event.image}');
         });
 
         it('should include EventJsonLd structured data', () => {
-            expect(content).toContain('name={(event as any).name}');
-            expect(content).toContain('startDate={(event as any).startDate}');
-            expect(content).toContain('location={(event as any).location}');
-            expect(content).toContain('organizer={(event as any).organizer}');
+            expect(content).toContain('name={event.name}');
+            expect(content).toContain('startDate={event.startDate}');
+            expect(content).toContain('location={event.location}');
+            expect(content).toContain('organizer={event.organizer}');
         });
     });
 
@@ -188,8 +186,8 @@ describe('[slug].astro (Event Detail)', () => {
     describe('Content sections', () => {
         it('should have event header section', () => {
             expect(content).toContain('id="event-header"');
-            expect(content).toContain('{(event as any).name}');
-            expect(content).toContain('{(event as any).category}');
+            expect(content).toContain('{event.name}');
+            expect(content).toContain('{event.category}');
         });
 
         it('should have event image section', () => {
@@ -200,25 +198,25 @@ describe('[slug].astro (Event Detail)', () => {
         it('should have event description section', () => {
             expect(content).toContain('id="event-description"');
             expect(content).toContain('{labels.description[locale]}');
-            expect(content).toContain('{(event as any).description');
+            expect(content).toContain('{event.description');
         });
 
         it('should have event schedule/agenda section', () => {
             expect(content).toContain('id="event-schedule"');
             expect(content).toContain('{labels.agenda[locale]}');
-            expect(content).toContain('{(event as any).agenda.map');
+            expect(content).toContain('{event.agenda.map');
         });
 
         it('should have event pricing section', () => {
             expect(content).toContain('id="event-pricing"');
             expect(content).toContain('{labels.pricing[locale]}');
-            expect(content).toContain('{(event as any).price}');
+            expect(content).toContain('{event.price}');
         });
 
         it('should have organizer info section', () => {
             expect(content).toContain('id="event-organizer"');
             expect(content).toContain('{labels.organizer[locale]}');
-            expect(content).toContain('{(event as any).organizer}');
+            expect(content).toContain('{event.organizer}');
         });
 
         it('should have related events section', () => {
@@ -236,17 +234,17 @@ describe('[slug].astro (Event Detail)', () => {
         it('should display event date', () => {
             expect(content).toContain('id="event-meta"');
             expect(content).toContain('{labels.date[locale]}');
-            expect(content).toContain('{formatDate((event as any).startDate)}');
+            expect(content).toContain('{formatDate(event.startDate)}');
         });
 
         it('should display event time', () => {
             expect(content).toContain('{labels.time[locale]}');
-            expect(content).toContain('{formatTime((event as any).startDate)}');
+            expect(content).toContain('{formatTime(event.startDate)}');
         });
 
         it('should display event location', () => {
             expect(content).toContain('{labels.location[locale]}');
-            expect(content).toContain('{(event as any).location.name}');
+            expect(content).toContain('{event.location.name}');
         });
 
         it('should have date formatting function', () => {
@@ -280,7 +278,9 @@ describe('[slug].astro (Event Detail)', () => {
     describe('Agenda/Schedule content', () => {
         it('should render agenda items as ordered list', () => {
             expect(content).toContain('<ol');
-            expect(content).toContain('{(event as any).agenda.map((item: any, index: number)');
+            expect(content).toContain(
+                '{event.agenda.map((item: { time?: string; title?: string; description?: string }, index: number)'
+            );
         });
 
         it('should display agenda item number', () => {
@@ -303,7 +303,7 @@ describe('[slug].astro (Event Detail)', () => {
         });
 
         it('should have external ticket link', () => {
-            expect(content).toContain('href={(event as any).ticketUrl}');
+            expect(content).toContain('href={event.ticketUrl}');
             expect(content).toContain('target="_blank"');
             expect(content).toContain('rel="noopener noreferrer"');
         });
@@ -363,31 +363,31 @@ describe('[slug].astro (Event Detail)', () => {
         });
 
         it('should check for event slug', () => {
-            expect(content).toContain('(event as any).name');
-            expect(content).toContain('(event as any).category');
-            expect(content).toContain('(event as any).description');
+            expect(content).toContain('event.name');
+            expect(content).toContain('event.category');
+            expect(content).toContain('event.description');
         });
 
         it('should handle event date properties', () => {
-            expect(content).toContain('(event as any).startDate');
-            expect(content).toContain('(event as any).endDate');
+            expect(content).toContain('event.startDate');
+            expect(content).toContain('event.endDate');
         });
 
         it('should handle location object', () => {
-            expect(content).toContain('(event as any).location');
+            expect(content).toContain('event.location');
         });
 
         it('should handle pricing and ticketing info', () => {
-            expect(content).toContain('(event as any).price');
-            expect(content).toContain('(event as any).ticketUrl');
+            expect(content).toContain('event.price');
+            expect(content).toContain('event.ticketUrl');
         });
 
         it('should handle agenda array', () => {
-            expect(content).toContain('(event as any).agenda');
+            expect(content).toContain('event.agenda');
         });
 
         it('should handle organizer info', () => {
-            expect(content).toContain('(event as any).organizer');
+            expect(content).toContain('event.organizer');
         });
     });
 

@@ -98,6 +98,7 @@ describe('ReviewList.client.tsx', () => {
                 <ReviewList
                     reviews={mockReviews}
                     totalCount={3}
+                    isAuthenticated={true}
                     onWriteReview={handleWriteReview}
                 />
             );
@@ -380,11 +381,12 @@ describe('ReviewList.client.tsx', () => {
             expect(screen.getByText('Lowest rated')).toBeInTheDocument();
         });
 
-        it('should render write review button when onWriteReview is provided', () => {
+        it('should render write review button when isAuthenticated and onWriteReview are provided', () => {
             render(
                 <ReviewList
                     reviews={mockReviews}
                     totalCount={3}
+                    isAuthenticated={true}
                     onWriteReview={vi.fn()}
                 />
             );
@@ -397,6 +399,19 @@ describe('ReviewList.client.tsx', () => {
                 <ReviewList
                     reviews={mockReviews}
                     totalCount={3}
+                />
+            );
+
+            expect(screen.queryByText('Escribir reseña')).not.toBeInTheDocument();
+        });
+
+        it('should not render write review button when not authenticated even with onWriteReview', () => {
+            render(
+                <ReviewList
+                    reviews={mockReviews}
+                    totalCount={3}
+                    isAuthenticated={false}
+                    onWriteReview={vi.fn()}
                 />
             );
 
@@ -468,11 +483,12 @@ describe('ReviewList.client.tsx', () => {
             expect(screen.getByText('Be the first to leave a review')).toBeInTheDocument();
         });
 
-        it('should render write review button in empty state when onWriteReview is provided', () => {
+        it('should render write review button in empty state when isAuthenticated and onWriteReview are provided', () => {
             render(
                 <ReviewList
                     reviews={[]}
                     totalCount={0}
+                    isAuthenticated={true}
                     onWriteReview={vi.fn()}
                 />
             );
@@ -486,6 +502,7 @@ describe('ReviewList.client.tsx', () => {
                 <ReviewList
                     reviews={[]}
                     totalCount={0}
+                    isAuthenticated={true}
                     onWriteReview={handleWriteReview}
                 />
             );
@@ -494,6 +511,19 @@ describe('ReviewList.client.tsx', () => {
             fireEvent.click(button);
 
             expect(handleWriteReview).toHaveBeenCalledTimes(1);
+        });
+
+        it('should not render write review button in empty state when not authenticated', () => {
+            render(
+                <ReviewList
+                    reviews={[]}
+                    totalCount={0}
+                    isAuthenticated={false}
+                    onWriteReview={vi.fn()}
+                />
+            );
+
+            expect(screen.queryByText('Escribir reseña')).not.toBeInTheDocument();
         });
 
         it('should not render header in empty state', () => {
@@ -549,6 +579,7 @@ describe('ReviewList.client.tsx', () => {
                 <ReviewList
                     reviews={mockReviews}
                     totalCount={3}
+                    isAuthenticated={true}
                     onWriteReview={handleWriteReview}
                 />
             );
@@ -638,6 +669,7 @@ describe('ReviewList.client.tsx', () => {
                     reviews={mockReviews}
                     totalCount={3}
                     locale="es"
+                    isAuthenticated={true}
                     onWriteReview={vi.fn()}
                 />
             );
@@ -649,6 +681,7 @@ describe('ReviewList.client.tsx', () => {
                     reviews={mockReviews}
                     totalCount={3}
                     locale="en"
+                    isAuthenticated={true}
                     onWriteReview={vi.fn()}
                 />
             );
@@ -700,6 +733,7 @@ describe('ReviewList.client.tsx', () => {
                     reviews={mockReviews}
                     totalCount={10}
                     hasMore={true}
+                    isAuthenticated={true}
                     onWriteReview={vi.fn()}
                     onLoadMore={vi.fn()}
                 />
@@ -716,6 +750,7 @@ describe('ReviewList.client.tsx', () => {
                 <ReviewList
                     reviews={mockReviews}
                     totalCount={3}
+                    isAuthenticated={true}
                     onWriteReview={vi.fn()}
                 />
             );
@@ -781,6 +816,7 @@ describe('ReviewList.client.tsx', () => {
                 <ReviewList
                     reviews={mockReviews}
                     totalCount={3}
+                    isAuthenticated={true}
                     onWriteReview={vi.fn()}
                 />
             );

@@ -107,12 +107,6 @@ describe('destinos/index.astro', () => {
             expect(content).toContain('ciudades históricas, paisajes naturales');
         });
 
-        it('should have localized search placeholders', () => {
-            expect(content).toContain('const searchPlaceholders: Record<SupportedLocale, string>');
-            expect(content).toContain("es: 'Buscar destinos...'");
-            expect(content).toContain("en: 'Search destinations...'");
-        });
-
         it('should have localized featured titles', () => {
             expect(content).toContain('const featuredTitles: Record<SupportedLocale, string>');
             expect(content).toContain("es: 'Destinos Destacados'");
@@ -175,10 +169,10 @@ describe('destinos/index.astro', () => {
             expect(content).toContain('{heroDescriptions[locale]}');
         });
 
-        it('should have search bar section', () => {
+        it('should have search bar section with DestinationFilters island', () => {
             expect(content).toContain('id="search-bar"');
-            expect(content).toContain('type="search"');
-            expect(content).toContain('placeholder={searchPlaceholders[locale]}');
+            expect(content).toContain('<DestinationFilters');
+            expect(content).toContain('client:load');
         });
 
         it('should have featured destinations section', () => {
@@ -207,6 +201,46 @@ describe('destinos/index.astro', () => {
 
         it('should have provinces section', () => {
             expect(content).toContain('id="provinces"');
+        });
+    });
+
+    describe('Search and filters (DestinationFilters island)', () => {
+        it('should import DestinationFilters client component', () => {
+            expect(content).toContain(
+                "import { DestinationFilters } from '../../../components/destination/DestinationFilters.client.tsx'"
+            );
+        });
+
+        it('should pass initialQuery prop from URL params', () => {
+            expect(content).toContain('initialQuery={initialQuery}');
+            expect(content).toContain("Astro.url.searchParams.get('q')");
+        });
+
+        it('should pass initialType prop from URL params', () => {
+            expect(content).toContain('initialType={initialType}');
+            expect(content).toContain("Astro.url.searchParams.get('type')");
+        });
+
+        it('should pass initialParentId prop from URL params', () => {
+            expect(content).toContain('initialParentId={initialParentId}');
+            expect(content).toContain("Astro.url.searchParams.get('parentId')");
+        });
+
+        it('should pass locale prop', () => {
+            expect(content).toContain('locale={locale}');
+        });
+
+        it('should not have any disabled form elements', () => {
+            // The disabled multi-field form has been replaced with a functional React island
+            expect(content).not.toMatch(/<input[^>]*disabled/);
+            expect(content).not.toMatch(/<button[^>]*disabled/);
+        });
+
+        it('should not have check-in, check-out, or guests fields', () => {
+            expect(content).not.toContain('type="date"');
+            expect(content).not.toContain('type="number"');
+            expect(content).not.toContain('CalendarIcon');
+            expect(content).not.toContain('UsersIcon');
         });
     });
 
@@ -259,10 +293,6 @@ describe('destinos/index.astro', () => {
             expect(content).toContain("from '@repo/icons'");
         });
 
-        it('should import SearchIcon', () => {
-            expect(content).toContain('SearchIcon');
-        });
-
         it('should import LocationIcon for destinations', () => {
             expect(content).toContain('LocationIcon');
         });
@@ -291,19 +321,6 @@ describe('destinos/index.astro', () => {
 
         it('should define getStaticPaths for locales', () => {
             expect(content).toContain('export function getStaticPaths()');
-        });
-    });
-
-    describe('Search functionality', () => {
-        it('should have search input with proper attributes', () => {
-            expect(content).toContain('type="search"');
-            expect(content).toContain('aria-label={searchPlaceholders[locale]}');
-        });
-
-        it('should have search input with focus styles', () => {
-            expect(content).toContain('focus:border-primary');
-            expect(content).toContain('focus:outline-none');
-            expect(content).toContain('focus:ring-2');
         });
     });
 

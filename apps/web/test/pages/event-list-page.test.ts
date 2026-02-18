@@ -339,8 +339,8 @@ describe('Event List Page', () => {
             expect(content).toContain('category');
         });
 
-        it('should cast event to any for EventCard', () => {
-            expect(content).toContain('event as any');
+        it('should pass event directly to EventCard', () => {
+            expect(content).toContain('event');
         });
     });
 

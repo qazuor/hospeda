@@ -43,6 +43,12 @@ describe('editar.astro', () => {
             );
             expect(editarContent).toContain('<Breadcrumb');
         });
+
+        it('should import ProfileEditForm React island', () => {
+            expect(editarContent).toContain(
+                "import { ProfileEditForm } from '../../../components/account/ProfileEditForm.client'"
+            );
+        });
     });
 
     describe('Locale validation', () => {
@@ -70,11 +76,6 @@ describe('editar.astro', () => {
 
         it('should have localized meta descriptions', () => {
             expect(editarContent).toContain('const descriptions: Record<SupportedLocale, string>');
-        });
-
-        it('should have localized form labels', () => {
-            expect(editarContent).toContain('const formLabels:');
-            expect(editarContent).toContain('const buttonLabels:');
         });
 
         it('should have localized breadcrumb labels', () => {
@@ -116,54 +117,35 @@ describe('editar.astro', () => {
         });
     });
 
-    describe('Form structure', () => {
-        it('should have profile form section', () => {
+    describe('Form section wrapper', () => {
+        it('should have profile form section article', () => {
             expect(editarContent).toContain('id="profile-form"');
         });
 
-        it('should have name input field', () => {
-            expect(editarContent).toContain('name="name"');
-            expect(editarContent).toContain('type="text"');
-            expect(editarContent).toContain('id="input-name"');
+        it('should render ProfileEditForm React island with client:visible', () => {
+            expect(editarContent).toContain('<ProfileEditForm');
+            expect(editarContent).toContain('client:visible');
         });
 
-        it('should have email input field (readonly)', () => {
-            expect(editarContent).toContain('name="email"');
-            expect(editarContent).toContain('type="email"');
-            expect(editarContent).toContain('disabled={true}');
-            expect(editarContent).toContain('id="input-email"');
+        it('should pass userId to ProfileEditForm', () => {
+            expect(editarContent).toContain('userId={user.id}');
         });
 
-        it('should have bio textarea field', () => {
-            expect(editarContent).toContain('name="bio"');
-            expect(editarContent).toContain('<Textarea');
-            expect(editarContent).toContain('id="input-bio"');
+        it('should pass initialName to ProfileEditForm', () => {
+            expect(editarContent).toContain('initialName={user.name}');
         });
 
-        it('should have save button', () => {
-            expect(editarContent).toContain('type="submit"');
-            expect(editarContent).toContain('{buttonLabels[locale].save}');
+        it('should pass email to ProfileEditForm', () => {
+            expect(editarContent).toContain('email={user.email}');
         });
 
-        it('should have cancel link back to account page', () => {
-            expect(editarContent).toContain('href={`/${locale}/mi-cuenta/`}');
-            expect(editarContent).toContain('{buttonLabels[locale].cancel}');
-        });
-    });
-
-    describe('Form labels and helpers', () => {
-        it('should have form label text', () => {
-            expect(editarContent).toContain('label={formLabels[locale]');
+        it('should pass locale to ProfileEditForm', () => {
+            expect(editarContent).toContain('locale={locale}');
         });
 
-        it('should have form placeholders', () => {
-            expect(editarContent).toContain('const formPlaceholders:');
-        });
-
-        it('should display field helper text', () => {
-            expect(editarContent).toContain('const formHelpers:');
-            expect(editarContent).toContain('{formHelpers[locale].email}');
-            expect(editarContent).toContain('{formHelpers[locale].bio}');
+        it('should extract userBio from user profile', () => {
+            expect(editarContent).toContain('userBio');
+            expect(editarContent).toContain('initialBio={userBio}');
         });
     });
 });
@@ -197,6 +179,12 @@ describe('preferencias.astro', () => {
             );
             expect(preferenciasContent).toContain('<Breadcrumb');
         });
+
+        it('should import PreferenceToggles React island', () => {
+            expect(preferenciasContent).toContain(
+                "import { PreferenceToggles } from '../../../components/account/PreferenceToggles.client'"
+            );
+        });
     });
 
     describe('Locale validation', () => {
@@ -219,7 +207,7 @@ describe('preferencias.astro', () => {
         it('should have localized titles for all supported locales', () => {
             expect(preferenciasContent).toContain("es: 'Preferencias'");
             expect(preferenciasContent).toContain("en: 'Preferences'");
-            expect(preferenciasContent).toContain("pt: 'Preferências'");
+            expect(preferenciasContent).toContain("pt: 'Preferencias'");
         });
 
         it('should have localized meta descriptions', () => {
@@ -231,8 +219,8 @@ describe('preferencias.astro', () => {
             );
         });
 
-        it('should have localized settings labels', () => {
-            expect(preferenciasContent).toContain('const settingsLabels =');
+        it('should have localized heading texts', () => {
+            expect(preferenciasContent).toContain('const headings:');
             expect(preferenciasContent).toContain("heading: 'Preferencias'");
         });
     });
@@ -273,44 +261,33 @@ describe('preferencias.astro', () => {
     });
 
     describe('Settings sections', () => {
-        it('should have notifications section', () => {
-            expect(preferenciasContent).toContain('id="notifications-heading"');
-            expect(preferenciasContent).toContain('{labels.notificationsSection}');
+        it('should render PreferenceToggles React island with client:visible', () => {
+            expect(preferenciasContent).toContain('<PreferenceToggles');
+            expect(preferenciasContent).toContain('client:visible');
         });
 
-        it('should have email notifications checkbox', () => {
-            expect(preferenciasContent).toContain('type="checkbox"');
-            expect(preferenciasContent).toContain('id="email-notifications"');
-            expect(preferenciasContent).toContain('name="email-notifications"');
+        it('should pass userId to PreferenceToggles', () => {
+            expect(preferenciasContent).toContain('userId={user.id}');
         });
 
-        it('should have newsletter checkbox', () => {
-            expect(preferenciasContent).toContain('id="newsletter"');
-            expect(preferenciasContent).toContain('name="newsletter"');
+        it('should pass initialSettings to PreferenceToggles', () => {
+            expect(preferenciasContent).toContain('initialSettings={initialSettings}');
         });
 
-        it('should have promotional offers checkbox', () => {
-            expect(preferenciasContent).toContain('id="promotional-offers"');
-            expect(preferenciasContent).toContain('name="promotional-offers"');
+        it('should pass locale to PreferenceToggles', () => {
+            expect(preferenciasContent).toContain('locale={locale}');
         });
 
-        it('should have language section', () => {
-            expect(preferenciasContent).toContain('id="language-heading"');
-            expect(preferenciasContent).toContain('{labels.languageSection}');
-        });
-
-        it('should display language options in select', () => {
-            expect(preferenciasContent).toContain('id="language-select"');
-            expect(preferenciasContent).toContain('{languageNames[loc]}');
+        it('should extract initialSettings from user session', () => {
+            expect(preferenciasContent).toContain('const initialSettings =');
         });
 
         it('should have timezone section', () => {
             expect(preferenciasContent).toContain('id="timezone-heading"');
-            expect(preferenciasContent).toContain('{labels.timezoneSection}');
         });
 
         it('should display timezone value', () => {
-            expect(preferenciasContent).toContain('{labels.timezoneValue}');
+            expect(preferenciasContent).toContain('America/Argentina/Buenos_Aires');
         });
     });
 });
@@ -344,6 +321,25 @@ describe('suscripcion.astro', () => {
             );
             expect(suscripcionContent).toContain('<Breadcrumb');
         });
+
+        it('should import SubscriptionCard from account components', () => {
+            expect(suscripcionContent).toContain(
+                "import { SubscriptionCard } from '../../../components/account/SubscriptionCard.client'"
+            );
+        });
+
+        it('should use SubscriptionCard with client:load directive', () => {
+            expect(suscripcionContent).toContain('<SubscriptionCard');
+            expect(suscripcionContent).toContain('client:load');
+        });
+
+        it('should pass locale prop to SubscriptionCard', () => {
+            expect(suscripcionContent).toContain('locale={locale}');
+        });
+
+        it('should pass upgradeHref prop to SubscriptionCard', () => {
+            expect(suscripcionContent).toContain('upgradeHref={`/${locale}/precios/turistas/`}');
+        });
     });
 
     describe('Locale validation', () => {
@@ -362,6 +358,17 @@ describe('suscripcion.astro', () => {
         });
     });
 
+    describe('Auth guard', () => {
+        it('should retain auth guard with Astro.locals.user check', () => {
+            expect(suscripcionContent).toContain('const user = Astro.locals.user');
+            expect(suscripcionContent).toContain('if (!user)');
+        });
+
+        it('should redirect unauthenticated users to signin', () => {
+            expect(suscripcionContent).toContain('return Astro.redirect(`/${locale}/auth/signin`)');
+        });
+    });
+
     describe('Localization', () => {
         it('should have localized titles for all supported locales', () => {
             expect(suscripcionContent).toContain("es: 'Mi Suscripción'");
@@ -376,14 +383,25 @@ describe('suscripcion.astro', () => {
             expect(suscripcionContent).toContain('Administra tu plan y suscripción en Hospeda');
         });
 
-        it('should have localized subscription labels', () => {
+        it('should have subscriptionLabels with only heading and description keys', () => {
+            // Arrange: the updated page delegates plan details to SubscriptionCard
+            // Act & Assert: subscriptionLabels only contains heading and description
             expect(suscripcionContent).toContain('const subscriptionLabels =');
             expect(suscripcionContent).toContain("heading: 'Mi Suscripción'");
-            expect(suscripcionContent).toContain("planName: 'Plan Gratuito'");
+            expect(suscripcionContent).toContain("description: 'Administra tu plan");
+            // Plan-detail keys must NOT appear in the Astro template (moved to React component)
+            expect(suscripcionContent).not.toContain("planName: 'Plan Gratuito'");
+            expect(suscripcionContent).not.toContain('featuresHeading');
+            expect(suscripcionContent).not.toContain('upgradeHeading');
+            expect(suscripcionContent).not.toContain('billingSection');
         });
     });
 
     describe('SEO elements', () => {
+        it('should retain SEOHead with noindex', () => {
+            expect(suscripcionContent).toContain('noindex={true}');
+        });
+
         it('should generate canonical URL', () => {
             expect(suscripcionContent).toContain('const canonicalUrl = new URL(Astro.url.pathname');
             expect(suscripcionContent).toContain('canonical={canonicalUrl}');
@@ -396,10 +414,6 @@ describe('suscripcion.astro', () => {
 
         it('should set page type to website', () => {
             expect(suscripcionContent).toContain('type="website"');
-        });
-
-        it('should set noindex to true', () => {
-            expect(suscripcionContent).toContain('noindex={true}');
         });
     });
 
@@ -416,56 +430,32 @@ describe('suscripcion.astro', () => {
         });
     });
 
-    describe('Current plan section', () => {
-        it('should display current plan section', () => {
-            expect(suscripcionContent).toContain('{labels.currentPlanSection}');
+    describe('Content delegation to SubscriptionCard', () => {
+        it('should not contain hardcoded "Plan Gratuito" literal in HTML template', () => {
+            // Plan name is now rendered by SubscriptionCard React component
+            // Remove frontmatter block to check only the HTML template section
+            const htmlTemplate = suscripcionContent.split('---').slice(2).join('---');
+            expect(htmlTemplate).not.toContain('Plan Gratuito');
         });
 
-        it('should show plan name', () => {
-            expect(suscripcionContent).toContain('{labels.planName}');
+        it('should not contain hardcoded "Free Plan" literal in HTML template', () => {
+            // Plan name is now rendered by SubscriptionCard React component
+            const htmlTemplate = suscripcionContent.split('---').slice(2).join('---');
+            expect(htmlTemplate).not.toContain('Free Plan');
         });
 
-        it('should show plan price', () => {
-            expect(suscripcionContent).toContain('{labels.planPrice}');
+        it('should not import CheckIcon (moved to React component)', () => {
+            // CheckIcon was previously imported for plan features list in the Astro template.
+            // It is now used exclusively inside SubscriptionCard.client.tsx.
+            expect(suscripcionContent).not.toContain('CheckIcon');
         });
 
-        it('should list plan features', () => {
-            expect(suscripcionContent).toContain('{labels.featuresHeading}');
-            expect(suscripcionContent).toContain('{labels.feature1}');
-            expect(suscripcionContent).toContain('{labels.feature2}');
-            expect(suscripcionContent).toContain('{labels.feature3}');
-            expect(suscripcionContent).toContain('{labels.feature4}');
+        it('should render labels.heading in the page heading', () => {
+            expect(suscripcionContent).toContain('{labels.heading}');
         });
 
-        it('should import CheckIcon from @repo/icons for features', () => {
-            expect(suscripcionContent).toContain("from '@repo/icons'");
-            expect(suscripcionContent).toContain('CheckIcon');
-        });
-    });
-
-    describe('Upgrade CTA section', () => {
-        it('should have upgrade heading', () => {
-            expect(suscripcionContent).toContain('{labels.upgradeHeading}');
-        });
-
-        it('should have upgrade description', () => {
-            expect(suscripcionContent).toContain('{labels.upgradeDescription}');
-        });
-
-        it('should have link to pricing page', () => {
-            expect(suscripcionContent).toContain('href={`/${locale}/precios/turistas/`}');
-            expect(suscripcionContent).toContain('{labels.upgradeButton}');
-        });
-    });
-
-    describe('Billing section', () => {
-        it('should display billing section', () => {
-            expect(suscripcionContent).toContain('{labels.billingSection}');
-        });
-
-        it('should show no billing info placeholder', () => {
-            expect(suscripcionContent).toContain('{labels.noBillingInfo}');
-            expect(suscripcionContent).toContain('{labels.billingHint}');
+        it('should render labels.description as subtitle', () => {
+            expect(suscripcionContent).toContain('{labels.description}');
         });
     });
 });

@@ -1,5 +1,5 @@
 /**
- * Tests for pricing pages (turistas and propietarios).
+ * Tests for pricing pages (turistas and propietarios) and the pricing-plans module.
  * Verifies page structure, SEO elements, localization, pricing plans, and CTA sections.
  */
 import { readFileSync } from 'node:fs';
@@ -11,6 +11,9 @@ const turistasContent = readFileSync(turistasPath, 'utf8');
 
 const propietariosPath = resolve(__dirname, '../../src/pages/[lang]/precios/propietarios.astro');
 const propietariosContent = readFileSync(propietariosPath, 'utf8');
+
+const pricingPlansPath = resolve(__dirname, '../../src/lib/pricing-plans.ts');
+const pricingPlansContent = readFileSync(pricingPlansPath, 'utf8');
 
 describe('turistas.astro (Tourist Pricing Page)', () => {
     describe('Page structure', () => {
@@ -57,9 +60,28 @@ describe('turistas.astro (Tourist Pricing Page)', () => {
         });
     });
 
+    describe('Rendering Strategy (SSG)', () => {
+        it('should enable prerendering', () => {
+            expect(turistasContent).toContain('export const prerender = true;');
+        });
+
+        it('should export getStaticPaths function', () => {
+            expect(turistasContent).toContain('export function getStaticPaths()');
+        });
+
+        it('should generate paths for all 3 locales', () => {
+            expect(turistasContent).toContain("{ params: { lang: 'es' } }");
+            expect(turistasContent).toContain("{ params: { lang: 'en' } }");
+            expect(turistasContent).toContain("{ params: { lang: 'pt' } }");
+        });
+    });
+
     describe('Locale validation', () => {
-        it('should validate locale parameter', () => {
+        it('should extract lang from params', () => {
             expect(turistasContent).toContain('const { lang } = Astro.params');
+        });
+
+        it('should validate locale parameter', () => {
             expect(turistasContent).toContain('if (!lang || !isValidLocale(lang))');
         });
 
@@ -70,6 +92,47 @@ describe('turistas.astro (Tourist Pricing Page)', () => {
         it('should import locale helpers', () => {
             expect(turistasContent).toContain('isValidLocale');
             expect(turistasContent).toContain('type SupportedLocale');
+        });
+
+        it('should cast locale to SupportedLocale', () => {
+            expect(turistasContent).toContain('const locale = lang as SupportedLocale;');
+        });
+    });
+
+    describe('Pricing plans import', () => {
+        it('should import fetchTouristPlans from pricing-plans module', () => {
+            expect(turistasContent).toContain(
+                "import { fetchTouristPlans } from '../../../lib/pricing-plans'"
+            );
+        });
+
+        it('should call fetchTouristPlans with locale', () => {
+            expect(turistasContent).toContain('await fetchTouristPlans(locale)');
+        });
+
+        it('should store result in currentPlans variable', () => {
+            expect(turistasContent).toContain(
+                'const currentPlans = await fetchTouristPlans(locale)'
+            );
+        });
+
+        it('should map currentPlans to PricingCard components', () => {
+            expect(turistasContent).toContain('currentPlans.map((plan) =>');
+            expect(turistasContent).toContain('<PricingCard');
+        });
+
+        it('should pass plan props to PricingCard', () => {
+            expect(turistasContent).toContain('plan={{');
+            expect(turistasContent).toContain('name: plan.name,');
+            expect(turistasContent).toContain('price: plan.price,');
+            expect(turistasContent).toContain('currency: plan.currency,');
+            expect(turistasContent).toContain('period: plan.period,');
+            expect(turistasContent).toContain('features: plan.features,');
+            expect(turistasContent).toContain('cta: plan.cta,');
+        });
+
+        it('should pass highlighted prop to PricingCard', () => {
+            expect(turistasContent).toContain('highlighted={plan.highlighted}');
         });
     });
 
@@ -118,6 +181,14 @@ describe('turistas.astro (Tourist Pricing Page)', () => {
         it('should set page type to website', () => {
             expect(turistasContent).toContain('type="website"');
         });
+
+        it('should pass locale with pt fallback', () => {
+            expect(turistasContent).toContain("locale={locale === 'pt' ? 'es' : locale}");
+        });
+
+        it('should use slot="head" for SEOHead', () => {
+            expect(turistasContent).toContain('slot="head"');
+        });
     });
 
     describe('Breadcrumb navigation', () => {
@@ -161,52 +232,36 @@ describe('turistas.astro (Tourist Pricing Page)', () => {
         });
     });
 
-    describe('Pricing plans', () => {
-        it('should have Free/Gratis plan', () => {
-            expect(turistasContent).toContain("name: 'Gratis'");
-            expect(turistasContent).toContain("name: 'Free'");
-            expect(turistasContent).toContain('price: 0');
+    describe('Hero section content', () => {
+        it('should have localized hero content structure', () => {
+            expect(turistasContent).toContain(
+                'const heroContent: Record<SupportedLocale, { title: string; description: string }>'
+            );
         });
 
-        it('should have Plus plan', () => {
-            expect(turistasContent).toContain("name: 'Plus'");
-            expect(turistasContent).toContain('price: 5000');
-            expect(turistasContent).toContain('price: 5');
+        it('should have Spanish hero title', () => {
+            expect(turistasContent).toContain("title: 'Planes para Turistas'");
         });
 
-        it('should have VIP plan', () => {
-            expect(turistasContent).toContain("name: 'VIP'");
-            expect(turistasContent).toContain('price: 15000');
-            expect(turistasContent).toContain('price: 15');
+        it('should have English hero title', () => {
+            expect(turistasContent).toContain("title: 'Tourist Plans'");
         });
 
-        it('should have VIP plan highlighted', () => {
-            expect(turistasContent).toContain('highlighted: true');
+        it('should have Portuguese hero title', () => {
+            expect(turistasContent).toContain("title: 'Planos para Turistas'");
         });
 
-        it('should display features for plans', () => {
-            expect(turistasContent).toContain('Navegar alojamientos');
-            expect(turistasContent).toContain('Browse accommodations');
-            expect(turistasContent).toContain('Leer reseñas');
-            expect(turistasContent).toContain('Read reviews');
-            expect(turistasContent).toContain('Servicio de conserjería');
-            expect(turistasContent).toContain('Concierge service');
+        it('should render h1 with hero title', () => {
+            expect(turistasContent).toContain('{heroContent[locale].title}');
         });
 
-        it('should have currency specified', () => {
-            expect(turistasContent).toContain("currency: 'ARS'");
-            expect(turistasContent).toContain("currency: 'USD'");
-        });
-
-        it('should have CTA links for each plan', () => {
-            expect(turistasContent).toContain('cta:');
-            expect(turistasContent).toContain('label:');
-            expect(turistasContent).toContain('href:');
+        it('should render hero description', () => {
+            expect(turistasContent).toContain('{heroContent[locale].description}');
         });
     });
 
     describe('FAQ content', () => {
-        it('should have FAQ questions and answers', () => {
+        it('should have FAQ questions and answers typed', () => {
             expect(turistasContent).toContain('const faqContent: Record<SupportedLocale');
             expect(turistasContent).toContain('question:');
             expect(turistasContent).toContain('answer:');
@@ -223,21 +278,37 @@ describe('turistas.astro (Tourist Pricing Page)', () => {
         it('should have trial period question', () => {
             expect(turistasContent).toContain('período de prueba');
         });
+
+        it('should render FAQ items from faqContent', () => {
+            expect(turistasContent).toContain('faqContent[locale].map((faq) =>');
+            expect(turistasContent).toContain('{faq.question}');
+            expect(turistasContent).toContain('{faq.answer}');
+        });
     });
 
     describe('CTA section', () => {
-        it('should have CTA content', () => {
+        it('should have CTA content typed', () => {
             expect(turistasContent).toContain('const ctaContent: Record<SupportedLocale');
         });
 
-        it('should have CTA button', () => {
+        it('should have Spanish CTA button text', () => {
             expect(turistasContent).toContain('Registrate Gratis');
+        });
+
+        it('should have English CTA button text', () => {
             expect(turistasContent).toContain('Sign Up Free');
+        });
+
+        it('should have Portuguese CTA button text', () => {
             expect(turistasContent).toContain('Cadastre-se Grátis');
         });
 
         it('should link to registration page', () => {
             expect(turistasContent).toContain('href={`/${locale}/registro/`}');
+        });
+
+        it('should render CTA button text', () => {
+            expect(turistasContent).toContain('{ctaContent[locale].buttonText}');
         });
     });
 
@@ -251,8 +322,15 @@ describe('turistas.astro (Tourist Pricing Page)', () => {
             expect(turistasContent).toContain('grid gap-8 md:grid-cols-3');
         });
 
-        it('should have section headings', () => {
+        it('should have section headings with semibold styling', () => {
             expect(turistasContent).toContain('text-3xl font-semibold');
+        });
+    });
+
+    describe('File size', () => {
+        it('should be under 500 lines', () => {
+            const lines = turistasContent.split('\n').length;
+            expect(lines).toBeLessThan(500);
         });
     });
 });
@@ -302,9 +380,28 @@ describe('propietarios.astro (Owner Pricing Page)', () => {
         });
     });
 
+    describe('Rendering Strategy (SSG)', () => {
+        it('should enable prerendering', () => {
+            expect(propietariosContent).toContain('export const prerender = true;');
+        });
+
+        it('should export getStaticPaths function', () => {
+            expect(propietariosContent).toContain('export function getStaticPaths()');
+        });
+
+        it('should generate paths for all 3 locales', () => {
+            expect(propietariosContent).toContain("{ params: { lang: 'es' } }");
+            expect(propietariosContent).toContain("{ params: { lang: 'en' } }");
+            expect(propietariosContent).toContain("{ params: { lang: 'pt' } }");
+        });
+    });
+
     describe('Locale validation', () => {
-        it('should validate locale parameter', () => {
+        it('should extract lang from params', () => {
             expect(propietariosContent).toContain('const { lang } = Astro.params');
+        });
+
+        it('should validate locale parameter', () => {
             expect(propietariosContent).toContain('if (!lang || !isValidLocale(lang))');
         });
 
@@ -315,6 +412,47 @@ describe('propietarios.astro (Owner Pricing Page)', () => {
         it('should import locale helpers', () => {
             expect(propietariosContent).toContain('isValidLocale');
             expect(propietariosContent).toContain('type SupportedLocale');
+        });
+
+        it('should cast locale to SupportedLocale', () => {
+            expect(propietariosContent).toContain('const locale = lang as SupportedLocale;');
+        });
+    });
+
+    describe('Pricing plans import', () => {
+        it('should import fetchOwnerPlans from pricing-plans module', () => {
+            expect(propietariosContent).toContain(
+                "import { fetchOwnerPlans } from '../../../lib/pricing-plans'"
+            );
+        });
+
+        it('should call fetchOwnerPlans with locale', () => {
+            expect(propietariosContent).toContain('await fetchOwnerPlans(locale)');
+        });
+
+        it('should store result in currentPlans variable', () => {
+            expect(propietariosContent).toContain(
+                'const currentPlans = await fetchOwnerPlans(locale)'
+            );
+        });
+
+        it('should map currentPlans to PricingCard components', () => {
+            expect(propietariosContent).toContain('currentPlans.map((plan) =>');
+            expect(propietariosContent).toContain('<PricingCard');
+        });
+
+        it('should pass plan props to PricingCard', () => {
+            expect(propietariosContent).toContain('plan={{');
+            expect(propietariosContent).toContain('name: plan.name,');
+            expect(propietariosContent).toContain('price: plan.price,');
+            expect(propietariosContent).toContain('currency: plan.currency,');
+            expect(propietariosContent).toContain('period: plan.period,');
+            expect(propietariosContent).toContain('features: plan.features,');
+            expect(propietariosContent).toContain('cta: plan.cta,');
+        });
+
+        it('should pass highlighted prop to PricingCard', () => {
+            expect(propietariosContent).toContain('highlighted={plan.highlighted}');
         });
     });
 
@@ -367,6 +505,14 @@ describe('propietarios.astro (Owner Pricing Page)', () => {
         it('should set page type to website', () => {
             expect(propietariosContent).toContain('type="website"');
         });
+
+        it('should pass locale with pt fallback', () => {
+            expect(propietariosContent).toContain("locale={locale === 'pt' ? 'es' : locale}");
+        });
+
+        it('should use slot="head" for SEOHead', () => {
+            expect(propietariosContent).toContain('slot="head"');
+        });
     });
 
     describe('Breadcrumb navigation', () => {
@@ -412,56 +558,36 @@ describe('propietarios.astro (Owner Pricing Page)', () => {
         });
     });
 
-    describe('Pricing plans', () => {
-        it('should have Basico/Basic plan', () => {
-            expect(propietariosContent).toContain("name: 'Basico'");
-            expect(propietariosContent).toContain("name: 'Basic'");
-            expect(propietariosContent).toContain("name: 'Básico'");
-            expect(propietariosContent).toContain('price: 15000');
-            expect(propietariosContent).toContain('price: 15');
+    describe('Hero section content', () => {
+        it('should have localized hero content structure', () => {
+            expect(propietariosContent).toContain(
+                'const heroContent: Record<SupportedLocale, { title: string; description: string }>'
+            );
         });
 
-        it('should have Profesional/Professional plan', () => {
-            expect(propietariosContent).toContain("name: 'Profesional'");
-            expect(propietariosContent).toContain("name: 'Professional'");
-            expect(propietariosContent).toContain("name: 'Profissional'");
-            expect(propietariosContent).toContain('price: 35000');
-            expect(propietariosContent).toContain('price: 35');
+        it('should have Spanish hero title', () => {
+            expect(propietariosContent).toContain("title: 'Planes para Propietarios'");
         });
 
-        it('should have Premium plan', () => {
-            expect(propietariosContent).toContain("name: 'Premium'");
-            expect(propietariosContent).toContain('price: 75000');
-            expect(propietariosContent).toContain('price: 75');
+        it('should have English hero title', () => {
+            expect(propietariosContent).toContain("title: 'Owner Plans'");
         });
 
-        it('should have Professional plan highlighted', () => {
-            expect(propietariosContent).toContain('highlighted: true');
+        it('should have Portuguese hero title', () => {
+            expect(propietariosContent).toContain("title: 'Planos para Proprietários'");
         });
 
-        it('should display features for plans', () => {
-            expect(propietariosContent).toContain('propiedad en listado');
-            expect(propietariosContent).toContain('property listing');
-            expect(propietariosContent).toContain('Análisis básicos');
-            expect(propietariosContent).toContain('Basic analytics');
-            expect(propietariosContent).toContain('Gestor de cuenta');
-            expect(propietariosContent).toContain('Account manager');
+        it('should render h1 with hero title', () => {
+            expect(propietariosContent).toContain('{heroContent[locale].title}');
         });
 
-        it('should have currency specified', () => {
-            expect(propietariosContent).toContain("currency: 'ARS'");
-            expect(propietariosContent).toContain("currency: 'USD'");
-        });
-
-        it('should have CTA links for each plan', () => {
-            expect(propietariosContent).toContain('cta:');
-            expect(propietariosContent).toContain('label:');
-            expect(propietariosContent).toContain('href:');
+        it('should render hero description', () => {
+            expect(propietariosContent).toContain('{heroContent[locale].description}');
         });
     });
 
     describe('FAQ content', () => {
-        it('should have FAQ questions and answers', () => {
+        it('should have FAQ questions and answers typed', () => {
             expect(propietariosContent).toContain('const faqContent: Record<SupportedLocale');
             expect(propietariosContent).toContain('question:');
             expect(propietariosContent).toContain('answer:');
@@ -478,21 +604,37 @@ describe('propietarios.astro (Owner Pricing Page)', () => {
         it('should have additional costs question', () => {
             expect(propietariosContent).toContain('costos adicionales');
         });
+
+        it('should render FAQ items from faqContent', () => {
+            expect(propietariosContent).toContain('faqContent[locale].map((faq) =>');
+            expect(propietariosContent).toContain('{faq.question}');
+            expect(propietariosContent).toContain('{faq.answer}');
+        });
     });
 
     describe('CTA section', () => {
-        it('should have CTA content', () => {
+        it('should have CTA content typed', () => {
             expect(propietariosContent).toContain('const ctaContent: Record<SupportedLocale');
         });
 
-        it('should have CTA button', () => {
+        it('should have Spanish CTA button text', () => {
             expect(propietariosContent).toContain('Comenzar Prueba Gratuita');
+        });
+
+        it('should have English CTA button text', () => {
             expect(propietariosContent).toContain('Start Free Trial');
+        });
+
+        it('should have Portuguese CTA button text', () => {
             expect(propietariosContent).toContain('Começar Teste Gratuito');
         });
 
         it('should link to owner registration page', () => {
             expect(propietariosContent).toContain('href={`/${locale}/registro/propietario/`}');
+        });
+
+        it('should render CTA button text', () => {
+            expect(propietariosContent).toContain('{ctaContent[locale].buttonText}');
         });
     });
 
@@ -506,8 +648,367 @@ describe('propietarios.astro (Owner Pricing Page)', () => {
             expect(propietariosContent).toContain('grid gap-8 md:grid-cols-3');
         });
 
-        it('should have section headings', () => {
+        it('should have section headings with semibold styling', () => {
             expect(propietariosContent).toContain('text-3xl font-semibold');
+        });
+    });
+
+    describe('File size', () => {
+        it('should be under 500 lines', () => {
+            const lines = propietariosContent.split('\n').length;
+            expect(lines).toBeLessThan(500);
+        });
+    });
+});
+
+describe('pricing-plans.ts (Pricing Plans Module)', () => {
+    describe('Exports', () => {
+        it('should export PricingPlan interface', () => {
+            expect(pricingPlansContent).toContain('export interface PricingPlan');
+        });
+
+        it('should export TOURIST_FALLBACK_PLANS constant', () => {
+            expect(pricingPlansContent).toContain('export const TOURIST_FALLBACK_PLANS');
+        });
+
+        it('should export OWNER_FALLBACK_PLANS constant', () => {
+            expect(pricingPlansContent).toContain('export const OWNER_FALLBACK_PLANS');
+        });
+
+        it('should export fetchTouristPlans function', () => {
+            expect(pricingPlansContent).toContain('export async function fetchTouristPlans');
+        });
+
+        it('should export fetchOwnerPlans function', () => {
+            expect(pricingPlansContent).toContain('export async function fetchOwnerPlans');
+        });
+    });
+
+    describe('PricingPlan interface', () => {
+        it('should have readonly name field', () => {
+            expect(pricingPlansContent).toContain('readonly name: string');
+        });
+
+        it('should have readonly price field', () => {
+            expect(pricingPlansContent).toContain('readonly price: number');
+        });
+
+        it('should have readonly currency field', () => {
+            expect(pricingPlansContent).toContain('readonly currency: string');
+        });
+
+        it('should have readonly period field', () => {
+            expect(pricingPlansContent).toContain('readonly period: string');
+        });
+
+        it('should have readonly features array', () => {
+            expect(pricingPlansContent).toContain('readonly features: readonly string[]');
+        });
+
+        it('should have readonly cta object with label and href', () => {
+            expect(pricingPlansContent).toContain(
+                'readonly cta: { readonly label: string; readonly href: string }'
+            );
+        });
+
+        it('should have optional highlighted field', () => {
+            expect(pricingPlansContent).toContain('readonly highlighted?: boolean');
+        });
+    });
+
+    describe('Imports', () => {
+        it('should import SupportedLocale type', () => {
+            expect(pricingPlansContent).toContain("import type { SupportedLocale } from './i18n'");
+        });
+
+        it('should import plansApi from endpoints', () => {
+            expect(pricingPlansContent).toContain("import { plansApi } from './api/endpoints'");
+        });
+    });
+
+    describe('Tourist Fallback Plans', () => {
+        it('should have fallback plans for all 3 locales', () => {
+            expect(pricingPlansContent).toContain('Record<SupportedLocale, PricingPlan[]>');
+        });
+
+        it('should have Free/Gratis plan', () => {
+            expect(pricingPlansContent).toContain("name: 'Gratis'");
+            expect(pricingPlansContent).toContain("name: 'Free'");
+            expect(pricingPlansContent).toContain("name: 'Grátis'");
+            expect(pricingPlansContent).toContain('price: 0');
+        });
+
+        it('should have Plus plan', () => {
+            expect(pricingPlansContent).toContain("name: 'Plus'");
+            expect(pricingPlansContent).toContain('price: 5000');
+            expect(pricingPlansContent).toContain('price: 5,');
+        });
+
+        it('should have VIP plan', () => {
+            expect(pricingPlansContent).toContain("name: 'VIP'");
+            expect(pricingPlansContent).toContain('price: 15000');
+            expect(pricingPlansContent).toContain('price: 15,');
+        });
+
+        it('should have VIP plan highlighted', () => {
+            expect(pricingPlansContent).toContain('highlighted: true');
+        });
+
+        it('should have tourist features in Spanish', () => {
+            expect(pricingPlansContent).toContain('Navegar alojamientos');
+            expect(pricingPlansContent).toContain('Leer reseñas');
+            expect(pricingPlansContent).toContain('Servicio de conserjería');
+        });
+
+        it('should have tourist features in English', () => {
+            expect(pricingPlansContent).toContain('Browse accommodations');
+            expect(pricingPlansContent).toContain('Read reviews');
+            expect(pricingPlansContent).toContain('Concierge service');
+        });
+
+        it('should have ARS currency for es locale', () => {
+            expect(pricingPlansContent).toContain("currency: 'ARS'");
+        });
+
+        it('should have USD currency for en locale', () => {
+            expect(pricingPlansContent).toContain("currency: 'USD'");
+        });
+
+        it('should have CTA links for tourist plans', () => {
+            expect(pricingPlansContent).toContain("label: 'Comenzar Gratis'");
+            expect(pricingPlansContent).toContain("label: 'Start Free'");
+        });
+    });
+
+    describe('Owner Fallback Plans', () => {
+        it('should have Basico/Basic plan', () => {
+            expect(pricingPlansContent).toContain("name: 'Basico'");
+            expect(pricingPlansContent).toContain("name: 'Basic'");
+            expect(pricingPlansContent).toContain("name: 'Básico'");
+            expect(pricingPlansContent).toContain('price: 15000');
+            expect(pricingPlansContent).toContain('price: 15,');
+        });
+
+        it('should have Profesional/Professional plan', () => {
+            expect(pricingPlansContent).toContain("name: 'Profesional'");
+            expect(pricingPlansContent).toContain("name: 'Professional'");
+            expect(pricingPlansContent).toContain("name: 'Profissional'");
+            expect(pricingPlansContent).toContain('price: 35000');
+            expect(pricingPlansContent).toContain('price: 35,');
+        });
+
+        it('should have Premium plan', () => {
+            expect(pricingPlansContent).toContain("name: 'Premium'");
+            expect(pricingPlansContent).toContain('price: 75000');
+            expect(pricingPlansContent).toContain('price: 75,');
+        });
+
+        it('should have Professional plan highlighted', () => {
+            expect(pricingPlansContent).toContain('highlighted: true');
+        });
+
+        it('should have owner features in Spanish', () => {
+            expect(pricingPlansContent).toContain('1 propiedad en listado');
+            expect(pricingPlansContent).toContain('Análisis básicos');
+            expect(pricingPlansContent).toContain('Gestor de cuenta');
+        });
+
+        it('should have owner features in English', () => {
+            expect(pricingPlansContent).toContain('1 property listing');
+            expect(pricingPlansContent).toContain('Basic analytics');
+            expect(pricingPlansContent).toContain('Account manager');
+        });
+
+        it('should have CTA links for owner plans', () => {
+            expect(pricingPlansContent).toContain("label: 'Comenzar Basico'");
+            expect(pricingPlansContent).toContain("label: 'Start Basic'");
+        });
+    });
+
+    describe('Locale Config', () => {
+        it('should define LOCALE_CONFIG with currency and period per locale', () => {
+            expect(pricingPlansContent).toContain('LOCALE_CONFIG: Record<SupportedLocale,');
+        });
+
+        it('should have ARS currency for es locale in config', () => {
+            expect(pricingPlansContent).toContain("es: { currency: 'ARS', period: '/mes' }");
+        });
+
+        it('should have USD currency for en locale in config', () => {
+            expect(pricingPlansContent).toContain("en: { currency: 'USD', period: '/month' }");
+        });
+
+        it('should have ARS currency for pt locale in config', () => {
+            expect(pricingPlansContent).toContain("pt: { currency: 'ARS', period: '/mês' }");
+        });
+    });
+
+    describe('fetchTouristPlans function', () => {
+        it('should call plansApi.list()', () => {
+            expect(pricingPlansContent).toContain('await plansApi.list()');
+        });
+
+        it('should return fallback on API failure', () => {
+            expect(pricingPlansContent).toContain('return TOURIST_FALLBACK_PLANS[locale]');
+        });
+
+        it('should filter plans by tourist category', () => {
+            expect(pricingPlansContent).toContain(
+                "filterByCategory(extractItems(result.data), 'tourist')"
+            );
+        });
+
+        it('should return fallback when no plans found', () => {
+            expect(pricingPlansContent).toContain(
+                'if (plans.length === 0) return TOURIST_FALLBACK_PLANS[locale]'
+            );
+        });
+
+        it('should sort plans by order', () => {
+            expect(pricingPlansContent).toContain('const sorted = sortByOrder(plans)');
+        });
+
+        it('should map API plans to card format', () => {
+            expect(pricingPlansContent).toContain('sorted.map((plan, idx) =>');
+            expect(pricingPlansContent).toContain('mapApiPlanToCard(');
+        });
+
+        it('should have try-catch for error handling', () => {
+            expect(pricingPlansContent).toContain('try {');
+            expect(pricingPlansContent).toContain('} catch {');
+        });
+
+        it('should accept locale parameter', () => {
+            expect(pricingPlansContent).toContain(
+                'export async function fetchTouristPlans(locale: SupportedLocale)'
+            );
+        });
+
+        it('should return Promise<PricingPlan[]>', () => {
+            expect(pricingPlansContent).toContain(
+                'export async function fetchTouristPlans(locale: SupportedLocale): Promise<PricingPlan[]>'
+            );
+        });
+    });
+
+    describe('fetchOwnerPlans function', () => {
+        it('should call plansApi.list()', () => {
+            expect(pricingPlansContent).toContain('await plansApi.list()');
+        });
+
+        it('should return fallback on API failure', () => {
+            expect(pricingPlansContent).toContain('return OWNER_FALLBACK_PLANS[locale]');
+        });
+
+        it('should filter plans by owner category', () => {
+            expect(pricingPlansContent).toContain(
+                "filterByCategory(extractItems(result.data), 'owner')"
+            );
+        });
+
+        it('should return fallback when no plans found', () => {
+            expect(pricingPlansContent).toContain(
+                'if (plans.length === 0) return OWNER_FALLBACK_PLANS[locale]'
+            );
+        });
+
+        it('should accept locale parameter', () => {
+            expect(pricingPlansContent).toContain(
+                'export async function fetchOwnerPlans(locale: SupportedLocale)'
+            );
+        });
+
+        it('should return Promise<PricingPlan[]>', () => {
+            expect(pricingPlansContent).toContain(
+                'export async function fetchOwnerPlans(locale: SupportedLocale): Promise<PricingPlan[]>'
+            );
+        });
+
+        it('should have try-catch for error handling', () => {
+            expect(pricingPlansContent).toContain('try {');
+            expect(pricingPlansContent).toContain('} catch {');
+        });
+    });
+
+    describe('Helper functions', () => {
+        it('should define extractItems helper', () => {
+            expect(pricingPlansContent).toContain('function extractItems(rawData: unknown)');
+        });
+
+        it('should handle array and paginated response shapes', () => {
+            expect(pricingPlansContent).toContain('if (Array.isArray(rawData)) return rawData');
+            expect(pricingPlansContent).toContain('Array.isArray(asRecord?.items)');
+        });
+
+        it('should define filterByCategory helper', () => {
+            expect(pricingPlansContent).toContain(
+                'function filterByCategory(items: unknown[], category: string)'
+            );
+        });
+
+        it('should define sortByOrder helper', () => {
+            expect(pricingPlansContent).toContain(
+                'function sortByOrder(plans: Record<string, unknown>[])'
+            );
+        });
+
+        it('should sort by sortOrder field ascending', () => {
+            expect(pricingPlansContent).toContain('aOrder - bOrder');
+        });
+
+        it('should define mapApiPlanToCard helper', () => {
+            expect(pricingPlansContent).toContain('function mapApiPlanToCard(');
+        });
+
+        it('should highlight the middle plan', () => {
+            expect(pricingPlansContent).toContain(
+                'const highlighted = total > 1 && index === Math.floor(total / 2)'
+            );
+        });
+
+        it('should use USD price for en locale', () => {
+            expect(pricingPlansContent).toContain(
+                "const price = locale === 'en' ? monthlyPriceUsdRef : Math.round(monthlyPriceArs / 100)"
+            );
+        });
+    });
+
+    describe('JSDoc documentation', () => {
+        it('should have module-level JSDoc', () => {
+            expect(pricingPlansContent).toContain('/**');
+            expect(pricingPlansContent).toContain(
+                '* Pricing plan utilities for the pricing pages.'
+            );
+        });
+
+        it('should have JSDoc for fetchTouristPlans', () => {
+            expect(pricingPlansContent).toContain('* Fetches tourist plans from the billing API');
+            expect(pricingPlansContent).toContain('* @param locale');
+            expect(pricingPlansContent).toContain('* @returns Sorted tourist PricingPlan array');
+        });
+
+        it('should have JSDoc for fetchOwnerPlans', () => {
+            expect(pricingPlansContent).toContain('* Fetches owner plans from the billing API');
+            expect(pricingPlansContent).toContain('* @returns Sorted owner PricingPlan array');
+        });
+
+        it('should document TOURIST_FALLBACK_PLANS', () => {
+            expect(pricingPlansContent).toContain(
+                '* Hardcoded fallback pricing plans for tourists'
+            );
+        });
+
+        it('should document OWNER_FALLBACK_PLANS', () => {
+            expect(pricingPlansContent).toContain(
+                '* Hardcoded fallback pricing plans for accommodation owners'
+            );
+        });
+    });
+
+    describe('File size', () => {
+        it('should be under 500 lines', () => {
+            const lines = pricingPlansContent.split('\n').length;
+            expect(lines).toBeLessThan(500);
         });
     });
 });

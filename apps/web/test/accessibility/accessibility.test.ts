@@ -109,8 +109,9 @@ describe('Accessibility Tests', () => {
                 expect(headerContent).toContain('aria-label="Main navigation"');
             });
 
-            it('should have mobile menu button with aria-label', () => {
-                expect(headerContent).toContain('aria-label="Open menu"');
+            it('should use MobileMenuWrapper React island for mobile navigation', () => {
+                expect(headerContent).toContain('MobileMenuWrapper');
+                expect(headerContent).toContain('client:media="(max-width: 768px)"');
             });
 
             it('should have decorative icons with aria-hidden', () => {
@@ -760,9 +761,9 @@ describe('Accessibility Tests', () => {
                 expect(headerContent).toContain('<nav');
             });
 
-            it('should use button element for menu trigger', () => {
-                expect(headerContent).toContain('<button');
-                expect(headerContent).toContain('type="button"');
+            it('should use MobileMenuWrapper for mobile menu trigger', () => {
+                expect(headerContent).toContain('<MobileMenuWrapper');
+                expect(headerContent).toContain('navItems={navLinks}');
             });
         });
 
@@ -970,8 +971,8 @@ describe('Accessibility Tests', () => {
                 expect(headerContent).toContain('md:flex');
             });
 
-            it('should show mobile menu button on small screens', () => {
-                expect(headerContent).toContain('md:hidden');
+            it('should use MobileMenuWrapper hydrated only on mobile', () => {
+                expect(headerContent).toContain('client:media="(max-width: 768px)"');
             });
         });
     });

@@ -8,43 +8,60 @@ import { describe, expect, it } from 'vitest';
 
 const accommodationTypePath = resolve(
     __dirname,
-    '../../src/pages/[lang]/alojamientos/tipo/[type].astro'
+    '../../src/pages/[lang]/alojamientos/tipo/[type]/index.astro'
 );
 const content = readFileSync(accommodationTypePath, 'utf8');
 
-describe('alojamientos/tipo/[type].astro', () => {
+describe('alojamientos/tipo/[type]/index.astro', () => {
+    describe('Rendering Strategy (SSG + ISR)', () => {
+        it('should enable prerendering', () => {
+            expect(content).toContain('export const prerender = true;');
+        });
+
+        it('should export getStaticPaths function', () => {
+            expect(content).toContain('export function getStaticPaths()');
+        });
+
+        it('should generate paths for all locale and type combinations', () => {
+            expect(content).toContain("const locales = ['es', 'en', 'pt']");
+            expect(content).toContain(
+                "const types = ['hotel', 'hostel', 'cabin', 'apartment', 'camping', 'estancia', 'posada']"
+            );
+        });
+    });
+
     describe('Page structure', () => {
         it('should use BaseLayout', () => {
             expect(content).toContain(
-                "import BaseLayout from '../../../../layouts/BaseLayout.astro'"
+                "import BaseLayout from '../../../../../layouts/BaseLayout.astro'"
             );
             expect(content).toContain('<BaseLayout');
         });
 
         it('should use SEOHead component', () => {
             expect(content).toContain(
-                "import SEOHead from '../../../../components/seo/SEOHead.astro'"
+                "import SEOHead from '../../../../../components/seo/SEOHead.astro'"
             );
             expect(content).toContain('<SEOHead');
         });
 
         it('should use Breadcrumb component', () => {
             expect(content).toContain(
-                "import Breadcrumb from '../../../../components/ui/Breadcrumb.astro'"
+                "import Breadcrumb from '../../../../../components/ui/Breadcrumb.astro'"
             );
             expect(content).toContain('<Breadcrumb items={breadcrumbItems}');
         });
 
         it('should use Container component', () => {
             expect(content).toContain(
-                "import Container from '../../../../components/ui/Container.astro'"
+                "import Container from '../../../../../components/ui/Container.astro'"
             );
             expect(content).toContain('<Container>');
         });
 
         it('should use Section component', () => {
             expect(content).toContain(
-                "import Section from '../../../../components/ui/Section.astro'"
+                "import Section from '../../../../../components/ui/Section.astro'"
             );
             expect(content).toContain('<Section>');
         });
@@ -67,13 +84,13 @@ describe('alojamientos/tipo/[type].astro', () => {
 
         it('should import accommodationsApi', () => {
             expect(content).toContain(
-                "import { accommodationsApi } from '../../../../lib/api/endpoints'"
+                "import { accommodationsApi } from '../../../../../lib/api/endpoints'"
             );
         });
 
         it('should import EmptyState', () => {
             expect(content).toContain(
-                "import EmptyState from '../../../../components/ui/EmptyState.astro'"
+                "import EmptyState from '../../../../../components/ui/EmptyState.astro'"
             );
         });
     });

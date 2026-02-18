@@ -180,11 +180,12 @@ describe('Destination Detail Page', () => {
             expect(content).toContain('<!-- Action buttons -->');
         });
 
-        it('should include FavoriteButton with client:visible', () => {
+        it('should include FavoriteButton with client:visible and isAuthenticated', () => {
             expect(content).toContain('<FavoriteButton');
             expect(content).toContain('client:visible');
             expect(content).toContain('entityId={destinationId}');
             expect(content).toContain('entityType="destination"');
+            expect(content).toContain('isAuthenticated={isAuthenticated}');
         });
 
         it('should include ShareButtons with client:visible', () => {
@@ -192,6 +193,20 @@ describe('Destination Detail Page', () => {
             expect(content).toContain('client:visible');
             expect(content).toContain('url={pageUrl}');
             expect(content).toContain('title={destinationName}');
+        });
+    });
+
+    describe('Authentication State', () => {
+        it('should derive isAuthenticated from Astro.locals.user', () => {
+            expect(content).toContain('const isAuthenticated = !!Astro.locals.user');
+        });
+
+        it('should pass isAuthenticated to FavoriteButton', () => {
+            expect(content).toContain('isAuthenticated={isAuthenticated}');
+        });
+
+        it('should not have any hardcoded isAuthenticated={false}', () => {
+            expect(content).not.toMatch(/isAuthenticated=\{false\}/);
         });
     });
 

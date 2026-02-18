@@ -407,7 +407,7 @@ describe('Page-Level SEO Checks', () => {
         });
 
         it('should pass dynamic title to SEOHead', () => {
-            expect(accommodationContent).toContain('title={(accommodation as any).name}');
+            expect(accommodationContent).toContain('title={accommodation.name}');
         });
 
         it('should pass dynamic description to SEOHead', () => {
@@ -419,7 +419,7 @@ describe('Page-Level SEO Checks', () => {
         });
 
         it('should pass image to SEOHead', () => {
-            expect(accommodationContent).toContain('image={(accommodation as any).images');
+            expect(accommodationContent).toContain('image={accommodation.images');
         });
     });
 
@@ -452,7 +452,7 @@ describe('Page-Level SEO Checks', () => {
         });
 
         it('should pass dynamic title from post', () => {
-            expect(blogPostContent).toContain('title={(post as any).title}');
+            expect(blogPostContent).toContain('title={post.title}');
         });
 
         it('should set type to article', () => {

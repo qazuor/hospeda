@@ -82,13 +82,10 @@ describe('contacto.astro', () => {
             expect(contactContent).toContain("pt: 'Início'");
         });
 
-        it('should have localized form labels', () => {
+        it('should have localized contact info labels', () => {
             expect(contactContent).toContain('const formLabels = {');
-            expect(contactContent).toContain("name: 'Nombre'");
-            expect(contactContent).toContain("email: 'Correo electrónico'");
-            expect(contactContent).toContain("subject: 'Asunto'");
-            expect(contactContent).toContain("message: 'Mensaje'");
-            expect(contactContent).toContain("submit: 'Enviar mensaje'");
+            expect(contactContent).toContain("contactInfo: 'Información de contacto'");
+            expect(contactContent).toContain("officeHours: 'Horario de atención'");
         });
     });
 
@@ -124,50 +121,23 @@ describe('contacto.astro', () => {
         });
     });
 
-    describe('Contact form', () => {
-        it('should have form element with id', () => {
-            expect(contactContent).toContain('<form');
-            expect(contactContent).toContain('id="contact-form"');
+    describe('Contact form (React island)', () => {
+        it('should import ContactForm component', () => {
+            expect(contactContent).toContain(
+                "import { ContactForm } from '../../components/forms/ContactForm.client'"
+            );
         });
 
-        it('should have name input field', () => {
-            expect(contactContent).toContain('id="name"');
-            expect(contactContent).toContain('name="name"');
-            expect(contactContent).toContain('type="text"');
-            expect(contactContent).toContain('required');
+        it('should render ContactForm with client:visible directive', () => {
+            expect(contactContent).toContain('<ContactForm client:visible');
         });
 
-        it('should have email input field', () => {
-            expect(contactContent).toContain('id="email"');
-            expect(contactContent).toContain('name="email"');
-            expect(contactContent).toContain('type="email"');
-            expect(contactContent).toContain('required');
+        it('should pass locale prop to ContactForm', () => {
+            expect(contactContent).toContain('locale={locale');
         });
 
-        it('should have subject input field', () => {
-            expect(contactContent).toContain('id="subject"');
-            expect(contactContent).toContain('name="subject"');
-            expect(contactContent).toContain('type="text"');
-            expect(contactContent).toContain('required');
-        });
-
-        it('should have message textarea field', () => {
-            expect(contactContent).toContain('id="message"');
-            expect(contactContent).toContain('name="message"');
-            expect(contactContent).toContain('<textarea');
-            expect(contactContent).toContain('required');
-        });
-
-        it('should have submit button', () => {
-            expect(contactContent).toContain('type="submit"');
-            expect(contactContent).toContain('{labels.submit}');
-        });
-
-        it('should have form labels', () => {
-            expect(contactContent).toContain('for="name"');
-            expect(contactContent).toContain('for="email"');
-            expect(contactContent).toContain('for="subject"');
-            expect(contactContent).toContain('for="message"');
+        it('should NOT have raw HTML form element', () => {
+            expect(contactContent).not.toContain('id="contact-form"');
         });
     });
 
@@ -237,18 +207,6 @@ describe('contacto.astro', () => {
             expect(contactContent).toContain('text-4xl font-bold');
         });
 
-        it('should style form inputs consistently', () => {
-            expect(contactContent).toContain('rounded-lg border border-border bg-bg');
-            expect(contactContent).toContain('focus:border-primary');
-            expect(contactContent).toContain('focus:ring-2 focus:ring-primary');
-        });
-
-        it('should style submit button', () => {
-            expect(contactContent).toContain('bg-primary');
-            expect(contactContent).toContain('hover:bg-primary-dark');
-            expect(contactContent).toContain('disabled:bg-gray-300');
-        });
-
         it('should have icon containers', () => {
             expect(contactContent).toContain('bg-primary bg-opacity-10');
         });
@@ -263,14 +221,6 @@ describe('contacto.astro', () => {
             expect(contactContent).toContain('aria-label="Instagram"');
             expect(contactContent).toContain('aria-label="Facebook"');
             expect(contactContent).toContain('aria-label="Twitter"');
-        });
-
-        it('should associate labels with form inputs', () => {
-            expect(contactContent).toContain('<label');
-            expect(contactContent).toContain('for="name"');
-            expect(contactContent).toContain('for="email"');
-            expect(contactContent).toContain('for="subject"');
-            expect(contactContent).toContain('for="message"');
         });
     });
 });

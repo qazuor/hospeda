@@ -169,27 +169,27 @@ describe('Accommodation Detail Page ([slug].astro)', () => {
         });
 
         it('should pass images to gallery', () => {
-            expect(content).toContain('images={(accommodation as any).images || []}');
+            expect(content).toContain('images={accommodation.images || []}');
         });
     });
 
     describe('Header Section', () => {
         it('should display type Badge', () => {
             expect(content).toContain('<Badge');
-            expect(content).toContain("label={(accommodation as any).type || 'HOTEL'}");
+            expect(content).toContain("label={accommodation.type || 'HOTEL'}");
         });
 
         it('should display accommodation name as h1', () => {
             expect(content).toContain('<h1');
-            expect(content).toContain('{(accommodation as any).name}');
+            expect(content).toContain('{accommodation.name}');
         });
 
         it('should display rating', () => {
-            expect(content).toContain('{(accommodation as any).rating || 0}');
+            expect(content).toContain('{accommodation.rating || 0}');
         });
 
         it('should display review count', () => {
-            expect(content).toContain('{(accommodation as any).reviewCount || 0}');
+            expect(content).toContain('{accommodation.reviewCount || 0}');
             expect(content).toContain('t.reviewsLabel');
         });
     });
@@ -201,7 +201,7 @@ describe('Accommodation Detail Page ([slug].astro)', () => {
         });
 
         it('should pass entityId to FavoriteButton', () => {
-            expect(content).toContain('entityId={(accommodation as any).id}');
+            expect(content).toContain('entityId={accommodation.id}');
         });
 
         it('should pass entityType to FavoriteButton', () => {
@@ -218,7 +218,30 @@ describe('Accommodation Detail Page ([slug].astro)', () => {
         });
 
         it('should pass title to ShareButtons', () => {
-            expect(content).toContain('title={(accommodation as any).name}');
+            expect(content).toContain('title={accommodation.name}');
+        });
+    });
+
+    describe('Authentication State', () => {
+        it('should derive isAuthenticated from Astro.locals.user', () => {
+            expect(content).toContain('const isAuthenticated = !!Astro.locals.user');
+        });
+
+        it('should pass dynamic isAuthenticated to ReviewList', () => {
+            expect(content).toContain('isAuthenticated={isAuthenticated}');
+            expect(content).not.toContain('isAuthenticated={false}');
+        });
+
+        it('should pass isAuthenticated to FavoriteButton', () => {
+            const favoriteSection = content.slice(
+                content.indexOf('<FavoriteButton'),
+                content.indexOf('/>', content.indexOf('<FavoriteButton')) + 2
+            );
+            expect(favoriteSection).toContain('isAuthenticated={isAuthenticated}');
+        });
+
+        it('should not have any hardcoded isAuthenticated={false}', () => {
+            expect(content).not.toMatch(/isAuthenticated=\{false\}/);
         });
     });
 
@@ -233,7 +256,7 @@ describe('Accommodation Detail Page ([slug].astro)', () => {
 
         it('should render AmenitiesList', () => {
             expect(content).toContain('<AmenitiesList');
-            expect(content).toContain('amenities={(accommodation as any).amenities || []}');
+            expect(content).toContain('amenities={accommodation.amenities || []}');
         });
 
         it('should have location section', () => {
@@ -263,7 +286,7 @@ describe('Accommodation Detail Page ([slug].astro)', () => {
         });
 
         it('should pass totalCount to ReviewList', () => {
-            expect(content).toContain('totalCount={(accommodation as any).reviewCount || 0}');
+            expect(content).toContain('totalCount={accommodation.reviewCount || 0}');
         });
 
         it('should pass locale to ReviewList', () => {
@@ -280,7 +303,7 @@ describe('Accommodation Detail Page ([slug].astro)', () => {
         });
 
         it('should pass FAQ items', () => {
-            expect(content).toContain('items={(accommodation as any).faqs || []}');
+            expect(content).toContain('items={accommodation.faqs || []}');
         });
     });
 
@@ -295,7 +318,7 @@ describe('Accommodation Detail Page ([slug].astro)', () => {
         });
 
         it('should pass amountARS to PriceDisplay', () => {
-            expect(content).toContain('amountARS={(accommodation as any).pricePerNight || 0}');
+            expect(content).toContain('amountARS={accommodation.pricePerNight || 0}');
         });
 
         it('should pass locale to PriceDisplay', () => {
@@ -308,12 +331,12 @@ describe('Accommodation Detail Page ([slug].astro)', () => {
 
         it('should display check-in time', () => {
             expect(content).toContain('t.checkIn');
-            expect(content).toContain("{(accommodation as any).checkIn || '14:00'}");
+            expect(content).toContain("{accommodation.checkIn || '14:00'}");
         });
 
         it('should display check-out time', () => {
             expect(content).toContain('t.checkOut');
-            expect(content).toContain("{(accommodation as any).checkOut || '10:00'}");
+            expect(content).toContain("{accommodation.checkOut || '10:00'}");
         });
 
         it('should have CTA button', () => {
@@ -348,15 +371,15 @@ describe('Accommodation Detail Page ([slug].astro)', () => {
         });
 
         it('should pass name to LodgingBusinessJsonLd', () => {
-            expect(content).toContain('name={(accommodation as any).name}');
+            expect(content).toContain('name={accommodation.name}');
         });
 
         it('should pass rating to LodgingBusinessJsonLd', () => {
-            expect(content).toContain('rating={(accommodation as any).rating || 0}');
+            expect(content).toContain('rating={accommodation.rating || 0}');
         });
 
         it('should pass reviewCount to LodgingBusinessJsonLd', () => {
-            expect(content).toContain('reviewCount={(accommodation as any).reviewCount || 0}');
+            expect(content).toContain('reviewCount={accommodation.reviewCount || 0}');
         });
     });
 
@@ -393,7 +416,7 @@ describe('Accommodation Detail Page ([slug].astro)', () => {
         });
 
         it('should pass title to BaseLayout', () => {
-            expect(content).toContain('title={(accommodation as any).name}');
+            expect(content).toContain('title={accommodation.name}');
         });
 
         it('should pass description to BaseLayout', () => {
@@ -406,7 +429,7 @@ describe('Accommodation Detail Page ([slug].astro)', () => {
 
         it('should pass image to BaseLayout', () => {
             expect(content).toContain(
-                "image={(accommodation as any).images?.[0]?.src || '/images/placeholder-accommodation.svg'}"
+                "image={accommodation.images?.[0]?.src || '/images/placeholder-accommodation.svg'}"
             );
         });
 

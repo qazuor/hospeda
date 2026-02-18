@@ -144,6 +144,30 @@ describe('signin.astro', () => {
 });
 
 describe('signup.astro', () => {
+    describe('Rendering Strategy (SSR)', () => {
+        it('should NOT enable prerendering (SSR page)', () => {
+            expect(registerContent).not.toContain('export const prerender = true');
+        });
+
+        it('should NOT have getStaticPaths (SSR page)', () => {
+            expect(registerContent).not.toContain('export function getStaticPaths');
+        });
+    });
+
+    describe('Server-side auth guard', () => {
+        it('should check Astro.locals.user for auth redirect', () => {
+            expect(registerContent).toContain('if (Astro.locals.user)');
+        });
+
+        it('should redirect authenticated users to home page', () => {
+            expect(registerContent).toContain('return Astro.redirect(`/${locale}/`)');
+        });
+
+        it('should NOT have client-side auth redirect script', () => {
+            expect(registerContent).not.toContain('redirectIfAuthenticated');
+        });
+    });
+
     describe('Page structure', () => {
         it('should use BaseLayout', () => {
             expect(registerContent).toContain(

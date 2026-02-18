@@ -1,0 +1,414 @@
+/**
+ * Tests for UserFavoritesList.client.tsx
+ *
+ * Verifies component structure, exports, props interface, localization,
+ * accessibility attributes, API integration, tab navigation, and deletion patterns.
+ */
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { describe, expect, it } from 'vitest';
+
+const componentPath = resolve(
+    __dirname,
+    '../../../src/components/account/UserFavoritesList.client.tsx'
+);
+const content = readFileSync(componentPath, 'utf8');
+
+describe('UserFavoritesList.client.tsx', () => {
+    describe('Module exports', () => {
+        it('should export UserFavoritesList as named export', () => {
+            expect(content).toContain('export function UserFavoritesList(');
+        });
+
+        it('should not use default export', () => {
+            expect(content).not.toContain('export default');
+        });
+    });
+
+    describe('Props interface', () => {
+        it('should define UserFavoritesListProps interface', () => {
+            expect(content).toContain('interface UserFavoritesListProps');
+        });
+
+        it('should define locale prop with supported locales', () => {
+            expect(content).toContain("locale: 'es' | 'en' | 'pt'");
+        });
+    });
+
+    describe('Imports', () => {
+        it('should import useState and useEffect from react', () => {
+            expect(content).toContain('useState');
+            expect(content).toContain('useEffect');
+        });
+
+        it('should import FavoriteIcon from @repo/icons', () => {
+            expect(content).toContain("import { FavoriteIcon } from '@repo/icons'");
+        });
+
+        it('should import userBookmarksApi from endpoints', () => {
+            expect(content).toContain("import { userBookmarksApi } from '../../lib/api/endpoints'");
+        });
+
+        it('should import addToast from toast store', () => {
+            expect(content).toContain("import { addToast } from '../../store/toast-store'");
+        });
+    });
+
+    describe('Internal types', () => {
+        it('should define EntityType union type', () => {
+            expect(content).toContain(
+                "type EntityType = 'ACCOMMODATION' | 'DESTINATION' | 'EVENT' | 'POST'"
+            );
+        });
+
+        it('should define Bookmark interface with id field', () => {
+            expect(content).toContain('id: string');
+        });
+
+        it('should define Bookmark interface with entityId field', () => {
+            expect(content).toContain('entityId: string');
+        });
+
+        it('should define Bookmark interface with entityType field', () => {
+            expect(content).toContain('entityType: EntityType');
+        });
+
+        it('should define Bookmark interface with displayName field', () => {
+            expect(content).toContain('displayName: string');
+        });
+
+        it('should define Bookmark interface with notes field', () => {
+            expect(content).toContain('notes: string | null');
+        });
+
+        it('should define Bookmark interface with createdAt field', () => {
+            expect(content).toContain('createdAt: string');
+        });
+
+        it('should define TabConfig interface', () => {
+            expect(content).toContain('interface TabConfig');
+        });
+    });
+
+    describe('Localization - Spanish (es)', () => {
+        it('should have Spanish Accommodations tab label', () => {
+            expect(content).toContain('Alojamientos');
+        });
+
+        it('should have Spanish Destinations tab label', () => {
+            expect(content).toContain("DESTINATION: 'Destinos'");
+        });
+
+        it('should have Spanish Events tab label', () => {
+            expect(content).toContain("EVENT: 'Eventos'");
+        });
+
+        it('should have Spanish Blog tab label', () => {
+            expect(content).toContain("POST: 'Blog'");
+        });
+
+        it('should have Spanish empty state message', () => {
+            expect(content).toContain('No tienes favoritos en esta categoría');
+        });
+
+        it('should have Spanish empty action message', () => {
+            expect(content).toContain('Comienza explorando contenido para guardar tus favoritos');
+        });
+
+        it('should have Spanish delete button text', () => {
+            expect(content).toContain("delete: 'Eliminar'");
+        });
+
+        it('should have Spanish delete success message', () => {
+            expect(content).toContain('Favorito eliminado correctamente');
+        });
+
+        it('should have Spanish delete error message', () => {
+            expect(content).toContain('Error al eliminar el favorito');
+        });
+
+        it('should have Spanish load more button text', () => {
+            expect(content).toContain("loadMore: 'Cargar más'");
+        });
+
+        it('should have Spanish loading text', () => {
+            expect(content).toContain("loading: 'Cargando...'");
+        });
+
+        it('should have Spanish fetch error message', () => {
+            expect(content).toContain('Error al cargar los favoritos');
+        });
+    });
+
+    describe('Localization - English (en)', () => {
+        it('should have English Accommodations tab label', () => {
+            expect(content).toContain("ACCOMMODATION: 'Accommodations'");
+        });
+
+        it('should have English Destinations tab label', () => {
+            expect(content).toContain("DESTINATION: 'Destinations'");
+        });
+
+        it('should have English Events tab label', () => {
+            expect(content).toContain("EVENT: 'Events'");
+        });
+
+        it('should have English empty state message', () => {
+            expect(content).toContain('You have no favorites in this category');
+        });
+
+        it('should have English delete button text', () => {
+            expect(content).toContain("delete: 'Delete'");
+        });
+
+        it('should have English delete success message', () => {
+            expect(content).toContain('Favorite deleted successfully');
+        });
+
+        it('should have English load more text', () => {
+            expect(content).toContain("loadMore: 'Load more'");
+        });
+
+        it('should have English fetch error message', () => {
+            expect(content).toContain('Error loading favorites');
+        });
+    });
+
+    describe('Localization - Portuguese (pt)', () => {
+        it('should have Portuguese Accommodations tab label', () => {
+            expect(content).toContain("ACCOMMODATION: 'Acomodações'");
+        });
+
+        it('should have Portuguese empty state message', () => {
+            expect(content).toContain('Você não tem favoritos nesta categoria');
+        });
+
+        it('should have Portuguese delete button text', () => {
+            expect(content).toContain("delete: 'Excluir'");
+        });
+
+        it('should have Portuguese delete success message', () => {
+            expect(content).toContain('Favorito excluído com sucesso');
+        });
+
+        it('should have Portuguese load more text', () => {
+            expect(content).toContain("loadMore: 'Carregar mais'");
+        });
+
+        it('should have Portuguese fetch error message', () => {
+            expect(content).toContain('Erro ao carregar favoritos');
+        });
+    });
+
+    describe('Tab navigation', () => {
+        it('should initialize activeTab to ACCOMMODATION', () => {
+            expect(content).toContain("useState<EntityType>('ACCOMMODATION')");
+        });
+
+        it('should have all 4 tabs defined', () => {
+            expect(content).toContain("{ id: 'ACCOMMODATION'");
+            expect(content).toContain("{ id: 'DESTINATION'");
+            expect(content).toContain("{ id: 'EVENT'");
+            expect(content).toContain("{ id: 'POST'");
+        });
+
+        it('should have handleTabChange function', () => {
+            expect(content).toContain('const handleTabChange = (tabId: EntityType)');
+        });
+
+        it('should reset bookmarks when tab changes', () => {
+            expect(content).toContain('setBookmarks([])');
+        });
+
+        it('should reset page to 1 on tab change', () => {
+            expect(content).toContain('setPage(1)');
+        });
+
+        it('should fetch bookmarks when activeTab changes via useEffect', () => {
+            expect(content).toContain('useEffect(() => {');
+            expect(content).toContain('}, [activeTab])');
+        });
+    });
+
+    describe('Accessibility', () => {
+        it('should have tablist role on nav element', () => {
+            expect(content).toContain('role="tablist"');
+        });
+
+        it('should have aria-label on tablist nav', () => {
+            expect(content).toContain('aria-label="Favorite categories"');
+        });
+
+        it('should have tab role on tab buttons', () => {
+            expect(content).toContain('role="tab"');
+        });
+
+        it('should have aria-selected on tab buttons', () => {
+            expect(content).toContain('aria-selected={activeTab === tab.id}');
+        });
+
+        it('should have aria-controls on tab buttons', () => {
+            expect(content).toContain('aria-controls={`panel-${tab.id}`}');
+        });
+
+        it('should have tabpanel role on content panel', () => {
+            expect(content).toContain('role="tabpanel"');
+        });
+
+        it('should have aria-labelledby on tabpanel', () => {
+            expect(content).toContain('aria-labelledby={`tab-${activeTab}`}');
+        });
+
+        it('should have aria-label on delete buttons', () => {
+            expect(content).toContain('aria-label={`${messages.delete} ${bookmark.displayName}`}');
+        });
+    });
+
+    describe('API integration', () => {
+        it('should call userBookmarksApi.list to fetch bookmarks', () => {
+            expect(content).toContain('userBookmarksApi.list(');
+        });
+
+        it('should pass entityType to list call', () => {
+            expect(content).toContain('entityType: activeTab');
+        });
+
+        it('should pass page to list call', () => {
+            expect(content).toContain('page: currentPage');
+        });
+
+        it('should pass pageSize of 12 to list call', () => {
+            expect(content).toContain('pageSize: 12');
+        });
+
+        it('should call userBookmarksApi.delete to remove bookmarks', () => {
+            expect(content).toContain('userBookmarksApi.delete({ id: bookmarkId })');
+        });
+
+        it('should define fetchBookmarks function', () => {
+            expect(content).toContain('const fetchBookmarks = async');
+        });
+
+        it('should handle fetch error with toast', () => {
+            expect(content).toContain('messages.fetchError');
+        });
+    });
+
+    describe('Optimistic deletion', () => {
+        it('should define handleDelete function', () => {
+            expect(content).toContain('const handleDelete = async (bookmarkId: string)');
+        });
+
+        it('should save previous bookmarks before optimistic remove', () => {
+            expect(content).toContain('const previousBookmarks = [...bookmarks]');
+        });
+
+        it('should filter out deleted bookmark optimistically', () => {
+            expect(content).toContain('prev.filter((b) => b.id !== bookmarkId)');
+        });
+
+        it('should decrement total optimistically', () => {
+            expect(content).toContain('setTotal((prev) => prev - 1)');
+        });
+
+        it('should restore bookmarks on delete error', () => {
+            expect(content).toContain('setBookmarks(previousBookmarks)');
+        });
+
+        it('should increment total back on delete error', () => {
+            expect(content).toContain('setTotal((prev) => prev + 1)');
+        });
+
+        it('should show success toast on delete success', () => {
+            expect(content).toContain('messages.deleteSuccess');
+        });
+
+        it('should show error toast on delete failure', () => {
+            expect(content).toContain('messages.deleteError');
+        });
+    });
+
+    describe('Pagination', () => {
+        it('should define handleLoadMore function', () => {
+            expect(content).toContain('const handleLoadMore = (e: FormEvent)');
+        });
+
+        it('should prevent default on load more button click', () => {
+            expect(content).toContain('e.preventDefault()');
+        });
+
+        it('should compute hasMore from bookmarks length vs total', () => {
+            expect(content).toContain('const hasMore = bookmarks.length < total');
+        });
+
+        it('should show load more button when hasMore is true', () => {
+            expect(content).toContain('{hasMore && !isLoading && (');
+        });
+
+        it('should increment page when loading more', () => {
+            expect(content).toContain('setPage(currentPage + 1)');
+        });
+    });
+
+    describe('Loading and empty states', () => {
+        it('should show loading state when isLoading and no bookmarks', () => {
+            expect(content).toContain('{isLoading && bookmarks.length === 0 && (');
+        });
+
+        it('should show empty state when not loading and no bookmarks', () => {
+            expect(content).toContain('{!isLoading && bookmarks.length === 0 && (');
+        });
+
+        it('should show FavoriteIcon in empty state', () => {
+            expect(content).toContain('<FavoriteIcon');
+        });
+
+        it('should show empty message text', () => {
+            expect(content).toContain('{messages.empty}');
+        });
+
+        it('should show empty action text', () => {
+            expect(content).toContain('{messages.emptyAction}');
+        });
+
+        it('should show loading spinner animation', () => {
+            expect(content).toContain('animate-spin');
+        });
+
+        it('should show loading text during initial load', () => {
+            expect(content).toContain('{messages.loading}');
+        });
+
+        it('should show inline loading indicator when loading more', () => {
+            expect(content).toContain('{isLoading && bookmarks.length > 0 && (');
+        });
+    });
+
+    describe('Bookmark list rendering', () => {
+        it('should render bookmark displayName', () => {
+            expect(content).toContain('{bookmark.displayName}');
+        });
+
+        it('should render bookmark notes when present', () => {
+            expect(content).toContain('{bookmark.notes && (');
+        });
+
+        it('should render formatted createdAt date', () => {
+            expect(content).toContain('new Date(bookmark.createdAt).toLocaleDateString(locale');
+        });
+
+        it('should use bookmark.id as key', () => {
+            expect(content).toContain('key={bookmark.id}');
+        });
+
+        it('should show bookmarks list when bookmarks exist', () => {
+            expect(content).toContain('{bookmarks.length > 0 && (');
+        });
+    });
+
+    describe('Container class', () => {
+        it('should have user-favorites-list class on root', () => {
+            expect(content).toContain('className="user-favorites-list"');
+        });
+    });
+});

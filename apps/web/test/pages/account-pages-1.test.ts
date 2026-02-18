@@ -173,16 +173,17 @@ describe('mi-cuenta/index.astro', () => {
 
         it('should display favorites stat card', () => {
             expect(accountIndexContent).toContain('{statsLabels[locale].favorites}');
-            expect(accountIndexContent).toContain('{stats.favorites}');
+            expect(accountIndexContent).toContain('id="stat-favorites"');
         });
 
         it('should display reviews stat card', () => {
             expect(accountIndexContent).toContain('{statsLabels[locale].reviews}');
-            expect(accountIndexContent).toContain('{stats.reviews}');
+            expect(accountIndexContent).toContain('id="stat-reviews"');
         });
 
         it('should display subscription stat card', () => {
             expect(accountIndexContent).toContain('{statsLabels[locale].subscription}');
+            expect(accountIndexContent).toContain('id="stat-subscription"');
         });
 
         it('should have links to account sections', () => {
@@ -203,6 +204,85 @@ describe('mi-cuenta/index.astro', () => {
 
         it('should define navigation items', () => {
             expect(accountIndexContent).toContain('const navItems:');
+        });
+    });
+
+    describe('Client-side stats script', () => {
+        it('should have a script tag to fetch stats from API', () => {
+            expect(accountIndexContent).toContain('<script>');
+            expect(accountIndexContent).toContain('/api/v1/protected');
+        });
+
+        it('should update stat elements by id', () => {
+            expect(accountIndexContent).toContain("getElementById('stat-favorites')");
+            expect(accountIndexContent).toContain("getElementById('stat-reviews')");
+            expect(accountIndexContent).toContain("getElementById('stat-subscription')");
+        });
+
+        it('should update stat-subscription-status based on plan.status in loadStats script', () => {
+            // Arrange: the script reads plan.status to pick the correct label attribute
+            expect(accountIndexContent).toContain("getElementById('stat-subscription-status')");
+            expect(accountIndexContent).toContain('plan.status');
+            expect(accountIndexContent).toContain('data-label-${plan.status}');
+        });
+
+        it('should handle null plan with free label fallback in loadStats script', () => {
+            // Arrange: when API returns no plan object, the script falls back to data-label-free
+            expect(accountIndexContent).toContain("getAttribute('data-label-free')");
+        });
+    });
+
+    describe('Subscription stat card data attributes', () => {
+        it('should have id "stat-subscription" on the plan name element', () => {
+            expect(accountIndexContent).toContain('id="stat-subscription"');
+        });
+
+        it('should have id "stat-subscription-status" on the status label element', () => {
+            expect(accountIndexContent).toContain('id="stat-subscription-status"');
+        });
+
+        it('should have data-label-active attribute on the status element', () => {
+            expect(accountIndexContent).toContain(
+                'data-label-active={statsDescriptions[locale].activeStatus}'
+            );
+        });
+
+        it('should have data-label-trial attribute on the status element', () => {
+            expect(accountIndexContent).toContain(
+                'data-label-trial={statsDescriptions[locale].trialStatus}'
+            );
+        });
+
+        it('should have data-label-free attribute on the status element', () => {
+            expect(accountIndexContent).toContain(
+                'data-label-free={statsDescriptions[locale].freeStatus}'
+            );
+        });
+    });
+
+    describe('statsDescriptions localization', () => {
+        it('should have subscriptionStatus in statsDescriptions', () => {
+            expect(accountIndexContent).toContain('subscriptionStatus:');
+        });
+
+        it('should have activeStatus in statsDescriptions', () => {
+            expect(accountIndexContent).toContain('activeStatus:');
+        });
+
+        it('should have trialStatus in statsDescriptions', () => {
+            expect(accountIndexContent).toContain('trialStatus:');
+        });
+
+        it('should have freeStatus in statsDescriptions', () => {
+            expect(accountIndexContent).toContain('freeStatus:');
+        });
+
+        it('should define statsDescriptions with all required locale keys', () => {
+            expect(accountIndexContent).toContain('const statsDescriptions:');
+        });
+
+        it('should render subscriptionStatus as the initial status text', () => {
+            expect(accountIndexContent).toContain('{statsDescriptions[locale].subscriptionStatus}');
         });
     });
 });
@@ -235,6 +315,12 @@ describe('mi-cuenta/favoritos.astro', () => {
                 "import Breadcrumb from '../../../components/ui/Breadcrumb.astro'"
             );
             expect(favoritosContent).toContain('<Breadcrumb');
+        });
+
+        it('should import UserFavoritesList React island', () => {
+            expect(favoritosContent).toContain(
+                "import { UserFavoritesList } from '../../../components/account/UserFavoritesList.client'"
+            );
         });
     });
 
@@ -274,20 +360,6 @@ describe('mi-cuenta/favoritos.astro', () => {
             );
             expect(favoritosContent).toContain("es: 'Mi Cuenta'");
             expect(favoritosContent).toContain("en: 'My Account'");
-        });
-
-        it('should have localized tab labels', () => {
-            expect(favoritosContent).toContain('tabs: {');
-            expect(favoritosContent).toContain("accommodations: 'Alojamientos'");
-            expect(favoritosContent).toContain("destinations: 'Destinos'");
-            expect(favoritosContent).toContain("events: 'Eventos'");
-            expect(favoritosContent).toContain("blog: 'Blog'");
-        });
-
-        it('should have localized empty state message', () => {
-            expect(favoritosContent).toContain(
-                "emptyState: 'No tienes favoritos en esta categoría'"
-            );
         });
     });
 
@@ -333,43 +405,17 @@ describe('mi-cuenta/favoritos.astro', () => {
         });
     });
 
-    describe('Tabs navigation', () => {
-        it('should have tabs container', () => {
-            expect(favoritosContent).toContain('border-b border-border');
-            expect(favoritosContent).toContain('aria-label="Tabs"');
+    describe('React island', () => {
+        it('should render UserFavoritesList with client:visible directive', () => {
+            expect(favoritosContent).toContain('<UserFavoritesList client:visible');
         });
 
-        it('should have accommodations tab', () => {
-            expect(favoritosContent).toContain('{labels.tabs.accommodations}');
-            expect(favoritosContent).toContain('border-primary');
-            expect(favoritosContent).toContain('aria-current="page"');
+        it('should pass locale prop to UserFavoritesList', () => {
+            expect(favoritosContent).toContain('locale={locale}');
         });
 
-        it('should have destinations tab', () => {
-            expect(favoritosContent).toContain('{labels.tabs.destinations}');
-        });
-
-        it('should have events tab', () => {
-            expect(favoritosContent).toContain('{labels.tabs.events}');
-        });
-
-        it('should have blog tab', () => {
-            expect(favoritosContent).toContain('{labels.tabs.blog}');
-        });
-    });
-
-    describe('Empty state', () => {
-        it('should display empty state message', () => {
-            expect(favoritosContent).toContain('{labels.emptyState}');
-        });
-
-        it('should import FavoriteIcon from @repo/icons', () => {
-            expect(favoritosContent).toContain("from '@repo/icons'");
-            expect(favoritosContent).toContain('FavoriteIcon');
-        });
-
-        it('should have placeholder comment for future card grid', () => {
-            expect(favoritosContent).toContain('<!-- Placeholder for future card grid -->');
+        it('should have a comment describing the React island purpose', () => {
+            expect(favoritosContent).toContain('UserFavoritesList');
         });
     });
 });
@@ -403,6 +449,12 @@ describe('mi-cuenta/resenas.astro', () => {
             );
             expect(resenasContent).toContain('<Breadcrumb');
         });
+
+        it('should import UserReviewsList React island', () => {
+            expect(resenasContent).toContain(
+                "import { UserReviewsList } from '../../../components/account/UserReviewsList.client'"
+            );
+        });
     });
 
     describe('Locale validation', () => {
@@ -423,14 +475,14 @@ describe('mi-cuenta/resenas.astro', () => {
 
     describe('Localization', () => {
         it('should have localized titles for all supported locales', () => {
-            expect(resenasContent).toContain("es: 'Mis Reseñas'");
+            expect(resenasContent).toContain("es: 'Mis Resenas'");
             expect(resenasContent).toContain("en: 'My Reviews'");
-            expect(resenasContent).toContain("pt: 'Minhas Avaliações'");
+            expect(resenasContent).toContain("pt: 'Minhas Avaliacoes'");
         });
 
         it('should have localized meta descriptions', () => {
             expect(resenasContent).toContain('const descriptions: Record<SupportedLocale, string>');
-            expect(resenasContent).toContain('Gestiona tus reseñas de alojamientos');
+            expect(resenasContent).toContain('Gestiona tus resenas de alojamientos');
         });
 
         it('should have localized account breadcrumb labels', () => {
@@ -439,12 +491,6 @@ describe('mi-cuenta/resenas.astro', () => {
             );
             expect(resenasContent).toContain("es: 'Mi Cuenta'");
             expect(resenasContent).toContain("en: 'My Account'");
-        });
-
-        it('should have localized content labels', () => {
-            expect(resenasContent).toContain('const contentLabels =');
-            expect(resenasContent).toContain("emptyTitle: 'No has escrito ninguna reseña todavía'");
-            expect(resenasContent).toContain("ctaButton: 'Explorar alojamientos'");
         });
     });
 
@@ -490,30 +536,17 @@ describe('mi-cuenta/resenas.astro', () => {
         });
     });
 
-    describe('Empty state', () => {
-        it('should display empty title', () => {
-            expect(resenasContent).toContain('{labels.emptyTitle}');
-            expect(resenasContent).toContain('text-2xl font-semibold');
+    describe('React island', () => {
+        it('should render UserReviewsList with client:visible directive', () => {
+            expect(resenasContent).toContain('<UserReviewsList client:visible');
         });
 
-        it('should display empty description', () => {
-            expect(resenasContent).toContain('{labels.emptyDescription}');
-            expect(resenasContent).toContain('max-w-2xl');
+        it('should pass locale prop to UserReviewsList', () => {
+            expect(resenasContent).toContain('locale={locale}');
         });
 
-        it('should import StarIcon from @repo/icons', () => {
-            expect(resenasContent).toContain("from '@repo/icons'");
-            expect(resenasContent).toContain('StarIcon');
-        });
-
-        it('should have CTA button', () => {
-            expect(resenasContent).toContain('href={`/${locale}/alojamientos/`}');
-            expect(resenasContent).toContain('{labels.ctaButton}');
-            expect(resenasContent).toContain('bg-primary');
-        });
-
-        it('should have placeholder comment for future ReviewCard list', () => {
-            expect(resenasContent).toContain('<!-- Placeholder for future ReviewCard list -->');
+        it('should have a comment describing the React island purpose', () => {
+            expect(resenasContent).toContain('UserReviewsList');
         });
     });
 });

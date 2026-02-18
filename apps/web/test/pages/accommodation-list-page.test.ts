@@ -83,18 +83,32 @@ describe('Accommodation List Page', () => {
         });
     });
 
+    describe('Rendering Strategy (SSG + ISR)', () => {
+        it('should enable prerendering', () => {
+            expect(content).toContain('export const prerender = true;');
+        });
+
+        it('should export getStaticPaths function', () => {
+            expect(content).toContain('export function getStaticPaths()');
+        });
+
+        it('should generate paths for all 3 locales', () => {
+            expect(content).toContain("{ params: { lang: 'es' } }");
+            expect(content).toContain("{ params: { lang: 'en' } }");
+            expect(content).toContain("{ params: { lang: 'pt' } }");
+        });
+    });
+
     describe('URL Query Parameters', () => {
-        it('should read URL from request', () => {
-            expect(content).toContain('const url = new URL(Astro.request.url);');
-        });
-
-        it('should extract sort parameter with default', () => {
-            expect(content).toContain("const sortBy = url.searchParams.get('sortBy') || 'name';");
-        });
-
-        it('should extract page parameter with default', () => {
+        it('should extract sort parameter from Astro.url with default', () => {
             expect(content).toContain(
-                "const page = Number.parseInt(url.searchParams.get('page') || '1', 10);"
+                "const sortBy = Astro.url.searchParams.get('sortBy') || 'name';"
+            );
+        });
+
+        it('should extract page parameter from Astro.url with default', () => {
+            expect(content).toContain(
+                "const page = Number.parseInt(Astro.url.searchParams.get('page') || '1', 10);"
             );
         });
     });
@@ -328,7 +342,7 @@ describe('Accommodation List Page', () => {
             expect(content).toContain('/**');
             expect(content).toContain('* Accommodation List page');
             expect(content).toContain('* @route /[lang]/alojamientos/');
-            expect(content).toContain('* @rendering SSR');
+            expect(content).toContain('* @rendering SSG + ISR');
         });
 
         it('should document localized text strings', () => {

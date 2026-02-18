@@ -62,12 +62,19 @@ describe('Header.astro', () => {
             expect(content).toContain('md:flex');
         });
 
-        it('should show mobile menu button only on mobile', () => {
-            expect(content).toContain('md:hidden');
+        it('should use MobileMenuWrapper component for mobile navigation', () => {
+            expect(content).toContain(
+                "import { MobileMenuWrapper } from '../components/ui/MobileMenuWrapper.client'"
+            );
         });
 
-        it('should have accessible mobile menu button', () => {
-            expect(content).toContain('aria-label="Open menu"');
+        it('should hydrate MobileMenuWrapper only on mobile via client:media', () => {
+            expect(content).toContain('client:media="(max-width: 768px)"');
+        });
+
+        it('should pass navLinks and locale to MobileMenuWrapper', () => {
+            expect(content).toContain('navItems={navLinks}');
+            expect(content).toContain('locale={locale');
         });
     });
 
