@@ -1,5 +1,5 @@
 import { FavoriteIcon } from '@repo/icons';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { JSX } from 'react';
 import { addToast } from '../../store/toast-store';
 import { AuthRequiredPopover } from '../auth/AuthRequiredPopover.client';
@@ -12,6 +12,8 @@ export interface FavoriteButtonProps {
     readonly entityId: string;
     /** Type of entity being favorited */
     readonly entityType: 'accommodation' | 'destination' | 'event';
+    /** Display name of the entity (stored in bookmark for listing) */
+    readonly entityName?: string;
     /** Initial favorited state (defaults to false) */
     readonly initialFavorited?: boolean;
     /** Locale for accessibility labels (defaults to 'es') */
@@ -22,32 +24,86 @@ export interface FavoriteButtonProps {
     readonly isAuthenticated?: boolean;
 }
 
+/** Maps component-level entity types to the API enum values */
+const ENTITY_TYPE_MAP: Record<string, string> = {
+    accommodation: 'ACCOMMODATION',
+    destination: 'DESTINATION',
+    event: 'EVENT'
+} as const;
+
 /**
- * Toggle favorite API call (placeholder - will be connected later)
+ * Resolve the API base URL from environment.
+ */
+function getApiBaseUrl(): string {
+    return (import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3001').replace(/\/$/, '');
+}
+
+/**
+ * Check if an entity is already bookmarked by the current user.
+ */
+async function checkBookmarkStatus(params: {
+    readonly entityId: string;
+    readonly entityType: string;
+}): Promise<{ readonly isFavorited: boolean }> {
+    const { entityId, entityType } = params;
+    const apiBaseUrl = getApiBaseUrl();
+    const apiEntityType = ENTITY_TYPE_MAP[entityType] ?? entityType.toUpperCase();
+
+    const url = `${apiBaseUrl}/api/v1/protected/user-bookmarks/check?entityId=${encodeURIComponent(entityId)}&entityType=${encodeURIComponent(apiEntityType)}`;
+
+    const response = await fetch(url, {
+        method: 'GET',
+        credentials: 'include'
+    });
+
+    if (!response.ok) {
+        return { isFavorited: false };
+    }
+
+    const body = await response.json();
+    const data = body?.data ?? body;
+    return { isFavorited: data?.isFavorited === true };
+}
+
+/**
+ * Toggle favorite (bookmark) via the protected user-bookmarks API.
+ * The API handles toggle semantics: creates if not exists, deletes if exists.
  *
- * @param params - API call parameters
- * @param params.entityId - Entity ID to favorite/unfavorite
- * @param params.entityType - Type of entity
- * @returns Promise resolving to success status
+ * @returns Object with toggled state (true = now favorited, false = now unfavorited)
  * @throws Error if API call fails
  */
 async function toggleFavorite(params: {
     readonly entityId: string;
     readonly entityType: string;
-}): Promise<{ readonly success: boolean }> {
-    const { entityId, entityType } = params;
+    readonly entityName?: string;
+}): Promise<{ readonly toggled: boolean }> {
+    const { entityId, entityType, entityName } = params;
+    const apiBaseUrl = getApiBaseUrl();
 
-    const response = await fetch('/api/v1/favorites', {
+    const body: Record<string, string> = {
+        entityId,
+        entityType: ENTITY_TYPE_MAP[entityType] ?? entityType.toUpperCase()
+    };
+
+    // Include name if provided (min 3 chars required by schema)
+    if (entityName && entityName.length >= 3) {
+        body.name = entityName;
+    }
+
+    const response = await fetch(`${apiBaseUrl}/api/v1/protected/user-bookmarks`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entityId, entityType })
+        credentials: 'include',
+        body: JSON.stringify(body)
     });
 
     if (!response.ok) {
         throw new Error('Failed to toggle favorite');
     }
 
-    return response.json();
+    const responseBody = await response.json();
+    const data = responseBody?.data ?? responseBody;
+    return { toggled: data?.toggled === true };
 }
 
 /**
@@ -57,6 +113,8 @@ async function toggleFavorite(params: {
  * If the user is not authenticated, shows an AuthRequiredPopover instead of toggling.
  *
  * Features:
+ * - Checks initial favorite state on mount (for authenticated users)
+ * - Toggle semantics (API prevents duplicates)
  * - Optimistic UI updates (immediate visual feedback)
  * - Auth check before allowing toggle
  * - Error handling with automatic state revert on API failure
@@ -81,6 +139,7 @@ async function toggleFavorite(params: {
 export function FavoriteButton({
     entityId,
     entityType,
+    entityName,
     initialFavorited = false,
     locale = 'es',
     className = '',
@@ -88,6 +147,24 @@ export function FavoriteButton({
 }: FavoriteButtonProps): JSX.Element {
     const [isFavorited, setIsFavorited] = useState(initialFavorited);
     const [showAuthPopover, setShowAuthPopover] = useState(false);
+
+    // Check initial bookmark state when authenticated
+    // biome-ignore lint/correctness/useExhaustiveDependencies: only check on mount with stable entityId/entityType
+    useEffect(() => {
+        if (!isAuthenticated) return;
+
+        let cancelled = false;
+
+        checkBookmarkStatus({ entityId, entityType }).then((result) => {
+            if (!cancelled) {
+                setIsFavorited(result.isFavorited);
+            }
+        });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [isAuthenticated, entityId, entityType]);
 
     // Localized texts
     const texts = {
@@ -125,8 +202,10 @@ export function FavoriteButton({
         setIsFavorited(!isFavorited);
 
         try {
-            // Call API
-            await toggleFavorite({ entityId, entityType });
+            // Call toggle API
+            const result = await toggleFavorite({ entityId, entityType, entityName });
+            // Sync with server response in case optimistic state diverged
+            setIsFavorited(result.toggled);
         } catch (_error) {
             // Revert state on error
             setIsFavorited(previousState);

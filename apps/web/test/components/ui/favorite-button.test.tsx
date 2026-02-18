@@ -12,6 +12,27 @@ vi.mock('../../../src/store/toast-store', () => ({
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
+/**
+ * Helper: mock the initial check status GET call.
+ * When isAuthenticated=true, FavoriteButton calls GET /check on mount.
+ */
+function mockCheckResponse(isFavorited = false) {
+    mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: { isFavorited, bookmarkId: isFavorited ? 'bk-1' : null } })
+    });
+}
+
+/**
+ * Helper: mock the toggle POST call.
+ */
+function mockToggleResponse(toggled = true) {
+    mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: { toggled, bookmark: toggled ? { id: 'bk-new' } : null } })
+    });
+}
+
 describe('FavoriteButton.client.tsx', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -24,6 +45,7 @@ describe('FavoriteButton.client.tsx', () => {
 
     describe('Rendering', () => {
         it('should render button with heart icon', () => {
+            mockCheckResponse();
             render(
                 <FavoriteButton
                     entityId="acc-123"
@@ -41,6 +63,7 @@ describe('FavoriteButton.client.tsx', () => {
         });
 
         it('should render with outline heart when not favorited', () => {
+            mockCheckResponse(false);
             render(
                 <FavoriteButton
                     entityId="acc-123"
@@ -55,6 +78,7 @@ describe('FavoriteButton.client.tsx', () => {
         });
 
         it('should render with filled heart when initialFavorited is true', () => {
+            mockCheckResponse(true);
             render(
                 <FavoriteButton
                     entityId="acc-123"
@@ -69,6 +93,7 @@ describe('FavoriteButton.client.tsx', () => {
         });
 
         it('should apply custom className', () => {
+            mockCheckResponse();
             render(
                 <FavoriteButton
                     entityId="acc-123"
@@ -85,6 +110,7 @@ describe('FavoriteButton.client.tsx', () => {
 
     describe('Accessibility', () => {
         it('should have correct aria-label when not favorited (Spanish)', () => {
+            mockCheckResponse(false);
             render(
                 <FavoriteButton
                     entityId="acc-123"
@@ -100,6 +126,7 @@ describe('FavoriteButton.client.tsx', () => {
         });
 
         it('should have correct aria-label when favorited (Spanish)', () => {
+            mockCheckResponse(true);
             render(
                 <FavoriteButton
                     entityId="acc-123"
@@ -115,6 +142,7 @@ describe('FavoriteButton.client.tsx', () => {
         });
 
         it('should have correct aria-label when not favorited (English)', () => {
+            mockCheckResponse(false);
             render(
                 <FavoriteButton
                     entityId="acc-123"
@@ -130,6 +158,7 @@ describe('FavoriteButton.client.tsx', () => {
         });
 
         it('should have correct aria-label when favorited (English)', () => {
+            mockCheckResponse(true);
             render(
                 <FavoriteButton
                     entityId="acc-123"
@@ -145,6 +174,7 @@ describe('FavoriteButton.client.tsx', () => {
         });
 
         it('should have type="button" attribute', () => {
+            mockCheckResponse();
             render(
                 <FavoriteButton
                     entityId="acc-123"
@@ -158,6 +188,7 @@ describe('FavoriteButton.client.tsx', () => {
         });
 
         it('should have focus-visible styles', () => {
+            mockCheckResponse();
             render(
                 <FavoriteButton
                     entityId="acc-123"
@@ -171,12 +202,52 @@ describe('FavoriteButton.client.tsx', () => {
         });
     });
 
+    describe('Initial State Check', () => {
+        it('should check bookmark status on mount when authenticated', async () => {
+            mockCheckResponse(true);
+            render(
+                <FavoriteButton
+                    entityId="acc-123"
+                    entityType="accommodation"
+                    isAuthenticated={true}
+                />
+            );
+
+            await waitFor(() => {
+                expect(mockFetch).toHaveBeenCalledWith(
+                    expect.stringContaining('/api/v1/protected/user-bookmarks/check'),
+                    expect.objectContaining({
+                        method: 'GET',
+                        credentials: 'include'
+                    })
+                );
+            });
+
+            // Should update to favorited state based on API response
+            await waitFor(() => {
+                const svg = screen.getByRole('button').querySelector('svg');
+                expect(svg?.getAttribute('class')).toContain('text-red-500');
+            });
+        });
+
+        it('should not check bookmark status when not authenticated', async () => {
+            render(
+                <FavoriteButton
+                    entityId="acc-123"
+                    entityType="accommodation"
+                    isAuthenticated={false}
+                />
+            );
+
+            await new Promise((resolve) => setTimeout(resolve, 100));
+            expect(mockFetch).not.toHaveBeenCalled();
+        });
+    });
+
     describe('Optimistic Updates', () => {
         it('should toggle visual state immediately on click', async () => {
-            mockFetch.mockResolvedValueOnce({
-                ok: true,
-                json: async () => ({ success: true })
-            });
+            mockCheckResponse(false);
+            mockToggleResponse(true);
 
             render(
                 <FavoriteButton
@@ -186,6 +257,11 @@ describe('FavoriteButton.client.tsx', () => {
                     isAuthenticated={true}
                 />
             );
+
+            // Wait for check call to complete
+            await waitFor(() => {
+                expect(mockFetch).toHaveBeenCalledTimes(1);
+            });
 
             const button = screen.getByRole('button');
             let svg = button.querySelector('svg');
@@ -201,15 +277,14 @@ describe('FavoriteButton.client.tsx', () => {
             expect(svg?.getAttribute('class')).toContain('text-red-500');
 
             await waitFor(() => {
-                expect(mockFetch).toHaveBeenCalledTimes(1);
+                // check + toggle = 2 calls
+                expect(mockFetch).toHaveBeenCalledTimes(2);
             });
         });
 
         it('should call API with correct parameters', async () => {
-            mockFetch.mockResolvedValueOnce({
-                ok: true,
-                json: async () => ({ success: true })
-            });
+            mockCheckResponse(false);
+            mockToggleResponse(true);
 
             render(
                 <FavoriteButton
@@ -220,23 +295,30 @@ describe('FavoriteButton.client.tsx', () => {
                 />
             );
 
+            // Wait for check call
+            await waitFor(() => {
+                expect(mockFetch).toHaveBeenCalledTimes(1);
+            });
+
             const button = screen.getByRole('button');
             fireEvent.click(button);
 
             await waitFor(() => {
-                expect(mockFetch).toHaveBeenCalledWith('/api/v1/favorites', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ entityId: 'dest-456', entityType: 'destination' })
-                });
+                expect(mockFetch).toHaveBeenCalledWith(
+                    'http://localhost:3001/api/v1/protected/user-bookmarks',
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ entityId: 'dest-456', entityType: 'DESTINATION' })
+                    }
+                );
             });
         });
 
         it('should update aria-label after optimistic toggle', async () => {
-            mockFetch.mockResolvedValueOnce({
-                ok: true,
-                json: async () => ({ success: true })
-            });
+            mockCheckResponse(false);
+            mockToggleResponse(true);
 
             render(
                 <FavoriteButton
@@ -247,6 +329,11 @@ describe('FavoriteButton.client.tsx', () => {
                     locale="es"
                 />
             );
+
+            // Wait for check call
+            await waitFor(() => {
+                expect(mockFetch).toHaveBeenCalledTimes(1);
+            });
 
             const button = screen.getByRole('button');
 
@@ -260,7 +347,7 @@ describe('FavoriteButton.client.tsx', () => {
             expect(button).toHaveAttribute('aria-label', 'Quitar de favoritos');
 
             await waitFor(() => {
-                expect(mockFetch).toHaveBeenCalledTimes(1);
+                expect(mockFetch).toHaveBeenCalledTimes(2);
             });
         });
     });
@@ -346,6 +433,7 @@ describe('FavoriteButton.client.tsx', () => {
 
     describe('Error Handling', () => {
         it('should revert state on API error', async () => {
+            mockCheckResponse(false);
             mockFetch.mockRejectedValueOnce(new Error('Network error'));
 
             render(
@@ -356,6 +444,11 @@ describe('FavoriteButton.client.tsx', () => {
                     isAuthenticated={true}
                 />
             );
+
+            // Wait for check call
+            await waitFor(() => {
+                expect(mockFetch).toHaveBeenCalledTimes(1);
+            });
 
             const button = screen.getByRole('button');
             let svg = button.querySelector('svg');
@@ -372,7 +465,7 @@ describe('FavoriteButton.client.tsx', () => {
 
             // Wait for API call to fail and state to revert
             await waitFor(() => {
-                expect(mockFetch).toHaveBeenCalledTimes(1);
+                expect(mockFetch).toHaveBeenCalledTimes(2);
             });
 
             await waitFor(() => {
@@ -382,6 +475,7 @@ describe('FavoriteButton.client.tsx', () => {
         });
 
         it('should show error toast on API failure (Spanish)', async () => {
+            mockCheckResponse(false);
             mockFetch.mockRejectedValueOnce(new Error('Network error'));
 
             render(
@@ -393,6 +487,11 @@ describe('FavoriteButton.client.tsx', () => {
                     locale="es"
                 />
             );
+
+            // Wait for check call
+            await waitFor(() => {
+                expect(mockFetch).toHaveBeenCalledTimes(1);
+            });
 
             const button = screen.getByRole('button');
             fireEvent.click(button);
@@ -407,6 +506,7 @@ describe('FavoriteButton.client.tsx', () => {
         });
 
         it('should show error toast on API failure (English)', async () => {
+            mockCheckResponse(false);
             mockFetch.mockRejectedValueOnce(new Error('Network error'));
 
             render(
@@ -418,6 +518,11 @@ describe('FavoriteButton.client.tsx', () => {
                     locale="en"
                 />
             );
+
+            // Wait for check call
+            await waitFor(() => {
+                expect(mockFetch).toHaveBeenCalledTimes(1);
+            });
 
             const button = screen.getByRole('button');
             fireEvent.click(button);
@@ -432,6 +537,7 @@ describe('FavoriteButton.client.tsx', () => {
         });
 
         it('should revert state on HTTP error response', async () => {
+            mockCheckResponse(false);
             mockFetch.mockResolvedValueOnce({
                 ok: false,
                 status: 500,
@@ -447,6 +553,11 @@ describe('FavoriteButton.client.tsx', () => {
                 />
             );
 
+            // Wait for check call
+            await waitFor(() => {
+                expect(mockFetch).toHaveBeenCalledTimes(1);
+            });
+
             const button = screen.getByRole('button');
             let svg = button.querySelector('svg');
 
@@ -462,7 +573,7 @@ describe('FavoriteButton.client.tsx', () => {
 
             // Wait for API call to fail and state to revert
             await waitFor(() => {
-                expect(mockFetch).toHaveBeenCalledTimes(1);
+                expect(mockFetch).toHaveBeenCalledTimes(2);
             });
 
             await waitFor(() => {
@@ -474,10 +585,8 @@ describe('FavoriteButton.client.tsx', () => {
 
     describe('Entity Types', () => {
         it('should work with accommodation entity type', async () => {
-            mockFetch.mockResolvedValueOnce({
-                ok: true,
-                json: async () => ({ success: true })
-            });
+            mockCheckResponse(false);
+            mockToggleResponse(true);
 
             render(
                 <FavoriteButton
@@ -487,24 +596,27 @@ describe('FavoriteButton.client.tsx', () => {
                 />
             );
 
+            // Wait for check call
+            await waitFor(() => {
+                expect(mockFetch).toHaveBeenCalledTimes(1);
+            });
+
             const button = screen.getByRole('button');
             fireEvent.click(button);
 
             await waitFor(() => {
                 expect(mockFetch).toHaveBeenCalledWith(
-                    '/api/v1/favorites',
+                    'http://localhost:3001/api/v1/protected/user-bookmarks',
                     expect.objectContaining({
-                        body: JSON.stringify({ entityId: 'acc-123', entityType: 'accommodation' })
+                        body: JSON.stringify({ entityId: 'acc-123', entityType: 'ACCOMMODATION' })
                     })
                 );
             });
         });
 
         it('should work with destination entity type', async () => {
-            mockFetch.mockResolvedValueOnce({
-                ok: true,
-                json: async () => ({ success: true })
-            });
+            mockCheckResponse(false);
+            mockToggleResponse(true);
 
             render(
                 <FavoriteButton
@@ -514,24 +626,27 @@ describe('FavoriteButton.client.tsx', () => {
                 />
             );
 
+            // Wait for check call
+            await waitFor(() => {
+                expect(mockFetch).toHaveBeenCalledTimes(1);
+            });
+
             const button = screen.getByRole('button');
             fireEvent.click(button);
 
             await waitFor(() => {
                 expect(mockFetch).toHaveBeenCalledWith(
-                    '/api/v1/favorites',
+                    'http://localhost:3001/api/v1/protected/user-bookmarks',
                     expect.objectContaining({
-                        body: JSON.stringify({ entityId: 'dest-456', entityType: 'destination' })
+                        body: JSON.stringify({ entityId: 'dest-456', entityType: 'DESTINATION' })
                     })
                 );
             });
         });
 
         it('should work with event entity type', async () => {
-            mockFetch.mockResolvedValueOnce({
-                ok: true,
-                json: async () => ({ success: true })
-            });
+            mockCheckResponse(false);
+            mockToggleResponse(true);
 
             render(
                 <FavoriteButton
@@ -541,14 +656,19 @@ describe('FavoriteButton.client.tsx', () => {
                 />
             );
 
+            // Wait for check call
+            await waitFor(() => {
+                expect(mockFetch).toHaveBeenCalledTimes(1);
+            });
+
             const button = screen.getByRole('button');
             fireEvent.click(button);
 
             await waitFor(() => {
                 expect(mockFetch).toHaveBeenCalledWith(
-                    '/api/v1/favorites',
+                    'http://localhost:3001/api/v1/protected/user-bookmarks',
                     expect.objectContaining({
-                        body: JSON.stringify({ entityId: 'evt-789', entityType: 'event' })
+                        body: JSON.stringify({ entityId: 'evt-789', entityType: 'EVENT' })
                     })
                 );
             });
@@ -557,6 +677,7 @@ describe('FavoriteButton.client.tsx', () => {
 
     describe('Styling', () => {
         it('should have rounded-full class for circular button', () => {
+            mockCheckResponse();
             render(
                 <FavoriteButton
                     entityId="acc-123"
@@ -570,6 +691,7 @@ describe('FavoriteButton.client.tsx', () => {
         });
 
         it('should have hover styles', () => {
+            mockCheckResponse();
             render(
                 <FavoriteButton
                     entityId="acc-123"
@@ -583,6 +705,7 @@ describe('FavoriteButton.client.tsx', () => {
         });
 
         it('should have transition classes', () => {
+            mockCheckResponse();
             render(
                 <FavoriteButton
                     entityId="acc-123"
@@ -596,6 +719,7 @@ describe('FavoriteButton.client.tsx', () => {
         });
 
         it('should have transition on heart icon', () => {
+            mockCheckResponse();
             render(
                 <FavoriteButton
                     entityId="acc-123"
@@ -611,15 +735,9 @@ describe('FavoriteButton.client.tsx', () => {
 
     describe('Multiple Toggles', () => {
         it('should handle multiple toggle operations', async () => {
-            mockFetch
-                .mockResolvedValueOnce({
-                    ok: true,
-                    json: async () => ({ success: true })
-                })
-                .mockResolvedValueOnce({
-                    ok: true,
-                    json: async () => ({ success: true })
-                });
+            mockCheckResponse(false);
+            mockToggleResponse(true);
+            mockToggleResponse(false);
 
             render(
                 <FavoriteButton
@@ -629,6 +747,11 @@ describe('FavoriteButton.client.tsx', () => {
                     isAuthenticated={true}
                 />
             );
+
+            // Wait for check call
+            await waitFor(() => {
+                expect(mockFetch).toHaveBeenCalledTimes(1);
+            });
 
             const button = screen.getByRole('button');
             let svg = button.querySelector('svg');
@@ -640,7 +763,8 @@ describe('FavoriteButton.client.tsx', () => {
             expect(svg?.getAttribute('class')).toContain('text-red-500');
 
             await waitFor(() => {
-                expect(mockFetch).toHaveBeenCalledTimes(1);
+                // check + first toggle = 2 calls
+                expect(mockFetch).toHaveBeenCalledTimes(2);
             });
 
             // Second toggle (unfavorite)
@@ -650,7 +774,39 @@ describe('FavoriteButton.client.tsx', () => {
             expect(svg?.getAttribute('class')).toContain('text-gray-600');
 
             await waitFor(() => {
-                expect(mockFetch).toHaveBeenCalledTimes(2);
+                // check + two toggles = 3 calls
+                expect(mockFetch).toHaveBeenCalledTimes(3);
+            });
+        });
+    });
+
+    describe('Toggle Sync', () => {
+        it('should sync state with server response after toggle', async () => {
+            mockCheckResponse(false);
+            // Server says toggled=true (bookmark created)
+            mockToggleResponse(true);
+
+            render(
+                <FavoriteButton
+                    entityId="acc-123"
+                    entityType="accommodation"
+                    initialFavorited={false}
+                    isAuthenticated={true}
+                />
+            );
+
+            // Wait for check call
+            await waitFor(() => {
+                expect(mockFetch).toHaveBeenCalledTimes(1);
+            });
+
+            const button = screen.getByRole('button');
+            fireEvent.click(button);
+
+            // After API response, state should be synced with server (toggled=true = favorited)
+            await waitFor(() => {
+                const svg = button.querySelector('svg');
+                expect(svg?.getAttribute('class')).toContain('text-red-500');
             });
         });
     });

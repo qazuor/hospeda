@@ -333,13 +333,32 @@ export const userBookmarksApi = {
         return apiClient.getProtected({ path: `${PROTECTED}/user-bookmarks/count`, params });
     },
 
-    /** Create a new bookmark */
+    /** Check if an entity is bookmarked by the authenticated user */
+    checkStatus(params: {
+        entityId: string;
+        entityType: 'ACCOMMODATION' | 'DESTINATION' | 'ATTRACTION' | 'EVENT' | 'POST';
+    }): Promise<ApiResult<{ isFavorited: boolean; bookmarkId: string | null }>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/user-bookmarks/check`,
+            params
+        });
+    },
+
+    /** Toggle a bookmark (create if not exists, delete if exists) */
+    toggle(body: {
+        entityId: string;
+        entityType: 'ACCOMMODATION' | 'DESTINATION' | 'ATTRACTION' | 'EVENT' | 'POST';
+        name?: string;
+    }): Promise<ApiResult<{ toggled: boolean; bookmark: UserBookmark | null }>> {
+        return apiClient.postProtected({ path: `${PROTECTED}/user-bookmarks`, body });
+    },
+
+    /** Create a new bookmark (alias for toggle) */
     create(body: {
         entityId: string;
         entityType: 'ACCOMMODATION' | 'DESTINATION' | 'ATTRACTION' | 'EVENT' | 'POST';
-        notes?: string;
-        displayName?: string;
-    }): Promise<ApiResult<UserBookmark>> {
+        name?: string;
+    }): Promise<ApiResult<{ toggled: boolean; bookmark: UserBookmark | null }>> {
         return apiClient.postProtected({ path: `${PROTECTED}/user-bookmarks`, body });
     },
 
