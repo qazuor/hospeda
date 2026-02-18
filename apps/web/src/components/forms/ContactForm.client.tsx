@@ -191,7 +191,11 @@ export function ContactForm({ locale = 'es', className = '' }: ContactFormProps)
         setIsSubmitting(true);
 
         try {
-            const response = await fetch('/api/v1/contact', {
+            const apiBaseUrl = (import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3001').replace(
+                /\/$/,
+                ''
+            );
+            const response = await fetch(`${apiBaseUrl}/api/v1/public/contact`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

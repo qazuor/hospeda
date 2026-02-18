@@ -418,18 +418,21 @@ describe('ContactForm.client.tsx', () => {
 
             await waitFor(() => {
                 expect(mockFetch).toHaveBeenCalledTimes(1);
-                expect(mockFetch).toHaveBeenCalledWith('/api/v1/contact', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        name: 'John Doe',
-                        email: 'john@example.com',
-                        subject: 'Test subject',
-                        message: 'This is a test message with more than 20 characters'
-                    })
-                });
+                expect(mockFetch).toHaveBeenCalledWith(
+                    'http://localhost:3001/api/v1/public/contact',
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            name: 'John Doe',
+                            email: 'john@example.com',
+                            subject: 'Test subject',
+                            message: 'This is a test message with more than 20 characters'
+                        })
+                    }
+                );
             });
         });
 

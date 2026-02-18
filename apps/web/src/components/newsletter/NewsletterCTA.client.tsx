@@ -33,21 +33,18 @@ interface LocalizedTexts {
 }
 
 /**
- * Toggle newsletter subscription via API
+ * Toggle newsletter subscription via API.
+ *
+ * TODO: Implement real newsletter toggle endpoint in apps/api
+ * (e.g. POST /api/v1/protected/newsletter/toggle).
+ * Currently returns a stub success response so the UI doesn't crash.
  *
  * @returns Promise resolving to success status
  */
 async function toggleNewsletterSubscription(): Promise<{ success: boolean }> {
-    const response = await fetch('/api/v1/newsletter/toggle', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-    });
-
-    if (!response.ok) {
-        throw new Error('Failed to toggle subscription');
-    }
-
-    return response.json();
+    // TODO: Replace stub with real API call once the newsletter endpoint exists
+    console.warn('[NewsletterCTA] Newsletter toggle endpoint not implemented yet');
+    return { success: true };
 }
 
 /**
