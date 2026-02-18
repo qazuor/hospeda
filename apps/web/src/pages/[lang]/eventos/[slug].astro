@@ -17,8 +17,10 @@ import Section from '../../../components/ui/Section.astro';
 import EventCard from '../../../components/event/EventCard.astro';
 import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
 import { eventsApi } from '../../../lib/api/endpoints';
+import { fetchAllPages } from '../../../lib/api/client';
 import { CalendarIcon, ClockIcon, LocationIcon, ImageIcon } from '@repo/icons';
 import { ShareButtons } from '../../../components/ui/ShareButtons.client';
+import { extractFeaturedImageUrl } from '../../../lib/media';
 
 /**
  * Generate static paths for all events across all locales.
@@ -26,8 +28,9 @@ import { ShareButtons } from '../../../components/ui/ShareButtons.client';
  */
 export async function getStaticPaths() {
 	const locales = ['es', 'en', 'pt'];
-	const result = await eventsApi.list({ pageSize: 500 });
-	const events = result.ok ? result.data.items : [];
+	const events = await fetchAllPages({
+		fetcher: (p) => eventsApi.list(p),
+	});
 
 	return locales.flatMap((lang) =>
 		events
@@ -59,6 +62,11 @@ if (!event) {
 	}
 	event = result.data;
 }
+
+/**
+ * Extract featured image URL from nested media structure
+ */
+const eventImageUrl = extractFeaturedImageUrl(event, '');
 
 /**
  * Calculate if event has ended based on actual end date
@@ -180,9 +188,26 @@ const breadcrumbItems = [
  * Filter out the current event from the list.
  */
 const relResult = await eventsApi.getUpcoming({ pageSize: 4 });
-const relatedEvents = relResult.ok
+const relatedEventsRaw = relResult.ok
 	? relResult.data.items.filter((e) => e.slug !== slug).slice(0, 3)
 	: [];
+
+const relatedEventCards = relatedEventsRaw.map((evt) => {
+	const e = evt as Record<string, unknown>;
+	return {
+		slug: String(e.slug || ''),
+		name: String(e.name || ''),
+		summary: String(e.summary || e.description || ''),
+		featuredImage: extractFeaturedImageUrl(e, '/images/placeholder-event.svg'),
+		category: String(e.category || ''),
+		date: {
+			start: String(e.startDate || ''),
+			end: e.endDate ? String(e.endDate) : undefined,
+		},
+		isFeatured: Boolean(e.isFeatured),
+		location: e.location as { name: string; city: string } | undefined,
+	};
+});
 
 /**
  * Format date for display
@@ -217,7 +242,7 @@ const formatTime = (dateString: string): string => {
 		canonical={canonicalUrl}
 		locale={locale === 'pt' ? 'es' : locale}
 		type="article"
-		image={event.featuredImage || event.image}
+		image={eventImageUrl || undefined}
 	/>
 
 	<EventJsonLd
@@ -227,7 +252,7 @@ const formatTime = (dateString: string): string => {
 		startDate={event.startDate}
 		endDate={event.endDate}
 		url={canonicalUrl}
-		image={event.featuredImage || event.image}
+		image={eventImageUrl || undefined}
 		location={event.location}
 		organizer={event.organizer}
 	/>
@@ -289,10 +314,10 @@ const formatTime = (dateString: string): string => {
 
 				<!-- Event Image Area -->
 				<article id="event-image" class="mb-12">
-					{(event.featuredImage || event.image) ? (
+					{eventImageUrl ? (
 						<div class="aspect-video w-full overflow-hidden rounded-lg bg-gray-200">
 							<img
-								src={event.featuredImage || event.image}
+								src={eventImageUrl}
 								alt={event.name}
 								class="h-full w-full object-cover"
 								loading="eager"
@@ -401,27 +426,15 @@ const formatTime = (dateString: string): string => {
 				</div>
 
 				<!-- Related Events Section -->
-				{relatedEvents.length > 0 && (
+				{relatedEventCards.length > 0 && (
 					<article id="related-events" class="mt-12">
 						<h2 class="mb-6 text-center text-3xl font-semibold text-text-primary">
 							{labels.relatedEvents[locale]}
 						</h2>
 						<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" role="region" aria-label={labels.relatedEvents[locale]}>
-							{relatedEvents.map((relatedEvent) => (
+							{relatedEventCards.map((event) => (
 								<EventCard
-									event={{
-										slug: relatedEvent.slug,
-										name: relatedEvent.name,
-										summary: relatedEvent.summary || relatedEvent.description || '',
-										featuredImage: relatedEvent.featuredImage || relatedEvent.image || '/images/placeholder-event.svg',
-										category: relatedEvent.category,
-										date: {
-											start: relatedEvent.startDate,
-											end: relatedEvent.endDate,
-										},
-										isFeatured: relatedEvent.isFeatured || false,
-										location: relatedEvent.location,
-									}}
+									event={event}
 									locale={locale}
 								/>
 							))}
