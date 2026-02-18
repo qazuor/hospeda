@@ -18,7 +18,9 @@ import DestinationCard from '../../../components/destination/DestinationCard.ast
 import EmptyState from '../../../components/ui/EmptyState.astro';
 import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
 import { destinationsApi } from '../../../lib/api/endpoints';
-import { SearchIcon, LocationIcon } from '@repo/icons';
+import Pagination from '../../../components/ui/Pagination.astro';
+import { LocationIcon } from '@repo/icons';
+import { DestinationFilters } from '../../../components/destination/DestinationFilters.client.tsx';
 
 const { lang } = Astro.params;
 
@@ -29,10 +31,17 @@ if (!lang || !isValidLocale(lang)) {
 const locale = lang as SupportedLocale;
 
 /**
+ * Pagination parameters
+ */
+const page = Number.parseInt(Astro.url.searchParams.get('page') || '1', 10);
+const pageSize = 12;
+
+/**
  * Fetch destinations from API
  */
-const result = await destinationsApi.list({ pageSize: 100 });
+const result = await destinationsApi.list({ page, pageSize });
 const destinations = result.ok ? (result.data.items as Array<Record<string, unknown>>) : [];
+const pagination = result.ok ? result.data.pagination : null;
 
 /**
  * Localized page titles
@@ -80,13 +89,12 @@ const heroDescriptions: Record<SupportedLocale, string> = {
 };
 
 /**
- * Localized search placeholder
+ * Parse URL query parameters for client-side filter pre-population.
+ * Since prerender = true, these are only used to pass initial values to the React island.
  */
-const searchPlaceholders: Record<SupportedLocale, string> = {
-	es: 'Buscar destinos...',
-	en: 'Search destinations...',
-	pt: 'Pesquisar destinos...',
-};
+const initialQuery = Astro.url.searchParams.get('q') || '';
+const initialType = Astro.url.searchParams.get('type') || '';
+const initialParentId = Astro.url.searchParams.get('parentId') || '';
 
 /**
  * Localized featured destinations section title
@@ -166,21 +174,15 @@ const breadcrumbItems = [
 					</p>
 				</article>
 
-				<!-- Search/Filter Bar Placeholder -->
+				<!-- Search and Filters (client-side React island) -->
 				<article id="search-bar" class="mb-12">
-					<div class="mx-auto max-w-2xl">
-						<div class="relative">
-							<div class="absolute left-4 top-1/2 -translate-y-1/2">
-								<SearchIcon size={20} className="text-text-tertiary" aria-hidden="true" />
-							</div>
-							<input
-								type="search"
-								placeholder={searchPlaceholders[locale]}
-								class="w-full rounded-lg border border-border bg-bg py-3 pl-12 pr-4 text-text-primary placeholder-text-tertiary transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-								aria-label={searchPlaceholders[locale]}
-							/>
-						</div>
-					</div>
+					<DestinationFilters
+						client:load
+						initialQuery={initialQuery}
+						initialType={initialType}
+						initialParentId={initialParentId}
+						locale={locale}
+					/>
 				</article>
 
 				<!-- Featured Destinations Section -->
@@ -221,6 +223,20 @@ const breadcrumbItems = [
 						)}
 					</div>
 				</article>
+
+				<!-- Pagination -->
+				{
+					pagination && pagination.totalPages > 1 && (
+						<article id="pagination" class="mb-12">
+							<Pagination
+								currentPage={pagination.page as number}
+								totalPages={pagination.totalPages as number}
+								baseUrl={`/${locale}/destinos`}
+								locale={locale}
+							/>
+						</article>
+					)
+				}
 
 				<!-- Regional Highlight Section -->
 				<article id="regional-highlight" class="mb-12">
