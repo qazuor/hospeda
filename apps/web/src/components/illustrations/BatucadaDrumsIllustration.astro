@@ -1,0 +1,141 @@
+---
+/**
+ * BatucadaDrumsIllustration
+ *
+ * Batucada drums showing surdo and repinique drums with drumsticks
+ * and musical notes to suggest rhythmic music.
+ * Uses currentColor for light/dark mode compatibility.
+ */
+export interface BatucadaDrumsIllustrationProps {
+  class?: string;
+}
+interface Props extends BatucadaDrumsIllustrationProps {}
+const { class: className } = Astro.props;
+---
+<svg
+  class:list={['illustration', className]}
+  viewBox="0 0 180 150"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  aria-hidden="true"
+  focusable="false"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <!-- Ground / surface suggestion -->
+  <line x1="10" y1="136" x2="170" y2="136" />
+
+  <!-- === SURDO (large bass drum - left, floor standing) === -->
+  <!-- Surdo body cylinder -->
+  <rect x="14" y="58" width="58" height="74" rx="4" />
+  <!-- Surdo top drumhead (ellipse) -->
+  <ellipse cx="43" cy="58" rx="29" ry="8" />
+  <!-- Surdo bottom ring -->
+  <ellipse cx="43" cy="132" rx="29" ry="8" />
+  <!-- Surdo tension rods (vertical lines on sides) -->
+  <line x1="22" y1="66" x2="22" y2="124" stroke-width="1" />
+  <line x1="30" y1="66" x2="30" y2="124" stroke-width="1" />
+  <line x1="56" y1="66" x2="56" y2="124" stroke-width="1" />
+  <line x1="64" y1="66" x2="64" y2="124" stroke-width="1" />
+  <!-- Surdo tension rod lugs (small rects) -->
+  <rect x="20" y="64" width="4" height="6" rx="1" stroke-width="1" />
+  <rect x="28" y="64" width="4" height="6" rx="1" stroke-width="1" />
+  <rect x="54" y="64" width="4" height="6" rx="1" stroke-width="1" />
+  <rect x="62" y="64" width="4" height="6" rx="1" stroke-width="1" />
+  <rect x="20" y="118" width="4" height="6" rx="1" stroke-width="1" />
+  <rect x="28" y="118" width="4" height="6" rx="1" stroke-width="1" />
+  <rect x="54" y="118" width="4" height="6" rx="1" stroke-width="1" />
+  <rect x="62" y="118" width="4" height="6" rx="1" stroke-width="1" />
+  <!-- Surdo decorative band in middle -->
+  <line x1="14" y1="92" x2="72" y2="92" stroke-width="1" />
+  <line x1="14" y1="96" x2="72" y2="96" stroke-width="1" />
+  <!-- Surdo label: decorative wave pattern -->
+  <path d="M 22,94 Q 28,88 34,94 Q 40,88 46,94 Q 52,88 58,94 Q 64,88 70,94" stroke-width="1" />
+
+  <!-- === REPINIQUE (medium drum - right, shoulder height) === -->
+  <!-- Repinique is shallower and smaller -->
+  <!-- Repinique body -->
+  <rect x="94" y="56" width="46" height="44" rx="3" />
+  <!-- Repinique top head -->
+  <ellipse cx="117" cy="56" rx="23" ry="6" />
+  <!-- Repinique bottom ring -->
+  <ellipse cx="117" cy="100" rx="23" ry="6" />
+  <!-- Repinique tension rods -->
+  <line x1="102" y1="62" x2="102" y2="94" stroke-width="1" />
+  <line x1="110" y1="62" x2="110" y2="94" stroke-width="1" />
+  <line x1="124" y1="62" x2="124" y2="94" stroke-width="1" />
+  <line x1="132" y1="62" x2="132" y2="94" stroke-width="1" />
+  <!-- Repinique lugs -->
+  <rect x="100" y="60" width="4" height="5" rx="1" stroke-width="1" />
+  <rect x="108" y="60" width="4" height="5" rx="1" stroke-width="1" />
+  <rect x="122" y="60" width="4" height="5" rx="1" stroke-width="1" />
+  <rect x="130" y="60" width="4" height="5" rx="1" stroke-width="1" />
+  <rect x="100" y="89" width="4" height="5" rx="1" stroke-width="1" />
+  <rect x="108" y="89" width="4" height="5" rx="1" stroke-width="1" />
+  <rect x="122" y="89" width="4" height="5" rx="1" stroke-width="1" />
+  <rect x="130" y="89" width="4" height="5" rx="1" stroke-width="1" />
+  <!-- Repinique mid decorative band -->
+  <line x1="94" y1="76" x2="140" y2="76" stroke-width="1" />
+  <line x1="94" y1="80" x2="140" y2="80" stroke-width="1" />
+
+  <!-- === CAIXA (small snare-style drum on stand) === -->
+  <!-- Stand legs -->
+  <line x1="148" y1="136" x2="152" y2="110" />
+  <line x1="172" y1="136" x2="168" y2="110" />
+  <line x1="160" y1="136" x2="160" y2="112" />
+  <!-- Stand junction -->
+  <ellipse cx="160" cy="110" rx="8" ry="3" stroke-width="1" />
+  <!-- Caixa body (small cylinder) -->
+  <rect x="146" y="88" width="28" height="24" rx="2" />
+  <!-- Caixa top head -->
+  <ellipse cx="160" cy="88" rx="14" ry="4" />
+  <!-- Caixa bottom -->
+  <ellipse cx="160" cy="112" rx="14" ry="4" />
+  <!-- Snare wires (across bottom head) -->
+  <line x1="150" y1="112" x2="170" y2="112" stroke-width="1" stroke-dasharray="2,1" />
+  <!-- Caixa tension rods -->
+  <line x1="150" y1="92" x2="150" y2="108" stroke-width="1" />
+  <line x1="170" y1="92" x2="170" y2="108" stroke-width="1" />
+
+  <!-- === DRUMSTICKS === -->
+  <!-- Drumstick 1 - striking surdo (angled) -->
+  <line x1="28" y1="46" x2="46" y2="56" stroke-width="3" stroke-linecap="round" />
+  <!-- Drumstick tip (ball) -->
+  <circle cx="46" cy="56" r="3" stroke-width="1.5" />
+  <!-- Drumstick grip end -->
+  <circle cx="28" cy="46" r="2" stroke-width="1" />
+
+  <!-- Drumstick 2 - other hand on surdo (other angle) -->
+  <line x1="58" y1="42" x2="42" y2="56" stroke-width="3" stroke-linecap="round" />
+  <circle cx="42" cy="56" r="3" stroke-width="1.5" />
+  <circle cx="58" cy="42" r="2" stroke-width="1" />
+
+  <!-- Drumstick 3 - on repinique -->
+  <line x1="126" y1="40" x2="120" y2="54" stroke-width="2.5" stroke-linecap="round" />
+  <circle cx="120" cy="54" r="2.5" stroke-width="1.5" />
+
+  <!-- === MUSICAL NOTES === -->
+  <!-- Note 1 - quarter note -->
+  <path d="M 82,18 L 82,32 Q 82,36 78,36 Q 74,36 74,32 Q 74,28 78,28 Q 80,28 82,32" />
+
+  <!-- Note 2 - eighth note -->
+  <path d="M 138,12 L 138,26 Q 138,30 134,30 Q 130,30 130,26 Q 130,22 134,22 Q 136,22 138,26" />
+  <line x1="138" y1="12" x2="150" y2="8" />
+
+  <!-- Note 3 - sixteenth note (two flags) -->
+  <path d="M 152,22 L 152,36 Q 152,40 148,40 Q 144,40 144,36 Q 144,32 148,32 Q 150,32 152,36" />
+  <line x1="152" y1="22" x2="162" y2="18" />
+  <line x1="152" y1="28" x2="162" y2="24" />
+
+  <!-- Note 4 - small note floating -->
+  <path d="M 106,20 L 106,30 Q 106,33 103,33 Q 100,33 100,30 Q 100,27 103,27 Q 105,27 106,30" />
+
+  <!-- Vibration waves around surdo (impact lines) -->
+  <path d="M 74,50 Q 78,46 82,50" stroke-width="1.5" />
+  <path d="M 76,44 Q 82,38 88,44" stroke-width="1" />
+
+  <!-- Carrying strap for repinique -->
+  <path d="M 94,64 Q 88,58 86,68 Q 84,78 94,76" stroke-width="1.5" />
+</svg>

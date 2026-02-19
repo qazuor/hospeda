@@ -1,0 +1,79 @@
+---
+/**
+ * CabanaIcon - Line-art illustration of a wooden cabin with surrounding trees.
+ * Used to represent the "Cabana" accommodation category.
+ * Part of the category icons illustration system (T-013).
+ */
+export interface CabanaIconProps {
+  /** Additional CSS classes for sizing or color customization */
+  class?: string;
+  /** Icon size in pixels (applied to both width and height) */
+  size?: number;
+}
+
+interface Props extends CabanaIconProps {}
+
+const { class: className, size = 48 } = Astro.props;
+---
+
+<svg
+  class:list={['category-icon', className]}
+  width={size}
+  height={size}
+  viewBox="0 0 48 48"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="1.5"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  aria-hidden="true"
+  focusable="false"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <!-- Ground line -->
+  <line x1="2" y1="42" x2="46" y2="42" />
+
+  <!-- Cabin walls -->
+  <rect x="13" y="26" width="22" height="16" />
+
+  <!-- Steep pitched roof -->
+  <polyline points="10,26 24,12 38,26" />
+
+  <!-- Roof overhang line -->
+  <line x1="10" y1="26" x2="38" y2="26" />
+
+  <!-- Horizontal wood plank lines on walls -->
+  <line x1="13" y1="30" x2="35" y2="30" />
+  <line x1="13" y1="34" x2="35" y2="34" />
+  <line x1="13" y1="38" x2="35" y2="38" />
+
+  <!-- Door -->
+  <path d="M20,42 L20,33 Q24,30 28,33 L28,42" />
+
+  <!-- Door knob -->
+  <circle cx="27" cy="38" r="0.8" fill="currentColor" />
+
+  <!-- Window left -->
+  <rect x="14" y="27" width="5" height="4" />
+  <line x1="16.5" y1="27" x2="16.5" y2="31" />
+
+  <!-- Window right -->
+  <rect x="29" y="27" width="5" height="4" />
+  <line x1="31.5" y1="27" x2="31.5" y2="31" />
+
+  <!-- Chimney -->
+  <rect x="28" y="14" width="4" height="8" />
+  <!-- Smoke puff -->
+  <path d="M28,14 Q26,10 28,8" />
+  <path d="M30,13 Q32,9 30,7" />
+
+  <!-- Left tree (pine shape) -->
+  <line x1="6" y1="42" x2="6" y2="32" />
+  <polygon points="6,18 2,32 10,32" />
+  <polygon points="6,24 3,34 9,34" />
+
+  <!-- Right tree (pine shape) -->
+  <line x1="42" y1="42" x2="42" y2="32" />
+  <polygon points="42,18 38,32 46,32" />
+  <polygon points="42,24 39,34 45,34" />
+</svg>

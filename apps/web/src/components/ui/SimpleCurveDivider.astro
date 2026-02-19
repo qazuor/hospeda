@@ -1,0 +1,33 @@
+---
+/**
+ * Inline SVG divider with a single minimal organic S-curve.
+ * Clean and lightweight section transition with no decorative complexity.
+ * Positioned absolute at the bottom of a parent section.
+ * Uses CSS variable for fill color to support dark mode theming.
+ */
+export interface SimpleCurveDividerProps {
+  /** Fill color for light mode (dark mode uses CSS variable override) */
+  fill?: string;
+  class?: string;
+}
+
+interface Props extends SimpleCurveDividerProps {}
+
+const { fill = 'currentColor', class: className } = Astro.props;
+---
+
+<svg
+  class:list={['wave-divider h-8 sm:h-[40px]', className]}
+  width="100%"
+  viewBox="0 0 1440 40"
+  preserveAspectRatio="none"
+  aria-hidden="true"
+  focusable="false"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <path
+    d="M0,20 C360,40 1080,0 1440,20 L1440,40 L0,40 Z"
+    fill={fill}
+    class="wave-divider-path"
+  />
+</svg>

@@ -1,0 +1,85 @@
+---
+/**
+ * FishingSceneIllustration - Person fishing on river bank silhouette.
+ * Line-art illustration using currentColor for light/dark mode compatibility.
+ */
+export interface FishingSceneIllustrationProps {
+  /** Additional CSS classes to apply to the SVG element */
+  class?: string;
+}
+
+interface Props extends FishingSceneIllustrationProps {}
+
+const { class: className } = Astro.props;
+---
+
+<svg
+  class:list={['illustration', className]}
+  viewBox="0 0 200 150"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  aria-hidden="true"
+  focusable="false"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <!-- Water surface with gentle waves -->
+  <path d="M0,110 Q25,105 50,110 Q75,115 100,110 Q125,105 150,110 Q175,115 200,110" />
+  <path d="M0,120 Q30,115 60,120 Q90,125 120,120 Q150,115 180,120 Q190,122 200,120" />
+  <path d="M10,130 Q40,126 70,130 Q100,134 130,130 Q160,126 200,130" />
+
+  <!-- River bank / ground -->
+  <path d="M0,110 L0,150 L200,150 L200,130" fill="currentColor" opacity="0.08" stroke="none" />
+  <path d="M0,110 Q20,108 40,110 L40,150 L0,150 Z" fill="currentColor" opacity="0.12" stroke="none" />
+
+  <!-- Bank edge -->
+  <path d="M0,110 Q15,107 30,110 Q38,112 40,110" stroke-width="2.5" />
+
+  <!-- Seated person - body -->
+  <!-- Torso -->
+  <line x1="25" y1="85" x2="25" y2="100" stroke-width="3" />
+  <!-- Head -->
+  <circle cx="25" cy="79" r="6" stroke-width="2" />
+  <!-- Hat brim -->
+  <path d="M18,76 L32,76" stroke-width="2.5" />
+  <path d="M20,76 Q25,70 30,76" stroke-width="1.5" />
+  <!-- Arm holding rod -->
+  <path d="M25,88 Q30,86 35,84" stroke-width="2" />
+  <!-- Legs (sitting) -->
+  <path d="M25,100 Q20,105 15,108" stroke-width="2.5" />
+  <path d="M25,100 Q28,106 30,110" stroke-width="2.5" />
+
+  <!-- Fishing rod -->
+  <line x1="35" y1="84" x2="120" y2="50" stroke-width="2" />
+  <!-- Rod tip -->
+  <circle cx="120" cy="50" r="1.5" fill="currentColor" />
+
+  <!-- Fishing line -->
+  <path d="M120,50 Q130,70 125,108" stroke-width="1" stroke-dasharray="3,2" />
+  <!-- Bobber -->
+  <circle cx="125" cy="108" r="3" fill="currentColor" opacity="0.6" />
+  <line x1="125" y1="105" x2="125" y2="100" stroke-width="1" />
+
+  <!-- Small fish beneath water (hint) -->
+  <path d="M105,120 Q110,117 116,120 Q110,123 105,120 Z" fill="currentColor" opacity="0.3" stroke="none" />
+  <path d="M104,120 Q101,118 100,120 Q101,122 104,120" fill="currentColor" opacity="0.3" stroke="none" />
+
+  <!-- Grass on bank -->
+  <line x1="5" y1="110" x2="3" y2="102" stroke-width="1.5" />
+  <line x1="8" y1="110" x2="7" y2="101" stroke-width="1.5" />
+  <line x1="11" y1="110" x2="10" y2="103" stroke-width="1.5" />
+
+  <!-- Distant reeds -->
+  <line x1="160" y1="110" x2="160" y2="92" stroke-width="1.5" />
+  <ellipse cx="160" cy="90" rx="3" ry="5" fill="currentColor" opacity="0.5" stroke="none" />
+  <line x1="167" y1="110" x2="167" y2="95" stroke-width="1.5" />
+  <ellipse cx="167" cy="93" rx="2.5" ry="4" fill="currentColor" opacity="0.5" stroke="none" />
+  <line x1="173" y1="110" x2="173" y2="97" stroke-width="1.5" />
+  <ellipse cx="173" cy="95" rx="2.5" ry="4" fill="currentColor" opacity="0.5" stroke="none" />
+
+  <!-- Sun / light reflection on water -->
+  <path d="M150,115 Q155,113 160,115" stroke-width="1" opacity="0.5" />
+  <path d="M145,122 Q152,120 158,122" stroke-width="1" opacity="0.4" />
+</svg>

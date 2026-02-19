@@ -1,0 +1,71 @@
+---
+/**
+ * CampingRiversideIcon - Line-art illustration of a camping tent on a riverside.
+ * Used to represent the "Camping" accommodation category.
+ * Part of the category icons illustration system (T-013).
+ */
+export interface CampingRiversideIconProps {
+  /** Additional CSS classes for sizing or color customization */
+  class?: string;
+  /** Icon size in pixels (applied to both width and height) */
+  size?: number;
+}
+
+interface Props extends CampingRiversideIconProps {}
+
+const { class: className, size = 48 } = Astro.props;
+---
+
+<svg
+  class:list={['category-icon', className]}
+  width={size}
+  height={size}
+  viewBox="0 0 48 48"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="1.5"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  aria-hidden="true"
+  focusable="false"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <!-- Ground / bank line -->
+  <path d="M2,36 Q10,34 18,36 Q26,38 34,36 L44,36" />
+
+  <!-- River water (wavy lines below bank) -->
+  <path d="M2,39 Q8,37 14,39 Q20,41 26,39 Q32,37 38,39 Q42,40 46,39" />
+  <path d="M2,43 Q8,41 14,43 Q20,45 26,43 Q32,41 38,43 Q42,44 46,43" />
+
+  <!-- Tent main body -->
+  <path d="M8,36 L24,14 L40,36" />
+
+  <!-- Tent inner divider (ridge line visible from front) -->
+  <line x1="24" y1="14" x2="24" y2="36" />
+
+  <!-- Tent door opening (right panel lifted) -->
+  <path d="M24,36 Q30,32 34,36" />
+
+  <!-- Guy rope left -->
+  <line x1="24" y1="14" x2="4" y2="26" />
+  <!-- Left stake -->
+  <line x1="4" y1="26" x2="3" y2="28" />
+  <line x1="4" y1="26" x2="5.5" y2="28" />
+
+  <!-- Guy rope right -->
+  <line x1="24" y1="14" x2="44" y2="26" />
+  <!-- Right stake -->
+  <line x1="44" y1="26" x2="43" y2="28" />
+  <line x1="44" y1="26" x2="45.5" y2="28" />
+
+  <!-- Moon / stars above (camping night ambiance) -->
+  <path d="M38,8 Q41,5 44,8 Q41,11 38,8" />
+  <circle cx="32" cy="7" r="0.8" fill="currentColor" stroke="none" />
+  <circle cx="36" cy="4" r="0.6" fill="currentColor" stroke="none" />
+  <circle cx="40" cy="3" r="0.6" fill="currentColor" stroke="none" />
+
+  <!-- Tree on the left bank -->
+  <line x1="5" y1="36" x2="5" y2="26" />
+  <path d="M5,26 Q2,22 5,18 Q8,22 5,26" />
+  <path d="M5,22 Q1.5,19 5,15 Q8.5,19 5,22" />
+</svg>
