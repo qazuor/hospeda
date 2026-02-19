@@ -1,52 +1,88 @@
 ---
 /**
- * Full-width hero section with background image, overlay, title, subtitle, and CTA.
- * Used as the main visual banner on key pages.
+ * Full-viewport hero section shell with carousel background,
+ * gradient overlay, static text content, search bar island, and wave divider.
  */
-import Button from '../ui/Button.astro';
+import { HeroCarousel } from './HeroCarousel.client';
+import { HeroSearchBar } from '../search/HeroSearchBar.client';
+import WaveDivider from '../ui/WaveDivider.astro';
 
-interface Props {
-  image: string;
-  title: string;
-  subtitle?: string;
-  cta?: {
-    label: string;
-    href: string;
+export interface HeroSectionProps {
+  slides: Array<{ src: string; alt: string }>;
+  accentSubtitle: string;
+  headline: string;
+  subheadline: string;
+  searchLabels: {
+    typePlaceholder: string;
+    destinationPlaceholder: string;
+    checkInPlaceholder: string;
+    checkOutPlaceholder: string;
+    ctaLabel: string;
+    loadingText: string;
+    searchAriaLabel: string;
   };
+  carouselLabels: {
+    carouselAriaLabel: string;
+    slideNavLegend: string;
+    dotAriaLabel: string;
+    liveRegionText: string;
+  };
+  locale: 'es' | 'en' | 'pt';
+  apiBaseUrl: string;
+  firstSectionFill?: string;
 }
 
-const { image, title, subtitle, cta } = Astro.props;
+interface Props extends HeroSectionProps {}
+
+const {
+  slides,
+  accentSubtitle,
+  headline,
+  subheadline,
+  searchLabels,
+  carouselLabels,
+  locale,
+  apiBaseUrl,
+  firstSectionFill = '#FFFFFF',
+} = Astro.props;
+
+const baseAccommodationsPath = `/${locale}/alojamientos`;
 ---
 
-<section class="relative flex min-h-[400px] items-center justify-center overflow-hidden md:min-h-[500px]">
-  <!-- Background image -->
-  <img
-    src={image}
-    alt=""
-    class="absolute inset-0 h-full w-full object-cover"
-    loading="eager"
-    aria-hidden="true"
-  />
+<section class="relative min-h-[max(100vh,600px)] overflow-hidden bg-gray-900">
+  <!-- Carousel background (React island) -->
+  <HeroCarousel client:load slides={slides} labels={carouselLabels} />
 
-  <!-- Dark overlay -->
-  <div class="absolute inset-0 bg-black/50" aria-hidden="true"></div>
+  <!-- Gradient overlay -->
+  <div class="absolute inset-0 bg-gradient-to-b from-black/10 via-black/30 to-black/70" aria-hidden="true"></div>
 
-  <!-- Content -->
-  <div class="relative z-10 mx-auto max-w-4xl px-4 py-16 text-center">
-    <h1 class="text-4xl font-bold text-white md:text-5xl lg:text-6xl" style="color: white;">
-      {title}
+  <!-- Overlay text content (static Astro markup) -->
+  <div class="relative z-20 flex min-h-[max(100vh,600px)] flex-col items-center justify-center px-4 text-center">
+    <p class="mb-4 font-accent text-[length:var(--fs-accent-subtitle)] text-white">
+      {accentSubtitle}
+    </p>
+    <h1 class="mb-4 font-serif text-[length:var(--fs-display-hero)] font-bold text-white">
+      {headline}
     </h1>
-    {subtitle && (
-      <p class="mx-auto mt-4 max-w-2xl text-lg text-white/80 md:text-xl" style="color: rgba(255,255,255,0.8);">
-        {subtitle}
-      </p>
-    )}
-    {cta && (
-      <div class="mt-8">
-        <Button href={cta.href} variant="primary" size="lg">
-          {cta.label}
-        </Button>
-      </div>
-    )}
+    <p class="mx-auto mb-8 max-w-2xl text-base text-white/80 sm:text-lg">
+      {subheadline}
+    </p>
+
+    <!-- Search bar (React island) -->
+    <div class="w-full max-w-4xl">
+      <HeroSearchBar
+        client:load
+        locale={locale}
+        apiBaseUrl={apiBaseUrl}
+        labels={searchLabels}
+        baseAccommodationsPath={baseAccommodationsPath}
+      />
+    </div>
   </div>
+
+  <!-- Wave divider at bottom -->
+  <WaveDivider
+    fill={firstSectionFill}
+    class="absolute bottom-0 left-0 w-full z-30"
+  />
 </section>

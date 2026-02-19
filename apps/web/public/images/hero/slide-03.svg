@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <defs>
+    <linearGradient id="g3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#92400e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f97316;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#g3)" />
+  <text x="960" y="540" text-anchor="middle" dominant-baseline="central" fill="white" font-family="sans-serif" font-size="48" opacity="0.5">Termas Entre Rios - Slide 3</text>
+</svg>

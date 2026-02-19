@@ -1,6 +1,6 @@
 /**
- * Tests for HeroSection component file content validation.
- * Validates props, structure, accessibility, and Tailwind classes.
+ * Tests for redesigned HeroSection component.
+ * Validates carousel shell, gradient overlay, React islands, and WaveDivider integration.
  */
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -9,147 +9,136 @@ import { describe, expect, it } from 'vitest';
 const componentPath = resolve(__dirname, '../../../src/components/content/HeroSection.astro');
 const content = readFileSync(componentPath, 'utf8');
 
-describe('HeroSection - File content', () => {
-    describe('Component documentation', () => {
-        it('should have JSDoc documentation', () => {
-            expect(content).toContain('/**');
-            expect(content).toContain('*/');
-        });
-
-        it('should describe purpose as hero section', () => {
-            expect(content).toContain('hero');
-        });
-    });
-
+describe('HeroSection.astro (Redesigned)', () => {
     describe('Props interface', () => {
-        it('should define Props interface', () => {
-            expect(content).toContain('interface Props');
+        it('should define HeroSectionProps export', () => {
+            expect(content).toContain('HeroSectionProps');
         });
 
-        it('should accept image prop', () => {
-            expect(content).toContain('image: string');
+        it('should accept slides array prop', () => {
+            expect(content).toContain('slides:');
         });
 
-        it('should accept title prop', () => {
-            expect(content).toContain('title: string');
+        it('should accept accentSubtitle prop', () => {
+            expect(content).toContain('accentSubtitle: string');
         });
 
-        it('should accept optional subtitle prop', () => {
-            expect(content).toContain('subtitle?');
+        it('should accept headline prop', () => {
+            expect(content).toContain('headline: string');
         });
 
-        it('should accept optional cta prop with label and href', () => {
-            expect(content).toContain('cta?');
-            expect(content).toContain('label: string');
-            expect(content).toContain('href: string');
-        });
-    });
-
-    describe('Structure', () => {
-        it('should use section element', () => {
-            expect(content).toContain('<section');
-            expect(content).toContain('</section>');
+        it('should accept subheadline prop', () => {
+            expect(content).toContain('subheadline: string');
         });
 
-        it('should render background image', () => {
-            expect(content).toContain('<img');
-            expect(content).toContain('{image}');
+        it('should accept searchLabels prop', () => {
+            expect(content).toContain('searchLabels:');
         });
 
-        it('should render dark overlay', () => {
-            expect(content).toContain('bg-black/50');
+        it('should accept carouselLabels prop', () => {
+            expect(content).toContain('carouselLabels:');
         });
 
-        it('should render title as h1', () => {
-            expect(content).toContain('<h1');
-            expect(content).toContain('{title}');
+        it('should accept locale prop', () => {
+            expect(content).toContain('locale:');
         });
 
-        it('should conditionally render subtitle', () => {
-            expect(content).toContain('{subtitle');
+        it('should accept apiBaseUrl prop', () => {
+            expect(content).toContain('apiBaseUrl: string');
         });
 
-        it('should conditionally render CTA', () => {
-            expect(content).toContain('{cta');
-        });
-
-        it('should import Button component for CTA', () => {
-            expect(content).toContain('import Button from');
-            expect(content).toContain('Button.astro');
+        it('should accept optional firstSectionFill prop', () => {
+            expect(content).toContain('firstSectionFill?');
         });
     });
 
-    describe('Responsive design', () => {
-        it('should have responsive min-height', () => {
-            expect(content).toContain('min-h-[400px]');
-            expect(content).toContain('md:min-h-[500px]');
-        });
-
-        it('should have responsive text sizing for title', () => {
-            expect(content).toContain('text-4xl');
-            expect(content).toContain('md:text-5xl');
-            expect(content).toContain('lg:text-6xl');
-        });
-
-        it('should center content with max-width', () => {
-            expect(content).toContain('max-w-4xl');
-            expect(content).toContain('text-center');
+    describe('Full-viewport height', () => {
+        it('should have min-h with 100vh or screen height', () => {
+            expect(content).toMatch(/min-h-\[max\(100vh,600px\)\]|min-h-screen/);
         });
     });
 
-    describe('Styling', () => {
-        it('should use white text for title', () => {
-            expect(content).toContain('text-white');
+    describe('Gradient overlay', () => {
+        it('should have gradient overlay classes', () => {
+            expect(content).toContain('bg-gradient-to-b');
         });
 
-        it('should use semi-transparent white for subtitle', () => {
-            expect(content).toContain('text-white/80');
-        });
-
-        it('should have inline color styles for white text fallback', () => {
-            expect(content).toContain('style="color: white;"');
-        });
-
-        it('should use full-cover image', () => {
-            expect(content).toContain('object-cover');
-        });
-
-        it('should use eager loading for hero image', () => {
-            expect(content).toContain('loading="eager"');
-        });
-
-        it('should use bold font for title', () => {
-            expect(content).toContain('font-bold');
-        });
-    });
-
-    describe('Accessibility', () => {
-        it('should hide decorative background image from screen readers', () => {
+        it('should have aria-hidden on gradient overlay', () => {
             expect(content).toContain('aria-hidden="true"');
         });
 
-        it('should use empty alt for decorative image', () => {
-            expect(content).toContain('alt=""');
+        it('should have absolute inset-0 on overlay', () => {
+            expect(content).toContain('absolute inset-0');
+        });
+    });
+
+    describe('React islands', () => {
+        it('should import HeroCarousel', () => {
+            expect(content).toContain('HeroCarousel');
         });
 
-        it('should use relative z-index for content above overlay', () => {
-            expect(content).toContain('z-10');
+        it('should use client:load for HeroCarousel', () => {
+            expect(content).toContain('client:load');
+        });
+
+        it('should import HeroSearchBar', () => {
+            expect(content).toContain('HeroSearchBar');
+        });
+    });
+
+    describe('WaveDivider', () => {
+        it('should import WaveDivider', () => {
+            expect(content).toContain('WaveDivider');
+        });
+
+        it('should position WaveDivider at bottom', () => {
+            expect(content).toContain('absolute');
+            expect(content).toContain('bottom-0');
+        });
+    });
+
+    describe('Typography', () => {
+        it('should render H1 with font-serif', () => {
+            expect(content).toContain('<h1');
+            expect(content).toContain('font-serif');
+        });
+
+        it('should use display-hero font size token', () => {
+            expect(content).toContain('fs-display-hero');
+        });
+
+        it('should use font-accent for accent subtitle', () => {
+            expect(content).toContain('font-accent');
+        });
+
+        it('should use accent-subtitle font size token', () => {
+            expect(content).toContain('fs-accent-subtitle');
         });
     });
 
     describe('Layout', () => {
-        it('should use flexbox for vertical centering', () => {
-            expect(content).toContain('flex');
-            expect(content).toContain('items-center');
-            expect(content).toContain('justify-center');
+        it('should use section element', () => {
+            expect(content).toContain('<section');
         });
 
-        it('should use overflow hidden on section', () => {
+        it('should use overflow-hidden', () => {
             expect(content).toContain('overflow-hidden');
         });
 
-        it('should use absolute positioning for image and overlay', () => {
-            expect(content).toContain('absolute inset-0');
+        it('should have bg-gray-900 fallback', () => {
+            expect(content).toContain('bg-gray-900');
+        });
+    });
+
+    describe('Accessibility', () => {
+        it('should render headline as h1 (not inside React island)', () => {
+            expect(content).toContain('<h1');
+            expect(content).toContain('{headline}');
+        });
+
+        it('should render text content as static Astro markup', () => {
+            expect(content).toContain('{accentSubtitle}');
+            expect(content).toContain('{subheadline}');
         });
     });
 });
