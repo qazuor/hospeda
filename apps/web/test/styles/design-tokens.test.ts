@@ -18,6 +18,8 @@ describe('Design Tokens - global.css', () => {
             '--color-secondary-dark',
             '--color-accent',
             '--color-accent-dark',
+            '--color-accent-warm',
+            '--color-bg-warm',
             '--color-text',
             '--color-text-secondary',
             '--color-text-tertiary',
@@ -32,6 +34,29 @@ describe('Design Tokens - global.css', () => {
 
         it.each(colorTokens)('should define %s', (token) => {
             expect(globalCss).toContain(`${token}:`);
+        });
+
+        it('should have --color-primary value of #3B82F6', () => {
+            expect(globalCss).toMatch(/--color-primary:\s*#3B82F6/i);
+        });
+
+        it('should have --color-primary-dark value of #2563EB', () => {
+            expect(globalCss).toMatch(/--color-primary-dark:\s*#2563EB/i);
+        });
+
+        it('should have --color-accent-warm value of #F97316', () => {
+            expect(globalCss).toMatch(/--color-accent-warm:\s*#F97316/i);
+        });
+
+        it('should have --color-bg-warm value of #F9F4EE in light mode', () => {
+            const rootSection = globalCss.split('[data-theme="dark"]')[0];
+            expect(rootSection).toMatch(/--color-bg-warm:\s*#F9F4EE/i);
+        });
+
+        it('should have --color-bg-warm dark mode override of #1C1917', () => {
+            const darkSection = globalCss.split('[data-theme="dark"]')[1];
+            expect(darkSection).toBeDefined();
+            expect(darkSection).toMatch(/--color-bg-warm:\s*#1C1917/i);
         });
     });
 
@@ -72,6 +97,36 @@ describe('Design Tokens - global.css', () => {
         it.each(shadowTokens)('should define %s', (token) => {
             expect(globalCss).toContain(`${token}:`);
         });
+
+        it('should have updated --shadow-md value', () => {
+            expect(globalCss).toContain('--shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1)');
+        });
+
+        it('should have updated --shadow-lg value', () => {
+            expect(globalCss).toContain('--shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1)');
+        });
+
+        it('should have updated --shadow-xl value', () => {
+            expect(globalCss).toContain('--shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1)');
+        });
+    });
+
+    describe('Typography scale tokens', () => {
+        it('should define --fs-display-hero', () => {
+            expect(globalCss).toContain('--fs-display-hero:');
+        });
+
+        it('should define --fs-display-section', () => {
+            expect(globalCss).toContain('--fs-display-section:');
+        });
+
+        it('should define --fs-accent-subtitle', () => {
+            expect(globalCss).toContain('--fs-accent-subtitle:');
+        });
+
+        it('should define --max-w-site with 1200px value', () => {
+            expect(globalCss).toMatch(/--max-w-site:\s*1200px/);
+        });
     });
 
     describe('Typography tokens', () => {
@@ -102,6 +157,45 @@ describe('Design Tokens - global.css', () => {
 
         it('should include Playfair Display Fallback font in serif stack', () => {
             expect(globalCss).toContain('Playfair Display Fallback');
+        });
+    });
+
+    describe('Accent font (Caveat)', () => {
+        it('should define --font-accent CSS variable', () => {
+            expect(globalCss).toContain('--font-accent:');
+        });
+
+        it('should include Caveat in --font-accent value', () => {
+            const fontAccentMatch = globalCss.match(/--font-accent:\s*([^;]+);/);
+            expect(fontAccentMatch).toBeTruthy();
+            expect(fontAccentMatch![1]).toContain('Caveat');
+        });
+
+        it('should include cursive fallback in --font-accent', () => {
+            const fontAccentMatch = globalCss.match(/--font-accent:\s*([^;]+);/);
+            expect(fontAccentMatch).toBeTruthy();
+            expect(fontAccentMatch![1]).toContain('cursive');
+        });
+
+        it('should define Caveat Fallback @font-face', () => {
+            expect(globalCss).toContain('font-family: "Caveat Fallback"');
+        });
+
+        it('should use font-display: swap for Caveat Fallback', () => {
+            const caveatFallbackSection = globalCss
+                .split('font-family: "Caveat Fallback"')[1]
+                ?.split('}')[0];
+            expect(caveatFallbackSection).toBeDefined();
+            expect(caveatFallbackSection).toContain('font-display: swap');
+        });
+
+        it('should have CLS-prevention metrics for Caveat Fallback', () => {
+            const caveatFallbackSection = globalCss
+                .split('font-family: "Caveat Fallback"')[1]
+                ?.split('}')[0];
+            expect(caveatFallbackSection).toBeDefined();
+            expect(caveatFallbackSection).toContain('ascent-override:');
+            expect(caveatFallbackSection).toContain('size-adjust:');
         });
     });
 
@@ -203,6 +297,8 @@ describe('Tailwind Theme - tailwind.css', () => {
             '--color-primary',
             '--color-secondary',
             '--color-accent',
+            '--color-accent-warm',
+            '--color-bg-warm',
             '--color-success',
             '--color-warning',
             '--color-error',
@@ -213,6 +309,25 @@ describe('Tailwind Theme - tailwind.css', () => {
             // Check that it appears inside the @theme inline block
             const themeSection = tailwindCss.split('@theme inline')[1];
             expect(themeSection).toContain(token);
+        });
+    });
+
+    describe('Theme typography scale mappings', () => {
+        const themeTypographyTokens = [
+            '--fs-display-hero',
+            '--fs-display-section',
+            '--fs-accent-subtitle',
+            '--font-accent'
+        ];
+
+        it.each(themeTypographyTokens)('should map %s to Tailwind theme', (token) => {
+            const themeSection = tailwindCss.split('@theme inline')[1];
+            expect(themeSection).toContain(token);
+        });
+
+        it('should map --max-w-site to Tailwind theme', () => {
+            const themeSection = tailwindCss.split('@theme inline')[1];
+            expect(themeSection).toContain('--max-w-site');
         });
     });
 

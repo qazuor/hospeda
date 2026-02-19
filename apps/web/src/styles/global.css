@@ -20,15 +20,27 @@
     size-adjust: 110%;
 }
 
+@font-face {
+    font-family: "Caveat Fallback";
+    src: local("cursive");
+    font-display: swap;
+    ascent-override: 100%;
+    descent-override: 30%;
+    line-gap-override: 0%;
+    size-adjust: 105%;
+}
+
 :root {
     /* Colors - Regional Palette */
-    --color-primary: #2196f3; /* River blue */
-    --color-primary-dark: #1565c0;
+    --color-primary: #3B82F6; /* Tailwind blue-500 */
+    --color-primary-dark: #2563EB; /* Tailwind blue-600 */
     --color-primary-light: #64b5f6;
     --color-secondary: #4caf50; /* Vegetation green */
     --color-secondary-dark: #2e7d32;
     --color-accent: #d7ccc8; /* Sand beige */
     --color-accent-dark: #8d6e63; /* Earth brown */
+    --color-accent-warm: #F97316; /* Tailwind orange-500 */
+    --color-bg-warm: #F9F4EE; /* Warm background */
 
     /* Neutrals */
     --color-text: #212121;
@@ -37,6 +49,9 @@
     --color-border: #eeeeee;
     --color-bg: #fafafa;
     --color-surface: #ffffff;
+    --color-surface-alt: #F3F4F6; /* gray-100 - alternate section background */
+    --color-surface-warm: #F9F4EE; /* warm surface for touristic sections */
+    --color-header-bg: #ffffff; /* sticky header background */
 
     /* Semantic */
     --color-success: #4caf50;
@@ -63,13 +78,23 @@
 
     /* Shadows */
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-    --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.1);
-    --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.15);
-    --shadow-xl: 0 8px 32px rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
 
     /* Typography */
     --font-serif: "Playfair Display", "Playfair Display Fallback", Georgia, serif;
     --font-sans: "Inter", "Inter Fallback", -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-accent: "Caveat", "Caveat Fallback", cursive;
+
+    /* Typography scale (responsive role tokens) */
+    --fs-display-hero: 3rem; /* 48px desktop */
+    --fs-display-section: 2.25rem; /* 36px desktop */
+    --fs-accent-subtitle: 1.5rem; /* 24px desktop */
+    --fs-counter-number: 2.5rem; /* 40px desktop */
+
+    /* Container width */
+    --max-w-site: 1200px;
 
     --font-size-xs: 0.75rem; /* 12px */
     --font-size-sm: 0.875rem; /* 14px */
@@ -99,12 +124,50 @@
     --z-toast: 1060;
 }
 
-/* Dark mode prepared (not implemented yet) */
+/* Responsive typography scale overrides */
+@media (max-width: 1023px) {
+    :root {
+        --fs-display-hero: 2.5rem; /* 40px tablet */
+        --fs-display-section: 1.875rem; /* 30px tablet */
+        --fs-accent-subtitle: 1.375rem; /* 22px tablet */
+        --fs-counter-number: 2.25rem; /* 36px tablet */
+    }
+}
+
+@media (max-width: 639px) {
+    :root {
+        --fs-display-hero: 2rem; /* 32px mobile */
+        --fs-display-section: 1.5rem; /* 24px mobile */
+        --fs-accent-subtitle: 1.25rem; /* 20px mobile */
+        --fs-counter-number: 2rem; /* 32px mobile */
+    }
+}
+
+/* Dark mode - complete token coverage (SPEC-014 Phase 6) */
 [data-theme="dark"] {
-    --color-text: #e0e0e0;
-    --color-text-secondary: #b0b0b0;
-    --color-text-tertiary: #808080;
-    --color-border: #333333;
-    --color-bg: #121212;
-    --color-surface: #1e1e1e;
+    --color-bg: #111827; /* gray-900 - body/page background */
+    --color-surface: #1F2937; /* gray-800 - standard section + card backgrounds */
+    --color-surface-alt: #1F2937; /* gray-800 - alternate section (same as surface in dark) */
+    --color-surface-warm: #1C1917; /* stone-900 - touristic warm sections */
+    --color-bg-warm: #1C1917; /* stone-900 - warm background alias */
+    --color-border: #374151; /* gray-700 */
+    --color-text: #FFFFFF; /* white - primary text */
+    --color-text-secondary: #D1D5DB; /* gray-300 - secondary text */
+    --color-text-tertiary: #9CA3AF; /* gray-400 - muted text (4.08:1 on gray-800) */
+    --color-header-bg: #111827; /* gray-900 - sticky header */
+}
+
+/* Dark mode: wave divider fill matches section below hero */
+[data-theme="dark"] .wave-divider-path {
+    fill: var(--color-bg) !important;
+}
+
+/* Dark mode: accent-warm text elevated for legibility on dark backgrounds */
+[data-theme="dark"] .text-accent-warm {
+    color: var(--color-text-secondary);
+}
+
+/* Dark mode overlay opacity increase for readability */
+[data-theme="dark"] .section-overlay {
+    background-color: rgba(0, 0, 0, 0.6);
 }

@@ -101,6 +101,32 @@
     animation-delay: 300ms;
 }
 
+/* Scroll reveal: initial hidden state and visible transition */
+.scroll-reveal {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 600ms ease-out, transform 600ms ease-out;
+}
+
+.scroll-reveal.scroll-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Ken-burns effect for hero carousel */
+@keyframes kenBurns {
+    from {
+        transform: scale(1);
+    }
+    to {
+        transform: scale(1.05);
+    }
+}
+
+.animate-ken-burns {
+    animation: kenBurns 7s ease-in-out forwards;
+}
+
 /* Respect user preferences for reduced motion */
 @media (prefers-reduced-motion: reduce) {
     *,
