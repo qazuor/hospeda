@@ -33,6 +33,45 @@
     },
     "testimonials": {
         "title": "O que dizem nossos usuarios",
-        "description": "Historias de quem ja aproveitou nossas hospedagens."
+        "description": "Historias de quem ja aproveitou nossas hospedagens.",
+        "accentSubtitle": "Experiencias reais",
+        "prevAriaLabel": "Depoimento anterior",
+        "nextAriaLabel": "Proximo depoimento",
+        "dotAriaLabel": "Ir para depoimento {{index}}",
+        "regionAriaLabel": "Depoimentos de usuarios",
+        "starsAriaLabel": "{{rating}} de 5 estrelas"
+    },
+    "statistics": {
+        "title": "Numeros que falam por si",
+        "accentSubtitle": "Nossa plataforma",
+        "accommodations": "Hospedagens",
+        "destinations": "Destinos",
+        "reviews": "Avaliacoes",
+        "experience": "Anos de experiencia"
+    },
+    "categories": {
+        "title": "Tipos de hospedagem",
+        "accentSubtitle": "O que voce procura",
+        "hotel": "Hotel",
+        "cabin": "Cabana",
+        "camping": "Camping",
+        "apartment": "Apartamento",
+        "bnb": "B&B",
+        "rural": "Rural",
+        "viewAriaLabel": "Ver hospedagens tipo {{type}}",
+        "viewWithCountAriaLabel": "Ver {{count}} hospedagens tipo {{type}}",
+        "countSingular": "{{count}} hospedagem",
+        "countPlural": "{{count}} hospedagens"
+    },
+    "newsletter": {
+        "title": "Receba as melhores ofertas do Litoral",
+        "accentSubtitle": "Fique informado",
+        "alreadySubscribed": "Voce ja esta inscrito em nossa newsletter."
+    },
+    "ownerCta": {
+        "accentSubtitle": "Para proprietarios",
+        "title": "Publique sua hospedagem no Hospeda",
+        "description": "Alcance milhares de viajantes que buscam hospedagens no Litoral argentino. Simples, rapido e eficaz.",
+        "button": "Comecar agora"
     }
 }

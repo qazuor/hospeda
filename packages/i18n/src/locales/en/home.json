@@ -33,6 +33,45 @@
     },
     "testimonials": {
         "title": "What our users say",
-        "description": "Stories from people who have already enjoyed our accommodations."
+        "description": "Stories from people who have already enjoyed our accommodations.",
+        "accentSubtitle": "Real experiences",
+        "prevAriaLabel": "Previous testimonial",
+        "nextAriaLabel": "Next testimonial",
+        "dotAriaLabel": "Go to testimonial {{index}}",
+        "regionAriaLabel": "User testimonials",
+        "starsAriaLabel": "{{rating}} of 5 stars"
+    },
+    "statistics": {
+        "title": "Numbers that speak for themselves",
+        "accentSubtitle": "Our platform",
+        "accommodations": "Accommodations",
+        "destinations": "Destinations",
+        "reviews": "Reviews",
+        "experience": "Years of experience"
+    },
+    "categories": {
+        "title": "Accommodation types",
+        "accentSubtitle": "What are you looking for",
+        "hotel": "Hotel",
+        "cabin": "Cabin",
+        "camping": "Camping",
+        "apartment": "Apartment",
+        "bnb": "B&B",
+        "rural": "Rural",
+        "viewAriaLabel": "View {{type}} accommodations",
+        "viewWithCountAriaLabel": "View {{count}} {{type}} accommodations",
+        "countSingular": "{{count}} accommodation",
+        "countPlural": "{{count}} accommodations"
+    },
+    "newsletter": {
+        "title": "Get the best deals from the Litoral",
+        "accentSubtitle": "Stay informed",
+        "alreadySubscribed": "You are already subscribed to our newsletter."
+    },
+    "ownerCta": {
+        "accentSubtitle": "For property owners",
+        "title": "List your accommodation on Hospeda",
+        "description": "Reach thousands of travelers looking for accommodations in the Argentine Litoral. Simple, fast and effective.",
+        "button": "Get started"
     }
 }
