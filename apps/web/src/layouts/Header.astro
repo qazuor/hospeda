@@ -1,13 +1,12 @@
 ---
 /**
  * Global site header with logo and main navigation.
- * Sticky positioned with responsive layout.
+ * Hero pages: transparent, absolute over the hero image with top offset.
+ * Other pages: solid dark background, relative position.
+ * Scrolls with the page (not sticky).
  *
  * Auth section uses a Server Island (server:defer) so that the user's
- * authentication state is resolved at request time on every page,
- * including pre-rendered SSG pages. This avoids the problem where
- * SSG pages always show "Iniciar Sesion" because they were built
- * without a user session.
+ * authentication state is resolved at request time on every page.
  */
 import Container from '../components/ui/Container.astro';
 import AuthSection from '../components/auth/AuthSection.astro';
@@ -17,9 +16,11 @@ import { MobileMenuWrapper } from '../components/ui/MobileMenuWrapper.client';
 interface Props {
   /** Current locale for localized navigation links */
   locale?: string;
+  /** Whether header floats transparent over the hero */
+  isHero?: boolean;
 }
 
-const { locale = 'es' } = Astro.props;
+const { locale = 'es', isHero = false } = Astro.props;
 
 const navLabels: Record<string, Record<string, string>> = {
   accommodations: { es: 'Alojamientos', en: 'Accommodations', pt: 'Hospedagens' },
@@ -49,55 +50,97 @@ function isLinkActive(href: string): boolean {
 }
 ---
 
-<header role="banner" class="sticky top-0 z-20 border-b border-border bg-header-bg">
+<header
+  role="banner"
+  id="main-header"
+  class:list={[
+    'z-20 w-full',
+    isHero
+      ? 'absolute top-0 left-0 mt-10 bg-transparent'
+      : 'relative bg-gray-900',
+  ]}
+  style="padding-top: env(safe-area-inset-top, 0px);"
+>
   <Container size="xl">
     <div class="flex h-16 items-center justify-between">
       <!-- Logo -->
-      <a href={`/${locale}/`} class="font-serif text-2xl font-bold text-primary no-underline hover:text-primary-dark">
-        Hospeda
+      <a
+        href={`/${locale}/`}
+        class="header-logo flex items-center gap-3 no-underline transition-opacity duration-300 hover:opacity-80"
+      >
+        <img
+          src="/logo.webp"
+          alt="Hospeda"
+          class="h-10 w-auto drop-shadow-md"
+          width="40"
+          height="40"
+          loading="eager"
+        />
+        <span class="font-serif text-2xl font-bold tracking-tight text-white">
+          Hospeda
+        </span>
       </a>
 
       <!-- Desktop Navigation -->
-      <nav role="navigation" aria-label="Main navigation" class="hidden items-center gap-8 md:flex">
-        {navLinks.map((link) => {
+      <nav role="navigation" aria-label="Main navigation" class="hidden items-center md:flex">
+        {navLinks.map((link, index) => {
           const isActive = isLinkActive(link.href);
           return (
-            <a
-              href={link.href}
-              class={`text-sm font-medium transition-colors hover:text-primary ${
-                isActive ? 'text-primary font-semibold' : 'text-text-secondary'
-              }`}
-              aria-current={isActive ? 'page' : undefined}
-            >
-              {link.label}
-            </a>
+            <>
+              <a
+                href={link.href}
+                class:list={[
+                  'nav-link px-4 py-1 text-[13px] font-bold uppercase tracking-widest no-underline transition-colors duration-300',
+                  isActive
+                    ? 'text-white'
+                    : 'text-white/70 hover:text-white',
+                ]}
+                aria-current={isActive ? 'page' : undefined}
+              >
+                {link.label}
+              </a>
+              {index < navLinks.length - 1 && (
+                <span class="text-white/20 select-none" aria-hidden="true">/</span>
+              )}
+            </>
           );
         })}
+
+        <!-- Separator before CTA -->
+        <span class="mx-3 h-5 w-px bg-white/20" aria-hidden="true" />
+
         <a
           href={ownerCtaHref}
-          class={`rounded-md border-2 border-primary px-3 py-1.5 text-sm font-semibold transition-colors ${
+          class:list={[
+            'rounded-full border border-white/30 px-4 py-1.5 text-[12px] font-bold uppercase tracking-widest no-underline transition-all duration-300',
             isLinkActive(ownerCtaHref)
-              ? 'bg-primary text-white'
-              : 'text-primary hover:bg-primary hover:text-white'
-          }`}
+              ? 'bg-secondary border-secondary text-white'
+              : 'text-white hover:border-white/60 hover:bg-white/10',
+          ]}
           aria-current={isLinkActive(ownerCtaHref) ? 'page' : undefined}
         >
           {ownerCtaLabel[locale] ?? ownerCtaLabel.es}
         </a>
       </nav>
 
-      <!-- Right side: theme toggle + auth area + mobile menu button -->
-      <div class="flex items-center gap-4">
-        <!-- Theme Toggle -->
-        <ThemeToggle client:idle />
+      <!-- Right side: theme toggle + auth + mobile menu -->
+      <div class="flex items-center gap-1">
+        <!-- Theme toggle -->
+        <div class="header-theme-toggle">
+          <ThemeToggle client:idle />
+        </div>
 
-        <!-- Auth Section (Server Island: resolved at request time) -->
-        <AuthSection server:defer locale={locale}>
-          <!-- Skeleton fallback while the server island loads -->
-          <div slot="fallback" class="h-8 w-24 animate-pulse rounded-md bg-gray-200" aria-hidden="true" />
-        </AuthSection>
+        <!-- Separator -->
+        <span class="mx-1 hidden h-5 w-px bg-white/20 sm:block" aria-hidden="true" />
 
-        <!-- Mobile menu (trigger + slide-in panel, hydrated only on mobile) -->
+        <!-- Auth area -->
+        <div class="header-auth-section hidden sm:block">
+          <AuthSection server:defer locale={locale}>
+            <div slot="fallback" class="h-8 w-20 animate-pulse rounded-full bg-white/5" aria-hidden="true" />
+          </AuthSection>
+        </div>
+
+        <!-- Mobile menu -->
         <MobileMenuWrapper
           client:media="(max-width: 768px)"
           navItems={[...navLinks, { label: ownerCtaLabel[locale] ?? ownerCtaLabel.es, href: ownerCtaHref }]}
@@ -107,3 +150,73 @@ function isLinkActive(href: string): boolean {
     </div>
   </Container>
 </header>
+
+<style>
+  /* Theme toggle: minimal white icon */
+  .header-theme-toggle :global(button) {
+    color: rgba(255, 255, 255, 0.6);
+    border-radius: 9999px;
+    padding: 0.375rem;
+    transition: all 0.3s ease;
+  }
+
+  .header-theme-toggle :global(button:hover) {
+    color: white;
+  }
+
+  /* Auth: signin link as outlined pill */
+  .header-auth-section :global(a) {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.875rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: white;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    text-decoration: none;
+  }
+
+  .header-auth-section :global(a:hover) {
+    border-color: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  /* Auth: UserNav trigger */
+  .header-auth-section :global(button) {
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 9999px;
+    padding: 0.25rem 0.625rem 0.25rem 0.25rem;
+    transition: all 0.3s ease;
+    background: transparent;
+  }
+
+  .header-auth-section :global(button:hover) {
+    border-color: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  /* UserNav initials circle */
+  .header-auth-section :global(button div) {
+    border: none;
+  }
+
+  /* UserNav name text */
+  .header-auth-section :global(button span) {
+    color: white;
+    font-weight: 700;
+    font-size: 0.75rem;
+    letter-spacing: 0.03em;
+  }
+
+  /* UserNav chevron */
+  .header-auth-section :global(button svg) {
+    color: rgba(255, 255, 255, 0.6);
+  }
+</style>
