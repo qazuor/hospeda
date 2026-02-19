@@ -1,7 +1,8 @@
 ---
 /**
- * Global site footer with categorized navigation links and copyright.
- * Provides organized access to main site sections, information, and legal pages.
+ * Global site footer with regional identity.
+ * Features SVG skyline silhouette, teal-to-night gradient background,
+ * 4-column navigation grid, "Hecho con mate" tagline, and social links.
  */
 import Container from '../components/ui/Container.astro';
 import NewsletterCTAIsland from '../components/newsletter/NewsletterCTAIsland.astro';
@@ -13,14 +14,7 @@ interface Props {
 
 const { locale = 'es' } = Astro.props;
 
-// Localized labels
 const t = (labels: Record<string, string>) => labels[locale] ?? labels.es;
-
-const newsletterTitle = t({
-  es: 'Suscribite a nuestro newsletter',
-  en: 'Subscribe to our newsletter',
-  pt: 'Assine nossa newsletter',
-});
 
 const linkGroups = [
   {
@@ -41,118 +35,115 @@ const linkGroups = [
     ],
   },
   {
-    title: t({ es: 'Informacion', en: 'Information', pt: 'Informacoes' }),
-    links: [
-      { label: t({ es: 'Quienes somos', en: 'About Us', pt: 'Quem Somos' }), href: `/${locale}/quienes-somos/` },
-      { label: t({ es: 'Beneficios', en: 'Benefits', pt: 'Beneficios' }), href: `/${locale}/beneficios/` },
-      { label: t({ es: 'Contacto', en: 'Contact', pt: 'Contato' }), href: `/${locale}/contacto/` },
-    ],
-  },
-  {
     title: t({ es: 'Legal', en: 'Legal', pt: 'Legal' }),
     links: [
       { label: t({ es: 'Terminos y condiciones', en: 'Terms and Conditions', pt: 'Termos e Condicoes' }), href: `/${locale}/terminos-condiciones/` },
       { label: t({ es: 'Privacidad', en: 'Privacy', pt: 'Privacidade' }), href: `/${locale}/privacidad/` },
-      { label: 'Sitemap', href: `/${locale}/sitemap/` },
+      { label: t({ es: 'Contacto', en: 'Contact', pt: 'Contato' }), href: `/${locale}/contacto/` },
     ],
   },
 ];
 
 const currentYear = new Date().getFullYear();
+
+const mateTagline = t({
+  es: 'Hecho con mate en la costa del Uruguay',
+  en: 'Made with mate on the Uruguay coast',
+  pt: 'Feito com mate na costa do Uruguai',
+});
 ---
 
-<footer role="contentinfo" class="border-t border-border bg-surface">
-  <Container size="xl">
-    <div class="py-12 md:py-16">
-      <!-- Newsletter Section -->
-      <div class="mb-12">
-        <h2 class="mb-6 text-2xl font-bold text-text">{newsletterTitle}</h2>
-        <NewsletterCTAIsland
-          server:defer
-          locale={locale}
-        >
-          <div slot="fallback" class="h-12 w-full max-w-md animate-pulse rounded-lg bg-gray-200" />
-        </NewsletterCTAIsland>
-      </div>
+<footer role="contentinfo" class="relative overflow-hidden">
+  <!-- Skyline silhouette divider -->
+  <div class="relative h-16 bg-bg sm:h-24" aria-hidden="true">
+    <svg class="absolute bottom-0 left-0 w-full text-primary-900" viewBox="0 0 1440 80" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Simplified skyline of Concepcion del Uruguay -->
+      <path d="M0,80 L0,60 L60,60 L60,40 L80,40 L80,30 L100,30 L100,40 L120,40 L120,55 L180,55 L180,45 L200,45 L200,35 L210,25 L220,35 L220,45 L260,45 L260,50 L320,50 L320,40 L340,40 L340,20 L345,15 L350,20 L350,40 L370,40 L370,50 L440,50 L440,55 L520,55 L520,45 L540,45 L540,30 L550,25 L560,30 L560,45 L580,45 L580,55 L680,55 L680,50 L700,50 L700,35 L720,35 L720,25 L730,20 L740,25 L740,35 L760,35 L760,50 L840,50 L840,55 L920,55 L920,50 L940,50 L940,35 L950,30 L960,35 L960,50 L1000,50 L1000,55 L1100,55 L1100,45 L1120,45 L1120,30 L1140,30 L1140,40 L1160,40 L1160,55 L1260,55 L1260,50 L1300,50 L1300,55 L1380,55 L1380,60 L1440,60 L1440,80 Z" fill="currentColor"/>
+    </svg>
+  </div>
 
-      <!-- Link columns -->
-      <div class="grid grid-cols-2 gap-8 md:grid-cols-3 lg:grid-cols-5">
-        <!-- Brand column -->
-        <div class="col-span-2 md:col-span-1">
-          <a href={`/${locale}/`} class="font-serif text-xl font-bold text-primary no-underline">
-            Hospeda
-          </a>
-          <p class="mt-3 text-sm text-text-tertiary">
-            {t({ es: 'Descubre alojamientos en el Litoral argentino.', en: 'Discover accommodations in the Argentine Litoral.', pt: 'Descubra hospedagens no Litoral argentino.' })}
+  <!-- Main footer content -->
+  <div class="bg-gradient-to-b from-primary-900 to-[#0F1A2E]">
+    <Container size="xl">
+      <div class="py-12 md:py-16">
+        <!-- 4-column grid -->
+        <div class="grid grid-cols-2 gap-8 md:grid-cols-4">
+          <!-- Brand column -->
+          <div class="col-span-2 md:col-span-1">
+            <a href={`/${locale}/`} class="font-serif text-xl font-bold text-white no-underline hover:text-primary-200">
+              Hospeda
+            </a>
+            <p class="mt-3 text-sm text-primary-200/70">
+              {t({ es: 'Descubre alojamientos en la costa del Rio Uruguay.', en: 'Discover accommodations on the Uruguay River coast.', pt: 'Descubra hospedagens na costa do Rio Uruguai.' })}
+            </p>
+            <!-- Mate tagline -->
+            <p class="mt-4 font-accent text-sm text-primary-300/60">
+              {mateTagline}
+            </p>
+          </div>
+
+          <!-- Link groups -->
+          {linkGroups.map((group) => (
+            <div>
+              <h3 class="text-sm font-semibold uppercase tracking-wider text-white/90">
+                {group.title}
+              </h3>
+              <ul class="mt-4 space-y-3">
+                {group.links.map((link) => (
+                  <li>
+                    <a
+                      href={link.href}
+                      class="text-sm text-primary-200/60 transition-colors hover:text-white"
+                    >
+                      {link.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+
+        <!-- Social links -->
+        <div class="mt-12 border-t border-white/10 pt-8">
+          <div class="mb-8 flex justify-center gap-6">
+            <a
+              href="https://instagram.com/hospeda"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-primary-200/60 transition-all hover:scale-110 hover:text-white"
+              aria-label="Instagram"
+            >
+              <InstagramIcon size={24} aria-hidden="true" />
+            </a>
+            <a
+              href="https://facebook.com/hospeda"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-primary-200/60 transition-all hover:scale-110 hover:text-white"
+              aria-label="Facebook"
+            >
+              <FacebookIcon size={24} aria-hidden="true" />
+            </a>
+            <a
+              href="https://wa.me/5493442000000"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-primary-200/60 transition-all hover:scale-110 hover:text-white"
+              aria-label="WhatsApp"
+            >
+              <WhatsappIcon size={24} aria-hidden="true" />
+            </a>
+          </div>
+        </div>
+
+        <!-- Copyright bar -->
+        <div class="border-t border-white/10 pt-8">
+          <p class="text-center text-sm text-primary-200/40">
+            &copy; {currentYear} Hospeda. {t({ es: 'Todos los derechos reservados.', en: 'All rights reserved.', pt: 'Todos os direitos reservados.' })}
           </p>
         </div>
-
-        <!-- Link groups -->
-        {linkGroups.map((group) => (
-          <div>
-            <h3 class="text-sm font-semibold uppercase tracking-wider text-text">
-              {group.title}
-            </h3>
-            <ul class="mt-4 space-y-3">
-              {group.links.map((link) => (
-                <li>
-                  <a
-                    href={link.href}
-                    class="text-sm text-text-tertiary transition-colors hover:text-primary"
-                  >
-                    {link.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
       </div>
-
-      <!-- Social Media Links -->
-      <div class="mt-12 border-t border-border pt-8">
-        <div class="flex justify-center gap-6 mb-8">
-          <!-- Instagram -->
-          <a
-            href="https://instagram.com/hospeda"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="text-text-tertiary transition-colors hover:text-primary"
-            aria-label="Instagram"
-          >
-            <InstagramIcon size={24} aria-hidden="true" />
-          </a>
-
-          <!-- Facebook -->
-          <a
-            href="https://facebook.com/hospeda"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="text-text-tertiary transition-colors hover:text-primary"
-            aria-label="Facebook"
-          >
-            <FacebookIcon size={24} aria-hidden="true" />
-          </a>
-
-          <!-- WhatsApp -->
-          <a
-            href="https://wa.me/5493442000000"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="text-text-tertiary transition-colors hover:text-primary"
-            aria-label="WhatsApp"
-          >
-            <WhatsappIcon size={24} aria-hidden="true" />
-          </a>
-        </div>
-      </div>
-
-      <!-- Copyright -->
-      <div class="border-t border-border pt-8">
-        <p class="text-center text-sm text-text-tertiary">
-          &copy; {currentYear} Hospeda. {t({ es: 'Todos los derechos reservados.', en: 'All rights reserved.', pt: 'Todos os direitos reservados.' })}
-        </p>
-      </div>
-    </div>
-  </Container>
+    </Container>
+  </div>
 </footer>
