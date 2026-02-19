@@ -51,13 +51,20 @@ const skipToContentText: Record<string, string> = {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="preload"
+      as="font"
+      type="font/woff2"
+      href="https://fonts.gstatic.com/s/caveat/v18/WnznHAc5bAfYB2QRah7pcpNvOx-pjfJ9SIKjYBxPigs.woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
       as="style"
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Playfair+Display:wght@600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Inter:wght@400;600;700&family=Playfair+Display:wght@600;700&display=swap"
       onload="this.onload=null;this.rel='stylesheet'"
     />
     <noscript>
       <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Playfair+Display:wght@600;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Inter:wght@400;600;700&family=Playfair+Display:wght@600;700&display=swap"
         rel="stylesheet"
       />
     </noscript>
@@ -124,5 +131,38 @@ const skipToContentText: Record<string, string> = {
     </main>
 
     <Footer locale={locale} />
+
+    <!-- Scroll reveal animation observer (runs on every page) -->
+    <script>
+      function initScrollReveal(): void {
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const elements = document.querySelectorAll('[data-scroll-reveal]');
+
+        if (prefersReducedMotion) {
+          elements.forEach((el) => el.classList.add('scroll-visible'));
+          return;
+        }
+
+        const observer = new IntersectionObserver(
+          (entries) => {
+            for (const entry of entries) {
+              if (entry.isIntersecting) {
+                const el = entry.target as HTMLElement;
+                const delay = el.style.getPropertyValue('--stagger-delay') || '0ms';
+                el.style.transitionDelay = delay;
+                el.classList.add('scroll-visible');
+                observer.unobserve(el);
+              }
+            }
+          },
+          { threshold: 0.1 }
+        );
+
+        elements.forEach((el) => observer.observe(el));
+      }
+
+      initScrollReveal();
+      document.addEventListener('astro:page-load', initScrollReveal);
+    </script>
   </body>
 </html>

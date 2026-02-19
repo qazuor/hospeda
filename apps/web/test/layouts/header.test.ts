@@ -91,7 +91,7 @@ describe('Header.astro', () => {
 
     describe('Styling', () => {
         it('should have white background', () => {
-            expect(content).toContain('bg-surface');
+            expect(content).toContain('bg-header-bg');
         });
 
         it('should have bottom border', () => {

@@ -68,7 +68,7 @@ export function ThemeToggle({ initialTheme }: ThemeToggleProps): JSX.Element {
             type="button"
             onClick={toggleTheme}
             aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
-            className="rounded p-2 text-text-secondary transition-colors hover:text-text"
+            className="rounded p-2 text-text-secondary transition-colors hover:text-text focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
         >
             {isDark ? (
                 <SunIcon

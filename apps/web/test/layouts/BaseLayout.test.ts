@@ -100,6 +100,10 @@ describe('BaseLayout.astro', () => {
             expect(layoutContent).toContain('Playfair+Display');
         });
 
+        it('should load Caveat font', () => {
+            expect(layoutContent).toContain('Caveat');
+        });
+
         it('should use display=swap', () => {
             expect(layoutContent).toContain('display=swap');
         });
@@ -107,6 +111,11 @@ describe('BaseLayout.astro', () => {
         it('should have noscript fallback for font loading', () => {
             expect(layoutContent).toContain('<noscript>');
             expect(layoutContent).toContain('rel="stylesheet"');
+        });
+
+        it('should preload Caveat font file', () => {
+            expect(layoutContent).toContain('as="font"');
+            expect(layoutContent).toContain('crossorigin');
         });
     });
 

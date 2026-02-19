@@ -28,7 +28,7 @@ export function MobileMenuWrapper({
         <>
             <button
                 type="button"
-                className="inline-flex items-center justify-center rounded-md p-2 text-text-secondary hover:bg-bg hover:text-text md:hidden"
+                className="inline-flex items-center justify-center rounded-md p-2 text-text-secondary hover:bg-bg hover:text-text focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 md:hidden"
                 aria-label="Open menu"
                 onClick={() => setIsOpen(true)}
             >
