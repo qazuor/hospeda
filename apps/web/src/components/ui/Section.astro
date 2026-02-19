@@ -13,7 +13,7 @@ interface Props {
 const { title, subtitle, class: className, id } = Astro.props;
 ---
 
-<section id={id} class:list={['py-12 md:py-16', className]}>
+<section id={id} class:list={['py-24', className]}>
   {(title || subtitle) && (
     <div class="mb-8 text-center">
       {title && <h2 class="text-3xl font-bold md:text-4xl">{title}</h2>}

@@ -7,8 +7,8 @@ const content = readFileSync(componentPath, 'utf8');
 
 describe('Container.astro', () => {
     describe('Props', () => {
-        it('should accept size prop with union type', () => {
-            expect(content).toContain("size?: 'sm' | 'md' | 'lg' | 'xl'");
+        it('should accept size prop with union type including site', () => {
+            expect(content).toContain("size?: 'sm' | 'md' | 'lg' | 'xl' | 'site'");
         });
 
         it('should accept class prop', () => {
@@ -35,6 +35,10 @@ describe('Container.astro', () => {
 
         it('should map xl to max-w-7xl', () => {
             expect(content).toContain('max-w-7xl');
+        });
+
+        it('should map site to max-w-site', () => {
+            expect(content).toContain('max-w-site');
         });
     });
 

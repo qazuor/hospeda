@@ -3,10 +3,12 @@
  * Responsive max-width container with horizontal padding.
  * Centers content and constrains width based on size prop.
  */
-interface Props {
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+export interface ContainerProps {
+  size?: 'sm' | 'md' | 'lg' | 'xl' | 'site';
   class?: string;
 }
+
+interface Props extends ContainerProps {}
 
 const { size = 'lg', class: className } = Astro.props;
 
@@ -15,6 +17,7 @@ const sizeClasses: Record<string, string> = {
   md: 'max-w-5xl',
   lg: 'max-w-6xl',
   xl: 'max-w-7xl',
+  site: 'max-w-site',
 };
 ---
 

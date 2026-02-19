@@ -33,8 +33,8 @@ describe('Section.astro', () => {
             expect(content).toContain('<h2');
         });
 
-        it('should include vertical padding', () => {
-            expect(content).toContain('py-12');
+        it('should include standard vertical padding of py-24', () => {
+            expect(content).toContain('py-24');
         });
 
         it('should include a slot', () => {

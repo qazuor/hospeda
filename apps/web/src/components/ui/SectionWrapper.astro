@@ -1,0 +1,58 @@
+---
+/**
+ * Full-bleed section wrapper with constrained content width.
+ * Manages background variants, vertical padding scale, and optional section overlap.
+ */
+export interface SectionWrapperProps {
+  variant?: 'white' | 'gray' | 'warm' | 'image';
+  backgroundImage?: string;
+  padding?: 'compact' | 'standard' | 'feature' | 'first';
+  overlap?: boolean;
+  id?: string;
+  class?: string;
+}
+
+interface Props extends SectionWrapperProps {}
+
+const {
+  variant = 'white',
+  backgroundImage,
+  padding = 'standard',
+  overlap = false,
+  id,
+  class: className,
+} = Astro.props;
+
+const variantClasses: Record<string, string> = {
+  white: 'bg-surface',
+  gray: 'bg-surface-alt',
+  warm: 'bg-bg-warm',
+  image: 'bg-cover bg-center relative',
+};
+
+const paddingClasses: Record<string, string> = {
+  compact: 'py-12 sm:py-16',
+  standard: 'py-12 sm:py-16 lg:py-24',
+  feature: 'py-16 sm:py-20 lg:py-[120px]',
+  first: 'py-12 sm:py-16 lg:py-20',
+};
+
+const overlapClass = overlap ? '-mt-6' : '';
+
+const imageStyle = variant === 'image' && backgroundImage
+  ? `background-image: url('${backgroundImage}')`
+  : undefined;
+---
+
+<section
+  id={id}
+  class:list={[variantClasses[variant], paddingClasses[padding], overlapClass, className]}
+  style={imageStyle}
+>
+  {variant === 'image' && (
+    <div class="section-overlay absolute inset-0 bg-black/50" aria-hidden="true"></div>
+  )}
+  <div class="relative mx-auto max-w-site px-4 sm:px-6">
+    <slot />
+  </div>
+</section>
