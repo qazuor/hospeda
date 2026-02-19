@@ -1,14 +1,25 @@
 ---
 /**
- * Full-viewport hero section shell with carousel background,
- * gradient overlay, static text content, search bar island, and wave divider.
+ * Immersive fullscreen hero section with image carousel background.
+ * Content centered over a dark overlay on all viewports.
+ * Features text entrance animations, search bar, social proof badge, and wave divider.
+ *
+ * Z-index layering:
+ *   z-0  - carousel images
+ *   z-[1] - dark gradient overlay
+ *   z-10 - text content + search bar
+ *   z-20 - wave divider
+ *   z-30 - carousel dot indicators (must be above everything)
  */
-import { HeroCarousel } from './HeroCarousel.client';
+import { HeroImageCarousel } from './HeroImageCarousel.client';
 import { HeroSearchBar } from '../search/HeroSearchBar.client';
-import WaveDivider from '../ui/WaveDivider.astro';
+import RiverWavesDivider from '../ui/RiverWavesDivider.astro';
 
 export interface HeroSectionProps {
-  slides: Array<{ src: string; alt: string }>;
+  /** Array of hero image URLs for the carousel */
+  heroImages?: readonly string[];
+  /** Single hero image URL (fallback if heroImages not provided) */
+  heroImage?: string;
   accentSubtitle: string;
   headline: string;
   subheadline: string;
@@ -21,68 +32,106 @@ export interface HeroSectionProps {
     loadingText: string;
     searchAriaLabel: string;
   };
-  carouselLabels: {
-    carouselAriaLabel: string;
-    slideNavLegend: string;
-    dotAriaLabel: string;
-    liveRegionText: string;
-  };
   locale: 'es' | 'en' | 'pt';
   apiBaseUrl: string;
   firstSectionFill?: string;
+  /** Auto-advance interval in ms (default: 6000) */
+  carouselInterval?: number;
+  /** Social proof text (e.g. "4500+ guests chose Hospeda") */
+  socialProofText?: string;
 }
 
 interface Props extends HeroSectionProps {}
 
 const {
-  slides,
+  heroImages,
+  heroImage = '/images/hero/rio1.jpg',
   accentSubtitle,
   headline,
   subheadline,
   searchLabels,
-  carouselLabels,
   locale,
   apiBaseUrl,
-  firstSectionFill = '#FFFFFF',
+  firstSectionFill = '#FDFAF5',
+  carouselInterval = 6000,
+  socialProofText,
 } = Astro.props;
+
+const images: readonly string[] = heroImages && heroImages.length > 0
+  ? heroImages
+  : [heroImage];
+const useCarousel = images.length > 1;
 
 const baseAccommodationsPath = `/${locale}/alojamientos`;
 ---
 
-<section class="relative min-h-[max(100vh,600px)] overflow-hidden bg-gray-900">
-  <!-- Carousel background (React island) -->
-  <HeroCarousel client:load slides={slides} labels={carouselLabels} />
-
-  <!-- Gradient overlay -->
-  <div class="absolute inset-0 bg-gradient-to-b from-black/10 via-black/30 to-black/70" aria-hidden="true"></div>
-
-  <!-- Overlay text content (static Astro markup) -->
-  <div class="relative z-20 flex min-h-[max(100vh,600px)] flex-col items-center justify-center px-4 text-center">
-    <p class="mb-4 font-accent text-[length:var(--fs-accent-subtitle)] text-white">
-      {accentSubtitle}
-    </p>
-    <h1 class="mb-4 font-serif text-[length:var(--fs-display-hero)] font-bold text-white">
-      {headline}
-    </h1>
-    <p class="mx-auto mb-8 max-w-2xl text-base text-white/80 sm:text-lg">
-      {subheadline}
-    </p>
-
-    <!-- Search bar (React island) -->
-    <div class="w-full max-w-4xl">
-      <HeroSearchBar
+<section class="hero-section relative overflow-hidden">
+  <!-- Layer 0: Fullscreen background carousel (no z-index to avoid stacking context) -->
+  <div class="absolute inset-0">
+    {useCarousel ? (
+      <HeroImageCarousel
         client:load
-        locale={locale}
-        apiBaseUrl={apiBaseUrl}
-        labels={searchLabels}
-        baseAccommodationsPath={baseAccommodationsPath}
+        images={images}
+        interval={carouselInterval}
+        ariaLabel="Hero image carousel"
+        enableParallax
       />
+    ) : (
+      <img
+        src={images[0]}
+        alt=""
+        class="h-full w-full object-cover"
+        loading="eager"
+        decoding="async"
+      />
+    )}
+  </div>
+
+  <!-- Layer 1: Dark gradient overlay -->
+  <div
+    class="absolute inset-0 z-[1] bg-gradient-to-b from-black/60 via-black/40 to-black/70"
+    aria-hidden="true"
+  />
+
+  <!-- Layer 10: Centered content -->
+  <div class="relative z-10 flex min-h-[max(100svh,600px)] flex-col items-center justify-center px-6 pt-24 pb-40 sm:px-12">
+    <div class="mx-auto max-w-2xl text-center">
+      <p class="hero-animate hero-animate-delay-1 mb-4 inline-block -rotate-2 font-accent text-[length:var(--fs-accent-subtitle)] text-white/90">
+        {accentSubtitle}
+      </p>
+      <h1
+        class="hero-animate hero-animate-delay-2 mb-4 font-serif text-[length:var(--fs-display-hero)] font-bold leading-tight text-white"
+        style="font-variation-settings: var(--fraunces-hero); letter-spacing: -0.04em;"
+      >
+        {headline}
+      </h1>
+      <p class="hero-animate hero-animate-delay-3 mx-auto mb-8 max-w-lg text-base text-white/80 sm:text-lg">
+        {subheadline}
+      </p>
+
+      <div class="hero-animate hero-animate-delay-4 w-full">
+        <HeroSearchBar
+          client:load
+          locale={locale}
+          apiBaseUrl={apiBaseUrl}
+          labels={searchLabels}
+          baseAccommodationsPath={baseAccommodationsPath}
+        />
+      </div>
+
+      {socialProofText && (
+        <div class="hero-animate hero-animate-delay-5 mt-6">
+          <span class="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm text-white/70 backdrop-blur-sm">
+            {socialProofText}
+          </span>
+        </div>
+      )}
     </div>
   </div>
 
-  <!-- Wave divider at bottom -->
-  <WaveDivider
+  <!-- Layer 20: Wave divider at bottom -->
+  <RiverWavesDivider
     fill={firstSectionFill}
-    class="absolute bottom-0 left-0 w-full z-30"
+    class="absolute bottom-0 left-0 z-20 w-full"
   />
 </section>
