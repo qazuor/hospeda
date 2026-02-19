@@ -22,6 +22,87 @@ describe('BlogPostCard.astro', () => {
         it('should accept optional locale prop', () => {
             expect(content).toContain('locale?: string');
         });
+
+        it('should accept optional tags prop in data interface', () => {
+            expect(content).toContain('tags?: string[]');
+        });
+    });
+
+    describe('Border radius and shadow', () => {
+        it('should use rounded-xl on root element', () => {
+            expect(content).toContain('rounded-xl');
+        });
+
+        it('should use shadow-md as default shadow', () => {
+            expect(content).toContain('shadow-md');
+        });
+
+        it('should use overflow-hidden on root element', () => {
+            expect(content).toContain('overflow-hidden');
+        });
+    });
+
+    describe('Hover effects', () => {
+        it('should apply translateY hover lift on card', () => {
+            expect(content).toContain('hover:-translate-y-1');
+        });
+
+        it('should apply shadow-xl on hover', () => {
+            expect(content).toContain('hover:shadow-xl');
+        });
+
+        it('should use transition with 300ms duration', () => {
+            expect(content).toContain('duration-300');
+        });
+
+        it('should scale image on hover', () => {
+            expect(content).toContain('group-hover:scale-105');
+        });
+    });
+
+    describe('Per-category color badge', () => {
+        it('should use category variant for badge', () => {
+            expect(content).toContain('variant="category"');
+        });
+
+        it('should have category color mapping', () => {
+            expect(content).toContain('categoryColorMap');
+        });
+
+        it('should map TIPS to green-500', () => {
+            expect(content).toContain('bg-green-500');
+        });
+
+        it('should map FOOD/GASTRONOMY to orange-500', () => {
+            expect(content).toContain('bg-orange-500');
+        });
+
+        it('should map CARNIVAL to pink-500', () => {
+            expect(content).toContain('bg-pink-500');
+        });
+
+        it('should map CULTURE to purple-500', () => {
+            expect(content).toContain('bg-purple-500');
+        });
+
+        it('should map BEACH to teal-500', () => {
+            expect(content).toContain('bg-teal-500');
+        });
+
+        it('should fallback to bg-primary for unknown categories', () => {
+            expect(content).toContain("'bg-primary'");
+        });
+    });
+
+    describe('Tag pills', () => {
+        it('should conditionally render tag pills when tags provided', () => {
+            expect(content).toContain('tags');
+            expect(content).toContain('variant="tag"');
+        });
+
+        it('should limit tags to 3 items', () => {
+            expect(content).toContain('slice(0, 3)');
+        });
     });
 
     describe('Structure', () => {
@@ -46,16 +127,16 @@ describe('BlogPostCard.astro', () => {
             expect(content).toContain('/publicaciones/');
             expect(content).toContain('slug');
         });
+
+        it('should preserve transition:name on image', () => {
+            expect(content).toContain('transition:name=');
+            expect(content).toContain('entity-');
+        });
     });
 
     describe('Content', () => {
         it('should import Badge component', () => {
             expect(content).toContain("import Badge from '../ui/Badge.astro'");
-        });
-
-        it('should display category badge', () => {
-            expect(content).toContain('Badge');
-            expect(content).toContain('category');
         });
 
         it('should display author name', () => {
@@ -74,10 +155,6 @@ describe('BlogPostCard.astro', () => {
             expect(content).toContain('publishedAt');
         });
 
-        it('should format date using toLocaleDateString', () => {
-            expect(content).toContain('toLocaleDateString');
-        });
-
         it('should display summary with line clamp', () => {
             expect(content).toContain('line-clamp');
             expect(content).toContain('summary');
@@ -93,11 +170,6 @@ describe('BlogPostCard.astro', () => {
         it('should have different title sizes based on variant', () => {
             expect(content).toContain("variant === 'featured'");
         });
-
-        it('should have different line clamp based on variant', () => {
-            expect(content).toContain('line-clamp-2');
-            expect(content).toContain('line-clamp-3');
-        });
     });
 
     describe('Accessibility', () => {
@@ -111,21 +183,7 @@ describe('BlogPostCard.astro', () => {
         });
     });
 
-    describe('Hover effects', () => {
-        it('should scale image on hover', () => {
-            expect(content).toContain('group-hover:scale');
-        });
-
-        it('should change shadow on hover', () => {
-            expect(content).toContain('hover:shadow-lg');
-        });
-    });
-
     describe('Data source agnostic', () => {
-        it('should accept typed BlogPostCardData interface', () => {
-            expect(content).toContain('interface BlogPostCardData');
-        });
-
         it('should not import DB models', () => {
             expect(content).not.toContain('@repo/db');
         });

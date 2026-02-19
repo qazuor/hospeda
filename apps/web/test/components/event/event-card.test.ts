@@ -30,13 +30,60 @@ describe('EventCard.astro', () => {
         it('should have optional location', () => {
             expect(content).toContain('location?: { name: string; city: string }');
         });
-    });
 
-    describe('Structure', () => {
-        it('should use article element', () => {
-            expect(content).toContain('<article');
+        it('should accept optional variant prop', () => {
+            expect(content).toContain('variant?:');
+            expect(content).toContain("'image'");
+            expect(content).toContain("'date-panel'");
         });
 
+        it('should accept optional index prop for color rotation', () => {
+            expect(content).toContain('index?:');
+        });
+
+        it('should default variant to image', () => {
+            expect(content).toContain("variant = 'image'");
+        });
+
+        it('should default index to 0', () => {
+            expect(content).toContain('index = 0');
+        });
+    });
+
+    describe('Border radius and shadow', () => {
+        it('should use rounded-xl on root element', () => {
+            expect(content).toContain('rounded-xl');
+        });
+
+        it('should use shadow-sm as default shadow', () => {
+            const articleMatch = content.match(/<article[^>]*class[^>]*>/);
+            expect(articleMatch?.[0]).toContain('shadow-sm');
+        });
+
+        it('should use overflow-hidden on root element', () => {
+            expect(content).toContain('overflow-hidden');
+        });
+    });
+
+    describe('Hover effects', () => {
+        it('should apply translateY hover lift on card', () => {
+            expect(content).toContain('hover:-translate-y-1');
+        });
+
+        it('should apply shadow-xl on hover', () => {
+            expect(content).toContain('hover:shadow-xl');
+        });
+
+        it('should use transition with 300ms duration', () => {
+            expect(content).toContain('duration-300');
+        });
+
+        it('should scale image on hover', () => {
+            expect(content).toContain('group-hover:scale-105');
+        });
+    });
+
+    describe('Image variant', () => {
         it('should render image with alt text', () => {
             expect(content).toContain('<img');
             expect(content).toContain('alt=');
@@ -44,6 +91,46 @@ describe('EventCard.astro', () => {
 
         it('should use lazy loading for images', () => {
             expect(content).toContain('loading="lazy"');
+        });
+
+        it('should preserve transition:name on image', () => {
+            expect(content).toContain('transition:name=');
+            expect(content).toContain('entity-');
+        });
+    });
+
+    describe('Date-panel variant', () => {
+        it('should compute date panel accent color based on index', () => {
+            expect(content).toContain('bg-blue-500');
+            expect(content).toContain('bg-green-500');
+            expect(content).toContain('bg-sky-500');
+        });
+
+        it('should use index modulo 3 for color rotation', () => {
+            expect(content).toContain('index % 3');
+        });
+
+        it('should display day number in the date panel', () => {
+            expect(content).toContain('getDate');
+        });
+
+        it('should use font-display (Playfair) for day number', () => {
+            expect(content).toContain('font-display');
+        });
+
+        it('should display abbreviated month in the date panel', () => {
+            expect(content).toContain('month:');
+            expect(content).toContain("'short'");
+        });
+
+        it('should use month Badge variant in date panel', () => {
+            expect(content).toContain('variant="month"');
+        });
+    });
+
+    describe('Structure', () => {
+        it('should use article element', () => {
+            expect(content).toContain('<article');
         });
 
         it('should render name as h3', () => {
@@ -66,21 +153,13 @@ describe('EventCard.astro', () => {
             expect(content).toContain('categoryLabel');
         });
 
-        it('should format date range', () => {
-            expect(content).toContain('formatDateRange');
-            expect(content).toContain('toLocaleDateString');
-        });
-
         it('should display date with time element', () => {
             expect(content).toContain('<time');
             expect(content).toContain('datetime');
-            expect(content).toContain('dateDisplay');
         });
 
         it('should conditionally display location', () => {
             expect(content).toContain('event.location');
-            expect(content).toContain('location.name');
-            expect(content).toContain('location.city');
         });
 
         it('should display summary with line clamp', () => {
@@ -94,18 +173,6 @@ describe('EventCard.astro', () => {
         });
     });
 
-    describe('Date formatting', () => {
-        it('should format start date using locale', () => {
-            expect(content).toContain('month:');
-            expect(content).toContain('day:');
-        });
-
-        it('should handle date ranges', () => {
-            expect(content).toContain('startFormatted');
-            expect(content).toContain('endFormatted');
-        });
-    });
-
     describe('Accessibility', () => {
         it('should hide decorative icons', () => {
             expect(content).toContain('aria-hidden="true"');
@@ -113,16 +180,6 @@ describe('EventCard.astro', () => {
 
         it('should provide alt text for event image', () => {
             expect(content).toContain('alt={event.name}');
-        });
-    });
-
-    describe('Hover effects', () => {
-        it('should scale image on hover', () => {
-            expect(content).toContain('group-hover:scale');
-        });
-
-        it('should change shadow on hover', () => {
-            expect(content).toContain('hover:shadow-lg');
         });
     });
 

@@ -1,11 +1,12 @@
 ---
 /**
  * Preview card for accommodation listings.
- * Displays featured image, type badge, name, rating, location, and summary.
+ * Displays featured image, type badge, price badge, name, rating,
+ * location, summary, and optional amenity icons row.
  * Data-source agnostic - receives typed props, not DB entities.
  */
 import Badge from '../ui/Badge.astro';
-import { FavoriteIcon } from '@repo/icons';
+import { FavoriteIcon, WifiIcon, PoolIcon, ParkingIcon, AirConditioningIcon, KitchenIcon, PetAllowedIcon } from '@repo/icons';
 
 interface AccommodationCardData {
   slug: string;
@@ -20,6 +21,12 @@ interface AccommodationCardData {
     state: string;
   };
   isFeatured: boolean;
+  price?: {
+    amount: number;
+    currency: string;
+    period: string;
+  };
+  amenities?: string[];
 }
 
 interface Props {
@@ -47,9 +54,28 @@ const typeLabels: Record<string, string> = {
   BOUTIQUE: 'Boutique',
 };
 const typeLabel = typeLabels[accommodation.type] ?? accommodation.type;
+
+/** Format price for display */
+const formattedPrice = accommodation.price
+  ? `${accommodation.price.currency}${accommodation.price.amount.toLocaleString('es-AR')}/${accommodation.price.period}`
+  : undefined;
+
+/** Amenity configuration: maps amenity keys to icon components and labels */
+const amenityConfig: Record<string, { icon: typeof WifiIcon; label: string }> = {
+  wifi: { icon: WifiIcon, label: 'Wi-Fi' },
+  pool: { icon: PoolIcon, label: 'Piscina' },
+  parking: { icon: ParkingIcon, label: 'Parking' },
+  ac: { icon: AirConditioningIcon, label: 'A/C' },
+  kitchen: { icon: KitchenIcon, label: 'Cocina' },
+  pets: { icon: PetAllowedIcon, label: 'Mascotas' },
+};
+
+const allAmenities = accommodation.amenities ?? [];
+const displayAmenities = allAmenities.slice(0, 3);
+const extraAmenityCount = allAmenities.length - displayAmenities.length;
 ---
 
-<article class="group overflow-hidden rounded-lg bg-surface shadow-md transition-shadow hover:shadow-lg">
+<article class="group overflow-hidden rounded-xl border border-border bg-surface shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
   <!-- Image container -->
   <a href={detailUrl} class="relative block aspect-[4/3] overflow-hidden">
     <img
@@ -61,8 +87,14 @@ const typeLabel = typeLabels[accommodation.type] ?? accommodation.type;
     />
     <!-- Type badge -->
     <div class="absolute left-3 top-3">
-      <Badge label={typeLabel} variant="primary" />
+      <Badge label={typeLabel} variant="type" />
     </div>
+    <!-- Price badge -->
+    {formattedPrice && (
+      <div class="absolute bottom-3 right-3">
+        <Badge label={formattedPrice} variant="price" />
+      </div>
+    )}
     <!-- Favorite button placeholder -->
     {showFavorite && (
       <div class="absolute right-3 top-3" data-slot="favorite-button">
@@ -79,7 +111,7 @@ const typeLabel = typeLabels[accommodation.type] ?? accommodation.type;
 
   <!-- Content -->
   <div class="p-4">
-    <h3 class="text-lg font-semibold">
+    <h3 class="text-lg font-semibold line-clamp-2" title={accommodation.name}>
       <a href={detailUrl} class="text-text no-underline hover:text-primary">
         {accommodation.name}
       </a>
@@ -106,5 +138,25 @@ const typeLabel = typeLabels[accommodation.type] ?? accommodation.type;
     <p class="mt-2 line-clamp-2 text-sm text-text-secondary">
       {accommodation.summary}
     </p>
+
+    <!-- Amenity icons row -->
+    {displayAmenities.length > 0 && (
+      <div class="mt-3 flex items-center gap-3">
+        {displayAmenities.map((key) => {
+          const config = amenityConfig[key];
+          if (!config) return null;
+          const AmenityIcon = config.icon;
+          return (
+            <div class="flex items-center gap-1 text-sm text-text-secondary">
+              <AmenityIcon size={16} aria-hidden="true" />
+              <span>{config.label}</span>
+            </div>
+          );
+        })}
+        {extraAmenityCount > 0 && (
+          <span class="text-xs text-text-tertiary">+{extraAmenityCount}</span>
+        )}
+      </div>
+    )}
   </div>
 </article>

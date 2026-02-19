@@ -1,7 +1,8 @@
 ---
 /**
  * Preview card for event listings.
- * Displays featured image, category badge, name, dates, location, and summary.
+ * Displays featured image or date-panel variant, category badge,
+ * name, dates, location, and summary.
  * Data-source agnostic - receives typed props, not DB entities.
  */
 import Badge from '../ui/Badge.astro';
@@ -20,21 +21,25 @@ interface EventCardData {
 
 interface Props {
   event: EventCardData;
+  /** Layout variant: 'image' (default) or 'date-panel' with colored left column */
+  variant?: 'image' | 'date-panel';
+  /** Position in list, used for rotating date panel accent color */
+  index?: number;
   /** Whether to show the favorite/bookmark button on the card */
   showFavorite?: boolean;
   locale?: string;
 }
 
-const { event, showFavorite = false, locale = 'es' } = Astro.props;
+const { event, variant = 'image', index = 0, showFavorite = false, locale = 'es' } = Astro.props;
 const detailUrl = `/${locale}/eventos/${event.slug}/`;
 
 /**
  * Format date range for display.
  * Returns formatted start date and end date (if different).
  */
-const formatDateRange = (start: string, end: string | undefined, locale: string): string => {
+const formatDateRange = (start: string, end: string | undefined, currentLocale: string): string => {
   const startDate = new Date(start);
-  const startFormatted = startDate.toLocaleDateString(locale, {
+  const startFormatted = startDate.toLocaleDateString(currentLocale, {
     month: 'short',
     day: 'numeric',
   });
@@ -44,12 +49,11 @@ const formatDateRange = (start: string, end: string | undefined, locale: string)
   }
 
   const endDate = new Date(end);
-  const endFormatted = endDate.toLocaleDateString(locale, {
+  const endFormatted = endDate.toLocaleDateString(currentLocale, {
     month: 'short',
     day: 'numeric',
   });
 
-  // If same date, return only start date
   if (startDate.toDateString() === endDate.toDateString()) {
     return startFormatted;
   }
@@ -73,74 +77,115 @@ const categoryLabels: Record<string, string> = {
   OTHER: 'Otro',
 };
 const categoryLabel = categoryLabels[event.category] ?? event.category;
+
+/** Date panel accent colors: rotate based on index % 3 */
+const panelColors = ['bg-blue-500', 'bg-green-500', 'bg-sky-500'] as const;
+const panelColor = panelColors[index % 3];
+
+/** Extract day and abbreviated month for date-panel variant */
+const startDate = new Date(event.date.start);
+const dayNumber = startDate.getDate();
+const monthAbbrev = startDate.toLocaleDateString(locale, { month: 'short' });
+
+const isDatePanel = variant === 'date-panel';
 ---
 
-<article class="group relative overflow-hidden rounded-lg bg-surface shadow-md transition-shadow hover:shadow-lg">
-  <!-- Image container -->
-  <a href={detailUrl} class="relative block aspect-[4/3] overflow-hidden">
-    <img
-      src={event.featuredImage}
-      alt={event.name}
-      class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-      loading="lazy"
-      transition:name={`entity-${event.slug}`}
-    />
-    <!-- Category badge -->
-    <div class="absolute left-3 top-3">
-      <Badge label={categoryLabel} variant="primary" />
-    </div>
-    <!-- Featured badge -->
-    {event.isFeatured && (
-      <div class="absolute right-3 top-3">
-        <span class="rounded-full bg-warning/90 px-2.5 py-0.5 text-xs font-medium text-text backdrop-blur-sm">
-          Destacado
+<article class="group overflow-hidden rounded-xl border border-border bg-surface shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+  {isDatePanel ? (
+    <!-- Date-panel layout: stacked on mobile, row on desktop -->
+    <a href={detailUrl} class="flex flex-col lg:flex-row">
+      <!-- Date panel -->
+      <div class:list={['flex w-full flex-shrink-0 flex-row items-center justify-center gap-2 py-3 lg:w-20 lg:flex-col lg:gap-0 lg:py-0', panelColor]}>
+        <span class="font-display text-[32px] font-bold text-white">
+          <time datetime={event.date.start}>{dayNumber}</time>
         </span>
+        <Badge label={monthAbbrev} variant="month" color={panelColor} />
       </div>
-    )}
-  </a>
-
-  <!-- Favorite button -->
-  {showFavorite && (
-    <div class="absolute right-3 bottom-3 z-10">
-      <button
-        type="button"
-        class="rounded-full bg-surface/80 p-1.5 shadow-sm backdrop-blur-sm transition-colors hover:bg-surface"
-        aria-label={`Agregar ${event.name} a favoritos`}
-      >
-        <FavoriteIcon size={20} className="text-text-secondary" aria-hidden="true" />
-      </button>
-    </div>
-  )}
-
-  <!-- Content -->
-  <div class="p-4">
-    <h3 class="text-lg font-semibold">
-      <a href={detailUrl} class="text-text no-underline hover:text-primary">
-        {event.name}
+      <!-- Content -->
+      <div class="flex-1 p-4">
+        <h3 class="text-lg font-semibold text-text hover:text-primary line-clamp-2" title={event.name}>
+          {event.name}
+        </h3>
+        {event.location && (
+          <div class="mt-1 flex items-center gap-1.5 text-sm text-text-tertiary">
+            <LocationIcon size={16} aria-hidden="true" />
+            <span>{event.location.name}, {event.location.city}</span>
+          </div>
+        )}
+        <p class="mt-2 line-clamp-2 text-sm text-text-secondary">
+          {event.summary}
+        </p>
+      </div>
+    </a>
+  ) : (
+    <!-- Image layout (default) -->
+    <Fragment>
+      <a href={detailUrl} class="relative block aspect-[4/3] overflow-hidden">
+        <img
+          src={event.featuredImage}
+          alt={event.name}
+          class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          loading="lazy"
+          transition:name={`entity-${event.slug}`}
+        />
+        <!-- Category badge -->
+        <div class="absolute left-3 top-3">
+          <Badge label={categoryLabel} variant="primary" />
+        </div>
+        <!-- Featured badge -->
+        {event.isFeatured && (
+          <div class="absolute right-3 top-3">
+            <span class="rounded-full bg-warning/90 px-2.5 py-0.5 text-xs font-medium text-text backdrop-blur-sm">
+              Destacado
+            </span>
+          </div>
+        )}
       </a>
-    </h3>
 
-    <!-- Date -->
-    <div class="mt-1.5 flex items-center gap-1.5 text-sm text-text-tertiary">
-      <CalendarIcon size={16} aria-hidden="true" />
-      <time datetime={event.date.start}>
-        {dateDisplay}
-      </time>
-    </div>
+      <!-- Favorite button -->
+      {showFavorite && (
+        <div class="absolute right-3 bottom-3 z-10">
+          <button
+            type="button"
+            class="rounded-full bg-surface/80 p-1.5 shadow-sm backdrop-blur-sm transition-colors hover:bg-surface"
+            aria-label={`Agregar ${event.name} a favoritos`}
+          >
+            <FavoriteIcon size={20} className="text-text-secondary" aria-hidden="true" />
+          </button>
+        </div>
+      )}
 
-    <!-- Location -->
-    {event.location && (
-      <div class="mt-1 flex items-center gap-1.5 text-sm text-text-tertiary">
-        <LocationIcon size={16} aria-hidden="true" />
-        <span>
-          {event.location.name}, {event.location.city}
-        </span>
+      <!-- Content -->
+      <div class="p-4">
+        <h3 class="text-lg font-semibold line-clamp-2" title={event.name}>
+          <a href={detailUrl} class="text-text no-underline hover:text-primary">
+            {event.name}
+          </a>
+        </h3>
+
+        <!-- Date -->
+        <div class="mt-1.5 flex items-center gap-1.5 text-sm text-text-tertiary">
+          <CalendarIcon size={16} aria-hidden="true" />
+          <time datetime={event.date.start}>
+            {dateDisplay}
+          </time>
+        </div>
+
+        <!-- Location -->
+        {event.location && (
+          <div class="mt-1 flex items-center gap-1.5 text-sm text-text-tertiary">
+            <LocationIcon size={16} aria-hidden="true" />
+            <span>
+              {event.location.name}, {event.location.city}
+            </span>
+          </div>
+        )}
+
+        <!-- Summary -->
+        <p class="mt-2 line-clamp-2 text-sm text-text-secondary">
+          {event.summary}
+        </p>
       </div>
-    )}
-
-    <!-- Summary -->
-    <p class="mt-2 line-clamp-2 text-sm text-text-secondary">
-      {event.summary}
-    </p>
-  </div>
+    </Fragment>
+  )}
 </article>

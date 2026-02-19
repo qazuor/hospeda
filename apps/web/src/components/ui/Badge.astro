@@ -2,24 +2,49 @@
 /**
  * Small inline badge for categories, tags, and status labels.
  * Provides visual distinction through color variants.
+ *
+ * Variants:
+ * - `primary`: default, translucent primary background
+ * - `secondary`: translucent secondary background
+ * - `outline`: bordered style with secondary text
+ * - `type`: white pill (90% opacity) for accommodation type overlay
+ * - `price`: accent-primary background, white bold text
+ * - `rating`: amber background, white bold text
+ * - `month`: dynamic background via `color` prop, white bold text
+ * - `tag`: gray pill for content tags (caption size)
+ * - `category`: dynamic background via `colorClass` prop, white text
  */
 interface Props {
   label: string;
-  variant?: 'primary' | 'secondary' | 'outline';
+  variant?: 'primary' | 'secondary' | 'outline' | 'type' | 'price' | 'rating' | 'month' | 'tag' | 'category';
+  color?: string;
+  colorClass?: string;
   class?: string;
 }
 
-const { label, variant = 'primary', class: className } = Astro.props;
+const { label, variant = 'primary', color, colorClass, class: className } = Astro.props;
 
 const variantClasses: Record<string, string> = {
   primary: 'bg-primary/10 text-primary',
   secondary: 'bg-secondary/10 text-secondary-dark',
   outline: 'border border-border text-text-secondary',
+  type: 'bg-white/90 text-gray-800 rounded-full',
+  price: 'bg-primary text-white font-bold rounded-full',
+  rating: 'bg-amber-400 text-white font-bold rounded',
+  month: 'text-white rounded-sm text-lg font-bold',
+  tag: 'bg-gray-100 text-gray-600 rounded-full text-xs font-medium',
+  category: 'text-white rounded-full font-semibold',
 };
 
 const baseClasses = 'inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded-full';
+
+/**
+ * For month variant, the `color` prop provides a dynamic Tailwind bg class (e.g., 'bg-blue-500').
+ * For category variant, the `colorClass` prop provides a dynamic Tailwind bg class (e.g., 'bg-green-500').
+ */
+const dynamicColor = variant === 'month' ? color : variant === 'category' ? colorClass : undefined;
 ---
 
-<span class:list={[baseClasses, variantClasses[variant], className]}>
+<span class:list={[baseClasses, variantClasses[variant], dynamicColor, className]}>
   {label}
 </span>

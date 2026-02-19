@@ -27,6 +27,67 @@ describe('DestinationCard.astro', () => {
         });
     });
 
+    describe('Border radius and shadow', () => {
+        it('should use rounded-xl on root element', () => {
+            expect(content).toContain('rounded-xl');
+        });
+
+        it('should use shadow-lg as default shadow', () => {
+            const articleMatch = content.match(/<article[^>]*class[^>]*>/);
+            expect(articleMatch?.[0]).toContain('shadow-lg');
+        });
+
+        it('should use overflow-hidden on root element', () => {
+            expect(content).toContain('overflow-hidden');
+        });
+    });
+
+    describe('Hover effects', () => {
+        it('should apply translateY hover lift on card', () => {
+            expect(content).toContain('hover:-translate-y-1');
+        });
+
+        it('should apply shadow-xl on hover', () => {
+            expect(content).toContain('hover:shadow-xl');
+        });
+
+        it('should use transition with 300ms duration', () => {
+            expect(content).toContain('duration-300');
+        });
+
+        it('should scale image on hover', () => {
+            expect(content).toContain('group-hover:scale-105');
+        });
+    });
+
+    describe('Full-bleed image layout', () => {
+        it('should render gradient overlay on image', () => {
+            expect(content).toContain('from-black/70');
+        });
+
+        it('should use absolute positioning for gradient overlay', () => {
+            expect(content).toContain('inset-0');
+            expect(content).toContain('bg-gradient-to-t');
+        });
+
+        it('should overlay name text on the image', () => {
+            // Name should be inside the image container, not a separate content div
+            expect(content).toContain('text-white');
+            expect(content).toContain('font-bold');
+        });
+
+        it('should overlay accommodation count on image with reduced opacity', () => {
+            expect(content).toContain('text-white/80');
+        });
+
+        it('should NOT have a separate content div below image', () => {
+            // The old <div class="p-4"> content block should be removed
+            // Name and count are now overlaid on the image
+            const contentDivCount = (content.match(/<div class="p-4">/g) || []).length;
+            expect(contentDivCount).toBe(0);
+        });
+    });
+
     describe('Structure', () => {
         it('should use article element', () => {
             expect(content).toContain('<article');
@@ -41,8 +102,9 @@ describe('DestinationCard.astro', () => {
             expect(content).toContain('loading="lazy"');
         });
 
-        it('should render name as h3', () => {
-            expect(content).toContain('<h3');
+        it('should preserve transition:name on image', () => {
+            expect(content).toContain('transition:name=');
+            expect(content).toContain('entity-');
         });
 
         it('should link to detail page via destinos route', () => {
@@ -54,11 +116,6 @@ describe('DestinationCard.astro', () => {
         it('should display accommodations count', () => {
             expect(content).toContain('accommodationsCount');
             expect(content).toContain('alojamiento');
-        });
-
-        it('should display summary with line clamp', () => {
-            expect(content).toContain('line-clamp-2');
-            expect(content).toContain('summary');
         });
 
         it('should show featured badge when applicable', () => {
@@ -74,13 +131,9 @@ describe('DestinationCard.astro', () => {
         });
     });
 
-    describe('Hover effects', () => {
-        it('should scale image on hover', () => {
-            expect(content).toContain('group-hover:scale');
-        });
-
-        it('should change shadow on hover', () => {
-            expect(content).toContain('hover:shadow-lg');
+    describe('Accessibility', () => {
+        it('should hide decorative icons', () => {
+            expect(content).toContain('aria-hidden="true"');
         });
     });
 });

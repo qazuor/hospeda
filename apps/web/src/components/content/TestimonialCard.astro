@@ -1,20 +1,32 @@
 ---
 /**
- * Testimonial card displaying a quote with author information and optional avatar.
- * Features a quote mark decoration, italic text, and accessible semantic markup.
+ * Testimonial card displaying a quote with author information, optional avatar,
+ * star rating, and location. Features quote mark decoration, italic text,
+ * hover lift effect, and accessible semantic markup.
  */
 interface Props {
   quote: string;
   author: string;
   image?: string;
+  /** @deprecated Use `location` instead. Kept for backward compatibility. */
   role?: string;
+  /** Location label displayed below author name (takes priority over `role`) */
+  location?: string;
+  /** Star rating from 1 to 5 */
+  rating?: number;
   class?: string;
 }
 
-const { quote, author, image, role, class: className } = Astro.props;
+const { quote, author, image, role, location, rating, class: className } = Astro.props;
+
+/** Location takes priority over role for display */
+const displaySubtitle = location ?? role;
+
+/** Clamp rating between 1 and 5 */
+const safeRating = rating ? Math.min(5, Math.max(1, Math.round(rating))) : undefined;
 ---
 
-<article class:list={['rounded-lg border border-border bg-surface p-6 shadow-sm', className]}>
+<article class:list={['overflow-hidden rounded-xl border border-border bg-surface p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl', className]}>
   <!-- Quote mark decoration -->
   <div class="mb-4 text-5xl leading-none text-primary/20" aria-hidden="true">
     &ldquo;
@@ -35,19 +47,28 @@ const { quote, author, image, role, class: className } = Astro.props;
           <img
             src={image}
             alt={`${author} avatar`}
-            class="h-12 w-12 rounded-full object-cover"
+            class="h-20 w-20 rounded-full object-cover ring-2 ring-white"
             loading="lazy"
-            width="48"
-            height="48"
+            width="80"
+            height="80"
           />
         )}
         <div>
-          <div class="font-semibold text-text" style="color: var(--color-text);">
+          <div class="text-lg font-semibold text-text" style="color: var(--color-text);">
             {author}
           </div>
-          {role && (
+          {safeRating && (
+            <div class="mt-0.5 flex items-center gap-0.5" aria-label={`${safeRating} de 5 estrellas`}>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <span class={i < safeRating ? 'text-amber-400' : 'text-amber-400/30'} aria-hidden="true">
+                  {i < safeRating ? '★' : '☆'}
+                </span>
+              ))}
+            </div>
+          )}
+          {displaySubtitle && (
             <div class="text-sm text-text-tertiary" style="color: var(--color-text-tertiary);">
-              {role}
+              {displaySubtitle}
             </div>
           )}
         </div>
