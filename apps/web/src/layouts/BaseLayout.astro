@@ -1,6 +1,7 @@
 ---
 import { ViewTransitions } from 'astro:transitions';
 import Header from './Header.astro';
+import StickyNav from './StickyNav.astro';
 import Footer from './Footer.astro';
 
 /**
@@ -14,9 +15,11 @@ interface Props {
   image?: string;
   noindex?: boolean;
   locale?: string;
+  /** Enable hero mode: header overlays hero, sticky nav appears on scroll */
+  isHero?: boolean;
 }
 
-const { title, description, image, noindex = false, locale = 'es' } = Astro.props;
+const { title, description, image, noindex = false, locale = 'es', isHero = false } = Astro.props;
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
 const pageTitle = `${title} | Hospeda`;
 const ogLocale = locale === 'es' ? 'es_AR' : locale === 'pt' ? 'pt_BR' : 'en_US';
@@ -59,12 +62,12 @@ const skipToContentText: Record<string, string> = {
     <link
       rel="preload"
       as="style"
-      href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Inter:wght@400;600;700&family=Playfair+Display:wght@600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,100..900,0..100,0..1;1,9..144,100..900,0..100,0..1&family=Inter:wght@400;600;700&display=swap"
       onload="this.onload=null;this.rel='stylesheet'"
     />
     <noscript>
       <link
-        href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Inter:wght@400;600;700&family=Playfair+Display:wght@600;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,100..900,0..100,0..1;1,9..144,100..900,0..100,0..1&family=Inter:wght@400;600;700&display=swap"
         rel="stylesheet"
       />
     </noscript>
@@ -81,23 +84,23 @@ const skipToContentText: Record<string, string> = {
     <style>
       @import '../styles/tailwind.css';
 
-      /* Custom view transitions */
+      /* Custom view transitions with subtle scale */
       ::view-transition-old(root) {
-        animation: fade-out 0.3s ease-out;
+        animation: vt-fade-scale-out 0.3s ease-out;
       }
 
       ::view-transition-new(root) {
-        animation: fade-in 0.3s ease-in;
+        animation: vt-fade-scale-in 0.3s ease-in;
       }
 
-      @keyframes fade-out {
-        from { opacity: 1; }
-        to { opacity: 0; }
+      @keyframes vt-fade-scale-out {
+        from { opacity: 1; transform: scale(1); }
+        to { opacity: 0; transform: scale(0.98); }
       }
 
-      @keyframes fade-in {
-        from { opacity: 0; }
-        to { opacity: 1; }
+      @keyframes vt-fade-scale-in {
+        from { opacity: 0; transform: scale(1.02); }
+        to { opacity: 1; transform: scale(1); }
       }
 
       /* Entity card-to-detail morph transition */
@@ -115,7 +118,7 @@ const skipToContentText: Record<string, string> = {
       }
     </style>
   </head>
-  <body>
+  <body style="margin:0;padding:0;">
     <!-- Skip to main content link for accessibility -->
     <a
       href="#main-content"
@@ -124,7 +127,8 @@ const skipToContentText: Record<string, string> = {
       {skipToContentText[locale] || skipToContentText.es}
     </a>
 
-    <Header locale={locale} />
+    <Header locale={locale} isHero={isHero} />
+    {isHero && <StickyNav locale={locale} />}
 
     <main id="main-content">
       <slot />

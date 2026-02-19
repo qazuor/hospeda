@@ -8,8 +8,9 @@ export function getStaticPaths() {
 /**
  * Localized homepage for Hospeda platform.
  * Static shell with Server Islands for dynamic featured content.
- * Hero, search, and section wrappers are pre-rendered.
+ * Hero uses split layout with teal bg + hero image.
  * Featured sections use server:defer with skeleton fallbacks.
+ * Includes new regional visual identity (SPEC-015).
  *
  * Rendering: SSG + Server Islands
  * Route: /[lang]/
@@ -41,27 +42,6 @@ if (!lang || !isValidLocale(lang)) {
 
 const locale = lang as SupportedLocale;
 
-/**
- * Hero slide images with localized alt text.
- */
-const HERO_SLIDES: Record<SupportedLocale, Array<{ src: string; alt: string }>> = {
-	es: [
-		{ src: '/images/hero/slide-01.svg', alt: 'Vista del Rio Uruguay al atardecer' },
-		{ src: '/images/hero/slide-02.svg', alt: 'Parque Nacional El Palmar' },
-		{ src: '/images/hero/slide-03.svg', alt: 'Termas de Entre Rios' },
-	],
-	en: [
-		{ src: '/images/hero/slide-01.svg', alt: 'Uruguay River sunset view' },
-		{ src: '/images/hero/slide-02.svg', alt: 'El Palmar National Park' },
-		{ src: '/images/hero/slide-03.svg', alt: 'Entre Rios hot springs' },
-	],
-	pt: [
-		{ src: '/images/hero/slide-01.svg', alt: 'Vista do Rio Uruguai ao entardecer' },
-		{ src: '/images/hero/slide-02.svg', alt: 'Parque Nacional El Palmar' },
-		{ src: '/images/hero/slide-03.svg', alt: 'Termas de Entre Rios' },
-	],
-};
-
 const texts: Record<SupportedLocale, {
 	heroAccentSubtitle: string;
 	heroHeadline: string;
@@ -73,10 +53,6 @@ const texts: Record<SupportedLocale, {
 	searchCtaLabel: string;
 	searchLoadingText: string;
 	searchAriaLabel: string;
-	carouselAriaLabel: string;
-	carouselSlideNavLegend: string;
-	carouselDotAriaLabel: string;
-	carouselLiveRegionText: string;
 	featuredAccommodations: string;
 	featuredDestinations: string;
 	upcomingEvents: string;
@@ -87,19 +63,15 @@ const texts: Record<SupportedLocale, {
 }> = {
 	es: {
 		heroAccentSubtitle: 'Descubri el Litoral',
-		heroHeadline: 'Descubri el Litoral argentino',
-		heroSubheadline: 'Encontra alojamientos unicos en Concepcion del Uruguay y la region',
+		heroHeadline: 'Tu aventura empieza en la costa del Uruguay',
+		heroSubheadline: 'Encontra alojamientos unicos en Concepcion del Uruguay y la region del Litoral argentino',
 		searchTypePlaceholder: 'Tipo de alojamiento',
-		searchDestinationPlaceholder: 'Destino',
+		searchDestinationPlaceholder: 'Donde queres ir?',
 		searchCheckInPlaceholder: 'Fecha de llegada',
 		searchCheckOutPlaceholder: 'Fecha de salida',
 		searchCtaLabel: 'Buscar',
 		searchLoadingText: 'Cargando...',
 		searchAriaLabel: 'Buscar alojamientos',
-		carouselAriaLabel: 'Carousel de imagenes',
-		carouselSlideNavLegend: 'Navegacion de diapositivas',
-		carouselDotAriaLabel: 'Ir a imagen {current} de {total}',
-		carouselLiveRegionText: 'Imagen {current} de {total}: {alt}',
 		featuredAccommodations: 'Alojamientos destacados',
 		featuredDestinations: 'Destinos populares',
 		upcomingEvents: 'Proximos eventos',
@@ -110,19 +82,15 @@ const texts: Record<SupportedLocale, {
 	},
 	en: {
 		heroAccentSubtitle: 'Discover the Litoral',
-		heroHeadline: 'Discover the Argentine Litoral',
-		heroSubheadline: 'Find unique accommodations in Concepcion del Uruguay and the region',
+		heroHeadline: 'Your adventure starts on the Uruguay coast',
+		heroSubheadline: 'Find unique accommodations in Concepcion del Uruguay and the Argentine Litoral region',
 		searchTypePlaceholder: 'Accommodation type',
-		searchDestinationPlaceholder: 'Destination',
+		searchDestinationPlaceholder: 'Where do you want to go?',
 		searchCheckInPlaceholder: 'Check-in date',
 		searchCheckOutPlaceholder: 'Check-out date',
 		searchCtaLabel: 'Search',
 		searchLoadingText: 'Loading...',
 		searchAriaLabel: 'Search accommodations',
-		carouselAriaLabel: 'Image carousel',
-		carouselSlideNavLegend: 'Slide navigation',
-		carouselDotAriaLabel: 'Go to image {current} of {total}',
-		carouselLiveRegionText: 'Image {current} of {total}: {alt}',
 		featuredAccommodations: 'Featured Accommodations',
 		featuredDestinations: 'Popular Destinations',
 		upcomingEvents: 'Upcoming Events',
@@ -133,19 +101,15 @@ const texts: Record<SupportedLocale, {
 	},
 	pt: {
 		heroAccentSubtitle: 'Descubra o Litoral',
-		heroHeadline: 'Descubra o Litoral argentino',
-		heroSubheadline: 'Encontre acomodacoes unicas em Concepcion del Uruguay e a regiao',
+		heroHeadline: 'Sua aventura comeca na costa do Uruguai',
+		heroSubheadline: 'Encontre acomodacoes unicas em Concepcion del Uruguay e a regiao do Litoral argentino',
 		searchTypePlaceholder: 'Tipo de acomodacao',
-		searchDestinationPlaceholder: 'Destino',
+		searchDestinationPlaceholder: 'Para onde voce quer ir?',
 		searchCheckInPlaceholder: 'Data de chegada',
 		searchCheckOutPlaceholder: 'Data de saida',
 		searchCtaLabel: 'Buscar',
 		searchLoadingText: 'Carregando...',
 		searchAriaLabel: 'Buscar acomodacoes',
-		carouselAriaLabel: 'Carrossel de imagens',
-		carouselSlideNavLegend: 'Navegacao de slides',
-		carouselDotAriaLabel: 'Ir para imagem {current} de {total}',
-		carouselLiveRegionText: 'Imagem {current} de {total}: {alt}',
 		featuredAccommodations: 'Acomodacoes em destaque',
 		featuredDestinations: 'Destinos populares',
 		upcomingEvents: 'Proximos eventos',
@@ -159,7 +123,32 @@ const texts: Record<SupportedLocale, {
 const t = texts[locale];
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 const apiBaseUrl = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3001';
-const heroSlides = HERO_SLIDES[locale];
+
+/**
+ * Hero carousel images showcasing the region.
+ * Images are in /public/images/hero/.
+ */
+/**
+ * Curated hero images (8 best picks from diverse categories).
+ * Covers: rio, playa, isla, carnaval, architectural, fiesta.
+ */
+const heroImages = [
+  '/images/hero/rio1.jpg',
+  '/images/hero/playa1.jpg',
+  '/images/hero/isla1.jpg',
+  '/images/hero/carnaval1.webp',
+  '/images/hero/palacio1.jpg',
+  '/images/hero/fiestaplaya1.webp',
+  '/images/hero/playa3.jpg',
+  '/images/hero/rio3.jpg',
+] as const;
+
+/** Social proof badge text by locale */
+const socialProofTexts: Record<SupportedLocale, string> = {
+  es: '4500+ huespedes eligieron Hospeda',
+  en: '4500+ guests chose Hospeda',
+  pt: '4500+ hospedes escolheram Hospeda',
+};
 
 /**
  * Hardcoded testimonials for the homepage carousel.
@@ -184,7 +173,7 @@ const TESTIMONIALS = [
 	},
 	{
 		id: 'testimonial-3',
-		quote: 'Hospeda nos ayudo a descubrir lugares increibles que no conocíamos. Totalmente recomendado.',
+		quote: 'Hospeda nos ayudo a descubrir lugares increibles que no conociamos. Totalmente recomendado.',
 		author: 'Laura Martinez',
 		image: '/images/testimonials/laura.jpg',
 		location: 'Gualeguaychu',
@@ -193,7 +182,7 @@ const TESTIMONIALS = [
 ];
 ---
 
-<BaseLayout title={t.pageTitle} description={t.pageDescription} locale={locale}>
+<BaseLayout title={t.pageTitle} description={t.pageDescription} locale={locale} isHero>
 	<SEOHead
 		slot="head"
 		title={t.pageTitle}
@@ -201,9 +190,10 @@ const TESTIMONIALS = [
 		canonical={canonicalUrl}
 		locale={locale}
 	/>
-	<!-- Hero Section with integrated carousel and search bar -->
+
+	<!-- 1. Hero Section with split layout + image carousel -->
 	<HeroSection
-		slides={heroSlides}
+		heroImages={heroImages}
 		accentSubtitle={t.heroAccentSubtitle}
 		headline={t.heroHeadline}
 		subheadline={t.heroSubheadline}
@@ -216,18 +206,13 @@ const TESTIMONIALS = [
 			loadingText: t.searchLoadingText,
 			searchAriaLabel: t.searchAriaLabel,
 		}}
-		carouselLabels={{
-			carouselAriaLabel: t.carouselAriaLabel,
-			slideNavLegend: t.carouselSlideNavLegend,
-			dotAriaLabel: t.carouselDotAriaLabel,
-			liveRegionText: t.carouselLiveRegionText,
-		}}
 		locale={locale}
 		apiBaseUrl={apiBaseUrl}
-		firstSectionFill="#F9F4EE"
+		firstSectionFill="#F0E6D6"
+		socialProofText={socialProofTexts[locale]}
 	/>
 
-	<!-- Featured Accommodations (Server Island) -->
+	<!-- 2. Featured Accommodations (Server Island) -->
 	<FeaturedSection
 		title={t.featuredAccommodations}
 		viewAllHref={`/${locale}/alojamientos/`}
@@ -245,24 +230,23 @@ const TESTIMONIALS = [
 		</FeaturedAccommodations>
 	</FeaturedSection>
 
-	<!-- 3. Featured Destinations (Server Island) - warm background -->
+	<!-- 3. Featured Destinations (Server Island) - sand texture background -->
 	<FeaturedSection
 		title={t.featuredDestinations}
 		viewAllHref={`/${locale}/destinos/`}
 		viewAllLabel={t.viewAll}
-		class="bg-bg-warm"
+		class="bg-bg-warm texture-sand"
 	>
 		<FeaturedDestinations server:defer locale={locale}>
-			<div slot="fallback" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+			<div slot="fallback" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
 				<DestinationCardSkeleton />
 				<DestinationCardSkeleton class="hidden sm:block" />
 				<DestinationCardSkeleton class="hidden lg:block" />
-				<DestinationCardSkeleton class="hidden xl:block" />
 			</div>
 		</FeaturedDestinations>
 	</FeaturedSection>
 
-	<!-- 4. Statistics Section (image overlay background) -->
+	<!-- 4. Statistics Section (glassmorphism over river photo) -->
 	<StatisticsSection locale={locale} />
 
 	<!-- 5. Featured Events (Server Island) -->
@@ -279,10 +263,10 @@ const TESTIMONIALS = [
 		</FeaturedEvents>
 	</FeaturedSection>
 
-	<!-- 6. Category Icons Section (warm background) -->
+	<!-- 6. Category Icons Section (warm texture background) -->
 	<CategoryIconsSection locale={locale} />
 
-	<!-- 7. Featured Blog Posts (Server Island) - gray background -->
+	<!-- 7. Featured Blog Posts (Server Island) - alternate background -->
 	<FeaturedSection
 		title={t.latestBlog}
 		viewAllHref={`/${locale}/publicaciones/`}
@@ -298,12 +282,12 @@ const TESTIMONIALS = [
 		</FeaturedPosts>
 	</FeaturedSection>
 
-	<!-- 8. Testimonials Section (warm background) -->
+	<!-- 8. Testimonials Section (postcard style on sand texture) -->
 	<TestimonialsSection locale={locale} testimonials={TESTIMONIALS} />
 
-	<!-- 9. Newsletter Section (image overlay background) -->
+	<!-- 9. Newsletter Section (illustrated river background) -->
 	<NewsletterSection locale={locale} />
 
-	<!-- 10. Owner CTA Section (image overlay background) -->
+	<!-- 10. Owner CTA Section (split layout with illustration) -->
 	<OwnerCTASection locale={locale} />
 </BaseLayout>
