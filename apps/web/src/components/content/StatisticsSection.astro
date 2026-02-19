@@ -1,0 +1,59 @@
+---
+/**
+ * Platform statistics section with background image overlay and animated counters.
+ * Displays key platform metrics (accommodations, destinations, reviews, experience)
+ * in a responsive 4-column grid with count-up animation on viewport entry.
+ */
+import SectionWrapper from '../ui/SectionWrapper.astro';
+import SectionHeader from '../ui/SectionHeader.astro';
+import { CounterAnimation } from './CounterAnimation.client.tsx';
+import { t, type SupportedLocale } from '../../lib/i18n';
+
+interface StatItem {
+  value: number;
+  suffix?: string;
+  prefix?: string;
+  label: string;
+}
+
+interface Props {
+  /** URL for the section background image */
+  backgroundImage?: string;
+  /** Array of stat items to display; defaults to hardcoded platform stats */
+  stats?: StatItem[];
+  /** Locale for translations */
+  locale?: SupportedLocale;
+}
+
+const { backgroundImage, stats, locale = 'es' } = Astro.props;
+
+/** Default platform statistics */
+const defaultStats: StatItem[] = [
+  { value: 500, suffix: '+', label: t({ locale, namespace: 'home', key: 'statistics.accommodations', fallback: 'Alojamientos' }) },
+  { value: 50, suffix: '+', label: t({ locale, namespace: 'home', key: 'statistics.destinations', fallback: 'Destinos' }) },
+  { value: 1000, suffix: '+', label: t({ locale, namespace: 'home', key: 'statistics.reviews', fallback: 'Resenas' }) },
+  { value: 10, suffix: '+', label: t({ locale, namespace: 'home', key: 'statistics.experience', fallback: 'Anos de experiencia' }) },
+];
+
+const displayStats = stats ?? defaultStats;
+---
+
+<SectionWrapper variant="image" backgroundImage={backgroundImage} class={!backgroundImage ? 'bg-gray-800' : ''}>
+  <SectionHeader
+    title={t({ locale, namespace: 'home', key: 'statistics.title', fallback: 'Numeros que hablan por si solos' })}
+    accentSubtitle={t({ locale, namespace: 'home', key: 'statistics.accentSubtitle', fallback: 'Nuestra plataforma' })}
+    align="center"
+    class="text-white [&_h2]:text-white [&_p]:text-white/80"
+  />
+  <div class="grid grid-cols-2 gap-8 md:grid-cols-4">
+    {displayStats.map((stat) => (
+      <CounterAnimation
+        client:visible
+        targetValue={stat.value}
+        suffix={stat.suffix}
+        prefix={stat.prefix}
+        label={stat.label}
+      />
+    ))}
+  </div>
+</SectionWrapper>

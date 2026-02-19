@@ -1,0 +1,49 @@
+---
+/**
+ * Testimonials section with carousel on warm beige background.
+ * Conditionally hidden when no testimonials are provided.
+ * Uses TestimonialCarousel React island for interactive carousel behavior.
+ */
+import SectionWrapper from '../ui/SectionWrapper.astro';
+import SectionHeader from '../ui/SectionHeader.astro';
+import { TestimonialCarousel } from './TestimonialCarousel.client.tsx';
+import { t, type SupportedLocale } from '../../lib/i18n';
+
+interface TestimonialItem {
+  id: string;
+  quote: string;
+  author: string;
+  image?: string;
+  location?: string;
+  rating?: number;
+}
+
+interface Props {
+  locale?: SupportedLocale;
+  /** Array of testimonial objects; if empty, section is hidden */
+  testimonials?: TestimonialItem[];
+  /** Auto-advance interval in ms (default: 5000) */
+  autoAdvanceMs?: number;
+}
+
+const { locale = 'es', testimonials = [], autoAdvanceMs = 5000 } = Astro.props;
+
+/** Do not render the section if no testimonials are available */
+const hasTestimonials = testimonials.length > 0;
+---
+
+{hasTestimonials && (
+  <SectionWrapper variant="warm">
+    <SectionHeader
+      title={t({ locale, namespace: 'home', key: 'testimonials.title', fallback: 'Lo que dicen nuestros usuarios' })}
+      accentSubtitle={t({ locale, namespace: 'home', key: 'testimonials.accentSubtitle', fallback: 'Experiencias reales' })}
+      align="center"
+    />
+    <TestimonialCarousel
+      client:visible
+      testimonials={testimonials}
+      autoAdvanceMs={autoAdvanceMs}
+      locale={locale}
+    />
+  </SectionWrapper>
+)}

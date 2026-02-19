@@ -1,0 +1,96 @@
+---
+/**
+ * Category icons section displaying accommodation types as a responsive icon grid.
+ * Each category links to filtered accommodation listings.
+ * Renders on warm beige background with hover scale effects.
+ */
+import SectionWrapper from '../ui/SectionWrapper.astro';
+import SectionHeader from '../ui/SectionHeader.astro';
+import { t, type SupportedLocale } from '../../lib/i18n';
+import {
+  BuildingIcon,
+  HomeIcon,
+  CampingAreaIcon,
+  EntirePropertyIcon,
+  CreoleInnIcon,
+  RuralAreaIcon,
+} from '@repo/icons';
+
+/** Map of category keys to their corresponding icon components */
+const CATEGORY_ICONS: Record<string, typeof BuildingIcon> = {
+  HOTEL: BuildingIcon,
+  CABIN: HomeIcon,
+  CAMPING: CampingAreaIcon,
+  APARTMENT: EntirePropertyIcon,
+  BNB: CreoleInnIcon,
+  RURAL: RuralAreaIcon,
+};
+
+interface CategoryItem {
+  /** Accommodation type key used in URL (e.g., 'HOTEL') */
+  key: string;
+  /** Display label */
+  label: string;
+  /** Number of accommodations in this category */
+  count?: number;
+  /** Tailwind background color class for the icon container */
+  color: string;
+}
+
+interface Props {
+  locale?: SupportedLocale;
+  categories?: CategoryItem[];
+}
+
+const { locale = 'es', categories } = Astro.props;
+
+/** Default 6 category items */
+const defaultCategories: CategoryItem[] = [
+  { key: 'HOTEL', label: t({ locale, namespace: 'home', key: 'categories.hotel', fallback: 'Hotel' }), color: 'bg-blue-500' },
+  { key: 'CABIN', label: t({ locale, namespace: 'home', key: 'categories.cabin', fallback: 'Cabana' }), color: 'bg-green-600' },
+  { key: 'CAMPING', label: t({ locale, namespace: 'home', key: 'categories.camping', fallback: 'Camping' }), color: 'bg-amber-600' },
+  { key: 'APARTMENT', label: t({ locale, namespace: 'home', key: 'categories.apartment', fallback: 'Departamento' }), color: 'bg-purple-500' },
+  { key: 'BNB', label: t({ locale, namespace: 'home', key: 'categories.bnb', fallback: 'B&B' }), color: 'bg-rose-500' },
+  { key: 'RURAL', label: t({ locale, namespace: 'home', key: 'categories.rural', fallback: 'Rural' }), color: 'bg-emerald-600' },
+];
+
+const displayCategories = categories ?? defaultCategories;
+
+/** Pluralize accommodation count */
+const formatCount = (count: number): string =>
+  count === 1
+    ? t({ locale, namespace: 'home', key: 'categories.countSingular', fallback: `${count} alojamiento`, params: { count } })
+    : t({ locale, namespace: 'home', key: 'categories.countPlural', fallback: `${count} alojamientos`, params: { count } });
+---
+
+<SectionWrapper variant="warm">
+  <SectionHeader
+    title={t({ locale, namespace: 'home', key: 'categories.title', fallback: 'Tipos de alojamiento' })}
+    accentSubtitle={t({ locale, namespace: 'home', key: 'categories.accentSubtitle', fallback: 'Que estas buscando' })}
+    align="center"
+  />
+  <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+    {displayCategories.map((item) => (
+      <a
+        href={`/${locale}/alojamientos/tipo/${item.key}/`}
+        class="group flex flex-col items-center gap-3 rounded-xl p-4 transition-all duration-300 hover:scale-105 hover:shadow-md"
+        aria-label={item.count !== undefined
+          ? t({ locale, namespace: 'home', key: 'categories.viewWithCountAriaLabel', fallback: `Ver ${item.count} alojamientos tipo ${item.label}`, params: { count: item.count, type: item.label } })
+          : t({ locale, namespace: 'home', key: 'categories.viewAriaLabel', fallback: `Ver alojamientos tipo ${item.label}`, params: { type: item.label } })}
+      >
+        <div class:list={['flex h-16 w-16 items-center justify-center rounded-xl', item.color]}>
+          {(() => {
+            const IconComponent = CATEGORY_ICONS[item.key] ?? BuildingIcon;
+            return <IconComponent size={32} className="text-white" aria-hidden="true" />;
+          })()}
+        </div>
+        <div class="text-center">
+          <span class="block text-base font-bold text-text">{item.label}</span>
+          {item.count !== undefined && (
+            <span class="block text-sm text-text-secondary">{formatCount(item.count)}</span>
+          )}
+        </div>
+      </a>
+    ))}
+  </div>
+</SectionWrapper>

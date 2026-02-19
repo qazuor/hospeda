@@ -1,0 +1,43 @@
+---
+/**
+ * Newsletter subscription section with background image overlay.
+ * Displays an inline subscription form (desktop) or stacked form (mobile).
+ * Shows a confirmation message if the user is already subscribed.
+ * Wraps the existing NewsletterCTA React island for form logic.
+ */
+import SectionWrapper from '../ui/SectionWrapper.astro';
+import SectionHeader from '../ui/SectionHeader.astro';
+import { NewsletterCTA } from '../newsletter/NewsletterCTA.client.tsx';
+import { t, type SupportedLocale } from '../../lib/i18n';
+
+interface Props {
+  locale?: SupportedLocale;
+  /** URL for the section background image */
+  backgroundImage?: string;
+  /** Whether the user is authenticated */
+  isAuthenticated?: boolean;
+  /** Whether the user is already subscribed to the newsletter */
+  isSubscribed?: boolean;
+}
+
+const { locale = 'es', backgroundImage, isAuthenticated = false, isSubscribed = false } = Astro.props;
+---
+
+<SectionWrapper variant="image" backgroundImage={backgroundImage} class={!backgroundImage ? 'bg-gray-800' : ''}>
+  <SectionHeader
+    title={t({ locale, namespace: 'home', key: 'newsletter.title', fallback: 'Recibi las mejores ofertas del Litoral' })}
+    accentSubtitle={t({ locale, namespace: 'home', key: 'newsletter.accentSubtitle', fallback: 'Mantenete informado' })}
+    align="center"
+    class="text-white [&_h2]:text-white [&_p]:text-white/80"
+  />
+
+  <div class="mx-auto max-w-xl text-center">
+    {isSubscribed ? (
+      <p class="text-lg text-white">
+        {t({ locale, namespace: 'home', key: 'newsletter.alreadySubscribed', fallback: 'Ya estas suscripto a nuestro newsletter.' })}
+      </p>
+    ) : (
+      <NewsletterCTA client:visible locale={locale} />
+    )}
+  </div>
+</SectionWrapper>

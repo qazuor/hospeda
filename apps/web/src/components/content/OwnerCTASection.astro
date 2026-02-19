@@ -1,0 +1,36 @@
+---
+/**
+ * Owner registration call-to-action section.
+ * Full-bleed background image with dark overlay, accent subtitle in Caveat,
+ * heading in Playfair Display, description, and primary-warm CTA button
+ * linking to the property owners page.
+ */
+import SectionWrapper from '../ui/SectionWrapper.astro';
+import Button from '../ui/Button.astro';
+import { t, type SupportedLocale } from '../../lib/i18n';
+
+interface Props {
+  locale?: SupportedLocale;
+  /** URL for the section background image */
+  backgroundImage?: string;
+}
+
+const { locale = 'es', backgroundImage } = Astro.props;
+---
+
+<SectionWrapper variant="image" backgroundImage={backgroundImage} class={!backgroundImage ? 'bg-gray-800' : ''}>
+  <div class="mx-auto max-w-2xl text-center">
+    <p class="mb-2 font-accent text-lg text-white">
+      {t({ locale, namespace: 'home', key: 'ownerCta.accentSubtitle', fallback: 'Para propietarios' })}
+    </p>
+    <h2 class="mb-4 font-display text-4xl font-bold text-white md:text-5xl">
+      {t({ locale, namespace: 'home', key: 'ownerCta.title', fallback: 'Publica tu alojamiento en Hospeda' })}
+    </h2>
+    <p class="mb-8 text-lg text-white/80">
+      {t({ locale, namespace: 'home', key: 'ownerCta.description', fallback: 'Llega a miles de viajeros que buscan alojamientos en el Litoral argentino. Simple, rapido y efectivo.' })}
+    </p>
+    <Button variant="primary-warm" href={`/${locale}/propietarios/`}>
+      {t({ locale, namespace: 'home', key: 'ownerCta.button', fallback: 'Comenzar ahora' })}
+    </Button>
+  </div>
+</SectionWrapper>
