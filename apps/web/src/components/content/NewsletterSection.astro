@@ -1,9 +1,8 @@
 ---
 /**
- * Newsletter subscription section with background image overlay.
- * Displays an inline subscription form (desktop) or stacked form (mobile).
- * Shows a confirmation message if the user is already subscribed.
- * Wraps the existing NewsletterCTA React island for form logic.
+ * Newsletter subscription section with illustrated river sunset background.
+ * Email input styled as postcard address line with Caveat placeholder.
+ * Uses SunsetCostaneraIllustration as decorative background element.
  */
 import SectionWrapper from '../ui/SectionWrapper.astro';
 import SectionHeader from '../ui/SectionHeader.astro';
@@ -12,32 +11,71 @@ import { t, type SupportedLocale } from '../../lib/i18n';
 
 interface Props {
   locale?: SupportedLocale;
-  /** URL for the section background image */
-  backgroundImage?: string;
   /** Whether the user is authenticated */
   isAuthenticated?: boolean;
   /** Whether the user is already subscribed to the newsletter */
   isSubscribed?: boolean;
 }
 
-const { locale = 'es', backgroundImage, isAuthenticated = false, isSubscribed = false } = Astro.props;
+const { locale = 'es', isAuthenticated = false, isSubscribed = false } = Astro.props;
 ---
 
-<SectionWrapper variant="image" backgroundImage={backgroundImage} class={!backgroundImage ? 'bg-gray-800' : ''}>
-  <SectionHeader
-    title={t({ locale, namespace: 'home', key: 'newsletter.title', fallback: 'Recibi las mejores ofertas del Litoral' })}
-    accentSubtitle={t({ locale, namespace: 'home', key: 'newsletter.accentSubtitle', fallback: 'Mantenete informado' })}
-    align="center"
-    class="text-white [&_h2]:text-white [&_p]:text-white/80"
-  />
+<SectionWrapper variant="river" class="relative overflow-hidden">
+  <!-- Decorative gradient background instead of photo -->
+  <div class="absolute inset-0 bg-gradient-to-br from-primary-800 via-primary-700 to-primary-900 opacity-95" aria-hidden="true"></div>
 
-  <div class="mx-auto max-w-xl text-center">
-    {isSubscribed ? (
-      <p class="text-lg text-white">
-        {t({ locale, namespace: 'home', key: 'newsletter.alreadySubscribed', fallback: 'Ya estas suscripto a nuestro newsletter.' })}
-      </p>
-    ) : (
-      <NewsletterCTA client:visible locale={locale} />
-    )}
+  <!-- Subtle SVG river illustration (decorative) -->
+  <div class="absolute bottom-0 left-0 right-0 opacity-10" aria-hidden="true">
+    <svg width="100%" height="120" viewBox="0 0 1440 120" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0,60 C200,20 400,100 600,60 C800,20 1000,80 1200,40 C1300,20 1380,50 1440,40 L1440,120 L0,120 Z" fill="currentColor" class="text-white"/>
+      <path d="M0,80 C300,40 500,100 700,70 C900,40 1100,90 1440,60 L1440,120 L0,120 Z" fill="currentColor" class="text-white" opacity="0.5"/>
+    </svg>
+  </div>
+
+  <div class="relative z-10">
+    <SectionHeader
+      title={t({ locale, namespace: 'home', key: 'newsletter.title', fallback: 'Recibi las mejores ofertas del Litoral' })}
+      accentSubtitle={t({ locale, namespace: 'home', key: 'newsletter.accentSubtitle', fallback: 'Mantenete informado' })}
+      align="center"
+      class="text-white [&_h2]:text-white [&_p]:text-white/80"
+    />
+
+    <div class="mx-auto max-w-xl text-center">
+      {isSubscribed ? (
+        <p class="text-lg text-white">
+          {t({ locale, namespace: 'home', key: 'newsletter.alreadySubscribed', fallback: 'Ya estas suscripto a nuestro newsletter.' })}
+        </p>
+      ) : (
+        <div class="newsletter-postcard">
+          <NewsletterCTA client:visible locale={locale} />
+        </div>
+      )}
+    </div>
   </div>
 </SectionWrapper>
+
+<style>
+  /* Postcard address line styling for newsletter input */
+  .newsletter-postcard :global(input[type="email"]) {
+    border-bottom: 2px dashed rgba(255, 255, 255, 0.4) !important;
+    border-top: none !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    color: white !important;
+    font-family: var(--font-accent) !important;
+    font-size: 1.125rem !important;
+  }
+
+  .newsletter-postcard :global(input[type="email"])::placeholder {
+    color: rgba(255, 255, 255, 0.6) !important;
+    font-family: var(--font-accent) !important;
+  }
+
+  .newsletter-postcard :global(input[type="email"]:focus) {
+    border-bottom-color: white !important;
+    outline: none !important;
+    box-shadow: none !important;
+  }
+</style>

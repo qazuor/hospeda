@@ -1,8 +1,8 @@
 ---
 /**
- * Platform statistics section with background image overlay and animated counters.
- * Displays key platform metrics (accommodations, destinations, reviews, experience)
- * in a responsive 4-column grid with count-up animation on viewport entry.
+ * Platform statistics section with panoramic river photo background
+ * and glassmorphism stat cards. Animated counters on viewport entry.
+ * Progressive enhancement: solid semi-transparent bg on browsers without backdrop-filter.
  */
 import SectionWrapper from '../ui/SectionWrapper.astro';
 import SectionHeader from '../ui/SectionHeader.astro';
@@ -38,22 +38,47 @@ const defaultStats: StatItem[] = [
 const displayStats = stats ?? defaultStats;
 ---
 
-<SectionWrapper variant="image" backgroundImage={backgroundImage} class={!backgroundImage ? 'bg-gray-800' : ''}>
+<SectionWrapper variant="image" backgroundImage={backgroundImage} class={!backgroundImage ? 'bg-primary-900' : ''}>
   <SectionHeader
     title={t({ locale, namespace: 'home', key: 'statistics.title', fallback: 'Numeros que hablan por si solos' })}
     accentSubtitle={t({ locale, namespace: 'home', key: 'statistics.accentSubtitle', fallback: 'Nuestra plataforma' })}
     align="center"
     class="text-white [&_h2]:text-white [&_p]:text-white/80"
   />
-  <div class="grid grid-cols-2 gap-8 md:grid-cols-4">
+  <div class="grid grid-cols-2 gap-6 md:grid-cols-4 md:gap-8">
     {displayStats.map((stat) => (
-      <CounterAnimation
-        client:visible
-        targetValue={stat.value}
-        suffix={stat.suffix}
-        prefix={stat.prefix}
-        label={stat.label}
-      />
+      <div class="glassmorphism-card rounded-2xl border border-white/20 p-6 text-center backdrop-blur-md sm:p-8">
+        <CounterAnimation
+          client:visible
+          targetValue={stat.value}
+          suffix={stat.suffix}
+          prefix={stat.prefix}
+          label={stat.label}
+          class="[&_.counter-number]:font-serif [&_.counter-number]:text-4xl [&_.counter-number]:font-bold [&_.counter-number]:text-white sm:[&_.counter-number]:text-5xl"
+        />
+      </div>
     ))}
   </div>
 </SectionWrapper>
+
+<style>
+  /* Glassmorphism with progressive enhancement */
+  .glassmorphism-card {
+    background-color: rgba(255, 255, 255, 0.08);
+  }
+
+  @supports (backdrop-filter: blur(1px)) {
+    .glassmorphism-card {
+      backdrop-filter: blur(12px);
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+  }
+
+  /* Mobile fallback: no blur, more opaque */
+  @media (max-width: 639px) {
+    .glassmorphism-card {
+      backdrop-filter: none;
+      background-color: rgba(0, 0, 0, 0.4);
+    }
+  }
+</style>

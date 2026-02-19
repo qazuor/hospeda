@@ -1,7 +1,8 @@
 ---
 /**
- * Server Island: Featured destinations section for the homepage.
- * Fetches featured destinations from the API and renders them as cards.
+ * Server Island: Featured destinations as a bento grid layout.
+ * Fetches featured destinations from the API.
+ * Featured destinations get large cells (span 2 cols, 2 rows on desktop).
  * Used with server:defer for dynamic content on a static shell.
  */
 import DestinationCard from '../destination/DestinationCard.astro';
@@ -15,7 +16,7 @@ interface Props {
 
 const { locale = 'es' } = Astro.props;
 
-const result = await destinationsApi.list({ isFeatured: true, pageSize: 4, destinationType: 'CITY' });
+const result = await destinationsApi.list({ isFeatured: true, pageSize: 5, destinationType: 'CITY' });
 const destinations = result.ok ? result.data.items : [];
 
 const destinationCards = destinations.map((dest) => {
@@ -30,20 +31,41 @@ const destinationCards = destinations.map((dest) => {
     path: String(d.path || d.slug || ''),
   };
 });
+
+const featuredCard = destinationCards.find((d) => d.isFeatured);
+const regularCards = destinationCards.filter((d) => d !== featuredCard);
 ---
 
 {destinationCards.length > 0 ? (
-  <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-    {destinationCards.map((destination) => (
+  <div class="bento-grid grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    {/* Featured destination: large cell */}
+    {featuredCard && (
+      <div class="sm:col-span-2 sm:row-span-2">
         <DestinationCard
-          destination={destination}
+          destination={featuredCard}
           locale={locale}
+          class="h-full [&_img]:h-64 sm:[&_img]:h-full"
         />
+      </div>
+    )}
+    {/* Regular destinations: smaller cells */}
+    {regularCards.map((destination) => (
+      <DestinationCard
+        destination={destination}
+        locale={locale}
+      />
+    ))}
+    {/* If no featured, show all in regular grid */}
+    {!featuredCard && destinationCards.map((destination) => (
+      <DestinationCard
+        destination={destination}
+        locale={locale}
+      />
     ))}
   </div>
 ) : (
   <EmptyState
     title="No hay destinos destacados"
-    message="Próximamente agregaremos destinos destacados."
+    message="Proximamente agregaremos destinos destacados."
   />
 )}

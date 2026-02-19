@@ -1,10 +1,11 @@
 ---
 /**
  * Full-bleed section wrapper with constrained content width.
- * Manages background variants, vertical padding scale, and optional section overlap.
+ * Manages background variants, vertical padding scale, optional texture patterns,
+ * and optional section overlap.
  */
 export interface SectionWrapperProps {
-  variant?: 'white' | 'gray' | 'warm' | 'image';
+  variant?: 'white' | 'gray' | 'warm' | 'image' | 'river' | 'sand' | 'forest';
   backgroundImage?: string;
   padding?: 'compact' | 'standard' | 'feature' | 'first';
   overlap?: boolean;
@@ -26,8 +27,11 @@ const {
 const variantClasses: Record<string, string> = {
   white: 'bg-surface',
   gray: 'bg-surface-alt',
-  warm: 'bg-bg-warm',
+  warm: 'bg-bg-warm texture-sand',
   image: 'bg-cover bg-center relative',
+  river: 'bg-primary-50 texture-water',
+  sand: 'bg-surface-warm texture-sand',
+  forest: 'bg-surface texture-leaf',
 };
 
 const paddingClasses: Record<string, string> = {

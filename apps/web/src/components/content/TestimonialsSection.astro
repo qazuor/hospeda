@@ -1,7 +1,7 @@
 ---
 /**
- * Testimonials section with carousel on warm beige background.
- * Conditionally hidden when no testimonials are provided.
+ * Testimonials section styled as vintage postcards on warm background.
+ * Cards have slight random rotation, folded corner effect, and stamp decoration.
  * Uses TestimonialCarousel React island for interactive carousel behavior.
  */
 import SectionWrapper from '../ui/SectionWrapper.astro';
@@ -33,17 +33,74 @@ const hasTestimonials = testimonials.length > 0;
 ---
 
 {hasTestimonials && (
-  <SectionWrapper variant="warm">
+  <SectionWrapper variant="sand">
     <SectionHeader
       title={t({ locale, namespace: 'home', key: 'testimonials.title', fallback: 'Lo que dicen nuestros usuarios' })}
       accentSubtitle={t({ locale, namespace: 'home', key: 'testimonials.accentSubtitle', fallback: 'Experiencias reales' })}
       align="center"
     />
-    <TestimonialCarousel
-      client:visible
-      testimonials={testimonials}
-      autoAdvanceMs={autoAdvanceMs}
-      locale={locale}
-    />
+    <div class="postcard-carousel">
+      <TestimonialCarousel
+        client:visible
+        testimonials={testimonials}
+        autoAdvanceMs={autoAdvanceMs}
+        locale={locale}
+      />
+    </div>
   </SectionWrapper>
 )}
+
+<style>
+  /* Postcard styling applied to testimonial cards within carousel */
+  .postcard-carousel :global(.testimonial-card) {
+    position: relative;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+  }
+
+  /* Slight random rotation for postcard feel */
+  .postcard-carousel :global(.testimonial-card:nth-child(odd)) {
+    transform: rotate(-1deg);
+  }
+
+  .postcard-carousel :global(.testimonial-card:nth-child(even)) {
+    transform: rotate(1deg);
+  }
+
+  /* Folded corner effect */
+  .postcard-carousel :global(.testimonial-card)::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 0 24px 24px 0;
+    border-color: transparent var(--color-surface-alt) transparent transparent;
+    z-index: 1;
+  }
+
+  /* Stamp decoration */
+  .postcard-carousel :global(.testimonial-card)::after {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    width: 28px;
+    height: 32px;
+    border: 2px dashed var(--color-primary);
+    border-radius: 2px;
+    opacity: 0.2;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .postcard-carousel :global(.testimonial-card:nth-child(odd)),
+    .postcard-carousel :global(.testimonial-card:nth-child(even)) {
+      transform: none;
+    }
+  }
+</style>
