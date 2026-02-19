@@ -1,5 +1,6 @@
 /* Design System Tokens - Hospeda web2 */
 /* Regional palette inspired by the Litoral argentino */
+/* Rio Uruguay, subtropical nature, colonial architecture, carnival culture */
 
 /* Font fallback metrics to minimize CLS */
 @font-face {
@@ -12,12 +13,12 @@
 }
 
 @font-face {
-    font-family: "Playfair Display Fallback";
+    font-family: "Fraunces Fallback";
     src: local("Georgia");
-    ascent-override: 90.91%;
-    descent-override: 24.77%;
+    ascent-override: 95%;
+    descent-override: 25%;
     line-gap-override: 0%;
-    size-adjust: 110%;
+    size-adjust: 108%;
 }
 
 @font-face {
@@ -31,33 +32,56 @@
 }
 
 :root {
-    /* Colors - Regional Palette */
-    --color-primary: #3B82F6; /* Tailwind blue-500 */
-    --color-primary-dark: #2563EB; /* Tailwind blue-600 */
-    --color-primary-light: #64b5f6;
-    --color-secondary: #4caf50; /* Vegetation green */
-    --color-secondary-dark: #2e7d32;
-    --color-accent: #d7ccc8; /* Sand beige */
-    --color-accent-dark: #8d6e63; /* Earth brown */
-    --color-accent-warm: #F97316; /* Tailwind orange-500 */
-    --color-bg-warm: #F9F4EE; /* Warm background */
+    /* Colors - Regional Palette: Rio Uruguay & Litoral */
+    --color-primary: #0D7377; /* Rio Uruguay teal */
+    --color-primary-dark: #0A5C5F;
+    --color-primary-light: #3D9B9E;
+    --color-secondary: #D4870E; /* Amber gold */
+    --color-secondary-dark: #B86F08;
+    --color-accent: #F0E6D6; /* Warm sand */
+    --color-accent-dark: #C25B3A; /* Terracotta */
+    --color-accent-warm: #D4870E; /* Amber */
+    --color-bg-warm: #F0E6D6; /* Warm sand background */
 
-    /* Neutrals */
-    --color-text: #212121;
-    --color-text-secondary: #424242;
-    --color-text-tertiary: #757575;
-    --color-border: #eeeeee;
-    --color-bg: #fafafa;
-    --color-surface: #ffffff;
-    --color-surface-alt: #F3F4F6; /* gray-100 - alternate section background */
-    --color-surface-warm: #F9F4EE; /* warm surface for touristic sections */
-    --color-header-bg: #ffffff; /* sticky header background */
+    /* Primary scale for gradients */
+    --color-primary-50: #E8F5F5;
+    --color-primary-100: #C5E8E9;
+    --color-primary-200: #9ED8DA;
+    --color-primary-300: #6FC4C7;
+    --color-primary-400: #3D9B9E;
+    --color-primary-500: #0D7377;
+    --color-primary-600: #0A5C5F;
+    --color-primary-700: #084A4D;
+    --color-primary-800: #063839;
+    --color-primary-900: #042526;
+    --color-primary-950: #021516;
+
+    /* Green (nature/vegetation) */
+    --color-green: #2D6A4F;
+    --color-green-dark: #1B4332;
+    --color-green-light: #52B788;
+
+    /* Terracotta */
+    --color-terracotta: #C25B3A;
+    --color-terracotta-dark: #A14427;
+    --color-terracotta-light: #D4785C;
+
+    /* Neutrals - warm tones */
+    --color-text: #2C1810; /* Dark warm brown */
+    --color-text-secondary: #5C4A32;
+    --color-text-tertiary: #8B7355;
+    --color-border: #E8DCC8;
+    --color-bg: #FDFAF5; /* River sand */
+    --color-surface: #FFFFFF;
+    --color-surface-alt: #F5EDE0;
+    --color-surface-warm: #F0E6D6;
+    --color-header-bg: #FFFFFF;
 
     /* Semantic */
-    --color-success: #4caf50;
-    --color-warning: #ffc107;
-    --color-error: #f44336;
-    --color-info: #2196f3;
+    --color-success: #2D6A4F;
+    --color-warning: #D4870E;
+    --color-error: #C25B3A;
+    --color-info: #0D7377;
 
     /* Spacing (8px grid) */
     --space-xs: 0.25rem; /* 4px */
@@ -74,24 +98,30 @@
     --radius-md: 8px;
     --radius-lg: 12px;
     --radius-xl: 16px;
+    --radius-2xl: 20px;
     --radius-full: 9999px;
 
-    /* Shadows */
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    /* Shadows - warm tinted */
+    --shadow-sm: 0 1px 2px rgba(44, 24, 16, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(44, 24, 16, 0.08);
+    --shadow-lg: 0 10px 15px -3px rgba(44, 24, 16, 0.08);
+    --shadow-xl: 0 20px 25px -5px rgba(44, 24, 16, 0.08);
 
     /* Typography */
-    --font-serif: "Playfair Display", "Playfair Display Fallback", Georgia, serif;
+    --font-serif: "Fraunces", "Fraunces Fallback", Georgia, serif;
     --font-sans: "Inter", "Inter Fallback", -apple-system, BlinkMacSystemFont, sans-serif;
     --font-accent: "Caveat", "Caveat Fallback", cursive;
 
-    /* Typography scale (responsive role tokens) */
-    --fs-display-hero: 3rem; /* 48px desktop */
-    --fs-display-section: 2.25rem; /* 36px desktop */
-    --fs-accent-subtitle: 1.5rem; /* 24px desktop */
-    --fs-counter-number: 2.5rem; /* 40px desktop */
+    /* Fraunces variable font axes */
+    --fraunces-hero: 'SOFT' 100, 'WONK' 1;
+    --fraunces-section: 'SOFT' 50, 'WONK' 1;
+    --fraunces-default: 'opsz' auto;
+
+    /* Typography scale (fluid with clamp) */
+    --fs-display-hero: clamp(2rem, 4vw + 1rem, 3rem);
+    --fs-display-section: clamp(1.5rem, 3vw + 0.75rem, 2.25rem);
+    --fs-accent-subtitle: clamp(1.375rem, 2vw + 0.75rem, 1.625rem);
+    --fs-counter-number: clamp(2rem, 3vw + 0.75rem, 2.5rem);
 
     /* Container width */
     --max-w-site: 1200px;
@@ -122,42 +152,43 @@
     --z-modal-backdrop: 1040;
     --z-modal: 1050;
     --z-toast: 1060;
+
+    /* Header glassmorphism RGB values (used with rgba()) */
+    --header-bg-rgb: 255, 255, 255;
+    --header-border-rgb: 232, 220, 200;
 }
 
-/* Responsive typography scale overrides */
-@media (max-width: 1023px) {
-    :root {
-        --fs-display-hero: 2.5rem; /* 40px tablet */
-        --fs-display-section: 1.875rem; /* 30px tablet */
-        --fs-accent-subtitle: 1.375rem; /* 22px tablet */
-        --fs-counter-number: 2.25rem; /* 36px tablet */
-    }
-}
+/* Fluid typography scale (clamp replaces discrete breakpoints) */
+/* Fallback breakpoints kept as reference:
+ * Desktop: hero 3rem, section 2.25rem, accent 1.625rem, counter 2.5rem
+ * Tablet:  hero 2.5rem, section 1.875rem, accent 1.5rem, counter 2.25rem
+ * Mobile:  hero 2rem, section 1.5rem, accent 1.375rem, counter 2rem
+ */
 
-@media (max-width: 639px) {
-    :root {
-        --fs-display-hero: 2rem; /* 32px mobile */
-        --fs-display-section: 1.5rem; /* 24px mobile */
-        --fs-accent-subtitle: 1.25rem; /* 20px mobile */
-        --fs-counter-number: 2rem; /* 32px mobile */
-    }
-}
-
-/* Dark mode - complete token coverage (SPEC-014 Phase 6) */
+/* Dark mode - "Noche Estrellada" (night blue, not gray) */
 [data-theme="dark"] {
-    --color-bg: #111827; /* gray-900 - body/page background */
-    --color-surface: #1F2937; /* gray-800 - standard section + card backgrounds */
-    --color-surface-alt: #1F2937; /* gray-800 - alternate section (same as surface in dark) */
-    --color-surface-warm: #1C1917; /* stone-900 - touristic warm sections */
-    --color-bg-warm: #1C1917; /* stone-900 - warm background alias */
-    --color-border: #374151; /* gray-700 */
-    --color-text: #FFFFFF; /* white - primary text */
-    --color-text-secondary: #D1D5DB; /* gray-300 - secondary text */
-    --color-text-tertiary: #9CA3AF; /* gray-400 - muted text (4.08:1 on gray-800) */
-    --color-header-bg: #111827; /* gray-900 - sticky header */
+    --color-bg: #0F1A2E; /* Night blue */
+    --color-surface: #1A2740; /* Deep night surface */
+    --color-surface-alt: #1A2740;
+    --color-surface-warm: #1C1A15; /* Warm dark surface */
+    --color-bg-warm: #1C1A15;
+    --color-border: #2D3B52;
+    --color-text: #F0EDE8; /* Warm white */
+    --color-text-secondary: #C4B8A8;
+    --color-text-tertiary: #8B7E6E;
+    --color-header-bg: #0F1A2E;
+
+    /* Luminous teal in dark mode */
+    --color-primary: #3DBDC0;
+    --color-primary-dark: #0D7377;
+    --color-primary-light: #6DD5D8;
+
+    /* Header glassmorphism RGB for dark mode */
+    --header-bg-rgb: 15, 26, 46;
+    --header-border-rgb: 45, 59, 82;
 }
 
-/* Dark mode: wave divider fill matches section below hero */
+/* Dark mode: generic wave divider fill override (for SimpleCurve, Totora, etc.) */
 [data-theme="dark"] .wave-divider-path {
     fill: var(--color-bg) !important;
 }
