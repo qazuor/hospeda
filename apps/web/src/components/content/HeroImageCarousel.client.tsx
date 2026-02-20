@@ -21,13 +21,16 @@ export interface HeroImageCarouselProps {
     readonly ariaLabel?: string;
     /** Enable parallax scroll effect on desktop */
     readonly enableParallax?: boolean;
+    /** Callback fired when the active slide changes */
+    readonly onSlideChange?: (index: number) => void;
 }
 
 export function HeroImageCarousel({
     images,
     interval = 6000,
     ariaLabel = 'Hero image carousel',
-    enableParallax = false
+    enableParallax = false,
+    onSlideChange
 }: HeroImageCarouselProps) {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isPaused, setIsPaused] = useState(false);
@@ -86,18 +89,23 @@ export function HeroImageCarousel({
         return () => window.removeEventListener('scroll', onScroll);
     }, [enableParallax, prefersReducedMotion]);
 
-    const goToIndex = useCallback((index: number) => {
-        setCurrentIndex(index);
-        setAnimationKey((prev) => prev + 1);
-    }, []);
+    const goToIndex = useCallback(
+        (index: number) => {
+            setCurrentIndex(index);
+            setAnimationKey((prev) => prev + 1);
+            onSlideChange?.(index);
+        },
+        [onSlideChange]
+    );
 
     const goToNext = useCallback(() => {
         setCurrentIndex((prev) => {
             const next = (prev + 1) % images.length;
             setAnimationKey((k) => k + 1);
+            onSlideChange?.(next);
             return next;
         });
-    }, [images.length]);
+    }, [images.length, onSlideChange]);
 
     /* Auto-advance timer */
     useEffect(() => {

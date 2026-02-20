@@ -118,9 +118,9 @@
     --fraunces-default: 'opsz' auto;
 
     /* Typography scale (fluid with clamp) */
-    --fs-display-hero: clamp(2rem, 4vw + 1rem, 3rem);
+    --fs-display-hero: clamp(2.25rem, 5vw + 1rem, 4rem);
     --fs-display-section: clamp(1.5rem, 3vw + 0.75rem, 2.25rem);
-    --fs-accent-subtitle: clamp(1.375rem, 2vw + 0.75rem, 1.625rem);
+    --fs-accent-subtitle: clamp(1.75rem, 3vw + 1rem, 2.75rem);
     --fs-counter-number: clamp(2rem, 3vw + 0.75rem, 2.5rem);
 
     /* Container width */

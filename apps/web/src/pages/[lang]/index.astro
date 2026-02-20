@@ -8,9 +8,8 @@ export function getStaticPaths() {
 /**
  * Localized homepage for Hospeda platform.
  * Static shell with Server Islands for dynamic featured content.
- * Hero uses split layout with teal bg + hero image.
- * Featured sections use server:defer with skeleton fallbacks.
- * Includes new regional visual identity (SPEC-015).
+ * Hero uses fullscreen carousel with category badges, animated counter,
+ * rotating phrases, and redesigned search bar with multi-select popovers.
  *
  * Rendering: SSG + Server Islands
  * Route: /[lang]/
@@ -33,6 +32,8 @@ import DestinationCardSkeleton from '../../components/ui/DestinationCardSkeleton
 import EventCardSkeleton from '../../components/ui/EventCardSkeleton.astro';
 import BlogPostCardSkeleton from '../../components/ui/BlogPostCardSkeleton.astro';
 import { isValidLocale, type SupportedLocale } from '../../lib/i18n';
+import { AccommodationTypeEnum } from '@repo/schemas';
+import type { HeroSearchBarLabels } from '../../components/search/search-bar-types';
 
 const { lang } = Astro.params;
 
@@ -42,17 +43,16 @@ if (!lang || !isValidLocale(lang)) {
 
 const locale = lang as SupportedLocale;
 
+// ---------------------------------------------------------------------------
+// i18n texts
+// ---------------------------------------------------------------------------
+
 const texts: Record<SupportedLocale, {
 	heroAccentSubtitle: string;
 	heroHeadline: string;
 	heroSubheadline: string;
-	searchTypePlaceholder: string;
-	searchDestinationPlaceholder: string;
-	searchCheckInPlaceholder: string;
-	searchCheckOutPlaceholder: string;
-	searchCtaLabel: string;
-	searchLoadingText: string;
-	searchAriaLabel: string;
+	searchLabels: HeroSearchBarLabels;
+	statsLabels: { destinations: string; accommodations: string };
 	featuredAccommodations: string;
 	featuredDestinations: string;
 	upcomingEvents: string;
@@ -65,13 +65,35 @@ const texts: Record<SupportedLocale, {
 		heroAccentSubtitle: 'Descubri el Litoral',
 		heroHeadline: 'Tu aventura empieza en la costa del Uruguay',
 		heroSubheadline: 'Encontra alojamientos unicos en Concepcion del Uruguay y la region del Litoral argentino',
-		searchTypePlaceholder: 'Tipo de alojamiento',
-		searchDestinationPlaceholder: 'Donde queres ir?',
-		searchCheckInPlaceholder: 'Fecha de llegada',
-		searchCheckOutPlaceholder: 'Fecha de salida',
-		searchCtaLabel: 'Buscar',
-		searchLoadingText: 'Cargando...',
-		searchAriaLabel: 'Buscar alojamientos',
+		searchLabels: {
+			typePlaceholder: 'Tipo de alojamiento',
+			destinationPlaceholder: 'Donde queres ir?',
+			datesPlaceholder: 'Fechas',
+			guestsPlaceholder: 'Huespedes',
+			checkInLabel: 'Llegada',
+			checkOutLabel: 'Salida',
+			adultsLabel: 'Adultos',
+			childrenLabel: 'Ninos',
+			guestsSummary: '{adults} adultos, {children} ninos',
+			ctaLabel: 'Buscar',
+			loadingText: 'Cargando...',
+			searchAriaLabel: 'Buscar alojamientos',
+			closePanelAriaLabel: 'Cerrar panel',
+			typeLabels: {
+				[AccommodationTypeEnum.HOTEL]: 'Hotel',
+				[AccommodationTypeEnum.CABIN]: 'Cabana',
+				[AccommodationTypeEnum.APARTMENT]: 'Departamento',
+				[AccommodationTypeEnum.HOUSE]: 'Casa',
+				[AccommodationTypeEnum.COUNTRY_HOUSE]: 'Casa de campo',
+				[AccommodationTypeEnum.HOSTEL]: 'Hostel',
+				[AccommodationTypeEnum.CAMPING]: 'Camping',
+				[AccommodationTypeEnum.ROOM]: 'Habitacion',
+				[AccommodationTypeEnum.MOTEL]: 'Motel',
+				[AccommodationTypeEnum.RESORT]: 'Resort',
+			},
+
+		},
+		statsLabels: { destinations: 'destinos', accommodations: 'alojamientos' },
 		featuredAccommodations: 'Alojamientos destacados',
 		featuredDestinations: 'Destinos populares',
 		upcomingEvents: 'Proximos eventos',
@@ -84,13 +106,34 @@ const texts: Record<SupportedLocale, {
 		heroAccentSubtitle: 'Discover the Litoral',
 		heroHeadline: 'Your adventure starts on the Uruguay coast',
 		heroSubheadline: 'Find unique accommodations in Concepcion del Uruguay and the Argentine Litoral region',
-		searchTypePlaceholder: 'Accommodation type',
-		searchDestinationPlaceholder: 'Where do you want to go?',
-		searchCheckInPlaceholder: 'Check-in date',
-		searchCheckOutPlaceholder: 'Check-out date',
-		searchCtaLabel: 'Search',
-		searchLoadingText: 'Loading...',
-		searchAriaLabel: 'Search accommodations',
+		searchLabels: {
+			typePlaceholder: 'Accommodation type',
+			destinationPlaceholder: 'Where do you want to go?',
+			datesPlaceholder: 'Dates',
+			guestsPlaceholder: 'Guests',
+			checkInLabel: 'Check-in',
+			checkOutLabel: 'Check-out',
+			adultsLabel: 'Adults',
+			childrenLabel: 'Children',
+			guestsSummary: '{adults} adults, {children} children',
+			ctaLabel: 'Search',
+			loadingText: 'Loading...',
+			searchAriaLabel: 'Search accommodations',
+			closePanelAriaLabel: 'Close panel',
+			typeLabels: {
+				[AccommodationTypeEnum.HOTEL]: 'Hotel',
+				[AccommodationTypeEnum.CABIN]: 'Cabin',
+				[AccommodationTypeEnum.APARTMENT]: 'Apartment',
+				[AccommodationTypeEnum.HOUSE]: 'House',
+				[AccommodationTypeEnum.COUNTRY_HOUSE]: 'Country house',
+				[AccommodationTypeEnum.HOSTEL]: 'Hostel',
+				[AccommodationTypeEnum.CAMPING]: 'Camping',
+				[AccommodationTypeEnum.ROOM]: 'Room',
+				[AccommodationTypeEnum.MOTEL]: 'Motel',
+				[AccommodationTypeEnum.RESORT]: 'Resort',
+			},
+		},
+		statsLabels: { destinations: 'destinations', accommodations: 'accommodations' },
 		featuredAccommodations: 'Featured Accommodations',
 		featuredDestinations: 'Popular Destinations',
 		upcomingEvents: 'Upcoming Events',
@@ -103,13 +146,35 @@ const texts: Record<SupportedLocale, {
 		heroAccentSubtitle: 'Descubra o Litoral',
 		heroHeadline: 'Sua aventura comeca na costa do Uruguai',
 		heroSubheadline: 'Encontre acomodacoes unicas em Concepcion del Uruguay e a regiao do Litoral argentino',
-		searchTypePlaceholder: 'Tipo de acomodacao',
-		searchDestinationPlaceholder: 'Para onde voce quer ir?',
-		searchCheckInPlaceholder: 'Data de chegada',
-		searchCheckOutPlaceholder: 'Data de saida',
-		searchCtaLabel: 'Buscar',
-		searchLoadingText: 'Carregando...',
-		searchAriaLabel: 'Buscar acomodacoes',
+		searchLabels: {
+			typePlaceholder: 'Tipo de acomodacao',
+			destinationPlaceholder: 'Para onde voce quer ir?',
+			datesPlaceholder: 'Datas',
+			guestsPlaceholder: 'Hospedes',
+			checkInLabel: 'Chegada',
+			checkOutLabel: 'Saida',
+			adultsLabel: 'Adultos',
+			childrenLabel: 'Criancas',
+			guestsSummary: '{adults} adultos, {children} criancas',
+			ctaLabel: 'Buscar',
+			loadingText: 'Carregando...',
+			searchAriaLabel: 'Buscar acomodacoes',
+			closePanelAriaLabel: 'Fechar painel',
+			typeLabels: {
+				[AccommodationTypeEnum.HOTEL]: 'Hotel',
+				[AccommodationTypeEnum.CABIN]: 'Cabana',
+				[AccommodationTypeEnum.APARTMENT]: 'Apartamento',
+				[AccommodationTypeEnum.HOUSE]: 'Casa',
+				[AccommodationTypeEnum.COUNTRY_HOUSE]: 'Casa de campo',
+				[AccommodationTypeEnum.HOSTEL]: 'Hostel',
+				[AccommodationTypeEnum.CAMPING]: 'Camping',
+				[AccommodationTypeEnum.ROOM]: 'Quarto',
+				[AccommodationTypeEnum.MOTEL]: 'Motel',
+				[AccommodationTypeEnum.RESORT]: 'Resort',
+			},
+
+		},
+		statsLabels: { destinations: 'destinos', accommodations: 'acomodacoes' },
 		featuredAccommodations: 'Acomodacoes em destaque',
 		featuredDestinations: 'Destinos populares',
 		upcomingEvents: 'Proximos eventos',
@@ -124,31 +189,140 @@ const t = texts[locale];
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 const apiBaseUrl = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3001';
 
+// ---------------------------------------------------------------------------
+// Hero carousel images
+// ---------------------------------------------------------------------------
+
 /**
- * Hero carousel images showcasing the region.
- * Images are in /public/images/hero/.
- */
-/**
- * Curated hero images (8 best picks from diverse categories).
- * Covers: rio, playa, isla, carnaval, architectural, fiesta.
+ * Curated hero carousel images showcasing the region.
+ * Covers: rio, playa, isla, carnaval, fiesta, autodromo, palacio, termas.
  */
 const heroImages = [
   '/images/hero/rio1.jpg',
-  '/images/hero/playa1.jpg',
-  '/images/hero/isla1.jpg',
-  '/images/hero/carnaval1.webp',
-  '/images/hero/palacio1.jpg',
-  '/images/hero/fiestaplaya1.webp',
-  '/images/hero/playa3.jpg',
+  '/images/hero/rio2.png',
   '/images/hero/rio3.jpg',
+  '/images/hero/playa1.jpg',
+  '/images/hero/playa2.jpg',
+  '/images/hero/playa3.png',
+  '/images/hero/playa4.jpg',
+  '/images/hero/playa5.jpg',
+  '/images/hero/playa6.jpg',
+  '/images/hero/playa7.jpg',
+  '/images/hero/playa8.webp',
+  '/images/hero/isla1.jpg',
+  '/images/hero/isla2.jpg',
+  '/images/hero/isla3.jpg',
+  '/images/hero/carnaval1.jpg',
+  '/images/hero/fiestaplaya1.jpg',
+  '/images/hero/autodromo1.webp',
+  '/images/hero/palacio1.jpg',
+  '/images/hero/palacio2.webp',
+  '/images/hero/termas1.png',
+  '/images/hero/termas2.jpeg',
+  '/images/hero/termas3.jpg',
 ] as const;
 
-/** Social proof badge text by locale */
-const socialProofTexts: Record<SupportedLocale, string> = {
-  es: '4500+ huespedes eligieron Hospeda',
-  en: '4500+ guests chose Hospeda',
-  pt: '4500+ hospedes escolheram Hospeda',
+// ---------------------------------------------------------------------------
+// Animated counter items
+// ---------------------------------------------------------------------------
+
+const counterItems: Record<SupportedLocale, readonly { value: number; suffix?: string; label: string }[]> = {
+  es: [
+    { value: 22, label: 'destinos' },
+    { value: 150, suffix: '+', label: 'alojamientos' },
+  ],
+  en: [
+    { value: 22, label: 'destinations' },
+    { value: 150, suffix: '+', label: 'accommodations' },
+  ],
+  pt: [
+    { value: 22, label: 'destinos' },
+    { value: 150, suffix: '+', label: 'acomodacoes' },
+  ],
 };
+
+// ---------------------------------------------------------------------------
+// Rotating phrases (one per image category, cycled across slides)
+// ---------------------------------------------------------------------------
+
+const rotatingPhrases: Record<SupportedLocale, readonly string[]> = {
+  es: [
+    'Navega el Rio Uruguay y descubri sus costas',
+    'Navega el Rio Uruguay y descubri sus costas',
+    'Navega el Rio Uruguay y descubri sus costas',
+    'Relajate en playas de arena dorada',
+    'Relajate en playas de arena dorada',
+    'Relajate en playas de arena dorada',
+    'Relajate en playas de arena dorada',
+    'Relajate en playas de arena dorada',
+    'Relajate en playas de arena dorada',
+    'Relajate en playas de arena dorada',
+    'Relajate en playas de arena dorada',
+    'Explora islas y paisajes naturales',
+    'Explora islas y paisajes naturales',
+    'Explora islas y paisajes naturales',
+    'Vivi el carnaval del Litoral',
+    'Disfuta de fiestas al aire libre',
+    'Senti la adrenalina del autodromo',
+    'Descubri la historia colonial',
+    'Descubri la historia colonial',
+    'Sumergite en aguas termales',
+    'Sumergite en aguas termales',
+    'Sumergite en aguas termales',
+  ],
+  en: [
+    'Sail the Uruguay River and discover its shores',
+    'Sail the Uruguay River and discover its shores',
+    'Sail the Uruguay River and discover its shores',
+    'Relax on golden sandy beaches',
+    'Relax on golden sandy beaches',
+    'Relax on golden sandy beaches',
+    'Relax on golden sandy beaches',
+    'Relax on golden sandy beaches',
+    'Relax on golden sandy beaches',
+    'Relax on golden sandy beaches',
+    'Relax on golden sandy beaches',
+    'Explore islands and natural landscapes',
+    'Explore islands and natural landscapes',
+    'Explore islands and natural landscapes',
+    'Experience the Litoral carnival',
+    'Enjoy open-air festivals',
+    'Feel the adrenaline of the racetrack',
+    'Discover colonial history',
+    'Discover colonial history',
+    'Immerse yourself in hot springs',
+    'Immerse yourself in hot springs',
+    'Immerse yourself in hot springs',
+  ],
+  pt: [
+    'Navegue o Rio Uruguai e descubra suas costas',
+    'Navegue o Rio Uruguai e descubra suas costas',
+    'Navegue o Rio Uruguai e descubra suas costas',
+    'Relaxe em praias de areia dourada',
+    'Relaxe em praias de areia dourada',
+    'Relaxe em praias de areia dourada',
+    'Relaxe em praias de areia dourada',
+    'Relaxe em praias de areia dourada',
+    'Relaxe em praias de areia dourada',
+    'Relaxe em praias de areia dourada',
+    'Relaxe em praias de areia dourada',
+    'Explore ilhas e paisagens naturais',
+    'Explore ilhas e paisagens naturais',
+    'Explore ilhas e paisagens naturais',
+    'Viva o carnaval do Litoral',
+    'Aproveite festas ao ar livre',
+    'Sinta a adrenalina do autodromo',
+    'Descubra a historia colonial',
+    'Descubra a historia colonial',
+    'Mergulhe em aguas termais',
+    'Mergulhe em aguas termais',
+    'Mergulhe em aguas termais',
+  ],
+};
+
+// ---------------------------------------------------------------------------
+// Testimonials
+// ---------------------------------------------------------------------------
 
 /**
  * Hardcoded testimonials for the homepage carousel.
@@ -191,25 +365,18 @@ const TESTIMONIALS = [
 		locale={locale}
 	/>
 
-	<!-- 1. Hero Section with split layout + image carousel -->
+	<!-- 1. Hero Section with carousel, category badges, counter, rotating phrases -->
 	<HeroSection
 		heroImages={heroImages}
 		accentSubtitle={t.heroAccentSubtitle}
 		headline={t.heroHeadline}
 		subheadline={t.heroSubheadline}
-		searchLabels={{
-			typePlaceholder: t.searchTypePlaceholder,
-			destinationPlaceholder: t.searchDestinationPlaceholder,
-			checkInPlaceholder: t.searchCheckInPlaceholder,
-			checkOutPlaceholder: t.searchCheckOutPlaceholder,
-			ctaLabel: t.searchCtaLabel,
-			loadingText: t.searchLoadingText,
-			searchAriaLabel: t.searchAriaLabel,
-		}}
+		searchLabels={t.searchLabels}
 		locale={locale}
 		apiBaseUrl={apiBaseUrl}
-		firstSectionFill="#F0E6D6"
-		socialProofText={socialProofTexts[locale]}
+		counterItems={counterItems[locale]}
+		statsLabels={t.statsLabels}
+		rotatingPhrases={rotatingPhrases[locale]}
 	/>
 
 	<!-- 2. Featured Accommodations (Server Island) -->

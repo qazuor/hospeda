@@ -1,19 +1,22 @@
 ---
 /**
  * Immersive fullscreen hero section with image carousel background.
- * Content centered over a dark overlay on all viewports.
- * Features text entrance animations, search bar, social proof badge, and wave divider.
+ * Content positioned towards the bottom over a dark overlay.
+ * Features text entrance animations, search bar,
+ * live stats counter, rotating phrases, scroll indicator,
+ * and a torn-paper shape divider into the next section.
  *
  * Z-index layering:
  *   z-0  - carousel images
  *   z-[1] - dark gradient overlay
  *   z-10 - text content + search bar
- *   z-20 - wave divider
+ *   z-20 - shape divider (CSS mask with var(--color-bg))
  *   z-30 - carousel dot indicators (must be above everything)
  */
-import { HeroImageCarousel } from './HeroImageCarousel.client';
+import { HeroCarouselWithPhrases } from './HeroCarouselWithPhrases.client';
 import { HeroSearchBar } from '../search/HeroSearchBar.client';
-import RiverWavesDivider from '../ui/RiverWavesDivider.astro';
+import { LiveStatsCounter } from './LiveStatsCounter.client';
+import type { HeroSearchBarLabels } from '../search/search-bar-types';
 
 export interface HeroSectionProps {
   /** Array of hero image URLs for the carousel */
@@ -23,22 +26,17 @@ export interface HeroSectionProps {
   accentSubtitle: string;
   headline: string;
   subheadline: string;
-  searchLabels: {
-    typePlaceholder: string;
-    destinationPlaceholder: string;
-    checkInPlaceholder: string;
-    checkOutPlaceholder: string;
-    ctaLabel: string;
-    loadingText: string;
-    searchAriaLabel: string;
-  };
+  searchLabels: HeroSearchBarLabels;
   locale: 'es' | 'en' | 'pt';
   apiBaseUrl: string;
-  firstSectionFill?: string;
   /** Auto-advance interval in ms (default: 6000) */
   carouselInterval?: number;
-  /** Social proof text (e.g. "4500+ guests chose Hospeda") */
-  socialProofText?: string;
+  /** Fallback counter items: { value, suffix?, label } */
+  counterItems?: readonly { value: number; suffix?: string; label: string }[];
+  /** Labels for stats counter */
+  statsLabels?: { destinations: string; accommodations: string };
+  /** Rotating phrases synchronized with carousel slides */
+  rotatingPhrases?: readonly string[];
 }
 
 interface Props extends HeroSectionProps {}
@@ -52,9 +50,10 @@ const {
   searchLabels,
   locale,
   apiBaseUrl,
-  firstSectionFill = '#FDFAF5',
   carouselInterval = 6000,
-  socialProofText,
+  counterItems = [],
+  statsLabels = { destinations: 'destinos', accommodations: 'alojamientos' },
+  rotatingPhrases = [],
 } = Astro.props;
 
 const images: readonly string[] = heroImages && heroImages.length > 0
@@ -63,18 +62,29 @@ const images: readonly string[] = heroImages && heroImages.length > 0
 const useCarousel = images.length > 1;
 
 const baseAccommodationsPath = `/${locale}/alojamientos`;
+const hasRotatingPhrases = rotatingPhrases.length > 0 && useCarousel;
 ---
 
 <section class="hero-section relative overflow-hidden">
   <!-- Layer 0: Fullscreen background carousel (no z-index to avoid stacking context) -->
   <div class="absolute inset-0">
-    {useCarousel ? (
-      <HeroImageCarousel
+    {hasRotatingPhrases ? (
+      <HeroCarouselWithPhrases
         client:load
         images={images}
+        phrases={rotatingPhrases}
         interval={carouselInterval}
-        ariaLabel="Hero image carousel"
         enableParallax
+        ariaLabel="Hero image carousel"
+      />
+    ) : useCarousel ? (
+      <HeroCarouselWithPhrases
+        client:load
+        images={images}
+        phrases={[]}
+        interval={carouselInterval}
+        enableParallax
+        ariaLabel="Hero image carousel"
       />
     ) : (
       <img
@@ -93,23 +103,43 @@ const baseAccommodationsPath = `/${locale}/alojamientos`;
     aria-hidden="true"
   />
 
-  <!-- Layer 10: Centered content -->
-  <div class="relative z-10 flex min-h-[max(100svh,600px)] flex-col items-center justify-center px-6 pt-24 pb-40 sm:px-12">
-    <div class="mx-auto max-w-2xl text-center">
-      <p class="hero-animate hero-animate-delay-1 mb-4 inline-block -rotate-2 font-accent text-[length:var(--fs-accent-subtitle)] text-white/90">
-        {accentSubtitle}
-      </p>
-      <h1
-        class="hero-animate hero-animate-delay-2 mb-4 font-serif text-[length:var(--fs-display-hero)] font-bold leading-tight text-white"
-        style="font-variation-settings: var(--fraunces-hero); letter-spacing: -0.04em;"
-      >
-        {headline}
-      </h1>
-      <p class="hero-animate hero-animate-delay-3 mx-auto mb-8 max-w-lg text-base text-white/80 sm:text-lg">
-        {subheadline}
-      </p>
+  <!-- Layer 10: Content with responsive layout -->
+  <!-- xl+: side-by-side (text left, search right) -->
+  <!-- md-lg: stacked centered (current design) -->
+  <!-- sm: stacked centered, mobile search triggers bottom sheet -->
+  <div class="relative z-10 flex min-h-[max(100svh,600px)] flex-col items-center justify-center px-4 pt-20 pb-28 sm:px-8 sm:pb-32">
+    <div class="hero-content mx-auto w-full max-w-4xl text-center xl:flex xl:max-w-6xl xl:items-center xl:gap-12 xl:text-left 2xl:max-w-7xl 2xl:gap-16">
+      <!-- Left column: text content -->
+      <div class="xl:flex-1">
+        <p class="hero-animate hero-animate-delay-1 mb-4 inline-block -rotate-2 font-accent text-[length:var(--fs-accent-subtitle)] text-white/90">
+          {accentSubtitle}
+        </p>
+        <h1
+          class="hero-animate hero-animate-delay-2 mb-4 font-serif text-[length:var(--fs-display-hero)] font-bold leading-tight text-white"
+          style="font-variation-settings: var(--fraunces-hero); letter-spacing: -0.04em;"
+        >
+          {headline}
+        </h1>
+        <p class="hero-animate hero-animate-delay-3 mx-auto mb-6 max-w-lg text-lg text-white/80 sm:text-xl xl:mx-0">
+          {subheadline}
+        </p>
 
-      <div class="hero-animate hero-animate-delay-4 w-full">
+        {/* Stats counter below text on wide screens - left aligned */}
+        {counterItems.length > 0 && (
+          <div class="hero-animate hero-animate-delay-5 mt-2 hidden xl:block">
+            <LiveStatsCounter
+              client:visible
+              apiBaseUrl={apiBaseUrl}
+              labels={statsLabels}
+              fallbackItems={counterItems}
+              className="xl:justify-start"
+            />
+          </div>
+        )}
+      </div>
+
+      <!-- Right column: search bar + stats -->
+      <div class="hero-animate hero-animate-delay-4 w-full xl:w-[420px] xl:flex-shrink-0 2xl:w-[460px]">
         <HeroSearchBar
           client:load
           locale={locale}
@@ -119,19 +149,64 @@ const baseAccommodationsPath = `/${locale}/alojamientos`;
         />
       </div>
 
-      {socialProofText && (
-        <div class="hero-animate hero-animate-delay-5 mt-6">
-          <span class="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm text-white/70 backdrop-blur-sm">
-            {socialProofText}
-          </span>
+      {/* Stats counter below search on stacked layout (non-wide) */}
+      {counterItems.length > 0 && (
+        <div class="hero-animate hero-animate-delay-5 mt-6 w-full xl:hidden">
+          <LiveStatsCounter
+            client:visible
+            apiBaseUrl={apiBaseUrl}
+            labels={statsLabels}
+            fallbackItems={counterItems}
+          />
         </div>
       )}
     </div>
   </div>
 
-  <!-- Layer 20: Wave divider at bottom -->
-  <RiverWavesDivider
-    fill={firstSectionFill}
-    class="absolute bottom-0 left-0 z-20 w-full"
+  <!-- Scroll indicator (CSS-only bounce) -->
+  <div class="hero-scroll-indicator absolute bottom-6 left-1/2 z-10 -translate-x-1/2" aria-hidden="true">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white/50">
+      <polyline points="6 9 12 15 18 9" />
+    </svg>
+  </div>
+
+  <!-- Layer 20: Torn paper shape divider into next section -->
+  <div
+    class="hero-shape-divider absolute bottom-[-1px] left-0 z-20 h-[80px] w-full sm:h-[100px] md:h-[134px]"
+    aria-hidden="true"
   />
 </section>
+
+<style>
+  .hero-shape-divider {
+    background-color: var(--color-bg);
+    mask-image: url('/images/banner-shape.png');
+    -webkit-mask-image: url('/images/banner-shape.png');
+    mask-size: 100% 100%;
+    -webkit-mask-size: 100% 100%;
+    mask-repeat: no-repeat;
+    -webkit-mask-repeat: no-repeat;
+  }
+
+  .hero-scroll-indicator {
+    animation: hero-bounce 2s ease-in-out infinite;
+  }
+
+  @keyframes hero-bounce {
+    0%, 100% { transform: translate(-50%, 0); opacity: 0.5; }
+    50% { transform: translate(-50%, 6px); opacity: 0.8; }
+  }
+
+  /* Hide scroll indicator once user scrolls */
+  @supports (animation-timeline: scroll()) {
+    .hero-scroll-indicator {
+      animation: hero-fade-out linear;
+      animation-timeline: scroll();
+      animation-range: 0px 150px;
+    }
+    @keyframes hero-fade-out {
+      from { opacity: 0.5; }
+      to { opacity: 0; pointer-events: none; }
+    }
+  }
+</style>
