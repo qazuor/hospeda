@@ -19,7 +19,8 @@ import { MERCADO_PAGO_DEFAULT_TIMEOUT_MS } from '../constants/billing.constants.
 export interface MercadoPagoAdapterConfig {
     /**
      * MercadoPago access token
-     * Must start with 'APP_USR-' (production) or 'TEST-' (sandbox)
+     * Typically starts with 'APP_USR-' or 'TEST-', but some test credentials
+     * may use 'APP_USR-' prefix even in sandbox mode.
      *
      * @remarks
      * If not provided, will be read from MERCADO_PAGO_ACCESS_TOKEN environment variable
@@ -38,8 +39,8 @@ export interface MercadoPagoAdapterConfig {
      * Enable sandbox/test mode
      *
      * @remarks
-     * When true, requires a TEST- access token
-     * When false, requires an APP_USR- access token
+     * When true, uses MercadoPago sandbox environment
+     * When false, uses production environment (requires APP_USR- token)
      * If not provided, will be read from MERCADO_PAGO_SANDBOX environment variable (default: true)
      */
     sandbox?: boolean;
@@ -145,22 +146,28 @@ export function createMercadoPagoAdapter(
         );
     }
 
-    // Validate access token format
+    // Validate access token format (warning only)
+    // MercadoPago tokens may start with 'APP_USR-' or 'TEST-', but some
+    // test credentials use 'APP_USR-' prefix even in sandbox mode.
+    // The actual token validity is verified by MercadoPago's API at runtime.
     const isTestToken = accessToken.startsWith('TEST-');
     const isProdToken = accessToken.startsWith('APP_USR-');
 
     if (!isTestToken && !isProdToken) {
-        throw new Error(
-            'Invalid MercadoPago access token format. Expected token starting with "APP_USR-" or "TEST-"'
+        console.warn(
+            '[billing] MercadoPago access token has unexpected format. ' +
+                'Expected prefix "APP_USR-" or "TEST-". Proceeding anyway as MercadoPago will validate at runtime.'
         );
     }
 
-    // Validate sandbox mode matches token type
-    if (sandbox && !isTestToken) {
-        throw new Error('Sandbox mode requires a TEST- access token. Received production token.');
+    if (sandbox && isProdToken) {
+        console.warn(
+            '[billing] Sandbox mode enabled with APP_USR- token. ' +
+                'This is acceptable if MercadoPago issued this token for your test application.'
+        );
     }
 
-    if (!sandbox && !isProdToken) {
+    if (!sandbox && isTestToken) {
         throw new Error('Production mode requires an APP_USR- access token. Received test token.');
     }
 
