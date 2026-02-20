@@ -67,7 +67,11 @@ export const AccommodationSearchHttpSchema = BaseHttpSearchSchema.extend({
     // Array filters with HTTP coercion
     types: createArrayQueryParam('Filter by multiple accommodation types'),
     amenities: createArrayQueryParam('Filter by required amenity IDs'),
-    features: createArrayQueryParam('Filter by required feature IDs')
+    features: createArrayQueryParam('Filter by required feature IDs'),
+
+    // Include relation flags (opt-in for heavier queries)
+    includeAmenities: createBooleanQueryParam('Include accommodation amenities in response'),
+    includeFeatures: createBooleanQueryParam('Include accommodation features in response')
 });
 
 export type AccommodationSearchHttp = z.infer<typeof AccommodationSearchHttpSchema>;

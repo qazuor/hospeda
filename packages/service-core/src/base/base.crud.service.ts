@@ -753,7 +753,12 @@ export abstract class BaseCrudService<
      */
     public async list(
         actor: Actor,
-        options: { page?: number; pageSize?: number; relations?: ListRelationsConfig } = {}
+        options: {
+            page?: number;
+            pageSize?: number;
+            relations?: ListRelationsConfig;
+            where?: Record<string, unknown>;
+        } = {}
     ): Promise<ServiceOutput<PaginatedListOutput<TEntity>>> {
         return this.runWithLoggingAndValidation({
             methodName: 'list',
@@ -761,7 +766,10 @@ export abstract class BaseCrudService<
             schema: z.object({
                 page: z.number().optional(),
                 pageSize: z.number().optional(),
-                relations: z.record(z.string(), z.boolean()).optional()
+                relations: z
+                    .record(z.string(), z.union([z.boolean(), z.record(z.string(), z.unknown())]))
+                    .optional(),
+                where: z.record(z.string(), z.unknown()).optional()
             }),
             execute: async (validatedOptions, validatedActor) => {
                 await this._canList(validatedActor);
@@ -773,18 +781,18 @@ export abstract class BaseCrudService<
 
                 // Determine which relations to use: provided relations or service defaults
                 const relationsToUse = processedOptions.relations ?? this.getDefaultListRelations();
+                const whereClause =
+                    ((processedOptions as Record<string, unknown>).where as
+                        | Record<string, unknown>
+                        | undefined) ?? {};
 
                 // Use findAllWithRelations if relations are specified, otherwise use regular findAll
                 const result = relationsToUse
-                    ? await this.model.findAllWithRelations(
-                          relationsToUse,
-                          {},
-                          {
-                              page: processedOptions.page,
-                              pageSize: processedOptions.pageSize
-                          }
-                      )
-                    : await this.model.findAll({}, processedOptions);
+                    ? await this.model.findAllWithRelations(relationsToUse, whereClause, {
+                          page: processedOptions.page,
+                          pageSize: processedOptions.pageSize
+                      })
+                    : await this.model.findAll(whereClause, processedOptions);
 
                 return this._afterList(result, validatedActor);
             }

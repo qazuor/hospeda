@@ -75,7 +75,9 @@ describe('AccommodationService.getFaqs', () => {
     });
 
     it('should return faqs for an accommodation', async () => {
-        const accommodationWithFaqs = { ...accommodation, faqs };
+        const accommodationWithFaqs = { ...accommodation, faqs } as typeof accommodation & {
+            faqs: typeof faqs;
+        };
         modelMock.findWithRelations.mockResolvedValue(accommodationWithFaqs);
         vi.spyOn(permissionHelpers, 'checkCanView').mockReturnValue();
         const result = await service.getFaqs(actor, input);
@@ -99,7 +101,9 @@ describe('AccommodationService.getFaqs', () => {
     });
 
     it('should return FORBIDDEN if actor cannot view', async () => {
-        const accommodationWithFaqs = { ...accommodation, faqs };
+        const accommodationWithFaqs = { ...accommodation, faqs } as typeof accommodation & {
+            faqs: typeof faqs;
+        };
         modelMock.findWithRelations.mockResolvedValue(accommodationWithFaqs);
         vi.spyOn(permissionHelpers, 'checkCanView').mockImplementation(() => {
             throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'forbidden');
