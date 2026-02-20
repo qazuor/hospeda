@@ -21,18 +21,25 @@ describe('Footer.astro', () => {
             expect(content).toContain('Hospeda');
         });
 
-        it('should have tagline', () => {
-            expect(content).toContain('Litoral argentino');
+        it('should have regional tagline referencing Uruguay coast', () => {
+            expect(content).toContain('Uruguay');
+        });
+
+        it('should have mate tagline', () => {
+            expect(content).toContain('mate');
+        });
+    });
+
+    describe('Skyline silhouette', () => {
+        it('should have SVG skyline divider', () => {
+            expect(content).toContain('<svg');
+            expect(content).toContain('skyline');
         });
     });
 
     describe('Link groups', () => {
         it('should have Explorar section', () => {
             expect(content).toContain('Explorar');
-        });
-
-        it('should have Informacion section', () => {
-            expect(content).toContain('Informacion');
         });
 
         it('should have Legal section', () => {
@@ -46,16 +53,31 @@ describe('Footer.astro', () => {
             expect(content).toContain('/publicaciones/');
         });
 
-        it('should include info links', () => {
-            expect(content).toContain('/quienes-somos/');
-            expect(content).toContain('/beneficios/');
-            expect(content).toContain('/contacto/');
-        });
-
         it('should include legal links', () => {
             expect(content).toContain('/terminos-condiciones/');
             expect(content).toContain('/privacidad/');
-            expect(content).toContain('/sitemap/');
+        });
+    });
+
+    describe('Social media', () => {
+        it('should have social media links', () => {
+            expect(content).toContain('instagram');
+            expect(content).toContain('facebook');
+        });
+
+        it('should have hover scale animation on social links', () => {
+            expect(content).toContain('hover:scale-110');
+        });
+    });
+
+    describe('Regional identity', () => {
+        it('should use teal-to-night gradient background', () => {
+            expect(content).toContain('from-primary-900');
+            expect(content).toContain('0F1A2E');
+        });
+
+        it('should use Caveat font for mate tagline', () => {
+            expect(content).toContain('font-accent');
         });
     });
 

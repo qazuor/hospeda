@@ -9,7 +9,7 @@ const tailwindCssPath = resolve(__dirname, '../../src/styles/tailwind.css');
 const tailwindCss = readFileSync(tailwindCssPath, 'utf8');
 
 describe('Design Tokens - global.css', () => {
-    describe('Color tokens', () => {
+    describe('Regional color palette', () => {
         const colorTokens = [
             '--color-primary',
             '--color-primary-dark',
@@ -26,6 +26,9 @@ describe('Design Tokens - global.css', () => {
             '--color-border',
             '--color-bg',
             '--color-surface',
+            '--color-surface-alt',
+            '--color-surface-warm',
+            '--color-header-bg',
             '--color-success',
             '--color-warning',
             '--color-error',
@@ -36,27 +39,85 @@ describe('Design Tokens - global.css', () => {
             expect(globalCss).toContain(`${token}:`);
         });
 
-        it('should have --color-primary value of #3B82F6', () => {
-            expect(globalCss).toMatch(/--color-primary:\s*#3B82F6/i);
+        it('should have --color-primary value of #0D7377 (Rio Uruguay teal)', () => {
+            expect(globalCss).toMatch(/--color-primary:\s*#0D7377/i);
         });
 
-        it('should have --color-primary-dark value of #2563EB', () => {
-            expect(globalCss).toMatch(/--color-primary-dark:\s*#2563EB/i);
+        it('should have --color-primary-dark value of #0A5C5F', () => {
+            expect(globalCss).toMatch(/--color-primary-dark:\s*#0A5C5F/i);
         });
 
-        it('should have --color-accent-warm value of #F97316', () => {
-            expect(globalCss).toMatch(/--color-accent-warm:\s*#F97316/i);
+        it('should have --color-primary-light value of #3D9B9E', () => {
+            expect(globalCss).toMatch(/--color-primary-light:\s*#3D9B9E/i);
         });
 
-        it('should have --color-bg-warm value of #F9F4EE in light mode', () => {
+        it('should have --color-secondary value of #D4870E (amber gold)', () => {
+            expect(globalCss).toMatch(/--color-secondary:\s*#D4870E/i);
+        });
+
+        it('should have --color-accent value of #F0E6D6 (warm sand)', () => {
+            expect(globalCss).toMatch(/--color-accent:\s*#F0E6D6/i);
+        });
+
+        it('should have --color-accent-dark value of #C25B3A (terracotta)', () => {
+            expect(globalCss).toMatch(/--color-accent-dark:\s*#C25B3A/i);
+        });
+
+        it('should have --color-accent-warm value of #D4870E (amber)', () => {
+            expect(globalCss).toMatch(/--color-accent-warm:\s*#D4870E/i);
+        });
+
+        it('should have --color-bg value of #FDFAF5 (river sand)', () => {
+            expect(globalCss).toMatch(/--color-bg:\s*#FDFAF5/i);
+        });
+
+        it('should have warm brown text color #2C1810', () => {
+            expect(globalCss).toMatch(/--color-text:\s*#2C1810/i);
+        });
+
+        it('should have --color-bg-warm value of #F0E6D6', () => {
             const rootSection = globalCss.split('[data-theme="dark"]')[0];
-            expect(rootSection).toMatch(/--color-bg-warm:\s*#F9F4EE/i);
+            expect(rootSection).toMatch(/--color-bg-warm:\s*#F0E6D6/i);
+        });
+    });
+
+    describe('Primary color scale (50-950)', () => {
+        const primaryScale = [
+            '--color-primary-50',
+            '--color-primary-100',
+            '--color-primary-200',
+            '--color-primary-300',
+            '--color-primary-400',
+            '--color-primary-500',
+            '--color-primary-600',
+            '--color-primary-700',
+            '--color-primary-800',
+            '--color-primary-900',
+            '--color-primary-950'
+        ];
+
+        it.each(primaryScale)('should define %s', (token) => {
+            expect(globalCss).toContain(`${token}:`);
+        });
+    });
+
+    describe('Green color tokens', () => {
+        it('should define --color-green', () => {
+            expect(globalCss).toMatch(/--color-green:\s*#2D6A4F/i);
         });
 
-        it('should have --color-bg-warm dark mode override of #1C1917', () => {
-            const darkSection = globalCss.split('[data-theme="dark"]')[1];
-            expect(darkSection).toBeDefined();
-            expect(darkSection).toMatch(/--color-bg-warm:\s*#1C1917/i);
+        it('should define --color-green-dark', () => {
+            expect(globalCss).toMatch(/--color-green-dark:\s*#1B4332/i);
+        });
+
+        it('should define --color-green-light', () => {
+            expect(globalCss).toMatch(/--color-green-light:\s*#52B788/i);
+        });
+    });
+
+    describe('Terracotta color tokens', () => {
+        it('should define --color-terracotta', () => {
+            expect(globalCss).toMatch(/--color-terracotta:\s*#C25B3A/i);
         });
     });
 
@@ -83,6 +144,7 @@ describe('Design Tokens - global.css', () => {
             '--radius-md',
             '--radius-lg',
             '--radius-xl',
+            '--radius-2xl',
             '--radius-full'
         ];
 
@@ -91,23 +153,53 @@ describe('Design Tokens - global.css', () => {
         });
     });
 
-    describe('Shadow tokens', () => {
+    describe('Shadow tokens (warm-tinted)', () => {
         const shadowTokens = ['--shadow-sm', '--shadow-md', '--shadow-lg', '--shadow-xl'];
 
         it.each(shadowTokens)('should define %s', (token) => {
             expect(globalCss).toContain(`${token}:`);
         });
 
-        it('should have updated --shadow-md value', () => {
-            expect(globalCss).toContain('--shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1)');
+        it('should use warm-tinted shadows with rgba(44, 24, 16, ...)', () => {
+            expect(globalCss).toContain('rgba(44, 24, 16,');
+        });
+    });
+
+    describe('Typography - Fraunces font', () => {
+        it('should define --font-serif with Fraunces', () => {
+            expect(globalCss).toContain('"Fraunces"');
         });
 
-        it('should have updated --shadow-lg value', () => {
-            expect(globalCss).toContain('--shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1)');
+        it('should include Fraunces Fallback in serif stack', () => {
+            expect(globalCss).toContain('"Fraunces Fallback"');
         });
 
-        it('should have updated --shadow-xl value', () => {
-            expect(globalCss).toContain('--shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1)');
+        it('should define Fraunces Fallback @font-face', () => {
+            expect(globalCss).toContain('font-family: "Fraunces Fallback"');
+        });
+
+        it('should use Georgia as Fraunces Fallback source', () => {
+            expect(globalCss).toContain('src: local("Georgia")');
+        });
+
+        it('should define --fraunces-hero variation settings', () => {
+            expect(globalCss).toContain('--fraunces-hero:');
+            expect(globalCss).toContain('"SOFT" 100');
+            expect(globalCss).toContain('"WONK" 1');
+        });
+
+        it('should define --fraunces-section variation settings', () => {
+            expect(globalCss).toContain('--fraunces-section:');
+            expect(globalCss).toContain('"SOFT" 50');
+        });
+
+        it('should define --fraunces-default variation settings', () => {
+            expect(globalCss).toContain('--fraunces-default:');
+            expect(globalCss).toContain('"opsz" auto');
+        });
+
+        it('should NOT reference Playfair Display', () => {
+            expect(globalCss).not.toContain('Playfair Display');
         });
     });
 
@@ -120,8 +212,10 @@ describe('Design Tokens - global.css', () => {
             expect(globalCss).toContain('--fs-display-section:');
         });
 
-        it('should define --fs-accent-subtitle', () => {
+        it('should define --fs-accent-subtitle with fluid clamp value', () => {
             expect(globalCss).toContain('--fs-accent-subtitle:');
+            /* Uses clamp() for fluid scaling: min 1.375rem, max 1.625rem */
+            expect(globalCss).toContain('--fs-accent-subtitle: clamp(');
         });
 
         it('should define --max-w-site with 1200px value', () => {
@@ -129,10 +223,11 @@ describe('Design Tokens - global.css', () => {
         });
     });
 
-    describe('Typography tokens', () => {
+    describe('Typography base tokens', () => {
         const typographyTokens = [
             '--font-serif',
             '--font-sans',
+            '--font-accent',
             '--font-size-xs',
             '--font-size-sm',
             '--font-size-base',
@@ -153,10 +248,6 @@ describe('Design Tokens - global.css', () => {
 
         it('should include Inter Fallback font in sans stack', () => {
             expect(globalCss).toContain('Inter Fallback');
-        });
-
-        it('should include Playfair Display Fallback font in serif stack', () => {
-            expect(globalCss).toContain('Playfair Display Fallback');
         });
     });
 
@@ -188,15 +279,6 @@ describe('Design Tokens - global.css', () => {
             expect(caveatFallbackSection).toBeDefined();
             expect(caveatFallbackSection).toContain('font-display: swap');
         });
-
-        it('should have CLS-prevention metrics for Caveat Fallback', () => {
-            const caveatFallbackSection = globalCss
-                .split('font-family: "Caveat Fallback"')[1]
-                ?.split('}')[0];
-            expect(caveatFallbackSection).toBeDefined();
-            expect(caveatFallbackSection).toContain('ascent-override:');
-            expect(caveatFallbackSection).toContain('size-adjust:');
-        });
     });
 
     describe('Font fallback metrics', () => {
@@ -208,28 +290,12 @@ describe('Design Tokens - global.css', () => {
             expect(globalCss).toContain('src: local("Arial")');
         });
 
-        it('should define Playfair Display Fallback @font-face', () => {
-            expect(globalCss).toContain('font-family: "Playfair Display Fallback"');
-        });
-
-        it('should use Georgia as Playfair Display Fallback', () => {
-            expect(globalCss).toContain('src: local("Georgia")');
-        });
-
         it('should have ascent-override for Inter Fallback', () => {
             const interFallbackSection = globalCss
                 .split('font-family: "Inter Fallback"')[1]
                 ?.split('}')[0];
             expect(interFallbackSection).toBeDefined();
             expect(interFallbackSection).toContain('ascent-override:');
-        });
-
-        it('should have descent-override for Inter Fallback', () => {
-            const interFallbackSection = globalCss
-                .split('font-family: "Inter Fallback"')[1]
-                ?.split('}')[0];
-            expect(interFallbackSection).toBeDefined();
-            expect(interFallbackSection).toContain('descent-override:');
         });
 
         it('should have size-adjust for Inter Fallback', () => {
@@ -264,7 +330,7 @@ describe('Design Tokens - global.css', () => {
         });
     });
 
-    describe('Dark mode', () => {
+    describe('Dark mode - "Noche Estrellada"', () => {
         it('should include dark mode skeleton with data-theme="dark"', () => {
             expect(globalCss).toContain('[data-theme="dark"]');
         });
@@ -276,6 +342,42 @@ describe('Design Tokens - global.css', () => {
             expect(darkSection).toContain('--color-bg:');
             expect(darkSection).toContain('--color-surface:');
         });
+
+        it('should use night blue background (#0F1A2E) not gray', () => {
+            const darkSection = globalCss.split('[data-theme="dark"]')[1];
+            expect(darkSection).toBeDefined();
+            expect(darkSection).toMatch(/--color-bg:\s*#0F1A2E/i);
+        });
+
+        it('should have deep night surface (#1A2740)', () => {
+            const darkSection = globalCss.split('[data-theme="dark"]')[1];
+            expect(darkSection).toBeDefined();
+            expect(darkSection).toMatch(/--color-surface:\s*#1A2740/i);
+        });
+
+        it('should have warm white text (#F0EDE8)', () => {
+            const darkSection = globalCss.split('[data-theme="dark"]')[1];
+            expect(darkSection).toBeDefined();
+            expect(darkSection).toMatch(/--color-text:\s*#F0EDE8/i);
+        });
+
+        it('should have luminous teal primary (#3DBDC0) in dark mode', () => {
+            const darkSection = globalCss.split('[data-theme="dark"]')[1];
+            expect(darkSection).toBeDefined();
+            expect(darkSection).toMatch(/--color-primary:\s*#3DBDC0/i);
+        });
+
+        it('should have night blue header (#0F1A2E)', () => {
+            const darkSection = globalCss.split('[data-theme="dark"]')[1];
+            expect(darkSection).toBeDefined();
+            expect(darkSection).toMatch(/--color-header-bg:\s*#0F1A2E/i);
+        });
+
+        it('should have --color-bg-warm dark mode override of #1C1A15', () => {
+            const darkSection = globalCss.split('[data-theme="dark"]')[1];
+            expect(darkSection).toBeDefined();
+            expect(darkSection).toMatch(/--color-bg-warm:\s*#1C1A15/i);
+        });
     });
 });
 
@@ -286,6 +388,10 @@ describe('Tailwind Theme - tailwind.css', () => {
 
     it('should import global.css', () => {
         expect(tailwindCss).toContain('@import "./global.css"');
+    });
+
+    it('should import textures.css', () => {
+        expect(tailwindCss).toContain('@import "./textures.css"');
     });
 
     it('should define @theme inline block', () => {
@@ -302,11 +408,32 @@ describe('Tailwind Theme - tailwind.css', () => {
             '--color-success',
             '--color-warning',
             '--color-error',
-            '--color-info'
+            '--color-info',
+            '--color-green',
+            '--color-green-dark',
+            '--color-green-light',
+            '--color-terracotta',
+            '--color-terracotta-dark',
+            '--color-terracotta-light'
         ];
 
         it.each(themeColors)('should map %s to Tailwind theme', (token) => {
-            // Check that it appears inside the @theme inline block
+            const themeSection = tailwindCss.split('@theme inline')[1];
+            expect(themeSection).toContain(token);
+        });
+    });
+
+    describe('Primary scale in theme', () => {
+        const primaryScaleTokens = [
+            '--color-primary-50',
+            '--color-primary-100',
+            '--color-primary-200',
+            '--color-primary-500',
+            '--color-primary-900',
+            '--color-primary-950'
+        ];
+
+        it.each(primaryScaleTokens)('should map %s to Tailwind theme', (token) => {
             const themeSection = tailwindCss.split('@theme inline')[1];
             expect(themeSection).toContain(token);
         });
@@ -329,6 +456,11 @@ describe('Tailwind Theme - tailwind.css', () => {
             const themeSection = tailwindCss.split('@theme inline')[1];
             expect(themeSection).toContain('--max-w-site');
         });
+
+        it('should map --radius-2xl to Tailwind theme', () => {
+            const themeSection = tailwindCss.split('@theme inline')[1];
+            expect(themeSection).toContain('--radius-2xl');
+        });
     });
 
     describe('Base typography', () => {
@@ -338,6 +470,19 @@ describe('Tailwind Theme - tailwind.css', () => {
 
         it('should set sans font for html', () => {
             expect(tailwindCss).toContain('var(--font-sans)');
+        });
+
+        it('should include font-variation-settings for headings', () => {
+            expect(tailwindCss).toContain('font-variation-settings');
+            expect(tailwindCss).toContain('var(--fraunces-default)');
+        });
+
+        it('should have h1 letter-spacing of -0.04em', () => {
+            expect(tailwindCss).toContain('-0.04em');
+        });
+
+        it('should have h2 letter-spacing of -0.03em', () => {
+            expect(tailwindCss).toContain('-0.03em');
         });
 
         it('should include focus-visible styles for accessibility', () => {

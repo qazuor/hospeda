@@ -39,8 +39,8 @@ describe('TestimonialsSection.astro', () => {
             expect(sectionContent).toContain('SectionWrapper');
         });
 
-        it('should use warm variant for beige background', () => {
-            expect(sectionContent).toContain('variant="warm"');
+        it('should use sand variant for beige background', () => {
+            expect(sectionContent).toContain('variant="sand"');
         });
     });
 
@@ -118,8 +118,8 @@ describe('TestimonialCarousel.client.tsx', () => {
     });
 
     describe('ARIA', () => {
-        it('should have role=region on carousel container', () => {
-            expect(carouselContent).toContain('role="region"');
+        it('should have aria-roledescription=carousel on carousel container', () => {
+            expect(carouselContent).toContain('aria-roledescription="carousel"');
         });
 
         it('should have aria-label on carousel', () => {

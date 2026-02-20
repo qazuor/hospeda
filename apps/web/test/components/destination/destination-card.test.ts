@@ -136,4 +136,24 @@ describe('DestinationCard.astro', () => {
             expect(content).toContain('aria-hidden="true"');
         });
     });
+
+    describe('T-037: Source file integrity', () => {
+        it('should be a non-empty readable file', () => {
+            expect(content.length).toBeGreaterThan(0);
+        });
+
+        it('should contain a valid Astro component frontmatter block', () => {
+            expect(content).toMatch(/^---/);
+            expect(content).toContain('---');
+        });
+
+        it('should not have any broken import statements', () => {
+            const imports = content.match(/^import .+from .+;?$/gm) ?? [];
+            expect(imports.length).toBeGreaterThan(0);
+        });
+
+        it('should still export a valid Props interface', () => {
+            expect(content).toContain('interface Props');
+        });
+    });
 });

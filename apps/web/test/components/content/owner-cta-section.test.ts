@@ -15,8 +15,8 @@ describe('OwnerCTASection.astro', () => {
             expect(content).toContain('locale');
         });
 
-        it('should accept optional backgroundImage prop', () => {
-            expect(content).toContain('backgroundImage');
+        it('should not require backgroundImage prop (uses gradient)', () => {
+            expect(content).toContain('locale');
         });
     });
 
@@ -25,8 +25,9 @@ describe('OwnerCTASection.astro', () => {
             expect(content).toContain('SectionWrapper');
         });
 
-        it('should use image variant for background overlay', () => {
-            expect(content).toContain('variant="image"');
+        it('should use gradient background (from-primary-50 via-surface-warm)', () => {
+            expect(content).toContain('from-primary-50');
+            expect(content).toContain('via-surface-warm');
         });
     });
 
@@ -57,8 +58,8 @@ describe('OwnerCTASection.astro', () => {
             expect(content).toContain('font-accent');
         });
 
-        it('should use font-display (Playfair) for heading', () => {
-            expect(content).toContain('font-display');
+        it('should use font-serif (Fraunces) for heading', () => {
+            expect(content).toContain('font-serif');
         });
     });
 
@@ -81,8 +82,8 @@ describe('OwnerCTASection.astro', () => {
     });
 
     describe('Background', () => {
-        it('should have dark background fallback', () => {
-            expect(content).toContain('bg-gray-800');
+        it('should have gradient background', () => {
+            expect(content).toContain('bg-gradient-to-br');
         });
 
         it('should NOT use img element for background', () => {

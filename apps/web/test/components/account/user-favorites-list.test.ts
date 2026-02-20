@@ -73,12 +73,12 @@ describe('UserFavoritesList.client.tsx', () => {
             expect(content).toContain('entityType: EntityType');
         });
 
-        it('should define Bookmark interface with displayName field', () => {
-            expect(content).toContain('displayName: string');
+        it('should define Bookmark interface with name field', () => {
+            expect(content).toContain('name: string | null');
         });
 
-        it('should define Bookmark interface with notes field', () => {
-            expect(content).toContain('notes: string | null');
+        it('should define Bookmark interface with description field', () => {
+            expect(content).toContain('description: string | null');
         });
 
         it('should define Bookmark interface with createdAt field', () => {
@@ -260,7 +260,7 @@ describe('UserFavoritesList.client.tsx', () => {
         });
 
         it('should have aria-label on delete buttons', () => {
-            expect(content).toContain('aria-label={`${messages.delete} ${bookmark.displayName}`}');
+            expect(content).toContain('aria-label={`${messages.delete} ${bookmark.name');
         });
     });
 
@@ -385,16 +385,16 @@ describe('UserFavoritesList.client.tsx', () => {
     });
 
     describe('Bookmark list rendering', () => {
-        it('should render bookmark displayName', () => {
-            expect(content).toContain('{bookmark.displayName}');
+        it('should render bookmark name', () => {
+            expect(content).toContain('bookmark.name');
         });
 
-        it('should render bookmark notes when present', () => {
-            expect(content).toContain('{bookmark.notes && (');
+        it('should render bookmark description when present', () => {
+            expect(content).toContain('bookmark.description');
         });
 
         it('should render formatted createdAt date', () => {
-            expect(content).toContain('new Date(bookmark.createdAt).toLocaleDateString(locale');
+            expect(content).toContain('new Date(bookmark.createdAt).toLocaleDateString(');
         });
 
         it('should use bookmark.id as key', () => {

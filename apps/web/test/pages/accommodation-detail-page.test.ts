@@ -169,7 +169,7 @@ describe('Accommodation Detail Page ([slug].astro)', () => {
         });
 
         it('should pass images to gallery', () => {
-            expect(content).toContain('images={accommodation.images || []}');
+            expect(content).toContain('images={galleryImages}');
         });
     });
 
@@ -352,7 +352,7 @@ describe('Accommodation Detail Page ([slug].astro)', () => {
 
         it('should render AccommodationCard for similar items', () => {
             expect(content).toContain('<AccommodationCard');
-            expect(content).toContain('similarAccommodations.map');
+            expect(content).toContain('similarCards.map');
         });
     });
 
@@ -425,9 +425,7 @@ describe('Accommodation Detail Page ([slug].astro)', () => {
         });
 
         it('should pass image to BaseLayout', () => {
-            expect(content).toContain(
-                "image={accommodation.images?.[0]?.src || '/images/placeholder-accommodation.svg'}"
-            );
+            expect(content).toContain('image={accommodationImage}');
         });
 
         it('should use Container component', () => {
@@ -482,7 +480,8 @@ describe('Accommodation Detail Page ([slug].astro)', () => {
         });
 
         it('should call accommodationsApi.list in getStaticPaths', () => {
-            expect(content).toContain('await accommodationsApi.list({ pageSize: 500 })');
+            expect(content).toContain('fetchAllPages');
+            expect(content).toContain('accommodationsApi.list');
         });
 
         it('should check result.ok before using data', () => {

@@ -208,13 +208,13 @@ describe('Accommodation List Page', () => {
         });
 
         it('should map accommodations to cards', () => {
-            expect(content).toContain('accommodations.map((acc) =>');
-            expect(content).toContain('<AccommodationCard accommodation={acc');
+            expect(content).toContain('accommodationCards.map((accommodation) =>');
+            expect(content).toContain('<AccommodationCard');
             expect(content).toContain('locale={locale}');
         });
 
         it('should show EmptyState when no accommodations', () => {
-            expect(content).toContain('accommodations.length > 0');
+            expect(content).toContain('accommodationCards.length > 0');
             expect(content).toContain('<EmptyState');
         });
     });

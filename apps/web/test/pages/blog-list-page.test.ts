@@ -279,7 +279,7 @@ describe('publicaciones/index.astro', () => {
         });
 
         it('should show EmptyState when no posts', () => {
-            expect(content).toContain('posts.length > 0');
+            expect(content).toContain('postCards.length > 0');
             expect(content).toContain('<EmptyState');
         });
 

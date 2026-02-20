@@ -26,6 +26,10 @@ describe('BaseLayout.astro', () => {
         it('should define optional locale prop', () => {
             expect(layoutContent).toContain('locale?: string');
         });
+
+        it('should define optional isHero prop for transparent header', () => {
+            expect(layoutContent).toContain('isHero?: boolean');
+        });
     });
 
     describe('Head section', () => {
@@ -96,8 +100,8 @@ describe('BaseLayout.astro', () => {
             expect(layoutContent).toContain('Inter');
         });
 
-        it('should load Playfair Display font', () => {
-            expect(layoutContent).toContain('Playfair+Display');
+        it('should load Fraunces variable font', () => {
+            expect(layoutContent).toContain('Fraunces');
         });
 
         it('should load Caveat font', () => {
@@ -143,8 +147,8 @@ describe('BaseLayout.astro', () => {
             expect(layoutContent).toContain("import Footer from './Footer.astro'");
         });
 
-        it('should render Header with locale', () => {
-            expect(layoutContent).toContain('<Header locale={locale}');
+        it('should render Header with locale and isHero', () => {
+            expect(layoutContent).toContain('<Header locale={locale} isHero={isHero}');
         });
 
         it('should render Footer with locale', () => {
@@ -160,6 +164,47 @@ describe('BaseLayout.astro', () => {
     describe('Styles', () => {
         it('should import tailwind.css', () => {
             expect(layoutContent).toContain('tailwind.css');
+        });
+    });
+
+    describe('View Transitions', () => {
+        it('should import ViewTransitions from astro:transitions', () => {
+            expect(layoutContent).toContain("import { ViewTransitions } from 'astro:transitions'");
+        });
+
+        it('should render ViewTransitions with fallback swap', () => {
+            expect(layoutContent).toContain('<ViewTransitions fallback="swap"');
+        });
+
+        it('should define custom view transition keyframes', () => {
+            expect(layoutContent).toContain('vt-fade-scale-out');
+            expect(layoutContent).toContain('vt-fade-scale-in');
+        });
+    });
+
+    describe('Dark mode FOUC prevention', () => {
+        it('should have inline script for theme detection', () => {
+            expect(layoutContent).toContain('is:inline');
+            expect(layoutContent).toContain('hospeda-theme');
+        });
+
+        it('should set data-theme attribute before first paint', () => {
+            expect(layoutContent).toContain('data-theme');
+        });
+    });
+
+    describe('Scroll reveal', () => {
+        it('should have scroll reveal observer script', () => {
+            expect(layoutContent).toContain('initScrollReveal');
+            expect(layoutContent).toContain('IntersectionObserver');
+        });
+
+        it('should respect prefers-reduced-motion', () => {
+            expect(layoutContent).toContain('prefers-reduced-motion');
+        });
+
+        it('should re-init on astro page load', () => {
+            expect(layoutContent).toContain('astro:page-load');
         });
     });
 });

@@ -474,8 +474,8 @@ describe('SubscriptionCard.client.tsx', () => {
             expect(content).toContain('readonly label: string');
         });
 
-        it('should have role="status" on the badge span', () => {
-            expect(content).toContain('role="status"');
+        it('should use output element for the badge', () => {
+            expect(content).toContain('<output');
         });
 
         it('should apply color classes from STATUS_BADGE_CLASSES', () => {
@@ -501,7 +501,7 @@ describe('SubscriptionCard.client.tsx', () => {
         });
 
         it('should render li elements for each feature', () => {
-            expect(content).toContain('<li key={feature}');
+            expect(content).toContain('key={feature}');
         });
 
         it('should render CheckIcon with aria-hidden for each feature', () => {
@@ -535,8 +535,8 @@ describe('SubscriptionCard.client.tsx', () => {
             expect(content).toContain('role="alert"');
         });
 
-        it('should use role="status" on StatusBadge span', () => {
-            expect(content).toContain('role="status"');
+        it('should use output element on StatusBadge', () => {
+            expect(content).toContain('<output');
         });
 
         it('should have focus-visible ring on CTA link for keyboard navigation', () => {
@@ -546,7 +546,7 @@ describe('SubscriptionCard.client.tsx', () => {
 
         it('should use ul/li for features list', () => {
             expect(content).toContain('<ul');
-            expect(content).toContain('<li key={feature}');
+            expect(content).toContain('key={feature}');
         });
     });
 

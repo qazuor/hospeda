@@ -15,8 +15,9 @@ describe('NewsletterSection.astro', () => {
             expect(content).toContain('locale');
         });
 
-        it('should accept optional backgroundImage prop', () => {
-            expect(content).toContain('backgroundImage');
+        it('should accept optional isAuthenticated and isSubscribed props', () => {
+            expect(content).toContain('isAuthenticated');
+            expect(content).toContain('isSubscribed');
         });
 
         it('should accept optional isAuthenticated prop', () => {
@@ -33,8 +34,8 @@ describe('NewsletterSection.astro', () => {
             expect(content).toContain('SectionWrapper');
         });
 
-        it('should use image variant for background overlay', () => {
-            expect(content).toContain('variant="image"');
+        it('should use river variant with gradient overlay', () => {
+            expect(content).toContain('variant="river"');
         });
     });
 
@@ -83,8 +84,9 @@ describe('NewsletterSection.astro', () => {
     });
 
     describe('Background fallback', () => {
-        it('should have dark background fallback', () => {
-            expect(content).toContain('bg-gray-800');
+        it('should have gradient background', () => {
+            expect(content).toContain('bg-gradient-to-br');
+            expect(content).toContain('from-primary-800');
         });
     });
 

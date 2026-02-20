@@ -75,8 +75,9 @@ describe('[slug].astro (Event Detail)', () => {
             expect(content).toContain('export async function getStaticPaths()');
         });
 
-        it('should call eventsApi.list in getStaticPaths', () => {
-            expect(content).toContain('await eventsApi.list({ pageSize: 500 })');
+        it('should call fetchAllPages in getStaticPaths', () => {
+            expect(content).toContain('await fetchAllPages(');
+            expect(content).toContain('eventsApi.list');
         });
 
         it('should check result.ok before using data', () => {
@@ -154,7 +155,7 @@ describe('[slug].astro (Event Detail)', () => {
         });
 
         it('should include image in SEO meta', () => {
-            expect(content).toContain('image={event.featuredImage || event.image}');
+            expect(content).toContain('image={eventImageUrl || undefined}');
         });
 
         it('should include EventJsonLd structured data', () => {

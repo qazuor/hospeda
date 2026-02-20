@@ -24,7 +24,7 @@ describe('View Transitions Configuration', () => {
 
     describe('Custom Transitions', () => {
         it('should have custom view transition CSS', () => {
-            expect(content).toContain('/* Custom view transitions */');
+            expect(content).toContain('/* Custom view transitions with subtle scale */');
         });
 
         it('should have ::view-transition-old(root) rule', () => {
@@ -36,8 +36,8 @@ describe('View Transitions Configuration', () => {
         });
 
         it('should have fade animation keyframes', () => {
-            expect(content).toContain('@keyframes fade-out');
-            expect(content).toContain('@keyframes fade-in');
+            expect(content).toContain('@keyframes vt-fade-scale-out');
+            expect(content).toContain('@keyframes vt-fade-scale-in');
         });
 
         it('should have entity-image transition group for card-to-detail morph', () => {
@@ -51,10 +51,10 @@ describe('View Transitions Configuration', () => {
 
         it('should have default transition duration of 0.3s', () => {
             const rootOldMatch = content.match(
-                /::view-transition-old\(root\)\s*{[^}]*animation:\s*fade-out\s+([\d.]+s)/
+                /::view-transition-old\(root\)\s*{[^}]*animation:\s*vt-fade-scale-out\s+([\d.]+s)/
             );
             const rootNewMatch = content.match(
-                /::view-transition-new\(root\)\s*{[^}]*animation:\s*fade-in\s+([\d.]+s)/
+                /::view-transition-new\(root\)\s*{[^}]*animation:\s*vt-fade-scale-in\s+([\d.]+s)/
             );
 
             expect(rootOldMatch).toBeTruthy();

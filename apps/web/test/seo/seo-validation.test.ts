@@ -419,7 +419,7 @@ describe('Page-Level SEO Checks', () => {
         });
 
         it('should pass image to SEOHead', () => {
-            expect(accommodationContent).toContain('image={accommodation.images');
+            expect(accommodationContent).toContain('image={accommodationImage}');
         });
     });
 

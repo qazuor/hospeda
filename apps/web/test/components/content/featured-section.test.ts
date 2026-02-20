@@ -35,7 +35,8 @@ describe('FeaturedSection.astro', () => {
 
         it('should have vertical padding classes', () => {
             expect(content).toContain('py-12');
-            expect(content).toContain('md:py-16');
+            expect(content).toContain('sm:py-16');
+            expect(content).toContain('lg:py-24');
         });
 
         it('should import Container from ui', () => {

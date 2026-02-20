@@ -310,7 +310,8 @@ describe('Blog Detail Page ([slug].astro)', () => {
         });
 
         it('should call postsApi.list in getStaticPaths', () => {
-            expect(content).toContain('await postsApi.list({ pageSize: 500 })');
+            expect(content).toContain('fetchAllPages');
+            expect(content).toContain('postsApi.list');
         });
 
         it('should check result.ok before using data', () => {

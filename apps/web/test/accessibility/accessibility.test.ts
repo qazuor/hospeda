@@ -98,7 +98,8 @@ describe('Accessibility Tests', () => {
             });
 
             it('should have header with role="banner"', () => {
-                expect(headerContent).toContain('<header role="banner"');
+                expect(headerContent).toContain('role="banner"');
+                expect(headerContent).toContain('<header');
             });
 
             it('should have navigation with role="navigation"', () => {
@@ -112,6 +113,7 @@ describe('Accessibility Tests', () => {
             it('should use MobileMenuWrapper React island for mobile navigation', () => {
                 expect(headerContent).toContain('MobileMenuWrapper');
                 expect(headerContent).toContain('client:media="(max-width: 768px)"');
+                expect(headerContent).toContain('navItems={');
             });
 
             it('should have decorative icons with aria-hidden', () => {
@@ -763,7 +765,7 @@ describe('Accessibility Tests', () => {
 
             it('should use MobileMenuWrapper for mobile menu trigger', () => {
                 expect(headerContent).toContain('<MobileMenuWrapper');
-                expect(headerContent).toContain('navItems={navLinks}');
+                expect(headerContent).toContain('navItems={');
             });
         });
 

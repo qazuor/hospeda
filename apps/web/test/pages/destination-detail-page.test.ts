@@ -384,7 +384,7 @@ describe('Destination Detail Page', () => {
         });
 
         it('should render AccommodationCard in grid', () => {
-            expect(content).toContain('accommodations.map');
+            expect(content).toContain('previewAccommodations.map');
             expect(content).toContain('<AccommodationCard accommodation={accommodation}');
         });
 
@@ -399,7 +399,7 @@ describe('Destination Detail Page', () => {
         });
 
         it('should use conditional rendering for accommodations', () => {
-            expect(content).toContain('accommodations.length > 0');
+            expect(content).toContain('previewAccommodations.length > 0');
         });
     });
 
@@ -413,7 +413,7 @@ describe('Destination Detail Page', () => {
         });
 
         it('should render EventCard in grid', () => {
-            expect(content).toContain('events.map');
+            expect(content).toContain('previewEvents.map');
             expect(content).toContain('<EventCard event={event}');
         });
 
@@ -428,7 +428,7 @@ describe('Destination Detail Page', () => {
         });
 
         it('should use conditional rendering for events', () => {
-            expect(content).toContain('events.length > 0');
+            expect(content).toContain('previewEvents.length > 0');
         });
     });
 
@@ -450,15 +450,11 @@ describe('Destination Detail Page', () => {
         });
 
         it('should have view all link for accommodations', () => {
-            expect(content).toContain(
-                'href={`/${locale}/alojamientos/?destination=${destinationSlug}`}'
-            );
+            expect(content).toContain('href={accommodationsListUrl}');
         });
 
         it('should have view all link for events', () => {
-            expect(content).toContain(
-                'href={`/${locale}/eventos/?destination=${destinationSlug}`}'
-            );
+            expect(content).toContain('href={eventsListUrl}');
         });
     });
 
@@ -564,11 +560,12 @@ describe('Destination Detail Page', () => {
         });
 
         it('should call destinationsApi.list in getStaticPaths', () => {
-            expect(content).toContain('await destinationsApi.list({ pageSize: 500 })');
+            expect(content).toContain('fetchAllPages');
+            expect(content).toContain('destinationsApi.list');
         });
 
         it('should check result.ok before using data', () => {
-            expect(content).toContain('result.ok');
+            expect(content).toContain('destResult.ok');
         });
 
         it('should fetch destination data from props or API', () => {

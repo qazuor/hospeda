@@ -243,13 +243,13 @@ describe('Event List Page', () => {
             expect(content).toContain('grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3');
         });
 
-        it('should map over events and render EventCard', () => {
-            expect(content).toContain('events.map');
-            expect(content).toContain('<EventCard event={event');
+        it('should map over eventCards and render EventCard', () => {
+            expect(content).toContain('eventCards.map');
+            expect(content).toContain('<EventCard');
         });
 
         it('should have conditional rendering for events', () => {
-            expect(content).toContain('events.length > 0');
+            expect(content).toContain('eventCards.length > 0');
         });
     });
 

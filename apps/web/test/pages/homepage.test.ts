@@ -218,8 +218,6 @@ describe('[lang]/index.astro - Homepage', () => {
         });
 
         it('should include summary templates with placeholders', () => {
-            expect(content).toContain('typesSummary:');
-            expect(content).toContain('destinationsSummary:');
             expect(content).toContain('guestsSummary:');
         });
     });

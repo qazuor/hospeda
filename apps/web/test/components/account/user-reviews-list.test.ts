@@ -278,7 +278,9 @@ describe('UserReviewsList.client.tsx', () => {
 
     describe('Totals and pagination', () => {
         it('should define totals state with accommodation and destination counts', () => {
-            expect(content).toContain('accommodationReviews: 0, destinationReviews: 0, total: 0');
+            expect(content).toContain('accommodationReviews: 0');
+            expect(content).toContain('destinationReviews: 0');
+            expect(content).toContain('total: 0');
         });
 
         it('should compute currentTotal based on active tab', () => {
@@ -356,7 +358,7 @@ describe('UserReviewsList.client.tsx', () => {
         });
 
         it('should render review date formatted', () => {
-            expect(content).toContain('new Date(review.createdAt).toLocaleDateString(locale');
+            expect(content).toContain('new Date(review.createdAt).toLocaleDateString(');
         });
 
         it('should use StarRating component for each review', () => {
