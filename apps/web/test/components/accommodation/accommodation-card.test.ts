@@ -34,7 +34,7 @@ describe('AccommodationCard.astro', () => {
         });
 
         it('should accept optional amenities prop in data interface', () => {
-            expect(content).toContain('amenities?: string[]');
+            expect(content).toContain('amenities?: Array<{ key: string; label: string }>');
         });
     });
 
@@ -124,7 +124,7 @@ describe('AccommodationCard.astro', () => {
     describe('Price badge', () => {
         it('should conditionally render price badge when price prop is provided', () => {
             expect(content).toContain('accommodation.price');
-            expect(content).toContain('variant="price"');
+            expect(content).toContain('variant="price-light"');
         });
 
         it('should not render price badge when price is undefined', () => {
@@ -138,8 +138,8 @@ describe('AccommodationCard.astro', () => {
             expect(content).toContain('amenities');
         });
 
-        it('should limit amenities to 3 items', () => {
-            expect(content).toContain('slice(0, 3)');
+        it('should limit badge items to 4', () => {
+            expect(content).toContain('slice(0, 4)');
         });
 
         it('should mark amenity icons as decorative', () => {

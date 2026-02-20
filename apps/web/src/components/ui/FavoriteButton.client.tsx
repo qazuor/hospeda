@@ -149,7 +149,6 @@ export function FavoriteButton({
     const [showAuthPopover, setShowAuthPopover] = useState(false);
 
     // Check initial bookmark state when authenticated
-    // biome-ignore lint/correctness/useExhaustiveDependencies: only check on mount with stable entityId/entityType
     useEffect(() => {
         if (!isAuthenticated) return;
 

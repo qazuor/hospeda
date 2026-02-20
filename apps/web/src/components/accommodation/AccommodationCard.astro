@@ -1,12 +1,13 @@
 ---
 /**
  * Preview card for accommodation listings.
- * Displays featured image, type badge, price badge, name, rating,
- * location, summary, and optional amenity icons row.
+ * Displays featured image with overlaid name, location pin, type badge,
+ * price badge (top-right), star rating or "no ratings" text,
+ * summary, and optional amenity/feature badges.
  * Data-source agnostic - receives typed props, not DB entities.
  */
 import Badge from '../ui/Badge.astro';
-import { FavoriteIcon, WifiIcon, PoolIcon, ParkingIcon, AirConditioningIcon, KitchenIcon, PetAllowedIcon } from '@repo/icons';
+import { FavoriteIcon, LocationIcon, WifiIcon, PoolIcon, ParkingIcon, AirConditioningIcon, KitchenIcon, PetAllowedIcon } from '@repo/icons';
 
 interface AccommodationCardData {
   slug: string;
@@ -26,7 +27,8 @@ interface AccommodationCardData {
     currency: string;
     period: string;
   };
-  amenities?: string[];
+  amenities?: Array<{ key: string; label: string }>;
+  features?: Array<{ key: string; label: string }>;
 }
 
 interface Props {
@@ -41,24 +43,85 @@ const detailUrl = `/${locale}/alojamientos/${accommodation.slug}/`;
 /** Format rating to 1 decimal place, defaulting to 0 if not a number */
 const numericRating = Number(accommodation.averageRating) || 0;
 const formattedRating = numericRating.toFixed(1);
+const hasReviews = (accommodation.reviewsCount ?? 0) > 0;
 
-/** Format accommodation type for display */
-const typeLabels: Record<string, string> = {
-  HOTEL: 'Hotel',
-  CABIN: 'Cabana',
-  APARTMENT: 'Departamento',
-  CAMPING: 'Camping',
-  HOSTEL: 'Hostel',
-  BNB: 'B&B',
-  RURAL: 'Rural',
-  BOUTIQUE: 'Boutique',
+/** Generate star display: filled and empty stars */
+const fullStars = Math.round(numericRating);
+const emptyStars = 5 - fullStars;
+
+/** Localized type labels for accommodation types */
+const typeLabels: Record<string, Record<string, string>> = {
+  es: {
+    HOTEL: 'Hotel',
+    CABIN: 'Cabaña',
+    APARTMENT: 'Departamento',
+    HOUSE: 'Casa',
+    COUNTRY_HOUSE: 'Casa de campo',
+    HOSTEL: 'Hostal',
+    CAMPING: 'Camping',
+    ROOM: 'Habitación',
+    MOTEL: 'Motel',
+    RESORT: 'Resort',
+  },
+  en: {
+    HOTEL: 'Hotel',
+    CABIN: 'Cabin',
+    APARTMENT: 'Apartment',
+    HOUSE: 'House',
+    COUNTRY_HOUSE: 'Country house',
+    HOSTEL: 'Hostel',
+    CAMPING: 'Camping',
+    ROOM: 'Room',
+    MOTEL: 'Motel',
+    RESORT: 'Resort',
+  },
+  pt: {
+    HOTEL: 'Hotel',
+    CABIN: 'Cabana',
+    APARTMENT: 'Apartamento',
+    HOUSE: 'Casa',
+    COUNTRY_HOUSE: 'Casa de campo',
+    HOSTEL: 'Hostel',
+    CAMPING: 'Camping',
+    ROOM: 'Quarto',
+    MOTEL: 'Motel',
+    RESORT: 'Resort',
+  },
 };
-const typeLabel = typeLabels[accommodation.type] ?? accommodation.type;
 
-/** Format price for display */
+const localeLabels = typeLabels[locale] ?? typeLabels.es;
+const typeLabel = localeLabels[accommodation.type] ?? accommodation.type;
+
+/** Format price for display or show "consult" label */
+const priceLabels: Record<string, string> = {
+  es: 'Consultar precio',
+  en: 'Ask for price',
+  pt: 'Consultar preco',
+};
+
+const noRatingLabels: Record<string, string> = {
+  es: 'Sin calificaciones',
+  en: 'No ratings',
+  pt: 'Sem avaliacoes',
+};
+
 const formattedPrice = accommodation.price
-  ? `${accommodation.price.currency}${accommodation.price.amount.toLocaleString('es-AR')}/${accommodation.price.period}`
+  ? `$${accommodation.price.amount.toLocaleString('es-AR')}`
   : undefined;
+
+const consultPriceLabel = priceLabels[locale] ?? priceLabels.es;
+const noRatingLabel = noRatingLabels[locale] ?? noRatingLabels.es;
+
+/** Location display: city only, fallback to state */
+const locationDisplay = accommodation.location?.city || accommodation.location?.state || '';
+
+/** Combine amenities and features into badge list */
+const allBadgeItems: Array<{ key: string; label: string }> = [
+  ...(accommodation.amenities ?? []),
+  ...(accommodation.features ?? []),
+];
+const badgeItems = allBadgeItems.slice(0, 4);
+const extraBadgeCount = allBadgeItems.length - badgeItems.length;
 
 /** Amenity configuration: maps amenity keys to icon components and labels */
 const amenityConfig: Record<string, { icon: typeof WifiIcon; label: string }> = {
@@ -69,14 +132,10 @@ const amenityConfig: Record<string, { icon: typeof WifiIcon; label: string }> = 
   kitchen: { icon: KitchenIcon, label: 'Cocina' },
   pets: { icon: PetAllowedIcon, label: 'Mascotas' },
 };
-
-const allAmenities = accommodation.amenities ?? [];
-const displayAmenities = allAmenities.slice(0, 3);
-const extraAmenityCount = allAmenities.length - displayAmenities.length;
 ---
 
 <article class="group overflow-hidden rounded-xl border border-border bg-surface shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-  <!-- Image container -->
+  <!-- Image container with overlaid name and location -->
   <a href={detailUrl} class="relative block aspect-[4/3] overflow-hidden">
     <img
       src={accommodation.featuredImage}
@@ -85,19 +144,27 @@ const extraAmenityCount = allAmenities.length - displayAmenities.length;
       loading="lazy"
       transition:name={`entity-${accommodation.slug}`}
     />
-    <!-- Type badge -->
+
+    <!-- Dark gradient overlay for text readability -->
+    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+
+    <!-- Type badge (top-left) -->
     <div class="absolute left-3 top-3">
       <Badge label={typeLabel} variant="type" />
     </div>
-    <!-- Price badge -->
-    {formattedPrice && (
-      <div class="absolute bottom-3 right-3">
-        <Badge label={formattedPrice} variant="price" />
-      </div>
-    )}
-    <!-- Favorite button placeholder -->
+
+    <!-- Price badge (top-right) -->
+    <div class="absolute right-3 top-3">
+      {formattedPrice ? (
+        <Badge label={formattedPrice} variant="price-light" />
+      ) : (
+        <Badge label={consultPriceLabel} variant="secondary" />
+      )}
+    </div>
+
+    <!-- Favorite button -->
     {showFavorite && (
-      <div class="absolute right-3 top-3" data-slot="favorite-button">
+      <div class="absolute right-3 top-12" data-slot="favorite-button">
         <button
           type="button"
           class="flex h-8 w-8 items-center justify-center rounded-full bg-surface/80 text-text-secondary backdrop-blur-sm transition-colors hover:text-error"
@@ -107,54 +174,68 @@ const extraAmenityCount = allAmenities.length - displayAmenities.length;
         </button>
       </div>
     )}
+
+    <!-- Name + Location overlaid on image (bottom) -->
+    <div class="absolute bottom-0 left-0 right-0 p-4">
+      <h3 class="text-lg font-bold text-white line-clamp-2 drop-shadow-md" title={accommodation.name}>
+        {accommodation.name}
+      </h3>
+      {locationDisplay && (
+        <p class="mt-1 flex items-center gap-1 text-sm text-white/90 drop-shadow-sm">
+          <LocationIcon size={14} className="flex-shrink-0 text-white" aria-hidden="true" />
+          {locationDisplay}
+        </p>
+      )}
+    </div>
   </a>
 
   <!-- Content -->
   <div class="p-4">
-    <h3 class="text-lg font-semibold line-clamp-2" title={accommodation.name}>
-      <a href={detailUrl} class="text-text no-underline hover:text-primary">
-        {accommodation.name}
-      </a>
-    </h3>
-
-    <!-- Rating and reviews -->
-    {(accommodation.reviewsCount ?? 0) > 0 && (
-      <div class="mt-1 flex items-center gap-1.5 text-sm">
-        <span class="font-semibold text-warning" aria-label={`Rating: ${formattedRating} out of 5`}>
-          ★ {formattedRating}
+    <!-- Star rating or "no ratings" -->
+    {hasReviews ? (
+      <div class="flex items-center gap-1.5 text-sm">
+        <span class="flex items-center text-warning" aria-label={`Rating: ${formattedRating} out of 5`}>
+          {Array.from({ length: fullStars }).map(() => (
+            <span aria-hidden="true">&#9733;</span>
+          ))}
+          {Array.from({ length: emptyStars }).map(() => (
+            <span class="text-text-tertiary" aria-hidden="true">&#9733;</span>
+          ))}
         </span>
+        <span class="font-medium text-text">{formattedRating}</span>
         <span class="text-text-tertiary">
           ({accommodation.reviewsCount})
         </span>
       </div>
+    ) : (
+      <div class="flex items-center text-sm">
+        <span class="text-text-tertiary italic">{noRatingLabel}</span>
+      </div>
     )}
 
-    <!-- Location -->
-    <p class="mt-1.5 text-sm text-text-tertiary">
-      {accommodation.location?.city}{accommodation.location?.city && accommodation.location?.state ? ', ' : ''}{accommodation.location?.state}
-    </p>
-
     <!-- Summary -->
-    <p class="mt-2 line-clamp-2 text-sm text-text-secondary">
+    <p class="mt-2 line-clamp-3 text-xs text-text-secondary">
       {accommodation.summary}
     </p>
 
-    <!-- Amenity icons row -->
-    {displayAmenities.length > 0 && (
-      <div class="mt-3 flex items-center gap-3">
-        {displayAmenities.map((key) => {
-          const config = amenityConfig[key];
-          if (!config) return null;
-          const AmenityIcon = config.icon;
-          return (
-            <div class="flex items-center gap-1 text-sm text-text-secondary">
-              <AmenityIcon size={16} aria-hidden="true" />
-              <span>{config.label}</span>
-            </div>
+    <!-- Amenity/Feature badges -->
+    {badgeItems.length > 0 && (
+      <div class="mt-3 flex flex-wrap items-center gap-1.5">
+        {badgeItems.map((item) => {
+          const config = amenityConfig[item.key.toLowerCase()];
+          return config ? (
+            <span class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-text-secondary dark:bg-gray-800">
+              <config.icon size={12} aria-hidden="true" />
+              {config.label}
+            </span>
+          ) : (
+            <span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs text-text-secondary dark:bg-gray-800">
+              {item.label}
+            </span>
           );
         })}
-        {extraAmenityCount > 0 && (
-          <span class="text-xs text-text-tertiary">+{extraAmenityCount}</span>
+        {extraBadgeCount > 0 && (
+          <span class="text-xs text-text-tertiary">+{extraBadgeCount}</span>
         )}
       </div>
     )}

@@ -36,6 +36,8 @@ export const accommodationsApi = {
         type?: string;
         isFeatured?: boolean;
         destinationId?: string;
+        includeAmenities?: boolean;
+        includeFeatures?: boolean;
     }): Promise<ApiResult<PaginatedResponse<AccommodationPublic>>> {
         return apiClient.getList({ path: `${BASE}/accommodations`, params });
     },

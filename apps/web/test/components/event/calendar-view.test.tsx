@@ -148,16 +148,16 @@ describe('CalendarView.client.tsx', () => {
             expect(grid).toBeInTheDocument();
         });
 
-        it('should render calendar cells with role="gridcell"', () => {
+        it('should render calendar day cells', () => {
             const onDateSelect = vi.fn();
-            render(
+            const { container } = render(
                 <CalendarView
                     events={mockEvents}
                     onDateSelect={onDateSelect}
                     locale="es"
                 />
             );
-            const cells = screen.getAllByRole('gridcell');
+            const cells = container.querySelectorAll('[data-calendar-cell]');
             expect(cells.length).toBeGreaterThan(0);
         });
 
@@ -221,16 +221,16 @@ describe('CalendarView.client.tsx', () => {
             expect(screen.getByRole('grid')).toBeInTheDocument();
         });
 
-        it('should have role="gridcell" on each day cell', () => {
+        it('should have data-calendar-cell on each day cell', () => {
             const onDateSelect = vi.fn();
-            render(
+            const { container } = render(
                 <CalendarView
                     events={mockEvents}
                     onDateSelect={onDateSelect}
                     locale="es"
                 />
             );
-            const cells = screen.getAllByRole('gridcell');
+            const cells = container.querySelectorAll('[data-calendar-cell]');
             expect(cells.length).toBe(42); // 6 rows × 7 columns
         });
 
@@ -863,7 +863,7 @@ describe('CalendarView.client.tsx', () => {
             // February 2026 starts on Sunday
             vi.setSystemTime(new Date(2026, 1, 1, 12, 0, 0));
 
-            render(
+            const { container } = render(
                 <CalendarView
                     events={mockEvents}
                     onDateSelect={onDateSelect}
@@ -872,7 +872,7 @@ describe('CalendarView.client.tsx', () => {
             );
 
             // Should have cells from previous month
-            const cells = screen.getAllByRole('gridcell');
+            const cells = container.querySelectorAll('[data-calendar-cell]');
             expect(cells.length).toBe(42); // 6 rows × 7 columns
 
             vi.useRealTimers();
@@ -884,7 +884,7 @@ describe('CalendarView.client.tsx', () => {
             // February 2026 ends on Saturday
             vi.setSystemTime(new Date(2026, 1, 28, 12, 0, 0));
 
-            render(
+            const { container } = render(
                 <CalendarView
                     events={mockEvents}
                     onDateSelect={onDateSelect}
@@ -893,7 +893,7 @@ describe('CalendarView.client.tsx', () => {
             );
 
             // Should have cells from next month
-            const cells = screen.getAllByRole('gridcell');
+            const cells = container.querySelectorAll('[data-calendar-cell]');
             expect(cells.length).toBe(42); // 6 rows × 7 columns
 
             vi.useRealTimers();
@@ -953,7 +953,7 @@ describe('CalendarView.client.tsx', () => {
             );
 
             // Days from other months should have text-gray-400
-            const cells = container.querySelectorAll('[role="gridcell"]');
+            const cells = container.querySelectorAll('[data-calendar-cell]');
             const mutedCells = Array.from(cells).filter((cell) =>
                 cell.className.includes('text-gray-400')
             );

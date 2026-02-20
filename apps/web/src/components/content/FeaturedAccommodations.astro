@@ -15,11 +15,26 @@ interface Props {
 
 const { locale = 'es' } = Astro.props;
 
-const result = await accommodationsApi.list({ isFeatured: true, pageSize: 6 });
+const result = await accommodationsApi.list({
+  isFeatured: true,
+  pageSize: 6,
+  includeAmenities: true,
+  includeFeatures: true,
+});
 const accommodations = result.ok ? result.data.items : [];
 
 const accommodationCards = accommodations.map((acc) => {
   const a = acc as Record<string, unknown>;
+  const priceData = a.price as { price?: number; currency?: string } | undefined;
+
+  // Extract city from the JSONB location object.
+  // The DB stores a FullLocationType JSONB with { city, state, country, ... }.
+  // Fallback chain: location.city -> destination.name -> location.state
+  const locationObj = a.location as Record<string, unknown> | undefined;
+  const destinationObj = a.destination as Record<string, unknown> | undefined;
+  const city = String(locationObj?.city || destinationObj?.name || '');
+  const state = String(locationObj?.state || '');
+
   return {
     slug: String(a.slug || ''),
     name: String(a.name || ''),
@@ -27,9 +42,34 @@ const accommodationCards = accommodations.map((acc) => {
     type: String(a.type || a.accommodationType || ''),
     featuredImage: extractFeaturedImageUrl(a, '/images/placeholder-accommodation.svg'),
     averageRating: Number(a.averageRating || 0),
-    reviewsCount: Number(a.reviewsCount || 0),
-    location: (a.location as { city: string; state: string }) || { city: '', state: '' },
+    reviewsCount: Number(a.reviewsCount || a.ratingCount || 0),
+    location: { city, state },
     isFeatured: Boolean(a.isFeatured),
+    price: priceData?.price != null
+      ? { amount: priceData.price, currency: priceData.currency ?? 'ARS', period: 'noche' }
+      : undefined,
+    amenities: Array.isArray(a.amenities)
+      ? (a.amenities as Array<Record<string, unknown>>)
+          .map((rel) => {
+            const amenity = rel.amenity as Record<string, unknown> | undefined;
+            return {
+              key: String(amenity?.slug || amenity?.name || ''),
+              label: String(amenity?.description || amenity?.name || rel.name || ''),
+            };
+          })
+          .filter((item) => item.key)
+      : undefined,
+    features: Array.isArray(a.features)
+      ? (a.features as Array<Record<string, unknown>>)
+          .map((rel) => {
+            const feature = rel.feature as Record<string, unknown> | undefined;
+            return {
+              key: String(feature?.slug || feature?.name || ''),
+              label: String(feature?.description || feature?.name || rel.name || ''),
+            };
+          })
+          .filter((item) => item.key)
+      : undefined,
   };
 });
 ---

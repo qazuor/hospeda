@@ -16,7 +16,7 @@
  */
 interface Props {
   label: string;
-  variant?: 'primary' | 'secondary' | 'outline' | 'type' | 'price' | 'rating' | 'month' | 'tag' | 'category';
+  variant?: 'primary' | 'secondary' | 'outline' | 'type' | 'price' | 'price-light' | 'rating' | 'month' | 'tag' | 'category';
   color?: string;
   colorClass?: string;
   class?: string;
@@ -30,6 +30,7 @@ const variantClasses: Record<string, string> = {
   outline: 'border border-border text-text-secondary',
   type: 'bg-white/90 text-gray-800 rounded-full',
   price: 'bg-primary text-white font-bold rounded-full',
+  'price-light': 'bg-sky-500/90 text-white font-bold rounded-full',
   rating: 'bg-amber-400 text-white font-bold rounded',
   month: 'text-white rounded-sm text-lg font-bold',
   tag: 'bg-gray-100 text-gray-600 rounded-full text-xs font-medium',

@@ -1,25 +1,38 @@
 ---
 /**
- * Section wrapper for featured content with title and optional "View all" link.
+ * Section wrapper for featured content with title, optional subtitle,
+ * and optional "View all" link.
  * Content is provided via the default slot (typically a grid of entity cards).
+ * The title can be overridden via the named "title" slot for custom styling.
  */
 import Container from '../ui/Container.astro';
 
 interface Props {
   title: string;
+  subtitle?: string;
   viewAllHref?: string;
   viewAllLabel?: string;
   class?: string;
 }
 
-const { title, viewAllHref, viewAllLabel = 'Ver todos', class: className } = Astro.props;
+const { title, subtitle, viewAllHref, viewAllLabel = 'Ver todos', class: className } = Astro.props;
+const hasTitleSlot = Astro.slots.has('title');
 ---
 
 <section class:list={['py-12 sm:py-16 lg:py-24', className]}>
   <Container>
     <!-- Section header -->
     <div class="mb-8 flex items-end justify-between">
-      <h2 class="text-2xl font-bold md:text-3xl">{title}</h2>
+      <div>
+        {hasTitleSlot ? (
+          <slot name="title" />
+        ) : (
+          <h2 class="text-2xl font-bold md:text-3xl">{title}</h2>
+        )}
+        {subtitle && (
+          <p class="mt-2 max-w-2xl text-base text-text-secondary">{subtitle}</p>
+        )}
+      </div>
       {viewAllHref && (
         <a
           href={viewAllHref}

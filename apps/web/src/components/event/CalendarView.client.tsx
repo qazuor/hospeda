@@ -397,6 +397,7 @@ export function CalendarView({
             </div>
 
             {/* Calendar grid */}
+            {/* biome-ignore lint/a11y/useSemanticElements: div with role="grid" is the standard WAI-ARIA calendar pattern */}
             <div
                 role="grid"
                 className="overflow-hidden rounded-lg border border-gray-200"
@@ -423,7 +424,6 @@ export function CalendarView({
                             <button
                                 key={cell.dateString}
                                 type="button"
-                                role="gridcell"
                                 aria-label={ariaLabel}
                                 {...(cell.isToday && { 'aria-current': 'date' as const })}
                                 aria-selected={isSelected}

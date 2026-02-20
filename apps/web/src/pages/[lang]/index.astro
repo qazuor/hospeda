@@ -54,6 +54,7 @@ const texts: Record<SupportedLocale, {
 	searchLabels: HeroSearchBarLabels;
 	statsLabels: { destinations: string; accommodations: string };
 	featuredAccommodations: string;
+	accommodationsSubtitle: string;
 	featuredDestinations: string;
 	upcomingEvents: string;
 	latestBlog: string;
@@ -81,13 +82,13 @@ const texts: Record<SupportedLocale, {
 			closePanelAriaLabel: 'Cerrar panel',
 			typeLabels: {
 				[AccommodationTypeEnum.HOTEL]: 'Hotel',
-				[AccommodationTypeEnum.CABIN]: 'Cabana',
+				[AccommodationTypeEnum.CABIN]: 'Cabaña',
 				[AccommodationTypeEnum.APARTMENT]: 'Departamento',
 				[AccommodationTypeEnum.HOUSE]: 'Casa',
 				[AccommodationTypeEnum.COUNTRY_HOUSE]: 'Casa de campo',
 				[AccommodationTypeEnum.HOSTEL]: 'Hostel',
 				[AccommodationTypeEnum.CAMPING]: 'Camping',
-				[AccommodationTypeEnum.ROOM]: 'Habitacion',
+				[AccommodationTypeEnum.ROOM]: 'Habitación',
 				[AccommodationTypeEnum.MOTEL]: 'Motel',
 				[AccommodationTypeEnum.RESORT]: 'Resort',
 			},
@@ -95,6 +96,7 @@ const texts: Record<SupportedLocale, {
 		},
 		statsLabels: { destinations: 'destinos', accommodations: 'alojamientos' },
 		featuredAccommodations: 'Alojamientos destacados',
+		accommodationsSubtitle: 'Descubri los mejores lugares para hospedarte en Entre Rios. Desde cabanas junto al rio hasta estancias tradicionales.',
 		featuredDestinations: 'Destinos populares',
 		upcomingEvents: 'Proximos eventos',
 		latestBlog: 'Ultimas publicaciones',
@@ -135,6 +137,7 @@ const texts: Record<SupportedLocale, {
 		},
 		statsLabels: { destinations: 'destinations', accommodations: 'accommodations' },
 		featuredAccommodations: 'Featured Accommodations',
+		accommodationsSubtitle: 'Discover the best places to stay in Entre Rios. From riverside cabins to traditional estancias.',
 		featuredDestinations: 'Popular Destinations',
 		upcomingEvents: 'Upcoming Events',
 		latestBlog: 'Latest Posts',
@@ -176,6 +179,7 @@ const texts: Record<SupportedLocale, {
 		},
 		statsLabels: { destinations: 'destinos', accommodations: 'acomodacoes' },
 		featuredAccommodations: 'Acomodacoes em destaque',
+		accommodationsSubtitle: 'Descubra os melhores lugares para se hospedar em Entre Rios. De cabanas a beira do rio ate estancias tradicionais.',
 		featuredDestinations: 'Destinos populares',
 		upcomingEvents: 'Proximos eventos',
 		latestBlog: 'Ultimas publicacoes',
@@ -382,6 +386,7 @@ const TESTIMONIALS = [
 	<!-- 2. Featured Accommodations (Server Island) -->
 	<FeaturedSection
 		title={t.featuredAccommodations}
+		subtitle={t.accommodationsSubtitle}
 		viewAllHref={`/${locale}/alojamientos/`}
 		viewAllLabel={t.viewAll}
 	>
