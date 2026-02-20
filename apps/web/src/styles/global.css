@@ -33,55 +33,55 @@
 
 :root {
     /* Colors - Regional Palette: Rio Uruguay & Litoral */
-    --color-primary: #0D7377; /* Rio Uruguay teal */
-    --color-primary-dark: #0A5C5F;
-    --color-primary-light: #3D9B9E;
-    --color-secondary: #D4870E; /* Amber gold */
-    --color-secondary-dark: #B86F08;
-    --color-accent: #F0E6D6; /* Warm sand */
-    --color-accent-dark: #C25B3A; /* Terracotta */
-    --color-accent-warm: #D4870E; /* Amber */
-    --color-bg-warm: #F0E6D6; /* Warm sand background */
+    --color-primary: #0d7377; /* Rio Uruguay teal */
+    --color-primary-dark: #0a5c5f;
+    --color-primary-light: #3d9b9e;
+    --color-secondary: #d4870e; /* Amber gold */
+    --color-secondary-dark: #b86f08;
+    --color-accent: #f0e6d6; /* Warm sand */
+    --color-accent-dark: #c25b3a; /* Terracotta */
+    --color-accent-warm: #d4870e; /* Amber */
+    --color-bg-warm: #f0e6d6; /* Warm sand background */
 
     /* Primary scale for gradients */
-    --color-primary-50: #E8F5F5;
-    --color-primary-100: #C5E8E9;
-    --color-primary-200: #9ED8DA;
-    --color-primary-300: #6FC4C7;
-    --color-primary-400: #3D9B9E;
-    --color-primary-500: #0D7377;
-    --color-primary-600: #0A5C5F;
-    --color-primary-700: #084A4D;
+    --color-primary-50: #e8f5f5;
+    --color-primary-100: #c5e8e9;
+    --color-primary-200: #9ed8da;
+    --color-primary-300: #6fc4c7;
+    --color-primary-400: #3d9b9e;
+    --color-primary-500: #0d7377;
+    --color-primary-600: #0a5c5f;
+    --color-primary-700: #084a4d;
     --color-primary-800: #063839;
     --color-primary-900: #042526;
     --color-primary-950: #021516;
 
     /* Green (nature/vegetation) */
-    --color-green: #2D6A4F;
-    --color-green-dark: #1B4332;
-    --color-green-light: #52B788;
+    --color-green: #2d6a4f;
+    --color-green-dark: #1b4332;
+    --color-green-light: #52b788;
 
     /* Terracotta */
-    --color-terracotta: #C25B3A;
-    --color-terracotta-dark: #A14427;
-    --color-terracotta-light: #D4785C;
+    --color-terracotta: #c25b3a;
+    --color-terracotta-dark: #a14427;
+    --color-terracotta-light: #d4785c;
 
     /* Neutrals - warm tones */
-    --color-text: #2C1810; /* Dark warm brown */
-    --color-text-secondary: #5C4A32;
-    --color-text-tertiary: #8B7355;
-    --color-border: #E8DCC8;
-    --color-bg: #FDFAF5; /* River sand */
-    --color-surface: #FFFFFF;
-    --color-surface-alt: #F5EDE0;
-    --color-surface-warm: #F0E6D6;
-    --color-header-bg: #FFFFFF;
+    --color-text: #2c1810; /* Dark warm brown */
+    --color-text-secondary: #5c4a32;
+    --color-text-tertiary: #8b7355;
+    --color-border: #e8dcc8;
+    --color-bg: #fdfaf5; /* River sand */
+    --color-surface: #ffffff;
+    --color-surface-alt: #f5ede0;
+    --color-surface-warm: #f0e6d6;
+    --color-header-bg: #ffffff;
 
     /* Semantic */
-    --color-success: #2D6A4F;
-    --color-warning: #D4870E;
-    --color-error: #C25B3A;
-    --color-info: #0D7377;
+    --color-success: #2d6a4f;
+    --color-warning: #d4870e;
+    --color-error: #c25b3a;
+    --color-info: #0d7377;
 
     /* Spacing (8px grid) */
     --space-xs: 0.25rem; /* 4px */
@@ -113,9 +113,9 @@
     --font-accent: "Caveat", "Caveat Fallback", cursive;
 
     /* Fraunces variable font axes */
-    --fraunces-hero: 'SOFT' 100, 'WONK' 1;
-    --fraunces-section: 'SOFT' 50, 'WONK' 1;
-    --fraunces-default: 'opsz' auto;
+    --fraunces-hero: "SOFT" 100, "WONK" 1;
+    --fraunces-section: "SOFT" 50, "WONK" 1;
+    --fraunces-default: "opsz" auto;
 
     /* Typography scale (fluid with clamp) */
     --fs-display-hero: clamp(2.25rem, 5vw + 1rem, 4rem);
@@ -167,21 +167,21 @@
 
 /* Dark mode - "Noche Estrellada" (night blue, not gray) */
 [data-theme="dark"] {
-    --color-bg: #0F1A2E; /* Night blue */
-    --color-surface: #1A2740; /* Deep night surface */
-    --color-surface-alt: #1A2740;
-    --color-surface-warm: #1C1A15; /* Warm dark surface */
-    --color-bg-warm: #1C1A15;
-    --color-border: #2D3B52;
-    --color-text: #F0EDE8; /* Warm white */
-    --color-text-secondary: #C4B8A8;
-    --color-text-tertiary: #8B7E6E;
-    --color-header-bg: #0F1A2E;
+    --color-bg: #0f1a2e; /* Night blue */
+    --color-surface: #1a2740; /* Deep night surface */
+    --color-surface-alt: #1a2740;
+    --color-surface-warm: #1c1a15; /* Warm dark surface */
+    --color-bg-warm: #1c1a15;
+    --color-border: #2d3b52;
+    --color-text: #f0ede8; /* Warm white */
+    --color-text-secondary: #c4b8a8;
+    --color-text-tertiary: #8b7e6e;
+    --color-header-bg: #0f1a2e;
 
     /* Luminous teal in dark mode */
-    --color-primary: #3DBDC0;
-    --color-primary-dark: #0D7377;
-    --color-primary-light: #6DD5D8;
+    --color-primary: #3dbdc0;
+    --color-primary-dark: #0d7377;
+    --color-primary-light: #6dd5d8;
 
     /* Header glassmorphism RGB for dark mode */
     --header-bg-rgb: 15, 26, 46;
