@@ -261,16 +261,13 @@ export const createErrorHandler = () => {
         // Get response configuration
         const responseConfig = getResponseConfig();
 
-        // Log the error for debugging
-        apiLogger.error({
-            message: '🚨 Caught error:',
-            name: error.name,
-            errorMessage: error.message,
-            stack: error.stack,
-            path: c.req.path,
-            method: c.req.method,
-            requestId: c.get('requestId')
-        });
+        // Log the error for debugging with full details
+        apiLogger.error(
+            `🚨 Caught error in ${c.req.method} ${c.req.path}: [${error.name}] ${error.message}`
+        );
+        if (error.stack) {
+            apiLogger.error(`📋 Stack: ${error.stack}`);
+        }
 
         if (!responseConfig.formatEnabled) {
             throw error; // Let Hono handle it

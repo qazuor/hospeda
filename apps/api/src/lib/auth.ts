@@ -20,12 +20,57 @@ import { createLogger } from '@repo/logger';
 import { compare, hash } from 'bcryptjs';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { admin } from 'better-auth/plugins';
+import { admin, createAccessControl } from 'better-auth/plugins';
 import { getQZPayBilling } from '../middlewares/billing';
 import { BillingCustomerSyncService } from '../services/billing-customer-sync';
 import { TrialService } from '../services/trial.service';
 
 const logger = createLogger('auth');
+
+/**
+ * Better Auth access control configuration.
+ * Defines what each role can do within Better Auth's admin plugin.
+ * These are Better Auth-level permissions (user CRUD, session management),
+ * separate from Hospeda's application-level PermissionEnum.
+ */
+const statements = {
+    user: [
+        'create',
+        'list',
+        'set-role',
+        'ban',
+        'impersonate',
+        'delete',
+        'set-password',
+        'get',
+        'update'
+    ],
+    session: ['list', 'revoke', 'delete']
+} as const;
+
+const ac = createAccessControl(statements);
+
+/** Full admin access for SUPER_ADMIN and ADMIN roles */
+const fullAdminRole = ac.newRole({
+    user: [
+        'create',
+        'list',
+        'set-role',
+        'ban',
+        'impersonate',
+        'delete',
+        'set-password',
+        'get',
+        'update'
+    ],
+    session: ['list', 'revoke', 'delete']
+});
+
+/** No admin access for regular roles */
+const noAdminRole = ac.newRole({
+    user: [],
+    session: []
+});
 
 /** Bcrypt salt rounds for password hashing */
 const BCRYPT_SALT_ROUNDS = 12;
@@ -224,7 +269,18 @@ export function getAuth(): ReturnType<typeof betterAuth> {
 
         plugins: [
             admin({
-                defaultRole: 'USER'
+                defaultRole: 'USER',
+                adminRoles: ['SUPER_ADMIN', 'ADMIN'],
+                roles: {
+                    SUPER_ADMIN: fullAdminRole,
+                    ADMIN: fullAdminRole,
+                    CLIENT_MANAGER: noAdminRole,
+                    EDITOR: noAdminRole,
+                    HOST: noAdminRole,
+                    SPONSOR: noAdminRole,
+                    USER: noAdminRole,
+                    GUEST: noAdminRole
+                }
             })
         ],
 

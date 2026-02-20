@@ -15,7 +15,6 @@
  */
 
 import { type QZPayBilling, createQZPayBilling } from '@qazuor/qzpay-core';
-import { createQZPayMiddleware } from '@qazuor/qzpay-hono';
 import { createMercadoPagoAdapter } from '@repo/billing';
 import { createBillingAdapter, getDb } from '@repo/db';
 import type { MiddlewareHandler } from 'hono';
@@ -89,10 +88,12 @@ function getBillingInstance(): QZPayBilling | null {
 
         return billingInstance;
     } catch (error) {
-        apiLogger.error(
-            'Failed to initialize billing:',
-            error instanceof Error ? error.message : String(error)
-        );
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorStack = error instanceof Error ? error.stack : undefined;
+        apiLogger.error(`Failed to initialize billing: ${errorMessage}`);
+        if (errorStack) {
+            apiLogger.error(`Billing init stack: ${errorStack}`);
+        }
         return null;
     }
 }
@@ -134,12 +135,13 @@ export const billingMiddleware: MiddlewareHandler = async (c, next) => {
         return;
     }
 
-    // Create and apply QZPay middleware
-    const qzpayMiddleware = createQZPayMiddleware({ billing });
-    await qzpayMiddleware(c, next);
-
-    // Set flag for routes
+    // Set billing flag BEFORE next() so downstream middlewares
+    // (billingCustomer, entitlement, trial) can see it
     c.set('billingEnabled', true);
+
+    // Set billing instance in context and continue
+    c.set('qzpay', billing);
+    await next();
 };
 
 /**

@@ -1,4 +1,5 @@
 import packageJSON from '../../package.json' with { type: 'json' };
+import { createErrorHandler } from '../middlewares/response';
 import type { AppOpenAPI } from '../types';
 import { env } from './env';
 import { apiLogger } from './logger';
@@ -24,7 +25,9 @@ export default function configureOpenAPI(app: AppOpenAPI) {
 
         apiLogger.debug('✅ OpenAPI endpoint configured successfully');
 
-        // Add error handling middleware specifically for OpenAPI endpoint
+        // Override the error handler to add OpenAPI-specific handling
+        // while preserving the main error handler as fallback
+        const mainErrorHandler = createErrorHandler();
         app.onError((err, c) => {
             if (c.req.path === '/docs/openapi.json') {
                 apiLogger.error('❌ OpenAPI generation error:', `${err.message} - ${c.req.url}`);
@@ -42,7 +45,8 @@ export default function configureOpenAPI(app: AppOpenAPI) {
                     500
                 );
             }
-            throw err;
+            // Delegate to the main error handler for all other routes
+            return mainErrorHandler(err, c);
         });
     } catch (error) {
         apiLogger.error('Failed to configure OpenAPI:', String(error));

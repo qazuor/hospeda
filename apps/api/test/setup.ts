@@ -3247,9 +3247,9 @@ vi.mock('@repo/service-core', () => {
             return {
                 data: {
                     id: 'tag_mock_id',
-                    // biome-ignore lint/suspicious/noExplicitAny: test mock
+
                     name: String((body as any).name || 'Mock Tag'),
-                    // biome-ignore lint/suspicious/noExplicitAny: test mock
+
                     slug: String((body as any).slug || 'mock-tag'),
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString()
@@ -3261,7 +3261,7 @@ vi.mock('@repo/service-core', () => {
             return {
                 data: {
                     id: params.id,
-                    // biome-ignore lint/suspicious/noExplicitAny: test mock
+
                     name: (params.data as any).name || 'Updated Tag',
                     updatedAt: new Date().toISOString()
                 }

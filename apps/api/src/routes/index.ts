@@ -32,6 +32,7 @@ import { sponsorshipPackageRoutes } from './sponsorship-package';
 import { publicTagRoutes } from './tag';
 import { userRoutes } from './user';
 import { protectedUserBookmarkRoutes } from './user-bookmark';
+import { adminUserRoutes } from './user/admin';
 import { protectedUserRoutes } from './user/protected';
 import { createMercadoPagoWebhookRoutes, webhookHealthRoutes } from './webhooks';
 import { adminWebhookRouter } from './webhooks/admin';
@@ -172,6 +173,10 @@ export const setupRoutes = (app: AppOpenAPI) => {
         apiLogger.debug('🔗 Registering admin billing routes...');
         app.route('/api/v1/admin/billing', adminBillingRoutes);
         apiLogger.debug('✅ Admin billing routes registered successfully');
+
+        apiLogger.debug('🔗 Registering admin user routes...');
+        app.route('/api/v1/admin/users', adminUserRoutes);
+        apiLogger.debug('✅ Admin user routes registered successfully');
 
         // Cron routes (protected by CRON_SECRET)
         apiLogger.debug('🔗 Registering cron routes...');
