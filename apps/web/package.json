@@ -20,6 +20,7 @@
         "@astrojs/react": "^4.4.2",
         "@astrojs/sitemap": "^3.4.2",
         "@astrojs/vercel": "^8.1.4",
+        "@floating-ui/react": "^0.27.18",
         "@repo/auth-ui": "workspace:*",
         "@repo/billing": "workspace:*",
         "@repo/config": "workspace:*",
@@ -32,6 +33,7 @@
         "@repo/utils": "workspace:*",
         "astro": "^5.12.9",
         "better-auth": "^1.4.18",
+        "cmdk": "^1.1.1",
         "react": "^19.1.1",
         "react-dom": "^19.1.1",
         "zod": "^4.0.8"
