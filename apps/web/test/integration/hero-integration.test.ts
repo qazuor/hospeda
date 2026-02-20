@@ -8,40 +8,31 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const heroSectionPath = resolve(__dirname, '../../src/components/content/HeroSection.astro');
-const heroCarouselPath = resolve(__dirname, '../../src/components/content/HeroCarousel.client.tsx');
 const heroSearchBarPath = resolve(
     __dirname,
     '../../src/components/search/HeroSearchBar.client.tsx'
 );
-const waveDividerPath = resolve(__dirname, '../../src/components/ui/WaveDivider.astro');
 const baseLayoutPath = resolve(__dirname, '../../src/layouts/BaseLayout.astro');
 const homepagePath = resolve(__dirname, '../../src/pages/[lang]/index.astro');
+const bottomSheetPath = resolve(
+    __dirname,
+    '../../src/components/search/SearchBottomSheet.client.tsx'
+);
 
 const heroSection = readFileSync(heroSectionPath, 'utf8');
-const heroCarousel = readFileSync(heroCarouselPath, 'utf8');
 const heroSearchBar = readFileSync(heroSearchBarPath, 'utf8');
-const waveDivider = readFileSync(waveDividerPath, 'utf8');
 const baseLayout = readFileSync(baseLayoutPath, 'utf8');
 const homepage = readFileSync(homepagePath, 'utf8');
+const bottomSheet = readFileSync(bottomSheetPath, 'utf8');
 
 describe('Hero Integration Tests', () => {
     describe('ARIA structure', () => {
-        it('HeroCarousel should include aria-live="polite" for slide announcements', () => {
-            expect(heroCarousel).toContain('aria-live="polite"');
+        it('HeroSearchBar should use semantic <search> element for desktop form', () => {
+            expect(heroSearchBar).toContain('<search');
         });
 
-        it('HeroCarousel dot buttons should be keyboard accessible', () => {
-            expect(heroCarousel).toContain('<button');
-            expect(heroCarousel).toContain('type="button"');
-            expect(heroCarousel).toContain('aria-label');
-        });
-
-        it('HeroSearchBar should include aria-label on all interactive elements', () => {
+        it('HeroSearchBar should have aria-label on the search form', () => {
             expect(heroSearchBar).toContain('aria-label={labels.searchAriaLabel}');
-            expect(heroSearchBar).toContain('aria-label={labels.typePlaceholder}');
-            expect(heroSearchBar).toContain('aria-label={labels.destinationPlaceholder}');
-            expect(heroSearchBar).toContain('aria-label={labels.checkInPlaceholder}');
-            expect(heroSearchBar).toContain('aria-label={labels.checkOutPlaceholder}');
         });
 
         it('HeroSearchBar should have fallback URL logic', () => {
@@ -58,14 +49,9 @@ describe('Hero Integration Tests', () => {
             expect(heroSection).toContain('aria-hidden="true"');
         });
 
-        it('HeroCarousel should handle empty slides with fallback gradient', () => {
-            expect(heroCarousel).toContain('bg-gradient-to-br');
-            expect(heroCarousel).toContain('from-primary');
-            expect(heroCarousel).toContain('to-primary-dark');
-        });
-
-        it('WaveDivider should have aria-hidden="true"', () => {
-            expect(waveDivider).toContain('aria-hidden="true"');
+        it('Shape divider should have aria-hidden="true"', () => {
+            const shapeDivider = heroSection.slice(heroSection.indexOf('hero-shape-divider'));
+            expect(shapeDivider).toContain('aria-hidden="true"');
         });
     });
 
@@ -81,36 +67,34 @@ describe('Hero Integration Tests', () => {
     });
 
     describe('Component references', () => {
-        it('HeroSection should import WaveDivider', () => {
-            expect(heroSection).toContain("import WaveDivider from '../ui/WaveDivider.astro'");
+        it('HeroSection should import HeroCarouselWithPhrases', () => {
+            expect(heroSection).toContain('HeroCarouselWithPhrases');
         });
 
-        it('HeroSection should position WaveDivider absolute bottom-0', () => {
-            expect(heroSection).toContain('absolute bottom-0');
+        it('HeroSection should import LiveStatsCounter', () => {
+            expect(heroSection).toContain('LiveStatsCounter');
         });
 
         it('HeroSection should have overflow-hidden on outer element', () => {
             expect(heroSection).toContain('overflow-hidden');
         });
 
-        it('HeroSection should pass firstSectionFill to WaveDivider', () => {
-            expect(heroSection).toContain('fill={firstSectionFill}');
-        });
-
-        it('HeroSection should import HeroCarousel with client:load', () => {
-            expect(heroSection).toContain('HeroCarousel');
-            expect(heroSection).toContain('client:load');
-        });
-
         it('HeroSection should import HeroSearchBar with client:load', () => {
             expect(heroSection).toContain('HeroSearchBar');
             expect(heroSection).toContain('client:load');
         });
+
+        it('HeroSection should use shape divider with CSS mask', () => {
+            expect(heroSection).toContain('hero-shape-divider');
+            expect(heroSection).toContain('mask-image');
+        });
     });
 
     describe('Homepage wiring', () => {
-        it('Homepage should pass slides as array to HeroSection', () => {
-            expect(homepage).toContain('slides={heroSlides}');
+        it('Homepage should pass headline and searchLabels to HeroSection', () => {
+            expect(homepage).toContain('headline={t.heroHeadline}');
+            expect(homepage).toContain('subheadline={t.heroSubheadline}');
+            expect(homepage).toContain('searchLabels={t.searchLabels}');
         });
 
         it('Homepage should pass apiBaseUrl from env', () => {
@@ -118,44 +102,50 @@ describe('Hero Integration Tests', () => {
             expect(homepage).toContain('import.meta.env.PUBLIC_API_URL');
         });
 
-        it('Homepage should pass firstSectionFill matching warm bg', () => {
-            expect(homepage).toContain('firstSectionFill="#F9F4EE"');
+        it('Homepage should NOT pass categoryBadges (removed)', () => {
+            expect(homepage).not.toContain('categoryBadges={');
+        });
+
+        it('Homepage should pass statsLabels', () => {
+            expect(homepage).toContain('statsLabels={t.statsLabels}');
+        });
+
+        it('Homepage should pass counterItems', () => {
+            expect(homepage).toContain('counterItems={counterItems[locale]}');
+        });
+
+        it('Homepage should pass rotatingPhrases', () => {
+            expect(homepage).toContain('rotatingPhrases={rotatingPhrases[locale]}');
         });
     });
 
-    describe('Reduced-motion support', () => {
-        it('HeroCarousel should check prefers-reduced-motion', () => {
-            expect(heroCarousel).toContain('prefers-reduced-motion');
+    describe('Mobile bottom sheet integration', () => {
+        it('HeroSearchBar should import SearchBottomSheet', () => {
+            expect(heroSearchBar).toContain('SearchBottomSheet');
         });
 
-        it('HeroCarousel should disable auto-advance when reduced motion preferred', () => {
-            expect(heroCarousel).toContain('useReducedMotion');
-            expect(heroCarousel).toContain('autoEnabled');
-        });
-    });
-
-    describe('Responsive behavior', () => {
-        it('HeroSearchBar should have vertical layout on mobile', () => {
-            expect(heroSearchBar).toContain('flex-col');
+        it('SearchBottomSheet should use native dialog element', () => {
+            expect(bottomSheet).toContain('<dialog');
+            expect(bottomSheet).toContain('showModal()');
         });
 
-        it('HeroSearchBar should have horizontal layout on desktop', () => {
-            expect(heroSearchBar).toContain('lg:flex-row');
-        });
-
-        it('WaveDivider should have responsive height', () => {
-            expect(waveDivider).toContain('h-10');
-            expect(waveDivider).toContain('sm:h-[60px]');
+        it('SearchBottomSheet should include all 4 popovers', () => {
+            expect(bottomSheet).toContain('DestinationPopover');
+            expect(bottomSheet).toContain('TypePopover');
+            expect(bottomSheet).toContain('DateRangePopover');
+            expect(bottomSheet).toContain('GuestsPopover');
         });
     });
 
-    describe('SVG accessibility in hero', () => {
-        it('All SVG elements in hero assembly should have aria-hidden', () => {
-            expect(waveDivider).toContain('aria-hidden="true"');
+    describe('Multi-select URL building', () => {
+        it('HeroSearchBar should support multi-value params', () => {
+            expect(heroSearchBar).toContain("params.append('destino'");
+            expect(heroSearchBar).toContain("params.append('tipo'");
         });
 
-        it('WaveDivider SVG should have focusable="false"', () => {
-            expect(waveDivider).toContain('focusable="false"');
+        it('HeroSearchBar should include guest params', () => {
+            expect(heroSearchBar).toContain("params.set('adultos'");
+            expect(heroSearchBar).toContain("params.set('ninos'");
         });
     });
 });

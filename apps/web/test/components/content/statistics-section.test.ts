@@ -107,7 +107,7 @@ describe('StatisticsSection.astro', () => {
 
     describe('Background fallback', () => {
         it('should have dark background fallback class', () => {
-            expect(sectionContent).toContain('bg-gray-800');
+            expect(sectionContent).toContain('bg-primary-900');
         });
     });
 });

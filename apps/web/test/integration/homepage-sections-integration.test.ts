@@ -98,16 +98,17 @@ describe('Homepage Sections Integration (SPEC-013)', () => {
             expect(categoryIcons).toContain('variant="warm"');
         });
 
-        it('TestimonialsSection should use warm variant for beige background', () => {
-            expect(testimonials).toContain('variant="warm"');
+        it('TestimonialsSection should use sand variant for beige background', () => {
+            expect(testimonials).toContain('variant="sand"');
         });
 
-        it('NewsletterSection should use image variant for overlay background', () => {
-            expect(newsletter).toContain('variant="image"');
+        it('NewsletterSection should use river variant with gradient overlay', () => {
+            expect(newsletter).toContain('variant="river"');
         });
 
-        it('OwnerCTASection should use image variant for overlay background', () => {
-            expect(ownerCta).toContain('variant="image"');
+        it('OwnerCTASection should use gradient background (from-primary-50 via-surface-warm)', () => {
+            expect(ownerCta).toContain('from-primary-50');
+            expect(ownerCta).toContain('via-surface-warm');
         });
 
         it('SectionWrapper should support all used variants', () => {
@@ -120,15 +121,15 @@ describe('Homepage Sections Integration (SPEC-013)', () => {
 
     describe('Background alternation pattern', () => {
         it('should alternate between white, warm, and image backgrounds', () => {
-            // Hero (image) -> Accommodations (white) -> Destinations (warm) ->
+            // Hero (split teal) -> Accommodations (white) -> Destinations (warm) ->
             // Statistics (image) -> Events (white) -> CategoryIcons (warm) ->
-            // Posts (gray) -> Testimonials (warm) -> Newsletter (image) -> OwnerCTA (image)
+            // Posts (gray) -> Testimonials (sand) -> Newsletter (river) -> OwnerCTA (gradient)
             // No two consecutive sections should feel visually identical
             expect(statistics).toContain('variant="image"');
             expect(categoryIcons).toContain('variant="warm"');
-            expect(testimonials).toContain('variant="warm"');
-            expect(newsletter).toContain('variant="image"');
-            expect(ownerCta).toContain('variant="image"');
+            expect(testimonials).toContain('variant="sand"');
+            expect(newsletter).toContain('variant="river"');
+            expect(ownerCta).toContain('from-primary-50');
         });
 
         it('Destinations FeaturedSection should have warm background class on homepage', () => {
@@ -218,8 +219,8 @@ describe('Homepage Sections Integration (SPEC-013)', () => {
     });
 
     describe('Accessibility across sections', () => {
-        it('TestimonialCarousel should have region role with aria-label', () => {
-            expect(carousel).toContain('role="region"');
+        it('TestimonialCarousel should have carousel roledescription with aria-label', () => {
+            expect(carousel).toContain('aria-roledescription="carousel"');
             expect(carousel).toContain('aria-label');
         });
 
@@ -252,15 +253,17 @@ describe('Homepage Sections Integration (SPEC-013)', () => {
 
     describe('Image overlay fallbacks', () => {
         it('StatisticsSection should have dark background fallback', () => {
-            expect(statistics).toContain('bg-gray-800');
+            expect(statistics).toContain('bg-primary-900');
         });
 
-        it('NewsletterSection should have dark background fallback', () => {
-            expect(newsletter).toContain('bg-gray-800');
+        it('NewsletterSection should have gradient background', () => {
+            expect(newsletter).toContain('bg-gradient-to-br');
+            expect(newsletter).toContain('from-primary-800');
         });
 
-        it('OwnerCTASection should have dark background fallback', () => {
-            expect(ownerCta).toContain('bg-gray-800');
+        it('OwnerCTASection should have gradient background', () => {
+            expect(ownerCta).toContain('bg-gradient-to-br');
+            expect(ownerCta).toContain('from-primary-50');
         });
     });
 
