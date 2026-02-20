@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-const API_BASE = '/api/v1';
+import { fetchApi } from '@/lib/api/client';
 
 /**
  * Query keys for event organizer queries
@@ -18,82 +18,44 @@ export const eventOrganizerQueryKeys = {
  * Fetch a single event organizer by ID
  */
 async function fetchEventOrganizer(id: string) {
-    const response = await fetch(`${API_BASE}/public/event-organizers/${id}`, {
-        credentials: 'include'
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/public/event-organizers/${id}`
     });
-
-    if (!response.ok) {
-        throw new Error(`Failed to fetch event organizer: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Update an event organizer
  */
 async function updateEventOrganizer(id: string, data: Record<string, unknown>) {
-    const response = await fetch(`${API_BASE}/protected/event-organizers/${id}`, {
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/protected/event-organizers/${id}`,
         method: 'PATCH',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify(data)
+        body: data
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(
-            error.message || `Failed to update event organizer: ${response.statusText}`
-        );
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Create a new event organizer
  */
 async function createEventOrganizer(data: Record<string, unknown>) {
-    const response = await fetch(`${API_BASE}/protected/event-organizers`, {
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: '/api/v1/protected/event-organizers',
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify(data)
+        body: data
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(
-            error.message || `Failed to create event organizer: ${response.statusText}`
-        );
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Delete an event organizer (soft delete)
  */
 async function deleteEventOrganizer(id: string) {
-    const response = await fetch(`${API_BASE}/admin/event-organizers/${id}`, {
-        method: 'DELETE',
-        credentials: 'include'
+    await fetchApi<{ success: boolean }>({
+        path: `/api/v1/admin/event-organizers/${id}`,
+        method: 'DELETE'
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(
-            error.message || `Failed to delete event organizer: ${response.statusText}`
-        );
-    }
-
     return true;
 }
 

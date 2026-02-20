@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-const API_BASE = '/api/v1';
+import { fetchApi } from '@/lib/api/client';
 
 /**
  * Query keys for tag queries
@@ -17,76 +17,44 @@ export const tagQueryKeys = {
  * Fetch a single tag by ID
  */
 async function fetchTag(id: string) {
-    const response = await fetch(`${API_BASE}/public/tags/${id}`, {
-        credentials: 'include'
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/public/tags/${id}`
     });
-
-    if (!response.ok) {
-        throw new Error(`Failed to fetch tag: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Update a tag
  */
 async function updateTag(id: string, data: Record<string, unknown>) {
-    const response = await fetch(`${API_BASE}/protected/tags/${id}`, {
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/protected/tags/${id}`,
         method: 'PATCH',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify(data)
+        body: data
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Failed to update tag: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Create a new tag
  */
 async function createTag(data: Record<string, unknown>) {
-    const response = await fetch(`${API_BASE}/protected/tags`, {
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: '/api/v1/protected/tags',
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify(data)
+        body: data
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Failed to create tag: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Delete a tag (soft delete)
  */
 async function deleteTag(id: string) {
-    const response = await fetch(`${API_BASE}/admin/tags/${id}`, {
-        method: 'DELETE',
-        credentials: 'include'
+    await fetchApi<{ success: boolean }>({
+        path: `/api/v1/admin/tags/${id}`,
+        method: 'DELETE'
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Failed to delete tag: ${response.statusText}`);
-    }
-
     return true;
 }
 

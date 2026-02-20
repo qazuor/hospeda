@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
 import { filterSectionsByMode } from '@/components/entity-form/utils/section-filter.utils';
+import { useUserPermissions } from '@/hooks/use-user-permissions';
 import { createDestinationConsolidatedConfig } from '../config';
 import { useDestinationQuery, useUpdateDestinationMutation } from './useDestinationQuery';
 
@@ -47,23 +48,8 @@ export const useDestinationPage = (entityId: string) => {
         []
     );
 
-    // User permissions (hardcoded for now, can be made dynamic)
-    const userPermissions = useMemo(
-        () => [
-            PermissionEnum.DESTINATION_VIEW_ALL,
-            PermissionEnum.DESTINATION_UPDATE,
-            PermissionEnum.DESTINATION_CREATE,
-            PermissionEnum.DESTINATION_DELETE,
-            PermissionEnum.DESTINATION_FEATURED_TOGGLE,
-            PermissionEnum.DESTINATION_VISIBILITY_TOGGLE,
-            PermissionEnum.DESTINATION_GALLERY_MANAGE,
-            PermissionEnum.DESTINATION_SLUG_MANAGE,
-            PermissionEnum.DESTINATION_TAGS_MANAGE,
-            PermissionEnum.DESTINATION_REVIEW_MODERATE,
-            PermissionEnum.DESTINATION_ATTRACTION_MANAGE
-        ],
-        []
-    );
+    // Real permissions from AuthContext
+    const userPermissions = useUserPermissions();
 
     // Check permissions for current mode
     const canView = useMemo(() => {

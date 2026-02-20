@@ -1,8 +1,10 @@
+import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { PageTabs, destinationTabs } from '@/components/layout/PageTabs';
 import { useDestinationPage } from '@/features/destinations/hooks/useDestinationPage';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
+import { PermissionEnum } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
 
 /**
@@ -24,21 +26,23 @@ function DestinationEditPage() {
     const entityData = useDestinationPage(id);
 
     return (
-        <div className="space-y-4">
-            {/* Level 3 Navigation: Page Tabs */}
-            <PageTabs
-                tabs={destinationTabs}
-                basePath={`/destinations/${id}`}
-            />
+        <RoutePermissionGuard permissions={[PermissionEnum.DESTINATION_UPDATE]}>
+            <div className="space-y-4">
+                {/* Level 3 Navigation: Page Tabs */}
+                <PageTabs
+                    tabs={destinationTabs}
+                    basePath={`/destinations/${id}`}
+                />
 
-            <EntityPageBase
-                entityType="destination"
-                entityId={id}
-                initialMode="edit"
-                entityData={entityData}
-            >
-                <EntityEditContent entityType="destination" />
-            </EntityPageBase>
-        </div>
+                <EntityPageBase
+                    entityType="destination"
+                    entityId={id}
+                    initialMode="edit"
+                    entityData={entityData}
+                >
+                    <EntityEditContent entityType="destination" />
+                </EntityPageBase>
+            </div>
+        </RoutePermissionGuard>
     );
 }

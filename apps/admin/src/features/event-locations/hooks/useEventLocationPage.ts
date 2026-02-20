@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
 import { filterSectionsByMode } from '@/components/entity-form/utils/section-filter.utils';
+import { useUserPermissions } from '@/hooks/use-user-permissions';
 import { createEventLocationConsolidatedConfig } from '../config';
 import { useEventLocationQuery, useUpdateEventLocationMutation } from './useEventLocationQuery';
 
@@ -47,17 +48,8 @@ export const useEventLocationPage = (entityId: string) => {
         []
     );
 
-    // User permissions (hardcoded for now, can be made dynamic)
-    const userPermissions = useMemo(
-        () => [
-            PermissionEnum.EVENT_LOCATION_VIEW,
-            PermissionEnum.EVENT_LOCATION_UPDATE,
-            PermissionEnum.EVENT_LOCATION_CREATE,
-            PermissionEnum.EVENT_LOCATION_DELETE,
-            PermissionEnum.EVENT_LOCATION_MANAGE
-        ],
-        []
-    );
+    // Real permissions from AuthContext
+    const userPermissions = useUserPermissions();
 
     // Check permissions for current mode
     const canView = useMemo(() => {

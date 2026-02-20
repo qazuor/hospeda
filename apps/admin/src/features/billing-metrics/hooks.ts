@@ -1,3 +1,4 @@
+import { fetchApi } from '@/lib/api/client';
 import { useQuery } from '@tanstack/react-query';
 import type {
     ApproachingLimitsResponse,
@@ -5,8 +6,6 @@ import type {
     CustomerUsageSummary,
     SystemUsageStats
 } from './types';
-
-const API_BASE = '/api/v1';
 
 /**
  * Query keys for billing metrics queries
@@ -45,16 +44,10 @@ async function fetchBillingMetrics(
         params.append('months', String(options.months));
     }
 
-    const response = await fetch(`${API_BASE}/billing/metrics?${params.toString()}`, {
-        credentials: 'include'
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/billing/metrics?${params.toString()}`
     });
-
-    if (!response.ok) {
-        throw new Error(`Failed to fetch billing metrics: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
@@ -75,16 +68,10 @@ async function fetchRecentActivity(
         params.append('limit', String(options.limit));
     }
 
-    const response = await fetch(`${API_BASE}/billing/metrics/activity?${params.toString()}`, {
-        credentials: 'include'
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/billing/metrics/activity?${params.toString()}`
     });
-
-    if (!response.ok) {
-        throw new Error(`Failed to fetch recent activity: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
@@ -98,32 +85,20 @@ async function searchCustomers(query: string): Promise<CustomerSearchResult[]> {
     const params = new URLSearchParams();
     params.append('q', query.trim());
 
-    const response = await fetch(`${API_BASE}/billing/customers/search?${params.toString()}`, {
-        credentials: 'include'
+    const result = await fetchApi<{ success: boolean; data: CustomerSearchResult[] }>({
+        path: `/api/v1/billing/customers/search?${params.toString()}`
     });
-
-    if (!response.ok) {
-        throw new Error(`Failed to search customers: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Fetch customer usage summary
  */
 async function fetchCustomerUsage(customerId: string): Promise<CustomerUsageSummary> {
-    const response = await fetch(`${API_BASE}/billing/customers/${customerId}/usage`, {
-        credentials: 'include'
+    const result = await fetchApi<{ success: boolean; data: CustomerUsageSummary }>({
+        path: `/api/v1/billing/customers/${customerId}/usage`
     });
-
-    if (!response.ok) {
-        throw new Error(`Failed to fetch customer usage: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
@@ -191,16 +166,10 @@ export const useCustomerUsageQuery = (customerId: string | null) => {
  * Fetch system-wide usage statistics
  */
 async function fetchSystemUsageStats(): Promise<SystemUsageStats> {
-    const response = await fetch(`${API_BASE}/billing/metrics/system-usage`, {
-        credentials: 'include'
+    const result = await fetchApi<{ success: boolean; data: SystemUsageStats }>({
+        path: '/api/v1/billing/metrics/system-usage'
     });
-
-    if (!response.ok) {
-        throw new Error(`Failed to fetch system usage stats: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
@@ -210,19 +179,10 @@ async function fetchApproachingLimits(threshold = 90): Promise<ApproachingLimits
     const params = new URLSearchParams();
     params.append('threshold', String(threshold));
 
-    const response = await fetch(
-        `${API_BASE}/billing/metrics/approaching-limits?${params.toString()}`,
-        {
-            credentials: 'include'
-        }
-    );
-
-    if (!response.ok) {
-        throw new Error(`Failed to fetch approaching limits: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    const result = await fetchApi<{ success: boolean; data: ApproachingLimitsResponse }>({
+        path: `/api/v1/billing/metrics/approaching-limits?${params.toString()}`
+    });
+    return result.data.data;
 }
 
 /**

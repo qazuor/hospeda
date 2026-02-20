@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-const API_BASE = '/api/v1';
+import { fetchApi } from '@/lib/api/client';
 
 /**
  * Query keys for attraction queries
@@ -17,76 +17,44 @@ export const attractionQueryKeys = {
  * Fetch a single attraction by ID
  */
 async function fetchAttraction(id: string) {
-    const response = await fetch(`${API_BASE}/public/attractions/${id}`, {
-        credentials: 'include'
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/public/attractions/${id}`
     });
-
-    if (!response.ok) {
-        throw new Error(`Failed to fetch attraction: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Update an attraction
  */
 async function updateAttraction(id: string, data: Record<string, unknown>) {
-    const response = await fetch(`${API_BASE}/protected/attractions/${id}`, {
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/protected/attractions/${id}`,
         method: 'PATCH',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify(data)
+        body: data
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Failed to update attraction: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Create a new attraction
  */
 async function createAttraction(data: Record<string, unknown>) {
-    const response = await fetch(`${API_BASE}/protected/attractions`, {
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: '/api/v1/protected/attractions',
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify(data)
+        body: data
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Failed to create attraction: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Delete an attraction (soft delete)
  */
 async function deleteAttraction(id: string) {
-    const response = await fetch(`${API_BASE}/admin/attractions/${id}`, {
-        method: 'DELETE',
-        credentials: 'include'
+    await fetchApi<{ success: boolean }>({
+        path: `/api/v1/admin/attractions/${id}`,
+        method: 'DELETE'
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Failed to delete attraction: ${response.statusText}`);
-    }
-
     return true;
 }
 

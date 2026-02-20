@@ -1,3 +1,4 @@
+import { fetchApi } from '@/lib/api/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
     CreateAddonPayload,
@@ -5,8 +6,6 @@ import type {
     PurchasedAddonsResponse,
     UpdateAddonPayload
 } from './types';
-
-const API_BASE = '/api/v1';
 
 /**
  * Query keys for addon-related queries
@@ -40,16 +39,10 @@ async function fetchAddons(filters: Record<string, unknown> = {}) {
         }
     }
 
-    const response = await fetch(`${API_BASE}/billing/addons?${params.toString()}`, {
-        credentials: 'include'
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/billing/addons?${params.toString()}`
     });
-
-    if (!response.ok) {
-        throw new Error(`Failed to fetch add-ons: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
@@ -66,140 +59,79 @@ async function fetchPurchasedAddons(
     if (filters.addonSlug) params.append('addonSlug', filters.addonSlug);
     if (filters.customerEmail) params.append('customerEmail', filters.customerEmail);
 
-    const response = await fetch(`${API_BASE}/billing/customer-addons?${params.toString()}`, {
-        credentials: 'include'
+    const result = await fetchApi<{ success: boolean; data: PurchasedAddonsResponse }>({
+        path: `/api/v1/billing/customer-addons?${params.toString()}`
     });
-
-    if (!response.ok) {
-        throw new Error(`Failed to fetch purchased add-ons: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Create a new add-on
  */
 async function createAddon(payload: CreateAddonPayload) {
-    const response = await fetch(`${API_BASE}/billing/addons`, {
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: '/api/v1/billing/addons',
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify(payload)
+        body: payload
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Failed to create add-on: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Update an existing add-on
  */
 async function updateAddon({ id, ...payload }: UpdateAddonPayload) {
-    const response = await fetch(`${API_BASE}/billing/addons/${id}`, {
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/billing/addons/${id}`,
         method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify(payload)
+        body: payload
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Failed to update add-on: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Toggle add-on active status
  */
 async function toggleAddonActive(id: string, isActive: boolean) {
-    const response = await fetch(`${API_BASE}/billing/addons/${id}`, {
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/billing/addons/${id}`,
         method: 'PATCH',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({ isActive })
+        body: { isActive }
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Failed to toggle add-on: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Delete an add-on
  */
 async function deleteAddon(id: string) {
-    const response = await fetch(`${API_BASE}/billing/addons/${id}`, {
-        method: 'DELETE',
-        credentials: 'include'
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/billing/addons/${id}`,
+        method: 'DELETE'
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Failed to delete add-on: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Force expire a purchased add-on
  */
 async function forceExpirePurchasedAddon(id: string) {
-    const response = await fetch(`${API_BASE}/billing/customer-addons/${id}/expire`, {
-        method: 'POST',
-        credentials: 'include'
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/billing/customer-addons/${id}/expire`,
+        method: 'POST'
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(
-            error.message || `Failed to force-expire purchased add-on: ${response.statusText}`
-        );
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Force activate a purchased add-on
  */
 async function forceActivatePurchasedAddon(id: string) {
-    const response = await fetch(`${API_BASE}/billing/customer-addons/${id}/activate`, {
-        method: 'POST',
-        credentials: 'include'
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/billing/customer-addons/${id}/activate`,
+        method: 'POST'
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(
-            error.message || `Failed to force-activate purchased add-on: ${response.statusText}`
-        );
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**

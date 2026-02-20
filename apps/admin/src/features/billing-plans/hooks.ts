@@ -1,7 +1,6 @@
+import { fetchApi } from '@/lib/api/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { CreatePlanPayload, UpdatePlanPayload } from './types';
-
-const API_BASE = '/api/v1';
 
 /**
  * Query keys for plan-related queries
@@ -29,100 +28,60 @@ async function fetchPlans(filters: Record<string, unknown> = {}) {
         }
     }
 
-    const response = await fetch(`${API_BASE}/billing/plans?${params.toString()}`, {
-        credentials: 'include'
+    const result = await fetchApi<{
+        success: boolean;
+        data: { items: Record<string, unknown>[]; pagination: Record<string, unknown> };
+    }>({
+        path: `/api/v1/billing/plans?${params.toString()}`
     });
-
-    if (!response.ok) {
-        throw new Error(`Failed to fetch plans: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Create a new plan
  */
 async function createPlan(payload: CreatePlanPayload) {
-    const response = await fetch(`${API_BASE}/billing/plans`, {
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: '/api/v1/billing/plans',
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify(payload)
+        body: payload
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Failed to create plan: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Update an existing plan
  */
 async function updatePlan({ id, ...payload }: UpdatePlanPayload) {
-    const response = await fetch(`${API_BASE}/billing/plans/${id}`, {
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/billing/plans/${id}`,
         method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify(payload)
+        body: payload
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Failed to update plan: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Toggle plan active status
  */
 async function togglePlanActive(id: string, isActive: boolean) {
-    const response = await fetch(`${API_BASE}/billing/plans/${id}`, {
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/billing/plans/${id}`,
         method: 'PATCH',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({ isActive })
+        body: { isActive }
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Failed to toggle plan: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Delete a plan
  */
 async function deletePlan(id: string) {
-    const response = await fetch(`${API_BASE}/billing/plans/${id}`, {
-        method: 'DELETE',
-        credentials: 'include'
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/billing/plans/${id}`,
+        method: 'DELETE'
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Failed to delete plan: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**

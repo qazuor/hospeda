@@ -1,8 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { fetchApi } from '@/lib/api/client';
 import { adminLogger } from '@/utils/logger';
-
-const API_BASE = '/api/v1';
 
 /**
  * Query keys for post operations
@@ -19,76 +18,44 @@ export const postQueryKeys = {
  * Fetch a single post by ID
  */
 async function fetchPost(id: string) {
-    const response = await fetch(`${API_BASE}/public/posts/${id}`, {
-        credentials: 'include'
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/public/posts/${id}`
     });
-
-    if (!response.ok) {
-        throw new Error(`Failed to fetch post: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Update a post
  */
 async function updatePost(id: string, data: Record<string, unknown>) {
-    const response = await fetch(`${API_BASE}/protected/posts/${id}`, {
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/protected/posts/${id}`,
         method: 'PATCH',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify(data)
+        body: data
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Failed to update post: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Create a new post
  */
 async function createPost(data: Record<string, unknown>) {
-    const response = await fetch(`${API_BASE}/protected/posts`, {
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: '/api/v1/protected/posts',
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify(data)
+        body: data
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Failed to create post: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Delete a post (soft delete)
  */
 async function deletePost(id: string) {
-    const response = await fetch(`${API_BASE}/admin/posts/${id}`, {
-        method: 'DELETE',
-        credentials: 'include'
+    await fetchApi<{ success: boolean }>({
+        path: `/api/v1/admin/posts/${id}`,
+        method: 'DELETE'
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Failed to delete post: ${response.statusText}`);
-    }
-
     return true;
 }
 

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-const API_BASE = '/api/v1';
+import { fetchApi } from '@/lib/api/client';
 
 /**
  * Query keys for event location queries
@@ -18,76 +18,44 @@ export const eventLocationQueryKeys = {
  * Fetch a single event location by ID
  */
 async function fetchEventLocation(id: string) {
-    const response = await fetch(`${API_BASE}/public/event-locations/${id}`, {
-        credentials: 'include'
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/public/event-locations/${id}`
     });
-
-    if (!response.ok) {
-        throw new Error(`Failed to fetch event location: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Update an event location
  */
 async function updateEventLocation(id: string, data: Record<string, unknown>) {
-    const response = await fetch(`${API_BASE}/protected/event-locations/${id}`, {
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/protected/event-locations/${id}`,
         method: 'PATCH',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify(data)
+        body: data
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Failed to update event location: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Create a new event location
  */
 async function createEventLocation(data: Record<string, unknown>) {
-    const response = await fetch(`${API_BASE}/protected/event-locations`, {
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: '/api/v1/protected/event-locations',
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify(data)
+        body: data
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Failed to create event location: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Delete an event location (soft delete)
  */
 async function deleteEventLocation(id: string) {
-    const response = await fetch(`${API_BASE}/admin/event-locations/${id}`, {
-        method: 'DELETE',
-        credentials: 'include'
+    await fetchApi<{ success: boolean }>({
+        path: `/api/v1/admin/event-locations/${id}`,
+        method: 'DELETE'
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Failed to delete event location: ${response.statusText}`);
-    }
-
     return true;
 }
 

@@ -22,6 +22,8 @@ import {
     useUpdateConfigMutation
 } from '@/features/exchange-rates';
 import type {
+    ExchangeRate,
+    ExchangeRateConfig,
     ExchangeRateConfigUpdateInput,
     ExchangeRateCreateInput
 } from '@/features/exchange-rates';
@@ -87,7 +89,7 @@ function ExchangeRatesPage() {
         isDeleting: deleteOverrideMutation.isPending
     });
 
-    const ratesList = Array.isArray(rates) ? rates : [];
+    const ratesList = (Array.isArray(rates) ? rates : []) as ExchangeRate[];
 
     return (
         <SidebarPageLayout>
@@ -219,7 +221,7 @@ function ExchangeRatesPage() {
                         </div>
 
                         <FetchConfigForm
-                            config={configData ?? null}
+                            config={(configData ?? null) as ExchangeRateConfig | null}
                             onSubmit={handleUpdateConfig}
                             isSubmitting={updateConfigMutation.isPending}
                         />

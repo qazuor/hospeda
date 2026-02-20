@@ -1,3 +1,4 @@
+import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { EntityFormProvider, EntityFormSection, FormModeEnum } from '@/components/entity-form';
 import { SmartBreadcrumbs, SmartNavigation } from '@/components/entity-form/navigation';
 import { LazySectionWrapper } from '@/components/entity-form/sections/LazySectionWrapper';
@@ -11,6 +12,7 @@ import { useToast } from '@/components/ui/ToastProvider';
 import { createTagConsolidatedConfig } from '@/features/tags/config';
 import { useCreateTagMutation } from '@/features/tags/hooks/useTagQuery';
 import { useIntelligentNavigation, useLazySections } from '@/hooks';
+import { useUserPermissions } from '@/hooks/use-user-permissions';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 import { adminLogger } from '@/utils/logger';
 import { LoaderIcon } from '@repo/icons';
@@ -68,11 +70,7 @@ function TagCreatePage() {
         };
     }, []);
 
-    // User permissions (hardcoded for now)
-    const userPermissions = useMemo(
-        () => [PermissionEnum.TAG_CREATE, PermissionEnum.TAG_UPDATE, PermissionEnum.TAG_DELETE],
-        []
-    );
+    const userPermissions = useUserPermissions();
 
     // Intelligent navigation
     const {
@@ -169,188 +167,195 @@ function TagCreatePage() {
     };
 
     return (
-        <div className="space-y-6">
-            <Card>
-                <CardHeader>
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <CardTitle className="text-2xl">Crear Etiqueta</CardTitle>
-                            <p className="text-gray-600">Crear una nueva etiqueta</p>
+        <RoutePermissionGuard permissions={[PermissionEnum.TAG_CREATE]}>
+            <div className="space-y-6">
+                <Card>
+                    <CardHeader>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <CardTitle className="text-2xl">Crear Etiqueta</CardTitle>
+                                <p className="text-gray-600">Crear una nueva etiqueta</p>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleCancel}
+                                >
+                                    <Icon
+                                        name="close"
+                                        className="mr-2 h-4 w-4"
+                                    />
+                                    Cancelar
+                                </Button>
+                            </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={handleCancel}
-                            >
-                                <Icon
-                                    name="close"
-                                    className="mr-2 h-4 w-4"
-                                />
-                                Cancelar
-                            </Button>
-                        </div>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <EntityErrorBoundary>
-                        <Suspense
-                            fallback={
-                                <div className="flex items-center justify-center p-8">
-                                    <LoaderIcon className="h-6 w-6 animate-spin text-blue-600" />
-                                </div>
-                            }
-                        >
-                            <EntityFormProvider
-                                config={entityConfig}
-                                mode={FormModeEnum.CREATE}
-                                initialValues={{}}
-                                userPermissions={userPermissions}
-                                onSave={handleSave}
-                            >
-                                <div className="space-y-6">
-                                    {/* Smart Breadcrumbs */}
-                                    <div className="sticky top-0 z-20 border-gray-200 border-b bg-white pb-4">
-                                        <SmartBreadcrumbs
-                                            sections={sectionProgress}
-                                            activeSectionId={activeSection}
-                                            onSectionSelect={navigateToSection}
-                                            showIcons
-                                            showProgress
-                                            maxVisible={5}
-                                        />
+                    </CardHeader>
+                    <CardContent>
+                        <EntityErrorBoundary>
+                            <Suspense
+                                fallback={
+                                    <div className="flex items-center justify-center p-8">
+                                        <LoaderIcon className="h-6 w-6 animate-spin text-blue-600" />
                                     </div>
-
-                                    {/* Main content with navigation sidebar */}
-                                    <div className="flex gap-6">
-                                        {/* Navigation Sidebar */}
-                                        <div className="w-80 flex-shrink-0">
-                                            <SmartNavigation
+                                }
+                            >
+                                <EntityFormProvider
+                                    config={entityConfig}
+                                    mode={FormModeEnum.CREATE}
+                                    initialValues={{}}
+                                    userPermissions={userPermissions}
+                                    onSave={handleSave}
+                                >
+                                    <div className="space-y-6">
+                                        {/* Smart Breadcrumbs */}
+                                        <div className="sticky top-0 z-20 border-gray-200 border-b bg-white pb-4">
+                                            <SmartBreadcrumbs
                                                 sections={sectionProgress}
-                                                overallProgress={overallProgress}
                                                 activeSectionId={activeSection}
                                                 onSectionSelect={navigateToSection}
-                                                onScrollToErrors={scrollToFirstError}
-                                                sticky
+                                                showIcons
                                                 showProgress
-                                                showDetails
+                                                maxVisible={5}
                                             />
                                         </div>
 
-                                        {/* Content Area */}
-                                        <div className="min-w-0 flex-1">
-                                            {/* Performance metrics (development only) */}
-                                            {process.env.NODE_ENV === 'development' && (
-                                                <div className="mb-4 rounded bg-blue-50 p-2 text-blue-800 text-xs">
-                                                    Lazy Loading: {getMetrics().loadedCount}/
-                                                    {getMetrics().totalSections} sections loaded
-                                                </div>
-                                            )}
+                                        {/* Main content with navigation sidebar */}
+                                        <div className="flex gap-6">
+                                            {/* Navigation Sidebar */}
+                                            <div className="w-80 flex-shrink-0">
+                                                <SmartNavigation
+                                                    sections={sectionProgress}
+                                                    overallProgress={overallProgress}
+                                                    activeSectionId={activeSection}
+                                                    onSectionSelect={navigateToSection}
+                                                    onScrollToErrors={scrollToFirstError}
+                                                    sticky
+                                                    showProgress
+                                                    showDetails
+                                                />
+                                            </div>
 
-                                            <form
-                                                onSubmit={(e) => {
-                                                    e.preventDefault();
-                                                    handleSave();
-                                                }}
-                                            >
-                                                <div className="space-y-8">
-                                                    {sections.map(
-                                                        (section: SectionConfig, index: number) => {
-                                                            const isLazy = shouldLazyLoad(
-                                                                section.id
-                                                            );
+                                            {/* Content Area */}
+                                            <div className="min-w-0 flex-1">
+                                                {/* Performance metrics (development only) */}
+                                                {process.env.NODE_ENV === 'development' && (
+                                                    <div className="mb-4 rounded bg-blue-50 p-2 text-blue-800 text-xs">
+                                                        Lazy Loading: {getMetrics().loadedCount}/
+                                                        {getMetrics().totalSections} sections loaded
+                                                    </div>
+                                                )}
 
-                                                            const sectionContent = (
-                                                                <EntityFormSection
-                                                                    key={
-                                                                        section.id ||
-                                                                        `section-${index}`
-                                                                    }
-                                                                    config={section}
-                                                                    values={values}
-                                                                    errors={errors}
-                                                                    onFieldChange={
-                                                                        handleFieldChange
-                                                                    }
-                                                                    onFieldBlur={(fieldId) => {
-                                                                        adminLogger.log(
-                                                                            'Field blurred:',
-                                                                            fieldId
-                                                                        );
-                                                                    }}
-                                                                    disabled={isSaving}
-                                                                    entityData={values}
-                                                                    userPermissions={
-                                                                        userPermissions
-                                                                    }
-                                                                />
-                                                            );
+                                                <form
+                                                    onSubmit={(e) => {
+                                                        e.preventDefault();
+                                                        handleSave();
+                                                    }}
+                                                >
+                                                    <div className="space-y-8">
+                                                        {sections.map(
+                                                            (
+                                                                section: SectionConfig,
+                                                                index: number
+                                                            ) => {
+                                                                const isLazy = shouldLazyLoad(
+                                                                    section.id
+                                                                );
 
-                                                            if (isLazy) {
-                                                                return (
-                                                                    <LazySectionWrapper
+                                                                const sectionContent = (
+                                                                    <EntityFormSection
                                                                         key={
                                                                             section.id ||
                                                                             `section-${index}`
                                                                         }
-                                                                        sectionId={section.id}
-                                                                        preloadAdjacent={true}
-                                                                        rootMargin="100px"
-                                                                        threshold={0.1}
-                                                                        className="min-h-[200px]"
-                                                                    >
-                                                                        {sectionContent}
-                                                                    </LazySectionWrapper>
+                                                                        config={section}
+                                                                        values={values}
+                                                                        errors={errors}
+                                                                        onFieldChange={
+                                                                            handleFieldChange
+                                                                        }
+                                                                        onFieldBlur={(fieldId) => {
+                                                                            adminLogger.log(
+                                                                                'Field blurred:',
+                                                                                fieldId
+                                                                            );
+                                                                        }}
+                                                                        disabled={isSaving}
+                                                                        entityData={values}
+                                                                        userPermissions={
+                                                                            userPermissions
+                                                                        }
+                                                                    />
                                                                 );
-                                                            }
 
-                                                            return sectionContent;
-                                                        }
-                                                    )}
-                                                </div>
-
-                                                <div className="mt-6 flex justify-end gap-3 border-t pt-6">
-                                                    <Button
-                                                        type="button"
-                                                        variant="outline"
-                                                        onClick={handleCancel}
-                                                        disabled={isSaving}
-                                                    >
-                                                        Cancelar
-                                                    </Button>
-                                                    <Button
-                                                        type="submit"
-                                                        disabled={
-                                                            isSaving ||
-                                                            !overallProgress.readyForSubmission
-                                                        }
-                                                        className={
-                                                            overallProgress.readyForSubmission
-                                                                ? ''
-                                                                : 'opacity-50'
-                                                        }
-                                                    >
-                                                        {isSaving ? 'Creando...' : 'Crear Etiqueta'}
-                                                        {!overallProgress.readyForSubmission && (
-                                                            <span className="ml-2 text-xs">
-                                                                (
-                                                                {
-                                                                    overallProgress.completionPercentage
+                                                                if (isLazy) {
+                                                                    return (
+                                                                        <LazySectionWrapper
+                                                                            key={
+                                                                                section.id ||
+                                                                                `section-${index}`
+                                                                            }
+                                                                            sectionId={section.id}
+                                                                            preloadAdjacent={true}
+                                                                            rootMargin="100px"
+                                                                            threshold={0.1}
+                                                                            className="min-h-[200px]"
+                                                                        >
+                                                                            {sectionContent}
+                                                                        </LazySectionWrapper>
+                                                                    );
                                                                 }
-                                                                %)
-                                                            </span>
+
+                                                                return sectionContent;
+                                                            }
                                                         )}
-                                                    </Button>
-                                                </div>
-                                            </form>
+                                                    </div>
+
+                                                    <div className="mt-6 flex justify-end gap-3 border-t pt-6">
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            onClick={handleCancel}
+                                                            disabled={isSaving}
+                                                        >
+                                                            Cancelar
+                                                        </Button>
+                                                        <Button
+                                                            type="submit"
+                                                            disabled={
+                                                                isSaving ||
+                                                                !overallProgress.readyForSubmission
+                                                            }
+                                                            className={
+                                                                overallProgress.readyForSubmission
+                                                                    ? ''
+                                                                    : 'opacity-50'
+                                                            }
+                                                        >
+                                                            {isSaving
+                                                                ? 'Creando...'
+                                                                : 'Crear Etiqueta'}
+                                                            {!overallProgress.readyForSubmission && (
+                                                                <span className="ml-2 text-xs">
+                                                                    (
+                                                                    {
+                                                                        overallProgress.completionPercentage
+                                                                    }
+                                                                    %)
+                                                                </span>
+                                                            )}
+                                                        </Button>
+                                                    </div>
+                                                </form>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            </EntityFormProvider>
-                        </Suspense>
-                    </EntityErrorBoundary>
-                </CardContent>
-            </Card>
-        </div>
+                                </EntityFormProvider>
+                            </Suspense>
+                        </EntityErrorBoundary>
+                    </CardContent>
+                </Card>
+            </div>
+        </RoutePermissionGuard>
     );
 }

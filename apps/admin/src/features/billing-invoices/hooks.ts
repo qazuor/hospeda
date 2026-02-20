@@ -1,6 +1,5 @@
+import { fetchApi } from '@/lib/api/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-
-const API_BASE = '/api/v1';
 
 /**
  * Query keys for invoice-related queries
@@ -28,74 +27,42 @@ async function fetchInvoices(filters: Record<string, unknown> = {}) {
         }
     }
 
-    const response = await fetch(`${API_BASE}/billing/invoices?${params.toString()}`, {
-        credentials: 'include'
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown>[] }>({
+        path: `/api/v1/billing/invoices?${params.toString()}`
     });
-
-    if (!response.ok) {
-        throw new Error(`Failed to fetch invoices: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Fetch a single invoice by ID
  */
 async function fetchInvoice(id: string) {
-    const response = await fetch(`${API_BASE}/billing/invoices/${id}`, {
-        credentials: 'include'
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/billing/invoices/${id}`
     });
-
-    if (!response.ok) {
-        throw new Error(`Failed to fetch invoice: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Pay an invoice
  */
 async function payInvoice(id: string) {
-    const response = await fetch(`${API_BASE}/billing/invoices/${id}/pay`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        credentials: 'include'
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/billing/invoices/${id}/pay`,
+        method: 'POST'
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Failed to pay invoice: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Void an invoice
  */
 async function voidInvoice(id: string) {
-    const response = await fetch(`${API_BASE}/billing/invoices/${id}/void`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        credentials: 'include'
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/billing/invoices/${id}/void`,
+        method: 'POST'
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Failed to void invoice: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**

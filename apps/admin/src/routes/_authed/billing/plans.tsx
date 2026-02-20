@@ -55,8 +55,8 @@ function BillingPlansPage() {
     const updateMutation = useUpdatePlanMutation();
 
     // Use API data if available, otherwise fall back to static config
-    const plans = data?.items || ALL_PLANS;
-    const total = data?.pagination?.total || ALL_PLANS.length;
+    const plans = (data?.items as PlanDefinition[] | undefined) || ALL_PLANS;
+    const total = (data?.pagination?.total as number | undefined) || ALL_PLANS.length;
 
     // Apply client-side filtering if using static data
     const filteredPlans = data?.items

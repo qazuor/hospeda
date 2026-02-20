@@ -1,6 +1,5 @@
+import { fetchApi } from '@/lib/api/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-
-const API_BASE = '/api/v1';
 
 /**
  * Webhook event types
@@ -57,69 +56,41 @@ async function fetchWebhookEvents(filters: Record<string, unknown> = {}) {
         }
     }
 
-    const response = await fetch(`${API_BASE}/admin/webhooks/events?${params.toString()}`, {
-        credentials: 'include'
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown>[] }>({
+        path: `/api/v1/admin/webhooks/events?${params.toString()}`
     });
-
-    if (!response.ok) {
-        throw new Error(`Failed to fetch webhook events: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Fetch a single webhook event by ID
  */
 async function fetchWebhookEvent(id: string) {
-    const response = await fetch(`${API_BASE}/admin/webhooks/events/${id}`, {
-        credentials: 'include'
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/admin/webhooks/events/${id}`
     });
-
-    if (!response.ok) {
-        throw new Error(`Failed to fetch webhook event: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Fetch dead letter queue events
  */
 async function fetchDeadLetterEvents() {
-    const response = await fetch(`${API_BASE}/admin/webhooks/dead-letter`, {
-        credentials: 'include'
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown>[] }>({
+        path: '/api/v1/admin/webhooks/dead-letter'
     });
-
-    if (!response.ok) {
-        throw new Error(`Failed to fetch dead letter events: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Retry a failed webhook event
  */
 async function retryWebhookEvent(id: string) {
-    const response = await fetch(`${API_BASE}/admin/webhooks/dead-letter/${id}/retry`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        credentials: 'include'
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/admin/webhooks/dead-letter/${id}/retry`,
+        method: 'POST'
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Failed to retry webhook event: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**

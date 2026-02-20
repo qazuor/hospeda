@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-const API_BASE = '/api/v1';
+import { fetchApi } from '@/lib/api/client';
 
 /**
  * Query keys for feature queries
@@ -17,76 +17,44 @@ export const featureQueryKeys = {
  * Fetch a single feature by ID
  */
 async function fetchFeature(id: string) {
-    const response = await fetch(`${API_BASE}/public/features/${id}`, {
-        credentials: 'include'
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/public/features/${id}`
     });
-
-    if (!response.ok) {
-        throw new Error(`Failed to fetch feature: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Update a feature
  */
 async function updateFeature(id: string, data: Record<string, unknown>) {
-    const response = await fetch(`${API_BASE}/protected/features/${id}`, {
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/protected/features/${id}`,
         method: 'PATCH',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify(data)
+        body: data
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Failed to update feature: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Create a new feature
  */
 async function createFeature(data: Record<string, unknown>) {
-    const response = await fetch(`${API_BASE}/protected/features`, {
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: '/api/v1/protected/features',
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify(data)
+        body: data
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Failed to create feature: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Delete a feature (soft delete)
  */
 async function deleteFeature(id: string) {
-    const response = await fetch(`${API_BASE}/admin/features/${id}`, {
-        method: 'DELETE',
-        credentials: 'include'
+    await fetchApi<{ success: boolean }>({
+        path: `/api/v1/admin/features/${id}`,
+        method: 'DELETE'
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Failed to delete feature: ${response.statusText}`);
-    }
-
     return true;
 }
 

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-const API_BASE = '/api/v1';
+import { fetchApi } from '@/lib/api/client';
 
 /**
  * Query keys for sponsor queries
@@ -17,76 +17,44 @@ export const sponsorQueryKeys = {
  * Fetch a single sponsor by ID
  */
 async function fetchSponsor(id: string) {
-    const response = await fetch(`${API_BASE}/public/sponsors/${id}`, {
-        credentials: 'include'
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/public/sponsors/${id}`
     });
-
-    if (!response.ok) {
-        throw new Error(`Failed to fetch sponsor: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Update a sponsor
  */
 async function updateSponsor(id: string, data: Record<string, unknown>) {
-    const response = await fetch(`${API_BASE}/protected/sponsors/${id}`, {
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/protected/sponsors/${id}`,
         method: 'PATCH',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify(data)
+        body: data
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Failed to update sponsor: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Create a new sponsor
  */
 async function createSponsor(data: Record<string, unknown>) {
-    const response = await fetch(`${API_BASE}/protected/sponsors`, {
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: '/api/v1/protected/sponsors',
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify(data)
+        body: data
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Failed to create sponsor: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Delete a sponsor (soft delete)
  */
 async function deleteSponsor(id: string) {
-    const response = await fetch(`${API_BASE}/admin/sponsors/${id}`, {
-        method: 'DELETE',
-        credentials: 'include'
+    await fetchApi<{ success: boolean }>({
+        path: `/api/v1/admin/sponsors/${id}`,
+        method: 'DELETE'
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Failed to delete sponsor: ${response.statusText}`);
-    }
-
     return true;
 }
 

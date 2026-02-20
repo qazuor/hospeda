@@ -4,12 +4,24 @@
  * This file contains the heavy UI components that are loaded on demand.
  * The route configuration is in dashboard.tsx
  */
+import { ComingSoon } from '@/components/feedback/ComingSoon';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { DashboardSkeleton } from '@/components/loading';
 import { useDashboardStats } from '@/features/dashboard/hooks/useDashboardStats';
 import { useTranslations } from '@/hooks/use-translations';
+import type { TranslationKey } from '@repo/i18n';
+import {
+    AccommodationIcon,
+    ActivityIcon,
+    BarChartIcon,
+    DestinationIcon,
+    EventIcon,
+    PostIcon,
+    RefreshIcon
+} from '@repo/icons';
 import { useQueryClient } from '@tanstack/react-query';
-import { createLazyFileRoute } from '@tanstack/react-router';
+import { Link, createLazyFileRoute } from '@tanstack/react-router';
+import type { ReactNode } from 'react';
 
 export const Route = createLazyFileRoute('/_authed/dashboard')({
     component: Dashboard,
@@ -21,27 +33,30 @@ function Dashboard() {
     const { entities, isLoading } = useDashboardStats();
     const queryClient = useQueryClient();
 
-    // Map entity names to KPI config
-    const kpiConfig = [
+    const kpiConfig: readonly KpiConfig[] = [
         {
             key: 'accommodations',
-            titleKey: 'admin-dashboard.kpis.accommodations' as const,
-            gradient: 'from-emerald-500 to-lime-500'
+            titleKey: 'admin-dashboard.kpis.accommodations' as TranslationKey,
+            icon: <AccommodationIcon className="h-5 w-5" />,
+            href: '/accommodations'
         },
         {
             key: 'destinations',
-            titleKey: 'admin-dashboard.kpis.destinations' as const,
-            gradient: 'from-sky-500 to-cyan-500'
+            titleKey: 'admin-dashboard.kpis.destinations' as TranslationKey,
+            icon: <DestinationIcon className="h-5 w-5" />,
+            href: '/destinations'
         },
         {
             key: 'events',
-            titleKey: 'admin-dashboard.kpis.events' as const,
-            gradient: 'from-amber-500 to-orange-500'
+            titleKey: 'admin-dashboard.kpis.events' as TranslationKey,
+            icon: <EventIcon className="h-5 w-5" />,
+            href: '/events'
         },
         {
             key: 'posts',
-            titleKey: 'admin-dashboard.kpis.posts' as const,
-            gradient: 'from-violet-500 to-fuchsia-500'
+            titleKey: 'admin-dashboard.kpis.posts' as TranslationKey,
+            icon: <PostIcon className="h-5 w-5" />,
+            href: '/posts'
         }
     ];
 
@@ -53,16 +68,15 @@ function Dashboard() {
         <SidebarPageLayout
             title={t('admin-dashboard.title')}
             actions={
-                <div className="flex items-center gap-2">
-                    <button
-                        type="button"
-                        onClick={handleRefresh}
-                        className="inline-flex items-center justify-center rounded-md border px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
-                        aria-label={t('admin-common.aria.refresh')}
-                    >
-                        {t('admin-dashboard.actions.refresh')}
-                    </button>
-                </div>
+                <button
+                    type="button"
+                    onClick={handleRefresh}
+                    className="inline-flex items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
+                    aria-label={t('admin-common.aria.refresh')}
+                >
+                    <RefreshIcon className="h-4 w-4" />
+                    {t('admin-dashboard.actions.refresh')}
+                </button>
             }
         >
             {/* KPI Cards */}
@@ -74,7 +88,8 @@ function Dashboard() {
                             key={kpi.key}
                             title={t(kpi.titleKey)}
                             value={entity?.isLoading ? '...' : String(entity?.count ?? 0)}
-                            gradient={kpi.gradient}
+                            icon={kpi.icon}
+                            href={kpi.href}
                             loading={entity?.isLoading ?? isLoading}
                         />
                     );
@@ -82,29 +97,23 @@ function Dashboard() {
             </div>
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                {/* Traffic chart placeholder */}
-                <div className="rounded-lg border p-4 lg:col-span-2">
-                    <h2 className="mb-3 font-semibold text-sm">
-                        {t('admin-dashboard.charts.traffic')}
-                    </h2>
-                    <div className="flex h-48 items-center justify-center">
-                        <p className="text-muted-foreground text-sm">
-                            Connect analytics provider to view traffic data
-                        </p>
-                    </div>
+                {/* Traffic chart - Coming Soon */}
+                <div className="lg:col-span-2">
+                    <ComingSoon
+                        title={t('admin-dashboard.charts.traffic')}
+                        description={t('admin-dashboard.comingSoon.analytics' as TranslationKey)}
+                        icon={<BarChartIcon className="h-8 w-8" />}
+                        className="h-full min-h-[200px]"
+                    />
                 </div>
 
-                {/* Recent activity */}
-                <div className="rounded-lg border p-4">
-                    <h2 className="mb-3 font-semibold text-sm">
-                        {t('admin-dashboard.activity.title')}
-                    </h2>
-                    <div className="flex h-48 items-center justify-center">
-                        <p className="text-center text-muted-foreground text-sm">
-                            Activity feed will be available once the audit log system is implemented
-                        </p>
-                    </div>
-                </div>
+                {/* Recent activity - Coming Soon */}
+                <ComingSoon
+                    title={t('admin-dashboard.activity.title')}
+                    description={t('admin-dashboard.comingSoon.auditLog' as TranslationKey)}
+                    icon={<ActivityIcon className="h-8 w-8" />}
+                    className="min-h-[200px]"
+                />
             </div>
 
             {/* Additional stats row */}
@@ -129,25 +138,36 @@ function Dashboard() {
     );
 }
 
+type KpiConfig = {
+    readonly key: string;
+    readonly titleKey: TranslationKey;
+    readonly icon: ReactNode;
+    readonly href: string;
+};
+
 type KpiCardProps = {
     readonly title: string;
     readonly value: string;
-    readonly gradient: string;
+    readonly icon: ReactNode;
+    readonly href: string;
     readonly loading?: boolean;
 };
 
-const KpiCard = ({ title, value, gradient, loading }: KpiCardProps) => (
-    <div className="rounded-lg border p-4">
-        <div className="mb-3 text-muted-foreground text-sm">{title}</div>
+const KpiCard = ({ title, value, icon, href, loading }: KpiCardProps) => (
+    <Link
+        to={href}
+        className="group rounded-lg border p-4 transition-colors hover:bg-accent/50"
+    >
+        <div className="mb-3 flex items-center gap-2">
+            <div className="rounded-md bg-primary/10 p-1.5 text-primary">{icon}</div>
+            <span className="text-muted-foreground text-sm">{title}</span>
+        </div>
         <div className="flex items-end justify-between">
             {loading ? (
                 <div className="h-9 w-20 animate-pulse rounded bg-muted" />
             ) : (
                 <div className="font-semibold text-3xl">{value}</div>
             )}
-            <div className={`rounded-md bg-gradient-to-r ${gradient} px-2 py-1 text-white text-xs`}>
-                Live
-            </div>
         </div>
-    </div>
+    </Link>
 );

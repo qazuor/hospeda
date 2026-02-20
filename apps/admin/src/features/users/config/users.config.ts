@@ -15,11 +15,11 @@ export const usersConfig: EntityConfig<User> = {
     entityType: EntityType.USER,
 
     // API
-    apiEndpoint: '/api/v1/public/users',
+    apiEndpoint: '/api/v1/admin/users',
 
     // Routes
-    basePath: '/users',
-    detailPath: '/users/[id]',
+    basePath: '/access/users',
+    detailPath: '/access/users/[id]',
 
     // Schemas - Use type assertion for Zod version compatibility
     listItemSchema: UserListItemWithComputedFieldsSchema as unknown as z.ZodSchema<User>,
@@ -55,7 +55,7 @@ export const usersConfig: EntityConfig<User> = {
     layoutConfig: {
         showBreadcrumbs: true,
         showCreateButton: true,
-        createButtonPath: '/users/new'
+        createButtonPath: '/access/users/new'
     },
 
     // Columns

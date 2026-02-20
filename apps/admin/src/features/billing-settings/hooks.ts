@@ -1,33 +1,6 @@
+import { fetchApi } from '@/lib/api/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { BillingSettings, UpdateBillingSettingsPayload } from './types';
-
-const API_BASE = '/api/v1';
-
-/**
- * Default billing settings (mock data)
- */
-const DEFAULT_SETTINGS: BillingSettings = {
-    trial: {
-        trialDurationDays: 14,
-        autoBlockOnExpiry: true
-    },
-    payment: {
-        gracePeriodDays: 3,
-        paymentRetryAttempts: 3,
-        retryIntervalHours: 24,
-        defaultCurrency: 'ARS'
-    },
-    webhook: {
-        webhookUrl: 'https://api.hospeda.com/webhooks/mercadopago',
-        webhookSecret: '••••••••••••••••',
-        lastWebhookReceivedAt: null
-    },
-    notification: {
-        sendPaymentReminders: true,
-        reminderDaysBeforeDue: 3,
-        sendReceiptOnPayment: true
-    }
-};
 
 /**
  * Query keys for billing settings
@@ -40,21 +13,10 @@ export const billingSettingsQueryKeys = {
  * Fetch billing settings
  */
 async function fetchBillingSettings(): Promise<BillingSettings> {
-    try {
-        const response = await fetch(`${API_BASE}/billing/settings`, {
-            credentials: 'include'
-        });
-
-        if (!response.ok) {
-            throw new Error(`Failed to fetch billing settings: ${response.statusText}`);
-        }
-
-        const json = await response.json();
-        return json.data;
-    } catch (_error) {
-        // Return default settings if API is not available
-        return DEFAULT_SETTINGS;
-    }
+    const result = await fetchApi<{ success: boolean; data: BillingSettings }>({
+        path: '/api/v1/billing/settings'
+    });
+    return result.data.data;
 }
 
 /**
@@ -63,24 +25,12 @@ async function fetchBillingSettings(): Promise<BillingSettings> {
 async function updateBillingSettings(
     payload: UpdateBillingSettingsPayload
 ): Promise<BillingSettings> {
-    const response = await fetch(`${API_BASE}/billing/settings`, {
+    const result = await fetchApi<{ success: boolean; data: BillingSettings }>({
+        path: '/api/v1/billing/settings',
         method: 'PATCH',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify(payload)
+        body: payload
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(
-            error.message || `Failed to update billing settings: ${response.statusText}`
-        );
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**

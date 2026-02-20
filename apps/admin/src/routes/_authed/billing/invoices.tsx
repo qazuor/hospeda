@@ -348,7 +348,7 @@ function BillingInvoicesPage() {
 
     // Fetch invoices with filters
     const {
-        data: invoices = [],
+        data: invoicesData = [],
         isLoading,
         isError
     } = useInvoicesQuery({
@@ -357,6 +357,7 @@ function BillingInvoicesPage() {
         startDate,
         endDate
     });
+    const invoices = invoicesData as unknown as Invoice[];
 
     // Mutations
     const payMutation = usePayInvoiceMutation();

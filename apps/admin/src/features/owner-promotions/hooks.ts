@@ -1,7 +1,6 @@
+import { fetchApi } from '@/lib/api/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { CreateOwnerPromotionInput, UpdateOwnerPromotionInput } from './types';
-
-const API_BASE = '/api/v1';
 
 /**
  * Query keys for owner promotion queries
@@ -27,56 +26,35 @@ async function fetchOwnerPromotions(filters: Record<string, unknown> = {}) {
         }
     }
 
-    const response = await fetch(`${API_BASE}/public/owner-promotions?${params.toString()}`, {
-        credentials: 'include'
+    const result = await fetchApi<{
+        success: boolean;
+        data: { items: Record<string, unknown>[]; pagination: Record<string, unknown> };
+    }>({
+        path: `/api/v1/public/owner-promotions?${params.toString()}`
     });
-
-    if (!response.ok) {
-        throw new Error(`Failed to fetch owner promotions: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Fetch single owner promotion
  */
 async function fetchOwnerPromotion(id: string) {
-    const response = await fetch(`${API_BASE}/public/owner-promotions/${id}`, {
-        credentials: 'include'
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/public/owner-promotions/${id}`
     });
-
-    if (!response.ok) {
-        throw new Error(`Failed to fetch owner promotion: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Create owner promotion
  */
 async function createOwnerPromotion(data: CreateOwnerPromotionInput) {
-    const response = await fetch(`${API_BASE}/owner-promotions`, {
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: '/api/v1/owner-promotions',
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify(data)
+        body: data
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(
-            error.message || `Failed to create owner promotion: ${response.statusText}`
-        );
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
@@ -85,42 +63,22 @@ async function createOwnerPromotion(data: CreateOwnerPromotionInput) {
 async function updateOwnerPromotion(data: UpdateOwnerPromotionInput) {
     const { id, ...updateData } = data;
 
-    const response = await fetch(`${API_BASE}/owner-promotions/${id}`, {
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/owner-promotions/${id}`,
         method: 'PATCH',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify(updateData)
+        body: updateData
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(
-            error.message || `Failed to update owner promotion: ${response.statusText}`
-        );
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Delete owner promotion
  */
 async function deleteOwnerPromotion(id: string) {
-    const response = await fetch(`${API_BASE}/owner-promotions/${id}`, {
-        method: 'DELETE',
-        credentials: 'include'
+    await fetchApi<{ success: boolean }>({
+        path: `/api/v1/owner-promotions/${id}`,
+        method: 'DELETE'
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(
-            error.message || `Failed to delete owner promotion: ${response.statusText}`
-        );
-    }
-
     return true;
 }
 
@@ -128,22 +86,12 @@ async function deleteOwnerPromotion(id: string) {
  * Toggle owner promotion active status
  */
 async function togglePromotionActive(id: string, isActive: boolean) {
-    const response = await fetch(`${API_BASE}/owner-promotions/${id}`, {
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/owner-promotions/${id}`,
         method: 'PATCH',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({ isActive })
+        body: { isActive }
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Failed to update promotion: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
@@ -193,7 +141,9 @@ export const useUpdateOwnerPromotionMutation = () => {
         mutationFn: updateOwnerPromotion,
         onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: ownerPromotionQueryKeys.lists() });
-            queryClient.invalidateQueries({ queryKey: ownerPromotionQueryKeys.detail(data.id) });
+            queryClient.invalidateQueries({
+                queryKey: ownerPromotionQueryKeys.detail((data as { id: string }).id)
+            });
         }
     });
 };
@@ -223,7 +173,9 @@ export const useTogglePromotionActiveMutation = () => {
             togglePromotionActive(id, isActive),
         onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: ownerPromotionQueryKeys.lists() });
-            queryClient.invalidateQueries({ queryKey: ownerPromotionQueryKeys.detail(data.id) });
+            queryClient.invalidateQueries({
+                queryKey: ownerPromotionQueryKeys.detail((data as { id: string }).id)
+            });
         }
     });
 };

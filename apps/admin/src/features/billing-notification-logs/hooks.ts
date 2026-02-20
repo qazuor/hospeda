@@ -1,6 +1,5 @@
+import { fetchApi } from '@/lib/api/client';
 import { useQuery } from '@tanstack/react-query';
-
-const API_BASE = '/api/v1';
 
 /**
  * Notification log entry types
@@ -58,32 +57,20 @@ async function fetchNotificationLogs(filters: Record<string, unknown> = {}) {
         }
     }
 
-    const response = await fetch(`${API_BASE}/admin/billing/notifications?${params.toString()}`, {
-        credentials: 'include'
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown>[] }>({
+        path: `/api/v1/admin/billing/notifications?${params.toString()}`
     });
-
-    if (!response.ok) {
-        throw new Error(`Failed to fetch notification logs: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Fetch a single notification log by ID
  */
 async function fetchNotificationLog(id: string) {
-    const response = await fetch(`${API_BASE}/admin/billing/notifications/${id}`, {
-        credentials: 'include'
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/admin/billing/notifications/${id}`
     });
-
-    if (!response.ok) {
-        throw new Error(`Failed to fetch notification log: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**

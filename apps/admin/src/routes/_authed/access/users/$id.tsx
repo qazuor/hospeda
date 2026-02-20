@@ -7,6 +7,7 @@
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { EntityViewContent } from '@/components/entity-pages/EntityViewContent';
 import { PageTabs, userTabs } from '@/components/layout/PageTabs';
+import { ImpersonateButton } from '@/features/users/components/ImpersonateButton';
 import { useUserPage } from '@/features/users/hooks/useUserPage';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 import { createFileRoute } from '@tanstack/react-router';
@@ -25,10 +26,16 @@ function UserViewPage() {
 
     return (
         <div className="space-y-4">
-            <PageTabs
-                tabs={userTabs}
-                basePath={`/access/users/${id}`}
-            />
+            <div className="flex items-center justify-between">
+                <PageTabs
+                    tabs={userTabs}
+                    basePath={`/access/users/${id}`}
+                />
+                <ImpersonateButton
+                    userId={id}
+                    variant="full"
+                />
+            </div>
 
             <EntityPageBase
                 entityType="user"

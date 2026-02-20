@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
 import { filterSectionsByMode } from '@/components/entity-form/utils/section-filter.utils';
+import { useUserPermissions } from '@/hooks/use-user-permissions';
 import { createUserConsolidatedConfig } from '../config';
 import { useUpdateUserMutation, useUserQuery } from './useUserQuery';
 
@@ -47,17 +48,8 @@ export const useUserPage = (entityId: string) => {
         []
     );
 
-    // User permissions (hardcoded for now, can be made dynamic)
-    const userPermissions = useMemo(
-        () => [
-            PermissionEnum.USER_READ_ALL,
-            PermissionEnum.USER_UPDATE_ROLES,
-            PermissionEnum.USER_CREATE,
-            PermissionEnum.USER_DELETE,
-            PermissionEnum.MANAGE_USERS
-        ],
-        []
-    );
+    // Real permissions from AuthContext
+    const userPermissions = useUserPermissions();
 
     // Check permissions for current mode
     const canView = useMemo(() => {

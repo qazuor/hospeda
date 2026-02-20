@@ -267,7 +267,7 @@ export function RateHistoryView() {
                                 !error &&
                                 history &&
                                 history.length > 0 &&
-                                history.map((rate: ExchangeRate, index: number) => (
+                                (history as unknown as ExchangeRate[]).map((rate, index) => (
                                     <tr
                                         key={`${rate.id}-${index}`}
                                         className="border-b hover:bg-muted/30"

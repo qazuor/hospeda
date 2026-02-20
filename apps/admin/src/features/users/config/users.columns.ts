@@ -1,5 +1,7 @@
 import type { ColumnConfig } from '@/components/entity-list/types';
 import { BadgeColor, ColumnType, CompoundLayout, EntityType } from '@/components/table/DataTable';
+import { createElement } from 'react';
+import { ImpersonateButton } from '../components/ImpersonateButton';
 import type { User } from '../schemas/users.schemas';
 
 export const createUsersColumns = (): readonly ColumnConfig<User>[] => [
@@ -14,7 +16,7 @@ export const createUsersColumns = (): readonly ColumnConfig<User>[] => [
             color: BadgeColor.PINK
         },
         linkHandler: (row) => ({
-            to: '/users/$id',
+            to: '/access/users/$id',
             params: { id: row.id }
         })
     },
@@ -139,5 +141,14 @@ export const createUsersColumns = (): readonly ColumnConfig<User>[] => [
         accessorKey: 'createdAt',
         enableSorting: true,
         columnType: ColumnType.TIME_AGO
+    },
+    {
+        id: 'actions',
+        header: 'Actions',
+        accessorKey: 'id',
+        enableSorting: false,
+        columnType: ColumnType.WIDGET,
+        widgetRenderer: (row) =>
+            createElement(ImpersonateButton, { userId: row.id, variant: 'icon' })
     }
 ];

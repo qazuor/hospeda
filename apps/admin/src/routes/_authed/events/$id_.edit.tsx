@@ -1,7 +1,9 @@
+import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { useEventPage } from '@/features/events/hooks/useEventPage';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
+import { PermissionEnum } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
 
 /**
@@ -23,15 +25,17 @@ function EventEditPage() {
     const entityData = useEventPage(id);
 
     return (
-        <div className="space-y-4">
-            <EntityPageBase
-                entityType="event"
-                entityId={id}
-                initialMode="edit"
-                entityData={entityData}
-            >
-                <EntityEditContent entityType="event" />
-            </EntityPageBase>
-        </div>
+        <RoutePermissionGuard permissions={[PermissionEnum.EVENT_UPDATE]}>
+            <div className="space-y-4">
+                <EntityPageBase
+                    entityType="event"
+                    entityId={id}
+                    initialMode="edit"
+                    entityData={entityData}
+                >
+                    <EntityEditContent entityType="event" />
+                </EntityPageBase>
+            </div>
+        </RoutePermissionGuard>
     );
 }

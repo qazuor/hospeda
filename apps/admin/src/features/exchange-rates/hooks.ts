@@ -1,3 +1,4 @@
+import { fetchApi } from '@/lib/api/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
     ExchangeRateConfigUpdateInput,
@@ -6,8 +7,6 @@ import type {
     ExchangeRateHistoryFilters,
     FetchNowResponse
 } from './types';
-
-const API_BASE = '/api/v1';
 
 /**
  * Query keys for exchange rate queries
@@ -42,16 +41,10 @@ async function fetchRates(filters: ExchangeRateFilters = {}) {
         }
     }
 
-    const response = await fetch(`${API_BASE}/public/exchange-rates?${params.toString()}`, {
-        credentials: 'include'
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown>[] }>({
+        path: `/api/v1/public/exchange-rates?${params.toString()}`
     });
-
-    if (!response.ok) {
-        throw new Error(`Failed to fetch rates: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
@@ -66,117 +59,66 @@ async function fetchRateHistory(filters: ExchangeRateHistoryFilters = {}) {
         }
     }
 
-    const response = await fetch(
-        `${API_BASE}/protected/exchange-rates/history?${params.toString()}`,
-        {
-            credentials: 'include'
-        }
-    );
-
-    if (!response.ok) {
-        throw new Error(`Failed to fetch rate history: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown>[] }>({
+        path: `/api/v1/protected/exchange-rates/history?${params.toString()}`
+    });
+    return result.data.data;
 }
 
 /**
  * Fetch exchange rate configuration
  */
 async function fetchConfig() {
-    const response = await fetch(`${API_BASE}/protected/exchange-rates/config`, {
-        credentials: 'include'
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: '/api/v1/protected/exchange-rates/config'
     });
-
-    if (!response.ok) {
-        throw new Error(`Failed to fetch config: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Create manual exchange rate override
  */
 async function createManualOverride(payload: ExchangeRateCreateInput) {
-    const response = await fetch(`${API_BASE}/protected/exchange-rates`, {
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: '/api/v1/protected/exchange-rates',
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify(payload)
+        body: payload
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(
-            error.message || `Failed to create manual override: ${response.statusText}`
-        );
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Delete manual exchange rate override
  */
 async function deleteManualOverride(id: string) {
-    const response = await fetch(`${API_BASE}/protected/exchange-rates/${id}`, {
-        method: 'DELETE',
-        credentials: 'include'
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/protected/exchange-rates/${id}`,
+        method: 'DELETE'
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Failed to delete override: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Update exchange rate configuration
  */
 async function updateConfig(payload: ExchangeRateConfigUpdateInput) {
-    const response = await fetch(`${API_BASE}/protected/exchange-rates/config`, {
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: '/api/v1/protected/exchange-rates/config',
         method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify(payload)
+        body: payload
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Failed to update config: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Trigger immediate rate fetch
  */
 async function triggerFetchNow(): Promise<FetchNowResponse> {
-    const response = await fetch(`${API_BASE}/protected/exchange-rates/fetch-now`, {
-        method: 'POST',
-        credentials: 'include'
+    const result = await fetchApi<{ success: boolean; data: FetchNowResponse }>({
+        path: '/api/v1/protected/exchange-rates/fetch-now',
+        method: 'POST'
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Failed to trigger fetch: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**

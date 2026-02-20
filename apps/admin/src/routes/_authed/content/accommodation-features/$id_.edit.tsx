@@ -1,7 +1,9 @@
+import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { useFeaturePage } from '@/features/features/hooks/useFeaturePage';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
+import { PermissionEnum } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
 
 /**
@@ -23,13 +25,15 @@ function FeatureEditPage() {
     const entityData = useFeaturePage(id);
 
     return (
-        <EntityPageBase
-            entityType="feature"
-            entityId={id}
-            initialMode="edit"
-            entityData={entityData}
-        >
-            <EntityEditContent entityType="feature" />
-        </EntityPageBase>
+        <RoutePermissionGuard permissions={[PermissionEnum.FEATURE_UPDATE]}>
+            <EntityPageBase
+                entityType="feature"
+                entityId={id}
+                initialMode="edit"
+                entityData={entityData}
+            >
+                <EntityEditContent entityType="feature" />
+            </EntityPageBase>
+        </RoutePermissionGuard>
     );
 }

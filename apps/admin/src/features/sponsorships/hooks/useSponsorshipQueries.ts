@@ -1,6 +1,5 @@
+import { fetchApi } from '@/lib/api/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-
-const API_BASE = '/api/v1';
 
 /**
  * Query keys for sponsorship-related queries
@@ -40,16 +39,13 @@ async function fetchSponsorships(filters: Record<string, unknown> = {}) {
         }
     }
 
-    const response = await fetch(`${API_BASE}/sponsorships?${params.toString()}`, {
-        credentials: 'include'
+    const result = await fetchApi<{
+        success: boolean;
+        data: { items: Record<string, unknown>[]; pagination: Record<string, unknown> };
+    }>({
+        path: `/api/v1/sponsorships?${params.toString()}`
     });
-
-    if (!response.ok) {
-        throw new Error(`Failed to fetch sponsorships: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
@@ -64,16 +60,13 @@ async function fetchSponsorshipLevels(filters: Record<string, unknown> = {}) {
         }
     }
 
-    const response = await fetch(`${API_BASE}/public/sponsorship-levels?${params.toString()}`, {
-        credentials: 'include'
+    const result = await fetchApi<{
+        success: boolean;
+        data: { items: Record<string, unknown>[]; pagination: Record<string, unknown> };
+    }>({
+        path: `/api/v1/public/sponsorship-levels?${params.toString()}`
     });
-
-    if (!response.ok) {
-        throw new Error(`Failed to fetch sponsorship levels: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
@@ -88,82 +81,49 @@ async function fetchSponsorshipPackages(filters: Record<string, unknown> = {}) {
         }
     }
 
-    const response = await fetch(`${API_BASE}/public/sponsorship-packages?${params.toString()}`, {
-        credentials: 'include'
+    const result = await fetchApi<{
+        success: boolean;
+        data: { items: Record<string, unknown>[]; pagination: Record<string, unknown> };
+    }>({
+        path: `/api/v1/public/sponsorship-packages?${params.toString()}`
     });
-
-    if (!response.ok) {
-        throw new Error(`Failed to fetch sponsorship packages: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Update sponsorship status (approve/cancel)
  */
 async function updateSponsorshipStatus(id: string, status: string) {
-    const response = await fetch(`${API_BASE}/sponsorships/${id}`, {
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/sponsorships/${id}`,
         method: 'PATCH',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({ status })
+        body: { status }
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Failed to update sponsorship: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Toggle sponsorship level active status
  */
 async function toggleLevelActive(id: string, isActive: boolean) {
-    const response = await fetch(`${API_BASE}/admin/sponsorship-levels/${id}`, {
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/admin/sponsorship-levels/${id}`,
         method: 'PATCH',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({ isActive })
+        body: { isActive }
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Failed to update level: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Toggle sponsorship package active status
  */
 async function togglePackageActive(id: string, isActive: boolean) {
-    const response = await fetch(`${API_BASE}/admin/sponsorship-packages/${id}`, {
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/admin/sponsorship-packages/${id}`,
         method: 'PATCH',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({ isActive })
+        body: { isActive }
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Failed to update package: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**

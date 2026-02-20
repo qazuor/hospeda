@@ -1,6 +1,5 @@
+import { fetchApi } from '@/lib/api/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-
-const API_BASE = '/api/v1';
 
 /**
  * Query keys for payment-related queries
@@ -28,32 +27,20 @@ async function fetchPayments(filters: Record<string, unknown> = {}) {
         }
     }
 
-    const response = await fetch(`${API_BASE}/billing/payments?${params.toString()}`, {
-        credentials: 'include'
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown>[] }>({
+        path: `/api/v1/billing/payments?${params.toString()}`
     });
-
-    if (!response.ok) {
-        throw new Error(`Failed to fetch payments: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Fetch a single payment by ID
  */
 async function fetchPayment(id: string) {
-    const response = await fetch(`${API_BASE}/billing/payments/${id}`, {
-        credentials: 'include'
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/billing/payments/${id}`
     });
-
-    if (!response.ok) {
-        throw new Error(`Failed to fetch payment: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
@@ -64,25 +51,15 @@ async function refundPayment(payload: {
     amount?: number;
     reason: string;
 }) {
-    const response = await fetch(`${API_BASE}/billing/payments/${payload.id}/refund`, {
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/billing/payments/${payload.id}/refund`,
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({
+        body: {
             amount: payload.amount,
             reason: payload.reason
-        })
+        }
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Failed to refund payment: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**

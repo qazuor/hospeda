@@ -9,7 +9,9 @@
  * The layout uses URL-based navigation for state persistence across page reloads.
  */
 
+import { ImpersonationBanner } from '@/components/auth/ImpersonationBanner';
 import { SidebarProvider } from '@/contexts/sidebar-context';
+import { useUserPermissions } from '@/hooks/use-user-permissions';
 import { useSectionSidebarSync } from '@/lib/sections';
 import type { ReactNode } from 'react';
 import { Header } from './header';
@@ -29,17 +31,23 @@ function AppLayoutInner({ children }: AppLayoutProps) {
     // Sync sidebar configuration with current route
     useSectionSidebarSync();
 
+    // Get real user permissions from AuthContext
+    const userPermissions = useUserPermissions();
+
     return (
         <div className="min-h-screen bg-background text-foreground">
+            {/* Impersonation warning banner */}
+            <ImpersonationBanner />
+
             {/* Level 1: Header with section navigation */}
             <Header />
 
             <div className="flex min-h-[calc(100vh-3.5rem)]">
-                {/* Level 2: Contextual sidebar */}
-                <Sidebar />
+                {/* Level 2: Contextual sidebar with real permissions */}
+                <Sidebar userPermissions={userPermissions} />
 
                 {/* Main content area */}
-                <main className="min-w-0 flex-1 p-4 md:p-6 lg:p-8">{children}</main>
+                <main className="min-w-0 flex-1">{children}</main>
             </div>
         </div>
     );

@@ -280,8 +280,8 @@ function SponsorshipsTab() {
         );
     }
 
-    const sponsorships = data?.items || [];
-    const total = data?.pagination?.total || 0;
+    const sponsorships = (data?.items as Sponsorship[] | undefined) ?? [];
+    const total = (data?.pagination?.total as number | undefined) ?? 0;
 
     return (
         <div className="space-y-4">
@@ -510,8 +510,8 @@ function SponsorshipLevelsTab() {
         );
     }
 
-    const levels = data?.items || [];
-    const total = data?.pagination?.total || 0;
+    const levels = (data?.items as SponsorshipLevel[] | undefined) ?? [];
+    const total = (data?.pagination?.total as number | undefined) ?? 0;
 
     return (
         <div className="space-y-4">
@@ -656,8 +656,8 @@ function SponsorshipPackagesTab() {
         );
     }
 
-    const packages = data?.items || [];
-    const total = data?.pagination?.total || 0;
+    const packages = (data?.items as SponsorshipPackage[] | undefined) ?? [];
+    const total = (data?.pagination?.total as number | undefined) ?? 0;
 
     return (
         <div className="space-y-4">

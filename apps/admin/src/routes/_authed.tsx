@@ -1,4 +1,5 @@
 import { AppLayout } from '@/components/layout/AppLayout';
+import { AuthProvider } from '@/contexts/auth-context';
 import { useTranslations } from '@/hooks/use-translations';
 import { fetchAuthSession } from '@/lib/auth-session';
 import { Link, Outlet, createFileRoute, redirect } from '@tanstack/react-router';
@@ -14,16 +15,18 @@ function AuthedNotFoundComponent() {
         <div className="flex min-h-[60vh] items-center justify-center">
             <div className="text-center">
                 <div className="mb-4">
-                    <h1 className="font-bold text-6xl text-gray-200">404</h1>
+                    <h1 className="font-bold text-6xl text-muted-foreground/30">404</h1>
                 </div>
-                <h2 className="mb-2 font-semibold text-gray-900 text-xl">
+                <h2 className="mb-2 font-semibold text-foreground text-xl">
                     {t('ui.errors.pageNotFound')}
                 </h2>
-                <p className="mb-6 text-gray-600">{t('ui.errors.pageNotFoundDescription')}</p>
+                <p className="mb-6 text-muted-foreground">
+                    {t('ui.errors.pageNotFoundDescription')}
+                </p>
                 <div className="space-x-4">
                     <Link
                         to="/"
-                        className="inline-flex items-center rounded-md bg-cyan-600 px-4 py-2 font-medium text-sm text-white transition-colors hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2"
+                        className="inline-flex items-center rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground text-sm transition-colors hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                     >
                         {t('ui.actions.goBackHome')}
                     </Link>
@@ -34,7 +37,7 @@ function AuthedNotFoundComponent() {
                                 window.history.back();
                             }
                         }}
-                        className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 font-medium text-gray-700 text-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2"
+                        className="inline-flex items-center rounded-md border bg-background px-4 py-2 font-medium text-foreground text-sm transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                     >
                         {t('ui.actions.goBack')}
                     </button>
@@ -75,8 +78,10 @@ export const Route = createFileRoute('/_authed')({
  */
 function AuthedLayout() {
     return (
-        <AppLayout>
-            <Outlet />
-        </AppLayout>
+        <AuthProvider>
+            <AppLayout>
+                <Outlet />
+            </AppLayout>
+        </AuthProvider>
     );
 }

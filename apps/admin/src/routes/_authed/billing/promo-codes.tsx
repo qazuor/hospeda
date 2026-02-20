@@ -513,8 +513,8 @@ function BillingPromoCodesPage() {
     const toggleActiveMutation = useTogglePromoCodeActiveMutation();
     const deleteMutation = useDeletePromoCodeMutation();
 
-    const promoCodes = data?.items || [];
-    const total = data?.pagination?.total || 0;
+    const promoCodes = (data?.items as PromoCode[] | undefined) ?? [];
+    const total = (data?.pagination?.total as number | undefined) ?? 0;
 
     const handleCreateNew = () => {
         setSelectedPromoCode(null);

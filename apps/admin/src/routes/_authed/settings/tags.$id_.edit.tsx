@@ -1,7 +1,9 @@
+import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { useTagPage } from '@/features/tags/hooks/useTagPage';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
+import { PermissionEnum } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
 
 /**
@@ -23,13 +25,15 @@ function TagEditPage() {
     const entityData = useTagPage(id);
 
     return (
-        <EntityPageBase
-            entityType="tag"
-            entityId={id}
-            initialMode="edit"
-            entityData={entityData}
-        >
-            <EntityEditContent entityType="tag" />
-        </EntityPageBase>
+        <RoutePermissionGuard permissions={[PermissionEnum.TAG_UPDATE]}>
+            <EntityPageBase
+                entityType="tag"
+                entityId={id}
+                initialMode="edit"
+                entityData={entityData}
+            >
+                <EntityEditContent entityType="tag" />
+            </EntityPageBase>
+        </RoutePermissionGuard>
     );
 }

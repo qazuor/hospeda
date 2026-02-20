@@ -1,3 +1,4 @@
+import { EmptyState } from '@/components/feedback/EmptyState';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
 import {
@@ -263,7 +264,7 @@ export const VirtualizedDataTable = <TData,>({
                         className="px-3 py-6"
                         colSpan={columns.length}
                     >
-                        {t('ui.errors.noRecordsFound')}
+                        <EmptyState message={t('ui.errors.noRecordsFound')} />
                     </td>
                 </tr>
             ) : (
@@ -331,7 +332,7 @@ export const VirtualizedDataTable = <TData,>({
                                         className="px-3 py-6"
                                         colSpan={columns.length}
                                     >
-                                        {t('ui.errors.noRecordsFound')}
+                                        <EmptyState message={t('ui.errors.noRecordsFound')} />
                                     </td>
                                 </tr>
                             </tbody>

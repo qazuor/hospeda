@@ -239,8 +239,8 @@ function BillingOwnerPromotionsPage() {
         );
     }
 
-    const promotions = data?.items || [];
-    const total = data?.pagination?.total || 0;
+    const promotions = (data?.items as OwnerPromotion[] | undefined) ?? [];
+    const total = (data?.pagination?.total as number | undefined) ?? 0;
 
     return (
         <SidebarPageLayout>

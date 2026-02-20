@@ -1,7 +1,9 @@
+import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { usePostPage } from '@/features/posts/hooks/usePostPage';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
+import { PermissionEnum } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
 
 /**
@@ -23,15 +25,17 @@ function PostEditPage() {
     const entityData = usePostPage(id);
 
     return (
-        <div className="space-y-4">
-            <EntityPageBase
-                entityType="post"
-                entityId={id}
-                initialMode="edit"
-                entityData={entityData}
-            >
-                <EntityEditContent entityType="post" />
-            </EntityPageBase>
-        </div>
+        <RoutePermissionGuard permissions={[PermissionEnum.POST_UPDATE]}>
+            <div className="space-y-4">
+                <EntityPageBase
+                    entityType="post"
+                    entityId={id}
+                    initialMode="edit"
+                    entityData={entityData}
+                >
+                    <EntityEditContent entityType="post" />
+                </EntityPageBase>
+            </div>
+        </RoutePermissionGuard>
     );
 }

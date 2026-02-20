@@ -1,7 +1,6 @@
+import { fetchApi } from '@/lib/api/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { CreatePromoCodePayload, PromoCodeFilters, UpdatePromoCodePayload } from './types';
-
-const API_BASE = '/api/v1';
 
 /**
  * Query keys for promo code-related queries
@@ -32,16 +31,13 @@ async function fetchPromoCodes(filters: PromoCodeFilters = {}) {
 
     // TODO: Update endpoint when API is ready
     // Expected endpoint: GET /api/v1/billing/promo-codes
-    const response = await fetch(`${API_BASE}/billing/promo-codes?${params.toString()}`, {
-        credentials: 'include'
+    const result = await fetchApi<{
+        success: boolean;
+        data: { items: Record<string, unknown>[]; pagination: Record<string, unknown> };
+    }>({
+        path: `/api/v1/billing/promo-codes?${params.toString()}`
     });
-
-    if (!response.ok) {
-        throw new Error(`Failed to fetch promo codes: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
@@ -51,22 +47,12 @@ async function fetchPromoCodes(filters: PromoCodeFilters = {}) {
 async function createPromoCode(payload: CreatePromoCodePayload) {
     // TODO: Update endpoint when API is ready
     // Expected endpoint: POST /api/v1/billing/promo-codes
-    const response = await fetch(`${API_BASE}/billing/promo-codes`, {
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: '/api/v1/billing/promo-codes',
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify(payload)
+        body: payload
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Failed to create promo code: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
@@ -76,22 +62,12 @@ async function createPromoCode(payload: CreatePromoCodePayload) {
 async function updatePromoCode({ id, ...payload }: UpdatePromoCodePayload) {
     // TODO: Update endpoint when API is ready
     // Expected endpoint: PUT /api/v1/billing/promo-codes/:id
-    const response = await fetch(`${API_BASE}/billing/promo-codes/${id}`, {
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/billing/promo-codes/${id}`,
         method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify(payload)
+        body: payload
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Failed to update promo code: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
@@ -101,22 +77,12 @@ async function updatePromoCode({ id, ...payload }: UpdatePromoCodePayload) {
 async function togglePromoCodeActive(id: string, isActive: boolean) {
     // TODO: Update endpoint when API is ready
     // Expected endpoint: PATCH /api/v1/billing/promo-codes/:id
-    const response = await fetch(`${API_BASE}/billing/promo-codes/${id}`, {
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/billing/promo-codes/${id}`,
         method: 'PATCH',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({ isActive })
+        body: { isActive }
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Failed to toggle promo code: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
@@ -126,18 +92,11 @@ async function togglePromoCodeActive(id: string, isActive: boolean) {
 async function deletePromoCode(id: string) {
     // TODO: Update endpoint when API is ready
     // Expected endpoint: DELETE /api/v1/billing/promo-codes/:id
-    const response = await fetch(`${API_BASE}/billing/promo-codes/${id}`, {
-        method: 'DELETE',
-        credentials: 'include'
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/billing/promo-codes/${id}`,
+        method: 'DELETE'
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Failed to delete promo code: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**

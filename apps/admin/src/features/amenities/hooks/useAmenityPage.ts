@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
 import { filterSectionsByMode } from '@/components/entity-form/utils/section-filter.utils';
+import { useUserPermissions } from '@/hooks/use-user-permissions';
 import { createAmenityConsolidatedConfig } from '../config';
 import { useAmenityQuery, useUpdateAmenityMutation } from './useAmenityQuery';
 
@@ -47,15 +48,8 @@ export const useAmenityPage = (entityId: string) => {
         []
     );
 
-    // User permissions (hardcoded for now, can be made dynamic)
-    const userPermissions = useMemo(
-        () => [
-            PermissionEnum.AMENITY_CREATE,
-            PermissionEnum.AMENITY_UPDATE,
-            PermissionEnum.AMENITY_DELETE
-        ],
-        []
-    );
+    // Real permissions from AuthContext
+    const userPermissions = useUserPermissions();
 
     // Check permissions for current mode
     const canView = useMemo(() => {

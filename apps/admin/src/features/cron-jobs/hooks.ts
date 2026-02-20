@@ -1,12 +1,11 @@
+import { fetchApi } from '@/lib/api/client';
 /**
  * Cron Jobs Feature Hooks
  *
  * TanStack Query hooks for cron job management
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { CronJobsListResponse, TriggerCronJobError, TriggerCronJobResponse } from './types';
-
-const API_BASE = '/api/v1';
+import type { CronJobsListResponse, TriggerCronJobResponse } from './types';
 
 /**
  * Query keys for cron job queries
@@ -23,16 +22,10 @@ export const cronJobQueryKeys = {
  * Fetch all registered cron jobs
  */
 async function fetchCronJobs(): Promise<CronJobsListResponse> {
-    const response = await fetch(`${API_BASE}/cron`, {
-        credentials: 'include'
+    const result = await fetchApi<CronJobsListResponse>({
+        path: '/api/v1/cron'
     });
-
-    if (!response.ok) {
-        throw new Error(`Failed to fetch cron jobs: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data;
 }
 
 /**
@@ -49,22 +42,9 @@ async function triggerCronJob({
     if (dryRun) {
         params.append('dryRun', 'true');
     }
-
-    const url = `${API_BASE}/cron/${jobName}${params.toString() ? `?${params.toString()}` : ''}`;
-
-    const response = await fetch(url, {
-        method: 'POST',
-        credentials: 'include'
-    });
-
-    const json = await response.json();
-
-    if (!response.ok) {
-        const error = json as TriggerCronJobError;
-        throw new Error(error.error.message);
-    }
-
-    return json;
+    const url = `/api/v1/cron/${jobName}${params.toString() ? `?${params.toString()}` : ''}`;
+    const result = await fetchApi<TriggerCronJobResponse>({ path: url, method: 'POST' });
+    return result.data;
 }
 
 /**

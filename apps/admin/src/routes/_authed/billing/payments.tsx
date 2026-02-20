@@ -459,7 +459,7 @@ function BillingPaymentsPage() {
 
     // Fetch payments with filters
     const {
-        data: payments = [],
+        data: paymentsData = [],
         isLoading,
         isError
     } = usePaymentsQuery({
@@ -471,6 +471,7 @@ function BillingPaymentsPage() {
         minAmount: minAmount ? Number.parseFloat(minAmount) : undefined,
         maxAmount: maxAmount ? Number.parseFloat(maxAmount) : undefined
     });
+    const payments = paymentsData as unknown as Payment[];
 
     // Refund mutation
     const refundMutation = useRefundPaymentMutation();

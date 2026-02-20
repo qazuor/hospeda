@@ -5,9 +5,8 @@
  * Uses TanStack Query's useQueries to fetch multiple endpoints in parallel
  */
 
+import { fetchApi } from '@/lib/api/client';
 import { useQueries } from '@tanstack/react-query';
-
-const API_BASE = '/api/v1';
 
 type EntityCount = {
     readonly name: string;
@@ -28,17 +27,15 @@ type DashboardStats = {
  * @returns The total count from pagination metadata
  */
 async function fetchEntityCount(endpoint: string): Promise<number> {
-    const response = await fetch(`${API_BASE}${endpoint}?page=1&limit=1`, {
-        credentials: 'include'
+    const result = await fetchApi<{
+        success: boolean;
+        data?: { pagination?: { total?: number } };
+        metadata?: { total?: number };
+    }>({
+        path: `/api/v1${endpoint}?page=1&limit=1`
     });
-
-    if (!response.ok) {
-        throw new Error(`Failed to fetch count from ${endpoint}`);
-    }
-
-    const json = await response.json();
     // Extract total from pagination
-    return json.data?.pagination?.total ?? json.metadata?.total ?? 0;
+    return result.data.data?.pagination?.total ?? result.data.metadata?.total ?? 0;
 }
 
 const ENTITY_ENDPOINTS = [

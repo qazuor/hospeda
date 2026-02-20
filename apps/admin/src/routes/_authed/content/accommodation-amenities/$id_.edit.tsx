@@ -1,7 +1,9 @@
+import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { useAmenityPage } from '@/features/amenities/hooks/useAmenityPage';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
+import { PermissionEnum } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
 
 /**
@@ -23,13 +25,15 @@ function AmenityEditPage() {
     const entityData = useAmenityPage(id);
 
     return (
-        <EntityPageBase
-            entityType="amenity"
-            entityId={id}
-            initialMode="edit"
-            entityData={entityData}
-        >
-            <EntityEditContent entityType="amenity" />
-        </EntityPageBase>
+        <RoutePermissionGuard permissions={[PermissionEnum.AMENITY_UPDATE]}>
+            <EntityPageBase
+                entityType="amenity"
+                entityId={id}
+                initialMode="edit"
+                entityData={entityData}
+            >
+                <EntityEditContent entityType="amenity" />
+            </EntityPageBase>
+        </RoutePermissionGuard>
     );
 }

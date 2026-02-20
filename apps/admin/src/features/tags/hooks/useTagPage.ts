@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
 import { filterSectionsByMode } from '@/components/entity-form/utils/section-filter.utils';
+import { useUserPermissions } from '@/hooks/use-user-permissions';
 import { createTagConsolidatedConfig } from '../config';
 import { useTagQuery, useUpdateTagMutation } from './useTagQuery';
 
@@ -47,11 +48,8 @@ export const useTagPage = (entityId: string) => {
         []
     );
 
-    // User permissions (hardcoded for now, can be made dynamic)
-    const userPermissions = useMemo(
-        () => [PermissionEnum.TAG_CREATE, PermissionEnum.TAG_UPDATE, PermissionEnum.TAG_DELETE],
-        []
-    );
+    // Real permissions from AuthContext
+    const userPermissions = useUserPermissions();
 
     // Check permissions for current mode
     const canView = useMemo(() => {

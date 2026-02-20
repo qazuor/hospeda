@@ -21,6 +21,7 @@ import {
     SettingsIcon,
     TagsIcon
 } from '@repo/icons';
+import { PermissionEnum } from '@repo/schemas';
 
 export const billingSection = createSection({
     id: 'billing',
@@ -41,19 +42,25 @@ export const billingSection = createSection({
                         'plans',
                         'Planes',
                         '/billing/plans',
-                        <ListIcon className="h-4 w-4" />
+                        <ListIcon className="h-4 w-4" />,
+                        [PermissionEnum.PRICING_PLAN_VIEW, PermissionEnum.PRICING_PLAN_CREATE]
                     ),
                     sidebar.link(
                         'subscriptions',
                         'Suscripciones',
                         '/billing/subscriptions',
-                        <ReceiptIcon className="h-4 w-4" />
+                        <ReceiptIcon className="h-4 w-4" />,
+                        [PermissionEnum.SUBSCRIPTION_VIEW, PermissionEnum.SUBSCRIPTION_CREATE]
                     ),
                     sidebar.link(
                         'addons',
                         'Add-ons',
                         '/billing/addons',
-                        <AddIcon className="h-4 w-4" />
+                        <AddIcon className="h-4 w-4" />,
+                        [
+                            PermissionEnum.SUBSCRIPTION_ITEM_VIEW,
+                            PermissionEnum.SUBSCRIPTION_ITEM_CREATE
+                        ]
                     )
                 ],
                 <CreditCardIcon className="h-4 w-4" />,
@@ -68,13 +75,15 @@ export const billingSection = createSection({
                         'payments',
                         'Pagos',
                         '/billing/payments',
-                        <PriceIcon className="h-4 w-4" />
+                        <PriceIcon className="h-4 w-4" />,
+                        [PermissionEnum.PAYMENT_VIEW]
                     ),
                     sidebar.link(
                         'invoices',
                         'Facturas',
                         '/billing/invoices',
-                        <FileTextIcon className="h-4 w-4" />
+                        <FileTextIcon className="h-4 w-4" />,
+                        [PermissionEnum.INVOICE_VIEW]
                     )
                 ],
                 <ReceiptIcon className="h-4 w-4" />
@@ -88,19 +97,22 @@ export const billingSection = createSection({
                         'promo-codes',
                         'Códigos Promocionales',
                         '/billing/promo-codes',
-                        <CouponsIcon className="h-4 w-4" />
+                        <CouponsIcon className="h-4 w-4" />,
+                        [PermissionEnum.DISCOUNT_CODE_VIEW]
                     ),
                     sidebar.link(
                         'sponsorships',
                         'Patrocinios',
                         '/billing/sponsorships',
-                        <PromotionsIcon className="h-4 w-4" />
+                        <PromotionsIcon className="h-4 w-4" />,
+                        [PermissionEnum.SPONSORSHIP_VIEW, PermissionEnum.SPONSORSHIP_CREATE]
                     ),
                     sidebar.link(
                         'owner-promotions',
                         'Promociones de Propietarios',
                         '/billing/owner-promotions',
-                        <OffersIcon className="h-4 w-4" />
+                        <OffersIcon className="h-4 w-4" />,
+                        [PermissionEnum.OWNER_PROMOTION_VIEW, PermissionEnum.OWNER_PROMOTION_CREATE]
                     )
                 ],
                 <TagsIcon className="h-4 w-4" />
@@ -110,26 +122,30 @@ export const billingSection = createSection({
                 'exchange-rates',
                 'Tasas de Cambio',
                 '/billing/exchange-rates',
-                <DollarSignIcon className="h-4 w-4" />
+                <DollarSignIcon className="h-4 w-4" />,
+                [PermissionEnum.EXCHANGE_RATE_VIEW]
             ),
             sidebar.separator(),
             sidebar.link(
                 'metrics',
                 'Métricas',
                 '/billing/metrics',
-                <MetricsIcon className="h-4 w-4" />
+                <MetricsIcon className="h-4 w-4" />,
+                [PermissionEnum.ANALYTICS_VIEW]
             ),
             sidebar.link(
                 'settings',
                 'Configuración',
                 '/billing/settings',
-                <SettingsIcon className="h-4 w-4" />
+                <SettingsIcon className="h-4 w-4" />,
+                [PermissionEnum.ACCESS_PANEL_ADMIN]
             ),
             sidebar.link(
                 'cron',
                 'Tareas Programadas',
                 '/billing/cron',
-                <ClockIcon className="h-4 w-4" />
+                <ClockIcon className="h-4 w-4" />,
+                [PermissionEnum.ACCESS_PANEL_ADMIN]
             )
         ]
     }

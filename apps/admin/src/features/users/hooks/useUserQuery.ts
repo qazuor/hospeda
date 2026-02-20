@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { fetchApi } from '@/lib/api/client';
 import { adminLogger } from '@/utils/logger';
 
-const API_BASE = '/api/v1';
+const API_PATH = '/api/v1/admin/users';
 
 /**
  * Query keys for user operations
@@ -19,76 +20,44 @@ export const userQueryKeys = {
  * Fetch a single user by ID
  */
 async function fetchUser(id: string) {
-    const response = await fetch(`${API_BASE}/admin/users/${id}`, {
-        credentials: 'include'
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `${API_PATH}/${id}`
     });
-
-    if (!response.ok) {
-        throw new Error(`Failed to fetch user: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Update a user
  */
 async function updateUser(id: string, data: Record<string, unknown>) {
-    const response = await fetch(`${API_BASE}/admin/users/${id}`, {
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `${API_PATH}/${id}`,
         method: 'PATCH',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify(data)
+        body: data
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Failed to update user: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Create a new user
  */
 async function createUser(data: Record<string, unknown>) {
-    const response = await fetch(`${API_BASE}/admin/users`, {
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: API_PATH,
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify(data)
+        body: data
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Failed to create user: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Delete a user (soft delete)
  */
 async function deleteUser(id: string) {
-    const response = await fetch(`${API_BASE}/admin/users/${id}`, {
-        method: 'DELETE',
-        credentials: 'include'
+    await fetchApi<{ success: boolean }>({
+        path: `${API_PATH}/${id}`,
+        method: 'DELETE'
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Failed to delete user: ${response.statusText}`);
-    }
-
     return true;
 }
 

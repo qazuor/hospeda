@@ -132,12 +132,12 @@ describe('useTranslations hook', () => {
             expect(result.current.t('ui.actions.edit')).toBe('Editar');
         });
 
-        it('should fallback to default locale for unsupported locale', () => {
+        it('should return English translation for en locale', () => {
             const { result } = renderHook(() => useTranslations('en'));
 
-            // Should still work by falling back to default locale (es)
+            // English locale is supported and returns English translations
             const translation = result.current.t('ui.actions.edit');
-            expect(translation).toBe('Editar');
+            expect(translation).toBe('Edit');
         });
     });
 

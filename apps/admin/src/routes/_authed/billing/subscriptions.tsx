@@ -437,15 +437,20 @@ function SubscriptionDetailsDialog({
     const plan = getPlanBySlug(subscription.planSlug);
 
     // Map API payment data to PaymentHistory interface
-    const paymentHistory: PaymentHistory[] = (paymentData?.items || []).map(
-        (p: { id: string; createdAt: string; amount: number; status: string }) => ({
-            id: p.id,
-            date: p.createdAt,
-            amount: p.amount / 100,
-            status:
-                p.status === 'completed' ? 'paid' : p.status === 'pending' ? 'pending' : 'failed'
-        })
-    );
+    const paymentHistory: PaymentHistory[] = (
+        (paymentData as unknown as
+            | Array<{ id: string; createdAt: string; amount: number; status: string }>
+            | undefined) ?? []
+    ).map((p) => ({
+        id: p.id,
+        date: p.createdAt,
+        amount: p.amount / 100,
+        status: (p.status === 'completed'
+            ? 'paid'
+            : p.status === 'pending'
+              ? 'pending'
+              : 'failed') as 'paid' | 'pending' | 'failed'
+    }));
 
     return (
         <Dialog
@@ -843,7 +848,7 @@ function BillingSubscriptionsPage() {
 
     // Fetch subscriptions with filters
     const {
-        data: subscriptions = [],
+        data: subscriptionsData,
         isLoading,
         isError
     } = useSubscriptionsQuery({
@@ -851,6 +856,9 @@ function BillingSubscriptionsPage() {
         planSlug: planFilter,
         q: searchQuery
     });
+
+    const subscriptions = ((subscriptionsData as { items?: Subscription[] } | undefined)?.items ??
+        []) as Subscription[];
 
     // Mutations
     const cancelMutation = useCancelSubscriptionMutation();

@@ -137,12 +137,18 @@ function UserActivityPage() {
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-2">
-                                    <p className="font-medium">{formatDate(user.createdAt)}</p>
+                                    <p className="font-medium">
+                                        {formatDate(
+                                            user.createdAt as string | Date | null | undefined
+                                        )}
+                                    </p>
                                     <Badge
                                         variant="secondary"
                                         className="text-xs"
                                     >
-                                        {getTimeSince(user.createdAt)}
+                                        {getTimeSince(
+                                            user.createdAt as string | Date | null | undefined
+                                        )}
                                     </Badge>
                                 </div>
                             </CardContent>
@@ -165,12 +171,18 @@ function UserActivityPage() {
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-2">
-                                    <p className="font-medium">{formatDate(user.updatedAt)}</p>
+                                    <p className="font-medium">
+                                        {formatDate(
+                                            user.updatedAt as string | Date | null | undefined
+                                        )}
+                                    </p>
                                     <Badge
                                         variant="secondary"
                                         className="text-xs"
                                     >
-                                        {getTimeSince(user.updatedAt)}
+                                        {getTimeSince(
+                                            user.updatedAt as string | Date | null | undefined
+                                        )}
                                     </Badge>
                                 </div>
                             </CardContent>

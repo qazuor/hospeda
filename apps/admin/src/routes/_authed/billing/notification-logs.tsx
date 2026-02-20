@@ -260,7 +260,7 @@ function NotificationLogsPage() {
 
     // Fetch notification logs with filters
     const {
-        data: notifications = [],
+        data: notificationsData = [],
         isLoading,
         isError
     } = useNotificationLogsQuery({
@@ -271,6 +271,7 @@ function NotificationLogsPage() {
         startDate,
         endDate
     });
+    const notifications = notificationsData as unknown as NotificationLog[];
 
     const filteredNotifications = notifications.filter((notification: NotificationLog) => {
         const matchesType = typeFilter === 'all' || notification.type === typeFilter;

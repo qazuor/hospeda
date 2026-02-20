@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
 import { filterSectionsByMode } from '@/components/entity-form/utils/section-filter.utils';
+import { useUserPermissions } from '@/hooks/use-user-permissions';
 import { createPostConsolidatedConfig } from '../config';
 import { usePostQuery, useUpdatePostMutation } from './usePostQuery';
 
@@ -47,16 +48,8 @@ export const usePostPage = (entityId: string) => {
         []
     );
 
-    // User permissions (hardcoded for now, can be made dynamic)
-    const userPermissions = useMemo(
-        () => [
-            PermissionEnum.POST_VIEW_ALL,
-            PermissionEnum.POST_UPDATE,
-            PermissionEnum.POST_CREATE,
-            PermissionEnum.POST_DELETE
-        ],
-        []
-    );
+    // Real permissions from AuthContext
+    const userPermissions = useUserPermissions();
 
     // Check permissions for current mode
     const canView = useMemo(() => {

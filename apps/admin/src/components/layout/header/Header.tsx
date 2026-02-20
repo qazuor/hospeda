@@ -9,12 +9,13 @@
  * - Mobile hamburger menu
  */
 
+import { CommandPalette } from '@/components/search/CommandPalette';
 import { headerNavItems } from '@/config/sections';
 import { useSidebarContext } from '@/contexts/sidebar-context';
 import { useTranslations } from '@/hooks/use-translations';
 import ClerkHeader from '@/integrations/clerk/header-user';
 import { useCurrentSectionId } from '@/lib/sections';
-import { MenuIcon, NotificationIcon, SearchIcon, SettingsIcon, UserIcon } from '@repo/icons';
+import { MenuIcon, NotificationIcon, SettingsIcon, UserIcon } from '@repo/icons';
 import { Link, useRouter } from '@tanstack/react-router';
 import { useEffect, useRef, useState } from 'react';
 import { HeaderNavItem } from './HeaderNavItem';
@@ -95,11 +96,8 @@ export function Header() {
 
                     {/* Right side actions */}
                     <div className="ml-auto flex items-center gap-2">
-                        {/* Search placeholder */}
-                        <div className="hidden items-center gap-2 rounded-md border bg-card px-2 py-1.5 text-muted-foreground text-sm lg:flex">
-                            <SearchIcon className="h-4 w-4" />
-                            <span>{t('admin-nav.topbar.search')}</span>
-                        </div>
+                        {/* Search command palette */}
+                        <CommandPalette />
 
                         {/* Notifications */}
                         <div

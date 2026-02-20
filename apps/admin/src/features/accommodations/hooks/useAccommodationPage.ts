@@ -4,6 +4,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
+import { useUserPermissions } from '@/hooks/use-user-permissions';
 import { useAccommodationTypeOptions } from '@/lib/utils/enum-to-options.utils';
 import { useAccommodationQuery, useUpdateAccommodationMutation } from './useAccommodationQuery';
 
@@ -56,24 +57,8 @@ export const useAccommodationPage = (entityId: string) => {
         []
     );
 
-    // User permissions (hardcoded for now, can be made dynamic)
-    const userPermissions = useMemo(
-        () => [
-            PermissionEnum.ACCOMMODATION_VIEW_ALL,
-            PermissionEnum.ACCOMMODATION_BASIC_INFO_EDIT,
-            PermissionEnum.ACCOMMODATION_CONTACT_INFO_EDIT,
-            PermissionEnum.ACCOMMODATION_LOCATION_EDIT,
-            PermissionEnum.ACCOMMODATION_STATES_EDIT,
-            PermissionEnum.ACCOMMODATION_FEATURED_TOGGLE,
-            PermissionEnum.ACCOMMODATION_UPDATE_ANY,
-            // ✅ Permisos adicionales para secciones faltantes
-            PermissionEnum.ACCOMMODATION_AMENITIES_EDIT,
-            PermissionEnum.ACCOMMODATION_GALLERY_MANAGE,
-            PermissionEnum.ACCOMMODATION_PUBLISH,
-            PermissionEnum.ACCOMMODATION_REVIEW_MODERATE
-        ],
-        []
-    );
+    // Real permissions from AuthContext
+    const userPermissions = useUserPermissions();
 
     // Check permissions for current mode
     const canView = useMemo(() => {

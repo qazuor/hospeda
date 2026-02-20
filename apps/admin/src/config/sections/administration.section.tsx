@@ -20,6 +20,7 @@ import {
     TagsIcon,
     UsersManagementIcon
 } from '@repo/icons';
+import { PermissionEnum } from '@repo/schemas';
 
 export const administrationSection = createSection({
     id: 'administration',
@@ -54,19 +55,22 @@ export const administrationSection = createSection({
                         'users',
                         'Usuarios',
                         '/access/users',
-                        <UsersManagementIcon className="h-4 w-4" />
+                        <UsersManagementIcon className="h-4 w-4" />,
+                        [PermissionEnum.USER_CREATE, PermissionEnum.USER_DELETE]
                     ),
                     sidebar.link(
                         'roles',
                         'Roles',
                         '/access/roles',
-                        <RolesIcon className="h-4 w-4" />
+                        <RolesIcon className="h-4 w-4" />,
+                        [PermissionEnum.ACCESS_PERMISSIONS_MANAGE]
                     ),
                     sidebar.link(
                         'permissions',
                         'Permisos',
                         '/access/permissions',
-                        <PermissionsIcon className="h-4 w-4" />
+                        <PermissionsIcon className="h-4 w-4" />,
+                        [PermissionEnum.ACCESS_PERMISSIONS_MANAGE, PermissionEnum.PERMISSION_VIEW]
                     )
                 ],
                 <AdminIcon className="h-4 w-4" />,
@@ -81,25 +85,29 @@ export const administrationSection = createSection({
                         'amenities',
                         'Amenidades',
                         '/content/accommodation-amenities',
-                        <SettingsIcon className="h-4 w-4" />
+                        <SettingsIcon className="h-4 w-4" />,
+                        [PermissionEnum.AMENITY_CREATE]
                     ),
                     sidebar.link(
                         'features',
                         'Características',
                         '/content/accommodation-features',
-                        <ContentIcon className="h-4 w-4" />
+                        <ContentIcon className="h-4 w-4" />,
+                        [PermissionEnum.FEATURE_CREATE]
                     ),
                     sidebar.link(
                         'attractions',
                         'Atracciones de Destino',
                         '/content/destination-attractions',
-                        <ListIcon className="h-4 w-4" />
+                        <ListIcon className="h-4 w-4" />,
+                        [PermissionEnum.ATTRACTION_VIEW, PermissionEnum.ATTRACTION_CREATE]
                     ),
                     sidebar.link(
                         'tags',
                         'Etiquetas',
                         '/settings/tags',
-                        <TagsIcon className="h-4 w-4" />
+                        <TagsIcon className="h-4 w-4" />,
+                        [PermissionEnum.TAG_CREATE]
                     )
                 ],
                 <TagsIcon className="h-4 w-4" />
@@ -112,13 +120,15 @@ export const administrationSection = createSection({
                         'locations',
                         'Ubicaciones',
                         '/events/locations',
-                        <EventLocationIcon className="h-4 w-4" />
+                        <EventLocationIcon className="h-4 w-4" />,
+                        [PermissionEnum.EVENT_LOCATION_VIEW, PermissionEnum.EVENT_LOCATION_CREATE]
                     ),
                     sidebar.link(
                         'organizers',
                         'Organizadores',
                         '/events/organizers',
-                        <EventOrganizerIcon className="h-4 w-4" />
+                        <EventOrganizerIcon className="h-4 w-4" />,
+                        [PermissionEnum.EVENT_ORGANIZER_VIEW, PermissionEnum.EVENT_ORGANIZER_CREATE]
                     )
                 ],
                 <EventLocationIcon className="h-4 w-4" />
@@ -128,18 +138,26 @@ export const administrationSection = createSection({
                 'sponsors',
                 'Patrocinadores',
                 '/sponsors',
-                <PostSponsorIcon className="h-4 w-4" />
+                <PostSponsorIcon className="h-4 w-4" />,
+                [PermissionEnum.POST_SPONSOR_VIEW, PermissionEnum.POST_SPONSOR_CREATE]
             ),
             sidebar.group(
                 'settings',
                 'Configuración',
                 [
-                    sidebar.link('seo', 'SEO', '/settings/seo', <SearchIcon className="h-4 w-4" />),
+                    sidebar.link(
+                        'seo',
+                        'SEO',
+                        '/settings/seo',
+                        <SearchIcon className="h-4 w-4" />,
+                        [PermissionEnum.SEO_MANAGE]
+                    ),
                     sidebar.link(
                         'critical',
                         'Configuración Crítica',
                         '/settings/critical',
-                        <SettingsIcon className="h-4 w-4" />
+                        <SettingsIcon className="h-4 w-4" />,
+                        [PermissionEnum.ACCESS_PANEL_ADMIN]
                     )
                 ],
                 <SettingsIcon className="h-4 w-4" />

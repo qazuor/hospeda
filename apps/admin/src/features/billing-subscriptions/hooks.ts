@@ -1,6 +1,5 @@
+import { fetchApi } from '@/lib/api/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-
-const API_BASE = '/api/v1';
 
 /**
  * Query keys for subscription-related queries
@@ -28,32 +27,23 @@ async function fetchSubscriptions(filters: Record<string, unknown> = {}) {
         }
     }
 
-    const response = await fetch(`${API_BASE}/billing/subscriptions?${params.toString()}`, {
-        credentials: 'include'
+    const result = await fetchApi<{
+        success: boolean;
+        data: { items: Record<string, unknown>[]; pagination: Record<string, unknown> };
+    }>({
+        path: `/api/v1/billing/subscriptions?${params.toString()}`
     });
-
-    if (!response.ok) {
-        throw new Error(`Failed to fetch subscriptions: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Fetch a single subscription by ID
  */
 async function fetchSubscription(id: string) {
-    const response = await fetch(`${API_BASE}/billing/subscriptions/${id}`, {
-        credentials: 'include'
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/billing/subscriptions/${id}`
     });
-
-    if (!response.ok) {
-        throw new Error(`Failed to fetch subscription: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
@@ -64,49 +54,29 @@ async function cancelSubscription(payload: {
     immediate: boolean;
     reason?: string;
 }) {
-    const response = await fetch(`${API_BASE}/billing/subscriptions/${payload.id}`, {
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/billing/subscriptions/${payload.id}`,
         method: 'DELETE',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({
+        body: {
             immediate: payload.immediate,
             reason: payload.reason
-        })
+        }
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Failed to cancel subscription: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
  * Change subscription plan
  */
 async function changePlan(payload: { subscriptionId: string; newPlanSlug: string }) {
-    const response = await fetch(`${API_BASE}/billing/subscriptions/${payload.subscriptionId}`, {
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: `/api/v1/billing/subscriptions/${payload.subscriptionId}`,
         method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({
+        body: {
             planSlug: payload.newPlanSlug
-        })
+        }
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Failed to change plan: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
@@ -170,22 +140,12 @@ export const useChangePlanMutation = () => {
  * Extend a trial subscription
  */
 async function extendTrial(payload: { subscriptionId: string; additionalDays: number }) {
-    const response = await fetch(`${API_BASE}/billing/trial/extend`, {
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: '/api/v1/billing/trial/extend',
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify(payload)
+        body: payload
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `Failed to extend trial: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**
@@ -212,16 +172,10 @@ async function fetchPaymentHistory(subscriptionId: string) {
     const params = new URLSearchParams();
     params.append('subscriptionId', subscriptionId);
 
-    const response = await fetch(`${API_BASE}/billing/payments?${params.toString()}`, {
-        credentials: 'include'
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown>[] }>({
+        path: `/api/v1/billing/payments?${params.toString()}`
     });
-
-    if (!response.ok) {
-        throw new Error(`Failed to fetch payment history: ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return json.data;
+    return result.data.data;
 }
 
 /**

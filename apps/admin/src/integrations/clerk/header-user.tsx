@@ -20,7 +20,13 @@ export default function HeaderUser() {
     const { data: session, isPending } = useSession();
     const router = useRouter();
     const [isOpen, setIsOpen] = useState(false);
+    const [hasMounted, setHasMounted] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
+
+    // Track client-side mount to avoid hydration mismatch
+    useEffect(() => {
+        setHasMounted(true);
+    }, []);
 
     // Close menu on outside click
     useEffect(() => {
@@ -44,7 +50,7 @@ export default function HeaderUser() {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isOpen]);
 
-    if (isPending) {
+    if (!hasMounted || isPending) {
         return <div className="h-8 w-8 animate-pulse rounded-full bg-gray-200" />;
     }
 
