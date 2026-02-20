@@ -41,6 +41,9 @@
         "seo": "SEO",
         "portalSettings": "Configurações do Portal"
     },
+    "billing": {
+        "title": "Faturamento"
+    },
     "sponsors": "Patrocinadores",
     "analytics": {
         "title": "Análises",

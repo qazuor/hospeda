@@ -31,5 +31,9 @@
             "newReview": "Nueva reseña en: Apartamento Loft Urbano",
             "eventCreated": "Evento creado: Noche de Jazz en La Bahía"
         }
+    },
+    "comingSoon": {
+        "analytics": "Conecta un proveedor de analíticas para ver datos de tráfico",
+        "auditLog": "El registro de actividad estará disponible cuando se implemente el sistema de auditoría"
     }
 }

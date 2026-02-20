@@ -23,6 +23,28 @@
         "search": "Buscar",
         "closeToast": "Fechar notificação",
         "closeSidebarOverlay": "Fechar sobreposição da barra lateral",
-        "clearAllSessions": "Limpar todas as sessões e recarregar página"
+        "clearAllSessions": "Limpar todas as sessões e recarregar página",
+        "mobileNavigation": "Navegação móvel"
+    },
+    "comingSoon": {
+        "title": "Em breve",
+        "description": "Este recurso está em desenvolvimento e estará disponível em breve.",
+        "sponsorAnalytics": "As análises de patrocínio estarão disponíveis quando o sistema de métricas de campanhas for implementado.",
+        "search": "A busca global estará disponível em breve.",
+        "searchPlaceholder": "Buscar páginas, entidades, ações..."
+    },
+    "emptyState": {
+        "noData": "Nenhum dado disponível"
+    },
+    "permissionDenied": {
+        "title": "Acesso Negado",
+        "description": "Você não tem permissão para acessar esta página."
+    },
+    "impersonation": {
+        "banner": "Você está visualizando como {{userName}}",
+        "stop": "Parar de personificar",
+        "start": "Personificar usuário",
+        "confirm": "Tem certeza de que deseja personificar este usuário?",
+        "error": "Erro ao personificar usuário. Tente novamente."
     }
 }

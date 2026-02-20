@@ -31,5 +31,9 @@
             "newReview": "New review on: Urban Loft Apartment",
             "eventCreated": "Event created: Jazz Night at La Bahia"
         }
+    },
+    "comingSoon": {
+        "analytics": "Connect an analytics provider to view traffic data",
+        "auditLog": "Activity feed will be available once the audit log system is implemented"
     }
 }

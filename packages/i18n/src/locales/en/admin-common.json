@@ -23,6 +23,28 @@
         "search": "Search",
         "closeToast": "Close notification",
         "closeSidebarOverlay": "Close sidebar overlay",
-        "clearAllSessions": "Clear all sessions and reload page"
+        "clearAllSessions": "Clear all sessions and reload page",
+        "mobileNavigation": "Mobile navigation"
+    },
+    "comingSoon": {
+        "title": "Coming Soon",
+        "description": "This feature is under development and will be available soon.",
+        "sponsorAnalytics": "Sponsorship analytics will be available when the campaign metrics system is implemented.",
+        "search": "Global search will be available soon.",
+        "searchPlaceholder": "Search pages, entities, actions..."
+    },
+    "emptyState": {
+        "noData": "No data available"
+    },
+    "permissionDenied": {
+        "title": "Access Denied",
+        "description": "You don't have permission to access this page."
+    },
+    "impersonation": {
+        "banner": "You are viewing as {{userName}}",
+        "stop": "Stop impersonating",
+        "start": "Impersonate user",
+        "confirm": "Are you sure you want to impersonate this user?",
+        "error": "Failed to impersonate user. Please try again."
     }
 }

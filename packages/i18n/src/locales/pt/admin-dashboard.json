@@ -31,5 +31,9 @@
             "newReview": "Nova avaliação em: Apartamento Loft Urbano",
             "eventCreated": "Evento criado: Noite de Jazz na Baía"
         }
+    },
+    "comingSoon": {
+        "analytics": "Conecte um provedor de análises para visualizar dados de tráfego",
+        "auditLog": "O feed de atividade estará disponível quando o sistema de auditoria for implementado"
     }
 }

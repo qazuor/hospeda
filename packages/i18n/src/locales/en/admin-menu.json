@@ -41,6 +41,9 @@
         "seo": "SEO",
         "portalSettings": "Portal Settings"
     },
+    "billing": {
+        "title": "Billing"
+    },
     "sponsors": "Sponsors",
     "analytics": {
         "title": "Analytics",
