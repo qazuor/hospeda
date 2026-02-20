@@ -123,8 +123,8 @@ export const accommodationsRelations = relations(accommodations, ({ one, many })
         fields: [accommodations.destinationId],
         references: [destinations.id]
     }),
-    amenities: many(rAccommodationAmenity),
-    features: many(rAccommodationFeature),
+    amenities: many(rAccommodationAmenity, { relationName: 'accommodationToAmenity' }),
+    features: many(rAccommodationFeature, { relationName: 'accommodationToFeature' }),
     reviews: many(accommodationReviews),
     faqs: many(accommodationFaqs),
     iaData: many(accommodationIaData),

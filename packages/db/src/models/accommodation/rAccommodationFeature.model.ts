@@ -26,7 +26,7 @@ export class RAccommodationFeatureModel extends BaseModel<AccommodationFeature> 
         const db = getDb();
         try {
             const withObj: Record<string, true> = {};
-            for (const key of ['accommodation', 'feature', 'accommodationsWithFeature']) {
+            for (const key of ['accommodation', 'feature']) {
                 if (relations[key]) withObj[key] = true;
             }
             if (Object.keys(withObj).length > 0) {

@@ -25,17 +25,14 @@ export const rAccommodationFeature = pgTable(
     })
 );
 
-export const rAccommodationFeatureRelations = relations(rAccommodationFeature, ({ one, many }) => ({
+export const rAccommodationFeatureRelations = relations(rAccommodationFeature, ({ one }) => ({
     accommodation: one(accommodations, {
+        relationName: 'accommodationToFeature',
         fields: [rAccommodationFeature.accommodationId],
         references: [accommodations.id]
     }),
     feature: one(features, {
         fields: [rAccommodationFeature.featureId],
         references: [features.id]
-    }),
-    /**
-     * Inverse navigation: All accommodations that have this feature (for join queries).
-     */
-    accommodationsWithFeature: many(accommodations)
+    })
 }));

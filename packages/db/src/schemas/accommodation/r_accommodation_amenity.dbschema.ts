@@ -35,17 +35,14 @@ export const rAccommodationAmenity = pgTable(
     })
 );
 
-export const rAccommodationAmenityRelations = relations(rAccommodationAmenity, ({ one, many }) => ({
+export const rAccommodationAmenityRelations = relations(rAccommodationAmenity, ({ one }) => ({
     accommodation: one(accommodations, {
+        relationName: 'accommodationToAmenity',
         fields: [rAccommodationAmenity.accommodationId],
         references: [accommodations.id]
     }),
     amenity: one(amenities, {
         fields: [rAccommodationAmenity.amenityId],
         references: [amenities.id]
-    }),
-    /**
-     * Inverse navigation: All accommodations that have this amenity (for join queries).
-     */
-    accommodationsWithAmenity: many(accommodations)
+    })
 }));
