@@ -73,5 +73,24 @@
         "title": "Publica tu alojamiento en Hospeda",
         "description": "Llega a miles de viajeros que buscan alojamientos en el Litoral argentino. Simple, rapido y efectivo.",
         "button": "Comenzar ahora"
+    },
+    "page": {
+        "title": "Inicio",
+        "description": "Descubre alojamientos unicos en Concepcion del Uruguay y el Litoral argentino. Hoteles, cabanas, departamentos y mas."
+    },
+    "heroCarousel": {
+        "accentSubtitle": "Descubri el Litoral",
+        "headline": "Tu aventura empieza en la costa del Uruguay",
+        "subheadline": "Encontra alojamientos unicos en Concepcion del Uruguay y la region del Litoral argentino",
+        "statsDestinations": "destinos",
+        "statsAccommodations": "alojamientos"
+    },
+    "sections": {
+        "featuredAccommodations": "Alojamientos destacados",
+        "accommodationsSubtitle": "Descubri los mejores lugares para hospedarte en Entre Rios. Desde cabanas junto al rio hasta estancias tradicionales.",
+        "featuredDestinations": "Destinos populares",
+        "upcomingEvents": "Proximos eventos",
+        "latestBlog": "Ultimas publicaciones",
+        "viewAll": "Ver todos"
     }
 }

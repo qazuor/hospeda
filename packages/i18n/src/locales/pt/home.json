@@ -73,5 +73,24 @@
         "title": "Publique sua hospedagem no Hospeda",
         "description": "Alcance milhares de viajantes que buscam hospedagens no Litoral argentino. Simples, rapido e eficaz.",
         "button": "Comecar agora"
+    },
+    "page": {
+        "title": "Inicio",
+        "description": "Descubra acomodacoes unicas em Concepcion del Uruguay e o Litoral argentino. Hoteis, cabanas, apartamentos e mais."
+    },
+    "heroCarousel": {
+        "accentSubtitle": "Descubra o Litoral",
+        "headline": "Sua aventura comeca na costa do Uruguai",
+        "subheadline": "Encontre acomodacoes unicas em Concepcion del Uruguay e a regiao do Litoral argentino",
+        "statsDestinations": "destinos",
+        "statsAccommodations": "acomodacoes"
+    },
+    "sections": {
+        "featuredAccommodations": "Acomodacoes em destaque",
+        "accommodationsSubtitle": "Descubra os melhores lugares para se hospedar em Entre Rios. De cabanas a beira do rio ate estancias tradicionais.",
+        "featuredDestinations": "Destinos populares",
+        "upcomingEvents": "Proximos eventos",
+        "latestBlog": "Ultimas publicacoes",
+        "viewAll": "Ver todos"
     }
 }

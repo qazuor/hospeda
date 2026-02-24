@@ -1,0 +1,158 @@
+{
+    "profileEdit": {
+        "name": "Full name",
+        "email": "Email address",
+        "bio": "Biography",
+        "save": "Save changes",
+        "cancel": "Cancel",
+        "emailHelper": "Email cannot be changed. Contact support if you need to change it.",
+        "bioHelper": "Maximum 500 characters. This information will be visible on your public reviews.",
+        "successMessage": "Profile updated successfully.",
+        "errorMessage": "Failed to update profile. Please try again.",
+        "validationNameRequired": "Name is required.",
+        "validationNameMinLength": "Name must be at least 2 characters long.",
+        "validationBioMaxLength": "Biography cannot exceed 500 characters."
+    },
+    "preferences": {
+        "notificationsTitle": "Notifications",
+        "notificationsDescription": "Configure how you want to receive notifications",
+        "emailLabel": "Email notifications",
+        "emailDescription": "Receive alerts and updates via email",
+        "smsLabel": "SMS notifications",
+        "smsDescription": "Receive alerts via text message",
+        "pushLabel": "Push notifications",
+        "pushDescription": "Receive notifications in your browser or app",
+        "languageTitle": "Language",
+        "languageDescription": "Select your preferred language",
+        "languageLabel": "Site language",
+        "languageEs": "Español",
+        "languageEn": "English",
+        "languagePt": "Português",
+        "saveButton": "Save changes",
+        "saving": "Saving...",
+        "notificationsSaved": "Notification preferences saved",
+        "languageSaved": "Language updated successfully",
+        "errorMessage": "Could not save changes. Please try again."
+    },
+    "subscription": {
+        "loading": "Loading subscription...",
+        "loadError": "Error loading subscription",
+        "retry": "Retry",
+        "freePlanName": "Free Plan",
+        "freePlanPrice": "Free forever",
+        "featuresHeading": "Included features",
+        "feature1": "Accommodation search",
+        "feature2": "Save favorites",
+        "feature3": "Browse destinations and events",
+        "feature4": "Contact owners",
+        "upgradeHeading": "Want more?",
+        "upgradeDescription": "Access premium features with our paid plans",
+        "upgradeButton": "View plans",
+        "statusActive": "Active",
+        "statusTrial": "Trial",
+        "statusCancelled": "Cancelled",
+        "statusExpired": "Expired",
+        "statusPending": "Pending",
+        "statusFree": "Free",
+        "trialEndsIn": "Trial ends in {{days}} days",
+        "cancelNotice": "Plan ends on {{date}}",
+        "renewsOn": "Renews on {{date}}",
+        "billingSection": "Billing",
+        "noBillingInfo": "No billing information available",
+        "billingHint": "Billing information will be updated when you make your first subscription"
+    },
+    "reviews": {
+        "tabs": {
+            "all": "All",
+            "accommodation": "Accommodations",
+            "destination": "Destinations"
+        },
+        "empty": "You have no reviews yet",
+        "emptyAction": "Visit accommodations and destinations to leave your first reviews",
+        "loading": "Loading...",
+        "fetchError": "Error loading reviews",
+        "loadMore": "Load more",
+        "ratingLabel": "Rating",
+        "accommodationReview": "Accommodation review",
+        "destinationReview": "Destination review",
+        "editButton": "Edit review",
+        "deleteButton": "Delete review",
+        "saveButton": "Save changes",
+        "cancelButton": "Cancel",
+        "deleteConfirm": "Are you sure you want to delete this review? This action cannot be undone.",
+        "updateSuccess": "Review updated successfully",
+        "updateError": "Error updating review",
+        "deleteSuccess": "Review deleted successfully",
+        "deleteError": "Error deleting review",
+        "titleLabel": "Title",
+        "contentLabel": "Comment",
+        "ratingEditLabel": "Rating",
+        "saving": "Saving...",
+        "deleting": "Deleting..."
+    },
+    "pages": {
+        "accountLabel": "My Account",
+        "dashboard": {
+            "title": "My Account",
+            "description": "Manage your account, favorites, reviews and preferences.",
+            "greeting": "Welcome",
+            "dashboardLabel": "Dashboard",
+            "viewLabel": "View",
+            "nav": {
+                "editProfile": "Edit Profile",
+                "editProfileDesc": "Update your personal information",
+                "myFavorites": "My Favorites",
+                "myFavoritesDesc": "Accommodations you have saved",
+                "myReviews": "My Reviews",
+                "myReviewsDesc": "Reviews you have written",
+                "preferences": "Preferences",
+                "preferencesDesc": "Notification and privacy settings",
+                "mySubscription": "My Subscription",
+                "mySubscriptionDesc": "Current plan and billing"
+            },
+            "stats": {
+                "favorites": "My Favorites",
+                "reviews": "My Reviews",
+                "subscription": "My Subscription",
+                "favoritesDesc": "Saved accommodations",
+                "reviewsDesc": "Published reviews",
+                "subscriptionDesc": "Free Plan",
+                "subscriptionStatus": "Free Plan",
+                "activeStatus": "Active",
+                "trialStatus": "Trial period",
+                "freeStatus": "Free Plan"
+            }
+        },
+        "editProfile": {
+            "title": "Edit Profile",
+            "description": "Update your personal information and account preferences."
+        },
+        "favorites": {
+            "title": "My Favorites",
+            "description": "Manage your favorite accommodations, destinations, events and articles on Hospeda"
+        },
+        "reviews": {
+            "title": "My Reviews",
+            "description": "Manage your accommodation and destination reviews on Hospeda"
+        },
+        "preferences": {
+            "title": "Preferences",
+            "description": "Configure your account preferences on Hospeda",
+            "heading": "Preferences",
+            "headingDesc": "Customize your Hospeda experience",
+            "timezone": {
+                "section": "Timezone",
+                "description": "Timezone used to display dates and times",
+                "current": "Current timezone",
+                "value": "America/Argentina/Buenos_Aires",
+                "note": "The timezone is automatically adjusted based on your location"
+            }
+        },
+        "subscription": {
+            "title": "My Subscription",
+            "description": "Manage your plan and subscription on Hospeda",
+            "heading": "My Subscription",
+            "headingDesc": "Manage your plan and payment preferences"
+        }
+    }
+}

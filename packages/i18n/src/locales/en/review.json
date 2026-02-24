@@ -1,0 +1,32 @@
+{
+    "form": {
+        "ratingLabel": "Rating",
+        "titleLabel": "Title",
+        "titlePlaceholder": "Summary of your experience",
+        "contentLabel": "Review",
+        "contentPlaceholder": "Share your experience in detail...",
+        "submitButton": "Submit review",
+        "cancelButton": "Cancel",
+        "errors": {
+            "ratingRequired": "You must select a rating",
+            "titleRequired": "Title is required",
+            "titleMinLength": "Title must be at least 3 characters",
+            "contentRequired": "Review is required",
+            "contentMinLength": "Review must be at least 10 characters"
+        }
+    },
+    "list": {
+        "title": "Reviews",
+        "totalReviews_one": "{{count}} review",
+        "totalReviews_other": "{{count}} reviews",
+        "sortBy": "Sort by",
+        "sortNewest": "Newest",
+        "sortHighest": "Highest rated",
+        "sortLowest": "Lowest rated",
+        "writeReview": "Write a review",
+        "loadMore": "Load more",
+        "noReviews": "No reviews yet",
+        "noReviewsDescription": "Be the first to leave a review",
+        "verified": "Verified"
+    }
+}

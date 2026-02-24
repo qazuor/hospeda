@@ -1,0 +1,32 @@
+{
+    "form": {
+        "ratingLabel": "Avaliação",
+        "titleLabel": "Título",
+        "titlePlaceholder": "Resumo da sua experiência",
+        "contentLabel": "Comentário",
+        "contentPlaceholder": "Compartilhe sua experiência em detalhes...",
+        "submitButton": "Enviar avaliação",
+        "cancelButton": "Cancelar",
+        "errors": {
+            "ratingRequired": "Você deve selecionar uma avaliação",
+            "titleRequired": "O título é obrigatório",
+            "titleMinLength": "O título deve ter pelo menos 3 caracteres",
+            "contentRequired": "O comentário é obrigatório",
+            "contentMinLength": "O comentário deve ter pelo menos 10 caracteres"
+        }
+    },
+    "list": {
+        "title": "Avaliações",
+        "totalReviews_one": "{{count}} avaliação",
+        "totalReviews_other": "{{count}} avaliações",
+        "sortBy": "Ordenar por",
+        "sortNewest": "Mais recentes",
+        "sortHighest": "Melhor avaliados",
+        "sortLowest": "Menor avaliados",
+        "writeReview": "Escrever avaliação",
+        "loadMore": "Carregar mais",
+        "noReviews": "Ainda não há avaliações",
+        "noReviewsDescription": "Seja o primeiro a deixar uma avaliação",
+        "verified": "Verificado"
+    }
+}

@@ -1,0 +1,158 @@
+{
+    "profileEdit": {
+        "name": "Nombre completo",
+        "email": "Correo electrónico",
+        "bio": "Biografía",
+        "save": "Guardar cambios",
+        "cancel": "Cancelar",
+        "emailHelper": "El correo electrónico no puede ser modificado. Contacta soporte si necesitas cambiarlo.",
+        "bioHelper": "Máximo 500 caracteres. Esta información será visible en tus reseñas públicas.",
+        "successMessage": "Perfil actualizado correctamente.",
+        "errorMessage": "Error al actualizar el perfil. Por favor, intenta de nuevo.",
+        "validationNameRequired": "El nombre es obligatorio.",
+        "validationNameMinLength": "El nombre debe tener al menos 2 caracteres.",
+        "validationBioMaxLength": "La biografía no puede superar los 500 caracteres."
+    },
+    "preferences": {
+        "notificationsTitle": "Notificaciones",
+        "notificationsDescription": "Configurá cómo querés recibir notificaciones",
+        "emailLabel": "Notificaciones por email",
+        "emailDescription": "Recibí alertas y actualizaciones por correo electrónico",
+        "smsLabel": "Notificaciones por SMS",
+        "smsDescription": "Recibí alertas por mensaje de texto",
+        "pushLabel": "Notificaciones push",
+        "pushDescription": "Recibí notificaciones en tu navegador o aplicación",
+        "languageTitle": "Idioma",
+        "languageDescription": "Seleccioná tu idioma preferido",
+        "languageLabel": "Idioma del sitio",
+        "languageEs": "Español",
+        "languageEn": "English",
+        "languagePt": "Português",
+        "saveButton": "Guardar cambios",
+        "saving": "Guardando...",
+        "notificationsSaved": "Preferencias de notificaciones guardadas",
+        "languageSaved": "Idioma actualizado correctamente",
+        "errorMessage": "No se pudieron guardar los cambios. Intentá nuevamente."
+    },
+    "subscription": {
+        "loading": "Cargando suscripcion...",
+        "loadError": "Error al cargar la suscripcion",
+        "retry": "Reintentar",
+        "freePlanName": "Plan Gratuito",
+        "freePlanPrice": "Gratis para siempre",
+        "featuresHeading": "Caracteristicas incluidas",
+        "feature1": "Busqueda de alojamientos",
+        "feature2": "Guardar favoritos",
+        "feature3": "Ver destinos y eventos",
+        "feature4": "Contactar propietarios",
+        "upgradeHeading": "Queres mas?",
+        "upgradeDescription": "Accede a funciones premium con nuestros planes pagos",
+        "upgradeButton": "Ver planes",
+        "statusActive": "Activo",
+        "statusTrial": "En prueba",
+        "statusCancelled": "Cancelado",
+        "statusExpired": "Expirado",
+        "statusPending": "Pendiente",
+        "statusFree": "Gratuito",
+        "trialEndsIn": "Prueba finaliza en {{days}} dias",
+        "cancelNotice": "Plan finaliza el {{date}}",
+        "renewsOn": "Se renueva el {{date}}",
+        "billingSection": "Facturacion",
+        "noBillingInfo": "No hay informacion de facturacion disponible",
+        "billingHint": "La informacion de facturacion se actualizara cuando realices tu primera suscripcion"
+    },
+    "reviews": {
+        "tabs": {
+            "all": "Todas",
+            "accommodation": "Alojamientos",
+            "destination": "Destinos"
+        },
+        "empty": "No tienes resenas todavia",
+        "emptyAction": "Visita alojamientos y destinos para dejar tus primeras resenas",
+        "loading": "Cargando...",
+        "fetchError": "Error al cargar las resenas",
+        "loadMore": "Cargar mas",
+        "ratingLabel": "Puntuacion",
+        "accommodationReview": "Resena de alojamiento",
+        "destinationReview": "Resena de destino",
+        "editButton": "Editar resena",
+        "deleteButton": "Eliminar resena",
+        "saveButton": "Guardar cambios",
+        "cancelButton": "Cancelar",
+        "deleteConfirm": "Esta seguro que desea eliminar esta resena? Esta accion no se puede deshacer.",
+        "updateSuccess": "Resena actualizada correctamente",
+        "updateError": "Error al actualizar la resena",
+        "deleteSuccess": "Resena eliminada correctamente",
+        "deleteError": "Error al eliminar la resena",
+        "titleLabel": "Titulo",
+        "contentLabel": "Comentario",
+        "ratingEditLabel": "Puntuacion",
+        "saving": "Guardando...",
+        "deleting": "Eliminando..."
+    },
+    "pages": {
+        "accountLabel": "Mi Cuenta",
+        "dashboard": {
+            "title": "Mi Cuenta",
+            "description": "Administra tu cuenta, favoritos, resenas y preferencias.",
+            "greeting": "Bienvenido",
+            "dashboardLabel": "Dashboard",
+            "viewLabel": "Ver",
+            "nav": {
+                "editProfile": "Editar Perfil",
+                "editProfileDesc": "Actualiza tu informacion personal",
+                "myFavorites": "Mis Favoritos",
+                "myFavoritesDesc": "Alojamientos que has guardado",
+                "myReviews": "Mis Resenas",
+                "myReviewsDesc": "Resenas que has escrito",
+                "preferences": "Preferencias",
+                "preferencesDesc": "Configuracion de notificaciones y privacidad",
+                "mySubscription": "Mi Suscripcion",
+                "mySubscriptionDesc": "Plan actual y facturacion"
+            },
+            "stats": {
+                "favorites": "Mis Favoritos",
+                "reviews": "Mis Resenas",
+                "subscription": "Mi Suscripcion",
+                "favoritesDesc": "Alojamientos guardados",
+                "reviewsDesc": "Resenas publicadas",
+                "subscriptionDesc": "Plan Gratuito",
+                "subscriptionStatus": "Plan Gratuito",
+                "activeStatus": "Activo",
+                "trialStatus": "Periodo de prueba",
+                "freeStatus": "Plan Gratuito"
+            }
+        },
+        "editProfile": {
+            "title": "Editar Perfil",
+            "description": "Actualiza tu informacion personal y preferencias de cuenta."
+        },
+        "favorites": {
+            "title": "Mis Favoritos",
+            "description": "Gestiona tus alojamientos, destinos, eventos y articulos favoritos en Hospeda"
+        },
+        "reviews": {
+            "title": "Mis Resenas",
+            "description": "Gestiona tus resenas de alojamientos y destinos en Hospeda"
+        },
+        "preferences": {
+            "title": "Preferencias",
+            "description": "Configura tus preferencias de cuenta en Hospeda",
+            "heading": "Preferencias",
+            "headingDesc": "Personaliza tu experiencia en Hospeda",
+            "timezone": {
+                "section": "Zona horaria",
+                "description": "Zona horaria utilizada para mostrar fechas y horarios",
+                "current": "Zona horaria actual",
+                "value": "America/Argentina/Buenos_Aires",
+                "note": "La zona horaria se ajusta automaticamente segun tu ubicacion"
+            }
+        },
+        "subscription": {
+            "title": "Mi Suscripcion",
+            "description": "Administra tu plan y suscripcion en Hospeda",
+            "heading": "Mi Suscripcion",
+            "headingDesc": "Administra tu plan y preferencias de pago"
+        }
+    }
+}

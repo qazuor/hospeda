@@ -1,0 +1,158 @@
+{
+    "profileEdit": {
+        "name": "Nome completo",
+        "email": "Endereço de e-mail",
+        "bio": "Biografia",
+        "save": "Salvar alterações",
+        "cancel": "Cancelar",
+        "emailHelper": "O e-mail não pode ser alterado. Entre em contato com o suporte se precisar alterá-lo.",
+        "bioHelper": "Máximo 500 caracteres. Esta informação será visível em suas avaliações públicas.",
+        "successMessage": "Perfil atualizado com sucesso.",
+        "errorMessage": "Erro ao atualizar o perfil. Por favor, tente novamente.",
+        "validationNameRequired": "O nome é obrigatório.",
+        "validationNameMinLength": "O nome deve ter pelo menos 2 caracteres.",
+        "validationBioMaxLength": "A biografia não pode exceder 500 caracteres."
+    },
+    "preferences": {
+        "notificationsTitle": "Notificações",
+        "notificationsDescription": "Configure como você deseja receber notificações",
+        "emailLabel": "Notificações por e-mail",
+        "emailDescription": "Receba alertas e atualizações por e-mail",
+        "smsLabel": "Notificações por SMS",
+        "smsDescription": "Receba alertas por mensagem de texto",
+        "pushLabel": "Notificações push",
+        "pushDescription": "Receba notificações no seu navegador ou aplicativo",
+        "languageTitle": "Idioma",
+        "languageDescription": "Selecione seu idioma preferido",
+        "languageLabel": "Idioma do site",
+        "languageEs": "Español",
+        "languageEn": "English",
+        "languagePt": "Português",
+        "saveButton": "Salvar alterações",
+        "saving": "Salvando...",
+        "notificationsSaved": "Preferências de notificação salvas",
+        "languageSaved": "Idioma atualizado com sucesso",
+        "errorMessage": "Não foi possível salvar as alterações. Tente novamente."
+    },
+    "subscription": {
+        "loading": "Carregando assinatura...",
+        "loadError": "Erro ao carregar assinatura",
+        "retry": "Tentar novamente",
+        "freePlanName": "Plano Gratuito",
+        "freePlanPrice": "Gratis para sempre",
+        "featuresHeading": "Recursos incluidos",
+        "feature1": "Busca de hospedagens",
+        "feature2": "Salvar favoritos",
+        "feature3": "Ver destinos e eventos",
+        "feature4": "Contatar proprietarios",
+        "upgradeHeading": "Quer mais?",
+        "upgradeDescription": "Acesse recursos premium com nossos planos pagos",
+        "upgradeButton": "Ver planos",
+        "statusActive": "Ativo",
+        "statusTrial": "Em avaliacao",
+        "statusCancelled": "Cancelado",
+        "statusExpired": "Expirado",
+        "statusPending": "Pendente",
+        "statusFree": "Gratuito",
+        "trialEndsIn": "Avaliacao termina em {{days}} dias",
+        "cancelNotice": "Plano termina em {{date}}",
+        "renewsOn": "Renova em {{date}}",
+        "billingSection": "Faturamento",
+        "noBillingInfo": "Nenhuma informacao de faturamento disponivel",
+        "billingHint": "As informacoes de faturamento serao atualizadas quando voce fizer sua primeira assinatura"
+    },
+    "reviews": {
+        "tabs": {
+            "all": "Todas",
+            "accommodation": "Acomodacoes",
+            "destination": "Destinos"
+        },
+        "empty": "Voce nao tem avaliacoes ainda",
+        "emptyAction": "Visite acomodacoes e destinos para deixar suas primeiras avaliacoes",
+        "loading": "Carregando...",
+        "fetchError": "Erro ao carregar avaliacoes",
+        "loadMore": "Carregar mais",
+        "ratingLabel": "Avaliacao",
+        "accommodationReview": "Avaliacao de acomodacao",
+        "destinationReview": "Avaliacao de destino",
+        "editButton": "Editar avaliacao",
+        "deleteButton": "Excluir avaliacao",
+        "saveButton": "Salvar alteracoes",
+        "cancelButton": "Cancelar",
+        "deleteConfirm": "Tem certeza que deseja excluir esta avaliacao? Esta acao nao pode ser desfeita.",
+        "updateSuccess": "Avaliacao atualizada com sucesso",
+        "updateError": "Erro ao atualizar avaliacao",
+        "deleteSuccess": "Avaliacao excluida com sucesso",
+        "deleteError": "Erro ao excluir avaliacao",
+        "titleLabel": "Titulo",
+        "contentLabel": "Comentario",
+        "ratingEditLabel": "Avaliacao",
+        "saving": "Salvando...",
+        "deleting": "Excluindo..."
+    },
+    "pages": {
+        "accountLabel": "Minha Conta",
+        "dashboard": {
+            "title": "Minha Conta",
+            "description": "Gerencie sua conta, favoritos, avaliacoes e preferencias.",
+            "greeting": "Bem-vindo",
+            "dashboardLabel": "Painel",
+            "viewLabel": "Ver",
+            "nav": {
+                "editProfile": "Editar Perfil",
+                "editProfileDesc": "Atualize suas informacoes pessoais",
+                "myFavorites": "Meus Favoritos",
+                "myFavoritesDesc": "Acomodacoes que voce salvou",
+                "myReviews": "Minhas Avaliacoes",
+                "myReviewsDesc": "Avaliacoes que voce escreveu",
+                "preferences": "Preferencias",
+                "preferencesDesc": "Configuracoes de notificacoes e privacidade",
+                "mySubscription": "Minha Assinatura",
+                "mySubscriptionDesc": "Plano atual e faturamento"
+            },
+            "stats": {
+                "favorites": "Meus Favoritos",
+                "reviews": "Minhas Avaliacoes",
+                "subscription": "Minha Assinatura",
+                "favoritesDesc": "Acomodacoes salvas",
+                "reviewsDesc": "Avaliacoes publicadas",
+                "subscriptionDesc": "Plano Gratuito",
+                "subscriptionStatus": "Plano Gratuito",
+                "activeStatus": "Ativo",
+                "trialStatus": "Periodo de avaliacao",
+                "freeStatus": "Plano Gratuito"
+            }
+        },
+        "editProfile": {
+            "title": "Editar Perfil",
+            "description": "Atualize suas informacoes pessoais e preferencias de conta."
+        },
+        "favorites": {
+            "title": "Meus Favoritos",
+            "description": "Gerencie suas acomodacoes, destinos, eventos e artigos favoritos no Hospeda"
+        },
+        "reviews": {
+            "title": "Minhas Avaliacoes",
+            "description": "Gerencie suas avaliacoes de acomodacoes e destinos no Hospeda"
+        },
+        "preferences": {
+            "title": "Preferencias",
+            "description": "Configure suas preferencias de conta no Hospeda",
+            "heading": "Preferencias",
+            "headingDesc": "Personalize sua experiencia no Hospeda",
+            "timezone": {
+                "section": "Fuso horario",
+                "description": "Fuso horario usado para exibir datas e horarios",
+                "current": "Fuso horario atual",
+                "value": "America/Argentina/Buenos_Aires",
+                "note": "O fuso horario e ajustado automaticamente com base em sua localizacao"
+            }
+        },
+        "subscription": {
+            "title": "Minha Assinatura",
+            "description": "Gerencie seu plano e assinatura no Hospeda",
+            "heading": "Minha Assinatura",
+            "headingDesc": "Gerencie seu plano e preferencias de pagamento"
+        }
+    }
+}

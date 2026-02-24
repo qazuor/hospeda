@@ -73,5 +73,24 @@
         "title": "List your accommodation on Hospeda",
         "description": "Reach thousands of travelers looking for accommodations in the Argentine Litoral. Simple, fast and effective.",
         "button": "Get started"
+    },
+    "page": {
+        "title": "Home",
+        "description": "Discover unique accommodations in Concepcion del Uruguay and the Argentine Litoral. Hotels, cabins, apartments and more."
+    },
+    "heroCarousel": {
+        "accentSubtitle": "Discover the Litoral",
+        "headline": "Your adventure starts on the Uruguay coast",
+        "subheadline": "Find unique accommodations in Concepcion del Uruguay and the Argentine Litoral region",
+        "statsDestinations": "destinations",
+        "statsAccommodations": "accommodations"
+    },
+    "sections": {
+        "featuredAccommodations": "Featured Accommodations",
+        "accommodationsSubtitle": "Discover the best places to stay in Entre Rios. From riverside cabins to traditional estancias.",
+        "featuredDestinations": "Popular Destinations",
+        "upcomingEvents": "Upcoming Events",
+        "latestBlog": "Latest Posts",
+        "viewAll": "View all"
     }
 }
