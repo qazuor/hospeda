@@ -122,6 +122,6 @@ export type BaseLocationFieldsType = typeof BaseLocationFields;
  * Full location fields (using FullLocationSchema structure)
  */
 export const FullLocationFields = {
-    location: FullLocationSchema.optional()
+    location: FullLocationSchema.nullish()
 } as const;
 export type FullLocationFieldsType = typeof FullLocationFields;

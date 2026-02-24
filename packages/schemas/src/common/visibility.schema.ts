@@ -1,11 +1,12 @@
 import { z } from 'zod';
+import { VisibilityEnum } from '../enums/index.js';
 import { VisibilityEnumSchema } from '../enums/index.js';
 
 /**
  * Base visibility fields
  */
 export const BaseVisibilityFields = {
-    visibility: VisibilityEnumSchema
+    visibility: VisibilityEnumSchema.default(VisibilityEnum.PUBLIC)
 } as const;
 export type BaseVisibilityFieldsType = typeof BaseVisibilityFields;
 

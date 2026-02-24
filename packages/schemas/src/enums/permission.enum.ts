@@ -43,6 +43,7 @@ export enum PermissionCategoryEnum {
     SERVICE_ORDER = 'SERVICE_ORDER',
     PROFESSIONAL_SERVICE = 'PROFESSIONAL_SERVICE',
     PROFESSIONAL_SERVICE_ORDER = 'PROFESSIONAL_SERVICE_ORDER',
+    BILLING = 'BILLING',
     PUBLIC = 'PUBLIC',
     SPONSORSHIP = 'SPONSORSHIP',
     OWNER_PROMOTION = 'OWNER_PROMOTION',
@@ -125,9 +126,11 @@ export enum PermissionEnum {
     ACCOMMODATION_LISTING_PLAN_STATUS_MANAGE = 'accommodationListingPlan.status.manage', // Allows managing accommodation listing plan status (activate, deactivate).
 
     // Catalog management for amenities/features
+    AMENITY_VIEW = 'amenity.view', // Allows viewing amenity information.
     AMENITY_CREATE = 'amenity.create', // Allows creating a new amenity in the catalog.
     AMENITY_UPDATE = 'amenity.update', // Allows updating an amenity in the catalog.
     AMENITY_DELETE = 'amenity.delete', // Allows deleting an amenity from the catalog.
+    FEATURE_VIEW = 'feature.view', // Allows viewing feature information.
     FEATURE_CREATE = 'feature.create', // Allows creating a new feature in the catalog.
     FEATURE_UPDATE = 'feature.update', // Allows updating a feature in the catalog.
     FEATURE_DELETE = 'feature.delete', // Allows deleting a feature from the catalog.
@@ -250,6 +253,7 @@ export enum PermissionEnum {
     HOMEPAGE_LAYOUT_CONFIGURE = 'ui.homepageLayout.configure', // Allows configuring the homepage layout.
 
     // TAG: Permissions related to tags (categorization, filtering, etc.)
+    TAG_VIEW = 'tag.view', // Allows viewing tag information.
     TAG_CREATE = 'tag.create', // Allows creating a new tag.
     TAG_UPDATE = 'tag.update', // Allows updating a tag.
     TAG_DELETE = 'tag.delete', // Allows deleting a tag.
@@ -677,5 +681,8 @@ export enum PermissionEnum {
     SERVICE_ORDER_SOFT_DELETE_VIEW = 'serviceOrder.softDelete.view', // Allows viewing soft-deleted service orders.
     SERVICE_ORDER_STATUS_MANAGE = 'serviceOrder.status.manage', // Allows managing service order status (start, complete, cancel, refund).
     SERVICE_ORDER_DELIVERABLES_MANAGE = 'serviceOrder.deliverables.manage', // Allows managing service order deliverables and revisions.
-    SERVICE_ORDER_PRICING_MANAGE = 'serviceOrder.pricing.manage' // Allows managing service order pricing and charges.
+    SERVICE_ORDER_PRICING_MANAGE = 'serviceOrder.pricing.manage', // Allows managing service order pricing and charges.
+
+    // BILLING: Cross-cutting billing admin permissions
+    BILLING_READ_ALL = 'billing.readAll' // Allows viewing all billing data (notifications, usage, webhooks).
 }

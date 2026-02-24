@@ -1,11 +1,12 @@
 import { z } from 'zod';
+import { ModerationStatusEnum } from '../enums/index.js';
 import { ModerationStatusEnumSchema } from '../enums/index.js';
 
 /**
  * Base moderation fields
  */
 export const BaseModerationFields = {
-    moderationState: ModerationStatusEnumSchema
+    moderationState: ModerationStatusEnumSchema.default(ModerationStatusEnum.PENDING)
 } as const;
 
 /**

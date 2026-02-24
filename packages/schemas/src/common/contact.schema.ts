@@ -36,6 +36,6 @@ export type ContactInfo = z.infer<typeof ContactInfoSchema>;
  * Base contact fields (using complete ContactInfoSchema structure)
  */
 export const BaseContactFields = {
-    contactInfo: ContactInfoSchema.optional()
+    contactInfo: ContactInfoSchema.nullish()
 } as const;
 export type BaseContactFieldsType = typeof BaseContactFields;

@@ -16,6 +16,9 @@ export {
     type PaginationParams
 } from './base.schema.js';
 
+// Admin search
+export * from './admin-search.schema.js';
+
 // Schemas
 export * from './admin.schema.js';
 export * from './audit.schema.js';

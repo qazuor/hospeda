@@ -62,5 +62,5 @@ export type SocialNetwork = z.infer<typeof SocialNetworkSchema>;
  * Social network fields (using SocialNetworkSchema structure)
  */
 export const SocialNetworkFields = {
-    socialNetworks: SocialNetworkSchema.optional()
+    socialNetworks: SocialNetworkSchema.nullish()
 } as const;

@@ -14,6 +14,8 @@ export type PaginatedListOptions = {
     page?: number;
     pageSize?: number;
     relations?: ListRelationsConfig;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
 };
 
 /**
