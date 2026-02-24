@@ -181,7 +181,8 @@ export class DestinationModel extends BaseModel<Destination> {
                             attractions,
                             eq(rDestinationAttraction.attractionId, attractions.id)
                         )
-                        .where(eq(rDestinationAttraction.destinationId, destination.id));
+                        .where(eq(rDestinationAttraction.destinationId, destination.id))
+                        .orderBy(desc(attractions.displayWeight));
 
                     return {
                         ...destination,
@@ -201,6 +202,71 @@ export class DestinationModel extends BaseModel<Destination> {
                 this.entityName,
                 'searchWithAttractions',
                 params,
+                (error as Error).message
+            );
+        }
+    }
+
+    /**
+     * Batch-loads attractions for a set of destination IDs in a single query.
+     * @param destIds - Array of destination UUIDs
+     * @returns Map of destinationId to array of { id, name, icon } attraction objects
+     */
+    async getAttractionsMap(
+        destIds: readonly string[]
+    ): Promise<
+        Map<
+            string,
+            Array<{
+                readonly id: string;
+                readonly name: string;
+                readonly icon: string | null;
+                readonly displayWeight: number;
+            }>
+        >
+    > {
+        if (destIds.length === 0) return new Map();
+        const db = getDb();
+        try {
+            const results = await db
+                .select({
+                    destinationId: rDestinationAttraction.destinationId,
+                    id: attractions.id,
+                    name: attractions.name,
+                    icon: attractions.icon,
+                    displayWeight: attractions.displayWeight
+                })
+                .from(rDestinationAttraction)
+                .innerJoin(attractions, eq(rDestinationAttraction.attractionId, attractions.id))
+                .where(inArray(rDestinationAttraction.destinationId, [...destIds]))
+                .orderBy(desc(attractions.displayWeight));
+
+            const map = new Map<
+                string,
+                Array<{
+                    readonly id: string;
+                    readonly name: string;
+                    readonly icon: string | null;
+                    readonly displayWeight: number;
+                }>
+            >();
+            for (const row of results) {
+                const existing = map.get(row.destinationId) ?? [];
+                existing.push({
+                    id: row.id,
+                    name: row.name,
+                    icon: row.icon,
+                    displayWeight: row.displayWeight
+                });
+                map.set(row.destinationId, existing);
+            }
+            return map;
+        } catch (error) {
+            logError(this.entityName, 'getAttractionsMap', { destIds }, error as Error);
+            throw new DbError(
+                this.entityName,
+                'getAttractionsMap',
+                { destIds },
                 (error as Error).message
             );
         }

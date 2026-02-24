@@ -1,6 +1,15 @@
 import type { AdminInfoType } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
-import { boolean, index, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+    boolean,
+    index,
+    integer,
+    jsonb,
+    pgTable,
+    text,
+    timestamp,
+    uuid
+} from 'drizzle-orm/pg-core';
 import { AmenitiesTypePgEnum, LifecycleStatusPgEnum } from '../enums.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
 import { rAccommodationAmenity } from './r_accommodation_amenity.dbschema.ts';
@@ -15,6 +24,7 @@ export const amenities = pgTable(
         icon: text('icon'),
         isBuiltin: boolean('is_builtin').notNull().default(false),
         isFeatured: boolean('is_featured').notNull().default(false),
+        displayWeight: integer('display_weight').notNull().default(50),
         type: AmenitiesTypePgEnum('type').notNull(),
         lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
         adminInfo: jsonb('admin_info').$type<AdminInfoType>(),

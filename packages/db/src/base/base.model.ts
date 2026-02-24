@@ -3,7 +3,7 @@ import type { SQL, Table } from 'drizzle-orm';
 import { count } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { getDb, type schema } from '../client.ts';
-import { buildWhereClause } from '../utils/drizzle-helpers.ts';
+import { buildOrderByClause, buildWhereClause } from '../utils/drizzle-helpers.ts';
 import { DbError } from '../utils/error.ts';
 import { logError, logQuery } from '../utils/logger.ts';
 
@@ -63,7 +63,7 @@ export abstract class BaseModel<T> {
      */
     async findAll(
         where: Record<string, unknown>,
-        options?: { page?: number; pageSize?: number },
+        options?: { page?: number; pageSize?: number; sortBy?: string; sortOrder?: 'asc' | 'desc' },
         tx?: NodePgDatabase<typeof schema>
     ): Promise<{ items: T[]; total: number }> {
         const db = this.getClient(tx);
@@ -81,8 +81,21 @@ export abstract class BaseModel<T> {
             const whereClause = buildWhereClause(safeWhere, this.table as unknown);
             const offset = (page - 1) * pageSize;
 
+            // Build orderBy clause if sorting is requested
+            const orderClause = options?.sortBy
+                ? buildOrderByClause(
+                      options.sortBy,
+                      this.table as unknown,
+                      options.sortOrder ?? 'asc'
+                  )
+                : undefined;
+
+            // Build query - use $dynamic() to allow conditional chaining
+            const baseQuery = db.select().from(this.table).where(whereClause).$dynamic();
+            const sortedQuery = orderClause ? baseQuery.orderBy(orderClause) : baseQuery;
+
             const [items, total] = await Promise.all([
-                db.select().from(this.table).where(whereClause).limit(pageSize).offset(offset),
+                sortedQuery.limit(pageSize).offset(offset),
                 this.count(safeWhere, tx)
             ]);
 
@@ -488,6 +501,7 @@ export abstract class BaseModel<T> {
                 findMany: (options: {
                     where?: unknown;
                     with?: Record<string, boolean | Record<string, unknown>>;
+                    orderBy?: unknown;
                     limit?: number;
                     offset?: number;
                 }) => Promise<unknown[]>;
@@ -518,9 +532,20 @@ export abstract class BaseModel<T> {
 
             // Pagination is always applied to prevent unbounded queries
             const transformedRelations = transformRelationsForDrizzle(relations);
+
+            // Build optional orderBy clause
+            const orderByClause = options.sortBy
+                ? buildOrderByClause(
+                      options.sortBy,
+                      this.table as unknown,
+                      options.sortOrder ?? 'asc'
+                  )
+                : undefined;
+
             const queryOptions = {
                 where: whereClause,
                 with: transformedRelations,
+                ...(orderByClause ? { orderBy: orderByClause } : {}),
                 limit: pageSize,
                 offset: offset
             };

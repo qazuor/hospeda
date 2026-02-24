@@ -14,7 +14,7 @@ export const eventOrganizers = pgTable(
         description: text('description'),
         logo: text('logo'),
         contactInfo: jsonb('contact_info').$type<ContactInfo>(),
-        social: jsonb('social').$type<SocialNetwork>(),
+        socialNetworks: jsonb('social').$type<SocialNetwork>(),
         lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
         adminInfo: jsonb('admin_info').$type<AdminInfoType>(),
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
