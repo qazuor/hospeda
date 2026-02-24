@@ -53,8 +53,8 @@ describe('editar.astro', () => {
 
     describe('Locale validation', () => {
         it('should validate locale parameter', () => {
-            expect(editarContent).toContain('const { lang } = Astro.params');
-            expect(editarContent).toContain('if (!lang || !isValidLocale(lang))');
+            expect(editarContent).toContain('getLocaleFromParams(Astro.params)');
+            expect(editarContent).toContain('if (!locale)');
         });
 
         it('should redirect to /es/ on invalid locale', () => {
@@ -62,25 +62,36 @@ describe('editar.astro', () => {
         });
 
         it('should import locale helpers', () => {
-            expect(editarContent).toContain('isValidLocale');
-            expect(editarContent).toContain('type SupportedLocale');
+            expect(editarContent).toContain('getLocaleFromParams');
+            expect(editarContent).toContain("import { t } from '../../../lib/i18n'");
         });
     });
 
-    describe('Localization', () => {
-        it('should have localized titles for all supported locales', () => {
-            expect(editarContent).toContain("es: 'Editar Perfil'");
-            expect(editarContent).toContain("en: 'Edit Profile'");
-            expect(editarContent).toContain("pt: 'Editar Perfil'");
+    describe('Localization with i18n', () => {
+        it('should import t() function from lib/i18n', () => {
+            expect(editarContent).toContain("import { t } from '../../../lib/i18n'");
         });
 
-        it('should have localized meta descriptions', () => {
-            expect(editarContent).toContain('const descriptions: Record<SupportedLocale, string>');
+        it('should use t() for title with correct key', () => {
+            expect(editarContent).toContain(
+                "const title = t({ locale, namespace: 'account', key: 'pages.editProfile.title' })"
+            );
         });
 
-        it('should have localized breadcrumb labels', () => {
-            expect(editarContent).toContain('const homeLabels');
-            expect(editarContent).toContain('const accountLabels');
+        it('should use t() for description with correct key', () => {
+            expect(editarContent).toContain(
+                "const description = t({ locale, namespace: 'account', key: 'pages.editProfile.description' })"
+            );
+        });
+
+        it('should use t() for accountLabel with correct key', () => {
+            expect(editarContent).toContain(
+                "const accountLabel = t({ locale, namespace: 'account', key: 'pages.accountLabel' })"
+            );
+        });
+
+        it('should NOT import type SupportedLocale', () => {
+            expect(editarContent).not.toContain('type SupportedLocale');
         });
     });
 
@@ -91,8 +102,8 @@ describe('editar.astro', () => {
         });
 
         it('should pass title and description to SEOHead', () => {
-            expect(editarContent).toContain('title={titles[locale]}');
-            expect(editarContent).toContain('description={descriptions[locale]}');
+            expect(editarContent).toContain('title={title}');
+            expect(editarContent).toContain('description={description}');
         });
 
         it('should set page type to website', () => {
@@ -107,9 +118,9 @@ describe('editar.astro', () => {
     describe('Breadcrumbs', () => {
         it('should define breadcrumb items', () => {
             expect(editarContent).toContain('const breadcrumbItems = [');
-            expect(editarContent).toContain('label: homeLabels[locale]');
-            expect(editarContent).toContain('label: accountLabels[locale]');
-            expect(editarContent).toContain('label: titles[locale]');
+            expect(editarContent).toContain('label: HOME_BREADCRUMB[locale]');
+            expect(editarContent).toContain('label: accountLabel');
+            expect(editarContent).toContain('label: title');
         });
 
         it('should render breadcrumb items prop', () => {
@@ -189,8 +200,8 @@ describe('preferencias.astro', () => {
 
     describe('Locale validation', () => {
         it('should validate locale parameter', () => {
-            expect(preferenciasContent).toContain('const { lang } = Astro.params');
-            expect(preferenciasContent).toContain('if (!lang || !isValidLocale(lang))');
+            expect(preferenciasContent).toContain('getLocaleFromParams(Astro.params)');
+            expect(preferenciasContent).toContain('if (!locale)');
         });
 
         it('should redirect to /es/ on invalid locale', () => {
@@ -198,30 +209,53 @@ describe('preferencias.astro', () => {
         });
 
         it('should import locale helpers', () => {
-            expect(preferenciasContent).toContain('isValidLocale');
-            expect(preferenciasContent).toContain('type SupportedLocale');
+            expect(preferenciasContent).toContain('getLocaleFromParams');
+            expect(preferenciasContent).toContain("import { t } from '../../../lib/i18n'");
         });
     });
 
-    describe('Localization', () => {
-        it('should have localized titles for all supported locales', () => {
-            expect(preferenciasContent).toContain("es: 'Preferencias'");
-            expect(preferenciasContent).toContain("en: 'Preferences'");
-            expect(preferenciasContent).toContain("pt: 'Preferencias'");
+    describe('Localization with i18n', () => {
+        it('should import t() function from lib/i18n', () => {
+            expect(preferenciasContent).toContain("import { t } from '../../../lib/i18n'");
         });
 
-        it('should have localized meta descriptions', () => {
+        it('should use t() for title with correct key', () => {
             expect(preferenciasContent).toContain(
-                'const descriptions: Record<SupportedLocale, string>'
-            );
-            expect(preferenciasContent).toContain(
-                'Configura tus preferencias de cuenta en Hospeda'
+                "const title = t({ locale, namespace: 'account', key: 'pages.preferences.title' })"
             );
         });
 
-        it('should have localized heading texts', () => {
-            expect(preferenciasContent).toContain('const headings:');
-            expect(preferenciasContent).toContain("heading: 'Preferencias'");
+        it('should use t() for description with correct key', () => {
+            expect(preferenciasContent).toContain(
+                "const description = t({ locale, namespace: 'account', key: 'pages.preferences.description' })"
+            );
+        });
+
+        it('should use t() for accountLabel with correct key', () => {
+            expect(preferenciasContent).toContain(
+                "const accountLabel = t({ locale, namespace: 'account', key: 'pages.accountLabel' })"
+            );
+        });
+
+        it('should use t() for headingText with correct key', () => {
+            expect(preferenciasContent).toContain(
+                "const headingText = t({ locale, namespace: 'account', key: 'pages.preferences.heading' })"
+            );
+        });
+
+        it('should use t() for headingDesc with correct key', () => {
+            expect(preferenciasContent).toContain(
+                "const headingDesc = t({ locale, namespace: 'account', key: 'pages.preferences.headingDesc' })"
+            );
+        });
+
+        it('should NOT import type SupportedLocale', () => {
+            expect(preferenciasContent).not.toContain('type SupportedLocale');
+        });
+
+        it('should NOT contain inline Record<SupportedLocale, string> objects', () => {
+            expect(preferenciasContent).not.toContain('const descriptions: Record<SupportedLocale');
+            expect(preferenciasContent).not.toContain('const headings:');
         });
     });
 
@@ -234,8 +268,8 @@ describe('preferencias.astro', () => {
         });
 
         it('should pass title and description to SEOHead', () => {
-            expect(preferenciasContent).toContain('title={titles[locale]}');
-            expect(preferenciasContent).toContain('description={descriptions[locale]}');
+            expect(preferenciasContent).toContain('title={title}');
+            expect(preferenciasContent).toContain('description={description}');
         });
 
         it('should set page type to website', () => {
@@ -250,9 +284,9 @@ describe('preferencias.astro', () => {
     describe('Breadcrumbs', () => {
         it('should define breadcrumb items', () => {
             expect(preferenciasContent).toContain('const breadcrumbItems = [');
-            expect(preferenciasContent).toContain('label: homeLabels[locale]');
-            expect(preferenciasContent).toContain('label: accountLabels[locale]');
-            expect(preferenciasContent).toContain('label: titles[locale]');
+            expect(preferenciasContent).toContain('label: HOME_BREADCRUMB[locale]');
+            expect(preferenciasContent).toContain('label: accountLabel');
+            expect(preferenciasContent).toContain('label: title');
         });
 
         it('should render breadcrumb items prop', () => {
@@ -286,8 +320,39 @@ describe('preferencias.astro', () => {
             expect(preferenciasContent).toContain('id="timezone-heading"');
         });
 
-        it('should display timezone value', () => {
-            expect(preferenciasContent).toContain('America/Argentina/Buenos_Aires');
+        it('should use individual timezone variables from i18n', () => {
+            expect(preferenciasContent).toContain(
+                "const tzSection = t({ locale, namespace: 'account', key: 'pages.preferences.timezone.section' })"
+            );
+            expect(preferenciasContent).toContain(
+                "const tzDescription = t({ locale, namespace: 'account', key: 'pages.preferences.timezone.description' })"
+            );
+            expect(preferenciasContent).toContain(
+                "const tzCurrent = t({ locale, namespace: 'account', key: 'pages.preferences.timezone.current' })"
+            );
+            expect(preferenciasContent).toContain(
+                "const tzValue = t({ locale, namespace: 'account', key: 'pages.preferences.timezone.value' })"
+            );
+            expect(preferenciasContent).toContain(
+                "const tzNote = t({ locale, namespace: 'account', key: 'pages.preferences.timezone.note' })"
+            );
+        });
+
+        it('should render timezone variables in template', () => {
+            expect(preferenciasContent).toContain('{tzSection}');
+            expect(preferenciasContent).toContain('{tzDescription}');
+            expect(preferenciasContent).toContain('{tzCurrent}');
+            expect(preferenciasContent).toContain('{tzValue}');
+            expect(preferenciasContent).toContain('{tzNote}');
+        });
+
+        it('should NOT contain hardcoded America/Argentina/Buenos_Aires literal', () => {
+            expect(preferenciasContent).not.toContain("'America/Argentina/Buenos_Aires'");
+        });
+
+        it('should render heading and description in template', () => {
+            expect(preferenciasContent).toContain('{headingText}');
+            expect(preferenciasContent).toContain('{headingDesc}');
         });
     });
 });
@@ -344,8 +409,8 @@ describe('suscripcion.astro', () => {
 
     describe('Locale validation', () => {
         it('should validate locale parameter', () => {
-            expect(suscripcionContent).toContain('const { lang } = Astro.params');
-            expect(suscripcionContent).toContain('if (!lang || !isValidLocale(lang))');
+            expect(suscripcionContent).toContain('getLocaleFromParams(Astro.params)');
+            expect(suscripcionContent).toContain('if (!locale)');
         });
 
         it('should redirect to /es/ on invalid locale', () => {
@@ -353,8 +418,8 @@ describe('suscripcion.astro', () => {
         });
 
         it('should import locale helpers', () => {
-            expect(suscripcionContent).toContain('isValidLocale');
-            expect(suscripcionContent).toContain('type SupportedLocale');
+            expect(suscripcionContent).toContain('getLocaleFromParams');
+            expect(suscripcionContent).toContain("import { t } from '../../../lib/i18n'");
         });
     });
 
@@ -369,31 +434,48 @@ describe('suscripcion.astro', () => {
         });
     });
 
-    describe('Localization', () => {
-        it('should have localized titles for all supported locales', () => {
-            expect(suscripcionContent).toContain("es: 'Mi Suscripción'");
-            expect(suscripcionContent).toContain("en: 'My Subscription'");
-            expect(suscripcionContent).toContain("pt: 'Minha Assinatura'");
+    describe('Localization with i18n', () => {
+        it('should import t() function from lib/i18n', () => {
+            expect(suscripcionContent).toContain("import { t } from '../../../lib/i18n'");
         });
 
-        it('should have localized meta descriptions', () => {
+        it('should use t() for title with correct key', () => {
             expect(suscripcionContent).toContain(
-                'const descriptions: Record<SupportedLocale, string>'
+                "const title = t({ locale, namespace: 'account', key: 'pages.subscription.title' })"
             );
-            expect(suscripcionContent).toContain('Administra tu plan y suscripción en Hospeda');
         });
 
-        it('should have subscriptionLabels with only heading and description keys', () => {
-            // Arrange: the updated page delegates plan details to SubscriptionCard
-            // Act & Assert: subscriptionLabels only contains heading and description
-            expect(suscripcionContent).toContain('const subscriptionLabels =');
-            expect(suscripcionContent).toContain("heading: 'Mi Suscripción'");
-            expect(suscripcionContent).toContain("description: 'Administra tu plan");
-            // Plan-detail keys must NOT appear in the Astro template (moved to React component)
-            expect(suscripcionContent).not.toContain("planName: 'Plan Gratuito'");
-            expect(suscripcionContent).not.toContain('featuresHeading');
-            expect(suscripcionContent).not.toContain('upgradeHeading');
-            expect(suscripcionContent).not.toContain('billingSection');
+        it('should use t() for description with correct key', () => {
+            expect(suscripcionContent).toContain(
+                "const description = t({ locale, namespace: 'account', key: 'pages.subscription.description' })"
+            );
+        });
+
+        it('should use t() for accountLabel with correct key', () => {
+            expect(suscripcionContent).toContain(
+                "const accountLabel = t({ locale, namespace: 'account', key: 'pages.accountLabel' })"
+            );
+        });
+
+        it('should use t() for headingText with correct key', () => {
+            expect(suscripcionContent).toContain(
+                "const headingText = t({ locale, namespace: 'account', key: 'pages.subscription.heading' })"
+            );
+        });
+
+        it('should use t() for headingDesc with correct key', () => {
+            expect(suscripcionContent).toContain(
+                "const headingDesc = t({ locale, namespace: 'account', key: 'pages.subscription.headingDesc' })"
+            );
+        });
+
+        it('should NOT import type SupportedLocale', () => {
+            expect(suscripcionContent).not.toContain('type SupportedLocale');
+        });
+
+        it('should NOT contain inline Record<SupportedLocale, string> objects', () => {
+            expect(suscripcionContent).not.toContain('const descriptions: Record<SupportedLocale');
+            expect(suscripcionContent).not.toContain('const subscriptionLabels =');
         });
     });
 
@@ -408,8 +490,8 @@ describe('suscripcion.astro', () => {
         });
 
         it('should pass title and description to SEOHead', () => {
-            expect(suscripcionContent).toContain('title={titles[locale]}');
-            expect(suscripcionContent).toContain('description={descriptions[locale]}');
+            expect(suscripcionContent).toContain('title={title}');
+            expect(suscripcionContent).toContain('description={description}');
         });
 
         it('should set page type to website', () => {
@@ -420,9 +502,9 @@ describe('suscripcion.astro', () => {
     describe('Breadcrumbs', () => {
         it('should define breadcrumb items', () => {
             expect(suscripcionContent).toContain('const breadcrumbItems = [');
-            expect(suscripcionContent).toContain('label: homeLabels[locale]');
-            expect(suscripcionContent).toContain('label: accountLabels[locale]');
-            expect(suscripcionContent).toContain('label: titles[locale]');
+            expect(suscripcionContent).toContain('label: HOME_BREADCRUMB[locale]');
+            expect(suscripcionContent).toContain('label: accountLabel');
+            expect(suscripcionContent).toContain('label: title');
         });
 
         it('should render breadcrumb items prop', () => {
@@ -450,12 +532,12 @@ describe('suscripcion.astro', () => {
             expect(suscripcionContent).not.toContain('CheckIcon');
         });
 
-        it('should render labels.heading in the page heading', () => {
-            expect(suscripcionContent).toContain('{labels.heading}');
+        it('should render headingText in the page heading', () => {
+            expect(suscripcionContent).toContain('{headingText}');
         });
 
-        it('should render labels.description as subtitle', () => {
-            expect(suscripcionContent).toContain('{labels.description}');
+        it('should render headingDesc as subtitle', () => {
+            expect(suscripcionContent).toContain('{headingDesc}');
         });
     });
 });
