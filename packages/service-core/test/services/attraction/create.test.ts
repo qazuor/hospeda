@@ -29,6 +29,7 @@ describe('AttractionService.create', () => {
         icon: '🎡',
         isBuiltin: false,
         isFeatured: false,
+        displayWeight: 50,
         lifecycleState: 'ACTIVE' as any
     };
     const createdAttraction = AttractionFactoryBuilder.create({

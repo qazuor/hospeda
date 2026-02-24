@@ -169,12 +169,12 @@ export interface BaseModel<T> {
     count(params: Record<string, unknown>): Promise<number>;
     findAll(
         where: Record<string, unknown>,
-        options?: { page?: number; pageSize?: number }
+        options?: { page?: number; pageSize?: number; sortBy?: string; sortOrder?: 'asc' | 'desc' }
     ): Promise<PaginatedListOutput<T>>;
     findAllWithRelations(
         relations: Record<string, boolean | Record<string, unknown>>,
         where?: Record<string, unknown>,
-        options?: { page?: number; pageSize?: number }
+        options?: { page?: number; pageSize?: number; sortBy?: string; sortOrder?: 'asc' | 'desc' }
     ): Promise<PaginatedListOutput<T>>;
 }
 

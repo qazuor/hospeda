@@ -758,6 +758,8 @@ export abstract class BaseCrudService<
             pageSize?: number;
             relations?: ListRelationsConfig;
             where?: Record<string, unknown>;
+            sortBy?: string;
+            sortOrder?: 'asc' | 'desc';
         } = {}
     ): Promise<ServiceOutput<PaginatedListOutput<TEntity>>> {
         return this.runWithLoggingAndValidation({
@@ -769,7 +771,9 @@ export abstract class BaseCrudService<
                 relations: z
                     .record(z.string(), z.union([z.boolean(), z.record(z.string(), z.unknown())]))
                     .optional(),
-                where: z.record(z.string(), z.unknown()).optional()
+                where: z.record(z.string(), z.unknown()).optional(),
+                sortBy: z.string().optional(),
+                sortOrder: z.enum(['asc', 'desc']).optional()
             }),
             execute: async (validatedOptions, validatedActor) => {
                 await this._canList(validatedActor);
@@ -786,13 +790,29 @@ export abstract class BaseCrudService<
                         | Record<string, unknown>
                         | undefined) ?? {};
 
+                // Extract sorting options
+                const sortBy = (processedOptions as Record<string, unknown>).sortBy as
+                    | string
+                    | undefined;
+                const sortOrder = (processedOptions as Record<string, unknown>).sortOrder as
+                    | 'asc'
+                    | 'desc'
+                    | undefined;
+
                 // Use findAllWithRelations if relations are specified, otherwise use regular findAll
                 const result = relationsToUse
                     ? await this.model.findAllWithRelations(relationsToUse, whereClause, {
                           page: processedOptions.page,
-                          pageSize: processedOptions.pageSize
+                          pageSize: processedOptions.pageSize,
+                          sortBy,
+                          sortOrder
                       })
-                    : await this.model.findAll(whereClause, processedOptions);
+                    : await this.model.findAll(whereClause, {
+                          page: processedOptions.page,
+                          pageSize: processedOptions.pageSize,
+                          sortBy,
+                          sortOrder
+                      });
 
                 return this._afterList(result, validatedActor);
             }

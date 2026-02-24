@@ -25,6 +25,7 @@ export class AmenityFactoryBuilder {
             description: 'A test amenity',
             isBuiltin: false,
             isFeatured: false,
+            displayWeight: 50,
             createdAt: new Date(),
             updatedAt: new Date(),
             createdById: getMockId('user') as UserIdType,

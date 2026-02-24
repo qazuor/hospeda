@@ -211,6 +211,28 @@ export class DestinationService extends BaseCrudService<
     // --- Domain-specific methods ---
 
     /**
+     * Batch-loads attractions for a set of destination IDs.
+     * Returns a map of destinationId to array of { id, name } attraction objects.
+     * @param destIds - Array of destination UUIDs
+     * @returns Map of destinationId to attraction array
+     */
+    async getAttractionsMap(
+        destIds: readonly string[]
+    ): Promise<
+        ReadonlyMap<
+            string,
+            ReadonlyArray<{
+                readonly id: string;
+                readonly name: string;
+                readonly icon: string | null;
+                readonly displayWeight: number;
+            }>
+        >
+    > {
+        return this.model.getAttractionsMap(destIds);
+    }
+
+    /**
      * Searches for destinations with attractions mapped to string arrays for list display.
      * @param actor - The actor performing the search
      * @param params - Search parameters (filters, pagination, etc.)

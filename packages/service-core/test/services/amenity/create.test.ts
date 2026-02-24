@@ -26,7 +26,8 @@ describe('AmenityService.create', () => {
         description: 'A test amenity',
         isFeatured: false,
         lifecycleState: 'ACTIVE' as any,
-        isBuiltin: false
+        isBuiltin: false,
+        displayWeight: 50
     };
     const createdAmenity = AmenityFactoryBuilder.create({
         ...input,
@@ -102,7 +103,8 @@ describe('AmenityService.create', () => {
             type: AmenitiesTypeEnum.GENERAL_APPLIANCES,
             isFeatured: false,
             lifecycleState: 'ACTIVE' as any,
-            isBuiltin: false
+            isBuiltin: false,
+            displayWeight: 50
         };
         const result = await service.create(actor, minimalInput);
         expectSuccess(result);

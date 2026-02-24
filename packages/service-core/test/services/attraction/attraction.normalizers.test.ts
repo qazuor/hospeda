@@ -19,6 +19,7 @@ describe('Attraction Normalizers', () => {
             destinationId: 'dest-1' as any,
             isFeatured: true,
             isBuiltin: false,
+            displayWeight: 50,
             lifecycleState: 'ACTIVE' as any,
             adminInfo: { favorite: true, notes: 'test' },
             extraField: 'should be ignored'

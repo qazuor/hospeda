@@ -18,6 +18,7 @@ export class FeatureFactoryBuilder {
             icon: '⭐',
             isBuiltin: false,
             isFeatured: false,
+            displayWeight: 50,
             createdAt: new Date(),
             updatedAt: new Date(),
             createdById: getMockId('user') as UserIdType,

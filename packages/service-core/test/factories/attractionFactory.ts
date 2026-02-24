@@ -18,6 +18,7 @@ export class AttractionFactoryBuilder {
             icon: '\ud83c\udfa1',
             isBuiltin: false,
             isFeatured: false,
+            displayWeight: 50,
             destinationId: undefined,
             createdAt: new Date(),
             updatedAt: new Date(),
