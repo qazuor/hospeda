@@ -54,5 +54,5 @@
             "outputs": ["coverage/**"]
         }
     },
-    "concurrency": "20"
+    "concurrency": "10"
 }
