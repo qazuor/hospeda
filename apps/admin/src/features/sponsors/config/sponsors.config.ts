@@ -11,7 +11,7 @@ export const sponsorsConfig: EntityConfig<Sponsor> = {
     entityType: EntityType.SPONSOR,
 
     // API
-    apiEndpoint: '/api/v1/public/sponsors',
+    apiEndpoint: '/api/v1/admin/post-sponsors',
 
     // Routes
     basePath: '/sponsors',

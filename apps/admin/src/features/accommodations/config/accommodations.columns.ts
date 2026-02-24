@@ -51,10 +51,10 @@ export const createAccommodationsColumns = (): readonly ColumnConfig<Accommodati
             color: BadgeColor.GREEN
         },
         linkHandler: (row) =>
-            row.destination?.slug
+            row.destination?.id
                 ? {
-                      to: '/destinations/$slug',
-                      params: { slug: row.destination.slug }
+                      to: '/destinations/$id',
+                      params: { id: row.destination.id }
                   }
                 : undefined
     },

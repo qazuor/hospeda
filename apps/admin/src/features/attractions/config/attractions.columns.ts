@@ -14,10 +14,10 @@ export const createAttractionsColumns = (): readonly ColumnConfig<Attraction>[] 
             color: BadgeColor.TEAL
         },
         linkHandler: (row) =>
-            row.slug
+            row.id
                 ? {
-                      to: '/attractions/$slug',
-                      params: { slug: row.slug }
+                      to: '/content/destination-attractions/$id',
+                      params: { id: row.id }
                   }
                 : undefined
     },
@@ -48,6 +48,13 @@ export const createAttractionsColumns = (): readonly ColumnConfig<Attraction>[] 
         accessorKey: 'isBuiltin',
         enableSorting: true,
         columnType: ColumnType.BOOLEAN
+    },
+    {
+        id: 'displayWeight',
+        header: 'Weight',
+        accessorKey: 'displayWeight',
+        enableSorting: true,
+        columnType: ColumnType.NUMBER
     },
     {
         id: 'destinationCount',

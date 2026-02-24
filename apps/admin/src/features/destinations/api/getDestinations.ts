@@ -47,7 +47,7 @@ export const getDestinations = async ({
     if (sort && sort.length > 0) params.set('sort', JSON.stringify(sort));
 
     const { data } = await fetchApi<unknown>({
-        path: `/api/v1/public/destinations?${params.toString()}`
+        path: `/api/v1/admin/destinations?${params.toString()}`
     });
 
     // Parse the API response

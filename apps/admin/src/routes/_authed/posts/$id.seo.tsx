@@ -21,12 +21,18 @@ function PostSeoPage() {
     const { t } = useTranslations();
     const { data: post, isLoading } = usePostQuery(id);
 
+    // API response may include extended fields not in base Post type
+    const postExtended = post as
+        | (typeof post & {
+              featuredImage?: string;
+          })
+        | undefined;
     const seo = post?.seo as Record<string, unknown> | undefined;
     const metaTitle = String(seo?.metaTitle || post?.title || '');
     const metaDescription = String(seo?.metaDescription || post?.summary || '');
     const slug = String(post?.slug || '');
     const canonicalUrl = String(seo?.canonicalUrl || '');
-    const ogImage = String(seo?.ogImage || post?.featuredImage || '');
+    const ogImage = String(seo?.ogImage || postExtended?.featuredImage || '');
 
     if (isLoading) {
         return (

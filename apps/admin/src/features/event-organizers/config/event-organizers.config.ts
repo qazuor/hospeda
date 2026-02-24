@@ -14,7 +14,7 @@ export const eventOrganizersConfig: EntityConfig<EventOrganizer> = {
     entityType: EntityType.EVENT_ORGANIZER,
 
     // API
-    apiEndpoint: '/api/v1/public/event-organizers',
+    apiEndpoint: '/api/v1/admin/event-organizers',
 
     // Routes
     basePath: '/events/organizers',

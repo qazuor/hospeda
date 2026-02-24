@@ -11,7 +11,7 @@ export const featuresConfig: EntityConfig<Feature> = {
     entityType: EntityType.FEATURE,
 
     // API
-    apiEndpoint: '/api/v1/public/features',
+    apiEndpoint: '/api/v1/admin/features',
 
     // Routes
     basePath: '/content/accommodation-features',

@@ -33,7 +33,7 @@ export type EntityHooksConfig<TData, TCreate = Partial<TData>, TUpdate = Partial
  * ```tsx
  * const accommodationHooks = createEntityHooks<Accommodation>({
  *   entityName: 'accommodations',
- *   apiEndpoint: '/api/v1/accommodations'
+ *   apiEndpoint: '/api/v1/admin/accommodations'
  * });
  *
  * // In component:

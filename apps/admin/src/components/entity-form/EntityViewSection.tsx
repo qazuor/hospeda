@@ -250,6 +250,10 @@ const EntityViewSectionComponent = React.forwardRef<HTMLDivElement, EntityViewSe
                 case FieldTypeEnum.EMAIL:
                 case FieldTypeEnum.URL:
                 case FieldTypeEnum.TEXTAREA:
+                case FieldTypeEnum.NUMBER:
+                case FieldTypeEnum.DATE:
+                case FieldTypeEnum.TIME:
+                case FieldTypeEnum.PHONE:
                     return (
                         <TextViewField
                             key={field.id}

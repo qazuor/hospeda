@@ -21,7 +21,14 @@ function EventAttendeesPage() {
     const { t } = useTranslations();
     const { data: event, isLoading } = useEventQuery(id);
 
-    const capacity = (event?.capacity || event?.maxAttendees) as number | undefined;
+    // API response may include extended fields not in base Event type
+    const eventExtended = event as
+        | (typeof event & {
+              capacity?: number;
+              maxAttendees?: number;
+          })
+        | undefined;
+    const capacity = (eventExtended?.capacity || eventExtended?.maxAttendees) as number | undefined;
 
     if (isLoading) {
         return (

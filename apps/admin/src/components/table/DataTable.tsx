@@ -274,14 +274,34 @@ export const DataTable = <TData,>({
 
     const internalColumns: ColumnDef<TData>[] = useMemo(
         () =>
-            columns.map((col) => ({
-                id: col.id,
-                accessorKey: col.accessorKey,
-                header: () => col.header,
-                cell: (info) => renderCellByType(col, info.getValue(), info.row.original),
-                enableSorting: col.enableSorting ?? true,
-                enableHiding: col.enableHiding ?? true
-            })),
+            columns.map((col) => {
+                // Use accessorFn for dot-notation keys to avoid TanStack Table warnings
+                const hasDotNotation = col.accessorKey?.includes('.');
+
+                return {
+                    id: col.id,
+                    ...(hasDotNotation
+                        ? {
+                              accessorFn: (row: TData) => {
+                                  const keys = col.accessorKey?.split('.') ?? [];
+                                  let value: unknown = row;
+                                  for (const key of keys) {
+                                      if (value && typeof value === 'object' && key in value) {
+                                          value = (value as Record<string, unknown>)[key];
+                                      } else {
+                                          return undefined;
+                                      }
+                                  }
+                                  return value;
+                              }
+                          }
+                        : { accessorKey: col.accessorKey }),
+                    header: () => col.header,
+                    cell: (info) => renderCellByType(col, info.getValue(), info.row.original),
+                    enableSorting: col.enableSorting ?? true,
+                    enableHiding: col.enableHiding ?? true
+                };
+            }),
         [columns]
     );
 

@@ -32,18 +32,18 @@ async function fetchEntityCount(endpoint: string): Promise<number> {
         data?: { pagination?: { total?: number } };
         metadata?: { total?: number };
     }>({
-        path: `/api/v1${endpoint}?page=1&limit=1`
+        path: `/api/v1${endpoint}?page=1&pageSize=1`
     });
     // Extract total from pagination
     return result.data.data?.pagination?.total ?? result.data.metadata?.total ?? 0;
 }
 
 const ENTITY_ENDPOINTS = [
-    { name: 'accommodations', endpoint: '/public/accommodations' },
-    { name: 'destinations', endpoint: '/public/destinations' },
-    { name: 'events', endpoint: '/public/events' },
-    { name: 'posts', endpoint: '/public/posts' },
-    { name: 'attractions', endpoint: '/public/attractions' },
+    { name: 'accommodations', endpoint: '/admin/accommodations' },
+    { name: 'destinations', endpoint: '/admin/destinations' },
+    { name: 'events', endpoint: '/admin/events' },
+    { name: 'posts', endpoint: '/admin/posts' },
+    { name: 'attractions', endpoint: '/admin/attractions' },
     { name: 'users', endpoint: '/admin/users' }
 ] as const;
 

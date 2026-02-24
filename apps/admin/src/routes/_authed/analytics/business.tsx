@@ -7,23 +7,25 @@ export const Route = createFileRoute('/_authed/analytics/business')({
     component: AnalyticsBusinessPage
 });
 
-const API_BASE = '/api/v1';
+import { fetchApi } from '@/lib/api/client';
 
 async function fetchEntityCount(endpoint: string): Promise<number> {
-    const response = await fetch(`${API_BASE}${endpoint}?page=1&limit=1`, {
-        credentials: 'include'
+    const result = await fetchApi<{
+        success: boolean;
+        data?: { pagination?: { total?: number } };
+        metadata?: { total?: number };
+    }>({
+        path: `/api/v1${endpoint}?page=1&pageSize=1`
     });
-    if (!response.ok) return 0;
-    const json = await response.json();
-    return json.data?.pagination?.total ?? json.metadata?.total ?? 0;
+    return result.data.data?.pagination?.total ?? result.data.metadata?.total ?? 0;
 }
 
 const ENTITIES = [
-    { name: 'Accommodations', endpoint: '/public/accommodations', key: 'accommodations' },
-    { name: 'Destinations', endpoint: '/public/destinations', key: 'destinations' },
-    { name: 'Events', endpoint: '/public/events', key: 'events' },
-    { name: 'Posts', endpoint: '/public/posts', key: 'posts' },
-    { name: 'Attractions', endpoint: '/public/attractions', key: 'attractions' }
+    { name: 'Accommodations', endpoint: '/admin/accommodations', key: 'accommodations' },
+    { name: 'Destinations', endpoint: '/admin/destinations', key: 'destinations' },
+    { name: 'Events', endpoint: '/admin/events', key: 'events' },
+    { name: 'Posts', endpoint: '/admin/posts', key: 'posts' },
+    { name: 'Attractions', endpoint: '/admin/attractions', key: 'attractions' }
 ];
 
 function AnalyticsBusinessPage() {

@@ -11,11 +11,11 @@ export const postsConfig: EntityConfig<Post> = {
     entityType: EntityType.POST,
 
     // API
-    apiEndpoint: '/api/v1/public/posts',
+    apiEndpoint: '/api/v1/admin/posts',
 
     // Routes
     basePath: '/posts',
-    detailPath: '/posts/[slug]',
+    detailPath: '/posts/[id]',
 
     // Schemas
     listItemSchema: PostListItemWithComputedFieldsSchema as unknown as z.ZodSchema<Post>,

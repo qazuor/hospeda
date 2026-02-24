@@ -33,11 +33,13 @@ async function fetchPromoCodes(filters: PromoCodeFilters = {}) {
     // Expected endpoint: GET /api/v1/billing/promo-codes
     const result = await fetchApi<{
         success: boolean;
-        data: { items: Record<string, unknown>[]; pagination: Record<string, unknown> };
+        data: Record<string, unknown>[];
     }>({
         path: `/api/v1/billing/promo-codes?${params.toString()}`
     });
-    return result.data.data;
+    // Custom billing route returns { success, data: [] } without pagination
+    const items = result.data.data;
+    return { items, pagination: { total: Array.isArray(items) ? items.length : 0 } };
 }
 
 /**

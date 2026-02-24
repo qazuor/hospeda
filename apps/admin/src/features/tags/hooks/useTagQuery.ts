@@ -1,3 +1,4 @@
+import type { Tag } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { fetchApi } from '@/lib/api/client';
@@ -17,8 +18,8 @@ export const tagQueryKeys = {
  * Fetch a single tag by ID
  */
 async function fetchTag(id: string) {
-    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: `/api/v1/public/tags/${id}`
+    const result = await fetchApi<{ success: boolean; data: Tag }>({
+        path: `/api/v1/admin/tags/${id}`
     });
     return result.data.data;
 }
@@ -26,9 +27,9 @@ async function fetchTag(id: string) {
 /**
  * Update a tag
  */
-async function updateTag(id: string, data: Record<string, unknown>) {
-    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: `/api/v1/protected/tags/${id}`,
+async function updateTag(id: string, data: Partial<Tag>) {
+    const result = await fetchApi<{ success: boolean; data: Tag }>({
+        path: `/api/v1/admin/tags/${id}`,
         method: 'PATCH',
         body: data
     });
@@ -38,9 +39,9 @@ async function updateTag(id: string, data: Record<string, unknown>) {
 /**
  * Create a new tag
  */
-async function createTag(data: Record<string, unknown>) {
-    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: '/api/v1/protected/tags',
+async function createTag(data: Partial<Tag>) {
+    const result = await fetchApi<{ success: boolean; data: Tag }>({
+        path: '/api/v1/admin/tags',
         method: 'POST',
         body: data
     });
@@ -77,7 +78,7 @@ export const useUpdateTagMutation = (id: string) => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (data: Record<string, unknown>) => updateTag(id, data),
+        mutationFn: (data: Partial<Tag>) => updateTag(id, data),
         onSuccess: (updatedData) => {
             // Update the cache with new data
             queryClient.setQueryData(tagQueryKeys.detail(id), updatedData);
@@ -94,7 +95,7 @@ export const useCreateTagMutation = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (data: Record<string, unknown>) => createTag(data),
+        mutationFn: (data: Partial<Tag>) => createTag(data),
         onSuccess: () => {
             // Invalidate list queries to refetch
             queryClient.invalidateQueries({ queryKey: tagQueryKeys.lists() });

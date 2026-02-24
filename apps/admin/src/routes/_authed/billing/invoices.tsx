@@ -357,7 +357,8 @@ function BillingInvoicesPage() {
         startDate,
         endDate
     });
-    const invoices = invoicesData as unknown as Invoice[];
+    const invoices = ((invoicesData as { items?: Invoice[] } | undefined)?.items ??
+        []) as Invoice[];
 
     // Mutations
     const payMutation = usePayInvoiceMutation();

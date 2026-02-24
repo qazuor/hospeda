@@ -9,9 +9,9 @@ export const eventsConfig: EntityConfig<Event> = {
     name: 'events',
     entityKey: 'event',
     entityType: EntityType.EVENT,
-    apiEndpoint: '/api/v1/public/events',
+    apiEndpoint: '/api/v1/admin/events',
     basePath: '/events',
-    detailPath: '/events/[slug]',
+    detailPath: '/events/[id]',
     // Schemas - Use type assertion for Zod version compatibility
     listItemSchema: EventListItemSchema as unknown as z.ZodSchema<Event>,
     searchConfig: {

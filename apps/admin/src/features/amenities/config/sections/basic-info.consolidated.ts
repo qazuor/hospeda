@@ -87,6 +87,25 @@ export const createBasicInfoConsolidatedSection = (): ConsolidatedSectionConfig 
             }
         },
         {
+            id: 'displayWeight',
+            type: FieldTypeEnum.NUMBER,
+            required: false,
+            modes: ['view', 'edit', 'create'],
+            label: 'Peso de Visualización',
+            description:
+                'Prioridad de visualización (1-100). Mayor valor = aparece primero en tarjetas',
+            placeholder: '50',
+            permissions: {
+                view: [PermissionEnum.AMENITY_CREATE],
+                edit: [PermissionEnum.AMENITY_UPDATE]
+            },
+            typeConfig: {
+                min: 1,
+                max: 100,
+                step: 1
+            }
+        },
+        {
             id: 'type',
             type: FieldTypeEnum.SELECT,
             required: true,

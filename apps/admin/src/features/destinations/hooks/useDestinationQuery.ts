@@ -1,3 +1,4 @@
+import type { Destination } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { fetchApi } from '@/lib/api/client';
@@ -17,8 +18,8 @@ export const destinationQueryKeys = {
  * Fetch a single destination by ID
  */
 async function fetchDestination(id: string) {
-    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: `/api/v1/public/destinations/${id}`
+    const result = await fetchApi<{ success: boolean; data: Destination }>({
+        path: `/api/v1/admin/destinations/${id}`
     });
     return result.data.data;
 }
@@ -26,9 +27,9 @@ async function fetchDestination(id: string) {
 /**
  * Update a destination
  */
-async function updateDestination(id: string, data: Record<string, unknown>) {
-    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: `/api/v1/protected/destinations/${id}`,
+async function updateDestination(id: string, data: Partial<Destination>) {
+    const result = await fetchApi<{ success: boolean; data: Destination }>({
+        path: `/api/v1/admin/destinations/${id}`,
         method: 'PATCH',
         body: data
     });
@@ -38,9 +39,9 @@ async function updateDestination(id: string, data: Record<string, unknown>) {
 /**
  * Create a new destination
  */
-async function createDestination(data: Record<string, unknown>) {
-    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: '/api/v1/protected/destinations',
+async function createDestination(data: Partial<Destination>) {
+    const result = await fetchApi<{ success: boolean; data: Destination }>({
+        path: '/api/v1/admin/destinations',
         method: 'POST',
         body: data
     });
@@ -77,7 +78,7 @@ export const useUpdateDestinationMutation = (id: string) => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (data: Record<string, unknown>) => updateDestination(id, data),
+        mutationFn: (data: Partial<Destination>) => updateDestination(id, data),
         onSuccess: (updatedData) => {
             // Update the cache with new data
             queryClient.setQueryData(destinationQueryKeys.detail(id), updatedData);
@@ -94,7 +95,7 @@ export const useCreateDestinationMutation = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (data: Record<string, unknown>) => createDestination(data),
+        mutationFn: (data: Partial<Destination>) => createDestination(data),
         onSuccess: () => {
             // Invalidate list queries to refetch
             queryClient.invalidateQueries({ queryKey: destinationQueryKeys.lists() });

@@ -1,8 +1,6 @@
 import { EntityViewSection } from '@/components/entity-form';
 import { EntitlementGatedSection } from '@/components/entity-form/sections/EntitlementGatedSection';
-import { LazySectionWrapper } from '@/components/entity-form/sections/LazySectionWrapper';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
-import { useLazySections } from '@/hooks';
 import type { PermissionEnum } from '@repo/schemas';
 import type { ReactNode } from 'react';
 
@@ -27,8 +25,9 @@ export interface EntityViewContentProps {
 }
 
 /**
- * Component for rendering entity content in view mode
- * Renders sections using EntityViewSection components
+ * Component for rendering entity content in view mode.
+ * All sections are rendered eagerly since view pages only have 5-7
+ * lightweight read-only sections that don't justify lazy loading complexity.
  */
 export const EntityViewContent = ({
     sections,
@@ -37,42 +36,18 @@ export const EntityViewContent = ({
     renderSection,
     className
 }: EntityViewContentProps) => {
-    // Convert sections to proper format for lazy loading
-    // Sections are already SectionConfig objects, not functions
-    const sectionConfigs = sections as SectionConfig[];
-
-    // Use lazy sections hook for performance optimization
-    const { shouldLazyLoad, getMetrics } = useLazySections(sectionConfigs, {
-        enabled: true,
-        preloadCount: 1,
-        alwaysLoad: ['basic-info'] // Always load basic info immediately
-    });
-
     if (!entity) {
         return null;
     }
 
     return (
         <div className={`space-y-6 ${className || ''}`}>
-            {/* Performance metrics (only in development) */}
-            {process.env.NODE_ENV === 'development' && (
-                <div className="mb-4 rounded bg-blue-50 p-2 text-blue-800 text-xs">
-                    Lazy Loading: {getMetrics().loadedCount}/{getMetrics().totalSections} sections
-                    loaded
-                </div>
-            )}
-
             <div className="space-y-8">
-                {sectionConfigs.map((section, index) => {
-                    // Use custom render function if provided
+                {sections.map((section, index) => {
                     if (renderSection) {
                         return renderSection(section, index);
                     }
 
-                    // Determine if this section should be lazy loaded
-                    const isLazy = shouldLazyLoad(section.id);
-
-                    // Default rendering with lazy loading wrapper
                     const sectionContent = (
                         <EntityViewSection
                             key={section.id || `section-${index}`}
@@ -84,35 +59,19 @@ export const EntityViewContent = ({
                         />
                     );
 
-                    // Wrap with entitlement gate if needed
-                    const gatedContent = section.entitlementKey ? (
-                        <EntitlementGatedSection
-                            key={section.id || `section-${index}`}
-                            entitlementKey={section.entitlementKey}
-                            sectionTitle={section.title}
-                        >
-                            {sectionContent}
-                        </EntitlementGatedSection>
-                    ) : (
-                        sectionContent
-                    );
-
-                    if (isLazy) {
+                    if (section.entitlementKey) {
                         return (
-                            <LazySectionWrapper
+                            <EntitlementGatedSection
                                 key={section.id || `section-${index}`}
-                                sectionId={section.id}
-                                preloadAdjacent={true}
-                                rootMargin="100px"
-                                threshold={0.1}
-                                className="min-h-[200px]"
+                                entitlementKey={section.entitlementKey}
+                                sectionTitle={section.title}
                             >
-                                {gatedContent}
-                            </LazySectionWrapper>
+                                {sectionContent}
+                            </EntitlementGatedSection>
                         );
                     }
 
-                    return gatedContent;
+                    return sectionContent;
                 })}
             </div>
         </div>

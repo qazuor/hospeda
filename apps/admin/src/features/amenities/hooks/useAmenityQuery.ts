@@ -1,3 +1,4 @@
+import type { Amenity } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { fetchApi } from '@/lib/api/client';
@@ -17,8 +18,8 @@ export const amenityQueryKeys = {
  * Fetch a single amenity by ID
  */
 async function fetchAmenity(id: string) {
-    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: `/api/v1/public/amenities/${id}`
+    const result = await fetchApi<{ success: boolean; data: Amenity }>({
+        path: `/api/v1/admin/amenities/${id}`
     });
     return result.data.data;
 }
@@ -26,9 +27,9 @@ async function fetchAmenity(id: string) {
 /**
  * Update an amenity
  */
-async function updateAmenity(id: string, data: Record<string, unknown>) {
-    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: `/api/v1/protected/amenities/${id}`,
+async function updateAmenity(id: string, data: Partial<Amenity>) {
+    const result = await fetchApi<{ success: boolean; data: Amenity }>({
+        path: `/api/v1/admin/amenities/${id}`,
         method: 'PATCH',
         body: data
     });
@@ -38,9 +39,9 @@ async function updateAmenity(id: string, data: Record<string, unknown>) {
 /**
  * Create a new amenity
  */
-async function createAmenity(data: Record<string, unknown>) {
-    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: '/api/v1/protected/amenities',
+async function createAmenity(data: Partial<Amenity>) {
+    const result = await fetchApi<{ success: boolean; data: Amenity }>({
+        path: '/api/v1/admin/amenities',
         method: 'POST',
         body: data
     });
@@ -77,7 +78,7 @@ export const useUpdateAmenityMutation = (id: string) => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (data: Record<string, unknown>) => updateAmenity(id, data),
+        mutationFn: (data: Partial<Amenity>) => updateAmenity(id, data),
         onSuccess: (updatedData) => {
             // Update the cache with new data
             queryClient.setQueryData(amenityQueryKeys.detail(id), updatedData);
@@ -94,7 +95,7 @@ export const useCreateAmenityMutation = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (data: Record<string, unknown>) => createAmenity(data),
+        mutationFn: (data: Partial<Amenity>) => createAmenity(data),
         onSuccess: () => {
             // Invalidate list queries to refetch
             queryClient.invalidateQueries({ queryKey: amenityQueryKeys.lists() });

@@ -108,7 +108,7 @@ export const OwnerSelect: FC<OwnerSelectProps> = ({
 }) => {
     return (
         <ApiSelect
-            endpoint="/api/v1/public/users"
+            endpoint="/api/v1/admin/users"
             queryKey={['users', 'list']}
             value={value}
             onValueChange={onValueChange}

@@ -27,10 +27,15 @@ async function fetchInvoices(filters: Record<string, unknown> = {}) {
         }
     }
 
-    const result = await fetchApi<{ success: boolean; data: Record<string, unknown>[] }>({
+    const result = await fetchApi<{
+        success: boolean;
+        data: Record<string, unknown>[];
+        pagination: Record<string, unknown>;
+    }>({
         path: `/api/v1/billing/invoices?${params.toString()}`
     });
-    return result.data.data;
+    // QZPay returns { success, data: [], pagination } - transform to { items, pagination }
+    return { items: result.data.data, pagination: result.data.pagination };
 }
 
 /**

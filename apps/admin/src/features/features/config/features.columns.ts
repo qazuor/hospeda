@@ -51,6 +51,13 @@ export const createFeaturesColumns = (): readonly ColumnConfig<Feature>[] => [
         columnType: ColumnType.BOOLEAN
     },
     {
+        id: 'displayWeight',
+        header: 'Weight',
+        accessorKey: 'displayWeight',
+        enableSorting: true,
+        columnType: ColumnType.NUMBER
+    },
+    {
         id: 'accommodationCount',
         header: 'Accommodations',
         accessorKey: 'accommodationCount',

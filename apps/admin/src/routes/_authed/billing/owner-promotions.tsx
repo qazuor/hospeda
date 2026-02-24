@@ -53,7 +53,7 @@ function BillingOwnerPromotionsPage() {
 
     const { data, isLoading, error } = useOwnerPromotionsQuery({
         page,
-        limit: pageSize,
+        pageSize,
         ...filters
     });
 

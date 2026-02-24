@@ -15,7 +15,7 @@ export const accommodationsConfig: EntityConfig<Accommodation> = {
     entityType: EntityType.ACCOMMODATION,
 
     // API
-    apiEndpoint: '/api/v1/public/accommodations',
+    apiEndpoint: '/api/v1/admin/accommodations',
 
     // Routes
     basePath: '/accommodations',

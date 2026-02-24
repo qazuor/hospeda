@@ -56,10 +56,14 @@ async function fetchWebhookEvents(filters: Record<string, unknown> = {}) {
         }
     }
 
-    const result = await fetchApi<{ success: boolean; data: Record<string, unknown>[] }>({
+    const result = await fetchApi<{
+        success: boolean;
+        data: { data: Record<string, unknown>[]; total: number; limit: number; offset: number };
+    }>({
         path: `/api/v1/admin/webhooks/events?${params.toString()}`
     });
-    return result.data.data;
+    // API returns { success, data: { data: [], total, limit, offset } }
+    return result.data.data.data;
 }
 
 /**

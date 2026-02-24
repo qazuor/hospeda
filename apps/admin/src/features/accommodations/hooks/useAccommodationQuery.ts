@@ -31,7 +31,7 @@ export const useAccommodationQuery = (
     return useQuery({
         queryKey: accommodationQueryKeys.detail(id),
         queryFn: async (): Promise<AccommodationCore> => {
-            const response = await fetchApi({ path: `/api/v1/public/accommodations/${id}` });
+            const response = await fetchApi({ path: `/api/v1/admin/accommodations/${id}` });
 
             // The API returns: { success: true, data: AccommodationCore, metadata: {...} }
             // We need to extract just the data part
@@ -92,10 +92,10 @@ export const useAccommodationListQuery = (
             }
 
             const response = await fetchApi({
-                path: `/api/v1/public/accommodations?${searchParams.toString()}`
+                path: `/api/v1/admin/accommodations?${searchParams.toString()}`
             });
 
-            // ✅ Actualizado para usar el formato de respuesta estándar de la API
+            // Updated to use the standard API response format
             const standardResponse = response.data as {
                 success: boolean;
                 data: {
@@ -163,10 +163,10 @@ export const useAccommodationSearchQuery = (
             }
 
             const response = await fetchApi({
-                path: `/api/v1/public/accommodations/search?${searchParams.toString()}`
+                path: `/api/v1/admin/accommodations/search?${searchParams.toString()}`
             });
 
-            // ✅ Actualizado para manejar respuesta estándar (aunque esta ruta puede no existir)
+            // Handle standard API response format (note: this search endpoint may not exist yet)
             const standardResponse = response.data as {
                 success: boolean;
                 data: {
@@ -185,6 +185,9 @@ export const useAccommodationSearchQuery = (
 /**
  * Hook for fetching accommodation section data
  * Useful for lazy loading specific sections
+ *
+ * TODO: The endpoint `/api/v1/admin/accommodations/:id/sections/:sectionId` does not
+ * exist in the API yet. This hook will fail at runtime until that endpoint is implemented.
  */
 export const useAccommodationSectionQuery = (
     id: string,
@@ -197,7 +200,7 @@ export const useAccommodationSectionQuery = (
         queryKey: accommodationQueryKeys.section(id, sectionId),
         queryFn: async (): Promise<Record<string, unknown>> => {
             const response = await fetchApi({
-                path: `/api/v1/public/accommodations/${id}/sections/${sectionId}`
+                path: `/api/v1/admin/accommodations/${id}/sections/${sectionId}`
             });
             return response.data as Record<string, unknown>;
         },
@@ -216,7 +219,7 @@ export const useCreateAccommodationMutation = () => {
     return useMutation({
         mutationFn: async (data: Partial<AccommodationCore>): Promise<AccommodationCore> => {
             const response = await fetchApi({
-                path: '/api/v1/public/accommodations',
+                path: '/api/v1/admin/accommodations',
                 method: 'POST',
                 body: data
             });
@@ -244,7 +247,7 @@ export const useUpdateAccommodationMutation = (id: string) => {
     return useMutation({
         mutationFn: async (data: Partial<AccommodationCore>): Promise<AccommodationCore> => {
             const response = await fetchApi({
-                path: `/api/v1/public/accommodations/${id}`,
+                path: `/api/v1/admin/accommodations/${id}`,
                 method: 'PATCH',
                 body: data
             });
@@ -300,6 +303,9 @@ export const useUpdateAccommodationMutation = (id: string) => {
 
 /**
  * Mutation hook for updating accommodation sections
+ *
+ * TODO: The endpoint `PATCH /api/v1/admin/accommodations/:id/sections/:sectionId` does not
+ * exist in the API yet. This hook will fail at runtime until that endpoint is implemented.
  */
 export const useUpdateAccommodationSectionMutation = (id: string, sectionId: string) => {
     const queryClient = useQueryClient();
@@ -307,7 +313,7 @@ export const useUpdateAccommodationSectionMutation = (id: string, sectionId: str
     return useMutation({
         mutationFn: async (data: Record<string, unknown>): Promise<Record<string, unknown>> => {
             const response = await fetchApi({
-                path: `/api/v1/public/accommodations/${id}/sections/${sectionId}`,
+                path: `/api/v1/admin/accommodations/${id}/sections/${sectionId}`,
                 method: 'PATCH',
                 body: data
             });
@@ -332,7 +338,7 @@ export const useDeleteAccommodationMutation = () => {
     return useMutation({
         mutationFn: async (id: string): Promise<void> => {
             await fetchApi({
-                path: `/api/v1/public/accommodations/${id}`,
+                path: `/api/v1/admin/accommodations/${id}`,
                 method: 'DELETE'
             });
         },
@@ -368,7 +374,7 @@ export const useAccommodationValidation = () => {
                     }
 
                     const response = await fetchApi({
-                        path: `/api/v1/public/accommodations/validate/unique?${searchParams.toString()}`
+                        path: `/api/v1/admin/accommodations/validate/unique?${searchParams.toString()}`
                     });
                     return response.data as { isUnique: boolean };
                 },

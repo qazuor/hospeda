@@ -143,7 +143,15 @@ export const EntityPageBase = <T = Record<string, unknown>>({
     }
 
     // Get entity name for display
-    const entityName = (entity as { name?: string })?.name || entityType;
+    // Try common name fields, then fall back to metadata entityName, then entityType
+    const entityRecord = entity as Record<string, unknown>;
+    const entityName =
+        (entityRecord?.name as string) ||
+        (entityRecord?.placeName as string) ||
+        (entityRecord?.title as string) ||
+        (entityRecord?.displayName as string) ||
+        (entityConfig.metadata?.entityName as string) ||
+        entityType;
 
     // Debug logging (temporarily disabled)
     // console.log('[EntityPageBase] Debug info:', {
@@ -205,8 +213,8 @@ export const EntityPageBase = <T = Record<string, unknown>>({
                             </CardTitle>
                             <p className="text-gray-600">
                                 {mode === 'view'
-                                    ? `View ${entityType} details`
-                                    : `Modify ${entityType} details`}
+                                    ? `View ${completeEntityConfig.entityName} details`
+                                    : `Modify ${completeEntityConfig.entityName} details`}
                             </p>
                         </div>
                         <div className="flex items-center gap-3">

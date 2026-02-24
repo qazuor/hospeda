@@ -30,11 +30,13 @@ async function fetchPlans(filters: Record<string, unknown> = {}) {
 
     const result = await fetchApi<{
         success: boolean;
-        data: { items: Record<string, unknown>[]; pagination: Record<string, unknown> };
+        data: Record<string, unknown>[];
+        pagination: Record<string, unknown>;
     }>({
         path: `/api/v1/billing/plans?${params.toString()}`
     });
-    return result.data.data;
+    // QZPay returns { success, data: [], pagination } - transform to { items, pagination }
+    return { items: result.data.data, pagination: result.data.pagination };
 }
 
 /**

@@ -30,7 +30,7 @@ async function fetchOwnerPromotions(filters: Record<string, unknown> = {}) {
         success: boolean;
         data: { items: Record<string, unknown>[]; pagination: Record<string, unknown> };
     }>({
-        path: `/api/v1/public/owner-promotions?${params.toString()}`
+        path: `/api/v1/admin/owner-promotions?${params.toString()}`
     });
     return result.data.data;
 }
@@ -40,7 +40,7 @@ async function fetchOwnerPromotions(filters: Record<string, unknown> = {}) {
  */
 async function fetchOwnerPromotion(id: string) {
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: `/api/v1/public/owner-promotions/${id}`
+        path: `/api/v1/admin/owner-promotions/${id}`
     });
     return result.data.data;
 }
@@ -50,7 +50,7 @@ async function fetchOwnerPromotion(id: string) {
  */
 async function createOwnerPromotion(data: CreateOwnerPromotionInput) {
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: '/api/v1/owner-promotions',
+        path: '/api/v1/admin/owner-promotions',
         method: 'POST',
         body: data
     });
@@ -64,7 +64,7 @@ async function updateOwnerPromotion(data: UpdateOwnerPromotionInput) {
     const { id, ...updateData } = data;
 
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: `/api/v1/owner-promotions/${id}`,
+        path: `/api/v1/admin/owner-promotions/${id}`,
         method: 'PATCH',
         body: updateData
     });
@@ -76,7 +76,7 @@ async function updateOwnerPromotion(data: UpdateOwnerPromotionInput) {
  */
 async function deleteOwnerPromotion(id: string) {
     await fetchApi<{ success: boolean }>({
-        path: `/api/v1/owner-promotions/${id}`,
+        path: `/api/v1/admin/owner-promotions/${id}`,
         method: 'DELETE'
     });
     return true;
@@ -87,7 +87,7 @@ async function deleteOwnerPromotion(id: string) {
  */
 async function togglePromotionActive(id: string, isActive: boolean) {
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: `/api/v1/owner-promotions/${id}`,
+        path: `/api/v1/admin/owner-promotions/${id}`,
         method: 'PATCH',
         body: { isActive }
     });

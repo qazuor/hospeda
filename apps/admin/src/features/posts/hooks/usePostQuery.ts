@@ -1,3 +1,4 @@
+import type { Post } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { fetchApi } from '@/lib/api/client';
@@ -18,8 +19,8 @@ export const postQueryKeys = {
  * Fetch a single post by ID
  */
 async function fetchPost(id: string) {
-    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: `/api/v1/public/posts/${id}`
+    const result = await fetchApi<{ success: boolean; data: Post }>({
+        path: `/api/v1/admin/posts/${id}`
     });
     return result.data.data;
 }
@@ -27,9 +28,9 @@ async function fetchPost(id: string) {
 /**
  * Update a post
  */
-async function updatePost(id: string, data: Record<string, unknown>) {
-    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: `/api/v1/protected/posts/${id}`,
+async function updatePost(id: string, data: Partial<Post>) {
+    const result = await fetchApi<{ success: boolean; data: Post }>({
+        path: `/api/v1/admin/posts/${id}`,
         method: 'PATCH',
         body: data
     });
@@ -39,9 +40,9 @@ async function updatePost(id: string, data: Record<string, unknown>) {
 /**
  * Create a new post
  */
-async function createPost(data: Record<string, unknown>) {
-    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: '/api/v1/protected/posts',
+async function createPost(data: Partial<Post>) {
+    const result = await fetchApi<{ success: boolean; data: Post }>({
+        path: '/api/v1/admin/posts',
         method: 'POST',
         body: data
     });
@@ -78,7 +79,7 @@ export const useUpdatePostMutation = (id: string) => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (data: Record<string, unknown>) => updatePost(id, data),
+        mutationFn: (data: Partial<Post>) => updatePost(id, data),
         onSuccess: (updatedData) => {
             adminLogger.debug('[PostMutation] Post updated successfully', {
                 id,
@@ -103,7 +104,7 @@ export const useCreatePostMutation = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (data: Record<string, unknown>) => createPost(data),
+        mutationFn: (data: Partial<Post>) => createPost(data),
         onSuccess: (data) => {
             adminLogger.debug('[PostMutation] Post created successfully', data);
 

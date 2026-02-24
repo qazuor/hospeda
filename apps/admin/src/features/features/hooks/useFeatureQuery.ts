@@ -1,3 +1,4 @@
+import type { Feature } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { fetchApi } from '@/lib/api/client';
@@ -17,8 +18,8 @@ export const featureQueryKeys = {
  * Fetch a single feature by ID
  */
 async function fetchFeature(id: string) {
-    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: `/api/v1/public/features/${id}`
+    const result = await fetchApi<{ success: boolean; data: Feature }>({
+        path: `/api/v1/admin/features/${id}`
     });
     return result.data.data;
 }
@@ -26,9 +27,9 @@ async function fetchFeature(id: string) {
 /**
  * Update a feature
  */
-async function updateFeature(id: string, data: Record<string, unknown>) {
-    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: `/api/v1/protected/features/${id}`,
+async function updateFeature(id: string, data: Partial<Feature>) {
+    const result = await fetchApi<{ success: boolean; data: Feature }>({
+        path: `/api/v1/admin/features/${id}`,
         method: 'PATCH',
         body: data
     });
@@ -38,9 +39,9 @@ async function updateFeature(id: string, data: Record<string, unknown>) {
 /**
  * Create a new feature
  */
-async function createFeature(data: Record<string, unknown>) {
-    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: '/api/v1/protected/features',
+async function createFeature(data: Partial<Feature>) {
+    const result = await fetchApi<{ success: boolean; data: Feature }>({
+        path: '/api/v1/admin/features',
         method: 'POST',
         body: data
     });
@@ -77,7 +78,7 @@ export const useUpdateFeatureMutation = (id: string) => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (data: Record<string, unknown>) => updateFeature(id, data),
+        mutationFn: (data: Partial<Feature>) => updateFeature(id, data),
         onSuccess: (updatedData) => {
             // Update the cache with new data
             queryClient.setQueryData(featureQueryKeys.detail(id), updatedData);
@@ -94,7 +95,7 @@ export const useCreateFeatureMutation = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (data: Record<string, unknown>) => createFeature(data),
+        mutationFn: (data: Partial<Feature>) => createFeature(data),
         onSuccess: () => {
             // Invalidate list queries to refetch
             queryClient.invalidateQueries({ queryKey: featureQueryKeys.lists() });

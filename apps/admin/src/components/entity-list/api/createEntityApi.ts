@@ -70,7 +70,19 @@ export const createEntityApi = <TData>(
         });
 
         // Parse the API response using the centralized schema
-        const apiResponse = PaginatedResponseSchema.parse(data) as ApiResponse;
+        const parseResult = PaginatedResponseSchema.safeParse(data);
+
+        if (!parseResult.success) {
+            console.error(
+                `[createEntityApi] Zod validation failed for ${endpoint}:`,
+                parseResult.error.issues
+            );
+            throw new Error(
+                `API response validation failed for ${endpoint}: ${parseResult.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join(', ')}`
+            );
+        }
+
+        const apiResponse = parseResult.data as ApiResponse;
 
         // Adapt to the expected format
         return {

@@ -15,7 +15,7 @@ export const searchUsers = async (
     if (!query.trim()) return [];
 
     try {
-        let path = `/api/v1/public/users?search=${encodeURIComponent(query)}&pageSize=20`;
+        let path = `/api/v1/admin/users?search=${encodeURIComponent(query)}&pageSize=20`;
 
         if (options?.roleFilter && options.roleFilter.length > 0) {
             path += `&roles=${options.roleFilter.join(',')}`;
@@ -82,7 +82,7 @@ export const loadUsersByIds = async (ids: string[]): Promise<SelectOption[]> => 
                 email?: string;
             } | null>;
         }>({
-            path: '/api/v1/public/users/batch',
+            path: '/api/v1/admin/users/batch',
             method: 'POST',
             body: { ids, fields: ['id', 'displayName', 'firstName', 'lastName', 'email'] }
         });
@@ -117,7 +117,7 @@ export const loadInitialUsers = async (options?: {
     statusFilter?: string[];
 }): Promise<SelectOption[]> => {
     try {
-        let path = '/api/v1/public/users?pageSize=10';
+        let path = '/api/v1/admin/users?pageSize=10';
 
         if (options?.roleFilter && options.roleFilter.length > 0) {
             path += `&roles=${options.roleFilter.join(',')}`;
@@ -172,7 +172,7 @@ export const loadAllUsers = async (options?: {
     adminLogger.warn('loadAllUsers called - not recommended for large user datasets');
 
     try {
-        let path = '/api/v1/public/users?pageSize=1000';
+        let path = '/api/v1/admin/users?pageSize=1000';
 
         if (options?.roleFilter && options.roleFilter.length > 0) {
             path += `&roles=${options.roleFilter.join(',')}`;

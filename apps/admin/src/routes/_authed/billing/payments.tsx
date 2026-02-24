@@ -471,7 +471,8 @@ function BillingPaymentsPage() {
         minAmount: minAmount ? Number.parseFloat(minAmount) : undefined,
         maxAmount: maxAmount ? Number.parseFloat(maxAmount) : undefined
     });
-    const payments = paymentsData as unknown as Payment[];
+    const payments = ((paymentsData as { items?: Payment[] } | undefined)?.items ??
+        []) as Payment[];
 
     // Refund mutation
     const refundMutation = useRefundPaymentMutation();

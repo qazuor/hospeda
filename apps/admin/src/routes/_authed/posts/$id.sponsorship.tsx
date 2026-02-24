@@ -22,8 +22,15 @@ function PostSponsorshipPage() {
     const { t } = useTranslations();
     const { data: post, isLoading } = usePostQuery(id);
 
-    const sponsorship = post?.sponsorship as Record<string, unknown> | undefined;
-    const sponsor = post?.sponsor as Record<string, unknown> | undefined;
+    // API response may include joined relations not in base Post type
+    const postWithRelations = post as
+        | (typeof post & {
+              sponsorship?: Record<string, unknown>;
+              sponsor?: Record<string, unknown>;
+          })
+        | undefined;
+    const sponsorship = postWithRelations?.sponsorship;
+    const sponsor = postWithRelations?.sponsor;
     const hasSponsor = !!sponsorship || !!sponsor;
 
     if (isLoading) {

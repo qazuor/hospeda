@@ -171,7 +171,7 @@ export const SelectField = React.forwardRef<HTMLButtonElement, SelectFieldProps>
                                         option.disabled && 'cursor-not-allowed opacity-50'
                                     )}
                                 >
-                                    <div className="flex items-center gap-2">
+                                    <span className="inline-flex items-center gap-2">
                                         {(() => {
                                             const icon = option.metadata?.icon;
                                             if (icon && typeof icon === 'string') {
@@ -184,15 +184,15 @@ export const SelectField = React.forwardRef<HTMLButtonElement, SelectFieldProps>
                                             return null;
                                         })()}
 
-                                        <div className="flex flex-col">
+                                        <span className="inline-flex flex-col">
                                             <span>{option.label}</span>
                                             {option.description && (
                                                 <span className="text-muted-foreground text-xs">
                                                     {option.description}
                                                 </span>
                                             )}
-                                        </div>
-                                    </div>
+                                        </span>
+                                    </span>
                                 </SelectItem>
                             ))}
 

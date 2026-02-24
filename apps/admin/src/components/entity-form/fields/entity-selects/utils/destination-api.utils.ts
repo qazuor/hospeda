@@ -12,7 +12,7 @@ export const searchDestinations = async (query: string): Promise<SelectOption[]>
         const response = await fetchApi<{
             data: { items: Array<{ id: string; name: string; description?: string }> };
         }>({
-            path: `/api/v1/public/destinations?search=${encodeURIComponent(query)}&pageSize=20`,
+            path: `/api/v1/admin/destinations?search=${encodeURIComponent(query)}&pageSize=20`,
             method: 'GET'
         });
 
@@ -42,7 +42,7 @@ export const loadDestinationsByIds = async (ids: string[]): Promise<SelectOption
         const response = await fetchApi<{
             data: Array<{ id: string; name: string; description?: string } | null>;
         }>({
-            path: '/api/v1/public/destinations/batch',
+            path: '/api/v1/admin/destinations/batch',
             method: 'POST',
             body: { ids, fields: ['id', 'name', 'description'] }
         });
@@ -75,7 +75,7 @@ export const loadAllDestinations = async (): Promise<SelectOption[]> => {
         const response = await fetchApi<{
             data: { items: Array<{ id: string; name: string; description?: string }> };
         }>({
-            path: '/api/v1/public/destinations?pageSize=100',
+            path: '/api/v1/admin/destinations?pageSize=100',
             method: 'GET'
         });
 

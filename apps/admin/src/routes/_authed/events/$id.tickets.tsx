@@ -22,11 +22,18 @@ function EventTicketsPage() {
     const { t } = useTranslations();
     const { data: event, isLoading } = useEventQuery(id);
 
+    // API response may include extended fields not in base Event type
+    const eventExtended = event as
+        | (typeof event & {
+              capacity?: number;
+              maxAttendees?: number;
+          })
+        | undefined;
     const pricing = event?.pricing as Record<string, unknown> | undefined;
     const isFree = pricing?.isFree === true;
     const price = pricing?.price as number | undefined;
     const currency = String(pricing?.currency || 'ARS');
-    const capacity = (event?.capacity || event?.maxAttendees) as number | undefined;
+    const capacity = (eventExtended?.capacity || eventExtended?.maxAttendees) as number | undefined;
 
     if (isLoading) {
         return (

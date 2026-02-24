@@ -2,6 +2,7 @@ import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { fetchApi } from '@/lib/api/client';
 import { useMutation } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { useCallback, useEffect, useState } from 'react';
@@ -10,16 +11,11 @@ export const Route = createFileRoute('/_authed/settings/critical')({
     component: CriticalSettingsPage
 });
 
-const API_BASE = '/api/v1';
 const MAINTENANCE_KEY = 'hospeda-admin-maintenance-mode';
 const ANNOUNCEMENT_KEY = 'hospeda-admin-global-announcement';
 
 async function resetMetrics(): Promise<void> {
-    const response = await fetch(`${API_BASE}/metrics/reset`, {
-        method: 'POST',
-        credentials: 'include'
-    });
-    if (!response.ok) throw new Error('Failed to reset metrics');
+    await fetchApi({ path: '/api/v1/admin/metrics/reset', method: 'POST' });
 }
 
 function CriticalSettingsPage() {

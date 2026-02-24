@@ -6,6 +6,7 @@
  * Used to protect edit/create routes that require specific permissions.
  */
 
+import { useAuthContext } from '@/hooks/use-auth-context';
 import { useUserPermissions } from '@/hooks/use-user-permissions';
 import type { PermissionEnum } from '@repo/schemas';
 import { useNavigate } from '@tanstack/react-router';
@@ -32,6 +33,7 @@ export function RoutePermissionGuard({
     redirectTo = '/dashboard',
     children
 }: RoutePermissionGuardProps) {
+    const { isLoading } = useAuthContext();
     const userPermissions = useUserPermissions();
     const navigate = useNavigate();
     const hasRedirected = useRef(false);
@@ -48,6 +50,12 @@ export function RoutePermissionGuard({
             navigate({ to: redirectTo });
         }
     }, [hasAccess, userPermissions, navigate, redirectTo]);
+
+    // While auth is loading, render nothing to prevent hydration mismatch
+    // (SSR renders null because user is null, client must match)
+    if (isLoading) {
+        return null;
+    }
 
     // While permissions are loading (empty array), show nothing
     if (userPermissions.length === 0) {

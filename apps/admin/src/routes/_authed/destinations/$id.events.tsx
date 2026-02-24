@@ -19,7 +19,15 @@ function DestinationEventsPage() {
     const { t } = useTranslations();
     const { data: destination, isLoading } = useDestinationQuery(id);
 
-    const events = Array.isArray(destination?.events) ? destination.events : [];
+    // API response may include joined relations not in base Destination type
+    const destinationWithRelations = destination as
+        | (typeof destination & {
+              events?: Array<Record<string, unknown>>;
+          })
+        | undefined;
+    const events = Array.isArray(destinationWithRelations?.events)
+        ? destinationWithRelations.events
+        : [];
 
     /**
      * Format event date to localized string

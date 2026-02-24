@@ -1,5 +1,6 @@
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { fetchApi } from '@/lib/api/client';
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 
@@ -7,13 +8,11 @@ export const Route = createFileRoute('/_authed/analytics/usage')({
     component: AnalyticsUsagePage
 });
 
-const API_BASE = '/api/v1';
-
 async function fetchMetrics(): Promise<Record<string, unknown>> {
-    const response = await fetch(`${API_BASE}/metrics`, { credentials: 'include' });
-    if (!response.ok) throw new Error('Failed to fetch metrics');
-    const json = await response.json();
-    return json.data ?? json;
+    const result = await fetchApi<{ data?: Record<string, unknown> }>({
+        path: '/api/v1/admin/metrics'
+    });
+    return result.data.data ?? (result.data as unknown as Record<string, unknown>);
 }
 
 function AnalyticsUsagePage() {

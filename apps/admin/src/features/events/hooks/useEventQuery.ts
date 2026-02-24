@@ -1,3 +1,4 @@
+import type { Event } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { fetchApi } from '@/lib/api/client';
@@ -18,8 +19,8 @@ export const eventQueryKeys = {
  * Fetch a single event by ID
  */
 async function fetchEvent(id: string) {
-    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: `/api/v1/public/events/${id}`
+    const result = await fetchApi<{ success: boolean; data: Event }>({
+        path: `/api/v1/admin/events/${id}`
     });
     return result.data.data;
 }
@@ -27,9 +28,9 @@ async function fetchEvent(id: string) {
 /**
  * Update an event
  */
-async function updateEvent(id: string, data: Record<string, unknown>) {
-    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: `/api/v1/protected/events/${id}`,
+async function updateEvent(id: string, data: Partial<Event>) {
+    const result = await fetchApi<{ success: boolean; data: Event }>({
+        path: `/api/v1/admin/events/${id}`,
         method: 'PATCH',
         body: data
     });
@@ -39,9 +40,9 @@ async function updateEvent(id: string, data: Record<string, unknown>) {
 /**
  * Create a new event
  */
-async function createEvent(data: Record<string, unknown>) {
-    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: '/api/v1/protected/events',
+async function createEvent(data: Partial<Event>) {
+    const result = await fetchApi<{ success: boolean; data: Event }>({
+        path: '/api/v1/admin/events',
         method: 'POST',
         body: data
     });
@@ -78,7 +79,7 @@ export const useUpdateEventMutation = (id: string) => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (data: Record<string, unknown>) => updateEvent(id, data),
+        mutationFn: (data: Partial<Event>) => updateEvent(id, data),
         onSuccess: (updatedData) => {
             adminLogger.debug('[EventMutation] Event updated successfully', {
                 id,
@@ -103,7 +104,7 @@ export const useCreateEventMutation = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (data: Record<string, unknown>) => createEvent(data),
+        mutationFn: (data: Partial<Event>) => createEvent(data),
         onSuccess: (data) => {
             adminLogger.debug('[EventMutation] Event created successfully', data);
 

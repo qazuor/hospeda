@@ -14,7 +14,7 @@ export const ownerPromotionsConfig: EntityConfig<OwnerPromotion> = {
     entityType: EntityType.SPONSOR,
 
     // API
-    apiEndpoint: '/api/v1/public/owner-promotions',
+    apiEndpoint: '/api/v1/admin/owner-promotions',
 
     // Routes
     basePath: '/billing/owner-promotions',

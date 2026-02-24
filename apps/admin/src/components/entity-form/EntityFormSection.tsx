@@ -113,8 +113,34 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
 
         // Dynamic import of field components based on type
         const renderField = (field: SectionConfig['fields'][0]) => {
-            const fieldValue = values[field.id];
-            const fieldError = errors[field.id];
+            // Support nested field access (e.g., 'contactInfo.personalEmail')
+            // biome-ignore lint/suspicious/noExplicitAny: Dynamic nested object access
+            const getNestedValue = (obj: any, path: string): any => {
+                return path.split('.').reduce((current, key) => current?.[key], obj);
+            };
+
+            const rawFieldValue = field.id.includes('.')
+                ? getNestedValue(values, field.id)
+                : values[field.id];
+
+            // Coalesce null to empty string for text-based fields to avoid React warning:
+            // "value prop on input should not be null"
+            const textFieldTypes = new Set([
+                FieldTypeEnum.TEXT,
+                FieldTypeEnum.TEXTAREA,
+                FieldTypeEnum.EMAIL,
+                FieldTypeEnum.PHONE,
+                FieldTypeEnum.URL,
+                FieldTypeEnum.NUMBER,
+                FieldTypeEnum.DATE,
+                FieldTypeEnum.TIME
+            ]);
+            const fieldValue =
+                rawFieldValue === null && textFieldTypes.has(field.type) ? '' : rawFieldValue;
+
+            const fieldError = field.id.includes('.')
+                ? getNestedValue(errors, field.id)
+                : errors[field.id];
             const hasError = Boolean(fieldError);
 
             // Field props for dynamic field component loading
@@ -260,6 +286,41 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
                                 {...fieldProps}
                                 value={fieldValue as string}
                             />
+                        );
+
+                    case FieldTypeEnum.URL:
+                    case FieldTypeEnum.EMAIL:
+                    case FieldTypeEnum.PHONE:
+                        return (
+                            <TextField
+                                {...fieldProps}
+                                value={fieldValue as string}
+                            />
+                        );
+
+                    case FieldTypeEnum.JSON: {
+                        const jsonStringValue =
+                            typeof fieldValue === 'string'
+                                ? fieldValue
+                                : fieldValue != null
+                                  ? JSON.stringify(fieldValue, null, 2)
+                                  : '';
+                        return (
+                            <TextareaField
+                                {...fieldProps}
+                                value={jsonStringValue}
+                            />
+                        );
+                    }
+
+                    case FieldTypeEnum.FILE:
+                        return (
+                            <div className="space-y-2 rounded-md border border-gray-300 border-dashed p-4">
+                                <div className="font-medium text-sm">{field.label || field.id}</div>
+                                <div className="text-muted-foreground text-xs">
+                                    File upload not yet implemented
+                                </div>
+                            </div>
                         );
 
                     default:

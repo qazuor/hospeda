@@ -66,8 +66,8 @@ export const useAttractionPage = (entityId: string) => {
 
     // Navigation
     const goToList = () => navigate({ to: '/content/destination-attractions' });
-    const goToView = () => navigate({ to: `/attractions/${entityId}` });
-    const goToEdit = () => navigate({ to: `/attractions/${entityId}/edit` });
+    const goToView = () => navigate({ to: `/content/destination-attractions/${entityId}` });
+    const goToEdit = () => navigate({ to: `/content/destination-attractions/${entityId}/edit` });
 
     // Get sections based on current mode
     const getSections = (): SectionConfig[] => {

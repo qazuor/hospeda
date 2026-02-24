@@ -42,7 +42,7 @@ async function fetchRates(filters: ExchangeRateFilters = {}) {
     }
 
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown>[] }>({
-        path: `/api/v1/public/exchange-rates?${params.toString()}`
+        path: `/api/v1/admin/exchange-rates?${params.toString()}`
     });
     return result.data.data;
 }
@@ -60,7 +60,7 @@ async function fetchRateHistory(filters: ExchangeRateHistoryFilters = {}) {
     }
 
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown>[] }>({
-        path: `/api/v1/protected/exchange-rates/history?${params.toString()}`
+        path: `/api/v1/admin/exchange-rates/history?${params.toString()}`
     });
     return result.data.data;
 }
@@ -70,7 +70,7 @@ async function fetchRateHistory(filters: ExchangeRateHistoryFilters = {}) {
  */
 async function fetchConfig() {
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: '/api/v1/protected/exchange-rates/config'
+        path: '/api/v1/admin/exchange-rates/config'
     });
     return result.data.data;
 }
@@ -80,7 +80,7 @@ async function fetchConfig() {
  */
 async function createManualOverride(payload: ExchangeRateCreateInput) {
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: '/api/v1/protected/exchange-rates',
+        path: '/api/v1/admin/exchange-rates',
         method: 'POST',
         body: payload
     });
@@ -92,7 +92,7 @@ async function createManualOverride(payload: ExchangeRateCreateInput) {
  */
 async function deleteManualOverride(id: string) {
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: `/api/v1/protected/exchange-rates/${id}`,
+        path: `/api/v1/admin/exchange-rates/${id}`,
         method: 'DELETE'
     });
     return result.data.data;
@@ -103,7 +103,7 @@ async function deleteManualOverride(id: string) {
  */
 async function updateConfig(payload: ExchangeRateConfigUpdateInput) {
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: '/api/v1/protected/exchange-rates/config',
+        path: '/api/v1/admin/exchange-rates/config',
         method: 'PUT',
         body: payload
     });
@@ -115,7 +115,7 @@ async function updateConfig(payload: ExchangeRateConfigUpdateInput) {
  */
 async function triggerFetchNow(): Promise<FetchNowResponse> {
     const result = await fetchApi<{ success: boolean; data: FetchNowResponse }>({
-        path: '/api/v1/protected/exchange-rates/fetch-now',
+        path: '/api/v1/admin/exchange-rates/fetch-now',
         method: 'POST'
     });
     return result.data.data;

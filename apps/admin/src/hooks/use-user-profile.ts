@@ -37,7 +37,7 @@ export function useUserProfile({ userId }: { readonly userId: string | undefined
         queryKey: userProfileQueryKeys.detail(userId ?? ''),
         queryFn: async (): Promise<UserProtected> => {
             const response = await fetchApi<unknown>({
-                path: `/api/v1/protected/users/${userId}`
+                path: `/api/v1/admin/users/${userId}`
             });
 
             const apiResponse = response.data as {
@@ -79,7 +79,7 @@ export function useUpdateUserSettings({ userId }: { readonly userId: string | un
     return useMutation({
         mutationFn: async (settings: Partial<UserSettings>): Promise<UserProtected> => {
             const response = await fetchApi<unknown>({
-                path: `/api/v1/protected/users/${userId}`,
+                path: `/api/v1/admin/users/${userId}`,
                 method: 'PATCH',
                 body: { settings }
             });

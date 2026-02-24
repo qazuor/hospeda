@@ -15,12 +15,12 @@ export const destinationsConfig: EntityConfig<Destination> = {
     entityType: EntityType.DESTINATION,
 
     // API
-    apiEndpoint: '/api/v1/public/destinations',
+    apiEndpoint: '/api/v1/admin/destinations',
     defaultFilters: { destinationType: 'CITY' },
 
     // Routes
     basePath: '/destinations',
-    detailPath: '/destinations/[slug]',
+    detailPath: '/destinations/[id]',
 
     // Schemas - Use type assertion for Zod version compatibility
     listItemSchema: DestinationListItemSchema as unknown as z.ZodSchema<Destination>,

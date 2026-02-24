@@ -4,6 +4,44 @@ import { fetchApi } from '@/lib/api/client';
 import { adminLogger } from '@/utils/logger';
 
 /**
+ * Explicit plural map for known entity types.
+ *
+ * Used to build fallback API endpoint URLs when `config.endpoint` is not provided.
+ * Avoids incorrect naive `s` suffix (e.g. "amenity" -> "amenitys" instead of "amenities").
+ *
+ * @internal
+ */
+const ENTITY_PLURAL_MAP: Readonly<Record<string, string>> = {
+    accommodation: 'accommodations',
+    amenity: 'amenities',
+    attraction: 'attractions',
+    destination: 'destinations',
+    event: 'events',
+    'event-location': 'event-locations',
+    'event-organizer': 'event-organizers',
+    feature: 'features',
+    'owner-promotion': 'owner-promotions',
+    post: 'posts',
+    sponsor: 'sponsors',
+    tag: 'tags',
+    user: 'users'
+} as const;
+
+/**
+ * Returns the pluralized entity path segment for use in API URLs.
+ * Falls back to a naive `s` suffix if the entity type is not in the known map.
+ *
+ * @param entityType - The entity type string (e.g. "amenity", "destination")
+ * @returns Pluralized path segment (e.g. "amenities", "destinations")
+ *
+ * @internal
+ */
+const getEntityPluralPath = (entityType: string): string => {
+    const normalized = entityType.toLowerCase();
+    return ENTITY_PLURAL_MAP[normalized] ?? `${normalized}s`;
+};
+
+/**
  * Configuration for entity search functionality
  */
 export type EntitySearchConfig = {
@@ -64,7 +102,8 @@ export const createEntitySearchFn = (config: EntitySearchConfig) => {
             return [];
         }
 
-        const endpoint = config.endpoint || `/api/${config.entityType.toLowerCase()}s/search`;
+        const endpoint =
+            config.endpoint || `/api/v1/admin/${getEntityPluralPath(config.entityType)}/search`;
 
         const params = new URLSearchParams({
             q: query,
@@ -124,7 +163,7 @@ export const createEntityLoadByIdsFn = (config: EntityLoadConfig) => {
                 const response = await fetchApi({
                     path:
                         config.endpoint ||
-                        `/api/v1/public/${config.entityType.toLowerCase()}s/batch`,
+                        `/api/v1/admin/${getEntityPluralPath(config.entityType)}/batch`,
                     method: 'POST',
                     body: {
                         ids,
@@ -156,7 +195,7 @@ export const createEntityLoadByIdsFn = (config: EntityLoadConfig) => {
         } else {
             // Use individual getById calls
             const baseEndpoint =
-                config.endpoint || `/api/v1/public/${config.entityType.toLowerCase()}s`;
+                config.endpoint || `/api/v1/admin/${getEntityPluralPath(config.entityType)}`;
 
             try {
                 const results = await Promise.all(
@@ -218,7 +257,8 @@ export const createPaginatedEntitySearchFn = (config: EntitySearchConfig) => {
             return { options: [], hasMore: false, total: 0 };
         }
 
-        const endpoint = config.endpoint || `/api/${config.entityType.toLowerCase()}s/search`;
+        const endpoint =
+            config.endpoint || `/api/v1/admin/${getEntityPluralPath(config.entityType)}/search`;
 
         const params = new URLSearchParams({
             q: query,

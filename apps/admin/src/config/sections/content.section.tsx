@@ -1,19 +1,23 @@
 /**
  * Content Section Configuration
  *
- * Routes: /accommodations/*, /destinations/*, /posts/*, /events/*, /attractions/*
+ * Routes: /accommodations/*, /destinations/*, /posts/*, /events/*,
+ *         /content/destination-attractions/*, /content/accommodation-amenities/*,
+ *         /content/accommodation-features/*
  */
 
 import { createSection, sidebar } from '@/lib/sections';
 import {
     AccommodationIcon,
     AddIcon,
+    CheckCircleIcon,
     ContentIcon,
     DestinationIcon,
     EventIcon,
     ListIcon,
     MapIcon,
-    PostIcon
+    PostIcon,
+    WifiIcon
 } from '@repo/icons';
 import { PermissionEnum } from '@repo/schemas';
 
@@ -31,8 +35,12 @@ export const contentSection = createSection({
         '/posts/**',
         '/events',
         '/events/**',
-        '/attractions',
-        '/attractions/**'
+        '/content/destination-attractions',
+        '/content/destination-attractions/**',
+        '/content/accommodation-amenities',
+        '/content/accommodation-amenities/**',
+        '/content/accommodation-features',
+        '/content/accommodation-features/**'
     ],
     defaultRoute: '/accommodations',
     sidebar: {
@@ -89,19 +97,61 @@ export const contentSection = createSection({
                     sidebar.link(
                         'attractions-list',
                         'Listado',
-                        '/attractions',
+                        '/content/destination-attractions',
                         <ListIcon className="h-4 w-4" />,
                         [PermissionEnum.ATTRACTION_VIEW]
                     ),
                     sidebar.link(
                         'attractions-new',
                         'Crear Nueva',
-                        '/attractions/new',
+                        '/content/destination-attractions/new',
                         <AddIcon className="h-4 w-4" />,
                         [PermissionEnum.ATTRACTION_CREATE]
                     )
                 ],
                 <MapIcon className="h-4 w-4" />
+            ),
+            sidebar.group(
+                'amenities',
+                'Amenidades',
+                [
+                    sidebar.link(
+                        'amenities-list',
+                        'Listado',
+                        '/content/accommodation-amenities',
+                        <ListIcon className="h-4 w-4" />,
+                        [PermissionEnum.AMENITY_VIEW]
+                    ),
+                    sidebar.link(
+                        'amenities-new',
+                        'Crear Nueva',
+                        '/content/accommodation-amenities/new',
+                        <AddIcon className="h-4 w-4" />,
+                        [PermissionEnum.AMENITY_CREATE]
+                    )
+                ],
+                <WifiIcon className="h-4 w-4" />
+            ),
+            sidebar.group(
+                'features',
+                'Características',
+                [
+                    sidebar.link(
+                        'features-list',
+                        'Listado',
+                        '/content/accommodation-features',
+                        <ListIcon className="h-4 w-4" />,
+                        [PermissionEnum.FEATURE_VIEW]
+                    ),
+                    sidebar.link(
+                        'features-new',
+                        'Crear Nueva',
+                        '/content/accommodation-features/new',
+                        <AddIcon className="h-4 w-4" />,
+                        [PermissionEnum.FEATURE_CREATE]
+                    )
+                ],
+                <CheckCircleIcon className="h-4 w-4" />
             ),
             sidebar.separator(),
             sidebar.group(

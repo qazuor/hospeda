@@ -14,7 +14,7 @@ export const eventLocationsConfig: EntityConfig<EventLocation> = {
     entityType: EntityType.EVENT_LOCATION,
 
     // API
-    apiEndpoint: '/api/v1/public/event-locations',
+    apiEndpoint: '/api/v1/admin/event-locations',
 
     // Routes
     basePath: '/events/locations',

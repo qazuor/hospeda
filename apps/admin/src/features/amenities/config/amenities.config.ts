@@ -11,7 +11,7 @@ export const amenitiesConfig: EntityConfig<Amenity> = {
     entityType: EntityType.AMENITY,
 
     // API
-    apiEndpoint: '/api/v1/public/amenities',
+    apiEndpoint: '/api/v1/admin/amenities',
 
     // Routes
     basePath: '/content/accommodation-amenities',

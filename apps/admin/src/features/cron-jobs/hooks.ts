@@ -23,7 +23,7 @@ export const cronJobQueryKeys = {
  */
 async function fetchCronJobs(): Promise<CronJobsListResponse> {
     const result = await fetchApi<CronJobsListResponse>({
-        path: '/api/v1/cron'
+        path: '/api/v1/admin/cron'
     });
     return result.data;
 }
@@ -42,7 +42,7 @@ async function triggerCronJob({
     if (dryRun) {
         params.append('dryRun', 'true');
     }
-    const url = `/api/v1/cron/${jobName}${params.toString() ? `?${params.toString()}` : ''}`;
+    const url = `/api/v1/admin/cron/${jobName}${params.toString() ? `?${params.toString()}` : ''}`;
     const result = await fetchApi<TriggerCronJobResponse>({ path: url, method: 'POST' });
     return result.data;
 }

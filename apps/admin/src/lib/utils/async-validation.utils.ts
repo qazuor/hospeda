@@ -28,44 +28,134 @@ export type ValidationContext = {
 };
 
 /**
- * Generic unique validator configuration
+ * Generic unique validator configuration.
+ *
+ * @remarks
+ * The `endpoint` field is REQUIRED. There are no default validation endpoints in the API.
+ * Callers must provide the full path to a real API endpoint, e.g.:
+ * `/api/v1/admin/destinations/validate/unique`
+ *
+ * The endpoint must accept query params: `field`, `value`, and optionally `excludeId`.
+ * It must return `{ isUnique: boolean }`.
  */
 export type UniqueValidatorConfig = {
     entityType: string;
     field: string;
-    endpoint?: string;
+    /** Full API path to the unique validation endpoint. Required - no default exists. */
+    endpoint: string;
     excludeId?: string;
 };
 
 /**
- * Generic exists validator configuration
+ * Generic exists validator configuration.
+ *
+ * @remarks
+ * The `endpoint` field is REQUIRED. There are no default `/exists` endpoints in the API.
+ * Callers must provide the full path template where the entity ID will be appended, e.g.:
+ * `/api/v1/admin/destinations` (the validator will append `/${value}/exists`)
+ *
+ * The endpoint must return `{ exists: boolean }`.
  */
 export type ExistsValidatorConfig = {
     entityType: string;
-    endpoint?: string;
+    /** Full API path prefix for the exists endpoint. Required - no default exists. */
+    endpoint: string;
 };
 
 /**
- * Generic relationship validator configuration
+ * Generic relationship validator configuration.
+ *
+ * @remarks
+ * The `endpoint` field is REQUIRED. There are no default `/accessible` endpoints in the API.
+ * Callers must provide the full path template where the entity ID will be appended, e.g.:
+ * `/api/v1/admin/users` (the validator will append `/${value}/accessible`)
+ *
+ * The endpoint must accept a POST body of `{ requiredPermissions: string[] }` and
+ * return `{ accessible: boolean }`.
  */
 export type RelationshipValidatorConfig = {
     entityType: string;
-    endpoint?: string;
+    /** Full API path prefix for the accessible endpoint. Required - no default exists. */
+    endpoint: string;
     requiredPermissions?: string[];
 };
 
 /**
- * Generic unique validator
- * Validates that a field value is unique across all entities of a type
+ * Configuration for server-side email validation.
+ * Only used when `checkDomain` is true.
  *
- * @param config - Configuration for the unique validator
- * @returns Async validator function
+ * @remarks
+ * The `endpoint` field is REQUIRED when `checkDomain` is true.
+ * There is no default `/api/v1/admin/validation/email` endpoint in the API.
+ */
+export type EmailValidatorServerConfig = {
+    /** Full API path to the email validation endpoint. Required when checkDomain is true. */
+    endpoint: string;
+    checkDomain: true;
+};
+
+/**
+ * Configuration for client-side only email validation.
+ * No server request is made.
+ */
+export type EmailValidatorClientConfig = {
+    endpoint?: never;
+    checkDomain?: false;
+};
+
+export type EmailValidatorConfig = EmailValidatorServerConfig | EmailValidatorClientConfig;
+
+/**
+ * Configuration for server-side URL reachability validation.
+ * Only used when `checkReachability` is true.
+ *
+ * @remarks
+ * The `endpoint` field is REQUIRED when `checkReachability` is true.
+ * There is no default `/api/v1/admin/validation/url` endpoint in the API.
+ */
+export type UrlValidatorServerConfig = {
+    /** Full API path to the URL validation endpoint. Required when checkReachability is true. */
+    endpoint: string;
+    checkReachability: true;
+    allowedProtocols?: string[];
+};
+
+/**
+ * Configuration for client-side only URL validation.
+ * No server request is made.
+ */
+export type UrlValidatorClientConfig = {
+    endpoint?: never;
+    checkReachability?: false;
+    allowedProtocols?: string[];
+};
+
+export type UrlValidatorConfig = UrlValidatorServerConfig | UrlValidatorClientConfig;
+
+/**
+ * Generic unique validator.
+ * Validates that a field value is unique across all entities of a type.
+ *
+ * @remarks
+ * Requires a real API endpoint via `config.endpoint`. No default endpoint exists.
+ * The endpoint must accept query params `field`, `value`, and optionally `excludeId`,
+ * and return `{ isUnique: boolean }`.
+ *
+ * @param config - Configuration including the required `endpoint`
+ * @returns Async validator function that resolves to `true` if the value is unique
+ *
+ * @example
+ * ```ts
+ * createUniqueValidator({
+ *   entityType: 'destination',
+ *   field: 'slug',
+ *   endpoint: '/api/v1/admin/destinations/validate/unique',
+ * });
+ * ```
  */
 export const createUniqueValidator = (config: UniqueValidatorConfig): AsyncValidatorFn => {
     return async (value: unknown, context?: ValidationContext) => {
         if (!value || typeof value !== 'string') return true;
-
-        const endpoint = config.endpoint || `/api/${config.entityType}/validate/unique`;
 
         const params = new URLSearchParams({
             field: config.field,
@@ -75,7 +165,7 @@ export const createUniqueValidator = (config: UniqueValidatorConfig): AsyncValid
         });
 
         try {
-            const response = await fetchApi({ path: `${endpoint}?${params}` });
+            const response = await fetchApi({ path: `${config.endpoint}?${params}` });
             return (response.data as { isUnique: boolean }).isUnique;
         } catch (error) {
             adminLogger.error('Unique validation error', error);
@@ -85,20 +175,32 @@ export const createUniqueValidator = (config: UniqueValidatorConfig): AsyncValid
 };
 
 /**
- * Generic exists validator
- * Validates that an entity with the given ID exists
+ * Generic exists validator.
+ * Validates that an entity with the given ID exists.
  *
- * @param config - Configuration for the exists validator
- * @returns Async validator function
+ * @remarks
+ * Requires a real API endpoint via `config.endpoint`. No default endpoint exists.
+ * The validator appends `/${value}/exists` to the provided endpoint path.
+ * The endpoint must return `{ exists: boolean }`.
+ *
+ * @param config - Configuration including the required `endpoint`
+ * @returns Async validator function that resolves to `true` if the entity exists
+ *
+ * @example
+ * ```ts
+ * createExistsValidator({
+ *   entityType: 'destination',
+ *   endpoint: '/api/v1/admin/destinations',
+ *   // Will call GET /api/v1/admin/destinations/${value}/exists
+ * });
+ * ```
  */
 export const createExistsValidator = (config: ExistsValidatorConfig): AsyncValidatorFn => {
     return async (value: unknown) => {
         if (!value || typeof value !== 'string') return true;
 
-        const endpoint = config.endpoint || `/api/${config.entityType}/${value}/exists`;
-
         try {
-            const response = await fetchApi({ path: endpoint });
+            const response = await fetchApi({ path: `${config.endpoint}/${value}/exists` });
             return (response.data as { exists: boolean }).exists;
         } catch (error) {
             adminLogger.error('Exists validation error', error);
@@ -108,11 +210,27 @@ export const createExistsValidator = (config: ExistsValidatorConfig): AsyncValid
 };
 
 /**
- * Generic relationship validator
- * Checks if related entity exists and is accessible with required permissions
+ * Generic relationship validator.
+ * Checks if related entity exists and is accessible with required permissions.
  *
- * @param config - Configuration for the relationship validator
- * @returns Async validator function
+ * @remarks
+ * Requires a real API endpoint via `config.endpoint`. No default endpoint exists.
+ * The validator appends `/${value}/accessible` to the provided endpoint path.
+ * The endpoint must accept POST `{ requiredPermissions: string[] }` and return
+ * `{ accessible: boolean }`.
+ *
+ * @param config - Configuration including the required `endpoint`
+ * @returns Async validator function that resolves to `true` if the entity is accessible
+ *
+ * @example
+ * ```ts
+ * createRelationshipValidator({
+ *   entityType: 'user',
+ *   endpoint: '/api/v1/admin/users',
+ *   requiredPermissions: ['user.view'],
+ *   // Will call POST /api/v1/admin/users/${value}/accessible
+ * });
+ * ```
  */
 export const createRelationshipValidator = (
     config: RelationshipValidatorConfig
@@ -120,11 +238,9 @@ export const createRelationshipValidator = (
     return async (value: unknown, _context?: ValidationContext) => {
         if (!value || typeof value !== 'string') return true;
 
-        const endpoint = config.endpoint || `/api/${config.entityType}/${value}/accessible`;
-
         try {
             const response = await fetchApi({
-                path: endpoint,
+                path: `${config.endpoint}/${value}/accessible`,
                 method: 'POST',
                 body: {
                     requiredPermissions: config.requiredPermissions || []
@@ -139,15 +255,20 @@ export const createRelationshipValidator = (
 };
 
 /**
- * Email format validator (async version for server-side validation)
+ * Email format validator (async version for optional server-side domain validation).
  *
- * @param config - Optional configuration
- * @returns Async validator function
+ * @remarks
+ * When `checkDomain` is false (default), only client-side regex validation is performed.
+ * No API call is made, so no endpoint is needed.
+ *
+ * When `checkDomain` is true, a server-side request is made. In this case `endpoint`
+ * is REQUIRED. There is no default `/api/v1/admin/validation/email` endpoint in the API.
+ * The endpoint must accept POST `{ email: string }` and return `{ isValid: boolean }`.
+ *
+ * @param config - Optional configuration; `endpoint` required only when `checkDomain` is true
+ * @returns Async validator function that resolves to `true` if the email is valid
  */
-export const createEmailValidator = (config?: {
-    endpoint?: string;
-    checkDomain?: boolean;
-}): AsyncValidatorFn => {
+export const createEmailValidator = (config?: EmailValidatorConfig): AsyncValidatorFn => {
     return async (value: unknown) => {
         if (!value || typeof value !== 'string') return true;
 
@@ -157,11 +278,9 @@ export const createEmailValidator = (config?: {
 
         // If domain checking is enabled, validate with server
         if (config?.checkDomain) {
-            const endpoint = config.endpoint || '/api/validation/email';
-
             try {
                 const response = await fetchApi({
-                    path: endpoint,
+                    path: config.endpoint,
                     method: 'POST',
                     body: { email: value }
                 });
@@ -177,16 +296,20 @@ export const createEmailValidator = (config?: {
 };
 
 /**
- * URL validator (async version for server-side validation)
+ * URL validator (async version for optional server-side reachability check).
  *
- * @param config - Optional configuration
- * @returns Async validator function
+ * @remarks
+ * When `checkReachability` is false (default), only client-side URL parsing is performed.
+ * No API call is made, so no endpoint is needed.
+ *
+ * When `checkReachability` is true, a server-side request is made. In this case `endpoint`
+ * is REQUIRED. There is no default `/api/v1/admin/validation/url` endpoint in the API.
+ * The endpoint must accept POST `{ url: string }` and return `{ isReachable: boolean }`.
+ *
+ * @param config - Optional configuration; `endpoint` required only when `checkReachability` is true
+ * @returns Async validator function that resolves to `true` if the URL is valid
  */
-export const createUrlValidator = (config?: {
-    endpoint?: string;
-    checkReachability?: boolean;
-    allowedProtocols?: string[];
-}): AsyncValidatorFn => {
+export const createUrlValidator = (config?: UrlValidatorConfig): AsyncValidatorFn => {
     return async (value: unknown) => {
         if (!value || typeof value !== 'string') return true;
 
@@ -200,11 +323,9 @@ export const createUrlValidator = (config?: {
 
             // If reachability checking is enabled, validate with server
             if (config?.checkReachability) {
-                const endpoint = config.endpoint || '/api/validation/url';
-
                 try {
                     const response = await fetchApi({
-                        path: endpoint,
+                        path: config.endpoint,
                         method: 'POST',
                         body: { url: value }
                     });
@@ -223,86 +344,35 @@ export const createUrlValidator = (config?: {
 };
 
 /**
- * Predefined common async validators
- * These are ready-to-use validators for common scenarios
+ * Predefined common async validators.
+ *
+ * @remarks
+ * Validators that require server-side checks (`uniqueSlug`, `uniqueEmail`, `uniqueName`,
+ * `destinationExists`, `userExists`, `eventExists`, `postExists`, `featureExists`,
+ * `amenityExists`, `tagExists`, `ownerAccessible`) are NOT included here because they
+ * depend on real API endpoints that must be provided by the caller.
+ *
+ * Use `createUniqueValidator`, `createExistsValidator`, or `createRelationshipValidator`
+ * directly, providing the `endpoint` for the specific entity route.
+ *
+ * Only validators that can run fully client-side are included.
  */
 export const commonAsyncValidators = {
     /**
-     * Validates that a slug is unique for the given entity type
+     * Validates email format (client-side only, no server request).
      */
-    uniqueSlug: (entityType: string, excludeId?: string) =>
-        createUniqueValidator({ entityType, field: 'slug', excludeId }),
+    validEmail: () => createEmailValidator(),
 
     /**
-     * Validates that an email is unique for the given entity type
+     * Validates URL format and optionally checks allowed protocols (client-side only).
+     *
+     * @param allowedProtocols - Protocols to allow (default: http and https)
      */
-    uniqueEmail: (entityType: string, excludeId?: string) =>
-        createUniqueValidator({ entityType, field: 'email', excludeId }),
-
-    /**
-     * Validates that a name is unique for the given entity type
-     */
-    uniqueName: (entityType: string, excludeId?: string) =>
-        createUniqueValidator({ entityType, field: 'name', excludeId }),
-
-    /**
-     * Validates that a destination exists and is accessible
-     */
-    destinationExists: () => createExistsValidator({ entityType: 'destinations' }),
-
-    /**
-     * Validates that a user exists and is accessible
-     */
-    userExists: () => createExistsValidator({ entityType: 'users' }),
-
-    /**
-     * Validates that an event exists and is accessible
-     */
-    eventExists: () => createExistsValidator({ entityType: 'events' }),
-
-    /**
-     * Validates that a post exists and is accessible
-     */
-    postExists: () => createExistsValidator({ entityType: 'posts' }),
-
-    /**
-     * Validates that a feature exists and is accessible
-     */
-    featureExists: () => createExistsValidator({ entityType: 'features' }),
-
-    /**
-     * Validates that an amenity exists and is accessible
-     */
-    amenityExists: () => createExistsValidator({ entityType: 'amenities' }),
-
-    /**
-     * Validates that a tag exists and is accessible
-     */
-    tagExists: () => createExistsValidator({ entityType: 'tags' }),
-
-    /**
-     * Validates that an owner (user) is accessible with proper permissions
-     */
-    ownerAccessible: () =>
-        createRelationshipValidator({
-            entityType: 'users',
-            requiredPermissions: ['user.view']
-        }),
-
-    /**
-     * Validates email format and optionally domain
-     */
-    validEmail: (checkDomain = false) => createEmailValidator({ checkDomain }),
-
-    /**
-     * Validates URL format and optionally reachability
-     */
-    validUrl: (checkReachability = false, allowedProtocols = ['http:', 'https:']) =>
-        createUrlValidator({ checkReachability, allowedProtocols })
+    validUrl: (allowedProtocols = ['http:', 'https:']) => createUrlValidator({ allowedProtocols })
 };
 
 /**
- * Utility to create a debounced async validator
+ * Utility to create a debounced async validator.
  *
  * @param validator - The async validator function
  * @param debounceMs - Debounce delay in milliseconds
@@ -332,7 +402,7 @@ export const createDebouncedValidator = (
 };
 
 /**
- * Utility to combine multiple async validators with AND logic
+ * Utility to combine multiple async validators with AND logic.
  *
  * @param validators - Array of async validator functions
  * @returns Combined validator function
@@ -348,7 +418,7 @@ export const combineAsyncValidators = (validators: AsyncValidatorFn[]): AsyncVal
 };
 
 /**
- * Utility to combine multiple async validators with OR logic
+ * Utility to combine multiple async validators with OR logic.
  *
  * @param validators - Array of async validator functions
  * @returns Combined validator function

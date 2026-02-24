@@ -1,3 +1,4 @@
+import type { PostSponsor } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { fetchApi } from '@/lib/api/client';
@@ -17,8 +18,8 @@ export const sponsorQueryKeys = {
  * Fetch a single sponsor by ID
  */
 async function fetchSponsor(id: string) {
-    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: `/api/v1/public/sponsors/${id}`
+    const result = await fetchApi<{ success: boolean; data: PostSponsor }>({
+        path: `/api/v1/admin/post-sponsors/${id}`
     });
     return result.data.data;
 }
@@ -26,9 +27,9 @@ async function fetchSponsor(id: string) {
 /**
  * Update a sponsor
  */
-async function updateSponsor(id: string, data: Record<string, unknown>) {
-    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: `/api/v1/protected/sponsors/${id}`,
+async function updateSponsor(id: string, data: Partial<PostSponsor>) {
+    const result = await fetchApi<{ success: boolean; data: PostSponsor }>({
+        path: `/api/v1/admin/post-sponsors/${id}`,
         method: 'PATCH',
         body: data
     });
@@ -38,9 +39,9 @@ async function updateSponsor(id: string, data: Record<string, unknown>) {
 /**
  * Create a new sponsor
  */
-async function createSponsor(data: Record<string, unknown>) {
-    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: '/api/v1/protected/sponsors',
+async function createSponsor(data: Partial<PostSponsor>) {
+    const result = await fetchApi<{ success: boolean; data: PostSponsor }>({
+        path: '/api/v1/admin/post-sponsors',
         method: 'POST',
         body: data
     });
@@ -52,7 +53,7 @@ async function createSponsor(data: Record<string, unknown>) {
  */
 async function deleteSponsor(id: string) {
     await fetchApi<{ success: boolean }>({
-        path: `/api/v1/admin/sponsors/${id}`,
+        path: `/api/v1/admin/post-sponsors/${id}`,
         method: 'DELETE'
     });
     return true;
@@ -77,7 +78,7 @@ export const useUpdateSponsorMutation = (id: string) => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (data: Record<string, unknown>) => updateSponsor(id, data),
+        mutationFn: (data: Partial<PostSponsor>) => updateSponsor(id, data),
         onSuccess: (updatedData) => {
             // Update the cache with new data
             queryClient.setQueryData(sponsorQueryKeys.detail(id), updatedData);
@@ -94,7 +95,7 @@ export const useCreateSponsorMutation = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (data: Record<string, unknown>) => createSponsor(data),
+        mutationFn: (data: Partial<PostSponsor>) => createSponsor(data),
         onSuccess: () => {
             // Invalidate list queries to refetch
             queryClient.invalidateQueries({ queryKey: sponsorQueryKeys.lists() });

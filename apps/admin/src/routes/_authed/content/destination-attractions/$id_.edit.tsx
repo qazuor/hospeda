@@ -9,7 +9,7 @@ import { createFileRoute } from '@tanstack/react-router';
 /**
  * Attraction Edit Route Configuration
  */
-export const Route = createFileRoute('/_authed/attractions/$id_/edit')({
+export const Route = createFileRoute('/_authed/content/destination-attractions/$id_/edit')({
     component: AttractionEditPage,
     loader: async ({ params }) => ({ attractionId: params.id }),
     errorComponent: createErrorComponent('Attraction'),
@@ -21,7 +21,6 @@ export const Route = createFileRoute('/_authed/attractions/$id_/edit')({
  */
 function AttractionEditPage() {
     const { id } = Route.useParams();
-    // Use the hook at the top level
     const entityData = useAttractionPage(id);
 
     return (

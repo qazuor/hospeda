@@ -27,7 +27,7 @@ async function fetchSponsorSummary(): Promise<SponsorSummary> {
         success: boolean;
         data: { items?: { impressions?: number; clicks?: number; amount?: number }[] };
     }>({
-        path: '/api/v1/sponsorships?status=ACTIVE'
+        path: '/api/v1/admin/sponsorships?status=ACTIVE'
     });
     const sponsorships = result.data.data?.items || [];
 
@@ -71,7 +71,7 @@ async function fetchSponsorSponsorships(
         success: boolean;
         data: { items: SponsorSponsorship[]; pagination: { total: number } };
     }>({
-        path: `/api/v1/sponsorships?${params.toString()}`
+        path: `/api/v1/admin/sponsorships?${params.toString()}`
     });
     return result.data.data;
 }
@@ -79,7 +79,7 @@ async function fetchSponsorSponsorships(
 /**
  * Fetch sponsor analytics
  * Returns an empty array until the analytics API endpoint is implemented.
- * Pending: GET /api/v1/sponsorships/:id/analytics
+ * Pending: GET /api/v1/admin/sponsorships/:id/analytics
  */
 async function fetchSponsorAnalytics(): Promise<SponsorAnalytics[]> {
     return [];

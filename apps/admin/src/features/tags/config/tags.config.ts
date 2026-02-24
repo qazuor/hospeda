@@ -11,7 +11,7 @@ export const tagsConfig: EntityConfig<Tag> = {
     entityType: EntityType.TAG,
 
     // API
-    apiEndpoint: '/api/v1/public/tags',
+    apiEndpoint: '/api/v1/admin/tags',
 
     // Routes
     basePath: '/settings/tags',

@@ -1,3 +1,4 @@
+import type { EventLocation } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { fetchApi } from '@/lib/api/client';
@@ -18,8 +19,8 @@ export const eventLocationQueryKeys = {
  * Fetch a single event location by ID
  */
 async function fetchEventLocation(id: string) {
-    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: `/api/v1/public/event-locations/${id}`
+    const result = await fetchApi<{ success: boolean; data: EventLocation }>({
+        path: `/api/v1/admin/event-locations/${id}`
     });
     return result.data.data;
 }
@@ -27,9 +28,9 @@ async function fetchEventLocation(id: string) {
 /**
  * Update an event location
  */
-async function updateEventLocation(id: string, data: Record<string, unknown>) {
-    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: `/api/v1/protected/event-locations/${id}`,
+async function updateEventLocation(id: string, data: Partial<EventLocation>) {
+    const result = await fetchApi<{ success: boolean; data: EventLocation }>({
+        path: `/api/v1/admin/event-locations/${id}`,
         method: 'PATCH',
         body: data
     });
@@ -39,9 +40,9 @@ async function updateEventLocation(id: string, data: Record<string, unknown>) {
 /**
  * Create a new event location
  */
-async function createEventLocation(data: Record<string, unknown>) {
-    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: '/api/v1/protected/event-locations',
+async function createEventLocation(data: Partial<EventLocation>) {
+    const result = await fetchApi<{ success: boolean; data: EventLocation }>({
+        path: '/api/v1/admin/event-locations',
         method: 'POST',
         body: data
     });
@@ -78,7 +79,7 @@ export const useUpdateEventLocationMutation = (id: string) => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (data: Record<string, unknown>) => updateEventLocation(id, data),
+        mutationFn: (data: Partial<EventLocation>) => updateEventLocation(id, data),
         onSuccess: (updatedData) => {
             // Update the cache with new data
             queryClient.setQueryData(eventLocationQueryKeys.detail(id), updatedData);
@@ -95,7 +96,7 @@ export const useCreateEventLocationMutation = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (data: Record<string, unknown>) => createEventLocation(data),
+        mutationFn: (data: Partial<EventLocation>) => createEventLocation(data),
         onSuccess: () => {
             // Invalidate list queries to refetch
             queryClient.invalidateQueries({ queryKey: eventLocationQueryKeys.lists() });

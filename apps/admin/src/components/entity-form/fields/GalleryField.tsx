@@ -389,15 +389,10 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
                                         each
                                     </p>
                                 </div>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    disabled={disabled}
-                                >
-                                    <UploadIcon className="mr-2 h-4 w-4" />
+                                <span className="inline-flex h-8 items-center justify-center gap-2 rounded-md border border-input bg-background px-3 font-medium text-xs ring-offset-background hover:bg-accent hover:text-accent-foreground">
+                                    <UploadIcon className="h-4 w-4" />
                                     Select Images
-                                </Button>
+                                </span>
                             </div>
                         )}
                     </button>

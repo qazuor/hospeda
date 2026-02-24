@@ -2,6 +2,7 @@ import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { fetchApi } from '@/lib/api/client';
 import { useMutation, useQueries, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 
@@ -9,28 +10,22 @@ export const Route = createFileRoute('/_authed/analytics/debug')({
     component: AnalyticsDebugPage
 });
 
-const API_BASE = '/api/v1';
-
 async function fetchHealth(): Promise<Record<string, unknown>> {
-    const response = await fetch(`${API_BASE}/health`, { credentials: 'include' });
-    if (!response.ok) throw new Error('Failed to fetch health');
-    const json = await response.json();
-    return json.data ?? json;
+    const result = await fetchApi<{ data?: Record<string, unknown> }>({
+        path: '/api/v1/health'
+    });
+    return result.data.data ?? (result.data as unknown as Record<string, unknown>);
 }
 
 async function fetchDbHealth(): Promise<Record<string, unknown>> {
-    const response = await fetch(`${API_BASE}/health/db`, { credentials: 'include' });
-    if (!response.ok) throw new Error('Failed to fetch DB health');
-    const json = await response.json();
-    return json.data ?? json;
+    const result = await fetchApi<{ data?: Record<string, unknown> }>({
+        path: '/api/v1/health/db'
+    });
+    return result.data.data ?? (result.data as unknown as Record<string, unknown>);
 }
 
 async function resetMetrics(): Promise<void> {
-    const response = await fetch(`${API_BASE}/metrics/reset`, {
-        method: 'POST',
-        credentials: 'include'
-    });
-    if (!response.ok) throw new Error('Failed to reset metrics');
+    await fetchApi({ path: '/api/v1/admin/metrics/reset', method: 'POST' });
 }
 
 function AnalyticsDebugPage() {

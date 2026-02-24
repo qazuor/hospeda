@@ -1,3 +1,4 @@
+import type { EventOrganizer } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { fetchApi } from '@/lib/api/client';
@@ -18,8 +19,8 @@ export const eventOrganizerQueryKeys = {
  * Fetch a single event organizer by ID
  */
 async function fetchEventOrganizer(id: string) {
-    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: `/api/v1/public/event-organizers/${id}`
+    const result = await fetchApi<{ success: boolean; data: EventOrganizer }>({
+        path: `/api/v1/admin/event-organizers/${id}`
     });
     return result.data.data;
 }
@@ -27,9 +28,9 @@ async function fetchEventOrganizer(id: string) {
 /**
  * Update an event organizer
  */
-async function updateEventOrganizer(id: string, data: Record<string, unknown>) {
-    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: `/api/v1/protected/event-organizers/${id}`,
+async function updateEventOrganizer(id: string, data: Partial<EventOrganizer>) {
+    const result = await fetchApi<{ success: boolean; data: EventOrganizer }>({
+        path: `/api/v1/admin/event-organizers/${id}`,
         method: 'PATCH',
         body: data
     });
@@ -39,9 +40,9 @@ async function updateEventOrganizer(id: string, data: Record<string, unknown>) {
 /**
  * Create a new event organizer
  */
-async function createEventOrganizer(data: Record<string, unknown>) {
-    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: '/api/v1/protected/event-organizers',
+async function createEventOrganizer(data: Partial<EventOrganizer>) {
+    const result = await fetchApi<{ success: boolean; data: EventOrganizer }>({
+        path: '/api/v1/admin/event-organizers',
         method: 'POST',
         body: data
     });
@@ -78,7 +79,7 @@ export const useUpdateEventOrganizerMutation = (id: string) => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (data: Record<string, unknown>) => updateEventOrganizer(id, data),
+        mutationFn: (data: Partial<EventOrganizer>) => updateEventOrganizer(id, data),
         onSuccess: (updatedData) => {
             // Update the cache with new data
             queryClient.setQueryData(eventOrganizerQueryKeys.detail(id), updatedData);
@@ -95,7 +96,7 @@ export const useCreateEventOrganizerMutation = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (data: Record<string, unknown>) => createEventOrganizer(data),
+        mutationFn: (data: Partial<EventOrganizer>) => createEventOrganizer(data),
         onSuccess: () => {
             // Invalidate list queries to refetch
             queryClient.invalidateQueries({ queryKey: eventOrganizerQueryKeys.lists() });

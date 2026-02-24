@@ -17,8 +17,8 @@ export const createDestinationsColumns = (): readonly ColumnConfig<Destination>[
             color: BadgeColor.GREEN
         },
         linkHandler: (row) => ({
-            to: '/destinations/$slug',
-            params: { slug: row.slug }
+            to: '/destinations/$id',
+            params: { id: row.id }
         })
     },
     {

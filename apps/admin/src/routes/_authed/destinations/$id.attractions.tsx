@@ -57,7 +57,7 @@ function DestinationAttractionsPage() {
                                 <div className="flex-1">
                                     <div className="mb-1">
                                         <Link
-                                            to="/attractions/$id"
+                                            to="/content/destination-attractions/$id"
                                             params={{ id: String(attraction.id) }}
                                             className="font-medium text-primary hover:underline"
                                         >

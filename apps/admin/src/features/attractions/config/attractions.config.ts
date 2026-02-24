@@ -11,11 +11,11 @@ export const attractionsConfig: EntityConfig<Attraction> = {
     entityType: EntityType.ATTRACTION,
 
     // API
-    apiEndpoint: '/api/v1/public/attractions',
+    apiEndpoint: '/api/v1/admin/attractions',
 
     // Routes
     basePath: '/content/destination-attractions',
-    detailPath: '/attractions/[slug]',
+    detailPath: '/content/destination-attractions/[id]',
 
     // Schemas - Use type assertion for Zod version compatibility
     listItemSchema: AttractionListItemSchema as unknown as z.ZodSchema<Attraction>,
@@ -51,7 +51,7 @@ export const attractionsConfig: EntityConfig<Attraction> = {
     layoutConfig: {
         showBreadcrumbs: true,
         showCreateButton: true,
-        createButtonPath: '/attractions/new'
+        createButtonPath: '/content/destination-attractions/new'
     },
 
     // Columns

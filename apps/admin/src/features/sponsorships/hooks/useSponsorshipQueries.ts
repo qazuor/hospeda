@@ -43,7 +43,7 @@ async function fetchSponsorships(filters: Record<string, unknown> = {}) {
         success: boolean;
         data: { items: Record<string, unknown>[]; pagination: Record<string, unknown> };
     }>({
-        path: `/api/v1/sponsorships?${params.toString()}`
+        path: `/api/v1/admin/sponsorships?${params.toString()}`
     });
     return result.data.data;
 }
@@ -64,7 +64,7 @@ async function fetchSponsorshipLevels(filters: Record<string, unknown> = {}) {
         success: boolean;
         data: { items: Record<string, unknown>[]; pagination: Record<string, unknown> };
     }>({
-        path: `/api/v1/public/sponsorship-levels?${params.toString()}`
+        path: `/api/v1/admin/sponsorship-levels?${params.toString()}`
     });
     return result.data.data;
 }
@@ -85,7 +85,7 @@ async function fetchSponsorshipPackages(filters: Record<string, unknown> = {}) {
         success: boolean;
         data: { items: Record<string, unknown>[]; pagination: Record<string, unknown> };
     }>({
-        path: `/api/v1/public/sponsorship-packages?${params.toString()}`
+        path: `/api/v1/admin/sponsorship-packages?${params.toString()}`
     });
     return result.data.data;
 }
@@ -95,7 +95,7 @@ async function fetchSponsorshipPackages(filters: Record<string, unknown> = {}) {
  */
 async function updateSponsorshipStatus(id: string, status: string) {
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: `/api/v1/sponsorships/${id}`,
+        path: `/api/v1/admin/sponsorships/${id}`,
         method: 'PATCH',
         body: { status }
     });

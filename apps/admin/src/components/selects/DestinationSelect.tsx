@@ -103,8 +103,8 @@ export const DestinationSelect: FC<DestinationSelectProps> = ({
 }) => {
     // Build endpoint with optional featured filter
     const endpoint = onlyFeatured
-        ? '/api/v1/public/destinations?featured=true'
-        : '/api/v1/public/destinations';
+        ? '/api/v1/admin/destinations?featured=true'
+        : '/api/v1/admin/destinations';
 
     // Build query key with featured filter
     const queryKey = onlyFeatured ? ['destinations', 'list', 'featured'] : ['destinations', 'list'];

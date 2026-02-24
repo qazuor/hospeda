@@ -1,3 +1,4 @@
+import type { Attraction } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { fetchApi } from '@/lib/api/client';
@@ -17,8 +18,8 @@ export const attractionQueryKeys = {
  * Fetch a single attraction by ID
  */
 async function fetchAttraction(id: string) {
-    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: `/api/v1/public/attractions/${id}`
+    const result = await fetchApi<{ success: boolean; data: Attraction }>({
+        path: `/api/v1/admin/attractions/${id}`
     });
     return result.data.data;
 }
@@ -26,9 +27,9 @@ async function fetchAttraction(id: string) {
 /**
  * Update an attraction
  */
-async function updateAttraction(id: string, data: Record<string, unknown>) {
-    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: `/api/v1/protected/attractions/${id}`,
+async function updateAttraction(id: string, data: Partial<Attraction>) {
+    const result = await fetchApi<{ success: boolean; data: Attraction }>({
+        path: `/api/v1/admin/attractions/${id}`,
         method: 'PATCH',
         body: data
     });
@@ -38,9 +39,9 @@ async function updateAttraction(id: string, data: Record<string, unknown>) {
 /**
  * Create a new attraction
  */
-async function createAttraction(data: Record<string, unknown>) {
-    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: '/api/v1/protected/attractions',
+async function createAttraction(data: Partial<Attraction>) {
+    const result = await fetchApi<{ success: boolean; data: Attraction }>({
+        path: '/api/v1/admin/attractions',
         method: 'POST',
         body: data
     });
@@ -77,7 +78,7 @@ export const useUpdateAttractionMutation = (id: string) => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (data: Record<string, unknown>) => updateAttraction(id, data),
+        mutationFn: (data: Partial<Attraction>) => updateAttraction(id, data),
         onSuccess: (updatedData) => {
             // Update the cache with new data
             queryClient.setQueryData(attractionQueryKeys.detail(id), updatedData);
@@ -94,7 +95,7 @@ export const useCreateAttractionMutation = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (data: Record<string, unknown>) => createAttraction(data),
+        mutationFn: (data: Partial<Attraction>) => createAttraction(data),
         onSuccess: () => {
             // Invalidate list queries to refetch
             queryClient.invalidateQueries({ queryKey: attractionQueryKeys.lists() });

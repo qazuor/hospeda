@@ -14,8 +14,8 @@ export const createEventsColumns = (): readonly ColumnConfig<Event>[] => [
             color: BadgeColor.ORANGE
         },
         linkHandler: (row) => ({
-            to: '/events/$slug',
-            params: { slug: row.slug }
+            to: '/events/$id',
+            params: { id: row.id }
         })
     },
     {

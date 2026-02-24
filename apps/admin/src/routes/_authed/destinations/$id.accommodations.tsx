@@ -19,8 +19,14 @@ function DestinationAccommodationsPage() {
     const { t } = useTranslations();
     const { data: destination, isLoading } = useDestinationQuery(id);
 
-    const accommodations = Array.isArray(destination?.accommodations)
-        ? destination.accommodations
+    // API response may include joined relations not in base Destination type
+    const destinationWithRelations = destination as
+        | (typeof destination & {
+              accommodations?: Array<Record<string, unknown>>;
+          })
+        | undefined;
+    const accommodations = Array.isArray(destinationWithRelations?.accommodations)
+        ? destinationWithRelations.accommodations
         : [];
 
     return (

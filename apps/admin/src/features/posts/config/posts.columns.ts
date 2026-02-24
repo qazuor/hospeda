@@ -14,8 +14,8 @@ export const createPostsColumns = (): readonly ColumnConfig<Post>[] => [
             color: BadgeColor.INDIGO
         },
         linkHandler: (row) => ({
-            to: '/posts/$slug',
-            params: { slug: row.slug }
+            to: '/posts/$id',
+            params: { id: row.id }
         })
     },
     {
