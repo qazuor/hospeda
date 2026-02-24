@@ -34,6 +34,13 @@
             "restricted": "Restricted"
         }
     },
+    "auth": {
+        "signIn": "Sign in",
+        "signUp": "Sign up",
+        "createAccount": "Create account",
+        "authRequired": "Authentication required",
+        "close": "Close"
+    },
     "error": {
         "404": "Page not found.",
         "general": "Sorry, something went wrong."

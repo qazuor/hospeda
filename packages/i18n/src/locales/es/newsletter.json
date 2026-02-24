@@ -1,8 +1,15 @@
 {
     "title": "Suscribite al newsletter",
-    "description": "Recibí novedades, destinos destacados y más.",
+    "description": "Recibí las mejores ofertas y novedades de alojamientos en tu email.",
     "email": "Tu correo electrónico",
     "submit": "Suscribirme",
     "success": "¡Gracias por suscribirte!",
-    "error": "Ocurrió un error. Intentá de nuevo."
+    "error": "Ocurrió un error. Intentá de nuevo.",
+    "subscribe": "Suscribirse",
+    "subscribed": "Suscripto al newsletter",
+    "unsubscribe": "Cancelar suscripción",
+    "authMessage": "Iniciá sesión para suscribirte al newsletter",
+    "successSubscribe": "Te suscribiste al newsletter",
+    "successUnsubscribe": "Te desuscribiste del newsletter",
+    "errorMessage": "No se pudo actualizar la suscripción"
 }

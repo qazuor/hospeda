@@ -1,8 +1,15 @@
 {
     "title": "Assine a newsletter",
-    "description": "Receba novidades, destinos em destaque e muito mais.",
+    "description": "Receba as melhores ofertas e novidades de hospedagens no seu e-mail.",
     "email": "Seu endereco de email",
     "submit": "Assinar",
     "success": "Obrigado por assinar!",
-    "error": "Ocorreu um erro. Tente novamente."
+    "error": "Ocorreu um erro. Tente novamente.",
+    "subscribe": "Assinar",
+    "subscribed": "Inscrito na newsletter",
+    "unsubscribe": "Cancelar assinatura",
+    "authMessage": "Faça login para assinar a newsletter",
+    "successSubscribe": "Você se inscreveu na newsletter",
+    "successUnsubscribe": "Você cancelou a assinatura da newsletter",
+    "errorMessage": "Não foi possível atualizar a assinatura"
 }

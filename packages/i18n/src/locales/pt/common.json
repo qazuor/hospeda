@@ -34,6 +34,13 @@
             "restricted": "Restrito"
         }
     },
+    "auth": {
+        "signIn": "Entrar",
+        "signUp": "Cadastrar-se",
+        "createAccount": "Criar conta",
+        "authRequired": "Autenticação necessária",
+        "close": "Fechar"
+    },
     "error": {
         "404": "Página não encontrada.",
         "general": "Desculpe, algo deu errado."

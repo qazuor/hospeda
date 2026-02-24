@@ -7,15 +7,32 @@
         "title": "Envíanos un mensaje",
         "firstName": "Nombre",
         "lastName": "Apellido",
+        "name": "Nombre",
         "email": "Email",
+        "subject": "Asunto",
         "message": "Mensaje",
         "submit": "Enviar mensaje",
+        "submitting": "Enviando...",
         "placeholders": {
             "firstName": "Tu nombre",
             "lastName": "Tu apellido",
+            "name": "Tu nombre",
             "email": "tu@email.com",
-            "message": "Escribe tu mensaje aquí..."
-        }
+            "subject": "Asunto de tu mensaje",
+            "message": "Escribí tu mensaje aquí..."
+        },
+        "validation": {
+            "nameRequired": "El nombre es obligatorio",
+            "nameMinLength": "El nombre debe tener al menos 2 caracteres",
+            "emailRequired": "El email es obligatorio",
+            "emailInvalid": "El email no es válido",
+            "subjectRequired": "El asunto es obligatorio",
+            "subjectMinLength": "El asunto debe tener al menos 3 caracteres",
+            "messageRequired": "El mensaje es obligatorio",
+            "messageMinLength": "El mensaje debe tener al menos 20 caracteres"
+        },
+        "successMessage": "Tu mensaje fue enviado correctamente",
+        "errorMessage": "No se pudo enviar el mensaje. Intentá nuevamente."
     },
     "info": {
         "title": "Información de contacto",

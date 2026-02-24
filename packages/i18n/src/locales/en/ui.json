@@ -69,7 +69,24 @@
         "gridView": "Grid view",
         "search": "Search",
         "closeToast": "Close notification",
-        "clearAllSessionsAndReload": "Clear all sessions and reload page"
+        "clearAllSessionsAndReload": "Clear all sessions and reload page",
+        "openFullscreen": "Open image in fullscreen",
+        "closeLightbox": "Close lightbox",
+        "previousImage": "Previous image",
+        "nextImage": "Next image",
+        "goToImage": "Go to image {{number}}",
+        "shareViaDevice": "Share via device",
+        "shareOnWhatsApp": "Share on WhatsApp",
+        "shareOnFacebook": "Share on Facebook",
+        "shareOnTwitter": "Share on Twitter",
+        "linkCopied": "Link copied",
+        "copyLink": "Copy link to clipboard",
+        "mapView": "Map view",
+        "faqSection": "Frequently Asked Questions",
+        "userMenuFor": "User menu for {{name}}",
+        "userMenu": "User menu",
+        "favoriteCategories": "Favorite categories",
+        "reviewCategories": "Review categories"
     },
     "pages": {
         "myProfile": "My Profile",
@@ -109,6 +126,12 @@
             "searchError": "Search failed: {error}",
             "unknownError": "Unknown error"
         }
+    },
+    "pagination": {
+        "previous": "Previous",
+        "next": "Next",
+        "page": "Page",
+        "of": "of"
     },
     "breadcrumbs": {
         "progress": "Progress"

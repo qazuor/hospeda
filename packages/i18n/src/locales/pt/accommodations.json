@@ -16,16 +16,67 @@
         "hostels": "Hostels"
     },
     "sort": {
-        "title": "Ordenar",
+        "title": "Ordenar por",
         "default": "Recomendados",
+        "featured": "Destaques",
         "price.asc": "Preco: Menor para maior",
-        "price.desc": "Preco: Maior para menor"
+        "price.desc": "Preco: Maior para menor",
+        "rating": "Melhor avaliados",
+        "recent": "Mais recentes",
+        "name": "Nome"
     },
-    "card": {
-        "guests": "Hospedes",
+    "search": {
+        "placeholder": "Buscar hospedagens...",
+        "button": "Buscar",
+        "noResults": "Sem resultados para",
+        "showing": "Mostrando",
+        "of": "de",
+        "results": "resultados"
+    },
+    "chips": {
+        "wifi": "WiFi",
+        "pool": "Piscina",
+        "pets": "Aceita pets",
+        "parking": "Estacionamento",
+        "type": "Tipo",
+        "price": "Preço",
+        "capacity": "Capacidade",
+        "rating": "Avaliação",
+        "apply": "Aplicar",
+        "min": "Mín",
+        "max": "Máx",
+        "guests": "Hóspedes",
         "bedrooms": "Quartos",
         "bathrooms": "Banheiros",
-        "per.night": "por noite"
+        "stars": "estrelas"
+    },
+    "activeFilters": {
+        "title": "Filtros ativos",
+        "clearAll": "Limpar todos",
+        "q": "Busca",
+        "type": "Tipo",
+        "minPrice": "Preço mín",
+        "maxPrice": "Preço máx",
+        "hasWifi": "WiFi",
+        "hasPool": "Piscina",
+        "allowsPets": "Aceita pets",
+        "hasParking": "Estacionamento",
+        "sortBy": "Ordenar",
+        "priceRange": "Preco: ${{min}}-${{max}}",
+        "minRating": "Avaliacao: {{min}}+",
+        "minGuests": "{{count}}+ hospedes",
+        "minBedrooms": "{{count}}+ quartos",
+        "minBathrooms": "{{count}}+ banheiros"
+    },
+    "card": {
+        "guests": "hospedes",
+        "bedrooms": "quartos",
+        "beds": "camas",
+        "bathrooms": "banheiros",
+        "per.night": "/noite",
+        "noRating": "Sem avaliacoes",
+        "consultPrice": "Consultar preco",
+        "reviews": "avaliacoes"
     },
     "details": {
         "about": "Descricao",
@@ -45,7 +96,32 @@
         "camping": "Camping",
         "room": "Quarto",
         "motel": "Motel",
-        "resort": "Resort"
+        "resort": "Resort",
+        "rural": "Rural",
+        "boutique": "Boutique"
+    },
+    "sidebar": {
+        "filters": "Filtros",
+        "type": "Tipo de hospedagem",
+        "priceRange": "Faixa de preço",
+        "priceMin": "Mínimo",
+        "priceMax": "Máximo",
+        "destination": "Destino",
+        "allDestinations": "Todos os destinos",
+        "amenities": "Comodidades",
+        "wifi": "WiFi",
+        "pool": "Piscina",
+        "parking": "Estacionamento",
+        "breakfast": "Café da manhã",
+        "airConditioning": "Ar condicionado",
+        "gym": "Academia",
+        "restaurant": "Restaurante",
+        "petFriendly": "Aceita pets",
+        "rating": "Avaliação mínima",
+        "stars": "estrelas",
+        "clearAll": "Limpar filtros",
+        "activeFilters": "Filtros ativos",
+        "removeFilter": "Remover filtro {{name}}"
     },
     "faqs": "Perguntas frequentes",
     "contactTitle": "Contato",

@@ -1,7 +1,13 @@
 {
     "description": "Seu portal para encontrar acomodações únicas na costa do rio Uruguai em Entre Rios.",
+    "shortDescription": "Descubra hospedagens na costa do Rio Uruguai.",
+    "explore": "Explorar",
     "destinations": "Destinos",
     "about": "Sobre",
+    "owners": "Proprietários",
+    "listProperty": "Publique seu alojamento",
+    "ownerPlans": "Planos para proprietários",
+    "touristPlans": "Planos para turistas",
     "legal": "Legal",
     "aboutUs": "Quem somos",
     "contact": "Contato",
@@ -9,5 +15,6 @@
     "terms": "Termos e condições",
     "privacy": "Política de privacidade",
     "cookies": "Política de cookies",
-    "rights": "Todos os direitos reservados."
+    "rights": "Todos os direitos reservados.",
+    "mateTagline": "Feito com mate na costa do Uruguai"
 }

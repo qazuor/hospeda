@@ -7,15 +7,32 @@
         "title": "Send us a message",
         "firstName": "First name",
         "lastName": "Last name",
+        "name": "Name",
         "email": "Email",
+        "subject": "Subject",
         "message": "Message",
         "submit": "Send message",
+        "submitting": "Sending...",
         "placeholders": {
             "firstName": "Your first name",
             "lastName": "Your last name",
-            "email": "you@email.com",
+            "name": "Your name",
+            "email": "your@email.com",
+            "subject": "Subject of your message",
             "message": "Write your message here..."
-        }
+        },
+        "validation": {
+            "nameRequired": "Name is required",
+            "nameMinLength": "Name must be at least 2 characters",
+            "emailRequired": "Email is required",
+            "emailInvalid": "Email is not valid",
+            "subjectRequired": "Subject is required",
+            "subjectMinLength": "Subject must be at least 3 characters",
+            "messageRequired": "Message is required",
+            "messageMinLength": "Message must be at least 20 characters"
+        },
+        "successMessage": "Your message was sent successfully",
+        "errorMessage": "Could not send the message. Please try again."
     },
     "info": {
         "title": "Contact information",

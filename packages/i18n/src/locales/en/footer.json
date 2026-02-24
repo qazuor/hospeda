@@ -1,7 +1,13 @@
 {
     "description": "Your portal for finding unique accommodations on the Uruguay river coast in Entre Rios.",
+    "shortDescription": "Discover accommodations on the Uruguay River coast.",
+    "explore": "Explore",
     "destinations": "Destinations",
     "about": "About",
+    "owners": "Property Owners",
+    "listProperty": "List your property",
+    "ownerPlans": "Owner plans",
+    "touristPlans": "Tourist plans",
     "legal": "Legal",
     "aboutUs": "About us",
     "contact": "Contact",
@@ -9,5 +15,6 @@
     "terms": "Terms and conditions",
     "privacy": "Privacy policy",
     "cookies": "Cookie policy",
-    "rights": "All rights reserved."
+    "rights": "All rights reserved.",
+    "mateTagline": "Made with mate on the Uruguay coast"
 }

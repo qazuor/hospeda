@@ -16,16 +16,67 @@
         "hostels": "Hostels"
     },
     "sort": {
-        "title": "Sort",
+        "title": "Sort by",
         "default": "Recommended",
+        "featured": "Featured",
         "price.asc": "Price: Low to high",
-        "price.desc": "Price: High to low"
+        "price.desc": "Price: High to low",
+        "rating": "Top rated",
+        "recent": "Most recent",
+        "name": "Name"
     },
-    "card": {
+    "search": {
+        "placeholder": "Search accommodations...",
+        "button": "Search",
+        "noResults": "No results for",
+        "showing": "Showing",
+        "of": "of",
+        "results": "results"
+    },
+    "chips": {
+        "wifi": "WiFi",
+        "pool": "Pool",
+        "pets": "Pet-friendly",
+        "parking": "Parking",
+        "type": "Type",
+        "price": "Price",
+        "capacity": "Capacity",
+        "rating": "Rating",
+        "apply": "Apply",
+        "min": "Min",
+        "max": "Max",
         "guests": "Guests",
         "bedrooms": "Bedrooms",
         "bathrooms": "Bathrooms",
-        "per.night": "per night"
+        "stars": "stars"
+    },
+    "activeFilters": {
+        "title": "Active filters",
+        "clearAll": "Clear all",
+        "q": "Search",
+        "type": "Type",
+        "minPrice": "Min price",
+        "maxPrice": "Max price",
+        "hasWifi": "WiFi",
+        "hasPool": "Pool",
+        "allowsPets": "Pet-friendly",
+        "hasParking": "Parking",
+        "sortBy": "Sort",
+        "priceRange": "Price: ${{min}}-${{max}}",
+        "minRating": "Rating: {{min}}+",
+        "minGuests": "{{count}}+ guests",
+        "minBedrooms": "{{count}}+ bedrooms",
+        "minBathrooms": "{{count}}+ bathrooms"
+    },
+    "card": {
+        "guests": "guests",
+        "bedrooms": "beds",
+        "beds": "beds",
+        "bathrooms": "baths",
+        "per.night": "/night",
+        "noRating": "No ratings",
+        "consultPrice": "Ask for price",
+        "reviews": "reviews"
     },
     "details": {
         "about": "Description",
@@ -45,7 +96,32 @@
         "camping": "Camping",
         "room": "Room",
         "motel": "Motel",
-        "resort": "Resort"
+        "resort": "Resort",
+        "rural": "Rural",
+        "boutique": "Boutique"
+    },
+    "sidebar": {
+        "filters": "Filters",
+        "type": "Accommodation type",
+        "priceRange": "Price range",
+        "priceMin": "Min",
+        "priceMax": "Max",
+        "destination": "Destination",
+        "allDestinations": "All destinations",
+        "amenities": "Amenities",
+        "wifi": "WiFi",
+        "pool": "Pool",
+        "parking": "Parking",
+        "breakfast": "Breakfast",
+        "airConditioning": "Air conditioning",
+        "gym": "Gym",
+        "restaurant": "Restaurant",
+        "petFriendly": "Pet friendly",
+        "rating": "Minimum rating",
+        "stars": "stars",
+        "clearAll": "Clear filters",
+        "activeFilters": "Active filters",
+        "removeFilter": "Remove {{name}} filter"
     },
     "faqs": "Frequently asked questions",
     "contactTitle": "Contact",

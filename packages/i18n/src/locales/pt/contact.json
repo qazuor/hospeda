@@ -7,15 +7,32 @@
         "title": "Manda uma mensagem pra gente",
         "firstName": "Nome",
         "lastName": "Sobrenome",
+        "name": "Nome",
         "email": "Email",
+        "subject": "Assunto",
         "message": "Mensagem",
         "submit": "Enviar mensagem",
+        "submitting": "Enviando...",
         "placeholders": {
             "firstName": "Seu nome",
             "lastName": "Seu sobrenome",
+            "name": "Seu nome",
             "email": "voce@email.com",
+            "subject": "Assunto da sua mensagem",
             "message": "Escreva sua mensagem aqui..."
-        }
+        },
+        "validation": {
+            "nameRequired": "O nome é obrigatório",
+            "nameMinLength": "O nome deve ter pelo menos 2 caracteres",
+            "emailRequired": "O e-mail é obrigatório",
+            "emailInvalid": "O e-mail não é válido",
+            "subjectRequired": "O assunto é obrigatório",
+            "subjectMinLength": "O assunto deve ter pelo menos 3 caracteres",
+            "messageRequired": "A mensagem é obrigatória",
+            "messageMinLength": "A mensagem deve ter pelo menos 20 caracteres"
+        },
+        "successMessage": "Sua mensagem foi enviada com sucesso",
+        "errorMessage": "Não foi possível enviar a mensagem. Tente novamente."
     },
     "info": {
         "title": "Informacoes de contato",

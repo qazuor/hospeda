@@ -16,6 +16,14 @@
         "hosts": "For hosts",
         "merchants": "For merchants"
     },
+    "ownerCta": "List your property",
+    "userMenu": {
+        "myAccount": "My Account",
+        "favorites": "Favorites",
+        "myReviews": "My Reviews",
+        "preferences": "Preferences",
+        "signOut": "Sign Out"
+    },
     "breadcrumb": {
         "home": "Home"
     }

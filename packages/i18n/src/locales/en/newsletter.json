@@ -1,8 +1,15 @@
 {
-    "title": "Subscribe to the newsletter",
-    "description": "Get the latest news, featured destinations, and more.",
+    "title": "Subscribe to our newsletter",
+    "description": "Get the best accommodation deals and news delivered to your inbox.",
     "email": "Your email address",
     "submit": "Subscribe",
     "success": "Thanks for subscribing!",
-    "error": "Something went wrong. Please try again."
+    "error": "Something went wrong. Please try again.",
+    "subscribe": "Subscribe",
+    "subscribed": "Subscribed to newsletter",
+    "unsubscribe": "Unsubscribe",
+    "authMessage": "Sign in to subscribe to the newsletter",
+    "successSubscribe": "Successfully subscribed to newsletter",
+    "successUnsubscribe": "Successfully unsubscribed from newsletter",
+    "errorMessage": "Could not update subscription"
 }

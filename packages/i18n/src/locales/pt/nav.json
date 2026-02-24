@@ -16,6 +16,14 @@
         "hosts": "Para anfitriões",
         "merchants": "Para comerciantes"
     },
+    "ownerCta": "Publique seu alojamento",
+    "userMenu": {
+        "myAccount": "Minha Conta",
+        "favorites": "Favoritos",
+        "myReviews": "Minhas Avaliações",
+        "preferences": "Preferências",
+        "signOut": "Sair"
+    },
     "breadcrumb": {
         "home": "Início"
     }

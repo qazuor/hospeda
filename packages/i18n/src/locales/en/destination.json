@@ -21,6 +21,25 @@
         "TOWN": "Town",
         "NEIGHBORHOOD": "Neighborhood"
     },
+    "search": {
+        "placeholder": "Search destinations...",
+        "button": "Search",
+        "typeLabel": "Destination type",
+        "allTypes": "All types",
+        "parentLabel": "Within",
+        "allParents": "All",
+        "clearFilters": "Clear filters",
+        "noResults": "No destinations found",
+        "noResultsMessage": "Try adjusting your filters or clearing the search.",
+        "resultsAnnouncement": "{{count}} destinations found",
+        "loadingParents": "Loading options...",
+        "noParentsAvailable": "No options available",
+        "errorLoading": "Error loading",
+        "accommodation": "accommodation",
+        "accommodations": "accommodations",
+        "featured": "Featured",
+        "loading": "Loading..."
+    },
     "card": {
         "seeMore": "See more",
         "location": "Location"
@@ -41,5 +60,51 @@
         "accommodations": "Accommodations",
         "posts": "Blog posts",
         "events": "Events"
+    },
+    "featured": {
+        "title": "Popular destinations",
+        "subtitle": "Discover the most visited destinations in Argentina's Litoral region",
+        "seeAll": "See all destinations",
+        "carousel": {
+            "label": "Featured destinations",
+            "previous": "Previous destination",
+            "next": "Next destination",
+            "progressLabel": "Carousel progress"
+        },
+        "map": {
+            "label": "Map of destinations in the region",
+            "showOnPage": "Show {{name}} on page",
+            "title": "Entre Ríos",
+            "riverParana": "Paraná River",
+            "riverUruguay": "Uruguay River"
+        },
+        "preview": {
+            "gallery": "Image gallery",
+            "topRatings": "Top ratings",
+            "viewAccommodations": "View accommodations",
+            "noGallery": "No gallery images",
+            "dimensions": {
+                "landscape": "Landscape",
+                "gastronomy": "Gastronomy",
+                "safety": "Safety",
+                "nightlife": "Nightlife",
+                "culture": "Culture",
+                "nature": "Nature",
+                "beaches": "Beaches",
+                "activities": "Activities"
+            }
+        },
+        "card": {
+            "accommodations": "{{count}} accommodation | {{count}} accommodations",
+            "accommodationSingular": "{{count}} accommodation",
+            "accommodationPlural": "{{count}} accommodations",
+            "events": "{{count}} event | {{count}} events",
+            "eventSingular": "{{count}} event",
+            "eventPlural": "{{count}} events",
+            "ratingLabel": "Rating: {{rating}} out of 5",
+            "featured": "Featured",
+            "attractions": "Attractions",
+            "addToFavorites": "Add {{name}} to favorites"
+        }
     }
 }

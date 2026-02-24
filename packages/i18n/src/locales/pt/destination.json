@@ -1,11 +1,11 @@
 {
-    "title": "Destinos Turisticos",
-    "description": "Descubra os melhores destinos turisticos. Explore lugares unicos e planeje a sua proxima aventura.",
-    "heading": "Destinos Turisticos",
-    "subheading": "Descubra lugares incriveis e viva experiencias unicas nos melhores destinos do mundo",
+    "title": "Destinos Turísticos",
+    "description": "Descubra os melhores destinos turísticos. Explore lugares únicos e planeje a sua próxima aventura.",
+    "heading": "Destinos Turísticos",
+    "subheading": "Descubra lugares incríveis e viva experiências únicas nos melhores destinos do mundo",
     "found": "destinos encontrados",
-    "emptyTitle": "Nenhum destino disponivel",
-    "emptyMessage": "Em breve adicionaremos destinos incriveis para voce.",
+    "emptyTitle": "Nenhum destino disponível",
+    "emptyMessage": "Em breve adicionaremos destinos incríveis para você.",
     "filters": {
         "all": "Todos",
         "beach": "Praia",
@@ -13,33 +13,98 @@
         "city": "Cidade"
     },
     "types": {
-        "COUNTRY": "Pais",
-        "REGION": "Regiao",
-        "PROVINCE": "Provincia",
+        "COUNTRY": "País",
+        "REGION": "Região",
+        "PROVINCE": "Província",
         "DEPARTMENT": "Departamento",
         "CITY": "Cidade",
         "TOWN": "Vila",
         "NEIGHBORHOOD": "Bairro"
     },
+    "search": {
+        "placeholder": "Pesquisar destinos...",
+        "button": "Pesquisar",
+        "typeLabel": "Tipo de destino",
+        "allTypes": "Todos os tipos",
+        "parentLabel": "Dentro de",
+        "allParents": "Todos",
+        "clearFilters": "Limpar filtros",
+        "noResults": "Nenhum destino encontrado",
+        "noResultsMessage": "Tente ajustar os filtros ou limpar a pesquisa.",
+        "resultsAnnouncement": "{{count}} destinos encontrados",
+        "loadingParents": "Carregando opções...",
+        "noParentsAvailable": "Sem opções disponíveis",
+        "errorLoading": "Erro ao carregar",
+        "accommodation": "acomodação",
+        "accommodations": "acomodações",
+        "featured": "Destaque",
+        "loading": "Carregando..."
+    },
     "card": {
         "seeMore": "Ver mais",
-        "location": "Localizacao"
+        "location": "Localização"
     },
     "seeAll": "Ver todos os destinos",
     "list": {
-        "title": "Destinos turisticos"
+        "title": "Destinos turísticos"
     },
     "details": {
         "about": "Sobre",
-        "attractions": "Principais atracoes",
+        "attractions": "Principais atrações",
         "accommodations": "Hospedagens em destaque",
-        "location": "Localizacao",
-        "rating": "Avaliacao geral"
+        "location": "Localização",
+        "rating": "Avaliação geral"
     },
     "tabs": {
-        "about": "Informacoes",
+        "about": "Informações",
         "accommodations": "Hospedagens",
-        "posts": "Publicacoes",
+        "posts": "Publicações",
         "events": "Eventos"
+    },
+    "featured": {
+        "title": "Destinos populares",
+        "subtitle": "Descubra os destinos mais visitados do Litoral argentino",
+        "seeAll": "Ver todos os destinos",
+        "carousel": {
+            "label": "Destinos em destaque",
+            "previous": "Destino anterior",
+            "next": "Próximo destino",
+            "progressLabel": "Progresso do carrossel"
+        },
+        "map": {
+            "label": "Mapa de destinos na região",
+            "showOnPage": "Ver {{name}} na página",
+            "title": "Entre Ríos",
+            "riverParana": "Rio Paraná",
+            "riverUruguay": "Rio Uruguai"
+        },
+        "preview": {
+            "gallery": "Galeria de imagens",
+            "topRatings": "Melhores avaliações",
+            "viewAccommodations": "Ver hospedagens",
+            "noGallery": "Sem imagens na galeria",
+            "dimensions": {
+                "landscape": "Paisagem",
+                "gastronomy": "Gastronomia",
+                "safety": "Segurança",
+                "nightlife": "Vida noturna",
+                "culture": "Cultura",
+                "nature": "Natureza",
+                "beaches": "Praias",
+                "activities": "Atividades"
+            }
+        },
+        "card": {
+            "accommodations": "{{count}} hospedagem | {{count}} hospedagens",
+            "accommodationSingular": "{{count}} hospedagem",
+            "accommodationPlural": "{{count}} hospedagens",
+            "events": "{{count}} evento | {{count}} eventos",
+            "eventSingular": "{{count}} evento",
+            "eventPlural": "{{count}} eventos",
+            "ratingLabel": "Avaliação: {{rating}} de 5",
+            "featured": "Destaque",
+            "attractions": "Atrações",
+            "addToFavorites": "Adicionar {{name}} aos favoritos"
+        }
     }
 }

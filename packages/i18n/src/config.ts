@@ -36,6 +36,8 @@ export const namespaces = [
     'ui',
     'fields',
     'exchange-rate',
+    'account',
+    'review',
     // Admin namespaces
     'admin-auth',
     'admin-billing',
@@ -93,6 +95,7 @@ function flattenObject(
 // Spanish translations
 import aboutEs from './locales/es/about.json';
 import accommodationsEs from './locales/es/accommodations.json';
+import accountEs from './locales/es/account.json';
 import adminAuthEs from './locales/es/admin-auth.json';
 import adminBillingEs from './locales/es/admin-billing.json';
 import adminCommonEs from './locales/es/admin-common.json';
@@ -119,6 +122,7 @@ import homeEs from './locales/es/home.json';
 import navEs from './locales/es/nav.json';
 import newsletterEs from './locales/es/newsletter.json';
 import privacyEs from './locales/es/privacy.json';
+import reviewEs from './locales/es/review.json';
 import searchEs from './locales/es/search.json';
 import termsEs from './locales/es/terms.json';
 import uiEs from './locales/es/ui.json';
@@ -126,6 +130,7 @@ import uiEs from './locales/es/ui.json';
 // English translations
 import aboutEn from './locales/en/about.json';
 import accommodationsEn from './locales/en/accommodations.json';
+import accountEn from './locales/en/account.json';
 import adminAuthEn from './locales/en/admin-auth.json';
 import adminBillingEn from './locales/en/admin-billing.json';
 import adminCommonEn from './locales/en/admin-common.json';
@@ -152,6 +157,7 @@ import homeEn from './locales/en/home.json';
 import navEn from './locales/en/nav.json';
 import newsletterEn from './locales/en/newsletter.json';
 import privacyEn from './locales/en/privacy.json';
+import reviewEn from './locales/en/review.json';
 import searchEn from './locales/en/search.json';
 import termsEn from './locales/en/terms.json';
 import uiEn from './locales/en/ui.json';
@@ -159,6 +165,7 @@ import uiEn from './locales/en/ui.json';
 // Portuguese translations
 import aboutPt from './locales/pt/about.json';
 import accommodationsPt from './locales/pt/accommodations.json';
+import accountPt from './locales/pt/account.json';
 import adminAuthPt from './locales/pt/admin-auth.json';
 import adminBillingPt from './locales/pt/admin-billing.json';
 import adminCommonPt from './locales/pt/admin-common.json';
@@ -185,6 +192,7 @@ import homePt from './locales/pt/home.json';
 import navPt from './locales/pt/nav.json';
 import newsletterPt from './locales/pt/newsletter.json';
 import privacyPt from './locales/pt/privacy.json';
+import reviewPt from './locales/pt/review.json';
 import searchPt from './locales/pt/search.json';
 import termsPt from './locales/pt/terms.json';
 import uiPt from './locales/pt/ui.json';
@@ -196,6 +204,7 @@ import uiPt from './locales/pt/ui.json';
 const rawTranslations = {
     es: {
         about: aboutEs,
+        account: accountEs,
         accommodations: accommodationsEs,
         'auth-ui': authUiEs,
         billing: billingEs,
@@ -203,7 +212,7 @@ const rawTranslations = {
         blog: blogEs,
         common: commonEs,
         contact: contactEs,
-        destination: destinationEs,
+        destinations: destinationEs,
         error: errorEs,
         event: eventEs,
         'exchange-rate': exchangeRateEs,
@@ -212,6 +221,7 @@ const rawTranslations = {
         nav: navEs,
         newsletter: newsletterEs,
         privacy: privacyEs,
+        review: reviewEs,
         search: searchEs,
         terms: termsEs,
         ui: uiEs,
@@ -229,6 +239,7 @@ const rawTranslations = {
     },
     en: {
         about: aboutEn,
+        account: accountEn,
         accommodations: accommodationsEn,
         'auth-ui': authUiEn,
         billing: billingEn,
@@ -236,7 +247,7 @@ const rawTranslations = {
         blog: blogEn,
         common: commonEn,
         contact: contactEn,
-        destination: destinationEn,
+        destinations: destinationEn,
         error: errorEn,
         event: eventEn,
         'exchange-rate': exchangeRateEn,
@@ -245,6 +256,7 @@ const rawTranslations = {
         nav: navEn,
         newsletter: newsletterEn,
         privacy: privacyEn,
+        review: reviewEn,
         search: searchEn,
         terms: termsEn,
         ui: uiEn,
@@ -262,6 +274,7 @@ const rawTranslations = {
     },
     pt: {
         about: aboutPt,
+        account: accountPt,
         accommodations: accommodationsPt,
         'auth-ui': authUiPt,
         billing: billingPt,
@@ -269,7 +282,7 @@ const rawTranslations = {
         blog: blogPt,
         common: commonPt,
         contact: contactPt,
-        destination: destinationPt,
+        destinations: destinationPt,
         error: errorPt,
         event: eventPt,
         'exchange-rate': exchangeRatePt,
@@ -278,6 +291,7 @@ const rawTranslations = {
         nav: navPt,
         newsletter: newsletterPt,
         privacy: privacyPt,
+        review: reviewPt,
         search: searchPt,
         terms: termsPt,
         ui: uiPt,

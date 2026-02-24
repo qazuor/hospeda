@@ -69,7 +69,24 @@
         "gridView": "Visualização em grade",
         "search": "Buscar",
         "closeToast": "Fechar notificação",
-        "clearAllSessionsAndReload": "Limpar todas as sessões e recarregar página"
+        "clearAllSessionsAndReload": "Limpar todas as sessões e recarregar página",
+        "openFullscreen": "Abrir imagem em tela cheia",
+        "closeLightbox": "Fechar visualizador de imagens",
+        "previousImage": "Imagem anterior",
+        "nextImage": "Proxima imagem",
+        "goToImage": "Ir para imagem {{number}}",
+        "shareViaDevice": "Compartilhar pelo dispositivo",
+        "shareOnWhatsApp": "Compartilhar no WhatsApp",
+        "shareOnFacebook": "Compartilhar no Facebook",
+        "shareOnTwitter": "Compartilhar no Twitter",
+        "linkCopied": "Link copiado",
+        "copyLink": "Copiar link",
+        "mapView": "Visualizacao em mapa",
+        "faqSection": "Perguntas frequentes",
+        "userMenuFor": "Menu do usuario para {{name}}",
+        "userMenu": "Menu do usuario",
+        "favoriteCategories": "Categorias de favoritos",
+        "reviewCategories": "Categorias de avaliacoes"
     },
     "pages": {
         "myProfile": "Meu Perfil",
@@ -109,6 +126,12 @@
             "searchError": "A busca falhou: {error}",
             "unknownError": "Erro desconhecido"
         }
+    },
+    "pagination": {
+        "previous": "Anterior",
+        "next": "Próximo",
+        "page": "Página",
+        "of": "de"
     },
     "breadcrumbs": {
         "progress": "Progresso"

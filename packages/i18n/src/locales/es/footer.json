@@ -1,7 +1,13 @@
 {
     "description": "Tu portal para encontrar alojamientos únicos en la costa del río Uruguay en Entre Ríos.",
+    "shortDescription": "Descubre alojamientos en la costa del Rio Uruguay.",
+    "explore": "Explorar",
     "destinations": "Destinos",
     "about": "Acerca de",
+    "owners": "Propietarios",
+    "listProperty": "Publica tu alojamiento",
+    "ownerPlans": "Planes para propietarios",
+    "touristPlans": "Planes para turistas",
     "legal": "Legal",
     "aboutUs": "Quiénes somos",
     "contact": "Contacto",
@@ -9,5 +15,6 @@
     "terms": "Términos y condiciones",
     "privacy": "Política de privacidad",
     "cookies": "Política de cookies",
-    "rights": "Todos los derechos reservados."
+    "rights": "Todos los derechos reservados.",
+    "mateTagline": "Hecho con mate en la costa del Uruguay"
 }
