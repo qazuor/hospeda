@@ -7,8 +7,10 @@ import { adminUserBatchRoute } from './batch';
 import { adminCreateUserRoute } from './create';
 import { adminDeleteUserRoute } from './delete';
 import { adminGetUserByIdRoute } from './getById';
+import { adminHardDeleteUserRoute } from './hardDelete';
 import { adminListUsersRoute } from './list';
 import { adminPatchUserRoute } from './patch';
+import { adminRestoreUserRoute } from './restore';
 import { adminUpdateUserRoute } from './update';
 
 const app = createRouter();
@@ -30,6 +32,12 @@ app.route('/', adminPatchUserRoute);
 
 // DELETE /:id - Soft delete user
 app.route('/', adminDeleteUserRoute);
+
+// DELETE /:id/hard - Hard delete user
+app.route('/', adminHardDeleteUserRoute);
+
+// POST /:id/restore - Restore soft-deleted user
+app.route('/', adminRestoreUserRoute);
 
 // POST /batch - Get multiple users
 app.route('/', adminUserBatchRoute);

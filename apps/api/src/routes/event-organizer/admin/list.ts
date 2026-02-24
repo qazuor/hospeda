@@ -4,7 +4,7 @@
  */
 import {
     EventOrganizerAdminSchema,
-    EventOrganizerSearchHttpSchema,
+    EventOrganizerAdminSearchSchema,
     PermissionEnum,
     type ServiceErrorCode
 } from '@repo/schemas';
@@ -27,13 +27,14 @@ export const adminListEventOrganizersRoute = createAdminListRoute({
     description: 'Returns a paginated list of all event organizers including soft-deleted ones',
     tags: ['Event Organizers'],
     requiredPermissions: [PermissionEnum.EVENT_ORGANIZER_VIEW],
-    requestQuery: EventOrganizerSearchHttpSchema.shape,
+    requestQuery: EventOrganizerAdminSearchSchema.shape,
     responseSchema: EventOrganizerAdminSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
 
-        const result = await eventOrganizerService.list(actor, { page, pageSize });
+        // Pass all admin search filters to service
+        const result = await eventOrganizerService.list(actor, { ...query });
 
         if (result.error) {
             throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);

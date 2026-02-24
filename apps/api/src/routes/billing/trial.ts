@@ -7,20 +7,20 @@
  * Routes:
  * - GET  /api/v1/billing/trial/status - Get current trial status (authenticated)
  * - POST /api/v1/billing/trial/start - Start trial for authenticated user
+ * - POST /api/v1/billing/trial/extend - Extend trial by additional days (admin only)
  * - POST /api/v1/billing/trial/check-expiry - Trigger expired trial check (admin only)
  *
  * @module routes/billing/trial
  */
 
-import { RoleEnum } from '@repo/schemas';
+import { PermissionEnum } from '@repo/schemas';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
-import { getActorFromContext } from '../../middlewares/actor';
 import { getQZPayBilling } from '../../middlewares/billing';
 import { TrialService } from '../../services/trial.service';
 import { createRouter } from '../../utils/create-app';
 import { apiLogger } from '../../utils/logger';
-import { type SimpleRouteInterface, createSimpleRoute } from '../../utils/route-factory';
+import { createAdminRoute, createSimpleRoute } from '../../utils/route-factory';
 
 /**
  * Trial status response schema
@@ -208,14 +208,16 @@ export const startTrialRoute = createSimpleRoute({
  * POST /api/v1/billing/trial/extend
  * Extend a trial subscription by additional days (admin only)
  */
-export const extendTrialRoute = createSimpleRoute({
+export const extendTrialRoute = createAdminRoute({
     method: 'post',
     path: '/extend',
     summary: 'Extend trial period',
     description: 'Extend a trial subscription by additional days (admin only)',
     tags: ['Billing', 'Trial', 'Admin'],
+    requestBody: extendTrialRequestSchema,
     responseSchema: extendTrialResponseSchema,
-    handler: async (c) => {
+    requiredPermissions: [PermissionEnum.MANAGE_SUBSCRIPTIONS],
+    handler: async (c, _params, body) => {
         const billingEnabled = c.get('billingEnabled');
 
         if (!billingEnabled) {
@@ -224,26 +226,10 @@ export const extendTrialRoute = createSimpleRoute({
             });
         }
 
-        // Admin-only check
-        const actor = getActorFromContext(c);
-        if (actor.role !== RoleEnum.ADMIN && actor.role !== RoleEnum.SUPER_ADMIN) {
-            throw new HTTPException(403, {
-                message: 'Admin access required'
-            });
-        }
-
-        // Parse request body
-        const body = await c.req.json();
-        const parseResult = extendTrialRequestSchema.safeParse(body);
-
-        if (!parseResult.success) {
-            throw new HTTPException(400, {
-                message: 'Invalid request body',
-                cause: parseResult.error.flatten()
-            });
-        }
-
-        const { subscriptionId, additionalDays } = parseResult.data;
+        const { subscriptionId, additionalDays } = body as {
+            subscriptionId: string;
+            additionalDays: number;
+        };
 
         const billing = getQZPayBilling();
         const trialService = new TrialService(billing);
@@ -287,23 +273,16 @@ export const extendTrialRoute = createSimpleRoute({
  * @param c - Hono context
  * @returns Response with blocked trial count
  * @throws HTTPException 503 if billing not configured
- * @throws HTTPException 403 if user is not admin
  * @throws HTTPException 500 if service fails
  */
-export const handleCheckExpiry = async (c: Parameters<SimpleRouteInterface['handler']>[0]) => {
+export const handleCheckExpiry = async (
+    c: Parameters<Parameters<typeof createAdminRoute>[0]['handler']>[0]
+) => {
     const billingEnabled = c.get('billingEnabled');
 
     if (!billingEnabled) {
         throw new HTTPException(503, {
             message: 'Billing service is not configured'
-        });
-    }
-
-    // Admin-only check
-    const actor = getActorFromContext(c);
-    if (actor.role !== RoleEnum.ADMIN && actor.role !== RoleEnum.SUPER_ADMIN) {
-        throw new HTTPException(403, {
-            message: 'Admin access required'
         });
     }
 
@@ -341,13 +320,14 @@ export const handleCheckExpiry = async (c: Parameters<SimpleRouteInterface['hand
  * This endpoint is meant to be called by a cron job or admin interface.
  * It finds all expired trials and blocks them.
  */
-export const checkExpiryRoute = createSimpleRoute({
+export const checkExpiryRoute = createAdminRoute({
     method: 'post',
     path: '/check-expiry',
     summary: 'Check expired trials',
     description: 'Batch job to find and block all expired trials',
     tags: ['Billing', 'Trial', 'Admin'],
     responseSchema: checkExpiryResponseSchema,
+    requiredPermissions: [PermissionEnum.MANAGE_SUBSCRIPTIONS],
     handler: handleCheckExpiry
 });
 

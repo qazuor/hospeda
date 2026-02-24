@@ -15,6 +15,10 @@ const app = createRouter();
 app.route('/', authStatusRoute);
 app.route('/', authMeRoute);
 app.route('/', authSignOutRoute);
-app.route('/', cacheStatsRoute);
 
 export const authRoutes = app;
+
+// Admin-only cache monitoring (separate router to mount under /admin/)
+const adminApp = createRouter();
+adminApp.route('/', cacheStatsRoute);
+export const adminAuthRoutes = adminApp;

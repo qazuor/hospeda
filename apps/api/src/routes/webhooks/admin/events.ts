@@ -11,7 +11,7 @@
  */
 
 import { billingWebhookEvents, getDb } from '@repo/db';
-import type { PermissionEnum } from '@repo/schemas';
+import { PermissionEnum } from '@repo/schemas';
 import { type SQL, and, count, desc, eq, gte, lte } from 'drizzle-orm';
 import { HTTPException } from 'hono/http-exception';
 import { ListWebhookEventsQuerySchema, WebhookEventsListResponseSchema } from '../../../schemas';
@@ -29,7 +29,7 @@ export const listWebhookEventsRoute = createAdminRoute({
     description:
         'Returns paginated list of webhook events with optional filtering by status, type, provider, and date range',
     tags: ['Webhooks'],
-    requiredPermissions: ['BILLING_READ_ALL' as PermissionEnum],
+    requiredPermissions: [PermissionEnum.BILLING_READ_ALL],
     requestQuery: ListWebhookEventsQuerySchema.shape,
     responseSchema: WebhookEventsListResponseSchema,
     handler: async (_c, _params, _body, query) => {

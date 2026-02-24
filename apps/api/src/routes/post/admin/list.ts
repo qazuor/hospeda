@@ -2,7 +2,12 @@
  * Admin post list endpoint
  * Returns all posts including deleted ones
  */
-import { PostAdminSchema, PostSearchHttpSchema, type ServiceErrorCode } from '@repo/schemas';
+import {
+    PermissionEnum,
+    PostAdminSchema,
+    PostAdminSearchSchema,
+    type ServiceErrorCode
+} from '@repo/schemas';
 import { PostService, ServiceError } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -21,7 +26,8 @@ export const adminListPostsRoute = createAdminListRoute({
     summary: 'List all posts',
     description: 'Returns a paginated list of all posts including deleted ones',
     tags: ['Posts'],
-    requestQuery: PostSearchHttpSchema.shape,
+    requiredPermissions: [PermissionEnum.POST_VIEW_ALL],
+    requestQuery: PostAdminSearchSchema.shape,
     responseSchema: PostAdminSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);

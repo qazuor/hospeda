@@ -2,7 +2,12 @@
  * Admin event list endpoint
  * Returns all events with full admin access
  */
-import { EventAdminSchema, EventSearchHttpSchema, type ServiceErrorCode } from '@repo/schemas';
+import {
+    EventAdminSchema,
+    EventAdminSearchSchema,
+    PermissionEnum,
+    type ServiceErrorCode
+} from '@repo/schemas';
 import { EventService, ServiceError } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -22,15 +27,15 @@ export const adminListEventsRoute = createAdminListRoute({
     summary: 'List all events (admin)',
     description: 'Returns a paginated list of all events with full admin details',
     tags: ['Events'],
-    requestQuery: EventSearchHttpSchema.shape,
+    requiredPermissions: [PermissionEnum.EVENT_VIEW_ALL],
+    requestQuery: EventAdminSearchSchema.shape,
     responseSchema: EventAdminSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
 
-        // Use list method with pagination only
-        // Admin actor permissions allow full access at service level
-        const result = await eventService.list(actor, { page, pageSize });
+        // Pass all admin search filters to service
+        const result = await eventService.list(actor, { ...query });
 
         if (result.error) {
             throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);

@@ -2,7 +2,12 @@
  * Admin user list endpoint
  * Returns all users with full admin access
  */
-import { type ServiceErrorCode, UserAdminSchema, UserSearchHttpSchema } from '@repo/schemas';
+import {
+    PermissionEnum,
+    type ServiceErrorCode,
+    UserAdminSchema,
+    UserAdminSearchSchema
+} from '@repo/schemas';
 import { ServiceError, UserService } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -22,15 +27,15 @@ export const adminListUsersRoute = createAdminListRoute({
     summary: 'List all users (admin)',
     description: 'Returns a paginated list of all users with full admin details',
     tags: ['Users'],
-    requestQuery: UserSearchHttpSchema.shape,
+    requiredPermissions: [PermissionEnum.USER_READ_ALL],
+    requestQuery: UserAdminSearchSchema.shape,
     responseSchema: UserAdminSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
 
-        // Use list method with pagination
-        // Admin actor permissions allow full access at service level
-        const result = await userService.list(actor, { page, pageSize });
+        // Pass all admin search filters to service
+        const result = await userService.list(actor, { ...query });
 
         if (result.error) {
             throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);

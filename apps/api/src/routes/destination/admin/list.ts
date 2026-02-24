@@ -4,7 +4,8 @@
  */
 import {
     DestinationAdminSchema,
-    DestinationSearchHttpSchema,
+    DestinationAdminSearchSchema,
+    PermissionEnum,
     type ServiceErrorCode
 } from '@repo/schemas';
 import { DestinationService, ServiceError } from '@repo/service-core';
@@ -26,15 +27,15 @@ export const adminListDestinationsRoute = createAdminListRoute({
     summary: 'List all destinations (admin)',
     description: 'Returns a paginated list of all destinations with full admin details',
     tags: ['Destinations'],
-    requestQuery: DestinationSearchHttpSchema.shape,
+    requiredPermissions: [PermissionEnum.DESTINATION_VIEW_ALL],
+    requestQuery: DestinationAdminSearchSchema.shape,
     responseSchema: DestinationAdminSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
 
-        // Use list method with pagination only
-        // Admin actor permissions allow full access at service level
-        const result = await destinationService.list(actor, { page, pageSize });
+        // Pass all admin search filters to service
+        const result = await destinationService.list(actor, { ...query });
 
         if (result.error) {
             throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);

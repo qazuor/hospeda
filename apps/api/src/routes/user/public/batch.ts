@@ -5,7 +5,7 @@
 import {
     type UserBatchRequest,
     UserBatchRequestSchema,
-    UserBatchResponseSchema
+    UserPublicBatchResponseSchema
 } from '@repo/schemas';
 import { UserService } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -26,7 +26,7 @@ export const publicUserBatchRoute = createPublicRoute({
     description: 'Retrieves multiple users by their IDs for entity select components',
     tags: ['Users'],
     requestBody: UserBatchRequestSchema,
-    responseSchema: UserBatchResponseSchema,
+    responseSchema: UserPublicBatchResponseSchema,
     handler: async (ctx: Context, _params, body: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const { ids, fields } = body as UserBatchRequest;

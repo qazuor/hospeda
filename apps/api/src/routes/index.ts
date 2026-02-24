@@ -1,39 +1,74 @@
+/**
+ * API Route Registration
+ * Organizes all routes into three tiers:
+ *   - Public:    /api/v1/public/*    (no auth required)
+ *   - Protected: /api/v1/protected/* (auth required, own resources)
+ *   - Admin:     /api/v1/admin/*     (admin role + permissions)
+ */
 import type { AppOpenAPI } from '../types';
 import { apiLogger } from '../utils/logger';
-import { accommodationRoutes } from './accommodation';
-import { attractionRoutes } from './attraction';
-import { destinationRoutes } from './destination';
-import { eventRoutes } from './event';
-import { eventLocationRoutes } from './event-location';
-import { eventOrganizerRoutes } from './event-organizer';
-import { exchangeRateRoutes } from './exchange-rates';
-import { postRoutes } from './post';
 
-apiLogger.debug('🏠 Loading accommodation routes...');
-apiLogger.debug('✅ Accommodation routes loaded successfully');
+// ─── Entity route imports (from entity barrels) ───────────────────────────────
+import {
+    adminAccommodationRoutes,
+    protectedAccommodationRoutes,
+    publicAccommodationRoutes
+} from './accommodation';
+import { adminAmenityRoutes, protectedAmenityRoutes, publicAmenityRoutes } from './amenity';
+import {
+    adminAttractionRoutes,
+    protectedAttractionRoutes,
+    publicAttractionRoutes
+} from './attraction';
+import {
+    adminDestinationRoutes,
+    protectedDestinationRoutes,
+    publicDestinationRoutes
+} from './destination';
+import { adminEventRoutes, protectedEventRoutes, publicEventRoutes } from './event';
+import {
+    adminEventLocationRoutes,
+    protectedEventLocationRoutes,
+    publicEventLocationRoutes
+} from './event-location';
+import {
+    adminEventOrganizerRoutes,
+    protectedEventOrganizerRoutes,
+    publicEventOrganizerRoutes
+} from './event-organizer';
+import { adminFeatureRoutes, protectedFeatureRoutes, publicFeatureRoutes } from './feature';
+import { adminPostRoutes, protectedPostRoutes, publicPostRoutes } from './post';
+import { adminTagRoutes, publicTagRoutes } from './tag';
 
+import {
+    adminOwnerPromotionRoutes,
+    protectedOwnerPromotionRoutes,
+    publicOwnerPromotionRoutes
+} from './owner-promotion';
+// ─── Entities with admin-only or specialized tiers ──────────────────────────
+import { adminPostSponsorRoutes } from './postSponsor';
+
+// ─── Non-entity route imports ─────────────────────────────────────────────────
 import { cronRoutes } from '../cron';
-import { amenityRoutes } from './amenity';
-import { authRoutes } from './auth';
+import { adminAuthRoutes, authRoutes } from './auth';
 import { betterAuthHandler } from './auth/handler';
 import { createBillingRoutesHandler } from './billing';
 import { adminBillingRoutes } from './billing/admin';
 import { publicBillingRoutes } from './billing/public';
 import { contactRoutes } from './contact';
 import { docsIndexRoutes, scalarRoutes, swaggerRoutes } from './docs';
-import { featureRoutes } from './feature';
+import { exchangeRateRoutes } from './exchange-rates';
 import { dbHealthRoutes, healthRoutes, liveRoutes, readyRoutes } from './health';
 import { metricsRoutes } from './metrics';
-import { ownerPromotionRoutes } from './owner-promotion';
 import { reportRoutes } from './reports';
-import { sponsorshipRoutes } from './sponsorship';
-import { sponsorshipLevelRoutes } from './sponsorship-level';
-import { sponsorshipPackageRoutes } from './sponsorship-package';
-import { publicTagRoutes } from './tag';
-import { userRoutes } from './user';
+import { protectedSponsorshipRoutes } from './sponsorship';
+import { adminSponsorshipLevelRoutes, publicSponsorshipLevelRoutes } from './sponsorship-level';
+import {
+    adminSponsorshipPackageRoutes,
+    publicSponsorshipPackageRoutes
+} from './sponsorship-package';
+import { adminUserRoutes, protectedUserRoutes, publicUserRoutes } from './user';
 import { protectedUserBookmarkRoutes } from './user-bookmark';
-import { adminUserRoutes } from './user/admin';
-import { protectedUserRoutes } from './user/protected';
 import { createMercadoPagoWebhookRoutes, webhookHealthRoutes } from './webhooks';
 import { adminWebhookRouter } from './webhooks/admin';
 
@@ -56,154 +91,137 @@ const rootRoute = createSimpleRoute({
         documentation: '/docs'
     }),
     options: {
-        skipAuth: true, // Public endpoint
-        cacheTTL: 300 // Cache for 5 minutes
+        skipAuth: true,
+        cacheTTL: 300
     }
 });
 
 export const setupRoutes = (app: AppOpenAPI) => {
     app.route('/', rootRoute);
 
-    // Health check routes
+    // ─── System routes ────────────────────────────────────────────────────────
     app.route('/health', healthRoutes);
     app.route('/health', dbHealthRoutes);
     app.route('/health', readyRoutes);
     app.route('/health', liveRoutes);
+    app.route('/api/v1/admin/metrics', metricsRoutes);
 
-    // Metrics routes
-    app.route('/metrics', metricsRoutes);
-
-    // Better Auth handler - catch-all for /api/auth/* (sign-in, sign-up, session, etc.)
+    // ─── Auth routes ──────────────────────────────────────────────────────────
     app.route('/api/auth', betterAuthHandler);
-
-    // Auth utility routes (status, me, signout, cache-stats)
     app.route('/api/v1/public/auth', authRoutes);
 
-    // Public routes
-    app.route('/api/v1/public/users', userRoutes);
-
-    // Protected user routes (auth required)
-    app.route('/api/v1/protected/users', protectedUserRoutes);
-
-    // Protected user bookmark routes (auth required)
-    app.route('/api/v1/protected/user-bookmarks', protectedUserBookmarkRoutes);
-
     try {
-        apiLogger.debug('🔗 Registering accommodation routes...');
-        app.route('/api/v1/public/accommodations', accommodationRoutes);
-        apiLogger.debug('✅ Accommodation routes registered successfully');
+        // ═══════════════════════════════════════════════════════════════════════
+        // PUBLIC ROUTES - No authentication required
+        // ═══════════════════════════════════════════════════════════════════════
 
-        apiLogger.debug('🔗 Registering destination routes...');
-        app.route('/api/v1/public/destinations', destinationRoutes);
-        apiLogger.debug('✅ Destination routes registered successfully');
+        apiLogger.debug('🔗 Registering public routes...');
 
-        apiLogger.debug('🔗 Registering event routes...');
-        app.route('/api/v1/public/events', eventRoutes);
-        apiLogger.debug('✅ Event routes registered successfully');
+        // Users (public read-only: getById, batch)
+        app.route('/api/v1/public/users', publicUserRoutes);
 
-        apiLogger.debug('🔗 Registering post routes...');
-        app.route('/api/v1/public/posts', postRoutes);
-        apiLogger.debug('✅ Post routes registered successfully');
+        // Core entities
+        app.route('/api/v1/public/accommodations', publicAccommodationRoutes);
+        app.route('/api/v1/public/destinations', publicDestinationRoutes);
+        app.route('/api/v1/public/events', publicEventRoutes);
+        app.route('/api/v1/public/posts', publicPostRoutes);
 
-        apiLogger.debug('🔗 Registering amenity routes...');
-        app.route('/api/v1/public', amenityRoutes);
-        apiLogger.debug('✅ Amenity routes registered successfully');
-
-        apiLogger.debug('🔗 Registering feature routes...');
-        app.route('/api/v1/public', featureRoutes);
-        apiLogger.debug('✅ Feature routes registered successfully');
-
-        apiLogger.debug('🔗 Registering attraction routes...');
-        app.route('/api/v1/public', attractionRoutes);
-        app.route('/api/v1/attractions', attractionRoutes);
-        apiLogger.debug('✅ Attraction routes registered successfully');
-
-        apiLogger.debug('🔗 Registering event organizer routes...');
-        app.route('/api/v1/public', eventOrganizerRoutes);
-        app.route('/api/v1/event-organizers', eventOrganizerRoutes);
-        apiLogger.debug('✅ Event organizer routes registered successfully');
-
-        apiLogger.debug('🔗 Registering event location routes...');
-        app.route('/api/v1/public', eventLocationRoutes);
-        app.route('/api/v1/event-locations', eventLocationRoutes);
-        apiLogger.debug('✅ Event location routes registered successfully');
-
-        apiLogger.debug('🔗 Registering sponsorship level routes...');
-        app.route('/api/v1/public/sponsorship-levels', sponsorshipLevelRoutes);
-        apiLogger.debug('✅ Sponsorship level routes registered successfully');
-
-        apiLogger.debug('🔗 Registering sponsorship package routes...');
-        app.route('/api/v1/public/sponsorship-packages', sponsorshipPackageRoutes);
-        apiLogger.debug('✅ Sponsorship package routes registered successfully');
-
-        apiLogger.debug('🔗 Registering sponsorship routes...');
-        app.route('/api/v1/sponsorships', sponsorshipRoutes);
-        apiLogger.debug('✅ Sponsorship routes registered successfully');
-
-        apiLogger.debug('🔗 Registering owner promotion routes...');
-        app.route('/api/v1/public/owner-promotions', ownerPromotionRoutes);
-        apiLogger.debug('✅ Owner promotion routes registered successfully');
-
-        apiLogger.debug('🔗 Registering contact routes...');
-        app.route('/api/v1/public', contactRoutes);
-        apiLogger.debug('✅ Contact routes registered successfully');
-
-        apiLogger.debug('🔗 Registering tag public routes...');
+        // Supporting entities
+        app.route('/api/v1/public/amenities', publicAmenityRoutes);
+        app.route('/api/v1/public/features', publicFeatureRoutes);
+        app.route('/api/v1/public/attractions', publicAttractionRoutes);
         app.route('/api/v1/public/tags', publicTagRoutes);
-        apiLogger.debug('✅ Tag public routes registered successfully');
+        app.route('/api/v1/public/event-locations', publicEventLocationRoutes);
+        app.route('/api/v1/public/event-organizers', publicEventOrganizerRoutes);
 
-        apiLogger.debug('🔗 Registering plans public routes...');
+        // Owner promotions
+        app.route('/api/v1/public/owner-promotions', publicOwnerPromotionRoutes);
+
+        // Other public routes (read-only)
+        app.route('/api/v1/public/sponsorship-levels', publicSponsorshipLevelRoutes);
+        app.route('/api/v1/public/sponsorship-packages', publicSponsorshipPackageRoutes);
         app.route('/api/v1/public/plans', publicBillingRoutes);
-        apiLogger.debug('✅ Plans public routes registered successfully');
+        app.route('/api/v1/public', contactRoutes);
 
-        apiLogger.debug('🔗 Registering exchange rate routes...');
-        app.route('/api/v1', exchangeRateRoutes);
-        apiLogger.debug('✅ Exchange rate routes registered successfully');
+        apiLogger.debug('✅ Public routes registered successfully');
 
-        apiLogger.debug('🔗 Registering report routes...');
-        app.route('/api/v1/reports', reportRoutes);
-        apiLogger.debug('✅ Report routes registered successfully');
+        // ═══════════════════════════════════════════════════════════════════════
+        // PROTECTED ROUTES - Authentication required, own resources
+        // ═══════════════════════════════════════════════════════════════════════
 
-        // Factory is called here (inside setupRoutes) to ensure the database
-        // and billing subsystem are initialized before dependency resolution.
-        apiLogger.debug('🔗 Registering billing routes...');
-        app.route('/api/v1/billing', createBillingRoutesHandler());
-        apiLogger.debug('✅ Billing routes registered successfully');
+        apiLogger.debug('🔗 Registering protected routes...');
 
-        apiLogger.debug('🔗 Registering admin billing routes...');
-        app.route('/api/v1/admin/billing', adminBillingRoutes);
-        apiLogger.debug('✅ Admin billing routes registered successfully');
+        app.route('/api/v1/protected/users', protectedUserRoutes);
+        app.route('/api/v1/protected/user-bookmarks', protectedUserBookmarkRoutes);
+        app.route('/api/v1/protected/accommodations', protectedAccommodationRoutes);
+        app.route('/api/v1/protected/destinations', protectedDestinationRoutes);
+        app.route('/api/v1/protected/events', protectedEventRoutes);
+        app.route('/api/v1/protected/posts', protectedPostRoutes);
+        app.route('/api/v1/protected/amenities', protectedAmenityRoutes);
+        app.route('/api/v1/protected/features', protectedFeatureRoutes);
+        app.route('/api/v1/protected/attractions', protectedAttractionRoutes);
+        app.route('/api/v1/protected/event-locations', protectedEventLocationRoutes);
+        app.route('/api/v1/protected/event-organizers', protectedEventOrganizerRoutes);
+        app.route('/api/v1/protected/owner-promotions', protectedOwnerPromotionRoutes);
+        app.route('/api/v1/protected/sponsorships', protectedSponsorshipRoutes);
 
-        apiLogger.debug('🔗 Registering admin user routes...');
+        apiLogger.debug('✅ Protected routes registered successfully');
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // ADMIN ROUTES - Admin role + permissions required
+        // ═══════════════════════════════════════════════════════════════════════
+
+        apiLogger.debug('🔗 Registering admin routes...');
+
+        // Users
         app.route('/api/v1/admin/users', adminUserRoutes);
-        apiLogger.debug('✅ Admin user routes registered successfully');
+
+        // Core entities
+        app.route('/api/v1/admin/accommodations', adminAccommodationRoutes);
+        app.route('/api/v1/admin/destinations', adminDestinationRoutes);
+        app.route('/api/v1/admin/events', adminEventRoutes);
+        app.route('/api/v1/admin/posts', adminPostRoutes);
+
+        // Supporting entities
+        app.route('/api/v1/admin/amenities', adminAmenityRoutes);
+        app.route('/api/v1/admin/features', adminFeatureRoutes);
+        app.route('/api/v1/admin/attractions', adminAttractionRoutes);
+        app.route('/api/v1/admin/tags', adminTagRoutes);
+        app.route('/api/v1/admin/event-locations', adminEventLocationRoutes);
+        app.route('/api/v1/admin/event-organizers', adminEventOrganizerRoutes);
+        app.route('/api/v1/admin/post-sponsors', adminPostSponsorRoutes);
+        app.route('/api/v1/admin/owner-promotions', adminOwnerPromotionRoutes);
+
+        // Sponsorship admin write operations
+        app.route('/api/v1/admin/sponsorship-levels', adminSponsorshipLevelRoutes);
+        app.route('/api/v1/admin/sponsorship-packages', adminSponsorshipPackageRoutes);
+
+        // Admin billing, webhooks, and auth monitoring
+        app.route('/api/v1/admin/billing', adminBillingRoutes);
+        app.route('/api/v1/admin/webhooks', adminWebhookRouter);
+        app.route('/api/v1/admin/auth', adminAuthRoutes);
+
+        apiLogger.debug('✅ Admin routes registered successfully');
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // OTHER ROUTES - Exchange rates, billing, reports
+        // ═══════════════════════════════════════════════════════════════════════
+
+        app.route('/api/v1', exchangeRateRoutes);
+        app.route('/api/v1/reports', reportRoutes);
+        app.route('/api/v1/billing', createBillingRoutesHandler());
 
         // Cron routes (protected by CRON_SECRET)
-        apiLogger.debug('🔗 Registering cron routes...');
         app.route('/api/v1/cron', cronRoutes);
-        apiLogger.debug('✅ Cron routes registered successfully');
 
         // Webhook routes (public endpoints with signature verification)
-        // Factory is called here (inside setupRoutes) to ensure the database
-        // and billing subsystem are initialized before dependency resolution.
         const mercadoPagoWebhookRoutes = createMercadoPagoWebhookRoutes();
         if (mercadoPagoWebhookRoutes) {
-            apiLogger.debug('🔗 Registering MercadoPago webhook routes...');
             app.route('/api/v1/webhooks/mercadopago', mercadoPagoWebhookRoutes);
-            apiLogger.debug('✅ MercadoPago webhook routes registered successfully');
         } else {
             apiLogger.warn('⚠️ MercadoPago webhook routes not registered - billing not configured');
         }
-
-        // Webhook health monitoring (protected by CRON_SECRET)
-        apiLogger.debug('🔗 Registering webhook health routes...');
         app.route('/api/v1/webhooks', webhookHealthRoutes);
-        apiLogger.debug('✅ Webhook health routes registered successfully');
-
-        // Admin webhook routes (protected by admin auth)
-        apiLogger.debug('🔗 Registering admin webhook routes...');
-        app.route('/api/v1/admin/webhooks', adminWebhookRouter);
-        apiLogger.debug('✅ Admin webhook routes registered successfully');
     } catch (error) {
         apiLogger.debug('❌ Failed to register routes:', String(error));
         throw error;

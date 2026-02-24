@@ -12,7 +12,7 @@
 
 import { getDb } from '@repo/db';
 import { billingNotificationLog } from '@repo/db';
-import type { PermissionEnum } from '@repo/schemas';
+import { PermissionEnum } from '@repo/schemas';
 import { type SQL, and, count, desc, eq, gte, lte } from 'drizzle-orm';
 import { HTTPException } from 'hono/http-exception';
 import {
@@ -142,7 +142,7 @@ export const listNotificationLogsRoute = createAdminRoute({
     description:
         'Returns paginated list of notification logs with optional filtering by type, status, and date range',
     tags: ['Billing', 'Notifications'],
-    requiredPermissions: ['BILLING_READ_ALL' as PermissionEnum],
+    requiredPermissions: [PermissionEnum.BILLING_READ_ALL],
     requestQuery: ListNotificationLogsQuerySchema.shape,
     responseSchema: NotificationLogsListResponseSchema,
     handler: listNotificationLogsHandler

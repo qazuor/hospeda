@@ -3,7 +3,7 @@
  * Routes that don't require authentication
  */
 import { createRouter } from '../../../utils/create-app';
-// Legacy routes that need to be updated to new pattern
+import { publicAccommodationReviewRoutes } from '../reviews/public/index.js';
 import { getByDestinationRoute } from './getByDestination';
 import { publicGetAccommodationByIdRoute } from './getById';
 import { publicGetAccommodationBySlugRoute } from './getBySlug';
@@ -34,5 +34,8 @@ app.route('/', getSummaryRoute);
 
 // GET /stats - Get stats
 app.route('/', getStatsRoute);
+
+// GET /:accommodationId/reviews - List reviews for an accommodation
+app.route('/', publicAccommodationReviewRoutes);
 
 export { app as publicAccommodationRoutes };

@@ -6,6 +6,12 @@ export default defineConfig({
         globals: true,
         environment: 'node',
         setupFiles: ['./test/setup.ts'],
+        pool: 'forks',
+        poolOptions: {
+            forks: {
+                maxForks: 3
+            }
+        },
         include: ['test/**/*.test.ts', 'src/**/*.test.ts'],
         // E2E and integration tests run separately with vitest.config.e2e.ts
         exclude: ['test/e2e/**/*.test.ts', 'test/integration/**/*.test.ts', 'node_modules/**'],

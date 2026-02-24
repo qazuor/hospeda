@@ -2,7 +2,11 @@
  * Admin batch destination endpoint
  * Retrieves multiple destinations by IDs - Admin only
  */
-import { DestinationBatchRequestSchema, DestinationBatchResponseSchema } from '@repo/schemas';
+import {
+    DestinationBatchRequestSchema,
+    DestinationBatchResponseSchema,
+    PermissionEnum
+} from '@repo/schemas';
 import { DestinationService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -22,6 +26,7 @@ export const adminBatchDestinationsRoute = createAdminRoute({
     description:
         'Retrieves multiple destinations by their IDs for entity select components. Admin only.',
     tags: ['Destinations'],
+    requiredPermissions: [PermissionEnum.DESTINATION_VIEW_ALL],
     requestBody: DestinationBatchRequestSchema,
     responseSchema: DestinationBatchResponseSchema,
     handler: async (ctx: Context, _params, body: Record<string, unknown>) => {

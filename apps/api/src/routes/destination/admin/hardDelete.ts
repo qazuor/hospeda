@@ -2,7 +2,7 @@
  * Admin hard delete destination endpoint
  * Permanently deletes a destination - Admin only
  */
-import { DestinationIdSchema, type ServiceErrorCode } from '@repo/schemas';
+import { DestinationIdSchema, PermissionEnum, type ServiceErrorCode } from '@repo/schemas';
 import { DestinationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -21,6 +21,7 @@ export const adminHardDeleteDestinationRoute = createAdminRoute({
     summary: 'Hard delete destination',
     description: 'Permanently deletes a destination by ID. Admin only.',
     tags: ['Destinations'],
+    requiredPermissions: [PermissionEnum.DESTINATION_DELETE],
     requestParams: { id: DestinationIdSchema },
     responseSchema: DestinationIdSchema,
     handler: async (ctx: Context, params: Record<string, unknown>) => {

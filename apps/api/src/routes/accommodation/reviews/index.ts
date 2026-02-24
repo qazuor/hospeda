@@ -1,10 +1,3 @@
-import { createRouter } from '../../../utils/create-app';
-import { createAccommodationReviewRoute } from './create';
-import { listAccommodationReviewsRoute } from './list';
-
-const app = createRouter();
-
-app.route('/', listAccommodationReviewsRoute);
-app.route('/', createAccommodationReviewRoute);
-
-export { app as accommodationReviewRoutes };
+export { adminAccommodationReviewRoutes } from './admin/index.js';
+export { protectedAccommodationReviewRoutes } from './protected/index.js';
+export { publicAccommodationReviewRoutes } from './public/index.js';

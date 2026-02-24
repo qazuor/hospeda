@@ -1,44 +1,8 @@
-import { createRouter } from '../../utils/create-app';
-import { postBatchRoute } from './batch';
-import { createPostRoute } from './create';
-import { getPostsByCategoryRoute } from './getByCategory';
-import { postGetByIdRoute } from './getById';
-import { postsByAccommodationRoute } from './getByRelatedAccommodation';
-import { postsByDestinationRoute } from './getByRelatedDestination';
-import { postsByEventRoute } from './getByRelatedEvent';
-import { getPostBySlugRoute } from './getBySlug';
-import { featuredPostsRoute } from './getFeatured';
-import { getNewsPostsRoute } from './getNews';
-import { getPostStatsRoute } from './getStats';
-import { getPostSummaryRoute } from './getSummary';
-import { hardDeletePostRoute } from './hardDelete';
-import { likePostRoute } from './like';
-import { postListRoute } from './list';
-import { restorePostRoute } from './restore';
-import { softDeletePostRoute } from './softDelete';
-import { unlikePostRoute } from './unlike';
-import { updatePostRoute } from './update';
-
-const app = createRouter();
-
-app.route('/', postListRoute);
-app.route('/', postBatchRoute);
-app.route('/', postGetByIdRoute);
-app.route('/', getPostBySlugRoute);
-app.route('/', getPostSummaryRoute);
-app.route('/', getPostStatsRoute);
-app.route('/', createPostRoute);
-app.route('/', updatePostRoute);
-app.route('/', softDeletePostRoute);
-app.route('/', hardDeletePostRoute);
-app.route('/', restorePostRoute);
-app.route('/', getPostsByCategoryRoute);
-app.route('/', postsByDestinationRoute);
-app.route('/', postsByAccommodationRoute);
-app.route('/', postsByEventRoute);
-app.route('/', getNewsPostsRoute);
-app.route('/', featuredPostsRoute);
-app.route('/', likePostRoute);
-app.route('/', unlikePostRoute);
-
-export const postRoutes = app;
+/**
+ * Post route aggregator
+ * Re-exports all post route tiers (public, protected, admin).
+ * Each tier is self-contained and registers its own routes internally.
+ */
+export { adminPostRoutes } from './admin/index.js';
+export { protectedPostRoutes } from './protected/index.js';
+export { publicPostRoutes } from './public/index.js';

@@ -1,5 +1,6 @@
 import { createLogger } from '@repo/logger';
 import { bodyLimit } from 'hono/body-limit';
+import { protectedAuthMiddleware } from '../../middlewares/authorization';
 import {
     ALLOWED_FILE_TYPES,
     BugReportFormSchema,
@@ -13,7 +14,6 @@ import {
     getLinearLabels,
     uploadFileToLinear
 } from '../../services/linear.service';
-import { getActorFromContext, isGuestActor } from '../../utils/actor';
 import { detectBrowser, detectPlatform } from '../../utils/browser-detection';
 import { createRouter } from '../../utils/create-app';
 import { buildBugReportMarkdown } from '../../utils/markdown-builder';
@@ -21,26 +21,20 @@ import { buildBugReportMarkdown } from '../../utils/markdown-builder';
 const logger = createLogger('reports:create');
 
 /**
- * POST /api/v1/reports
+ * POST /api/v1/reports/create
  * Creates a bug report in Linear from multipart form data.
  * Expects: multipart/form-data with "data" (JSON) and optional "files" fields.
- * Requires authentication.
+ * Requires authentication (protected route).
  */
 const app = createRouter();
 
 // Apply body limit of 60MB for this route to allow file uploads
 app.use('/create', bodyLimit({ maxSize: 60 * 1024 * 1024 }));
 
-app.post('/create', async (c) => {
-    // Check authentication
-    const actor = getActorFromContext(c);
-    if (isGuestActor(actor)) {
-        return c.json(
-            { success: false, error: { code: 'UNAUTHORIZED', message: 'Authentication required' } },
-            401
-        );
-    }
+// Require authenticated user - delegates auth check to middleware
+app.use('/create', protectedAuthMiddleware());
 
+app.post('/create', async (c) => {
     try {
         // Parse multipart form data
         const formData = await c.req.formData();

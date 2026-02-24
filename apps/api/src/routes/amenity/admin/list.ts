@@ -2,7 +2,12 @@
  * Admin amenity list endpoint
  * Returns all amenities with full admin access
  */
-import { AmenityAdminSchema, AmenitySearchHttpSchema, type ServiceErrorCode } from '@repo/schemas';
+import {
+    AmenityAdminSchema,
+    AmenityAdminSearchSchema,
+    PermissionEnum,
+    type ServiceErrorCode
+} from '@repo/schemas';
 import { AmenityService, ServiceError } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor.js';
 import { apiLogger } from '../../../utils/logger.js';
@@ -22,15 +27,15 @@ export const adminListAmenitiesRoute = createAdminListRoute({
     summary: 'List all amenities (admin)',
     description: 'Returns a paginated list of all amenities with full admin details',
     tags: ['Amenities'],
-    requestQuery: AmenitySearchHttpSchema.shape,
+    requiredPermissions: [PermissionEnum.AMENITY_VIEW],
+    requestQuery: AmenityAdminSearchSchema.shape,
     responseSchema: AmenityAdminSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
 
-        // Use list method with pagination only
-        // Admin actor permissions allow full access at service level
-        const result = await amenityService.list(actor, { page, pageSize });
+        // Pass all admin search filters to service
+        const result = await amenityService.list(actor, { ...query });
 
         if (result.error) {
             throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);

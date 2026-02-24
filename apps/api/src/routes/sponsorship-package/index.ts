@@ -1,19 +1,6 @@
-import { createRouter } from '../../utils/create-app';
-import { createSponsorshipPackageRoute } from './create';
-import { deleteSponsorshipPackageRoute } from './delete';
-import { sponsorshipPackageGetByIdRoute } from './getById';
-import { sponsorshipPackageListRoute } from './list';
-import { updateSponsorshipPackageRoute } from './update';
-
-const app = createRouter();
-
-// Public routes
-app.route('/', sponsorshipPackageListRoute);
-app.route('/', sponsorshipPackageGetByIdRoute);
-
-// Admin routes
-app.route('/', createSponsorshipPackageRoute);
-app.route('/', updateSponsorshipPackageRoute);
-app.route('/', deleteSponsorshipPackageRoute);
-
-export const sponsorshipPackageRoutes = app;
+/**
+ * Sponsorship package routes aggregator
+ * Exports public and admin sponsorship package routes
+ */
+export { adminSponsorshipPackageRoutes } from './admin/index.js';
+export { publicSponsorshipPackageRoutes } from './public/index.js';

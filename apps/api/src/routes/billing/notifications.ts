@@ -10,14 +10,13 @@
  * @module routes/billing/notifications
  */
 
-import { RoleEnum } from '@repo/schemas';
+import { PermissionEnum } from '@repo/schemas';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
-import { getActorFromContext } from '../../middlewares/actor';
 import { NotificationRetentionService } from '../../services/notification-retention.service';
 import { createRouter } from '../../utils/create-app';
 import { apiLogger } from '../../utils/logger';
-import { type SimpleRouteInterface, createSimpleRoute } from '../../utils/route-factory';
+import { createAdminRoute } from '../../utils/route-factory';
 
 /**
  * Retention policy cleanup response schema
@@ -35,18 +34,11 @@ const cleanupResponseSchema = z.object({
  *
  * @param c - Hono context
  * @returns Response with cleanup summary
- * @throws HTTPException 403 if user is not admin
  * @throws HTTPException 500 if service fails
  */
-export const handleCleanup = async (c: Parameters<SimpleRouteInterface['handler']>[0]) => {
-    // Admin-only check
-    const actor = getActorFromContext(c);
-    if (actor.role !== RoleEnum.ADMIN && actor.role !== RoleEnum.SUPER_ADMIN) {
-        throw new HTTPException(403, {
-            message: 'Admin access required'
-        });
-    }
-
+export const handleCleanup = async (
+    _c: Parameters<Parameters<typeof createAdminRoute>[0]['handler']>[0]
+) => {
     const retentionService = new NotificationRetentionService();
 
     try {
@@ -83,13 +75,14 @@ export const handleCleanup = async (c: Parameters<SimpleRouteInterface['handler'
  * 1. Marks notifications older than 90 days as expired
  * 2. Permanently deletes notifications expired for more than 30 days
  */
-export const cleanupRoute = createSimpleRoute({
+export const cleanupRoute = createAdminRoute({
     method: 'post',
     path: '/cleanup',
     summary: 'Run notification log cleanup',
     description: 'Execute retention policy: mark old logs as expired and purge long-expired logs',
     tags: ['Billing', 'Notifications', 'Admin'],
     responseSchema: cleanupResponseSchema,
+    requiredPermissions: [PermissionEnum.ACCESS_API_ADMIN],
     handler: handleCleanup
 });
 

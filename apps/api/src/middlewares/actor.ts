@@ -27,11 +27,12 @@ const MockPermissionsSchema = z.array(z.nativeEnum(PermissionEnum));
 
 /**
  * Check if mock actor headers are allowed.
- * @internal TEST-ONLY .. Never enable in production!
+ * @internal TEST-ONLY .. Never enable in production or staging!
  *
- * Mock actor headers are ONLY accepted when:
+ * Mock actor headers are ONLY accepted when ALL conditions are met:
  * - NODE_ENV === 'test'
  * - ALLOW_MOCK_ACTOR === 'true' (explicit opt-in)
+ * - CI !== 'true' (never in CI pipelines with real tokens)
  *
  * Headers:
  * - x-mock-actor-id: UUID of the mock actor
@@ -39,7 +40,11 @@ const MockPermissionsSchema = z.array(z.nativeEnum(PermissionEnum));
  * - x-mock-actor-permissions: JSON array of permissions
  */
 const isMockActorAllowed = (): boolean => {
-    return process.env.NODE_ENV === 'test' && process.env.ALLOW_MOCK_ACTOR === 'true';
+    return (
+        process.env.NODE_ENV === 'test' &&
+        process.env.ALLOW_MOCK_ACTOR === 'true' &&
+        process.env.CI !== 'true'
+    );
 };
 
 /**

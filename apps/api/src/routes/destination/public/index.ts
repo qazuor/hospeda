@@ -3,6 +3,7 @@
  * All routes here are accessible without authentication
  */
 import { createRouter } from '../../../utils/create-app';
+import { publicDestinationReviewRoutes } from '../reviews/public/index.js';
 import { publicGetDestinationAccommodationsRoute } from './getAccommodations';
 import { publicGetDestinationAncestorsRoute } from './getAncestors';
 import { publicGetDestinationBreadcrumbRoute } from './getBreadcrumb';
@@ -31,5 +32,8 @@ app.route('/', publicGetDestinationChildrenRoute);
 app.route('/', publicGetDestinationDescendantsRoute);
 app.route('/', publicGetDestinationAncestorsRoute);
 app.route('/', publicGetDestinationBreadcrumbRoute);
+
+// Review routes
+app.route('/', publicDestinationReviewRoutes);
 
 export { app as publicDestinationRoutes };

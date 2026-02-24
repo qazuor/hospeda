@@ -5,7 +5,8 @@
 import {
     type FeatureBatchRequest,
     FeatureBatchRequestSchema,
-    FeatureBatchResponseSchema
+    FeatureBatchResponseSchema,
+    PermissionEnum
 } from '@repo/schemas';
 import { FeatureService } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -25,6 +26,7 @@ export const adminBatchFeaturesRoute = createAdminRoute({
     summary: 'Get multiple features by IDs',
     description: 'Retrieves multiple features by their IDs for entity select components',
     tags: ['Features'],
+    requiredPermissions: [PermissionEnum.FEATURE_UPDATE],
     requestBody: FeatureBatchRequestSchema,
     responseSchema: FeatureBatchResponseSchema,
     handler: async (ctx: Context, _params, body: Record<string, unknown>) => {

@@ -44,9 +44,9 @@ import usageRouter from './usage';
  * Compatible with QZPay's authMiddleware requirement.
  */
 const billingAuthMiddleware: MiddlewareHandler = async (c, next) => {
-    const auth = c.get('auth');
+    const user = c.get('user');
 
-    if (!auth?.userId) {
+    if (!user?.id) {
         throw new HTTPException(401, {
             message: 'Authentication required for billing operations'
         });

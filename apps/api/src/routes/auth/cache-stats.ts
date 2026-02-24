@@ -1,18 +1,19 @@
-import { CacheStatsResponseSchema } from '@repo/schemas';
-import { createSimpleRoute } from '../../utils/route-factory';
+import { CacheStatsResponseSchema, PermissionEnum } from '@repo/schemas';
+import { createAdminRoute } from '../../utils/route-factory';
 import { userCache } from '../../utils/user-cache';
 
 /**
  * Cache statistics endpoint for monitoring and debugging
  * Returns comprehensive cache performance metrics
+ * Restricted to admin users with ACCESS_PANEL_ADMIN permission
  */
-export const cacheStatsRoute = createSimpleRoute({
+export const cacheStatsRoute = createAdminRoute({
     method: 'get',
     path: '/cache/stats',
     summary: 'Get user cache statistics',
     description: 'Returns comprehensive cache performance metrics for monitoring and debugging',
     tags: ['Auth', 'Monitoring'],
-    options: { skipAuth: true }, // Allow monitoring without authentication
+    requiredPermissions: [PermissionEnum.ACCESS_PANEL_ADMIN],
     responseSchema: CacheStatsResponseSchema,
     handler: async () => {
         const stats = userCache.getStats();

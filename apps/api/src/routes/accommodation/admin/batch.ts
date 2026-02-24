@@ -1,4 +1,8 @@
-import { AccommodationBatchRequestSchema, AccommodationBatchResponseSchema } from '@repo/schemas';
+import {
+    AccommodationBatchRequestSchema,
+    AccommodationBatchResponseSchema,
+    PermissionEnum
+} from '@repo/schemas';
 import { AccommodationService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -18,6 +22,7 @@ export const adminBatchAccommodationsRoute = createAdminRoute({
     description:
         'Retrieves multiple accommodations by their IDs for entity select components. Admin only.',
     tags: ['Accommodations'],
+    requiredPermissions: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
     requestBody: AccommodationBatchRequestSchema,
     responseSchema: AccommodationBatchResponseSchema,
     handler: async (ctx: Context, _params, body: Record<string, unknown>) => {

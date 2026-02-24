@@ -25,21 +25,64 @@ export function createOpenAPISchema<T extends z.ZodTypeAny>(schema: T): z.ZodTyp
 
     // If it's a ZodObject, process its shape
     if (schema instanceof z.ZodObject) {
-        const newShape: Record<string, z.ZodTypeAny> = {};
+        try {
+            const newShape: Record<string, z.ZodTypeAny> = {};
 
-        // Access the shape - works with both Zod 3 and Zod 4
-        // biome-ignore lint/suspicious/noExplicitAny: Need to access internal Zod structure
-        const shapeObj = (schema._def as any).shape;
+            // In Zod v4, .pick()/.omit() schemas have a Proxy shape that may throw
+            // "Unrecognized key" errors when the picked keys don't exist in the base schema.
+            // This happens when access schemas pick flattened field names (e.g., "city")
+            // that are actually nested inside composite objects (e.g., "location.city").
+            // biome-ignore lint/suspicious/noExplicitAny: Zod internals access
+            const def = (schema as any)._def;
 
-        for (const [key, value] of Object.entries(shapeObj)) {
-            newShape[key] = convertDateField(value as z.ZodTypeAny, key);
+            // Try to get shape as a plain object (works for non-pick/omit schemas)
+            let shapeObj: Record<string, z.ZodTypeAny> | null = null;
+
+            if (typeof def.shape === 'function') {
+                // Zod v3 style: _def.shape is a function
+                shapeObj = def.shape();
+            } else if (def.shape && typeof def.shape === 'object') {
+                // Zod v4 style: _def.shape is an object/Proxy - copy it safely
+                const keys = Object.keys(def.shape);
+                shapeObj = {};
+                for (const key of keys) {
+                    shapeObj[key] = def.shape[key];
+                }
+            }
+
+            if (!shapeObj) {
+                // Cannot access shape, return a passthrough object for OpenAPI
+                return createFallbackObjectSchema();
+            }
+
+            for (const [key, value] of Object.entries(shapeObj)) {
+                newShape[key] = convertDateField(value as z.ZodTypeAny, key);
+            }
+
+            return z.object(newShape);
+        } catch {
+            // If shape access fails (e.g., Zod v4 .pick()/.omit() Proxy with invalid keys),
+            // return a generic passthrough object schema that OpenAPI can process without errors.
+            // This preserves API functionality (runtime validation still works with the original schema)
+            // while preventing zod-to-openapi from crashing on Proxy introspection.
+            return createFallbackObjectSchema();
         }
-
-        return z.object(newShape);
     }
 
     // For non-object schemas, just convert the field directly
     return convertDateField(schema, 'root');
+}
+
+/**
+ * Creates a fallback OpenAPI schema for cases where the original schema cannot be introspected.
+ * This happens with Zod v4 .pick()/.omit() schemas that use Proxy shapes with keys
+ * that don't exist in the base schema. Returns a permissive object schema that
+ * zod-to-openapi can safely process for documentation generation.
+ */
+function createFallbackObjectSchema(): z.ZodTypeAny {
+    return z.record(z.string(), z.unknown()).openapi({
+        description: 'Entity response object (schema details omitted due to Zod v4 compatibility)'
+    });
 }
 
 /**

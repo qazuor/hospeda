@@ -4,7 +4,8 @@
  */
 import {
     EventLocationAdminSchema,
-    EventLocationSearchHttpSchema,
+    EventLocationAdminSearchSchema,
+    PermissionEnum,
     type ServiceErrorCode
 } from '@repo/schemas';
 import { EventLocationService, ServiceError } from '@repo/service-core';
@@ -26,15 +27,15 @@ export const adminListEventLocationsRoute = createAdminListRoute({
     summary: 'List all event locations (admin)',
     description: 'Returns a paginated list of all event locations with full admin details',
     tags: ['Event Locations'],
-    requestQuery: EventLocationSearchHttpSchema.shape,
+    requiredPermissions: [PermissionEnum.EVENT_LOCATION_VIEW],
+    requestQuery: EventLocationAdminSearchSchema.shape,
     responseSchema: EventLocationAdminSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
 
-        // Use list method with pagination only
-        // Admin actor permissions allow full access at service level
-        const result = await eventLocationService.list(actor, { page, pageSize });
+        // Pass all admin search filters to service
+        const result = await eventLocationService.list(actor, { ...query });
 
         if (result.error) {
             throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);

@@ -2,7 +2,12 @@
  * Admin restore amenity endpoint
  * Restores a soft-deleted amenity
  */
-import { AmenityAdminSchema, AmenityIdSchema, type ServiceErrorCode } from '@repo/schemas';
+import {
+    AmenityAdminSchema,
+    AmenityIdSchema,
+    PermissionEnum,
+    type ServiceErrorCode
+} from '@repo/schemas';
 import { AmenityService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor.js';
@@ -21,6 +26,7 @@ export const adminRestoreAmenityRoute = createAdminRoute({
     summary: 'Restore amenity',
     description: 'Restores a soft-deleted amenity',
     tags: ['Amenities'],
+    requiredPermissions: [PermissionEnum.AMENITY_DELETE],
     requestParams: {
         id: AmenityIdSchema
     },

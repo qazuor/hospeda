@@ -3,6 +3,7 @@
  * Handles multiple posts operations
  */
 import {
+    PermissionEnum,
     type PostBatchRequest,
     PostBatchRequestSchema,
     PostBatchResponseSchema
@@ -25,6 +26,7 @@ export const adminPostBatchRoute = createAdminRoute({
     summary: 'Get multiple posts by IDs',
     description: 'Retrieves multiple posts by their IDs for entity select components',
     tags: ['Posts'],
+    requiredPermissions: [PermissionEnum.POST_VIEW_ALL],
     requestBody: PostBatchRequestSchema,
     responseSchema: PostBatchResponseSchema,
     handler: async (ctx: Context, _params, body: Record<string, unknown>) => {

@@ -3,6 +3,7 @@
  * Routes that require authentication
  */
 import { createRouter } from '../../../utils/create-app';
+import { protectedAccommodationReviewRoutes } from '../reviews/protected/index.js';
 // FAQ routes (require auth and ownership)
 import { addFaqRoute } from './addFaq';
 import { protectedCreateAccommodationRoute } from './create';
@@ -32,5 +33,8 @@ app.route('/', getFaqsRoute);
 app.route('/', addFaqRoute);
 app.route('/', updateFaqRoute);
 app.route('/', removeFaqRoute);
+
+// POST /:accommodationId/reviews - Create review for an accommodation
+app.route('/', protectedAccommodationReviewRoutes);
 
 export { app as protectedAccommodationRoutes };
