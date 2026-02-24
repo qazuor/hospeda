@@ -18,3 +18,6 @@ export * from './attraction.batch.schema.js'; // Batch retrieval schemas
 
 // Relations
 export * from './attraction.relations.schema.js'; // Schemas with related entities
+
+// Admin search schemas
+export * from './attraction.admin-search.schema.js';

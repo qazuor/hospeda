@@ -27,15 +27,12 @@ export const AccommodationPublicSchema = AccommodationSchema.pick({
     // Media (public safe)
     media: true,
 
-    // Location (public safe)
-    city: true,
-    state: true,
-    country: true,
-    address: true,
+    // Location (nested object with state, country, coordinates)
+    location: true,
 
     // Review aggregates (public)
     averageRating: true,
-    ratingCount: true,
+    reviewsCount: true,
 
     // Visibility
     visibility: true,
@@ -74,12 +71,9 @@ export const AccommodationProtectedSchema = AccommodationSchema.pick({
     isFeatured: true,
     destinationId: true,
     media: true,
-    city: true,
-    state: true,
-    country: true,
-    address: true,
+    location: true,
     averageRating: true,
-    ratingCount: true,
+    reviewsCount: true,
     visibility: true,
     seo: true,
     price: true,
@@ -89,16 +83,8 @@ export const AccommodationProtectedSchema = AccommodationSchema.pick({
     // Protected fields - ownership
     ownerId: true,
 
-    // Contact info (authenticated users only)
-    email: true,
-    phone: true,
-    website: true,
-    socialLinks: true,
-
-    // Full location (authenticated users)
-    zipCode: true,
-    latitude: true,
-    longitude: true,
+    // Contact info (nested object with email, phone, website)
+    contactInfo: true,
 
     // Lifecycle (for owners)
     lifecycleState: true,

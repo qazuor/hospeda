@@ -52,7 +52,13 @@ export const FeatureSchema = z.object({
         .optional(),
 
     isBuiltin: z.boolean().default(false),
-    isFeatured: z.boolean().default(false)
+    isFeatured: z.boolean().default(false),
+    displayWeight: z
+        .number({ message: 'zodError.feature.displayWeight.required' })
+        .int({ message: 'zodError.feature.displayWeight.int' })
+        .min(1, { message: 'zodError.feature.displayWeight.min' })
+        .max(100, { message: 'zodError.feature.displayWeight.max' })
+        .default(50)
 });
 
 /**

@@ -43,14 +43,14 @@ export const EventOrganizerSchema = z.object({
         })
         .min(10, { message: 'zodError.eventOrganizer.description.min' })
         .max(500, { message: 'zodError.eventOrganizer.description.max' })
-        .optional(),
+        .nullish(),
 
     logo: z
         .string({
             message: 'zodError.eventOrganizer.logo.invalidType'
         })
         .url({ message: 'zodError.eventOrganizer.logo.url' })
-        .optional(),
+        .nullish(),
 
     // Contact and social (using base objects)
     ...BaseContactFields,

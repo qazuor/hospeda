@@ -15,3 +15,6 @@ export * from './eventOrganizer.http.schema.js'; // HTTP-compatible schemas with
 
 // Batch operations
 export * from './eventOrganizer.batch.schema.js'; // Batch retrieval schemas
+
+// Admin search
+export * from './eventOrganizer.admin-search.schema.js';

@@ -54,7 +54,14 @@ export const AttractionSchema = z.object({
 
     isFeatured: z.boolean().default(false),
 
-    isBuiltin: z.boolean().default(false)
+    isBuiltin: z.boolean().default(false),
+
+    displayWeight: z
+        .number({ message: 'zodError.attraction.displayWeight.required' })
+        .int({ message: 'zodError.attraction.displayWeight.int' })
+        .min(1, { message: 'zodError.attraction.displayWeight.min' })
+        .max(100, { message: 'zodError.attraction.displayWeight.max' })
+        .default(50)
 });
 
 /**
@@ -68,7 +75,8 @@ export const AttractionSummarySchema = AttractionSchema.pick({
     description: true,
     icon: true,
     isFeatured: true,
-    isBuiltin: true
+    isBuiltin: true,
+    displayWeight: true
 });
 
 /**

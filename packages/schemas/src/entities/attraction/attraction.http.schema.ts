@@ -51,7 +51,8 @@ export const AttractionCreateHttpSchema = z.object({
     icon: z.string().min(1).max(100),
     destinationId: z.string().uuid().optional(),
     isFeatured: z.coerce.boolean().default(false),
-    isBuiltin: z.coerce.boolean().default(false)
+    isBuiltin: z.coerce.boolean().default(false),
+    displayWeight: z.coerce.number().int().min(1).max(100).default(50)
 });
 
 export type AttractionCreateHttp = z.infer<typeof AttractionCreateHttpSchema>;
@@ -131,6 +132,7 @@ export const httpToDomainAttractionCreate = (
         destinationId: httpData.destinationId,
         isFeatured: httpData.isFeatured,
         isBuiltin: httpData.isBuiltin,
+        displayWeight: httpData.displayWeight,
         lifecycleState: LifecycleStatusEnum.ACTIVE
     };
 };
@@ -149,7 +151,8 @@ export const httpToDomainAttractionUpdate = (
         icon: httpData.icon,
         destinationId: httpData.destinationId,
         isFeatured: httpData.isFeatured,
-        isBuiltin: httpData.isBuiltin
+        isBuiltin: httpData.isBuiltin,
+        displayWeight: httpData.displayWeight
         // Note: lifecycleState not included in updates - should be handled separately
     };
 };

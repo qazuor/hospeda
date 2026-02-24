@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { UserPublicSchema } from './user.access.schema.js';
 import { UserSchema } from './user.schema.js';
 
 /**
@@ -35,17 +36,17 @@ export const UserBatchRequestSchema = z.object({
 });
 
 /**
- * Batch response schema for user operations
- * Returns an array of users or null for missing/inaccessible users
- *
- * @example
- * ```typescript
- * const response = [
- *   { id: 'user_123', firstName: 'John', lastName: 'Doe' },
- *   null, // user not found or not accessible
- *   { id: 'user_789', firstName: 'Jane', lastName: 'Smith' }
- * ];
- * ```
+ * Public batch response schema for user operations
+ * Returns an array of public user data or null for missing/inaccessible users.
+ * Only exposes safe public fields (id, displayName, firstName, lastName, slug, avatarUrl, role).
+ */
+export const UserPublicBatchResponseSchema = z.array(
+    UserPublicSchema.nullable().describe('Public user data or null if not found/accessible')
+);
+
+/**
+ * Admin batch response schema for user operations
+ * Returns full user data including sensitive fields. Only for admin endpoints.
  */
 export const UserBatchResponseSchema = z.array(
     UserSchema.nullable().describe('User data or null if not found/accessible')
@@ -53,4 +54,5 @@ export const UserBatchResponseSchema = z.array(
 
 // Type exports for TypeScript usage
 export type UserBatchRequest = z.infer<typeof UserBatchRequestSchema>;
+export type UserPublicBatchResponse = z.infer<typeof UserPublicBatchResponseSchema>;
 export type UserBatchResponse = z.infer<typeof UserBatchResponseSchema>;

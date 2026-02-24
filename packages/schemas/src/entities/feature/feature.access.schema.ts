@@ -21,7 +21,10 @@ export const FeaturePublicSchema = FeatureSchema.pick({
 
     // Visibility
     isFeatured: true,
-    isBuiltin: true
+    isBuiltin: true,
+
+    // Display
+    displayWeight: true
 });
 
 export type FeaturePublic = z.infer<typeof FeaturePublicSchema>;
@@ -43,6 +46,7 @@ export const FeatureProtectedSchema = FeatureSchema.pick({
     icon: true,
     isFeatured: true,
     isBuiltin: true,
+    displayWeight: true,
 
     // Protected fields - lifecycle
     lifecycleState: true,

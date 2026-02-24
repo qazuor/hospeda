@@ -147,6 +147,7 @@ export const FeatureListItemSchema = FeatureSchema.pick({
     icon: true,
     isBuiltin: true,
     isFeatured: true,
+    displayWeight: true,
     createdAt: true,
     updatedAt: true
 });

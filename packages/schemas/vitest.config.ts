@@ -5,6 +5,12 @@ export default defineConfig({
         globals: true,
         environment: 'node',
         setupFiles: ['./test/setup.ts'],
+        pool: 'forks',
+        poolOptions: {
+            forks: {
+                maxForks: 3
+            }
+        },
         coverage: {
             provider: 'v8',
             reporter: ['text', 'json', 'html'],

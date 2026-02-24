@@ -73,11 +73,8 @@ export const EventProtectedSchema = EventSchema.pick({
     // Protected fields - ownership
     authorId: true,
 
-    // Contact info (authenticated users only)
-    email: true,
-    phone: true,
-    website: true,
-    socialLinks: true,
+    // Contact info (nested object with email, phone, website)
+    contactInfo: true,
 
     // Lifecycle (for authors)
     lifecycleState: true,

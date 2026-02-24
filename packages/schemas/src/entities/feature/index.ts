@@ -18,3 +18,6 @@ export * from './feature.relations.schema.js'; // Schemas with related entities
 
 // Batch operations
 export * from './feature.batch.schema.js'; // Batch request and response schemas
+
+// Admin search schemas
+export * from './feature.admin-search.schema.js';

@@ -20,6 +20,7 @@ export const AttractionPublicSchema = AttractionSchema.pick({
     icon: true,
     isFeatured: true,
     isBuiltin: true,
+    displayWeight: true,
 
     // Destination reference
     destinationId: true
@@ -44,6 +45,7 @@ export const AttractionProtectedSchema = AttractionSchema.pick({
     icon: true,
     isFeatured: true,
     isBuiltin: true,
+    displayWeight: true,
     destinationId: true,
 
     // Lifecycle (for authenticated users)

@@ -40,6 +40,7 @@ export const DestinationSearchHttpSchema = BaseHttpSearchSchema.extend({
 
     // Features with HTTP coercion
     hasAttractions: createBooleanQueryParam('Filter destinations with attractions'),
+    includeEventCount: createBooleanQueryParam('Include event count per destination'),
     climate: z.string().min(1).max(50).optional(),
     bestSeason: z.string().min(1).max(50).optional(),
 

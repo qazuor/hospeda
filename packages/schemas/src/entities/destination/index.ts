@@ -7,6 +7,9 @@ export * from './destination.crud.schema.js'; // Create, Update, Delete, Restore
 // Query operations
 export * from './destination.query.schema.js'; // List, Search, Summary, Stats, Filters schemas
 
+// Admin search
+export * from './destination.admin-search.schema.js'; // Admin-specific search with extended filters
+
 // HTTP operations
 export * from './destination.http.schema.js'; // HTTP-compatible schemas with query coercion
 

@@ -123,6 +123,7 @@ export const AttractionListItemSchema = AttractionSchema.pick({
     destinationId: true,
     isFeatured: true,
     isBuiltin: true,
+    displayWeight: true,
     lifecycleState: true,
     createdAt: true,
     updatedAt: true

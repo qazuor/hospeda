@@ -68,7 +68,8 @@ export const FeatureCreateHttpSchema = z.object({
     priority: z.coerce.number().int().min(0).max(100).default(50),
     isAvailable: z.coerce.boolean().default(true),
     isPremium: z.coerce.boolean().default(false),
-    requiresPayment: z.coerce.boolean().default(false)
+    requiresPayment: z.coerce.boolean().default(false),
+    displayWeight: z.coerce.number().int().min(1).max(100).default(50)
 });
 
 export type FeatureCreateHttp = z.infer<typeof FeatureCreateHttpSchema>;
@@ -128,7 +129,8 @@ export function httpToDomainFeatureCreate(
         description: httpData.description,
         icon: httpData.icon,
         isBuiltin: false, // Default value
-        isFeatured: false // Default value
+        isFeatured: false, // Default value
+        displayWeight: httpData.displayWeight
     };
 }
 
@@ -142,6 +144,7 @@ export function httpToDomainFeatureUpdate(
         name: httpData.name,
         slug: httpData.slug,
         description: httpData.description,
-        icon: httpData.icon
+        icon: httpData.icon,
+        displayWeight: httpData.displayWeight
     };
 }

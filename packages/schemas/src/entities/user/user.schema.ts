@@ -84,7 +84,7 @@ export const UserSchema = z.object({
         })
         .min(2, { message: 'zodError.user.firstName.min' })
         .max(50, { message: 'zodError.user.firstName.max' })
-        .optional(),
+        .nullish(),
 
     lastName: z
         .string({
@@ -92,7 +92,7 @@ export const UserSchema = z.object({
         })
         .min(2, { message: 'zodError.user.lastName.min' })
         .max(50, { message: 'zodError.user.lastName.max' })
-        .optional(),
+        .nullish(),
 
     birthDate: z
         .date({
@@ -114,7 +114,7 @@ export const UserSchema = z.object({
     permissions: z.array(PermissionEnumSchema).default([]),
 
     // User-specific nested objects
-    profile: UserProfileSchema.optional(),
+    profile: UserProfileSchema.nullish(),
     settings: UserSettingsSchema.optional(),
     bookmarks: z.array(UserBookmarkSchema).optional()
 });

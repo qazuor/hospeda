@@ -27,3 +27,6 @@ export * from './eventLocation.batch.schema.js';
 
 // Access schemas
 export * from './eventLocation.access.schema.js';
+
+// Admin search
+export * from './eventLocation.admin-search.schema.js';

@@ -7,6 +7,9 @@ export * from './event.crud.schema.js'; // Create, Update, Delete, Restore schem
 // Query operations
 export * from './event.query.schema.js'; // List, Search, Summary, Stats, Filters schemas
 
+// Admin search
+export * from './event.admin-search.schema.js'; // Admin-specific search with extended filters
+
 // HTTP operations
 export * from './event.http.schema.js'; // HTTP-compatible schemas with query coercion
 

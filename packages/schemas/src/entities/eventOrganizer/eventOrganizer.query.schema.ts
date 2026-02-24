@@ -4,7 +4,9 @@ import {
     HttpQueryFields,
     HttpSortingSchema
 } from '../../api/http/base-http.schema.js';
+import { ContactInfoSchema } from '../../common/contact.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
+import { SocialNetworkSchema } from '../../common/social.schema.js';
 import { type OpenApiSchemaMetadata, applyOpenApiMetadata } from '../../utils/openapi.utils.js';
 import { EventOrganizerSchema } from './eventOrganizer.schema.js';
 
@@ -71,19 +73,22 @@ export const EventOrganizerSearchSchema = BaseSearchSchema.extend({
 // ============================================================================
 
 /**
- * EventOrganizer list item schema - contains essential fields for list display
+ * EventOrganizer list item schema - contains essential fields for list display.
+ * contactInfo and socialNetworks use .partial() because DB records may have
+ * incomplete nested objects (e.g., missing mobilePhone).
  */
 export const EventOrganizerListItemSchema = EventOrganizerSchema.pick({
     id: true,
     name: true,
     description: true,
     logo: true,
-    contactInfo: true,
-    socialNetworks: true,
     createdAt: true,
     updatedAt: true,
     lifecycleState: true,
     adminInfo: true
+}).extend({
+    contactInfo: ContactInfoSchema.partial().nullish(),
+    socialNetworks: SocialNetworkSchema.partial().nullish()
 });
 
 /**

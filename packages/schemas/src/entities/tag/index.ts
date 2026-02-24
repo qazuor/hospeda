@@ -13,3 +13,6 @@ export * from './tag.batch.schema.js'; // Batch retrieve schemas
 
 // Relations
 export * from './tag.relations.schema.js'; // Schemas with related entities
+
+// Admin search schemas
+export * from './tag.admin-search.schema.js';

@@ -13,16 +13,17 @@ export const EventOrganizerPublicSchema = EventOrganizerSchema.pick({
     // Identification
     id: true,
     name: true,
+    slug: true,
 
     // Content
     description: true,
     logo: true,
 
-    // Social (public safe)
-    website: true,
-    facebook: true,
-    instagram: true,
-    twitter: true,
+    // Contact info (nested object with website, etc.)
+    contactInfo: true,
+
+    // Social networks (nested object with facebook, instagram, twitter, etc.)
+    socialNetworks: true,
 
     // Lifecycle state (to show if active/archived)
     lifecycleState: true
@@ -42,17 +43,12 @@ export const EventOrganizerProtectedSchema = EventOrganizerSchema.pick({
     // All public fields
     id: true,
     name: true,
+    slug: true,
     description: true,
     logo: true,
-    website: true,
-    facebook: true,
-    instagram: true,
-    twitter: true,
+    contactInfo: true,
+    socialNetworks: true,
     lifecycleState: true,
-
-    // Protected fields - contact info
-    email: true,
-    phone: true,
 
     // Basic audit (created/updated dates)
     createdAt: true,

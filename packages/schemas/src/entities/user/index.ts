@@ -19,6 +19,9 @@ export * from './user.http.schema.js'; // HTTP-compatible schemas with coercion
 // Relations
 export * from './user.relations.schema.js'; // Schemas with related entities
 
+// Admin search
+export * from './user.admin-search.schema.js'; // Admin-specific search with extended filters
+
 // Additional schemas
 export * from './permission.schema.js';
 export * from './role.schema.js';

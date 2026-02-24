@@ -56,7 +56,13 @@ export const AmenitySchema = z.object({
 
     type: AmenitiesTypeEnumSchema,
     isBuiltin: z.boolean({ message: 'zodError.amenity.isBuiltin.required' }).default(false),
-    isFeatured: z.boolean({ message: 'zodError.amenity.isFeatured.required' }).default(false)
+    isFeatured: z.boolean({ message: 'zodError.amenity.isFeatured.required' }).default(false),
+    displayWeight: z
+        .number({ message: 'zodError.amenity.displayWeight.required' })
+        .int({ message: 'zodError.amenity.displayWeight.int' })
+        .min(1, { message: 'zodError.amenity.displayWeight.min' })
+        .max(100, { message: 'zodError.amenity.displayWeight.max' })
+        .default(50)
 });
 export type Amenity = z.infer<typeof AmenitySchema>;
 

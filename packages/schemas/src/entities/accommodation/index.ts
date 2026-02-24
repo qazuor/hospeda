@@ -8,6 +8,9 @@ export * from './accommodation.crud.schema.js'; // Create, Update, Delete, Resto
 // Query operations
 export * from './accommodation.query.schema.js'; // List, Search, Summary, Stats, Filters schemas
 
+// Admin search
+export * from './accommodation.admin-search.schema.js'; // Admin-specific search with extended filters
+
 // HTTP operations
 export * from './accommodation.http.schema.js'; // HTTP-compatible schemas with query coercion
 

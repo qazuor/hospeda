@@ -6,3 +6,6 @@ export * from './postSponsor.crud.schema.js'; // Create, Update, Delete, Restore
 
 // HTTP operations
 export * from './postSponsor.http.schema.js'; // HTTP-compatible schemas with query coercion
+
+// Admin search
+export * from './postSponsor.admin-search.schema.js';

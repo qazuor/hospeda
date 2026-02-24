@@ -23,7 +23,8 @@ export const AmenityPublicSchema = AmenitySchema.pick({
     type: true,
 
     // Display
-    isFeatured: true
+    isFeatured: true,
+    displayWeight: true
 });
 
 export type AmenityPublic = z.infer<typeof AmenityPublicSchema>;
@@ -45,6 +46,7 @@ export const AmenityProtectedSchema = AmenitySchema.pick({
     icon: true,
     type: true,
     isFeatured: true,
+    displayWeight: true,
 
     // Protected fields
     isBuiltin: true,

@@ -71,7 +71,8 @@ export const AmenityCreateHttpSchema = z.object({
     priority: z.coerce.number().int().min(0).max(100).default(50),
     isActive: z.coerce.boolean().default(true),
     isPopular: z.coerce.boolean().default(false),
-    isFeatured: z.coerce.boolean().default(false)
+    isFeatured: z.coerce.boolean().default(false),
+    displayWeight: z.coerce.number().int().min(1).max(100).default(50)
 });
 
 export type AmenityCreateHttp = z.infer<typeof AmenityCreateHttpSchema>;
@@ -155,6 +156,7 @@ export const httpToDomainAmenityCreate = (httpData: AmenityCreateHttp): AmenityC
     type: httpData.type,
     icon: httpData.icon,
     isFeatured: httpData.isFeatured,
+    displayWeight: httpData.displayWeight,
     isBuiltin: false, // Default for user-created amenities
 
     // Required fields with defaults for domain schema
@@ -176,5 +178,6 @@ export const httpToDomainAmenityUpdate = (httpData: AmenityUpdateHttp): AmenityU
     type: httpData.type,
     icon: httpData.icon,
     isFeatured: httpData.isFeatured,
+    displayWeight: httpData.displayWeight,
     isBuiltin: httpData.isActive !== undefined ? !httpData.isActive : undefined // Map isActive inversely to isBuiltin
 });

@@ -204,6 +204,7 @@ export const AmenityListItemSchema = AmenitySchema.pick({
     icon: true,
     isBuiltin: true,
     isFeatured: true,
+    displayWeight: true,
     createdAt: true,
     updatedAt: true
 }).extend({

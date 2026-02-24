@@ -62,6 +62,7 @@ export const FeatureCreateInputSchema = z
 
         isBuiltin: z.boolean().optional(),
         isFeatured: z.boolean().optional(),
+        displayWeight: z.number().int().min(1).max(100).default(50).optional(),
         lifecycleState: LifecycleStatusEnumSchema.optional(),
 
         // Admin info (optional)
