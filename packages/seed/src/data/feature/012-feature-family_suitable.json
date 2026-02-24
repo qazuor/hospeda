@@ -4,8 +4,9 @@
     "name": "Apto para familias",
     "slug": "family_suitable",
     "description": "Instalaciones y servicios especialmente diseñados para familias con niños, con medidas de seguridad y entretenimiento apropiadas",
-    "icon": "feature",
+    "icon": "FamilySuitableIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 68,
     "lifecycleState": "ACTIVE"
 }

@@ -4,8 +4,9 @@
     "name": "Sector exclusivo para niños",
     "slug": "exclusive_kids_area",
     "description": "Área especialmente diseñada y equipada solo para niños con juegos, seguridad y supervisión apropiada",
-    "icon": "feature",
+    "icon": "KidsGamesIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 30,
     "lifecycleState": "ACTIVE"
 }

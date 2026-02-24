@@ -6,6 +6,7 @@
     "description": "Excursiones y tours por el delta del río",
     "icon": "explore",
     "isBuiltin": true,
+    "displayWeight": 50,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

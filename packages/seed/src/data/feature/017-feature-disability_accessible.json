@@ -4,8 +4,9 @@
     "name": "Apto para personas con discapacidad",
     "slug": "disability_accessible",
     "description": "Completamente accesible con rampas, baños adaptados, puertas amplias y todas las facilidades para personas con movilidad reducida",
-    "icon": "feature",
+    "icon": "AccessibilityFriendlyIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 55,
     "lifecycleState": "ACTIVE"
 }

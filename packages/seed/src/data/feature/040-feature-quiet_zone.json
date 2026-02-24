@@ -4,8 +4,9 @@
     "name": "Zona de silencio",
     "slug": "quiet_zone",
     "description": "Área específicamente designada para descanso y relajación donde se mantiene absoluto silencio",
-    "icon": "feature",
+    "icon": "QuietZoneIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 42,
     "lifecycleState": "ACTIVE"
 }

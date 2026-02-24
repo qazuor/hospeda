@@ -6,6 +6,7 @@
     "description": "Mercado con variedad de comidas y productos gastronómicos",
     "icon": "restaurant",
     "isBuiltin": true,
+    "displayWeight": 50,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

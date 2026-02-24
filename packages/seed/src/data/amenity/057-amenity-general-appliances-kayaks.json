@@ -5,7 +5,8 @@
     "slug": "kayaks",
     "description": "Kayaks disponibles",
     "type": "GENERAL_APPLIANCES",
-    "icon": "amenity",
+    "icon": "KayakRentalIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 55
 }

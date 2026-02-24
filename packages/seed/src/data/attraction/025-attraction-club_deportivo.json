@@ -6,6 +6,7 @@
     "description": "Club con instalaciones deportivas y actividades recreativas",
     "icon": "fitness_center",
     "isBuiltin": true,
+    "displayWeight": 38,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

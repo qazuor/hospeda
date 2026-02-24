@@ -4,8 +4,9 @@
     "name": "Sector de barbacoa techado",
     "slug": "covered_barbecue_area",
     "description": "Área de asado protegida de la intemperie con equipamiento completo y espacios para reuniones",
-    "icon": "feature",
+    "icon": "CoveredGrillAreaIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 62,
     "lifecycleState": "ACTIVE"
 }

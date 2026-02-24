@@ -4,8 +4,9 @@
     "name": "Alojamiento sustentable",
     "slug": "sustainable_accommodation",
     "description": "Operación completamente eco-friendly con prácticas sustentables en todas las actividades y servicios",
-    "icon": "feature",
+    "icon": "EcologicalIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 35,
     "lifecycleState": "ACTIVE"
 }

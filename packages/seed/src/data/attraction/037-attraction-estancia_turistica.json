@@ -6,6 +6,7 @@
     "description": "Estancia con actividades rurales y turismo rural",
     "icon": "cottage",
     "isBuiltin": true,
+    "displayWeight": 48,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

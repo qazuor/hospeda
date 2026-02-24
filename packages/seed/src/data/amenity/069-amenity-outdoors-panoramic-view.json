@@ -5,7 +5,8 @@
     "slug": "panoramic_view",
     "description": "Vista panorámica",
     "type": "OUTDOORS",
-    "icon": "amenity",
+    "icon": "PrivateViewpointIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 75
 }

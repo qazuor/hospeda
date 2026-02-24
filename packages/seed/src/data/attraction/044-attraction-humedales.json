@@ -6,6 +6,7 @@
     "description": "Ecosistema de humedales con flora y fauna características",
     "icon": "water",
     "isBuiltin": true,
+    "displayWeight": 52,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

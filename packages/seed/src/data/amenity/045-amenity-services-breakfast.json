@@ -5,7 +5,8 @@
     "slug": "breakfast",
     "description": "Provisión de desayuno",
     "type": "SERVICES",
-    "icon": "amenity",
+    "icon": "BreakfastIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 75
 }

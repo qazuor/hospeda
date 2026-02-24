@@ -4,8 +4,9 @@
     "name": "Duchas solares",
     "slug": "solar_showers",
     "description": "Sistema de calentamiento de agua mediante energía solar para duchas ecológicas y sustentables",
-    "icon": "feature",
+    "icon": "SolarShowersIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 18,
     "lifecycleState": "ACTIVE"
 }

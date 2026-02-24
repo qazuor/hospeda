@@ -5,7 +5,8 @@
     "slug": "microwave",
     "description": "Microondas",
     "type": "KITCHEN",
-    "icon": "amenity",
+    "icon": "MicrowaveIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 40
 }

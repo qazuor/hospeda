@@ -4,8 +4,9 @@
     "name": "Estacionamiento interno",
     "slug": "internal_parking",
     "description": "Plaza de estacionamiento segura dentro de la propiedad, protegida y de uso exclusivo",
-    "icon": "feature",
+    "icon": "InternalParkingIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 50,
     "lifecycleState": "ACTIVE"
 }

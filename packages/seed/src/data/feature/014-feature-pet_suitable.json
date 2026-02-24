@@ -4,8 +4,9 @@
     "name": "Apto para mascotas",
     "slug": "pet_suitable",
     "description": "Instalaciones preparadas para recibir mascotas con áreas seguras, servicios veterinarios cercanos y políticas pet-friendly",
-    "icon": "feature",
+    "icon": "PetFriendlyIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 68,
     "lifecycleState": "ACTIVE"
 }

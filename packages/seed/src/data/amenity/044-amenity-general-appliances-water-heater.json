@@ -5,7 +5,8 @@
     "slug": "water_heater",
     "description": "Caldera / Termotanque",
     "type": "GENERAL_APPLIANCES",
-    "icon": "amenity",
+    "icon": "HeatingIcon",
     "isBuiltin": false,
-    "isFeatured": false
+    "isFeatured": false,
+    "displayWeight": 15
 }

@@ -4,8 +4,9 @@
     "name": "Circuito de caminatas",
     "slug": "walking_circuit",
     "description": "Senderos señalizados y mantenidos para caminatas recreativas y contacto con la naturaleza",
-    "icon": "feature",
+    "icon": "WalkingTrailIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 38,
     "lifecycleState": "ACTIVE"
 }

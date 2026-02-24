@@ -5,7 +5,8 @@
     "slug": "double_glazed_windows",
     "description": "Ventanas con doble vidrio",
     "type": "GENERAL_APPLIANCES",
-    "icon": "amenity",
+    "icon": "DoubleGlazingIcon",
     "isBuiltin": false,
-    "isFeatured": false
+    "isFeatured": false,
+    "displayWeight": 20
 }

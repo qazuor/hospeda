@@ -5,7 +5,8 @@
     "slug": "soap_dispensers",
     "description": "Dispensador de gel y jabón",
     "type": "BED_AND_BATH",
-    "icon": "amenity",
+    "icon": "SoapDispenserIcon",
     "isBuiltin": false,
-    "isFeatured": false
+    "isFeatured": false,
+    "displayWeight": 10
 }

@@ -6,6 +6,7 @@
     "description": "Zona habilitada para pesca deportiva con especies autóctonas del río",
     "icon": "fishing",
     "isBuiltin": true,
+    "displayWeight": 62,
     "tagIds": [
         "030-tag-pesca",
         "013-tag-deportes",

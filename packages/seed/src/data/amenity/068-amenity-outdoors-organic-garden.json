@@ -5,7 +5,8 @@
     "slug": "organic_garden",
     "description": "Huerta orgánica",
     "type": "OUTDOORS",
-    "icon": "amenity",
+    "icon": "OrganicGardenIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 35
 }

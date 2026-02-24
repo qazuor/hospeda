@@ -6,6 +6,7 @@
     "description": "Convento histórico con arquitectura colonial y valor patrimonial",
     "icon": "temple_buddhist",
     "isBuiltin": true,
+    "displayWeight": 42,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

@@ -5,7 +5,8 @@
     "slug": "books_magazines",
     "description": "Libros y revistas",
     "type": "ENTERTAINMENT",
-    "icon": "amenity",
+    "icon": "BooksAndMagazinesIcon",
     "isBuiltin": false,
-    "isFeatured": false
+    "isFeatured": false,
+    "displayWeight": 15
 }

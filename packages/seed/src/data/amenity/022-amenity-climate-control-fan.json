@@ -5,7 +5,8 @@
     "slug": "fan",
     "description": "Ventilador",
     "type": "CLIMATE_CONTROL",
-    "icon": "amenity",
+    "icon": "FanIcon",
     "isBuiltin": false,
-    "isFeatured": false
+    "isFeatured": false,
+    "displayWeight": 30
 }

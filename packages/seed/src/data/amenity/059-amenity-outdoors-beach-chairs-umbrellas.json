@@ -5,7 +5,8 @@
     "slug": "beach_chairs_umbrellas",
     "description": "Reposeras y sombrillas",
     "type": "OUTDOORS",
-    "icon": "amenity",
+    "icon": "BeachEquipmentIcon",
     "isBuiltin": false,
-    "isFeatured": false
+    "isFeatured": false,
+    "displayWeight": 30
 }

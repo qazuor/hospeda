@@ -5,7 +5,8 @@
     "slug": "hair_dryer",
     "description": "Secador de pelo",
     "type": "CLIMATE_CONTROL",
-    "icon": "amenity",
+    "icon": "HairDryerIcon",
     "isBuiltin": false,
-    "isFeatured": false
+    "isFeatured": false,
+    "displayWeight": 20
 }

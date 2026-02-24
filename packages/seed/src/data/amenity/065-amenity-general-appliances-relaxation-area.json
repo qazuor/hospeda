@@ -5,7 +5,8 @@
     "slug": "relaxation_area",
     "description": "Zona de relax",
     "type": "GENERAL_APPLIANCES",
-    "icon": "amenity",
+    "icon": "RelaxationAreaIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 40
 }

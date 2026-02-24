@@ -6,6 +6,7 @@
     "description": "Mercado de productos agrícolas frescos y regionales",
     "icon": "storefront",
     "isBuiltin": true,
+    "displayWeight": 42,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

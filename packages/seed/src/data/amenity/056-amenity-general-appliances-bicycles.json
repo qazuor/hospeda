@@ -5,7 +5,8 @@
     "slug": "bicycles",
     "description": "Bicicletas disponibles",
     "type": "GENERAL_APPLIANCES",
-    "icon": "amenity",
+    "icon": "BicyclesIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 50
 }

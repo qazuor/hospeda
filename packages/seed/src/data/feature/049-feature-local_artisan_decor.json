@@ -4,8 +4,9 @@
     "name": "Decoración local artesanal",
     "slug": "local_artisan_decor",
     "description": "Ambientación con arte y artesanías tradicionales de la región creadas por artistas locales",
-    "icon": "feature",
+    "icon": "LocalCraftsIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 25,
     "lifecycleState": "ACTIVE"
 }

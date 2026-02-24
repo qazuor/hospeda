@@ -6,6 +6,7 @@
     "description": "Espacio dedicado a actividades culturales, exposiciones y eventos artísticos",
     "icon": "theater_comedy",
     "isBuiltin": true,
+    "displayWeight": 50,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

@@ -6,6 +6,7 @@
     "description": "Actividades de navegación recreativa y paseos en embarcaciones",
     "icon": "directions_boat_filled",
     "isBuiltin": true,
+    "displayWeight": 60,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

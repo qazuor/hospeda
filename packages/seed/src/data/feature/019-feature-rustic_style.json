@@ -4,8 +4,9 @@
     "name": "Estilo rústico",
     "slug": "rustic_style",
     "description": "Construcción tradicional con materiales naturales como madera y piedra, manteniendo el encanto rural auténtico",
-    "icon": "feature",
+    "icon": "RusticStyleIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 48,
     "lifecycleState": "ACTIVE"
 }

@@ -6,6 +6,7 @@
     "description": "Bodegón tradicional con comidas criollas y ambiente típico",
     "icon": "restaurant",
     "isBuiltin": true,
+    "displayWeight": 45,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

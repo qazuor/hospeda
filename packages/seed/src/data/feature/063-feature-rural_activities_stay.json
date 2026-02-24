@@ -4,8 +4,9 @@
     "name": "Estancia con actividades rurales",
     "slug": "rural_activities_stay",
     "description": "Experiencia completa de vida rural con participación en actividades agrícolas y ganaderas",
-    "icon": "feature",
+    "icon": "RuralActivitiesIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 32,
     "lifecycleState": "ACTIVE"
 }

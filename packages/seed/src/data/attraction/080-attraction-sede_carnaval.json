@@ -6,6 +6,7 @@
     "description": "Lugar principal donde se desarrollan los eventos del carnaval",
     "icon": "celebration",
     "isBuiltin": true,
+    "displayWeight": 52,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

@@ -4,8 +4,9 @@
     "name": "Actividades con animales",
     "slug": "animal_activities",
     "description": "Experiencias de interacción directa con animales de granja, cabalgatas o actividades ecuestres",
-    "icon": "feature",
+    "icon": "AnimalActivitiesIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 30,
     "lifecycleState": "ACTIVE"
 }

@@ -6,6 +6,7 @@
     "description": "Galería cubierta con locales comerciales y servicios",
     "icon": "store",
     "isBuiltin": true,
+    "displayWeight": 35,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

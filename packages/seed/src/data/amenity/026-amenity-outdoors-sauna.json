@@ -5,7 +5,8 @@
     "slug": "sauna",
     "description": "Sauna disponible",
     "type": "OUTDOORS",
-    "icon": "amenity",
+    "icon": "SaunaIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 65
 }

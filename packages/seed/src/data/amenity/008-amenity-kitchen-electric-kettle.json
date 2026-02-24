@@ -5,7 +5,8 @@
     "slug": "electric_kettle",
     "description": "Pava eléctrica",
     "type": "KITCHEN",
-    "icon": "amenity",
+    "icon": "KettleIcon",
     "isBuiltin": false,
-    "isFeatured": false
+    "isFeatured": false,
+    "displayWeight": 20
 }

@@ -4,8 +4,9 @@
     "name": "Apto para retiros espirituales",
     "slug": "spiritual_retreat_suitable",
     "description": "Ambiente de paz y tranquilidad ideal para meditación, yoga y actividades de crecimiento personal",
-    "icon": "feature",
+    "icon": "YogaMeditationIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 25,
     "lifecycleState": "ACTIVE"
 }

@@ -6,6 +6,7 @@
     "description": "Sede del carnaval con gradas y pista para desfiles de comparsas",
     "icon": "theater_comedy",
     "isBuiltin": true,
+    "displayWeight": 50,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

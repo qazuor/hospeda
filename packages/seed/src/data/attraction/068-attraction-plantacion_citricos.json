@@ -6,6 +6,7 @@
     "description": "Plantación de naranjas, mandarinas y otros cítricos con tours educativos",
     "icon": "agriculture",
     "isBuiltin": true,
+    "displayWeight": 35,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

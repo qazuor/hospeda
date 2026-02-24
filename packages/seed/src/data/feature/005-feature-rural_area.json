@@ -4,8 +4,9 @@
     "name": "Zona rural",
     "slug": "rural_area",
     "description": "Ubicado en área campestre alejada de centros urbanos, ideal para desconectar y disfrutar de la tranquilidad del campo",
-    "icon": "feature",
+    "icon": "RuralAreaIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 50,
     "lifecycleState": "ACTIVE"
 }

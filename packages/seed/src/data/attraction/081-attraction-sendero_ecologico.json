@@ -6,6 +6,7 @@
     "description": "Sendero interpretativo para conocer la flora y fauna local",
     "icon": "hiking",
     "isBuiltin": true,
+    "displayWeight": 65,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

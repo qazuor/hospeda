@@ -6,6 +6,7 @@
     "description": "Canal natural o artificial para navegación recreativa",
     "icon": "water_body",
     "isBuiltin": true,
+    "displayWeight": 40,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

@@ -4,8 +4,9 @@
     "name": "Guardaequipaje",
     "slug": "luggage_storage",
     "description": "Servicio seguro de almacenamiento de equipaje antes del check-in o después del check-out",
-    "icon": "feature",
+    "icon": "LuggageStorageIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 22,
     "lifecycleState": "ACTIVE"
 }

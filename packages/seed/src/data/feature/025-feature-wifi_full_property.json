@@ -4,8 +4,9 @@
     "name": "Wi-Fi en todo el predio",
     "slug": "wifi_full_property",
     "description": "Cobertura completa de internet inalámbrico de alta velocidad en todas las áreas interiores y exteriores de la propiedad",
-    "icon": "feature",
+    "icon": "WifiIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 42,
     "lifecycleState": "ACTIVE"
 }

@@ -5,7 +5,8 @@
     "slug": "patio",
     "description": "Patio interno",
     "type": "OUTDOORS",
-    "icon": "amenity",
+    "icon": "SharedPatioIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 42
 }

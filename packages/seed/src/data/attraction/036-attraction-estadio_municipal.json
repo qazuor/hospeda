@@ -6,6 +6,7 @@
     "description": "Estadio principal para eventos deportivos y espectáculos",
     "icon": "stadium",
     "isBuiltin": true,
+    "displayWeight": 35,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

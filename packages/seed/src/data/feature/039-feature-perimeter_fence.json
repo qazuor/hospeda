@@ -4,8 +4,9 @@
     "name": "Cerco perimetral",
     "slug": "perimeter_fence",
     "description": "Cercado completo de la propiedad que garantiza privacidad, seguridad y delimitación clara del espacio",
-    "icon": "feature",
+    "icon": "PerimeterFenceIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 45,
     "lifecycleState": "ACTIVE"
 }

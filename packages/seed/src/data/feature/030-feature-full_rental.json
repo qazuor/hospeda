@@ -4,8 +4,9 @@
     "name": "Alquiler completo",
     "slug": "full_rental",
     "description": "Renta de toda la propiedad de forma exclusiva, sin compartir espacios con otros huéspedes o propietarios",
-    "icon": "feature",
+    "icon": "EntirePropertyIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 60,
     "lifecycleState": "ACTIVE"
 }

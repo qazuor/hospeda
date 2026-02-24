@@ -5,7 +5,8 @@
     "slug": "electric_blankets",
     "description": "Sábanas térmicas o eléctricas",
     "type": "BED_AND_BATH",
-    "icon": "amenity",
+    "icon": "ElectricBlanketIcon",
     "isBuiltin": false,
-    "isFeatured": false
+    "isFeatured": false,
+    "displayWeight": 20
 }

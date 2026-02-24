@@ -6,6 +6,7 @@
     "description": "Fábrica artesanal de dulces regionales con visitas y degustaciones",
     "icon": "cake",
     "isBuiltin": true,
+    "displayWeight": 38,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

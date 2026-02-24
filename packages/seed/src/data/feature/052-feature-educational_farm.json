@@ -4,8 +4,9 @@
     "name": "Granja educativa",
     "slug": "educational_farm",
     "description": "Espacio didáctico donde los huéspedes pueden aprender sobre agricultura, ganadería y vida rural",
-    "icon": "feature",
+    "icon": "AnimalPenIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 28,
     "lifecycleState": "ACTIVE"
 }

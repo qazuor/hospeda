@@ -6,6 +6,7 @@
     "description": "Playa natural a orillas del río con servicios para visitantes",
     "icon": "beach_access",
     "isBuiltin": true,
+    "displayWeight": 92,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

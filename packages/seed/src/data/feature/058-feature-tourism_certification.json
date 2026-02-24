@@ -4,8 +4,9 @@
     "name": "Certificación turística",
     "slug": "tourism_certification",
     "description": "Reconocimiento oficial de calidad turística otorgado por organismos nacionales o internacionales",
-    "icon": "feature",
+    "icon": "TouristInfoIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 32,
     "lifecycleState": "ACTIVE"
 }

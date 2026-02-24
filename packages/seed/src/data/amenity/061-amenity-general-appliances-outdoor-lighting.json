@@ -5,7 +5,8 @@
     "slug": "outdoor_lighting",
     "description": "Iluminación nocturna exterior",
     "type": "GENERAL_APPLIANCES",
-    "icon": "amenity",
+    "icon": "OutdoorLightingIcon",
     "isBuiltin": false,
-    "isFeatured": false
+    "isFeatured": false,
+    "displayWeight": 15
 }

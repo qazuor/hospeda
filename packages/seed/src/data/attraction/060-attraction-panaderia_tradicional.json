@@ -6,6 +6,7 @@
     "description": "Panadería con productos caseros y recetas tradicionales",
     "icon": "bakery_dining",
     "isBuiltin": true,
+    "displayWeight": 35,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

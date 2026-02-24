@@ -5,7 +5,8 @@
     "slug": "crib",
     "description": "Cuna / practicuna",
     "type": "FAMILY_FRIENDLY",
-    "icon": "amenity",
+    "icon": "BabyMonitorIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 40
 }

@@ -5,7 +5,8 @@
     "slug": "motorhome_parking",
     "description": "Estacionamiento para motorhome",
     "type": "GENERAL_APPLIANCES",
-    "icon": "amenity",
+    "icon": "MotorhomeParkingIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 35
 }

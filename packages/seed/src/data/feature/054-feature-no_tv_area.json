@@ -4,8 +4,9 @@
     "name": "Área sin televisión",
     "slug": "no_tv_area",
     "description": "Espacios libres de televisores para promover la interacción social y el disfrute del entorno natural",
-    "icon": "feature",
+    "icon": "DigitalDetoxIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 18,
     "lifecycleState": "ACTIVE"
 }

@@ -5,7 +5,8 @@
     "slug": "baby_monitor",
     "description": "Detector de ruido / cámara bebé",
     "type": "FAMILY_FRIENDLY",
-    "icon": "amenity",
+    "icon": "BabyMonitorIcon",
     "isBuiltin": false,
-    "isFeatured": false
+    "isFeatured": false,
+    "displayWeight": 25
 }

@@ -5,7 +5,8 @@
     "slug": "restaurant",
     "description": "Restaurante",
     "type": "SERVICES",
-    "icon": "amenity",
+    "icon": "FullBoardIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 65
 }

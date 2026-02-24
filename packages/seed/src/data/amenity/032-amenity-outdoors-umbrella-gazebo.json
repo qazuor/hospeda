@@ -5,7 +5,8 @@
     "slug": "umbrella_gazebo",
     "description": "Sombrilla / Gazebo",
     "type": "OUTDOORS",
-    "icon": "amenity",
+    "icon": "BeachUmbrellaIcon",
     "isBuiltin": false,
-    "isFeatured": false
+    "isFeatured": false,
+    "displayWeight": 25
 }

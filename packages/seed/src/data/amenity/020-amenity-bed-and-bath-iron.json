@@ -5,7 +5,8 @@
     "slug": "iron",
     "description": "Plancha de ropa",
     "type": "BED_AND_BATH",
-    "icon": "amenity",
+    "icon": "ShirtIcon",
     "isBuiltin": false,
-    "isFeatured": false
+    "isFeatured": false,
+    "displayWeight": 15
 }

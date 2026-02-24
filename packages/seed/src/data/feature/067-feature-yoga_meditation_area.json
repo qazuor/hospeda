@@ -4,8 +4,9 @@
     "name": "Área de yoga y meditación",
     "slug": "yoga_meditation_area",
     "description": "Espacio especialmente diseñado para prácticas de yoga, meditación y ejercicios de relajación",
-    "icon": "feature",
+    "icon": "YogaMeditationIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 38,
     "lifecycleState": "ACTIVE"
 }

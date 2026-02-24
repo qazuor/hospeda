@@ -5,7 +5,8 @@
     "slug": "beach_equipment",
     "description": "Equipo de playa",
     "type": "GENERAL_APPLIANCES",
-    "icon": "amenity",
+    "icon": "BeachEquipmentIcon",
     "isBuiltin": false,
-    "isFeatured": false
+    "isFeatured": false,
+    "displayWeight": 30
 }

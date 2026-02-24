@@ -6,6 +6,7 @@
     "description": "Centro para la realización de eventos, convenciones y espectáculos",
     "icon": "event",
     "isBuiltin": true,
+    "displayWeight": 40,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

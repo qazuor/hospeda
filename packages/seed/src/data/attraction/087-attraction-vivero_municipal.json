@@ -6,6 +6,7 @@
     "description": "Vivero con plantas nativas y proyectos de reforestación",
     "icon": "local_florist",
     "isBuiltin": true,
+    "displayWeight": 28,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

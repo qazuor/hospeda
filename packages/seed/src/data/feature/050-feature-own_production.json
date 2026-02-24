@@ -4,8 +4,9 @@
     "name": "Producción propia",
     "slug": "own_production",
     "description": "Elaboración in-situ de productos gastronómicos como dulces caseros, vinos, quesos o conservas",
-    "icon": "feature",
+    "icon": "OwnProductionIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 28,
     "lifecycleState": "ACTIVE"
 }

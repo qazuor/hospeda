@@ -5,7 +5,8 @@
     "slug": "gas_electric_stove",
     "description": "Cocina a gas / eléctrica",
     "type": "KITCHEN",
-    "icon": "amenity",
+    "icon": "StoveIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 45
 }

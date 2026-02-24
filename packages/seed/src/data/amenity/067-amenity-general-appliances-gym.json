@@ -5,7 +5,8 @@
     "slug": "gym",
     "description": "Gimnasio completo",
     "type": "GENERAL_APPLIANCES",
-    "icon": "amenity",
+    "icon": "GymIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 45
 }

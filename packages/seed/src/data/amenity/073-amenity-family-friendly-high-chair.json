@@ -5,7 +5,8 @@
     "slug": "high_chair",
     "description": "Silla alta para bebés",
     "type": "FAMILY_FRIENDLY",
-    "icon": "amenity",
+    "icon": "HighChairIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 35
 }

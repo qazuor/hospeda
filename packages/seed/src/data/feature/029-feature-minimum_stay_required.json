@@ -4,8 +4,9 @@
     "name": "Estancia mínima requerida",
     "slug": "minimum_stay_required",
     "description": "Política de reserva que establece una cantidad mínima de noches de alojamiento para garantizar mejor experiencia",
-    "icon": "feature",
+    "icon": "MinimumStayIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 15,
     "lifecycleState": "ACTIVE"
 }

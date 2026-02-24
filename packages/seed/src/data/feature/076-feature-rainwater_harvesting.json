@@ -4,8 +4,9 @@
     "name": "Captación de agua de lluvia",
     "slug": "rainwater_harvesting",
     "description": "Sistema de recolección y aprovechamiento de agua pluvial para uso sustentable en la propiedad",
-    "icon": "feature",
+    "icon": "RainwaterHarvestingIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 18,
     "lifecycleState": "ACTIVE"
 }

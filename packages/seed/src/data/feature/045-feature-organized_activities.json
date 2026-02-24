@@ -4,8 +4,9 @@
     "name": "Actividades organizadas",
     "slug": "organized_activities",
     "description": "Programación regular de actividades recreativas, culturales o deportivas organizadas por el establecimiento",
-    "icon": "feature",
+    "icon": "OrganizedActivitiesIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 42,
     "lifecycleState": "ACTIVE"
 }

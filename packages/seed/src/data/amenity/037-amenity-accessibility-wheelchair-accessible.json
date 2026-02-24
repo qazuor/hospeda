@@ -5,7 +5,8 @@
     "slug": "wheelchair_accessible",
     "description": "Acceso para personas con movilidad reducida",
     "type": "ACCESSIBILITY",
-    "icon": "amenity",
+    "icon": "AccessibilityFriendlyIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 60
 }

@@ -4,8 +4,9 @@
     "name": "Apto para trabajo remoto",
     "slug": "remote_coworking_suitable",
     "description": "Espacios de trabajo equipados con internet de alta velocidad, escritorios y ambiente profesional",
-    "icon": "feature",
+    "icon": "CoworkingSpaceIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 50,
     "lifecycleState": "ACTIVE"
 }

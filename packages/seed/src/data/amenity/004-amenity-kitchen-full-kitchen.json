@@ -5,7 +5,8 @@
     "slug": "full_kitchen",
     "description": "Cocina completa",
     "type": "KITCHEN",
-    "icon": "amenity",
+    "icon": "KitchenIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 75
 }

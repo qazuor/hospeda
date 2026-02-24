@@ -4,8 +4,9 @@
     "name": "Estilo moderno",
     "slug": "modern_style",
     "description": "Arquitectura contemporánea con líneas limpias, materiales modernos y diseño minimalista actual",
-    "icon": "feature",
+    "icon": "ModernStyleIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 48,
     "lifecycleState": "ACTIVE"
 }

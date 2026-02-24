@@ -39,16 +39,17 @@ export async function seedExchangeRateConfig(context: SeedContext): Promise<void
         const configData = configs[0];
 
         // Remove metadata fields
-        const { $schema: _schema, id: _id, ...cleanData } = configData;
-
-        // Create service and apply config via updateConfig
-        const serviceContext = {
-            requestId: `seed-${entityName}`,
-            userId: actor.id,
-            permissions: actor.permissions
+        const {
+            $schema: _schema,
+            id: _id,
+            ...cleanData
+        } = configData as Record<string, unknown> & {
+            $schema?: string;
+            id?: string;
         };
 
-        const service = new ExchangeRateConfigService(serviceContext);
+        // Create service with ServiceContext (only logger is accepted)
+        const service = new ExchangeRateConfigService({});
 
         const result = await service.updateConfig({
             actor,

@@ -4,8 +4,9 @@
     "name": "Frente al río",
     "slug": "river_front",
     "description": "Propiedad ubicada directamente frente a un río, ofreciendo acceso directo al agua y vistas panorámicas al curso fluvial",
-    "icon": "feature",
+    "icon": "RiverFrontIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 90,
     "lifecycleState": "ACTIVE"
 }

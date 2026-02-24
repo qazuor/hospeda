@@ -4,8 +4,9 @@
     "name": "Sector para acampar",
     "slug": "camping_sector",
     "description": "Área natural acondicionada para camping con servicios básicos y respeto por el medio ambiente",
-    "icon": "feature",
+    "icon": "CampingSectorIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 38,
     "lifecycleState": "ACTIVE"
 }

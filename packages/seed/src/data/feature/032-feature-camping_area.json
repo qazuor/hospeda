@@ -4,8 +4,9 @@
     "name": "Sector de camping",
     "slug": "camping_area",
     "description": "Área específicamente acondicionada para acampar con carpas, con servicios básicos y espacios naturales",
-    "icon": "feature",
+    "icon": "CampingAreaIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 40,
     "lifecycleState": "ACTIVE"
 }

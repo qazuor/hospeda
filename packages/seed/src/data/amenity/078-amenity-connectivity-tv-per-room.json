@@ -5,7 +5,8 @@
     "slug": "tv_per_room",
     "description": "TV en cada habitación",
     "type": "CONNECTIVITY",
-    "icon": "amenity",
+    "icon": "RoomTvIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 35
 }

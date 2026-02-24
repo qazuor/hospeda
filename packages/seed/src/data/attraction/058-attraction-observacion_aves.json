@@ -6,6 +6,7 @@
     "description": "Punto de observación de aves autóctonas y migratorias",
     "icon": "flutter_dash",
     "isBuiltin": true,
+    "displayWeight": 50,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

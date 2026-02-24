@@ -4,8 +4,9 @@
     "name": "Iluminación perimetral",
     "slug": "perimeter_lighting",
     "description": "Sistema de iluminación completo alrededor de toda la propiedad para seguridad y orientación nocturna",
-    "icon": "feature",
+    "icon": "PerimeterLightingIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 32,
     "lifecycleState": "ACTIVE"
 }

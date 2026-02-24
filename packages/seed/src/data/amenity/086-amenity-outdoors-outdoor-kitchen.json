@@ -5,7 +5,8 @@
     "slug": "outdoor_kitchen",
     "description": "Cocina exterior",
     "type": "OUTDOORS",
-    "icon": "amenity",
+    "icon": "OutdoorKitchenIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 55
 }

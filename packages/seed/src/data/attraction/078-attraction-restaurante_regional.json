@@ -6,6 +6,7 @@
     "description": "Restaurante especializado en comida típica de Entre Ríos",
     "icon": "restaurant",
     "isBuiltin": true,
+    "displayWeight": 55,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

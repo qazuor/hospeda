@@ -5,7 +5,8 @@
     "slug": "full_board",
     "description": "Pensión completa opcional",
     "type": "SERVICES",
-    "icon": "amenity",
+    "icon": "FullBoardIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 60
 }

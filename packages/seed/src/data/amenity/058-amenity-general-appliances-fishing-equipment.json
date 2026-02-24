@@ -5,7 +5,8 @@
     "slug": "fishing_equipment",
     "description": "Equipamiento de pesca",
     "type": "GENERAL_APPLIANCES",
-    "icon": "amenity",
+    "icon": "FishingEquipmentIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 45
 }

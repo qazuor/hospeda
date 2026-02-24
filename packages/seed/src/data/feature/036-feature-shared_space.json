@@ -4,8 +4,9 @@
     "name": "Espacio compartido",
     "slug": "shared_space",
     "description": "Áreas comunes diseñadas para la interacción social entre huéspedes, como salones, cocinas o jardines",
-    "icon": "feature",
+    "icon": "SharedSpaceIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 28,
     "lifecycleState": "ACTIVE"
 }

@@ -4,8 +4,9 @@
     "name": "Galería techada",
     "slug": "covered_gallery",
     "description": "Espacio cubierto al aire libre ideal para relajarse, comer o socializar protegido de las inclemencias del tiempo",
-    "icon": "feature",
+    "icon": "CoveredGalleryIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 45,
     "lifecycleState": "ACTIVE"
 }

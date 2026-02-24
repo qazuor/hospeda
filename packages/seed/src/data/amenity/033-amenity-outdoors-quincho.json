@@ -5,7 +5,8 @@
     "slug": "quincho",
     "description": "Quincho para asados",
     "type": "OUTDOORS",
-    "icon": "amenity",
+    "icon": "CoveredGrillAreaIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 68
 }

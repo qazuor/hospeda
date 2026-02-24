@@ -6,6 +6,7 @@
     "description": "Área protegida con flora y fauna autóctona",
     "icon": "nature_reserve",
     "isBuiltin": true,
+    "displayWeight": 78,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

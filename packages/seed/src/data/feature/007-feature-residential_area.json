@@ -4,8 +4,9 @@
     "name": "Zona residencial",
     "slug": "residential_area",
     "description": "Situado en barrio tranquilo y seguro, rodeado de viviendas familiares y ambiente hogareño",
-    "icon": "feature",
+    "icon": "ResidentialAreaIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 42,
     "lifecycleState": "ACTIVE"
 }

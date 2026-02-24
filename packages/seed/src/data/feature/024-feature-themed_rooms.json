@@ -4,8 +4,9 @@
     "name": "Habitaciones temáticas",
     "slug": "themed_rooms",
     "description": "Cada habitación diseñada con temática única y decoración especializada para crear experiencias diferenciadas",
-    "icon": "feature",
+    "icon": "ThemedRoomsIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 30,
     "lifecycleState": "ACTIVE"
 }

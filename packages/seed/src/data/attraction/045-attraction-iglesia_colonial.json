@@ -6,6 +6,7 @@
     "description": "Iglesia de época colonial con arquitectura histórica y valor patrimonial",
     "icon": "church",
     "isBuiltin": true,
+    "displayWeight": 48,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

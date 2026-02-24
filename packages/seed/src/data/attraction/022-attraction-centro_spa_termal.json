@@ -6,6 +6,7 @@
     "description": "Centro especializado en tratamientos de spa con aguas termales y terapias de relajación",
     "icon": "spa",
     "isBuiltin": true,
+    "displayWeight": 58,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

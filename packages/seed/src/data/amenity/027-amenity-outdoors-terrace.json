@@ -5,7 +5,8 @@
     "slug": "terrace",
     "description": "Terraza privada",
     "type": "OUTDOORS",
-    "icon": "amenity",
+    "icon": "TerraceIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 50
 }

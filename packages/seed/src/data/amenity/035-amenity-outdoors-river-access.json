@@ -5,7 +5,8 @@
     "slug": "river_access",
     "description": "Acceso al río",
     "type": "OUTDOORS",
-    "icon": "amenity",
+    "icon": "DockAccessIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 82
 }

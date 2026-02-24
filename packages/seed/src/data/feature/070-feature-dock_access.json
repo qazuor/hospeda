@@ -4,8 +4,9 @@
     "name": "Acceso a muelle",
     "slug": "dock_access",
     "description": "Facilidad de acceso directo a embarcadero privado para actividades náuticas y deportes acuáticos",
-    "icon": "feature",
+    "icon": "DockAccessIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 75,
     "lifecycleState": "ACTIVE"
 }

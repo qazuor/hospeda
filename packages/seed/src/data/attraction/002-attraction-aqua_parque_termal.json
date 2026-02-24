@@ -6,6 +6,7 @@
     "description": "Parque acuático con piscinas termales, toboganes y juegos acuáticos",
     "icon": "water_slide",
     "isBuiltin": true,
+    "displayWeight": 82,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

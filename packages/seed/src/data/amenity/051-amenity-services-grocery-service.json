@@ -5,7 +5,8 @@
     "slug": "grocery_service",
     "description": "Proveeduría",
     "type": "SERVICES",
-    "icon": "amenity",
+    "icon": "ShoppingServiceIcon",
     "isBuiltin": false,
-    "isFeatured": false
+    "isFeatured": false,
+    "displayWeight": 30
 }

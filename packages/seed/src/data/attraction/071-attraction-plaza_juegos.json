@@ -6,6 +6,7 @@
     "description": "Plaza con juegos infantiles y espacios recreativos",
     "icon": "toys",
     "isBuiltin": true,
+    "displayWeight": 38,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

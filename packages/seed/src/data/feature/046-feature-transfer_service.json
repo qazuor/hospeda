@@ -4,8 +4,9 @@
     "name": "Servicio de traslado",
     "slug": "transfer_service",
     "description": "Transporte privado desde y hacia aeropuertos, terminales o puntos de interés coordinado por el alojamiento",
-    "icon": "feature",
+    "icon": "TransferServiceIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 38,
     "lifecycleState": "ACTIVE"
 }

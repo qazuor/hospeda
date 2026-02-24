@@ -4,8 +4,9 @@
     "name": "Sector solo adultos",
     "slug": "adults_only_area",
     "description": "Zona restringida exclusivamente para huéspedes adultos, garantizando tranquilidad y ambiente sofisticado",
-    "icon": "feature",
+    "icon": "AdultsOnlyIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 30,
     "lifecycleState": "ACTIVE"
 }

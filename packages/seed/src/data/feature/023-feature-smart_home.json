@@ -4,8 +4,9 @@
     "name": "Casa inteligente",
     "slug": "smart_home",
     "description": "Tecnología domótica avanzada con automatización de luces, climatización, seguridad y control remoto desde dispositivos móviles",
-    "icon": "feature",
+    "icon": "SmartHomeIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 55,
     "lifecycleState": "ACTIVE"
 }

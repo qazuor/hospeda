@@ -5,7 +5,8 @@
     "slug": "luggage_storage",
     "description": "Servicio de guardado de equipaje",
     "type": "SERVICES",
-    "icon": "amenity",
+    "icon": "LuggageStorageIcon",
     "isBuiltin": false,
-    "isFeatured": false
+    "isFeatured": false,
+    "displayWeight": 20
 }

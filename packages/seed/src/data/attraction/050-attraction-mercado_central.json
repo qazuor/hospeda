@@ -6,6 +6,7 @@
     "description": "Mercado tradicional con productos locales y artesanías",
     "icon": "store",
     "isBuiltin": true,
+    "displayWeight": 48,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

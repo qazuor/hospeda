@@ -6,6 +6,7 @@
     "description": "Museo dedicado a la historia local y regional con colecciones permanentes",
     "icon": "museum",
     "isBuiltin": true,
+    "displayWeight": 70,
     "tagIds": [
         "022-tag-historia",
         "025-tag-museos",

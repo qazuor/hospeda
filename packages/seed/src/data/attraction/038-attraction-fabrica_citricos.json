@@ -6,6 +6,7 @@
     "description": "Planta procesadora de cítricos con visitas guiadas y degustaciones",
     "icon": "factory",
     "isBuiltin": true,
+    "displayWeight": 35,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

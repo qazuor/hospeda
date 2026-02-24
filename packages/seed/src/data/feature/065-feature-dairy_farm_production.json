@@ -4,8 +4,9 @@
     "name": "Tambo y producción de campo",
     "slug": "dairy_farm_production",
     "description": "Instalación agrícola activa donde se puede observar y participar en la producción láctea y agrícola",
-    "icon": "feature",
+    "icon": "DairyProductionIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 22,
     "lifecycleState": "ACTIVE"
 }

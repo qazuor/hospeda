@@ -5,7 +5,8 @@
     "slug": "blackout_curtains",
     "description": "Cortinas blackout",
     "type": "BED_AND_BATH",
-    "icon": "amenity",
+    "icon": "BlackoutCurtainsIcon",
     "isBuiltin": false,
-    "isFeatured": false
+    "isFeatured": false,
+    "displayWeight": 25
 }

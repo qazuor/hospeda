@@ -6,6 +6,7 @@
     "description": "Centro comercial con tiendas, servicios y entretenimiento",
     "icon": "shopping_mall",
     "isBuiltin": true,
+    "displayWeight": 42,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

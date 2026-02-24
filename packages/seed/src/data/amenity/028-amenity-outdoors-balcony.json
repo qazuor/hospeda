@@ -5,7 +5,8 @@
     "slug": "balcony",
     "description": "Balcón privado",
     "type": "OUTDOORS",
-    "icon": "amenity",
+    "icon": "BalconyIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 40
 }

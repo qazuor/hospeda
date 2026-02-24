@@ -6,6 +6,7 @@
     "description": "Calle peatonal con comercios, restaurantes y entretenimiento",
     "icon": "directions_walk",
     "isBuiltin": true,
+    "displayWeight": 58,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

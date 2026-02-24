@@ -6,6 +6,7 @@
     "description": "Cine local con cartelera comercial y eventos culturales",
     "icon": "movie",
     "isBuiltin": true,
+    "displayWeight": 32,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

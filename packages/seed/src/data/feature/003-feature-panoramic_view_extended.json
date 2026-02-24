@@ -4,8 +4,9 @@
     "name": "Vista panorámica",
     "slug": "panoramic_view_extended",
     "description": "Vistas espectaculares de 360 grados o amplias perspectivas del paisaje circundante desde el alojamiento",
-    "icon": "feature",
+    "icon": "PanoramicViewIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 80,
     "lifecycleState": "ACTIVE"
 }

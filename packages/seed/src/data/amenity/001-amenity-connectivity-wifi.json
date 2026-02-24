@@ -5,7 +5,8 @@
     "slug": "wifi",
     "description": "Conexión Wi-Fi",
     "type": "CONNECTIVITY",
-    "icon": "amenity",
+    "icon": "WifiIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 95
 }

@@ -4,8 +4,9 @@
     "name": "Espacio de fogón",
     "slug": "fire_pit_area",
     "description": "Área segura y acondicionada para hacer fogatas con asientos alrededor y medidas de seguridad contra incendios",
-    "icon": "feature",
+    "icon": "FirePitAreaIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 45,
     "lifecycleState": "ACTIVE"
 }

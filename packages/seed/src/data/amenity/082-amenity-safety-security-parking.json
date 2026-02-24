@@ -5,7 +5,8 @@
     "slug": "security_parking",
     "description": "Estacionamiento vigilado",
     "type": "SAFETY",
-    "icon": "amenity",
+    "icon": "SecureParkingIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 50
 }

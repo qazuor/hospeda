@@ -5,7 +5,8 @@
     "slug": "mini_bar",
     "description": "Mini bar en habitación",
     "type": "SERVICES",
-    "icon": "amenity",
+    "icon": "MiniBarIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 35
 }

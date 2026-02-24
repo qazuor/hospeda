@@ -4,8 +4,9 @@
     "name": "Información turística disponible",
     "slug": "tourist_info_available",
     "description": "Servicio de información completa sobre atracciones locales, actividades y servicios turísticos de la zona",
-    "icon": "feature",
+    "icon": "TouristInfoIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 28,
     "lifecycleState": "ACTIVE"
 }

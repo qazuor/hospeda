@@ -6,6 +6,7 @@
     "description": "Plaza central de la ciudad con valor histórico y social",
     "icon": "location_city",
     "isBuiltin": true,
+    "displayWeight": 72,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

@@ -5,7 +5,8 @@
     "slug": "24h_reception",
     "description": "Recepción 24h",
     "type": "SERVICES",
-    "icon": "amenity",
+    "icon": "Reception24hIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 50
 }

@@ -5,7 +5,8 @@
     "slug": "smoke_detector",
     "description": "Detector de humo",
     "type": "SAFETY",
-    "icon": "amenity",
+    "icon": "SmokeDetectorIcon",
     "isBuiltin": false,
-    "isFeatured": false
+    "isFeatured": false,
+    "displayWeight": 15
 }

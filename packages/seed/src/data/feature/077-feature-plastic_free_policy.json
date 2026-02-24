@@ -4,8 +4,9 @@
     "name": "Política sin plásticos",
     "slug": "plastic_free_policy",
     "description": "Compromiso ambiental de operación libre de plásticos desechables utilizando alternativas biodegradables",
-    "icon": "feature",
+    "icon": "PlasticFreeIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 20,
     "lifecycleState": "ACTIVE"
 }

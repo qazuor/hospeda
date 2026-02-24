@@ -4,8 +4,9 @@
     "name": "Apto para eventos",
     "slug": "event_suitable",
     "description": "Instalaciones y servicios apropiados para realizar celebraciones, conferencias o eventos sociales",
-    "icon": "feature",
+    "icon": "OrganizedActivitiesIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 38,
     "lifecycleState": "ACTIVE"
 }

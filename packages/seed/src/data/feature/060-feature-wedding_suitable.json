@@ -4,8 +4,9 @@
     "name": "Apto para bodas",
     "slug": "wedding_suitable",
     "description": "Espacios románticos y servicios especializados para ceremonias y celebraciones matrimoniales",
-    "icon": "feature",
+    "icon": "CouplesFriendlyIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 36,
     "lifecycleState": "ACTIVE"
 }

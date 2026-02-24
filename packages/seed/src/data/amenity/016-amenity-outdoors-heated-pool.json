@@ -5,7 +5,8 @@
     "slug": "heated_pool",
     "description": "Piscina climatizada",
     "type": "OUTDOORS",
-    "icon": "amenity",
+    "icon": "HeatedPoolIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 88
 }

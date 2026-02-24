@@ -4,8 +4,9 @@
     "name": "Entorno natural",
     "slug": "natural_environment",
     "description": "Rodeado completamente por naturaleza preservada, bosques, montañas o ecosistemas nativos sin intervención urbana",
-    "icon": "feature",
+    "icon": "NaturalEnvironmentIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 72,
     "lifecycleState": "ACTIVE"
 }

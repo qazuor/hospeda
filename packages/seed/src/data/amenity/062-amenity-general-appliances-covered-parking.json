@@ -5,7 +5,8 @@
     "slug": "covered_parking",
     "description": "Estacionamiento techado",
     "type": "GENERAL_APPLIANCES",
-    "icon": "amenity",
+    "icon": "CoveredParkingIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 65
 }

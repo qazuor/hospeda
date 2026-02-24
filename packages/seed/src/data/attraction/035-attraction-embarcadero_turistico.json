@@ -6,6 +6,7 @@
     "description": "Punto de partida para excursiones fluviales y paseos en barco",
     "icon": "sailing",
     "isBuiltin": true,
+    "displayWeight": 58,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

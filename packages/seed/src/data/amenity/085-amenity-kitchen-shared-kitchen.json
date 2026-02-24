@@ -5,7 +5,8 @@
     "slug": "shared_kitchen",
     "description": "Cocina compartida",
     "type": "KITCHEN",
-    "icon": "amenity",
+    "icon": "SharedKitchenIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 45
 }

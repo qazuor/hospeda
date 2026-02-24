@@ -6,6 +6,7 @@
     "description": "Paseo costero con vistas al río, ideal para caminatas y actividades al aire libre",
     "icon": "directions_walk",
     "isBuiltin": true,
+    "displayWeight": 88,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

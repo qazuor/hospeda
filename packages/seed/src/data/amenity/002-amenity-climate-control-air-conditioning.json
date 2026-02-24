@@ -5,7 +5,8 @@
     "slug": "air_conditioning",
     "description": "Aire acondicionado",
     "type": "CLIMATE_CONTROL",
-    "icon": "amenity",
+    "icon": "AirConditioningIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 90
 }

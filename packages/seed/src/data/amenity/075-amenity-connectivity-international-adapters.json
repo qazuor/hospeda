@@ -5,7 +5,8 @@
     "slug": "international_adapters",
     "description": "Adaptadores internacionales",
     "type": "CONNECTIVITY",
-    "icon": "amenity",
+    "icon": "InternationalAdaptersIcon",
     "isBuiltin": false,
-    "isFeatured": false
+    "isFeatured": false,
+    "displayWeight": 15
 }

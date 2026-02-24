@@ -5,7 +5,8 @@
     "slug": "children_games",
     "description": "Juegos infantiles",
     "type": "FAMILY_FRIENDLY",
-    "icon": "amenity",
+    "icon": "KidsGamesIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 50
 }

@@ -5,7 +5,8 @@
     "slug": "coffee_maker",
     "description": "Cafetera disponible",
     "type": "KITCHEN",
-    "icon": "amenity",
+    "icon": "CoffeeMakerIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 35
 }

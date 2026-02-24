@@ -4,8 +4,9 @@
     "name": "Alquiler de vehículos",
     "slug": "vehicle_rental",
     "description": "Servicio de renta de automóviles, bicicletas, motos o vehículos todo terreno para explorar la zona",
-    "icon": "feature",
+    "icon": "TransferServiceIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 25,
     "lifecycleState": "ACTIVE"
 }

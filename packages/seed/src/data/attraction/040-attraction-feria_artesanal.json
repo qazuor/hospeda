@@ -6,6 +6,7 @@
     "description": "Feria de artesanos locales con productos únicos",
     "icon": "handyman",
     "isBuiltin": true,
+    "displayWeight": 55,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

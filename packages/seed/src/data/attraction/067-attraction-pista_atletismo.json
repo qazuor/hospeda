@@ -6,6 +6,7 @@
     "description": "Pista para atletismo y deportes de pista y campo",
     "icon": "directions_run",
     "isBuiltin": true,
+    "displayWeight": 28,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

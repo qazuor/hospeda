@@ -5,7 +5,8 @@
     "slug": "daily_cleaning",
     "description": "Servicio de limpieza diario",
     "type": "SERVICES",
-    "icon": "amenity",
+    "icon": "DailyCleaningIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 40
 }

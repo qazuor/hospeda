@@ -4,8 +4,9 @@
     "name": "Seguridad 24 horas",
     "slug": "24h_security",
     "description": "Vigilancia y seguridad permanente las 24 horas con personal capacitado y sistemas de monitoreo",
-    "icon": "feature",
+    "icon": "Security24hIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 55,
     "lifecycleState": "ACTIVE"
 }

@@ -5,7 +5,8 @@
     "slug": "board_games",
     "description": "Juegos de mesa",
     "type": "ENTERTAINMENT",
-    "icon": "amenity",
+    "icon": "BoardGamesIcon",
     "isBuiltin": false,
-    "isFeatured": false
+    "isFeatured": false,
+    "displayWeight": 25
 }

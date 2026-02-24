@@ -5,7 +5,8 @@
     "slug": "room_service",
     "description": "Room service",
     "type": "SERVICES",
-    "icon": "amenity",
+    "icon": "RoomServiceIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 45
 }

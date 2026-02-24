@@ -6,6 +6,7 @@
     "description": "Granja didáctica con animales de campo y actividades educativas",
     "icon": "pets",
     "isBuiltin": true,
+    "displayWeight": 35,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

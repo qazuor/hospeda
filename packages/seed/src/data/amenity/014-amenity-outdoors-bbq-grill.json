@@ -5,7 +5,8 @@
     "slug": "bbq_grill",
     "description": "Parrilla para barbacoa",
     "type": "OUTDOORS",
-    "icon": "amenity",
+    "icon": "BbqGrillIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 72
 }

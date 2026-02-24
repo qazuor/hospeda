@@ -4,8 +4,9 @@
     "name": "Corral de animales",
     "slug": "animal_corral",
     "description": "Instalaciones para el cuidado y exhibición de animales de granja en ambiente seguro y educativo",
-    "icon": "feature",
+    "icon": "AnimalPenIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 20,
     "lifecycleState": "ACTIVE"
 }

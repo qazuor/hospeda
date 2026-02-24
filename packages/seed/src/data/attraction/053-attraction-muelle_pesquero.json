@@ -6,6 +6,7 @@
     "description": "Muelle tradicional para pesca deportiva y recreativa en el río",
     "icon": "phishing",
     "isBuiltin": true,
+    "displayWeight": 42,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

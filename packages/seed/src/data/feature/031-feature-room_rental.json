@@ -4,8 +4,9 @@
     "name": "Alquiler por habitación",
     "slug": "room_rental",
     "description": "Modalidad de hospedaje donde se alquilan habitaciones individuales compartiendo algunas áreas comunes",
-    "icon": "feature",
+    "icon": "RoomRentalIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 40,
     "lifecycleState": "ACTIVE"
 }

@@ -4,8 +4,9 @@
     "name": "Zona céntrica",
     "slug": "central_area",
     "description": "Posición estratégica en el centro de la ciudad o pueblo, con fácil acceso a servicios, comercios y atracciones principales",
-    "icon": "feature",
+    "icon": "CentralAreaIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 70,
     "lifecycleState": "ACTIVE"
 }

@@ -6,6 +6,7 @@
     "description": "Casino con juegos de azar y entretenimiento nocturno",
     "icon": "casino",
     "isBuiltin": true,
+    "displayWeight": 45,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

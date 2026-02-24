@@ -4,8 +4,9 @@
     "name": "Mirador privado",
     "slug": "private_viewpoint",
     "description": "Punto elevado exclusivo del alojamiento con vistas panorámicas excepcionales del paisaje",
-    "icon": "feature",
+    "icon": "PrivateViewpointIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 78,
     "lifecycleState": "ACTIVE"
 }

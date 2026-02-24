@@ -5,7 +5,8 @@
     "slug": "heating",
     "description": "Calefacción",
     "type": "CLIMATE_CONTROL",
-    "icon": "amenity",
+    "icon": "HeatingIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 70
 }

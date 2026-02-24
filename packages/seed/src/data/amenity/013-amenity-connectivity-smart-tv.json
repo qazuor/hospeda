@@ -5,7 +5,8 @@
     "slug": "smart_tv",
     "description": "Smart TV / Streaming",
     "type": "CONNECTIVITY",
-    "icon": "amenity",
+    "icon": "SmartTvIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 55
 }

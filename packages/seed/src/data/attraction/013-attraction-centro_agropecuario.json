@@ -6,6 +6,7 @@
     "description": "Centro de exhibición y venta de productos agropecuarios locales",
     "icon": "store",
     "isBuiltin": true,
+    "displayWeight": 28,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

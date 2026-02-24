@@ -6,6 +6,7 @@
     "description": "Piscinas termales al aire libre con diferentes temperaturas y propiedades terapéuticas",
     "icon": "pool",
     "isBuiltin": true,
+    "displayWeight": 85,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

@@ -5,7 +5,8 @@
     "slug": "fire_extinguisher",
     "description": "Extintor de incendios",
     "type": "SAFETY",
-    "icon": "amenity",
+    "icon": "FireExtinguisherIcon",
     "isBuiltin": false,
-    "isFeatured": false
+    "isFeatured": false,
+    "displayWeight": 10
 }

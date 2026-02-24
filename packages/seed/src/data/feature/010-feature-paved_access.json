@@ -4,8 +4,9 @@
     "name": "Acceso pavimentado",
     "slug": "paved_access",
     "description": "Camino de acceso completamente asfaltado o pavimentado, apto para cualquier tipo de vehículo en todas las condiciones climáticas",
-    "icon": "feature",
+    "icon": "PavedAccessIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 52,
     "lifecycleState": "ACTIVE"
 }

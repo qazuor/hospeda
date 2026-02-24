@@ -4,8 +4,9 @@
     "name": "Reciclado de residuos",
     "slug": "waste_recycling",
     "description": "Sistema completo de separación y reciclado de residuos como parte del compromiso ambiental del establecimiento",
-    "icon": "feature",
+    "icon": "WasteRecyclingIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 20,
     "lifecycleState": "ACTIVE"
 }

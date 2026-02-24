@@ -5,7 +5,8 @@
     "slug": "solarium",
     "description": "Solárium disponible",
     "type": "OUTDOORS",
-    "icon": "amenity",
+    "icon": "SolarShowersIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 45
 }

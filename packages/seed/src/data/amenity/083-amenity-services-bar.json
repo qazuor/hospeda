@@ -5,7 +5,8 @@
     "slug": "bar",
     "description": "Bar en el hotel",
     "type": "SERVICES",
-    "icon": "amenity",
+    "icon": "BarServiceIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 55
 }

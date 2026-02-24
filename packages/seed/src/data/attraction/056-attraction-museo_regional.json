@@ -6,6 +6,7 @@
     "description": "Museo que exhibe la cultura y tradiciones de la región",
     "icon": "museum",
     "isBuiltin": true,
+    "displayWeight": 52,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

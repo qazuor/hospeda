@@ -5,7 +5,8 @@
     "slug": "private_garden",
     "description": "Jardín privado",
     "type": "OUTDOORS",
-    "icon": "amenity",
+    "icon": "PrivateGardenIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 48
 }

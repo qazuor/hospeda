@@ -6,6 +6,7 @@
     "description": "Cancha de fútbol para prácticas deportivas y eventos locales",
     "icon": "sports_soccer",
     "isBuiltin": true,
+    "displayWeight": 30,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

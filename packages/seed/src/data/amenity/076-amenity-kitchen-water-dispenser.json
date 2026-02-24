@@ -5,7 +5,8 @@
     "slug": "water_dispenser",
     "description": "Dispenser de agua fría/caliente",
     "type": "KITCHEN",
-    "icon": "amenity",
+    "icon": "WaterDispenserIcon",
     "isBuiltin": false,
-    "isFeatured": false
+    "isFeatured": false,
+    "displayWeight": 15
 }

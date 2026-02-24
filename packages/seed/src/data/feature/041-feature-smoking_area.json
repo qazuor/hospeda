@@ -4,8 +4,9 @@
     "name": "Sector para fumadores",
     "slug": "smoking_area",
     "description": "Espacio al aire libre especialmente designado y ventilado para huéspedes fumadores",
-    "icon": "feature",
+    "icon": "SmokingAreaIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 22,
     "lifecycleState": "ACTIVE"
 }

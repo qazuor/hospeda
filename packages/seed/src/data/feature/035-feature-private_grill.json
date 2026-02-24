@@ -4,8 +4,9 @@
     "name": "Parrilla privada",
     "slug": "private_grill",
     "description": "Zona de asado exclusiva para el alojamiento con parrilla completa, utensilios y área de preparación",
-    "icon": "feature",
+    "icon": "PrivateGrillIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 65,
     "lifecycleState": "ACTIVE"
 }

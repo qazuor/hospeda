@@ -5,7 +5,8 @@
     "slug": "elevator",
     "description": "Ascensor disponible",
     "type": "ACCESSIBILITY",
-    "icon": "amenity",
+    "icon": "ElevatorIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 55
 }

@@ -6,6 +6,7 @@
     "description": "Discoteca con música moderna y ambiente nocturno",
     "icon": "nightlife",
     "isBuiltin": true,
+    "displayWeight": 32,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

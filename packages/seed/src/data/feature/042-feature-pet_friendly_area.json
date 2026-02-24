@@ -4,8 +4,9 @@
     "name": "Sector pet-friendly",
     "slug": "pet_friendly_area",
     "description": "Zona especialmente acondicionada para mascotas con servicios, juegos y comodidades para animales",
-    "icon": "feature",
+    "icon": "PetAreaIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 28,
     "lifecycleState": "ACTIVE"
 }

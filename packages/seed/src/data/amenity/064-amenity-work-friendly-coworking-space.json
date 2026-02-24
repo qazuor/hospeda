@@ -5,7 +5,8 @@
     "slug": "coworking_space",
     "description": "Espacio de coworking",
     "type": "WORK_FRIENDLY",
-    "icon": "amenity",
+    "icon": "CoworkingSpaceIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 50
 }

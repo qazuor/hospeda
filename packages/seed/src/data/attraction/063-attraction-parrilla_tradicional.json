@@ -6,6 +6,7 @@
     "description": "Parrilla argentina con carnes a la parrilla y ambiente tradicional",
     "icon": "restaurant",
     "isBuiltin": true,
+    "displayWeight": 52,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

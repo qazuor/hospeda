@@ -5,7 +5,8 @@
     "slug": "spa",
     "description": "Spa y relajación",
     "type": "GENERAL_APPLIANCES",
-    "icon": "amenity",
+    "icon": "SpaServicesIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 70
 }

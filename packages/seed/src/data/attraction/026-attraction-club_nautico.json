@@ -6,6 +6,7 @@
     "description": "Club con servicios náuticos, alquiler de embarcaciones y actividades acuáticas",
     "icon": "anchor",
     "isBuiltin": true,
+    "displayWeight": 48,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

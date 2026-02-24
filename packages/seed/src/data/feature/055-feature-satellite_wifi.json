@@ -4,8 +4,9 @@
     "name": "Wi-Fi satelital",
     "slug": "satellite_wifi",
     "description": "Conexión a internet de alta velocidad mediante tecnología satelital, ideal para zonas remotas",
-    "icon": "feature",
+    "icon": "WifiIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 20,
     "lifecycleState": "ACTIVE"
 }

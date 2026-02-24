@@ -5,7 +5,8 @@
     "slug": "playground",
     "description": "Parque infantil",
     "type": "FAMILY_FRIENDLY",
-    "icon": "amenity",
+    "icon": "PlaygroundIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 55
 }

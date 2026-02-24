@@ -5,7 +5,8 @@
     "slug": "first_aid_kit",
     "description": "Kit de primeros auxilios",
     "type": "SAFETY",
-    "icon": "amenity",
+    "icon": "FirstAidKitIcon",
     "isBuiltin": false,
-    "isFeatured": false
+    "isFeatured": false,
+    "displayWeight": 15
 }

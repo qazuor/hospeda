@@ -5,7 +5,8 @@
     "slug": "outdoor_furniture",
     "description": "Mesa y sillas de exterior",
     "type": "OUTDOORS",
-    "icon": "amenity",
+    "icon": "OutdoorFurnitureIcon",
     "isBuiltin": false,
-    "isFeatured": false
+    "isFeatured": false,
+    "displayWeight": 25
 }

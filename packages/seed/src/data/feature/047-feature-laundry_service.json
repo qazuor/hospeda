@@ -4,8 +4,9 @@
     "name": "Servicio de lavandería",
     "slug": "laundry_service",
     "description": "Facilidad de lavado, secado y planchado de ropa disponible para los huéspedes",
-    "icon": "feature",
+    "icon": "LaundryServiceIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 25,
     "lifecycleState": "ACTIVE"
 }

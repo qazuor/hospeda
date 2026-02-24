@@ -5,7 +5,8 @@
     "slug": "fireplace",
     "description": "Chimenea funcional",
     "type": "OUTDOORS",
-    "icon": "amenity",
+    "icon": "FireplaceIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 60
 }

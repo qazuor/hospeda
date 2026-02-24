@@ -4,8 +4,9 @@
     "name": "Ideal para grupos",
     "slug": "ideal_for_groups",
     "description": "Capacidad y distribución de espacios optimizada para grupos grandes, con áreas comunes amplias y múltiples habitaciones",
-    "icon": "feature",
+    "icon": "GroupFriendlyIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 48,
     "lifecycleState": "ACTIVE"
 }

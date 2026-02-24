@@ -4,8 +4,9 @@
     "name": "Alojamiento LGBTQ+ amigable",
     "slug": "lgbtq_friendly",
     "description": "Ambiente inclusivo y respetuoso que celebra la diversidad sexual y de género con políticas anti-discriminación",
-    "icon": "feature",
+    "icon": "LGBTQFriendlyIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 35,
     "lifecycleState": "ACTIVE"
 }

@@ -4,8 +4,9 @@
     "name": "Sin señal de celular",
     "slug": "no_cell_signal",
     "description": "Ubicación naturalmente desconectada de redes móviles para una experiencia de desconexión digital total",
-    "icon": "feature",
+    "icon": "NoCellSignalIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 12,
     "lifecycleState": "ACTIVE"
 }

@@ -6,6 +6,7 @@
     "description": "Casa histórica conservada con valor patrimonial y cultural",
     "icon": "home",
     "isBuiltin": true,
+    "displayWeight": 45,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

@@ -5,7 +5,8 @@
     "slug": "cable_tv",
     "description": "TV por cable",
     "type": "CONNECTIVITY",
-    "icon": "amenity",
+    "icon": "TvIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 40
 }

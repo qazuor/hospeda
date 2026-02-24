@@ -5,7 +5,8 @@
     "slug": "pool",
     "description": "Piscina privada",
     "type": "OUTDOORS",
-    "icon": "amenity",
+    "icon": "PoolIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 92
 }

@@ -4,8 +4,9 @@
     "name": "Apto para parejas",
     "slug": "couple_suitable",
     "description": "Ambiente romántico e íntimo, perfecto para parejas que buscan privacidad y experiencias especiales",
-    "icon": "feature",
+    "icon": "CouplesFriendlyIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 65,
     "lifecycleState": "ACTIVE"
 }

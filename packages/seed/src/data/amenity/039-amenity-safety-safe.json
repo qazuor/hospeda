@@ -5,7 +5,8 @@
     "slug": "safe",
     "description": "Caja fuerte",
     "type": "SAFETY",
-    "icon": "amenity",
+    "icon": "SafeIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 40
 }

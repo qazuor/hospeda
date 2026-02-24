@@ -5,7 +5,8 @@
     "slug": "wood_stove",
     "description": "Estufa a leña",
     "type": "CLIMATE_CONTROL",
-    "icon": "amenity",
+    "icon": "FireplaceIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 50
 }

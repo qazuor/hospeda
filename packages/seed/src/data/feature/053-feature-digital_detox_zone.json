@@ -4,8 +4,9 @@
     "name": "Zona sin conexión digital",
     "slug": "digital_detox_zone",
     "description": "Área libre de dispositivos electrónicos y señales digitales para desconexión total y relajación",
-    "icon": "feature",
+    "icon": "DigitalDetoxIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 25,
     "lifecycleState": "ACTIVE"
 }

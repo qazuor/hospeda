@@ -4,8 +4,9 @@
     "name": "Check-in autónomo",
     "slug": "autonomous_checkin",
     "description": "Sistema de ingreso independiente sin necesidad de personal, mediante códigos, llaves inteligentes o aplicaciones móviles",
-    "icon": "feature",
+    "icon": "SelfCheckInIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 55,
     "lifecycleState": "ACTIVE"
 }

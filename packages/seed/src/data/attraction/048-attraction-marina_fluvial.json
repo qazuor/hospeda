@@ -6,6 +6,7 @@
     "description": "Marina con servicios completos para embarcaciones y deportes náuticos",
     "icon": "marina",
     "isBuiltin": true,
+    "displayWeight": 45,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

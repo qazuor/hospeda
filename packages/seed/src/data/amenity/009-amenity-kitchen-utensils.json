@@ -5,7 +5,8 @@
     "slug": "kitchen_utensils",
     "description": "Utensilios de cocina",
     "type": "KITCHEN",
-    "icon": "amenity",
+    "icon": "UtensilsIcon",
     "isBuiltin": false,
-    "isFeatured": false
+    "isFeatured": false,
+    "displayWeight": 15
 }

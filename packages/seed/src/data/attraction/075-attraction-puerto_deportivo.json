@@ -6,6 +6,7 @@
     "description": "Puerto con embarcaciones deportivas y servicios náuticos para actividades recreativas",
     "icon": "directions_boat",
     "isBuiltin": true,
+    "displayWeight": 45,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

@@ -4,8 +4,9 @@
     "name": "Entorno silencioso",
     "slug": "silent_environment",
     "description": "Ambiente de completa tranquilidad sonora, alejado de ruidos urbanos, tráfico o actividades ruidosas",
-    "icon": "feature",
+    "icon": "QuietEnvironmentIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 58,
     "lifecycleState": "ACTIVE"
 }

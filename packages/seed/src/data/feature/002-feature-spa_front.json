@@ -4,8 +4,9 @@
     "name": "Frente al balneario",
     "slug": "spa_front",
     "description": "Ubicación privilegiada frente a balnearios termales o spas naturales, con acceso directo a las instalaciones de relajación",
-    "icon": "feature",
+    "icon": "SpaFrontIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 85,
     "lifecycleState": "ACTIVE"
 }

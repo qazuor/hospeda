@@ -6,6 +6,7 @@
     "description": "Complejo termal con piscinas de aguas termales naturales, ideal para relajación y bienestar",
     "icon": "hot_tub",
     "isBuiltin": true,
+    "displayWeight": 88,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

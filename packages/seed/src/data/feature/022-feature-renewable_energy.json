@@ -4,8 +4,9 @@
     "name": "Uso de energías renovables",
     "slug": "renewable_energy",
     "description": "Sistema energético basado en fuentes renovables como solar, eólica o hidroeléctrica para un funcionamiento sustentable",
-    "icon": "feature",
+    "icon": "RenewableEnergyIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 33,
     "lifecycleState": "ACTIVE"
 }

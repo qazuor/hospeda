@@ -4,8 +4,9 @@
     "name": "Servicios bilingües",
     "slug": "bilingual_services",
     "description": "Personal capacitado para atención en múltiples idiomas garantizando comunicación fluida con huéspedes internacionales",
-    "icon": "feature",
+    "icon": "BilingualServiceIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 35,
     "lifecycleState": "ACTIVE"
 }

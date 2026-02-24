@@ -4,8 +4,9 @@
     "name": "Construcción ecológica",
     "slug": "ecological_construction",
     "description": "Edificación sustentable con materiales ecológicos, técnicas de bioconstrucción y mínimo impacto ambiental",
-    "icon": "feature",
+    "icon": "EcoConstructionIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 35,
     "lifecycleState": "ACTIVE"
 }

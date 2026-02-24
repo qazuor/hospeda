@@ -6,6 +6,7 @@
     "description": "Parque con juegos y actividades para niños",
     "icon": "playground",
     "isBuiltin": true,
+    "displayWeight": 40,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

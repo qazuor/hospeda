@@ -6,6 +6,7 @@
     "description": "Casco histórico de la ciudad con arquitectura colonial y sitios de interés patrimonial",
     "icon": "account_balance",
     "isBuiltin": true,
+    "displayWeight": 70,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

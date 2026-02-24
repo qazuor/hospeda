@@ -6,6 +6,7 @@
     "description": "Catedral principal de la ciudad con arquitectura destacada y valor histórico",
     "icon": "church",
     "isBuiltin": true,
+    "displayWeight": 48,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

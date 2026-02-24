@@ -5,7 +5,8 @@
     "slug": "river_view",
     "description": "Vista al río",
     "type": "OUTDOORS",
-    "icon": "amenity",
+    "icon": "RiverViewIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 78
 }

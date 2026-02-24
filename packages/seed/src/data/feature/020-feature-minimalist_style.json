@@ -4,8 +4,9 @@
     "name": "Estilo minimalista",
     "slug": "minimalist_style",
     "description": "Diseño despojado y funcional con espacios limpios, colores neutros y decoración esencial",
-    "icon": "feature",
+    "icon": "MinimalistStyleIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 30,
     "lifecycleState": "ACTIVE"
 }

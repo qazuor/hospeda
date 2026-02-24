@@ -5,7 +5,8 @@
     "slug": "towels",
     "description": "Toallas incluidas",
     "type": "BED_AND_BATH",
-    "icon": "amenity",
+    "icon": "TowelsIcon",
     "isBuiltin": false,
-    "isFeatured": false
+    "isFeatured": false,
+    "displayWeight": 20
 }

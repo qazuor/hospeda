@@ -6,6 +6,7 @@
     "description": "Spa en entorno natural con tratamientos orgánicos y terapias alternativas",
     "icon": "nature_people",
     "isBuiltin": true,
+    "displayWeight": 55,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

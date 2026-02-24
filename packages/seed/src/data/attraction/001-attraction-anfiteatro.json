@@ -6,6 +6,7 @@
     "description": "Anfiteatro al aire libre para espectáculos y eventos culturales",
     "icon": "theater_comedy",
     "isBuiltin": true,
+    "displayWeight": 38,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

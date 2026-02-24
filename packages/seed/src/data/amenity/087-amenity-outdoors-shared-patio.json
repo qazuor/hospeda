@@ -5,7 +5,8 @@
     "slug": "shared_patio",
     "description": "Patio compartido",
     "type": "OUTDOORS",
-    "icon": "amenity",
+    "icon": "SharedPatioIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 30
 }

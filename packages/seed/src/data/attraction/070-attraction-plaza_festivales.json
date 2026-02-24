@@ -6,6 +6,7 @@
     "description": "Plaza principal donde se realizan festivales y eventos al aire libre",
     "icon": "festival",
     "isBuiltin": true,
+    "displayWeight": 42,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

@@ -6,6 +6,7 @@
     "description": "Edificio de gobierno con arquitectura destacada y valor histórico",
     "icon": "gavel",
     "isBuiltin": true,
+    "displayWeight": 22,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

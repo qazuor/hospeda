@@ -4,8 +4,9 @@
     "name": "Espacio para talleres y capacitaciones",
     "slug": "workshop_training_space",
     "description": "Instalaciones equipadas para realizar cursos, talleres y actividades de aprendizaje grupal",
-    "icon": "feature",
+    "icon": "WorkshopSpaceIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 22,
     "lifecycleState": "ACTIVE"
 }

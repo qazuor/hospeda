@@ -5,7 +5,8 @@
     "slug": "washer",
     "description": "Lavarropas",
     "type": "BED_AND_BATH",
-    "icon": "amenity",
+    "icon": "WasherIcon",
     "isBuiltin": false,
-    "isFeatured": true
+    "isFeatured": true,
+    "displayWeight": 45
 }

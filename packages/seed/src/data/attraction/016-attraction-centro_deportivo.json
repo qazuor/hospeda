@@ -6,6 +6,7 @@
     "description": "Centro con instalaciones deportivas variadas",
     "icon": "sports",
     "isBuiltin": true,
+    "displayWeight": 42,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

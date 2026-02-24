@@ -4,8 +4,9 @@
     "name": "Aislado sin vecinos",
     "slug": "isolated_no_neighbors",
     "description": "Propiedad completamente privada sin construcciones cercanas, garantizando máxima privacidad y exclusividad",
-    "icon": "feature",
+    "icon": "IsolatedLocationIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 50,
     "lifecycleState": "ACTIVE"
 }

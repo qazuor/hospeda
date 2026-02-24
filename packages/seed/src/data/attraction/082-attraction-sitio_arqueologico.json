@@ -6,6 +6,7 @@
     "description": "Sitio de interés arqueológico con restos y evidencias históricas",
     "icon": "archaeology",
     "isBuiltin": true,
+    "displayWeight": 42,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }

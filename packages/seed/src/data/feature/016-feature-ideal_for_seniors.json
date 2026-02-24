@@ -4,8 +4,9 @@
     "name": "Ideal para adultos mayores",
     "slug": "ideal_for_seniors",
     "description": "Instalaciones adaptadas para personas mayores con accesibilidad, servicios de salud cercanos y ambiente tranquilo",
-    "icon": "feature",
+    "icon": "SeniorFriendlyIcon",
     "isBuiltin": true,
     "isFeatured": false,
+    "displayWeight": 38,
     "lifecycleState": "ACTIVE"
 }

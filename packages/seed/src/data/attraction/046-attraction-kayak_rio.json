@@ -6,6 +6,7 @@
     "description": "Alquiler de kayaks y excursiones guiadas por el río",
     "icon": "kayaking",
     "isBuiltin": true,
+    "displayWeight": 65,
     "lifecycleState": "ACTIVE",
     "tagIds": []
 }
