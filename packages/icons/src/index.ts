@@ -9,6 +9,9 @@
 export { DEFAULT_DUOTONE_COLOR, ICON_SIZES } from './types';
 export type { IconProps, IconWeight } from './types';
 
+// Export icon resolver
+export { ICON_MAP, resolveIcon } from './icon-resolver';
+
 // Export Phosphor icon factory
 export { createPhosphorIcon } from './create-phosphor-icon';
 
