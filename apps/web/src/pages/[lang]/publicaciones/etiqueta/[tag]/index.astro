@@ -16,18 +16,17 @@ import Section from '../../../../../components/ui/Section.astro';
 import EmptyState from '../../../../../components/ui/EmptyState.astro';
 import Pagination from '../../../../../components/ui/Pagination.astro';
 import BlogPostCard from '../../../../../components/blog/BlogPostCard.astro';
-import { isValidLocale, type SupportedLocale } from '../../../../../lib/i18n';
-import { tagsApi } from '../../../../../lib/api/endpoints';
+import { getLocaleFromParams } from '../../../../../lib/page-helpers';
+import { tagsApi } from '../../../../../lib/api/endpoints-protected';
 import { apiClient } from '../../../../../lib/api/client';
 import type { PaginatedResponse } from '../../../../../lib/api/types';
+import { t } from '../../../../../lib/i18n';
+import { toPostCardProps } from '../../../../../lib/api/transforms';
 
-const { lang, tag } = Astro.params;
+const { tag } = Astro.params;
 
-if (!lang || !isValidLocale(lang)) {
-  return Astro.redirect('/es/');
-}
-
-const locale = lang as SupportedLocale;
+const locale = getLocaleFromParams(Astro.params);
+if (!locale) return Astro.redirect('/es/');
 
 /**
  * Validate tag param
@@ -75,87 +74,25 @@ const pagination = postsResult.ok ? postsResult.data.pagination : null;
  */
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
-/**
- * Localized page titles
- */
-const pageTitles: Record<SupportedLocale, string> = {
-  es: `Publicaciones etiquetadas con "${tagData.name}"`,
-  en: `Posts tagged with "${tagData.name}"`,
-  pt: `Publicações com a etiqueta "${tagData.name}"`,
-};
+const tagName = tagData.name;
 
-/**
- * Localized meta descriptions for SEO
- */
-const metaDescriptions: Record<SupportedLocale, string> = {
-  es: `Explora todas las publicaciones del blog de Hospeda etiquetadas con "${tagData.name}". Artículos sobre turismo en el Litoral argentino.`,
-  en: `Browse all Hospeda blog posts tagged with "${tagData.name}". Articles about tourism in the Argentine Litoral region.`,
-  pt: `Explore todas as publicações do blog da Hospeda com a etiqueta "${tagData.name}". Artigos sobre turismo no Litoral argentino.`,
-};
-
-/**
- * Localized breadcrumb labels
- */
-const breadcrumbLabels: Record<SupportedLocale, { home: string; posts: string; tag: string }> = {
-  es: { home: 'Inicio', posts: 'Publicaciones', tag: `Etiqueta: ${tagData.name}` },
-  en: { home: 'Home', posts: 'Posts', tag: `Tag: ${tagData.name}` },
-  pt: { home: 'Início', posts: 'Publicações', tag: `Etiqueta: ${tagData.name}` },
-};
-
-/**
- * Localized heading
- */
-const headings: Record<SupportedLocale, string> = {
-  es: `Etiqueta: ${tagData.name}`,
-  en: `Tag: ${tagData.name}`,
-  pt: `Etiqueta: ${tagData.name}`,
-};
-
-/**
- * Localized sub-heading description
- */
-const subHeadings: Record<SupportedLocale, string> = {
-  es: `Todas las publicaciones etiquetadas con "${tagData.name}"`,
-  en: `All posts tagged with "${tagData.name}"`,
-  pt: `Todas as publicações com a etiqueta "${tagData.name}"`,
-};
-
-/**
- * Localized empty state message
- */
-const emptyStateMessages: Record<SupportedLocale, string> = {
-  es: `No hay publicaciones disponibles para la etiqueta "${tagData.name}"`,
-  en: `No posts available for tag "${tagData.name}"`,
-  pt: `Não há publicações disponíveis para a etiqueta "${tagData.name}"`,
-};
-
-const pageTitle = pageTitles[locale];
-const metaDescription = metaDescriptions[locale];
-const labels = breadcrumbLabels[locale];
+const pageTitle = t({ locale, namespace: 'blog', key: 'tagPage.title', params: { tag: tagName } });
+const metaDescription = t({ locale, namespace: 'blog', key: 'tagPage.description', params: { tag: tagName } });
+const breadcrumbHome = t({ locale, namespace: 'blog', key: 'tagPage.breadcrumb.home' });
+const breadcrumbPosts = t({ locale, namespace: 'blog', key: 'tagPage.breadcrumb.posts' });
+const breadcrumbTag = t({ locale, namespace: 'blog', key: 'tagPage.breadcrumb.tag', params: { tag: tagName } });
+const heading = t({ locale, namespace: 'blog', key: 'tagPage.heading', params: { tag: tagName } });
+const subHeading = t({ locale, namespace: 'blog', key: 'tagPage.subHeading', params: { tag: tagName } });
+const emptyStateMessage = t({ locale, namespace: 'blog', key: 'tagPage.emptyState', params: { tag: tagName } });
 
 /**
  * Breadcrumb navigation items
  */
 const breadcrumbItems = [
-  { label: labels.home, href: `/${locale}/` },
-  { label: labels.posts, href: `/${locale}/publicaciones/` },
-  { label: labels.tag, href: `/${locale}/publicaciones/etiqueta/${tagSlug}/` },
+  { label: breadcrumbHome, href: `/${locale}/` },
+  { label: breadcrumbPosts, href: `/${locale}/publicaciones/` },
+  { label: breadcrumbTag, href: `/${locale}/publicaciones/etiqueta/${tagSlug}/` },
 ];
-
-/**
- * Type alias for BlogPostCard data shape
- */
-type BlogPostCardData = {
-  slug: string;
-  title: string;
-  summary: string;
-  featuredImage: string;
-  category: string;
-  publishedAt: string;
-  readingTimeMinutes: number;
-  authorName: string;
-  isFeatured: boolean;
-};
 
 /**
  * CollectionPage + BreadcrumbList JSON-LD structured data
@@ -188,7 +125,7 @@ const collectionJsonLd = {
     title={pageTitle}
     description={metaDescription}
     canonical={canonicalUrl}
-    locale={locale === 'pt' ? 'es' : locale}
+    locale={locale}
     type="website"
   />
   <JsonLd slot="head" data={collectionJsonLd} />
@@ -201,10 +138,10 @@ const collectionJsonLd = {
         <!-- Tag Header Section -->
         <article id="tag-header" class="mb-12 text-center">
           <h1 class="mb-4 text-4xl font-bold text-text-primary md:text-5xl">
-            {headings[locale]}
+            {heading}
           </h1>
           <p class="text-xl leading-relaxed text-text-secondary">
-            {subHeadings[locale]}
+            {subHeading}
           </p>
         </article>
 
@@ -219,15 +156,15 @@ const collectionJsonLd = {
               >
                 {posts.map((post) => (
                   <BlogPostCard
-                    post={post as BlogPostCardData}
+                    post={toPostCardProps({ item: post as Record<string, unknown> })}
                     locale={locale}
                   />
                 ))}
               </div>
             ) : (
               <EmptyState
-                title={emptyStateMessages[locale]}
-                message={emptyStateMessages[locale]}
+                title={emptyStateMessage}
+                message={emptyStateMessage}
               />
             )
           }

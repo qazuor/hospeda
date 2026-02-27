@@ -10,15 +10,11 @@ import Container from '../../../components/ui/Container.astro';
 import Breadcrumb from '../../../components/ui/Breadcrumb.astro';
 import Section from '../../../components/ui/Section.astro';
 import { ProfileEditForm } from '../../../components/account/ProfileEditForm.client';
-import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
+import { getLocaleFromParams, HOME_BREADCRUMB } from '../../../lib/page-helpers';
+import { t } from '../../../lib/i18n';
 
-const { lang } = Astro.params;
-
-if (!lang || !isValidLocale(lang)) {
-	return Astro.redirect('/es/');
-}
-
-const locale = lang as SupportedLocale;
+const locale = getLocaleFromParams(Astro.params);
+if (!locale) return Astro.redirect('/es/');
 
 /**
  * User is guaranteed to exist due to middleware auth protection
@@ -28,49 +24,17 @@ if (!user) {
 	return Astro.redirect(`/${locale}/auth/signin`);
 }
 
-/**
- * Localized page titles
- */
-const titles: Record<SupportedLocale, string> = {
-	es: 'Editar Perfil',
-	en: 'Edit Profile',
-	pt: 'Editar Perfil',
-};
-
-/**
- * Localized meta descriptions
- */
-const descriptions: Record<SupportedLocale, string> = {
-	es: 'Actualiza tu información personal y preferencias de cuenta.',
-	en: 'Update your personal information and account preferences.',
-	pt: 'Atualize suas informações pessoais e preferências de conta.',
-};
-
-/**
- * Localized home breadcrumb labels
- */
-const homeLabels: Record<SupportedLocale, string> = {
-	es: 'Inicio',
-	en: 'Home',
-	pt: 'Início',
-};
-
-/**
- * Localized account breadcrumb labels
- */
-const accountLabels: Record<SupportedLocale, string> = {
-	es: 'Mi Cuenta',
-	en: 'My Account',
-	pt: 'Minha Conta',
-};
+const title = t({ locale, namespace: 'account', key: 'pages.editProfile.title' });
+const description = t({ locale, namespace: 'account', key: 'pages.editProfile.description' });
+const accountLabel = t({ locale, namespace: 'account', key: 'pages.accountLabel' });
 
 /**
  * Breadcrumb navigation items
  */
 const breadcrumbItems = [
-	{ label: homeLabels[locale], href: `/${locale}/` },
-	{ label: accountLabels[locale], href: `/${locale}/mi-cuenta/` },
-	{ label: titles[locale], href: `/${locale}/mi-cuenta/editar/` },
+	{ label: HOME_BREADCRUMB[locale], href: `/${locale}/` },
+	{ label: accountLabel, href: `/${locale}/mi-cuenta/` },
+	{ label: title, href: `/${locale}/mi-cuenta/editar/` },
 ];
 
 /**
@@ -83,13 +47,13 @@ const userBio = (user as Record<string, unknown>).profile
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 ---
 
-<BaseLayout title={titles[locale]} description={descriptions[locale]} locale={locale}>
+<BaseLayout title={title} description={description} locale={locale}>
 	<SEOHead
 		slot="head"
-		title={titles[locale]}
-		description={descriptions[locale]}
+		title={title}
+		description={description}
 		canonical={canonicalUrl}
-		locale={locale === 'pt' ? 'es' : locale}
+		locale={locale}
 		type="website"
 		noindex={true}
 	/>
@@ -101,8 +65,8 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 			<div class="mx-auto max-w-3xl">
 				<!-- Page Header -->
 				<header id="page-header" class="mb-8">
-					<h1 class="mb-2 text-3xl font-bold text-text-primary">{titles[locale]}</h1>
-					<p class="text-lg text-text-secondary">{descriptions[locale]}</p>
+					<h1 class="mb-2 text-3xl font-bold text-text-primary">{title}</h1>
+					<p class="text-lg text-text-secondary">{description}</p>
 				</header>
 
 				<!-- Profile Edit Form (React Island) -->

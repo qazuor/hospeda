@@ -6,25 +6,23 @@
  *
  * @route /[lang]/eventos/page/[page]/
  */
-import { isValidLocale } from '../../../../lib/i18n';
+import { getLocaleFromParams } from '../../../../lib/page-helpers';
 
-const { lang, page } = Astro.params;
-
-if (!lang || !isValidLocale(lang)) {
-  return Astro.redirect('/es/');
-}
+const { page } = Astro.params;
+const locale = getLocaleFromParams(Astro.params);
+if (!locale) return Astro.redirect('/es/');
 
 const pageNum = Number.parseInt(page || '1', 10);
 
 if (Number.isNaN(pageNum) || pageNum < 1) {
-  return Astro.redirect(`/${lang}/eventos/`);
+  return Astro.redirect(`/${locale}/eventos/`);
 }
 
 /** Page 1 should use the canonical base URL without /page/ segment */
 if (pageNum === 1) {
-  return Astro.redirect(`/${lang}/eventos/`);
+  return Astro.redirect(`/${locale}/eventos/`);
 }
 
 /** Rewrite to the index page with the page query parameter */
-return Astro.rewrite(`/${lang}/eventos/?page=${pageNum}`);
+return Astro.rewrite(`/${locale}/eventos/?page=${pageNum}`);
 ---

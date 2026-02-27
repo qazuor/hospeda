@@ -6,31 +6,29 @@
  *
  * @route /[lang]/eventos/categoria/[category]/page/[page]/
  */
-import { isValidLocale } from '../../../../../../lib/i18n';
+import { getLocaleFromParams } from '../../../../../../lib/page-helpers';
 
 const ALLOWED_CATEGORIES = ['festival', 'fair', 'sport', 'cultural', 'gastronomy'] as const;
 
-const { lang, category, page } = Astro.params;
-
-if (!lang || !isValidLocale(lang)) {
-  return Astro.redirect('/es/');
-}
+const { category, page } = Astro.params;
+const locale = getLocaleFromParams(Astro.params);
+if (!locale) return Astro.redirect('/es/');
 
 if (!category || !ALLOWED_CATEGORIES.includes(category as (typeof ALLOWED_CATEGORIES)[number])) {
-  return Astro.redirect(`/${lang}/eventos/`);
+  return Astro.redirect(`/${locale}/eventos/`);
 }
 
 const pageNum = Number.parseInt(page || '1', 10);
 
 if (Number.isNaN(pageNum) || pageNum < 1) {
-  return Astro.redirect(`/${lang}/eventos/categoria/${category}/`);
+  return Astro.redirect(`/${locale}/eventos/categoria/${category}/`);
 }
 
 /** Page 1 should use the canonical base URL without /page/ segment */
 if (pageNum === 1) {
-  return Astro.redirect(`/${lang}/eventos/categoria/${category}/`);
+  return Astro.redirect(`/${locale}/eventos/categoria/${category}/`);
 }
 
 /** Rewrite to the category index page with the page query parameter */
-return Astro.rewrite(`/${lang}/eventos/categoria/${category}/?page=${pageNum}`);
+return Astro.rewrite(`/${locale}/eventos/categoria/${category}/?page=${pageNum}`);
 ---

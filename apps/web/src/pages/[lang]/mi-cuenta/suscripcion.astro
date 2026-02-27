@@ -8,16 +8,12 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 import SEOHead from '../../../components/seo/SEOHead.astro';
 import Breadcrumb from '../../../components/ui/Breadcrumb.astro';
 import Container from '../../../components/ui/Container.astro';
-import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
+import { getLocaleFromParams, HOME_BREADCRUMB } from '../../../lib/page-helpers';
+import { t } from '../../../lib/i18n';
 import { SubscriptionCard } from '../../../components/account/SubscriptionCard.client';
 
-const { lang } = Astro.params;
-
-if (!lang || !isValidLocale(lang)) {
-	return Astro.redirect('/es/');
-}
-
-const locale = lang as SupportedLocale;
+const locale = getLocaleFromParams(Astro.params);
+if (!locale) return Astro.redirect('/es/');
 
 /** Auth guard: redirect unauthenticated users to sign in */
 const user = Astro.locals.user;
@@ -25,60 +21,11 @@ if (!user) {
 	return Astro.redirect(`/${locale}/auth/signin`);
 }
 
-/**
- * Localized page titles
- */
-const titles: Record<SupportedLocale, string> = {
-	es: 'Mi Suscripción',
-	en: 'My Subscription',
-	pt: 'Minha Assinatura',
-};
-
-/**
- * Localized meta descriptions
- */
-const descriptions: Record<SupportedLocale, string> = {
-	es: 'Administra tu plan y suscripción en Hospeda',
-	en: 'Manage your plan and subscription on Hospeda',
-	pt: 'Gerencie seu plano e assinatura no Hospeda',
-};
-
-/**
- * Localized home breadcrumb labels
- */
-const homeLabels: Record<SupportedLocale, string> = {
-	es: 'Inicio',
-	en: 'Home',
-	pt: 'Início',
-};
-
-/**
- * Localized account breadcrumb labels
- */
-const accountLabels: Record<SupportedLocale, string> = {
-	es: 'Mi Cuenta',
-	en: 'My Account',
-	pt: 'Minha Conta',
-};
-
-/**
- * Localized subscription page heading and subtitle.
- * Plan details, features, billing info, and upgrade CTA are handled by SubscriptionCard.
- */
-const subscriptionLabels = {
-	es: {
-		heading: 'Mi Suscripción',
-		description: 'Administra tu plan y preferencias de pago',
-	},
-	en: {
-		heading: 'My Subscription',
-		description: 'Manage your plan and payment preferences',
-	},
-	pt: {
-		heading: 'Minha Assinatura',
-		description: 'Gerencie seu plano e preferências de pagamento',
-	},
-};
+const title = t({ locale, namespace: 'account', key: 'pages.subscription.title' });
+const description = t({ locale, namespace: 'account', key: 'pages.subscription.description' });
+const accountLabel = t({ locale, namespace: 'account', key: 'pages.accountLabel' });
+const headingText = t({ locale, namespace: 'account', key: 'pages.subscription.heading' });
+const headingDesc = t({ locale, namespace: 'account', key: 'pages.subscription.headingDesc' });
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
@@ -86,12 +33,10 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
  * Breadcrumb navigation items
  */
 const breadcrumbItems = [
-	{ label: homeLabels[locale], href: `/${locale}/` },
-	{ label: accountLabels[locale], href: `/${locale}/mi-cuenta/` },
-	{ label: titles[locale], href: `/${locale}/mi-cuenta/suscripcion/` },
+	{ label: HOME_BREADCRUMB[locale], href: `/${locale}/` },
+	{ label: accountLabel, href: `/${locale}/mi-cuenta/` },
+	{ label: title, href: `/${locale}/mi-cuenta/suscripcion/` },
 ];
-
-const labels = subscriptionLabels[locale];
 
 /**
  * Subscription data will be enhanced client-side via API when billing is available.
@@ -99,13 +44,13 @@ const labels = subscriptionLabels[locale];
  */
 ---
 
-<BaseLayout title={titles[locale]} description={descriptions[locale]} locale={locale}>
+<BaseLayout title={title} description={description} locale={locale}>
 	<SEOHead
 		slot="head"
-		title={titles[locale]}
-		description={descriptions[locale]}
+		title={title}
+		description={description}
 		canonical={canonicalUrl}
-		locale={locale === 'pt' ? 'es' : locale}
+		locale={locale}
 		type="website"
 		noindex={true}
 	/>
@@ -116,10 +61,10 @@ const labels = subscriptionLabels[locale];
 		<div class="mx-auto max-w-3xl py-8">
 			<div class="mb-8">
 				<h1 class="mb-2 text-3xl font-bold text-text-primary">
-					{labels.heading}
+					{headingText}
 				</h1>
 				<p class="text-text-secondary">
-					{labels.description}
+					{headingDesc}
 				</p>
 			</div>
 

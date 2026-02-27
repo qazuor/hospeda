@@ -8,131 +8,34 @@ import SEOHead from '../../../components/seo/SEOHead.astro';
 import Breadcrumb from '../../../components/ui/Breadcrumb.astro';
 import Container from '../../../components/ui/Container.astro';
 import Section from '../../../components/ui/Section.astro';
+import SectionTitle from '../../../components/ui/SectionTitle.astro';
 import EmptyState from '../../../components/ui/EmptyState.astro';
+import PostErrorState from '../../../components/error/PostErrorState.astro';
 import Pagination from '../../../components/ui/Pagination.astro';
 import BlogPostCard from '../../../components/blog/BlogPostCard.astro';
-import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
+import { getLocaleFromParams, HOME_BREADCRUMB } from '../../../lib/page-helpers';
 import { postsApi } from '../../../lib/api/endpoints';
-import { extractFeaturedImageUrl } from '../../../lib/media';
+import { toPostCardProps } from '../../../lib/api/transforms';
+import { t } from '../../../lib/i18n';
 
-const { lang } = Astro.params;
-
-if (!lang || !isValidLocale(lang)) {
-	return Astro.redirect('/es/');
-}
-
-const locale = lang as SupportedLocale;
+const locale = getLocaleFromParams(Astro.params);
+if (!locale) return Astro.redirect('/es/');
 
 /**
- * Localized page titles
+ * Localized labels from i18n
  */
-const titles: Record<SupportedLocale, string> = {
-	es: 'Blog',
-	en: 'Blog',
-	pt: 'Blog',
-};
-
-/**
- * Localized meta descriptions
- */
-const descriptions: Record<SupportedLocale, string> = {
-	es: 'Descubre historias, consejos de viaje y novedades sobre turismo en el Litoral argentino. Artículos sobre destinos, alojamientos, eventos y gastronomía.',
-	en: 'Discover stories, travel tips and news about tourism in the Argentine Litoral region. Articles about destinations, accommodations, events and gastronomy.',
-	pt: 'Descubra histórias, dicas de viagem e novidades sobre turismo no Litoral argentino. Artigos sobre destinos, acomodações, eventos e gastronomia.',
-};
-
-/**
- * Localized home breadcrumb labels
- */
-const homeLabels: Record<SupportedLocale, string> = {
-	es: 'Inicio',
-	en: 'Home',
-	pt: 'Início',
-};
-
-/**
- * Localized hero heading
- */
-const heroHeadings: Record<SupportedLocale, string> = {
-	es: 'Blog de Hospeda',
-	en: 'Hospeda Blog',
-	pt: 'Blog da Hospeda',
-};
-
-/**
- * Localized hero description
- */
-const heroDescriptions: Record<SupportedLocale, string> = {
-	es: 'Historias, consejos y novedades sobre turismo en el Litoral argentino. Descubre los mejores destinos, alojamientos, eventos y experiencias gastronómicas de la región.',
-	en: 'Stories, tips and news about tourism in the Argentine Litoral region. Discover the best destinations, accommodations, events and gastronomic experiences in the region.',
-	pt: 'Histórias, dicas e novidades sobre turismo no Litoral argentino. Descubra os melhores destinos, acomodações, eventos e experiências gastronômicas da região.',
-};
-
-/**
- * Localized featured post section title
- */
-const featuredTitles: Record<SupportedLocale, string> = {
-	es: 'Publicación Destacada',
-	en: 'Featured Post',
-	pt: 'Publicação em Destaque',
-};
-
-/**
- * Localized category filter labels
- */
-const categoryLabels: Record<SupportedLocale, Record<string, string>> = {
-	es: {
-		all: 'Todos',
-		destinations: 'Destinos',
-		accommodations: 'Alojamientos',
-		events: 'Eventos',
-		gastronomy: 'Gastronomía',
-		tips: 'Consejos',
-	},
-	en: {
-		all: 'All',
-		destinations: 'Destinations',
-		accommodations: 'Accommodations',
-		events: 'Events',
-		gastronomy: 'Gastronomy',
-		tips: 'Tips',
-	},
-	pt: {
-		all: 'Todos',
-		destinations: 'Destinos',
-		accommodations: 'Acomodações',
-		events: 'Eventos',
-		gastronomy: 'Gastronomia',
-		tips: 'Dicas',
-	},
-};
-
-/**
- * Localized empty state text
- */
-const emptyStateTexts: Record<SupportedLocale, string> = {
-	es: 'No hay publicaciones disponibles',
-	en: 'No posts available',
-	pt: 'Nenhuma publicação disponível',
-};
-
-/**
- * Localized pagination labels
- */
-const paginationLabels: Record<SupportedLocale, { previous: string; next: string }> = {
-	es: {
-		previous: 'Anterior',
-		next: 'Siguiente',
-	},
-	en: {
-		previous: 'Previous',
-		next: 'Next',
-	},
-	pt: {
-		previous: 'Anterior',
-		next: 'Próximo',
-	},
-};
+const pageTitle = t({ locale, namespace: 'blog', key: 'listPage.title' });
+const pageDescription = t({ locale, namespace: 'blog', key: 'listPage.description' });
+const heroHeading = t({ locale, namespace: 'blog', key: 'listPage.heroHeading' });
+const heroDescription = t({ locale, namespace: 'blog', key: 'listPage.heroDescription' });
+const featuredTitle = t({ locale, namespace: 'blog', key: 'listPage.featuredTitle' });
+const emptyStateText = t({ locale, namespace: 'blog', key: 'listPage.emptyState' });
+const catAll = t({ locale, namespace: 'blog', key: 'listPage.categories.all' });
+const catDestinations = t({ locale, namespace: 'blog', key: 'listPage.categories.destinations' });
+const catAccommodations = t({ locale, namespace: 'blog', key: 'listPage.categories.accommodations' });
+const catEvents = t({ locale, namespace: 'blog', key: 'listPage.categories.events' });
+const catGastronomy = t({ locale, namespace: 'blog', key: 'listPage.categories.gastronomy' });
+const catTips = t({ locale, namespace: 'blog', key: 'listPage.categories.tips' });
 
 /**
  * Get query parameters from URL
@@ -150,6 +53,7 @@ const category = url.searchParams.get('categoria') || '';
  */
 const apiResult = await postsApi.list({ page, pageSize, q, sortBy, sortOrder, category: category || undefined });
 
+const apiError = !apiResult.ok;
 const posts = apiResult.ok ? apiResult.data.items : [];
 const pagination = apiResult.ok ? apiResult.data.pagination : null;
 
@@ -158,10 +62,7 @@ const pagination = apiResult.ok ? apiResult.data.pagination : null;
  */
 const featuredResult = await postsApi.getFeatured();
 const featuredPostRaw = featuredResult.ok && featuredResult.data.items.length > 0 ? featuredResult.data.items[0] as Record<string, unknown> : null;
-const featuredPost = featuredPostRaw ? {
-	...featuredPostRaw,
-	featuredImage: extractFeaturedImageUrl(featuredPostRaw, ''),
-} : null;
+const featuredPost = featuredPostRaw ? toPostCardProps({ item: featuredPostRaw }) : null;
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
@@ -169,33 +70,22 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
  * Breadcrumb navigation items
  */
 const breadcrumbItems = [
-	{ label: homeLabels[locale], href: `/${locale}/` },
-	{ label: titles[locale], href: `/${locale}/publicaciones/` },
+	{ label: HOME_BREADCRUMB[locale], href: `/${locale}/` },
+	{ label: pageTitle, href: `/${locale}/publicaciones/` },
 ];
 
-const postCards = posts.map((post) => {
-	const p = post as Record<string, unknown>;
-	return {
-		slug: String(p.slug || ''),
-		title: String(p.title || ''),
-		summary: String(p.summary || p.content || ''),
-		featuredImage: extractFeaturedImageUrl(p, '/images/placeholder-post.svg'),
-		category: String(p.category || ''),
-		publishedAt: String(p.publishedAt || ''),
-		readingTimeMinutes: Number(p.readingTimeMinutes || 0),
-		authorName: String(p.authorName || ''),
-		isFeatured: Boolean(p.isFeatured),
-	};
-});
+const postCards = posts.map((post) =>
+	toPostCardProps({ item: post as Record<string, unknown> })
+);
 ---
 
-<BaseLayout title={titles[locale]} description={descriptions[locale]} locale={locale}>
+<BaseLayout title={pageTitle} description={pageDescription} locale={locale}>
 	<SEOHead
 		slot="head"
-		title={titles[locale]}
-		description={descriptions[locale]}
+		title={pageTitle}
+		description={pageDescription}
 		canonical={canonicalUrl}
-		locale={locale === 'pt' ? 'es' : locale}
+		locale={locale}
 		type="website"
 	/>
 
@@ -206,11 +96,11 @@ const postCards = posts.map((post) => {
 			<div class="mx-auto max-w-6xl">
 				<!-- Hero Section -->
 				<article id="hero" class="mb-12 text-center">
-					<h1 class="mb-6 text-4xl font-bold text-text-primary md:text-5xl">
-						{heroHeadings[locale]}
-					</h1>
+					<SectionTitle as="h1" class="mb-6">
+						{heroHeading}
+					</SectionTitle>
 					<p class="mx-auto max-w-3xl text-xl leading-relaxed text-text-secondary">
-						{heroDescriptions[locale]}
+						{heroDescription}
 					</p>
 				</article>
 
@@ -218,9 +108,9 @@ const postCards = posts.map((post) => {
 				{
 					featuredPost && (
 						<article id="featured-post" class="mb-12">
-							<h2 class="mb-6 text-2xl font-semibold text-text-primary">
-								{featuredTitles[locale]}
-							</h2>
+							<SectionTitle as="h2" size="1.5rem" weight="semibold" class="mb-6">
+								{featuredTitle}
+							</SectionTitle>
 
 							<div class="rounded-lg border border-border bg-bg p-8 shadow-sm transition-shadow hover:shadow-md">
 								<div class="grid gap-8 md:grid-cols-2">
@@ -280,7 +170,7 @@ const postCards = posts.map((post) => {
 								}
 								aria-current={!category ? 'page' : undefined}
 							>
-								{categoryLabels[locale].all}
+								{catAll}
 							</a>
 							<a
 								href={`/${locale}/publicaciones/?categoria=destinos`}
@@ -291,7 +181,7 @@ const postCards = posts.map((post) => {
 								}
 								aria-current={category === 'destinos' ? 'page' : undefined}
 							>
-								{categoryLabels[locale].destinations}
+								{catDestinations}
 							</a>
 							<a
 								href={`/${locale}/publicaciones/?categoria=alojamientos`}
@@ -302,7 +192,7 @@ const postCards = posts.map((post) => {
 								}
 								aria-current={category === 'alojamientos' ? 'page' : undefined}
 							>
-								{categoryLabels[locale].accommodations}
+								{catAccommodations}
 							</a>
 							<a
 								href={`/${locale}/publicaciones/?categoria=eventos`}
@@ -313,7 +203,7 @@ const postCards = posts.map((post) => {
 								}
 								aria-current={category === 'eventos' ? 'page' : undefined}
 							>
-								{categoryLabels[locale].events}
+								{catEvents}
 							</a>
 							<a
 								href={`/${locale}/publicaciones/?categoria=gastronomia`}
@@ -324,7 +214,7 @@ const postCards = posts.map((post) => {
 								}
 								aria-current={category === 'gastronomia' ? 'page' : undefined}
 							>
-								{categoryLabels[locale].gastronomy}
+								{catGastronomy}
 							</a>
 							<a
 								href={`/${locale}/publicaciones/?categoria=consejos`}
@@ -335,7 +225,7 @@ const postCards = posts.map((post) => {
 								}
 								aria-current={category === 'consejos' ? 'page' : undefined}
 							>
-								{categoryLabels[locale].tips}
+								{catTips}
 							</a>
 						</div>
 					</nav>
@@ -353,8 +243,10 @@ const postCards = posts.map((post) => {
 									/>
 								))}
 							</div>
+						) : apiError ? (
+							<PostErrorState locale={locale} />
 						) : (
-							<EmptyState title={emptyStateTexts[locale]} message={emptyStateTexts[locale]} />
+							<EmptyState title={emptyStateText} message={emptyStateText} />
 						)
 					}
 				</article>

@@ -7,37 +7,29 @@
  * @route /[lang]/publicaciones/etiqueta/[tag]/page/[page]/
  * @rendering SSR (on-demand, inherits from tag index rewrite target)
  */
-import { isValidLocale } from '../../../../../../lib/i18n';
+import { getLocaleFromParams } from '../../../../../../lib/page-helpers';
 
-const { lang, tag, page } = Astro.params;
+const { tag, page } = Astro.params;
+const locale = getLocaleFromParams(Astro.params);
+if (!locale) return Astro.redirect('/es/');
 
-if (!lang || !isValidLocale(lang)) {
-  return Astro.redirect('/es/');
-}
-
-/**
- * Validate tag param presence
- */
 if (!tag || typeof tag !== 'string' || tag.trim() === '') {
-  return Astro.redirect(`/${lang}/publicaciones/`);
+  return Astro.redirect(`/${locale}/publicaciones/`);
 }
 
 const tagSlug = tag.trim();
 
-/**
- * Parse and validate page number
- */
 const pageNum = Number.parseInt(page || '1', 10);
 
 if (Number.isNaN(pageNum) || pageNum < 1) {
-  return Astro.redirect(`/${lang}/publicaciones/etiqueta/${tagSlug}/`);
+  return Astro.redirect(`/${locale}/publicaciones/etiqueta/${tagSlug}/`);
 }
 
 /** Page 1 should use the canonical base URL without /page/ segment */
 if (pageNum === 1) {
-  return Astro.redirect(`/${lang}/publicaciones/etiqueta/${tagSlug}/`);
+  return Astro.redirect(`/${locale}/publicaciones/etiqueta/${tagSlug}/`);
 }
 
 /** Rewrite to the tag index page with the page query parameter */
-return Astro.rewrite(`/${lang}/publicaciones/etiqueta/${tagSlug}/?page=${pageNum}`);
+return Astro.rewrite(`/${locale}/publicaciones/etiqueta/${tagSlug}/?page=${pageNum}`);
 ---

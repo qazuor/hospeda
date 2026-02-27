@@ -28,24 +28,26 @@ import Section from '../../../components/ui/Section.astro';
 import Badge from '../../../components/ui/Badge.astro';
 import Breadcrumb from '../../../components/ui/Breadcrumb.astro';
 import SEOHead from '../../../components/seo/SEOHead.astro';
-import AccommodationCard from '../../../components/accommodation/AccommodationCard.astro';
+import AccommodationCardFeatured from '../../../components/accommodation/AccommodationCardFeatured.astro';
 import EventCard from '../../../components/event/EventCard.astro';
 import EmptyState from '../../../components/ui/EmptyState.astro';
 import { ImageGallery } from '../../../components/ui/ImageGallery.client.tsx';
 import { ShareButtons } from '../../../components/ui/ShareButtons.client.tsx';
 import FavoriteButtonIsland from '../../../components/ui/FavoriteButtonIsland.astro';
 import { MapView } from '../../../components/map/MapView.client.tsx';
-import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
+import { SUPPORTED_LOCALES, getLocaleFromParams } from '../../../lib/page-helpers';
+import { t as i18nT } from '../../../lib/i18n';
 import { renderTiptapContent } from '../../../lib/tiptap-renderer';
 import { destinationsApi, accommodationsApi, eventsApi } from '../../../lib/api/endpoints';
 import { fetchAllPages } from '../../../lib/api/client';
+import { toAccommodationCardProps, toEventCardProps } from '../../../lib/api/transforms';
 import { extractFeaturedImageUrl, extractGalleryUrls } from '../../../lib/media';
 
 /**
  * Generate static paths for all destinations in all locales
  */
 export async function getStaticPaths() {
-	const locales = ['es', 'en', 'pt'];
+	const locales = SUPPORTED_LOCALES;
 	const destinations = await fetchAllPages<Record<string, unknown>>({
 		fetcher: (p) => destinationsApi.list(p),
 	});
@@ -60,15 +62,11 @@ export async function getStaticPaths() {
 	);
 }
 
-const { lang, path } = Astro.params;
+const { path } = Astro.params;
 const { destinationData } = Astro.props;
 
-// Validate locale and redirect to default if invalid
-if (!lang || !isValidLocale(lang)) {
-  return Astro.redirect('/es/');
-}
-
-const locale = lang as SupportedLocale;
+const locale = getLocaleFromParams(Astro.params);
+if (!locale) return Astro.redirect('/es/');
 
 /**
  * Fetch destination data from API
@@ -112,18 +110,7 @@ if (destinationId) {
 	if (accResult.ok) {
 		const accData = accResult.data as unknown as Record<string, unknown>;
 		const rawAccommodations = (accData.accommodations ?? accData.items ?? []) as Array<Record<string, unknown>>;
-		accommodations = rawAccommodations.map((a) => ({
-			...a,
-			slug: String(a.slug || ''),
-			name: String(a.name || ''),
-			summary: String(a.summary || a.description || ''),
-			type: String(a.type || a.accommodationType || ''),
-			featuredImage: extractFeaturedImageUrl(a, '/images/placeholder-accommodation.svg'),
-			averageRating: Number(a.averageRating || 0),
-			reviewsCount: Number(a.reviewsCount || 0),
-			location: (a.location as { city: string; state: string }) || { city: '', state: '' },
-			isFeatured: Boolean(a.isFeatured),
-		}));
+		accommodations = rawAccommodations.map((a) => toAccommodationCardProps({ item: a }));
 	}
 
 	// Fetch events filtered by destination city name.
@@ -131,28 +118,12 @@ if (destinationId) {
 	// batch and filter client-side by matching the event location city.
 	const evtResult = await eventsApi.list({ pageSize: 100 });
 	if (evtResult.ok) {
-		const allMapped = evtResult.data.items.map((e) => {
-			const evt = e as Record<string, unknown>;
-			const evtDate = evt.date as { start?: string; end?: string } | undefined;
-			const evtLocation = evt.location as Record<string, unknown> | undefined;
-			return {
-				...evt,
-				slug: String(evt.slug || ''),
-				name: String(evt.name || ''),
-				summary: String(evt.summary || evt.description || ''),
-				featuredImage: extractFeaturedImageUrl(evt, '/images/placeholder-event.svg'),
-				category: String(evt.category || ''),
-				date: {
-					start: String(evtDate?.start || evt.startDate || ''),
-					end: evtDate?.end ? String(evtDate.end) : (evt.endDate ? String(evt.endDate) : undefined),
-				},
-				isFeatured: Boolean(evt.isFeatured),
-				location: evtLocation ? { name: String(evtLocation.placeName || evtLocation.name || ''), city: String(evtLocation.city || '') } : undefined,
-			};
-		});
+		const allMapped = evtResult.data.items.map((e) =>
+			toEventCardProps({ item: e as Record<string, unknown> })
+		);
 		// Filter events whose location city matches the destination name
 		events = allMapped.filter((e) => {
-			const evtCity = (e.location as { city?: string } | undefined)?.city;
+			const evtCity = e.location?.city;
 			return evtCity && evtCity.toLowerCase() === destinationName.toLowerCase();
 		});
 	}
@@ -183,13 +154,8 @@ const howToGetThereContent = destination.howToGetThere || { type: 'doc', content
 const renderedDescription = renderTiptapContent({ content: descriptionContent });
 const renderedHowToGetThere = renderTiptapContent({ content: howToGetThereContent });
 
-const texts = {
-  es: { home: 'Inicio', destinations: 'Destinos', description: 'Descripción', gallery: 'Galería', climate: 'Clima', howToGetThere: 'Cómo llegar', attractions: 'Qué hacer', accommodationsTitle: 'Alojamientos', eventsTitle: 'Eventos', viewAll: 'Ver todos', map: 'Mapa', summer: 'Verano', winter: 'Invierno', bestSeason: 'Mejor época', rainfall: 'Lluvias', noAccommodations: 'No hay alojamientos disponibles', noAccommodationsMessage: 'Próximamente agregaremos alojamientos en este destino.', noEvents: 'No hay eventos próximos', noEventsMessage: 'No hay eventos programados para este destino en este momento.', accommodationsIn: 'Alojamientos en', eventsIn: 'Eventos en' },
-  en: { home: 'Home', destinations: 'Destinations', description: 'Description', gallery: 'Gallery', climate: 'Climate', howToGetThere: 'How to get there', attractions: 'Things to do', accommodationsTitle: 'Accommodations', eventsTitle: 'Events', viewAll: 'View all', map: 'Map', summer: 'Summer', winter: 'Winter', bestSeason: 'Best season', rainfall: 'Rainfall', noAccommodations: 'No accommodations available', noAccommodationsMessage: 'We will soon add accommodations in this destination.', noEvents: 'No upcoming events', noEventsMessage: 'There are no events scheduled for this destination at this time.', accommodationsIn: 'Accommodations in', eventsIn: 'Events in' },
-  pt: { home: 'Início', destinations: 'Destinos', description: 'Descrição', gallery: 'Galeria', climate: 'Clima', howToGetThere: 'Como chegar', attractions: 'O que fazer', accommodationsTitle: 'Acomodações', eventsTitle: 'Eventos', viewAll: 'Ver todos', map: 'Mapa', summer: 'Verão', winter: 'Inverno', bestSeason: 'Melhor época', rainfall: 'Chuvas', noAccommodations: 'Nenhuma acomodação disponível', noAccommodationsMessage: 'Em breve adicionaremos acomodações neste destino.', noEvents: 'Nenhum evento próximo', noEventsMessage: 'Não há eventos programados para este destino no momento.', accommodationsIn: 'Acomodações em', eventsIn: 'Eventos em' },
-} as const;
-
-const t = texts[locale];
+/** Helper to translate destination detail page keys */
+const tDetail = (key: string) => i18nT({ locale, namespace: 'destinations', key: `detailPage.${key}` });
 
 /**
  * Extract data from destination with fallbacks
@@ -217,8 +183,8 @@ const eventsListUrl = `/${locale}/eventos/?city=${encodeURIComponent(destination
 
 // Breadcrumb navigation items (includes full hierarchy: Home > Destinations > Parent... > Current)
 const breadcrumbItems = [
-	{ label: t.home, href: `/${locale}/` },
-	{ label: t.destinations, href: `/${locale}/destinos/` },
+	{ label: tDetail('home'), href: `/${locale}/` },
+	{ label: tDetail('destinations'), href: `/${locale}/destinos/` },
 	...hierarchyBreadcrumb
 		.filter((item) => item.id !== destinationId)
 		.map((item) => ({
@@ -300,14 +266,14 @@ const mapMarkers = destinationLocation.lat && destinationLocation.lng
       <div class="lg:col-span-2 space-y-8">
         <!-- Description -->
         <section>
-          <h2 class="mb-4 text-2xl font-bold">{t.description}</h2>
+          <h2 class="mb-4 text-2xl font-bold">{tDetail('description')}</h2>
           <div class="prose max-w-none text-text-secondary" set:html={renderedDescription} />
         </section>
 
         <!-- Image Gallery -->
         {destinationImages.length > 0 && (
           <section>
-            <h2 class="mb-4 text-2xl font-bold">{t.gallery}</h2>
+            <h2 class="mb-4 text-2xl font-bold">{tDetail('gallery')}</h2>
             <ImageGallery client:visible images={destinationImages} />
           </section>
         )}
@@ -315,29 +281,29 @@ const mapMarkers = destinationLocation.lat && destinationLocation.lng
         <!-- Climate -->
         {(destinationClimate.summer || destinationClimate.winter || destinationClimate.bestSeason || destinationClimate.rainfall) && (
           <section>
-            <h2 class="mb-4 text-2xl font-bold">{t.climate}</h2>
+            <h2 class="mb-4 text-2xl font-bold">{tDetail('climate')}</h2>
             <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
               {destinationClimate.summer && (
                 <div class="rounded-lg border border-border bg-surface p-4">
-                  <div class="text-sm text-text-tertiary">{t.summer}</div>
+                  <div class="text-sm text-text-tertiary">{tDetail('summer')}</div>
                   <div class="mt-1 font-semibold text-text">{destinationClimate.summer}</div>
                 </div>
               )}
               {destinationClimate.winter && (
                 <div class="rounded-lg border border-border bg-surface p-4">
-                  <div class="text-sm text-text-tertiary">{t.winter}</div>
+                  <div class="text-sm text-text-tertiary">{tDetail('winter')}</div>
                   <div class="mt-1 font-semibold text-text">{destinationClimate.winter}</div>
                 </div>
               )}
               {destinationClimate.bestSeason && (
                 <div class="rounded-lg border border-border bg-surface p-4">
-                  <div class="text-sm text-text-tertiary">{t.bestSeason}</div>
+                  <div class="text-sm text-text-tertiary">{tDetail('bestSeason')}</div>
                   <div class="mt-1 font-semibold text-text">{destinationClimate.bestSeason}</div>
                 </div>
               )}
               {destinationClimate.rainfall && (
                 <div class="rounded-lg border border-border bg-surface p-4">
-                  <div class="text-sm text-text-tertiary">{t.rainfall}</div>
+                  <div class="text-sm text-text-tertiary">{tDetail('rainfall')}</div>
                   <div class="mt-1 font-semibold text-text">{destinationClimate.rainfall}</div>
                 </div>
               )}
@@ -348,7 +314,7 @@ const mapMarkers = destinationLocation.lat && destinationLocation.lng
         <!-- How to get there -->
         {renderedHowToGetThere && renderedHowToGetThere.trim() !== '' && (
           <section>
-            <h2 class="mb-4 text-2xl font-bold">{t.howToGetThere}</h2>
+            <h2 class="mb-4 text-2xl font-bold">{tDetail('howToGetThere')}</h2>
             <div class="prose max-w-none text-text-secondary" set:html={renderedHowToGetThere} />
           </section>
         )}
@@ -356,7 +322,7 @@ const mapMarkers = destinationLocation.lat && destinationLocation.lng
         <!-- Attractions -->
         {destinationAttractions.length > 0 && (
           <section>
-            <h2 class="mb-4 text-2xl font-bold">{t.attractions}</h2>
+            <h2 class="mb-4 text-2xl font-bold">{tDetail('attractions')}</h2>
             <ul class="space-y-3">
               {destinationAttractions.map((attraction) => (
                 <li class="rounded-lg border border-border bg-surface p-4">
@@ -371,7 +337,7 @@ const mapMarkers = destinationLocation.lat && destinationLocation.lng
         <!-- Map -->
         {mapMarkers.length > 0 && destinationLocation.lat && destinationLocation.lng && (
           <section>
-            <h2 class="mb-4 text-2xl font-bold">{t.map}</h2>
+            <h2 class="mb-4 text-2xl font-bold">{tDetail('map')}</h2>
             <MapView
               client:visible
               markers={mapMarkers}
@@ -387,7 +353,7 @@ const mapMarkers = destinationLocation.lat && destinationLocation.lng
       <aside class="lg:sticky lg:top-4 lg:self-start space-y-6">
         <!-- Accommodations count card -->
         <div class="rounded-lg border border-border bg-surface p-6 shadow-sm">
-          <h3 class="text-lg font-semibold text-text">{t.accommodationsTitle}</h3>
+          <h3 class="text-lg font-semibold text-text">{tDetail('accommodationsTitle')}</h3>
           <p class="mt-2 text-3xl font-bold text-primary">{accommodationCount}</p>
           <p class="mt-1 text-sm text-text-tertiary">
             {accommodationCount === 1 ? 'alojamiento disponible' : 'alojamientos disponibles'}
@@ -396,13 +362,13 @@ const mapMarkers = destinationLocation.lat && destinationLocation.lng
             href={accommodationsListUrl}
             class="mt-4 block text-center rounded-md bg-primary px-4 py-2 font-semibold text-white transition-colors hover:bg-primary-dark"
           >
-            {t.viewAll}
+            {tDetail('viewAll')}
           </a>
         </div>
 
         <!-- Events count card -->
         <div class="rounded-lg border border-border bg-surface p-6 shadow-sm">
-          <h3 class="text-lg font-semibold text-text">{t.eventsTitle}</h3>
+          <h3 class="text-lg font-semibold text-text">{tDetail('eventsTitle')}</h3>
           <p class="mt-2 text-3xl font-bold text-primary">{eventCount}</p>
           <p class="mt-1 text-sm text-text-tertiary">
             {eventCount === 1 ? 'evento próximo' : 'eventos próximos'}
@@ -411,19 +377,19 @@ const mapMarkers = destinationLocation.lat && destinationLocation.lng
             href={eventsListUrl}
             class="mt-4 block text-center rounded-md bg-primary px-4 py-2 font-semibold text-white transition-colors hover:bg-primary-dark"
           >
-            {t.viewAll}
+            {tDetail('viewAll')}
           </a>
         </div>
       </aside>
     </div>
 
     <!-- Accommodations section -->
-    <Section title={`${t.accommodationsIn} ${destinationName}`} class="mt-12">
+    <Section title={`${tDetail('accommodationsIn')} ${destinationName}`} class="mt-12">
       {previewAccommodations.length > 0 ? (
         <>
           <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {previewAccommodations.map((accommodation) => (
-              <AccommodationCard accommodation={accommodation} locale={locale} />
+              <AccommodationCardFeatured accommodation={accommodation} locale={locale} />
             ))}
           </div>
           {accommodations.length > PREVIEW_LIMIT && (
@@ -432,21 +398,21 @@ const mapMarkers = destinationLocation.lat && destinationLocation.lng
                 href={accommodationsListUrl}
                 class="inline-block rounded-md border-2 border-primary px-6 py-2 font-semibold text-primary transition-colors hover:bg-primary hover:text-white"
               >
-                {t.viewAll} ({accommodationCount})
+                {tDetail('viewAll')} ({accommodationCount})
               </a>
             </div>
           )}
         </>
       ) : (
         <EmptyState
-          title={t.noAccommodations}
-          message={t.noAccommodationsMessage}
+          title={tDetail('noAccommodations')}
+          message={tDetail('noAccommodationsMessage')}
         />
       )}
     </Section>
 
     <!-- Events section -->
-    <Section title={`${t.eventsIn} ${destinationName}`} class="mt-12">
+    <Section title={`${tDetail('eventsIn')} ${destinationName}`} class="mt-12">
       {previewEvents.length > 0 ? (
         <>
           <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -460,15 +426,15 @@ const mapMarkers = destinationLocation.lat && destinationLocation.lng
                 href={eventsListUrl}
                 class="inline-block rounded-md border-2 border-primary px-6 py-2 font-semibold text-primary transition-colors hover:bg-primary hover:text-white"
               >
-                {t.viewAll} ({eventCount})
+                {tDetail('viewAll')} ({eventCount})
               </a>
             </div>
           )}
         </>
       ) : (
         <EmptyState
-          title={t.noEvents}
-          message={t.noEventsMessage}
+          title={tDetail('noEvents')}
+          message={tDetail('noEventsMessage')}
         />
       )}
     </Section>

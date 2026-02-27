@@ -1,9 +1,7 @@
 ---
 export const prerender = true;
 
-export function getStaticPaths() {
-	return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
-}
+export { getStaticLocalePaths as getStaticPaths } from '../../lib/page-helpers';
 
 /**
  * HTML Sitemap page - organized list of all site pages by section.
@@ -14,169 +12,20 @@ import SEOHead from '../../components/seo/SEOHead.astro';
 import Breadcrumb from '../../components/ui/Breadcrumb.astro';
 import Container from '../../components/ui/Container.astro';
 import Section from '../../components/ui/Section.astro';
-import { isValidLocale, type SupportedLocale } from '../../lib/i18n';
+import { getLocaleFromParams, HOME_BREADCRUMB } from '../../lib/page-helpers';
+import { t } from '../../lib/i18n';
 
-const { lang } = Astro.params;
+const locale = getLocaleFromParams(Astro.params);
+if (!locale) return Astro.redirect('/es/');
 
-if (!lang || !isValidLocale(lang)) {
-	return Astro.redirect('/es/');
-}
+const pageTitle = t({ locale, namespace: 'common', key: 'sitemap.title' });
+const pageDescription = t({ locale, namespace: 'common', key: 'sitemap.description' });
 
-const locale = lang as SupportedLocale;
+/** Helper to get a sitemap section heading from i18n */
+const section = (key: string) => t({ locale, namespace: 'common', key: `sitemap.sections.${key}` });
 
-/**
- * Localized page titles
- */
-const titles: Record<SupportedLocale, string> = {
-	es: 'Mapa del Sitio',
-	en: 'Sitemap',
-	pt: 'Mapa do Site',
-};
-
-/**
- * Localized meta descriptions
- */
-const descriptions: Record<SupportedLocale, string> = {
-	es: 'Mapa del sitio de Hospeda. Encuentra rápidamente todas las páginas, alojamientos, destinos, eventos y recursos disponibles en nuestra plataforma',
-	en: 'Hospeda sitemap. Quickly find all pages, accommodations, destinations, events and resources available on our platform',
-	pt: 'Mapa do site da Hospeda. Encontre rapidamente todas as páginas, acomodações, destinos, eventos e recursos disponíveis em nossa plataforma',
-};
-
-/**
- * Localized home breadcrumb labels
- */
-const homeLabels: Record<SupportedLocale, string> = {
-	es: 'Inicio',
-	en: 'Home',
-	pt: 'Início',
-};
-
-/**
- * Localized section headings
- */
-const sectionHeadings = {
-	principal: {
-		es: 'Principal',
-		en: 'Main',
-		pt: 'Principal',
-	},
-	alojamientos: {
-		es: 'Alojamientos',
-		en: 'Accommodations',
-		pt: 'Acomodações',
-	},
-	destinos: {
-		es: 'Destinos',
-		en: 'Destinations',
-		pt: 'Destinos',
-	},
-	eventos: {
-		es: 'Eventos',
-		en: 'Events',
-		pt: 'Eventos',
-	},
-	blog: {
-		es: 'Blog',
-		en: 'Blog',
-		pt: 'Blog',
-	},
-	cuenta: {
-		es: 'Cuenta',
-		en: 'Account',
-		pt: 'Conta',
-	},
-	informacion: {
-		es: 'Información',
-		en: 'Information',
-		pt: 'Informação',
-	},
-};
-
-/**
- * Localized link labels
- */
-const linkLabels = {
-	home: {
-		es: 'Inicio',
-		en: 'Home',
-		pt: 'Início',
-	},
-	about: {
-		es: 'Quienes Somos',
-		en: 'About Us',
-		pt: 'Sobre Nós',
-	},
-	benefits: {
-		es: 'Beneficios',
-		en: 'Benefits',
-		pt: 'Benefícios',
-	},
-	contact: {
-		es: 'Contacto',
-		en: 'Contact',
-		pt: 'Contato',
-	},
-	browseAccommodations: {
-		es: 'Explorar Alojamientos',
-		en: 'Browse Accommodations',
-		pt: 'Explorar Acomodações',
-	},
-	searchAccommodations: {
-		es: 'Buscar Alojamientos',
-		en: 'Search Accommodations',
-		pt: 'Buscar Acomodações',
-	},
-	byType: {
-		es: 'Por Tipo',
-		en: 'By Type',
-		pt: 'Por Tipo',
-	},
-	browseDestinations: {
-		es: 'Explorar Destinos',
-		en: 'Browse Destinations',
-		pt: 'Explorar Destinos',
-	},
-	browseEvents: {
-		es: 'Explorar Eventos',
-		en: 'Browse Events',
-		pt: 'Explorar Eventos',
-	},
-	blogListing: {
-		es: 'Artículos del Blog',
-		en: 'Blog Articles',
-		pt: 'Artigos do Blog',
-	},
-	signIn: {
-		es: 'Iniciar Sesión',
-		en: 'Sign In',
-		pt: 'Entrar',
-	},
-	signUp: {
-		es: 'Registrarse',
-		en: 'Sign Up',
-		pt: 'Cadastrar',
-	},
-	forgotPassword: {
-		es: 'Olvidé mi Contraseña',
-		en: 'Forgot Password',
-		pt: 'Esqueci minha Senha',
-	},
-	terms: {
-		es: 'Términos y Condiciones',
-		en: 'Terms and Conditions',
-		pt: 'Termos e Condições',
-	},
-	privacy: {
-		es: 'Política de Privacidad',
-		en: 'Privacy Policy',
-		pt: 'Política de Privacidade',
-	},
-	sitemap: {
-		es: 'Mapa del Sitio',
-		en: 'Sitemap',
-		pt: 'Mapa do Site',
-	},
-};
+/** Helper to get a sitemap link label from i18n */
+const link = (key: string) => t({ locale, namespace: 'common', key: `sitemap.links.${key}` });
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
@@ -184,8 +33,8 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
  * Breadcrumb navigation items
  */
 const breadcrumbItems = [
-	{ label: homeLabels[locale], href: `/${locale}/` },
-	{ label: titles[locale], href: `/${locale}/mapa-del-sitio/` },
+	{ label: HOME_BREADCRUMB[locale], href: `/${locale}/` },
+	{ label: pageTitle, href: `/${locale}/mapa-del-sitio/` },
 ];
 
 /**
@@ -194,83 +43,68 @@ const breadcrumbItems = [
 const sitemapSections = [
 	{
 		id: 'principal',
-		heading: sectionHeadings.principal[locale],
+		heading: section('principal'),
 		links: [
-			{ label: linkLabels.home[locale], href: `/${locale}/` },
-			{ label: linkLabels.about[locale], href: `/${locale}/quienes-somos/` },
-			{ label: linkLabels.benefits[locale], href: `/${locale}/beneficios/` },
-			{ label: linkLabels.contact[locale], href: `/${locale}/contacto/` },
+			{ label: link('home'), href: `/${locale}/` },
+			{ label: link('about'), href: `/${locale}/quienes-somos/` },
+			{ label: link('benefits'), href: `/${locale}/beneficios/` },
+			{ label: link('contact'), href: `/${locale}/contacto/` },
 		],
 	},
 	{
 		id: 'alojamientos',
-		heading: sectionHeadings.alojamientos[locale],
+		heading: section('alojamientos'),
 		links: [
-			{
-				label: linkLabels.browseAccommodations[locale],
-				href: `/${locale}/alojamientos/`,
-			},
-			{
-				label: linkLabels.searchAccommodations[locale],
-				href: `/${locale}/alojamientos/buscar/`,
-			},
-			{ label: linkLabels.byType[locale], href: `/${locale}/alojamientos/tipo/` },
+			{ label: link('browseAccommodations'), href: `/${locale}/alojamientos/` },
+			{ label: link('searchAccommodations'), href: `/${locale}/alojamientos/buscar/` },
+			{ label: link('byType'), href: `/${locale}/alojamientos/tipo/` },
 		],
 	},
 	{
 		id: 'destinos',
-		heading: sectionHeadings.destinos[locale],
+		heading: section('destinos'),
 		links: [
-			{
-				label: linkLabels.browseDestinations[locale],
-				href: `/${locale}/destinos/`,
-			},
+			{ label: link('browseDestinations'), href: `/${locale}/destinos/` },
 		],
 	},
 	{
 		id: 'eventos',
-		heading: sectionHeadings.eventos[locale],
-		links: [{ label: linkLabels.browseEvents[locale], href: `/${locale}/eventos/` }],
+		heading: section('eventos'),
+		links: [{ label: link('browseEvents'), href: `/${locale}/eventos/` }],
 	},
 	{
 		id: 'blog',
-		heading: sectionHeadings.blog[locale],
-		links: [{ label: linkLabels.blogListing[locale], href: `/${locale}/blog/` }],
+		heading: section('blog'),
+		links: [{ label: link('blogListing'), href: `/${locale}/blog/` }],
 	},
 	{
 		id: 'cuenta',
-		heading: sectionHeadings.cuenta[locale],
+		heading: section('cuenta'),
 		links: [
-			{ label: linkLabels.signIn[locale], href: `/${locale}/auth/signin/` },
-			{ label: linkLabels.signUp[locale], href: `/${locale}/auth/signup/` },
-			{
-				label: linkLabels.forgotPassword[locale],
-				href: `/${locale}/auth/forgot-password/`,
-			},
+			{ label: link('signIn'), href: `/${locale}/auth/signin/` },
+			{ label: link('signUp'), href: `/${locale}/auth/signup/` },
+			{ label: link('forgotPassword'), href: `/${locale}/auth/forgot-password/` },
 		],
 	},
 	{
 		id: 'informacion',
-		heading: sectionHeadings.informacion[locale],
+		heading: section('informacion'),
 		links: [
-			{ label: linkLabels.terms[locale], href: `/${locale}/terminos-y-condiciones/` },
-			{
-				label: linkLabels.privacy[locale],
-				href: `/${locale}/politica-de-privacidad/`,
-			},
-			{ label: linkLabels.sitemap[locale], href: `/${locale}/mapa-del-sitio/` },
+			{ label: link('terms'), href: `/${locale}/terminos-y-condiciones/` },
+			{ label: link('privacy'), href: `/${locale}/politica-de-privacidad/` },
+			{ label: link('sitemap'), href: `/${locale}/mapa-del-sitio/` },
 		],
 	},
 ];
 ---
 
-<BaseLayout title={titles[locale]} description={descriptions[locale]} locale={locale}>
+<BaseLayout title={pageTitle} description={pageDescription} locale={locale}>
 	<SEOHead
 		slot="head"
-		title={titles[locale]}
-		description={descriptions[locale]}
+		title={pageTitle}
+		description={pageDescription}
 		canonical={canonicalUrl}
-		locale={locale === 'pt' ? 'es' : locale}
+		locale={locale}
 		type="website"
 	/>
 
@@ -282,10 +116,10 @@ const sitemapSections = [
 				<!-- Page Header -->
 				<header class="mb-12 text-center">
 					<h1 class="mb-4 text-4xl font-bold text-text-primary md:text-5xl">
-						{titles[locale]}
+						{pageTitle}
 					</h1>
 					<p class="text-lg text-text-secondary">
-						{descriptions[locale]}
+						{pageDescription}
 					</p>
 				</header>
 

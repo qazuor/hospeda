@@ -7,7 +7,7 @@ export const prerender = true;
  * Combined with ISR (configured globally), pages revalidate on-demand.
  */
 export function getStaticPaths() {
-  const locales = ['es', 'en', 'pt'] as const;
+  const locales = SUPPORTED_LOCALES;
   const types = ['hotel', 'hostel', 'cabin', 'apartment', 'camping', 'estancia', 'posada'] as const;
 
   return locales.flatMap((lang) =>
@@ -30,17 +30,16 @@ import Container from '../../../../../components/ui/Container.astro';
 import Section from '../../../../../components/ui/Section.astro';
 import EmptyState from '../../../../../components/ui/EmptyState.astro';
 import Pagination from '../../../../../components/ui/Pagination.astro';
-import AccommodationCard from '../../../../../components/accommodation/AccommodationCard.astro';
-import { isValidLocale, type SupportedLocale } from '../../../../../lib/i18n';
+import AccommodationCardFeatured from '../../../../../components/accommodation/AccommodationCardFeatured.astro';
+import { getLocaleFromParams, SUPPORTED_LOCALES } from '../../../../../lib/page-helpers';
 import { accommodationsApi } from '../../../../../lib/api/endpoints';
+import { toAccommodationCardProps } from '../../../../../lib/api/transforms';
+import { t } from '../../../../../lib/i18n';
 
-const { lang, type } = Astro.params;
+const { type } = Astro.params;
 
-if (!lang || !isValidLocale(lang)) {
-	return Astro.redirect('/es/');
-}
-
-const locale = lang as SupportedLocale;
+const locale = getLocaleFromParams(Astro.params);
+if (!locale) return Astro.redirect('/es/');
 
 /**
  * Allowed accommodation types
@@ -66,137 +65,20 @@ if (!type || !ALLOWED_TYPES.includes(type as AccommodationType)) {
 
 const accommodationType = type as AccommodationType;
 
-/**
- * Localized type names (plural)
- */
-const typeNames: Record<SupportedLocale, Record<AccommodationType, string>> = {
-	es: {
-		hotel: 'Hoteles',
-		hostel: 'Hostels',
-		cabin: 'Cabañas',
-		apartment: 'Apartamentos',
-		camping: 'Campings',
-		estancia: 'Estancias',
-		posada: 'Posadas',
-	},
-	en: {
-		hotel: 'Hotels',
-		hostel: 'Hostels',
-		cabin: 'Cabins',
-		apartment: 'Apartments',
-		camping: 'Campgrounds',
-		estancia: 'Ranch Houses',
-		posada: 'Inns',
-	},
-	pt: {
-		hotel: 'Hotéis',
-		hostel: 'Hostels',
-		cabin: 'Cabanas',
-		apartment: 'Apartamentos',
-		camping: 'Campings',
-		estancia: 'Estâncias',
-		posada: 'Pousadas',
-	},
-};
-
-/**
- * Localized type descriptions
- */
-const typeDescriptions: Record<SupportedLocale, Record<AccommodationType, string>> = {
-	es: {
-		hotel: 'Descubre los mejores hoteles en Concepción del Uruguay y la región del Litoral argentino. Comodidad y servicios de calidad para tu estadía.',
-		hostel: 'Encuentra hostels económicos y con ambiente joven. Ideal para viajeros que buscan conectar con otros aventureros.',
-		cabin: 'Cabañas acogedoras en entornos naturales. Perfectas para escapadas románticas o vacaciones familiares en la naturaleza.',
-		apartment: 'Apartamentos equipados para estadías cortas y largas. La comodidad de sentirte como en casa durante tu viaje.',
-		camping: 'Campings con infraestructura completa para disfrutar al aire libre. Conecta con la naturaleza en la región del Litoral.',
-		estancia: 'Estancias tradicionales argentinas que ofrecen experiencias auténticas de campo y cultura gaucha.',
-		posada: 'Posadas familiares con calidez y hospitalidad local. Alojamientos con encanto y atención personalizada.',
-	},
-	en: {
-		hotel: 'Discover the best hotels in Concepción del Uruguay and the Argentine Litoral region. Comfort and quality services for your stay.',
-		hostel: 'Find budget-friendly hostels with a youthful atmosphere. Ideal for travelers looking to connect with other adventurers.',
-		cabin: 'Cozy cabins in natural settings. Perfect for romantic getaways or family vacations in nature.',
-		apartment: 'Fully equipped apartments for short and long stays. The comfort of feeling at home during your trip.',
-		camping: 'Campgrounds with complete infrastructure to enjoy the outdoors. Connect with nature in the Litoral region.',
-		estancia: 'Traditional Argentine ranch houses offering authentic countryside and gaucho culture experiences.',
-		posada: 'Family-run inns with warmth and local hospitality. Charming accommodations with personalized service.',
-	},
-	pt: {
-		hotel: 'Descubra os melhores hotéis em Concepción del Uruguay e na região do Litoral argentino. Conforto e serviços de qualidade para sua estadia.',
-		hostel: 'Encontre hostels econômicos com ambiente jovem. Ideal para viajantes que buscam conectar com outros aventureiros.',
-		cabin: 'Cabanas aconchegantes em ambientes naturais. Perfeitas para escapadas românticas ou férias em família na natureza.',
-		apartment: 'Apartamentos equipados para estadias curtas e longas. O conforto de se sentir em casa durante sua viagem.',
-		camping: 'Campings com infraestrutura completa para aproveitar ao ar livre. Conecte-se com a natureza na região do Litoral.',
-		estancia: 'Estâncias tradicionais argentinas que oferecem experiências autênticas de campo e cultura gaúcha.',
-		posada: 'Pousadas familiares com calor e hospitalidade local. Acomodações com charme e atendimento personalizado.',
-	},
-};
-
-/**
- * Localized page titles
- */
-const pageTitles: Record<SupportedLocale, Record<AccommodationType, string>> = {
-	es: {
-		hotel: 'Alojamientos - Hoteles',
-		hostel: 'Alojamientos - Hostels',
-		cabin: 'Alojamientos - Cabañas',
-		apartment: 'Alojamientos - Apartamentos',
-		camping: 'Alojamientos - Campings',
-		estancia: 'Alojamientos - Estancias',
-		posada: 'Alojamientos - Posadas',
-	},
-	en: {
-		hotel: 'Accommodations - Hotels',
-		hostel: 'Accommodations - Hostels',
-		cabin: 'Accommodations - Cabins',
-		apartment: 'Accommodations - Apartments',
-		camping: 'Accommodations - Campgrounds',
-		estancia: 'Accommodations - Ranch Houses',
-		posada: 'Accommodations - Inns',
-	},
-	pt: {
-		hotel: 'Acomodações - Hotéis',
-		hostel: 'Acomodações - Hostels',
-		cabin: 'Acomodações - Cabanas',
-		apartment: 'Acomodações - Apartamentos',
-		camping: 'Acomodações - Campings',
-		estancia: 'Acomodações - Estâncias',
-		posada: 'Acomodações - Pousadas',
-	},
-};
-
-/**
- * Localized common labels
- */
-const labels: Record<SupportedLocale, Record<string, string>> = {
-	es: {
-		home: 'Inicio',
-		accommodations: 'Alojamientos',
-		noResults: 'No hay alojamientos de tipo {type} disponibles',
-	},
-	en: {
-		home: 'Home',
-		accommodations: 'Accommodations',
-		noResults: 'No {type} accommodations available',
-	},
-	pt: {
-		home: 'Início',
-		accommodations: 'Acomodações',
-		noResults: 'Não há acomodações do tipo {type} disponíveis',
-	},
-};
-
-const typeName = typeNames[locale][accommodationType];
-const typeDescription = typeDescriptions[locale][accommodationType];
-const pageTitle = pageTitles[locale][accommodationType];
+const typeName = t({ locale, namespace: 'accommodations', key: `typePage.typeDetails.${accommodationType}.name` });
+const typeDescription = t({ locale, namespace: 'accommodations', key: `typePage.typeDetails.${accommodationType}.description` });
+const pageTitle = t({ locale, namespace: 'accommodations', key: `typePage.typeDetails.${accommodationType}.pageTitle` });
+const breadcrumbHome = t({ locale, namespace: 'accommodations', key: 'typePage.labels.breadcrumbHome' });
+const breadcrumbAccommodations = t({ locale, namespace: 'accommodations', key: 'typePage.labels.breadcrumbAccommodations' });
+const emptyTitle = t({ locale, namespace: 'accommodations', key: 'typePage.labels.emptyTitle', params: { type: typeName.toLowerCase() } });
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
 /**
  * Breadcrumb navigation items
  */
 const breadcrumbItems = [
-	{ label: labels[locale].home, href: `/${locale}/` },
-	{ label: labels[locale].accommodations, href: `/${locale}/alojamientos/` },
+	{ label: breadcrumbHome, href: `/${locale}/` },
+	{ label: breadcrumbAccommodations, href: `/${locale}/alojamientos/` },
 	{ label: typeName, href: `/${locale}/alojamientos/tipo/${accommodationType}/` },
 ];
 
@@ -218,7 +100,7 @@ const pagination = apiResult.ok ? apiResult.data.pagination : null;
 /**
  * Generate empty state message
  */
-const emptyMessage = labels[locale].noResults.replace('{type}', typeName.toLowerCase());
+const emptyMessage = emptyTitle;
 ---
 
 <BaseLayout title={pageTitle} description={typeDescription} locale={locale}>
@@ -227,7 +109,7 @@ const emptyMessage = labels[locale].noResults.replace('{type}', typeName.toLower
 		title={pageTitle}
 		description={typeDescription}
 		canonical={canonicalUrl}
-		locale={locale === 'pt' ? 'es' : locale}
+		locale={locale}
 		type="website"
 	/>
 
@@ -252,11 +134,11 @@ const emptyMessage = labels[locale].noResults.replace('{type}', typeName.toLower
 						accommodations.length > 0 ? (
 							<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 								{accommodations.map((accommodation) => (
-									<AccommodationCard accommodation={accommodation} locale={locale} />
+									<AccommodationCardFeatured accommodation={toAccommodationCardProps({ item: accommodation as Record<string, unknown> })} locale={locale} />
 								))}
 							</div>
 						) : (
-							<EmptyState title={emptyMessage} message={labels[locale].accommodations} />
+							<EmptyState title={emptyMessage} message={breadcrumbAccommodations} />
 						)
 					}
 				</article>

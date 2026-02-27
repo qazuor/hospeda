@@ -10,15 +10,11 @@ import Breadcrumb from '../../../components/ui/Breadcrumb.astro';
 import Container from '../../../components/ui/Container.astro';
 import Section from '../../../components/ui/Section.astro';
 import { UserReviewsList } from '../../../components/account/UserReviewsList.client';
-import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
+import { getLocaleFromParams, HOME_BREADCRUMB } from '../../../lib/page-helpers';
+import { t } from '../../../lib/i18n';
 
-const { lang } = Astro.params;
-
-if (!lang || !isValidLocale(lang)) {
-	return Astro.redirect('/es/');
-}
-
-const locale = lang as SupportedLocale;
+const locale = getLocaleFromParams(Astro.params);
+if (!locale) return Astro.redirect('/es/');
 
 /** Auth guard: redirect unauthenticated users to sign in */
 const user = Astro.locals.user;
@@ -26,41 +22,9 @@ if (!user) {
 	return Astro.redirect(`/${locale}/auth/signin`);
 }
 
-/**
- * Localized page titles
- */
-const titles: Record<SupportedLocale, string> = {
-	es: 'Mis Resenas',
-	en: 'My Reviews',
-	pt: 'Minhas Avaliacoes',
-};
-
-/**
- * Localized meta descriptions
- */
-const descriptions: Record<SupportedLocale, string> = {
-	es: 'Gestiona tus resenas de alojamientos y destinos en Hospeda',
-	en: 'Manage your accommodation and destination reviews on Hospeda',
-	pt: 'Gerencie suas avaliacoes de acomodacoes e destinos no Hospeda',
-};
-
-/**
- * Localized home breadcrumb labels
- */
-const homeLabels: Record<SupportedLocale, string> = {
-	es: 'Inicio',
-	en: 'Home',
-	pt: 'Inicio',
-};
-
-/**
- * Localized account breadcrumb labels
- */
-const accountLabels: Record<SupportedLocale, string> = {
-	es: 'Mi Cuenta',
-	en: 'My Account',
-	pt: 'Minha Conta',
-};
+const title = t({ locale, namespace: 'account', key: 'pages.reviews.title' });
+const description = t({ locale, namespace: 'account', key: 'pages.reviews.description' });
+const accountLabel = t({ locale, namespace: 'account', key: 'pages.accountLabel' });
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
@@ -68,19 +32,19 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
  * Breadcrumb navigation items
  */
 const breadcrumbItems = [
-	{ label: homeLabels[locale], href: `/${locale}/` },
-	{ label: accountLabels[locale], href: `/${locale}/mi-cuenta/` },
-	{ label: titles[locale], href: `/${locale}/mi-cuenta/resenas/` },
+	{ label: HOME_BREADCRUMB[locale], href: `/${locale}/` },
+	{ label: accountLabel, href: `/${locale}/mi-cuenta/` },
+	{ label: title, href: `/${locale}/mi-cuenta/resenas/` },
 ];
 ---
 
-<BaseLayout title={titles[locale]} description={descriptions[locale]} locale={locale}>
+<BaseLayout title={title} description={description} locale={locale}>
 	<SEOHead
 		slot="head"
-		title={titles[locale]}
-		description={descriptions[locale]}
+		title={title}
+		description={description}
 		canonical={canonicalUrl}
-		locale={locale === 'pt' ? 'es' : locale}
+		locale={locale}
 		type="website"
 		noindex={true}
 	/>
@@ -91,7 +55,7 @@ const breadcrumbItems = [
 		<Section>
 			<div class="mx-auto max-w-7xl">
 				<h1 class="mb-8 text-4xl font-bold text-text-primary">
-					{titles[locale]}
+					{title}
 				</h1>
 
 				<!-- UserReviewsList React Island handles tabs, data fetching, and pagination -->

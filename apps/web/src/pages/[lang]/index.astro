@@ -1,9 +1,7 @@
 ---
 export const prerender = true;
 
-export function getStaticPaths() {
-	return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
-}
+export { getStaticLocalePaths as getStaticPaths } from '../../lib/page-helpers';
 
 /**
  * Localized homepage for Hospeda platform.
@@ -14,184 +12,81 @@ export function getStaticPaths() {
  * Rendering: SSG + Server Islands
  * Route: /[lang]/
  */
-import BaseLayout from '../../layouts/BaseLayout.astro';
-import SEOHead from '../../components/seo/SEOHead.astro';
-import HeroSection from '../../components/content/HeroSection.astro';
-import FeaturedSection from '../../components/content/FeaturedSection.astro';
-import FeaturedAccommodations from '../../components/content/FeaturedAccommodations.astro';
-import FeaturedDestinations from '../../components/content/FeaturedDestinations.astro';
-import FeaturedEvents from '../../components/content/FeaturedEvents.astro';
-import FeaturedPosts from '../../components/content/FeaturedPosts.astro';
-import StatisticsSection from '../../components/content/StatisticsSection.astro';
-import CategoryIconsSection from '../../components/content/CategoryIconsSection.astro';
-import TestimonialsSection from '../../components/content/TestimonialsSection.astro';
-import NewsletterSection from '../../components/content/NewsletterSection.astro';
-import OwnerCTASection from '../../components/content/OwnerCTASection.astro';
-import AccommodationCardSkeleton from '../../components/ui/AccommodationCardSkeleton.astro';
-import DestinationCardSkeleton from '../../components/ui/DestinationCardSkeleton.astro';
-import EventCardSkeleton from '../../components/ui/EventCardSkeleton.astro';
-import BlogPostCardSkeleton from '../../components/ui/BlogPostCardSkeleton.astro';
-import { isValidLocale, type SupportedLocale } from '../../lib/i18n';
-import { AccommodationTypeEnum } from '@repo/schemas';
-import type { HeroSearchBarLabels } from '../../components/search/search-bar-types';
+import { AccommodationTypeEnum } from "@repo/schemas";
+import CategoryIconsSection from "../../components/content/CategoryIconsSection.astro";
+import FeaturedAccommodations from "../../components/content/FeaturedAccommodations.astro";
+import FeaturedDestinations from "../../components/content/FeaturedDestinations.astro";
+import FeaturedEvents from "../../components/content/FeaturedEvents.astro";
+import FeaturedPosts from "../../components/content/FeaturedPosts.astro";
+import FeaturedSection from "../../components/content/FeaturedSection.astro";
+import HeroSection from "../../components/content/HeroSection.astro";
+import SectionSubtitle from "../../components/ui/SectionSubtitle.astro";
+import SectionTitle from "../../components/ui/SectionTitle.astro";
+import OwnerCTASection from "../../components/content/OwnerCTASection.astro";
+import TestimonialsSection from "../../components/content/TestimonialsSection.astro";
+import type { HeroSearchBarLabels } from "../../components/search/search-bar-types";
+import SEOHead from "../../components/seo/SEOHead.astro";
+import AccommodationCardSkeleton from "../../components/ui/AccommodationCardSkeleton.astro";
+import BlogPostCardSkeleton from "../../components/ui/BlogPostCardSkeleton.astro";
+import DestinationCardSkeleton from "../../components/ui/DestinationCardSkeleton.astro";
+import EventCardSkeleton from "../../components/ui/EventCardSkeleton.astro";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { t as i18nT } from "../../lib/i18n";
+import { getApiUrl } from "../../lib/env";
+import { getLocaleFromParams } from "../../lib/page-helpers";
 
-const { lang } = Astro.params;
-
-if (!lang || !isValidLocale(lang)) {
-	return Astro.redirect('/es/');
-}
-
-const locale = lang as SupportedLocale;
+const locale = getLocaleFromParams(Astro.params);
+if (!locale) return Astro.redirect('/es/');
 
 // ---------------------------------------------------------------------------
-// i18n texts
+// i18n texts - simple strings from locale files
 // ---------------------------------------------------------------------------
 
-const texts: Record<SupportedLocale, {
-	heroAccentSubtitle: string;
-	heroHeadline: string;
-	heroSubheadline: string;
-	searchLabels: HeroSearchBarLabels;
-	statsLabels: { destinations: string; accommodations: string };
-	featuredAccommodations: string;
-	accommodationsSubtitle: string;
-	featuredDestinations: string;
-	upcomingEvents: string;
-	latestBlog: string;
-	viewAll: string;
-	pageTitle: string;
-	pageDescription: string;
-}> = {
-	es: {
-		heroAccentSubtitle: 'Descubri el Litoral',
-		heroHeadline: 'Tu aventura empieza en la costa del Uruguay',
-		heroSubheadline: 'Encontra alojamientos unicos en Concepcion del Uruguay y la region del Litoral argentino',
-		searchLabels: {
-			typePlaceholder: 'Tipo de alojamiento',
-			destinationPlaceholder: 'Donde queres ir?',
-			datesPlaceholder: 'Fechas',
-			guestsPlaceholder: 'Huespedes',
-			checkInLabel: 'Llegada',
-			checkOutLabel: 'Salida',
-			adultsLabel: 'Adultos',
-			childrenLabel: 'Ninos',
-			guestsSummary: '{adults} adultos, {children} ninos',
-			ctaLabel: 'Buscar',
-			loadingText: 'Cargando...',
-			searchAriaLabel: 'Buscar alojamientos',
-			closePanelAriaLabel: 'Cerrar panel',
-			typeLabels: {
-				[AccommodationTypeEnum.HOTEL]: 'Hotel',
-				[AccommodationTypeEnum.CABIN]: 'Cabaña',
-				[AccommodationTypeEnum.APARTMENT]: 'Departamento',
-				[AccommodationTypeEnum.HOUSE]: 'Casa',
-				[AccommodationTypeEnum.COUNTRY_HOUSE]: 'Casa de campo',
-				[AccommodationTypeEnum.HOSTEL]: 'Hostel',
-				[AccommodationTypeEnum.CAMPING]: 'Camping',
-				[AccommodationTypeEnum.ROOM]: 'Habitación',
-				[AccommodationTypeEnum.MOTEL]: 'Motel',
-				[AccommodationTypeEnum.RESORT]: 'Resort',
-			},
+const pageTitle = i18nT({ locale, namespace: 'home', key: 'page.title' });
+const pageDescription = i18nT({ locale, namespace: 'home', key: 'page.description' });
+const heroAccentSubtitle = i18nT({ locale, namespace: 'home', key: 'heroCarousel.accentSubtitle' });
+const heroHeadline = i18nT({ locale, namespace: 'home', key: 'heroCarousel.headline' });
+const heroSubheadline = i18nT({ locale, namespace: 'home', key: 'heroCarousel.subheadline' });
+const statsDestinations = i18nT({ locale, namespace: 'home', key: 'heroCarousel.statsDestinations' });
+const statsAccommodations = i18nT({ locale, namespace: 'home', key: 'heroCarousel.statsAccommodations' });
+const featuredAccommodationsTitle = i18nT({ locale, namespace: 'home', key: 'sections.featuredAccommodations' });
+const accommodationsSubtitle = i18nT({ locale, namespace: 'home', key: 'sections.accommodationsSubtitle' });
+const featuredDestinationsTitle = i18nT({ locale, namespace: 'home', key: 'sections.featuredDestinations' });
+const upcomingEventsTitle = i18nT({ locale, namespace: 'home', key: 'sections.upcomingEvents' });
+const latestBlogTitle = i18nT({ locale, namespace: 'home', key: 'sections.latestBlog' });
+const viewAllLabel = i18nT({ locale, namespace: 'home', key: 'sections.viewAll' });
 
-		},
-		statsLabels: { destinations: 'destinos', accommodations: 'alojamientos' },
-		featuredAccommodations: 'Alojamientos destacados',
-		accommodationsSubtitle: 'Descubri los mejores lugares para hospedarte en Entre Rios. Desde cabanas junto al rio hasta estancias tradicionales.',
-		featuredDestinations: 'Destinos populares',
-		upcomingEvents: 'Proximos eventos',
-		latestBlog: 'Ultimas publicaciones',
-		viewAll: 'Ver todos',
-		pageTitle: 'Inicio',
-		pageDescription: 'Descubre alojamientos unicos en Concepcion del Uruguay y el Litoral argentino. Hoteles, cabanas, departamentos y mas.',
-	},
-	en: {
-		heroAccentSubtitle: 'Discover the Litoral',
-		heroHeadline: 'Your adventure starts on the Uruguay coast',
-		heroSubheadline: 'Find unique accommodations in Concepcion del Uruguay and the Argentine Litoral region',
-		searchLabels: {
-			typePlaceholder: 'Accommodation type',
-			destinationPlaceholder: 'Where do you want to go?',
-			datesPlaceholder: 'Dates',
-			guestsPlaceholder: 'Guests',
-			checkInLabel: 'Check-in',
-			checkOutLabel: 'Check-out',
-			adultsLabel: 'Adults',
-			childrenLabel: 'Children',
-			guestsSummary: '{adults} adults, {children} children',
-			ctaLabel: 'Search',
-			loadingText: 'Loading...',
-			searchAriaLabel: 'Search accommodations',
-			closePanelAriaLabel: 'Close panel',
-			typeLabels: {
-				[AccommodationTypeEnum.HOTEL]: 'Hotel',
-				[AccommodationTypeEnum.CABIN]: 'Cabin',
-				[AccommodationTypeEnum.APARTMENT]: 'Apartment',
-				[AccommodationTypeEnum.HOUSE]: 'House',
-				[AccommodationTypeEnum.COUNTRY_HOUSE]: 'Country house',
-				[AccommodationTypeEnum.HOSTEL]: 'Hostel',
-				[AccommodationTypeEnum.CAMPING]: 'Camping',
-				[AccommodationTypeEnum.ROOM]: 'Room',
-				[AccommodationTypeEnum.MOTEL]: 'Motel',
-				[AccommodationTypeEnum.RESORT]: 'Resort',
-			},
-		},
-		statsLabels: { destinations: 'destinations', accommodations: 'accommodations' },
-		featuredAccommodations: 'Featured Accommodations',
-		accommodationsSubtitle: 'Discover the best places to stay in Entre Rios. From riverside cabins to traditional estancias.',
-		featuredDestinations: 'Popular Destinations',
-		upcomingEvents: 'Upcoming Events',
-		latestBlog: 'Latest Posts',
-		viewAll: 'View all',
-		pageTitle: 'Home',
-		pageDescription: 'Discover unique accommodations in Concepcion del Uruguay and the Argentine Litoral. Hotels, cabins, apartments and more.',
-	},
-	pt: {
-		heroAccentSubtitle: 'Descubra o Litoral',
-		heroHeadline: 'Sua aventura comeca na costa do Uruguai',
-		heroSubheadline: 'Encontre acomodacoes unicas em Concepcion del Uruguay e a regiao do Litoral argentino',
-		searchLabels: {
-			typePlaceholder: 'Tipo de acomodacao',
-			destinationPlaceholder: 'Para onde voce quer ir?',
-			datesPlaceholder: 'Datas',
-			guestsPlaceholder: 'Hospedes',
-			checkInLabel: 'Chegada',
-			checkOutLabel: 'Saida',
-			adultsLabel: 'Adultos',
-			childrenLabel: 'Criancas',
-			guestsSummary: '{adults} adultos, {children} criancas',
-			ctaLabel: 'Buscar',
-			loadingText: 'Carregando...',
-			searchAriaLabel: 'Buscar acomodacoes',
-			closePanelAriaLabel: 'Fechar painel',
-			typeLabels: {
-				[AccommodationTypeEnum.HOTEL]: 'Hotel',
-				[AccommodationTypeEnum.CABIN]: 'Cabana',
-				[AccommodationTypeEnum.APARTMENT]: 'Apartamento',
-				[AccommodationTypeEnum.HOUSE]: 'Casa',
-				[AccommodationTypeEnum.COUNTRY_HOUSE]: 'Casa de campo',
-				[AccommodationTypeEnum.HOSTEL]: 'Hostel',
-				[AccommodationTypeEnum.CAMPING]: 'Camping',
-				[AccommodationTypeEnum.ROOM]: 'Quarto',
-				[AccommodationTypeEnum.MOTEL]: 'Motel',
-				[AccommodationTypeEnum.RESORT]: 'Resort',
-			},
+// ---------------------------------------------------------------------------
+// Search bar labels - built from i18n locale files
+// ---------------------------------------------------------------------------
 
-		},
-		statsLabels: { destinations: 'destinos', accommodations: 'acomodacoes' },
-		featuredAccommodations: 'Acomodacoes em destaque',
-		accommodationsSubtitle: 'Descubra os melhores lugares para se hospedar em Entre Rios. De cabanas a beira do rio ate estancias tradicionais.',
-		featuredDestinations: 'Destinos populares',
-		upcomingEvents: 'Proximos eventos',
-		latestBlog: 'Ultimas publicacoes',
-		viewAll: 'Ver todos',
-		pageTitle: 'Inicio',
-		pageDescription: 'Descubra acomodacoes unicas em Concepcion del Uruguay e o Litoral argentino. Hoteis, cabanas, apartamentos e mais.',
-	},
+const typeLabels = Object.values(AccommodationTypeEnum).reduce(
+    (acc, enumVal) => {
+        acc[enumVal] = i18nT({ locale, namespace: 'accommodations', key: `types.${enumVal.toLowerCase()}` });
+        return acc;
+    },
+    {} as Record<AccommodationTypeEnum, string>
+);
+
+const searchLabels: HeroSearchBarLabels = {
+    typePlaceholder: i18nT({ locale, namespace: 'home', key: 'searchBar.typePlaceholder' }),
+    destinationPlaceholder: i18nT({ locale, namespace: 'home', key: 'searchBar.destinationPlaceholder' }),
+    datesPlaceholder: i18nT({ locale, namespace: 'home', key: 'searchBar.datesPlaceholder' }),
+    guestsPlaceholder: i18nT({ locale, namespace: 'home', key: 'searchBar.guestsPlaceholder' }),
+    checkInLabel: i18nT({ locale, namespace: 'home', key: 'searchBar.checkInLabel' }),
+    checkOutLabel: i18nT({ locale, namespace: 'home', key: 'searchBar.checkOutLabel' }),
+    adultsLabel: i18nT({ locale, namespace: 'home', key: 'searchBar.adultsLabel' }),
+    childrenLabel: i18nT({ locale, namespace: 'home', key: 'searchBar.childrenLabel' }),
+    guestsSummary: i18nT({ locale, namespace: 'home', key: 'searchBar.guestsSummary' }),
+    ctaLabel: i18nT({ locale, namespace: 'home', key: 'searchBar.ctaLabel' }),
+    loadingText: i18nT({ locale, namespace: 'home', key: 'searchBar.loadingText' }),
+    searchAriaLabel: i18nT({ locale, namespace: 'home', key: 'searchBar.searchAriaLabel' }),
+    closePanelAriaLabel: i18nT({ locale, namespace: 'home', key: 'searchBar.closePanelAriaLabel' }),
+    typeLabels,
 };
 
-const t = texts[locale];
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
-const apiBaseUrl = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3001';
+const apiBaseUrl = getApiUrl();
 
 // ---------------------------------------------------------------------------
 // Hero carousel images
@@ -202,127 +97,62 @@ const apiBaseUrl = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3001';
  * Covers: rio, playa, isla, carnaval, fiesta, autodromo, palacio, termas.
  */
 const heroImages = [
-  '/images/hero/rio1.jpg',
-  '/images/hero/rio2.png',
-  '/images/hero/rio3.jpg',
-  '/images/hero/playa1.jpg',
-  '/images/hero/playa2.jpg',
-  '/images/hero/playa3.png',
-  '/images/hero/playa4.jpg',
-  '/images/hero/playa5.jpg',
-  '/images/hero/playa6.jpg',
-  '/images/hero/playa7.jpg',
-  '/images/hero/playa8.webp',
-  '/images/hero/isla1.jpg',
-  '/images/hero/isla2.jpg',
-  '/images/hero/isla3.jpg',
-  '/images/hero/carnaval1.jpg',
-  '/images/hero/fiestaplaya1.jpg',
-  '/images/hero/autodromo1.webp',
-  '/images/hero/palacio1.jpg',
-  '/images/hero/palacio2.webp',
-  '/images/hero/termas1.png',
-  '/images/hero/termas2.jpeg',
-  '/images/hero/termas3.jpg',
+    "/images/hero/rio1.jpg",
+    "/images/hero/rio2.png",
+    "/images/hero/rio3.jpg",
+    "/images/hero/playa1.jpg",
+    "/images/hero/playa2.jpg",
+    "/images/hero/playa3.png",
+    "/images/hero/playa4.jpg",
+    "/images/hero/playa5.jpg",
+    "/images/hero/playa6.jpg",
+    "/images/hero/playa7.jpg",
+    "/images/hero/playa8.webp",
+    "/images/hero/isla1.jpg",
+    "/images/hero/isla2.jpg",
+    "/images/hero/isla3.jpg",
+    "/images/hero/carnaval1.jpg",
+    "/images/hero/fiestaplaya1.jpg",
+    "/images/hero/autodromo1.webp",
+    "/images/hero/palacio1.jpg",
+    "/images/hero/palacio2.webp",
+    "/images/hero/termas1.png",
+    "/images/hero/termas2.jpeg",
+    "/images/hero/termas3.jpg",
 ] as const;
 
 // ---------------------------------------------------------------------------
 // Animated counter items
 // ---------------------------------------------------------------------------
 
-const counterItems: Record<SupportedLocale, readonly { value: number; suffix?: string; label: string }[]> = {
-  es: [
-    { value: 22, label: 'destinos' },
-    { value: 150, suffix: '+', label: 'alojamientos' },
-  ],
-  en: [
-    { value: 22, label: 'destinations' },
-    { value: 150, suffix: '+', label: 'accommodations' },
-  ],
-  pt: [
-    { value: 22, label: 'destinos' },
-    { value: 150, suffix: '+', label: 'acomodacoes' },
-  ],
-};
+const counterItems = [
+    { value: 22, label: i18nT({ locale, namespace: 'home', key: 'counter.destinations.label' }) },
+    { value: 150, suffix: "+", label: i18nT({ locale, namespace: 'home', key: 'counter.accommodations.label' }) },
+] as const;
 
 // ---------------------------------------------------------------------------
 // Rotating phrases (one per image category, cycled across slides)
 // ---------------------------------------------------------------------------
 
-const rotatingPhrases: Record<SupportedLocale, readonly string[]> = {
-  es: [
-    'Navega el Rio Uruguay y descubri sus costas',
-    'Navega el Rio Uruguay y descubri sus costas',
-    'Navega el Rio Uruguay y descubri sus costas',
-    'Relajate en playas de arena dorada',
-    'Relajate en playas de arena dorada',
-    'Relajate en playas de arena dorada',
-    'Relajate en playas de arena dorada',
-    'Relajate en playas de arena dorada',
-    'Relajate en playas de arena dorada',
-    'Relajate en playas de arena dorada',
-    'Relajate en playas de arena dorada',
-    'Explora islas y paisajes naturales',
-    'Explora islas y paisajes naturales',
-    'Explora islas y paisajes naturales',
-    'Vivi el carnaval del Litoral',
-    'Disfuta de fiestas al aire libre',
-    'Senti la adrenalina del autodromo',
-    'Descubri la historia colonial',
-    'Descubri la historia colonial',
-    'Sumergite en aguas termales',
-    'Sumergite en aguas termales',
-    'Sumergite en aguas termales',
-  ],
-  en: [
-    'Sail the Uruguay River and discover its shores',
-    'Sail the Uruguay River and discover its shores',
-    'Sail the Uruguay River and discover its shores',
-    'Relax on golden sandy beaches',
-    'Relax on golden sandy beaches',
-    'Relax on golden sandy beaches',
-    'Relax on golden sandy beaches',
-    'Relax on golden sandy beaches',
-    'Relax on golden sandy beaches',
-    'Relax on golden sandy beaches',
-    'Relax on golden sandy beaches',
-    'Explore islands and natural landscapes',
-    'Explore islands and natural landscapes',
-    'Explore islands and natural landscapes',
-    'Experience the Litoral carnival',
-    'Enjoy open-air festivals',
-    'Feel the adrenaline of the racetrack',
-    'Discover colonial history',
-    'Discover colonial history',
-    'Immerse yourself in hot springs',
-    'Immerse yourself in hot springs',
-    'Immerse yourself in hot springs',
-  ],
-  pt: [
-    'Navegue o Rio Uruguai e descubra suas costas',
-    'Navegue o Rio Uruguai e descubra suas costas',
-    'Navegue o Rio Uruguai e descubra suas costas',
-    'Relaxe em praias de areia dourada',
-    'Relaxe em praias de areia dourada',
-    'Relaxe em praias de areia dourada',
-    'Relaxe em praias de areia dourada',
-    'Relaxe em praias de areia dourada',
-    'Relaxe em praias de areia dourada',
-    'Relaxe em praias de areia dourada',
-    'Relaxe em praias de areia dourada',
-    'Explore ilhas e paisagens naturais',
-    'Explore ilhas e paisagens naturais',
-    'Explore ilhas e paisagens naturais',
-    'Viva o carnaval do Litoral',
-    'Aproveite festas ao ar livre',
-    'Sinta a adrenalina do autodromo',
-    'Descubra a historia colonial',
-    'Descubra a historia colonial',
-    'Mergulhe em aguas termais',
-    'Mergulhe em aguas termais',
-    'Mergulhe em aguas termais',
-  ],
-};
+const phraseRiver = i18nT({ locale, namespace: 'home', key: 'heroCarousel.phrases.river' });
+const phraseBeach = i18nT({ locale, namespace: 'home', key: 'heroCarousel.phrases.beach' });
+const phraseIslands = i18nT({ locale, namespace: 'home', key: 'heroCarousel.phrases.islands' });
+const phraseCarnival = i18nT({ locale, namespace: 'home', key: 'heroCarousel.phrases.carnival' });
+const phraseFestivals = i18nT({ locale, namespace: 'home', key: 'heroCarousel.phrases.festivals' });
+const phraseRacetrack = i18nT({ locale, namespace: 'home', key: 'heroCarousel.phrases.racetrack' });
+const phraseHistory = i18nT({ locale, namespace: 'home', key: 'heroCarousel.phrases.history' });
+const phraseHotsprings = i18nT({ locale, namespace: 'home', key: 'heroCarousel.phrases.hotsprings' });
+
+const rotatingPhrases = [
+    phraseRiver, phraseRiver, phraseRiver,
+    phraseBeach, phraseBeach, phraseBeach, phraseBeach, phraseBeach, phraseBeach, phraseBeach, phraseBeach,
+    phraseIslands, phraseIslands, phraseIslands,
+    phraseCarnival,
+    phraseFestivals,
+    phraseRacetrack,
+    phraseHistory, phraseHistory,
+    phraseHotsprings, phraseHotsprings, phraseHotsprings,
+] as const;
 
 // ---------------------------------------------------------------------------
 // Testimonials
@@ -333,133 +163,127 @@ const rotatingPhrases: Record<SupportedLocale, readonly string[]> = {
  * Will be replaced with API data when testimonials endpoint is available.
  */
 const TESTIMONIALS = [
-	{
-		id: 'testimonial-1',
-		quote: 'Encontramos la cabana perfecta para nuestras vacaciones en familia. El proceso de reserva fue muy simple.',
-		author: 'Maria Garcia',
-		image: '/images/testimonials/maria.jpg',
-		location: 'Concepcion del Uruguay',
-		rating: 5,
-	},
-	{
-		id: 'testimonial-2',
-		quote: 'Excelente plataforma para encontrar alojamiento en el Litoral. Muy buenas opciones y precios.',
-		author: 'Carlos Rodriguez',
-		image: '/images/testimonials/carlos.jpg',
-		location: 'Colon, Entre Rios',
-		rating: 4,
-	},
-	{
-		id: 'testimonial-3',
-		quote: 'Hospeda nos ayudo a descubrir lugares increibles que no conociamos. Totalmente recomendado.',
-		author: 'Laura Martinez',
-		image: '/images/testimonials/laura.jpg',
-		location: 'Gualeguaychu',
-		rating: 5,
-	},
+    {
+        id: "testimonial-1",
+        quote: "Encontramos la cabana perfecta para nuestras vacaciones en familia. El proceso de reserva fue muy simple.",
+        author: "Maria Garcia",
+        location: "Concepcion del Uruguay",
+        rating: 5,
+    },
+    {
+        id: "testimonial-2",
+        quote: "Excelente plataforma para encontrar alojamiento en el Litoral. Muy buenas opciones y precios.",
+        author: "Carlos Rodriguez",
+        location: "Colon, Entre Rios",
+        rating: 4,
+    },
+    {
+        id: "testimonial-3",
+        quote: "Hospeda nos ayudo a descubrir lugares increibles que no conociamos. Totalmente recomendado.",
+        author: "Laura Martinez",
+        location: "Gualeguaychu",
+        rating: 5,
+    },
 ];
 ---
 
-<BaseLayout title={t.pageTitle} description={t.pageDescription} locale={locale} isHero>
-	<SEOHead
-		slot="head"
-		title={t.pageTitle}
-		description={t.pageDescription}
-		canonical={canonicalUrl}
-		locale={locale}
-	/>
+<BaseLayout title={pageTitle} description={pageDescription} locale={locale} isHero>
+    <SEOHead slot="head" title={pageTitle} description={pageDescription} canonical={canonicalUrl} locale={locale} />
 
-	<!-- 1. Hero Section with carousel, category badges, counter, rotating phrases -->
-	<HeroSection
-		heroImages={heroImages}
-		accentSubtitle={t.heroAccentSubtitle}
-		headline={t.heroHeadline}
-		subheadline={t.heroSubheadline}
-		searchLabels={t.searchLabels}
-		locale={locale}
-		apiBaseUrl={apiBaseUrl}
-		counterItems={counterItems[locale]}
-		statsLabels={t.statsLabels}
-		rotatingPhrases={rotatingPhrases[locale]}
-	/>
+    <!-- 1. Hero Section with carousel, category badges, counter, rotating phrases -->
+    <HeroSection
+        heroImages={heroImages}
+        accentSubtitle={heroAccentSubtitle}
+        headline={heroHeadline}
+        subheadline={heroSubheadline}
+        searchLabels={searchLabels}
+        locale={locale}
+        apiBaseUrl={apiBaseUrl}
+        counterItems={counterItems}
+        statsLabels={{ destinations: statsDestinations, accommodations: statsAccommodations }}
+        rotatingPhrases={rotatingPhrases}
+    />
 
-	<!-- 2. Featured Accommodations (Server Island) -->
-	<FeaturedSection
-		title={t.featuredAccommodations}
-		subtitle={t.accommodationsSubtitle}
-		viewAllHref={`/${locale}/alojamientos/`}
-		viewAllLabel={t.viewAll}
-	>
-		<FeaturedAccommodations server:defer locale={locale}>
-			<div slot="fallback" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-				<AccommodationCardSkeleton />
-				<AccommodationCardSkeleton />
-				<AccommodationCardSkeleton />
-				<AccommodationCardSkeleton class="hidden sm:block" />
-				<AccommodationCardSkeleton class="hidden lg:block" />
-				<AccommodationCardSkeleton class="hidden lg:block" />
-			</div>
-		</FeaturedAccommodations>
-	</FeaturedSection>
+    <!-- 2. Featured Accommodations (Server Island) -->
+    <FeaturedSection
+        title={featuredAccommodationsTitle}
+        subtitle={accommodationsSubtitle}
+        viewAllHref={`/${locale}/alojamientos/`}
+        viewAllLabel={viewAllLabel}
+    >
+        <FeaturedAccommodations server:defer locale={locale}>
+            <div slot="fallback" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                <AccommodationCardSkeleton />
+                <AccommodationCardSkeleton />
+                <AccommodationCardSkeleton />
+                <AccommodationCardSkeleton />
+                <AccommodationCardSkeleton class="hidden sm:block" />
+                <AccommodationCardSkeleton class="hidden lg:block" />
+                <AccommodationCardSkeleton class="hidden lg:block" />
+                <AccommodationCardSkeleton class="hidden lg:block" />
+            </div>
+        </FeaturedAccommodations>
+    </FeaturedSection>
 
-	<!-- 3. Featured Destinations (Server Island) - sand texture background -->
-	<FeaturedSection
-		title={t.featuredDestinations}
-		viewAllHref={`/${locale}/destinos/`}
-		viewAllLabel={t.viewAll}
-		class="bg-bg-warm texture-sand"
-	>
-		<FeaturedDestinations server:defer locale={locale}>
-			<div slot="fallback" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-				<DestinationCardSkeleton />
-				<DestinationCardSkeleton class="hidden sm:block" />
-				<DestinationCardSkeleton class="hidden lg:block" />
-			</div>
-		</FeaturedDestinations>
-	</FeaturedSection>
+    <!-- 3. Featured Destinations (Server Island) - sand texture background -->
+    <FeaturedSection
+        title={featuredDestinationsTitle}
+        viewAllHref={`/${locale}/destinos/`}
+        viewAllLabel={viewAllLabel}
+        class="bg-bg-warm texture-sand"
+    >
+        <Fragment slot="title">
+            <SectionTitle>{featuredDestinationsTitle}</SectionTitle>
+            <SectionSubtitle class="mt-2">
+                {i18nT({ locale, namespace: "destinations", key: "featured.subtitle" })}
+            </SectionSubtitle>
+        </Fragment>
+        <FeaturedDestinations server:defer locale={locale}>
+            <div slot="fallback" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 lg:gap-5">
+                <DestinationCardSkeleton />
+                <DestinationCardSkeleton class="hidden sm:block" />
+                <DestinationCardSkeleton class="hidden lg:block" />
+                <DestinationCardSkeleton class="hidden xl:block" />
+                <DestinationCardSkeleton class="hidden sm:block" />
+                <DestinationCardSkeleton class="hidden lg:block" />
+                <DestinationCardSkeleton class="hidden xl:block" />
+                <DestinationCardSkeleton class="hidden xl:block" />
+            </div>
+        </FeaturedDestinations>
+    </FeaturedSection>
 
-	<!-- 4. Statistics Section (glassmorphism over river photo) -->
-	<StatisticsSection locale={locale} />
+    <!-- 4. Featured Events (Server Island) -->
+    <FeaturedSection title={upcomingEventsTitle} viewAllHref={`/${locale}/eventos/`} viewAllLabel={viewAllLabel}>
+        <FeaturedEvents server:defer locale={locale}>
+            <div slot="fallback" class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                <EventCardSkeleton />
+                <EventCardSkeleton class="hidden lg:block" />
+            </div>
+        </FeaturedEvents>
+    </FeaturedSection>
 
-	<!-- 5. Featured Events (Server Island) -->
-	<FeaturedSection
-		title={t.upcomingEvents}
-		viewAllHref={`/${locale}/eventos/`}
-		viewAllLabel={t.viewAll}
-	>
-		<FeaturedEvents server:defer locale={locale}>
-			<div slot="fallback" class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-				<EventCardSkeleton />
-				<EventCardSkeleton class="hidden lg:block" />
-			</div>
-		</FeaturedEvents>
-	</FeaturedSection>
+    <!-- 6. Category Icons Section (warm texture background) -->
+    <CategoryIconsSection locale={locale} />
 
-	<!-- 6. Category Icons Section (warm texture background) -->
-	<CategoryIconsSection locale={locale} />
+    <!-- 7. Featured Blog Posts (Server Island) - alternate background -->
+    <FeaturedSection
+        title={latestBlogTitle}
+        viewAllHref={`/${locale}/publicaciones/`}
+        viewAllLabel={viewAllLabel}
+        class="bg-surface-alt"
+    >
+        <FeaturedPosts server:defer locale={locale}>
+            <div slot="fallback" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                <BlogPostCardSkeleton />
+                <BlogPostCardSkeleton />
+                <BlogPostCardSkeleton class="hidden sm:block" />
+            </div>
+        </FeaturedPosts>
+    </FeaturedSection>
 
-	<!-- 7. Featured Blog Posts (Server Island) - alternate background -->
-	<FeaturedSection
-		title={t.latestBlog}
-		viewAllHref={`/${locale}/publicaciones/`}
-		viewAllLabel={t.viewAll}
-		class="bg-surface-alt"
-	>
-		<FeaturedPosts server:defer locale={locale}>
-			<div slot="fallback" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-				<BlogPostCardSkeleton />
-				<BlogPostCardSkeleton />
-				<BlogPostCardSkeleton class="hidden sm:block" />
-			</div>
-		</FeaturedPosts>
-	</FeaturedSection>
+    <!-- 8. Testimonials Section (postcard style on sand texture) -->
+    <TestimonialsSection locale={locale} testimonials={TESTIMONIALS} />
 
-	<!-- 8. Testimonials Section (postcard style on sand texture) -->
-	<TestimonialsSection locale={locale} testimonials={TESTIMONIALS} />
-
-	<!-- 9. Newsletter Section (illustrated river background) -->
-	<NewsletterSection locale={locale} />
-
-	<!-- 10. Owner CTA Section (split layout with illustration) -->
-	<OwnerCTASection locale={locale} />
+    <!-- 9. Owner CTA Section (split layout with illustration) -->
+    <OwnerCTASection locale={locale} />
 </BaseLayout>

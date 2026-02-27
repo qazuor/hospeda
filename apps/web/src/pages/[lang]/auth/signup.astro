@@ -1,7 +1,7 @@
 ---
 /**
  * Sign up page - allows users to create a new account.
- * Uses the SignUpIsland React island for interactive registration via Better Auth.
+ * Uses the SignUpClient React island for interactive registration via Better Auth.
  * Validates locale parameter and redirects invalid locales to Spanish (default).
  *
  * @route /[lang]/auth/signup/
@@ -10,16 +10,12 @@
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import SEOHead from '../../../components/seo/SEOHead.astro';
 import Container from '../../../components/ui/Container.astro';
-import { SignUpIsland } from '../../../components/auth/SignUpIsland';
-import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
+import { SignUpClient } from '../../../components/auth/SignUp.client';
+import { getLocaleFromParams } from '../../../lib/page-helpers';
+import { t } from '../../../lib/i18n';
 
-const { lang } = Astro.params;
-
-if (!lang || !isValidLocale(lang)) {
-	return Astro.redirect('/es/');
-}
-
-const locale = lang as SupportedLocale;
+const locale = getLocaleFromParams(Astro.params);
+if (!locale) return Astro.redirect('/es/');
 
 /**
  * Server-side auth guard: redirect authenticated users to home page.
@@ -29,23 +25,8 @@ if (Astro.locals.user) {
 	return Astro.redirect(`/${locale}/`);
 }
 
-/**
- * Localized page titles
- */
-const titles: Record<SupportedLocale, string> = {
-	es: 'Registrarse',
-	en: 'Sign Up',
-	pt: 'Registrar',
-};
-
-/**
- * Localized meta descriptions
- */
-const descriptions: Record<SupportedLocale, string> = {
-	es: 'Crea tu cuenta en Hospeda para gestionar tus reservas y descubrir nuevos alojamientos',
-	en: 'Create your Hospeda account to manage your bookings and discover new accommodations',
-	pt: 'Crie sua conta no Hospeda para gerenciar suas reservas e descobrir novas acomodações',
-};
+const title = t({ locale, namespace: 'auth-ui', key: 'pages.signup.title' });
+const description = t({ locale, namespace: 'auth-ui', key: 'pages.signup.description' });
 
 /**
  * Localized labels
@@ -76,13 +57,13 @@ const siteOrigin = import.meta.env.PUBLIC_SITE_URL || import.meta.env.HOSPEDA_SI
 const redirectTo = new URL(`/${locale}/mi-cuenta`, siteOrigin).href;
 ---
 
-<BaseLayout title={titles[locale]} description={descriptions[locale]} locale={locale}>
+<BaseLayout title={title} description={description} locale={locale}>
 	<SEOHead
 		slot="head"
-		title={titles[locale]}
-		description={descriptions[locale]}
+		title={title}
+		description={description}
 		canonical={canonicalUrl}
-		locale={locale === 'pt' ? 'es' : locale}
+		locale={locale}
 		type="website"
 		noindex={true}
 	/>
@@ -91,7 +72,7 @@ const redirectTo = new URL(`/${locale}/mi-cuenta`, siteOrigin).href;
 		<div class="flex min-h-screen items-center justify-center py-12">
 			<div class="w-full max-w-md">
 				<div class="rounded-lg border border-border bg-bg-secondary p-8 shadow-lg">
-					<SignUpIsland
+					<SignUpClient
 						client:load
 						redirectTo={redirectTo}
 						showOAuth={true}

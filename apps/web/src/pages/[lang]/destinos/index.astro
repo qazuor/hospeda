@@ -1,9 +1,7 @@
 ---
 export const prerender = true;
 
-export function getStaticPaths() {
-	return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
-}
+export { getStaticLocalePaths as getStaticPaths } from '../../../lib/page-helpers';
 
 /**
  * Destination list page - displays all destinations in the Litoral region.
@@ -16,20 +14,18 @@ import Container from '../../../components/ui/Container.astro';
 import Section from '../../../components/ui/Section.astro';
 import DestinationCard from '../../../components/destination/DestinationCard.astro';
 import EmptyState from '../../../components/ui/EmptyState.astro';
-import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
+import DestinationErrorState from '../../../components/error/DestinationErrorState.astro';
+import SectionTitle from '../../../components/ui/SectionTitle.astro';
+import { getLocaleFromParams, HOME_BREADCRUMB } from '../../../lib/page-helpers';
 import { destinationsApi } from '../../../lib/api/endpoints';
 import Pagination from '../../../components/ui/Pagination.astro';
 import { LocationIcon } from '@repo/icons';
 import { DestinationFilters } from '../../../components/destination/DestinationFilters.client.tsx';
-import { extractFeaturedImageUrl } from '../../../lib/media';
+import { toDestinationCardProps } from '../../../lib/api/transforms';
+import { t } from '../../../lib/i18n';
 
-const { lang } = Astro.params;
-
-if (!lang || !isValidLocale(lang)) {
-	return Astro.redirect('/es/');
-}
-
-const locale = lang as SupportedLocale;
+const locale = getLocaleFromParams(Astro.params);
+if (!locale) return Astro.redirect('/es/');
 
 /**
  * Pagination parameters
@@ -41,53 +37,9 @@ const pageSize = 12;
  * Fetch destinations from API
  */
 const result = await destinationsApi.list({ page, pageSize, destinationType: 'CITY' });
+const apiError = !result.ok;
 const destinations = result.ok ? (result.data.items as Array<Record<string, unknown>>) : [];
 const pagination = result.ok ? result.data.pagination : null;
-
-/**
- * Localized page titles
- */
-const titles: Record<SupportedLocale, string> = {
-	es: 'Destinos',
-	en: 'Destinations',
-	pt: 'Destinos',
-};
-
-/**
- * Localized meta descriptions
- */
-const descriptions: Record<SupportedLocale, string> = {
-	es: 'Descubre los destinos turísticos más fascinantes del Litoral argentino. Entre Ríos, Corrientes y Santa Fe te esperan.',
-	en: 'Discover the most fascinating tourist destinations in the Argentine Litoral region. Entre Ríos, Corrientes and Santa Fe await you.',
-	pt: 'Descubra os destinos turísticos mais fascinantes do Litoral argentino. Entre Ríos, Corrientes e Santa Fe esperam por você.',
-};
-
-/**
- * Localized home breadcrumb labels
- */
-const homeLabels: Record<SupportedLocale, string> = {
-	es: 'Inicio',
-	en: 'Home',
-	pt: 'Início',
-};
-
-/**
- * Localized hero heading
- */
-const heroHeadings: Record<SupportedLocale, string> = {
-	es: 'Explora los Destinos del Litoral',
-	en: 'Explore Litoral Destinations',
-	pt: 'Explore os Destinos do Litoral',
-};
-
-/**
- * Localized hero description
- */
-const heroDescriptions: Record<SupportedLocale, string> = {
-	es: 'Descubre ciudades históricas, paisajes naturales y experiencias únicas en la región del Litoral argentino. Desde las termas de Entre Ríos hasta los esteros de Corrientes.',
-	en: 'Discover historic cities, natural landscapes and unique experiences in the Argentine Litoral region. From the hot springs of Entre Ríos to the wetlands of Corrientes.',
-	pt: 'Descubra cidades históricas, paisagens naturais e experiências únicas na região do Litoral argentino. Das termas de Entre Ríos aos pântanos de Corrientes.',
-};
 
 /**
  * Parse URL query parameters for client-side filter pre-population.
@@ -97,47 +49,15 @@ const initialQuery = Astro.url.searchParams.get('q') || '';
 const initialType = Astro.url.searchParams.get('type') || '';
 const initialParentId = Astro.url.searchParams.get('parentId') || '';
 
-/**
- * Localized featured destinations section title
- */
-const featuredTitles: Record<SupportedLocale, string> = {
-	es: 'Destinos Destacados',
-	en: 'Featured Destinations',
-	pt: 'Destinos em Destaque',
-};
-
-/**
- * Localized empty state text
- */
-const emptyStateTitles: Record<SupportedLocale, string> = {
-	es: 'No hay destinos disponibles',
-	en: 'No destinations available',
-	pt: 'Nenhum destino disponível',
-};
-
-const emptyStateMessages: Record<SupportedLocale, string> = {
-	es: 'Próximamente agregaremos destinos turísticos en esta sección.',
-	en: 'We will soon add tourist destinations in this section.',
-	pt: 'Em breve adicionaremos destinos turísticos nesta seção.',
-};
-
-/**
- * Localized regional highlight title
- */
-const regionalTitles: Record<SupportedLocale, string> = {
-	es: 'La Región del Litoral',
-	en: 'The Litoral Region',
-	pt: 'A Região do Litoral',
-};
-
-/**
- * Localized regional highlight text
- */
-const regionalTexts: Record<SupportedLocale, string> = {
-	es: 'El Litoral argentino comprende las provincias de Entre Ríos, Corrientes y Santa Fe. Esta región se caracteriza por su riqueza natural, con el río Paraná como eje vertebrador, sus termas naturales, su historia colonial y la calidez de su gente. Concepción del Uruguay, en Entre Ríos, es una de las ciudades históricas más importantes de la región.',
-	en: 'The Argentine Litoral comprises the provinces of Entre Ríos, Corrientes and Santa Fe. This region is characterized by its natural richness, with the Paraná River as its backbone, its natural hot springs, its colonial history and the warmth of its people. Concepción del Uruguay, in Entre Ríos, is one of the most important historic cities in the region.',
-	pt: 'O Litoral argentino compreende as províncias de Entre Ríos, Corrientes e Santa Fe. Esta região é caracterizada por sua riqueza natural, com o rio Paraná como eixo vertebral, suas termas naturais, sua história colonial e o calor de sua gente. Concepción del Uruguay, em Entre Ríos, é uma das cidades históricas mais importantes da região.',
-};
+const pageTitle = t({ locale, namespace: 'destination', key: 'listing.title' });
+const pageDescription = t({ locale, namespace: 'destination', key: 'listing.description' });
+const heroHeading = t({ locale, namespace: 'destination', key: 'listing.hero.heading' });
+const heroDescription = t({ locale, namespace: 'destination', key: 'listing.hero.description' });
+const featuredTitle = t({ locale, namespace: 'destination', key: 'listing.featured.title' });
+const emptyStateTitle = t({ locale, namespace: 'destination', key: 'listing.emptyState.title' });
+const emptyStateMessage = t({ locale, namespace: 'destination', key: 'listing.emptyState.message' });
+const regionalTitle = t({ locale, namespace: 'destination', key: 'listing.regional.title' });
+const regionalText = t({ locale, namespace: 'destination', key: 'listing.regional.text' });
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
@@ -145,18 +65,18 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
  * Breadcrumb navigation items
  */
 const breadcrumbItems = [
-	{ label: homeLabels[locale], href: `/${locale}/` },
-	{ label: titles[locale], href: `/${locale}/destinos/` },
+	{ label: HOME_BREADCRUMB[locale], href: `/${locale}/` },
+	{ label: pageTitle, href: `/${locale}/destinos/` },
 ];
 ---
 
-<BaseLayout title={titles[locale]} description={descriptions[locale]} locale={locale}>
+<BaseLayout title={pageTitle} description={pageDescription} locale={locale}>
 	<SEOHead
 		slot="head"
-		title={titles[locale]}
-		description={descriptions[locale]}
+		title={pageTitle}
+		description={pageDescription}
 		canonical={canonicalUrl}
-		locale={locale === 'pt' ? 'es' : locale}
+		locale={locale}
 		type="website"
 	/>
 
@@ -167,11 +87,11 @@ const breadcrumbItems = [
 			<div class="mx-auto max-w-6xl">
 				<!-- Hero Section -->
 				<article id="hero" class="mb-12 text-center">
-					<h1 class="mb-6 text-4xl font-bold text-text-primary md:text-5xl">
-						{heroHeadings[locale]}
-					</h1>
+					<SectionTitle as="h1" class="mb-6">
+						{heroHeading}
+					</SectionTitle>
 					<p class="mx-auto max-w-3xl text-xl leading-relaxed text-text-secondary">
-						{heroDescriptions[locale]}
+						{heroDescription}
 					</p>
 				</article>
 
@@ -188,37 +108,33 @@ const breadcrumbItems = [
 
 				<!-- Featured Destinations Section -->
 				<article id="featured-destinations" class="mb-16">
-					<h2 class="mb-8 text-center text-3xl font-semibold text-text-primary">
-						{featuredTitles[locale]}
-					</h2>
+					<SectionTitle as="h2" weight="semibold" class="mb-8 text-center">
+						{featuredTitle}
+					</SectionTitle>
 
 					<!-- Grid Area for Destination Cards -->
 					<div
 						id="destination-grid"
 						class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
 						role="region"
-						aria-label={featuredTitles[locale]}
+						aria-label={featuredTitle}
 					>
 						{destinations.length > 0 ? (
 							destinations.map((dest) => (
 								<DestinationCard
-									destination={{
-										slug: String(dest.slug || ''),
-										name: String(dest.name || 'Sin nombre'),
-										summary: String(dest.summary || dest.description || ''),
-										featuredImage: extractFeaturedImageUrl(dest, '/images/placeholder-destination.svg'),
-										accommodationsCount: Number(dest.accommodationsCount || 0),
-										isFeatured: Boolean(dest.isFeatured),
-										path: String(dest.path || dest.slug || ''),
-									}}
+									destination={toDestinationCardProps({ item: dest as Record<string, unknown> })}
 									locale={locale}
 								/>
 							))
+						) : apiError ? (
+							<div class="col-span-full">
+								<DestinationErrorState locale={locale} />
+							</div>
 						) : (
 							<div class="col-span-full">
 								<EmptyState
-									title={emptyStateTitles[locale]}
-									message={emptyStateMessages[locale]}
+									title={emptyStateTitle}
+									message={emptyStateMessage}
 								/>
 							</div>
 						)}
@@ -242,11 +158,11 @@ const breadcrumbItems = [
 				<!-- Regional Highlight Section -->
 				<article id="regional-highlight" class="mb-12">
 					<div class="rounded-lg bg-bg p-8 shadow-sm">
-						<h2 class="mb-4 text-center text-3xl font-semibold text-text-primary">
-							{regionalTitles[locale]}
-						</h2>
+						<SectionTitle as="h2" weight="semibold" class="mb-4 text-center">
+							{regionalTitle}
+						</SectionTitle>
 						<p class="mx-auto max-w-4xl text-lg leading-relaxed text-text-secondary">
-							{regionalTexts[locale]}
+							{regionalText}
 						</p>
 					</div>
 				</article>

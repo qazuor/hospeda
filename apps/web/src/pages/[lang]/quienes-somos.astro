@@ -1,9 +1,7 @@
 ---
 export const prerender = true;
 
-export function getStaticPaths() {
-	return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
-}
+export { getStaticLocalePaths as getStaticPaths } from '../../lib/page-helpers';
 
 /**
  * About Us page - information about Hospeda platform, mission, values, and the region.
@@ -14,43 +12,47 @@ import SEOHead from '../../components/seo/SEOHead.astro';
 import Breadcrumb from '../../components/ui/Breadcrumb.astro';
 import Container from '../../components/ui/Container.astro';
 import Section from '../../components/ui/Section.astro';
-import { isValidLocale, type SupportedLocale } from '../../lib/i18n';
+import { getLocaleFromParams, HOME_BREADCRUMB } from '../../lib/page-helpers';
+import { t } from '../../lib/i18n';
 import { CheckIcon, UsersIcon, CheckCircleIcon, GlobeIcon } from '@repo/icons';
 
-const { lang } = Astro.params;
+const locale = getLocaleFromParams(Astro.params);
+if (!locale) return Astro.redirect('/es/');
 
-if (!lang || !isValidLocale(lang)) {
-	return Astro.redirect('/es/');
-}
-
-const locale = lang as SupportedLocale;
-
-/**
- * Localized page titles
- */
-const titles: Record<SupportedLocale, string> = {
-	es: 'Quienes Somos',
-	en: 'About Us',
-	pt: 'Sobre Nós',
-};
-
-/**
- * Localized meta descriptions
- */
-const descriptions: Record<SupportedLocale, string> = {
-	es: 'Descubre la misión, valores y propósito de Hospeda, la plataforma que conecta viajeros con alojamientos auténticos en el Litoral argentino',
-	en: 'Discover the mission, values and purpose of Hospeda, the platform connecting travelers with authentic accommodations in the Argentine Litoral region',
-	pt: 'Descubra a missão, valores e propósito da Hospeda, a plataforma que conecta viajantes com acomodações autênticas no Litoral argentino',
-};
+const pageTitle = t({ locale, namespace: 'about', key: 'page.title' });
+const pageDescription = t({ locale, namespace: 'about', key: 'page.description' });
+const heroText = t({ locale, namespace: 'about', key: 'page.heroText' });
+const missionTitle = t({ locale, namespace: 'about', key: 'page.missionTitle' });
+const missionText = t({ locale, namespace: 'about', key: 'page.missionText' });
+const valuesTitle = t({ locale, namespace: 'about', key: 'page.valuesTitle' });
+const regionTitle = t({ locale, namespace: 'about', key: 'page.regionTitle' });
+const regionText1 = t({ locale, namespace: 'about', key: 'page.regionText1' });
+const regionText2 = t({ locale, namespace: 'about', key: 'page.regionText2' });
+const ctaTitle = t({ locale, namespace: 'about', key: 'page.ctaTitle' });
+const ctaText = t({ locale, namespace: 'about', key: 'page.ctaText' });
+const ctaButton = t({ locale, namespace: 'about', key: 'page.ctaButton' });
 
 /**
- * Localized home breadcrumb labels
+ * Values content built from i18n keys
  */
-const homeLabels: Record<SupportedLocale, string> = {
-	es: 'Inicio',
-	en: 'Home',
-	pt: 'Início',
-};
+const values = [
+	{
+		title: t({ locale, namespace: 'about', key: 'page.values.authenticity.title' }),
+		text: t({ locale, namespace: 'about', key: 'page.values.authenticity.text' }),
+	},
+	{
+		title: t({ locale, namespace: 'about', key: 'page.values.community.title' }),
+		text: t({ locale, namespace: 'about', key: 'page.values.community.text' }),
+	},
+	{
+		title: t({ locale, namespace: 'about', key: 'page.values.quality.title' }),
+		text: t({ locale, namespace: 'about', key: 'page.values.quality.text' }),
+	},
+	{
+		title: t({ locale, namespace: 'about', key: 'page.values.sustainability.title' }),
+		text: t({ locale, namespace: 'about', key: 'page.values.sustainability.text' }),
+	},
+];
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
@@ -58,137 +60,9 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
  * Breadcrumb navigation items
  */
 const breadcrumbItems = [
-	{ label: homeLabels[locale], href: `/${locale}/` },
-	{ label: titles[locale], href: `/${locale}/quienes-somos/` },
+	{ label: HOME_BREADCRUMB[locale], href: `/${locale}/` },
+	{ label: pageTitle, href: `/${locale}/quienes-somos/` },
 ];
-
-/**
- * Localized body content for all sections
- */
-const content: Record<
-	SupportedLocale,
-	{
-		heroText: string;
-		missionTitle: string;
-		missionText: string;
-		valuesTitle: string;
-		values: Array<{ title: string; text: string }>;
-		regionTitle: string;
-		regionText1: string;
-		regionText2: string;
-		ctaTitle: string;
-		ctaText: string;
-		ctaButton: string;
-	}
-> = {
-	es: {
-		heroText:
-			'Hospeda es la plataforma que conecta viajeros con alojamientos auténticos y experiencias únicas en Concepción del Uruguay y la región del Litoral argentino. Creemos en el turismo responsable y en el valor de las conexiones genuinas.',
-		missionTitle: 'Nuestra Misión',
-		missionText:
-			'Conectar viajeros con alojamientos auténticos en la región del Litoral argentino, promoviendo el turismo responsable y sustentable. Facilitamos el descubrimiento de experiencias únicas y fomentamos el desarrollo económico local a través del turismo comunitario.',
-		valuesTitle: 'Nuestros Valores',
-		values: [
-			{
-				title: 'Autenticidad',
-				text: 'Promovemos experiencias genuinas que reflejan la cultura y hospitalidad local del Litoral argentino.',
-			},
-			{
-				title: 'Comunidad',
-				text: 'Fortalecemos el tejido social local apoyando emprendimientos turísticos y generando oportunidades económicas.',
-			},
-			{
-				title: 'Calidad',
-				text: 'Nos comprometemos a ofrecer alojamientos verificados con altos estándares de confort y servicio.',
-			},
-			{
-				title: 'Sustentabilidad',
-				text: 'Fomentamos prácticas turísticas responsables que preservan el patrimonio natural y cultural de la región.',
-			},
-		],
-		regionTitle: 'Nuestra Región',
-		regionText1:
-			'Concepción del Uruguay y la región del Litoral argentino ofrecen una combinación única de historia, naturaleza y cultura. Desde las costas del Río Uruguay hasta los paisajes rurales, nuestra región es el escenario perfecto para experiencias turísticas auténticas.',
-		regionText2:
-			'La región se caracteriza por su rica herencia cultural, arquitectura colonial, festividades tradicionales, gastronomía local y la calidez de su gente. Promovemos el descubrimiento de estos tesoros a través de alojamientos que reflejan la identidad local.',
-		ctaTitle: 'Conectemos y Crezcamos Juntos',
-		ctaText:
-			'¿Tienes preguntas o deseas formar parte de nuestra red de alojamientos? Nos encantaría conocerte y trabajar juntos para fortalecer el turismo en la región.',
-		ctaButton: 'Contáctanos',
-	},
-	en: {
-		heroText:
-			'Hospeda is the platform that connects travelers with authentic accommodations and unique experiences in Concepcion del Uruguay and the Argentine Litoral region. We believe in responsible tourism and the value of genuine connections.',
-		missionTitle: 'Our Mission',
-		missionText:
-			'To connect travelers with authentic accommodations in the Argentine Litoral region, promoting responsible and sustainable tourism. We facilitate the discovery of unique experiences and foster local economic development through community tourism.',
-		valuesTitle: 'Our Values',
-		values: [
-			{
-				title: 'Authenticity',
-				text: 'We promote genuine experiences that reflect the culture and local hospitality of the Argentine Litoral.',
-			},
-			{
-				title: 'Community',
-				text: 'We strengthen the local social fabric by supporting tourism ventures and generating economic opportunities.',
-			},
-			{
-				title: 'Quality',
-				text: 'We are committed to offering verified accommodations with high standards of comfort and service.',
-			},
-			{
-				title: 'Sustainability',
-				text: 'We encourage responsible tourism practices that preserve the natural and cultural heritage of the region.',
-			},
-		],
-		regionTitle: 'Our Region',
-		regionText1:
-			'Concepcion del Uruguay and the Argentine Litoral region offer a unique combination of history, nature, and culture. From the shores of the Uruguay River to the rural landscapes, our region is the perfect setting for authentic tourism experiences.',
-		regionText2:
-			'The region is characterized by its rich cultural heritage, colonial architecture, traditional festivities, local cuisine, and the warmth of its people. We promote the discovery of these treasures through accommodations that reflect the local identity.',
-		ctaTitle: "Let's Connect and Grow Together",
-		ctaText:
-			"Have questions or want to be part of our accommodation network? We'd love to meet you and work together to strengthen tourism in the region.",
-		ctaButton: 'Contact Us',
-	},
-	pt: {
-		heroText:
-			'Hospeda e a plataforma que conecta viajantes com acomodacoes autenticas e experiencias unicas em Concepcion del Uruguay e na regiao do Litoral argentino. Acreditamos no turismo responsavel e no valor das conexoes genuinas.',
-		missionTitle: 'Nossa Missao',
-		missionText:
-			'Conectar viajantes com acomodacoes autenticas na regiao do Litoral argentino, promovendo o turismo responsavel e sustentavel. Facilitamos a descoberta de experiencias unicas e fomentamos o desenvolvimento economico local atraves do turismo comunitario.',
-		valuesTitle: 'Nossos Valores',
-		values: [
-			{
-				title: 'Autenticidade',
-				text: 'Promovemos experiencias genuinas que refletem a cultura e a hospitalidade local do Litoral argentino.',
-			},
-			{
-				title: 'Comunidade',
-				text: 'Fortalecemos o tecido social local apoiando empreendimentos turisticos e gerando oportunidades economicas.',
-			},
-			{
-				title: 'Qualidade',
-				text: 'Comprometemo-nos a oferecer acomodacoes verificadas com altos padroes de conforto e servico.',
-			},
-			{
-				title: 'Sustentabilidade',
-				text: 'Incentivamos praticas turisticas responsaveis que preservam o patrimonio natural e cultural da regiao.',
-			},
-		],
-		regionTitle: 'Nossa Regiao',
-		regionText1:
-			'Concepcion del Uruguay e a regiao do Litoral argentino oferecem uma combinacao unica de historia, natureza e cultura. Das margens do Rio Uruguai ate as paisagens rurais, nossa regiao e o cenario perfeito para experiencias turisticas autenticas.',
-		regionText2:
-			'A regiao se caracteriza por sua rica heranca cultural, arquitetura colonial, festividades tradicionais, gastronomia local e a calidez de seu povo. Promovemos a descoberta destes tesouros atraves de acomodacoes que refletem a identidade local.',
-		ctaTitle: 'Vamos Nos Conectar e Crescer Juntos',
-		ctaText:
-			'Tem perguntas ou deseja fazer parte da nossa rede de acomodacoes? Adorariamos conhece-lo e trabalhar juntos para fortalecer o turismo na regiao.',
-		ctaButton: 'Entre em Contato',
-	},
-};
-
-const c = content[locale];
 
 /**
  * Icon components in order corresponding to values array entries:
@@ -197,13 +71,13 @@ const c = content[locale];
 const valueIcons = [CheckIcon, UsersIcon, CheckCircleIcon, GlobeIcon];
 ---
 
-<BaseLayout title={titles[locale]} description={descriptions[locale]} locale={locale}>
+<BaseLayout title={pageTitle} description={pageDescription} locale={locale}>
 	<SEOHead
 		slot="head"
-		title={titles[locale]}
-		description={descriptions[locale]}
+		title={pageTitle}
+		description={pageDescription}
 		canonical={canonicalUrl}
-		locale={locale === 'pt' ? 'es' : locale}
+		locale={locale}
 		type="website"
 	/>
 
@@ -215,19 +89,19 @@ const valueIcons = [CheckIcon, UsersIcon, CheckCircleIcon, GlobeIcon];
 				<!-- Hero Section -->
 				<article id="hero" class="mb-12 text-center">
 					<h1 class="mb-6 text-4xl font-bold text-text-primary md:text-5xl">
-						{titles[locale]}
+						{pageTitle}
 					</h1>
 					<p class="text-xl leading-relaxed text-text-secondary">
-						{c.heroText}
+						{heroText}
 					</p>
 				</article>
 
 				<!-- Mission Section -->
 				<article id="mission" class="mb-12">
 					<div class="rounded-lg bg-bg p-8 shadow-sm">
-						<h2 class="mb-4 text-3xl font-semibold text-text-primary">{c.missionTitle}</h2>
+						<h2 class="mb-4 text-3xl font-semibold text-text-primary">{missionTitle}</h2>
 						<p class="text-lg leading-relaxed text-text-secondary">
-							{c.missionText}
+							{missionText}
 						</p>
 					</div>
 				</article>
@@ -235,11 +109,11 @@ const valueIcons = [CheckIcon, UsersIcon, CheckCircleIcon, GlobeIcon];
 				<!-- Values Section -->
 				<article id="values" class="mb-12">
 					<h2 class="mb-8 text-center text-3xl font-semibold text-text-primary">
-						{c.valuesTitle}
+						{valuesTitle}
 					</h2>
 					<div class="grid gap-8 md:grid-cols-2">
 						{
-							c.values.map((value, index) => {
+							values.map((value, index) => {
 								const IconComponent = valueIcons[index];
 								return (
 									<div class="flex flex-col items-center text-center">
@@ -264,12 +138,12 @@ const valueIcons = [CheckIcon, UsersIcon, CheckCircleIcon, GlobeIcon];
 				<!-- Region Section -->
 				<article id="region" class="mb-12">
 					<div class="rounded-lg bg-bg p-8 shadow-sm">
-						<h2 class="mb-4 text-3xl font-semibold text-text-primary">{c.regionTitle}</h2>
+						<h2 class="mb-4 text-3xl font-semibold text-text-primary">{regionTitle}</h2>
 						<p class="mb-4 text-lg leading-relaxed text-text-secondary">
-							{c.regionText1}
+							{regionText1}
 						</p>
 						<p class="text-lg leading-relaxed text-text-secondary">
-							{c.regionText2}
+							{regionText2}
 						</p>
 					</div>
 				</article>
@@ -280,16 +154,16 @@ const valueIcons = [CheckIcon, UsersIcon, CheckCircleIcon, GlobeIcon];
 						class="rounded-lg bg-primary/10 p-8 text-center shadow-sm transition-shadow hover:shadow-md"
 					>
 						<h2 class="mb-4 text-3xl font-semibold text-text-primary">
-							{c.ctaTitle}
+							{ctaTitle}
 						</h2>
 						<p class="mb-6 text-lg leading-relaxed text-text-secondary">
-							{c.ctaText}
+							{ctaText}
 						</p>
 						<a
 							href={`/${locale}/contacto/`}
 							class="inline-block rounded-lg bg-primary px-8 py-3 font-semibold text-white transition-colors hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
 						>
-							{c.ctaButton}
+							{ctaButton}
 						</a>
 					</div>
 				</article>

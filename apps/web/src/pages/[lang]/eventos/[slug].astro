@@ -15,24 +15,25 @@ import Breadcrumb from '../../../components/ui/Breadcrumb.astro';
 import Container from '../../../components/ui/Container.astro';
 import Section from '../../../components/ui/Section.astro';
 import EventCard from '../../../components/event/EventCard.astro';
-import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
+import { getLocaleFromParams, HOME_BREADCRUMB, SUPPORTED_LOCALES } from '../../../lib/page-helpers';
 import { eventsApi } from '../../../lib/api/endpoints';
 import { fetchAllPages } from '../../../lib/api/client';
 import { CalendarIcon, ClockIcon, LocationIcon, ImageIcon } from '@repo/icons';
 import { ShareButtons } from '../../../components/ui/ShareButtons.client';
+import { toEventCardProps } from '../../../lib/api/transforms';
 import { extractFeaturedImageUrl } from '../../../lib/media';
+import { t } from '../../../lib/i18n';
 
 /**
  * Generate static paths for all events across all locales.
  * Pre-renders event detail pages at build time for SSG.
  */
 export async function getStaticPaths() {
-	const locales = ['es', 'en', 'pt'];
 	const events = await fetchAllPages({
 		fetcher: (p) => eventsApi.list(p),
 	});
 
-	return locales.flatMap((lang) =>
+	return SUPPORTED_LOCALES.flatMap((lang) =>
 		events
 			.filter((e) => e.slug)
 			.map((e) => ({
@@ -42,13 +43,10 @@ export async function getStaticPaths() {
 	);
 }
 
-const { lang, slug } = Astro.params;
+const { slug } = Astro.params;
 
-if (!lang || !isValidLocale(lang)) {
-	return Astro.redirect('/es/');
-}
-
-const locale = lang as SupportedLocale;
+const locale = getLocaleFromParams(Astro.params);
+if (!locale) return Astro.redirect('/es/');
 
 /**
  * Fetch event data from API.
@@ -79,98 +77,31 @@ const isPastEvent = event.endDate ? new Date(event.endDate) < new Date() : false
 const pageTitle = event.name;
 
 /**
- * Localized meta descriptions
+ * Localized meta description computed from event data
  */
 const eventDescription = event.description || event.summary || '';
-const descriptions: Record<SupportedLocale, string> = {
-	es: eventDescription.substring(0, 155) + (eventDescription.length > 155 ? '...' : ''),
-	en: eventDescription.substring(0, 155) + (eventDescription.length > 155 ? '...' : ''),
-	pt: eventDescription.substring(0, 155) + (eventDescription.length > 155 ? '...' : ''),
-};
+const metaDescription = eventDescription.substring(0, 155) + (eventDescription.length > 155 ? '...' : '');
 
 /**
- * Localized home breadcrumb labels
+ * Localized events breadcrumb label
  */
-const homeLabels: Record<SupportedLocale, string> = {
-	es: 'Inicio',
-	en: 'Home',
-	pt: 'Início',
-};
-
-/**
- * Localized events breadcrumb labels
- */
-const eventsLabels: Record<SupportedLocale, string> = {
-	es: 'Eventos',
-	en: 'Events',
-	pt: 'Eventos',
-};
+const eventsLabel = t({ locale, namespace: 'event', key: 'breadcrumb.events' });
 
 /**
  * Localized section labels
  */
-const labels = {
-	category: {
-		es: 'Categoría',
-		en: 'Category',
-		pt: 'Categoria',
-	},
-	date: {
-		es: 'Fecha',
-		en: 'Date',
-		pt: 'Data',
-	},
-	time: {
-		es: 'Horario',
-		en: 'Time',
-		pt: 'Horário',
-	},
-	location: {
-		es: 'Ubicación',
-		en: 'Location',
-		pt: 'Localização',
-	},
-	description: {
-		es: 'Descripción',
-		en: 'Description',
-		pt: 'Descrição',
-	},
-	agenda: {
-		es: 'Agenda del Evento',
-		en: 'Event Schedule',
-		pt: 'Programação do Evento',
-	},
-	pricing: {
-		es: 'Entradas y Precios',
-		en: 'Tickets and Pricing',
-		pt: 'Ingressos e Preços',
-	},
-	organizer: {
-		es: 'Organizado por',
-		en: 'Organized by',
-		pt: 'Organizado por',
-	},
-	getTickets: {
-		es: 'Obtener Entradas',
-		en: 'Get Tickets',
-		pt: 'Obter Ingressos',
-	},
-	relatedEvents: {
-		es: 'Eventos Relacionados',
-		en: 'Related Events',
-		pt: 'Eventos Relacionados',
-	},
-	shareEvent: {
-		es: 'Compartir Evento',
-		en: 'Share Event',
-		pt: 'Compartilhar Evento',
-	},
-	pastEvent: {
-		es: 'Evento Finalizado',
-		en: 'Past Event',
-		pt: 'Evento Encerrado',
-	},
-};
+const labelCategory = t({ locale, namespace: 'event', key: 'detail.category' });
+const labelDate = t({ locale, namespace: 'event', key: 'detail.date' });
+const labelTime = t({ locale, namespace: 'event', key: 'detail.time' });
+const labelLocation = t({ locale, namespace: 'event', key: 'detail.location' });
+const labelDescription = t({ locale, namespace: 'event', key: 'detail.description' });
+const labelAgenda = t({ locale, namespace: 'event', key: 'detail.agenda' });
+const labelPricing = t({ locale, namespace: 'event', key: 'detail.pricing' });
+const labelOrganizer = t({ locale, namespace: 'event', key: 'detail.organizer' });
+const labelGetTickets = t({ locale, namespace: 'event', key: 'detail.getTickets' });
+const labelRelatedEvents = t({ locale, namespace: 'event', key: 'detail.relatedEvents' });
+const labelShareEvent = t({ locale, namespace: 'event', key: 'detail.shareEvent' });
+const labelPastEvent = t({ locale, namespace: 'event', key: 'detail.pastEvent' });
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
@@ -178,8 +109,8 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
  * Breadcrumb navigation items
  */
 const breadcrumbItems = [
-	{ label: homeLabels[locale], href: `/${locale}/` },
-	{ label: eventsLabels[locale], href: `/${locale}/eventos/` },
+	{ label: HOME_BREADCRUMB[locale], href: `/${locale}/` },
+	{ label: eventsLabel, href: `/${locale}/eventos/` },
 	{ label: pageTitle, href: `/${locale}/eventos/${slug}/` },
 ];
 
@@ -192,22 +123,9 @@ const relatedEventsRaw = relResult.ok
 	? relResult.data.items.filter((e) => e.slug !== slug).slice(0, 3)
 	: [];
 
-const relatedEventCards = relatedEventsRaw.map((evt) => {
-	const e = evt as Record<string, unknown>;
-	return {
-		slug: String(e.slug || ''),
-		name: String(e.name || ''),
-		summary: String(e.summary || e.description || ''),
-		featuredImage: extractFeaturedImageUrl(e, '/images/placeholder-event.svg'),
-		category: String(e.category || ''),
-		date: {
-			start: String(e.startDate || ''),
-			end: e.endDate ? String(e.endDate) : undefined,
-		},
-		isFeatured: Boolean(e.isFeatured),
-		location: e.location as { name: string; city: string } | undefined,
-	};
-});
+const relatedEventCards = relatedEventsRaw.map((evt) =>
+	toEventCardProps({ item: evt as Record<string, unknown> })
+);
 
 /**
  * Format date for display
@@ -234,13 +152,13 @@ const formatTime = (dateString: string): string => {
 };
 ---
 
-<BaseLayout title={pageTitle} description={descriptions[locale]} locale={locale}>
+<BaseLayout title={pageTitle} description={metaDescription} locale={locale}>
 	<SEOHead
 		slot="head"
 		title={pageTitle}
-		description={descriptions[locale]}
+		description={metaDescription}
 		canonical={canonicalUrl}
-		locale={locale === 'pt' ? 'es' : locale}
+		locale={locale}
 		type="article"
 		image={eventImageUrl || undefined}
 	/>
@@ -270,7 +188,7 @@ const formatTime = (dateString: string): string => {
 						</span>
 						{isPastEvent && (
 							<span id="past-event-badge" class="inline-flex items-center rounded-full bg-gray-500/10 px-3 py-1 text-sm font-semibold text-gray-600">
-								{labels.pastEvent[locale]}
+								{labelPastEvent}
 							</span>
 						)}
 					</div>
@@ -285,7 +203,7 @@ const formatTime = (dateString: string): string => {
 						<div class="flex items-center gap-2">
 							<CalendarIcon size={20} className="text-primary" aria-hidden="true" />
 							<div>
-								<span class="font-semibold">{labels.date[locale]}:</span>
+								<span class="font-semibold">{labelDate}:</span>
 								<span class="ml-1">{formatDate(event.startDate)}</span>
 							</div>
 						</div>
@@ -294,7 +212,7 @@ const formatTime = (dateString: string): string => {
 						<div class="flex items-center gap-2">
 							<ClockIcon size={20} className="text-primary" aria-hidden="true" />
 							<div>
-								<span class="font-semibold">{labels.time[locale]}:</span>
+								<span class="font-semibold">{labelTime}:</span>
 								<span class="ml-1">{formatTime(event.startDate)}</span>
 							</div>
 						</div>
@@ -304,7 +222,7 @@ const formatTime = (dateString: string): string => {
 							<div class="flex items-center gap-2">
 								<LocationIcon size={20} className="text-primary" aria-hidden="true" />
 								<div>
-									<span class="font-semibold">{labels.location[locale]}:</span>
+									<span class="font-semibold">{labelLocation}:</span>
 									<span class="ml-1">{event.location.name}</span>
 								</div>
 							</div>
@@ -339,7 +257,7 @@ const formatTime = (dateString: string): string => {
 						<!-- Description Section -->
 						<article id="event-description" class="rounded-lg bg-bg p-6 shadow-sm">
 							<h2 class="mb-4 text-2xl font-semibold text-text-primary">
-								{labels.description[locale]}
+								{labelDescription}
 							</h2>
 							<p class="text-lg leading-relaxed text-text-secondary">
 								{event.description || event.summary}
@@ -350,7 +268,7 @@ const formatTime = (dateString: string): string => {
 						{event.agenda && Array.isArray(event.agenda) && event.agenda.length > 0 && (
 							<article id="event-schedule" class="rounded-lg bg-bg p-6 shadow-sm">
 								<h2 class="mb-6 text-2xl font-semibold text-text-primary">
-									{labels.agenda[locale]}
+									{labelAgenda}
 								</h2>
 								<ol class="space-y-4">
 									{event.agenda.map((item: { time?: string; title?: string; description?: string }, index: number) => (
@@ -374,7 +292,7 @@ const formatTime = (dateString: string): string => {
 						<!-- Share Buttons -->
 						<article id="share-buttons" class="rounded-lg bg-bg p-6 shadow-sm">
 							<h3 class="mb-4 text-lg font-semibold text-text-primary">
-								{labels.shareEvent[locale]}
+								{labelShareEvent}
 							</h3>
 							<ShareButtons
 								client:visible
@@ -391,7 +309,7 @@ const formatTime = (dateString: string): string => {
 						{(event.price || event.ticketUrl) && (
 							<article id="event-pricing" class="rounded-lg bg-bg p-6 shadow-sm">
 								<h2 class="mb-4 text-xl font-semibold text-text-primary">
-									{labels.pricing[locale]}
+									{labelPricing}
 								</h2>
 								{event.price && (
 									<p class="mb-4 text-2xl font-bold text-primary">
@@ -405,7 +323,7 @@ const formatTime = (dateString: string): string => {
 										target="_blank"
 										rel="noopener noreferrer"
 									>
-										{labels.getTickets[locale]}
+										{labelGetTickets}
 									</a>
 								)}
 							</article>
@@ -415,7 +333,7 @@ const formatTime = (dateString: string): string => {
 						{event.organizer && (
 							<article id="event-organizer" class="rounded-lg bg-bg p-6 shadow-sm">
 								<h3 class="mb-2 text-sm font-semibold uppercase tracking-wide text-text-tertiary">
-									{labels.organizer[locale]}
+									{labelOrganizer}
 								</h3>
 								<p class="text-lg font-semibold text-text-primary">
 									{event.organizer}
@@ -429,9 +347,9 @@ const formatTime = (dateString: string): string => {
 				{relatedEventCards.length > 0 && (
 					<article id="related-events" class="mt-12">
 						<h2 class="mb-6 text-center text-3xl font-semibold text-text-primary">
-							{labels.relatedEvents[locale]}
+							{labelRelatedEvents}
 						</h2>
-						<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" role="region" aria-label={labels.relatedEvents[locale]}>
+						<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" role="region" aria-label={labelRelatedEvents}>
 							{relatedEventCards.map((event) => (
 								<EventCard
 									event={event}

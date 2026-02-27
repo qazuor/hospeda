@@ -1,9 +1,7 @@
 ---
 export const prerender = true;
 
-export function getStaticPaths() {
-	return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
-}
+export { getStaticLocalePaths as getStaticPaths } from '../../lib/page-helpers';
 
 /**
  * Contact page - form and contact information.
@@ -14,65 +12,20 @@ import SEOHead from '../../components/seo/SEOHead.astro';
 import Breadcrumb from '../../components/ui/Breadcrumb.astro';
 import Container from '../../components/ui/Container.astro';
 import Section from '../../components/ui/Section.astro';
-import { ContactForm } from '../../components/forms/ContactForm.client';
-import { isValidLocale, type SupportedLocale } from '../../lib/i18n';
+import { ContactForm } from '../../components/content/ContactForm.client';
+import { getLocaleFromParams, HOME_BREADCRUMB } from '../../lib/page-helpers';
+import { t } from '../../lib/i18n';
 import { EmailIcon, LocationIcon, ClockIcon, InstagramIcon, FacebookIcon, TwitterIcon } from '@repo/icons';
 
-const { lang } = Astro.params;
+const locale = getLocaleFromParams(Astro.params);
+if (!locale) return Astro.redirect('/es/');
 
-if (!lang || !isValidLocale(lang)) {
-	return Astro.redirect('/es/');
-}
-
-const locale = lang as SupportedLocale;
-
-/**
- * Localized page titles
- */
-const titles: Record<SupportedLocale, string> = {
-	es: 'Contacto',
-	en: 'Contact',
-	pt: 'Contato',
-};
-
-/**
- * Localized meta descriptions
- */
-const descriptions: Record<SupportedLocale, string> = {
-	es: 'Contacta con Hospeda. Estamos aquí para ayudarte con tus consultas sobre alojamiento en Concepción del Uruguay',
-	en: 'Contact Hospeda. We are here to help you with your accommodation inquiries in Concepción del Uruguay',
-	pt: 'Entre em contato com Hospeda. Estamos aqui para ajudá-lo com suas dúvidas sobre acomodação em Concepción del Uruguay',
-};
-
-/**
- * Localized home breadcrumb labels
- */
-const homeLabels: Record<SupportedLocale, string> = {
-	es: 'Inicio',
-	en: 'Home',
-	pt: 'Início',
-};
-
-/**
- * Localized contact info labels (form handling moved to ContactForm.client.tsx)
- */
-const formLabels = {
-	es: {
-		contactInfo: 'Información de contacto',
-		officeHours: 'Horario de atención',
-		officeHoursValue: 'Lunes a Viernes, 9:00 - 18:00',
-	},
-	en: {
-		contactInfo: 'Contact information',
-		officeHours: 'Office hours',
-		officeHoursValue: 'Monday to Friday, 9:00 AM - 6:00 PM',
-	},
-	pt: {
-		contactInfo: 'Informações de contato',
-		officeHours: 'Horário de atendimento',
-		officeHoursValue: 'Segunda a Sexta, 9:00 - 18:00',
-	},
-};
+const title = t({ locale, namespace: 'contact', key: 'page.title' });
+const description = t({ locale, namespace: 'contact', key: 'page.description' });
+const contactInfo = t({ locale, namespace: 'contact', key: 'page.contactInfo' });
+const officeHours = t({ locale, namespace: 'contact', key: 'page.officeHours' });
+const officeHoursValue = t({ locale, namespace: 'contact', key: 'page.officeHoursValue' });
+const followUs = t({ locale, namespace: 'contact', key: 'page.followUs' });
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
@@ -80,20 +33,18 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
  * Breadcrumb navigation items
  */
 const breadcrumbItems = [
-	{ label: homeLabels[locale], href: `/${locale}/` },
-	{ label: titles[locale], href: `/${locale}/contacto/` },
+	{ label: HOME_BREADCRUMB[locale], href: `/${locale}/` },
+	{ label: title, href: `/${locale}/contacto/` },
 ];
-
-const labels = formLabels[locale];
 ---
 
-<BaseLayout title={titles[locale]} description={descriptions[locale]} locale={locale}>
+<BaseLayout title={title} description={description} locale={locale}>
 	<SEOHead
 		slot="head"
-		title={titles[locale]}
-		description={descriptions[locale]}
+		title={title}
+		description={description}
 		canonical={canonicalUrl}
-		locale={locale === 'pt' ? 'es' : locale}
+		locale={locale}
 		type="website"
 	/>
 
@@ -103,20 +54,20 @@ const labels = formLabels[locale];
 		<Section>
 			<div class="mx-auto max-w-7xl">
 				<h1 class="mb-8 text-4xl font-bold text-text-primary">
-					{titles[locale]}
+					{title}
 				</h1>
 
 				<div class="grid gap-12 lg:grid-cols-2">
 					<!-- Left column: Contact form (React island) -->
 					<div class="order-2 lg:order-1">
-						<ContactForm client:visible locale={locale === 'pt' ? 'es' : locale} />
+						<ContactForm client:visible locale={locale} />
 					</div>
 
 					<!-- Right column: Contact information -->
 					<div class="order-1 lg:order-2">
 						<div class="rounded-lg border border-border bg-bg-secondary p-8">
 							<h2 class="mb-6 text-2xl font-semibold text-text-primary">
-								{labels.contactInfo}
+								{contactInfo}
 							</h2>
 
 							<div class="space-y-6">
@@ -161,9 +112,9 @@ const labels = formLabels[locale];
 										<ClockIcon size={20} className="text-primary" aria-hidden="true" />
 									</div>
 									<div>
-										<p class="font-medium text-text-primary">{labels.officeHours}</p>
+										<p class="font-medium text-text-primary">{officeHours}</p>
 										<p class="text-text-secondary">
-											{labels.officeHoursValue}
+											{officeHoursValue}
 										</p>
 									</div>
 								</div>
@@ -171,7 +122,7 @@ const labels = formLabels[locale];
 								<!-- Social media -->
 								<div class="border-t border-border pt-6">
 									<p class="mb-4 font-medium text-text-primary">
-										{locale === 'es' ? 'Síguenos' : locale === 'en' ? 'Follow us' : 'Siga-nos'}
+										{followUs}
 									</p>
 									<div class="flex gap-4">
 										<a

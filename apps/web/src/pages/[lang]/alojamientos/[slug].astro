@@ -22,7 +22,7 @@ import Badge from '../../../components/ui/Badge.astro';
 import Breadcrumb from '../../../components/ui/Breadcrumb.astro';
 import SEOHead from '../../../components/seo/SEOHead.astro';
 import LodgingBusinessJsonLd from '../../../components/seo/LodgingBusinessJsonLd.astro';
-import AccommodationCard from '../../../components/accommodation/AccommodationCard.astro';
+import AccommodationCardFeatured from '../../../components/accommodation/AccommodationCardFeatured.astro';
 import AmenitiesList from '../../../components/accommodation/AmenitiesList.astro';
 import { ImageGallery } from '../../../components/ui/ImageGallery.client.tsx';
 import { ShareButtons } from '../../../components/ui/ShareButtons.client.tsx';
@@ -31,26 +31,24 @@ import { AccordionFAQ } from '../../../components/ui/AccordionFAQ.client.tsx';
 import { MapView } from '../../../components/map/MapView.client.tsx';
 import ReviewListIsland from '../../../components/review/ReviewListIsland.astro';
 import PriceDisplay from '../../../components/ui/PriceDisplay.astro';
-import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
+import { SUPPORTED_LOCALES, getLocaleFromParams } from '../../../lib/page-helpers';
+import { t as i18nT } from '../../../lib/i18n';
 import { renderTiptapContent } from '../../../lib/tiptap-renderer';
 import { accommodationsApi } from '../../../lib/api/endpoints';
 import { fetchAllPages } from '../../../lib/api/client';
+import { toAccommodationCardProps } from '../../../lib/api/transforms';
 import { extractFeaturedImageUrl, extractGalleryUrls } from '../../../lib/media';
 
-const { lang, slug } = Astro.params;
+const { slug } = Astro.params;
 
-// Validate locale and redirect to default if invalid
-if (!lang || !isValidLocale(lang)) {
-  return Astro.redirect('/es/');
-}
-
-const locale = lang as SupportedLocale;
+const locale = getLocaleFromParams(Astro.params);
+if (!locale) return Astro.redirect('/es/');
 
 /**
  * getStaticPaths - Generate static paths for all accommodations
  */
 export async function getStaticPaths() {
-  const locales = ['es', 'en', 'pt'];
+  const locales = SUPPORTED_LOCALES;
   const accommodations = await fetchAllPages({
     fetcher: (p) => accommodationsApi.list(p),
   });
@@ -92,96 +90,28 @@ const allAccommodations = simResult.ok ? simResult.data.items : [];
 const similarCards = allAccommodations
   .filter((a) => a.id !== accommodation.id)
   .slice(0, 3)
-  .map((item) => {
-    const a = item as Record<string, unknown>;
-    return {
-      slug: String(a.slug || ''),
-      name: String(a.name || ''),
-      summary: String(a.summary || a.description || ''),
-      type: String(a.type || a.accommodationType || ''),
-      featuredImage: extractFeaturedImageUrl(a, '/images/placeholder-accommodation.svg'),
-      averageRating: Number(a.averageRating || 0),
-      reviewsCount: Number(a.reviewsCount || 0),
-      location: (a.location as { city: string; state: string }) || { city: '', state: '' },
-      isFeatured: Boolean(a.isFeatured),
-    };
-  });
+  .map((item) => toAccommodationCardProps({ item: item as Record<string, unknown> }));
 
-// Reviews will be integrated later - use empty array for now
-const mockReviews: unknown[] = [];
+// Localized texts via i18n
+const tAcc = (key: string) => i18nT({ locale, namespace: 'accommodations', key: `detail.${key}` });
 
-// Localized texts
-const texts: Record<SupportedLocale, {
-  home: string;
-  accommodations: string;
-  description: string;
-  amenities: string;
-  location: string;
-  reviews: string;
-  faq: string;
-  similar: string;
-  perNight: string;
-  share: string;
-  checkIn: string;
-  checkOut: string;
-  stars: string;
-  reviewsLabel: string;
-  bookNow: string;
-}> = {
-  es: {
-    home: 'Inicio',
-    accommodations: 'Alojamientos',
-    description: 'Descripción',
-    amenities: 'Servicios',
-    location: 'Ubicación',
-    reviews: 'Reseñas',
-    faq: 'Preguntas frecuentes',
-    similar: 'Alojamientos similares',
-    perNight: 'por noche',
-    share: 'Compartir',
-    checkIn: 'Check-in',
-    checkOut: 'Check-out',
-    stars: 'estrellas',
-    reviewsLabel: 'reseñas',
-    bookNow: 'Reservar ahora',
-  },
-  en: {
-    home: 'Home',
-    accommodations: 'Accommodations',
-    description: 'Description',
-    amenities: 'Amenities',
-    location: 'Location',
-    reviews: 'Reviews',
-    faq: 'Frequently Asked Questions',
-    similar: 'Similar Accommodations',
-    perNight: 'per night',
-    share: 'Share',
-    checkIn: 'Check-in',
-    checkOut: 'Check-out',
-    stars: 'stars',
-    reviewsLabel: 'reviews',
-    bookNow: 'Book now',
-  },
-  pt: {
-    home: 'Início',
-    accommodations: 'Acomodações',
-    description: 'Descrição',
-    amenities: 'Serviços',
-    location: 'Localização',
-    reviews: 'Avaliações',
-    faq: 'Perguntas frequentes',
-    similar: 'Acomodações similares',
-    perNight: 'por noite',
-    share: 'Compartilhar',
-    checkIn: 'Check-in',
-    checkOut: 'Check-out',
-    stars: 'estrelas',
-    reviewsLabel: 'avaliações',
-    bookNow: 'Reservar agora',
-  },
+const t = {
+  home: tAcc('home'),
+  accommodations: tAcc('accommodations'),
+  description: tAcc('description'),
+  amenities: tAcc('amenities'),
+  location: tAcc('location'),
+  reviews: tAcc('reviews'),
+  faq: tAcc('faq'),
+  similar: tAcc('similar'),
+  perNight: tAcc('perNight'),
+  share: tAcc('share'),
+  checkIn: tAcc('checkIn'),
+  checkOut: tAcc('checkOut'),
+  stars: tAcc('stars'),
+  reviewsLabel: tAcc('reviewsLabel'),
+  bookNow: tAcc('bookNow'),
 };
-
-const t = texts[locale];
 
 // Breadcrumb navigation items
 const breadcrumbItems = [
@@ -308,7 +238,7 @@ const mapMarkers = [
           <h2 class="mb-4 text-2xl font-bold">{t.reviews}</h2>
           <ReviewListIsland
             server:defer
-            reviews={mockReviews}
+            reviews={[]}
             totalCount={accommodation.reviewCount || 0}
             locale={locale}
             hasMore={false}
@@ -367,7 +297,7 @@ const mapMarkers = [
     <Section title={t.similar} class="mt-12">
       <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {similarCards.map((accommodation) => (
-          <AccommodationCard
+          <AccommodationCardFeatured
             accommodation={accommodation}
             locale={locale}
           />

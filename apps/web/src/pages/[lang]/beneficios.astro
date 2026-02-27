@@ -1,9 +1,7 @@
 ---
 export const prerender = true;
 
-export function getStaticPaths() {
-	return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
-}
+export { getStaticLocalePaths as getStaticPaths } from '../../lib/page-helpers';
 
 /**
  * Benefits page - showcases benefits for tourists and property owners.
@@ -14,43 +12,15 @@ import SEOHead from '../../components/seo/SEOHead.astro';
 import Breadcrumb from '../../components/ui/Breadcrumb.astro';
 import Container from '../../components/ui/Container.astro';
 import Section from '../../components/ui/Section.astro';
-import { isValidLocale, type SupportedLocale } from '../../lib/i18n';
+import { getLocaleFromParams, HOME_BREADCRUMB } from '../../lib/page-helpers';
+import { t } from '../../lib/i18n';
 import { HomeIcon, ShieldIcon, LocationIcon, StarIcon, InfoIcon, UserIcon, CheckIcon, UsersIcon } from '@repo/icons';
 
-const { lang } = Astro.params;
+const locale = getLocaleFromParams(Astro.params);
+if (!locale) return Astro.redirect('/es/');
 
-if (!lang || !isValidLocale(lang)) {
-	return Astro.redirect('/es/');
-}
-
-const locale = lang as SupportedLocale;
-
-/**
- * Localized page titles
- */
-const titles: Record<SupportedLocale, string> = {
-	es: 'Beneficios',
-	en: 'Benefits',
-	pt: 'Beneficios',
-};
-
-/**
- * Localized meta descriptions
- */
-const descriptions: Record<SupportedLocale, string> = {
-	es: 'Descubre los beneficios de usar Hospeda para turistas y propietarios de alojamientos en el Litoral argentino',
-	en: 'Discover the benefits of using Hospeda for tourists and accommodation owners in the Argentine Litoral region',
-	pt: 'Descubra os benefícios de usar a Hospeda para turistas e proprietários de acomodações no Litoral argentino',
-};
-
-/**
- * Localized home breadcrumb labels
- */
-const homeLabels: Record<SupportedLocale, string> = {
-	es: 'Inicio',
-	en: 'Home',
-	pt: 'Início',
-};
+const title = t({ locale, namespace: 'benefits', key: 'page.title' });
+const description = t({ locale, namespace: 'benefits', key: 'page.description' });
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
@@ -58,18 +28,18 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
  * Breadcrumb navigation items
  */
 const breadcrumbItems = [
-	{ label: homeLabels[locale], href: `/${locale}/` },
-	{ label: titles[locale], href: `/${locale}/beneficios/` },
+	{ label: HOME_BREADCRUMB[locale], href: `/${locale}/` },
+	{ label: title, href: `/${locale}/beneficios/` },
 ];
 ---
 
-<BaseLayout title={titles[locale]} description={descriptions[locale]} locale={locale}>
+<BaseLayout title={title} description={description} locale={locale}>
 	<SEOHead
 		slot="head"
-		title={titles[locale]}
-		description={descriptions[locale]}
+		title={title}
+		description={description}
 		canonical={canonicalUrl}
-		locale={locale === 'pt' ? 'es' : locale}
+		locale={locale}
 		type="website"
 	/>
 
@@ -81,7 +51,7 @@ const breadcrumbItems = [
 				<!-- Hero Section -->
 				<article id="hero" class="mb-12 text-center">
 					<h1 class="mb-6 text-4xl font-bold text-text-primary md:text-5xl">
-						{titles[locale]}
+						{title}
 					</h1>
 					<p class="text-xl leading-relaxed text-text-secondary">
 						Hospeda conecta viajeros con alojamientos auténticos y apoya a propietarios con

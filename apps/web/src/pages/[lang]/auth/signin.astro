@@ -2,22 +2,18 @@
 /**
  * Sign in page - allows users to log in to their account.
  * NOTE: This page must NOT be prerendered because it reads `returnUrl` from query params.
- * Uses the SignInIsland React island for interactive authentication via Better Auth.
+ * Uses the SignInClient React island for interactive authentication via Better Auth.
  * Validates locale parameter and redirects invalid locales to Spanish (default).
  */
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import SEOHead from '../../../components/seo/SEOHead.astro';
 import Container from '../../../components/ui/Container.astro';
-import { SignInIsland } from '../../../components/auth/SignInIsland';
-import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
+import { SignInClient } from '../../../components/auth/SignIn.client';
+import { getLocaleFromParams } from '../../../lib/page-helpers';
+import { t } from '../../../lib/i18n';
 
-const { lang } = Astro.params;
-
-if (!lang || !isValidLocale(lang)) {
-	return Astro.redirect('/es/');
-}
-
-const locale = lang as SupportedLocale;
+const locale = getLocaleFromParams(Astro.params);
+if (!locale) return Astro.redirect('/es/');
 
 /**
  * Redirect authenticated users to home page.
@@ -27,23 +23,8 @@ if (Astro.locals.user) {
 	return Astro.redirect(`/${locale}/`);
 }
 
-/**
- * Localized page titles
- */
-const titles: Record<SupportedLocale, string> = {
-	es: 'Iniciar sesión',
-	en: 'Sign In',
-	pt: 'Entrar',
-};
-
-/**
- * Localized meta descriptions
- */
-const descriptions: Record<SupportedLocale, string> = {
-	es: 'Inicia sesión en tu cuenta de Hospeda para acceder a tus reservas y favoritos',
-	en: 'Sign in to your Hospeda account to access your bookings and favorites',
-	pt: 'Entre na sua conta do Hospeda para acessar suas reservas e favoritos',
-};
+const title = t({ locale, namespace: 'auth-ui', key: 'pages.signin.title' });
+const description = t({ locale, namespace: 'auth-ui', key: 'pages.signin.description' });
 
 /**
  * Localized labels
@@ -80,13 +61,13 @@ const siteOrigin = import.meta.env.PUBLIC_SITE_URL || import.meta.env.HOSPEDA_SI
 const redirectTo = new URL(returnPath, siteOrigin).href;
 ---
 
-<BaseLayout title={titles[locale]} description={descriptions[locale]} locale={locale}>
+<BaseLayout title={title} description={description} locale={locale}>
 	<SEOHead
 		slot="head"
-		title={titles[locale]}
-		description={descriptions[locale]}
+		title={title}
+		description={description}
 		canonical={canonicalUrl}
-		locale={locale === 'pt' ? 'es' : locale}
+		locale={locale}
 		type="website"
 		noindex={true}
 	/>
@@ -95,7 +76,7 @@ const redirectTo = new URL(returnPath, siteOrigin).href;
 		<div class="flex min-h-screen items-center justify-center py-12">
 			<div class="w-full max-w-md">
 				<div class="rounded-lg border border-border bg-bg-secondary p-8 shadow-lg">
-					<SignInIsland
+					<SignInClient
 						client:load
 						redirectTo={redirectTo}
 						showOAuth={true}

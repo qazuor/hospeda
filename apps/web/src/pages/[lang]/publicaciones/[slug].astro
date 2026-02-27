@@ -17,24 +17,23 @@ import SEOHead from '../../../components/seo/SEOHead.astro';
 import ArticleJsonLd from '../../../components/seo/ArticleJsonLd.astro';
 import { ShareButtons } from '../../../components/ui/ShareButtons.client.tsx';
 import BlogPostCard from '../../../components/blog/BlogPostCard.astro';
-import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
+import { SUPPORTED_LOCALES, getLocaleFromParams } from '../../../lib/page-helpers';
 import { renderTiptapContent } from '../../../lib/tiptap-renderer';
 import { postsApi } from '../../../lib/api/endpoints';
 import { fetchAllPages } from '../../../lib/api/client';
+import { toPostCardProps } from '../../../lib/api/transforms';
+import { t as i18nT } from '../../../lib/i18n';
 
-const { lang, slug } = Astro.params;
+const { slug } = Astro.params;
 
-if (!lang || !isValidLocale(lang)) {
-	return Astro.redirect('/es/');
-}
-
-const locale = lang as SupportedLocale;
+const locale = getLocaleFromParams(Astro.params);
+if (!locale) return Astro.redirect('/es/');
 
 /**
  * getStaticPaths - Generate static paths for all posts
  */
 export async function getStaticPaths() {
-	const locales = ['es', 'en', 'pt'];
+	const locales = SUPPORTED_LOCALES;
 	const posts = await fetchAllPages({
 		fetcher: (p) => postsApi.list(p),
 	});
@@ -65,7 +64,7 @@ const allPosts = relResult.ok ? relResult.data.items : [];
 const relatedPosts = allPosts
 	.filter((p) => p.id !== post.id)
 	.slice(0, 3)
-	.map((p) => ({ post: p }));
+	.map((p) => ({ post: toPostCardProps({ item: p as Record<string, unknown> }) }));
 
 /**
  * Render TipTap content to HTML
@@ -73,46 +72,14 @@ const relatedPosts = allPosts
 const renderedContent = renderTiptapContent({ content: post.content });
 
 /**
- * Localized texts for UI elements
+ * Localized labels from i18n
  */
-const texts: Record<
-	SupportedLocale,
-	{
-		blog: string;
-		relatedPosts: string;
-		share: string;
-		tags: string;
-		readingTime: string;
-		home: string;
-	}
-> = {
-	es: {
-		blog: 'Blog',
-		relatedPosts: 'Publicaciones relacionadas',
-		share: 'Compartir',
-		tags: 'Etiquetas',
-		readingTime: 'min de lectura',
-		home: 'Inicio',
-	},
-	en: {
-		blog: 'Blog',
-		relatedPosts: 'Related Posts',
-		share: 'Share',
-		tags: 'Tags',
-		readingTime: 'min read',
-		home: 'Home',
-	},
-	pt: {
-		blog: 'Blog',
-		relatedPosts: 'Publicações relacionadas',
-		share: 'Compartilhar',
-		tags: 'Tags',
-		readingTime: 'min de leitura',
-		home: 'Início',
-	},
-};
-
-const t = texts[locale];
+const blogLabel = i18nT({ locale, namespace: 'blog', key: 'detail.blog' });
+const relatedPostsLabel = i18nT({ locale, namespace: 'blog', key: 'detail.relatedPosts' });
+const shareLabel = i18nT({ locale, namespace: 'blog', key: 'detail.share' });
+const tagsLabel = i18nT({ locale, namespace: 'blog', key: 'detail.tags' });
+const readingTimeLabel = i18nT({ locale, namespace: 'blog', key: 'detail.readingTime' });
+const homeLabel = i18nT({ locale, namespace: 'blog', key: 'detail.home' });
 
 /**
  * Format publication date according to locale
@@ -131,8 +98,8 @@ const formattedDate = publishDate.toLocaleDateString(
  * Breadcrumb navigation items
  */
 const breadcrumbItems = [
-	{ label: t.home, href: `/${locale}/` },
-	{ label: t.blog, href: `/${locale}/publicaciones/` },
+	{ label: homeLabel, href: `/${locale}/` },
+	{ label: blogLabel, href: `/${locale}/publicaciones/` },
 	{ label: post.category || 'Blog', href: `/${locale}/publicaciones/` },
 ];
 
@@ -151,7 +118,7 @@ const canonicalUrl = new URL(pageUrl, Astro.site).href;
 		canonical={canonicalUrl}
 		image={post.coverImage || '/images/placeholder-blog.svg'}
 		type="article"
-		locale={locale === 'pt' ? 'es' : locale}
+		locale={locale}
 	/>
 	<ArticleJsonLd
 		slot="head"
@@ -197,7 +164,7 @@ const canonicalUrl = new URL(pageUrl, Astro.site).href;
 					<p class="font-medium text-gray-900">{post.author?.name || 'Anonymous'}</p>
 					<p class="text-sm">
 						{formattedDate} · {post.readingTime || 5}
-						{t.readingTime}
+						{readingTimeLabel}
 					</p>
 				</div>
 			</div>
@@ -208,7 +175,7 @@ const canonicalUrl = new URL(pageUrl, Astro.site).href;
 			<!-- Tags -->
 			<div class="mt-8 border-t pt-6">
 				<h3 class="mb-3 text-sm font-semibold uppercase text-gray-500">
-					{t.tags}
+					{tagsLabel}
 				</h3>
 				<div class="flex flex-wrap gap-2">
 					{
@@ -222,14 +189,14 @@ const canonicalUrl = new URL(pageUrl, Astro.site).href;
 			<!-- Share -->
 			<div class="mt-6 border-t pt-6">
 				<h3 class="mb-3 text-sm font-semibold uppercase text-gray-500">
-					{t.share}
+					{shareLabel}
 				</h3>
 				<ShareButtons client:visible url={canonicalUrl} title={post.title} />
 			</div>
 		</article>
 
 		<!-- Related Posts -->
-		<Section title={t.relatedPosts} class="mt-12">
+		<Section title={relatedPostsLabel} class="mt-12">
 			<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
 				{
 					relatedPosts.map((rp) => (

@@ -6,31 +6,29 @@
  *
  * @route /[lang]/alojamientos/tipo/[type]/page/[page]/
  */
-import { isValidLocale } from '../../../../../../lib/i18n';
+import { getLocaleFromParams } from '../../../../../../lib/page-helpers';
 
 const ALLOWED_TYPES = ['hotel', 'hostel', 'cabin', 'apartment', 'camping', 'estancia', 'posada'] as const;
 
-const { lang, type, page } = Astro.params;
-
-if (!lang || !isValidLocale(lang)) {
-  return Astro.redirect('/es/');
-}
+const { type, page } = Astro.params;
+const locale = getLocaleFromParams(Astro.params);
+if (!locale) return Astro.redirect('/es/');
 
 if (!type || !ALLOWED_TYPES.includes(type as (typeof ALLOWED_TYPES)[number])) {
-  return Astro.redirect(`/${lang}/alojamientos/`);
+  return Astro.redirect(`/${locale}/alojamientos/`);
 }
 
 const pageNum = Number.parseInt(page || '1', 10);
 
 if (Number.isNaN(pageNum) || pageNum < 1) {
-  return Astro.redirect(`/${lang}/alojamientos/tipo/${type}/`);
+  return Astro.redirect(`/${locale}/alojamientos/tipo/${type}/`);
 }
 
 /** Page 1 should use the canonical base URL without /page/ segment */
 if (pageNum === 1) {
-  return Astro.redirect(`/${lang}/alojamientos/tipo/${type}/`);
+  return Astro.redirect(`/${locale}/alojamientos/tipo/${type}/`);
 }
 
 /** Rewrite to the type index page with the page query parameter */
-return Astro.rewrite(`/${lang}/alojamientos/tipo/${type}/?page=${pageNum}`);
+return Astro.rewrite(`/${locale}/alojamientos/tipo/${type}/?page=${pageNum}`);
 ---

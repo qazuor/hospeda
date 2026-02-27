@@ -1,277 +1,270 @@
 ---
-export const prerender = true;
+export const prerender = false;
 
 /**
- * Returns static paths for all supported locales.
- * Combined with ISR (configured globally in astro.config.mjs),
- * pages are pre-rendered at build time and revalidated on-demand.
- */
-export function getStaticPaths() {
-  return [
-    { params: { lang: 'es' } },
-    { params: { lang: 'en' } },
-    { params: { lang: 'pt' } },
-  ];
-}
-
-/**
- * Accommodation List page
- * Displays a paginated, sortable grid of accommodation listings.
+ * Accommodation List page - Airbnb-style redesign.
+ * SSR page with URL query params for search, filters, sorting, and pagination.
  *
  * @route /[lang]/alojamientos/
- * @rendering SSG + ISR (Static Site Generation with Incremental Static Regeneration)
+ * @rendering SSR (Server-Side Rendering) - filters require dynamic query params
  */
 
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import Container from '../../../components/ui/Container.astro';
 import Breadcrumb from '../../../components/ui/Breadcrumb.astro';
 import SEOHead from '../../../components/seo/SEOHead.astro';
-import AccommodationCard from '../../../components/accommodation/AccommodationCard.astro';
+import AccommodationCardDetailed from '../../../components/accommodation/AccommodationCardDetailed.astro';
+import SearchBar from '../../../components/accommodation/SearchBar.astro';
+import { FilterChipsBar } from '../../../components/accommodation/FilterChipsBar.client';
+import ActiveFilters from '../../../components/accommodation/ActiveFilters.astro';
+import SortDropdown from '../../../components/accommodation/SortDropdown.astro';
 import EmptyState from '../../../components/ui/EmptyState.astro';
+import AccommodationErrorState from '../../../components/error/AccommodationErrorState.astro';
 import Pagination from '../../../components/ui/Pagination.astro';
-import { ViewToggle } from '../../../components/ui/ViewToggle.client.tsx';
-import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
+import type { AccommodationPublic } from '@repo/schemas';
+import { getLocaleFromParams, type SupportedLocale } from '../../../lib/page-helpers';
+import { t as i18nT } from '../../../lib/i18n';
 import { accommodationsApi } from '../../../lib/api/endpoints';
-import { extractFeaturedImageUrl } from '../../../lib/media';
+import { toAccommodationDetailedProps } from '../../../lib/api/transforms';
 
-const { lang } = Astro.params;
-
-if (!lang || !isValidLocale(lang)) {
-  return Astro.redirect('/es/');
+/** API response shape with optional relations and nested data */
+interface AccommodationWithRelations extends AccommodationPublic {
+    readonly location?: {
+        readonly city?: string;
+        readonly state?: string | null;
+    };
+    readonly reviewsCount?: number;
+    readonly extraInfo?: {
+        readonly capacity?: number;
+        readonly bedrooms?: number;
+        readonly beds?: number;
+        readonly bathrooms?: number;
+    };
+    readonly price?: {
+        readonly amount: number;
+        readonly currency: string;
+    };
 }
 
-const locale = lang as SupportedLocale;
+const locale = getLocaleFromParams(Astro.params);
+if (!locale) return Astro.redirect('/es/');
+const basePath = `/${locale}/alojamientos/`;
 
-// Get query params for filtering/sorting
-// Astro.url.searchParams works for both SSG and ISR modes
-const sortBy = Astro.url.searchParams.get('sortBy') || 'name';
-const typeFilter = Astro.url.searchParams.get('type') || undefined;
-const page = Number.parseInt(Astro.url.searchParams.get('page') || '1', 10);
+// ─── Read ALL query params ──────────────────────────────────────────────────
+const sp = Astro.url.searchParams;
+const q = sp.get('q') || undefined;
+const typeFilter = sp.get('type') || undefined;
+const sortParam = sp.get('sortBy') || 'featured';
+
+// Map user-friendly sort values to actual DB column names + direction
+const SORT_MAP: Record<string, { sortBy: string; sortOrder: 'asc' | 'desc' }> = {
+    featured: { sortBy: 'isFeatured', sortOrder: 'desc' },
+    price_asc: { sortBy: 'name', sortOrder: 'asc' }, // price is JSONB, fallback to name
+    price_desc: { sortBy: 'name', sortOrder: 'desc' }, // price is JSONB, fallback to name
+    rating: { sortBy: 'averageRating', sortOrder: 'desc' },
+    recent: { sortBy: 'createdAt', sortOrder: 'desc' },
+    name: { sortBy: 'name', sortOrder: 'asc' },
+};
+const sortConfig = SORT_MAP[sortParam] ?? SORT_MAP.featured;
+const sortBy = sortConfig.sortBy;
+const sortOrder = sortConfig.sortOrder;
+const page = Number.parseInt(sp.get('page') || '1', 10);
 const perPage = 12;
 
-/**
- * Localized text strings for all supported locales.
- */
-const texts: Record<
-  SupportedLocale,
-  {
-    title: string;
-    description: string;
-    home: string;
-    accommodations: string;
-    sortLabel: string;
-    sortFeatured: string;
-    sortPriceAsc: string;
-    sortPriceDesc: string;
-    sortRating: string;
-    sortRecent: string;
-    noResults: string;
-    showing: string;
-    of: string;
-    results: string;
-    previous: string;
-    next: string;
-  }
-> = {
-  es: {
-    title: 'Alojamientos',
-    description: 'Descubrí los mejores alojamientos en el Litoral argentino',
-    home: 'Inicio',
-    accommodations: 'Alojamientos',
-    sortLabel: 'Ordenar por',
-    sortFeatured: 'Destacados',
-    sortPriceAsc: 'Precio: menor a mayor',
-    sortPriceDesc: 'Precio: mayor a menor',
-    sortRating: 'Mejor calificados',
-    sortRecent: 'Más recientes',
-    noResults: 'No se encontraron alojamientos',
-    showing: 'Mostrando',
-    of: 'de',
-    results: 'resultados',
-    previous: 'Anterior',
-    next: 'Siguiente',
-  },
-  en: {
-    title: 'Accommodations',
-    description: 'Discover the best accommodations in the Argentine Litoral',
-    home: 'Home',
-    accommodations: 'Accommodations',
-    sortLabel: 'Sort by',
-    sortFeatured: 'Featured',
-    sortPriceAsc: 'Price: low to high',
-    sortPriceDesc: 'Price: high to low',
-    sortRating: 'Top rated',
-    sortRecent: 'Most recent',
-    noResults: 'No accommodations found',
-    showing: 'Showing',
-    of: 'of',
-    results: 'results',
-    previous: 'Previous',
-    next: 'Next',
-  },
-  pt: {
-    title: 'Acomodações',
-    description: 'Descubra as melhores acomodações no Litoral argentino',
-    home: 'Início',
-    accommodations: 'Acomodações',
-    sortLabel: 'Ordenar por',
-    sortFeatured: 'Destaques',
-    sortPriceAsc: 'Preço: menor para maior',
-    sortPriceDesc: 'Preço: maior para menor',
-    sortRating: 'Melhor avaliados',
-    sortRecent: 'Mais recentes',
-    noResults: 'Nenhuma acomodação encontrada',
-    showing: 'Mostrando',
-    of: 'de',
-    results: 'resultados',
-    previous: 'Anterior',
-    next: 'Próximo',
-  },
+// Price filters
+const minPrice = sp.get('minPrice') ? Number(sp.get('minPrice')) : undefined;
+const maxPrice = sp.get('maxPrice') ? Number(sp.get('maxPrice')) : undefined;
+const currency = sp.get('currency') || undefined;
+
+// Capacity filters
+const minGuests = sp.get('minGuests') ? Number(sp.get('minGuests')) : undefined;
+const minBedrooms = sp.get('minBedrooms') ? Number(sp.get('minBedrooms')) : undefined;
+const minBathrooms = sp.get('minBathrooms') ? Number(sp.get('minBathrooms')) : undefined;
+
+// Rating filter
+const minRating = sp.get('minRating') ? Number(sp.get('minRating')) : undefined;
+
+// Boolean filters
+const hasWifi = sp.get('hasWifi') === 'true' ? true : undefined;
+const hasPool = sp.get('hasPool') === 'true' ? true : undefined;
+const allowsPets = sp.get('allowsPets') === 'true' ? true : undefined;
+const hasParking = sp.get('hasParking') === 'true' ? true : undefined;
+
+// ─── Fetch data ─────────────────────────────────────────────────────────────
+const result = await accommodationsApi.list({
+    page,
+    pageSize: perPage,
+    q,
+    sortBy,
+    sortOrder,
+    type: typeFilter,
+    includeAmenities: true,
+    includeFeatures: true,
+    minPrice,
+    maxPrice,
+    currency,
+    minGuests,
+    minBedrooms,
+    minBathrooms,
+    minRating,
+    hasWifi,
+    hasPool,
+    allowsPets,
+    hasParking,
+});
+
+const apiError = !result.ok;
+const accommodations = result.ok ? (result.data.items as AccommodationWithRelations[]) : [];
+const pagination = result.ok
+    ? result.data.pagination
+    : { page: 1, pageSize: perPage, total: 0, totalPages: 0, hasNextPage: false, hasPreviousPage: false };
+
+// ─── Build filter state for components ──────────────────────────────────────
+/** Collect current query params as a flat record for FilterChipsBar */
+const currentFilters: Record<string, string> = {};
+for (const [key, value] of sp.entries()) {
+    if (key !== 'page') currentFilters[key] = value;
+}
+
+/** Preserve params for search bar */
+const preserveParams: Record<string, string> = { ...currentFilters };
+delete preserveParams.q;
+
+/** Accommodation type options for the type filter dropdown */
+const typeOptions: Record<string, readonly { readonly value: string; readonly label: string }[]> = {
+    es: [
+        { value: 'HOTEL', label: 'Hotel' }, { value: 'CABIN', label: 'Cabaña' },
+        { value: 'APARTMENT', label: 'Departamento' }, { value: 'HOUSE', label: 'Casa' },
+        { value: 'COUNTRY_HOUSE', label: 'Casa de campo' }, { value: 'HOSTEL', label: 'Hostal' },
+        { value: 'CAMPING', label: 'Camping' }, { value: 'ROOM', label: 'Habitación' },
+        { value: 'MOTEL', label: 'Motel' }, { value: 'RESORT', label: 'Resort' },
+    ],
+    en: [
+        { value: 'HOTEL', label: 'Hotel' }, { value: 'CABIN', label: 'Cabin' },
+        { value: 'APARTMENT', label: 'Apartment' }, { value: 'HOUSE', label: 'House' },
+        { value: 'COUNTRY_HOUSE', label: 'Country house' }, { value: 'HOSTEL', label: 'Hostel' },
+        { value: 'CAMPING', label: 'Camping' }, { value: 'ROOM', label: 'Room' },
+        { value: 'MOTEL', label: 'Motel' }, { value: 'RESORT', label: 'Resort' },
+    ],
+    pt: [
+        { value: 'HOTEL', label: 'Hotel' }, { value: 'CABIN', label: 'Cabana' },
+        { value: 'APARTMENT', label: 'Apartamento' }, { value: 'HOUSE', label: 'Casa' },
+        { value: 'COUNTRY_HOUSE', label: 'Chácara' }, { value: 'HOSTEL', label: 'Hostel' },
+        { value: 'CAMPING', label: 'Camping' }, { value: 'ROOM', label: 'Quarto' },
+        { value: 'MOTEL', label: 'Motel' }, { value: 'RESORT', label: 'Resort' },
+    ],
 };
 
-const t = texts[locale];
+// ─── Localized texts via i18n ────────────────────────────────────────────────
+/** Helper to translate accommodation list page keys */
+const tList = (key: string) => i18nT({ locale, namespace: 'accommodations', key: `listPage.${key}` });
 
-/**
- * Fetch accommodation data from API with pagination, sorting, and type filter.
- */
-const result = await accommodationsApi.list({
-  page,
-  pageSize: perPage,
-  sortBy,
-  type: typeFilter,
-});
-
-const accommodations = result.ok ? result.data.items : [];
-const pagination = result.ok ? result.data.pagination : { page: 1, pageSize: perPage, total: 0, totalPages: 0, hasNextPage: false, hasPreviousPage: false };
-const totalResults = pagination.total;
-const totalPages = pagination.totalPages;
-
-/**
- * Sort options for the select dropdown.
- */
-const sortOptions = [
-  { value: 'featured', label: t.sortFeatured },
-  { value: 'price_asc', label: t.sortPriceAsc },
-  { value: 'price_desc', label: t.sortPriceDesc },
-  { value: 'rating', label: t.sortRating },
-  { value: 'recent', label: t.sortRecent },
-];
-
-/**
- * Breadcrumb navigation items.
- */
 const breadcrumbItems = [
-  { label: t.home, href: `/${locale}/` },
-  { label: t.accommodations, href: `/${locale}/alojamientos/` },
+    { label: tList('home'), href: `/${locale}/` },
+    { label: tList('breadcrumb'), href: basePath },
 ];
 
-/**
- * Canonical URL for SEO.
- */
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
-const accommodationCards = accommodations.map((acc) => {
-  const a = acc as Record<string, unknown>;
-  return {
-    slug: String(a.slug || ''),
-    name: String(a.name || ''),
-    summary: String(a.summary || a.description || ''),
-    type: String(a.type || a.accommodationType || ''),
-    featuredImage: extractFeaturedImageUrl(a, '/images/placeholder-accommodation.svg'),
-    averageRating: Number(a.averageRating || 0),
-    reviewsCount: Number(a.reviewsCount || 0),
-    location: (a.location as { city: string; state: string }) || { city: '', state: '' },
-    isFeatured: Boolean(a.isFeatured),
-  };
-});
+// ─── Transform accommodations for cards ─────────────────────────────────────
+const cards = accommodations.map((acc) =>
+    toAccommodationDetailedProps({ item: acc as unknown as Record<string, unknown> })
+);
+
+/** Search params to pass to Pagination (preserves filters when paginating) */
+const paginationSearchParams = new URLSearchParams();
+for (const [key, value] of Object.entries(currentFilters)) {
+    paginationSearchParams.set(key, value);
+}
 ---
 
-<BaseLayout title={t.title} description={t.description} locale={locale}>
-  <SEOHead
-    slot="head"
-    title={t.title}
-    description={t.description}
-    canonical={canonicalUrl}
-    locale={locale === 'pt' ? 'es' : locale}
-  />
+<BaseLayout title={tList('title')} description={tList('description')} locale={locale}>
+    <SEOHead
+        slot="head"
+        title={tList('title')}
+        description={tList('description')}
+        canonical={canonicalUrl}
+        locale={locale}
+    />
 
-  <Container>
-    <Breadcrumb items={breadcrumbItems} class="py-4" />
+    <Container>
+        <Breadcrumb items={breadcrumbItems} class="py-4" />
 
-    <!-- Page Header with controls -->
-    <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h1 class="text-3xl font-bold">{t.title}</h1>
-        <p class="mt-1 text-gray-600">
-          {t.showing} {accommodations.length} {t.of} {totalResults} {t.results}
-        </p>
-      </div>
+        <!-- Page Title -->
+        <h1 class="mb-4 font-serif text-3xl font-bold text-text sm:text-4xl">
+            {tList('title')}
+        </h1>
 
-      <div class="flex items-center gap-3">
-        <!-- Sort dropdown -->
-        <div class="flex items-center gap-2">
-          <label for="sort-select" class="whitespace-nowrap text-sm font-medium text-gray-700">
-            {t.sortLabel}:
-          </label>
-          <select
-            id="sort-select"
-            class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-          >
-            {
-              sortOptions.map((opt) => (
-                <option value={opt.value} selected={opt.value === sortBy}>
-                  {opt.label}
-                </option>
-              ))
-            }
-          </select>
+        <!-- Search Bar -->
+        <div class="mb-4">
+            <SearchBar query={q ?? ''} locale={locale} preserveParams={preserveParams} />
         </div>
 
-        <!-- View Toggle -->
-        <ViewToggle client:idle />
-      </div>
-    </div>
+        <!-- Filter Chips Bar -->
+        <div class="mb-4">
+            <FilterChipsBar
+                client:idle
+                currentFilters={currentFilters}
+                locale={locale}
+                accommodationTypes={typeOptions[locale] ?? typeOptions.es}
+            />
+        </div>
 
-    <!-- Accommodation Grid -->
-    {accommodationCards.length > 0 ? (
-      <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {accommodationCards.map((accommodation) => (
-          <AccommodationCard
-            accommodation={accommodation}
+        <!-- Results count + Sort + Active Filters -->
+        <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p class="text-sm text-text-secondary">
+                {tList('showing')} <span class="font-medium text-text">{accommodations.length}</span> {tList('of')} <span class="font-medium text-text">{pagination.total}</span> {tList('results')}
+            </p>
+            <SortDropdown currentSort={sortParam} locale={locale} />
+        </div>
+
+        <!-- Active filter tags -->
+        {Object.keys(currentFilters).length > 0 && (
+            <div class="mb-6">
+                <ActiveFilters filters={currentFilters} locale={locale} basePath={basePath} />
+            </div>
+        )}
+
+        <!-- Accommodation Grid -->
+        {apiError ? (
+            <AccommodationErrorState locale={locale} retryHref={basePath} />
+        ) : cards.length > 0 ? (
+            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {cards.map((card) => (
+                    <AccommodationCardDetailed
+                        id={card.id}
+                        slug={card.slug}
+                        name={card.name}
+                        type={card.type}
+                        images={card.images}
+                        location={card.location}
+                        capacity={card.capacity}
+                        bedrooms={card.bedrooms}
+                        beds={card.beds}
+                        bathrooms={card.bathrooms}
+                        averageRating={card.averageRating}
+                        reviewsCount={card.reviewsCount}
+                        price={card.price}
+                        isFeatured={card.isFeatured}
+                        locale={locale}
+                    />
+                ))}
+            </div>
+        ) : (
+            <EmptyState
+                title={tList('noResults')}
+                message={tList('noResultsMessage')}
+                cta={{ label: tList('clearFilters'), href: basePath }}
+            />
+        )}
+
+        <!-- Pagination (query-param mode) -->
+        <Pagination
+            currentPage={page}
+            totalPages={pagination.totalPages}
+            baseUrl={basePath.endsWith('/') ? basePath.slice(0, -1) : basePath}
             locale={locale}
-          />
-        ))}
-      </div>
-    ) : (
-      <EmptyState
-        title={t.noResults}
-        message={locale === 'es' ? 'Intenta ajustar los filtros o buscar de otra manera.' : 'Try adjusting the filters or searching differently.'}
-        cta={{ label: locale === 'es' ? 'Limpiar filtros' : 'Clear filters', href: `/${locale}/alojamientos/` }}
-      />
-    )}
-
-    <!-- Pagination -->
-    <Pagination
-      currentPage={page}
-      totalPages={totalPages}
-      baseUrl={`/${locale}/alojamientos`}
-      locale={locale}
-    />
-  </Container>
+            searchParams={paginationSearchParams}
+        />
+    </Container>
 </BaseLayout>
-
-<script>
-  /**
-   * Sort dropdown change handler.
-   * Updates the URL with the new sort value and resets to page 1.
-   */
-  const sortSelect = document.getElementById('sort-select') as HTMLSelectElement;
-  if (sortSelect) {
-    sortSelect.addEventListener('change', () => {
-      const url = new URL(window.location.href);
-      url.searchParams.set('sortBy', sortSelect.value);
-      url.searchParams.set('page', '1');
-      window.location.href = url.toString();
-    });
-  }
-</script>

@@ -6,7 +6,7 @@ export const prerender = true;
  * 3 locales x 5 categories = 15 pre-rendered pages.
  */
 export function getStaticPaths() {
-  const locales = ['es', 'en', 'pt'] as const;
+  const locales = SUPPORTED_LOCALES;
   const categories = ['festival', 'fair', 'sport', 'cultural', 'gastronomy'] as const;
 
   return locales.flatMap((lang) =>
@@ -22,6 +22,7 @@ export function getStaticPaths() {
  * @route /[lang]/eventos/categoria/[category]/
  * @rendering SSG (Static Site Generation)
  */
+import { toEventCardProps } from '../../../../../lib/api/transforms';
 import BaseLayout from '../../../../../layouts/BaseLayout.astro';
 import SEOHead from '../../../../../components/seo/SEOHead.astro';
 import JsonLd from '../../../../../components/seo/JsonLd.astro';
@@ -31,16 +32,14 @@ import Section from '../../../../../components/ui/Section.astro';
 import EmptyState from '../../../../../components/ui/EmptyState.astro';
 import Pagination from '../../../../../components/ui/Pagination.astro';
 import EventCard from '../../../../../components/event/EventCard.astro';
-import { isValidLocale, type SupportedLocale } from '../../../../../lib/i18n';
+import { getLocaleFromParams, SUPPORTED_LOCALES } from '../../../../../lib/page-helpers';
 import { eventsApi } from '../../../../../lib/api/endpoints';
+import { t } from '../../../../../lib/i18n';
 
-const { lang, category } = Astro.params;
+const { category } = Astro.params;
 
-if (!lang || !isValidLocale(lang)) {
-  return Astro.redirect('/es/');
-}
-
-const locale = lang as SupportedLocale;
+const locale = getLocaleFromParams(Astro.params);
+if (!locale) return Astro.redirect('/es/');
 
 /**
  * Allowed event categories (URL slugs)
@@ -75,119 +74,20 @@ const categoryApiValue: Record<EventCategory, string> = {
   gastronomy: 'GASTRONOMY',
 };
 
-/**
- * Localized category names (plural)
- */
-const categoryNames: Record<SupportedLocale, Record<EventCategory, string>> = {
-  es: {
-    festival: 'Festivales',
-    fair: 'Ferias',
-    sport: 'Deportes',
-    cultural: 'Culturales',
-    gastronomy: 'Gastronomía',
-  },
-  en: {
-    festival: 'Festivals',
-    fair: 'Fairs',
-    sport: 'Sports',
-    cultural: 'Cultural Events',
-    gastronomy: 'Gastronomy',
-  },
-  pt: {
-    festival: 'Festivais',
-    fair: 'Feiras',
-    sport: 'Esportes',
-    cultural: 'Eventos Culturais',
-    gastronomy: 'Gastronomia',
-  },
-};
-
-/**
- * Localized category descriptions for SEO
- */
-const categoryDescriptions: Record<SupportedLocale, Record<EventCategory, string>> = {
-  es: {
-    festival: 'Descubre los mejores festivales en Concepción del Uruguay y la región del Litoral argentino. Música, arte y cultura para todos.',
-    fair: 'Explora las ferias locales y regionales del Litoral argentino. Artesanías, productos típicos y experiencias únicas.',
-    sport: 'Encuentra eventos deportivos en Concepción del Uruguay. Competencias, torneos y actividades para todas las edades.',
-    cultural: 'Eventos culturales, exposiciones y actividades artísticas en el Litoral argentino. Descubre el patrimonio cultural de la región.',
-    gastronomy: 'Festivales y eventos gastronómicos en Concepción del Uruguay. Sabores únicos de la cocina regional del Litoral.',
-  },
-  en: {
-    festival: 'Discover the best festivals in Concepción del Uruguay and the Argentine Litoral region. Music, art, and culture for everyone.',
-    fair: 'Explore local and regional fairs in the Argentine Litoral. Crafts, typical products, and unique experiences.',
-    sport: 'Find sporting events in Concepción del Uruguay. Competitions, tournaments, and activities for all ages.',
-    cultural: 'Cultural events, exhibitions, and artistic activities in the Argentine Litoral. Discover the cultural heritage of the region.',
-    gastronomy: 'Food festivals and gastronomic events in Concepción del Uruguay. Unique flavors of regional Litoral cuisine.',
-  },
-  pt: {
-    festival: 'Descubra os melhores festivais em Concepción del Uruguay e na região do Litoral argentino. Música, arte e cultura para todos.',
-    fair: 'Explore as feiras locais e regionais do Litoral argentino. Artesanato, produtos típicos e experiências únicas.',
-    sport: 'Encontre eventos esportivos em Concepción del Uruguay. Competições, torneios e atividades para todas as idades.',
-    cultural: 'Eventos culturais, exposições e atividades artísticas no Litoral argentino. Descubra o patrimônio cultural da região.',
-    gastronomy: 'Festivais e eventos gastronômicos em Concepción del Uruguay. Sabores únicos da culinária regional do Litoral.',
-  },
-};
-
-/**
- * Localized page titles
- */
-const pageTitles: Record<SupportedLocale, Record<EventCategory, string>> = {
-  es: {
-    festival: 'Eventos - Festivales',
-    fair: 'Eventos - Ferias',
-    sport: 'Eventos - Deportes',
-    cultural: 'Eventos - Culturales',
-    gastronomy: 'Eventos - Gastronomía',
-  },
-  en: {
-    festival: 'Events - Festivals',
-    fair: 'Events - Fairs',
-    sport: 'Events - Sports',
-    cultural: 'Events - Cultural',
-    gastronomy: 'Events - Gastronomy',
-  },
-  pt: {
-    festival: 'Eventos - Festivais',
-    fair: 'Eventos - Feiras',
-    sport: 'Eventos - Esportes',
-    cultural: 'Eventos - Culturais',
-    gastronomy: 'Eventos - Gastronomia',
-  },
-};
-
-/**
- * Localized common labels
- */
-const labels: Record<SupportedLocale, Record<string, string>> = {
-  es: {
-    home: 'Inicio',
-    events: 'Eventos',
-    noResults: 'No hay eventos de categoría {category} disponibles',
-  },
-  en: {
-    home: 'Home',
-    events: 'Events',
-    noResults: 'No {category} events available',
-  },
-  pt: {
-    home: 'Início',
-    events: 'Eventos',
-    noResults: 'Não há eventos da categoria {category} disponíveis',
-  },
-};
-
-const categoryName = categoryNames[locale][eventCategory];
-const categoryDescription = categoryDescriptions[locale][eventCategory];
-const pageTitle = pageTitles[locale][eventCategory];
+const categoryName = t({ locale, namespace: 'event', key: `categoryPage.categories.${eventCategory}.name` });
+const categoryDescription = t({ locale, namespace: 'event', key: `categoryPage.categories.${eventCategory}.description` });
+const pageTitle = t({ locale, namespace: 'event', key: `categoryPage.categories.${eventCategory}.pageTitle` });
+const breadcrumbHome = t({ locale, namespace: 'event', key: 'categoryPage.labels.breadcrumbHome' });
+const breadcrumbEvents = t({ locale, namespace: 'event', key: 'categoryPage.labels.breadcrumbEvents' });
+const emptyTitle = t({ locale, namespace: 'event', key: 'categoryPage.labels.emptyTitle', params: { category: categoryName.toLowerCase() } });
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
 /**
  * Breadcrumb navigation items
  */
 const breadcrumbItems = [
-  { label: labels[locale].home, href: `/${locale}/` },
-  { label: labels[locale].events, href: `/${locale}/eventos/` },
+  { label: breadcrumbHome, href: `/${locale}/` },
+  { label: breadcrumbEvents, href: `/${locale}/eventos/` },
   { label: categoryName, href: `/${locale}/eventos/categoria/${eventCategory}/` },
 ];
 
@@ -209,7 +109,7 @@ const pagination = apiResult.ok ? apiResult.data.pagination : null;
 /**
  * Generate empty state message
  */
-const emptyMessage = labels[locale].noResults.replace('{category}', categoryName.toLowerCase());
+const emptyMessage = emptyTitle;
 
 /**
  * CollectionPage + BreadcrumbList JSON-LD structured data
@@ -242,7 +142,7 @@ const collectionJsonLd = {
     title={pageTitle}
     description={categoryDescription}
     canonical={canonicalUrl}
-    locale={locale === 'pt' ? 'es' : locale}
+    locale={locale}
     type="website"
   />
   <JsonLd slot="head" data={collectionJsonLd} />
@@ -268,11 +168,11 @@ const collectionJsonLd = {
             events.length > 0 ? (
               <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {events.map((event) => (
-                  <EventCard event={event} locale={locale} />
+                  <EventCard event={toEventCardProps({ item: event as Record<string, unknown> })} locale={locale} />
                 ))}
               </div>
             ) : (
-              <EmptyState title={emptyMessage} message={labels[locale].events} />
+              <EmptyState title={emptyMessage} message={breadcrumbEvents} />
             )
           }
         </article>

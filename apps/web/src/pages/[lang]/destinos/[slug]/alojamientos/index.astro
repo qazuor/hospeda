@@ -15,22 +15,17 @@ import Container from '../../../../../components/ui/Container.astro';
 import Section from '../../../../../components/ui/Section.astro';
 import EmptyState from '../../../../../components/ui/EmptyState.astro';
 import Pagination from '../../../../../components/ui/Pagination.astro';
-import AccommodationCard from '../../../../../components/accommodation/AccommodationCard.astro';
+import AccommodationCardFeatured from '../../../../../components/accommodation/AccommodationCardFeatured.astro';
 import DestinationErrorState from '../../../../../components/error/DestinationErrorState.astro';
-import { isValidLocale, type SupportedLocale } from '../../../../../lib/i18n';
+import { getLocaleFromParams } from '../../../../../lib/page-helpers';
+import { t as i18nT } from '../../../../../lib/i18n';
 import { destinationsApi } from '../../../../../lib/api/endpoints';
+import { toAccommodationCardProps } from '../../../../../lib/api/transforms';
 
-const { lang, slug } = Astro.params;
+const { slug } = Astro.params;
 
-/**
- * Validate locale parameter.
- * Redirect to default locale if invalid.
- */
-if (!lang || !isValidLocale(lang)) {
-	return Astro.redirect('/es/');
-}
-
-const locale = lang as SupportedLocale;
+const locale = getLocaleFromParams(Astro.params);
+if (!locale) return Astro.redirect('/es/');
 
 /**
  * Validate slug parameter.
@@ -40,39 +35,19 @@ if (!slug) {
 }
 
 /**
- * Localized UI labels.
+ * Localized UI labels via i18n.
  */
-const labels: Record<SupportedLocale, Record<string, string>> = {
-	es: {
-		home: 'Inicio',
-		destinations: 'Destinos',
-		accommodations: 'Alojamientos',
-		noResults: 'No hay alojamientos disponibles para este destino',
-		noResultsDetail: 'Todavía no tenemos alojamientos registrados para este destino. Explorá otros destinos.',
-		pageTitle: 'Alojamientos en',
-		pageDescription: 'Descubrí los mejores alojamientos en',
-	},
-	en: {
-		home: 'Home',
-		destinations: 'Destinations',
-		accommodations: 'Accommodations',
-		noResults: 'No accommodations available for this destination',
-		noResultsDetail: 'We do not have any accommodations listed for this destination yet. Explore other destinations.',
-		pageTitle: 'Accommodations in',
-		pageDescription: 'Discover the best accommodations in',
-	},
-	pt: {
-		home: 'Início',
-		destinations: 'Destinos',
-		accommodations: 'Acomodações',
-		noResults: 'Não há acomodações disponíveis para este destino',
-		noResultsDetail: 'Ainda não temos acomodações registradas para este destino. Explore outros destinos.',
-		pageTitle: 'Acomodações em',
-		pageDescription: 'Descubra as melhores acomodações em',
-	},
-};
+const tDest = (key: string) => i18nT({ locale, namespace: 'destination', key: `accommodationsPage.${key}` });
 
-const t = labels[locale];
+const t = {
+	home: tDest('home'),
+	destinations: tDest('destinations'),
+	accommodations: tDest('accommodations'),
+	noResults: tDest('noResults'),
+	noResultsDetail: tDest('noResultsDetail'),
+	pageTitle: tDest('pageTitle'),
+	pageDescription: tDest('pageDescription'),
+};
 
 /**
  * Resolve destination by slug from the API.
@@ -162,7 +137,7 @@ const collectionJsonLd = {
 		title={pageTitle}
 		description={pageDescription}
 		canonical={canonicalUrl}
-		locale={locale === 'pt' ? 'es' : locale}
+		locale={locale}
 		type="website"
 	/>
 	<JsonLd slot="head" data={collectionJsonLd} />
@@ -197,8 +172,8 @@ const collectionJsonLd = {
 							{accommodations.length > 0 ? (
 								<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 									{accommodations.map((accommodation) => (
-										<AccommodationCard
-											accommodation={accommodation}
+										<AccommodationCardFeatured
+											accommodation={toAccommodationCardProps({ item: accommodation as Record<string, unknown> })}
 											locale={locale}
 										/>
 									))}

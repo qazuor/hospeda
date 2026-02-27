@@ -9,16 +9,12 @@ import SEOHead from '../../../components/seo/SEOHead.astro';
 import Container from '../../../components/ui/Container.astro';
 import Breadcrumb from '../../../components/ui/Breadcrumb.astro';
 import Section from '../../../components/ui/Section.astro';
-import { isValidLocale, type SupportedLocale } from '../../../lib/i18n';
+import { getLocaleFromParams, HOME_BREADCRUMB } from '../../../lib/page-helpers';
+import { t } from '../../../lib/i18n';
 import { FavoriteIcon, StarIcon, CheckCircleIcon } from '@repo/icons';
 
-const { lang } = Astro.params;
-
-if (!lang || !isValidLocale(lang)) {
-	return Astro.redirect('/es/');
-}
-
-const locale = lang as SupportedLocale;
+const locale = getLocaleFromParams(Astro.params);
+if (!locale) return Astro.redirect('/es/');
 
 /**
  * User is guaranteed to exist due to middleware auth protection
@@ -38,215 +34,61 @@ const initials = user.name
 	.join('')
 	.toUpperCase();
 
-/**
- * Localized page titles
- */
-const titles: Record<SupportedLocale, string> = {
-	es: 'Mi Cuenta',
-	en: 'My Account',
-	pt: 'Minha Conta',
-};
+const title = t({ locale, namespace: 'account', key: 'pages.dashboard.title' });
+const description = t({ locale, namespace: 'account', key: 'pages.dashboard.description' });
+const greeting = t({ locale, namespace: 'account', key: 'pages.dashboard.greeting' });
+const dashboardLabel = t({ locale, namespace: 'account', key: 'pages.dashboard.dashboardLabel' });
+const viewLabel = t({ locale, namespace: 'account', key: 'pages.dashboard.viewLabel' });
 
 /**
- * Localized meta descriptions
+ * Navigation items for the account sidebar.
+ * Labels and descriptions are localized via t(); hrefs use locale dynamically.
  */
-const descriptions: Record<SupportedLocale, string> = {
-	es: 'Administra tu cuenta, favoritos, reseñas y preferencias.',
-	en: 'Manage your account, favorites, reviews and preferences.',
-	pt: 'Gerencie sua conta, favoritos, avaliações e preferências.',
-};
-
-/**
- * Localized home breadcrumb labels
- */
-const homeLabels: Record<SupportedLocale, string> = {
-	es: 'Inicio',
-	en: 'Home',
-	pt: 'Início',
-};
-
-/**
- * Localized greeting
- */
-const greetings: Record<SupportedLocale, string> = {
-	es: 'Bienvenido',
-	en: 'Welcome',
-	pt: 'Bem-vindo',
-};
-
-/**
- * Localized navigation items
- */
-const navItems: Record<
-	SupportedLocale,
-	Array<{ label: string; href: string; description: string }>
-> = {
-	es: [
-		{
-			label: 'Editar Perfil',
-			href: `/${locale}/mi-cuenta/editar/`,
-			description: 'Actualiza tu información personal',
-		},
-		{
-			label: 'Mis Favoritos',
-			href: `/${locale}/mi-cuenta/favoritos/`,
-			description: 'Alojamientos que has guardado',
-		},
-		{
-			label: 'Mis Reseñas',
-			href: `/${locale}/mi-cuenta/resenas/`,
-			description: 'Reseñas que has escrito',
-		},
-		{
-			label: 'Preferencias',
-			href: `/${locale}/mi-cuenta/preferencias/`,
-			description: 'Configuración de notificaciones y privacidad',
-		},
-		{
-			label: 'Mi Suscripción',
-			href: `/${locale}/mi-cuenta/suscripcion/`,
-			description: 'Plan actual y facturación',
-		},
-	],
-	en: [
-		{
-			label: 'Edit Profile',
-			href: `/${locale}/mi-cuenta/editar/`,
-			description: 'Update your personal information',
-		},
-		{
-			label: 'My Favorites',
-			href: `/${locale}/mi-cuenta/favoritos/`,
-			description: 'Accommodations you have saved',
-		},
-		{
-			label: 'My Reviews',
-			href: `/${locale}/mi-cuenta/resenas/`,
-			description: 'Reviews you have written',
-		},
-		{
-			label: 'Preferences',
-			href: `/${locale}/mi-cuenta/preferencias/`,
-			description: 'Notification and privacy settings',
-		},
-		{
-			label: 'My Subscription',
-			href: `/${locale}/mi-cuenta/suscripcion/`,
-			description: 'Current plan and billing',
-		},
-	],
-	pt: [
-		{
-			label: 'Editar Perfil',
-			href: `/${locale}/mi-cuenta/editar/`,
-			description: 'Atualize suas informações pessoais',
-		},
-		{
-			label: 'Meus Favoritos',
-			href: `/${locale}/mi-cuenta/favoritos/`,
-			description: 'Acomodações que você salvou',
-		},
-		{
-			label: 'Minhas Avaliações',
-			href: `/${locale}/mi-cuenta/resenas/`,
-			description: 'Avaliações que você escreveu',
-		},
-		{
-			label: 'Preferências',
-			href: `/${locale}/mi-cuenta/preferencias/`,
-			description: 'Configurações de notificações e privacidade',
-		},
-		{
-			label: 'Minha Assinatura',
-			href: `/${locale}/mi-cuenta/suscripcion/`,
-			description: 'Plano atual e faturamento',
-		},
-	],
-};
-
-/**
- * Localized quick stats section
- */
-const statsLabels: Record<
-	SupportedLocale,
-	{ favorites: string; reviews: string; subscription: string }
-> = {
-	es: {
-		favorites: 'Mis Favoritos',
-		reviews: 'Mis Reseñas',
-		subscription: 'Mi Suscripción',
-	},
-	en: {
-		favorites: 'My Favorites',
-		reviews: 'My Reviews',
-		subscription: 'My Subscription',
-	},
-	pt: {
-		favorites: 'Meus Favoritos',
-		reviews: 'Minhas Avaliações',
-		subscription: 'Minha Assinatura',
-	},
-};
-
-const statsDescriptions: Record<
-	SupportedLocale,
+const navItems = [
 	{
-		favorites: string;
-		reviews: string;
-		subscription: string;
-		subscriptionStatus: string;
-		activeStatus: string;
-		trialStatus: string;
-		freeStatus: string;
-	}
-> = {
-	es: {
-		favorites: 'Alojamientos guardados',
-		reviews: 'Reseñas publicadas',
-		subscription: 'Plan Gratuito',
-		subscriptionStatus: 'Plan Gratuito',
-		activeStatus: 'Activo',
-		trialStatus: 'Periodo de prueba',
-		freeStatus: 'Plan Gratuito',
+		label: t({ locale, namespace: 'account', key: 'pages.dashboard.nav.editProfile' }),
+		href: `/${locale}/mi-cuenta/editar/`,
+		description: t({ locale, namespace: 'account', key: 'pages.dashboard.nav.editProfileDesc' }),
 	},
-	en: {
-		favorites: 'Saved accommodations',
-		reviews: 'Published reviews',
-		subscription: 'Free Plan',
-		subscriptionStatus: 'Free Plan',
-		activeStatus: 'Active',
-		trialStatus: 'Trial period',
-		freeStatus: 'Free Plan',
+	{
+		label: t({ locale, namespace: 'account', key: 'pages.dashboard.nav.myFavorites' }),
+		href: `/${locale}/mi-cuenta/favoritos/`,
+		description: t({ locale, namespace: 'account', key: 'pages.dashboard.nav.myFavoritesDesc' }),
 	},
-	pt: {
-		favorites: 'Acomodações salvas',
-		reviews: 'Avaliações publicadas',
-		subscription: 'Plano Gratuito',
-		subscriptionStatus: 'Plano Gratuito',
-		activeStatus: 'Ativo',
-		trialStatus: 'Periodo de avaliacao',
-		freeStatus: 'Plano Gratuito',
+	{
+		label: t({ locale, namespace: 'account', key: 'pages.dashboard.nav.myReviews' }),
+		href: `/${locale}/mi-cuenta/resenas/`,
+		description: t({ locale, namespace: 'account', key: 'pages.dashboard.nav.myReviewsDesc' }),
 	},
-};
+	{
+		label: t({ locale, namespace: 'account', key: 'pages.dashboard.nav.preferences' }),
+		href: `/${locale}/mi-cuenta/preferencias/`,
+		description: t({ locale, namespace: 'account', key: 'pages.dashboard.nav.preferencesDesc' }),
+	},
+	{
+		label: t({ locale, namespace: 'account', key: 'pages.dashboard.nav.mySubscription' }),
+		href: `/${locale}/mi-cuenta/suscripcion/`,
+		description: t({ locale, namespace: 'account', key: 'pages.dashboard.nav.mySubscriptionDesc' }),
+	},
+];
 
-const viewLabels: Record<SupportedLocale, string> = {
-	es: 'Ver',
-	en: 'View',
-	pt: 'Ver',
-};
-
-const dashboardLabels: Record<SupportedLocale, string> = {
-	es: 'Dashboard',
-	en: 'Dashboard',
-	pt: 'Painel',
-};
+const statFavoritesLabel = t({ locale, namespace: 'account', key: 'pages.dashboard.stats.favorites' });
+const statReviewsLabel = t({ locale, namespace: 'account', key: 'pages.dashboard.stats.reviews' });
+const statSubscriptionLabel = t({ locale, namespace: 'account', key: 'pages.dashboard.stats.subscription' });
+const statFavoritesDesc = t({ locale, namespace: 'account', key: 'pages.dashboard.stats.favoritesDesc' });
+const statReviewsDesc = t({ locale, namespace: 'account', key: 'pages.dashboard.stats.reviewsDesc' });
+const statSubscriptionDesc = t({ locale, namespace: 'account', key: 'pages.dashboard.stats.subscriptionDesc' });
+const statSubscriptionStatus = t({ locale, namespace: 'account', key: 'pages.dashboard.stats.subscriptionStatus' });
+const statActiveStatus = t({ locale, namespace: 'account', key: 'pages.dashboard.stats.activeStatus' });
+const statTrialStatus = t({ locale, namespace: 'account', key: 'pages.dashboard.stats.trialStatus' });
+const statFreeStatus = t({ locale, namespace: 'account', key: 'pages.dashboard.stats.freeStatus' });
 
 /**
  * Breadcrumb navigation items
  */
 const breadcrumbItems = [
-	{ label: homeLabels[locale], href: `/${locale}/` },
-	{ label: titles[locale], href: `/${locale}/mi-cuenta/` },
+	{ label: HOME_BREADCRUMB[locale], href: `/${locale}/` },
+	{ label: title, href: `/${locale}/mi-cuenta/` },
 ];
 
 /**
@@ -262,13 +104,13 @@ const stats = {
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 ---
 
-<BaseLayout title={titles[locale]} description={descriptions[locale]} locale={locale}>
+<BaseLayout title={title} description={description} locale={locale}>
 	<SEOHead
 		slot="head"
-		title={titles[locale]}
-		description={descriptions[locale]}
+		title={title}
+		description={description}
 		canonical={canonicalUrl}
-		locale={locale === 'pt' ? 'es' : locale}
+		locale={locale}
 		type="website"
 		noindex={true}
 	/>
@@ -295,7 +137,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 						<!-- User Info -->
 						<div class="flex-1 text-center sm:text-left">
 							<h1 class="mb-2 text-3xl font-bold text-text-primary">
-								{greetings[locale]}, {user.name}
+								{greeting}, {user.name}
 							</h1>
 							<p class="text-lg text-text-secondary">{user.email}</p>
 						</div>
@@ -312,7 +154,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 						<nav>
 							<ul class="space-y-2" role="list">
 								{
-									navItems[locale].map((item) => (
+									navItems.map((item) => (
 										<li>
 											<a
 												href={item.href}
@@ -332,7 +174,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
 					<!-- Main Content - Quick Stats -->
 					<div id="account-stats" class="space-y-6">
-						<h2 class="text-2xl font-bold text-text-primary">{dashboardLabels[locale]}</h2>
+						<h2 class="text-2xl font-bold text-text-primary">{dashboardLabel}</h2>
 
 						<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 							<!-- Favorites Card -->
@@ -341,17 +183,17 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 							>
 								<div class="mb-3 flex items-center justify-between">
 									<h3 class="text-lg font-semibold text-text-primary">
-										{statsLabels[locale].favorites}
+										{statFavoritesLabel}
 									</h3>
 									<FavoriteIcon size={24} className="text-primary" weight="fill" aria-hidden="true" />
 								</div>
 								<p id="stat-favorites" class="mb-2 text-3xl font-bold text-text-primary">{stats.favorites}</p>
-								<p class="text-sm text-text-secondary">{statsDescriptions[locale].favorites}</p>
+								<p class="text-sm text-text-secondary">{statFavoritesDesc}</p>
 								<a
 									href={`/${locale}/mi-cuenta/favoritos/`}
 									class="mt-4 inline-flex items-center text-sm font-medium text-primary hover:underline"
 								>
-									{viewLabels[locale]} {statsLabels[locale].favorites.toLowerCase()} →
+									{viewLabel} {statFavoritesLabel.toLowerCase()} →
 								</a>
 							</article>
 
@@ -361,17 +203,17 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 							>
 								<div class="mb-3 flex items-center justify-between">
 									<h3 class="text-lg font-semibold text-text-primary">
-										{statsLabels[locale].reviews}
+										{statReviewsLabel}
 									</h3>
 									<StarIcon size={24} className="text-primary" weight="fill" aria-hidden="true" />
 								</div>
 								<p id="stat-reviews" class="mb-2 text-3xl font-bold text-text-primary">{stats.reviews}</p>
-								<p class="text-sm text-text-secondary">{statsDescriptions[locale].reviews}</p>
+								<p class="text-sm text-text-secondary">{statReviewsDesc}</p>
 								<a
 									href={`/${locale}/mi-cuenta/resenas/`}
 									class="mt-4 inline-flex items-center text-sm font-medium text-primary hover:underline"
 								>
-									{viewLabels[locale]} {statsLabels[locale].reviews.toLowerCase()} →
+									{viewLabel} {statReviewsLabel.toLowerCase()} →
 								</a>
 							</article>
 
@@ -381,27 +223,27 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 							>
 								<div class="mb-3 flex items-center justify-between">
 									<h3 class="text-lg font-semibold text-text-primary">
-										{statsLabels[locale].subscription}
+										{statSubscriptionLabel}
 									</h3>
 									<CheckCircleIcon size={24} className="text-primary" aria-hidden="true" />
 								</div>
 								<p id="stat-subscription" class="mb-2 text-3xl font-bold text-text-primary">
-									{statsDescriptions[locale].subscription}
+									{statSubscriptionDesc}
 								</p>
 								<p
 									id="stat-subscription-status"
 									class="text-sm text-text-secondary"
-									data-label-active={statsDescriptions[locale].activeStatus}
-									data-label-trial={statsDescriptions[locale].trialStatus}
-									data-label-free={statsDescriptions[locale].freeStatus}
+									data-label-active={statActiveStatus}
+									data-label-trial={statTrialStatus}
+									data-label-free={statFreeStatus}
 								>
-									{statsDescriptions[locale].subscriptionStatus}
+									{statSubscriptionStatus}
 								</p>
 								<a
 									href={`/${locale}/mi-cuenta/suscripcion/`}
 									class="mt-4 inline-flex items-center text-sm font-medium text-primary hover:underline"
 								>
-									{viewLabels[locale]} {statsLabels[locale].subscription.toLowerCase()} →
+									{viewLabel} {statSubscriptionLabel.toLowerCase()} →
 								</a>
 							</article>
 						</div>
@@ -413,13 +255,14 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 </BaseLayout>
 
 <script>
+	import { getApiUrl } from '../../../lib/env';
+
 	/**
 	 * Fetch user stats from API and update dashboard numbers.
 	 * Falls back gracefully to default values on error.
 	 */
 	async function loadStats() {
-		const apiUrl = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3001';
-		const base = `${apiUrl}/api/v1/protected`;
+		const base = `${getApiUrl()}/api/v1/protected`;
 
 		try {
 			const [statsRes, reviewsRes] = await Promise.all([

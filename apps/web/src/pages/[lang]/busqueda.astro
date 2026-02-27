@@ -10,146 +10,54 @@ import Breadcrumb from '../../components/ui/Breadcrumb.astro';
 import Container from '../../components/ui/Container.astro';
 import Section from '../../components/ui/Section.astro';
 import EmptyState from '../../components/ui/EmptyState.astro';
-import AccommodationCard from '../../components/accommodation/AccommodationCard.astro';
+import GenericErrorState from '../../components/error/GenericErrorState.astro';
+import AccommodationCardFeatured from '../../components/accommodation/AccommodationCardFeatured.astro';
 import DestinationCard from '../../components/destination/DestinationCard.astro';
 import EventCard from '../../components/event/EventCard.astro';
 import BlogPostCard from '../../components/blog/BlogPostCard.astro';
-import { isValidLocale, type SupportedLocale } from '../../lib/i18n';
+import { getLocaleFromParams, HOME_BREADCRUMB } from '../../lib/page-helpers';
+import { t as i18nT } from '../../lib/i18n';
 import { accommodationsApi, destinationsApi, eventsApi, postsApi } from '../../lib/api/endpoints';
+import { toAccommodationCardProps, toDestinationCardProps, toEventCardProps, toPostCardProps } from '../../lib/api/transforms';
 import { SearchIcon } from '@repo/icons';
 
-const { lang } = Astro.params;
-
-if (!lang || !isValidLocale(lang)) {
-	return Astro.redirect('/es/');
-}
-
-const locale = lang as SupportedLocale;
+const locale = getLocaleFromParams(Astro.params);
+if (!locale) return Astro.redirect('/es/');
 
 /**
  * Get search query from URL parameters
  */
 const query = Astro.url.searchParams.get('q') || '';
 
-/**
- * Localized page titles
- */
-const titles: Record<SupportedLocale, string> = {
-	es: 'Resultados de búsqueda',
-	en: 'Search Results',
-	pt: 'Resultados da busca',
-};
+/** Helper to translate search results page keys */
+const tSearch = (key: string) => i18nT({ locale, namespace: 'search', key: `resultsPage.${key}` });
+
+/** Localized page text via i18n */
+const pageTitle = tSearch('title');
+const pageDescription = tSearch('description');
+const searchHeading = tSearch('heading');
+const searchPlaceholder = tSearch('placeholder');
+const catAccommodations = tSearch('categories.accommodations');
+const catDestinations = tSearch('categories.destinations');
+const catEvents = tSearch('categories.events');
+const catPosts = tSearch('categories.posts');
+const emptyStateText = tSearch('emptyState');
+const emptySuggestion = tSearch('emptySuggestion');
+const popularSearchesHeading = tSearch('popularSearches');
+const viewAllAccommodations = tSearch('viewAll.accommodations');
+const viewAllDestinations = tSearch('viewAll.destinations');
+const viewAllEvents = tSearch('viewAll.events');
+const viewAllPosts = tSearch('viewAll.posts');
+const resultsFound = tSearch('resultsFound');
+const noResultsFound = tSearch('noResults');
 
 /**
- * Localized meta descriptions
+ * Popular search terms - localized via i18n
  */
-const descriptions: Record<SupportedLocale, string> = {
-	es: 'Encuentra alojamientos, destinos, eventos y publicaciones en Hospeda.',
-	en: 'Find accommodations, destinations, events and posts on Hospeda.',
-	pt: 'Encontre acomodações, destinos, eventos e publicações no Hospeda.',
-};
-
-/**
- * Localized home breadcrumb labels
- */
-const homeLabels: Record<SupportedLocale, string> = {
-	es: 'Inicio',
-	en: 'Home',
-	pt: 'Início',
-};
-
-/**
- * Localized search result heading
- */
-const searchHeadings: Record<SupportedLocale, string> = {
-	es: 'Resultados para',
-	en: 'Results for',
-	pt: 'Resultados para',
-};
-
-/**
- * Localized search input placeholder
- */
-const searchPlaceholders: Record<SupportedLocale, string> = {
-	es: 'Buscar alojamientos, destinos, eventos...',
-	en: 'Search accommodations, destinations, events...',
-	pt: 'Pesquisar acomodações, destinos, eventos...',
-};
-
-/**
- * Localized category labels
- */
-const categoryLabels: Record<SupportedLocale, Record<string, string>> = {
-	es: {
-		accommodations: 'Alojamientos',
-		destinations: 'Destinos',
-		events: 'Eventos',
-		posts: 'Publicaciones',
-	},
-	en: {
-		accommodations: 'Accommodations',
-		destinations: 'Destinations',
-		events: 'Events',
-		posts: 'Posts',
-	},
-	pt: {
-		accommodations: 'Acomodações',
-		destinations: 'Destinos',
-		events: 'Eventos',
-		posts: 'Publicações',
-	},
-};
-
-/**
- * Localized empty state text
- */
-const emptyStateTexts: Record<SupportedLocale, string> = {
-	es: 'No se encontraron resultados',
-	en: 'No results found',
-	pt: 'Nenhum resultado encontrado',
-};
-
-/**
- * Localized empty state suggestions
- */
-const emptySuggestions: Record<SupportedLocale, string> = {
-	es: 'Intenta con otros términos de búsqueda',
-	en: 'Try other search terms',
-	pt: 'Tente outros termos de busca',
-};
-
-/**
- * Localized popular searches heading
- */
-const popularSearchesHeadings: Record<SupportedLocale, string> = {
-	es: 'Búsquedas populares',
-	en: 'Popular searches',
-	pt: 'Pesquisas populares',
-};
-
-/**
- * Popular search terms (placeholder)
- */
-const popularSearches: Record<SupportedLocale, Array<{ label: string; href: string }>> = {
-	es: [
-		{ label: 'Hoteles', href: `/${locale}/busqueda/?q=hoteles` },
-		{ label: 'Cabañas', href: `/${locale}/busqueda/?q=cabanas` },
-		{ label: 'Concepción del Uruguay', href: `/${locale}/busqueda/?q=concepcion` },
-		{ label: 'Eventos', href: `/${locale}/busqueda/?q=eventos` },
-	],
-	en: [
-		{ label: 'Hotels', href: `/${locale}/busqueda/?q=hotels` },
-		{ label: 'Cabins', href: `/${locale}/busqueda/?q=cabins` },
-		{ label: 'Concepción del Uruguay', href: `/${locale}/busqueda/?q=concepcion` },
-		{ label: 'Events', href: `/${locale}/busqueda/?q=events` },
-	],
-	pt: [
-		{ label: 'Hotéis', href: `/${locale}/busqueda/?q=hoteis` },
-		{ label: 'Cabanas', href: `/${locale}/busqueda/?q=cabanas` },
-		{ label: 'Concepción del Uruguay', href: `/${locale}/busqueda/?q=concepcion` },
-		{ label: 'Eventos', href: `/${locale}/busqueda/?q=eventos` },
-	],
-};
+const popularSearches = [0, 1, 2, 3].map((i) => ({
+	label: tSearch(`popular.${i}.label`),
+	href: `/${locale}/busqueda/?q=${tSearch(`popular.${i}.query`)}`,
+}));
 
 /**
  * Fetch search results from API when query is present
@@ -158,6 +66,7 @@ let accommodations: Record<string, unknown>[] = [];
 let destinations: Record<string, unknown>[] = [];
 let events: Record<string, unknown>[] = [];
 let posts: Record<string, unknown>[] = [];
+let apiError = false;
 
 if (query) {
 	const [accommodationsResult, destinationsResult, eventsResult, postsResult] = await Promise.all([
@@ -171,6 +80,7 @@ if (query) {
 	destinations = destinationsResult.ok ? destinationsResult.data.items : [];
 	events = eventsResult.ok ? eventsResult.data.items : [];
 	posts = postsResult.ok ? postsResult.data.items : [];
+	apiError = !accommodationsResult.ok && !destinationsResult.ok && !eventsResult.ok && !postsResult.ok;
 }
 
 const totalResults = accommodations.length + destinations.length + events.length + posts.length;
@@ -181,18 +91,18 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
  * Breadcrumb navigation items
  */
 const breadcrumbItems = [
-	{ label: homeLabels[locale], href: `/${locale}/` },
-	{ label: titles[locale], href: `/${locale}/busqueda/` },
+	{ label: HOME_BREADCRUMB[locale], href: `/${locale}/` },
+	{ label: pageTitle, href: `/${locale}/busqueda/` },
 ];
 ---
 
-<BaseLayout title={titles[locale]} description={descriptions[locale]} locale={locale}>
+<BaseLayout title={pageTitle} description={pageDescription} locale={locale}>
 	<SEOHead
 		slot="head"
-		title={titles[locale]}
-		description={descriptions[locale]}
+		title={pageTitle}
+		description={pageDescription}
 		canonical={canonicalUrl}
-		locale={locale === 'pt' ? 'es' : locale}
+		locale={locale}
 		type="website"
 		noindex={true}
 	/>
@@ -207,7 +117,7 @@ const breadcrumbItems = [
 					query && (
 						<article id="search-header" class="mb-8">
 							<h1 class="text-3xl font-bold text-text-primary md:text-4xl">
-								{searchHeadings[locale]} <span class="text-primary">"{query}"</span>
+								{searchHeading} <span class="text-primary">"{query}"</span>
 							</h1>
 						</article>
 					)
@@ -224,9 +134,9 @@ const breadcrumbItems = [
 								type="search"
 								name="q"
 								value={query}
-								placeholder={searchPlaceholders[locale]}
+								placeholder={searchPlaceholder}
 								class="w-full rounded-lg border border-border bg-bg py-3 pl-12 pr-4 text-text-primary placeholder-text-tertiary transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-								aria-label={searchPlaceholders[locale]}
+								aria-label={searchPlaceholder}
 								required
 							/>
 						</div>
@@ -240,8 +150,8 @@ const breadcrumbItems = [
 							<div class="mb-8 text-center">
 								<p class="text-lg text-text-secondary">
 									{totalResults > 0
-										? `Se encontraron ${totalResults} resultado${totalResults === 1 ? '' : 's'}`
-										: 'No se encontraron resultados'
+										? `${resultsFound} ${totalResults}`
+										: noResultsFound
 									}
 								</p>
 							</div>
@@ -253,17 +163,17 @@ const breadcrumbItems = [
 									{accommodations.length > 0 && (
 										<section id="accommodations-results">
 											<h2 class="mb-6 text-2xl font-semibold text-text-primary">
-												{categoryLabels[locale].accommodations}{' '}
+												{catAccommodations}{' '}
 												<span class="text-text-tertiary">({accommodations.length})</span>
 											</h2>
 											<div
 												class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
 												role="region"
-												aria-label={categoryLabels[locale].accommodations}
+												aria-label={catAccommodations}
 											>
 												{accommodations.map((accommodation) => (
-													<AccommodationCard
-														accommodation={accommodation}
+													<AccommodationCardFeatured
+														accommodation={toAccommodationCardProps({ item: accommodation as Record<string, unknown> })}
 														locale={locale}
 													/>
 												))}
@@ -273,7 +183,7 @@ const breadcrumbItems = [
 													href={`/${locale}/alojamientos/?q=${encodeURIComponent(query)}`}
 													class="text-sm text-primary hover:underline"
 												>
-													Ver todos los alojamientos →
+													{viewAllAccommodations}
 												</a>
 											</div>
 										</section>
@@ -283,17 +193,17 @@ const breadcrumbItems = [
 									{destinations.length > 0 && (
 										<section id="destinations-results">
 											<h2 class="mb-6 text-2xl font-semibold text-text-primary">
-												{categoryLabels[locale].destinations}{' '}
+												{catDestinations}{' '}
 												<span class="text-text-tertiary">({destinations.length})</span>
 											</h2>
 											<div
 												class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
 												role="region"
-												aria-label={categoryLabels[locale].destinations}
+												aria-label={catDestinations}
 											>
 												{destinations.map((destination) => (
 													<DestinationCard
-														destination={destination}
+														destination={toDestinationCardProps({ item: destination as Record<string, unknown> })}
 														locale={locale}
 													/>
 												))}
@@ -303,7 +213,7 @@ const breadcrumbItems = [
 													href={`/${locale}/destinos/?q=${encodeURIComponent(query)}`}
 													class="text-sm text-primary hover:underline"
 												>
-													Ver todos los destinos →
+													{viewAllDestinations}
 												</a>
 											</div>
 										</section>
@@ -313,17 +223,17 @@ const breadcrumbItems = [
 									{events.length > 0 && (
 										<section id="events-results">
 											<h2 class="mb-6 text-2xl font-semibold text-text-primary">
-												{categoryLabels[locale].events}{' '}
+												{catEvents}{' '}
 												<span class="text-text-tertiary">({events.length})</span>
 											</h2>
 											<div
 												class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
 												role="region"
-												aria-label={categoryLabels[locale].events}
+												aria-label={catEvents}
 											>
 												{events.map((event) => (
 													<EventCard
-														event={event}
+														event={toEventCardProps({ item: event as Record<string, unknown> })}
 														locale={locale}
 													/>
 												))}
@@ -333,7 +243,7 @@ const breadcrumbItems = [
 													href={`/${locale}/eventos/?q=${encodeURIComponent(query)}`}
 													class="text-sm text-primary hover:underline"
 												>
-													Ver todos los eventos →
+													{viewAllEvents}
 												</a>
 											</div>
 										</section>
@@ -343,17 +253,17 @@ const breadcrumbItems = [
 									{posts.length > 0 && (
 										<section id="posts-results">
 											<h2 class="mb-6 text-2xl font-semibold text-text-primary">
-												{categoryLabels[locale].posts}{' '}
+												{catPosts}{' '}
 												<span class="text-text-tertiary">({posts.length})</span>
 											</h2>
 											<div
 												class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
 												role="region"
-												aria-label={categoryLabels[locale].posts}
+												aria-label={catPosts}
 											>
 												{posts.map((post) => (
 													<BlogPostCard
-														post={post}
+														post={toPostCardProps({ item: post as Record<string, unknown> })}
 														locale={locale}
 													/>
 												))}
@@ -363,16 +273,24 @@ const breadcrumbItems = [
 													href={`/${locale}/publicaciones/?q=${encodeURIComponent(query)}`}
 													class="text-sm text-primary hover:underline"
 												>
-													Ver todas las publicaciones →
+													{viewAllPosts}
 												</a>
 											</div>
 										</section>
 									)}
 								</article>
+							) : apiError ? (
+								<GenericErrorState
+									title={emptyStateText}
+									message={emptySuggestion}
+									retryHref={`/${locale}/busqueda/?q=${encodeURIComponent(query)}`}
+									homeHref={`/${locale}/`}
+									locale={locale}
+								/>
 							) : (
 								<EmptyState
-									title={emptyStateTexts[locale]}
-									message={emptySuggestions[locale]}
+									title={emptyStateText}
+									message={emptySuggestion}
 								/>
 							)}
 						</>
@@ -382,17 +300,17 @@ const breadcrumbItems = [
 							<article id="empty-state" class="py-12 text-center">
 								<div class="mx-auto max-w-2xl">
 									<h1 class="mb-4 text-3xl font-bold text-text-primary">
-										{emptyStateTexts[locale]}
+										{emptyStateText}
 									</h1>
-									<p class="mb-8 text-lg text-text-secondary">{emptySuggestions[locale]}</p>
+									<p class="mb-8 text-lg text-text-secondary">{emptySuggestion}</p>
 
 									<!-- Popular Searches -->
 									<div class="mt-12">
 										<h2 class="mb-6 text-xl font-semibold text-text-primary">
-											{popularSearchesHeadings[locale]}
+											{popularSearchesHeading}
 										</h2>
 										<div class="flex flex-wrap justify-center gap-3">
-											{popularSearches[locale].map((search) => (
+											{popularSearches.map((search) => (
 												<a
 													href={search.href}
 													class="rounded-full bg-bg px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-primary hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
