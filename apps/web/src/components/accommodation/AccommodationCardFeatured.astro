@@ -1,0 +1,243 @@
+---
+/**
+ * Featured-style accommodation card with image overlay layout.
+ * Displays featured image with overlaid name, location pin, type badge,
+ * price badge (top-right), star rating or "no ratings" text,
+ * summary, and optional amenity/feature badges.
+ *
+ * Used in: homepage featured, search results, destination detail,
+ * destination accommodations, accommodation detail (similar), type listing.
+ *
+ * Data-source agnostic - receives typed props, not DB entities.
+ */
+import { AccommodationIcon, LocationIcon, resolveIcon } from "@repo/icons";
+import Badge from "../ui/Badge.astro";
+import FavoriteButtonIsland from "../ui/FavoriteButtonIsland.astro";
+import {
+    buildDetailUrl,
+    formatLocationDisplay,
+    formatPrice,
+    formatRating,
+    getTypeI18nKey,
+} from "./accommodation-card.utils";
+import type { SupportedLocale } from "../../lib/i18n";
+import { t } from "../../lib/i18n";
+import type { AccommodationCardData } from "../../lib/api/transforms";
+
+interface Props {
+    accommodation: AccommodationCardData;
+    showFavorite?: boolean;
+    locale?: string;
+}
+
+const { accommodation, showFavorite = false, locale = "es" } = Astro.props;
+const safeLocale = (["es", "en", "pt"].includes(locale) ? locale : "es") as SupportedLocale;
+
+const detailUrl = buildDetailUrl({ locale: safeLocale, slug: accommodation.slug });
+
+/** Format rating to 1 decimal place, defaulting to 0 if not a number */
+const { numericRating, formattedRating } = formatRating({ averageRating: accommodation.averageRating });
+const hasReviews = (accommodation.reviewsCount ?? 0) > 0;
+const reviewCount = accommodation.reviewsCount ?? 0;
+
+/**
+ * Single star color: interpolates from gray (0) to bright amber (5).
+ * Uses HSL where hue stays at amber (45), saturation goes 0%->100%, lightness 75%->50%.
+ */
+const ratingRatio = Math.min(numericRating / 5, 1);
+const starSaturation = Math.round(ratingRatio * 100);
+const starLightness = Math.round(75 - ratingRatio * 25);
+const starColor = `hsl(45, ${starSaturation}%, ${starLightness}%)`;
+
+/** Localized type label via i18n, falling back to the raw type string */
+const typeLabel =
+    t({ locale: safeLocale, namespace: "accommodations", key: getTypeI18nKey({ type: accommodation.type }) }) ||
+    accommodation.type;
+
+/** Formatted price or undefined when no price is set */
+const formattedPrice = formatPrice({ price: accommodation.price });
+
+/** Localized labels for price consultation and no-rating states */
+const consultPriceLabel = t({ locale: safeLocale, namespace: "accommodations", key: "card.consultPrice" });
+const noRatingLabel = t({ locale: safeLocale, namespace: "accommodations", key: "card.noRating" });
+
+/** Location display: city + state when both available */
+const locationDisplay = formatLocationDisplay({
+    city: accommodation.location?.city,
+    state: accommodation.location?.state,
+});
+
+/** Combine amenities and features into badge list, sorted by displayWeight DESC */
+const allBadgeItems: Array<{ key: string; label: string; icon?: string; displayWeight?: number }> = [
+    ...(accommodation.amenities ?? []),
+    ...(accommodation.features ?? []),
+].sort((a, b) => (b.displayWeight ?? 50) - (a.displayWeight ?? 50));
+const badgeItems = allBadgeItems.slice(0, 6);
+const extraBadgeCount = allBadgeItems.length - badgeItems.length;
+
+/** Fallback icon for amenities/features without a matching icon */
+const FallbackIcon = AccommodationIcon;
+---
+
+<article
+    class="group relative rounded-xl border border-border bg-surface shadow-md transition-shadow duration-300 hover:shadow-xl"
+>
+    <!-- Favorite button (outside <a> to prevent navigation on click) -->
+    {
+        showFavorite && accommodation.id && (
+            <div class="absolute right-3 top-12 z-20" data-slot="favorite-button">
+                <FavoriteButtonIsland
+                    entityId={accommodation.id}
+                    entityType="accommodation"
+                    entityName={accommodation.name}
+                    locale={locale as "es" | "en"}
+                    className="card-favorite-btn"
+                />
+            </div>
+        )
+    }
+
+    <!-- Image container with overlaid name and location -->
+    <a href={detailUrl} class="relative block aspect-[4/3] overflow-hidden rounded-t-xl">
+        <img
+            src={accommodation.featuredImage}
+            alt={accommodation.name}
+            class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            loading="lazy"
+            transition:name={`entity-${accommodation.slug}`}
+        />
+
+        <!-- Dark gradient overlay for text readability -->
+        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
+
+        <!-- Type badge (top-left) -->
+        <div class="absolute left-3 top-3">
+            <Badge label={typeLabel} variant="type" />
+        </div>
+
+        <!-- Price badge (top-right) -->
+        <div class="absolute right-3 top-3">
+            {
+                formattedPrice ? (
+                    <Badge label={formattedPrice} variant="price-light" />
+                ) : (
+                    <Badge label={consultPriceLabel} variant="secondary" />
+                )
+            }
+        </div>
+
+        <!-- Name + Location overlaid on image (bottom) -->
+        <div class="absolute bottom-0 left-0 right-0 p-2">
+            <h3 class="text-xl font-bold text-white line-clamp-2 drop-shadow-md mb-0" title={accommodation.name}>
+                {accommodation.name}
+            </h3>
+            {
+                locationDisplay && (
+                    <p class="mb-0 mt-0 bold flex items-center gap-1 text-xs text-white/90 drop-shadow-sm">
+                        <LocationIcon
+                            size={14}
+                            weight="bold"
+                            color="white"
+                            className="flex-shrink-0"
+                            aria-hidden="true"
+                        />
+                        {locationDisplay}
+                    </p>
+                )
+            }
+        </div>
+    </a>
+
+    <!-- Content -->
+    <div class="card-content p-4">
+        <!-- Summary -->
+        <p class="card-summary line-clamp-3 text-xs text-text-secondary">
+            {accommodation.summary}
+        </p>
+
+        <!-- Single star rating (always visible) -->
+        <div class="card-rating mt-2 flex items-center gap-1.5 text-sm">
+            <span style={`color: ${starColor}`} aria-hidden="true" class="text-2xl leading-none">&#9733;</span>
+            {
+                hasReviews ? (
+                    <>
+                        <span class="font-medium text-text">{formattedRating}</span>
+                        <span class="text-text-tertiary">({reviewCount})</span>
+                    </>
+                ) : (
+                    <span class="text-text-tertiary italic">{noRatingLabel}</span>
+                )
+            }
+        </div>
+
+        <!-- Amenity/Feature icon badges with CSS tooltip -->
+        {
+            badgeItems.length > 0 && (
+                <div class="card-badges mt-3 flex flex-wrap items-center gap-1">
+                    {badgeItems.map((item) => {
+                        const IconComponent =
+                            (item.icon ? resolveIcon({ iconName: item.icon }) : undefined) ?? FallbackIcon;
+                        return (
+                            <span class="icon-tooltip" data-tooltip={item.label} aria-label={item.label} role="img">
+                                <IconComponent size={16} weight="regular" color="currentColor" aria-hidden="true" />
+                            </span>
+                        );
+                    })}
+                    {extraBadgeCount > 0 && (
+                        <span class="inline-flex items-center justify-center rounded-full bg-primary-50 px-2 py-1 text-xs font-medium text-primary-600">
+                            +{extraBadgeCount}
+                        </span>
+                    )}
+                </div>
+            )
+        }
+    </div>
+</article>
+
+<style>
+    /* Content hover effects - subtle lift on inner elements */
+    .card-content {
+        transition: background-color 0.3s ease;
+    }
+
+    .group:hover .card-summary {
+        color: var(--color-text);
+        transition: color 0.3s ease;
+    }
+
+    .card-summary {
+        transition: color 0.3s ease;
+    }
+
+    .card-rating {
+        transition: transform 0.3s ease;
+    }
+
+    .group:hover .card-rating {
+        transform: translateX(2px);
+    }
+
+    .card-badges {
+        transition:
+            transform 0.3s ease,
+            opacity 0.3s ease;
+    }
+
+    .group:hover .card-badges {
+        transform: translateY(-1px);
+    }
+
+    /* Icon tooltip styles loaded from styles/components.css */
+
+    /* Favorite button - icon only, no container background */
+    :global(.card-favorite-btn) {
+        background: none !important;
+        padding: 0 !important;
+        border: none !important;
+        border-radius: 0 !important;
+    }
+
+    :global(.card-favorite-btn:hover) {
+        background: none !important;
+    }
+</style>

@@ -1,18 +1,15 @@
-import { ChevronDownIcon, CloseIcon, StarIcon } from '@repo/icons';
+import { StarIcon } from '@repo/icons';
 import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
+import { useTranslation } from '../../hooks/useTranslation';
+import type { SupportedLocale } from '../../lib/i18n';
+import { ActiveFilterChips } from './ActiveFilterChips.client';
+import { FilterSection } from './FilterSection.client';
+import { PriceRangeFilter } from './PriceRangeFilter.client';
+import type { AccommodationFilters, SectionState } from './filter-sidebar.types';
+import { ACCOMMODATION_TYPES, AMENITIES, DESTINATIONS } from './filter-sidebar.types';
 
-/**
- * Accommodation filter configuration
- */
-export interface AccommodationFilters {
-    readonly types: string[];
-    readonly priceMin: number | null;
-    readonly priceMax: number | null;
-    readonly destination: string;
-    readonly amenities: string[];
-    readonly minRating: number | null;
-}
+export type { AccommodationFilters } from './filter-sidebar.types';
 
 /**
  * Props for the FilterSidebar component
@@ -27,7 +24,7 @@ export interface FilterSidebarProps {
      * Locale for UI text
      * @default 'es'
      */
-    readonly locale?: 'es' | 'en';
+    readonly locale?: string;
 
     /**
      * Additional CSS classes to apply to the component
@@ -36,123 +33,17 @@ export interface FilterSidebarProps {
 }
 
 /**
- * Destination option
- */
-interface Destination {
-    readonly value: string;
-    readonly label: string;
-}
-
-/**
- * Collapsible section state
- */
-interface SectionState {
-    readonly type: boolean;
-    readonly price: boolean;
-    readonly destination: boolean;
-    readonly amenities: boolean;
-    readonly rating: boolean;
-}
-
-/**
- * Available accommodation types
- */
-const ACCOMMODATION_TYPES = ['hotel', 'cabin', 'apartment', 'rural', 'hostel', 'boutique'] as const;
-
-/**
- * Available amenities
- */
-const AMENITIES = [
-    'wifi',
-    'pool',
-    'parking',
-    'breakfast',
-    'airConditioning',
-    'gym',
-    'restaurant',
-    'petFriendly'
-] as const;
-
-/**
- * Available destinations (mock data)
- */
-const DESTINATIONS: Destination[] = [
-    { value: 'concepcion-del-uruguay', label: 'Concepción del Uruguay' },
-    { value: 'colon', label: 'Colón' },
-    { value: 'gualeguaychu', label: 'Gualeguaychú' },
-    { value: 'parana', label: 'Paraná' },
-    { value: 'federacion', label: 'Federación' }
-];
-
-/**
- * Localized text strings
- */
-const translations = {
-    es: {
-        filters: 'Filtros',
-        type: 'Tipo de alojamiento',
-        hotel: 'Hotel',
-        cabin: 'Cabaña',
-        apartment: 'Departamento',
-        rural: 'Rural',
-        hostel: 'Hostel',
-        boutique: 'Boutique',
-        priceRange: 'Rango de precio',
-        priceMin: 'Mínimo',
-        priceMax: 'Máximo',
-        destination: 'Destino',
-        allDestinations: 'Todos los destinos',
-        amenities: 'Servicios',
-        wifi: 'WiFi',
-        pool: 'Piscina',
-        parking: 'Estacionamiento',
-        breakfast: 'Desayuno',
-        airConditioning: 'Aire acondicionado',
-        gym: 'Gimnasio',
-        restaurant: 'Restaurante',
-        petFriendly: 'Admite mascotas',
-        rating: 'Calificación mínima',
-        stars: 'estrellas',
-        clearAll: 'Limpiar filtros',
-        activeFilters: 'Filtros activos'
-    },
-    en: {
-        filters: 'Filters',
-        type: 'Accommodation type',
-        hotel: 'Hotel',
-        cabin: 'Cabin',
-        apartment: 'Apartment',
-        rural: 'Rural',
-        hostel: 'Hostel',
-        boutique: 'Boutique',
-        priceRange: 'Price range',
-        priceMin: 'Min',
-        priceMax: 'Max',
-        destination: 'Destination',
-        allDestinations: 'All destinations',
-        amenities: 'Amenities',
-        wifi: 'WiFi',
-        pool: 'Pool',
-        parking: 'Parking',
-        breakfast: 'Breakfast',
-        airConditioning: 'Air conditioning',
-        gym: 'Gym',
-        restaurant: 'Restaurant',
-        petFriendly: 'Pet friendly',
-        rating: 'Minimum rating',
-        stars: 'stars',
-        clearAll: 'Clear filters',
-        activeFilters: 'Active filters'
-    }
-};
-
-/**
  * FilterSidebar component
  *
  * A comprehensive filter sidebar for accommodation search with URL synchronization.
  * Features collapsible sections for type, price, destination, amenities, and rating.
  * Active filters are displayed as removable badges. All filter changes sync to URL
  * query parameters without page reload.
+ *
+ * Sub-components:
+ * - {@link FilterSection} - Collapsible section wrapper
+ * - {@link PriceRangeFilter} - Price min/max inputs
+ * - {@link ActiveFilterChips} - Active filter badge chips
  *
  * @param props - Component props
  * @returns React component
@@ -188,7 +79,10 @@ export function FilterSidebar({
         rating: true
     });
 
-    const t = translations[locale];
+    const { t } = useTranslation({
+        locale: locale as SupportedLocale,
+        namespace: 'accommodations'
+    });
 
     /**
      * Syncs filters to URL query parameters
@@ -269,7 +163,7 @@ export function FilterSidebar({
      */
     const toggleType = (type: string): void => {
         const newTypes = filters.types.includes(type)
-            ? filters.types.filter((t) => t !== type)
+            ? filters.types.filter((item) => item !== type)
             : [...filters.types, type];
         updateFilters({ types: newTypes });
     };
@@ -279,7 +173,7 @@ export function FilterSidebar({
      */
     const toggleAmenity = (amenity: string): void => {
         const newAmenities = filters.amenities.includes(amenity)
-            ? filters.amenities.filter((a) => a !== amenity)
+            ? filters.amenities.filter((item) => item !== amenity)
             : [...filters.amenities, amenity];
         updateFilters({ amenities: newAmenities });
     };
@@ -313,18 +207,14 @@ export function FilterSidebar({
     const clearFilter = (filterType: keyof AccommodationFilters, value?: string): void => {
         switch (filterType) {
             case 'types':
-                if (value) {
-                    updateFilters({ types: filters.types.filter((t) => t !== value) });
-                } else {
-                    updateFilters({ types: [] });
-                }
+                updateFilters({
+                    types: value ? filters.types.filter((item) => item !== value) : []
+                });
                 break;
             case 'amenities':
-                if (value) {
-                    updateFilters({ amenities: filters.amenities.filter((a) => a !== value) });
-                } else {
-                    updateFilters({ amenities: [] });
-                }
+                updateFilters({
+                    amenities: value ? filters.amenities.filter((item) => item !== value) : []
+                });
                 break;
             case 'priceMin':
                 updateFilters({ priceMin: null });
@@ -349,18 +239,7 @@ export function FilterSidebar({
     };
 
     /**
-     * Counts active filters
-     */
-    const activeFilterCount =
-        filters.types.length +
-        filters.amenities.length +
-        (filters.priceMin !== null ? 1 : 0) +
-        (filters.priceMax !== null ? 1 : 0) +
-        (filters.destination ? 1 : 0) +
-        (filters.minRating !== null ? 1 : 0);
-
-    /**
-     * Renders a star for rating selection
+     * Renders a star button for rating selection
      */
     const renderStar = (index: number): JSX.Element => {
         const value = index + 1;
@@ -371,7 +250,7 @@ export function FilterSidebar({
                 key={index}
                 type="button"
                 onClick={() => setRating(value)}
-                aria-label={`${value} ${t.stars}`}
+                aria-label={`${value} ${t('sidebar.stars')}`}
                 className="rounded p-1 transition-transform hover:scale-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
             >
                 <StarIcon
@@ -384,344 +263,124 @@ export function FilterSidebar({
         );
     };
 
-    /**
-     * Renders active filter badges
-     */
-    const renderActiveFilters = (): JSX.Element | null => {
-        if (activeFilterCount === 0) return null;
-
-        return (
-            <div className="mb-6 rounded-lg bg-gray-50 p-4">
-                <div className="mb-3 flex items-center justify-between">
-                    <h3 className="font-semibold text-gray-700 text-sm">{t.activeFilters}</h3>
-                    <button
-                        type="button"
-                        onClick={clearAllFilters}
-                        className="rounded text-primary text-xs underline hover:text-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
-                    >
-                        {t.clearAll}
-                    </button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                    {filters.types.map((type) => (
-                        <span
-                            key={type}
-                            className="inline-flex items-center gap-1 rounded-full border border-gray-300 bg-white px-3 py-1 text-sm"
-                        >
-                            {t[type as keyof typeof t]}
-                            <button
-                                type="button"
-                                onClick={() => clearFilter('types', type)}
-                                aria-label={`Remove ${type} filter`}
-                                className="rounded hover:text-red-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
-                            >
-                                <CloseIcon
-                                    size={16}
-                                    weight="bold"
-                                    aria-hidden="true"
-                                />
-                            </button>
-                        </span>
-                    ))}
-                    {filters.priceMin !== null && (
-                        <span className="inline-flex items-center gap-1 rounded-full border border-gray-300 bg-white px-3 py-1 text-sm">
-                            {t.priceMin}: ${filters.priceMin}
-                            <button
-                                type="button"
-                                onClick={() => clearFilter('priceMin')}
-                                aria-label="Remove minimum price filter"
-                                className="rounded hover:text-red-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
-                            >
-                                <CloseIcon
-                                    size={16}
-                                    weight="bold"
-                                    aria-hidden="true"
-                                />
-                            </button>
-                        </span>
-                    )}
-                    {filters.priceMax !== null && (
-                        <span className="inline-flex items-center gap-1 rounded-full border border-gray-300 bg-white px-3 py-1 text-sm">
-                            {t.priceMax}: ${filters.priceMax}
-                            <button
-                                type="button"
-                                onClick={() => clearFilter('priceMax')}
-                                aria-label="Remove maximum price filter"
-                                className="rounded hover:text-red-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
-                            >
-                                <CloseIcon
-                                    size={16}
-                                    weight="bold"
-                                    aria-hidden="true"
-                                />
-                            </button>
-                        </span>
-                    )}
-                    {filters.destination && (
-                        <span className="inline-flex items-center gap-1 rounded-full border border-gray-300 bg-white px-3 py-1 text-sm">
-                            {DESTINATIONS.find((d) => d.value === filters.destination)?.label}
-                            <button
-                                type="button"
-                                onClick={() => clearFilter('destination')}
-                                aria-label="Remove destination filter"
-                                className="rounded hover:text-red-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
-                            >
-                                <CloseIcon
-                                    size={16}
-                                    weight="bold"
-                                    aria-hidden="true"
-                                />
-                            </button>
-                        </span>
-                    )}
-                    {filters.amenities.map((amenity) => (
-                        <span
-                            key={amenity}
-                            className="inline-flex items-center gap-1 rounded-full border border-gray-300 bg-white px-3 py-1 text-sm"
-                        >
-                            {t[amenity as keyof typeof t]}
-                            <button
-                                type="button"
-                                onClick={() => clearFilter('amenities', amenity)}
-                                aria-label={`Remove ${amenity} filter`}
-                                className="rounded hover:text-red-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
-                            >
-                                <CloseIcon
-                                    size={16}
-                                    weight="bold"
-                                    aria-hidden="true"
-                                />
-                            </button>
-                        </span>
-                    ))}
-                    {filters.minRating !== null && (
-                        <span className="inline-flex items-center gap-1 rounded-full border border-gray-300 bg-white px-3 py-1 text-sm">
-                            {filters.minRating}+ {t.stars}
-                            <button
-                                type="button"
-                                onClick={() => clearFilter('minRating')}
-                                aria-label="Remove rating filter"
-                                className="rounded hover:text-red-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
-                            >
-                                <CloseIcon
-                                    size={16}
-                                    weight="bold"
-                                    aria-hidden="true"
-                                />
-                            </button>
-                        </span>
-                    )}
-                </div>
-            </div>
-        );
-    };
-
     return (
         <aside
             className={`${className}`.trim()}
-            aria-label={t.filters}
+            aria-label={t('sidebar.filters')}
         >
             <div className="rounded-lg border border-gray-200 bg-white p-6">
-                <h2 className="mb-6 font-bold text-gray-900 text-xl">{t.filters}</h2>
+                <h2 className="mb-6 font-bold text-gray-900 text-xl">{t('sidebar.filters')}</h2>
 
-                {renderActiveFilters()}
+                <ActiveFilterChips
+                    filters={filters}
+                    onClearType={(value) => clearFilter('types', value)}
+                    onClearPriceMin={() => clearFilter('priceMin')}
+                    onClearPriceMax={() => clearFilter('priceMax')}
+                    onClearDestination={() => clearFilter('destination')}
+                    onClearAmenity={(value) => clearFilter('amenities', value)}
+                    onClearRating={() => clearFilter('minRating')}
+                    onClearAll={clearAllFilters}
+                    locale={locale}
+                />
 
                 {/* Type Section */}
-                <div className="mb-6 border-gray-200 border-b pb-6">
-                    <button
-                        type="button"
-                        onClick={() => toggleSection('type')}
-                        aria-expanded={expandedSections.type}
-                        className="mb-3 flex w-full items-center justify-between rounded text-left font-semibold text-gray-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
-                    >
-                        {t.type}
-                        <ChevronDownIcon
-                            size={20}
-                            weight="bold"
-                            className={`transition-transform ${expandedSections.type ? 'rotate-180' : ''}`}
-                            aria-hidden="true"
-                        />
-                    </button>
-                    {expandedSections.type && (
-                        <div className="space-y-2">
-                            {ACCOMMODATION_TYPES.map((type) => (
-                                <label
-                                    key={type}
-                                    className="flex cursor-pointer items-center"
-                                >
-                                    <input
-                                        type="checkbox"
-                                        checked={filters.types.includes(type)}
-                                        onChange={() => toggleType(type)}
-                                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-2 focus:ring-primary"
-                                    />
-                                    <span className="ml-3 text-gray-700 text-sm">{t[type]}</span>
-                                </label>
-                            ))}
-                        </div>
-                    )}
-                </div>
+                <FilterSection
+                    title={t('sidebar.type')}
+                    isExpanded={expandedSections.type}
+                    onToggle={() => toggleSection('type')}
+                >
+                    <div className="space-y-2">
+                        {ACCOMMODATION_TYPES.map((type) => (
+                            <label
+                                key={type}
+                                className="flex cursor-pointer items-center"
+                            >
+                                <input
+                                    type="checkbox"
+                                    checked={filters.types.includes(type)}
+                                    onChange={() => toggleType(type)}
+                                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-2 focus:ring-primary"
+                                />
+                                <span className="ml-3 text-gray-700 text-sm">
+                                    {t(`types.${type}`)}
+                                </span>
+                            </label>
+                        ))}
+                    </div>
+                </FilterSection>
 
                 {/* Price Range Section */}
-                <div className="mb-6 border-gray-200 border-b pb-6">
-                    <button
-                        type="button"
-                        onClick={() => toggleSection('price')}
-                        aria-expanded={expandedSections.price}
-                        className="mb-3 flex w-full items-center justify-between rounded text-left font-semibold text-gray-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
-                    >
-                        {t.priceRange}
-                        <ChevronDownIcon
-                            size={20}
-                            weight="bold"
-                            className={`transition-transform ${expandedSections.price ? 'rotate-180' : ''}`}
-                            aria-hidden="true"
-                        />
-                    </button>
-                    {expandedSections.price && (
-                        <div className="space-y-3">
-                            <div>
-                                <label
-                                    htmlFor="price-min"
-                                    className="mb-1 block text-gray-700 text-sm"
-                                >
-                                    {t.priceMin}
-                                </label>
-                                <input
-                                    type="number"
-                                    id="price-min"
-                                    value={filters.priceMin ?? ''}
-                                    onChange={(e) => {
-                                        const value = e.target.value
-                                            ? Number.parseInt(e.target.value, 10)
-                                            : null;
-                                        updateFilters({ priceMin: value });
-                                    }}
-                                    placeholder="0"
-                                    min="0"
-                                    className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
-                                />
-                            </div>
-                            <div>
-                                <label
-                                    htmlFor="price-max"
-                                    className="mb-1 block text-gray-700 text-sm"
-                                >
-                                    {t.priceMax}
-                                </label>
-                                <input
-                                    type="number"
-                                    id="price-max"
-                                    value={filters.priceMax ?? ''}
-                                    onChange={(e) => {
-                                        const value = e.target.value
-                                            ? Number.parseInt(e.target.value, 10)
-                                            : null;
-                                        updateFilters({ priceMax: value });
-                                    }}
-                                    placeholder="0"
-                                    min="0"
-                                    className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
-                                />
-                            </div>
-                        </div>
-                    )}
-                </div>
+                <PriceRangeFilter
+                    priceMin={filters.priceMin}
+                    priceMax={filters.priceMax}
+                    isExpanded={expandedSections.price}
+                    onToggle={() => toggleSection('price')}
+                    onPriceMinChange={(value) => updateFilters({ priceMin: value })}
+                    onPriceMaxChange={(value) => updateFilters({ priceMax: value })}
+                    locale={locale}
+                />
 
                 {/* Destination Section */}
-                <div className="mb-6 border-gray-200 border-b pb-6">
-                    <button
-                        type="button"
-                        onClick={() => toggleSection('destination')}
-                        aria-expanded={expandedSections.destination}
-                        className="mb-3 flex w-full items-center justify-between rounded text-left font-semibold text-gray-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+                <FilterSection
+                    title={t('sidebar.destination')}
+                    isExpanded={expandedSections.destination}
+                    onToggle={() => toggleSection('destination')}
+                >
+                    <select
+                        id="destination"
+                        value={filters.destination}
+                        onChange={(e) => updateFilters({ destination: e.target.value })}
+                        className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
                     >
-                        {t.destination}
-                        <ChevronDownIcon
-                            size={20}
-                            weight="bold"
-                            className={`transition-transform ${expandedSections.destination ? 'rotate-180' : ''}`}
-                            aria-hidden="true"
-                        />
-                    </button>
-                    {expandedSections.destination && (
-                        <select
-                            id="destination"
-                            value={filters.destination}
-                            onChange={(e) => updateFilters({ destination: e.target.value })}
-                            className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
-                        >
-                            <option value="">{t.allDestinations}</option>
-                            {DESTINATIONS.map((dest) => (
-                                <option
-                                    key={dest.value}
-                                    value={dest.value}
-                                >
-                                    {dest.label}
-                                </option>
-                            ))}
-                        </select>
-                    )}
-                </div>
+                        <option value="">{t('sidebar.allDestinations')}</option>
+                        {DESTINATIONS.map((dest) => (
+                            <option
+                                key={dest.value}
+                                value={dest.value}
+                            >
+                                {dest.label}
+                            </option>
+                        ))}
+                    </select>
+                </FilterSection>
 
                 {/* Amenities Section */}
-                <div className="mb-6 border-gray-200 border-b pb-6">
-                    <button
-                        type="button"
-                        onClick={() => toggleSection('amenities')}
-                        aria-expanded={expandedSections.amenities}
-                        className="mb-3 flex w-full items-center justify-between rounded text-left font-semibold text-gray-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
-                    >
-                        {t.amenities}
-                        <ChevronDownIcon
-                            size={20}
-                            weight="bold"
-                            className={`transition-transform ${expandedSections.amenities ? 'rotate-180' : ''}`}
-                            aria-hidden="true"
-                        />
-                    </button>
-                    {expandedSections.amenities && (
-                        <div className="space-y-2">
-                            {AMENITIES.map((amenity) => (
-                                <label
-                                    key={amenity}
-                                    className="flex cursor-pointer items-center"
-                                >
-                                    <input
-                                        type="checkbox"
-                                        checked={filters.amenities.includes(amenity)}
-                                        onChange={() => toggleAmenity(amenity)}
-                                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-2 focus:ring-primary"
-                                    />
-                                    <span className="ml-3 text-gray-700 text-sm">{t[amenity]}</span>
-                                </label>
-                            ))}
-                        </div>
-                    )}
-                </div>
+                <FilterSection
+                    title={t('sidebar.amenities')}
+                    isExpanded={expandedSections.amenities}
+                    onToggle={() => toggleSection('amenities')}
+                >
+                    <div className="space-y-2">
+                        {AMENITIES.map((amenity) => (
+                            <label
+                                key={amenity}
+                                className="flex cursor-pointer items-center"
+                            >
+                                <input
+                                    type="checkbox"
+                                    checked={filters.amenities.includes(amenity)}
+                                    onChange={() => toggleAmenity(amenity)}
+                                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-2 focus:ring-primary"
+                                />
+                                <span className="ml-3 text-gray-700 text-sm">
+                                    {t(`sidebar.${amenity}`)}
+                                </span>
+                            </label>
+                        ))}
+                    </div>
+                </FilterSection>
 
                 {/* Rating Section */}
-                <div>
-                    <button
-                        type="button"
-                        onClick={() => toggleSection('rating')}
-                        aria-expanded={expandedSections.rating}
-                        className="mb-3 flex w-full items-center justify-between rounded text-left font-semibold text-gray-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
-                    >
-                        {t.rating}
-                        <ChevronDownIcon
-                            size={20}
-                            weight="bold"
-                            className={`transition-transform ${expandedSections.rating ? 'rotate-180' : ''}`}
-                            aria-hidden="true"
-                        />
-                    </button>
-                    {expandedSections.rating && (
-                        <div className="flex gap-1">
-                            {Array.from({ length: 5 }, (_, i) => renderStar(i))}
-                        </div>
-                    )}
-                </div>
+                <FilterSection
+                    title={t('sidebar.rating')}
+                    isExpanded={expandedSections.rating}
+                    onToggle={() => toggleSection('rating')}
+                    withBorder={false}
+                >
+                    <div className="flex gap-1">
+                        {Array.from({ length: 5 }, (_, i) => renderStar(i))}
+                    </div>
+                </FilterSection>
             </div>
         </aside>
     );

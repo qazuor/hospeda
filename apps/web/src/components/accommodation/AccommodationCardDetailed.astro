@@ -1,0 +1,201 @@
+---
+/**
+ * Detailed accommodation card with Airbnb-style layout.
+ * Features image carousel, specs (guests/beds/baths), rating, and price.
+ * Uses ImageCarousel React island for swipeable gallery.
+ *
+ * Layout:
+ * +--------------------------------------+
+ * | [Image Carousel]          [Heart]    |
+ * | [Type Badge bottom-left]             |
+ * +--------------------------------------+
+ * | Type en Location                     |
+ * | Accommodation Name                   |
+ * | 4 guests . 2 beds . 1 bath           |
+ * |--------------------------------------|
+ * | * 4.8 (23)               $45.000/n   |
+ * +--------------------------------------+
+ */
+import { ImageCarousel } from './ImageCarousel.client';
+import Badge from '../ui/Badge.astro';
+import FavoriteButtonIsland from '../ui/FavoriteButtonIsland.astro';
+import { t } from '../../lib/i18n';
+import type { SupportedLocale } from '../../lib/i18n';
+import {
+    buildDetailUrl,
+    formatLocationDisplay,
+    formatPrice,
+    formatRating,
+    getTypeI18nKey,
+} from './accommodation-card.utils';
+
+interface Props {
+    readonly id?: string;
+    readonly slug: string;
+    readonly name: string;
+    readonly type: string;
+    readonly images: readonly string[];
+    readonly location: { readonly city?: string; readonly state?: string };
+    readonly capacity?: number;
+    readonly bedrooms?: number;
+    readonly beds?: number;
+    readonly bathrooms?: number;
+    readonly averageRating?: number;
+    readonly reviewsCount?: number;
+    readonly price?: { readonly amount: number; readonly currency: string };
+    readonly isFeatured?: boolean;
+    readonly locale?: string;
+}
+
+const {
+    id,
+    slug,
+    name,
+    type,
+    images,
+    location,
+    capacity,
+    bedrooms: _bedrooms,
+    beds,
+    bathrooms,
+    averageRating = 0,
+    reviewsCount = 0,
+    price,
+    locale = 'es',
+} = Astro.props;
+
+const safeLocale = (locale as SupportedLocale) ?? 'es';
+
+const detailUrl = buildDetailUrl({ locale: safeLocale, slug });
+
+const typeLabel =
+    t({ locale: safeLocale, namespace: 'accommodations', key: getTypeI18nKey({ type }) }) || type;
+
+const locationDisplay = formatLocationDisplay({ city: location?.city, state: location?.state });
+
+const typeLine = locationDisplay
+    ? t({
+          locale: safeLocale,
+          namespace: 'accommodations',
+          key: 'card.typeInLocation',
+          params: { type: typeLabel, location: locationDisplay },
+      })
+    : typeLabel;
+
+const { formattedRating } = formatRating({ averageRating });
+const hasReviews = reviewsCount > 0;
+
+const guestsLabel = t({ locale: safeLocale, namespace: 'accommodations', key: 'card.guests' });
+const bedsLabel = t({ locale: safeLocale, namespace: 'accommodations', key: 'card.beds' });
+const bathsLabel = t({ locale: safeLocale, namespace: 'accommodations', key: 'card.bathrooms' });
+const perNightLabel = t({ locale: safeLocale, namespace: 'accommodations', key: 'card.per.night' });
+const noRatingLabel = t({ locale: safeLocale, namespace: 'accommodations', key: 'card.noRating' });
+const consultLabel = t({ locale: safeLocale, namespace: 'accommodations', key: 'card.consultPrice' });
+
+/** Build specs string: "4 guests . 2 beds . 1 bath" */
+const specs: string[] = [];
+if (capacity) specs.push(`${capacity} ${guestsLabel}`);
+if (beds) specs.push(`${beds} ${bedsLabel}`);
+if (bathrooms) specs.push(`${bathrooms} ${bathsLabel}`);
+const specsLine = specs.join(' · ');
+
+const formattedPrice = formatPrice({ price });
+---
+
+<article class="group relative overflow-hidden rounded-xl transition-shadow duration-300 hover:shadow-lg">
+    {/* Favorite button (outside link to prevent navigation) */}
+    {id && (
+        <div class="absolute right-3 top-3 z-20">
+            <FavoriteButtonIsland
+                entityId={id}
+                entityType="accommodation"
+                entityName={name}
+                locale={locale as 'es' | 'en'}
+                className="card-v2-favorite"
+            />
+        </div>
+    )}
+
+    {/* Image area with carousel */}
+    <a href={detailUrl} class="relative block overflow-hidden rounded-xl">
+        <ImageCarousel
+            client:visible
+            images={images}
+            alt={name}
+            slug={slug}
+        />
+
+        {/* Type badge bottom-left on image */}
+        <div class="absolute bottom-3 left-3 z-10">
+            <Badge label={typeLabel} variant="type" />
+        </div>
+    </a>
+
+    {/* Content area */}
+    <a href={detailUrl} class="block px-1 pt-3 pb-1 no-underline">
+        {/* Type + Location (subtitle) */}
+        <p class="mb-0.5 truncate text-sm text-text-secondary">
+            {typeLine}
+        </p>
+
+        {/* Accommodation name */}
+        <h3 class="mb-1 line-clamp-1 font-serif text-base font-semibold text-text" title={name}>
+            {name}
+        </h3>
+
+        {/* Specs: guests, beds, baths */}
+        {specsLine && (
+            <p class="mb-2 text-sm text-text-tertiary">
+                {specsLine}
+            </p>
+        )}
+
+        {/* Divider */}
+        <div class="mb-2 border-t border-border"></div>
+
+        {/* Rating + Price row */}
+        <div class="flex items-center justify-between">
+            {/* Rating */}
+            <div class="flex items-center gap-1 text-sm">
+                {hasReviews ? (
+                    <>
+                        <span class="text-amber-500" aria-hidden="true">&#9733;</span>
+                        <span class="font-medium text-text">{formattedRating}</span>
+                        <span class="text-text-tertiary">({reviewsCount})</span>
+                    </>
+                ) : (
+                    <span class="text-text-tertiary italic">{noRatingLabel}</span>
+                )}
+            </div>
+
+            {/* Price */}
+            <div class="text-right">
+                {formattedPrice ? (
+                    <span class="text-base font-bold text-text">
+                        {formattedPrice}<span class="text-sm font-normal text-text-secondary">{perNightLabel}</span>
+                    </span>
+                ) : (
+                    <span class="text-sm text-text-tertiary">{consultLabel}</span>
+                )}
+            </div>
+        </div>
+    </a>
+</article>
+
+<style>
+    /* Favorite button - icon only, no container background */
+    :global(.card-v2-favorite) {
+        background: none !important;
+        padding: 0 !important;
+        border: none !important;
+        border-radius: 0 !important;
+    }
+    :global(.card-v2-favorite:hover) {
+        background: none !important;
+    }
+
+    /* Hide scrollbar for carousel */
+    :global(.scrollbar-hide::-webkit-scrollbar) {
+        display: none;
+    }
+</style>

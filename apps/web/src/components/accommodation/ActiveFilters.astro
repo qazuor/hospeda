@@ -1,0 +1,92 @@
+---
+/**
+ * Displays tags for active filters with "x" links to remove each one.
+ * Pure Astro component (no JS). Each tag is a link that removes the query param.
+ */
+import { t as translate, getTranslations, type SupportedLocale } from '../../lib/i18n';
+
+interface Props {
+    /** Active filter entries as key-value from URL search params */
+    readonly filters: Record<string, string>;
+    readonly locale?: string;
+    /** Base path for building removal links */
+    readonly basePath: string;
+}
+
+const { filters, locale = 'es', basePath } = Astro.props;
+const loc = locale as SupportedLocale;
+
+/** Param keys that represent user-visible filters (exclude internal params) */
+const FILTER_KEYS = new Set([
+    'q', 'type', 'minPrice', 'maxPrice', 'minGuests', 'minBedrooms', 'minBathrooms',
+    'minRating', 'hasWifi', 'hasPool', 'allowsPets', 'hasParking', 'sortBy',
+]);
+
+const activeEntries = Object.entries(filters).filter(([key]) => FILTER_KEYS.has(key));
+
+if (activeEntries.length === 0) return;
+
+/** Shorthand for activeFilters translations */
+const ft = (key: string) => translate({ locale: loc, namespace: 'accommodations', key: `activeFilters.${key}` });
+
+/** Build a map of filter key to localized label */
+const t: Record<string, string> = {};
+for (const key of FILTER_KEYS) {
+    t[key] = ft(key);
+}
+t.clearAll = ft('clearAll');
+
+/** Build URL removing a specific param */
+function buildRemoveUrl(keyToRemove: string): string {
+    const params = new URLSearchParams();
+    for (const [key, value] of activeEntries) {
+        if (key !== keyToRemove) {
+            params.set(key, value);
+        }
+    }
+    const qs = params.toString();
+    return qs ? `${basePath}?${qs}` : basePath;
+}
+
+/** Format display value for a filter */
+function displayValue(key: string, value: string): string {
+    if (key === 'hasWifi' || key === 'hasPool' || key === 'allowsPets' || key === 'hasParking') {
+        return t[key] ?? key;
+    }
+    if (key === 'minRating') return `${value}+★`;
+    if (key === 'minPrice' || key === 'maxPrice') return `$${Number(value).toLocaleString('es-AR')}`;
+    if (key === 'minGuests' || key === 'minBedrooms' || key === 'minBathrooms') return `${value}+`;
+    return value;
+}
+
+const clearAllUrl = basePath;
+---
+
+<div class="flex flex-wrap items-center gap-2">
+    {activeEntries.map(([key, value]) => {
+        const label = t[key] ?? key;
+        const displayVal = displayValue(key, value);
+        const isBooleanFilter = ['hasWifi', 'hasPool', 'allowsPets', 'hasParking'].includes(key);
+        const tagText = isBooleanFilter ? displayVal : `${label}: ${displayVal}`;
+
+        return (
+            <a
+                href={buildRemoveUrl(key)}
+                class="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/20"
+                title={`Remove ${label} filter`}
+            >
+                {tagText}
+                <span aria-hidden="true" class="ml-0.5 text-primary/60">&times;</span>
+            </a>
+        );
+    })}
+
+    {activeEntries.length > 1 && (
+        <a
+            href={clearAllUrl}
+            class="text-xs font-medium text-text-tertiary transition-colors hover:text-text"
+        >
+            {t.clearAll}
+        </a>
+    )}
+</div>

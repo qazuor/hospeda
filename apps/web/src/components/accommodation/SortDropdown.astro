@@ -1,0 +1,55 @@
+---
+/**
+ * Sort dropdown for accommodations list.
+ * Native <select> with minimal JS for navigation on change.
+ */
+import { t, type SupportedLocale } from '../../lib/i18n';
+
+interface Props {
+    readonly currentSort?: string;
+    readonly locale?: string;
+}
+
+const { currentSort = 'featured', locale = 'es' } = Astro.props;
+const loc = locale as SupportedLocale;
+
+/** Shorthand for accommodations.sort translations */
+const st = (key: string) => t({ locale: loc, namespace: 'accommodations', key: `sort.${key}` });
+
+const options = [
+    { value: 'featured', label: st('featured') },
+    { value: 'price_asc', label: st('price.asc') },
+    { value: 'price_desc', label: st('price.desc') },
+    { value: 'rating', label: st('rating') },
+    { value: 'recent', label: st('recent') },
+    { value: 'name', label: st('name') },
+] as const;
+---
+
+<div class="flex items-center gap-2">
+    <label for="sort-select" class="whitespace-nowrap text-sm font-medium text-text-secondary">
+        {st('title')}:
+    </label>
+    <select
+        id="sort-select"
+        class="rounded-full border border-border bg-surface px-4 py-2 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors"
+    >
+        {options.map((opt) => (
+            <option value={opt.value} selected={opt.value === currentSort}>
+                {opt.label}
+            </option>
+        ))}
+    </select>
+</div>
+
+<script>
+    const sortSelect = document.getElementById('sort-select') as HTMLSelectElement;
+    if (sortSelect) {
+        sortSelect.addEventListener('change', () => {
+            const url = new URL(window.location.href);
+            url.searchParams.set('sortBy', sortSelect.value);
+            url.searchParams.delete('page');
+            window.location.href = url.toString();
+        });
+    }
+</script>
