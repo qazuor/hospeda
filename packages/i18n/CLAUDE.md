@@ -6,7 +6,7 @@ This file provides guidance for working with the Internationalization package (`
 
 ## Overview
 
-Internationalization (i18n) utilities and translation management for supporting multiple languages across the Hospeda platform. Currently supports Spanish (es) and English (en).
+Internationalization (i18n) utilities and translation management for supporting multiple languages across the Hospeda platform. Currently supports Spanish (es), English (en), and Portuguese (pt).
 
 ## Key Commands
 
@@ -91,18 +91,21 @@ const description = t('page.home.description');
 
 ```
 locales/
-├── es/
-│   ├── common.json       # Common translations
-│   ├── auth.json         # Authentication
-│   ├── accommodations.json
-│   ├── destinations.json
-│   └── errors.json
-└── en/
-    ├── common.json
-    ├── auth.json
-    ├── accommodations.json
-    ├── destinations.json
-    └── errors.json
+├── es/                    # Spanish (default)
+│   ├── common.json            # Common UI translations
+│   ├── auth.json              # Authentication
+│   ├── accommodations.json    # Accommodation pages
+│   ├── destination.json       # Destination pages
+│   ├── nav.json               # Navigation items
+│   ├── footer.json            # Footer content
+│   ├── newsletter.json        # Newsletter CTA
+│   ├── ui.json                # Generic UI elements
+│   ├── contact.json           # Contact form
+│   ├── admin-tabs.json        # Admin panel tab labels
+│   ├── account.json           # User account pages
+│   └── review.json            # Review components
+├── en/                    # English (same structure)
+└── pt/                    # Portuguese (same structure)
 ```
 
 ### Translation File Format
@@ -303,6 +306,7 @@ export function LanguageSwitcher() {
 
 - `es` - Spanish (default)
 - `en` - English
+- `pt` - Portuguese
 
 ## Key Dependencies
 

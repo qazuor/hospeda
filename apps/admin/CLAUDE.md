@@ -42,316 +42,190 @@ pnpm clean:cache       # Remove Vite cache only
 
 ```
 src/
-├── routes/            # File-based routing
-│   ├── __root.tsx         # Root layout
-│   ├── index.tsx          # Dashboard home
-│   ├── accommodations/    # Accommodation management
-│   ├── destinations/      # Destination management
-│   ├── events/            # Event management
-│   └── users/             # User management
-├── features/          # Feature-specific modules
-│   ├── accommodations/
+├── routes/                # File-based routing (TanStack Router)
+│   ├── __root.tsx             # Root layout
+│   ├── _authed/               # Authenticated routes wrapper
+│   │   ├── accommodations/    # Accommodation CRUD pages
+│   │   ├── destinations/      # Destination CRUD pages
+│   │   ├── events/            # Events + locations + organizers
+│   │   ├── content/           # Amenities, features, attractions
+│   │   ├── sponsors/          # Sponsor pages (nested folder)
+│   │   ├── settings/          # Tags, critical settings
+│   │   ├── access/            # User management
+│   │   ├── billing/           # Billing pages
+│   │   └── posts/             # Blog post pages
+├── features/              # Feature-specific modules
+│   ├── accommodations/        # config/, hooks/, utils/
 │   ├── destinations/
+│   ├── amenities/
+│   ├── attractions/
+│   ├── features/
 │   ├── events/
-│   └── users/
-├── components/        # Reusable components
-│   ├── ui/                # Shadcn UI components
-│   ├── forms/             # Form components
-│   ├── tables/            # Table components
-│   └── layouts/           # Layout components
-├── lib/               # Utility libraries
-│   ├── api.ts             # API client
-│   ├── query.ts           # TanStack Query config
-│   └── utils.ts           # Helper utilities
-├── hooks/             # Custom React hooks
-├── contexts/          # React contexts
-├── shared/            # Shared utilities
-└── utils/             # General utilities
+│   ├── event-locations/
+│   ├── event-organizers/
+│   ├── sponsors/
+│   ├── tags/
+│   ├── posts/
+│   └── dashboard/
+├── components/            # Reusable components
+│   ├── entity-form/           # EntityFormSection, fields, navigation
+│   ├── entity-pages/          # EntityPageBase, EntityViewContent, EntityCreateContent
+│   ├── entity-list/           # DataTable, createEntityApi
+│   ├── selects/               # DestinationSelect, OwnerSelect
+│   ├── error-boundaries/      # EntityErrorBoundary
+│   ├── auth/                  # RoutePermissionGuard
+│   ├── table/                 # DataTable wrapper
+│   ├── ui/                    # Shadcn UI components
+│   └── ui-wrapped/            # Wrapped UI components (Button, Card, etc.)
+├── lib/                   # Utility libraries
+│   ├── api/                   # fetchApi client
+│   ├── factories/             # createEntityHooks factory
+│   └── utils/                 # async-validation, entity-search
+├── hooks/                 # Custom React hooks
+├── config/                # App configuration (sections, navigation)
+└── utils/                 # General utilities (logger)
 ```
 
 ## File-Based Routing
 
-TanStack Router uses file-based routing in `src/routes/`:
+TanStack Router uses file-based routing in `src/routes/_authed/`:
 
 ```
-routes/
-├── __root.tsx                     → Root layout
-├── index.tsx                      → /
+routes/_authed/
 ├── accommodations/
-│   ├── index.tsx                  → /accommodations
-│   ├── $id.tsx                    → /accommodations/:id
-│   ├── new.tsx                    → /accommodations/new
-│   └── $id.edit.tsx              → /accommodations/:id/edit
-└── _authenticated/
-    └── dashboard.tsx              → /dashboard (requires auth)
+│   ├── index.tsx              → LIST page
+│   ├── $id.tsx                → VIEW page
+│   ├── $id_.edit.tsx          → EDIT page ($id_ = sibling, not child)
+│   └── new.tsx                → CREATE page
+├── events/
+│   ├── locations/             → Nested folder (NOT flat locations.tsx)
+│   │   ├── index.tsx          → LIST
+│   │   ├── $id.tsx            → VIEW
+│   │   ├── $id_.edit.tsx      → EDIT
+│   │   └── new.tsx            → CREATE
+│   └── organizers/            → Same pattern
+├── sponsors/                  → Nested folder (NOT flat sponsors.tsx)
+│   ├── index.tsx
+│   ├── $id.tsx
+│   ├── $id_.edit.tsx
+│   └── new.tsx
+└── settings/
+    └── tags/                  → Nested folder
+        ├── index.tsx
+        ├── $id.tsx
+        ├── $id_.edit.tsx
+        └── new.tsx
 ```
 
-### Creating a Route
+**Route naming rules:**
 
-```tsx
-// routes/accommodations/index.tsx
-import { createFileRoute } from '@tanstack/react-router';
-import { AccommodationsList } from '@/features/accommodations';
-
-export const Route = createFileRoute('/accommodations/')({
-  component: AccommodationsPage,
-});
-
-function AccommodationsPage() {
-  return (
-    <div>
-      <h1>Accommodations</h1>
-      <AccommodationsList />
-    </div>
-  );
-}
-```
-
-### Route with Loader (Data Fetching)
-
-```tsx
-// routes/accommodations/$id.tsx
-import { createFileRoute } from '@tanstack/react-router';
-import { getAccommodation } from '@/lib/api';
-
-export const Route = createFileRoute('/accommodations/$id')({
-  loader: async ({ params }) => {
-    const accommodation = await getAccommodation(params.id);
-    return { accommodation };
-  },
-  component: AccommodationDetail,
-});
-
-function AccommodationDetail() {
-  const { accommodation } = Route.useLoaderData();
-
-  return (
-    <div>
-      <h1>{accommodation.name}</h1>
-      {/* Rest of the component */}
-    </div>
-  );
-}
-```
+- Use **nested folders** (NOT flat files like `tags.tsx`, `tags.$id.tsx`)
+- `$id.tsx` = view page (child of folder)
+- `$id_.edit.tsx` = edit page (underscore suffix makes it a sibling route, not nested under `$id`)
+- `new.tsx` = create page
+- `index.tsx` = list page
 
 ### Protected Routes
 
+All routes under `_authed/` require authentication via `beforeLoad` guard in `_authed.tsx`.
+
+## Entity Page Architecture
+
+Every entity in the admin panel follows a consistent 4-page pattern:
+
+### LIST Page (`index.tsx`)
+
+Uses `DataTable` with entity-specific columns and config:
+
 ```tsx
-// routes/_authenticated/dashboard.tsx
-import { createFileRoute, redirect } from '@tanstack/react-router';
-import { useSession } from 'better-auth/react';
-
-export const Route = createFileRoute('/_authenticated/dashboard')({
-  beforeLoad: async ({ context }) => {
-    const { session } = context.auth;
-
-    if (!session) {
-      throw redirect({ to: '/signin' });
-    }
-  },
-  component: DashboardPage,
-});
+// Features entity-specific config in features/<entity>/config/<entity>.columns.ts
+// and features/<entity>/config/<entity>.config.ts
 ```
 
-### Search Params (Query Strings)
+### VIEW Page (`$id.tsx`)
+
+Uses `EntityPageBase` with tabs (General, Events, Contact, etc.):
 
 ```tsx
-import { createFileRoute } from '@tanstack/react-router';
-import { z } from 'zod';
+import { EntityPageBase } from '@/components/entity-pages';
+// EntityPageBase renders tabs, breadcrumbs, and EntityViewContent per section
+```
 
-const searchSchema = z.object({
-  page: z.number().default(1),
-  status: z.enum(['active', 'inactive']).optional(),
-});
+### EDIT Page (`$id_.edit.tsx`)
 
-export const Route = createFileRoute('/accommodations/')({
-  validateSearch: searchSchema,
-  component: AccommodationsPage,
-});
+Uses `EntityPageBase` in edit mode with `EntityFormSection` for each section.
 
-function AccommodationsPage() {
-  const { page, status } = Route.useSearch();
-  const navigate = Route.useNavigate();
+### CREATE Page (`new.tsx`)
 
-  const changePage = (newPage: number) => {
-    navigate({
-      search: (prev) => ({ ...prev, page: newPage }),
-    });
-  };
+Uses **`EntityCreateContent`** shared component (in `components/entity-pages/EntityCreateContent.tsx`). This is the standard pattern for ALL create pages:
 
-  return <div>Page: {page}</div>;
+```tsx
+import { EntityCreateContent } from '@/components/entity-pages';
+import { createConsolidatedConfig } from '../config/sections/basic-info.consolidated';
+
+function NewEntityPage() {
+    const createMutation = useCreateEntity();
+    const navigate = useNavigate();
+
+    return (
+        <EntityCreateContent
+            config={{
+                entityType: 'entity-name',
+                title: 'Create Entity',
+                description: 'Create a new entity',
+                entityName: 'Entity',
+                entityNamePlural: 'Entities',
+                basePath: '/entities',
+                submitLabel: 'Create',
+                savingLabel: 'Creating...',
+                successToastTitle: 'Created',
+                successToastMessage: 'Entity created successfully',
+                errorToastTitle: 'Error',
+                errorMessage: 'Failed to create entity',
+            }}
+            createConsolidatedConfig={createConsolidatedConfig}
+            createMutation={createMutation}
+            onNavigate={(path) => navigate({ to: path })}
+        />
+    );
 }
 ```
 
-## Navigation
+**Never duplicate form/navigation/error-handling logic in individual create pages.** Always use EntityCreateContent.
 
-### Using Link Component
+### Consolidated Config Pattern
 
-```tsx
-import { Link } from '@tanstack/react-router';
-
-export function Navigation() {
-  return (
-    <nav>
-      <Link to="/">Home</Link>
-      <Link to="/accommodations">Accommodations</Link>
-      <Link to="/accommodations/$id" params={{ id: '123' }}>
-        Accommodation Detail
-      </Link>
-    </nav>
-  );
-}
-```
-
-### Programmatic Navigation
-
-```tsx
-import { useNavigate } from '@tanstack/react-router';
-
-export function MyComponent() {
-  const navigate = useNavigate();
-
-  const goToAccommodation = (id: string) => {
-    navigate({
-      to: '/accommodations/$id',
-      params: { id },
-    });
-  };
-
-  return <button onClick={() => goToAccommodation('123')}>View</button>;
-}
-```
-
-## Data Fetching (TanStack Query)
-
-### Query Setup
+Each entity defines its sections in `features/<entity>/config/sections/basic-info.consolidated.ts`:
 
 ```ts
-// lib/query.ts
-import { QueryClient } from '@tanstack/react-query';
+export function createConsolidatedConfig() {
+    return {
+        sections: [
+            {
+                id: 'basic-info',
+                title: 'Basic Information',
+                mode: ['create', 'edit', 'view'],
+                fields: [/* field definitions */],
+            },
+            // More sections...
+        ],
+        metadata: {
+            entityName: 'Entity',
+            entityNamePlural: 'Entities',
+        },
+    };
+}
+```
 
-export const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 60 * 1000, // 1 minute
-      retry: 1,
-    },
-  },
+### Entity Hooks Factory
+
+Use `createEntityHooks` from `lib/factories/createEntityHooks.ts` to generate standardized CRUD hooks:
+
+```ts
+const { useList, useGetById, useCreate, useUpdate, useDelete } = createEntityHooks({
+    entityName: 'accommodations',
+    apiEndpoint: '/api/v1/admin/accommodations',
 });
-```
-
-### Using Queries
-
-```tsx
-import { useQuery } from '@tanstack/react-query';
-import { getAccommodations } from '@/lib/api';
-
-export function AccommodationsList() {
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['accommodations'],
-    queryFn: getAccommodations,
-  });
-
-  if (isLoading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error.message}</div>;
-
-  return (
-    <ul>
-      {data.map((acc) => (
-        <li key={acc.id}>{acc.name}</li>
-      ))}
-    </ul>
-  );
-}
-```
-
-### Mutations
-
-```tsx
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createAccommodation } from '@/lib/api';
-
-export function CreateAccommodationForm() {
-  const queryClient = useQueryClient();
-
-  const mutation = useMutation({
-    mutationFn: createAccommodation,
-    onSuccess: () => {
-      // Invalidate and refetch
-      queryClient.invalidateQueries({ queryKey: ['accommodations'] });
-    },
-  });
-
-  const handleSubmit = (data: CreateAccommodationData) => {
-    mutation.mutate(data);
-  };
-
-  return (
-    <form onSubmit={(e) => {
-      e.preventDefault();
-      handleSubmit(formData);
-    }}>
-      {/* Form fields */}
-      <button disabled={mutation.isPending}>
-        {mutation.isPending ? 'Creating...' : 'Create'}
-      </button>
-    </form>
-  );
-}
-```
-
-## Forms (TanStack Form)
-
-```tsx
-import { useForm } from '@tanstack/react-form';
-import { zodValidator } from '@tanstack/zod-form-adapter';
-import { createAccommodationSchema } from '@repo/schemas';
-
-export function AccommodationForm() {
-  const form = useForm({
-    defaultValues: {
-      name: '',
-      description: '',
-    },
-    onSubmit: async ({ value }) => {
-      await createAccommodation(value);
-    },
-    validatorAdapter: zodValidator(),
-  });
-
-  return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        form.handleSubmit();
-      }}
-    >
-      <form.Field
-        name="name"
-        validators={{
-          onChange: createAccommodationSchema.shape.name,
-        }}
-      >
-        {(field) => (
-          <div>
-            <label htmlFor={field.name}>Name:</label>
-            <input
-              id={field.name}
-              value={field.state.value}
-              onChange={(e) => field.handleChange(e.target.value)}
-            />
-            {field.state.meta.errors && (
-              <span>{field.state.meta.errors.join(', ')}</span>
-            )}
-          </div>
-        )}
-      </form.Field>
-
-      <button type="submit">Submit</button>
-    </form>
-  );
-}
 ```
 
 ## Tables (TanStack Table)
@@ -515,39 +389,54 @@ export function UserProfile() {
 }
 ```
 
-## API Client
+## API Endpoint Convention
+
+**All admin panel API calls use `/api/v1/admin/*` endpoints.** This ensures admin users get full access to all resources (including drafts, deleted items, and audit fields).
+
+| Pattern | Usage |
+|---------|-------|
+| `/api/v1/admin/<entity>` | ALL entity CRUD operations |
+| `/api/v1/public/auth/me` | Auth status check (exception) |
+| `/api/v1/billing/*` | Billing operations (separate tier) |
+
+**Never use `/api/v1/public/*` or `/api/v1/protected/*` in admin panel code** (except auth).
+
+### Entity Config Pattern
+
+Each entity config defines the `apiEndpoint`:
 
 ```ts
-// lib/api.ts
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+// features/accommodations/config/accommodations.config.ts
+export const accommodationsConfig = {
+    apiEndpoint: '/api/v1/admin/accommodations',
+    // ...
+};
+```
 
-export async function fetchAPI<T>(
-  endpoint: string,
-  options?: RequestInit
-): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
-  });
+### Entity Hook Pattern
 
-  if (!response.ok) {
-    throw new Error(`API error: ${response.statusText}`);
-  }
+Hooks use the admin endpoint for all operations:
 
-  return response.json();
-}
+```ts
+const fetchAccommodations = async () => {
+    const response = await fetchApi('/api/v1/admin/accommodations');
+    return response;
+};
+```
 
-export const getAccommodations = () =>
-  fetchAPI<Accommodation[]>('/api/v1/accommodations');
+## API Client
 
-export const createAccommodation = (data: CreateAccommodationData) =>
-  fetchAPI<Accommodation>('/api/v1/accommodations', {
-    method: 'POST',
-    body: JSON.stringify(data),
-  });
+Uses `fetchApi` from `@/lib/api/fetch-api` with automatic auth token injection.
+
+```ts
+import { fetchApi } from '@/lib/api/fetch-api';
+
+// All CRUD operations go through /admin/ endpoints
+const list = () => fetchApi('/api/v1/admin/accommodations');
+const getById = (id: string) => fetchApi(`/api/v1/admin/accommodations/${id}`);
+const create = (data: unknown) => fetchApi('/api/v1/admin/accommodations', { method: 'POST', body: JSON.stringify(data) });
+const update = (id: string, data: unknown) => fetchApi(`/api/v1/admin/accommodations/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+const remove = (id: string) => fetchApi(`/api/v1/admin/accommodations/${id}`, { method: 'DELETE' });
 ```
 
 ## State Management
@@ -671,16 +560,16 @@ export function Button({ variant, size, className, ...props }) {
 
 ## Best Practices
 
-1. **Use file-based routing** - create files in `src/routes/`
-2. **Leverage TanStack Query** for server state
-3. **Use loaders for data fetching** in routes
-4. **Validate search params** with Zod
-5. **Protect routes with beforeLoad** for auth checks
-6. **Use Shadcn components** for consistent UI
-7. **Keep route files simple** - extract logic to features/
-8. **Use TypeScript strict mode** - no `any` types
-9. **Test components** with React Testing Library
-10. **Follow TanStack patterns** - consult official docs
+1. **Use nested folder routing** - `entity/index.tsx`, `entity/$id.tsx`, NOT flat `entity.tsx`, `entity.$id.tsx`
+2. **Use EntityCreateContent** for ALL create pages - never duplicate form/navigation/error logic
+3. **Use EntityPageBase** for view/edit pages with tabs
+4. **Use createEntityHooks factory** for standardized CRUD hooks
+5. **Use consolidated configs** for section definitions shared across create/edit/view
+6. **All API calls go through `/api/v1/admin/*`** - use fetchApi from `@/lib/api/fetch-api`
+7. **Use Shadcn components** via `@/components/ui-wrapped/` wrappers
+8. **Keep route files thin** - extract logic to features/ and use shared components
+9. **Use TypeScript strict mode** - no `any` types (biome enforces this)
+10. **Use `useMemo` with whole objects as deps** - not individual properties (biome `useExhaustiveDependencies`)
 
 <claude-mem-context>
 # Recent Activity

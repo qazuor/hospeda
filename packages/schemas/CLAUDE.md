@@ -499,6 +499,40 @@ Hierarchy-specific schemas for geographic destination organization.
 - `BreadcrumbItem` - `{ id, slug, name, level, destinationType, path }`
 - `BreadcrumbResponse` - Array of `BreadcrumbItem`
 
+## Entity Schema File Convention
+
+Each entity follows a standard set of schema files:
+
+| File | Purpose |
+|------|---------|
+| `<entity>.schema.ts` | Base entity schema (core fields, Zod inferred types) |
+| `<entity>.crud.schema.ts` | Create/Update schemas (omit id, timestamps) |
+| `<entity>.query.schema.ts` | Search/filter schemas for public queries |
+| `<entity>.http.schema.ts` | API request/response schemas (params, body, response) |
+| `<entity>.access.schema.ts` | Permission-based access schemas using `PermissionEnum` |
+| `<entity>.admin-search.schema.ts` | Admin list search schemas extending `AdminSearchBaseSchema` |
+| `index.ts` | Re-exports all schemas from the entity directory |
+
+### AdminSearchBaseSchema
+
+Located in `common/admin-search.schema.ts`. All admin list routes use entity-specific schemas that extend this base:
+
+```ts
+// common/admin-search.schema.ts
+export const AdminSearchBaseSchema = z.object({
+    page: z.coerce.number().min(1).default(1),
+    pageSize: z.coerce.number().min(1).max(100).default(10),
+    search: z.string().optional(),
+    sort: z.string().optional(),
+    status: z.string().optional(),
+    includeDeleted: z.coerce.boolean().default(false),
+    createdAfter: z.string().optional(),
+    createdBefore: z.string().optional(),
+});
+```
+
+Entity-specific admin search schemas extend this with additional filters (e.g., `destinationType`, `type`, `category`).
+
 ## Best Practices
 
 1. **One schema per file** - keep schemas focused and modular

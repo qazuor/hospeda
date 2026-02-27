@@ -31,7 +31,7 @@ hospeda/
 │   ├── biome-config/ # Shared Biome configuration
 │   ├── config/       # Shared configuration
 │   ├── db/           # Drizzle ORM models and schemas
-│   ├── i18n/         # Internationalization (es/en)
+│   ├── i18n/         # Internationalization (es/en/pt)
 │   ├── icons/        # Shared icon components
 │   ├── logger/       # Structured logging
 │   ├── notifications/# Notification system
@@ -43,6 +43,20 @@ hospeda/
 │   └── utils/        # Shared utilities
 └── scripts/          # Build and deployment scripts
 ```
+
+## API Route Architecture
+
+The API uses a three-tier route architecture:
+
+| Tier | URL Pattern | Auth | Consumer |
+|------|-------------|------|----------|
+| **Public** | `/api/v1/public/*` | None | Web app (public pages) |
+| **Protected** | `/api/v1/protected/*` | User session | Web app (user features) |
+| **Admin** | `/api/v1/admin/*` | Admin + permissions | Admin panel |
+
+- **Web app** (`apps/web`): Uses only `/public/` and `/protected/` endpoints. Never `/admin/`.
+- **Admin panel** (`apps/admin`): Uses only `/admin/` endpoints. Exception: `/api/v1/public/auth/me`.
+- See `apps/api/docs/route-architecture.md` for full reference.
 
 ## Development Guidelines
 
@@ -117,6 +131,18 @@ pnpm deploy:api       # Build + deploy API to Fly.io
 - Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
 - Atomic, focused commits
 - Stage files individually (never `git add .` or `git add -A`)
+- **Commit immediately after staging**.. never accumulate multiple `git add` groups without committing between them
+- Exclude documentation/CLAUDE.md files from code commits (commit them separately if needed)
+- Pre-commit hooks (husky + lint-staged + biome) run on ALL staged files.. if the hook fails, fix the issue and create a NEW commit (never amend)
+
+### Biome Lint Gotchas
+
+Common biome errors that block commits:
+
+- **`useDefaultParameterLast`**: Parameters with default values MUST come after required parameters. `fn(a, b = 'x', c)` fails.. use `fn(a, c, b = 'x')`
+- **`noExplicitAny`**: `biome-ignore` comments on interface/type properties do NOT work.. use proper types like `SectionConfig[]` instead of `any[]`
+- **`useExhaustiveDependencies`**: `useMemo`/`useEffect` must list ALL dependencies. When using properties from an object, pass the whole object (e.g., `[config]` instead of individual `config.title`, `config.basePath`, etc.)
+- **`noUnusedVariables`**: Prefix unused parameters with `_` (e.g., `_c` instead of `c`)
 
 ## Patterns and Conventions
 
@@ -176,7 +202,7 @@ HOSPEDA_SITE_URL=http://localhost:4321
 
 ## Important Notes
 
-- Default locale is Spanish (`es`) for the Argentina market
+- Default locale is Spanish (`es`) for the Argentina market. Supported locales: es, en, pt
 - Billing integration uses MercadoPago (Argentina payment processor)
 - All packages are tree-shakeable with ESM
 - Schemas package (`@repo/schemas`) is the single source of truth for types

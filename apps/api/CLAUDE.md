@@ -263,35 +263,78 @@ try {
 }
 ```
 
-## Route Registration
+## Route Architecture (Three-Tier)
 
-In entity index file (e.g., `routes/accommodation/index.ts`):
+All entity routes are organized into three tiers:
 
-```ts
-import { createRouter } from '../../utils/create-app';
-import { listRoute } from './list';
-import { createRoute } from './create';
-import { getByIdRoute } from './getById';
+| Tier | URL Pattern | Auth | Purpose |
+|------|-------------|------|---------|
+| **Public** | `/api/v1/public/<entity>` | None (`skipAuth: true`) | Read-only, published content |
+| **Protected** | `/api/v1/protected/<entity>` | User auth required | Own resource CRUD |
+| **Admin** | `/api/v1/admin/<entity>` | Admin role + `PermissionEnum` | Full CRUD, all resources |
 
-const router = createRouter();
+### Entity Directory Structure
 
-// Register routes
-router.route('/', listRoute);
-router.route('/', createRoute);
-router.route('/', getByIdRoute);
-
-export default router;
+```
+routes/<entity>/
+  index.ts           # Re-exports from subdirectories only
+  public/index.ts    # Public GET routes (list, getById, getBySlug)
+  protected/index.ts # Auth-required routes (create, update, delete own)
+  admin/index.ts     # Admin CRUD (list, getById, create, update, patch, delete, hardDelete, restore, batch)
 ```
 
-In main routes index (`routes/index.ts`):
+### Entity Index Pattern
+
+Each entity's `index.ts` only re-exports:
 
 ```ts
-import accommodationRoutes from './accommodation';
-
-export const registerRoutes = (app: Hono) => {
-  app.route('/api/v1/accommodations', accommodationRoutes);
-};
+export { adminAccommodationRoutes } from './admin/index.js';
+export { protectedAccommodationRoutes } from './protected/index.js';
+export { publicAccommodationRoutes } from './public/index.js';
 ```
+
+### Route Registration (routes/index.ts)
+
+```ts
+// Public tier
+app.route('/api/v1/public/accommodations', publicAccommodationRoutes);
+
+// Protected tier
+app.route('/api/v1/protected/accommodations', protectedAccommodationRoutes);
+
+// Admin tier
+app.route('/api/v1/admin/accommodations', adminAccommodationRoutes);
+```
+
+### Admin Route Factory
+
+```ts
+import { createAdminRoute } from '../../../utils/route-factory';
+import { PermissionEnum } from '@repo/schemas';
+
+export const adminGetByIdRoute = createAdminRoute({
+    method: 'get',
+    path: '/{id}',
+    summary: 'Get accommodation by ID (admin)',
+    requiredPermissions: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
+    requestParams: { id: AccommodationIdSchema },
+    responseSchema: AccommodationAdminSchema,
+    handler: async (ctx, params) => { /* ... */ }
+});
+```
+
+### Admin List Query Params (AdminSearchBaseSchema)
+
+All admin list routes accept: `page`, `pageSize`, `search`, `sort`, `status`, `includeDeleted`, `createdAfter`, `createdBefore`, plus entity-specific filters.
+
+The base schema is defined in `@repo/schemas` at `common/admin-search.schema.ts`. Each entity extends it with entity-specific filters in `entities/<entity>/<entity>.admin-search.schema.ts`.
+
+### Anti-patterns
+
+- Never PUT/POST/DELETE in public tier
+- Never skip auth on admin routes
+- Never check roles directly (use `PermissionEnum`)
+- Never mix tiers in one router
 
 ## Service Integration
 

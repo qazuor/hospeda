@@ -350,6 +350,31 @@ pnpm seed --example --count=100
 - `@repo/db` - Database models and schemas
 - `@repo/schemas` - Validation schemas
 
+## Seed Data JSON Format
+
+Static seed data files are in `src/data/<entity>/` as individual JSON files per record.
+
+### Key Fields
+
+- **`icon`**: Use actual icon component names (e.g., `"WifiIcon"`, `"PoolIcon"`), NOT generic names like `"amenity"`
+- **`displayWeight`**: Integer controlling display order (higher = shown first). E.g., WiFi = 95, Pool = 80, Sauna = 30
+- **`isBuiltin`**: Boolean for system-provided vs user-created items
+- **`isFeatured`**: Boolean for highlighting on public pages
+
+Example amenity seed:
+
+```json
+{
+    "slug": "wifi",
+    "description": "Conexion Wi-Fi",
+    "type": "CONNECTIVITY",
+    "icon": "WifiIcon",
+    "isBuiltin": false,
+    "isFeatured": true,
+    "displayWeight": 95
+}
+```
+
 ## Notes
 
 - Seeds are meant for development/testing, not production

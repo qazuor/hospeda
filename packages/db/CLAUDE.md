@@ -511,6 +511,26 @@ export class AccommodationModel extends BaseModel<Accommodation> {
 
 Models follow the repository pattern - they encapsulate all database access for an entity.
 
+## displayWeight Column Pattern
+
+Entities that need user-controlled display ordering (amenities, features, attractions) use a `displayWeight` column:
+
+```ts
+displayWeight: integer('display_weight'),  // nullable, higher = shown first
+```
+
+Used for sorting in public-facing lists. Seed data includes displayWeight values (e.g., WiFi = 95, Pool = 80).
+
+## buildOrderByClause Parameter Order
+
+**WARNING**: The `buildOrderByClause` utility in `utils/drizzle-helpers.ts` has this signature:
+
+```ts
+buildOrderByClause(sortBy: string, table: unknown, sortOrder: 'asc' | 'desc' = 'asc')
+```
+
+The `table` parameter comes BEFORE the default `sortOrder` parameter. Biome's `useDefaultParameterLast` rule enforces this ordering. If you swap them, the pre-commit hook will fail.
+
 ## Notes
 
 - Models are stateless - create new instances as needed
