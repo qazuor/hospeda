@@ -270,6 +270,91 @@
     background-image: url("data:image/svg+xml,%3Csvg width='100' height='4' viewBox='0 0 100 4' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0,2 C16,0 33,4 50,2 C66,0 83,4 100,2' stroke='%233DBDC0' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
 }
 
+/* Section title wave underline (reuses waveUnderlineDraw keyframe) */
+.section-title-wave {
+    position: relative;
+    display: inline-block;
+}
+
+.section-title-wave::after {
+    content: "";
+    position: absolute;
+    bottom: -4px;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background-image: url("data:image/svg+xml,%3Csvg width='120' height='6' viewBox='0 0 120 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0,3 C20,0 40,6 60,3 C80,0 100,6 120,3' stroke='%230D7377' stroke-width='2' fill='none'/%3E%3C/svg%3E");
+    background-repeat: repeat-x;
+    background-size: 60px 4px;
+    animation: waveUnderlineDraw 0.8s ease-out 0.3s both;
+}
+
+[data-theme="dark"] .section-title-wave::after {
+    background-image: url("data:image/svg+xml,%3Csvg width='120' height='6' viewBox='0 0 120 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0,3 C20,0 40,6 60,3 C80,0 100,6 120,3' stroke='%233DBDC0' stroke-width='2' fill='none'/%3E%3C/svg%3E");
+}
+
+/* Brush-stroke underline for section titles */
+/* Uses a filled SVG path with variable thickness for hand-drawn effect */
+.brush-stroke-underline {
+    position: relative;
+    display: inline-block;
+}
+
+.brush-stroke-underline::after {
+    content: "";
+    position: absolute;
+    bottom: -4px;
+    left: 0;
+    width: 100%;
+    height: 8px;
+    background-image: url("data:image/svg+xml,%3Csvg width='120' height='8' viewBox='0 0 120 8' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0,4 C5,1.5 12,5 20,3 C28,1 35,5 45,2.5 C55,0 62,5 75,3.5 C88,2 95,5 105,2 C110,1 115,4.5 120,3 L120,6 C115,7 110,5 105,6.5 C95,8 88,5.5 75,7 C62,8 55,5 45,6.5 C35,8 28,5 20,6 C12,7 5,5.5 0,6 Z' fill='%230D7377'/%3E%3C/svg%3E");
+    background-repeat: repeat-x;
+    background-size: 120px 8px;
+    animation: waveUnderlineDraw 0.8s ease-out 0.3s both;
+}
+
+[data-theme="dark"] .brush-stroke-underline::after {
+    background-image: url("data:image/svg+xml,%3Csvg width='120' height='8' viewBox='0 0 120 8' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0,4 C5,1.5 12,5 20,3 C28,1 35,5 45,2.5 C55,0 62,5 75,3.5 C88,2 95,5 105,2 C110,1 115,4.5 120,3 L120,6 C115,7 110,5 105,6.5 C95,8 88,5.5 75,7 C62,8 55,5 45,6.5 C35,8 28,5 20,6 C12,7 5,5.5 0,6 Z' fill='%233DBDC0'/%3E%3C/svg%3E");
+}
+
+/* Torn-edge mask for vintage postcard / brush-stroke aesthetic (SPEC-017) */
+/* Uses a real brush-stroke PNG mask for authentic paint-brush irregular edges */
+.torn-edge-mask {
+    mask-image: url("/images/thumb-mask-image.png");
+    -webkit-mask-image: url("/images/thumb-mask-image.png");
+    mask-size: 100% 100%;
+    -webkit-mask-size: 100% 100%;
+    mask-repeat: no-repeat;
+    -webkit-mask-repeat: no-repeat;
+}
+
+@supports not (mask-image: url("")) {
+    .torn-edge-mask {
+        border-radius: 0.75rem;
+    }
+}
+
+/* Shimmer badge effect for featured cards */
+@keyframes shimmerBadge {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+.shimmer-badge {
+    background-image: linear-gradient(
+        110deg,
+        transparent 30%,
+        rgba(255, 255, 255, 0.4) 50%,
+        transparent 70%
+    );
+    background-size: 200% 100%;
+    animation: shimmerBadge 3s ease-in-out 1s infinite;
+}
+
 /* Hero text stagger entrance */
 @keyframes heroEntrance {
     from {
@@ -304,16 +389,6 @@
     animation-delay: 1000ms;
 }
 
-/* Carousel progress bar fill */
-@keyframes progressFill {
-    from {
-        transform: scaleX(0);
-    }
-    to {
-        transform: scaleX(1);
-    }
-}
-
 /* Respect user preferences for reduced motion */
 @media (prefers-reduced-motion: reduce) {
     *,
@@ -341,5 +416,104 @@
         opacity: 1;
         transform: none;
         animation: none;
+    }
+}
+
+/* ============================================
+   Stagger Reveal System (SPEC-017)
+   Reusable scroll-triggered stagger animation
+   ============================================ */
+
+.scroll-reveal-stagger {
+    opacity: 0;
+    transform: translateY(16px) scale(0.97);
+    transition: opacity 500ms ease-out, transform 500ms ease-out;
+}
+
+.scroll-reveal-stagger.scroll-visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.scroll-reveal-stagger-1 {
+    transition-delay: 0ms;
+}
+.scroll-reveal-stagger-2 {
+    transition-delay: 100ms;
+}
+.scroll-reveal-stagger-3 {
+    transition-delay: 200ms;
+}
+.scroll-reveal-stagger-4 {
+    transition-delay: 300ms;
+}
+.scroll-reveal-stagger-5 {
+    transition-delay: 400ms;
+}
+.scroll-reveal-stagger-6 {
+    transition-delay: 500ms;
+}
+/* Safety guard: extra slots for grids with more than 6 animated items */
+.scroll-reveal-stagger-7 {
+    transition-delay: 600ms;
+}
+.scroll-reveal-stagger-8 {
+    transition-delay: 700ms;
+}
+.scroll-reveal-stagger-9 {
+    transition-delay: 800ms;
+}
+.scroll-reveal-stagger-10 {
+    transition-delay: 900ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .scroll-reveal-stagger {
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
+}
+
+/* ============================================
+   Glassmorphism Utilities (SPEC-017)
+   Reusable frosted-glass card styles
+   ============================================ */
+
+.glass-bar {
+    background-color: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 0.75rem;
+}
+
+@supports (backdrop-filter: blur(1px)) {
+    .glass-bar {
+        backdrop-filter: blur(12px) saturate(1.2);
+        -webkit-backdrop-filter: blur(12px) saturate(1.2);
+        background-color: rgba(0, 0, 0, 0.25);
+    }
+
+    [data-theme="dark"] .glass-bar {
+        backdrop-filter: blur(12px) saturate(1.1);
+        -webkit-backdrop-filter: blur(12px) saturate(1.1);
+        background-color: rgba(15, 26, 46, 0.45);
+    }
+}
+
+[data-theme="dark"] .glass-bar {
+    background-color: rgba(15, 26, 46, 0.55);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Mobile fallback: more opaque, no blur */
+@media (max-width: 639px) {
+    .glass-bar {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        background-color: rgba(0, 0, 0, 0.55);
+    }
+
+    [data-theme="dark"] .glass-bar {
+        background-color: rgba(15, 26, 46, 0.7);
     }
 }

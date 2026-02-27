@@ -2,6 +2,7 @@
 @import "./global.css";
 @import "./animations.css";
 @import "./textures.css";
+@import "./components.css";
 
 /* Map CSS variables to Tailwind theme tokens */
 @theme inline {

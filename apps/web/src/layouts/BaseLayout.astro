@@ -138,12 +138,22 @@ const skipToContentText: Record<string, string> = {
 
     <!-- Scroll reveal animation observer (runs on every page) -->
     <script>
+      let scrollRevealObserver: IntersectionObserver | null = null;
+
       function initScrollReveal(): void {
+        scrollRevealObserver?.disconnect();
+        scrollRevealObserver = null;
+
         const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         const elements = document.querySelectorAll('[data-scroll-reveal]');
 
         if (prefersReducedMotion) {
-          elements.forEach((el) => el.classList.add('scroll-visible'));
+          elements.forEach((el) => {
+            el.classList.add('scroll-visible');
+            el.querySelectorAll('.scroll-reveal-stagger').forEach((child) =>
+              child.classList.add('scroll-visible')
+            );
+          });
           return;
         }
 
@@ -155,6 +165,10 @@ const skipToContentText: Record<string, string> = {
                 const delay = el.style.getPropertyValue('--stagger-delay') || '0ms';
                 el.style.transitionDelay = delay;
                 el.classList.add('scroll-visible');
+                /* Reveal stagger children within this container */
+                el.querySelectorAll('.scroll-reveal-stagger').forEach((child) =>
+                  child.classList.add('scroll-visible')
+                );
                 observer.unobserve(el);
               }
             }
@@ -163,10 +177,15 @@ const skipToContentText: Record<string, string> = {
         );
 
         elements.forEach((el) => observer.observe(el));
+        scrollRevealObserver = observer;
       }
 
       initScrollReveal();
       document.addEventListener('astro:page-load', initScrollReveal);
+      document.addEventListener('astro:before-swap', () => {
+        scrollRevealObserver?.disconnect();
+        scrollRevealObserver = null;
+      });
     </script>
   </body>
 </html>

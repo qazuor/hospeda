@@ -12,6 +12,7 @@ import Container from '../components/ui/Container.astro';
 import AuthSection from '../components/auth/AuthSection.astro';
 import { ThemeToggle } from '../components/ui/ThemeToggle.client';
 import { MobileMenuWrapper } from '../components/ui/MobileMenuWrapper.client';
+import { t, type SupportedLocale } from '../lib/i18n';
 
 interface Props {
   /** Current locale for localized navigation links */
@@ -21,27 +22,15 @@ interface Props {
 }
 
 const { locale = 'es', isHero = false } = Astro.props;
-
-const navLabels: Record<string, Record<string, string>> = {
-  accommodations: { es: 'Alojamientos', en: 'Accommodations', pt: 'Hospedagens' },
-  destinations: { es: 'Destinos', en: 'Destinations', pt: 'Destinos' },
-  events: { es: 'Eventos', en: 'Events', pt: 'Eventos' },
-  blog: { es: 'Blog', en: 'Blog', pt: 'Blog' },
-};
-
-const ownerCtaLabel: Record<string, string> = {
-  es: 'Publica tu alojamiento',
-  en: 'List your property',
-  pt: 'Publique seu alojamento',
-};
+const loc = locale as SupportedLocale;
 
 const ownerCtaHref = `/${locale}/propietarios/`;
 
 const navLinks = [
-  { label: navLabels.accommodations[locale] ?? navLabels.accommodations.es, href: `/${locale}/alojamientos/` },
-  { label: navLabels.destinations[locale] ?? navLabels.destinations.es, href: `/${locale}/destinos/` },
-  { label: navLabels.events[locale] ?? navLabels.events.es, href: `/${locale}/eventos/` },
-  { label: navLabels.blog[locale] ?? navLabels.blog.es, href: `/${locale}/publicaciones/` },
+  { label: t({ locale: loc, namespace: 'nav', key: 'accommodations' }), href: `/${locale}/alojamientos/` },
+  { label: t({ locale: loc, namespace: 'nav', key: 'destinations' }), href: `/${locale}/destinos/` },
+  { label: t({ locale: loc, namespace: 'nav', key: 'events' }), href: `/${locale}/eventos/` },
+  { label: t({ locale: loc, namespace: 'nav', key: 'blog' }), href: `/${locale}/publicaciones/` },
 ];
 
 /** Check if a navigation link matches the current route */
@@ -119,7 +108,7 @@ function isLinkActive(href: string): boolean {
           ]}
           aria-current={isLinkActive(ownerCtaHref) ? 'page' : undefined}
         >
-          {ownerCtaLabel[locale] ?? ownerCtaLabel.es}
+          {t({ locale: loc, namespace: 'nav', key: 'ownerCta' })}
         </a>
       </nav>
 
@@ -143,7 +132,7 @@ function isLinkActive(href: string): boolean {
         <!-- Mobile menu -->
         <MobileMenuWrapper
           client:media="(max-width: 768px)"
-          navItems={[...navLinks, { label: ownerCtaLabel[locale] ?? ownerCtaLabel.es, href: ownerCtaHref }]}
+          navItems={[...navLinks, { label: t({ locale: loc, namespace: 'nav', key: 'ownerCta' }), href: ownerCtaHref }]}
           locale={locale as 'es' | 'en' | 'pt'}
         />
       </div>
