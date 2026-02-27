@@ -1,75 +1,181 @@
 ---
 /**
- * Preview card for destination listings.
- * Full-bleed image layout with gradient overlay and text overlaid on image.
- * Data-source agnostic - receives typed props, not DB entities.
+ * Destination card with torn-edge masked image, glassmorphism info bar,
+ * star rating, stat counters, and attraction icon badges.
+ *
+ * Image area uses a torn-edge CSS mask with a glass bar overlay showing
+ * rating and accommodation/event counts. Title and attraction badges
+ * render below the image on the page background.
  */
-import { FavoriteIcon } from '@repo/icons';
+import { AccommodationIcon, CalendarIcon, LocationIcon, resolveIcon } from "@repo/icons";
+import type { SupportedLocale } from "../../lib/i18n";
+import StarRating from "../ui/StarRating.astro";
+import { type DestinationCardData, computeCardText } from "./destination-card.types";
 
-interface DestinationCardData {
-  slug: string;
-  name: string;
-  summary: string;
-  featuredImage: string;
-  accommodationsCount: number;
-  isFeatured: boolean;
-  path?: string;
-}
+export type { DestinationCardData };
 
 interface Props {
-  destination: DestinationCardData;
-  /** Whether to show the favorite/bookmark button on the card */
-  showFavorite?: boolean;
-  locale?: string;
+    destination: DestinationCardData;
+    locale?: SupportedLocale;
+    /** Max number of attraction badges to show */
+    maxAttractions?: number;
+    class?: string;
 }
 
-const { destination, showFavorite = false, locale = 'es' } = Astro.props;
+const {
+    destination,
+    locale = "es",
+    maxAttractions = 3,
+    class: className,
+} = Astro.props;
 
-const detailPath = destination.path ?? destination.slug;
-const detailUrl = `/${locale}/destinos/${detailPath}/`;
-
-const countText = `${destination.accommodationsCount} ${destination.accommodationsCount === 1 ? 'alojamiento' : 'alojamientos'}`;
+const { detailUrl, accText, evtCount, evtText, featuredLabel } = computeCardText({ destination, locale });
+const visibleAttractions = (destination.attractions ?? []).slice(0, maxAttractions);
+const extraAttractionCount = Math.max(0, (destination.attractions ?? []).length - maxAttractions);
+const FallbackIcon = LocationIcon;
 ---
 
-<article class="group overflow-hidden rounded-xl border border-border bg-surface shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-  <a href={detailUrl} class="relative block aspect-[16/9] overflow-hidden">
-    <img
-      src={destination.featuredImage}
-      alt={destination.name}
-      class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-      loading="lazy"
-      transition:name={`entity-${destination.slug}`}
-    />
-    <!-- Gradient overlay -->
-    <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" aria-hidden="true"></div>
-    <!-- Featured badge -->
-    {destination.isFeatured && (
-      <div class="absolute right-3 top-3">
-        <span class="rounded-full bg-warning/90 px-2.5 py-0.5 text-xs font-medium text-text backdrop-blur-sm">
-          Destacado
-        </span>
-      </div>
-    )}
-    <!-- Favorite button -->
-    {showFavorite && (
-      <div class="absolute right-3 bottom-12 z-10">
-        <button
-          type="button"
-          class="rounded-full bg-surface/80 p-1.5 shadow-sm backdrop-blur-sm transition-colors hover:bg-surface"
-          aria-label={`Agregar ${destination.name} a favoritos`}
+<article
+    class:list={["destination-card group relative card-tilt transition-all duration-300", className]}
+    data-destination-slug={destination.slug}
+>
+    <a href={detailUrl} class="relative block">
+        {/* Torn-edge masked image area */}
+        <div
+            class="torn-edge-mask relative aspect-[16/9] overflow-hidden"
         >
-          <FavoriteIcon size={20} className="text-text-secondary" aria-hidden="true" />
-        </button>
-      </div>
-    )}
-    <!-- Text overlay -->
-    <div class="absolute bottom-0 left-0 right-0 p-4">
-      <h3 class="text-lg font-bold text-white line-clamp-2" title={destination.name}>
-        {destination.name}
-      </h3>
-      <p class="mt-0.5 text-sm text-white/80">
-        {countText}
-      </p>
-    </div>
-  </a>
+            <img
+                src={destination.featuredImage}
+                alt={destination.name}
+                class="h-full w-full object-cover transition-transform duration-300 will-change-transform group-hover:scale-105"
+                loading="lazy"
+                decoding="async"
+                fetchpriority="low"
+                width="640"
+                height="360"
+                transition:name={`entity-${destination.slug}`}
+            />
+            <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" aria-hidden="true" />
+
+            {destination.isFeatured && (
+                <div class="absolute right-3 top-3 z-10">
+                    <span class="shimmer-badge rounded-full bg-warning/90 px-2.5 py-0.5 text-xs font-medium text-text backdrop-blur-sm">
+                        {featuredLabel}
+                    </span>
+                </div>
+            )}
+
+            {/* Glass bar: rating + stats */}
+            <div class="absolute bottom-0 left-0 right-0 p-2 sm:p-3">
+                <div class="glass-bar px-3 py-2 sm:px-4 sm:py-2.5">
+                    <div class="flex items-center justify-between gap-2">
+                        {(destination.averageRating ?? 0) > 0 && (
+                            <StarRating
+                                rating={destination.averageRating ?? 0}
+                                reviewsCount={destination.reviewsCount}
+                                size="sm"
+                                locale={locale}
+                                class="shrink-0 [&_span]:text-white/70"
+                            />
+                        )}
+                        <div class="flex items-center gap-3 text-xs text-white/80">
+                            <span class="inline-flex items-center gap-1">
+                                <AccommodationIcon size={14} className="shrink-0" aria-hidden="true" />
+                                {accText}
+                            </span>
+                            {evtCount > 0 && (
+                                <span class="inline-flex items-center gap-1">
+                                    <CalendarIcon size={14} className="shrink-0" aria-hidden="true" />
+                                    {evtText}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {/* Text below image: title + attraction badges */}
+        <div class="px-1 pt-2.5 pb-1">
+            <h3 class="font-serif text-base font-bold text-text line-clamp-1 sm:text-lg" title={destination.name}>
+                {destination.name}
+            </h3>
+            {visibleAttractions.length > 0 && (
+                <div class="mt-1.5 flex flex-wrap items-center gap-1">
+                    {visibleAttractions.map((attraction) => {
+                        const IconComp =
+                            (attraction.icon ? resolveIcon({ iconName: attraction.icon }) : undefined) ??
+                            FallbackIcon;
+                        return (
+                            <span
+                                class="dest-attraction-badge"
+                                data-tooltip={attraction.name}
+                                aria-label={attraction.name}
+                                role="img"
+                            >
+                                <IconComp size={16} weight="regular" color="currentColor" aria-hidden="true" />
+                            </span>
+                        );
+                    })}
+                    {extraAttractionCount > 0 && (
+                        <span class="inline-flex items-center justify-center rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-600">
+                            +{extraAttractionCount}
+                        </span>
+                    )}
+                </div>
+            )}
+        </div>
+    </a>
 </article>
+
+<style>
+    .dest-attraction-badge {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 9999px;
+        padding: 5px;
+        color: var(--color-primary-600, #0a5c5f);
+        background: var(--color-primary-50, #e8f5f5);
+        transition:
+            color 0.2s,
+            background 0.2s,
+            transform 0.2s;
+        cursor: default;
+    }
+
+    .dest-attraction-badge:hover {
+        color: var(--color-primary-800, #063839);
+        background: var(--color-primary-100, #c5e8e9);
+        transform: translateY(-1px);
+    }
+
+    /* Tooltip: CSS-only via data-tooltip attribute */
+    .dest-attraction-badge::after {
+        content: attr(data-tooltip);
+        position: absolute;
+        bottom: calc(100% + 6px);
+        left: 50%;
+        transform: translateX(-50%) scale(0.9);
+        padding: 4px 8px;
+        font-size: 0.7rem;
+        line-height: 1.2;
+        font-weight: 500;
+        white-space: nowrap;
+        color: #fff;
+        background: var(--color-primary-700, #084a4d);
+        border-radius: 6px;
+        pointer-events: none;
+        opacity: 0;
+        transition:
+            opacity 0.15s ease,
+            transform 0.15s ease;
+        z-index: 50;
+    }
+
+    .dest-attraction-badge:hover::after {
+        opacity: 1;
+        transform: translateX(-50%) scale(1);
+    }
+</style>
