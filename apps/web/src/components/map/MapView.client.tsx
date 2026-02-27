@@ -1,5 +1,7 @@
 import { LocationIcon, MapIcon } from '@repo/icons';
 import type { JSX } from 'react';
+import { useTranslation } from '../../hooks/useTranslation';
+import type { SupportedLocale } from '../../lib/i18n';
 
 /**
  * Represents a marker on the map
@@ -62,6 +64,12 @@ export interface MapViewProps {
      * Additional CSS classes to apply to the component
      */
     readonly className?: string;
+
+    /**
+     * Locale for i18n translations
+     * @default 'es'
+     */
+    readonly locale?: SupportedLocale;
 }
 
 /**
@@ -100,8 +108,10 @@ export function MapView({
     center = [0, 0],
     zoom = 13,
     height = '400px',
-    className = ''
+    className = '',
+    locale = 'es'
 }: MapViewProps): JSX.Element {
+    const { t } = useTranslation({ locale, namespace: 'ui' });
     return (
         <div
             className={`relative ${className}`.trim()}
@@ -112,7 +122,9 @@ export function MapView({
                 className="relative overflow-hidden rounded-lg border border-gray-300 bg-gradient-to-br from-gray-100 to-gray-200"
                 style={{ height }}
                 role="img"
-                aria-label={`Map showing ${markers.length} location${markers.length !== 1 ? 's' : ''}`}
+                aria-label={t('accessibility.mapShowingLocations', undefined, {
+                    count: markers.length
+                })}
             >
                 {/* Map Loading Indicator */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-gray-600">
@@ -123,7 +135,7 @@ export function MapView({
                         className="opacity-40"
                         aria-hidden="true"
                     />
-                    <span className="font-medium text-sm">Map Loading...</span>
+                    <span className="font-medium text-sm">{t('map.loading')}</span>
                     <span className="text-gray-500 text-xs">
                         Center: {center[0].toFixed(4)}, {center[1].toFixed(4)} | Zoom: {zoom}
                     </span>
@@ -145,10 +157,10 @@ export function MapView({
             {markers.length > 0 && (
                 <section
                     className="mt-4 rounded-lg border border-gray-200 bg-white p-4"
-                    aria-label="Map markers"
+                    aria-label={t('accessibility.mapMarkers')}
                 >
                     <h3 className="mb-3 font-semibold text-gray-900 text-sm">
-                        Locations ({markers.length})
+                        {t('map.locationsTitle', undefined, { count: markers.length })}
                     </h3>
                     <ul className="space-y-2">
                         {markers.map((marker) => (
@@ -190,7 +202,7 @@ export function MapView({
                         className="mx-auto text-gray-400"
                         aria-hidden="true"
                     />
-                    <p className="mt-2 text-gray-600 text-sm">No locations to display</p>
+                    <p className="mt-2 text-gray-600 text-sm">{t('map.noLocations')}</p>
                 </div>
             )}
         </div>

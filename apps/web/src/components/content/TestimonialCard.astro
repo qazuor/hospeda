@@ -24,6 +24,14 @@ const displaySubtitle = location ?? role;
 
 /** Clamp rating between 1 and 5 */
 const safeRating = rating ? Math.min(5, Math.max(1, Math.round(rating))) : undefined;
+
+/** Extract up to 2 initials from a full name for the avatar fallback. */
+const initials = author
+  .split(/\s+/)
+  .filter(Boolean)
+  .slice(0, 2)
+  .map((w) => w[0]?.toUpperCase() ?? '')
+  .join('');
 ---
 
 <article class:list={['overflow-hidden rounded-xl border border-border bg-surface p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl', className]}>
@@ -34,7 +42,7 @@ const safeRating = rating ? Math.min(5, Math.max(1, Math.round(rating))) : undef
 
   <!-- Quote content -->
   <blockquote class="mb-6">
-    <p class="italic text-text" style="color: var(--color-text);">
+    <p class="italic text-text">
       {quote}
     </p>
   </blockquote>
@@ -43,18 +51,24 @@ const safeRating = rating ? Math.min(5, Math.max(1, Math.round(rating))) : undef
   <footer>
     <cite class="not-italic">
       <div class="flex items-center gap-3">
-        {image && (
-          <img
-            src={image}
-            alt={`${author} avatar`}
-            class="h-20 w-20 rounded-full object-cover ring-2 ring-white"
-            loading="lazy"
-            width="80"
-            height="80"
-          />
-        )}
+        <span
+          class="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-primary/15 text-2xl font-semibold text-primary ring-2 ring-white"
+          aria-hidden="true"
+        >
+          {initials}
+          {image && (
+            <img
+              src={image}
+              alt={`${author} avatar`}
+              class="absolute inset-0 h-full w-full rounded-full object-cover"
+              loading="lazy"
+              width="80"
+              height="80"
+            />
+          )}
+        </span>
         <div>
-          <div class="text-lg font-semibold text-text" style="color: var(--color-text);">
+          <div class="text-lg font-semibold text-text">
             {author}
           </div>
           {safeRating && (
@@ -67,7 +81,7 @@ const safeRating = rating ? Math.min(5, Math.max(1, Math.round(rating))) : undef
             </div>
           )}
           {displaySubtitle && (
-            <div class="text-sm text-text-tertiary" style="color: var(--color-text-tertiary);">
+            <div class="text-sm text-text-tertiary">
               {displaySubtitle}
             </div>
           )}

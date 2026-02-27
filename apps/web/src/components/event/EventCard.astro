@@ -7,17 +7,8 @@
  */
 import Badge from '../ui/Badge.astro';
 import { CalendarIcon, FavoriteIcon, LocationIcon } from '@repo/icons';
-
-interface EventCardData {
-  slug: string;
-  name: string;
-  summary: string;
-  featuredImage: string;
-  category: string;
-  date: { start: string; end?: string };
-  isFeatured: boolean;
-  location?: { name: string; city: string };
-}
+import { t } from '../../lib/i18n';
+import type { EventCardData } from '../../lib/api/transforms';
 
 interface Props {
   event: EventCardData;
@@ -63,20 +54,17 @@ const formatDateRange = (start: string, end: string | undefined, currentLocale: 
 
 const dateDisplay = formatDateRange(event.date.start, event.date.end, locale);
 
-/** Format event category for display */
-const categoryLabels: Record<string, string> = {
-  FESTIVAL: 'Festival',
-  CONFERENCE: 'Conferencia',
-  WORKSHOP: 'Taller',
-  CONCERT: 'Concierto',
-  EXHIBITION: 'Exposición',
-  SPORTS: 'Deportes',
-  CULTURAL: 'Cultural',
-  GASTRONOMY: 'Gastronomía',
-  RELIGIOUS: 'Religioso',
-  OTHER: 'Otro',
-};
-const categoryLabel = categoryLabels[event.category] ?? event.category;
+/** i18n helper for event card translations */
+const tCard = (key: string) => t({ locale, namespace: 'event', key: `card.${key}` });
+
+/** Format event category for display via i18n */
+const categoryLabel = tCard(`categories.${event.category}`) || event.category;
+
+/** Featured badge label */
+const featuredLabel = tCard('featured');
+
+/** Favorite button aria-label */
+const addToFavoritesLabel = tCard('addToFavorites').replace('{name}', event.name);
 
 /** Date panel accent colors: rotate based on index % 3 */
 const panelColors = ['bg-blue-500', 'bg-green-500', 'bg-sky-500'] as const;
@@ -135,9 +123,7 @@ const isDatePanel = variant === 'date-panel';
         <!-- Featured badge -->
         {event.isFeatured && (
           <div class="absolute right-3 top-3">
-            <span class="rounded-full bg-warning/90 px-2.5 py-0.5 text-xs font-medium text-text backdrop-blur-sm">
-              Destacado
-            </span>
+            <Badge label={featuredLabel} variant="featured" />
           </div>
         )}
       </a>
@@ -148,7 +134,7 @@ const isDatePanel = variant === 'date-panel';
           <button
             type="button"
             class="rounded-full bg-surface/80 p-1.5 shadow-sm backdrop-blur-sm transition-colors hover:bg-surface"
-            aria-label={`Agregar ${event.name} a favoritos`}
+            aria-label={addToFavoritesLabel}
           >
             <FavoriteIcon size={20} className="text-text-secondary" aria-hidden="true" />
           </button>

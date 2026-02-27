@@ -4,88 +4,52 @@
  * Fetches featured accommodations from the API and renders them as cards.
  * Used with server:defer for dynamic content on a static shell.
  */
-import AccommodationCard from '../accommodation/AccommodationCard.astro';
-import EmptyState from '../ui/EmptyState.astro';
-import { accommodationsApi } from '../../lib/api/endpoints';
-import { extractFeaturedImageUrl } from '../../lib/media';
+import { accommodationsApi } from "../../lib/api/endpoints";
+import { toAccommodationCardProps } from "../../lib/api/transforms";
+import { t, type SupportedLocale } from "../../lib/i18n";
+import AccommodationCardFeatured from "../accommodation/AccommodationCardFeatured.astro";
+import EmptyState from "../ui/EmptyState.astro";
 
 interface Props {
-  locale?: string;
+    locale?: SupportedLocale;
 }
 
-const { locale = 'es' } = Astro.props;
+const { locale = "es" } = Astro.props;
 
 const result = await accommodationsApi.list({
-  isFeatured: true,
-  pageSize: 6,
-  includeAmenities: true,
-  includeFeatures: true,
+    isFeatured: true,
+    pageSize: 12,
+    includeAmenities: true,
+    includeFeatures: true,
 });
 const accommodations = result.ok ? result.data.items : [];
 
-const accommodationCards = accommodations.map((acc) => {
-  const a = acc as Record<string, unknown>;
-  const priceData = a.price as { price?: number; currency?: string } | undefined;
-
-  // Extract city from the JSONB location object.
-  // The DB stores a FullLocationType JSONB with { city, state, country, ... }.
-  // Fallback chain: location.city -> destination.name -> location.state
-  const locationObj = a.location as Record<string, unknown> | undefined;
-  const destinationObj = a.destination as Record<string, unknown> | undefined;
-  const city = String(locationObj?.city || destinationObj?.name || '');
-  const state = String(locationObj?.state || '');
-
-  return {
-    slug: String(a.slug || ''),
-    name: String(a.name || ''),
-    summary: String(a.summary || a.description || ''),
-    type: String(a.type || a.accommodationType || ''),
-    featuredImage: extractFeaturedImageUrl(a, '/images/placeholder-accommodation.svg'),
-    averageRating: Number(a.averageRating || 0),
-    reviewsCount: Number(a.reviewsCount || a.ratingCount || 0),
-    location: { city, state },
-    isFeatured: Boolean(a.isFeatured),
-    price: priceData?.price != null
-      ? { amount: priceData.price, currency: priceData.currency ?? 'ARS', period: 'noche' }
-      : undefined,
-    amenities: Array.isArray(a.amenities)
-      ? (a.amenities as Array<Record<string, unknown>>)
-          .map((rel) => {
-            const amenity = rel.amenity as Record<string, unknown> | undefined;
-            return {
-              key: String(amenity?.slug || amenity?.name || ''),
-              label: String(amenity?.description || amenity?.name || rel.name || ''),
-            };
-          })
-          .filter((item) => item.key)
-      : undefined,
-    features: Array.isArray(a.features)
-      ? (a.features as Array<Record<string, unknown>>)
-          .map((rel) => {
-            const feature = rel.feature as Record<string, unknown> | undefined;
-            return {
-              key: String(feature?.slug || feature?.name || ''),
-              label: String(feature?.description || feature?.name || rel.name || ''),
-            };
-          })
-          .filter((item) => item.key)
-      : undefined,
-  };
-});
+const accommodationCards = accommodations.map((acc) =>
+    toAccommodationCardProps({ item: acc as Record<string, unknown> })
+);
 ---
 
-{accommodationCards.length > 0 ? (
-  <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-    {accommodationCards.map((accommodation) => (
-        <AccommodationCard
-          accommodation={accommodation}
-          locale={locale}
+{
+    accommodationCards.length > 0 ? (
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {accommodationCards.map((accommodation) => (
+                <AccommodationCardFeatured accommodation={accommodation} showFavorite={true} locale={locale} />
+            ))}
+        </div>
+    ) : (
+        <EmptyState
+            title={t({
+                locale,
+                namespace: "accommodations",
+                key: "featured.emptyTitle",
+                fallback: "No hay alojamientos destacados",
+            })}
+            message={t({
+                locale,
+                namespace: "accommodations",
+                key: "featured.emptyMessage",
+                fallback: "Proximamente agregaremos alojamientos destacados.",
+            })}
         />
-    ))}
-  </div>
-) : (
-  <EmptyState
-    title="No hay alojamientos destacados"
-    message="Próximamente agregaremos alojamientos destacados."
-  />
-)}
+    )
+}

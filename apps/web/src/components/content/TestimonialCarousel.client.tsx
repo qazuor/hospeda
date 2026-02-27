@@ -6,6 +6,16 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from '../../hooks/useTranslation';
 import type { SupportedLocale } from '../../lib/i18n';
 
+/** Extract up to 2 initials from a full name. */
+function getInitials(name: string): string {
+    return name
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((w) => w[0]?.toUpperCase() ?? '')
+        .join('');
+}
+
 interface TestimonialItem {
     id: string;
     quote: string;
@@ -29,7 +39,13 @@ export const TestimonialCarousel = ({
     const { t } = useTranslation({ locale, namespace: 'home' });
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isPaused, setIsPaused] = useState(false);
+    const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
     const touchStartX = useRef(0);
+
+    /** Mark an image as failed so we show the initials fallback instead. */
+    const handleImageError = useCallback((id: string) => {
+        setFailedImages((prev) => new Set(prev).add(id));
+    }, []);
 
     const goToNext = useCallback(() => {
         setCurrentIndex((prev) => (prev + 1) % testimonials.length);
@@ -141,13 +157,21 @@ export const TestimonialCarousel = ({
                                     <p className="text-text italic">{testimonial.quote}</p>
                                 </blockquote>
                                 <div className="flex items-center gap-3">
-                                    {testimonial.image && (
+                                    {testimonial.image && !failedImages.has(testimonial.id) ? (
                                         <img
                                             src={testimonial.image}
                                             alt={`${testimonial.author} avatar`}
                                             className="h-14 w-14 rounded-full object-cover ring-2 ring-white"
                                             loading="lazy"
+                                            onError={() => handleImageError(testimonial.id)}
                                         />
+                                    ) : (
+                                        <span
+                                            className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/15 font-semibold text-lg text-primary ring-2 ring-white"
+                                            aria-hidden="true"
+                                        >
+                                            {getInitials(testimonial.author)}
+                                        </span>
                                     )}
                                     <div>
                                         <div className="font-semibold text-text">

@@ -1,6 +1,8 @@
 import { CloseIcon, SearchIcon } from '@repo/icons';
 import type { JSX } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from '../../hooks/useTranslation';
+import type { SupportedLocale } from '../../lib/i18n';
 
 /**
  * Props for the SearchBar component
@@ -35,15 +37,6 @@ export interface SearchBarProps {
 }
 
 /**
- * Localized placeholder text for the search input
- */
-const PLACEHOLDERS = {
-    es: 'Buscar alojamientos, destinos...',
-    en: 'Search accommodations, destinations...',
-    pt: 'Buscar hospedagens, destinos...'
-} as const;
-
-/**
  * SearchBar component with debounced input and search functionality
  *
  * Features:
@@ -66,6 +59,11 @@ export function SearchBar({
     onSearch,
     className = ''
 }: SearchBarProps): JSX.Element {
+    const { t } = useTranslation({ locale: locale as SupportedLocale, namespace: 'ui' });
+    const { t: tSearch } = useTranslation({
+        locale: locale as SupportedLocale,
+        namespace: 'search'
+    });
     const [query, setQuery] = useState(defaultValue);
     const [_debouncedQuery, setDebouncedQuery] = useState(defaultValue);
     const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -125,7 +123,7 @@ export function SearchBar({
         setDebouncedQuery('');
     }, []);
 
-    const placeholderText = placeholder || PLACEHOLDERS[locale];
+    const placeholderText = placeholder || tSearch('resultsPage.placeholder');
     const hasQuery = query.length > 0;
 
     return (
@@ -147,7 +145,7 @@ export function SearchBar({
                 onKeyDown={handleKeyDown}
                 placeholder={placeholderText}
                 className="w-full rounded-lg border border-gray-300 py-2 pr-20 pl-10 text-base text-gray-900 placeholder-gray-500 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50"
-                aria-label="Search"
+                aria-label={t('accessibility.search')}
             />
 
             {/* Clear Button */}
@@ -156,7 +154,7 @@ export function SearchBar({
                     type="button"
                     onClick={handleClear}
                     className="absolute right-14 flex h-5 w-5 items-center justify-center rounded-full bg-gray-300 text-gray-700 transition-colors hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50"
-                    aria-label="Clear search"
+                    aria-label={t('accessibility.clearSearch')}
                 >
                     <CloseIcon
                         size={12}
@@ -172,7 +170,7 @@ export function SearchBar({
                 onClick={handleSearch}
                 disabled={!hasQuery}
                 className="absolute right-2 rounded-md bg-primary px-3 py-1 font-semibold text-sm text-white transition-colors hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50 disabled:cursor-not-allowed disabled:bg-gray-300"
-                aria-label="Search"
+                aria-label={t('accessibility.search')}
             >
                 <SearchIcon
                     size={16}

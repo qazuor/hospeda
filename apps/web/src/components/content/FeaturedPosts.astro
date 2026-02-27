@@ -7,7 +7,7 @@
 import BlogPostCard from '../blog/BlogPostCard.astro';
 import EmptyState from '../ui/EmptyState.astro';
 import { postsApi } from '../../lib/api/endpoints';
-import { extractFeaturedImageUrl } from '../../lib/media';
+import { toPostCardProps } from '../../lib/api/transforms';
 
 interface Props {
   locale?: string;
@@ -18,20 +18,9 @@ const { locale = 'es' } = Astro.props;
 const result = await postsApi.list({ pageSize: 6, sortBy: 'createdAt', sortOrder: 'desc' });
 const posts = result.ok ? result.data.items : [];
 
-const postCards = posts.map((post) => {
-  const p = post as Record<string, unknown>;
-  return {
-    slug: String(p.slug || ''),
-    title: String(p.title || ''),
-    summary: String(p.summary || p.content || ''),
-    featuredImage: extractFeaturedImageUrl(p, '/images/placeholder-post.svg'),
-    category: String(p.category || ''),
-    publishedAt: String(p.publishedAt || ''),
-    readingTimeMinutes: Number(p.readingTimeMinutes || 0),
-    authorName: String(p.authorName || ''),
-    isFeatured: Boolean(p.isFeatured),
-  };
-});
+const postCards = posts.map((post) =>
+  toPostCardProps({ item: post as Record<string, unknown> })
+);
 ---
 
 {postCards.length > 0 ? (

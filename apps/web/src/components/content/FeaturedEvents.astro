@@ -7,7 +7,7 @@
 import EventCard from '../event/EventCard.astro';
 import EmptyState from '../ui/EmptyState.astro';
 import { eventsApi } from '../../lib/api/endpoints';
-import { extractFeaturedImageUrl } from '../../lib/media';
+import { toEventCardProps } from '../../lib/api/transforms';
 
 interface Props {
   locale?: string;
@@ -18,22 +18,9 @@ const { locale = 'es' } = Astro.props;
 const result = await eventsApi.list({ pageSize: 4, sortBy: 'startDate', sortOrder: 'asc' });
 const events = result.ok ? result.data.items : [];
 
-const eventCards = events.map((evt) => {
-  const e = evt as Record<string, unknown>;
-  return {
-    slug: String(e.slug || ''),
-    name: String(e.name || ''),
-    summary: String(e.summary || e.description || ''),
-    featuredImage: extractFeaturedImageUrl(e, '/images/placeholder-event.svg'),
-    category: String(e.category || ''),
-    date: {
-      start: String(e.startDate || ''),
-      end: e.endDate ? String(e.endDate) : undefined,
-    },
-    isFeatured: Boolean(e.isFeatured),
-    location: e.location as { name: string; city: string } | undefined,
-  };
-});
+const eventCards = events.map((evt) =>
+  toEventCardProps({ item: evt as Record<string, unknown> })
+);
 ---
 
 {eventCards.length > 0 ? (

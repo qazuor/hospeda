@@ -12,12 +12,13 @@ import { ChatIcon, DeleteIcon, EditIcon } from '@repo/icons';
  * ```
  */
 import { type FormEvent, useCallback, useEffect, useState } from 'react';
+import { useTranslation } from '../../hooks/useTranslation';
 import { apiClient } from '../../lib/api/client';
-import { userApi } from '../../lib/api/endpoints';
+import { userApi } from '../../lib/api/endpoints-protected';
+import type { SupportedLocale } from '../../lib/i18n';
 import { addToast } from '../../store/toast-store';
-import { ReviewEditForm } from './ReviewEditForm';
-import type { EditFormState } from './ReviewEditForm';
-import { REVIEWS_MESSAGES, TAB_LABELS } from './user-reviews-i18n';
+import { ReviewEditForm } from './ReviewEditForm.client';
+import type { EditFormState } from './ReviewEditForm.client';
 
 interface UserReviewsListProps {
     locale: 'es' | 'en' | 'pt';
@@ -131,13 +132,13 @@ export function UserReviewsList({ locale }: UserReviewsListProps) {
     /** IDs of reviews with a DELETE request in flight */
     const [deletingIds, setDeletingIds] = useState<ReadonlySet<string>>(new Set());
 
-    const messages = REVIEWS_MESSAGES[locale];
-    const tabLabels = TAB_LABELS[locale];
+    const { t } = useTranslation({ locale: locale as SupportedLocale, namespace: 'account' });
+    const { t: tUi } = useTranslation({ locale: locale as SupportedLocale, namespace: 'ui' });
 
     const tabs: TabConfig[] = [
-        { id: 'all', label: tabLabels.all },
-        { id: 'accommodation', label: tabLabels.accommodation },
-        { id: 'destination', label: tabLabels.destination }
+        { id: 'all', label: t('reviews.tabs.all') },
+        { id: 'accommodation', label: t('reviews.tabs.accommodation') },
+        { id: 'destination', label: t('reviews.tabs.destination') }
     ];
 
     /** Fetch reviews for the current tab and page */
@@ -161,17 +162,17 @@ export function UserReviewsList({ locale }: UserReviewsListProps) {
                     setTotals(result.data.totals);
                     if (!resetPage) setPage(currentPage + 1);
                 } else {
-                    addToast({ type: 'error', message: messages.fetchError });
+                    addToast({ type: 'error', message: t('reviews.fetchError') });
                 }
             } catch (error) {
-                addToast({ type: 'error', message: messages.fetchError });
+                addToast({ type: 'error', message: t('reviews.fetchError') });
                 console.error('Error fetching reviews:', error);
             } finally {
                 setIsLoading(false);
             }
         },
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [activeTab, page, messages.fetchError]
+        [activeTab, page, t]
     );
 
     const handleTabChange = (tabId: ReviewType) => {
@@ -207,13 +208,13 @@ export function UserReviewsList({ locale }: UserReviewsListProps) {
                     )
                 );
                 setEditingId(null);
-                addToast({ type: 'success', message: messages.updateSuccess });
+                addToast({ type: 'success', message: t('reviews.updateSuccess') });
             } else {
-                addToast({ type: 'error', message: messages.updateError });
+                addToast({ type: 'error', message: t('reviews.updateError') });
             }
         } catch (error) {
             console.error('Error updating review:', error);
-            addToast({ type: 'error', message: messages.updateError });
+            addToast({ type: 'error', message: t('reviews.updateError') });
         } finally {
             setSavingIds((prev) => {
                 const next = new Set(prev);
@@ -227,7 +228,7 @@ export function UserReviewsList({ locale }: UserReviewsListProps) {
      * Delete review via DELETE after window.confirm (placeholder endpoint).
      */
     const handleDelete = async (review: ReviewItem) => {
-        if (!window.confirm(messages.deleteConfirm)) return;
+        if (!window.confirm(t('reviews.deleteConfirm'))) return;
 
         setDeletingIds((prev) => new Set([...prev, review.id]));
         try {
@@ -247,13 +248,13 @@ export function UserReviewsList({ locale }: UserReviewsListProps) {
                         : prev.destinationReviews
                 }));
                 if (editingId === review.id) setEditingId(null);
-                addToast({ type: 'success', message: messages.deleteSuccess });
+                addToast({ type: 'success', message: t('reviews.deleteSuccess') });
             } else {
-                addToast({ type: 'error', message: messages.deleteError });
+                addToast({ type: 'error', message: t('reviews.deleteError') });
             }
         } catch (error) {
             console.error('Error deleting review:', error);
-            addToast({ type: 'error', message: messages.deleteError });
+            addToast({ type: 'error', message: t('reviews.deleteError') });
         } finally {
             setDeletingIds((prev) => {
                 const next = new Set(prev);
@@ -284,7 +285,7 @@ export function UserReviewsList({ locale }: UserReviewsListProps) {
                 <nav
                     className="flex gap-4"
                     role="tablist"
-                    aria-label="Review categories"
+                    aria-label={tUi('accessibility.reviewCategories')}
                 >
                     {tabs.map((tab) => (
                         <button
@@ -316,7 +317,7 @@ export function UserReviewsList({ locale }: UserReviewsListProps) {
                 {isLoading && reviews.length === 0 && (
                     <div className="flex items-center justify-center py-12">
                         <div className="h-12 w-12 animate-spin rounded-full border-primary border-b-2" />
-                        <span className="ml-3 text-gray-600">{messages.loading}</span>
+                        <span className="ml-3 text-gray-600">{t('reviews.loading')}</span>
                     </div>
                 )}
 
@@ -329,9 +330,9 @@ export function UserReviewsList({ locale }: UserReviewsListProps) {
                             className="mb-4 text-gray-400"
                         />
                         <h3 className="mb-2 font-semibold text-gray-900 text-lg">
-                            {messages.empty}
+                            {t('reviews.empty')}
                         </h3>
-                        <p className="max-w-md text-gray-600 text-sm">{messages.emptyAction}</p>
+                        <p className="max-w-md text-gray-600 text-sm">{t('reviews.emptyAction')}</p>
                     </div>
                 )}
 
@@ -356,7 +357,14 @@ export function UserReviewsList({ locale }: UserReviewsListProps) {
                                     {isEditing ? (
                                         <ReviewEditForm
                                             review={review}
-                                            messages={messages}
+                                            messages={{
+                                                ratingEditLabel: t('reviews.ratingEditLabel'),
+                                                titleLabel: t('reviews.titleLabel'),
+                                                contentLabel: t('reviews.contentLabel'),
+                                                cancelButton: t('reviews.cancelButton'),
+                                                saveButton: t('reviews.saveButton'),
+                                                saving: t('reviews.saving')
+                                            }}
                                             onSave={handleSave}
                                             onCancel={() => setEditingId(null)}
                                             isSaving={isSaving}
@@ -367,12 +375,12 @@ export function UserReviewsList({ locale }: UserReviewsListProps) {
                                                 <div className="mb-2 flex items-center gap-3">
                                                     <StarRating
                                                         rating={review.rating}
-                                                        label={messages.ratingLabel}
+                                                        label={t('reviews.ratingLabel')}
                                                     />
                                                     <span className="rounded-full bg-gray-100 px-2 py-0.5 text-gray-600 text-xs">
                                                         {review.accommodationId
-                                                            ? messages.accommodationReview
-                                                            : messages.destinationReview}
+                                                            ? t('reviews.accommodationReview')
+                                                            : t('reviews.destinationReview')}
                                                     </span>
                                                 </div>
                                                 <h3 className="mb-1 font-semibold text-base text-gray-900">
@@ -398,8 +406,8 @@ export function UserReviewsList({ locale }: UserReviewsListProps) {
                                                     type="button"
                                                     onClick={() => setEditingId(review.id)}
                                                     disabled={isDisabled}
-                                                    aria-label={messages.editButton}
-                                                    title={messages.editButton}
+                                                    aria-label={t('reviews.editButton')}
+                                                    title={t('reviews.editButton')}
                                                     className="rounded-md p-1.5 text-gray-500 transition-colors hover:bg-primary/10 hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 disabled:opacity-50"
                                                 >
                                                     <EditIcon
@@ -414,10 +422,10 @@ export function UserReviewsList({ locale }: UserReviewsListProps) {
                                                     disabled={isDisabled}
                                                     aria-label={
                                                         isDeleting
-                                                            ? messages.deleting
-                                                            : messages.deleteButton
+                                                            ? t('reviews.deleting')
+                                                            : t('reviews.deleteButton')
                                                     }
-                                                    title={messages.deleteButton}
+                                                    title={t('reviews.deleteButton')}
                                                     className="rounded-md p-1.5 text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1 disabled:opacity-50"
                                                 >
                                                     {isDeleting ? (
@@ -450,7 +458,7 @@ export function UserReviewsList({ locale }: UserReviewsListProps) {
                             onClick={handleLoadMore}
                             className="rounded-lg bg-primary px-6 py-2.5 font-medium text-white transition-colors hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                         >
-                            {messages.loadMore}
+                            {t('reviews.loadMore')}
                         </button>
                     </div>
                 )}

@@ -1,90 +1,40 @@
 /**
- * IntersectionObserver-based count-up animation React island.
- * Animates a number from 0 to targetValue when the element enters the viewport.
- * Respects prefers-reduced-motion by showing final value immediately.
- * Fires only once per page load via hasAnimated ref.
+ * Single counter animation with vertical layout.
+ * Animates a number from 0 to targetValue when entering the viewport.
+ * Used by StatisticsSection on the owners page.
  */
-import { useEffect, useRef, useState } from 'react';
+import { useCountUp, useViewportTrigger } from '../../hooks/useCountUp';
 
 interface CounterAnimationProps {
     /** Target number to animate to */
-    targetValue: number;
+    readonly targetValue: number;
     /** Text displayed after the number (e.g., '+') */
-    suffix?: string;
+    readonly suffix?: string;
     /** Text displayed before the number */
-    prefix?: string;
+    readonly prefix?: string;
     /** Descriptive label shown below the number */
-    label: string;
+    readonly label: string;
 }
 
 /**
- * Easing function for smooth deceleration at the end of the animation.
+ * Vertical counter with prefix/suffix, locale-formatted number,
+ * and screen-reader-friendly aria-live announcement.
  */
-const easeOutQuart = (t: number): number => 1 - (1 - t) ** 4;
-
 export const CounterAnimation = ({
     targetValue,
     suffix = '',
     prefix = '',
     label
 }: CounterAnimationProps) => {
-    const [displayValue, setDisplayValue] = useState(0);
-    const [isComplete, setIsComplete] = useState(false);
-    const elementRef = useRef<HTMLDivElement>(null);
-    const hasAnimated = useRef(false);
+    const [elementRef, isVisible] = useViewportTrigger<HTMLDivElement>();
+    const { value, isComplete } = useCountUp({
+        target: targetValue,
+        duration: 2000,
+        isVisible,
+        easing: 'quart'
+    });
 
-    useEffect(() => {
-        const element = elementRef.current;
-        if (!element) return;
-
-        /** Check if user prefers reduced motion */
-        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-        if (prefersReducedMotion) {
-            setDisplayValue(targetValue);
-            setIsComplete(true);
-            hasAnimated.current = true;
-            return;
-        }
-
-        const observer = new IntersectionObserver(
-            (entries) => {
-                const entry = entries[0];
-                if (entry?.isIntersecting && !hasAnimated.current) {
-                    hasAnimated.current = true;
-                    const duration = 2000;
-                    const startTime = performance.now();
-
-                    const animate = (currentTime: number) => {
-                        const elapsed = currentTime - startTime;
-                        const progress = Math.min(elapsed / duration, 1);
-                        const easedProgress = easeOutQuart(progress);
-                        const currentValue = Math.round(easedProgress * targetValue);
-
-                        setDisplayValue(currentValue);
-
-                        if (progress < 1) {
-                            requestAnimationFrame(animate);
-                        } else {
-                            setDisplayValue(targetValue);
-                            setIsComplete(true);
-                        }
-                    };
-
-                    requestAnimationFrame(animate);
-                }
-            },
-            { threshold: 0.3 }
-        );
-
-        observer.observe(element);
-
-        return () => {
-            observer.disconnect();
-        };
-    }, [targetValue]);
-
-    const formattedValue = displayValue.toLocaleString('es-AR');
+    const formattedValue = value.toLocaleString('es-AR');
 
     return (
         <div

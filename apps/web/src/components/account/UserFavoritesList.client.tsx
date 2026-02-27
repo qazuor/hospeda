@@ -11,7 +11,9 @@ import { FavoriteIcon } from '@repo/icons';
  * ```
  */
 import { type FormEvent, useEffect, useState } from 'react';
-import { userBookmarksApi } from '../../lib/api/endpoints';
+import { useTranslation } from '../../hooks/useTranslation';
+import { userBookmarksApi } from '../../lib/api/endpoints-protected';
+import type { SupportedLocale } from '../../lib/i18n';
 import { addToast } from '../../store/toast-store';
 
 interface UserFavoritesListProps {
@@ -104,6 +106,7 @@ function getMessages(locale: 'es' | 'en' | 'pt') {
  * User favorites list component
  */
 export function UserFavoritesList({ locale }: UserFavoritesListProps) {
+    const { t } = useTranslation({ locale: locale as SupportedLocale, namespace: 'ui' });
     const [activeTab, setActiveTab] = useState<EntityType>('ACCOMMODATION');
     const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
     const [total, setTotal] = useState(0);
@@ -209,7 +212,7 @@ export function UserFavoritesList({ locale }: UserFavoritesListProps) {
                 <nav
                     className="flex gap-4"
                     role="tablist"
-                    aria-label="Favorite categories"
+                    aria-label={t('accessibility.favoriteCategories')}
                 >
                     {tabs.map((tab) => (
                         <button

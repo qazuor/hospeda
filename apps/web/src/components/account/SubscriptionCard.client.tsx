@@ -11,12 +11,10 @@ import { AlertTriangleIcon, CheckIcon, RefreshIcon } from '@repo/icons';
  * ```
  */
 import { useCallback, useEffect, useState } from 'react';
-import { userApi } from '../../lib/api/endpoints';
-import type { SubscriptionData } from '../../lib/api/endpoints';
-import {
-    SUBSCRIPTION_CARD_MESSAGES,
-    type SubscriptionCardMessages
-} from './subscription-card-i18n';
+import { useTranslation } from '../../hooks/useTranslation';
+import type { SubscriptionData } from '../../lib/api/endpoints-protected';
+import { userApi } from '../../lib/api/endpoints-protected';
+import type { SupportedLocale } from '../../lib/i18n';
 
 /** Props for the SubscriptionCard component */
 interface SubscriptionCardProps {
@@ -155,6 +153,9 @@ function UpgradeCta({ heading, description, buttonText, href }: UpgradeCtaProps)
     );
 }
 
+/** Translation function type used by sub-components */
+type TFunction = (key: string, fallback?: string, params?: Record<string, unknown>) => string;
+
 /**
  * Loaded state for an authenticated user with an active paid subscription.
  */
@@ -162,14 +163,18 @@ interface ActiveSubscriptionViewProps {
     readonly subscription: SubscriptionData;
     readonly locale: 'es' | 'en' | 'pt';
     readonly upgradeHref: string;
-    readonly messages: SubscriptionCardMessages;
+    readonly t: TFunction;
+    readonly features: readonly string[];
+    readonly statusLabels: Record<string, string>;
 }
 
 function ActiveSubscriptionView({
     subscription,
     locale,
     upgradeHref,
-    messages
+    t,
+    features,
+    statusLabels
 }: ActiveSubscriptionViewProps) {
     const { planName, status, monthlyPriceArs, trialEndsAt, cancelAtPeriodEnd, currentPeriodEnd } =
         subscription;
@@ -188,42 +193,46 @@ function ActiveSubscriptionView({
                 <h2 className="font-bold text-gray-900 text-xl">{planName}</h2>
                 <StatusBadge
                     statusKey={status}
-                    label={messages.statusLabels[status]}
+                    label={statusLabels[status] ?? status}
                 />
             </div>
 
             {/* Price */}
             <div>
                 <p className="font-bold text-2xl text-gray-900">
-                    {isFree ? messages.freePlanPrice : formatArsPrice(monthlyPriceArs, locale)}
+                    {isFree
+                        ? t('subscription.freePlanPrice')
+                        : formatArsPrice(monthlyPriceArs, locale)}
                 </p>
             </div>
 
             {/* Trial warning */}
             {trialDaysRemaining !== null && (
                 <p className="rounded-md bg-amber-50 px-3 py-2 font-medium text-amber-800 text-sm">
-                    {messages.trialEndsIn(trialDaysRemaining)}
+                    {t('subscription.trialEndsIn', undefined, { days: trialDaysRemaining })}
                 </p>
             )}
 
             {/* Cancellation notice */}
             {cancelAtPeriodEnd && formattedPeriodEnd && (
                 <p className="rounded-md bg-red-50 px-3 py-2 font-medium text-red-700 text-sm">
-                    {messages.cancelNotice(formattedPeriodEnd)}
+                    {t('subscription.cancelNotice', undefined, { date: formattedPeriodEnd })}
                 </p>
             )}
 
             {/* Renewal info */}
             {!cancelAtPeriodEnd && status === 'active' && formattedPeriodEnd && (
-                <p className="text-gray-500 text-sm">{messages.renewsOn(formattedPeriodEnd)}</p>
+                <p className="text-gray-500 text-sm">
+                    {t('subscription.renewsOn', undefined, { date: formattedPeriodEnd })}
+                </p>
             )}
 
             <hr className="border-gray-100" />
 
             {/* Features list */}
             <FeaturesList
-                features={messages.features}
-                heading={messages.featuresHeading}
+                features={features}
+                heading={t('subscription.featuresHeading')}
             />
 
             {/* Upgrade CTA - only for free plan */}
@@ -231,9 +240,9 @@ function ActiveSubscriptionView({
                 <>
                     <hr className="border-gray-100" />
                     <UpgradeCta
-                        heading={messages.upgradeHeading}
-                        description={messages.upgradeDescription}
-                        buttonText={messages.upgradeButton}
+                        heading={t('subscription.upgradeHeading')}
+                        description={t('subscription.upgradeDescription')}
+                        buttonText={t('subscription.upgradeButton')}
                         href={upgradeHref}
                     />
                 </>
@@ -247,41 +256,47 @@ function ActiveSubscriptionView({
  */
 interface FreePlanViewProps {
     readonly upgradeHref: string;
-    readonly messages: SubscriptionCardMessages;
+    readonly t: TFunction;
+    readonly features: readonly string[];
+    readonly statusLabels: Record<string, string>;
 }
 
-function FreePlanView({ upgradeHref, messages }: FreePlanViewProps) {
+function FreePlanView({ upgradeHref, t, features, statusLabels }: FreePlanViewProps) {
     return (
         <div className="space-y-6">
             {/* Plan header */}
             <div className="space-y-2">
-                <h2 className="font-bold text-gray-900 text-xl">{messages.freePlanName}</h2>
+                <h2 className="font-bold text-gray-900 text-xl">
+                    {t('subscription.freePlanName')}
+                </h2>
                 <StatusBadge
                     statusKey="free"
-                    label={messages.statusLabels.free}
+                    label={statusLabels.free ?? 'Free'}
                 />
             </div>
 
             {/* Price */}
             <div>
-                <p className="font-bold text-2xl text-gray-900">{messages.freePlanPrice}</p>
+                <p className="font-bold text-2xl text-gray-900">
+                    {t('subscription.freePlanPrice')}
+                </p>
             </div>
 
             <hr className="border-gray-100" />
 
             {/* Features list */}
             <FeaturesList
-                features={messages.features}
-                heading={messages.featuresHeading}
+                features={features}
+                heading={t('subscription.featuresHeading')}
             />
 
             <hr className="border-gray-100" />
 
             {/* Upgrade CTA */}
             <UpgradeCta
-                heading={messages.upgradeHeading}
-                description={messages.upgradeDescription}
-                buttonText={messages.upgradeButton}
+                heading={t('subscription.upgradeHeading')}
+                description={t('subscription.upgradeDescription')}
+                buttonText={t('subscription.upgradeButton')}
                 href={upgradeHref}
             />
         </div>
@@ -298,7 +313,24 @@ export function SubscriptionCard({ locale, upgradeHref }: SubscriptionCardProps)
     const [error, setError] = useState(false);
     const [data, setData] = useState<SubscriptionData | null>(null);
 
-    const messages = SUBSCRIPTION_CARD_MESSAGES[locale];
+    const { t } = useTranslation({ locale: locale as SupportedLocale, namespace: 'account' });
+    const { t: tUi } = useTranslation({ locale: locale as SupportedLocale, namespace: 'ui' });
+
+    const features = [
+        t('subscription.feature1'),
+        t('subscription.feature2'),
+        t('subscription.feature3'),
+        t('subscription.feature4')
+    ] as const;
+
+    const statusLabels: Record<string, string> = {
+        active: t('subscription.statusActive'),
+        trial: t('subscription.statusTrial'),
+        cancelled: t('subscription.statusCancelled'),
+        expired: t('subscription.statusExpired'),
+        pending: t('subscription.statusPending'),
+        free: t('subscription.statusFree')
+    };
 
     const fetchSubscription = useCallback(async () => {
         setIsLoading(true);
@@ -330,9 +362,9 @@ export function SubscriptionCard({ locale, upgradeHref }: SubscriptionCardProps)
             <output
                 className="block rounded-lg border border-gray-200 p-6"
                 aria-busy="true"
-                aria-label={messages.loading}
+                aria-label={t('subscription.loading')}
             >
-                <span className="sr-only">{messages.loading}</span>
+                <span className="sr-only">{t('subscription.loading')}</span>
 
                 {/* Skeleton placeholder matching the loaded state height */}
                 <div className="animate-pulse space-y-4">
@@ -378,7 +410,7 @@ export function SubscriptionCard({ locale, upgradeHref }: SubscriptionCardProps)
                 {/* Visible loading text below skeleton */}
                 <div className="mt-6 flex items-center gap-3 border-gray-100 border-t pt-4">
                     <div className="h-5 w-5 shrink-0 animate-spin rounded-full border-primary border-b-2" />
-                    <span className="text-gray-600 text-sm">{messages.loading}</span>
+                    <span className="text-gray-600 text-sm">{t('subscription.loading')}</span>
                 </div>
             </output>
         );
@@ -398,11 +430,13 @@ export function SubscriptionCard({ locale, upgradeHref }: SubscriptionCardProps)
                         className="text-red-500"
                         aria-hidden="true"
                     />
-                    <p className="font-medium text-red-700 text-sm">{messages.loadError}</p>
+                    <p className="font-medium text-red-700 text-sm">
+                        {t('subscription.loadError')}
+                    </p>
                     <button
                         type="button"
                         onClick={fetchSubscription}
-                        aria-label="Retry loading subscription data"
+                        aria-label={tUi('accessibility.retryLoading')}
                         className="inline-flex items-center gap-2 rounded-md border border-red-300 bg-white px-4 py-2 font-medium text-red-700 text-sm transition-colors hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
                     >
                         <RefreshIcon
@@ -410,7 +444,7 @@ export function SubscriptionCard({ locale, upgradeHref }: SubscriptionCardProps)
                             weight="bold"
                             aria-hidden="true"
                         />
-                        {messages.retry}
+                        {t('subscription.retry')}
                     </button>
                 </div>
             </div>
@@ -425,12 +459,16 @@ export function SubscriptionCard({ locale, upgradeHref }: SubscriptionCardProps)
                     subscription={data}
                     locale={locale}
                     upgradeHref={upgradeHref}
-                    messages={messages}
+                    t={t}
+                    features={features}
+                    statusLabels={statusLabels}
                 />
             ) : (
                 <FreePlanView
                     upgradeHref={upgradeHref}
-                    messages={messages}
+                    t={t}
+                    features={features}
+                    statusLabels={statusLabels}
                 />
             )}
         </div>

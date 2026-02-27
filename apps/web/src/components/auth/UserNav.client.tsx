@@ -1,7 +1,9 @@
 import { ChevronDownIcon } from '@repo/icons';
 import type { JSX } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from '../../hooks/useTranslation';
 import { signOut } from '../../lib/auth-client';
+import type { SupportedLocale } from '../../lib/i18n';
 import { buildUrl } from '../../lib/urls';
 
 /**
@@ -44,33 +46,6 @@ export interface UserNavProps {
      */
     readonly className?: string;
 }
-
-/**
- * Translations for the UserNav component
- */
-const translations = {
-    es: {
-        myAccount: 'Mi Cuenta',
-        favorites: 'Favoritos',
-        myReviews: 'Mis Reseñas',
-        preferences: 'Preferencias',
-        signOut: 'Cerrar sesión'
-    },
-    en: {
-        myAccount: 'My Account',
-        favorites: 'Favorites',
-        myReviews: 'My Reviews',
-        preferences: 'Preferences',
-        signOut: 'Sign Out'
-    },
-    pt: {
-        myAccount: 'Minha Conta',
-        favorites: 'Favoritos',
-        myReviews: 'Minhas Avaliações',
-        preferences: 'Preferências',
-        signOut: 'Sair'
-    }
-} as const;
 
 /**
  * Get user initials from name
@@ -123,7 +98,8 @@ export function UserNav({ user, locale = 'es', className = '' }: UserNavProps): 
     const menuRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
 
-    const t = translations[locale];
+    const { t } = useTranslation({ locale: locale as SupportedLocale, namespace: 'nav' });
+    const { t: tUi } = useTranslation({ locale: locale as SupportedLocale, namespace: 'ui' });
     const initials = getUserInitials({ name: user.name });
 
     // Close menu on click outside
@@ -187,7 +163,7 @@ export function UserNav({ user, locale = 'es', className = '' }: UserNavProps): 
                 onClick={handleToggle}
                 aria-expanded={isOpen}
                 aria-haspopup="menu"
-                aria-label={`User menu for ${user.name}`}
+                aria-label={tUi('accessibility.userMenuFor', undefined, { name: user.name })}
                 className="inline-flex items-center gap-2 rounded-lg px-3 py-2 font-medium text-gray-700 text-sm transition-colors hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
             >
                 {/* Avatar or Initials */}
@@ -224,7 +200,7 @@ export function UserNav({ user, locale = 'es', className = '' }: UserNavProps): 
                 <div
                     ref={menuRef}
                     role="menu"
-                    aria-label="User menu"
+                    aria-label={tUi('accessibility.userMenu')}
                     className="absolute top-full right-0 z-50 mt-2 w-64 rounded-lg border border-gray-200 bg-white py-2 shadow-lg"
                 >
                     {/* User Info Header */}
@@ -240,28 +216,28 @@ export function UserNav({ user, locale = 'es', className = '' }: UserNavProps): 
                             role="menuitem"
                             className="block px-4 py-2 text-gray-700 text-sm transition-colors hover:bg-gray-100 focus-visible:bg-gray-100 focus-visible:outline-none"
                         >
-                            {t.myAccount}
+                            {t('userMenu.myAccount')}
                         </a>
                         <a
                             href={buildUrl({ locale, path: 'mi-cuenta/favoritos' })}
                             role="menuitem"
                             className="block px-4 py-2 text-gray-700 text-sm transition-colors hover:bg-gray-100 focus-visible:bg-gray-100 focus-visible:outline-none"
                         >
-                            {t.favorites}
+                            {t('userMenu.favorites')}
                         </a>
                         <a
                             href={buildUrl({ locale, path: 'mi-cuenta/resenas' })}
                             role="menuitem"
                             className="block px-4 py-2 text-gray-700 text-sm transition-colors hover:bg-gray-100 focus-visible:bg-gray-100 focus-visible:outline-none"
                         >
-                            {t.myReviews}
+                            {t('userMenu.myReviews')}
                         </a>
                         <a
                             href={buildUrl({ locale, path: 'mi-cuenta/preferencias' })}
                             role="menuitem"
                             className="block px-4 py-2 text-gray-700 text-sm transition-colors hover:bg-gray-100 focus-visible:bg-gray-100 focus-visible:outline-none"
                         >
-                            {t.preferences}
+                            {t('userMenu.preferences')}
                         </a>
                     </div>
 
@@ -276,7 +252,7 @@ export function UserNav({ user, locale = 'es', className = '' }: UserNavProps): 
                             role="menuitem"
                             className="block w-full px-4 py-2 text-left text-red-600 text-sm transition-colors hover:bg-red-50 focus-visible:bg-red-50 focus-visible:outline-none"
                         >
-                            {t.signOut}
+                            {t('userMenu.signOut')}
                         </button>
                     </div>
                 </div>

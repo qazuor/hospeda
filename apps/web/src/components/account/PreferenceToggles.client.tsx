@@ -1,6 +1,8 @@
 import type { JSX } from 'react';
 import { useState } from 'react';
-import { userApi } from '../../lib/api/endpoints';
+import { useTranslation } from '../../hooks/useTranslation';
+import { userApi } from '../../lib/api/endpoints-protected';
+import type { SupportedLocale } from '../../lib/i18n';
 import { addToast } from '../../store/toast-store';
 
 /**
@@ -40,77 +42,8 @@ export interface PreferenceTogglesProps {
      * Current locale for localized text
      * @default 'es'
      */
-    readonly locale?: 'es' | 'en' | 'pt';
+    readonly locale?: string;
 }
-
-/**
- * Localized text strings
- */
-const texts = {
-    es: {
-        notificationsTitle: 'Notificaciones',
-        notificationsDescription: 'Configurá cómo querés recibir notificaciones',
-        emailLabel: 'Notificaciones por email',
-        emailDescription: 'Recibí alertas y actualizaciones por correo electrónico',
-        smsLabel: 'Notificaciones por SMS',
-        smsDescription: 'Recibí alertas por mensaje de texto',
-        pushLabel: 'Notificaciones push',
-        pushDescription: 'Recibí notificaciones en tu navegador o aplicación',
-        languageTitle: 'Idioma',
-        languageDescription: 'Seleccioná tu idioma preferido',
-        languageLabel: 'Idioma del sitio',
-        languageEs: 'Español',
-        languageEn: 'English',
-        languagePt: 'Português',
-        saveButton: 'Guardar cambios',
-        saving: 'Guardando...',
-        notificationsSaved: 'Preferencias de notificaciones guardadas',
-        languageSaved: 'Idioma actualizado correctamente',
-        errorMessage: 'No se pudieron guardar los cambios. Intentá nuevamente.'
-    },
-    en: {
-        notificationsTitle: 'Notifications',
-        notificationsDescription: 'Configure how you want to receive notifications',
-        emailLabel: 'Email notifications',
-        emailDescription: 'Receive alerts and updates via email',
-        smsLabel: 'SMS notifications',
-        smsDescription: 'Receive alerts via text message',
-        pushLabel: 'Push notifications',
-        pushDescription: 'Receive notifications in your browser or app',
-        languageTitle: 'Language',
-        languageDescription: 'Select your preferred language',
-        languageLabel: 'Site language',
-        languageEs: 'Español',
-        languageEn: 'English',
-        languagePt: 'Português',
-        saveButton: 'Save changes',
-        saving: 'Saving...',
-        notificationsSaved: 'Notification preferences saved',
-        languageSaved: 'Language updated successfully',
-        errorMessage: 'Could not save changes. Please try again.'
-    },
-    pt: {
-        notificationsTitle: 'Notificações',
-        notificationsDescription: 'Configure como você deseja receber notificações',
-        emailLabel: 'Notificações por e-mail',
-        emailDescription: 'Receba alertas e atualizações por e-mail',
-        smsLabel: 'Notificações por SMS',
-        smsDescription: 'Receba alertas por mensagem de texto',
-        pushLabel: 'Notificações push',
-        pushDescription: 'Receba notificações no seu navegador ou aplicativo',
-        languageTitle: 'Idioma',
-        languageDescription: 'Selecione seu idioma preferido',
-        languageLabel: 'Idioma do site',
-        languageEs: 'Español',
-        languageEn: 'English',
-        languagePt: 'Português',
-        saveButton: 'Salvar alterações',
-        saving: 'Salvando...',
-        notificationsSaved: 'Preferências de notificação salvas',
-        languageSaved: 'Idioma atualizado com sucesso',
-        errorMessage: 'Não foi possível salvar as alterações. Tente novamente.'
-    }
-};
 
 /**
  * PreferenceToggles component
@@ -151,7 +84,7 @@ export function PreferenceToggles({
     const [isSavingNotifications, setIsSavingNotifications] = useState<boolean>(false);
     const [isSavingLanguage, setIsSavingLanguage] = useState<boolean>(false);
 
-    const t = texts[locale];
+    const { t } = useTranslation({ locale: locale as SupportedLocale, namespace: 'account' });
 
     /**
      * Handles notification checkbox toggle
@@ -188,13 +121,13 @@ export function PreferenceToggles({
 
             addToast({
                 type: 'success',
-                message: t.notificationsSaved,
+                message: t('preferences.notificationsSaved'),
                 duration: 3000
             });
         } catch (_error) {
             addToast({
                 type: 'error',
-                message: t.errorMessage,
+                message: t('preferences.errorMessage'),
                 duration: 5000
             });
         } finally {
@@ -225,7 +158,7 @@ export function PreferenceToggles({
 
             addToast({
                 type: 'success',
-                message: t.languageSaved,
+                message: t('preferences.languageSaved'),
                 duration: 3000
             });
 
@@ -244,7 +177,7 @@ export function PreferenceToggles({
         } catch (_error) {
             addToast({
                 type: 'error',
-                message: t.errorMessage,
+                message: t('preferences.errorMessage'),
                 duration: 5000
             });
             setIsSavingLanguage(false);
@@ -256,8 +189,12 @@ export function PreferenceToggles({
             {/* Notifications Section */}
             <section className="rounded-lg border bg-bg p-6">
                 <div className="mb-4">
-                    <h2 className="font-semibold text-lg text-text">{t.notificationsTitle}</h2>
-                    <p className="mt-1 text-sm text-text-secondary">{t.notificationsDescription}</p>
+                    <h2 className="font-semibold text-lg text-text">
+                        {t('preferences.notificationsTitle')}
+                    </h2>
+                    <p className="mt-1 text-sm text-text-secondary">
+                        {t('preferences.notificationsDescription')}
+                    </p>
                 </div>
 
                 <div className="space-y-4">
@@ -276,13 +213,13 @@ export function PreferenceToggles({
                                 htmlFor="notification-email"
                                 className="cursor-pointer font-medium text-sm text-text"
                             >
-                                {t.emailLabel}
+                                {t('preferences.emailLabel')}
                             </label>
                             <p
                                 id="notification-email-description"
                                 className="mt-0.5 text-text-secondary text-xs"
                             >
-                                {t.emailDescription}
+                                {t('preferences.emailDescription')}
                             </p>
                         </div>
                     </div>
@@ -302,13 +239,13 @@ export function PreferenceToggles({
                                 htmlFor="notification-sms"
                                 className="cursor-pointer font-medium text-sm text-text"
                             >
-                                {t.smsLabel}
+                                {t('preferences.smsLabel')}
                             </label>
                             <p
                                 id="notification-sms-description"
                                 className="mt-0.5 text-text-secondary text-xs"
                             >
-                                {t.smsDescription}
+                                {t('preferences.smsDescription')}
                             </p>
                         </div>
                     </div>
@@ -328,13 +265,13 @@ export function PreferenceToggles({
                                 htmlFor="notification-push"
                                 className="cursor-pointer font-medium text-sm text-text"
                             >
-                                {t.pushLabel}
+                                {t('preferences.pushLabel')}
                             </label>
                             <p
                                 id="notification-push-description"
                                 className="mt-0.5 text-text-secondary text-xs"
                             >
-                                {t.pushDescription}
+                                {t('preferences.pushDescription')}
                             </p>
                         </div>
                     </div>
@@ -348,7 +285,9 @@ export function PreferenceToggles({
                         disabled={isSavingNotifications}
                         className="rounded-md bg-primary px-4 py-2 font-medium text-sm text-white transition-colors hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:bg-gray-300"
                     >
-                        {isSavingNotifications ? t.saving : t.saveButton}
+                        {isSavingNotifications
+                            ? t('preferences.saving')
+                            : t('preferences.saveButton')}
                     </button>
                 </div>
             </section>
@@ -356,8 +295,12 @@ export function PreferenceToggles({
             {/* Language Section */}
             <section className="rounded-lg border bg-bg p-6">
                 <div className="mb-4">
-                    <h2 className="font-semibold text-lg text-text">{t.languageTitle}</h2>
-                    <p className="mt-1 text-sm text-text-secondary">{t.languageDescription}</p>
+                    <h2 className="font-semibold text-lg text-text">
+                        {t('preferences.languageTitle')}
+                    </h2>
+                    <p className="mt-1 text-sm text-text-secondary">
+                        {t('preferences.languageDescription')}
+                    </p>
                 </div>
 
                 <div>
@@ -365,7 +308,7 @@ export function PreferenceToggles({
                         htmlFor="language-select"
                         className="mb-2 block font-medium text-sm text-text"
                     >
-                        {t.languageLabel}
+                        {t('preferences.languageLabel')}
                     </label>
                     <select
                         id="language-select"
@@ -373,9 +316,9 @@ export function PreferenceToggles({
                         onChange={(e) => setLanguage(e.target.value)}
                         className="w-full max-w-xs rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                     >
-                        <option value="es">{t.languageEs}</option>
-                        <option value="en">{t.languageEn}</option>
-                        <option value="pt">{t.languagePt}</option>
+                        <option value="es">{t('preferences.languageEs')}</option>
+                        <option value="en">{t('preferences.languageEn')}</option>
+                        <option value="pt">{t('preferences.languagePt')}</option>
                     </select>
                 </div>
 
@@ -387,7 +330,7 @@ export function PreferenceToggles({
                         disabled={isSavingLanguage}
                         className="rounded-md bg-primary px-4 py-2 font-medium text-sm text-white transition-colors hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:bg-gray-300"
                     >
-                        {isSavingLanguage ? t.saving : t.saveButton}
+                        {isSavingLanguage ? t('preferences.saving') : t('preferences.saveButton')}
                     </button>
                 </div>
             </section>

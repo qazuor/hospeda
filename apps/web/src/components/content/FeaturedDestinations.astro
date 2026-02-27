@@ -1,71 +1,126 @@
 ---
 /**
- * Server Island: Featured destinations as a bento grid layout.
- * Fetches featured destinations from the API.
- * Featured destinations get large cells (span 2 cols, 2 rows on desktop).
+ * Server Island: Featured destinations with responsive layout.
+ * Desktop/Tablet: Uniform grid (no hero card) with staggered animations.
+ * Mobile: Horizontal carousel with scroll-snap and progress bar.
+ * Includes hover preview panel for desktop users.
  * Used with server:defer for dynamic content on a static shell.
  */
-import DestinationCard from '../destination/DestinationCard.astro';
-import EmptyState from '../ui/EmptyState.astro';
-import { destinationsApi } from '../../lib/api/endpoints';
-import { extractFeaturedImageUrl } from '../../lib/media';
+import type { DestinationPublic } from "@repo/schemas";
+import { destinationsApi } from "../../lib/api/endpoints";
+import { toDestinationCardProps } from "../../lib/api/transforms";
+import { t, type SupportedLocale } from "../../lib/i18n";
+import DestinationCard from "../destination/DestinationCard.astro";
+import DestinationCarousel from "../destination/DestinationCarousel.astro";
+import DestinationPreview from "../destination/DestinationPreview.astro";
+import LitoralMap from "../destination/LitoralMap.astro";
+import EmptyState from "../ui/EmptyState.astro";
 
-interface Props {
-  locale?: string;
+/**
+ * Extended destination type with computed fields added by the API
+ * when includeEventCount=true. Extends the base DestinationPublic schema.
+ */
+interface DestinationWithEventCount extends DestinationPublic {
+    readonly eventsCount?: number;
 }
 
-const { locale = 'es' } = Astro.props;
+interface Props {
+    locale?: SupportedLocale;
+}
 
-const result = await destinationsApi.list({ isFeatured: true, pageSize: 5, destinationType: 'CITY' });
-const destinations = result.ok ? result.data.items : [];
+const { locale = "es" } = Astro.props;
 
-const destinationCards = destinations.map((dest) => {
-  const d = dest as Record<string, unknown>;
-  return {
-    slug: String(d.slug || ''),
-    name: String(d.name || ''),
-    summary: String(d.summary || d.description || ''),
-    featuredImage: extractFeaturedImageUrl(d, '/images/placeholder-destination.svg'),
-    accommodationsCount: Number(d.accommodationsCount || 0),
-    isFeatured: Boolean(d.isFeatured),
-    path: String(d.path || d.slug || ''),
-  };
+/** Only fetch city-level destinations for the featured section (excludes regions/provinces) */
+const FEATURED_DESTINATION_TYPE = "CITY" as const;
+
+const result = await destinationsApi.list({
+    pageSize: 8,
+    destinationType: FEATURED_DESTINATION_TYPE,
+    includeEventCount: true,
+});
+const rawDestinations = (result.ok ? result.data.items : []) as ReadonlyArray<DestinationWithEventCount>;
+
+/** Sort: featured destinations first, then by rating descending */
+const destinations = [...rawDestinations].sort((a, b) => {
+    const aFeat = a.isFeatured ? 1 : 0;
+    const bFeat = b.isFeatured ? 1 : 0;
+    if (bFeat !== aFeat) return bFeat - aFeat;
+    return (b.averageRating ?? 0) - (a.averageRating ?? 0);
 });
 
-const featuredCard = destinationCards.find((d) => d.isFeatured);
-const regularCards = destinationCards.filter((d) => d !== featuredCard);
+/** Map API response to card data with all enriched fields */
+const destinationCards = destinations.map((dest) =>
+    toDestinationCardProps({ item: dest as unknown as Record<string, unknown> })
+);
+
+const emptyTitle = t({ locale, namespace: "destinations", key: "emptyTitle", fallback: "No hay destinos disponibles" });
+const emptyMsg = t({
+    locale,
+    namespace: "destinations",
+    key: "emptyMessage",
+    fallback: "Pronto agregaremos destinos.",
+});
+
+/** Preview data for desktop hover cards */
+const previewDestinations = destinationCards.map((d) => ({
+    slug: d.slug,
+    name: d.name,
+    summary: d.summary,
+    path: d.path,
+    gallery: d.gallery,
+    ratingDimensions: d.ratingDimensions,
+}));
+
+/** Map data: all destinations with coordinates */
+const mapDestinations = destinationCards.map((d) => ({
+    slug: d.slug,
+    name: d.name,
+    coordinates: d.coordinates,
+}));
 ---
 
-{destinationCards.length > 0 ? (
-  <div class="bento-grid grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-    {/* Featured destination: large cell */}
-    {featuredCard && (
-      <div class="sm:col-span-2 sm:row-span-2">
-        <DestinationCard
-          destination={featuredCard}
-          locale={locale}
-          class="h-full [&_img]:h-64 sm:[&_img]:h-full"
-        />
-      </div>
-    )}
-    {/* Regular destinations: smaller cells */}
-    {regularCards.map((destination) => (
-      <DestinationCard
-        destination={destination}
-        locale={locale}
-      />
-    ))}
-    {/* If no featured, show all in regular grid */}
-    {!featuredCard && destinationCards.map((destination) => (
-      <DestinationCard
-        destination={destination}
-        locale={locale}
-      />
-    ))}
-  </div>
-) : (
-  <EmptyState
-    title="No hay destinos destacados"
-    message="Proximamente agregaremos destinos destacados."
-  />
-)}
+{
+    destinationCards.length > 0 ? (
+        <Fragment>
+            {/* Mobile: Horizontal carousel (visible < sm) */}
+            <div class="sm:hidden">
+                <DestinationCarousel count={destinationCards.length} locale={locale}>
+                    {destinationCards.map((destination) => (
+                        <DestinationCard destination={destination} locale={locale} class="snap-start" />
+                    ))}
+                </DestinationCarousel>
+            </div>
+
+            {/* Tablet + Desktop: Uniform grid with map sidebar (visible sm+) */}
+            <div class="hidden sm:block">
+                <div class="flex gap-5">
+                    {/* Card grid */}
+                    <div class="min-w-0 flex-1">
+                        <div
+                            class="destinations-grid grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-3 lg:gap-5"
+                            data-scroll-reveal
+                        >
+                            {destinationCards.map((destination, i) => (
+                                <div class:list={["scroll-reveal-stagger", `scroll-reveal-stagger-${i + 1}`]}>
+                                    <DestinationCard destination={destination} locale={locale} />
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Map sidebar (desktop lg+ only, hidden on tablet) */}
+                    <LitoralMap
+                        destinations={mapDestinations}
+                        locale={locale}
+                        class="w-100 shrink-0 scroll-reveal-stagger scroll-reveal-stagger-9"
+                    />
+                </div>
+
+                {/* Desktop hover preview panels */}
+                <DestinationPreview destinations={previewDestinations} locale={locale} />
+            </div>
+        </Fragment>
+    ) : (
+        <EmptyState title={emptyTitle} message={emptyMsg} />
+    )
+}

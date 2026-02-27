@@ -25,6 +25,8 @@
 /**
  * Props interface for SEOHead component.
  */
+import { SUPPORTED_LOCALES, type SupportedLocale } from '../../lib/i18n';
+
 export interface Props {
   /**
    * Page title (will be suffixed with " | Hospeda")
@@ -53,10 +55,11 @@ export interface Props {
   noindex?: boolean;
 
   /**
-   * Page locale for Open Graph and hreflang tags
+   * Page locale for Open Graph and hreflang tags.
+   * All supported locales are accepted directly.. no need to convert PT to ES.
    * @default 'es'
    */
-  locale?: 'es' | 'en' | 'pt';
+  locale?: SupportedLocale;
 
   /**
    * Open Graph type
@@ -79,11 +82,6 @@ const {
  * Generate full page title with site suffix
  */
 const fullTitle = `${title} | Hospeda`;
-
-/**
- * Supported locales for hreflang generation.
- */
-const SUPPORTED_LOCALES = ['es', 'en', 'pt'] as const;
 
 /**
  * Generate alternate URLs for hreflang tags.

@@ -1,5 +1,7 @@
 import { AddIcon, ChatIcon, CheckCircleIcon, StarIcon } from '@repo/icons';
 import type { JSX } from 'react';
+import { useTranslation } from '../../hooks/useTranslation';
+import type { SupportedLocale } from '../../lib/i18n';
 
 /**
  * Individual review data structure
@@ -33,7 +35,7 @@ export interface ReviewListProps {
      * Locale for internationalization
      * @default 'es'
      */
-    readonly locale?: 'es' | 'en';
+    readonly locale?: string;
 
     /**
      * Whether the user is authenticated
@@ -75,38 +77,6 @@ export interface ReviewListProps {
 }
 
 /**
- * Translations for the ReviewList component
- */
-const translations = {
-    es: {
-        title: 'Reseñas',
-        totalReviews: (count: number) => `${count} reseña${count !== 1 ? 's' : ''}`,
-        sortBy: 'Ordenar por',
-        sortNewest: 'Más recientes',
-        sortHighest: 'Mejor valorados',
-        sortLowest: 'Menor valorados',
-        writeReview: 'Escribir reseña',
-        loadMore: 'Cargar más',
-        noReviews: 'Aún no hay reseñas',
-        noReviewsDescription: 'Sé el primero en dejar una reseña',
-        verified: 'Verificado'
-    },
-    en: {
-        title: 'Reviews',
-        totalReviews: (count: number) => `${count} review${count !== 1 ? 's' : ''}`,
-        sortBy: 'Sort by',
-        sortNewest: 'Newest',
-        sortHighest: 'Highest rated',
-        sortLowest: 'Lowest rated',
-        writeReview: 'Write a review',
-        loadMore: 'Load more',
-        noReviews: 'No reviews yet',
-        noReviewsDescription: 'Be the first to leave a review',
-        verified: 'Verified'
-    }
-};
-
-/**
  * ReviewList component
  *
  * PRESENTATIONAL COMPONENT. Receives reviews as props, does NOT fetch from API.
@@ -144,7 +114,8 @@ export function ReviewList({
     onSortChange,
     className = ''
 }: ReviewListProps): JSX.Element {
-    const t = translations[locale];
+    const { t } = useTranslation({ locale: locale as SupportedLocale, namespace: 'review' });
+    const { t: tUi } = useTranslation({ locale: locale as SupportedLocale, namespace: 'ui' });
 
     /**
      * Renders a star rating display
@@ -154,7 +125,7 @@ export function ReviewList({
             <div
                 className="flex gap-0.5"
                 role="img"
-                aria-label={`Rating: ${rating} out of 5 stars`}
+                aria-label={tUi('accessibility.ratingOutOf', undefined, { rating })}
             >
                 {Array.from({ length: 5 }, (_, index) => {
                     const isFilled = index < Math.floor(rating);
@@ -207,7 +178,7 @@ export function ReviewList({
                                             className="text-green-700"
                                             aria-hidden="true"
                                         />
-                                        {t.verified}
+                                        {t('list.verified')}
                                     </span>
                                 )}
                             </div>
@@ -216,7 +187,7 @@ export function ReviewList({
                                 dateTime={review.date}
                             >
                                 {new Date(review.date).toLocaleDateString(
-                                    locale === 'es' ? 'es-ES' : 'en-US',
+                                    locale === 'es' ? 'es-AR' : locale === 'pt' ? 'pt-BR' : 'en-US',
                                     {
                                         year: 'numeric',
                                         month: 'long',
@@ -247,15 +218,17 @@ export function ReviewList({
                         className="mx-auto text-gray-400"
                         aria-hidden="true"
                     />
-                    <h3 className="mt-4 font-semibold text-gray-900 text-lg">{t.noReviews}</h3>
-                    <p className="mt-2 text-gray-500 text-sm">{t.noReviewsDescription}</p>
+                    <h3 className="mt-4 font-semibold text-gray-900 text-lg">
+                        {t('list.noReviews')}
+                    </h3>
+                    <p className="mt-2 text-gray-500 text-sm">{t('list.noReviewsDescription')}</p>
                     {isAuthenticated && onWriteReview && (
                         <button
                             type="button"
                             onClick={onWriteReview}
                             className="mt-6 inline-flex items-center rounded-md bg-primary px-4 py-2 text-white transition-colors hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
                         >
-                            {t.writeReview}
+                            {t('list.writeReview')}
                         </button>
                     )}
                 </div>
@@ -268,8 +241,14 @@ export function ReviewList({
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="font-bold text-2xl text-gray-900">{t.title}</h2>
-                    <p className="mt-1 text-gray-500 text-sm">{t.totalReviews(totalCount)}</p>
+                    <h2 className="font-bold text-2xl text-gray-900">{t('list.title')}</h2>
+                    <p className="mt-1 text-gray-500 text-sm">
+                        {t(
+                            totalCount === 1 ? 'list.totalReviews_one' : 'list.totalReviews_other',
+                            undefined,
+                            { count: totalCount }
+                        )}
+                    </p>
                 </div>
 
                 <div className="flex items-center gap-4">
@@ -279,7 +258,7 @@ export function ReviewList({
                             htmlFor="sort-select"
                             className="font-medium text-gray-700 text-sm"
                         >
-                            {t.sortBy}:
+                            {t('list.sortBy')}:
                         </label>
                         <select
                             id="sort-select"
@@ -289,9 +268,9 @@ export function ReviewList({
                             }
                             className="block rounded-md border-gray-300 px-3 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                         >
-                            <option value="newest">{t.sortNewest}</option>
-                            <option value="highest">{t.sortHighest}</option>
-                            <option value="lowest">{t.sortLowest}</option>
+                            <option value="newest">{t('list.sortNewest')}</option>
+                            <option value="highest">{t('list.sortHighest')}</option>
+                            <option value="lowest">{t('list.sortLowest')}</option>
                         </select>
                     </div>
 
@@ -308,7 +287,7 @@ export function ReviewList({
                                 className="mr-2 text-white"
                                 aria-hidden="true"
                             />
-                            {t.writeReview}
+                            {t('list.writeReview')}
                         </button>
                     )}
                 </div>
@@ -325,7 +304,7 @@ export function ReviewList({
                         onClick={onLoadMore}
                         className="inline-flex items-center rounded-md border-2 border-primary bg-white px-6 py-3 text-primary transition-colors hover:bg-primary hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
                     >
-                        {t.loadMore}
+                        {t('list.loadMore')}
                     </button>
                 </div>
             )}

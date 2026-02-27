@@ -11,6 +11,8 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from '../../hooks/useTranslation';
+import type { SupportedLocale } from '../../lib/i18n';
 
 export interface HeroImageCarouselProps {
     /** Array of image URLs to cycle through */
@@ -23,6 +25,8 @@ export interface HeroImageCarouselProps {
     readonly enableParallax?: boolean;
     /** Callback fired when the active slide changes */
     readonly onSlideChange?: (index: number) => void;
+    /** Locale for i18n translations */
+    readonly locale?: SupportedLocale;
 }
 
 export function HeroImageCarousel({
@@ -30,8 +34,10 @@ export function HeroImageCarousel({
     interval = 6000,
     ariaLabel = 'Hero image carousel',
     enableParallax = false,
-    onSlideChange
+    onSlideChange,
+    locale = 'es'
 }: HeroImageCarouselProps) {
+    const { t } = useTranslation({ locale, namespace: 'ui' });
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isPaused, setIsPaused] = useState(false);
     const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
@@ -138,7 +144,7 @@ export function HeroImageCarousel({
                   <nav
                       className="-translate-x-1/2 pointer-events-auto absolute left-1/2 flex items-center gap-3 rounded-full px-4 py-2"
                       style={{ top: 'calc(100svh - 4rem)', backgroundColor: 'rgba(0,0,0,0.7)' }}
-                      aria-label="Carousel navigation"
+                      aria-label={t('accessibility.carouselNavigation')}
                   >
                       {images.map((src, index) => {
                           const isActive = index === currentIndex;
@@ -151,7 +157,10 @@ export function HeroImageCarousel({
                                       isActive ? 'h-4 w-12' : 'h-4 w-4'
                                   }`}
                                   style={{ backgroundColor: '#ffffff' }}
-                                  aria-label={`Go to image ${index + 1} of ${images.length}`}
+                                  aria-label={t('accessibility.goToImageOfTotal', undefined, {
+                                      current: index + 1,
+                                      total: images.length
+                                  })}
                                   aria-current={isActive ? 'true' : undefined}
                               >
                                   {/* Progress fill inside active dot */}

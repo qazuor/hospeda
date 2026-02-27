@@ -1,77 +1,9 @@
 import { type ChangeEvent, type FormEvent, useState } from 'react';
 import type { JSX } from 'react';
-import { userApi } from '../../lib/api/endpoints';
+import { useTranslation } from '../../hooks/useTranslation';
+import { userApi } from '../../lib/api/endpoints-protected';
+import type { SupportedLocale } from '../../lib/i18n';
 import { addToast } from '../../store/toast-store';
-
-/**
- * Localized text translations for the form
- */
-interface LocalizedTexts {
-    readonly name: string;
-    readonly email: string;
-    readonly bio: string;
-    readonly save: string;
-    readonly cancel: string;
-    readonly emailHelper: string;
-    readonly bioHelper: string;
-    readonly successMessage: string;
-    readonly errorMessage: string;
-    readonly validationNameRequired: string;
-    readonly validationNameMinLength: string;
-    readonly validationBioMaxLength: string;
-}
-
-/**
- * All localized texts for supported locales
- */
-const localizedTexts: Record<'es' | 'en' | 'pt', LocalizedTexts> = {
-    es: {
-        name: 'Nombre completo',
-        email: 'Correo electrónico',
-        bio: 'Biografía',
-        save: 'Guardar cambios',
-        cancel: 'Cancelar',
-        emailHelper:
-            'El correo electrónico no puede ser modificado. Contacta soporte si necesitas cambiarlo.',
-        bioHelper: 'Máximo 500 caracteres. Esta información será visible en tus reseñas públicas.',
-        successMessage: 'Perfil actualizado correctamente.',
-        errorMessage: 'Error al actualizar el perfil. Por favor, intenta de nuevo.',
-        validationNameRequired: 'El nombre es obligatorio.',
-        validationNameMinLength: 'El nombre debe tener al menos 2 caracteres.',
-        validationBioMaxLength: 'La biografía no puede superar los 500 caracteres.'
-    },
-    en: {
-        name: 'Full name',
-        email: 'Email address',
-        bio: 'Biography',
-        save: 'Save changes',
-        cancel: 'Cancel',
-        emailHelper: 'Email cannot be changed. Contact support if you need to change it.',
-        bioHelper:
-            'Maximum 500 characters. This information will be visible on your public reviews.',
-        successMessage: 'Profile updated successfully.',
-        errorMessage: 'Failed to update profile. Please try again.',
-        validationNameRequired: 'Name is required.',
-        validationNameMinLength: 'Name must be at least 2 characters long.',
-        validationBioMaxLength: 'Biography cannot exceed 500 characters.'
-    },
-    pt: {
-        name: 'Nome completo',
-        email: 'Endereço de e-mail',
-        bio: 'Biografia',
-        save: 'Salvar alterações',
-        cancel: 'Cancelar',
-        emailHelper:
-            'O e-mail não pode ser alterado. Entre em contato com o suporte se precisar alterá-lo.',
-        bioHelper:
-            'Máximo 500 caracteres. Esta informação será visível em suas avaliações públicas.',
-        successMessage: 'Perfil atualizado com sucesso.',
-        errorMessage: 'Erro ao atualizar o perfil. Por favor, tente novamente.',
-        validationNameRequired: 'O nome é obrigatório.',
-        validationNameMinLength: 'O nome deve ter pelo menos 2 caracteres.',
-        validationBioMaxLength: 'A biografia não pode exceder 500 caracteres.'
-    }
-};
 
 /**
  * Props for the ProfileEditForm component
@@ -86,7 +18,7 @@ export interface ProfileEditFormProps {
     /** User email (read-only display) */
     readonly email: string;
     /** Locale for localized labels and messages */
-    readonly locale: 'es' | 'en' | 'pt';
+    readonly locale: string;
 }
 
 /**
@@ -137,7 +69,7 @@ export function ProfileEditForm({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [errors, setErrors] = useState<ValidationErrors>({});
 
-    const texts = localizedTexts[locale];
+    const { t } = useTranslation({ locale: locale as SupportedLocale, namespace: 'account' });
 
     /**
      * Validate form fields
@@ -149,13 +81,13 @@ export function ProfileEditForm({
 
         const trimmedName = name.trim();
         if (!trimmedName) {
-            newErrors.name = texts.validationNameRequired;
+            newErrors.name = t('profileEdit.validationNameRequired');
         } else if (trimmedName.length < 2) {
-            newErrors.name = texts.validationNameMinLength;
+            newErrors.name = t('profileEdit.validationNameMinLength');
         }
 
         if (bio.length > 500) {
-            newErrors.bio = texts.validationBioMaxLength;
+            newErrors.bio = t('profileEdit.validationBioMaxLength');
         }
 
         return Object.keys(newErrors).length > 0 ? newErrors : undefined;
@@ -221,7 +153,7 @@ export function ProfileEditForm({
             if (result.ok) {
                 addToast({
                     type: 'success',
-                    message: texts.successMessage,
+                    message: t('profileEdit.successMessage'),
                     duration: 5000
                 });
             } else {
@@ -231,7 +163,7 @@ export function ProfileEditForm({
             // On error, show error toast
             addToast({
                 type: 'error',
-                message: texts.errorMessage,
+                message: t('profileEdit.errorMessage'),
                 duration: 5000
             });
         } finally {
@@ -262,7 +194,7 @@ export function ProfileEditForm({
                         htmlFor="input-name"
                         className="mb-2 block font-medium text-sm text-text-primary"
                     >
-                        {texts.name}
+                        {t('profileEdit.name')}
                     </label>
                     <input
                         id="input-name"
@@ -293,7 +225,7 @@ export function ProfileEditForm({
                         htmlFor="input-email"
                         className="mb-2 block font-medium text-sm text-text-primary"
                     >
-                        {texts.email}
+                        {t('profileEdit.email')}
                     </label>
                     <input
                         id="input-email"
@@ -310,7 +242,7 @@ export function ProfileEditForm({
                         id="email-help"
                         className="mt-2 text-sm text-text-tertiary"
                     >
-                        {texts.emailHelper}
+                        {t('profileEdit.emailHelper')}
                     </p>
                 </div>
 
@@ -320,7 +252,7 @@ export function ProfileEditForm({
                         htmlFor="input-bio"
                         className="mb-2 block font-medium text-sm text-text-primary"
                     >
-                        {texts.bio}
+                        {t('profileEdit.bio')}
                     </label>
                     <textarea
                         id="input-bio"
@@ -337,7 +269,7 @@ export function ProfileEditForm({
                             id="bio-help"
                             className="text-sm text-text-tertiary"
                         >
-                            {texts.bioHelper}
+                            {t('profileEdit.bioHelper')}
                         </p>
                         <p
                             className={`text-sm ${bioCharCountColor}`}
@@ -364,7 +296,7 @@ export function ProfileEditForm({
                     href={`/${locale}/mi-cuenta/`}
                     className="inline-flex items-center justify-center rounded-md px-4 py-2 font-semibold text-base text-text transition-colors hover:bg-bg focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 sm:w-auto"
                 >
-                    {texts.cancel}
+                    {t('profileEdit.cancel')}
                 </a>
                 <button
                     type="submit"
@@ -375,10 +307,10 @@ export function ProfileEditForm({
                     {isSubmitting ? (
                         <>
                             <span className="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                            {texts.save}
+                            {t('profileEdit.save')}
                         </>
                     ) : (
-                        texts.save
+                        t('profileEdit.save')
                     )}
                 </button>
             </div>

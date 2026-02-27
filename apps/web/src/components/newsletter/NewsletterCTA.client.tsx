@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import type { JSX } from 'react';
+import { useTranslation } from '../../hooks/useTranslation';
+import type { SupportedLocale } from '../../lib/i18n';
 import { addToast } from '../../store/toast-store';
 import { AuthRequiredPopover } from '../auth/AuthRequiredPopover.client';
 
@@ -8,28 +10,13 @@ import { AuthRequiredPopover } from '../auth/AuthRequiredPopover.client';
  */
 export interface NewsletterCTAProps {
     /** Locale for localized text (defaults to 'es') */
-    readonly locale?: 'es' | 'en';
+    readonly locale?: SupportedLocale;
     /** Whether the user is authenticated */
     readonly isAuthenticated?: boolean;
     /** Whether the user is already subscribed to the newsletter */
     readonly isSubscribed?: boolean;
     /** Additional CSS classes to apply to the container */
     readonly className?: string;
-}
-
-/**
- * Localized text definitions for the component
- */
-interface LocalizedTexts {
-    readonly title: string;
-    readonly description: string;
-    readonly subscribe: string;
-    readonly subscribed: string;
-    readonly unsubscribe: string;
-    readonly authMessage: string;
-    readonly successSubscribe: string;
-    readonly successUnsubscribe: string;
-    readonly errorMessage: string;
 }
 
 /**
@@ -85,33 +72,7 @@ export function NewsletterCTA({
     const [isToggling, setIsToggling] = useState(false);
     const [showAuthPopover, setShowAuthPopover] = useState(false);
 
-    // Localized text definitions
-    const texts: Record<'es' | 'en', LocalizedTexts> = {
-        es: {
-            title: 'Suscribite al newsletter',
-            description: 'Recibí las mejores ofertas y novedades de alojamientos en tu email.',
-            subscribe: 'Suscribirse',
-            subscribed: 'Suscripto al newsletter',
-            unsubscribe: 'Cancelar suscripción',
-            authMessage: 'Iniciá sesión para suscribirte al newsletter',
-            successSubscribe: 'Te suscribiste al newsletter',
-            successUnsubscribe: 'Te desuscribiste del newsletter',
-            errorMessage: 'No se pudo actualizar la suscripción'
-        },
-        en: {
-            title: 'Subscribe to our newsletter',
-            description: 'Get the best accommodation deals and news delivered to your inbox.',
-            subscribe: 'Subscribe',
-            subscribed: 'Subscribed to newsletter',
-            unsubscribe: 'Unsubscribe',
-            authMessage: 'Sign in to subscribe to the newsletter',
-            successSubscribe: 'Successfully subscribed to newsletter',
-            successUnsubscribe: 'Successfully unsubscribed from newsletter',
-            errorMessage: 'Could not update subscription'
-        }
-    };
-
-    const localizedTexts = texts[locale];
+    const { t } = useTranslation({ locale: locale as SupportedLocale, namespace: 'newsletter' });
 
     /**
      * Handle subscribe button click for unauthenticated users
@@ -138,9 +99,7 @@ export function NewsletterCTA({
             // Show success toast
             addToast({
                 type: 'success',
-                message: newState
-                    ? localizedTexts.successSubscribe
-                    : localizedTexts.successUnsubscribe
+                message: newState ? t('successSubscribe') : t('successUnsubscribe')
             });
         } catch (_error) {
             // Revert on error
@@ -149,7 +108,7 @@ export function NewsletterCTA({
             // Show error toast
             addToast({
                 type: 'error',
-                message: localizedTexts.errorMessage
+                message: t('errorMessage')
             });
         } finally {
             setIsToggling(false);
@@ -158,8 +117,8 @@ export function NewsletterCTA({
 
     return (
         <div className={`relative rounded-lg bg-white p-6 shadow-md ${className}`.trim()}>
-            <h3 className="mb-2 font-semibold text-gray-900 text-lg">{localizedTexts.title}</h3>
-            <p className="mb-4 text-gray-600 text-sm">{localizedTexts.description}</p>
+            <h3 className="mb-2 font-semibold text-gray-900 text-lg">{t('title')}</h3>
+            <p className="mb-4 text-gray-600 text-sm">{t('description')}</p>
 
             {isAuthenticated ? (
                 // Authenticated user: Show toggle
@@ -177,7 +136,7 @@ export function NewsletterCTA({
                             className="h-5 w-5 rounded border-gray-300 text-primary transition-colors focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                         />
                         <span className="text-gray-700 text-sm">
-                            {subscribed ? localizedTexts.subscribed : localizedTexts.subscribe}
+                            {subscribed ? t('subscribed') : t('subscribe')}
                         </span>
                     </label>
                 </div>
@@ -189,13 +148,13 @@ export function NewsletterCTA({
                         onClick={handleUnauthenticatedSubscribe}
                         className="rounded-md bg-primary px-4 py-2 font-semibold text-white transition-colors hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
                     >
-                        {localizedTexts.subscribe}
+                        {t('subscribe')}
                     </button>
 
                     {showAuthPopover && (
                         <div className="top-full mt-4">
                             <AuthRequiredPopover
-                                message={localizedTexts.authMessage}
+                                message={t('authMessage')}
                                 onClose={() => setShowAuthPopover(false)}
                                 locale={locale}
                                 returnUrl={

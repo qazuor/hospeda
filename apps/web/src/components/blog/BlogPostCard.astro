@@ -6,19 +6,7 @@
  * Data-source agnostic - receives typed props, not DB entities.
  */
 import Badge from '../ui/Badge.astro';
-
-interface BlogPostCardData {
-  slug: string;
-  title: string;
-  summary: string;
-  featuredImage: string;
-  category: string;
-  publishedAt: string;
-  readingTimeMinutes: number;
-  authorName: string;
-  isFeatured: boolean;
-  tags?: string[];
-}
+import type { BlogPostCardData } from '../../lib/api/transforms';
 
 interface Props {
   post: BlogPostCardData;

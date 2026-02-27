@@ -1,6 +1,8 @@
 import { StarIcon } from '@repo/icons';
 import type { JSX } from 'react';
 import { useState } from 'react';
+import { useTranslation } from '../../hooks/useTranslation';
+import type { SupportedLocale } from '../../lib/i18n';
 
 /**
  * Form data for review submission
@@ -29,7 +31,7 @@ export interface ReviewFormProps {
      * Locale for UI text
      * @default 'es'
      */
-    readonly locale?: 'es' | 'en';
+    readonly locale?: string;
 
     /**
      * Callback fired when form is submitted with valid data
@@ -55,44 +57,6 @@ interface ValidationErrors {
     title?: string;
     content?: string;
 }
-
-/**
- * Localized text strings
- */
-const translations = {
-    es: {
-        ratingLabel: 'Calificación',
-        titleLabel: 'Título',
-        titlePlaceholder: 'Resumen de tu experiencia',
-        contentLabel: 'Comentario',
-        contentPlaceholder: 'Comparte tu experiencia en detalle...',
-        submitButton: 'Enviar reseña',
-        cancelButton: 'Cancelar',
-        errors: {
-            ratingRequired: 'Debes seleccionar una calificación',
-            titleRequired: 'El título es requerido',
-            titleMinLength: 'El título debe tener al menos 3 caracteres',
-            contentRequired: 'El comentario es requerido',
-            contentMinLength: 'El comentario debe tener al menos 10 caracteres'
-        }
-    },
-    en: {
-        ratingLabel: 'Rating',
-        titleLabel: 'Title',
-        titlePlaceholder: 'Summary of your experience',
-        contentLabel: 'Review',
-        contentPlaceholder: 'Share your experience in detail...',
-        submitButton: 'Submit review',
-        cancelButton: 'Cancel',
-        errors: {
-            ratingRequired: 'You must select a rating',
-            titleRequired: 'Title is required',
-            titleMinLength: 'Title must be at least 3 characters',
-            contentRequired: 'Review is required',
-            contentMinLength: 'Review must be at least 10 characters'
-        }
-    }
-};
 
 /**
  * ReviewForm component
@@ -128,7 +92,8 @@ export function ReviewForm({
     const [content, setContent] = useState<string>('');
     const [errors, setErrors] = useState<ValidationErrors>({});
 
-    const t = translations[locale];
+    const { t } = useTranslation({ locale: locale as SupportedLocale, namespace: 'review' });
+    const { t: tUi } = useTranslation({ locale: locale as SupportedLocale, namespace: 'ui' });
 
     /**
      * Validates form data
@@ -143,19 +108,19 @@ export function ReviewForm({
         const validationErrors: ValidationErrors = {};
 
         if (data.rating < 1) {
-            validationErrors.rating = t.errors.ratingRequired;
+            validationErrors.rating = t('form.errors.ratingRequired');
         }
 
         if (!data.title.trim()) {
-            validationErrors.title = t.errors.titleRequired;
+            validationErrors.title = t('form.errors.titleRequired');
         } else if (data.title.trim().length < 3) {
-            validationErrors.title = t.errors.titleMinLength;
+            validationErrors.title = t('form.errors.titleMinLength');
         }
 
         if (!data.content.trim()) {
-            validationErrors.content = t.errors.contentRequired;
+            validationErrors.content = t('form.errors.contentRequired');
         } else if (data.content.trim().length < 10) {
-            validationErrors.content = t.errors.contentMinLength;
+            validationErrors.content = t('form.errors.contentMinLength');
         }
 
         return validationErrors;
@@ -225,7 +190,7 @@ export function ReviewForm({
                 onClick={() => handleStarClick(value)}
                 onMouseEnter={() => setHoveredRating(value)}
                 onMouseLeave={() => setHoveredRating(0)}
-                aria-label={`Rate ${value} star${value > 1 ? 's' : ''}`}
+                aria-label={tUi('accessibility.rateStars', undefined, { count: value })}
                 className="rounded p-1 transition-transform hover:scale-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
             >
                 <StarIcon
@@ -251,7 +216,7 @@ export function ReviewForm({
                     id="rating-label"
                     className="mb-2 block font-medium text-gray-700 text-sm"
                 >
-                    {t.ratingLabel}
+                    {t('form.ratingLabel')}
                 </span>
                 <div
                     role="radiogroup"
@@ -279,14 +244,14 @@ export function ReviewForm({
                     htmlFor="review-title"
                     className="mb-2 block font-medium text-gray-700 text-sm"
                 >
-                    {t.titleLabel}
+                    {t('form.titleLabel')}
                 </label>
                 <input
                     type="text"
                     id="review-title"
                     value={title}
                     onChange={handleTitleChange}
-                    placeholder={t.titlePlaceholder}
+                    placeholder={t('form.titlePlaceholder')}
                     aria-required="true"
                     aria-invalid={!!errors.title}
                     aria-describedby={errors.title ? 'title-error' : undefined}
@@ -310,13 +275,13 @@ export function ReviewForm({
                     htmlFor="review-content"
                     className="mb-2 block font-medium text-gray-700 text-sm"
                 >
-                    {t.contentLabel}
+                    {t('form.contentLabel')}
                 </label>
                 <textarea
                     id="review-content"
                     value={content}
                     onChange={handleContentChange}
-                    placeholder={t.contentPlaceholder}
+                    placeholder={t('form.contentPlaceholder')}
                     rows={5}
                     aria-required="true"
                     aria-invalid={!!errors.content}
@@ -343,14 +308,14 @@ export function ReviewForm({
                         onClick={onCancel}
                         className="rounded-md border border-gray-300 px-6 py-2 text-gray-700 transition-colors hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
                     >
-                        {t.cancelButton}
+                        {t('form.cancelButton')}
                     </button>
                 )}
                 <button
                     type="submit"
                     className="rounded-md bg-primary px-6 py-2 text-white transition-colors hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
                 >
-                    {t.submitButton}
+                    {t('form.submitButton')}
                 </button>
             </div>
         </form>

@@ -6,16 +6,21 @@
  * The title can be overridden via the named "title" slot for custom styling.
  */
 import Container from '../ui/Container.astro';
+import SectionTitle from '../ui/SectionTitle.astro';
+import { t, type SupportedLocale } from '../../lib/i18n';
 
 interface Props {
   title: string;
   subtitle?: string;
   viewAllHref?: string;
   viewAllLabel?: string;
+  locale?: string;
   class?: string;
 }
 
-const { title, subtitle, viewAllHref, viewAllLabel = 'Ver todos', class: className } = Astro.props;
+const { title, subtitle, viewAllHref, viewAllLabel, locale = 'es', class: className } = Astro.props;
+const safeLocale = (locale as SupportedLocale) ?? 'es';
+const resolvedViewAllLabel = viewAllLabel || t({ locale: safeLocale, namespace: 'common', key: 'viewAll' });
 const hasTitleSlot = Astro.slots.has('title');
 ---
 
@@ -27,7 +32,7 @@ const hasTitleSlot = Astro.slots.has('title');
         {hasTitleSlot ? (
           <slot name="title" />
         ) : (
-          <h2 class="text-2xl font-bold md:text-3xl">{title}</h2>
+          <SectionTitle>{title}</SectionTitle>
         )}
         {subtitle && (
           <p class="mt-2 max-w-2xl text-base text-text-secondary">{subtitle}</p>
@@ -38,7 +43,7 @@ const hasTitleSlot = Astro.slots.has('title');
           href={viewAllHref}
           class="text-sm font-medium text-primary transition-colors hover:text-primary-dark"
         >
-          {viewAllLabel} &rarr;
+          {resolvedViewAllLabel} &rarr;
         </a>
       )}
     </div>
