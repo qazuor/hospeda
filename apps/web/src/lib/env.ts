@@ -29,7 +29,7 @@ export function getApiUrl(): string {
         import.meta.env.PUBLIC_API_URL ||
         import.meta.env.HOSPEDA_API_URL ||
         'http://localhost:3001';
-    return url;
+    return url.replace(/\/$/, '');
 }
 
 /**

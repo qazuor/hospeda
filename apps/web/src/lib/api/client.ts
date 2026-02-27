@@ -1,3 +1,4 @@
+import { getApiUrl } from '../env';
 /**
  * Centralized API client for consuming apps/api public endpoints.
  * Provides typed fetch wrapper with error handling, timeout, and query serialization.
@@ -16,17 +17,8 @@ interface ApiClientConfig {
     readonly timeout: number;
 }
 
-/** Resolve the API base URL from environment variables */
-function resolveBaseUrl(): string {
-    const url =
-        import.meta.env.PUBLIC_API_URL ??
-        import.meta.env.HOSPEDA_API_URL ??
-        'http://localhost:3001';
-    return url.replace(/\/$/, '');
-}
-
 const config: ApiClientConfig = {
-    baseUrl: resolveBaseUrl(),
+    baseUrl: getApiUrl().replace(/\/$/, ''),
     timeout: 10_000
 };
 

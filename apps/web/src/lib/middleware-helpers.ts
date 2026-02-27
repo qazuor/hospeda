@@ -220,9 +220,18 @@ export interface SessionUser {
  *
  * @returns The API base URL.
  */
+/**
+ * Middleware-specific API URL resolver using process.env (not import.meta.env).
+ * Middleware runs in a Node.js context where import.meta.env is not available,
+ * so this cannot use the shared getApiUrl() from lib/env.ts.
+ */
 function getApiUrl(): string {
     if (typeof process !== 'undefined') {
-        return process.env.HOSPEDA_API_URL || process.env.PUBLIC_API_URL || 'http://localhost:3001';
+        return (
+            process.env.HOSPEDA_API_URL ||
+            process.env.PUBLIC_API_URL ||
+            'http://localhost:3001'
+        ).replace(/\/$/, '');
     }
     return 'http://localhost:3001';
 }
