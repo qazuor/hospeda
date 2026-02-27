@@ -56,12 +56,15 @@ import { createBillingRoutesHandler } from './billing';
 import { adminBillingRoutes } from './billing/admin';
 import { publicBillingRoutes } from './billing/public';
 import { contactRoutes } from './contact';
+import { adminCronRoutes } from './cron-admin';
 import { docsIndexRoutes, scalarRoutes, swaggerRoutes } from './docs';
 import { exchangeRateRoutes } from './exchange-rates';
+import { protectedExchangeRateRoutes } from './exchange-rates/protected/index.js';
+import { publicExchangeRateRoutes } from './exchange-rates/public/index.js';
 import { dbHealthRoutes, healthRoutes, liveRoutes, readyRoutes } from './health';
 import { metricsRoutes } from './metrics';
 import { reportRoutes } from './reports';
-import { protectedSponsorshipRoutes } from './sponsorship';
+import { adminSponsorshipRoutes, protectedSponsorshipRoutes } from './sponsorship';
 import { adminSponsorshipLevelRoutes, publicSponsorshipLevelRoutes } from './sponsorship-level';
 import {
     adminSponsorshipPackageRoutes,
@@ -192,9 +195,17 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/post-sponsors', adminPostSponsorRoutes);
         app.route('/api/v1/admin/owner-promotions', adminOwnerPromotionRoutes);
 
-        // Sponsorship admin write operations
+        // Sponsorship admin routes
+        app.route('/api/v1/admin/sponsorships', adminSponsorshipRoutes);
         app.route('/api/v1/admin/sponsorship-levels', adminSponsorshipLevelRoutes);
         app.route('/api/v1/admin/sponsorship-packages', adminSponsorshipPackageRoutes);
+
+        // Admin cron job management
+        app.route('/api/v1/admin/cron', adminCronRoutes);
+
+        // Exchange rates admin (mounts both public list + protected management routes)
+        app.route('/api/v1/admin/exchange-rates', publicExchangeRateRoutes);
+        app.route('/api/v1/admin/exchange-rates', protectedExchangeRateRoutes);
 
         // Admin billing, webhooks, and auth monitoring
         app.route('/api/v1/admin/billing', adminBillingRoutes);

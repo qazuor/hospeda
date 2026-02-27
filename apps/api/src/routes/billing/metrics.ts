@@ -13,6 +13,7 @@
 
 import { z } from 'zod';
 import { getBillingMetricsService } from '../../services/billing-metrics.service';
+import { getApproachingLimits, getSystemUsage } from '../../services/billing-usage.service';
 import { createRouter } from '../../utils/create-app';
 import { apiLogger } from '../../utils/logger';
 import { createAdminRoute } from '../../utils/route-factory';
@@ -227,6 +228,131 @@ export const getRecentActivityRoute = createAdminRoute({
 });
 
 /**
+ * Response schema for system usage statistics
+ */
+const SystemUsageResponseSchema = z.object({
+    totalCustomers: z.number().describe('Total billing customers count'),
+    customersByCategory: z
+        .record(z.string(), z.number())
+        .describe('Customer counts grouped by category'),
+    planStats: z
+        .array(
+            z.object({
+                planSlug: z.string(),
+                planName: z.string(),
+                customerCount: z.number(),
+                averageUsage: z.record(z.string(), z.number())
+            })
+        )
+        .describe('Plan subscription statistics'),
+    topLimits: z
+        .array(
+            z.object({
+                limitKey: z.string(),
+                limitName: z.string(),
+                averageUsage: z.number(),
+                customersAtCapacity: z.number()
+            })
+        )
+        .describe('Top limits approaching capacity')
+});
+
+/**
+ * Response schema for a single approaching-limit item
+ */
+const ApproachingLimitItemSchema = z.object({
+    customerId: z.string().uuid().describe('Customer ID'),
+    customerEmail: z.string().email().describe('Customer email'),
+    limitKey: z.string().describe('Limit key identifier'),
+    currentUsage: z.number().describe('Current usage value'),
+    maxAllowed: z.number().describe('Maximum allowed value'),
+    usagePercentage: z.number().describe('Usage as a percentage of the maximum (0-100)')
+});
+
+/**
+ * Query schema for approaching-limits route
+ */
+const ApproachingLimitsQuerySchema = z.object({
+    threshold: z.coerce
+        .number()
+        .min(1)
+        .max(100)
+        .optional()
+        .default(90)
+        .describe('Minimum usage percentage threshold (1-100, default 90)'),
+    livemode: z
+        .enum(['true', 'false'])
+        .optional()
+        .default('true')
+        .describe('Whether to fetch live or test mode data')
+});
+
+/**
+ * Get system-wide usage statistics (admin only)
+ *
+ * GET /api/v1/billing/metrics/system-usage
+ */
+export const getSystemUsageRoute = createAdminRoute({
+    method: 'get',
+    path: '/system-usage',
+    summary: 'Get system-wide usage statistics',
+    description:
+        'Returns aggregated system usage statistics including customer counts, subscription states, revenue totals, and add-on purchase counts. Admin only.',
+    tags: ['Billing - Metrics'],
+    requestQuery: {
+        livemode: z
+            .enum(['true', 'false'])
+            .optional()
+            .default('true')
+            .describe('Whether to fetch live or test mode data')
+    },
+    responseSchema: SystemUsageResponseSchema,
+    handler: async (_c, _params, _body, query) => {
+        const livemode = query?.livemode === 'true';
+
+        apiLogger.debug({ livemode }, 'Fetching system usage stats');
+
+        const result = await getSystemUsage(livemode);
+
+        if (!result.success || !result.data) {
+            throw new Error(result.error?.message ?? 'Failed to fetch system usage stats');
+        }
+
+        return result.data;
+    }
+});
+
+/**
+ * Get customers approaching their limits (admin only)
+ *
+ * GET /api/v1/billing/metrics/approaching-limits
+ */
+export const getApproachingLimitsRoute = createAdminRoute({
+    method: 'get',
+    path: '/approaching-limits',
+    summary: 'Get customers approaching their usage limits',
+    description:
+        'Returns a list of customers whose usage is at or above the specified threshold percentage. Useful for proactive capacity management. Admin only.',
+    tags: ['Billing - Metrics'],
+    requestQuery: ApproachingLimitsQuerySchema.shape,
+    responseSchema: z.array(ApproachingLimitItemSchema),
+    handler: async (_c, _params, _body, query) => {
+        const livemode = query?.livemode === 'true';
+        const threshold = (query?.threshold as number) ?? 90;
+
+        apiLogger.debug({ threshold, livemode }, 'Fetching approaching limits');
+
+        const result = await getApproachingLimits(threshold, livemode);
+
+        if (!result.success || !result.data) {
+            throw new Error(result.error?.message ?? 'Failed to fetch approaching limits');
+        }
+
+        return result.data;
+    }
+});
+
+/**
  * Billing metrics router
  *
  * Combines all metrics routes
@@ -236,5 +362,7 @@ export const metricsRouter = createRouter();
 // Mount all routes
 metricsRouter.route('/', getDashboardMetricsRoute);
 metricsRouter.route('/', getRecentActivityRoute);
+metricsRouter.route('/', getSystemUsageRoute);
+metricsRouter.route('/', getApproachingLimitsRoute);
 
 export default metricsRouter;

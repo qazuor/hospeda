@@ -61,6 +61,21 @@ export type {
     NotificationLogsListResponse
 } from './notification.schema';
 
+// Customer add-on purchase schemas
+export {
+    CustomerAddonResponseSchema,
+    CustomerAddonsListResponseSchema,
+    EntitlementAdjustmentSchema,
+    LimitAdjustmentSchema,
+    ListCustomerAddonsQuerySchema
+} from './customer-addons.schema';
+
+export type {
+    CustomerAddonResponse,
+    CustomerAddonsListResponse,
+    ListCustomerAddonsQuery
+} from './customer-addons.schema';
+
 // Webhook schemas
 export {
     DeadLetterEntryResponseSchema,

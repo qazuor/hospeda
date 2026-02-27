@@ -3,6 +3,7 @@
  * Routes that require admin-level access for billing operations
  */
 import { createRouter } from '../../../utils/create-app';
+import { listCustomerAddonsRoute } from './customer-addons';
 import { listNotificationLogsRoute } from './notifications';
 import { getAdminCustomerUsageSummaryRoute } from './usage';
 
@@ -13,5 +14,8 @@ app.route('/usage', getAdminCustomerUsageSummaryRoute);
 
 // GET /notifications - List notification logs
 app.route('/notifications', listNotificationLogsRoute);
+
+// GET /customer-addons - List purchased add-ons across all customers
+app.route('/customer-addons', listCustomerAddonsRoute);
 
 export { app as adminBillingRoutes };
