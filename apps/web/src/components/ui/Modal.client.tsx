@@ -1,6 +1,8 @@
 import { CloseIcon } from '@repo/icons';
 import type { JSX } from 'react';
 import { useEffect, useRef } from 'react';
+import { useTranslation } from '../../hooks/useTranslation';
+import type { SupportedLocale } from '../../lib/i18n';
 
 /**
  * Props for the Modal component
@@ -30,6 +32,12 @@ export interface ModalProps {
      * Additional CSS classes to apply to the modal
      */
     readonly className?: string;
+
+    /**
+     * Locale for i18n translations
+     * @default 'es'
+     */
+    readonly locale?: SupportedLocale;
 }
 
 /**
@@ -61,8 +69,16 @@ export interface ModalProps {
  * </Modal>
  * ```
  */
-export function Modal({ title, children, open, onClose, className = '' }: ModalProps): JSX.Element {
+export function Modal({
+    title,
+    children,
+    open,
+    onClose,
+    className = '',
+    locale = 'es'
+}: ModalProps): JSX.Element {
     const dialogRef = useRef<HTMLDialogElement>(null);
+    const { t } = useTranslation({ locale, namespace: 'ui' });
 
     // Sync open prop with dialog.showModal()/close()
     useEffect(() => {
@@ -135,7 +151,7 @@ export function Modal({ title, children, open, onClose, className = '' }: ModalP
                     <button
                         type="button"
                         onClick={onClose}
-                        aria-label="Close modal"
+                        aria-label={t('accessibility.closeModal')}
                         className="inline-flex items-center justify-center rounded-md p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
                     >
                         <CloseIcon

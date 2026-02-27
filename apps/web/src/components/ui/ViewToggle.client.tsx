@@ -1,6 +1,8 @@
 import { GridIcon, MapIcon } from '@repo/icons';
 import type { JSX } from 'react';
 import { useState } from 'react';
+import { useTranslation } from '../../hooks/useTranslation';
+import type { SupportedLocale } from '../../lib/i18n';
 
 /**
  * Props for the ViewToggle component
@@ -21,6 +23,11 @@ export interface ViewToggleProps {
      * Additional CSS classes to apply to the component
      */
     readonly className?: string;
+    /**
+     * Locale for i18n translations
+     * @default 'es'
+     */
+    readonly locale?: SupportedLocale;
 }
 
 /**
@@ -44,8 +51,10 @@ export interface ViewToggleProps {
 export function ViewToggle({
     defaultView = 'grid',
     onChange,
-    className = ''
+    className = '',
+    locale = 'es'
 }: ViewToggleProps): JSX.Element {
+    const { t } = useTranslation({ locale: locale as SupportedLocale, namespace: 'ui' });
     const [activeView, setActiveView] = useState<'grid' | 'map'>(defaultView);
 
     const handleViewChange = (view: 'grid' | 'map') => {
@@ -65,14 +74,14 @@ export function ViewToggle({
 
     return (
         <fieldset
-            aria-label="View toggle"
+            aria-label={t('accessibility.viewToggle')}
             className={`inline-flex rounded-lg border border-gray-300 ${className}`.trim()}
         >
             <button
                 type="button"
                 onClick={() => handleViewChange('grid')}
                 aria-pressed={activeView === 'grid'}
-                aria-label="Grid view"
+                aria-label={t('accessibility.gridView')}
                 className={`${getButtonStyles('grid')} rounded-l-lg border-gray-300 border-r`}
             >
                 <GridIcon
@@ -86,7 +95,7 @@ export function ViewToggle({
                 type="button"
                 onClick={() => handleViewChange('map')}
                 aria-pressed={activeView === 'map'}
-                aria-label="Map view"
+                aria-label={t('accessibility.mapView')}
                 className={`${getButtonStyles('map')} rounded-r-lg`}
             >
                 <MapIcon

@@ -1,0 +1,56 @@
+---
+/**
+ * Reusable section title component with Fraunces serif font,
+ * configurable heading level, and optional brush-stroke underline.
+ */
+export interface SectionTitleProps {
+  /** HTML heading tag to render */
+  as?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
+  /** CSS font-size value (default: var(--fs-display-section)) */
+  size?: string;
+  /** Font weight (default: bold) */
+  weight?: 'normal' | 'medium' | 'semibold' | 'bold';
+  /** CSS color value (default: inherits) */
+  color?: string;
+  /** Show brush-stroke underline (default: true) */
+  underline?: boolean;
+  /** Additional CSS classes */
+  class?: string;
+}
+
+interface Props extends SectionTitleProps {}
+
+const {
+  as: Tag = 'h2',
+  size = 'var(--fs-display-section)',
+  weight = 'bold',
+  color,
+  underline = true,
+  class: className,
+} = Astro.props;
+
+const weightClass: Record<string, string> = {
+  normal: 'font-normal',
+  medium: 'font-medium',
+  semibold: 'font-semibold',
+  bold: 'font-bold',
+};
+
+const inlineStyle = [
+  `font-size: ${size}`,
+  `font-variation-settings: var(--fraunces-section)`,
+  color ? `color: ${color}` : '',
+].filter(Boolean).join('; ');
+---
+
+<Tag
+  class:list={[
+    'font-serif tracking-[-0.03em] leading-tight',
+    weightClass[weight],
+    underline && 'brush-stroke-underline',
+    className,
+  ]}
+  style={inlineStyle}
+>
+  <slot />
+</Tag>

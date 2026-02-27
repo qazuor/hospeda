@@ -2,7 +2,11 @@
 /**
  * Standard section heading pattern with optional accent subtitle,
  * icon badge, description, and view-all link.
+ * Uses SectionTitle and SectionSubtitle internally for consistent typography.
  */
+import SectionSubtitle from './SectionSubtitle.astro';
+import SectionTitle from './SectionTitle.astro';
+
 export interface SectionHeaderProps {
   title: string;
   accentSubtitle?: string;
@@ -14,6 +18,8 @@ export interface SectionHeaderProps {
   viewAllHref?: string;
   viewAllLabel?: string;
   align?: 'left' | 'center';
+  /** Show brush-stroke underline on title (default: true) */
+  underline?: boolean;
   class?: string;
 }
 
@@ -27,6 +33,7 @@ const {
   viewAllHref,
   viewAllLabel,
   align = 'center',
+  underline = true,
   class: className,
 } = Astro.props;
 
@@ -44,13 +51,13 @@ const IconComponent = icon?.component as any;
     </div>
   )}
   {accentSubtitle && (
-    <p class="mb-2 inline-block -rotate-2 font-accent text-[length:var(--fs-accent-subtitle)] text-accent-warm">
+    <SectionSubtitle class="mb-2 inline-block">
       {accentSubtitle}
-    </p>
+    </SectionSubtitle>
   )}
-  <h2 class="mb-2 font-serif text-[length:var(--fs-display-section)] font-bold text-text">
+  <SectionTitle class="mb-2 text-text" underline={underline}>
     {title}
-  </h2>
+  </SectionTitle>
   {description && (
     <p class:list={['mt-3 text-lg text-text-secondary max-w-[600px]', align === 'center' && 'mx-auto']}>
       {description}

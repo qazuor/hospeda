@@ -1,6 +1,8 @@
 import { CloseIcon } from '@repo/icons';
 import { useEffect, useRef } from 'react';
 import type { ReactElement } from 'react';
+import { useTranslation } from '../../hooks/useTranslation';
+import type { SupportedLocale } from '../../lib/i18n';
 import { buildUrl } from '../../lib/urls';
 
 /**
@@ -82,23 +84,8 @@ export function MobileMenu({
         onClose();
     };
 
-    // Auth strings based on locale
-    const authStrings = {
-        es: {
-            signIn: 'Iniciar sesion',
-            signUp: 'Registrarse'
-        },
-        en: {
-            signIn: 'Sign in',
-            signUp: 'Sign up'
-        },
-        pt: {
-            signIn: 'Entrar',
-            signUp: 'Cadastrar-se'
-        }
-    };
-
-    const strings = authStrings[locale];
+    const { t } = useTranslation({ locale: locale as SupportedLocale, namespace: 'common' });
+    const { t: tUi } = useTranslation({ locale: locale as SupportedLocale, namespace: 'ui' });
 
     return (
         <dialog
@@ -120,7 +107,7 @@ export function MobileMenu({
                     <button
                         type="button"
                         onClick={onClose}
-                        aria-label="Close mobile menu"
+                        aria-label={tUi('accessibility.closeMenu')}
                         className="rounded-md p-2 text-text-secondary transition-colors hover:bg-bg-secondary hover:text-text focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
                     >
                         <CloseIcon
@@ -133,7 +120,7 @@ export function MobileMenu({
                 {/* Navigation Links */}
                 <nav
                     className="flex-grow overflow-y-auto p-4"
-                    aria-label="Mobile navigation"
+                    aria-label={tUi('accessibility.mobileNavigation')}
                 >
                     <ul className="space-y-2">
                         {navItems.map((item) => (
@@ -162,13 +149,13 @@ export function MobileMenu({
                                 href={buildUrl({ locale, path: 'auth/signin' })}
                                 className="block rounded-md bg-bg-secondary px-4 py-2 text-center text-text transition-colors hover:bg-bg-tertiary focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
                             >
-                                {strings.signIn}
+                                {t('auth.signIn')}
                             </a>
                             <a
                                 href={buildUrl({ locale, path: 'auth/signup' })}
                                 className="block rounded-md bg-primary px-4 py-2 text-center text-white transition-colors hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
                             >
-                                {strings.signUp}
+                                {t('auth.signUp')}
                             </a>
                         </div>
                     )}

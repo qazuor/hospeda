@@ -7,6 +7,8 @@ import {
 } from '@repo/icons';
 import type { JSX } from 'react';
 import { useSyncExternalStore } from 'react';
+import { useTranslation } from '../../hooks/useTranslation';
+import type { SupportedLocale } from '../../lib/i18n';
 import { getToasts, removeToast, subscribe } from '../../store/toast-store';
 import type { Toast } from '../../store/toast-store';
 
@@ -92,9 +94,14 @@ function getToastTypeClasses(type: Toast['type']): string {
  *
  * @param params - Component props
  * @param params.toast - Toast object
+ * @param params.locale - Locale for i18n translations
  */
-function ToastItem(params: { readonly toast: Toast }): JSX.Element {
-    const { toast } = params;
+function ToastItem(params: {
+    readonly toast: Toast;
+    readonly locale: SupportedLocale;
+}): JSX.Element {
+    const { toast, locale } = params;
+    const { t } = useTranslation({ locale, namespace: 'ui' });
 
     const handleClose = (): void => {
         removeToast(toast.id);
@@ -113,7 +120,7 @@ function ToastItem(params: { readonly toast: Toast }): JSX.Element {
                     type="button"
                     onClick={handleClose}
                     className="shrink-0 rounded transition-opacity hover:opacity-70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
-                    aria-label="Close notification"
+                    aria-label={t('accessibility.closeToast')}
                 >
                     <CloseIconComponent
                         size={20}
@@ -127,18 +134,31 @@ function ToastItem(params: { readonly toast: Toast }): JSX.Element {
 }
 
 /**
+ * Props for the ToastContainer component
+ */
+export interface ToastContainerProps {
+    /**
+     * Locale for i18n translations
+     * @default 'es'
+     */
+    readonly locale?: SupportedLocale;
+}
+
+/**
  * Toast container component
  *
  * Renders all active toasts in a fixed position container.
  * Should be rendered once at the app root level.
  *
+ * @param props - Component props
+ *
  * @example
  * ```tsx
  * // In your layout/app root
- * <ToastContainer />
+ * <ToastContainer locale="es" />
  * ```
  */
-export function ToastContainer(): JSX.Element {
+export function ToastContainer({ locale = 'es' }: ToastContainerProps): JSX.Element {
     const toasts = useToasts();
 
     return (
@@ -151,6 +171,7 @@ export function ToastContainer(): JSX.Element {
                 <ToastItem
                     key={toast.id}
                     toast={toast}
+                    locale={locale}
                 />
             ))}
         </div>

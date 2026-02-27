@@ -1,31 +1,106 @@
 ---
 /**
- * Skeleton loading state for DestinationCard.
- * Mirrors the card layout with shimmer animation placeholders.
+ * Skeleton loading state for the enhanced DestinationCard.
+ *
+ * Non-hero: torn-edge masked image area with simplified glass bar,
+ * title and badge placeholders below the image.
+ * Hero: full glassmorphism card layout with shimmer placeholders.
  */
+import { t, type SupportedLocale } from '../../lib/i18n';
+
 interface Props {
+  /** Render as hero variant (taller, more content placeholders) */
+  hero?: boolean;
+  locale?: SupportedLocale;
   class?: string;
 }
 
-const { class: className } = Astro.props;
+const { hero = false, locale = 'es', class: className } = Astro.props;
+
+const loadingLabel = t({ locale, namespace: 'common', key: 'loading', fallback: 'Loading...' });
 ---
 
-<div class:list={['overflow-hidden rounded-xl border border-border bg-surface shadow-md', className]} role="status" aria-hidden="true">
-  <span class="sr-only">Loading...</span>
-
-  <!-- Image placeholder -->
-  <div class="aspect-[16/9] bg-border/50 animate-shimmer" />
-
-  <!-- Content placeholders -->
-  <div class="p-4 space-y-3">
-    <!-- Title -->
-    <div class="h-5 w-2/3 rounded bg-border/50 animate-shimmer" />
-    <!-- Count -->
-    <div class="h-4 w-28 rounded bg-border/50 animate-shimmer" />
-    <!-- Summary lines -->
-    <div class="space-y-2">
-      <div class="h-3 w-full rounded bg-border/50 animate-shimmer" />
-      <div class="h-3 w-3/4 rounded bg-border/50 animate-shimmer" />
+{hero ? (
+  /* Hero skeleton: full-bleed shimmer with glass bar */
+  <div
+    class:list={[
+      'overflow-hidden rounded-xl bg-border/30 shadow-md h-full min-h-[320px] sm:min-h-[400px]',
+      className,
+    ]}
+    role="status"
+    aria-live="polite"
+    aria-label={loadingLabel}
+  >
+    <span class="sr-only">{loadingLabel}</span>
+    <div class="relative h-full w-full animate-shimmer">
+      <div class="absolute bottom-0 left-0 right-0 p-2 sm:p-3 sm:p-4">
+        <div class="skeleton-glass-bar rounded-xl px-3 py-2.5 sm:px-4 sm:py-3">
+          <div class="flex items-center justify-between gap-2">
+            <div class="h-5 w-2/3 rounded bg-white/15 animate-shimmer" />
+            <div class="h-4 w-16 rounded bg-white/10 animate-shimmer" />
+          </div>
+          <div class="mt-2 space-y-1.5">
+            <div class="h-3.5 w-full rounded bg-white/10 animate-shimmer" />
+            <div class="h-3.5 w-4/5 rounded bg-white/10 animate-shimmer" />
+          </div>
+          <div class="mt-2 flex items-center gap-3">
+            <div class="h-3.5 w-24 rounded bg-white/10 animate-shimmer" />
+            <div class="h-3.5 w-16 rounded bg-white/10 animate-shimmer" />
+          </div>
+          <div class="mt-2 flex gap-1.5">
+            <div class="h-5 w-14 rounded-full bg-white/10 animate-shimmer" />
+            <div class="h-5 w-[4.5rem] rounded-full bg-white/10 animate-shimmer" />
+            <div class="h-5 w-12 rounded-full bg-white/10 animate-shimmer" />
+          </div>
+        </div>
+      </div>
     </div>
   </div>
-</div>
+) : (
+  /* Default skeleton: torn-edge image + text below */
+  <div
+    class:list={['bg-transparent', className]}
+    role="status"
+    aria-live="polite"
+    aria-label={loadingLabel}
+  >
+    <span class="sr-only">{loadingLabel}</span>
+
+    {/* Torn-edge masked image area */}
+    <div class="torn-edge-mask relative aspect-[16/9] overflow-hidden bg-border/30">
+      <div class="relative h-full w-full animate-shimmer">
+        {/* Glass bar skeleton: stats row only */}
+        <div class="absolute bottom-0 left-0 right-0 p-2 sm:p-3">
+          <div class="skeleton-glass-bar rounded-xl px-3 py-2 sm:px-4 sm:py-2.5">
+            <div class="flex items-center justify-between gap-2">
+              <div class="h-4 w-16 rounded bg-white/10 animate-shimmer" />
+              <div class="flex items-center gap-3">
+                <div class="h-3.5 w-20 rounded bg-white/10 animate-shimmer" />
+                <div class="h-3.5 w-14 rounded bg-white/10 animate-shimmer" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* Text below: title + badges */}
+    <div class="px-1 pt-2.5 pb-1">
+      <div class="h-5 w-3/4 rounded bg-border/40 animate-shimmer" />
+      <div class="mt-1.5 flex gap-1">
+        <div class="h-5 w-14 rounded-full bg-primary/10 animate-shimmer" />
+        <div class="h-5 w-[4.5rem] rounded-full bg-primary/10 animate-shimmer" />
+        <div class="h-5 w-12 rounded-full bg-primary/10 animate-shimmer" />
+      </div>
+    </div>
+  </div>
+)}
+
+<style>
+  .skeleton-glass-bar {
+    background-color: rgb(0 0 0 / 0.2);
+  }
+  [data-theme="dark"] .skeleton-glass-bar {
+    background-color: rgb(255 255 255 / 0.1);
+  }
+</style>

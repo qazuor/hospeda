@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { JSX } from 'react';
+import { getApiUrl } from '../../lib/env';
 
 /**
  * Props for the PriceDisplay component
@@ -124,7 +125,7 @@ interface ExchangeRatesApiResponse {
  * Falls back to FALLBACK_RATES on any error.
  */
 async function fetchExchangeRates(): Promise<ConversionRates> {
-    const apiUrl = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3001';
+    const apiUrl = getApiUrl();
     const endpoint = `${apiUrl}/api/v1/public/exchange-rates?pageSize=50`;
 
     try {

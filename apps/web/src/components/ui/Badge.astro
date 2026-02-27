@@ -16,8 +16,13 @@
  */
 interface Props {
   label: string;
-  variant?: 'primary' | 'secondary' | 'outline' | 'type' | 'price' | 'price-light' | 'rating' | 'month' | 'tag' | 'category';
+  variant?: 'primary' | 'secondary' | 'outline' | 'type' | 'price' | 'price-light' | 'rating' | 'month' | 'tag' | 'category' | 'featured';
   color?: string;
+  /**
+   * Dynamic Tailwind background class for the `category` variant (e.g., 'bg-green-500').
+   * IMPORTANT: Dynamic classes must be safelisted in Tailwind config or used
+   * elsewhere in the codebase, otherwise they will be purged during build.
+   */
   colorClass?: string;
   class?: string;
 }
@@ -28,16 +33,20 @@ const variantClasses: Record<string, string> = {
   primary: 'bg-primary/10 text-primary',
   secondary: 'bg-secondary/10 text-secondary-dark',
   outline: 'border border-border text-text-secondary',
-  type: 'bg-white/90 text-gray-800 rounded-full',
-  price: 'bg-primary text-white font-bold rounded-full',
-  'price-light': 'bg-sky-500/90 text-white font-bold rounded-full',
+  type: 'bg-white/90 text-gray-800 font-bold rounded-full text-sm px-3 py-1',
+  price: 'bg-primary text-white font-bold rounded-full text-sm px-3 py-1',
+  'price-light': 'bg-sky-500/90 text-white font-bold rounded-full text-sm px-3 py-1',
   rating: 'bg-amber-400 text-white font-bold rounded',
   month: 'text-white rounded-sm text-lg font-bold',
   tag: 'bg-gray-100 text-gray-600 rounded-full text-xs font-medium',
   category: 'text-white rounded-full font-semibold',
+  featured: 'bg-warning/90 text-text backdrop-blur-sm rounded-full text-xs font-medium',
 };
 
-const baseClasses = 'inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded-full';
+const sizeVariants = new Set(['type', 'price', 'price-light', 'month', 'tag', 'featured']);
+const baseClasses = sizeVariants.has(variant)
+  ? 'inline-flex items-center font-medium'
+  : 'inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded-full';
 
 /**
  * For month variant, the `color` prop provides a dynamic Tailwind bg class (e.g., 'bg-blue-500').

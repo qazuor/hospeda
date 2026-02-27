@@ -15,6 +15,8 @@
  * ```
  */
 
+import { t as translate, type SupportedLocale } from '../../lib/i18n';
+
 interface Props {
   /** Current active page (1-based) */
   currentPage: number;
@@ -24,29 +26,48 @@ interface Props {
   baseUrl: string;
   /** Current locale for localized labels */
   locale?: 'es' | 'en' | 'pt';
+  /**
+   * When provided, pagination uses query-param mode (?page=N&...params)
+   * instead of URL-segment mode (/page/N/). The page param is managed
+   * automatically.. pass the other search params to preserve them.
+   */
+  searchParams?: URLSearchParams;
   /** Additional CSS classes */
   class?: string;
 }
 
-const { currentPage, totalPages, baseUrl, locale = 'es', class: className } = Astro.props;
+const { currentPage, totalPages, baseUrl, locale = 'es', searchParams, class: className } = Astro.props;
+const loc = locale as SupportedLocale;
 
-/**
- * Localized labels for pagination controls.
- */
-const labels: Record<string, { previous: string; next: string; page: string; of: string }> = {
-  es: { previous: 'Anterior', next: 'Siguiente', page: 'Página', of: 'de' },
-  en: { previous: 'Previous', next: 'Next', page: 'Page', of: 'of' },
-  pt: { previous: 'Anterior', next: 'Próximo', page: 'Página', of: 'de' },
+/** Shorthand for ui.pagination translations */
+const pt = (key: string) => translate({ locale: loc, namespace: 'ui', key: `pagination.${key}` });
+
+const t = {
+  previous: pt('previous'),
+  next: pt('next'),
+  page: pt('page'),
+  of: pt('of'),
 };
-
-const t = labels[locale] ?? labels.es;
 
 /**
  * Build the URL for a specific page number.
- * Page 1 uses the base URL without /page/ segment.
+ * When searchParams is provided, uses query-param mode (?page=N&...params).
+ * Otherwise, uses URL-segment mode (/page/N/).
  */
 function buildPageUrl(page: number): string {
   const normalizedBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+
+  if (searchParams) {
+    const params = new URLSearchParams(searchParams);
+    if (page === 1) {
+      params.delete('page');
+    } else {
+      params.set('page', String(page));
+    }
+    const qs = params.toString();
+    return qs ? `${normalizedBase}/?${qs}` : `${normalizedBase}/`;
+  }
+
   if (page === 1) {
     return `${normalizedBase}/`;
   }

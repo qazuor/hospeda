@@ -1,6 +1,7 @@
 import { FavoriteIcon } from '@repo/icons';
 import { useEffect, useState } from 'react';
 import type { JSX } from 'react';
+import { z } from 'zod';
 import { addToast } from '../../store/toast-store';
 import { AuthRequiredPopover } from '../auth/AuthRequiredPopover.client';
 
@@ -17,7 +18,7 @@ export interface FavoriteButtonProps {
     /** Initial favorited state (defaults to false) */
     readonly initialFavorited?: boolean;
     /** Locale for accessibility labels (defaults to 'es') */
-    readonly locale?: 'es' | 'en';
+    readonly locale?: 'es' | 'en' | 'pt';
     /** Additional CSS classes to apply to the button */
     readonly className?: string;
     /** Whether the user is authenticated */
@@ -31,12 +32,21 @@ const ENTITY_TYPE_MAP: Record<string, string> = {
     event: 'EVENT'
 } as const;
 
-/**
- * Resolve the API base URL from environment.
- */
-function getApiBaseUrl(): string {
-    return (import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3001').replace(/\/$/, '');
-}
+import { getApiUrl } from '../../lib/env';
+
+/** Zod schema for validating the bookmark check API response */
+const bookmarkCheckResponseSchema = z
+    .object({
+        isFavorited: z.boolean()
+    })
+    .passthrough();
+
+/** Zod schema for validating the toggle favorite API response */
+const toggleFavoriteResponseSchema = z
+    .object({
+        toggled: z.boolean()
+    })
+    .passthrough();
 
 /**
  * Check if an entity is already bookmarked by the current user.
@@ -46,7 +56,7 @@ async function checkBookmarkStatus(params: {
     readonly entityType: string;
 }): Promise<{ readonly isFavorited: boolean }> {
     const { entityId, entityType } = params;
-    const apiBaseUrl = getApiBaseUrl();
+    const apiBaseUrl = getApiUrl();
     const apiEntityType = ENTITY_TYPE_MAP[entityType] ?? entityType.toUpperCase();
 
     const url = `${apiBaseUrl}/api/v1/protected/user-bookmarks/check?entityId=${encodeURIComponent(entityId)}&entityType=${encodeURIComponent(apiEntityType)}`;
@@ -60,9 +70,13 @@ async function checkBookmarkStatus(params: {
         return { isFavorited: false };
     }
 
-    const body = await response.json();
-    const data = body?.data ?? body;
-    return { isFavorited: data?.isFavorited === true };
+    const json = await response.json();
+    const raw = json?.data ?? json;
+    const parsed = bookmarkCheckResponseSchema.safeParse(raw);
+    if (!parsed.success) {
+        return { isFavorited: false };
+    }
+    return { isFavorited: parsed.data.isFavorited };
 }
 
 /**
@@ -78,7 +92,7 @@ async function toggleFavorite(params: {
     readonly entityName?: string;
 }): Promise<{ readonly toggled: boolean }> {
     const { entityId, entityType, entityName } = params;
-    const apiBaseUrl = getApiBaseUrl();
+    const apiBaseUrl = getApiUrl();
 
     const body: Record<string, string> = {
         entityId,
@@ -101,9 +115,13 @@ async function toggleFavorite(params: {
         throw new Error('Failed to toggle favorite');
     }
 
-    const responseBody = await response.json();
-    const data = responseBody?.data ?? responseBody;
-    return { toggled: data?.toggled === true };
+    const json = await response.json();
+    const raw = json?.data ?? json;
+    const parsed = toggleFavoriteResponseSchema.safeParse(raw);
+    if (!parsed.success) {
+        throw new Error(`Invalid toggle response: ${parsed.error.message}`);
+    }
+    return { toggled: parsed.data.toggled };
 }
 
 /**
@@ -178,6 +196,12 @@ export function FavoriteButton({
             removeFromFavorites: 'Remove from favorites',
             authRequired: 'You must sign in to save favorites',
             errorMessage: 'Failed to save favorite. Please try again.'
+        },
+        pt: {
+            addToFavorites: 'Adicionar aos favoritos',
+            removeFromFavorites: 'Remover dos favoritos',
+            authRequired: 'Você precisa fazer login para salvar favoritos',
+            errorMessage: 'Erro ao salvar favorito. Por favor, tente novamente.'
         }
     };
 
@@ -243,7 +267,7 @@ export function FavoriteButton({
 
             {/* Auth Required Popover */}
             {showAuthPopover && (
-                <div className="absolute top-full right-0 z-50 mt-2 w-64">
+                <div className="absolute top-full right-0 z-50 mt-3">
                     <AuthRequiredPopover
                         message={localizedTexts.authRequired}
                         onClose={() => setShowAuthPopover(false)}

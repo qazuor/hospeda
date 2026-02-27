@@ -8,6 +8,8 @@ import {
 } from '@repo/icons';
 import { useState } from 'react';
 import type { ReactElement } from 'react';
+import { useTranslation } from '../../hooks/useTranslation';
+import type { SupportedLocale } from '../../lib/i18n';
 
 /**
  * Props for the ShareButtons component.
@@ -29,6 +31,11 @@ export interface ShareButtonsProps {
      * Optional CSS class names to apply to the container.
      */
     readonly className?: string;
+    /**
+     * Locale for i18n translations
+     * @default 'es'
+     */
+    readonly locale?: SupportedLocale;
 }
 
 /**
@@ -51,7 +58,8 @@ export interface ShareButtonsProps {
  * ```
  */
 export function ShareButtons(props: ShareButtonsProps): ReactElement {
-    const { url, title, text = '', className = '' } = props;
+    const { url, title, text = '', className = '', locale = 'es' } = props;
+    const { t } = useTranslation({ locale: locale as SupportedLocale, namespace: 'ui' });
     const [copied, setCopied] = useState(false);
     const hasWebShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
 
@@ -119,7 +127,7 @@ export function ShareButtons(props: ShareButtonsProps): ReactElement {
                 <button
                     type="button"
                     onClick={handleNativeShare}
-                    aria-label="Share via device"
+                    aria-label={t('accessibility.shareViaDevice')}
                     className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-white transition-colors hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
                 >
                     <ShareIcon
@@ -135,7 +143,7 @@ export function ShareButtons(props: ShareButtonsProps): ReactElement {
                         href={getWhatsAppUrl()}
                         target="_blank"
                         rel="noopener noreferrer"
-                        aria-label="Share on WhatsApp"
+                        aria-label={t('accessibility.shareOnWhatsApp')}
                         className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-green-500 text-white transition-colors hover:bg-green-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-green-500 focus-visible:outline-offset-2"
                     >
                         <WhatsappIcon
@@ -149,7 +157,7 @@ export function ShareButtons(props: ShareButtonsProps): ReactElement {
                         href={getFacebookUrl()}
                         target="_blank"
                         rel="noopener noreferrer"
-                        aria-label="Share on Facebook"
+                        aria-label={t('accessibility.shareOnFacebook')}
                         className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white transition-colors hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600 focus-visible:outline-offset-2"
                     >
                         <FacebookIcon
@@ -163,7 +171,7 @@ export function ShareButtons(props: ShareButtonsProps): ReactElement {
                         href={getTwitterUrl()}
                         target="_blank"
                         rel="noopener noreferrer"
-                        aria-label="Share on Twitter"
+                        aria-label={t('accessibility.shareOnTwitter')}
                         className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-black text-white transition-colors hover:bg-gray-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-black focus-visible:outline-offset-2"
                     >
                         <span className="sr-only">Share on Twitter</span>
@@ -179,7 +187,7 @@ export function ShareButtons(props: ShareButtonsProps): ReactElement {
             <button
                 type="button"
                 onClick={handleCopyToClipboard}
-                aria-label={copied ? 'Link copied' : 'Copy link to clipboard'}
+                aria-label={copied ? t('accessibility.linkCopied') : t('accessibility.copyLink')}
                 className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 text-gray-700 transition-colors hover:bg-gray-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gray-400 focus-visible:outline-offset-2"
             >
                 {copied ? (

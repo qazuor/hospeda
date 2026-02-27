@@ -1,6 +1,8 @@
 import { CloseIcon, NextIcon, PreviousIcon } from '@repo/icons';
 import type { JSX } from 'react';
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from '../../hooks/useTranslation';
+import type { SupportedLocale } from '../../lib/i18n';
 
 /**
  * Represents a single image in the gallery
@@ -18,6 +20,12 @@ export interface ImageGalleryProps {
      * Array of images to display in the gallery
      */
     readonly images: ReadonlyArray<GalleryImage>;
+
+    /**
+     * Locale for i18n translations
+     * @default 'es'
+     */
+    readonly locale?: SupportedLocale;
 
     /**
      * Additional CSS classes to apply to the component
@@ -52,7 +60,12 @@ export interface ImageGalleryProps {
  * />
  * ```
  */
-export function ImageGallery({ images, className = '' }: ImageGalleryProps): JSX.Element {
+export function ImageGallery({
+    images,
+    locale = 'es',
+    className = ''
+}: ImageGalleryProps): JSX.Element {
+    const { t } = useTranslation({ locale: locale as SupportedLocale, namespace: 'ui' });
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
@@ -140,7 +153,7 @@ export function ImageGallery({ images, className = '' }: ImageGalleryProps): JSX
                     type="button"
                     onClick={handleOpenLightbox}
                     className="w-full overflow-hidden rounded-lg focus:outline focus:outline-2 focus:outline-primary focus:outline-offset-2"
-                    aria-label="Open image in fullscreen"
+                    aria-label={t('accessibility.openFullscreen')}
                 >
                     <img
                         src={currentImage.src}
@@ -197,7 +210,7 @@ export function ImageGallery({ images, className = '' }: ImageGalleryProps): JSX
                             type="button"
                             onClick={handleCloseLightbox}
                             className="absolute top-4 right-4 z-10 rounded-md p-2 text-white transition-colors hover:text-gray-300 focus:outline focus:outline-2 focus:outline-white"
-                            aria-label="Close lightbox"
+                            aria-label={t('accessibility.closeLightbox')}
                             data-testid="close-button"
                         >
                             <CloseIcon
@@ -232,7 +245,7 @@ export function ImageGallery({ images, className = '' }: ImageGalleryProps): JSX
                                     type="button"
                                     onClick={handlePrevious}
                                     className="-translate-y-1/2 absolute top-1/2 left-4 rounded-full bg-black bg-opacity-50 p-3 text-white transition-all hover:bg-opacity-70 hover:text-gray-300 focus:outline focus:outline-2 focus:outline-white"
-                                    aria-label="Previous image"
+                                    aria-label={t('accessibility.previousImage')}
                                     data-testid="prev-button"
                                 >
                                     <PreviousIcon
@@ -248,7 +261,7 @@ export function ImageGallery({ images, className = '' }: ImageGalleryProps): JSX
                                     type="button"
                                     onClick={handleNext}
                                     className="-translate-y-1/2 absolute top-1/2 right-4 rounded-full bg-black bg-opacity-50 p-3 text-white transition-all hover:bg-opacity-70 hover:text-gray-300 focus:outline focus:outline-2 focus:outline-white"
-                                    aria-label="Next image"
+                                    aria-label={t('accessibility.nextImage')}
                                     data-testid="next-button"
                                 >
                                     <NextIcon

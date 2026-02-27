@@ -1,6 +1,8 @@
 import { ChevronDownIcon } from '@repo/icons';
 import { useState } from 'react';
 import type { JSX } from 'react';
+import { useTranslation } from '../../hooks/useTranslation';
+import type { SupportedLocale } from '../../lib/i18n';
 
 /**
  * Props for the AccordionFAQ component
@@ -15,6 +17,8 @@ export interface AccordionFAQProps {
     readonly allowMultiple?: boolean;
     /** Additional CSS classes to apply to the accordion container */
     readonly className?: string;
+    /** Locale for accessibility label translations */
+    readonly locale?: SupportedLocale;
 }
 
 /**
@@ -39,8 +43,10 @@ export interface AccordionFAQProps {
 export function AccordionFAQ({
     items,
     allowMultiple = false,
-    className = ''
+    className = '',
+    locale = 'es'
 }: AccordionFAQProps): JSX.Element {
+    const { t } = useTranslation({ locale, namespace: 'ui' });
     const [openItems, setOpenItems] = useState<Set<number>>(new Set());
 
     /**
@@ -69,7 +75,7 @@ export function AccordionFAQ({
     return (
         <section
             className={`space-y-2 ${className}`.trim()}
-            aria-label="Frequently Asked Questions"
+            aria-label={t('accessibility.faqSection')}
         >
             {items.map((item, index) => {
                 const isOpen = openItems.has(index);
