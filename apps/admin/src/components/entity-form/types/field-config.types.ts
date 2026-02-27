@@ -348,7 +348,7 @@ export type FieldConfig = {
     hidden?: boolean;
 
     // Modes where this field should appear
-    modes?: ('view' | 'edit')[];
+    modes?: ('view' | 'edit' | 'create')[];
     viewOnly?: boolean;
     editOnly?: boolean;
 

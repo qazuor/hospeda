@@ -13,7 +13,7 @@ import { useUserQuery } from '@/features/users/hooks/useUserQuery';
 import { ActivityIcon, AlertCircleIcon, CalendarIcon, ClockIcon, LoaderIcon } from '@repo/icons';
 import { createFileRoute } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/_authed/access/users/$id/activity')({
+export const Route = createFileRoute('/_authed/access/users/$id_/activity')({
     component: UserActivityPage
 });
 

@@ -73,7 +73,7 @@ export const createUsersColumns = (): readonly ColumnConfig<User>[] => [
     {
         id: 'email',
         header: 'Email',
-        accessorKey: 'primaryEmail',
+        accessorKey: 'email',
         enableSorting: false,
         columnType: ColumnType.STRING
     },

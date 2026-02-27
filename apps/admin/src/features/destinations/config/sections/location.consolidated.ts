@@ -50,7 +50,7 @@ export const createLocationConsolidatedSection = (): ConsolidatedSectionConfig =
         {
             id: 'location.city',
             type: FieldTypeEnum.TEXT,
-            required: true,
+            required: false,
             modes: ['view', 'edit', 'create'],
             label: 'Ciudad',
             description: 'Ciudad del destino',

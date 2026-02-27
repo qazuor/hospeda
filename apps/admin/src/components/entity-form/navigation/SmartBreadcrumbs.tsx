@@ -250,27 +250,30 @@ export const SmartBreadcrumbs: React.FC<SmartBreadcrumbsProps> = ({
                     )}
             </ol>
 
-            {/* Overall progress indicator */}
-            {showProgress && (
+            {/* Overall progress indicator - uses average completionPercentage (BUG-003/007) */}
+            {showProgress && visibleSections.length > 0 && (
                 <div className="ml-4 flex items-center space-x-2 text-gray-500 text-xs">
                     <span>{t('ui.breadcrumbs.progress')}:</span>
                     <div className="flex items-center space-x-1">
-                        <div className="h-2 w-16 rounded-full bg-gray-200">
-                            <div
-                                className="h-2 rounded-full bg-blue-500 transition-all duration-300"
-                                style={{
-                                    width: `${(visibleSections.filter((s) => s.status === 'complete').length / visibleSections.length) * 100}%`
-                                }}
-                            />
-                        </div>
-                        <span className="font-medium">
-                            {Math.round(
-                                (visibleSections.filter((s) => s.status === 'complete').length /
-                                    visibleSections.length) *
-                                    100
-                            )}
-                            %
-                        </span>
+                        {(() => {
+                            const avgPercentage = Math.round(
+                                visibleSections.reduce(
+                                    (sum, s) => sum + s.completionPercentage,
+                                    0
+                                ) / visibleSections.length
+                            );
+                            return (
+                                <>
+                                    <div className="h-2 w-16 rounded-full bg-gray-200">
+                                        <div
+                                            className="h-2 rounded-full bg-blue-500 transition-all duration-300"
+                                            style={{ width: `${avgPercentage}%` }}
+                                        />
+                                    </div>
+                                    <span className="font-medium">{avgPercentage}%</span>
+                                </>
+                            );
+                        })()}
                     </div>
                 </div>
             )}

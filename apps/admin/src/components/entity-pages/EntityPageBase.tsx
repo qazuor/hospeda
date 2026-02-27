@@ -1,5 +1,9 @@
 import { EntityFormProvider, FormModeEnum } from '@/components/entity-form';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
+import {
+    prepareFormValues,
+    unflattenValues
+} from '@/components/entity-form/utils/unflatten-values.utils';
 import { EntityErrorBoundary } from '@/components/error-boundaries';
 import { Icon } from '@/components/icons';
 import { Button } from '@/components/ui-wrapped/Button';
@@ -105,15 +109,35 @@ export const EntityPageBase = <T = Record<string, unknown>>({
                 }
             }
 
-            // DEBUG: Log filtered values being sent to API
-            adminLogger.debug('[EntityPageBase] Filtered values for API', fieldsToSave);
+            // Convert dot-notated keys to nested objects (e.g. 'location.country' -> { location: { country: ... } })
+            const payload = unflattenValues(fieldsToSave);
 
-            await updateMutation.mutateAsync(fieldsToSave);
+            // DEBUG: Log filtered values being sent to API
+            adminLogger.debug('[EntityPageBase] Filtered values for API', payload);
+
+            await updateMutation.mutateAsync(payload);
             // After successful save, navigate to view mode
             goToView();
         },
         [updateMutation, goToView, entityConfig.editSections]
     );
+
+    // Prepare initial values for the form by resolving dot-notated field IDs
+    // from nested entity data (e.g., entity.location.country → values["location.country"])
+    const preparedValues = React.useMemo(() => {
+        if (!entity) return {};
+        const entityRecord = entity as Record<string, unknown>;
+
+        // Collect all field IDs from edit sections
+        const editSections = entityConfig.editSections.map((section) =>
+            typeof section === 'function' ? section() : section
+        );
+        const allFieldIds = editSections
+            .flatMap((section) => section.fields || [])
+            .map((field) => field.id);
+
+        return prepareFormValues(entityRecord, allFieldIds);
+    }, [entity, entityConfig.editSections]);
 
     // Loading state
     if (isLoading) {
@@ -287,7 +311,7 @@ export const EntityPageBase = <T = Record<string, unknown>>({
                             <EntityFormProvider
                                 config={completeEntityConfig}
                                 mode={mode === 'view' ? FormModeEnum.VIEW : FormModeEnum.EDIT}
-                                initialValues={entity}
+                                initialValues={preparedValues}
                                 userPermissions={userPermissions}
                                 onSave={handleSave}
                             >

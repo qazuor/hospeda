@@ -1,12 +1,21 @@
-import { AttractionWithDestinationCountSchema as BaseAttractionListItemSchema } from '@repo/schemas';
+import {
+    AttractionWithDestinationCountSchema as BaseAttractionListItemSchema,
+    LifecycleStatusEnumSchema,
+    ModerationStatusEnumSchema,
+    VisibilityEnumSchema
+} from '@repo/schemas';
 import type { z } from 'zod';
 
 /**
  * Admin Attraction Schemas
  *
- * Uses AttractionWithDestinationCountSchema which includes destinationCount
+ * Extends base schema with admin-only status fields (BUG-005)
  */
-export const AttractionListItemSchema = BaseAttractionListItemSchema;
+export const AttractionListItemSchema = BaseAttractionListItemSchema.extend({
+    visibility: VisibilityEnumSchema.optional(),
+    lifecycleState: LifecycleStatusEnumSchema.optional(),
+    moderationState: ModerationStatusEnumSchema.optional()
+});
 
 /**
  * Type for attraction list items

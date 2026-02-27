@@ -11,7 +11,7 @@ import { useAccommodationQuery } from '@/features/accommodations/hooks/useAccomm
 import { useTranslations } from '@/hooks/use-translations';
 import { createFileRoute } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/_authed/accommodations/$id/amenities')({
+export const Route = createFileRoute('/_authed/accommodations/$id_/amenities')({
     component: AccommodationAmenitiesPage
 });
 
@@ -33,7 +33,6 @@ function AccommodationAmenitiesPage() {
                 tabs={accommodationTabs}
                 basePath={`/accommodations/${id}`}
             />
-
             <div className="rounded-lg border bg-card p-6">
                 <h2 className="mb-4 font-semibold text-lg">{t('admin-tabs.amenities')}</h2>
 

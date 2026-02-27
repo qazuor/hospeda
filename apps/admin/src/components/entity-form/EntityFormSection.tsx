@@ -262,11 +262,25 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
                         );
 
                     case FieldTypeEnum.NUMBER:
-                        // Use TextField for numbers for now
+                        // Use TextField for numbers, converting string input to number on change
                         return (
                             <TextField
                                 {...fieldProps}
-                                value={fieldValue as string}
+                                value={
+                                    fieldValue === null || fieldValue === undefined
+                                        ? ''
+                                        : String(fieldValue)
+                                }
+                                onChange={(value: unknown) => {
+                                    const strVal = String(value).trim();
+                                    const numVal = strVal === '' ? undefined : Number(strVal);
+                                    onFieldChange(
+                                        field.id,
+                                        numVal !== undefined && !Number.isNaN(numVal)
+                                            ? numVal
+                                            : value
+                                    );
+                                }}
                             />
                         );
 

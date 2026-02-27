@@ -248,7 +248,7 @@ function MyProfilePage() {
     }
 
     const avatarUrl = session?.user?.image ?? profile?.avatarUrl;
-    const email = session?.user?.email ?? profile?.email;
+    const email = session?.user?.email ?? authUser?.email ?? profile?.email;
     const emailVerified = session?.user?.emailVerified ?? false;
     const role = authUser?.role ?? profile?.role;
     const permissions = authUser?.permissions ?? profile?.permissions ?? [];

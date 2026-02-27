@@ -12,7 +12,7 @@ import { usePostQuery } from '@/features/posts/hooks/usePostQuery';
 import { useTranslations } from '@/hooks/use-translations';
 import { createFileRoute } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/_authed/posts/$id/seo')({
+export const Route = createFileRoute('/_authed/posts/$id_/seo')({
     component: PostSeoPage
 });
 

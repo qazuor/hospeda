@@ -10,13 +10,21 @@
  * - Status: event.visibility, event.lifecycleState, event.moderationState, event.tags
  */
 
-import { EventListItemWithRelationsSchema } from '@repo/schemas';
+import {
+    EventListItemWithRelationsSchema,
+    LifecycleStatusEnumSchema,
+    VisibilityEnumSchema
+} from '@repo/schemas';
 import { z } from 'zod';
 
 /**
  * Admin Event List Item Schema - Extends base with computed fields for null handling
+ * and admin-only status fields (BUG-005)
  */
 export const EventListItemSchema = EventListItemWithRelationsSchema.extend({
+    // Admin status fields not included in public list schema
+    visibility: VisibilityEnumSchema.optional(),
+    lifecycleState: LifecycleStatusEnumSchema.optional(),
     // Computed fields for admin display when relations are null
     organizerName: z
         .string()

@@ -79,7 +79,7 @@ export const createAccommodationsColumns = (): readonly ColumnConfig<Accommodati
     {
         id: 'price',
         header: 'Price',
-        accessorKey: 'basePrice',
+        accessorKey: 'price.price',
         enableSorting: true,
         columnType: ColumnType.NUMBER
     },

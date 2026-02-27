@@ -22,14 +22,12 @@ export const UserListItemSchema = UserListItemWithCountsSchema.extend(
 
 // Admin-specific schema with computed fields for handling nested data
 export const UserListItemWithComputedFieldsSchema = UserListItemSchema.extend({
-    primaryEmail: z.string().optional(),
     locationCity: z.string().optional(),
     accommodationsCount: z.number().optional(),
     eventsCount: z.number().optional(),
     postsCount: z.number().optional()
 }).transform((data) => ({
     ...data,
-    primaryEmail: data.contactInfo?.personalEmail || data.contactInfo?.workEmail || undefined,
     locationCity: data.location?.city || undefined,
     accommodationsCount: data.accommodationsCount || 0,
     eventsCount: data.eventsCount || 0,

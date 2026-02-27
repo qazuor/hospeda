@@ -70,14 +70,17 @@ export const ListCell = ({
     if (orientation === ListOrientation.COLUMN) {
         return (
             <div className="flex flex-col gap-1">
-                {visibleItems.map((item) => (
-                    <span
-                        key={item}
-                        className="text-gray-900 dark:text-gray-100"
-                    >
-                        {item}
-                    </span>
-                ))}
+                {visibleItems.map((item, index) => {
+                    const uniqueKey = `list-${item}-${index}`;
+                    return (
+                        <span
+                            key={uniqueKey}
+                            className="text-gray-900 dark:text-gray-100"
+                        >
+                            {item}
+                        </span>
+                    );
+                })}
                 {needsTruncation && (
                     <span className="text-gray-500 text-xs dark:text-gray-400">
                         and {remainingCount} more

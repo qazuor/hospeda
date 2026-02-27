@@ -1,7 +1,7 @@
 /**
- * Destination Attractions Tab Route
+ * Destination Events Tab Route
  *
- * Displays attractions associated with a specific destination.
+ * Displays events associated with a specific destination.
  */
 
 import { PageTabs, destinationTabs } from '@/components/layout/PageTabs';
@@ -10,16 +10,44 @@ import { useDestinationQuery } from '@/features/destinations/hooks/useDestinatio
 import { useTranslations } from '@/hooks/use-translations';
 import { Link, createFileRoute } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/_authed/destinations/$id/attractions')({
-    component: DestinationAttractionsPage
+export const Route = createFileRoute('/_authed/destinations/$id_/events')({
+    component: DestinationEventsPage
 });
 
-function DestinationAttractionsPage() {
+function DestinationEventsPage() {
     const { id } = Route.useParams();
     const { t } = useTranslations();
     const { data: destination, isLoading } = useDestinationQuery(id);
 
-    const attractions = Array.isArray(destination?.attractions) ? destination.attractions : [];
+    // API response may include joined relations not in base Destination type
+    const destinationWithRelations = destination as
+        | (typeof destination & {
+              events?: Array<Record<string, unknown>>;
+          })
+        | undefined;
+    const events = Array.isArray(destinationWithRelations?.events)
+        ? destinationWithRelations.events
+        : [];
+
+    /**
+     * Format event date to localized string
+     */
+    const formatEventDate = (event: Record<string, unknown>): string => {
+        try {
+            const dateValue = event.date as Record<string, unknown> | undefined;
+            if (dateValue && typeof dateValue === 'object' && 'start' in dateValue) {
+                const startDate = new Date(String(dateValue.start));
+                return startDate.toLocaleDateString('es-AR', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+            }
+            return 'Date not available';
+        } catch {
+            return 'Invalid date';
+        }
+    };
 
     return (
         <div className="space-y-4">
@@ -29,7 +57,7 @@ function DestinationAttractionsPage() {
             />
 
             <div className="rounded-lg border bg-card p-6">
-                <h2 className="mb-4 font-semibold text-lg">{t('admin-tabs.attractions')}</h2>
+                <h2 className="mb-4 font-semibold text-lg">{t('admin-tabs.events')}</h2>
 
                 {isLoading ? (
                     <div className="space-y-3">
@@ -41,52 +69,50 @@ function DestinationAttractionsPage() {
                             />
                         ))}
                     </div>
-                ) : attractions.length === 0 ? (
+                ) : events.length === 0 ? (
                     <div className="py-8 text-center">
                         <p className="text-muted-foreground">
-                            No attractions found for this destination.
+                            No events found for this destination.
                         </p>
                     </div>
                 ) : (
                     <div className="divide-y">
-                        {attractions.map((attraction: Record<string, unknown>) => (
+                        {events.map((event: Record<string, unknown>) => (
                             <div
-                                key={String(attraction.id)}
+                                key={String(event.id)}
                                 className="flex items-start justify-between py-4"
                             >
                                 <div className="flex-1">
                                     <div className="mb-1">
                                         <Link
-                                            to="/content/destination-attractions/$id"
-                                            params={{ id: String(attraction.id) }}
+                                            to="/events/$id"
+                                            params={{ id: String(event.id) }}
                                             className="font-medium text-primary hover:underline"
                                         >
-                                            {String(attraction.name || 'Unnamed')}
+                                            {String(event.name || 'Unnamed')}
                                         </Link>
-                                        {attraction.type ? (
+                                        {event.category ? (
                                             <Badge
                                                 variant="secondary"
                                                 className="ml-2"
                                             >
-                                                {String(attraction.type)}
+                                                {String(event.category)}
                                             </Badge>
                                         ) : null}
                                     </div>
-                                    {attraction.description ? (
-                                        <p className="line-clamp-2 text-muted-foreground text-sm">
-                                            {String(attraction.description)}
-                                        </p>
-                                    ) : null}
+                                    <p className="text-muted-foreground text-sm">
+                                        {formatEventDate(event)}
+                                    </p>
                                 </div>
-                                {attraction.lifecycleState ? (
+                                {event.lifecycleState ? (
                                     <Badge
                                         variant={
-                                            attraction.lifecycleState === 'ACTIVE'
+                                            event.lifecycleState === 'ACTIVE'
                                                 ? 'success'
                                                 : 'outline'
                                         }
                                     >
-                                        {String(attraction.lifecycleState)}
+                                        {String(event.lifecycleState)}
                                     </Badge>
                                 ) : null}
                             </div>

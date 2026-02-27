@@ -10,7 +10,7 @@ import { useDestinationQuery } from '@/features/destinations/hooks/useDestinatio
 import { useTranslations } from '@/hooks/use-translations';
 import { Link, createFileRoute } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/_authed/destinations/$id/accommodations')({
+export const Route = createFileRoute('/_authed/destinations/$id_/accommodations')({
     component: DestinationAccommodationsPage
 });
 

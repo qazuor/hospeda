@@ -3,17 +3,45 @@ import { SmartBreadcrumbs, SmartNavigation } from '@/components/entity-form/navi
 import { LazySectionWrapper } from '@/components/entity-form/sections/LazySectionWrapper';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
 import { filterSectionsByMode } from '@/components/entity-form/utils/section-filter.utils';
+import { unflattenValues } from '@/components/entity-form/utils/unflatten-values.utils';
 import { EntityErrorBoundary } from '@/components/error-boundaries';
 import { Icon } from '@/components/icons';
 import { Button } from '@/components/ui-wrapped/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui-wrapped/Card';
 import { useToast } from '@/components/ui/ToastProvider';
+import type { ConsolidatedSectionConfig } from '@/features/accommodations/types/consolidated-config.types';
 import { useIntelligentNavigation, useLazySections } from '@/hooks';
 import { useUserPermissions } from '@/hooks/use-user-permissions';
 import { adminLogger } from '@/utils/logger';
 import { LoaderIcon } from '@repo/icons';
 import type { PermissionEnum } from '@repo/schemas';
 import { Suspense, useMemo, useState } from 'react';
+
+/**
+ * Formats a Zod error message key into a human-readable message.
+ * Converts keys like "zodError.user.slug.required" into "Campo requerido"
+ */
+function formatZodErrorMessage(message: string): string {
+    if (!message.startsWith('zodError.')) {
+        return message;
+    }
+
+    // Extract the error type from the key (last segment)
+    const parts = message.split('.');
+    const errorType = parts[parts.length - 1];
+
+    const errorTypeMap: Record<string, string> = {
+        required: 'Este campo es requerido',
+        invalid: 'Valor inválido',
+        invalidType: 'Tipo de dato inválido',
+        min: 'El valor es demasiado corto',
+        max: 'El valor es demasiado largo',
+        pattern: 'El formato no es válido',
+        email: 'Debe ser un email válido'
+    };
+
+    return errorTypeMap[errorType] || 'Campo inválido';
+}
 
 /**
  * Configuration for an entity create page
@@ -53,7 +81,7 @@ export interface EntityCreateContentProps {
     readonly config: EntityCreateConfig;
     /** Function that creates the consolidated config (sections, metadata, etc.) */
     readonly createConsolidatedConfig: () => {
-        sections: SectionConfig[];
+        sections: ConsolidatedSectionConfig[] | SectionConfig[];
         metadata?: Record<string, unknown>;
     };
     /** Mutation function to create the entity */
@@ -92,7 +120,10 @@ export function EntityCreateContent({
     // Get consolidated config and filter for create mode
     const { sections, entityConfig } = useMemo(() => {
         const consolidatedConfig = createConsolidatedConfig();
-        const createSections = filterSectionsByMode(consolidatedConfig.sections, 'create');
+        const createSections = filterSectionsByMode(
+            consolidatedConfig.sections as ConsolidatedSectionConfig[],
+            'create'
+        );
 
         return {
             sections: createSections,
@@ -142,7 +173,7 @@ export function EntityCreateContent({
     });
 
     const { shouldLazyLoad, getMetrics } = useLazySections(sections, {
-        enabled: true,
+        enabled: false,
         preloadCount: 1,
         alwaysLoad: ['basic-info']
     });
@@ -163,8 +194,9 @@ export function EntityCreateContent({
     const handleSave = async () => {
         setIsSaving(true);
         try {
-            adminLogger.debug(`[${config.entityType}Create] Saving values`, values);
-            const result = await createMutation.mutateAsync(values);
+            const payload = unflattenValues(values);
+            adminLogger.debug(`[${config.entityType}Create] Saving values`, payload);
+            const result = await createMutation.mutateAsync(payload);
 
             addToast({
                 title: config.successToastTitle,
@@ -177,22 +209,30 @@ export function EntityCreateContent({
         } catch (error) {
             adminLogger.error(`Failed to create ${config.entityType}`, error);
 
-            let errorMessage = config.errorMessage;
             const fieldErrors: Record<string, string> = {};
+            let toastMessage = config.errorMessage;
 
             if (error instanceof Error) {
-                errorMessage = error.message;
                 try {
                     const zodErrors = JSON.parse(error.message);
                     if (Array.isArray(zodErrors)) {
+                        const fieldNames: string[] = [];
                         for (const zodError of zodErrors) {
                             if (zodError.path?.length > 0) {
-                                fieldErrors[zodError.path[0]] = zodError.message;
+                                const fieldId = zodError.path[0] as string;
+                                fieldErrors[fieldId] = formatZodErrorMessage(
+                                    zodError.message as string
+                                );
+                                fieldNames.push(fieldId);
                             }
+                        }
+                        if (fieldNames.length > 0) {
+                            toastMessage = `Hay ${fieldNames.length} campo(s) con errores de validación: ${fieldNames.join(', ')}`;
                         }
                     }
                 } catch {
-                    // Not a JSON error
+                    // Not a JSON error, use the raw message
+                    toastMessage = error.message;
                 }
             }
 
@@ -203,7 +243,7 @@ export function EntityCreateContent({
 
             addToast({
                 title: config.errorToastTitle,
-                message: errorMessage,
+                message: toastMessage,
                 variant: 'error'
             });
         } finally {
@@ -324,13 +364,15 @@ export function EntityCreateContent({
 
                                         {/* Content Area */}
                                         <div className="min-w-0 flex-1">
-                                            {/* Performance metrics (development only) */}
-                                            {process.env.NODE_ENV === 'development' && (
-                                                <div className="mb-4 rounded bg-blue-50 p-2 text-blue-800 text-xs">
-                                                    Lazy Loading: {getMetrics().loadedCount}/
-                                                    {getMetrics().totalSections} sections loaded
-                                                </div>
-                                            )}
+                                            {/* Performance metrics (development only - hidden by default) */}
+                                            {import.meta.env.DEV &&
+                                                import.meta.env.VITE_DEBUG_LAZY_SECTIONS ===
+                                                    'true' && (
+                                                    <div className="mb-4 rounded bg-blue-50 p-2 text-blue-800 text-xs">
+                                                        Lazy Loading: {getMetrics().loadedCount}/
+                                                        {getMetrics().totalSections} sections loaded
+                                                    </div>
+                                                )}
 
                                             <form
                                                 onSubmit={(e) => {

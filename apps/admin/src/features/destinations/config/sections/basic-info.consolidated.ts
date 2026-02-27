@@ -1,5 +1,5 @@
 import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
-import { PermissionEnum } from '@repo/schemas';
+import { DestinationTypeEnum, PermissionEnum } from '@repo/schemas';
 import type { ConsolidatedSectionConfig } from '../../types/consolidated-config.types';
 
 /**
@@ -49,6 +49,29 @@ export const createBasicInfoConsolidatedSection = (): ConsolidatedSectionConfig 
                 maxLength: 50,
                 minLength: 3,
                 pattern: '^[a-z0-9-]+$'
+            }
+        },
+        {
+            id: 'destinationType',
+            type: FieldTypeEnum.SELECT,
+            required: true,
+            modes: ['view', 'edit', 'create'],
+            label: 'Tipo de Destino',
+            description: 'Tipo de destino en la jerarquía geográfica',
+            permissions: {
+                view: [PermissionEnum.DESTINATION_VIEW_ALL],
+                edit: [PermissionEnum.DESTINATION_UPDATE]
+            },
+            typeConfig: {
+                options: [
+                    { value: DestinationTypeEnum.COUNTRY, label: 'País' },
+                    { value: DestinationTypeEnum.REGION, label: 'Región' },
+                    { value: DestinationTypeEnum.PROVINCE, label: 'Provincia' },
+                    { value: DestinationTypeEnum.DEPARTMENT, label: 'Departamento' },
+                    { value: DestinationTypeEnum.CITY, label: 'Ciudad' },
+                    { value: DestinationTypeEnum.TOWN, label: 'Pueblo' },
+                    { value: DestinationTypeEnum.NEIGHBORHOOD, label: 'Barrio' }
+                ]
             }
         },
         {

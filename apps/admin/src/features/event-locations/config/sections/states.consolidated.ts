@@ -1,16 +1,17 @@
 import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type { ConsolidatedSectionConfig } from '@/features/destinations/types/consolidated-config.types';
-import { LifecycleStatusEnum, PermissionEnum, VisibilityEnum } from '@repo/schemas';
+import { LifecycleStatusEnum, PermissionEnum } from '@repo/schemas';
 
 /**
  * Consolidated configuration for the States section of event location
+ * NOTE: EventLocationSchema does NOT have visibility field
  */
 export const createStatesConsolidatedSection = (): ConsolidatedSectionConfig => ({
     id: 'states',
-    title: 'Estados',
-    description: 'Estado y visibilidad de la ubicación',
+    title: 'Estado',
+    description: 'Estado de la ubicación',
     layout: LayoutTypeEnum.GRID,
-    modes: ['view', 'edit'],
+    modes: ['view', 'edit', 'create'],
     permissions: {
         view: [PermissionEnum.EVENT_LOCATION_VIEW],
         edit: [PermissionEnum.EVENT_LOCATION_MANAGE]
@@ -20,7 +21,7 @@ export const createStatesConsolidatedSection = (): ConsolidatedSectionConfig => 
             id: 'lifecycleState',
             type: FieldTypeEnum.SELECT,
             required: true,
-            modes: ['view', 'edit'],
+            modes: ['view', 'edit', 'create'],
             label: 'Estado de Ciclo de Vida',
             description: 'Estado actual del registro',
             permissions: {
@@ -32,25 +33,6 @@ export const createStatesConsolidatedSection = (): ConsolidatedSectionConfig => 
                     { value: LifecycleStatusEnum.DRAFT, label: 'Borrador' },
                     { value: LifecycleStatusEnum.ACTIVE, label: 'Activo' },
                     { value: LifecycleStatusEnum.ARCHIVED, label: 'Archivado' }
-                ]
-            }
-        },
-        {
-            id: 'visibility',
-            type: FieldTypeEnum.SELECT,
-            required: true,
-            modes: ['view', 'edit'],
-            label: 'Visibilidad',
-            description: 'Quién puede ver esta ubicación',
-            permissions: {
-                view: [PermissionEnum.EVENT_LOCATION_VIEW],
-                edit: [PermissionEnum.EVENT_LOCATION_MANAGE]
-            },
-            typeConfig: {
-                options: [
-                    { value: VisibilityEnum.PUBLIC, label: 'Público' },
-                    { value: VisibilityEnum.PRIVATE, label: 'Privado' },
-                    { value: VisibilityEnum.RESTRICTED, label: 'Restringido' }
                 ]
             }
         }

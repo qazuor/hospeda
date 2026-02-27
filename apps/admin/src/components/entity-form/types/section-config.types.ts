@@ -16,7 +16,7 @@ export type SectionConfig = {
     layout: LayoutTypeEnum;
 
     // Modes where this section should appear
-    modes?: ('view' | 'edit')[];
+    modes?: ('view' | 'edit' | 'create')[];
 
     // UI elements
     icon?: React.ReactNode;

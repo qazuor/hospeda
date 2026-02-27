@@ -2,6 +2,9 @@ import { DestinationExtensionSchema, OwnerExtensionSchema } from '@/shared/schem
 import {
     AccommodationSchema,
     AccommodationListItemSchema as BaseAccommodationListItemSchema,
+    LifecycleStatusEnumSchema,
+    ModerationStatusEnumSchema,
+    VisibilityEnumSchema,
     createAverageRatingField
 } from '@repo/schemas';
 import type { z } from 'zod';
@@ -15,6 +18,7 @@ export { AccommodationSchema };
  * Extensions:
  * - destination: Uses DestinationExtensionSchema for consistency
  * - owner: Uses OwnerExtensionSchema for consistency
+ * - visibility, lifecycleState, moderationState: Admin-only status fields (BUG-005)
  */
 export const AccommodationListItemSchema = BaseAccommodationListItemSchema.extend(
     DestinationExtensionSchema.shape
@@ -22,7 +26,11 @@ export const AccommodationListItemSchema = BaseAccommodationListItemSchema.exten
     .extend(OwnerExtensionSchema.shape)
     .extend({
         // Proper averageRating field handling for database numeric values
-        averageRating: createAverageRatingField({ optional: true })
+        averageRating: createAverageRatingField({ optional: true }),
+        // Admin status fields not included in public list schema
+        visibility: VisibilityEnumSchema.optional(),
+        lifecycleState: LifecycleStatusEnumSchema.optional(),
+        moderationState: ModerationStatusEnumSchema.optional()
     });
 
 /**

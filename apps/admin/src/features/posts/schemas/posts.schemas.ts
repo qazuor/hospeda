@@ -1,7 +1,9 @@
 import {
+    ModerationStatusEnumSchema,
     PostListItemSchema,
     type PostListItemWithRelations,
-    PostListItemWithRelationsSchema
+    PostListItemWithRelationsSchema,
+    VisibilityEnumSchema
 } from '@repo/schemas';
 import { z } from 'zod';
 
@@ -11,8 +13,12 @@ export { PostListItemSchema, PostListItemWithRelationsSchema };
 /**
  * Admin-specific schema with computed fields for handling null relations safely
  * Extends base schema with computed string fields for UI display
+ * and admin-only status fields (BUG-005)
  */
 export const PostListItemWithComputedFieldsSchema = PostListItemWithRelationsSchema.extend({
+    // Admin status fields not included in public list schema
+    visibility: VisibilityEnumSchema.optional(),
+    moderationState: ModerationStatusEnumSchema.optional(),
     authorName: z.string().optional(),
     accommodationName: z.string().optional(),
     destinationName: z.string().optional(),

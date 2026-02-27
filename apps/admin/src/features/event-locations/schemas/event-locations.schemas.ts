@@ -1,4 +1,7 @@
-import { EventLocationListItemSchema as BaseEventLocationListItemSchema } from '@repo/schemas';
+import {
+    EventLocationListItemSchema as BaseEventLocationListItemSchema,
+    LifecycleStatusEnumSchema
+} from '@repo/schemas';
 import type { z } from 'zod';
 
 /**
@@ -8,8 +11,12 @@ import type { z } from 'zod';
  * - Location details: floor, apartment, neighborhood, department
  * - Coordinates: coordinates.lat, coordinates.long
  * - Lifecycle: lifecycleState from base schema
+ *
+ * Extends base schema with admin-only status fields (BUG-005)
  */
-export const EventLocationListItemSchema = BaseEventLocationListItemSchema;
+export const EventLocationListItemSchema = BaseEventLocationListItemSchema.extend({
+    lifecycleState: LifecycleStatusEnumSchema.optional()
+});
 
 export const EventLocationListItemClientSchema = EventLocationListItemSchema;
 

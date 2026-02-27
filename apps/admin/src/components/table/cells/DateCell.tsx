@@ -9,7 +9,7 @@ type DateCellProps = {
  * Formats dates using locale-specific formatting.
  */
 export const DateCell = ({ value }: DateCellProps): ReactNode => {
-    if (value === null || value === undefined) {
+    if (value === null || value === undefined || value === '' || value === 0 || value === '0') {
         return <span className="text-gray-400 dark:text-gray-500">—</span>;
     }
 

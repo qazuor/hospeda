@@ -10,7 +10,7 @@ export const createRolePermissionsConsolidatedSection = (): ConsolidatedSectionC
     title: 'Rol y Permisos',
     description: 'Configuración de acceso y permisos del usuario',
     layout: LayoutTypeEnum.GRID,
-    modes: ['view', 'edit'],
+    modes: ['view', 'edit', 'create'],
     permissions: {
         view: [PermissionEnum.USER_READ_ALL],
         edit: [PermissionEnum.USER_UPDATE_ROLES]
@@ -20,7 +20,7 @@ export const createRolePermissionsConsolidatedSection = (): ConsolidatedSectionC
             id: 'role',
             type: FieldTypeEnum.SELECT,
             required: true,
-            modes: ['view', 'edit'],
+            modes: ['view', 'edit', 'create'],
             label: 'Rol',
             description: 'Rol del usuario en el sistema',
             permissions: {

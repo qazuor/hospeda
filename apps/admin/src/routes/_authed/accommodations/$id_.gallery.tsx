@@ -9,7 +9,7 @@ import { useAccommodationQuery } from '@/features/accommodations/hooks/useAccomm
 import { useTranslations } from '@/hooks/use-translations';
 import { createFileRoute } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/_authed/accommodations/$id/gallery')({
+export const Route = createFileRoute('/_authed/accommodations/$id_/gallery')({
     component: AccommodationGalleryPage
 });
 

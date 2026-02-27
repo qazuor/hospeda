@@ -13,7 +13,7 @@ import { useTranslations } from '@/hooks/use-translations';
 import { InfoIcon } from '@repo/icons';
 import { createFileRoute } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/_authed/posts/$id/sponsorship')({
+export const Route = createFileRoute('/_authed/posts/$id_/sponsorship')({
     component: PostSponsorshipPage
 });
 

@@ -31,7 +31,7 @@ export const createEventOrganizersColumns = (): readonly ColumnConfig<EventOrgan
         {
             id: 'email',
             header: 'Email',
-            accessorKey: 'contactInfo.email',
+            accessorKey: 'contactInfo.personalEmail',
             enableSorting: false,
             columnType: ColumnType.STRING,
             startVisibleOnTable: true,
@@ -40,7 +40,7 @@ export const createEventOrganizersColumns = (): readonly ColumnConfig<EventOrgan
         {
             id: 'phone',
             header: 'Phone',
-            accessorKey: 'contactInfo.phone',
+            accessorKey: 'contactInfo.mobilePhone',
             enableSorting: false,
             columnType: ColumnType.STRING,
             startVisibleOnTable: false,

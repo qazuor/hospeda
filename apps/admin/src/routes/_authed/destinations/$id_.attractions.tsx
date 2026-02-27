@@ -1,7 +1,7 @@
 /**
- * Destination Events Tab Route
+ * Destination Attractions Tab Route
  *
- * Displays events associated with a specific destination.
+ * Displays attractions associated with a specific destination.
  */
 
 import { PageTabs, destinationTabs } from '@/components/layout/PageTabs';
@@ -10,44 +10,16 @@ import { useDestinationQuery } from '@/features/destinations/hooks/useDestinatio
 import { useTranslations } from '@/hooks/use-translations';
 import { Link, createFileRoute } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/_authed/destinations/$id/events')({
-    component: DestinationEventsPage
+export const Route = createFileRoute('/_authed/destinations/$id_/attractions')({
+    component: DestinationAttractionsPage
 });
 
-function DestinationEventsPage() {
+function DestinationAttractionsPage() {
     const { id } = Route.useParams();
     const { t } = useTranslations();
     const { data: destination, isLoading } = useDestinationQuery(id);
 
-    // API response may include joined relations not in base Destination type
-    const destinationWithRelations = destination as
-        | (typeof destination & {
-              events?: Array<Record<string, unknown>>;
-          })
-        | undefined;
-    const events = Array.isArray(destinationWithRelations?.events)
-        ? destinationWithRelations.events
-        : [];
-
-    /**
-     * Format event date to localized string
-     */
-    const formatEventDate = (event: Record<string, unknown>): string => {
-        try {
-            const dateValue = event.date as Record<string, unknown> | undefined;
-            if (dateValue && typeof dateValue === 'object' && 'start' in dateValue) {
-                const startDate = new Date(String(dateValue.start));
-                return startDate.toLocaleDateString('es-AR', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                });
-            }
-            return 'Date not available';
-        } catch {
-            return 'Invalid date';
-        }
-    };
+    const attractions = Array.isArray(destination?.attractions) ? destination.attractions : [];
 
     return (
         <div className="space-y-4">
@@ -57,7 +29,7 @@ function DestinationEventsPage() {
             />
 
             <div className="rounded-lg border bg-card p-6">
-                <h2 className="mb-4 font-semibold text-lg">{t('admin-tabs.events')}</h2>
+                <h2 className="mb-4 font-semibold text-lg">{t('admin-tabs.attractions')}</h2>
 
                 {isLoading ? (
                     <div className="space-y-3">
@@ -69,50 +41,52 @@ function DestinationEventsPage() {
                             />
                         ))}
                     </div>
-                ) : events.length === 0 ? (
+                ) : attractions.length === 0 ? (
                     <div className="py-8 text-center">
                         <p className="text-muted-foreground">
-                            No events found for this destination.
+                            No attractions found for this destination.
                         </p>
                     </div>
                 ) : (
                     <div className="divide-y">
-                        {events.map((event: Record<string, unknown>) => (
+                        {attractions.map((attraction: Record<string, unknown>) => (
                             <div
-                                key={String(event.id)}
+                                key={String(attraction.id)}
                                 className="flex items-start justify-between py-4"
                             >
                                 <div className="flex-1">
                                     <div className="mb-1">
                                         <Link
-                                            to="/events/$id"
-                                            params={{ id: String(event.id) }}
+                                            to="/content/destination-attractions/$id"
+                                            params={{ id: String(attraction.id) }}
                                             className="font-medium text-primary hover:underline"
                                         >
-                                            {String(event.name || 'Unnamed')}
+                                            {String(attraction.name || 'Unnamed')}
                                         </Link>
-                                        {event.category ? (
+                                        {attraction.type ? (
                                             <Badge
                                                 variant="secondary"
                                                 className="ml-2"
                                             >
-                                                {String(event.category)}
+                                                {String(attraction.type)}
                                             </Badge>
                                         ) : null}
                                     </div>
-                                    <p className="text-muted-foreground text-sm">
-                                        {formatEventDate(event)}
-                                    </p>
+                                    {attraction.description ? (
+                                        <p className="line-clamp-2 text-muted-foreground text-sm">
+                                            {String(attraction.description)}
+                                        </p>
+                                    ) : null}
                                 </div>
-                                {event.lifecycleState ? (
+                                {attraction.lifecycleState ? (
                                     <Badge
                                         variant={
-                                            event.lifecycleState === 'ACTIVE'
+                                            attraction.lifecycleState === 'ACTIVE'
                                                 ? 'success'
                                                 : 'outline'
                                         }
                                     >
-                                        {String(event.lifecycleState)}
+                                        {String(attraction.lifecycleState)}
                                     </Badge>
                                 ) : null}
                             </div>

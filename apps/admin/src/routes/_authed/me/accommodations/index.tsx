@@ -77,7 +77,9 @@ function MyAccommodations() {
                     <Card>
                         <CardContent className="pt-6">
                             <p className="text-destructive">
-                                {t('admin-entities.messages.error.load')}
+                                {t('admin-entities.messages.error.load', {
+                                    entity: t('admin-entities.entities.accommodation.plural')
+                                })}
                             </p>
                         </CardContent>
                     </Card>
@@ -89,7 +91,9 @@ function MyAccommodations() {
                         <CardContent className="flex flex-col items-center justify-center py-12">
                             <BuildingIcon className="mb-4 h-12 w-12 text-muted-foreground" />
                             <h3 className="mb-2 font-semibold text-lg">
-                                {t('admin-entities.messages.empty.title')}
+                                {t('admin-entities.messages.empty.title', {
+                                    entities: t('admin-entities.entities.accommodation.plural')
+                                })}
                             </h3>
                             <p className="mb-4 text-muted-foreground text-sm">
                                 {t('admin-entities.entities.accommodation.description')}

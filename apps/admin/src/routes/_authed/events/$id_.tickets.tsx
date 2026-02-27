@@ -13,7 +13,7 @@ import { useTranslations } from '@/hooks/use-translations';
 import { DollarSignIcon, InfoIcon, UsersIcon } from '@repo/icons';
 import { createFileRoute } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/_authed/events/$id/tickets')({
+export const Route = createFileRoute('/_authed/events/$id_/tickets')({
     component: EventTicketsPage
 });
 

@@ -53,11 +53,15 @@ export const EntityEditContent = ({ renderSection, className }: EntityEditConten
         scrollOffset: 100
     });
 
-    // Use lazy sections hook for performance optimization
+    // Lazy loading disabled: the LazySectionWrapper has race conditions with
+    // dual IntersectionObservers that cause sections to be permanently stuck on
+    // "Loading section..." for entities with 4+ sections (BUG-008/BUG-001).
+    // EntityCreateContent already has this disabled. Re-enable only after fixing
+    // the LazySectionWrapper implementation.
     const { shouldLazyLoad, getMetrics } = useLazySections(sections, {
-        enabled: true,
+        enabled: false,
         preloadCount: 1,
-        alwaysLoad: ['basic-info'] // Always load basic info immediately
+        alwaysLoad: ['basic-info']
     });
 
     // Debug logging (temporarily disabled)
@@ -175,8 +179,8 @@ export const EntityEditContent = ({ renderSection, className }: EntityEditConten
 
                 {/* Content Area */}
                 <div className="min-w-0 flex-1">
-                    {/* Performance metrics (only in development) */}
-                    {process.env.NODE_ENV === 'development' && (
+                    {/* Performance metrics (development only - hidden by default) */}
+                    {import.meta.env.DEV && import.meta.env.VITE_DEBUG_LAZY_SECTIONS === 'true' && (
                         <div className="mb-4 rounded bg-blue-50 p-2 text-blue-800 text-xs">
                             Lazy Loading: {getMetrics().loadedCount}/{getMetrics().totalSections}{' '}
                             sections loaded

@@ -37,7 +37,9 @@ export const createContactConsolidatedSection = (): ConsolidatedSectionConfig =>
             id: 'phone',
             type: FieldTypeEnum.TEXT,
             required: false,
-            modes: ['view', 'edit', 'create'],
+            // NOTE: phone is stored inside contactInfo JSONB, not as a direct field.
+            // Excluded from create/edit until proper contactInfo mapping is implemented.
+            modes: ['view'],
             label: 'Teléfono',
             description: 'Número de teléfono',
             placeholder: '+54 9 11 1234-5678',

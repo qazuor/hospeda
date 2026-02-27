@@ -3,10 +3,12 @@ import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import type { DataTableColumn, DataTableSort } from '@/components/table/DataTable';
 import { DataTable } from '@/components/table/DataTable';
 import { DataTableToolbar } from '@/components/table/DataTableToolbar';
+import { Button } from '@/components/ui-wrapped/Button';
 import { useToast } from '@/components/ui/ToastProvider';
 import { useTranslations } from '@/hooks/use-translations';
 import { adminLogger } from '@/utils/logger';
 import type { TranslationKey } from '@repo/i18n';
+import { AddIcon } from '@repo/icons';
 import type { NavigateOptions, RegisteredRouter } from '@tanstack/react-router';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -316,8 +318,35 @@ export const createEntityListPage = <TData extends { id: string }>(
             );
         }, [getInitialColumnVisibility]);
 
+        const createButtonAction = useMemo(() => {
+            if (!config.layoutConfig?.showCreateButton || !config.layoutConfig?.createButtonPath) {
+                return undefined;
+            }
+            const entitySingular =
+                t(`admin-entities.entities.${config.entityKey}.singular` as TranslationKey) ||
+                config.name;
+            const buttonText = config.layoutConfig.createButtonText || `Crear ${entitySingular}`;
+            const buttonPath = config.layoutConfig.createButtonPath;
+            return (
+                <Button
+                    size="sm"
+                    onClick={() =>
+                        navigate({
+                            to: buttonPath
+                        } as DynamicNavigateOptions)
+                    }
+                >
+                    <AddIcon className="mr-2 h-4 w-4" />
+                    {buttonText}
+                </Button>
+            );
+        }, [config.layoutConfig, config.entityKey, config.name, t, navigate]);
+
         return (
-            <SidebarPageLayout title={translatedTitle}>
+            <SidebarPageLayout
+                title={translatedTitle}
+                actions={createButtonAction}
+            >
                 <div className="space-y-4">
                     <DataTableToolbar
                         key={`search-config-${searchConfig.minChars}`}

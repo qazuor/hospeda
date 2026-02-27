@@ -14,7 +14,7 @@ import { AlertCircleIcon, InfoIcon, LoaderIcon, ShieldIcon } from '@repo/icons';
 import { RoleEnum } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/_authed/access/users/$id/permissions')({
+export const Route = createFileRoute('/_authed/access/users/$id_/permissions')({
     component: UserPermissionsPage
 });
 

@@ -11,7 +11,7 @@ export const createStatesConsolidatedSection = (): ConsolidatedSectionConfig => 
     title: 'Estado',
     description: 'Control del estado de la etiqueta',
     layout: LayoutTypeEnum.GRID,
-    modes: ['view', 'edit'],
+    modes: ['view', 'edit', 'create'],
     permissions: {
         view: [PermissionEnum.TAG_CREATE],
         edit: [PermissionEnum.TAG_UPDATE]
@@ -21,7 +21,7 @@ export const createStatesConsolidatedSection = (): ConsolidatedSectionConfig => 
             id: 'lifecycleState',
             type: FieldTypeEnum.SELECT,
             required: true,
-            modes: ['view', 'edit'],
+            modes: ['view', 'edit', 'create'],
             label: 'Estado',
             description: 'Estado del ciclo de vida',
             permissions: {

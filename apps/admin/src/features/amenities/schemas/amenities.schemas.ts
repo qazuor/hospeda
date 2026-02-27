@@ -1,12 +1,19 @@
-import type { AmenityListItem } from '@repo/schemas';
-import { AmenityWithAccommodationCountSchema as BaseAmenityListItemSchema } from '@repo/schemas';
+import {
+    AmenityWithAccommodationCountSchema as BaseAmenityListItemSchema,
+    LifecycleStatusEnumSchema,
+    ModerationStatusEnumSchema,
+    VisibilityEnumSchema
+} from '@repo/schemas';
+import type { z } from 'zod';
 
 /**
  * Schema for amenity list items in admin
- * Uses AmenityWithAccommodationCountSchema from @repo/schemas
+ * Extends base schema with admin-only status fields (BUG-005)
  */
-export const AmenityListItemSchema = BaseAmenityListItemSchema;
+export const AmenityListItemSchema = BaseAmenityListItemSchema.extend({
+    visibility: VisibilityEnumSchema.optional(),
+    lifecycleState: LifecycleStatusEnumSchema.optional(),
+    moderationState: ModerationStatusEnumSchema.optional()
+});
 
-export type Amenity = AmenityListItem & {
-    accommodationCount?: number;
-};
+export type Amenity = z.infer<typeof AmenityListItemSchema>;

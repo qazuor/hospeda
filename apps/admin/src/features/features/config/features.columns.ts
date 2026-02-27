@@ -44,9 +44,9 @@ export const createFeaturesColumns = (): readonly ColumnConfig<Feature>[] => [
         columnType: ColumnType.BOOLEAN
     },
     {
-        id: 'is_featured',
+        id: 'isFeatured',
         header: 'Featured',
-        accessorKey: 'is_featured',
+        accessorKey: 'isFeatured',
         enableSorting: true,
         columnType: ColumnType.BOOLEAN
     },

@@ -1,17 +1,18 @@
 import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type { ConsolidatedSectionConfig } from '@/features/destinations/types/consolidated-config.types';
-import { LifecycleStatusEnum, PermissionEnum, VisibilityEnum } from '@repo/schemas';
+import { LifecycleStatusEnum, PermissionEnum } from '@repo/schemas';
 
 /**
  * States section configuration for Sponsor entity
- * Contains: lifecycleState, visibility
+ * Contains: lifecycleState
+ * NOTE: PostSponsorSchema does NOT have visibility field
  */
 export const createStatesConsolidatedSection = (): ConsolidatedSectionConfig => ({
     id: 'states',
-    title: 'Estado y Visibilidad',
-    description: 'Control del estado y visibilidad',
+    title: 'Estado',
+    description: 'Control del estado del patrocinador',
     layout: LayoutTypeEnum.GRID,
-    modes: ['view', 'edit'],
+    modes: ['view', 'edit', 'create'],
     permissions: {
         view: [PermissionEnum.POST_SPONSOR_VIEW],
         edit: [PermissionEnum.POST_SPONSOR_UPDATE]
@@ -21,7 +22,7 @@ export const createStatesConsolidatedSection = (): ConsolidatedSectionConfig => 
             id: 'lifecycleState',
             type: FieldTypeEnum.SELECT,
             required: true,
-            modes: ['view', 'edit'],
+            modes: ['view', 'edit', 'create'],
             label: 'Estado',
             description: 'Estado del ciclo de vida',
             permissions: {
@@ -33,25 +34,6 @@ export const createStatesConsolidatedSection = (): ConsolidatedSectionConfig => 
                     { value: LifecycleStatusEnum.DRAFT, label: 'Borrador' },
                     { value: LifecycleStatusEnum.ACTIVE, label: 'Activo' },
                     { value: LifecycleStatusEnum.ARCHIVED, label: 'Archivado' }
-                ]
-            }
-        },
-        {
-            id: 'visibility',
-            type: FieldTypeEnum.SELECT,
-            required: true,
-            modes: ['view', 'edit'],
-            label: 'Visibilidad',
-            description: 'Quién puede ver este patrocinador',
-            permissions: {
-                view: [PermissionEnum.POST_SPONSOR_VIEW],
-                edit: [PermissionEnum.POST_SPONSOR_UPDATE]
-            },
-            typeConfig: {
-                options: [
-                    { value: VisibilityEnum.PUBLIC, label: 'Público' },
-                    { value: VisibilityEnum.PRIVATE, label: 'Privado' },
-                    { value: VisibilityEnum.RESTRICTED, label: 'Restringido' }
                 ]
             }
         }
