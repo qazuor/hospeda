@@ -77,7 +77,8 @@ export const useInvoicesQuery = (filters: Record<string, unknown> = {}) => {
     return useQuery({
         queryKey: invoiceQueryKeys.invoices.list(filters),
         queryFn: () => fetchInvoices(filters),
-        staleTime: 60_000
+        staleTime: 60_000,
+        retry: 1
     });
 };
 
@@ -89,7 +90,8 @@ export const useInvoiceQuery = (id: string) => {
         queryKey: invoiceQueryKeys.invoices.detail(id),
         queryFn: () => fetchInvoice(id),
         staleTime: 60_000,
-        enabled: !!id
+        enabled: !!id,
+        retry: 1
     });
 };
 

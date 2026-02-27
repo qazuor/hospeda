@@ -113,7 +113,8 @@ export const useBillingMetricsQuery = (
     return useQuery({
         queryKey: metricsQueryKeys.metrics.overview(options),
         queryFn: () => fetchBillingMetrics(options),
-        staleTime: 5 * 60_000 // 5 minutes
+        staleTime: 5 * 60_000, // 5 minutes
+        retry: 1
     });
 };
 
@@ -129,7 +130,8 @@ export const useRecentActivityQuery = (
     return useQuery({
         queryKey: metricsQueryKeys.metrics.activity(options),
         queryFn: () => fetchRecentActivity(options),
-        staleTime: 60_000 // 1 minute
+        staleTime: 60_000, // 1 minute
+        retry: 1
     });
 };
 
@@ -141,7 +143,8 @@ export const useCustomerSearchQuery = (query: string) => {
         queryKey: metricsQueryKeys.customers.search(query),
         queryFn: () => searchCustomers(query),
         enabled: query.trim().length >= 2,
-        staleTime: 60_000
+        staleTime: 60_000,
+        retry: 1
     });
 };
 
@@ -158,7 +161,8 @@ export const useCustomerUsageQuery = (customerId: string | null) => {
             return fetchCustomerUsage(customerId);
         },
         enabled: !!customerId,
-        staleTime: 30_000 // 30 seconds
+        staleTime: 30_000, // 30 seconds
+        retry: 1
     });
 };
 
@@ -173,16 +177,48 @@ async function fetchSystemUsageStats(): Promise<SystemUsageStats> {
 }
 
 /**
+ * API response shape for a single approaching-limit item
+ */
+interface ApproachingLimitApiItem {
+    readonly customerId: string;
+    readonly customerEmail: string;
+    readonly limitKey: string;
+    readonly currentUsage: number;
+    readonly maxAllowed: number;
+    readonly usagePercentage: number;
+}
+
+/**
  * Fetch customers approaching limits (>90% usage)
+ * Transforms API array response into the frontend ApproachingLimitsResponse format
  */
 async function fetchApproachingLimits(threshold = 90): Promise<ApproachingLimitsResponse> {
     const params = new URLSearchParams();
     params.append('threshold', String(threshold));
 
-    const result = await fetchApi<{ success: boolean; data: ApproachingLimitsResponse }>({
+    const result = await fetchApi<{ success: boolean; data: ApproachingLimitApiItem[] }>({
         path: `/api/v1/billing/metrics/approaching-limits?${params.toString()}`
     });
-    return result.data.data;
+
+    const apiItems = result.data.data ?? [];
+
+    return {
+        threshold,
+        totalCustomers: apiItems.length,
+        customers: apiItems.map((item) => ({
+            customerId: item.customerId,
+            customerEmail: item.customerEmail,
+            customerName: null,
+            category: 'owner' as const,
+            planSlug: null,
+            planName: null,
+            limitKey: item.limitKey,
+            limitName: item.limitKey,
+            currentValue: item.currentUsage,
+            maxValue: item.maxAllowed,
+            percentage: item.usagePercentage
+        }))
+    };
 }
 
 /**
@@ -192,7 +228,8 @@ export const useSystemUsageStatsQuery = () => {
     return useQuery({
         queryKey: [...metricsQueryKeys.metrics.all, 'system-usage'] as const,
         queryFn: () => fetchSystemUsageStats(),
-        staleTime: 5 * 60_000 // 5 minutes
+        staleTime: 5 * 60_000, // 5 minutes
+        retry: 1
     });
 };
 
@@ -203,6 +240,7 @@ export const useApproachingLimitsQuery = (threshold = 90) => {
     return useQuery({
         queryKey: [...metricsQueryKeys.metrics.all, 'approaching-limits', threshold] as const,
         queryFn: () => fetchApproachingLimits(threshold),
-        staleTime: 2 * 60_000 // 2 minutes
+        staleTime: 2 * 60_000, // 2 minutes
+        retry: 1
     });
 };

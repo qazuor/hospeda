@@ -38,7 +38,7 @@ function SponsorSponsorshipsPage() {
 
     const { data, isLoading, error } = useSponsorSponsorshipsQuery({
         page,
-        limit: pageSize,
+        pageSize,
         ...filters
     });
 

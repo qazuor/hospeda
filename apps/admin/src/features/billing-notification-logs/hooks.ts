@@ -84,7 +84,8 @@ export const useNotificationLogsQuery = (filters: Record<string, unknown> = {}) 
     return useQuery({
         queryKey: notificationLogQueryKeys.notifications.list(filters),
         queryFn: () => fetchNotificationLogs(filters),
-        staleTime: 30_000
+        staleTime: 30_000,
+        retry: 1
     });
 };
 
@@ -96,6 +97,7 @@ export const useNotificationLogQuery = (id: string) => {
         queryKey: notificationLogQueryKeys.notifications.detail(id),
         queryFn: () => fetchNotificationLog(id),
         staleTime: 60_000,
-        enabled: !!id
+        enabled: !!id,
+        retry: 1
     });
 };

@@ -55,11 +55,17 @@ function BillingPlansPage() {
     const updateMutation = useUpdatePlanMutation();
 
     // Use API data if available, otherwise fall back to static config
-    const plans = (data?.items as PlanDefinition[] | undefined) || ALL_PLANS;
-    const total = (data?.pagination?.total as number | undefined) || ALL_PLANS.length;
+    const hasApiData = Array.isArray(data?.items) && data.items.length > 0;
+    const plans = hasApiData ? (data.items as PlanDefinition[]) : ALL_PLANS;
+    const total = hasApiData
+        ? ((data?.pagination?.total as number | undefined) ?? plans.length)
+        : ALL_PLANS.length;
+
+    // When using static fallback, never show loading state
+    const effectiveLoading = hasApiData ? isLoading : false;
 
     // Apply client-side filtering if using static data
-    const filteredPlans = data?.items
+    const filteredPlans = hasApiData
         ? plans
         : (ALL_PLANS as readonly PlanDefinition[]).filter((plan: PlanDefinition) => {
               if (categoryFilter === 'all') return true;
@@ -89,7 +95,7 @@ function BillingPlansPage() {
     };
 
     const handleToggleActive = (id: string, isActive: boolean) => {
-        if (!data?.items) {
+        if (!hasApiData) {
             alert(t('admin-billing.plans.apiRequired'));
             return;
         }
@@ -103,7 +109,7 @@ function BillingPlansPage() {
     };
 
     const handleDelete = (id: string) => {
-        if (!data?.items) {
+        if (!hasApiData) {
             alert(t('admin-billing.plans.apiRequired'));
             return;
         }
@@ -188,7 +194,7 @@ function BillingPlansPage() {
                     </div>
                 </div>
 
-                {!data?.items && (
+                {!hasApiData && !isLoading && (
                     <Card className="border-yellow-200 bg-yellow-50">
                         <CardContent className="py-4">
                             <p className="text-sm text-yellow-800">
@@ -201,11 +207,11 @@ function BillingPlansPage() {
 
                 <PlansTable
                     plans={filteredPlans}
-                    total={data?.items ? total : filteredPlans.length}
+                    total={hasApiData ? total : filteredPlans.length}
                     page={page}
                     pageSize={pageSize}
                     columns={columns}
-                    isLoading={isLoading}
+                    isLoading={effectiveLoading}
                     categoryFilter={categoryFilter}
                     onPageChange={setPage}
                     onPageSizeChange={setPageSize}

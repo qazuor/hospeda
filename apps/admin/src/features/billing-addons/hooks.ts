@@ -66,7 +66,7 @@ async function fetchPurchasedAddons(
     if (filters.customerEmail) params.append('customerEmail', filters.customerEmail);
 
     const result = await fetchApi<{ success: boolean; data: PurchasedAddonsResponse }>({
-        path: `/api/v1/billing/customer-addons?${params.toString()}`
+        path: `/api/v1/admin/billing/customer-addons?${params.toString()}`
     });
     return result.data.data;
 }
@@ -123,7 +123,7 @@ async function deleteAddon(id: string) {
  */
 async function forceExpirePurchasedAddon(id: string) {
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: `/api/v1/billing/customer-addons/${id}/expire`,
+        path: `/api/v1/admin/billing/customer-addons/${id}/expire`,
         method: 'POST'
     });
     return result.data.data;
@@ -134,7 +134,7 @@ async function forceExpirePurchasedAddon(id: string) {
  */
 async function forceActivatePurchasedAddon(id: string) {
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: `/api/v1/billing/customer-addons/${id}/activate`,
+        path: `/api/v1/admin/billing/customer-addons/${id}/activate`,
         method: 'POST'
     });
     return result.data.data;
@@ -147,7 +147,8 @@ export const useAddonsQuery = (filters: Record<string, unknown> = {}) => {
     return useQuery({
         queryKey: addonQueryKeys.addons.list(filters),
         queryFn: () => fetchAddons(filters),
-        staleTime: 60_000
+        staleTime: 60_000,
+        retry: 1
     });
 };
 
@@ -158,7 +159,8 @@ export const usePurchasedAddonsQuery = (filters: PurchasedAddonFilters = {}) => 
     return useQuery({
         queryKey: addonQueryKeys.purchased.list(filters as Record<string, unknown>),
         queryFn: () => fetchPurchasedAddons(filters),
-        staleTime: 60_000
+        staleTime: 60_000,
+        retry: 1
     });
 };
 

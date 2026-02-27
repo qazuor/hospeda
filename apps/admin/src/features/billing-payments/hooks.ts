@@ -74,7 +74,8 @@ export const usePaymentsQuery = (filters: Record<string, unknown> = {}) => {
     return useQuery({
         queryKey: paymentQueryKeys.payments.list(filters),
         queryFn: () => fetchPayments(filters),
-        staleTime: 60_000
+        staleTime: 60_000,
+        retry: 1
     });
 };
 
@@ -86,7 +87,8 @@ export const usePaymentQuery = (id: string) => {
         queryKey: paymentQueryKeys.payments.detail(id),
         queryFn: () => fetchPayment(id),
         staleTime: 60_000,
-        enabled: !!id
+        enabled: !!id,
+        retry: 1
     });
 };
 

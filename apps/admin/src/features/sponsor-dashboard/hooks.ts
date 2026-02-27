@@ -27,7 +27,7 @@ async function fetchSponsorSummary(): Promise<SponsorSummary> {
         success: boolean;
         data: { items?: { impressions?: number; clicks?: number; amount?: number }[] };
     }>({
-        path: '/api/v1/admin/sponsorships?status=ACTIVE'
+        path: '/api/v1/admin/sponsorships?status=active'
     });
     const sponsorships = result.data.data?.items || [];
 

@@ -502,7 +502,7 @@ function BillingPromoCodesPage() {
     // Fetch promo codes
     const { data, isLoading, error } = usePromoCodesQuery({
         page,
-        limit: pageSize,
+        pageSize,
         status: statusFilter === 'all' ? undefined : statusFilter,
         type: typeFilter === 'all' ? undefined : typeFilter,
         search: searchQuery || undefined

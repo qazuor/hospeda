@@ -17,29 +17,60 @@ export const promoCodeQueryKeys = {
 };
 
 /**
- * Fetch promo codes with filters
- * TODO: Replace with actual API endpoint once qzpay-hono billing routes are implemented
+ * Map UI filters to API query parameters.
+ * UI uses status ("active"/"expired"/"inactive"), type, search.
+ * API expects active (bool string), expired (bool string), codeSearch.
  */
-async function fetchPromoCodes(filters: PromoCodeFilters = {}) {
+function buildPromoCodeParams(filters: PromoCodeFilters): URLSearchParams {
     const params = new URLSearchParams();
 
-    for (const [key, value] of Object.entries(filters)) {
-        if (value !== undefined && value !== null && value !== '' && value !== 'all') {
-            params.append(key, String(value));
+    if (filters.page) params.append('page', String(filters.page));
+    if (filters.pageSize) params.append('pageSize', String(filters.pageSize));
+
+    // Map status filter to active/expired booleans
+    if (filters.status && filters.status !== 'all') {
+        if (filters.status === 'active') {
+            params.append('active', 'true');
+        } else if (filters.status === 'expired') {
+            params.append('expired', 'true');
+        } else if (filters.status === 'inactive') {
+            params.append('active', 'false');
         }
     }
 
-    // TODO: Update endpoint when API is ready
-    // Expected endpoint: GET /api/v1/billing/promo-codes
+    // Map search to codeSearch
+    if (filters.search) {
+        params.append('codeSearch', filters.search);
+    }
+
+    // Note: 'type' filter (percentage/fixed) is not supported by the API.
+    // Client-side filtering is applied after fetching.
+
+    return params;
+}
+
+/**
+ * Fetch promo codes with filters
+ */
+async function fetchPromoCodes(filters: PromoCodeFilters = {}) {
+    const params = buildPromoCodeParams(filters);
+
     const result = await fetchApi<{
         success: boolean;
-        data: Record<string, unknown>[];
+        data: { items: Record<string, unknown>[]; pagination: Record<string, unknown> };
     }>({
         path: `/api/v1/billing/promo-codes?${params.toString()}`
     });
-    // Custom billing route returns { success, data: [] } without pagination
-    const items = result.data.data;
-    return { items, pagination: { total: Array.isArray(items) ? items.length : 0 } };
+
+    const responseData = result.data.data;
+    let items = responseData.items ?? [];
+
+    // Client-side filter for discount type (not supported by API)
+    if (filters.type && filters.type !== 'all') {
+        items = items.filter((item: Record<string, unknown>) => item.type === filters.type);
+    }
+
+    return { items, pagination: responseData.pagination ?? { total: items.length } };
 }
 
 /**

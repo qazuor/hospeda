@@ -41,11 +41,11 @@ export interface PromoCode {
  * Promo code filters for UI
  */
 export interface PromoCodeFilters {
-    status?: PromoCodeStatus | 'all';
-    type?: DiscountType | 'all';
-    search?: string;
-    page?: number;
-    limit?: number;
+    readonly status?: PromoCodeStatus | 'all';
+    readonly type?: DiscountType | 'all';
+    readonly search?: string;
+    readonly page?: number;
+    readonly pageSize?: number;
 }
 
 /**

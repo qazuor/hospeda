@@ -88,7 +88,8 @@ export const useSubscriptionsQuery = (filters: Record<string, unknown> = {}) => 
     return useQuery({
         queryKey: subscriptionQueryKeys.subscriptions.list(filters),
         queryFn: () => fetchSubscriptions(filters),
-        staleTime: 60_000
+        staleTime: 60_000,
+        retry: 1
     });
 };
 
@@ -100,7 +101,8 @@ export const useSubscriptionQuery = (id: string) => {
         queryKey: subscriptionQueryKeys.subscriptions.detail(id),
         queryFn: () => fetchSubscription(id),
         staleTime: 60_000,
-        enabled: !!id
+        enabled: !!id,
+        retry: 1
     });
 };
 
@@ -199,6 +201,7 @@ export const usePaymentHistoryQuery = (subscriptionId: string | undefined) => {
         queryKey: paymentQueryKeys.payments.bySubscription(subscriptionId || ''),
         queryFn: () => fetchPaymentHistory(subscriptionId as string),
         staleTime: 60_000,
-        enabled: !!subscriptionId
+        enabled: !!subscriptionId,
+        retry: 1
     });
 };

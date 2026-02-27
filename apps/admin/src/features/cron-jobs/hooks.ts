@@ -22,10 +22,10 @@ export const cronJobQueryKeys = {
  * Fetch all registered cron jobs
  */
 async function fetchCronJobs(): Promise<CronJobsListResponse> {
-    const result = await fetchApi<CronJobsListResponse>({
+    const result = await fetchApi<{ success: boolean; data: CronJobsListResponse }>({
         path: '/api/v1/admin/cron'
     });
-    return result.data;
+    return result.data.data;
 }
 
 /**
@@ -43,8 +43,11 @@ async function triggerCronJob({
         params.append('dryRun', 'true');
     }
     const url = `/api/v1/admin/cron/${jobName}${params.toString() ? `?${params.toString()}` : ''}`;
-    const result = await fetchApi<TriggerCronJobResponse>({ path: url, method: 'POST' });
-    return result.data;
+    const result = await fetchApi<{ success: boolean; data: TriggerCronJobResponse }>({
+        path: url,
+        method: 'POST'
+    });
+    return result.data.data;
 }
 
 /**
@@ -55,7 +58,8 @@ export const useCronJobsQuery = () => {
         queryKey: cronJobQueryKeys.cronJobs.list(),
         queryFn: fetchCronJobs,
         staleTime: 5 * 60_000, // 5 minutes
-        refetchInterval: 60_000 // Refetch every minute
+        refetchInterval: 60_000, // Refetch every minute
+        retry: 1
     });
 };
 

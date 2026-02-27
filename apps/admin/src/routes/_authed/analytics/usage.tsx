@@ -8,11 +8,51 @@ export const Route = createFileRoute('/_authed/analytics/usage')({
     component: AnalyticsUsagePage
 });
 
-async function fetchMetrics(): Promise<Record<string, unknown>> {
-    const result = await fetchApi<{ data?: Record<string, unknown> }>({
+/**
+ * Metrics response shape from the API
+ */
+interface MetricsSummary {
+    readonly totalRequests: number;
+    readonly totalErrors: number;
+    readonly globalErrorRate: number;
+    readonly activeConnections: number;
+    readonly timestamp: string;
+}
+
+interface EndpointMetric {
+    readonly endpoint: string;
+    readonly requests: number;
+    readonly errors: number;
+    readonly errorRate: number;
+    readonly avgResponseTime: number;
+    readonly maxResponseTime: number;
+    readonly minResponseTime: number;
+    readonly p95ResponseTime: number;
+    readonly p99ResponseTime: number;
+    readonly sampleCount: number;
+}
+
+interface MetricsData {
+    readonly summary: MetricsSummary;
+    readonly endpoints: EndpointMetric[];
+}
+
+async function fetchMetrics(): Promise<MetricsData> {
+    const result = await fetchApi<{ data?: MetricsData }>({
         path: '/api/v1/admin/metrics'
     });
-    return result.data.data ?? (result.data as unknown as Record<string, unknown>);
+    return (
+        result.data.data ?? {
+            summary: {
+                totalRequests: 0,
+                totalErrors: 0,
+                globalErrorRate: 0,
+                activeConnections: 0,
+                timestamp: new Date().toISOString()
+            },
+            endpoints: []
+        }
+    );
 }
 
 function AnalyticsUsagePage() {
@@ -27,9 +67,17 @@ function AnalyticsUsagePage() {
         retry: 1
     });
 
-    const totalRequests = (metrics?.requests as number) ?? 0;
-    const errorRate = (metrics?.errorRate as number) ?? 0;
-    const avgResponseTime = (metrics?.avgResponseTime as number) ?? 0;
+    const totalRequests = metrics?.summary?.totalRequests ?? 0;
+    const totalErrors = metrics?.summary?.totalErrors ?? 0;
+    const errorRate = metrics?.summary?.globalErrorRate ?? 0;
+    const activeConnections = metrics?.summary?.activeConnections ?? 0;
+
+    // Compute average response time across all endpoints
+    const avgResponseTime =
+        metrics?.endpoints && metrics.endpoints.length > 0
+            ? metrics.endpoints.reduce((sum, ep) => sum + ep.avgResponseTime, 0) /
+              metrics.endpoints.length
+            : 0;
 
     return (
         <SidebarPageLayout titleKey="admin-pages.titles.analyticsUsage">
@@ -51,7 +99,7 @@ function AnalyticsUsagePage() {
                     </Card>
                 ) : (
                     <>
-                        <div className="grid gap-4 md:grid-cols-3">
+                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                             <Card>
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                     <CardTitle className="font-medium text-sm">
@@ -68,13 +116,16 @@ function AnalyticsUsagePage() {
                             <Card>
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                     <CardTitle className="font-medium text-sm">
-                                        Error Rate
+                                        Total Errors
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
                                     <div className="font-bold text-2xl">
-                                        {isLoading ? '...' : `${(errorRate * 100).toFixed(2)}%`}
+                                        {isLoading ? '...' : totalErrors.toLocaleString()}
                                     </div>
+                                    <p className="text-muted-foreground text-xs">
+                                        {isLoading ? '' : `${errorRate.toFixed(2)}% error rate`}
+                                    </p>
                                 </CardContent>
                             </Card>
 
@@ -90,7 +141,83 @@ function AnalyticsUsagePage() {
                                     </div>
                                 </CardContent>
                             </Card>
+
+                            <Card>
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="font-medium text-sm">
+                                        Active Connections
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="font-bold text-2xl">
+                                        {isLoading ? '...' : activeConnections}
+                                    </div>
+                                </CardContent>
+                            </Card>
                         </div>
+
+                        {/* Endpoint breakdown table */}
+                        {metrics?.endpoints && metrics.endpoints.length > 0 && (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Endpoint Breakdown</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="overflow-auto">
+                                        <table className="w-full text-sm">
+                                            <thead>
+                                                <tr className="border-b text-left">
+                                                    <th className="pb-2 font-medium">Endpoint</th>
+                                                    <th className="pb-2 font-medium">Requests</th>
+                                                    <th className="pb-2 font-medium">Errors</th>
+                                                    <th className="pb-2 font-medium">Avg (ms)</th>
+                                                    <th className="pb-2 font-medium">P95 (ms)</th>
+                                                    <th className="pb-2 font-medium">P99 (ms)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {metrics.endpoints
+                                                    .sort((a, b) => b.requests - a.requests)
+                                                    .slice(0, 20)
+                                                    .map((ep) => (
+                                                        <tr
+                                                            key={ep.endpoint}
+                                                            className="border-b last:border-0"
+                                                        >
+                                                            <td className="py-2 font-mono text-xs">
+                                                                {ep.endpoint}
+                                                            </td>
+                                                            <td className="py-2">
+                                                                {ep.requests.toLocaleString()}
+                                                            </td>
+                                                            <td className="py-2">
+                                                                <span
+                                                                    className={
+                                                                        ep.errors > 0
+                                                                            ? 'text-red-600'
+                                                                            : ''
+                                                                    }
+                                                                >
+                                                                    {ep.errors}
+                                                                </span>
+                                                            </td>
+                                                            <td className="py-2">
+                                                                {ep.avgResponseTime.toFixed(0)}
+                                                            </td>
+                                                            <td className="py-2">
+                                                                {ep.p95ResponseTime.toFixed(0)}
+                                                            </td>
+                                                            <td className="py-2">
+                                                                {ep.p99ResponseTime.toFixed(0)}
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
 
                         <Card>
                             <CardHeader>

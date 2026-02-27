@@ -104,7 +104,8 @@ export const useWebhookEventsQuery = (filters: Record<string, unknown> = {}) => 
     return useQuery({
         queryKey: webhookEventQueryKeys.events.list(filters),
         queryFn: () => fetchWebhookEvents(filters),
-        staleTime: 30_000
+        staleTime: 30_000,
+        retry: 1
     });
 };
 
@@ -116,7 +117,8 @@ export const useWebhookEventQuery = (id: string) => {
         queryKey: webhookEventQueryKeys.events.detail(id),
         queryFn: () => fetchWebhookEvent(id),
         staleTime: 60_000,
-        enabled: !!id
+        enabled: !!id,
+        retry: 1
     });
 };
 
@@ -127,7 +129,8 @@ export const useDeadLetterEventsQuery = () => {
     return useQuery({
         queryKey: webhookEventQueryKeys.events.deadLetter(),
         queryFn: fetchDeadLetterEvents,
-        staleTime: 30_000
+        staleTime: 30_000,
+        retry: 1
     });
 };
 

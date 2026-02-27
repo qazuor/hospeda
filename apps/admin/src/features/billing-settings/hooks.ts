@@ -40,7 +40,8 @@ export const useBillingSettingsQuery = () => {
     return useQuery({
         queryKey: billingSettingsQueryKeys.settings,
         queryFn: fetchBillingSettings,
-        staleTime: 5 * 60 * 1000 // 5 minutes
+        staleTime: 5 * 60 * 1000, // 5 minutes
+        retry: 1
     });
 };
 

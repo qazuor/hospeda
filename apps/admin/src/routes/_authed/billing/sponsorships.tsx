@@ -130,7 +130,7 @@ function SponsorshipsTab() {
 
     const { data, isLoading, error } = useSponsorshipsQuery({
         page,
-        limit: pageSize,
+        pageSize,
         ...filters
     });
 
@@ -373,7 +373,7 @@ function SponsorshipLevelsTab() {
 
     const { data, isLoading, error } = useSponsorshipLevelsQuery({
         page,
-        limit: pageSize
+        pageSize
     });
 
     const toggleActiveMutation = useToggleLevelActiveMutation();
@@ -551,7 +551,7 @@ function SponsorshipPackagesTab() {
 
     const { data, isLoading, error } = useSponsorshipPackagesQuery({
         page,
-        limit: pageSize
+        pageSize
     });
 
     const toggleActiveMutation = useTogglePackageActiveMutation();

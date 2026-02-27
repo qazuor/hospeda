@@ -1,6 +1,48 @@
 import { fetchApi } from '@/lib/api/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { CreatePlanPayload, UpdatePlanPayload } from './types';
+import type { CreatePlanPayload, PlanDefinition, UpdatePlanPayload } from './types';
+
+/**
+ * QZPay API plan record shape
+ */
+interface QZPayPlanRecord {
+    readonly id: string;
+    readonly name: string;
+    readonly description: string | null;
+    readonly active: boolean;
+    readonly entitlements: string[];
+    readonly limits: Record<string, number>;
+    readonly metadata: Record<string, unknown>;
+    readonly createdAt: string;
+    readonly updatedAt: string;
+}
+
+/**
+ * Transform a QZPay plan record to PlanDefinition format
+ */
+function transformPlanRecord(record: QZPayPlanRecord): PlanDefinition & { id: string } {
+    const meta = record.metadata ?? {};
+    return {
+        id: record.id,
+        name: record.name,
+        description: record.description ?? '',
+        slug: (meta.slug as string) ?? '',
+        category: (meta.category as PlanDefinition['category']) ?? 'owner',
+        isActive: record.active,
+        isDefault: (meta.isDefault as boolean) ?? false,
+        sortOrder: (meta.sortOrder as number) ?? 0,
+        hasTrial: (meta.hasTrial as boolean) ?? false,
+        trialDays: (meta.trialDays as number) ?? 0,
+        monthlyPriceArs: (meta.monthlyPriceArs as number) ?? 0,
+        annualPriceArs: (meta.annualPriceArs as number) ?? null,
+        monthlyPriceUsdRef: (meta.monthlyPriceUsdRef as number) ?? 0,
+        entitlements: record.entitlements ?? [],
+        limits: Object.entries(record.limits ?? {}).map(([key, value]) => ({
+            key,
+            value
+        }))
+    } as PlanDefinition & { id: string };
+}
 
 /**
  * Query keys for plan-related queries
@@ -30,13 +72,16 @@ async function fetchPlans(filters: Record<string, unknown> = {}) {
 
     const result = await fetchApi<{
         success: boolean;
-        data: Record<string, unknown>[];
+        data: QZPayPlanRecord[];
         pagination: Record<string, unknown>;
     }>({
         path: `/api/v1/billing/plans?${params.toString()}`
     });
-    // QZPay returns { success, data: [], pagination } - transform to { items, pagination }
-    return { items: result.data.data, pagination: result.data.pagination };
+
+    // Transform QZPay records to PlanDefinition format
+    const apiData = result.data.data ?? [];
+    const items = apiData.map(transformPlanRecord);
+    return { items, pagination: result.data.pagination };
 }
 
 /**
