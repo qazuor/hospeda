@@ -4,16 +4,16 @@
  * Connects the auth-ui ForgotPasswordForm with the web app's Better Auth client.
  * Used in Astro pages with `client:load` for immediate interactivity.
  *
- * @module ForgotPasswordIsland
+ * @module ForgotPassword.client
  */
 
 import { ForgotPasswordForm } from '@repo/auth-ui';
 import { forgetPassword } from '../../lib/auth-client';
 
 /**
- * Props for the ForgotPasswordIsland component
+ * Props for the ForgotPasswordClient component
  */
-export interface ForgotPasswordIslandProps {
+export interface ForgotPasswordClientProps {
     /** URL for the reset password page (included in the reset email) */
     readonly resetPasswordUrl: string;
     /** URL for the sign-in page link */
@@ -21,9 +21,9 @@ export interface ForgotPasswordIslandProps {
 }
 
 /**
- * ForgotPasswordIsland wraps the auth-ui ForgotPasswordForm with the web app's auth client.
+ * ForgotPasswordClient wraps the auth-ui ForgotPasswordForm with the web app's auth client.
  */
-export function ForgotPasswordIsland({ resetPasswordUrl, signInUrl }: ForgotPasswordIslandProps) {
+export function ForgotPasswordClient({ resetPasswordUrl, signInUrl }: ForgotPasswordClientProps) {
     const handleForgotPassword = async ({
         email,
         redirectTo

@@ -4,6 +4,8 @@ import { CancelIcon, SaveIcon } from '@repo/icons';
  * Rendered inside the review card when editing is active.
  */
 import { type ChangeEvent, type FormEvent, useState } from 'react';
+import { useTranslation } from '../../hooks/useTranslation';
+import type { SupportedLocale } from '../../lib/i18n';
 
 /** State managed by the inline edit form */
 export interface EditFormState {
@@ -36,6 +38,7 @@ interface ReviewEditFormProps {
     onSave: (id: string, data: EditFormState) => Promise<void>;
     onCancel: () => void;
     isSaving: boolean;
+    locale?: SupportedLocale;
 }
 
 /**
@@ -54,8 +57,10 @@ export function ReviewEditForm({
     messages,
     onSave,
     onCancel,
-    isSaving
+    isSaving,
+    locale = 'es'
 }: ReviewEditFormProps) {
+    const { t: tUi } = useTranslation({ locale, namespace: 'ui' });
     const [form, setForm] = useState<EditFormState>({
         rating: review.rating,
         title: review.title,
@@ -100,7 +105,9 @@ export function ReviewEditForm({
                                 // biome-ignore lint/a11y/useSemanticElements: custom star rating widget uses buttons for better UX
                                 role="radio"
                                 aria-checked={form.rating === star}
-                                aria-label={`${star} star${star !== 1 ? 's' : ''}`}
+                                aria-label={tUi('accessibility.rateStars', undefined, {
+                                    count: star
+                                })}
                                 onClick={() => handleRatingChange(star)}
                                 className={`text-xl transition-colors ${
                                     star <= form.rating ? 'text-yellow-500' : 'text-gray-300'

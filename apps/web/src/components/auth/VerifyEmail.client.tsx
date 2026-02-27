@@ -4,16 +4,16 @@
  * Connects the auth-ui VerifyEmail with the web app's Better Auth client.
  * Used in Astro pages with `client:load` for immediate interactivity.
  *
- * @module VerifyEmailIsland
+ * @module VerifyEmail.client
  */
 
 import { VerifyEmail } from '@repo/auth-ui';
 import { verifyEmail } from '../../lib/auth-client';
 
 /**
- * Props for the VerifyEmailIsland component
+ * Props for the VerifyEmailClient component
  */
-export interface VerifyEmailIslandProps {
+export interface VerifyEmailClientProps {
     /** Verification token from the URL */
     readonly token: string;
     /** URL to redirect after successful verification */
@@ -21,9 +21,9 @@ export interface VerifyEmailIslandProps {
 }
 
 /**
- * VerifyEmailIsland wraps the auth-ui VerifyEmail with the web app's auth client.
+ * VerifyEmailClient wraps the auth-ui VerifyEmail with the web app's auth client.
  */
-export function VerifyEmailIsland({ token, redirectTo }: VerifyEmailIslandProps) {
+export function VerifyEmailClient({ token, redirectTo }: VerifyEmailClientProps) {
     const handleVerifyEmail = async ({ token: verifyToken }: { token: string }) => {
         const result = await verifyEmail({ token: verifyToken });
         return result;

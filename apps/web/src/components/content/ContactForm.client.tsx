@@ -1,5 +1,8 @@
 import type { JSX } from 'react';
 import { useState } from 'react';
+import { useTranslation } from '../../hooks/useTranslation';
+import { getApiUrl } from '../../lib/env';
+import type { SupportedLocale } from '../../lib/i18n';
 import { addToast } from '../../store/toast-store';
 
 /**
@@ -30,63 +33,13 @@ export interface ContactFormProps {
      * Locale for UI text
      * @default 'es'
      */
-    readonly locale?: 'es' | 'en';
+    readonly locale?: string;
 
     /**
      * Additional CSS classes to apply to the component
      */
     readonly className?: string;
 }
-
-/**
- * Localized text strings
- */
-const texts = {
-    es: {
-        nameLabel: 'Nombre',
-        namePlaceholder: 'Tu nombre',
-        nameRequired: 'El nombre es obligatorio',
-        nameMinLength: 'El nombre debe tener al menos 2 caracteres',
-        emailLabel: 'Email',
-        emailPlaceholder: 'tu@email.com',
-        emailRequired: 'El email es obligatorio',
-        emailInvalid: 'El email no es válido',
-        subjectLabel: 'Asunto',
-        subjectPlaceholder: 'Asunto de tu mensaje',
-        subjectRequired: 'El asunto es obligatorio',
-        subjectMinLength: 'El asunto debe tener al menos 3 caracteres',
-        messageLabel: 'Mensaje',
-        messagePlaceholder: 'Escribí tu mensaje aquí...',
-        messageRequired: 'El mensaje es obligatorio',
-        messageMinLength: 'El mensaje debe tener al menos 20 caracteres',
-        submit: 'Enviar mensaje',
-        submitting: 'Enviando...',
-        successMessage: 'Tu mensaje fue enviado correctamente',
-        errorMessage: 'No se pudo enviar el mensaje. Intentá nuevamente.'
-    },
-    en: {
-        nameLabel: 'Name',
-        namePlaceholder: 'Your name',
-        nameRequired: 'Name is required',
-        nameMinLength: 'Name must be at least 2 characters',
-        emailLabel: 'Email',
-        emailPlaceholder: 'your@email.com',
-        emailRequired: 'Email is required',
-        emailInvalid: 'Email is not valid',
-        subjectLabel: 'Subject',
-        subjectPlaceholder: 'Subject of your message',
-        subjectRequired: 'Subject is required',
-        subjectMinLength: 'Subject must be at least 3 characters',
-        messageLabel: 'Message',
-        messagePlaceholder: 'Write your message here...',
-        messageRequired: 'Message is required',
-        messageMinLength: 'Message must be at least 20 characters',
-        submit: 'Send message',
-        submitting: 'Sending...',
-        successMessage: 'Your message was sent successfully',
-        errorMessage: 'Could not send the message. Please try again.'
-    }
-};
 
 /**
  * Validates an email address using a simple regex pattern
@@ -123,7 +76,7 @@ export function ContactForm({ locale = 'es', className = '' }: ContactFormProps)
     const [errors, setErrors] = useState<ContactFormErrors>({});
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-    const t = texts[locale];
+    const { t } = useTranslation({ locale: locale as SupportedLocale, namespace: 'contact' });
 
     /**
      * Validates form data
@@ -136,30 +89,30 @@ export function ContactForm({ locale = 'es', className = '' }: ContactFormProps)
 
         // Name validation
         if (!data.name.trim()) {
-            validationErrors.name = t.nameRequired;
+            validationErrors.name = t('form.validation.nameRequired');
         } else if (data.name.trim().length < 2) {
-            validationErrors.name = t.nameMinLength;
+            validationErrors.name = t('form.validation.nameMinLength');
         }
 
         // Email validation
         if (!data.email.trim()) {
-            validationErrors.email = t.emailRequired;
+            validationErrors.email = t('form.validation.emailRequired');
         } else if (!isValidEmail(data.email.trim())) {
-            validationErrors.email = t.emailInvalid;
+            validationErrors.email = t('form.validation.emailInvalid');
         }
 
         // Subject validation
         if (!data.subject.trim()) {
-            validationErrors.subject = t.subjectRequired;
+            validationErrors.subject = t('form.validation.subjectRequired');
         } else if (data.subject.trim().length < 3) {
-            validationErrors.subject = t.subjectMinLength;
+            validationErrors.subject = t('form.validation.subjectMinLength');
         }
 
         // Message validation
         if (!data.message.trim()) {
-            validationErrors.message = t.messageRequired;
+            validationErrors.message = t('form.validation.messageRequired');
         } else if (data.message.trim().length < 20) {
-            validationErrors.message = t.messageMinLength;
+            validationErrors.message = t('form.validation.messageMinLength');
         }
 
         return validationErrors;
@@ -191,10 +144,7 @@ export function ContactForm({ locale = 'es', className = '' }: ContactFormProps)
         setIsSubmitting(true);
 
         try {
-            const apiBaseUrl = (import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3001').replace(
-                /\/$/,
-                ''
-            );
+            const apiBaseUrl = getApiUrl();
             const response = await fetch(`${apiBaseUrl}/api/v1/public/contact`, {
                 method: 'POST',
                 headers: {
@@ -215,7 +165,7 @@ export function ContactForm({ locale = 'es', className = '' }: ContactFormProps)
             // Success: show toast and reset form
             addToast({
                 type: 'success',
-                message: t.successMessage
+                message: t('form.successMessage')
             });
 
             setFormState({
@@ -229,7 +179,7 @@ export function ContactForm({ locale = 'es', className = '' }: ContactFormProps)
             // Error: show toast
             addToast({
                 type: 'error',
-                message: t.errorMessage
+                message: t('form.errorMessage')
             });
         } finally {
             setIsSubmitting(false);
@@ -260,14 +210,14 @@ export function ContactForm({ locale = 'es', className = '' }: ContactFormProps)
                     htmlFor="contact-name"
                     className="mb-1 block font-medium text-gray-700 text-sm"
                 >
-                    {t.nameLabel}
+                    {t('form.name')}
                 </label>
                 <input
                     type="text"
                     id="contact-name"
                     value={formState.name}
                     onChange={(e) => handleFieldChange('name', e.target.value)}
-                    placeholder={t.namePlaceholder}
+                    placeholder={t('form.placeholders.name')}
                     disabled={isSubmitting}
                     aria-required="true"
                     aria-invalid={!!errors.name}
@@ -296,14 +246,14 @@ export function ContactForm({ locale = 'es', className = '' }: ContactFormProps)
                     htmlFor="contact-email"
                     className="mb-1 block font-medium text-gray-700 text-sm"
                 >
-                    {t.emailLabel}
+                    {t('form.email')}
                 </label>
                 <input
                     type="email"
                     id="contact-email"
                     value={formState.email}
                     onChange={(e) => handleFieldChange('email', e.target.value)}
-                    placeholder={t.emailPlaceholder}
+                    placeholder={t('form.placeholders.email')}
                     disabled={isSubmitting}
                     aria-required="true"
                     aria-invalid={!!errors.email}
@@ -332,14 +282,14 @@ export function ContactForm({ locale = 'es', className = '' }: ContactFormProps)
                     htmlFor="contact-subject"
                     className="mb-1 block font-medium text-gray-700 text-sm"
                 >
-                    {t.subjectLabel}
+                    {t('form.subject')}
                 </label>
                 <input
                     type="text"
                     id="contact-subject"
                     value={formState.subject}
                     onChange={(e) => handleFieldChange('subject', e.target.value)}
-                    placeholder={t.subjectPlaceholder}
+                    placeholder={t('form.placeholders.subject')}
                     disabled={isSubmitting}
                     aria-required="true"
                     aria-invalid={!!errors.subject}
@@ -368,13 +318,13 @@ export function ContactForm({ locale = 'es', className = '' }: ContactFormProps)
                     htmlFor="contact-message"
                     className="mb-1 block font-medium text-gray-700 text-sm"
                 >
-                    {t.messageLabel}
+                    {t('form.message')}
                 </label>
                 <textarea
                     id="contact-message"
                     value={formState.message}
                     onChange={(e) => handleFieldChange('message', e.target.value)}
-                    placeholder={t.messagePlaceholder}
+                    placeholder={t('form.placeholders.message')}
                     rows={5}
                     disabled={isSubmitting}
                     aria-required="true"
@@ -404,7 +354,7 @@ export function ContactForm({ locale = 'es', className = '' }: ContactFormProps)
                 disabled={isSubmitting}
                 className="w-full rounded-md bg-primary px-4 py-2 font-semibold text-white transition-colors hover:bg-primary-dark disabled:cursor-not-allowed disabled:bg-gray-300"
             >
-                {isSubmitting ? t.submitting : t.submit}
+                {isSubmitting ? t('form.submitting') : t('form.submit')}
             </button>
         </form>
     );

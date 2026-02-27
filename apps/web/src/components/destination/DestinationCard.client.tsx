@@ -21,25 +21,21 @@ export interface DestinationItem {
 }
 
 /** Localized labels needed for card rendering */
-interface CardLabels {
+export interface CardLabels {
     readonly accommodation: string;
     readonly accommodations: string;
     readonly featured: string;
 }
 
-const CARD_LABELS: Record<string, CardLabels> = {
-    es: { accommodation: 'alojamiento', accommodations: 'alojamientos', featured: 'Destacado' },
-    en: { accommodation: 'accommodation', accommodations: 'accommodations', featured: 'Featured' },
-    pt: { accommodation: 'acomodação', accommodations: 'acomodações', featured: 'Destaque' }
-};
-
 /** Minimal destination card for client-rendered filtered results. */
 export function DestinationCardClient({
     destination,
-    locale
+    locale,
+    labels
 }: {
     readonly destination: DestinationItem;
     readonly locale: string;
+    readonly labels: CardLabels;
 }) {
     const detailPath = destination.path ?? destination.slug;
     const detailUrl = `/${locale}/destinos/${detailPath}/`;
@@ -52,8 +48,7 @@ export function DestinationCardClient({
         '/images/placeholder-destination.svg';
     const summary = destination.summary ?? (destination.description as string | undefined) ?? '';
     const count = destination.accommodationsCount ?? 0;
-    const t = (CARD_LABELS[locale] ?? CARD_LABELS.es) as CardLabels;
-    const countLabel = count === 1 ? t.accommodation : t.accommodations;
+    const countLabel = count === 1 ? labels.accommodation : labels.accommodations;
 
     return (
         <article className="group relative overflow-hidden rounded-lg bg-surface shadow-md transition-shadow hover:shadow-lg">
@@ -70,7 +65,7 @@ export function DestinationCardClient({
                 {destination.isFeatured && (
                     <div className="absolute top-3 right-3">
                         <span className="rounded-full bg-warning/90 px-2.5 py-0.5 font-medium text-text text-xs backdrop-blur-sm">
-                            {t.featured}
+                            {labels.featured}
                         </span>
                     </div>
                 )}

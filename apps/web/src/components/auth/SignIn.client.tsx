@@ -4,16 +4,16 @@
  * Connects the auth-ui SignInForm with the web app's Better Auth client.
  * Used in Astro pages with `client:load` for immediate interactivity.
  *
- * @module SignInIsland
+ * @module SignIn.client
  */
 
 import { SignInForm } from '@repo/auth-ui';
 import { signIn } from '../../lib/auth-client';
 
 /**
- * Props for the SignInIsland component
+ * Props for the SignInClient component
  */
-export interface SignInIslandProps {
+export interface SignInClientProps {
     /** URL to redirect after successful sign-in */
     readonly redirectTo: string;
     /** Whether to show OAuth buttons (Google, Facebook) */
@@ -21,9 +21,9 @@ export interface SignInIslandProps {
 }
 
 /**
- * SignInIsland wraps the auth-ui SignInForm with the web app's auth client.
+ * SignInClient wraps the auth-ui SignInForm with the web app's auth client.
  */
-export function SignInIsland({ redirectTo, showOAuth = true }: SignInIslandProps) {
+export function SignInClient({ redirectTo, showOAuth = true }: SignInClientProps) {
     return (
         <SignInForm
             signIn={signIn}

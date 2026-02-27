@@ -4,16 +4,16 @@
  * Connects the auth-ui ResetPasswordForm with the web app's Better Auth client.
  * Used in Astro pages with `client:load` for immediate interactivity.
  *
- * @module ResetPasswordIsland
+ * @module ResetPassword.client
  */
 
 import { ResetPasswordForm } from '@repo/auth-ui';
 import { resetPassword } from '../../lib/auth-client';
 
 /**
- * Props for the ResetPasswordIsland component
+ * Props for the ResetPasswordClient component
  */
-export interface ResetPasswordIslandProps {
+export interface ResetPasswordClientProps {
     /** Token from the password reset URL */
     readonly token: string;
     /** URL for the sign-in page link */
@@ -21,9 +21,9 @@ export interface ResetPasswordIslandProps {
 }
 
 /**
- * ResetPasswordIsland wraps the auth-ui ResetPasswordForm with the web app's auth client.
+ * ResetPasswordClient wraps the auth-ui ResetPasswordForm with the web app's auth client.
  */
-export function ResetPasswordIsland({ token, signInUrl }: ResetPasswordIslandProps) {
+export function ResetPasswordClient({ token, signInUrl }: ResetPasswordClientProps) {
     const handleResetPassword = async ({
         newPassword,
         token: resetToken

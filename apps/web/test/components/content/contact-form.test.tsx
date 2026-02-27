@@ -10,7 +10,7 @@ vi.mock('../../../src/store/toast-store', () => ({
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
-import { ContactForm } from '../../../src/components/forms/ContactForm.client';
+import { ContactForm } from '../../../src/components/content/ContactForm.client';
 import { addToast } from '../../../src/store/toast-store';
 
 describe('ContactForm.client.tsx', () => {
