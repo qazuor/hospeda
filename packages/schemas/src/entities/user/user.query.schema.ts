@@ -232,6 +232,7 @@ export const UserSearchSchemaWithMetadata = applyOpenApiMetadata(
 export const UserListItemSchema = UserSchema.pick({
     id: true,
     slug: true,
+    email: true,
     displayName: true,
     firstName: true,
     lastName: true,

@@ -41,7 +41,7 @@ export const FeatureSchema = z.object({
         })
         .min(10, { message: 'zodError.feature.description.min' })
         .max(500, { message: 'zodError.feature.description.max' })
-        .optional(),
+        .nullish(),
 
     icon: z
         .string({
@@ -49,7 +49,7 @@ export const FeatureSchema = z.object({
         })
         .min(1, { message: 'zodError.feature.icon.min' })
         .max(100, { message: 'zodError.feature.icon.max' })
-        .optional(),
+        .nullish(),
 
     isBuiltin: z.boolean().default(false),
     isFeatured: z.boolean().default(false),

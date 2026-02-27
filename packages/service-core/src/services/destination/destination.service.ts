@@ -216,9 +216,7 @@ export class DestinationService extends BaseCrudService<
      * @param destIds - Array of destination UUIDs
      * @returns Map of destinationId to attraction array
      */
-    async getAttractionsMap(
-        destIds: readonly string[]
-    ): Promise<
+    async getAttractionsMap(destIds: readonly string[]): Promise<
         ReadonlyMap<
             string,
             ReadonlyArray<{
@@ -425,6 +423,16 @@ export class DestinationService extends BaseCrudService<
         // Generate slug if not provided
         const slug = data.slug || (await generateDestinationSlug(data.name));
         result.slug = slug;
+
+        // Ensure media has a default value (DB column is NOT NULL)
+        if (!data.media) {
+            result.media = { featuredImage: undefined, gallery: [], videos: [] };
+        }
+
+        // Ensure location has a default value (DB column is NOT NULL)
+        if (!data.location) {
+            result.location = {};
+        }
 
         if (data.parentDestinationId) {
             // Fetch parent destination

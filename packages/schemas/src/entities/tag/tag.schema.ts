@@ -54,7 +54,7 @@ export const TagSchema = z.object({
         })
         .min(2, { message: 'zodError.tag.icon.min' })
         .max(100, { message: 'zodError.tag.icon.max' })
-        .optional(),
+        .nullish(),
 
     notes: z
         .string({
@@ -62,7 +62,7 @@ export const TagSchema = z.object({
         })
         .min(5, { message: 'zodError.tag.notes.min' })
         .max(300, { message: 'zodError.tag.notes.max' })
-        .optional()
+        .nullish()
 });
 export type Tag = z.infer<typeof TagSchema>;
 

@@ -29,7 +29,7 @@ export const AmenitySchema = z.object({
         .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, {
             message: 'zodError.amenity.slug.pattern'
         })
-        .optional(),
+        .nullish(),
 
     name: z
         .string({
@@ -44,7 +44,7 @@ export const AmenitySchema = z.object({
         })
         .min(10, { message: 'zodError.amenity.description.min' })
         .max(500, { message: 'zodError.amenity.description.max' })
-        .optional(),
+        .nullish(),
 
     icon: z
         .string({
@@ -52,7 +52,7 @@ export const AmenitySchema = z.object({
         })
         .min(2, { message: 'zodError.amenity.icon.min' })
         .max(100, { message: 'zodError.amenity.icon.max' })
-        .optional(),
+        .nullish(),
 
     type: AmenitiesTypeEnumSchema,
     isBuiltin: z.boolean({ message: 'zodError.amenity.isBuiltin.required' }).default(false),

@@ -212,9 +212,7 @@ export class DestinationModel extends BaseModel<Destination> {
      * @param destIds - Array of destination UUIDs
      * @returns Map of destinationId to array of { id, name, icon } attraction objects
      */
-    async getAttractionsMap(
-        destIds: readonly string[]
-    ): Promise<
+    async getAttractionsMap(destIds: readonly string[]): Promise<
         Map<
             string,
             Array<{

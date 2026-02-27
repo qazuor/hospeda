@@ -73,12 +73,15 @@ export async function seedBillingPlans(_context: SeedContext): Promise<void> {
                 }
 
                 // Create plan using QZPay-compatible schema
+                // In development, livemode must be false to match QZPay's query filter
+                const isProduction = process.env.NODE_ENV === 'production';
                 await db.insert(billingPlans).values({
                     name: plan.name,
                     description: plan.description,
                     active: plan.isActive,
                     entitlements: plan.entitlements as string[],
                     limits: limitsObj,
+                    livemode: isProduction,
                     metadata: {
                         slug: plan.slug,
                         category: plan.category,

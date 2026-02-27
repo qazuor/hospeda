@@ -146,9 +146,14 @@ export class PostService extends BaseCrudService<
         const slug =
             normalized.slug ||
             (await generatePostSlug(String(normalized.category), normalized.title, isNews, date));
+
+        // Ensure media has a default value (DB column is NOT NULL)
+        const media = normalized.media ?? { featuredImage: undefined, gallery: [], videos: [] };
+
         return {
             ...normalized,
-            slug
+            slug,
+            media
         } as Partial<Post>;
     }
 

@@ -74,6 +74,8 @@ export async function seedBillingAddons(_context: SeedContext): Promise<void> {
                         : {};
 
                 // Create add-on using QZPay-compatible schema
+                // In development, livemode must be false to match QZPay's query filter
+                const isProduction = process.env.NODE_ENV === 'production';
                 await db.insert(billingAddons).values({
                     name: addon.name,
                     description: addon.description,
@@ -84,6 +86,7 @@ export async function seedBillingAddons(_context: SeedContext): Promise<void> {
                     billingIntervalCount: 1,
                     entitlements,
                     limits,
+                    livemode: isProduction,
                     metadata: {
                         slug: addon.slug,
                         durationDays: addon.durationDays,

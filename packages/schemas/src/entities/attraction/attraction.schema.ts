@@ -34,7 +34,7 @@ export const AttractionSchema = z.object({
         .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, {
             message: 'zodError.attraction.slug.pattern'
         })
-        .optional(),
+        .nullish(),
 
     description: z
         .string({
@@ -50,7 +50,7 @@ export const AttractionSchema = z.object({
         .min(1, { message: 'zodError.attraction.icon.min' })
         .max(100, { message: 'zodError.attraction.icon.max' }),
 
-    destinationId: DestinationIdSchema.optional(),
+    destinationId: DestinationIdSchema.nullish(),
 
     isFeatured: z.boolean().default(false),
 

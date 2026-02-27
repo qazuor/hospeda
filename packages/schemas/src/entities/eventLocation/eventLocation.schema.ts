@@ -30,27 +30,27 @@ export const EventLocationSchema = BaseLocationSchema.extend({
         .string()
         .min(2, { message: 'zodError.eventLocation.street.min' })
         .max(50, { message: 'zodError.eventLocation.street.max' })
-        .optional(),
+        .nullish(),
     number: z
         .string()
         .min(1, { message: 'zodError.eventLocation.number.min' })
         .max(10, { message: 'zodError.eventLocation.number.max' })
-        .optional(),
+        .nullish(),
     floor: z
         .string()
         .min(1, { message: 'zodError.eventLocation.floor.min' })
         .max(10, { message: 'zodError.eventLocation.floor.max' })
-        .optional(),
+        .nullish(),
     apartment: z
         .string()
         .min(1, { message: 'zodError.eventLocation.apartment.min' })
         .max(10, { message: 'zodError.eventLocation.apartment.max' })
-        .optional(),
+        .nullish(),
     neighborhood: z
         .string()
         .min(2, { message: 'zodError.eventLocation.neighborhood.min' })
         .max(50, { message: 'zodError.eventLocation.neighborhood.max' })
-        .optional(),
+        .nullish(),
     city: z
         .string({
             message: 'zodError.eventLocation.city.required'
@@ -61,12 +61,12 @@ export const EventLocationSchema = BaseLocationSchema.extend({
         .string()
         .min(2, { message: 'zodError.eventLocation.department.min' })
         .max(50, { message: 'zodError.eventLocation.department.max' })
-        .optional(),
+        .nullish(),
     placeName: z
         .string()
         .min(2, { message: 'zodError.eventLocation.placeName.min' })
         .max(100, { message: 'zodError.eventLocation.placeName.max' })
-        .optional()
+        .nullish()
 });
 
 export type EventLocation = z.infer<typeof EventLocationSchema>;

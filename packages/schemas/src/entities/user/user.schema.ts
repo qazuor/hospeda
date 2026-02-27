@@ -98,7 +98,7 @@ export const UserSchema = z.object({
         .date({
             message: 'zodError.user.birthDate.invalid'
         })
-        .optional(),
+        .nullish(),
 
     // Contact and location (using base objects)
     ...BaseContactFields,

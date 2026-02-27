@@ -81,6 +81,17 @@ export abstract class BaseCrudService<
      */
     protected abstract getDefaultListRelations(): ListRelationsConfig;
 
+    /**
+     * Returns column names to search against when the `search` query param is provided.
+     * The default searches by `name`. Concrete services can override to search
+     * additional columns (e.g., `title`, `slug`, `description`).
+     * Note: uses `_like` suffix convention for case-insensitive ILIKE matching.
+     * @returns Array of column names to apply ILIKE search on
+     */
+    protected getSearchableColumns(): string[] {
+        return ['name'];
+    }
+
     protected declare normalizers?: CrudNormalizers<
         z.infer<TCreateSchema>,
         z.infer<TUpdateSchema>,
@@ -593,7 +604,9 @@ export abstract class BaseCrudService<
 
                 const processedData = await this._beforeUpdate(normalizedData, validActor);
 
+                // Merge normalized data with hook-processed data (hook overrides take precedence)
                 const payload = {
+                    ...normalizedData,
                     ...processedData,
                     updatedById: validActor.id
                 } as unknown as Partial<TEntity>;
@@ -756,6 +769,7 @@ export abstract class BaseCrudService<
         options: {
             page?: number;
             pageSize?: number;
+            search?: string;
             relations?: ListRelationsConfig;
             where?: Record<string, unknown>;
             sortBy?: string;
@@ -768,6 +782,7 @@ export abstract class BaseCrudService<
             schema: z.object({
                 page: z.number().optional(),
                 pageSize: z.number().optional(),
+                search: z.string().max(200).optional(),
                 relations: z
                     .record(z.string(), z.union([z.boolean(), z.record(z.string(), z.unknown())]))
                     .optional(),
@@ -789,6 +804,17 @@ export abstract class BaseCrudService<
                     ((processedOptions as Record<string, unknown>).where as
                         | Record<string, unknown>
                         | undefined) ?? {};
+
+                // Apply text search: convert `search` to `name_like` for ILIKE matching
+                const search = (processedOptions as Record<string, unknown>).search as
+                    | string
+                    | undefined;
+                if (search && search.trim().length > 0) {
+                    const searchColumns = this.getSearchableColumns();
+                    for (const col of searchColumns) {
+                        whereClause[`${col}_like`] = search.trim();
+                    }
+                }
 
                 // Extract sorting options
                 const sortBy = (processedOptions as Record<string, unknown>).sortBy as

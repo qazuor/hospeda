@@ -41,7 +41,7 @@ export const PostSponsorSchema = z.object({
             description: z.string().optional(),
             moderationState: z.string().optional()
         })
-        .optional(),
+        .nullish(),
 
     // Contact and social (using base objects)
     ...BaseContactFields,
