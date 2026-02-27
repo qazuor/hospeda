@@ -37,5 +37,34 @@
         "emptyMessage": "Ingresa un destino para encontrar alojamientos increíbles.",
         "sampleDescription": "Un alojamiento cómodo y bien ubicado con todas las comodidades que necesitas.",
         "sampleName": "Hotel Ejemplo"
+    },
+    "resultsPage": {
+        "title": "Resultados de búsqueda",
+        "description": "Encuentra alojamientos, destinos, eventos y publicaciones en Hospeda.",
+        "heading": "Resultados para",
+        "placeholder": "Buscar alojamientos, destinos, eventos...",
+        "categories": {
+            "accommodations": "Alojamientos",
+            "destinations": "Destinos",
+            "events": "Eventos",
+            "posts": "Publicaciones"
+        },
+        "emptyState": "No se encontraron resultados",
+        "emptySuggestion": "Intenta con otros términos de búsqueda",
+        "popularSearches": "Búsquedas populares",
+        "resultsFound": "Se encontraron resultados:",
+        "noResults": "No se encontraron resultados",
+        "viewAll": {
+            "accommodations": "Ver todos los alojamientos →",
+            "destinations": "Ver todos los destinos →",
+            "events": "Ver todos los eventos →",
+            "posts": "Ver todas las publicaciones →"
+        },
+        "popular": {
+            "0": { "label": "Hoteles", "query": "hoteles" },
+            "1": { "label": "Cabañas", "query": "cabanas" },
+            "2": { "label": "Concepción del Uruguay", "query": "concepcion" },
+            "3": { "label": "Eventos", "query": "eventos" }
+        }
     }
 }

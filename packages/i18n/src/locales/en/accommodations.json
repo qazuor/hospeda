@@ -76,7 +76,8 @@
         "per.night": "/night",
         "noRating": "No ratings",
         "consultPrice": "Ask for price",
-        "reviews": "reviews"
+        "reviews": "reviews",
+        "typeInLocation": "{{type}} in {{location}}"
     },
     "details": {
         "about": "Description",
@@ -148,5 +149,78 @@
             "title": "Administrative Status",
             "description": "Moderation and administration statuses"
         }
+    },
+    "typePage": {
+        "typeDetails": {
+            "hotel": {
+                "name": "Hotels",
+                "description": "Discover the best hotels in Concepción del Uruguay and the Argentine Litoral region. Comfort and quality services for your stay.",
+                "pageTitle": "Accommodations - Hotels"
+            },
+            "hostel": {
+                "name": "Hostels",
+                "description": "Find budget-friendly hostels with a youthful atmosphere. Ideal for travelers looking to connect with other adventurers.",
+                "pageTitle": "Accommodations - Hostels"
+            },
+            "cabin": {
+                "name": "Cabins",
+                "description": "Cozy cabins in natural settings. Perfect for romantic getaways or family vacations in nature.",
+                "pageTitle": "Accommodations - Cabins"
+            },
+            "apartment": {
+                "name": "Apartments",
+                "description": "Fully equipped apartments for short and long stays. The comfort of feeling at home during your trip.",
+                "pageTitle": "Accommodations - Apartments"
+            },
+            "camping": {
+                "name": "Campgrounds",
+                "description": "Campgrounds with complete infrastructure to enjoy the outdoors. Connect with nature in the Litoral region.",
+                "pageTitle": "Accommodations - Campgrounds"
+            },
+            "estancia": {
+                "name": "Ranch Houses",
+                "description": "Traditional Argentine ranch houses offering authentic countryside and gaucho culture experiences.",
+                "pageTitle": "Accommodations - Ranch Houses"
+            },
+            "posada": {
+                "name": "Inns",
+                "description": "Family-run inns with warmth and local hospitality. Charming accommodations with personalized service.",
+                "pageTitle": "Accommodations - Inns"
+            }
+        },
+        "labels": {
+            "breadcrumbHome": "Home",
+            "breadcrumbAccommodations": "Accommodations",
+            "emptyTitle": "No {type} accommodations available"
+        }
+    },
+    "listPage": {
+        "title": "Accommodations",
+        "description": "Discover the best accommodations in the Argentine Litoral",
+        "home": "Home",
+        "breadcrumb": "Accommodations",
+        "showing": "Showing",
+        "of": "of",
+        "results": "results",
+        "noResults": "No accommodations found",
+        "noResultsMessage": "Try adjusting the filters or searching differently.",
+        "clearFilters": "Clear filters"
+    },
+    "detail": {
+        "home": "Home",
+        "accommodations": "Accommodations",
+        "description": "Description",
+        "amenities": "Amenities",
+        "location": "Location",
+        "reviews": "Reviews",
+        "faq": "Frequently Asked Questions",
+        "similar": "Similar Accommodations",
+        "perNight": "per night",
+        "share": "Share",
+        "checkIn": "Check-in",
+        "checkOut": "Check-out",
+        "stars": "stars",
+        "reviewsLabel": "reviews",
+        "bookNow": "Book now"
     }
 }

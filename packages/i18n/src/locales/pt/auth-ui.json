@@ -109,5 +109,27 @@
         "next": "Próximo",
         "finish": "Finalizar",
         "close": "Fechar"
+    },
+    "pages": {
+        "signin": {
+            "title": "Entrar",
+            "description": "Entre na sua conta do Hospeda para acessar suas reservas e favoritos"
+        },
+        "signup": {
+            "title": "Registrar",
+            "description": "Crie sua conta no Hospeda para gerenciar suas reservas e descobrir novas acomodações"
+        },
+        "forgotPassword": {
+            "title": "Esqueci a senha",
+            "description": "Recupere sua senha do Hospeda. Enviaremos um link para redefinir sua senha"
+        },
+        "resetPassword": {
+            "title": "Redefinir senha",
+            "description": "Defina uma nova senha para sua conta Hospeda"
+        },
+        "verifyEmail": {
+            "title": "Verificar email",
+            "description": "Verificando seu endereço de email no Hospeda"
+        }
     }
 }

@@ -86,7 +86,24 @@
         "userMenuFor": "Menu do usuario para {{name}}",
         "userMenu": "Menu do usuario",
         "favoriteCategories": "Categorias de favoritos",
-        "reviewCategories": "Categorias de avaliacoes"
+        "reviewCategories": "Categorias de avaliacoes",
+        "clearSearch": "Limpar busca",
+        "retryLoading": "Tentar carregar dados novamente",
+        "carouselNavigation": "Navegação do carrossel",
+        "openMenu": "Abrir menu",
+        "mobileNavigation": "Navegação móvel",
+        "viewToggle": "Alternar visualização",
+        "closeModal": "Fechar janela",
+        "mapMarkers": "Marcadores do mapa",
+        "goToImageOfTotal": "Ir para imagem {current} de {total}",
+        "mapShowingLocations": "Mapa mostrando {count} localizações",
+        "rateStars": "Avaliar {{count}} estrela(s)",
+        "ratingOutOf": "Avaliação: {{rating}} de 5 estrelas"
+    },
+    "map": {
+        "loading": "Carregando mapa...",
+        "locationsTitle": "Localizações ({count})",
+        "noLocations": "Nenhuma localização para exibir"
     },
     "pages": {
         "myProfile": "Meu Perfil",

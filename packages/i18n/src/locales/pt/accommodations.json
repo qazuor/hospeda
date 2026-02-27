@@ -76,7 +76,8 @@
         "per.night": "/noite",
         "noRating": "Sem avaliacoes",
         "consultPrice": "Consultar preco",
-        "reviews": "avaliacoes"
+        "reviews": "avaliacoes",
+        "typeInLocation": "{{type}} em {{location}}"
     },
     "details": {
         "about": "Descricao",
@@ -148,5 +149,78 @@
             "title": "Status Administrativos",
             "description": "Status de moderacao e administracao"
         }
+    },
+    "typePage": {
+        "typeDetails": {
+            "hotel": {
+                "name": "Hotéis",
+                "description": "Descubra os melhores hotéis em Concepción del Uruguay e na região do Litoral argentino. Conforto e serviços de qualidade para sua estadia.",
+                "pageTitle": "Acomodações - Hotéis"
+            },
+            "hostel": {
+                "name": "Hostels",
+                "description": "Encontre hostels econômicos com ambiente jovem. Ideal para viajantes que buscam conectar com outros aventureiros.",
+                "pageTitle": "Acomodações - Hostels"
+            },
+            "cabin": {
+                "name": "Cabanas",
+                "description": "Cabanas aconchegantes em ambientes naturais. Perfeitas para escapadas românticas ou férias em família na natureza.",
+                "pageTitle": "Acomodações - Cabanas"
+            },
+            "apartment": {
+                "name": "Apartamentos",
+                "description": "Apartamentos equipados para estadias curtas e longas. O conforto de se sentir em casa durante sua viagem.",
+                "pageTitle": "Acomodações - Apartamentos"
+            },
+            "camping": {
+                "name": "Campings",
+                "description": "Campings com infraestrutura completa para aproveitar ao ar livre. Conecte-se com a natureza na região do Litoral.",
+                "pageTitle": "Acomodações - Campings"
+            },
+            "estancia": {
+                "name": "Estâncias",
+                "description": "Estâncias tradicionais argentinas que oferecem experiências autênticas de campo e cultura gaúcha.",
+                "pageTitle": "Acomodações - Estâncias"
+            },
+            "posada": {
+                "name": "Pousadas",
+                "description": "Pousadas familiares com calor e hospitalidade local. Acomodações com charme e atendimento personalizado.",
+                "pageTitle": "Acomodações - Pousadas"
+            }
+        },
+        "labels": {
+            "breadcrumbHome": "Início",
+            "breadcrumbAccommodations": "Acomodações",
+            "emptyTitle": "Não há acomodações do tipo {type} disponíveis"
+        }
+    },
+    "listPage": {
+        "title": "Hospedagens",
+        "description": "Descubra as melhores hospedagens no Litoral argentino",
+        "home": "Início",
+        "breadcrumb": "Hospedagens",
+        "showing": "Mostrando",
+        "of": "de",
+        "results": "resultados",
+        "noResults": "Nenhuma hospedagem encontrada",
+        "noResultsMessage": "Tente ajustar os filtros ou pesquisar de outra forma.",
+        "clearFilters": "Limpar filtros"
+    },
+    "detail": {
+        "home": "Início",
+        "accommodations": "Acomodações",
+        "description": "Descrição",
+        "amenities": "Serviços",
+        "location": "Localização",
+        "reviews": "Avaliações",
+        "faq": "Perguntas frequentes",
+        "similar": "Acomodações similares",
+        "perNight": "por noite",
+        "share": "Compartilhar",
+        "checkIn": "Check-in",
+        "checkOut": "Check-out",
+        "stars": "estrelas",
+        "reviewsLabel": "avaliações",
+        "bookNow": "Reservar agora"
     }
 }

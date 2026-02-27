@@ -66,5 +66,9 @@
         "title": "Ready to start enjoying these benefits?",
         "description": "Sign up today and start earning points with your first booking.",
         "button": "Make my first booking"
+    },
+    "page": {
+        "title": "Benefits",
+        "description": "Discover the benefits of using Hospeda for tourists and accommodation owners in the Argentine Litoral region"
     }
 }

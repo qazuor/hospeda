@@ -26,6 +26,7 @@ export const namespaces = [
     'events',
     'home',
     'newsletter',
+    'owners',
     'contact',
     'about',
     'benefits',
@@ -121,6 +122,7 @@ import footerEs from './locales/es/footer.json';
 import homeEs from './locales/es/home.json';
 import navEs from './locales/es/nav.json';
 import newsletterEs from './locales/es/newsletter.json';
+import ownersEs from './locales/es/owners.json';
 import privacyEs from './locales/es/privacy.json';
 import reviewEs from './locales/es/review.json';
 import searchEs from './locales/es/search.json';
@@ -156,6 +158,7 @@ import footerEn from './locales/en/footer.json';
 import homeEn from './locales/en/home.json';
 import navEn from './locales/en/nav.json';
 import newsletterEn from './locales/en/newsletter.json';
+import ownersEn from './locales/en/owners.json';
 import privacyEn from './locales/en/privacy.json';
 import reviewEn from './locales/en/review.json';
 import searchEn from './locales/en/search.json';
@@ -191,6 +194,7 @@ import footerPt from './locales/pt/footer.json';
 import homePt from './locales/pt/home.json';
 import navPt from './locales/pt/nav.json';
 import newsletterPt from './locales/pt/newsletter.json';
+import ownersPt from './locales/pt/owners.json';
 import privacyPt from './locales/pt/privacy.json';
 import reviewPt from './locales/pt/review.json';
 import searchPt from './locales/pt/search.json';
@@ -220,6 +224,7 @@ const rawTranslations = {
         home: homeEs,
         nav: navEs,
         newsletter: newsletterEs,
+        owners: ownersEs,
         privacy: privacyEs,
         review: reviewEs,
         search: searchEs,
@@ -255,6 +260,7 @@ const rawTranslations = {
         home: homeEn,
         nav: navEn,
         newsletter: newsletterEn,
+        owners: ownersEn,
         privacy: privacyEn,
         review: reviewEn,
         search: searchEn,
@@ -290,6 +296,7 @@ const rawTranslations = {
         home: homePt,
         nav: navPt,
         newsletter: newsletterPt,
+        owners: ownersPt,
         privacy: privacyPt,
         review: reviewPt,
         search: searchPt,

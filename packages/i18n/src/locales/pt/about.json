@@ -48,5 +48,37 @@
             "description": "Descubra acomodacoes unicas e comece a planejar sua viagem perfeita",
             "button": "Explorar acomodacoes"
         }
+    },
+    "page": {
+        "title": "Sobre Nós",
+        "description": "Descubra a missão, valores e propósito da Hospeda, a plataforma que conecta viajantes com acomodações autênticas no Litoral argentino",
+        "heroText": "Hospeda e a plataforma que conecta viajantes com acomodacoes autenticas e experiencias unicas em Concepcion del Uruguay e na regiao do Litoral argentino. Acreditamos no turismo responsavel e no valor das conexoes genuinas.",
+        "missionTitle": "Nossa Missao",
+        "missionText": "Conectar viajantes com acomodacoes autenticas na regiao do Litoral argentino, promovendo o turismo responsavel e sustentavel. Facilitamos a descoberta de experiencias unicas e fomentamos o desenvolvimento economico local atraves do turismo comunitario.",
+        "valuesTitle": "Nossos Valores",
+        "values": {
+            "authenticity": {
+                "title": "Autenticidade",
+                "text": "Promovemos experiencias genuinas que refletem a cultura e a hospitalidade local do Litoral argentino."
+            },
+            "community": {
+                "title": "Comunidade",
+                "text": "Fortalecemos o tecido social local apoiando empreendimentos turisticos e gerando oportunidades economicas."
+            },
+            "quality": {
+                "title": "Qualidade",
+                "text": "Comprometemo-nos a oferecer acomodacoes verificadas com altos padroes de conforto e servico."
+            },
+            "sustainability": {
+                "title": "Sustentabilidade",
+                "text": "Incentivamos praticas turisticas responsaveis que preservam o patrimonio natural e cultural da regiao."
+            }
+        },
+        "regionTitle": "Nossa Regiao",
+        "regionText1": "Concepcion del Uruguay e a regiao do Litoral argentino oferecem uma combinacao unica de historia, natureza e cultura. Das margens do Rio Uruguai ate as paisagens rurais, nossa regiao e o cenario perfeito para experiencias turisticas autenticas.",
+        "regionText2": "A regiao se caracteriza por sua rica heranca cultural, arquitetura colonial, festividades tradicionais, gastronomia local e a calidez de seu povo. Promovemos a descoberta destes tesouros atraves de acomodacoes que refletem a identidade local.",
+        "ctaTitle": "Vamos Nos Conectar e Crescer Juntos",
+        "ctaText": "Tem perguntas ou deseja fazer parte da nossa rede de acomodacoes? Adorariamos conhece-lo e trabalhar juntos para fortalecer o turismo na regiao.",
+        "ctaButton": "Entre em Contato"
     }
 }

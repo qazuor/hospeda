@@ -24,5 +24,41 @@
         "related": "Posts relacionados",
         "share": "Compartilhar",
         "author": "Autor"
+    },
+    "detail": {
+        "blog": "Blog",
+        "relatedPosts": "Publicações relacionadas",
+        "share": "Compartilhar",
+        "tags": "Tags",
+        "readingTime": "min de leitura",
+        "home": "Início"
+    },
+    "tagPage": {
+        "title": "Publicações com a etiqueta \"{tag}\"",
+        "description": "Explore todas as publicações do blog da Hospeda com a etiqueta \"{tag}\". Artigos sobre turismo no Litoral argentino.",
+        "breadcrumb": {
+            "home": "Início",
+            "posts": "Publicações",
+            "tag": "Etiqueta: {tag}"
+        },
+        "heading": "Etiqueta: {tag}",
+        "subHeading": "Todas as publicações com a etiqueta \"{tag}\"",
+        "emptyState": "Não há publicações disponíveis para a etiqueta \"{tag}\""
+    },
+    "listPage": {
+        "title": "Blog",
+        "description": "Descubra histórias, dicas de viagem e novidades sobre turismo no Litoral argentino. Artigos sobre destinos, acomodações, eventos e gastronomia.",
+        "heroHeading": "Blog da Hospeda",
+        "heroDescription": "Histórias, dicas e novidades sobre turismo no Litoral argentino. Descubra os melhores destinos, acomodações, eventos e experiências gastronômicas da região.",
+        "featuredTitle": "Publicação em Destaque",
+        "emptyState": "Nenhuma publicação disponível",
+        "categories": {
+            "all": "Todos",
+            "destinations": "Destinos",
+            "accommodations": "Acomodações",
+            "events": "Eventos",
+            "gastronomy": "Gastronomia",
+            "tips": "Dicas"
+        }
     }
 }

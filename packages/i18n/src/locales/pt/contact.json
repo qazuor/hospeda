@@ -46,5 +46,13 @@
         }
     },
     "success": "Obrigado por entrar em contato!",
-    "error": "Ocorreu um erro ao enviar a mensagem."
+    "error": "Ocorreu um erro ao enviar a mensagem.",
+    "page": {
+        "title": "Contato",
+        "description": "Entre em contato com Hospeda. Estamos aqui para ajudá-lo com suas dúvidas sobre acomodação em Concepción del Uruguay",
+        "contactInfo": "Informações de contato",
+        "officeHours": "Horário de atendimento",
+        "officeHoursValue": "Segunda a Sexta, 9:00 - 18:00",
+        "followUs": "Siga-nos"
+    }
 }

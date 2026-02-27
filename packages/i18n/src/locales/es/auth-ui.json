@@ -109,5 +109,27 @@
         "next": "Siguiente",
         "finish": "Finalizar",
         "close": "Cerrar"
+    },
+    "pages": {
+        "signin": {
+            "title": "Iniciar sesión",
+            "description": "Inicia sesión en tu cuenta de Hospeda para acceder a tus reservas y favoritos"
+        },
+        "signup": {
+            "title": "Registrarse",
+            "description": "Crea tu cuenta en Hospeda para gestionar tus reservas y descubrir nuevos alojamientos"
+        },
+        "forgotPassword": {
+            "title": "Recuperar contraseña",
+            "description": "Recupera tu contraseña de Hospeda. Te enviaremos un enlace para restablecer tu contraseña"
+        },
+        "resetPassword": {
+            "title": "Restablecer contraseña",
+            "description": "Establece una nueva contraseña para tu cuenta de Hospeda"
+        },
+        "verifyEmail": {
+            "title": "Verificar email",
+            "description": "Verificando tu dirección de correo electrónico en Hospeda"
+        }
     }
 }

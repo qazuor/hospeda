@@ -48,5 +48,37 @@
             "description": "Discover unique accommodations and start planning your perfect trip",
             "button": "Explore accommodations"
         }
+    },
+    "page": {
+        "title": "About Us",
+        "description": "Discover the mission, values and purpose of Hospeda, the platform connecting travelers with authentic accommodations in the Argentine Litoral region",
+        "heroText": "Hospeda is the platform that connects travelers with authentic accommodations and unique experiences in Concepcion del Uruguay and the Argentine Litoral region. We believe in responsible tourism and the value of genuine connections.",
+        "missionTitle": "Our Mission",
+        "missionText": "To connect travelers with authentic accommodations in the Argentine Litoral region, promoting responsible and sustainable tourism. We facilitate the discovery of unique experiences and foster local economic development through community tourism.",
+        "valuesTitle": "Our Values",
+        "values": {
+            "authenticity": {
+                "title": "Authenticity",
+                "text": "We promote genuine experiences that reflect the culture and local hospitality of the Argentine Litoral."
+            },
+            "community": {
+                "title": "Community",
+                "text": "We strengthen the local social fabric by supporting tourism ventures and generating economic opportunities."
+            },
+            "quality": {
+                "title": "Quality",
+                "text": "We are committed to offering verified accommodations with high standards of comfort and service."
+            },
+            "sustainability": {
+                "title": "Sustainability",
+                "text": "We encourage responsible tourism practices that preserve the natural and cultural heritage of the region."
+            }
+        },
+        "regionTitle": "Our Region",
+        "regionText1": "Concepcion del Uruguay and the Argentine Litoral region offer a unique combination of history, nature, and culture. From the shores of the Uruguay River to the rural landscapes, our region is the perfect setting for authentic tourism experiences.",
+        "regionText2": "The region is characterized by its rich cultural heritage, colonial architecture, traditional festivities, local cuisine, and the warmth of its people. We promote the discovery of these treasures through accommodations that reflect the local identity.",
+        "ctaTitle": "Let's Connect and Grow Together",
+        "ctaText": "Have questions or want to be part of our accommodation network? We'd love to meet you and work together to strengthen tourism in the region.",
+        "ctaButton": "Contact Us"
     }
 }

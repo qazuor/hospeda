@@ -83,7 +83,17 @@
         "headline": "Your adventure starts on the Uruguay coast",
         "subheadline": "Find unique accommodations in Concepcion del Uruguay and the Argentine Litoral region",
         "statsDestinations": "destinations",
-        "statsAccommodations": "accommodations"
+        "statsAccommodations": "accommodations",
+        "phrases": {
+            "river": "Sail the Uruguay River and discover its shores",
+            "beach": "Relax on golden sandy beaches",
+            "islands": "Explore islands and natural landscapes",
+            "carnival": "Experience the Litoral carnival",
+            "festivals": "Enjoy open-air festivals",
+            "racetrack": "Feel the adrenaline of the racetrack",
+            "history": "Discover colonial history",
+            "hotsprings": "Immerse yourself in hot springs"
+        }
     },
     "sections": {
         "featuredAccommodations": "Featured Accommodations",
@@ -92,5 +102,28 @@
         "upcomingEvents": "Upcoming Events",
         "latestBlog": "Latest Posts",
         "viewAll": "View all"
+    },
+    "counter": {
+        "destinations": {
+            "label": "destinations"
+        },
+        "accommodations": {
+            "label": "accommodations"
+        }
+    },
+    "searchBar": {
+        "typePlaceholder": "Accommodation type",
+        "destinationPlaceholder": "Where do you want to go?",
+        "datesPlaceholder": "Dates",
+        "guestsPlaceholder": "Guests",
+        "checkInLabel": "Check-in",
+        "checkOutLabel": "Check-out",
+        "adultsLabel": "Adults",
+        "childrenLabel": "Children",
+        "guestsSummary": "{adults} adults, {children} children",
+        "ctaLabel": "Search",
+        "loadingText": "Loading...",
+        "searchAriaLabel": "Search accommodations",
+        "closePanelAriaLabel": "Close panel"
     }
 }

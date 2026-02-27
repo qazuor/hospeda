@@ -48,5 +48,37 @@
             "description": "Descubre alojamientos únicos y comienza a planificar tu viaje perfecto",
             "button": "Explorar alojamientos"
         }
+    },
+    "page": {
+        "title": "Quienes Somos",
+        "description": "Descubre la misión, valores y propósito de Hospeda, la plataforma que conecta viajeros con alojamientos auténticos en el Litoral argentino",
+        "heroText": "Hospeda es la plataforma que conecta viajeros con alojamientos auténticos y experiencias únicas en Concepción del Uruguay y la región del Litoral argentino. Creemos en el turismo responsable y en el valor de las conexiones genuinas.",
+        "missionTitle": "Nuestra Misión",
+        "missionText": "Conectar viajeros con alojamientos auténticos en la región del Litoral argentino, promoviendo el turismo responsable y sustentable. Facilitamos el descubrimiento de experiencias únicas y fomentamos el desarrollo económico local a través del turismo comunitario.",
+        "valuesTitle": "Nuestros Valores",
+        "values": {
+            "authenticity": {
+                "title": "Autenticidad",
+                "text": "Promovemos experiencias genuinas que reflejan la cultura y hospitalidad local del Litoral argentino."
+            },
+            "community": {
+                "title": "Comunidad",
+                "text": "Fortalecemos el tejido social local apoyando emprendimientos turísticos y generando oportunidades económicas."
+            },
+            "quality": {
+                "title": "Calidad",
+                "text": "Nos comprometemos a ofrecer alojamientos verificados con altos estándares de confort y servicio."
+            },
+            "sustainability": {
+                "title": "Sustentabilidad",
+                "text": "Fomentamos prácticas turísticas responsables que preservan el patrimonio natural y cultural de la región."
+            }
+        },
+        "regionTitle": "Nuestra Región",
+        "regionText1": "Concepción del Uruguay y la región del Litoral argentino ofrecen una combinación única de historia, naturaleza y cultura. Desde las costas del Río Uruguay hasta los paisajes rurales, nuestra región es el escenario perfecto para experiencias turísticas auténticas.",
+        "regionText2": "La región se caracteriza por su rica herencia cultural, arquitectura colonial, festividades tradicionales, gastronomía local y la calidez de su gente. Promovemos el descubrimiento de estos tesoros a través de alojamientos que reflejan la identidad local.",
+        "ctaTitle": "Conectemos y Crezcamos Juntos",
+        "ctaText": "¿Tienes preguntas o deseas formar parte de nuestra red de alojamientos? Nos encantaría conocerte y trabajar juntos para fortalecer el turismo en la región.",
+        "ctaButton": "Contáctanos"
     }
 }

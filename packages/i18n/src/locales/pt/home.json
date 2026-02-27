@@ -83,7 +83,17 @@
         "headline": "Sua aventura comeca na costa do Uruguai",
         "subheadline": "Encontre acomodacoes unicas em Concepcion del Uruguay e a regiao do Litoral argentino",
         "statsDestinations": "destinos",
-        "statsAccommodations": "acomodacoes"
+        "statsAccommodations": "acomodacoes",
+        "phrases": {
+            "river": "Navegue o Rio Uruguai e descubra suas costas",
+            "beach": "Relaxe em praias de areia dourada",
+            "islands": "Explore ilhas e paisagens naturais",
+            "carnival": "Viva o carnaval do Litoral",
+            "festivals": "Aproveite festas ao ar livre",
+            "racetrack": "Sinta a adrenalina do autodromo",
+            "history": "Descubra a historia colonial",
+            "hotsprings": "Mergulhe em aguas termais"
+        }
     },
     "sections": {
         "featuredAccommodations": "Acomodacoes em destaque",
@@ -92,5 +102,28 @@
         "upcomingEvents": "Proximos eventos",
         "latestBlog": "Ultimas publicacoes",
         "viewAll": "Ver todos"
+    },
+    "counter": {
+        "destinations": {
+            "label": "destinos"
+        },
+        "accommodations": {
+            "label": "acomodacoes"
+        }
+    },
+    "searchBar": {
+        "typePlaceholder": "Tipo de acomodação",
+        "destinationPlaceholder": "Para onde você quer ir?",
+        "datesPlaceholder": "Datas",
+        "guestsPlaceholder": "Hóspedes",
+        "checkInLabel": "Chegada",
+        "checkOutLabel": "Saída",
+        "adultsLabel": "Adultos",
+        "childrenLabel": "Crianças",
+        "guestsSummary": "{adults} adultos, {children} crianças",
+        "ctaLabel": "Buscar",
+        "loadingText": "Carregando...",
+        "searchAriaLabel": "Buscar acomodações",
+        "closePanelAriaLabel": "Fechar painel"
     }
 }

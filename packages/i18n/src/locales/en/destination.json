@@ -106,5 +106,56 @@
             "attractions": "Attractions",
             "addToFavorites": "Add {{name}} to favorites"
         }
+    },
+    "listing": {
+        "title": "Destinations",
+        "description": "Discover the most fascinating tourist destinations in the Argentine Litoral region. Entre Ríos, Corrientes and Santa Fe await you.",
+        "hero": {
+            "heading": "Explore Litoral Destinations",
+            "description": "Discover historic cities, natural landscapes and unique experiences in the Argentine Litoral region. From the hot springs of Entre Ríos to the wetlands of Corrientes."
+        },
+        "featured": {
+            "title": "Featured Destinations"
+        },
+        "emptyState": {
+            "title": "No destinations available",
+            "message": "We will soon add tourist destinations in this section."
+        },
+        "regional": {
+            "title": "The Litoral Region",
+            "text": "The Argentine Litoral comprises the provinces of Entre Ríos, Corrientes and Santa Fe. This region is characterized by its natural richness, with the Paraná River as its backbone, its natural hot springs, its colonial history and the warmth of its people. Concepción del Uruguay, in Entre Ríos, is one of the most important historic cities in the region."
+        }
+    },
+    "accommodationsPage": {
+        "home": "Home",
+        "destinations": "Destinations",
+        "accommodations": "Accommodations",
+        "noResults": "No accommodations available for this destination",
+        "noResultsDetail": "We do not have any accommodations listed for this destination yet. Explore other destinations.",
+        "pageTitle": "Accommodations in",
+        "pageDescription": "Discover the best accommodations in"
+    },
+    "detailPage": {
+        "home": "Home",
+        "destinations": "Destinations",
+        "description": "Description",
+        "gallery": "Gallery",
+        "climate": "Climate",
+        "howToGetThere": "How to get there",
+        "attractions": "Things to do",
+        "accommodationsTitle": "Accommodations",
+        "eventsTitle": "Events",
+        "viewAll": "View all",
+        "map": "Map",
+        "summer": "Summer",
+        "winter": "Winter",
+        "bestSeason": "Best season",
+        "rainfall": "Rainfall",
+        "noAccommodations": "No accommodations available",
+        "noAccommodationsMessage": "We will soon add accommodations in this destination.",
+        "noEvents": "No upcoming events",
+        "noEventsMessage": "There are no events scheduled for this destination at this time.",
+        "accommodationsIn": "Accommodations in",
+        "eventsIn": "Events in"
     }
 }

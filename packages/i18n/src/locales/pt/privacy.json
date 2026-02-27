@@ -96,5 +96,9 @@
                 "phoneValue": "+1 (234) 567-890"
             }
         }
+    },
+    "page": {
+        "title": "Política de Privacidade",
+        "description": "Política de privacidade e proteção de dados da Hospeda"
     }
 }

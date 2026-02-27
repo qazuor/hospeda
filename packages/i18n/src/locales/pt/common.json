@@ -61,5 +61,36 @@
     "sort": "Ordenar",
     "submit": "Enviar",
     "viewAll": "Ver tudo",
-    "yes": "Sim"
+    "yes": "Sim",
+    "sitemap": {
+        "title": "Mapa do Site",
+        "description": "Mapa do site da Hospeda. Encontre rapidamente todas as páginas, acomodações, destinos, eventos e recursos disponíveis em nossa plataforma",
+        "sections": {
+            "principal": "Principal",
+            "alojamientos": "Acomodações",
+            "destinos": "Destinos",
+            "eventos": "Eventos",
+            "blog": "Blog",
+            "cuenta": "Conta",
+            "informacion": "Informação"
+        },
+        "links": {
+            "home": "Início",
+            "about": "Sobre Nós",
+            "benefits": "Benefícios",
+            "contact": "Contato",
+            "browseAccommodations": "Explorar Acomodações",
+            "searchAccommodations": "Buscar Acomodações",
+            "byType": "Por Tipo",
+            "browseDestinations": "Explorar Destinos",
+            "browseEvents": "Explorar Eventos",
+            "blogListing": "Artigos do Blog",
+            "signIn": "Entrar",
+            "signUp": "Cadastrar",
+            "forgotPassword": "Esqueci minha Senha",
+            "terms": "Termos e Condições",
+            "privacy": "Política de Privacidade",
+            "sitemap": "Mapa do Site"
+        }
+    }
 }

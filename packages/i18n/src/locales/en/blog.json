@@ -24,5 +24,41 @@
         "related": "Related articles",
         "share": "Share",
         "author": "Author"
+    },
+    "detail": {
+        "blog": "Blog",
+        "relatedPosts": "Related Posts",
+        "share": "Share",
+        "tags": "Tags",
+        "readingTime": "min read",
+        "home": "Home"
+    },
+    "tagPage": {
+        "title": "Posts tagged with \"{tag}\"",
+        "description": "Browse all Hospeda blog posts tagged with \"{tag}\". Articles about tourism in the Argentine Litoral region.",
+        "breadcrumb": {
+            "home": "Home",
+            "posts": "Posts",
+            "tag": "Tag: {tag}"
+        },
+        "heading": "Tag: {tag}",
+        "subHeading": "All posts tagged with \"{tag}\"",
+        "emptyState": "No posts available for tag \"{tag}\""
+    },
+    "listPage": {
+        "title": "Blog",
+        "description": "Discover stories, travel tips and news about tourism in the Argentine Litoral region. Articles about destinations, accommodations, events and gastronomy.",
+        "heroHeading": "Hospeda Blog",
+        "heroDescription": "Stories, tips and news about tourism in the Argentine Litoral region. Discover the best destinations, accommodations, events and gastronomic experiences in the region.",
+        "featuredTitle": "Featured Post",
+        "emptyState": "No posts available",
+        "categories": {
+            "all": "All",
+            "destinations": "Destinations",
+            "accommodations": "Accommodations",
+            "events": "Events",
+            "gastronomy": "Gastronomy",
+            "tips": "Tips"
+        }
     }
 }

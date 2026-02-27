@@ -16,7 +16,21 @@
     "card": {
         "free": "Gratis",
         "checkPrice": "Consultar precio",
-        "seeDetails": "Ver detalles"
+        "seeDetails": "Ver detalles",
+        "featured": "Destacado",
+        "addToFavorites": "Agregar {name} a favoritos",
+        "categories": {
+            "FESTIVAL": "Festival",
+            "CONFERENCE": "Conferencia",
+            "WORKSHOP": "Taller",
+            "CONCERT": "Concierto",
+            "EXHIBITION": "Exposición",
+            "SPORTS": "Deportes",
+            "CULTURAL": "Cultural",
+            "GASTRONOMY": "Gastronomía",
+            "RELIGIOUS": "Religioso",
+            "OTHER": "Otro"
+        }
     },
     "list": {
         "title": "Eventos"
@@ -28,5 +42,78 @@
         "organizer": "Organizador",
         "contact": "Contacto",
         "price": "Precio"
+    },
+    "breadcrumb": {
+        "events": "Eventos"
+    },
+    "detail": {
+        "category": "Categoría",
+        "date": "Fecha",
+        "time": "Horario",
+        "location": "Ubicación",
+        "description": "Descripción",
+        "agenda": "Agenda del Evento",
+        "pricing": "Entradas y Precios",
+        "organizer": "Organizado por",
+        "getTickets": "Obtener Entradas",
+        "relatedEvents": "Eventos Relacionados",
+        "shareEvent": "Compartir Evento",
+        "pastEvent": "Evento Finalizado"
+    },
+    "categoryPage": {
+        "categories": {
+            "festival": {
+                "name": "Festivales",
+                "description": "Descubre los mejores festivales en Concepción del Uruguay y la región del Litoral argentino. Música, arte y cultura para todos.",
+                "pageTitle": "Eventos - Festivales"
+            },
+            "fair": {
+                "name": "Ferias",
+                "description": "Explora las ferias locales y regionales del Litoral argentino. Artesanías, productos típicos y experiencias únicas.",
+                "pageTitle": "Eventos - Ferias"
+            },
+            "sport": {
+                "name": "Deportes",
+                "description": "Encuentra eventos deportivos en Concepción del Uruguay. Competencias, torneos y actividades para todas las edades.",
+                "pageTitle": "Eventos - Deportes"
+            },
+            "cultural": {
+                "name": "Culturales",
+                "description": "Eventos culturales, exposiciones y actividades artísticas en el Litoral argentino. Descubre el patrimonio cultural de la región.",
+                "pageTitle": "Eventos - Culturales"
+            },
+            "gastronomy": {
+                "name": "Gastronomía",
+                "description": "Festivales y eventos gastronómicos en Concepción del Uruguay. Sabores únicos de la cocina regional del Litoral.",
+                "pageTitle": "Eventos - Gastronomía"
+            }
+        },
+        "labels": {
+            "breadcrumbHome": "Inicio",
+            "breadcrumbEvents": "Eventos",
+            "emptyTitle": "No hay eventos de categoría {category} disponibles"
+        }
+    },
+    "listPage": {
+        "title": "Eventos",
+        "description": "Descubrí los próximos eventos en el Litoral argentino",
+        "home": "Inicio",
+        "events": "Eventos",
+        "upcoming": "Próximos",
+        "past": "Pasados",
+        "all": "Todos",
+        "filterByCategory": "Categoría",
+        "allCategories": "Todas",
+        "festival": "Festival",
+        "fair": "Feria",
+        "sport": "Deportivo",
+        "cultural": "Cultural",
+        "gastronomy": "Gastronomía",
+        "noEvents": "No hay eventos",
+        "noEventsDescription": "No se encontraron eventos con los filtros seleccionados.",
+        "date": "Fecha",
+        "location": "Ubicación",
+        "free": "Gratis",
+        "paid": "Pago"
     }
 }

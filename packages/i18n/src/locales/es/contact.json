@@ -46,5 +46,13 @@
         }
     },
     "success": "¡Gracias por contactarnos!",
-    "error": "Ocurrió un error al enviar el mensaje."
+    "error": "Ocurrió un error al enviar el mensaje.",
+    "page": {
+        "title": "Contacto",
+        "description": "Contacta con Hospeda. Estamos aquí para ayudarte con tus consultas sobre alojamiento en Concepción del Uruguay",
+        "contactInfo": "Información de contacto",
+        "officeHours": "Horario de atención",
+        "officeHoursValue": "Lunes a Viernes, 9:00 - 18:00",
+        "followUs": "Síguenos"
+    }
 }

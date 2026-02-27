@@ -37,5 +37,34 @@
         "emptyMessage": "Enter a destination to find amazing accommodations.",
         "sampleDescription": "A comfortable, well-located accommodation with all the amenities you need.",
         "sampleName": "Example Hotel"
+    },
+    "resultsPage": {
+        "title": "Search Results",
+        "description": "Find accommodations, destinations, events and posts on Hospeda.",
+        "heading": "Results for",
+        "placeholder": "Search accommodations, destinations, events...",
+        "categories": {
+            "accommodations": "Accommodations",
+            "destinations": "Destinations",
+            "events": "Events",
+            "posts": "Posts"
+        },
+        "emptyState": "No results found",
+        "emptySuggestion": "Try other search terms",
+        "popularSearches": "Popular searches",
+        "resultsFound": "Results found:",
+        "noResults": "No results found",
+        "viewAll": {
+            "accommodations": "View all accommodations →",
+            "destinations": "View all destinations →",
+            "events": "View all events →",
+            "posts": "View all posts →"
+        },
+        "popular": {
+            "0": { "label": "Hotels", "query": "hotels" },
+            "1": { "label": "Cabins", "query": "cabins" },
+            "2": { "label": "Concepcion del Uruguay", "query": "concepcion" },
+            "3": { "label": "Events", "query": "events" }
+        }
     }
 }

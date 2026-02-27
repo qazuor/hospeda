@@ -86,7 +86,24 @@
         "userMenuFor": "User menu for {{name}}",
         "userMenu": "User menu",
         "favoriteCategories": "Favorite categories",
-        "reviewCategories": "Review categories"
+        "reviewCategories": "Review categories",
+        "clearSearch": "Clear search",
+        "retryLoading": "Retry loading data",
+        "carouselNavigation": "Carousel navigation",
+        "openMenu": "Open menu",
+        "mobileNavigation": "Mobile navigation",
+        "viewToggle": "View toggle",
+        "closeModal": "Close modal",
+        "mapMarkers": "Map markers",
+        "goToImageOfTotal": "Go to image {current} of {total}",
+        "mapShowingLocations": "Map showing {count} locations",
+        "rateStars": "Rate {{count}} star(s)",
+        "ratingOutOf": "Rating: {{rating}} out of 5 stars"
+    },
+    "map": {
+        "loading": "Map loading...",
+        "locationsTitle": "Locations ({count})",
+        "noLocations": "No locations to display"
     },
     "pages": {
         "myProfile": "My Profile",

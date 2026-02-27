@@ -109,5 +109,27 @@
         "next": "Next",
         "finish": "Finish",
         "close": "Close"
+    },
+    "pages": {
+        "signin": {
+            "title": "Sign In",
+            "description": "Sign in to your Hospeda account to access your bookings and favorites"
+        },
+        "signup": {
+            "title": "Sign Up",
+            "description": "Create your Hospeda account to manage your bookings and discover new accommodations"
+        },
+        "forgotPassword": {
+            "title": "Forgot Password",
+            "description": "Recover your Hospeda password. We will send you a link to reset your password"
+        },
+        "resetPassword": {
+            "title": "Reset Password",
+            "description": "Set a new password for your Hospeda account"
+        },
+        "verifyEmail": {
+            "title": "Verify Email",
+            "description": "Verifying your email address on Hospeda"
+        }
     }
 }

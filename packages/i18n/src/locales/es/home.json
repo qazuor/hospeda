@@ -83,7 +83,17 @@
         "headline": "Tu aventura empieza en la costa del Uruguay",
         "subheadline": "Encontra alojamientos unicos en Concepcion del Uruguay y la region del Litoral argentino",
         "statsDestinations": "destinos",
-        "statsAccommodations": "alojamientos"
+        "statsAccommodations": "alojamientos",
+        "phrases": {
+            "river": "Navega el Rio Uruguay y descubri sus costas",
+            "beach": "Relajate en playas de arena dorada",
+            "islands": "Explora islas y paisajes naturales",
+            "carnival": "Vivi el carnaval del Litoral",
+            "festivals": "Disfuta de fiestas al aire libre",
+            "racetrack": "Senti la adrenalina del autodromo",
+            "history": "Descubri la historia colonial",
+            "hotsprings": "Sumergite en aguas termales"
+        }
     },
     "sections": {
         "featuredAccommodations": "Alojamientos destacados",
@@ -92,5 +102,28 @@
         "upcomingEvents": "Proximos eventos",
         "latestBlog": "Ultimas publicaciones",
         "viewAll": "Ver todos"
+    },
+    "counter": {
+        "destinations": {
+            "label": "destinos"
+        },
+        "accommodations": {
+            "label": "alojamientos"
+        }
+    },
+    "searchBar": {
+        "typePlaceholder": "Tipo de alojamiento",
+        "destinationPlaceholder": "¿Dónde querés ir?",
+        "datesPlaceholder": "Fechas",
+        "guestsPlaceholder": "Huéspedes",
+        "checkInLabel": "Llegada",
+        "checkOutLabel": "Salida",
+        "adultsLabel": "Adultos",
+        "childrenLabel": "Niños",
+        "guestsSummary": "{adults} adultos, {children} niños",
+        "ctaLabel": "Buscar",
+        "loadingText": "Cargando...",
+        "searchAriaLabel": "Buscar alojamientos",
+        "closePanelAriaLabel": "Cerrar panel"
     }
 }

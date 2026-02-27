@@ -66,5 +66,9 @@
         "title": "¿Listo para empezar a disfrutar estos beneficios?",
         "description": "Regístrate hoy y comienza a acumular puntos con tu primera reserva.",
         "button": "Hacer mi primera reserva"
+    },
+    "page": {
+        "title": "Beneficios",
+        "description": "Descubre los beneficios de usar Hospeda para turistas y propietarios de alojamientos en el Litoral argentino"
     }
 }

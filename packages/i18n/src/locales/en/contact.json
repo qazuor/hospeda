@@ -46,5 +46,13 @@
         }
     },
     "success": "Thanks for reaching out!",
-    "error": "Something went wrong while sending your message."
+    "error": "Something went wrong while sending your message.",
+    "page": {
+        "title": "Contact",
+        "description": "Contact Hospeda. We are here to help you with your accommodation inquiries in Concepción del Uruguay",
+        "contactInfo": "Contact information",
+        "officeHours": "Office hours",
+        "officeHoursValue": "Monday to Friday, 9:00 AM - 6:00 PM",
+        "followUs": "Follow us"
+    }
 }

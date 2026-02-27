@@ -61,5 +61,36 @@
     "sort": "Sort",
     "submit": "Submit",
     "viewAll": "View all",
-    "yes": "Yes"
+    "yes": "Yes",
+    "sitemap": {
+        "title": "Sitemap",
+        "description": "Hospeda sitemap. Quickly find all pages, accommodations, destinations, events and resources available on our platform",
+        "sections": {
+            "principal": "Main",
+            "alojamientos": "Accommodations",
+            "destinos": "Destinations",
+            "eventos": "Events",
+            "blog": "Blog",
+            "cuenta": "Account",
+            "informacion": "Information"
+        },
+        "links": {
+            "home": "Home",
+            "about": "About Us",
+            "benefits": "Benefits",
+            "contact": "Contact",
+            "browseAccommodations": "Browse Accommodations",
+            "searchAccommodations": "Search Accommodations",
+            "byType": "By Type",
+            "browseDestinations": "Browse Destinations",
+            "browseEvents": "Browse Events",
+            "blogListing": "Blog Articles",
+            "signIn": "Sign In",
+            "signUp": "Sign Up",
+            "forgotPassword": "Forgot Password",
+            "terms": "Terms and Conditions",
+            "privacy": "Privacy Policy",
+            "sitemap": "Sitemap"
+        }
+    }
 }

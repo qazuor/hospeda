@@ -16,7 +16,21 @@
     "card": {
         "free": "Free",
         "checkPrice": "Check price",
-        "seeDetails": "See details"
+        "seeDetails": "See details",
+        "featured": "Featured",
+        "addToFavorites": "Add {name} to favorites",
+        "categories": {
+            "FESTIVAL": "Festival",
+            "CONFERENCE": "Conference",
+            "WORKSHOP": "Workshop",
+            "CONCERT": "Concert",
+            "EXHIBITION": "Exhibition",
+            "SPORTS": "Sports",
+            "CULTURAL": "Cultural",
+            "GASTRONOMY": "Gastronomy",
+            "RELIGIOUS": "Religious",
+            "OTHER": "Other"
+        }
     },
     "list": {
         "title": "Events"
@@ -28,5 +42,78 @@
         "organizer": "Organizer",
         "contact": "Contact",
         "price": "Price"
+    },
+    "breadcrumb": {
+        "events": "Events"
+    },
+    "detail": {
+        "category": "Category",
+        "date": "Date",
+        "time": "Time",
+        "location": "Location",
+        "description": "Description",
+        "agenda": "Event Schedule",
+        "pricing": "Tickets and Pricing",
+        "organizer": "Organized by",
+        "getTickets": "Get Tickets",
+        "relatedEvents": "Related Events",
+        "shareEvent": "Share Event",
+        "pastEvent": "Past Event"
+    },
+    "categoryPage": {
+        "categories": {
+            "festival": {
+                "name": "Festivals",
+                "description": "Discover the best festivals in Concepción del Uruguay and the Argentine Litoral region. Music, art, and culture for everyone.",
+                "pageTitle": "Events - Festivals"
+            },
+            "fair": {
+                "name": "Fairs",
+                "description": "Explore local and regional fairs in the Argentine Litoral. Crafts, typical products, and unique experiences.",
+                "pageTitle": "Events - Fairs"
+            },
+            "sport": {
+                "name": "Sports",
+                "description": "Find sporting events in Concepción del Uruguay. Competitions, tournaments, and activities for all ages.",
+                "pageTitle": "Events - Sports"
+            },
+            "cultural": {
+                "name": "Cultural Events",
+                "description": "Cultural events, exhibitions, and artistic activities in the Argentine Litoral. Discover the cultural heritage of the region.",
+                "pageTitle": "Events - Cultural"
+            },
+            "gastronomy": {
+                "name": "Gastronomy",
+                "description": "Food festivals and gastronomic events in Concepción del Uruguay. Unique flavors of regional Litoral cuisine.",
+                "pageTitle": "Events - Gastronomy"
+            }
+        },
+        "labels": {
+            "breadcrumbHome": "Home",
+            "breadcrumbEvents": "Events",
+            "emptyTitle": "No {category} events available"
+        }
+    },
+    "listPage": {
+        "title": "Events",
+        "description": "Discover upcoming events in the Argentine Litoral",
+        "home": "Home",
+        "events": "Events",
+        "upcoming": "Upcoming",
+        "past": "Past",
+        "all": "All",
+        "filterByCategory": "Category",
+        "allCategories": "All",
+        "festival": "Festival",
+        "fair": "Fair",
+        "sport": "Sports",
+        "cultural": "Cultural",
+        "gastronomy": "Gastronomy",
+        "noEvents": "No events",
+        "noEventsDescription": "No events found with the selected filters.",
+        "date": "Date",
+        "location": "Location",
+        "free": "Free",
+        "paid": "Paid"
     }
 }

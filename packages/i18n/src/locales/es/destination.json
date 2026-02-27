@@ -106,5 +106,56 @@
             "attractions": "Atracciones",
             "addToFavorites": "Agregar {{name}} a favoritos"
         }
+    },
+    "listing": {
+        "title": "Destinos",
+        "description": "Descubre los destinos turísticos más fascinantes del Litoral argentino. Entre Ríos, Corrientes y Santa Fe te esperan.",
+        "hero": {
+            "heading": "Explora los Destinos del Litoral",
+            "description": "Descubre ciudades históricas, paisajes naturales y experiencias únicas en la región del Litoral argentino. Desde las termas de Entre Ríos hasta los esteros de Corrientes."
+        },
+        "featured": {
+            "title": "Destinos Destacados"
+        },
+        "emptyState": {
+            "title": "No hay destinos disponibles",
+            "message": "Próximamente agregaremos destinos turísticos en esta sección."
+        },
+        "regional": {
+            "title": "La Región del Litoral",
+            "text": "El Litoral argentino comprende las provincias de Entre Ríos, Corrientes y Santa Fe. Esta región se caracteriza por su riqueza natural, con el río Paraná como eje vertebrador, sus termas naturales, su historia colonial y la calidez de su gente. Concepción del Uruguay, en Entre Ríos, es una de las ciudades históricas más importantes de la región."
+        }
+    },
+    "accommodationsPage": {
+        "home": "Inicio",
+        "destinations": "Destinos",
+        "accommodations": "Alojamientos",
+        "noResults": "No hay alojamientos disponibles para este destino",
+        "noResultsDetail": "Todavía no tenemos alojamientos registrados para este destino. Explorá otros destinos.",
+        "pageTitle": "Alojamientos en",
+        "pageDescription": "Descubrí los mejores alojamientos en"
+    },
+    "detailPage": {
+        "home": "Inicio",
+        "destinations": "Destinos",
+        "description": "Descripción",
+        "gallery": "Galería",
+        "climate": "Clima",
+        "howToGetThere": "Cómo llegar",
+        "attractions": "Qué hacer",
+        "accommodationsTitle": "Alojamientos",
+        "eventsTitle": "Eventos",
+        "viewAll": "Ver todos",
+        "map": "Mapa",
+        "summer": "Verano",
+        "winter": "Invierno",
+        "bestSeason": "Mejor época",
+        "rainfall": "Lluvias",
+        "noAccommodations": "No hay alojamientos disponibles",
+        "noAccommodationsMessage": "Próximamente agregaremos alojamientos en este destino.",
+        "noEvents": "No hay eventos próximos",
+        "noEventsMessage": "No hay eventos programados para este destino en este momento.",
+        "accommodationsIn": "Alojamientos en",
+        "eventsIn": "Eventos en"
     }
 }

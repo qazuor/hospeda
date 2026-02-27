@@ -242,5 +242,68 @@
     },
     "island": {
         "loadingAria": "Carregando faturamento..."
+    },
+    "pricing": {
+        "breadcrumb": "Precos",
+        "tourist": {
+            "title": "Precos para Turistas",
+            "description": "Descubra nossos planos de assinatura para turistas. De grátis a VIP com serviço de concierge.",
+            "hero": {
+                "title": "Planos para Turistas",
+                "description": "Encontre o plano perfeito para suas aventuras no Litoral argentino. Desde navegação básica até serviço VIP com concierge personalizado."
+            },
+            "faq": {
+                "heading": "Perguntas Frequentes",
+                "items": {
+                    "0": {
+                        "question": "Posso mudar de plano a qualquer momento?",
+                        "answer": "Sim, você pode atualizar ou mudar seu plano a qualquer momento da sua conta. As alterações serão aplicadas no próximo ciclo de faturamento."
+                    },
+                    "1": {
+                        "question": "Que métodos de pagamento vocês aceitam?",
+                        "answer": "Aceitamos todos os métodos de pagamento através do MercadoPago, incluindo cartões de crédito, débito e transferências bancárias."
+                    },
+                    "2": {
+                        "question": "Há período de teste?",
+                        "answer": "O plano Grátis não requer cartão de crédito. Os planos Plus e VIP oferecem 7 dias de teste gratuito."
+                    }
+                }
+            },
+            "cta": {
+                "title": "Pronto para começar sua aventura?",
+                "description": "Cadastre-se gratuitamente e comece a explorar as melhores acomodações do Litoral argentino.",
+                "button": "Cadastre-se Grátis"
+            }
+        },
+        "owner": {
+            "title": "Precos para Proprietarios",
+            "description": "Descubra nossos planos de assinatura para proprietários de acomodações. De básico a premium com gerente de conta dedicado.",
+            "hero": {
+                "title": "Planos para Proprietários",
+                "description": "Escolha o plano ideal para gerenciar e promover suas acomodações. De listagem básica até ferramentas profissionais com gerente de conta dedicado."
+            },
+            "faq": {
+                "heading": "Perguntas Frequentes",
+                "items": {
+                    "0": {
+                        "question": "O que está incluído no teste gratuito?",
+                        "answer": "O teste gratuito de 14 dias inclui acesso completo a todas as funcionalidades do plano selecionado, sem necessidade de cartão de crédito."
+                    },
+                    "1": {
+                        "question": "Posso mudar de plano depois?",
+                        "answer": "Sim, você pode atualizar ou mudar seu plano a qualquer momento. As alterações são refletidas imediatamente e o faturamento é ajustado proporcionalmente."
+                    },
+                    "2": {
+                        "question": "Há custos adicionais por reservas?",
+                        "answer": "Não cobramos comissões por reserva. O preço do plano cobre todas as funcionalidades. Os pagamentos de hóspedes são processados via MercadoPago com suas tarifas padrão."
+                    }
+                }
+            },
+            "cta": {
+                "title": "Pronto para fazer crescer seu negócio?",
+                "description": "Comece seu teste gratuito de 14 dias e descubra como a Hospeda pode ajudá-lo a aumentar suas reservas.",
+                "button": "Começar Teste Gratuito"
+            }
+        }
     }
 }

@@ -79,5 +79,9 @@
                 "phoneValue": "+1 (234) 567-890"
             }
         }
+    },
+    "page": {
+        "title": "Termos e Condições",
+        "description": "Termos e condições de uso da plataforma Hospeda"
     }
 }

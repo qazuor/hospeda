@@ -242,5 +242,68 @@
     },
     "island": {
         "loadingAria": "Loading billing..."
+    },
+    "pricing": {
+        "breadcrumb": "Pricing",
+        "tourist": {
+            "title": "Tourist Pricing",
+            "description": "Discover our subscription plans for tourists. From free to VIP with concierge service.",
+            "hero": {
+                "title": "Tourist Plans",
+                "description": "Find the perfect plan for your adventures in the Argentine Litoral. From basic browsing to VIP service with personalized concierge."
+            },
+            "faq": {
+                "heading": "Frequently Asked Questions",
+                "items": {
+                    "0": {
+                        "question": "Can I change my plan at any time?",
+                        "answer": "Yes, you can upgrade or change your plan at any time from your account. Changes will be applied in the next billing cycle."
+                    },
+                    "1": {
+                        "question": "What payment methods do you accept?",
+                        "answer": "We accept all payment methods through MercadoPago, including credit cards, debit cards, and bank transfers."
+                    },
+                    "2": {
+                        "question": "Is there a trial period?",
+                        "answer": "The Free plan requires no credit card. Plus and VIP plans offer a 7-day free trial."
+                    }
+                }
+            },
+            "cta": {
+                "title": "Ready to start your adventure?",
+                "description": "Sign up for free and start exploring the best accommodations in the Argentine Litoral.",
+                "button": "Sign Up Free"
+            }
+        },
+        "owner": {
+            "title": "Owner Pricing",
+            "description": "Discover our subscription plans for accommodation owners. From basic to premium with dedicated account manager.",
+            "hero": {
+                "title": "Owner Plans",
+                "description": "Choose the ideal plan to manage and promote your accommodations. From basic listing to professional tools with dedicated account manager."
+            },
+            "faq": {
+                "heading": "Frequently Asked Questions",
+                "items": {
+                    "0": {
+                        "question": "What is included in the free trial?",
+                        "answer": "The 14-day free trial includes full access to all features of the selected plan, with no credit card required."
+                    },
+                    "1": {
+                        "question": "Can I change my plan later?",
+                        "answer": "Yes, you can upgrade or change your plan at any time. Changes are reflected immediately and billing is adjusted proportionally."
+                    },
+                    "2": {
+                        "question": "Are there additional costs per booking?",
+                        "answer": "We do not charge booking commissions. The plan price covers all functionalities. Guest payments are processed via MercadoPago with their standard fees."
+                    }
+                }
+            },
+            "cta": {
+                "title": "Ready to grow your business?",
+                "description": "Start your 14-day free trial and discover how Hospeda can help you increase your bookings.",
+                "button": "Start Free Trial"
+            }
+        }
     }
 }
