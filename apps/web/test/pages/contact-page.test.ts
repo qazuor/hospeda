@@ -49,43 +49,51 @@ describe('contacto.astro', () => {
 
     describe('Locale validation', () => {
         it('should validate locale parameter', () => {
-            expect(contactContent).toContain('const { lang } = Astro.params');
-            expect(contactContent).toContain('if (!lang || !isValidLocale(lang))');
+            expect(contactContent).toContain('getLocaleFromParams(Astro.params)');
+            expect(contactContent).toContain('if (!locale)');
         });
 
         it('should redirect to /es/ on invalid locale', () => {
             expect(contactContent).toContain("return Astro.redirect('/es/')");
         });
 
-        it('should import locale helpers', () => {
-            expect(contactContent).toContain('isValidLocale');
-            expect(contactContent).toContain('type SupportedLocale');
+        it('should import locale helpers and i18n', () => {
+            expect(contactContent).toContain('getLocaleFromParams');
+            expect(contactContent).toContain("import { t } from '../../lib/i18n'");
         });
     });
 
     describe('Localization', () => {
-        it('should have localized titles for all supported locales', () => {
-            expect(contactContent).toContain("es: 'Contacto'");
-            expect(contactContent).toContain("en: 'Contact'");
-            expect(contactContent).toContain("pt: 'Contato'");
+        it('should use t() for localized titles', () => {
+            expect(contactContent).toContain(
+                "const title = t({ locale, namespace: 'contact', key: 'page.title' })"
+            );
         });
 
-        it('should have localized meta descriptions', () => {
-            expect(contactContent).toContain('const descriptions: Record<SupportedLocale, string>');
-            expect(contactContent).toContain('Contacta con Hospeda');
+        it('should use t() for localized descriptions', () => {
+            expect(contactContent).toContain(
+                "const description = t({ locale, namespace: 'contact', key: 'page.description' })"
+            );
         });
 
-        it('should have localized home breadcrumb labels', () => {
-            expect(contactContent).toContain('const homeLabels: Record<SupportedLocale, string>');
-            expect(contactContent).toContain("es: 'Inicio'");
-            expect(contactContent).toContain("en: 'Home'");
-            expect(contactContent).toContain("pt: 'Início'");
+        it('should import HOME_BREADCRUMB from page-helpers', () => {
+            expect(contactContent).toContain('HOME_BREADCRUMB');
+            expect(contactContent).toContain("from '../../lib/page-helpers'");
         });
 
         it('should have localized contact info labels', () => {
-            expect(contactContent).toContain('const formLabels = {');
-            expect(contactContent).toContain("contactInfo: 'Información de contacto'");
-            expect(contactContent).toContain("officeHours: 'Horario de atención'");
+            expect(contactContent).toContain(
+                "const contactInfo = t({ locale, namespace: 'contact', key: 'page.contactInfo' })"
+            );
+            expect(contactContent).toContain(
+                "const officeHours = t({ locale, namespace: 'contact', key: 'page.officeHours' })"
+            );
+            expect(contactContent).toContain(
+                "const officeHoursValue = t({ locale, namespace: 'contact', key: 'page.officeHoursValue' })"
+            );
+            expect(contactContent).toContain(
+                "const followUs = t({ locale, namespace: 'contact', key: 'page.followUs' })"
+            );
         });
     });
 
@@ -96,8 +104,8 @@ describe('contacto.astro', () => {
         });
 
         it('should pass title and description to SEOHead', () => {
-            expect(contactContent).toContain('title={titles[locale]}');
-            expect(contactContent).toContain('description={descriptions[locale]}');
+            expect(contactContent).toContain('title={title}');
+            expect(contactContent).toContain('description={description}');
         });
 
         it('should set page type to website', () => {
@@ -111,20 +119,20 @@ describe('contacto.astro', () => {
         });
 
         it('should have home breadcrumb link', () => {
-            expect(contactContent).toContain('{ label: homeLabels[locale], href: `/${locale}/`');
+            expect(contactContent).toContain(
+                '{ label: HOME_BREADCRUMB[locale], href: `/${locale}/`'
+            );
         });
 
         it('should have contact page breadcrumb', () => {
-            expect(contactContent).toContain(
-                '{ label: titles[locale], href: `/${locale}/contacto/`'
-            );
+            expect(contactContent).toContain('{ label: title, href: `/${locale}/contacto/`');
         });
     });
 
     describe('Contact form (React island)', () => {
         it('should import ContactForm component', () => {
             expect(contactContent).toContain(
-                "import { ContactForm } from '../../components/forms/ContactForm.client'"
+                "import { ContactForm } from '../../components/content/ContactForm.client'"
             );
         });
 
@@ -154,14 +162,12 @@ describe('contacto.astro', () => {
         });
 
         it('should display office hours', () => {
-            expect(contactContent).toContain('{labels.officeHours}');
-            expect(contactContent).toContain('{labels.officeHoursValue}');
-            expect(contactContent).toContain("officeHoursValue: 'Lunes a Viernes, 9:00 - 18:00'");
+            expect(contactContent).toContain('{officeHours}');
+            expect(contactContent).toContain('{officeHoursValue}');
         });
 
         it('should have contact info heading', () => {
-            expect(contactContent).toContain('{labels.contactInfo}');
-            expect(contactContent).toContain("contactInfo: 'Información de contacto'");
+            expect(contactContent).toContain('{contactInfo}');
         });
     });
 

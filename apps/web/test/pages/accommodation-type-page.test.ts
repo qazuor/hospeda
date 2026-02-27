@@ -23,7 +23,7 @@ describe('alojamientos/tipo/[type]/index.astro', () => {
         });
 
         it('should generate paths for all locale and type combinations', () => {
-            expect(content).toContain("const locales = ['es', 'en', 'pt']");
+            expect(content).toContain('const locales = SUPPORTED_LOCALES');
             expect(content).toContain(
                 "const types = ['hotel', 'hostel', 'cabin', 'apartment', 'camping', 'estancia', 'posada']"
             );
@@ -69,8 +69,8 @@ describe('alojamientos/tipo/[type]/index.astro', () => {
 
     describe('Locale validation', () => {
         it('should validate locale parameter', () => {
-            expect(content).toContain('const { lang, type } = Astro.params');
-            expect(content).toContain('if (!lang || !isValidLocale(lang))');
+            expect(content).toContain('getLocaleFromParams(Astro.params)');
+            expect(content).toContain('if (!locale)');
         });
 
         it('should redirect to /es/ on invalid locale', () => {
@@ -78,8 +78,11 @@ describe('alojamientos/tipo/[type]/index.astro', () => {
         });
 
         it('should import locale helpers', () => {
-            expect(content).toContain('isValidLocale');
-            expect(content).toContain('type SupportedLocale');
+            expect(content).toContain('getLocaleFromParams');
+        });
+
+        it('should import t from lib/i18n', () => {
+            expect(content).toContain("import { t } from '../../../../../lib/i18n'");
         });
 
         it('should import accommodationsApi', () => {
@@ -121,96 +124,46 @@ describe('alojamientos/tipo/[type]/index.astro', () => {
     });
 
     describe('Localization - Type names', () => {
-        it('should have localized type names for all types and locales', () => {
-            expect(content).toContain('const typeNames: Record<SupportedLocale');
-        });
-
-        it('should have Spanish type names', () => {
-            expect(content).toContain("hotel: 'Hoteles'");
-            expect(content).toContain("hostel: 'Hostels'");
-            expect(content).toContain("cabin: 'Cabañas'");
-            expect(content).toContain("apartment: 'Apartamentos'");
-            expect(content).toContain("camping: 'Campings'");
-            expect(content).toContain("estancia: 'Estancias'");
-            expect(content).toContain("posada: 'Posadas'");
-        });
-
-        it('should have English type names', () => {
-            expect(content).toContain("hotel: 'Hotels'");
-            expect(content).toContain("cabin: 'Cabins'");
-            expect(content).toContain("camping: 'Campgrounds'");
-            expect(content).toContain("estancia: 'Ranch Houses'");
-            expect(content).toContain("posada: 'Inns'");
-        });
-
-        it('should have Portuguese type names', () => {
-            expect(content).toContain("hotel: 'Hotéis'");
-            expect(content).toContain("cabin: 'Cabanas'");
-            expect(content).toContain("estancia: 'Estâncias'");
-            expect(content).toContain("posada: 'Pousadas'");
+        it('should use t() for type name', () => {
+            expect(content).toContain(
+                "t({ locale, namespace: 'accommodations', key: `typePage.typeDetails.${accommodationType}.name` })"
+            );
         });
     });
 
     describe('Localization - Type descriptions', () => {
-        it('should have localized type descriptions', () => {
-            expect(content).toContain('const typeDescriptions: Record<SupportedLocale');
-        });
-
-        it('should have Spanish hotel description', () => {
-            expect(content).toContain('Descubre los mejores hoteles en Concepción del Uruguay');
-        });
-
-        it('should have English hotel description', () => {
-            expect(content).toContain('Discover the best hotels in Concepción del Uruguay');
-        });
-
-        it('should have Portuguese hotel description', () => {
-            expect(content).toContain('Descubra os melhores hotéis em Concepción del Uruguay');
+        it('should use t() for type description', () => {
+            expect(content).toContain(
+                "t({ locale, namespace: 'accommodations', key: `typePage.typeDetails.${accommodationType}.description` })"
+            );
         });
     });
 
     describe('Localization - Page titles', () => {
-        it('should have localized page titles', () => {
-            expect(content).toContain('const pageTitles: Record<SupportedLocale');
-        });
-
-        it('should have Spanish page titles', () => {
-            expect(content).toContain("hotel: 'Alojamientos - Hoteles'");
-            expect(content).toContain("cabin: 'Alojamientos - Cabañas'");
-        });
-
-        it('should have English page titles', () => {
-            expect(content).toContain("hotel: 'Accommodations - Hotels'");
-            expect(content).toContain("cabin: 'Accommodations - Cabins'");
-        });
-
-        it('should have Portuguese page titles', () => {
-            expect(content).toContain("hotel: 'Acomodações - Hotéis'");
-            expect(content).toContain("cabin: 'Acomodações - Cabanas'");
+        it('should use t() for page title', () => {
+            expect(content).toContain(
+                "t({ locale, namespace: 'accommodations', key: `typePage.typeDetails.${accommodationType}.pageTitle` })"
+            );
         });
     });
 
     describe('Localization - Common labels', () => {
-        it('should have localized common labels', () => {
-            expect(content).toContain('const labels: Record<SupportedLocale');
+        it('should use t() for breadcrumb home', () => {
+            expect(content).toContain(
+                "t({ locale, namespace: 'accommodations', key: 'typePage.labels.breadcrumbHome' })"
+            );
         });
 
-        it('should have home breadcrumb labels', () => {
-            expect(content).toContain("home: 'Inicio'");
-            expect(content).toContain("home: 'Home'");
-            expect(content).toContain("home: 'Início'");
+        it('should use t() for breadcrumb accommodations', () => {
+            expect(content).toContain(
+                "t({ locale, namespace: 'accommodations', key: 'typePage.labels.breadcrumbAccommodations' })"
+            );
         });
 
-        it('should have accommodations breadcrumb labels', () => {
-            expect(content).toContain("accommodations: 'Alojamientos'");
-            expect(content).toContain("accommodations: 'Accommodations'");
-            expect(content).toContain("accommodations: 'Acomodações'");
-        });
-
-        it('should have no results messages', () => {
-            expect(content).toContain("noResults: 'No hay alojamientos de tipo {type}");
-            expect(content).toContain("noResults: 'No {type} accommodations available'");
-            expect(content).toContain("noResults: 'Não há acomodações do tipo {type}");
+        it('should use t() for empty title with type interpolation', () => {
+            expect(content).toContain(
+                "t({ locale, namespace: 'accommodations', key: 'typePage.labels.emptyTitle', params: { type: typeName.toLowerCase() } })"
+            );
         });
     });
 
@@ -229,8 +182,8 @@ describe('alojamientos/tipo/[type]/index.astro', () => {
             expect(content).toContain('type="website"');
         });
 
-        it('should handle Portuguese locale mapping', () => {
-            expect(content).toContain("locale={locale === 'pt' ? 'es' : locale}");
+        it('should pass locale directly to SEOHead', () => {
+            expect(content).toContain('locale={locale}');
         });
     });
 
@@ -240,12 +193,12 @@ describe('alojamientos/tipo/[type]/index.astro', () => {
         });
 
         it('should have home breadcrumb link', () => {
-            expect(content).toContain('{ label: labels[locale].home, href: `/${locale}/`');
+            expect(content).toContain('{ label: breadcrumbHome, href: `/${locale}/`');
         });
 
         it('should have accommodations breadcrumb link', () => {
             expect(content).toContain(
-                '{ label: labels[locale].accommodations, href: `/${locale}/alojamientos/`'
+                '{ label: breadcrumbAccommodations, href: `/${locale}/alojamientos/`'
             );
         });
 
@@ -286,7 +239,7 @@ describe('alojamientos/tipo/[type]/index.astro', () => {
     describe('Empty state', () => {
         it('should generate empty state message', () => {
             expect(content).toContain('const emptyMessage =');
-            expect(content).toContain("labels[locale].noResults.replace('{type}'");
+            expect(content).toContain('emptyTitle');
         });
 
         it('should display empty state message', () => {
@@ -333,8 +286,10 @@ describe('alojamientos/tipo/[type]/index.astro', () => {
     });
 
     describe('Accommodation Grid', () => {
-        it('should render AccommodationCard components', () => {
-            expect(content).toContain('<AccommodationCard accommodation={accommodation');
+        it('should render AccommodationCardFeatured components', () => {
+            expect(content).toContain(
+                '<AccommodationCardFeatured accommodation={toAccommodationCardProps('
+            );
         });
 
         it('should pass locale to AccommodationCard', () => {

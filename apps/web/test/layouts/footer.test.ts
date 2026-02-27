@@ -21,12 +21,12 @@ describe('Footer.astro', () => {
             expect(content).toContain('Hospeda');
         });
 
-        it('should have regional tagline referencing Uruguay coast', () => {
-            expect(content).toContain('Uruguay');
+        it('should use i18n for short description', () => {
+            expect(content).toContain("ft('shortDescription')");
         });
 
-        it('should have mate tagline', () => {
-            expect(content).toContain('mate');
+        it('should use i18n for mate tagline', () => {
+            expect(content).toContain("ft('mateTagline')");
         });
     });
 
@@ -38,12 +38,12 @@ describe('Footer.astro', () => {
     });
 
     describe('Link groups', () => {
-        it('should have Explorar section', () => {
-            expect(content).toContain('Explorar');
+        it('should have explore section via i18n', () => {
+            expect(content).toContain("ft('explore')");
         });
 
-        it('should have Legal section', () => {
-            expect(content).toContain('Legal');
+        it('should have legal section via i18n', () => {
+            expect(content).toContain("ft('legal')");
         });
 
         it('should include key navigation links', () => {
@@ -76,15 +76,16 @@ describe('Footer.astro', () => {
             expect(content).toContain('0F1A2E');
         });
 
-        it('should use Caveat font for mate tagline', () => {
+        it('should use Caveat font for mate tagline via i18n', () => {
             expect(content).toContain('font-accent');
+            expect(content).toContain("ft('mateTagline')");
         });
     });
 
     describe('Copyright', () => {
-        it('should include copyright text', () => {
+        it('should include copyright text via i18n', () => {
             expect(content).toContain('Hospeda');
-            expect(content).toContain('Todos los derechos reservados');
+            expect(content).toContain("ft('rights')");
         });
     });
 

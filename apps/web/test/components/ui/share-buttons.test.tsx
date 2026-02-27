@@ -30,12 +30,22 @@ describe('ShareButtons.client.tsx', () => {
         });
 
         it('should accept url prop', () => {
-            render(<ShareButtons {...defaultProps} />);
+            render(
+                <ShareButtons
+                    {...defaultProps}
+                    locale="en"
+                />
+            );
             expect(screen.getByLabelText('Share on WhatsApp')).toBeInTheDocument();
         });
 
         it('should accept title prop', () => {
-            render(<ShareButtons {...defaultProps} />);
+            render(
+                <ShareButtons
+                    {...defaultProps}
+                    locale="en"
+                />
+            );
             expect(screen.getByLabelText('Share on WhatsApp')).toBeInTheDocument();
         });
 
@@ -44,6 +54,7 @@ describe('ShareButtons.client.tsx', () => {
                 <ShareButtons
                     url={defaultProps.url}
                     title={defaultProps.title}
+                    locale="en"
                 />
             );
             expect(screen.getByLabelText('Share on WhatsApp')).toBeInTheDocument();
@@ -54,6 +65,7 @@ describe('ShareButtons.client.tsx', () => {
                 <ShareButtons
                     {...defaultProps}
                     className="custom-class"
+                    locale="en"
                 />
             );
             const wrapper = container.firstChild as HTMLElement;
@@ -61,7 +73,12 @@ describe('ShareButtons.client.tsx', () => {
         });
 
         it('should apply default className when not provided', () => {
-            const { container } = render(<ShareButtons {...defaultProps} />);
+            const { container } = render(
+                <ShareButtons
+                    {...defaultProps}
+                    locale="en"
+                />
+            );
             const wrapper = container.firstChild as HTMLElement;
             expect(wrapper).toHaveClass('flex', 'gap-2', 'items-center');
         });
@@ -78,19 +95,34 @@ describe('ShareButtons.client.tsx', () => {
         });
 
         it('should render native share button when Web Share API is available', () => {
-            render(<ShareButtons {...defaultProps} />);
+            render(
+                <ShareButtons
+                    {...defaultProps}
+                    locale="en"
+                />
+            );
             expect(screen.getByLabelText('Share via device')).toBeInTheDocument();
         });
 
         it('should not render social links when Web Share API is available', () => {
-            render(<ShareButtons {...defaultProps} />);
+            render(
+                <ShareButtons
+                    {...defaultProps}
+                    locale="en"
+                />
+            );
             expect(screen.queryByLabelText('Share on WhatsApp')).not.toBeInTheDocument();
             expect(screen.queryByLabelText('Share on Facebook')).not.toBeInTheDocument();
             expect(screen.queryByLabelText('Share on Twitter')).not.toBeInTheDocument();
         });
 
         it('should still render copy to clipboard button when Web Share API is available', () => {
-            render(<ShareButtons {...defaultProps} />);
+            render(
+                <ShareButtons
+                    {...defaultProps}
+                    locale="en"
+                />
+            );
             expect(screen.getByLabelText('Copy link to clipboard')).toBeInTheDocument();
         });
     });
@@ -102,27 +134,52 @@ describe('ShareButtons.client.tsx', () => {
         });
 
         it('should render WhatsApp share link', () => {
-            render(<ShareButtons {...defaultProps} />);
+            render(
+                <ShareButtons
+                    {...defaultProps}
+                    locale="en"
+                />
+            );
             expect(screen.getByLabelText('Share on WhatsApp')).toBeInTheDocument();
         });
 
         it('should render Facebook share link', () => {
-            render(<ShareButtons {...defaultProps} />);
+            render(
+                <ShareButtons
+                    {...defaultProps}
+                    locale="en"
+                />
+            );
             expect(screen.getByLabelText('Share on Facebook')).toBeInTheDocument();
         });
 
         it('should render Twitter share link', () => {
-            render(<ShareButtons {...defaultProps} />);
+            render(
+                <ShareButtons
+                    {...defaultProps}
+                    locale="en"
+                />
+            );
             expect(screen.getByLabelText('Share on Twitter')).toBeInTheDocument();
         });
 
         it('should render copy to clipboard button', () => {
-            render(<ShareButtons {...defaultProps} />);
+            render(
+                <ShareButtons
+                    {...defaultProps}
+                    locale="en"
+                />
+            );
             expect(screen.getByLabelText('Copy link to clipboard')).toBeInTheDocument();
         });
 
         it('should not render native share button when Web Share API is unavailable', () => {
-            render(<ShareButtons {...defaultProps} />);
+            render(
+                <ShareButtons
+                    {...defaultProps}
+                    locale="en"
+                />
+            );
             expect(screen.queryByLabelText('Share via device')).not.toBeInTheDocument();
         });
     });
@@ -134,7 +191,12 @@ describe('ShareButtons.client.tsx', () => {
         });
 
         it('should generate correct WhatsApp URL with text', () => {
-            render(<ShareButtons {...defaultProps} />);
+            render(
+                <ShareButtons
+                    {...defaultProps}
+                    locale="en"
+                />
+            );
             const whatsappLink = screen.getByLabelText('Share on WhatsApp');
             const expectedMessage = `${defaultProps.title} - ${defaultProps.text} ${defaultProps.url}`;
             expect(whatsappLink).toHaveAttribute(
@@ -148,6 +210,7 @@ describe('ShareButtons.client.tsx', () => {
                 <ShareButtons
                     url={defaultProps.url}
                     title={defaultProps.title}
+                    locale="en"
                 />
             );
             const whatsappLink = screen.getByLabelText('Share on WhatsApp');
@@ -159,7 +222,12 @@ describe('ShareButtons.client.tsx', () => {
         });
 
         it('should generate correct Facebook URL', () => {
-            render(<ShareButtons {...defaultProps} />);
+            render(
+                <ShareButtons
+                    {...defaultProps}
+                    locale="en"
+                />
+            );
             const facebookLink = screen.getByLabelText('Share on Facebook');
             expect(facebookLink).toHaveAttribute(
                 'href',
@@ -168,7 +236,12 @@ describe('ShareButtons.client.tsx', () => {
         });
 
         it('should generate correct Twitter URL with text', () => {
-            render(<ShareButtons {...defaultProps} />);
+            render(
+                <ShareButtons
+                    {...defaultProps}
+                    locale="en"
+                />
+            );
             const twitterLink = screen.getByLabelText('Share on Twitter');
             const expectedText = `${defaultProps.title} - ${defaultProps.text}`;
             expect(twitterLink).toHaveAttribute(
@@ -182,6 +255,7 @@ describe('ShareButtons.client.tsx', () => {
                 <ShareButtons
                     url={defaultProps.url}
                     title={defaultProps.title}
+                    locale="en"
                 />
             );
             const twitterLink = screen.getByLabelText('Share on Twitter');
@@ -199,37 +273,67 @@ describe('ShareButtons.client.tsx', () => {
         });
 
         it('should have target="_blank" on WhatsApp link', () => {
-            render(<ShareButtons {...defaultProps} />);
+            render(
+                <ShareButtons
+                    {...defaultProps}
+                    locale="en"
+                />
+            );
             const link = screen.getByLabelText('Share on WhatsApp');
             expect(link).toHaveAttribute('target', '_blank');
         });
 
         it('should have rel="noopener noreferrer" on WhatsApp link', () => {
-            render(<ShareButtons {...defaultProps} />);
+            render(
+                <ShareButtons
+                    {...defaultProps}
+                    locale="en"
+                />
+            );
             const link = screen.getByLabelText('Share on WhatsApp');
             expect(link).toHaveAttribute('rel', 'noopener noreferrer');
         });
 
         it('should have target="_blank" on Facebook link', () => {
-            render(<ShareButtons {...defaultProps} />);
+            render(
+                <ShareButtons
+                    {...defaultProps}
+                    locale="en"
+                />
+            );
             const link = screen.getByLabelText('Share on Facebook');
             expect(link).toHaveAttribute('target', '_blank');
         });
 
         it('should have rel="noopener noreferrer" on Facebook link', () => {
-            render(<ShareButtons {...defaultProps} />);
+            render(
+                <ShareButtons
+                    {...defaultProps}
+                    locale="en"
+                />
+            );
             const link = screen.getByLabelText('Share on Facebook');
             expect(link).toHaveAttribute('rel', 'noopener noreferrer');
         });
 
         it('should have target="_blank" on Twitter link', () => {
-            render(<ShareButtons {...defaultProps} />);
+            render(
+                <ShareButtons
+                    {...defaultProps}
+                    locale="en"
+                />
+            );
             const link = screen.getByLabelText('Share on Twitter');
             expect(link).toHaveAttribute('target', '_blank');
         });
 
         it('should have rel="noopener noreferrer" on Twitter link', () => {
-            render(<ShareButtons {...defaultProps} />);
+            render(
+                <ShareButtons
+                    {...defaultProps}
+                    locale="en"
+                />
+            );
             const link = screen.getByLabelText('Share on Twitter');
             expect(link).toHaveAttribute('rel', 'noopener noreferrer');
         });
@@ -251,7 +355,12 @@ describe('ShareButtons.client.tsx', () => {
         });
 
         it('should copy URL to clipboard when copy button is clicked', async () => {
-            render(<ShareButtons {...defaultProps} />);
+            render(
+                <ShareButtons
+                    {...defaultProps}
+                    locale="en"
+                />
+            );
 
             const copyButton = screen.getByLabelText('Copy link to clipboard');
             fireEvent.click(copyButton);
@@ -262,7 +371,12 @@ describe('ShareButtons.client.tsx', () => {
         });
 
         it('should show "Copied!" feedback after copying', async () => {
-            render(<ShareButtons {...defaultProps} />);
+            render(
+                <ShareButtons
+                    {...defaultProps}
+                    locale="en"
+                />
+            );
 
             const copyButton = screen.getByLabelText('Copy link to clipboard');
             fireEvent.click(copyButton);
@@ -273,7 +387,12 @@ describe('ShareButtons.client.tsx', () => {
         });
 
         it('should update aria-label to "Link copied" after copying', async () => {
-            render(<ShareButtons {...defaultProps} />);
+            render(
+                <ShareButtons
+                    {...defaultProps}
+                    locale="en"
+                />
+            );
 
             const copyButton = screen.getByLabelText('Copy link to clipboard');
             fireEvent.click(copyButton);
@@ -286,7 +405,12 @@ describe('ShareButtons.client.tsx', () => {
         it('should hide "Copied!" feedback after 2 seconds', async () => {
             vi.useFakeTimers();
 
-            render(<ShareButtons {...defaultProps} />);
+            render(
+                <ShareButtons
+                    {...defaultProps}
+                    locale="en"
+                />
+            );
 
             const copyButton = screen.getByLabelText('Copy link to clipboard');
 
@@ -323,7 +447,12 @@ describe('ShareButtons.client.tsx', () => {
                 }
             });
 
-            render(<ShareButtons {...defaultProps} />);
+            render(
+                <ShareButtons
+                    {...defaultProps}
+                    locale="en"
+                />
+            );
 
             const copyButton = screen.getByLabelText('Copy link to clipboard');
 
@@ -364,7 +493,12 @@ describe('ShareButtons.client.tsx', () => {
         });
 
         it('should call navigator.share when share button is clicked', async () => {
-            render(<ShareButtons {...defaultProps} />);
+            render(
+                <ShareButtons
+                    {...defaultProps}
+                    locale="en"
+                />
+            );
 
             const shareButton = screen.getByLabelText('Share via device');
 
@@ -384,6 +518,7 @@ describe('ShareButtons.client.tsx', () => {
                 <ShareButtons
                     url={defaultProps.url}
                     title={defaultProps.title}
+                    locale="en"
                 />
             );
 
@@ -412,7 +547,12 @@ describe('ShareButtons.client.tsx', () => {
                 value: shareMock
             });
 
-            render(<ShareButtons {...defaultProps} />);
+            render(
+                <ShareButtons
+                    {...defaultProps}
+                    locale="en"
+                />
+            );
 
             const shareButton = screen.getByLabelText('Share via device');
 
@@ -446,27 +586,52 @@ describe('ShareButtons.client.tsx', () => {
         });
 
         it('should have aria-label on WhatsApp button', () => {
-            render(<ShareButtons {...defaultProps} />);
+            render(
+                <ShareButtons
+                    {...defaultProps}
+                    locale="en"
+                />
+            );
             expect(screen.getByLabelText('Share on WhatsApp')).toBeInTheDocument();
         });
 
         it('should have aria-label on Facebook button', () => {
-            render(<ShareButtons {...defaultProps} />);
+            render(
+                <ShareButtons
+                    {...defaultProps}
+                    locale="en"
+                />
+            );
             expect(screen.getByLabelText('Share on Facebook')).toBeInTheDocument();
         });
 
         it('should have aria-label on Twitter button', () => {
-            render(<ShareButtons {...defaultProps} />);
+            render(
+                <ShareButtons
+                    {...defaultProps}
+                    locale="en"
+                />
+            );
             expect(screen.getByLabelText('Share on Twitter')).toBeInTheDocument();
         });
 
         it('should have aria-label on copy button', () => {
-            render(<ShareButtons {...defaultProps} />);
+            render(
+                <ShareButtons
+                    {...defaultProps}
+                    locale="en"
+                />
+            );
             expect(screen.getByLabelText('Copy link to clipboard')).toBeInTheDocument();
         });
 
         it('should have aria-hidden on SVG icons', () => {
-            const { container } = render(<ShareButtons {...defaultProps} />);
+            const { container } = render(
+                <ShareButtons
+                    {...defaultProps}
+                    locale="en"
+                />
+            );
             const icons = Array.from(container.querySelectorAll('svg'));
             for (const icon of icons) {
                 expect(icon).toHaveAttribute('aria-hidden', 'true');
@@ -485,7 +650,12 @@ describe('ShareButtons.client.tsx', () => {
                 }
             });
 
-            render(<ShareButtons {...defaultProps} />);
+            render(
+                <ShareButtons
+                    {...defaultProps}
+                    locale="en"
+                />
+            );
 
             const copyButton = screen.getByLabelText('Copy link to clipboard');
 
@@ -509,7 +679,12 @@ describe('ShareButtons.client.tsx', () => {
         });
 
         it('should have type="button" on all buttons', () => {
-            render(<ShareButtons {...defaultProps} />);
+            render(
+                <ShareButtons
+                    {...defaultProps}
+                    locale="en"
+                />
+            );
             const copyButton = screen.getByLabelText('Copy link to clipboard');
             expect(copyButton).toHaveAttribute('type', 'button');
         });
@@ -522,43 +697,78 @@ describe('ShareButtons.client.tsx', () => {
         });
 
         it('should have focus-visible styles on WhatsApp button', () => {
-            render(<ShareButtons {...defaultProps} />);
+            render(
+                <ShareButtons
+                    {...defaultProps}
+                    locale="en"
+                />
+            );
             const button = screen.getByLabelText('Share on WhatsApp');
             expect(button.className).toContain('focus-visible:outline');
         });
 
         it('should have focus-visible styles on Facebook button', () => {
-            render(<ShareButtons {...defaultProps} />);
+            render(
+                <ShareButtons
+                    {...defaultProps}
+                    locale="en"
+                />
+            );
             const button = screen.getByLabelText('Share on Facebook');
             expect(button.className).toContain('focus-visible:outline');
         });
 
         it('should have focus-visible styles on Twitter button', () => {
-            render(<ShareButtons {...defaultProps} />);
+            render(
+                <ShareButtons
+                    {...defaultProps}
+                    locale="en"
+                />
+            );
             const button = screen.getByLabelText('Share on Twitter');
             expect(button.className).toContain('focus-visible:outline');
         });
 
         it('should have focus-visible styles on copy button', () => {
-            render(<ShareButtons {...defaultProps} />);
+            render(
+                <ShareButtons
+                    {...defaultProps}
+                    locale="en"
+                />
+            );
             const button = screen.getByLabelText('Copy link to clipboard');
             expect(button.className).toContain('focus-visible:outline');
         });
 
         it('should have transition styles on buttons', () => {
-            render(<ShareButtons {...defaultProps} />);
+            render(
+                <ShareButtons
+                    {...defaultProps}
+                    locale="en"
+                />
+            );
             const copyButton = screen.getByLabelText('Copy link to clipboard');
             expect(copyButton.className).toContain('transition-colors');
         });
 
         it('should have proper styling classes on container', () => {
-            const { container } = render(<ShareButtons {...defaultProps} />);
+            const { container } = render(
+                <ShareButtons
+                    {...defaultProps}
+                    locale="en"
+                />
+            );
             const wrapper = container.firstChild as HTMLElement;
             expect(wrapper).toHaveClass('flex', 'gap-2', 'items-center');
         });
 
         it('should have rounded corners on social buttons', () => {
-            render(<ShareButtons {...defaultProps} />);
+            render(
+                <ShareButtons
+                    {...defaultProps}
+                    locale="en"
+                />
+            );
             const whatsappButton = screen.getByLabelText('Share on WhatsApp');
             expect(whatsappButton.className).toContain('rounded-full');
         });

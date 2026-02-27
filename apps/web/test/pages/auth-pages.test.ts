@@ -47,8 +47,8 @@ describe('forgot-password.astro', () => {
 
     describe('Locale validation', () => {
         it('should validate locale parameter', () => {
-            expect(forgotPasswordContent).toContain('const { lang } = Astro.params');
-            expect(forgotPasswordContent).toContain('if (!lang || !isValidLocale(lang))');
+            expect(forgotPasswordContent).toContain('getLocaleFromParams(Astro.params)');
+            expect(forgotPasswordContent).toContain('if (!locale)');
         });
 
         it('should redirect to /es/ on invalid locale', () => {
@@ -56,23 +56,22 @@ describe('forgot-password.astro', () => {
         });
 
         it('should import locale helpers', () => {
-            expect(forgotPasswordContent).toContain('isValidLocale');
-            expect(forgotPasswordContent).toContain('type SupportedLocale');
+            expect(forgotPasswordContent).toContain('getLocaleFromParams');
+            expect(forgotPasswordContent).toContain("import { t } from '../../../lib/i18n'");
         });
     });
 
     describe('Localization', () => {
         it('should have localized titles for all supported locales', () => {
-            expect(forgotPasswordContent).toContain("es: 'Recuperar contraseña'");
-            expect(forgotPasswordContent).toContain("en: 'Forgot Password'");
-            expect(forgotPasswordContent).toContain("pt: 'Esqueci a senha'");
+            expect(forgotPasswordContent).toContain(
+                "t({ locale, namespace: 'auth-ui', key: 'pages.forgotPassword.title' })"
+            );
         });
 
         it('should have localized meta descriptions', () => {
             expect(forgotPasswordContent).toContain(
-                'const descriptions: Record<SupportedLocale, string>'
+                "t({ locale, namespace: 'auth-ui', key: 'pages.forgotPassword.description' })"
             );
-            expect(forgotPasswordContent).toContain('Recupera tu contraseña de Hospeda');
         });
     });
 
@@ -85,8 +84,8 @@ describe('forgot-password.astro', () => {
         });
 
         it('should pass title and description to SEOHead', () => {
-            expect(forgotPasswordContent).toContain('title={titles[locale]}');
-            expect(forgotPasswordContent).toContain('description={descriptions[locale]}');
+            expect(forgotPasswordContent).toContain('title={title}');
+            expect(forgotPasswordContent).toContain('description={description}');
         });
 
         it('should set page type to website', () => {
@@ -99,14 +98,14 @@ describe('forgot-password.astro', () => {
     });
 
     describe('React island integration', () => {
-        it('should import ForgotPasswordIsland component', () => {
+        it('should import ForgotPasswordClient component', () => {
             expect(forgotPasswordContent).toContain(
-                "import { ForgotPasswordIsland } from '../../../components/auth/ForgotPasswordIsland'"
+                "import { ForgotPasswordClient } from '../../../components/auth/ForgotPassword.client'"
             );
         });
 
-        it('should render ForgotPasswordIsland with client:load', () => {
-            expect(forgotPasswordContent).toContain('<ForgotPasswordIsland');
+        it('should render ForgotPasswordClient with client:load', () => {
+            expect(forgotPasswordContent).toContain('<ForgotPasswordClient');
             expect(forgotPasswordContent).toContain('client:load');
         });
 
@@ -166,8 +165,8 @@ describe('reset-password.astro', () => {
 
     describe('Locale validation', () => {
         it('should validate locale parameter', () => {
-            expect(resetPasswordContent).toContain('const { lang } = Astro.params');
-            expect(resetPasswordContent).toContain('if (!lang || !isValidLocale(lang))');
+            expect(resetPasswordContent).toContain('getLocaleFromParams(Astro.params)');
+            expect(resetPasswordContent).toContain('if (!locale)');
         });
 
         it('should redirect to /es/ on invalid locale', () => {
@@ -175,23 +174,22 @@ describe('reset-password.astro', () => {
         });
 
         it('should import locale helpers', () => {
-            expect(resetPasswordContent).toContain('isValidLocale');
-            expect(resetPasswordContent).toContain('type SupportedLocale');
+            expect(resetPasswordContent).toContain('getLocaleFromParams');
+            expect(resetPasswordContent).toContain("import { t } from '../../../lib/i18n'");
         });
     });
 
     describe('Localization', () => {
         it('should have localized titles for all supported locales', () => {
-            expect(resetPasswordContent).toContain("es: 'Restablecer contraseña'");
-            expect(resetPasswordContent).toContain("en: 'Reset Password'");
-            expect(resetPasswordContent).toContain("pt: 'Redefinir senha'");
+            expect(resetPasswordContent).toContain(
+                "t({ locale, namespace: 'auth-ui', key: 'pages.resetPassword.title' })"
+            );
         });
 
         it('should have localized meta descriptions', () => {
             expect(resetPasswordContent).toContain(
-                'const descriptions: Record<SupportedLocale, string>'
+                "t({ locale, namespace: 'auth-ui', key: 'pages.resetPassword.description' })"
             );
-            expect(resetPasswordContent).toContain('Establece una nueva contraseña');
         });
     });
 
@@ -204,8 +202,8 @@ describe('reset-password.astro', () => {
         });
 
         it('should pass title and description to SEOHead', () => {
-            expect(resetPasswordContent).toContain('title={titles[locale]}');
-            expect(resetPasswordContent).toContain('description={descriptions[locale]}');
+            expect(resetPasswordContent).toContain('title={title}');
+            expect(resetPasswordContent).toContain('description={description}');
         });
 
         it('should set page type to website', () => {
@@ -218,14 +216,14 @@ describe('reset-password.astro', () => {
     });
 
     describe('React island integration', () => {
-        it('should import ResetPasswordIsland component', () => {
+        it('should import ResetPasswordClient component', () => {
             expect(resetPasswordContent).toContain(
-                "import { ResetPasswordIsland } from '../../../components/auth/ResetPasswordIsland'"
+                "import { ResetPasswordClient } from '../../../components/auth/ResetPassword.client'"
             );
         });
 
-        it('should render ResetPasswordIsland with client:load', () => {
-            expect(resetPasswordContent).toContain('<ResetPasswordIsland');
+        it('should render ResetPasswordClient with client:load', () => {
+            expect(resetPasswordContent).toContain('<ResetPasswordClient');
             expect(resetPasswordContent).toContain('client:load');
         });
 
@@ -280,8 +278,8 @@ describe('verify-email.astro', () => {
 
     describe('Locale validation', () => {
         it('should validate locale parameter', () => {
-            expect(verifyEmailContent).toContain('const { lang } = Astro.params');
-            expect(verifyEmailContent).toContain('if (!lang || !isValidLocale(lang))');
+            expect(verifyEmailContent).toContain('getLocaleFromParams(Astro.params)');
+            expect(verifyEmailContent).toContain('if (!locale)');
         });
 
         it('should redirect to /es/ on invalid locale', () => {
@@ -289,23 +287,22 @@ describe('verify-email.astro', () => {
         });
 
         it('should import locale helpers', () => {
-            expect(verifyEmailContent).toContain('isValidLocale');
-            expect(verifyEmailContent).toContain('type SupportedLocale');
+            expect(verifyEmailContent).toContain('getLocaleFromParams');
+            expect(verifyEmailContent).toContain("import { t } from '../../../lib/i18n'");
         });
     });
 
     describe('Localization', () => {
         it('should have localized titles for all supported locales', () => {
-            expect(verifyEmailContent).toContain("es: 'Verificar email'");
-            expect(verifyEmailContent).toContain("en: 'Verify Email'");
-            expect(verifyEmailContent).toContain("pt: 'Verificar email'");
+            expect(verifyEmailContent).toContain(
+                "t({ locale, namespace: 'auth-ui', key: 'pages.verifyEmail.title' })"
+            );
         });
 
         it('should have localized meta descriptions', () => {
             expect(verifyEmailContent).toContain(
-                'const descriptions: Record<SupportedLocale, string>'
+                "t({ locale, namespace: 'auth-ui', key: 'pages.verifyEmail.description' })"
             );
-            expect(verifyEmailContent).toContain('Verificando tu dirección de correo electrónico');
         });
     });
 
@@ -316,8 +313,8 @@ describe('verify-email.astro', () => {
         });
 
         it('should pass title and description to SEOHead', () => {
-            expect(verifyEmailContent).toContain('title={titles[locale]}');
-            expect(verifyEmailContent).toContain('description={descriptions[locale]}');
+            expect(verifyEmailContent).toContain('title={title}');
+            expect(verifyEmailContent).toContain('description={description}');
         });
 
         it('should set page type to website', () => {
@@ -330,14 +327,14 @@ describe('verify-email.astro', () => {
     });
 
     describe('React island integration', () => {
-        it('should import VerifyEmailIsland component', () => {
+        it('should import VerifyEmailClient component', () => {
             expect(verifyEmailContent).toContain(
-                "import { VerifyEmailIsland } from '../../../components/auth/VerifyEmailIsland'"
+                "import { VerifyEmailClient } from '../../../components/auth/VerifyEmail.client'"
             );
         });
 
-        it('should render VerifyEmailIsland with client:load', () => {
-            expect(verifyEmailContent).toContain('<VerifyEmailIsland');
+        it('should render VerifyEmailClient with client:load', () => {
+            expect(verifyEmailContent).toContain('<VerifyEmailClient');
             expect(verifyEmailContent).toContain('client:load');
         });
 

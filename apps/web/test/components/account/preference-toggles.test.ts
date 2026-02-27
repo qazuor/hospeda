@@ -38,8 +38,8 @@ describe('PreferenceToggles.client.tsx', () => {
             expect(content).toContain('readonly initialSettings: UserSettings');
         });
 
-        it('should define optional locale prop with supported locales', () => {
-            expect(content).toContain("readonly locale?: 'es' | 'en' | 'pt'");
+        it('should define optional locale prop as string', () => {
+            expect(content).toContain('readonly locale?: string');
         });
 
         it('should default locale to es', () => {
@@ -57,11 +57,19 @@ describe('PreferenceToggles.client.tsx', () => {
         });
 
         it('should import userApi from endpoints', () => {
-            expect(content).toContain("import { userApi } from '../../lib/api/endpoints'");
+            expect(content).toContain(
+                "import { userApi } from '../../lib/api/endpoints-protected'"
+            );
         });
 
         it('should import addToast from toast store', () => {
             expect(content).toContain("import { addToast } from '../../store/toast-store'");
+        });
+
+        it('should import useTranslation hook', () => {
+            expect(content).toContain(
+                "import { useTranslation } from '../../hooks/useTranslation'"
+            );
         });
     });
 
@@ -103,129 +111,69 @@ describe('PreferenceToggles.client.tsx', () => {
         });
     });
 
-    describe('Localization - Spanish (es)', () => {
-        it('should have Spanish notifications title', () => {
-            expect(content).toContain('Notificaciones');
+    describe('Localization - useTranslation hook', () => {
+        it('should use useTranslation with account namespace', () => {
+            expect(content).toContain("namespace: 'account'");
         });
 
-        it('should have Spanish email label', () => {
-            expect(content).toContain('Notificaciones por email');
+        it('should destructure t from useTranslation', () => {
+            expect(content).toContain('const { t } = useTranslation(');
         });
 
-        it('should have Spanish SMS label', () => {
-            expect(content).toContain('Notificaciones por SMS');
+        it('should use t function for notifications title', () => {
+            expect(content).toContain("t('preferences.notificationsTitle')");
         });
 
-        it('should have Spanish push label', () => {
-            expect(content).toContain('Notificaciones push');
+        it('should use t function for email label', () => {
+            expect(content).toContain("t('preferences.emailLabel')");
         });
 
-        it('should have Spanish language title', () => {
-            expect(content).toContain("languageTitle: 'Idioma'");
+        it('should use t function for SMS label', () => {
+            expect(content).toContain("t('preferences.smsLabel')");
         });
 
-        it('should have Spanish save button text', () => {
-            expect(content).toContain("saveButton: 'Guardar cambios'");
+        it('should use t function for push label', () => {
+            expect(content).toContain("t('preferences.pushLabel')");
         });
 
-        it('should have Spanish saving indicator', () => {
-            expect(content).toContain("saving: 'Guardando...'");
+        it('should use t function for language title', () => {
+            expect(content).toContain("t('preferences.languageTitle')");
         });
 
-        it('should have Spanish notifications saved message', () => {
-            expect(content).toContain('Preferencias de notificaciones guardadas');
+        it('should use t function for save button', () => {
+            expect(content).toContain("t('preferences.saveButton')");
         });
 
-        it('should have Spanish language saved message', () => {
-            expect(content).toContain('Idioma actualizado correctamente');
+        it('should use t function for saving indicator', () => {
+            expect(content).toContain("t('preferences.saving')");
         });
 
-        it('should have Spanish error message', () => {
-            expect(content).toContain('No se pudieron guardar los cambios. Intentá nuevamente.');
-        });
-    });
-
-    describe('Localization - English (en)', () => {
-        it('should have English notifications title', () => {
-            expect(content).toContain("notificationsTitle: 'Notifications'");
+        it('should use t function for notifications saved message', () => {
+            expect(content).toContain("t('preferences.notificationsSaved')");
         });
 
-        it('should have English email label', () => {
-            expect(content).toContain("emailLabel: 'Email notifications'");
+        it('should use t function for language saved message', () => {
+            expect(content).toContain("t('preferences.languageSaved')");
         });
 
-        it('should have English SMS label', () => {
-            expect(content).toContain("smsLabel: 'SMS notifications'");
+        it('should use t function for error message', () => {
+            expect(content).toContain("t('preferences.errorMessage')");
         });
 
-        it('should have English push label', () => {
-            expect(content).toContain("pushLabel: 'Push notifications'");
+        it('should use t function for language Es option', () => {
+            expect(content).toContain("t('preferences.languageEs')");
         });
 
-        it('should have English save button text', () => {
-            expect(content).toContain("saveButton: 'Save changes'");
+        it('should use t function for language En option', () => {
+            expect(content).toContain("t('preferences.languageEn')");
         });
 
-        it('should have English saving indicator', () => {
-            expect(content).toContain("saving: 'Saving...'");
-        });
-
-        it('should have English notifications saved message', () => {
-            expect(content).toContain('Notification preferences saved');
-        });
-
-        it('should have English language saved message', () => {
-            expect(content).toContain('Language updated successfully');
-        });
-
-        it('should have English error message', () => {
-            expect(content).toContain('Could not save changes. Please try again.');
-        });
-    });
-
-    describe('Localization - Portuguese (pt)', () => {
-        it('should have Portuguese notifications title', () => {
-            expect(content).toContain("notificationsTitle: 'Notificações'");
-        });
-
-        it('should have Portuguese email label', () => {
-            expect(content).toContain("emailLabel: 'Notificações por e-mail'");
-        });
-
-        it('should have Portuguese save button text', () => {
-            expect(content).toContain("saveButton: 'Salvar alterações'");
-        });
-
-        it('should have Portuguese saving indicator', () => {
-            expect(content).toContain("saving: 'Salvando...'");
-        });
-
-        it('should have Portuguese notifications saved message', () => {
-            expect(content).toContain('Preferências de notificação salvas');
-        });
-
-        it('should have Portuguese language saved message', () => {
-            expect(content).toContain('Idioma atualizado com sucesso');
-        });
-
-        it('should have Portuguese error message', () => {
-            expect(content).toContain('Não foi possível salvar as alterações. Tente novamente.');
+        it('should use t function for language Pt option', () => {
+            expect(content).toContain("t('preferences.languagePt')");
         });
     });
 
     describe('Language options', () => {
-        it('should include Español option for all locales', () => {
-            expect(content).toContain("languageEs: 'Español'");
-        });
-
-        it('should include English option for all locales', () => {
-            expect(content).toContain("languageEn: 'English'");
-        });
-
-        it('should include Português option for all locales', () => {
-            expect(content).toContain("languagePt: 'Português'");
-        });
-
         it('should have language select element', () => {
             expect(content).toContain('id="language-select"');
         });
@@ -353,15 +301,15 @@ describe('PreferenceToggles.client.tsx', () => {
 
     describe('Toast notifications', () => {
         it('should show success toast when notifications saved', () => {
-            expect(content).toContain('t.notificationsSaved');
+            expect(content).toContain("t('preferences.notificationsSaved')");
         });
 
         it('should show success toast when language saved', () => {
-            expect(content).toContain('t.languageSaved');
+            expect(content).toContain("t('preferences.languageSaved')");
         });
 
         it('should show error toast on failure', () => {
-            expect(content).toContain('t.errorMessage');
+            expect(content).toContain("t('preferences.errorMessage')");
         });
 
         it('should use type success for success toasts', () => {
@@ -390,21 +338,25 @@ describe('PreferenceToggles.client.tsx', () => {
 
     describe('Loading state', () => {
         it('should show saving text when saving notifications', () => {
-            expect(content).toContain('{isSavingNotifications ? t.saving : t.saveButton}');
+            expect(content).toContain('{isSavingNotifications');
+            expect(content).toContain("t('preferences.saving')");
+            expect(content).toContain("t('preferences.saveButton')");
         });
 
         it('should show saving text when saving language', () => {
-            expect(content).toContain('{isSavingLanguage ? t.saving : t.saveButton}');
+            expect(content).toContain(
+                "isSavingLanguage ? t('preferences.saving') : t('preferences.saveButton')"
+            );
         });
     });
 
     describe('UI structure', () => {
         it('should have a notifications section', () => {
-            expect(content).toContain('t.notificationsTitle');
+            expect(content).toContain("t('preferences.notificationsTitle')");
         });
 
         it('should have a language section', () => {
-            expect(content).toContain('t.languageTitle');
+            expect(content).toContain("t('preferences.languageTitle')");
         });
 
         it('should have handleNotificationToggle function', () => {

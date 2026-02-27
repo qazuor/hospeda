@@ -90,15 +90,19 @@ describe('Accommodation Detail Page ([slug].astro)', () => {
             );
         });
 
-        it('should import AccommodationCard', () => {
+        it('should import AccommodationCardFeatured', () => {
             expect(content).toContain(
-                "import AccommodationCard from '../../../components/accommodation/AccommodationCard.astro'"
+                "import AccommodationCardFeatured from '../../../components/accommodation/AccommodationCardFeatured.astro'"
             );
         });
 
         it('should import i18n utilities', () => {
-            expect(content).toContain('import { isValidLocale, type SupportedLocale }');
-            expect(content).toContain("from '../../../lib/i18n'");
+            expect(content).toContain('getLocaleFromParams');
+            expect(content).toContain("from '../../../lib/page-helpers'");
+        });
+
+        it('should import t from lib/i18n', () => {
+            expect(content).toContain("import { t as i18nT } from '../../../lib/i18n'");
         });
 
         it('should import renderTiptapContent', () => {
@@ -115,11 +119,12 @@ describe('Accommodation Detail Page ([slug].astro)', () => {
 
     describe('Locale Validation', () => {
         it('should extract lang param', () => {
-            expect(content).toContain('const { lang, slug } = Astro.params');
+            expect(content).toContain('const { slug } = Astro.params');
         });
 
         it('should validate locale', () => {
-            expect(content).toContain('if (!lang || !isValidLocale(lang))');
+            expect(content).toContain('getLocaleFromParams(Astro.params)');
+            expect(content).toContain('if (!locale)');
         });
 
         it('should redirect to default locale if invalid', () => {
@@ -127,7 +132,7 @@ describe('Accommodation Detail Page ([slug].astro)', () => {
         });
 
         it('should cast locale to SupportedLocale type', () => {
-            expect(content).toContain('const locale = lang as SupportedLocale');
+            expect(content).toContain('const locale = getLocaleFromParams(Astro.params)');
         });
     });
 
@@ -278,8 +283,8 @@ describe('Accommodation Detail Page ([slug].astro)', () => {
             expect(content).toContain('server:defer');
         });
 
-        it('should pass reviews to ReviewListIsland', () => {
-            expect(content).toContain('reviews={mockReviews}');
+        it('should pass empty reviews array to ReviewListIsland', () => {
+            expect(content).toContain('reviews={[]}');
         });
 
         it('should pass totalCount to ReviewListIsland', () => {
@@ -381,29 +386,26 @@ describe('Accommodation Detail Page ([slug].astro)', () => {
     });
 
     describe('Localization', () => {
-        it('should have localized texts for es', () => {
-            expect(content).toContain('es: {');
-            expect(content).toContain("home: 'Inicio'");
-            expect(content).toContain("accommodations: 'Alojamientos'");
-            expect(content).toContain("description: 'Descripción'");
+        it('should use i18n for localized texts via tAcc helper', () => {
+            expect(content).toContain('const tAcc = (key: string)');
+            expect(content).toContain("namespace: 'accommodations'");
+            expect(content).toContain('`detail.${key}`');
         });
 
-        it('should have localized texts for en', () => {
-            expect(content).toContain('en: {');
-            expect(content).toContain("home: 'Home'");
-            expect(content).toContain("accommodations: 'Accommodations'");
-            expect(content).toContain("description: 'Description'");
+        it('should build t object with all required keys via tAcc', () => {
+            expect(content).toContain('home: tAcc(');
+            expect(content).toContain('accommodations: tAcc(');
+            expect(content).toContain('description: tAcc(');
         });
 
-        it('should have localized texts for pt', () => {
-            expect(content).toContain('pt: {');
-            expect(content).toContain("home: 'Início'");
-            expect(content).toContain("accommodations: 'Acomodações'");
-            expect(content).toContain("description: 'Descrição'");
+        it('should call tAcc for all text keys', () => {
+            expect(content).toContain("tAcc('home')");
+            expect(content).toContain("tAcc('description')");
+            expect(content).toContain("tAcc('bookNow')");
         });
 
-        it('should select texts based on locale', () => {
-            expect(content).toContain('const t = texts[locale]');
+        it('should select texts based on locale via i18n', () => {
+            expect(content).toContain('const t = {');
         });
     });
 
@@ -459,13 +461,13 @@ describe('Accommodation Detail Page ([slug].astro)', () => {
         });
 
         it('should use const for variable declarations', () => {
-            expect(content).toContain('const { lang, slug }');
+            expect(content).toContain('const { slug }');
             expect(content).toContain('const locale =');
             expect(content).toContain('const t =');
         });
 
         it('should use TypeScript types', () => {
-            expect(content).toContain('SupportedLocale');
+            expect(content).toContain('SUPPORTED_LOCALES');
         });
 
         it('should be under 500 lines', () => {
@@ -511,7 +513,7 @@ describe('Accommodation Detail Page ([slug].astro)', () => {
         });
 
         it('should generate static paths for all locales', () => {
-            expect(content).toContain("const locales = ['es', 'en', 'pt']");
+            expect(content).toContain('const locales = SUPPORTED_LOCALES');
         });
     });
 });

@@ -7,8 +7,9 @@ const content = readFileSync(componentPath, 'utf8');
 
 describe('EventCard.astro', () => {
     describe('Props', () => {
-        it('should define EventCardData interface', () => {
-            expect(content).toContain('interface EventCardData');
+        it('should import EventCardData from transforms', () => {
+            expect(content).toContain('import type { EventCardData } from');
+            expect(content).toContain('lib/api/transforms');
         });
 
         it('should accept event prop', () => {
@@ -19,16 +20,8 @@ describe('EventCard.astro', () => {
             expect(content).toContain('locale?: string');
         });
 
-        it('should have slug property', () => {
-            expect(content).toContain('slug: string');
-        });
-
-        it('should have date with start and optional end', () => {
-            expect(content).toContain('date: { start: string; end?: string }');
-        });
-
-        it('should have optional location', () => {
-            expect(content).toContain('location?: { name: string; city: string }');
+        it('should use EventCardData type for event prop', () => {
+            expect(content).toContain('event: EventCardData');
         });
 
         it('should accept optional variant prop', () => {
@@ -169,7 +162,24 @@ describe('EventCard.astro', () => {
 
         it('should show featured badge when applicable', () => {
             expect(content).toContain('isFeatured');
-            expect(content).toContain('Destacado');
+            expect(content).toContain('featuredLabel');
+            expect(content).toContain('variant="featured"');
+        });
+    });
+
+    describe('i18n', () => {
+        it('should import t from i18n lib', () => {
+            expect(content).toContain("import { t } from '../../lib/i18n'");
+        });
+
+        it('should define tCard helper for event card translations', () => {
+            expect(content).toContain('tCard');
+            expect(content).toContain("namespace: 'event'");
+        });
+
+        it('should use i18n for favorite button aria-label', () => {
+            expect(content).toContain('addToFavoritesLabel');
+            expect(content).toContain('aria-label={addToFavoritesLabel}');
         });
     });
 
@@ -184,11 +194,11 @@ describe('EventCard.astro', () => {
     });
 
     describe('Category mapping', () => {
-        it('should define category labels', () => {
-            expect(content).toContain('categoryLabels');
+        it('should use i18n for category labels', () => {
+            expect(content).toContain('tCard(`categories.${event.category}`)');
         });
 
-        it('should fallback to category value if no label', () => {
+        it('should fallback to category value if no i18n label', () => {
             expect(content).toContain('event.category');
         });
     });

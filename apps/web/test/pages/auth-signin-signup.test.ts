@@ -3,7 +3,7 @@
  * Verifies page structure, SEO elements, localization, React island usage, and navigation links.
  *
  * Note: Form fields and social login buttons are now inside React island components
- * (SignInIsland, SignUpIsland from @repo/auth-ui), not in the Astro pages directly.
+ * (SignInClient, SignUpClient from @repo/auth-ui), not in the Astro pages directly.
  */
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -45,8 +45,8 @@ describe('signin.astro', () => {
 
     describe('Locale validation', () => {
         it('should validate locale parameter', () => {
-            expect(loginContent).toContain('const { lang } = Astro.params');
-            expect(loginContent).toContain('if (!lang || !isValidLocale(lang))');
+            expect(loginContent).toContain('getLocaleFromParams(Astro.params)');
+            expect(loginContent).toContain('if (!locale)');
         });
 
         it('should redirect to /es/ on invalid locale', () => {
@@ -54,21 +54,22 @@ describe('signin.astro', () => {
         });
 
         it('should import locale helpers', () => {
-            expect(loginContent).toContain('isValidLocale');
-            expect(loginContent).toContain('type SupportedLocale');
+            expect(loginContent).toContain('getLocaleFromParams');
+            expect(loginContent).toContain("import { t } from '../../../lib/i18n'");
         });
     });
 
     describe('Localization', () => {
         it('should have localized titles for all supported locales', () => {
-            expect(loginContent).toContain("es: 'Iniciar sesión'");
-            expect(loginContent).toContain("en: 'Sign In'");
-            expect(loginContent).toContain("pt: 'Entrar'");
+            expect(loginContent).toContain(
+                "t({ locale, namespace: 'auth-ui', key: 'pages.signin.title' })"
+            );
         });
 
         it('should have localized meta descriptions', () => {
-            expect(loginContent).toContain('const descriptions: Record<SupportedLocale, string>');
-            expect(loginContent).toContain('Inicia sesión en tu cuenta de Hospeda');
+            expect(loginContent).toContain(
+                "t({ locale, namespace: 'auth-ui', key: 'pages.signin.description' })"
+            );
         });
 
         it('should have localized navigation labels', () => {
@@ -85,8 +86,8 @@ describe('signin.astro', () => {
         });
 
         it('should pass title and description to SEOHead', () => {
-            expect(loginContent).toContain('title={titles[locale]}');
-            expect(loginContent).toContain('description={descriptions[locale]}');
+            expect(loginContent).toContain('title={title}');
+            expect(loginContent).toContain('description={description}');
         });
 
         it('should set page type to website', () => {
@@ -99,14 +100,14 @@ describe('signin.astro', () => {
     });
 
     describe('React island integration', () => {
-        it('should import SignInIsland component', () => {
+        it('should import SignInClient component', () => {
             expect(loginContent).toContain(
-                "import { SignInIsland } from '../../../components/auth/SignInIsland'"
+                "import { SignInClient } from '../../../components/auth/SignIn.client'"
             );
         });
 
-        it('should render SignInIsland with client:load', () => {
-            expect(loginContent).toContain('<SignInIsland');
+        it('should render SignInClient with client:load', () => {
+            expect(loginContent).toContain('<SignInClient');
             expect(loginContent).toContain('client:load');
         });
 
@@ -197,8 +198,8 @@ describe('signup.astro', () => {
 
     describe('Locale validation', () => {
         it('should validate locale parameter', () => {
-            expect(registerContent).toContain('const { lang } = Astro.params');
-            expect(registerContent).toContain('if (!lang || !isValidLocale(lang))');
+            expect(registerContent).toContain('getLocaleFromParams(Astro.params)');
+            expect(registerContent).toContain('if (!locale)');
         });
 
         it('should redirect to /es/ on invalid locale', () => {
@@ -206,23 +207,22 @@ describe('signup.astro', () => {
         });
 
         it('should import locale helpers', () => {
-            expect(registerContent).toContain('isValidLocale');
-            expect(registerContent).toContain('type SupportedLocale');
+            expect(registerContent).toContain('getLocaleFromParams');
+            expect(registerContent).toContain("import { t } from '../../../lib/i18n'");
         });
     });
 
     describe('Localization', () => {
         it('should have localized titles for all supported locales', () => {
-            expect(registerContent).toContain("es: 'Registrarse'");
-            expect(registerContent).toContain("en: 'Sign Up'");
-            expect(registerContent).toContain("pt: 'Registrar'");
+            expect(registerContent).toContain(
+                "t({ locale, namespace: 'auth-ui', key: 'pages.signup.title' })"
+            );
         });
 
         it('should have localized meta descriptions', () => {
             expect(registerContent).toContain(
-                'const descriptions: Record<SupportedLocale, string>'
+                "t({ locale, namespace: 'auth-ui', key: 'pages.signup.description' })"
             );
-            expect(registerContent).toContain('Crea tu cuenta en Hospeda');
         });
 
         it('should have localized navigation labels', () => {
@@ -239,8 +239,8 @@ describe('signup.astro', () => {
         });
 
         it('should pass title and description to SEOHead', () => {
-            expect(registerContent).toContain('title={titles[locale]}');
-            expect(registerContent).toContain('description={descriptions[locale]}');
+            expect(registerContent).toContain('title={title}');
+            expect(registerContent).toContain('description={description}');
         });
 
         it('should set page type to website', () => {
@@ -253,14 +253,14 @@ describe('signup.astro', () => {
     });
 
     describe('React island integration', () => {
-        it('should import SignUpIsland component', () => {
+        it('should import SignUpClient component', () => {
             expect(registerContent).toContain(
-                "import { SignUpIsland } from '../../../components/auth/SignUpIsland'"
+                "import { SignUpClient } from '../../../components/auth/SignUp.client'"
             );
         });
 
-        it('should render SignUpIsland with client:load', () => {
-            expect(registerContent).toContain('<SignUpIsland');
+        it('should render SignUpClient with client:load', () => {
+            expect(registerContent).toContain('<SignUpClient');
             expect(registerContent).toContain('client:load');
         });
 

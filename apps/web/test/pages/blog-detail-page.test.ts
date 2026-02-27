@@ -59,10 +59,13 @@ describe('Blog Detail Page ([slug].astro)', () => {
             );
         });
 
-        it('should import i18n utilities', () => {
-            expect(content).toContain(
-                "import { isValidLocale, type SupportedLocale } from '../../../lib/i18n'"
-            );
+        it('should import i18n utilities from page-helpers', () => {
+            expect(content).toContain("from '../../../lib/page-helpers'");
+            expect(content).toContain('getLocaleFromParams');
+        });
+
+        it('should import t from i18n lib', () => {
+            expect(content).toContain("import { t as i18nT } from '../../../lib/i18n'");
         });
 
         it('should import renderTiptapContent', () => {
@@ -78,16 +81,16 @@ describe('Blog Detail Page ([slug].astro)', () => {
 
     describe('Locale Validation', () => {
         it('should validate locale parameter', () => {
-            expect(content).toContain('const { lang, slug } = Astro.params');
-            expect(content).toContain('if (!lang || !isValidLocale(lang))');
+            expect(content).toContain('getLocaleFromParams(Astro.params)');
+            expect(content).toContain('if (!locale)');
         });
 
         it('should redirect invalid locales to Spanish', () => {
             expect(content).toContain("return Astro.redirect('/es/')");
         });
 
-        it('should cast valid locale to SupportedLocale', () => {
-            expect(content).toContain('const locale = lang as SupportedLocale');
+        it('should extract slug from params', () => {
+            expect(content).toContain('const { slug } = Astro.params');
         });
     });
 
@@ -106,12 +109,12 @@ describe('Blog Detail Page ([slug].astro)', () => {
             expect(content).toContain('const breadcrumbItems');
         });
 
-        it('should include home in breadcrumb', () => {
-            expect(content).toContain('{ label: t.home');
+        it('should include home label in breadcrumb', () => {
+            expect(content).toContain('{ label: homeLabel');
         });
 
-        it('should include blog in breadcrumb', () => {
-            expect(content).toContain('{ label: t.blog');
+        it('should include blog label in breadcrumb', () => {
+            expect(content).toContain('{ label: blogLabel');
         });
 
         it('should include category in breadcrumb', () => {
@@ -159,7 +162,7 @@ describe('Blog Detail Page ([slug].astro)', () => {
 
         it('should display reading time', () => {
             expect(content).toContain('{post.readingTime');
-            expect(content).toContain('{t.readingTime}');
+            expect(content).toContain('{readingTimeLabel}');
         });
 
         it('should have prose typography for content', () => {
@@ -169,7 +172,7 @@ describe('Blog Detail Page ([slug].astro)', () => {
 
     describe('Tags Section', () => {
         it('should have tags section heading', () => {
-            expect(content).toContain('{t.tags}');
+            expect(content).toContain('{tagsLabel}');
         });
 
         it('should render tags with Badge components', () => {
@@ -185,7 +188,7 @@ describe('Blog Detail Page ([slug].astro)', () => {
 
     describe('Share Section', () => {
         it('should have share section heading', () => {
-            expect(content).toContain('{t.share}');
+            expect(content).toContain('{shareLabel}');
         });
 
         it('should render ShareButtons with client:visible', () => {
@@ -242,8 +245,8 @@ describe('Blog Detail Page ([slug].astro)', () => {
     });
 
     describe('Related Posts Section', () => {
-        it('should render Section with title', () => {
-            expect(content).toContain('<Section title={t.relatedPosts}');
+        it('should render Section with relatedPostsLabel', () => {
+            expect(content).toContain('<Section title={relatedPostsLabel}');
         });
 
         it('should have responsive grid', () => {
@@ -261,25 +264,32 @@ describe('Blog Detail Page ([slug].astro)', () => {
     });
 
     describe('Localization', () => {
-        it('should define texts for es locale', () => {
-            expect(content).toContain('es: {');
-            expect(content).toContain("blog: 'Blog'");
-            expect(content).toContain("relatedPosts: 'Publicaciones relacionadas'");
-            expect(content).toContain("share: 'Compartir'");
-            expect(content).toContain("tags: 'Etiquetas'");
+        it('should use i18n t function for blog label', () => {
+            expect(content).toContain("i18nT({ locale, namespace: 'blog', key: 'detail.blog' })");
         });
 
-        it('should define texts for en locale', () => {
-            expect(content).toContain('en: {');
-            expect(content).toContain("relatedPosts: 'Related Posts'");
-            expect(content).toContain("share: 'Share'");
-            expect(content).toContain("tags: 'Tags'");
+        it('should use i18n t function for relatedPosts label', () => {
+            expect(content).toContain(
+                "i18nT({ locale, namespace: 'blog', key: 'detail.relatedPosts' })"
+            );
         });
 
-        it('should define texts for pt locale', () => {
-            expect(content).toContain('pt: {');
-            expect(content).toContain("relatedPosts: 'Publicações relacionadas'");
-            expect(content).toContain("share: 'Compartilhar'");
+        it('should use i18n t function for share label', () => {
+            expect(content).toContain("i18nT({ locale, namespace: 'blog', key: 'detail.share' })");
+        });
+
+        it('should use i18n t function for tags label', () => {
+            expect(content).toContain("i18nT({ locale, namespace: 'blog', key: 'detail.tags' })");
+        });
+
+        it('should use i18n t function for readingTime label', () => {
+            expect(content).toContain(
+                "i18nT({ locale, namespace: 'blog', key: 'detail.readingTime' })"
+            );
+        });
+
+        it('should use i18n t function for home label', () => {
+            expect(content).toContain("i18nT({ locale, namespace: 'blog', key: 'detail.home' })");
         });
 
         it('should format date according to locale', () => {
@@ -341,7 +351,7 @@ describe('Blog Detail Page ([slug].astro)', () => {
         });
 
         it('should generate static paths for all locales', () => {
-            expect(content).toContain("const locales = ['es', 'en', 'pt']");
+            expect(content).toContain('const locales = SUPPORTED_LOCALES');
         });
     });
 });

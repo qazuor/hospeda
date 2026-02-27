@@ -85,13 +85,17 @@ describe('publicaciones/etiqueta/[tag]/index.astro', () => {
 
         it('should import i18n utilities', () => {
             expect(indexContent).toContain(
-                "import { isValidLocale, type SupportedLocale } from '../../../../../lib/i18n'"
+                "import { getLocaleFromParams } from '../../../../../lib/page-helpers'"
             );
+        });
+
+        it('should import t from lib/i18n', () => {
+            expect(indexContent).toContain("import { t } from '../../../../../lib/i18n'");
         });
 
         it('should import tagsApi', () => {
             expect(indexContent).toContain(
-                "import { tagsApi } from '../../../../../lib/api/endpoints'"
+                "import { tagsApi } from '../../../../../lib/api/endpoints-protected'"
             );
         });
 
@@ -103,20 +107,13 @@ describe('publicaciones/etiqueta/[tag]/index.astro', () => {
     });
 
     describe('Locale Validation', () => {
-        it('should extract lang and tag from params', () => {
-            expect(indexContent).toContain('const { lang, tag } = Astro.params;');
-        });
-
-        it('should validate locale with isValidLocale', () => {
-            expect(indexContent).toContain('if (!lang || !isValidLocale(lang))');
+        it('should extract locale with getLocaleFromParams', () => {
+            expect(indexContent).toContain('getLocaleFromParams(Astro.params)');
+            expect(indexContent).toContain('if (!locale)');
         });
 
         it('should redirect to /es/ if locale is invalid', () => {
             expect(indexContent).toContain("return Astro.redirect('/es/');");
-        });
-
-        it('should cast validated locale to SupportedLocale', () => {
-            expect(indexContent).toContain('const locale = lang as SupportedLocale;');
         });
     });
 
@@ -194,127 +191,62 @@ describe('publicaciones/etiqueta/[tag]/index.astro', () => {
     });
 
     describe('Localized Page Titles', () => {
-        it('should define pageTitles record', () => {
-            expect(indexContent).toContain('const pageTitles: Record<SupportedLocale, string> = {');
-        });
-
-        it('should have Spanish page title with tag name', () => {
-            expect(indexContent).toContain('Publicaciones etiquetadas con "');
-        });
-
-        it('should have English page title with tag name', () => {
-            expect(indexContent).toContain('Posts tagged with "');
-        });
-
-        it('should have Portuguese page title with tag name', () => {
-            expect(indexContent).toContain('Publicações com a etiqueta "');
+        it('should use t() for page title with tag interpolation', () => {
+            expect(indexContent).toContain(
+                "t({ locale, namespace: 'blog', key: 'tagPage.title', params: { tag: tagName } })"
+            );
         });
     });
 
     describe('Localized Meta Descriptions', () => {
-        it('should define metaDescriptions record', () => {
+        it('should use t() for meta description with tag interpolation', () => {
             expect(indexContent).toContain(
-                'const metaDescriptions: Record<SupportedLocale, string> = {'
-            );
-        });
-
-        it('should have Spanish meta description', () => {
-            expect(indexContent).toContain(
-                'Explora todas las publicaciones del blog de Hospeda etiquetadas con "'
-            );
-        });
-
-        it('should have English meta description', () => {
-            expect(indexContent).toContain('Browse all Hospeda blog posts tagged with "');
-        });
-
-        it('should have Portuguese meta description', () => {
-            expect(indexContent).toContain(
-                'Explore todas as publicações do blog da Hospeda com a etiqueta "'
+                "t({ locale, namespace: 'blog', key: 'tagPage.description', params: { tag: tagName } })"
             );
         });
     });
 
     describe('Localized Breadcrumb Labels', () => {
-        it('should define breadcrumbLabels record', () => {
+        it('should use t() for breadcrumb home', () => {
             expect(indexContent).toContain(
-                'const breadcrumbLabels: Record<SupportedLocale, { home: string; posts: string; tag: string }> = {'
+                "t({ locale, namespace: 'blog', key: 'tagPage.breadcrumb.home' })"
             );
         });
 
-        it('should have home label for all locales', () => {
-            expect(indexContent).toContain("home: 'Inicio'");
-            expect(indexContent).toContain("home: 'Home'");
-            expect(indexContent).toContain("home: 'Início'");
+        it('should use t() for breadcrumb posts', () => {
+            expect(indexContent).toContain(
+                "t({ locale, namespace: 'blog', key: 'tagPage.breadcrumb.posts' })"
+            );
         });
 
-        it('should have posts label for all locales', () => {
-            expect(indexContent).toContain("posts: 'Publicaciones'");
-            expect(indexContent).toContain("posts: 'Posts'");
-            expect(indexContent).toContain("posts: 'Publicações'");
-        });
-
-        it('should have tag label with tag name', () => {
-            expect(indexContent).toContain('tag: `Etiqueta: ${tagData.name}`');
-            expect(indexContent).toContain('tag: `Tag: ${tagData.name}`');
+        it('should use t() for breadcrumb tag with tag interpolation', () => {
+            expect(indexContent).toContain(
+                "t({ locale, namespace: 'blog', key: 'tagPage.breadcrumb.tag', params: { tag: tagName } })"
+            );
         });
     });
 
     describe('Localized Headings', () => {
-        it('should define headings record', () => {
-            expect(indexContent).toContain('const headings: Record<SupportedLocale, string> = {');
-        });
-
-        it('should have Spanish heading with tag name', () => {
-            expect(indexContent).toContain('es: `Etiqueta: ${tagData.name}`');
-        });
-
-        it('should have English heading with tag name', () => {
-            expect(indexContent).toContain('en: `Tag: ${tagData.name}`');
+        it('should use t() for heading with tag interpolation', () => {
+            expect(indexContent).toContain(
+                "t({ locale, namespace: 'blog', key: 'tagPage.heading', params: { tag: tagName } })"
+            );
         });
     });
 
     describe('Localized Sub-Headings', () => {
-        it('should define subHeadings record', () => {
+        it('should use t() for sub-heading with tag interpolation', () => {
             expect(indexContent).toContain(
-                'const subHeadings: Record<SupportedLocale, string> = {'
-            );
-        });
-
-        it('should have Spanish sub-heading', () => {
-            expect(indexContent).toContain(
-                'es: `Todas las publicaciones etiquetadas con "${tagData.name}"`'
-            );
-        });
-
-        it('should have English sub-heading', () => {
-            expect(indexContent).toContain('en: `All posts tagged with "${tagData.name}"`');
-        });
-
-        it('should have Portuguese sub-heading', () => {
-            expect(indexContent).toContain(
-                'pt: `Todas as publicações com a etiqueta "${tagData.name}"`'
+                "t({ locale, namespace: 'blog', key: 'tagPage.subHeading', params: { tag: tagName } })"
             );
         });
     });
 
     describe('Localized Empty State Messages', () => {
-        it('should define emptyStateMessages record', () => {
+        it('should use t() for empty state message with tag interpolation', () => {
             expect(indexContent).toContain(
-                'const emptyStateMessages: Record<SupportedLocale, string> = {'
+                "t({ locale, namespace: 'blog', key: 'tagPage.emptyState', params: { tag: tagName } })"
             );
-        });
-
-        it('should have Spanish empty state message', () => {
-            expect(indexContent).toContain('No hay publicaciones disponibles para la etiqueta "');
-        });
-
-        it('should have English empty state message', () => {
-            expect(indexContent).toContain('No posts available for tag "');
-        });
-
-        it('should have Portuguese empty state message', () => {
-            expect(indexContent).toContain('Não há publicações disponíveis para a etiqueta "');
         });
     });
 
@@ -342,8 +274,8 @@ describe('publicaciones/etiqueta/[tag]/index.astro', () => {
             expect(indexContent).toContain('canonical={canonicalUrl}');
         });
 
-        it('should handle Portuguese locale mapping', () => {
-            expect(indexContent).toContain("locale={locale === 'pt' ? 'es' : locale}");
+        it('should pass locale directly to SEOHead', () => {
+            expect(indexContent).toContain('locale={locale}');
         });
 
         it('should set page type to website', () => {
@@ -357,18 +289,18 @@ describe('publicaciones/etiqueta/[tag]/index.astro', () => {
         });
 
         it('should include home breadcrumb link', () => {
-            expect(indexContent).toContain('{ label: labels.home, href: `/${locale}/` }');
+            expect(indexContent).toContain('{ label: breadcrumbHome, href: `/${locale}/` }');
         });
 
         it('should include posts breadcrumb link', () => {
             expect(indexContent).toContain(
-                '{ label: labels.posts, href: `/${locale}/publicaciones/` }'
+                '{ label: breadcrumbPosts, href: `/${locale}/publicaciones/` }'
             );
         });
 
         it('should include tag breadcrumb link', () => {
             expect(indexContent).toContain(
-                '{ label: labels.tag, href: `/${locale}/publicaciones/etiqueta/${tagSlug}/` }'
+                '{ label: breadcrumbTag, href: `/${locale}/publicaciones/etiqueta/${tagSlug}/` }'
             );
         });
 
@@ -380,7 +312,7 @@ describe('publicaciones/etiqueta/[tag]/index.astro', () => {
     describe('Posts Grid', () => {
         it('should render BlogPostCard components', () => {
             expect(indexContent).toContain('<BlogPostCard');
-            expect(indexContent).toContain('post={post as BlogPostCardData}');
+            expect(indexContent).toContain('toPostCardProps');
             expect(indexContent).toContain('locale={locale}');
         });
 
@@ -404,8 +336,8 @@ describe('publicaciones/etiqueta/[tag]/index.astro', () => {
         });
 
         it('should pass localized message to EmptyState', () => {
-            expect(indexContent).toContain('title={emptyStateMessages[locale]}');
-            expect(indexContent).toContain('message={emptyStateMessages[locale]}');
+            expect(indexContent).toContain('title={emptyStateMessage}');
+            expect(indexContent).toContain('message={emptyStateMessage}');
         });
     });
 
@@ -451,14 +383,14 @@ describe('publicaciones/etiqueta/[tag]/index.astro', () => {
         });
 
         it('should display heading as h1', () => {
-            expect(indexContent).toContain('{headings[locale]}');
+            expect(indexContent).toContain('{heading}');
             expect(indexContent).toContain('<h1');
             expect(indexContent).toContain('text-4xl font-bold');
             expect(indexContent).toContain('md:text-5xl');
         });
 
         it('should display sub-heading', () => {
-            expect(indexContent).toContain('{subHeadings[locale]}');
+            expect(indexContent).toContain('{subHeading}');
             expect(indexContent).toContain('text-xl leading-relaxed');
         });
 
@@ -472,17 +404,9 @@ describe('publicaciones/etiqueta/[tag]/index.astro', () => {
     });
 
     describe('TypeScript Types', () => {
-        it('should define BlogPostCardData type alias', () => {
-            expect(indexContent).toContain('type BlogPostCardData = {');
-            expect(indexContent).toContain('slug: string;');
-            expect(indexContent).toContain('title: string;');
-            expect(indexContent).toContain('summary: string;');
-            expect(indexContent).toContain('featuredImage: string;');
-            expect(indexContent).toContain('category: string;');
-            expect(indexContent).toContain('publishedAt: string;');
-            expect(indexContent).toContain('readingTimeMinutes: number;');
-            expect(indexContent).toContain('authorName: string;');
-            expect(indexContent).toContain('isFeatured: boolean;');
+        it('should import toPostCardProps from transforms', () => {
+            expect(indexContent).toContain('import { toPostCardProps } from');
+            expect(indexContent).toContain('lib/api/transforms');
         });
 
         it('should import PaginatedResponse type', () => {
@@ -520,20 +444,20 @@ describe('publicaciones/etiqueta/[tag]/index.astro', () => {
 
 describe('publicaciones/etiqueta/[tag]/page/[page].astro', () => {
     describe('Imports', () => {
-        it('should import isValidLocale from i18n', () => {
-            expect(paginationContent).toContain(
-                "import { isValidLocale } from '../../../../../../lib/i18n'"
-            );
+        it('should import getLocaleFromParams from page-helpers', () => {
+            expect(paginationContent).toContain('getLocaleFromParams');
+            expect(paginationContent).toContain("from '../../../../../../lib/page-helpers'");
         });
     });
 
     describe('Locale Validation', () => {
-        it('should extract lang, tag, and page from params', () => {
-            expect(paginationContent).toContain('const { lang, tag, page } = Astro.params;');
+        it('should extract tag and page from params', () => {
+            expect(paginationContent).toContain('const { tag, page } = Astro.params;');
         });
 
-        it('should validate locale with isValidLocale', () => {
-            expect(paginationContent).toContain('if (!lang || !isValidLocale(lang))');
+        it('should validate locale with getLocaleFromParams', () => {
+            expect(paginationContent).toContain('getLocaleFromParams(Astro.params)');
+            expect(paginationContent).toContain('if (!locale)');
         });
 
         it('should redirect to /es/ on invalid locale', () => {
@@ -550,7 +474,7 @@ describe('publicaciones/etiqueta/[tag]/page/[page].astro', () => {
 
         it('should redirect to publications listing on empty tag', () => {
             expect(paginationContent).toContain(
-                'return Astro.redirect(`/${lang}/publicaciones/`);'
+                'return Astro.redirect(`/${locale}/publicaciones/`);'
             );
         });
 
@@ -569,7 +493,7 @@ describe('publicaciones/etiqueta/[tag]/page/[page].astro', () => {
         it('should redirect on invalid page number (NaN or < 1)', () => {
             expect(paginationContent).toContain('if (Number.isNaN(pageNum) || pageNum < 1)');
             expect(paginationContent).toContain(
-                'return Astro.redirect(`/${lang}/publicaciones/etiqueta/${tagSlug}/`);'
+                'return Astro.redirect(`/${locale}/publicaciones/etiqueta/${tagSlug}/`);'
             );
         });
     });
@@ -578,7 +502,7 @@ describe('publicaciones/etiqueta/[tag]/page/[page].astro', () => {
         it('should redirect page 1 to the canonical base URL', () => {
             expect(paginationContent).toContain('if (pageNum === 1)');
             expect(paginationContent).toContain(
-                'return Astro.redirect(`/${lang}/publicaciones/etiqueta/${tagSlug}/`);'
+                'return Astro.redirect(`/${locale}/publicaciones/etiqueta/${tagSlug}/`);'
             );
         });
     });
@@ -586,7 +510,7 @@ describe('publicaciones/etiqueta/[tag]/page/[page].astro', () => {
     describe('Rewrite to Index With Query Param', () => {
         it('should rewrite to the tag index page with page query parameter', () => {
             expect(paginationContent).toContain(
-                'return Astro.rewrite(`/${lang}/publicaciones/etiqueta/${tagSlug}/?page=${pageNum}`);'
+                'return Astro.rewrite(`/${locale}/publicaciones/etiqueta/${tagSlug}/?page=${pageNum}`);'
             );
         });
     });

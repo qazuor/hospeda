@@ -95,9 +95,9 @@ describe('destinos/[slug]/alojamientos/index.astro', () => {
             );
         });
 
-        it('should import AccommodationCard', () => {
+        it('should import AccommodationCardFeatured', () => {
             expect(indexContent).toContain(
-                "import AccommodationCard from '../../../../../components/accommodation/AccommodationCard.astro'"
+                "import AccommodationCardFeatured from '../../../../../components/accommodation/AccommodationCardFeatured.astro'"
             );
         });
 
@@ -108,9 +108,12 @@ describe('destinos/[slug]/alojamientos/index.astro', () => {
         });
 
         it('should import i18n utilities', () => {
-            expect(indexContent).toContain(
-                "import { isValidLocale, type SupportedLocale } from '../../../../../lib/i18n'"
-            );
+            expect(indexContent).toContain('getLocaleFromParams');
+            expect(indexContent).toContain("from '../../../../../lib/page-helpers'");
+        });
+
+        it('should import t from lib/i18n', () => {
+            expect(indexContent).toContain("import { t as i18nT } from '../../../../../lib/i18n'");
         });
 
         it('should import destinationsApi', () => {
@@ -121,20 +124,13 @@ describe('destinos/[slug]/alojamientos/index.astro', () => {
     });
 
     describe('Locale Validation', () => {
-        it('should extract lang and slug from params', () => {
-            expect(indexContent).toContain('const { lang, slug } = Astro.params;');
-        });
-
-        it('should validate locale with isValidLocale', () => {
-            expect(indexContent).toContain('if (!lang || !isValidLocale(lang))');
+        it('should extract locale with getLocaleFromParams', () => {
+            expect(indexContent).toContain('getLocaleFromParams(Astro.params)');
+            expect(indexContent).toContain('if (!locale)');
         });
 
         it('should redirect to /es/ if locale is invalid', () => {
             expect(indexContent).toContain("return Astro.redirect('/es/');");
-        });
-
-        it('should cast validated locale to SupportedLocale', () => {
-            expect(indexContent).toContain('const locale = lang as SupportedLocale;');
         });
     });
 
@@ -149,60 +145,32 @@ describe('destinos/[slug]/alojamientos/index.astro', () => {
     });
 
     describe('Localized Labels', () => {
-        it('should define labels record for all locales', () => {
-            expect(indexContent).toContain('const labels: Record<SupportedLocale');
+        it('should use i18n for localized labels via tDest helper', () => {
+            expect(indexContent).toContain('const tDest = (key: string)');
+            expect(indexContent).toContain("namespace: 'destination'");
+            expect(indexContent).toContain('`accommodationsPage.${key}`');
         });
 
-        it('should define Spanish labels', () => {
-            expect(indexContent).toContain("home: 'Inicio'");
-            expect(indexContent).toContain("destinations: 'Destinos'");
-            expect(indexContent).toContain("accommodations: 'Alojamientos'");
+        it('should build t object with all required keys via tDest', () => {
+            expect(indexContent).toContain('home: tDest(');
+            expect(indexContent).toContain('destinations: tDest(');
+            expect(indexContent).toContain('accommodations: tDest(');
         });
 
-        it('should define English labels', () => {
-            expect(indexContent).toContain("home: 'Home'");
-            expect(indexContent).toContain("destinations: 'Destinations'");
-            expect(indexContent).toContain("accommodations: 'Accommodations'");
+        it('should call tDest for noResults label', () => {
+            expect(indexContent).toContain("tDest('noResults')");
         });
 
-        it('should define Portuguese labels', () => {
-            expect(indexContent).toContain("home: 'Início'");
-            expect(indexContent).toContain("destinations: 'Destinos'");
-            expect(indexContent).toContain("accommodations: 'Acomodações'");
+        it('should call tDest for pageTitle label', () => {
+            expect(indexContent).toContain("tDest('pageTitle')");
         });
 
-        it('should define noResults label for Spanish', () => {
-            expect(indexContent).toContain(
-                "noResults: 'No hay alojamientos disponibles para este destino'"
-            );
+        it('should call tDest for pageDescription label', () => {
+            expect(indexContent).toContain("tDest('pageDescription')");
         });
 
-        it('should define noResults label for English', () => {
-            expect(indexContent).toContain(
-                "noResults: 'No accommodations available for this destination'"
-            );
-        });
-
-        it('should define noResults label for Portuguese', () => {
-            expect(indexContent).toContain(
-                "noResults: 'Não há acomodações disponíveis para este destino'"
-            );
-        });
-
-        it('should define pageTitle prefix for Spanish', () => {
-            expect(indexContent).toContain("pageTitle: 'Alojamientos en'");
-        });
-
-        it('should define pageTitle prefix for English', () => {
-            expect(indexContent).toContain("pageTitle: 'Accommodations in'");
-        });
-
-        it('should define pageTitle prefix for Portuguese', () => {
-            expect(indexContent).toContain("pageTitle: 'Acomodações em'");
-        });
-
-        it('should select texts based on locale', () => {
-            expect(indexContent).toContain('const t = labels[locale];');
+        it('should define t object with all keys', () => {
+            expect(indexContent).toContain('const t = {');
         });
     });
 
@@ -308,8 +276,8 @@ describe('destinos/[slug]/alojamientos/index.astro', () => {
             expect(indexContent).toContain('canonical={canonicalUrl}');
         });
 
-        it('should handle Portuguese locale mapping for SEOHead', () => {
-            expect(indexContent).toContain("locale={locale === 'pt' ? 'es' : locale}");
+        it('should pass locale directly to SEOHead', () => {
+            expect(indexContent).toContain('locale={locale}');
         });
 
         it('should set type to website in SEOHead', () => {
@@ -508,10 +476,9 @@ describe('destinos/[slug]/alojamientos/page/[page].astro', () => {
     });
 
     describe('Imports', () => {
-        it('should import isValidLocale from i18n', () => {
-            expect(paginationContent).toContain(
-                "import { isValidLocale } from '../../../../../../lib/i18n'"
-            );
+        it('should import getLocaleFromParams from page-helpers', () => {
+            expect(paginationContent).toContain('getLocaleFromParams');
+            expect(paginationContent).toContain("from '../../../../../../lib/page-helpers'");
         });
     });
 
@@ -522,14 +489,15 @@ describe('destinos/[slug]/alojamientos/page/[page].astro', () => {
     });
 
     describe('Parameter Extraction', () => {
-        it('should extract lang, slug, and page from params', () => {
-            expect(paginationContent).toContain('const { lang, slug, page } = Astro.params;');
+        it('should extract slug and page from params', () => {
+            expect(paginationContent).toContain('const { slug, page } = Astro.params;');
         });
     });
 
     describe('Locale Validation', () => {
-        it('should validate locale with isValidLocale', () => {
-            expect(paginationContent).toContain('if (!lang || !isValidLocale(lang))');
+        it('should validate locale with getLocaleFromParams', () => {
+            expect(paginationContent).toContain('getLocaleFromParams(Astro.params)');
+            expect(paginationContent).toContain('if (!locale)');
         });
 
         it('should redirect to /es/ on invalid locale', () => {
@@ -543,7 +511,7 @@ describe('destinos/[slug]/alojamientos/page/[page].astro', () => {
         });
 
         it('should redirect to destinos listing when slug is missing', () => {
-            expect(paginationContent).toContain('return Astro.redirect(`/${lang}/destinos/`);');
+            expect(paginationContent).toContain('return Astro.redirect(`/${locale}/destinos/`);');
         });
     });
 
@@ -557,7 +525,7 @@ describe('destinos/[slug]/alojamientos/page/[page].astro', () => {
         it('should redirect on NaN or negative page number', () => {
             expect(paginationContent).toContain('if (Number.isNaN(pageNum) || pageNum < 1)');
             expect(paginationContent).toContain(
-                'return Astro.redirect(`/${lang}/destinos/${slug}/alojamientos/`);'
+                'return Astro.redirect(`/${locale}/destinos/${slug}/alojamientos/`);'
             );
         });
     });
@@ -566,7 +534,7 @@ describe('destinos/[slug]/alojamientos/page/[page].astro', () => {
         it('should redirect page 1 to the canonical base URL', () => {
             expect(paginationContent).toContain('if (pageNum === 1)');
             expect(paginationContent).toContain(
-                'return Astro.redirect(`/${lang}/destinos/${slug}/alojamientos/`);'
+                'return Astro.redirect(`/${locale}/destinos/${slug}/alojamientos/`);'
             );
         });
     });
@@ -574,7 +542,7 @@ describe('destinos/[slug]/alojamientos/page/[page].astro', () => {
     describe('Rewrite to Index with Query Param', () => {
         it('should rewrite to accommodations index with page query param', () => {
             expect(paginationContent).toContain(
-                'return Astro.rewrite(`/${lang}/destinos/${slug}/alojamientos/?page=${pageNum}`);'
+                'return Astro.rewrite(`/${locale}/destinos/${slug}/alojamientos/?page=${pageNum}`);'
             );
         });
     });

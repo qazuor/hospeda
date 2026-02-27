@@ -17,19 +17,19 @@ describe('Toast.client.tsx', () => {
 
     describe('Rendering', () => {
         it('should render container with aria-live="polite"', () => {
-            const { container } = render(<ToastContainer />);
+            const { container } = render(<ToastContainer locale="en" />);
             const toastContainer = container.querySelector('[aria-live="polite"]');
             expect(toastContainer).toBeInTheDocument();
         });
 
         it('should render empty container when no toasts', () => {
-            const { container } = render(<ToastContainer />);
+            const { container } = render(<ToastContainer locale="en" />);
             const toastContainer = container.querySelector('[aria-live="polite"]');
             expect(toastContainer?.children).toHaveLength(0);
         });
 
         it('should render toast when added', () => {
-            render(<ToastContainer />);
+            render(<ToastContainer locale="en" />);
 
             act(() => {
                 addToast({ type: 'success', message: 'Test message' });
@@ -41,7 +41,7 @@ describe('Toast.client.tsx', () => {
         });
 
         it('should render multiple toasts', () => {
-            render(<ToastContainer />);
+            render(<ToastContainer locale="en" />);
 
             act(() => {
                 addToast({ type: 'success', message: 'First toast' });
@@ -57,7 +57,7 @@ describe('Toast.client.tsx', () => {
         });
 
         it('should render toast with close button', () => {
-            render(<ToastContainer />);
+            render(<ToastContainer locale="en" />);
 
             act(() => {
                 addToast({ type: 'success', message: 'Test' });
@@ -71,7 +71,7 @@ describe('Toast.client.tsx', () => {
 
     describe('Toast Types', () => {
         it('should render success toast with green styling', () => {
-            render(<ToastContainer />);
+            render(<ToastContainer locale="en" />);
 
             act(() => {
                 addToast({ type: 'success', message: 'Success message' });
@@ -84,7 +84,7 @@ describe('Toast.client.tsx', () => {
         });
 
         it('should render error toast with red styling', () => {
-            render(<ToastContainer />);
+            render(<ToastContainer locale="en" />);
 
             act(() => {
                 addToast({ type: 'error', message: 'Error message' });
@@ -97,7 +97,7 @@ describe('Toast.client.tsx', () => {
         });
 
         it('should render warning toast with yellow styling', () => {
-            render(<ToastContainer />);
+            render(<ToastContainer locale="en" />);
 
             act(() => {
                 addToast({ type: 'warning', message: 'Warning message' });
@@ -110,7 +110,7 @@ describe('Toast.client.tsx', () => {
         });
 
         it('should render info toast with blue styling', () => {
-            render(<ToastContainer />);
+            render(<ToastContainer locale="en" />);
 
             act(() => {
                 addToast({ type: 'info', message: 'Info message' });
@@ -123,7 +123,7 @@ describe('Toast.client.tsx', () => {
         });
 
         it('should render appropriate icon for success toast', () => {
-            render(<ToastContainer />);
+            render(<ToastContainer locale="en" />);
 
             act(() => {
                 addToast({ type: 'success', message: 'Success' });
@@ -136,7 +136,7 @@ describe('Toast.client.tsx', () => {
         });
 
         it('should render appropriate icon for error toast', () => {
-            render(<ToastContainer />);
+            render(<ToastContainer locale="en" />);
 
             act(() => {
                 addToast({ type: 'error', message: 'Error' });
@@ -149,7 +149,7 @@ describe('Toast.client.tsx', () => {
         });
 
         it('should render appropriate icon for warning toast', () => {
-            render(<ToastContainer />);
+            render(<ToastContainer locale="en" />);
 
             act(() => {
                 addToast({ type: 'warning', message: 'Warning' });
@@ -162,7 +162,7 @@ describe('Toast.client.tsx', () => {
         });
 
         it('should render appropriate icon for info toast', () => {
-            render(<ToastContainer />);
+            render(<ToastContainer locale="en" />);
 
             act(() => {
                 addToast({ type: 'info', message: 'Info' });
@@ -177,7 +177,7 @@ describe('Toast.client.tsx', () => {
 
     describe('Accessibility', () => {
         it('should have role="alert" on each toast', () => {
-            render(<ToastContainer />);
+            render(<ToastContainer locale="en" />);
 
             act(() => {
                 addToast({ type: 'success', message: 'Test 1' });
@@ -192,13 +192,13 @@ describe('Toast.client.tsx', () => {
         });
 
         it('should have aria-live="polite" on container', () => {
-            const { container } = render(<ToastContainer />);
+            const { container } = render(<ToastContainer locale="en" />);
             const toastContainer = container.querySelector('[aria-live="polite"]');
             expect(toastContainer).toHaveAttribute('aria-live', 'polite');
         });
 
         it('should have aria-label on close button', () => {
-            render(<ToastContainer />);
+            render(<ToastContainer locale="en" />);
 
             act(() => {
                 addToast({ type: 'success', message: 'Test' });
@@ -209,7 +209,7 @@ describe('Toast.client.tsx', () => {
         });
 
         it('should have aria-hidden on icons', () => {
-            render(<ToastContainer />);
+            render(<ToastContainer locale="en" />);
 
             act(() => {
                 addToast({ type: 'success', message: 'Test' });
@@ -224,7 +224,7 @@ describe('Toast.client.tsx', () => {
         });
 
         it('should have focus-visible styles on close button', () => {
-            render(<ToastContainer />);
+            render(<ToastContainer locale="en" />);
 
             act(() => {
                 addToast({ type: 'success', message: 'Test' });
@@ -235,7 +235,7 @@ describe('Toast.client.tsx', () => {
         });
 
         it('should have type="button" on close button', () => {
-            render(<ToastContainer />);
+            render(<ToastContainer locale="en" />);
 
             act(() => {
                 addToast({ type: 'success', message: 'Test' });
@@ -248,7 +248,7 @@ describe('Toast.client.tsx', () => {
 
     describe('Interaction', () => {
         it('should remove toast when close button is clicked', () => {
-            render(<ToastContainer />);
+            render(<ToastContainer locale="en" />);
 
             act(() => {
                 addToast({ type: 'success', message: 'Test toast' });
@@ -263,7 +263,7 @@ describe('Toast.client.tsx', () => {
         });
 
         it('should remove only clicked toast when multiple exist', () => {
-            render(<ToastContainer />);
+            render(<ToastContainer locale="en" />);
 
             act(() => {
                 addToast({ type: 'success', message: 'First toast' });
@@ -284,7 +284,7 @@ describe('Toast.client.tsx', () => {
         });
 
         it('should update when toasts are added dynamically', () => {
-            render(<ToastContainer />);
+            render(<ToastContainer locale="en" />);
 
             expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 
@@ -297,7 +297,7 @@ describe('Toast.client.tsx', () => {
         });
 
         it('should update when toasts are removed dynamically', () => {
-            render(<ToastContainer />);
+            render(<ToastContainer locale="en" />);
 
             act(() => {
                 addToast({ type: 'success', message: 'Toast 1' });
@@ -316,26 +316,26 @@ describe('Toast.client.tsx', () => {
 
     describe('Styling', () => {
         it('should have fixed positioning', () => {
-            const { container } = render(<ToastContainer />);
+            const { container } = render(<ToastContainer locale="en" />);
             const toastContainer = container.querySelector('[aria-live="polite"]');
             expect(toastContainer?.className).toContain('fixed');
         });
 
         it('should be positioned top-right', () => {
-            const { container } = render(<ToastContainer />);
+            const { container } = render(<ToastContainer locale="en" />);
             const toastContainer = container.querySelector('[aria-live="polite"]');
             expect(toastContainer?.className).toContain('top-4');
             expect(toastContainer?.className).toContain('right-4');
         });
 
         it('should have high z-index', () => {
-            const { container } = render(<ToastContainer />);
+            const { container } = render(<ToastContainer locale="en" />);
             const toastContainer = container.querySelector('[aria-live="polite"]');
             expect(toastContainer?.className).toContain('z-50');
         });
 
         it('should have slide-in animation on toast', () => {
-            render(<ToastContainer />);
+            render(<ToastContainer locale="en" />);
 
             act(() => {
                 addToast({ type: 'success', message: 'Test' });
@@ -346,7 +346,7 @@ describe('Toast.client.tsx', () => {
         });
 
         it('should have transition classes on toast', () => {
-            render(<ToastContainer />);
+            render(<ToastContainer locale="en" />);
 
             act(() => {
                 addToast({ type: 'success', message: 'Test' });
@@ -358,7 +358,7 @@ describe('Toast.client.tsx', () => {
         });
 
         it('should have rounded corners on toast', () => {
-            render(<ToastContainer />);
+            render(<ToastContainer locale="en" />);
 
             act(() => {
                 addToast({ type: 'success', message: 'Test' });
@@ -369,7 +369,7 @@ describe('Toast.client.tsx', () => {
         });
 
         it('should have border on toast', () => {
-            render(<ToastContainer />);
+            render(<ToastContainer locale="en" />);
 
             act(() => {
                 addToast({ type: 'success', message: 'Test' });
@@ -380,7 +380,7 @@ describe('Toast.client.tsx', () => {
         });
 
         it('should have shadow on toast', () => {
-            render(<ToastContainer />);
+            render(<ToastContainer locale="en" />);
 
             act(() => {
                 addToast({ type: 'success', message: 'Test' });
@@ -391,7 +391,7 @@ describe('Toast.client.tsx', () => {
         });
 
         it('should have max-width on toast', () => {
-            render(<ToastContainer />);
+            render(<ToastContainer locale="en" />);
 
             act(() => {
                 addToast({ type: 'success', message: 'Test' });
@@ -402,7 +402,7 @@ describe('Toast.client.tsx', () => {
         });
 
         it('should have hover styles on close button', () => {
-            render(<ToastContainer />);
+            render(<ToastContainer locale="en" />);
 
             act(() => {
                 addToast({ type: 'success', message: 'Test' });
@@ -413,14 +413,14 @@ describe('Toast.client.tsx', () => {
         });
 
         it('should display toasts in flex column layout', () => {
-            const { container } = render(<ToastContainer />);
+            const { container } = render(<ToastContainer locale="en" />);
             const toastContainer = container.querySelector('[aria-live="polite"]');
             expect(toastContainer?.className).toContain('flex');
             expect(toastContainer?.className).toContain('flex-col');
         });
 
         it('should have gap between toasts', () => {
-            const { container } = render(<ToastContainer />);
+            const { container } = render(<ToastContainer locale="en" />);
             const toastContainer = container.querySelector('[aria-live="polite"]');
             expect(toastContainer?.className).toContain('gap-3');
         });
@@ -428,7 +428,7 @@ describe('Toast.client.tsx', () => {
 
     describe('Auto-dismiss', () => {
         it('should auto-dismiss toast after duration', () => {
-            render(<ToastContainer />);
+            render(<ToastContainer locale="en" />);
 
             act(() => {
                 addToast({ type: 'success', message: 'Auto dismiss', duration: 5000 });
@@ -444,7 +444,7 @@ describe('Toast.client.tsx', () => {
         });
 
         it('should auto-dismiss multiple toasts independently', () => {
-            render(<ToastContainer />);
+            render(<ToastContainer locale="en" />);
 
             act(() => {
                 addToast({ type: 'success', message: 'First', duration: 3000 });
@@ -470,7 +470,7 @@ describe('Toast.client.tsx', () => {
 
     describe('Message Display', () => {
         it('should display message text', () => {
-            render(<ToastContainer />);
+            render(<ToastContainer locale="en" />);
 
             act(() => {
                 addToast({ type: 'success', message: 'This is a test message' });
@@ -480,7 +480,7 @@ describe('Toast.client.tsx', () => {
         });
 
         it('should display long message text', () => {
-            render(<ToastContainer />);
+            render(<ToastContainer locale="en" />);
 
             const longMessage =
                 'This is a very long message that should be displayed correctly in the toast notification component.';
@@ -493,7 +493,7 @@ describe('Toast.client.tsx', () => {
         });
 
         it('should handle special characters in message', () => {
-            render(<ToastContainer />);
+            render(<ToastContainer locale="en" />);
 
             const specialMessage = 'Message with <special> & "quoted" characters!';
 

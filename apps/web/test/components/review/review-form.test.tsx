@@ -78,7 +78,7 @@ describe('ReviewForm.client.tsx', () => {
 
             // Rating field
             expect(screen.getByText('Calificación')).toBeInTheDocument();
-            const stars = screen.getAllByLabelText(/Rate \d star/);
+            const stars = screen.getAllByLabelText(/Calificar \d estrella/);
             expect(stars).toHaveLength(5);
 
             // Title field
@@ -115,7 +115,7 @@ describe('ReviewForm.client.tsx', () => {
 
         it('should render 5 stars for rating', () => {
             render(<ReviewForm {...defaultProps} />);
-            const stars = screen.getAllByLabelText(/Rate \d star/);
+            const stars = screen.getAllByLabelText(/Calificar \d estrella/);
             expect(stars).toHaveLength(5);
         });
 
@@ -138,11 +138,11 @@ describe('ReviewForm.client.tsx', () => {
     describe('Star Rating Interaction', () => {
         it('should select rating when star is clicked', () => {
             render(<ReviewForm {...defaultProps} />);
-            const thirdStar = screen.getByLabelText('Rate 3 stars');
+            const thirdStar = screen.getByLabelText('Calificar 3 estrella(s)');
             fireEvent.click(thirdStar);
 
             // Stars should be filled up to the clicked one (check for yellow color class)
-            const stars = screen.getAllByLabelText(/Rate \d star/);
+            const stars = screen.getAllByLabelText(/Calificar \d estrella/);
             const filledStars = stars.filter((star) => {
                 const svg = star.querySelector('svg');
                 return svg?.getAttribute('class')?.includes('text-yellow-400');
@@ -153,13 +153,13 @@ describe('ReviewForm.client.tsx', () => {
         it('should update rating when different star is clicked', () => {
             render(<ReviewForm {...defaultProps} />);
 
-            const secondStar = screen.getByLabelText('Rate 2 stars');
+            const secondStar = screen.getByLabelText('Calificar 2 estrella(s)');
             fireEvent.click(secondStar);
 
-            const fifthStar = screen.getByLabelText('Rate 5 stars');
+            const fifthStar = screen.getByLabelText('Calificar 5 estrella(s)');
             fireEvent.click(fifthStar);
 
-            const stars = screen.getAllByLabelText(/Rate \d star/);
+            const stars = screen.getAllByLabelText(/Calificar \d estrella/);
             const filledStars = stars.filter((star) => {
                 const svg = star.querySelector('svg');
                 return svg?.getAttribute('class')?.includes('text-yellow-400');
@@ -169,11 +169,11 @@ describe('ReviewForm.client.tsx', () => {
 
         it('should show visual hover state on stars', () => {
             render(<ReviewForm {...defaultProps} />);
-            const fourthStar = screen.getByLabelText('Rate 4 stars');
+            const fourthStar = screen.getByLabelText('Calificar 4 estrella(s)');
 
             fireEvent.mouseEnter(fourthStar);
 
-            const stars = screen.getAllByLabelText(/Rate \d star/);
+            const stars = screen.getAllByLabelText(/Calificar \d estrella/);
             const hoveredStars = stars.filter((star, index) => {
                 const svg = star.querySelector('svg');
                 return index < 4 && svg?.getAttribute('class')?.includes('text-yellow-400');
@@ -183,12 +183,12 @@ describe('ReviewForm.client.tsx', () => {
 
         it('should clear hover state when mouse leaves', () => {
             render(<ReviewForm {...defaultProps} />);
-            const thirdStar = screen.getByLabelText('Rate 3 stars');
+            const thirdStar = screen.getByLabelText('Calificar 3 estrella(s)');
 
             fireEvent.mouseEnter(thirdStar);
             fireEvent.mouseLeave(thirdStar);
 
-            const stars = screen.getAllByLabelText(/Rate \d star/);
+            const stars = screen.getAllByLabelText(/Calificar \d estrella/);
             const filledStars = stars.filter((star) => {
                 const svg = star.querySelector('svg');
                 return svg?.getAttribute('class')?.includes('text-yellow-400');
@@ -286,7 +286,7 @@ describe('ReviewForm.client.tsx', () => {
                 expect(screen.getByText('Debes seleccionar una calificación')).toBeInTheDocument();
             });
 
-            const firstStar = screen.getByLabelText('Rate 1 star');
+            const firstStar = screen.getByLabelText('Calificar 1 estrella(s)');
             fireEvent.click(firstStar);
 
             await waitFor(() => {
@@ -346,7 +346,7 @@ describe('ReviewForm.client.tsx', () => {
             );
 
             // Fill form
-            const thirdStar = screen.getByLabelText('Rate 3 stars');
+            const thirdStar = screen.getByLabelText('Calificar 3 estrella(s)');
             fireEvent.click(thirdStar);
 
             const titleInput = screen.getByLabelText('Título');
@@ -380,7 +380,7 @@ describe('ReviewForm.client.tsx', () => {
                 />
             );
 
-            const firstStar = screen.getByLabelText('Rate 1 star');
+            const firstStar = screen.getByLabelText('Calificar 1 estrella(s)');
             fireEvent.click(firstStar);
 
             const titleInput = screen.getByLabelText('Título');
@@ -677,7 +677,7 @@ describe('ReviewForm.client.tsx', () => {
         it('should have aria-hidden on star SVG icons', () => {
             const { container } = render(<ReviewForm {...defaultProps} />);
             const starSvgs = Array.from(
-                container.querySelectorAll('button[aria-label^="Rate"] svg')
+                container.querySelectorAll('button[aria-label^="Calificar"] svg')
             );
 
             for (const svg of starSvgs) {
@@ -688,16 +688,16 @@ describe('ReviewForm.client.tsx', () => {
         it('should have aria-label on each star button', () => {
             render(<ReviewForm {...defaultProps} />);
 
-            expect(screen.getByLabelText('Rate 1 star')).toBeInTheDocument();
-            expect(screen.getByLabelText('Rate 2 stars')).toBeInTheDocument();
-            expect(screen.getByLabelText('Rate 3 stars')).toBeInTheDocument();
-            expect(screen.getByLabelText('Rate 4 stars')).toBeInTheDocument();
-            expect(screen.getByLabelText('Rate 5 stars')).toBeInTheDocument();
+            expect(screen.getByLabelText('Calificar 1 estrella(s)')).toBeInTheDocument();
+            expect(screen.getByLabelText('Calificar 2 estrella(s)')).toBeInTheDocument();
+            expect(screen.getByLabelText('Calificar 3 estrella(s)')).toBeInTheDocument();
+            expect(screen.getByLabelText('Calificar 4 estrella(s)')).toBeInTheDocument();
+            expect(screen.getByLabelText('Calificar 5 estrella(s)')).toBeInTheDocument();
         });
 
         it('should have focus-visible styles on star buttons', () => {
             render(<ReviewForm {...defaultProps} />);
-            const firstStar = screen.getByLabelText('Rate 1 star');
+            const firstStar = screen.getByLabelText('Calificar 1 estrella(s)');
             expect(firstStar.className).toContain('focus-visible:outline');
         });
 
@@ -733,13 +733,13 @@ describe('ReviewForm.client.tsx', () => {
 
         it('should have transition styles on star buttons', () => {
             render(<ReviewForm {...defaultProps} />);
-            const firstStar = screen.getByLabelText('Rate 1 star');
+            const firstStar = screen.getByLabelText('Calificar 1 estrella(s)');
             expect(firstStar.className).toContain('transition-transform');
         });
 
         it('should have hover scale effect on star buttons', () => {
             render(<ReviewForm {...defaultProps} />);
-            const firstStar = screen.getByLabelText('Rate 1 star');
+            const firstStar = screen.getByLabelText('Calificar 1 estrella(s)');
             expect(firstStar.className).toContain('hover:scale-110');
         });
 

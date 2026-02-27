@@ -46,7 +46,9 @@ describe('UserFavoritesList.client.tsx', () => {
         });
 
         it('should import userBookmarksApi from endpoints', () => {
-            expect(content).toContain("import { userBookmarksApi } from '../../lib/api/endpoints'");
+            expect(content).toContain(
+                "import { userBookmarksApi } from '../../lib/api/endpoints-protected'"
+            );
         });
 
         it('should import addToast from toast store', () => {
@@ -236,7 +238,7 @@ describe('UserFavoritesList.client.tsx', () => {
         });
 
         it('should have aria-label on tablist nav', () => {
-            expect(content).toContain('aria-label="Favorite categories"');
+            expect(content).toContain("aria-label={t('accessibility.favoriteCategories')}");
         });
 
         it('should have tab role on tab buttons', () => {

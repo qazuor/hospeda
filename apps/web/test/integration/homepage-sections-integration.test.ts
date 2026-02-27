@@ -41,18 +41,16 @@ const sectionWrapperPath = resolve(__dirname, '../../src/components/ui/SectionWr
 const sectionWrapper = readFileSync(sectionWrapperPath, 'utf8');
 
 describe('Homepage Sections Integration (SPEC-013)', () => {
-    describe('Complete section order (positions 1-10)', () => {
-        it('should render all 10 sections in correct order', () => {
+    describe('Complete section order (positions 1-8)', () => {
+        it('should render all 8 sections in correct order', () => {
             const sectionOrder = [
                 '<HeroSection',
                 '<FeaturedAccommodations',
                 '<FeaturedDestinations',
-                '<StatisticsSection',
                 '<FeaturedEvents',
                 '<CategoryIconsSection',
                 '<FeaturedPosts',
                 '<TestimonialsSection',
-                '<NewsletterSection',
                 '<OwnerCTASection'
             ];
 
@@ -73,13 +71,7 @@ describe('Homepage Sections Integration (SPEC-013)', () => {
         });
 
         it('should not have duplicate section renders', () => {
-            const sections = [
-                'StatisticsSection',
-                'CategoryIconsSection',
-                'TestimonialsSection',
-                'NewsletterSection',
-                'OwnerCTASection'
-            ];
+            const sections = ['CategoryIconsSection', 'TestimonialsSection', 'OwnerCTASection'];
 
             for (const section of sections) {
                 const regex = new RegExp(`<${section}`, 'g');
@@ -134,7 +126,7 @@ describe('Homepage Sections Integration (SPEC-013)', () => {
 
         it('Destinations FeaturedSection should have warm background class on homepage', () => {
             const destSection = homepage.match(
-                /<FeaturedSection[^>]*title=\{t\.featuredDestinations\}[^>]*/
+                /<FeaturedSection[^>]*title=\{featuredDestinationsTitle\}[^>]*/
             );
             expect(destSection).not.toBeNull();
             expect(destSection![0]).toContain('bg-bg-warm');
@@ -142,7 +134,7 @@ describe('Homepage Sections Integration (SPEC-013)', () => {
 
         it('Posts FeaturedSection should have gray background class on homepage', () => {
             const postsSection = homepage.match(
-                /<FeaturedSection[^>]*title=\{t\.latestBlog\}[^>]*/
+                /<FeaturedSection[^>]*title=\{latestBlogTitle\}[^>]*/
             );
             expect(postsSection).not.toBeNull();
             expect(postsSection![0]).toContain('bg-surface-alt');
@@ -152,10 +144,8 @@ describe('Homepage Sections Integration (SPEC-013)', () => {
     describe('Cross-component locale propagation', () => {
         it('homepage should pass locale to all sections that need it', () => {
             const sectionLocalePatterns = [
-                /<StatisticsSection[^>]*locale/,
                 /<CategoryIconsSection[^>]*locale/,
                 /<TestimonialsSection[^>]*locale/,
-                /<NewsletterSection[^>]*locale/,
                 /<OwnerCTASection[^>]*locale/
             ];
 
@@ -165,10 +155,8 @@ describe('Homepage Sections Integration (SPEC-013)', () => {
         });
 
         it('sections with locale-dependent content should accept locale prop', () => {
-            expect(statistics).toContain('locale');
             expect(categoryIcons).toContain('locale');
             expect(testimonials).toContain('locale');
-            expect(newsletter).toContain('locale');
             expect(ownerCta).toContain('locale');
         });
     });

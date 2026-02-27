@@ -51,39 +51,36 @@ describe('terminos-condiciones.astro', () => {
 
     describe('Locale validation', () => {
         it('should validate locale parameter', () => {
-            expect(terminosContent).toContain('const { lang } = Astro.params');
-            expect(terminosContent).toContain('if (!lang || !isValidLocale(lang))');
+            expect(terminosContent).toContain('getLocaleFromParams(Astro.params)');
+            expect(terminosContent).toContain('if (!locale)');
         });
 
         it('should redirect to /es/ on invalid locale', () => {
             expect(terminosContent).toContain("return Astro.redirect('/es/')");
         });
 
-        it('should import locale helpers', () => {
-            expect(terminosContent).toContain('isValidLocale');
-            expect(terminosContent).toContain('type SupportedLocale');
+        it('should import locale helpers and i18n', () => {
+            expect(terminosContent).toContain('getLocaleFromParams');
+            expect(terminosContent).toContain("import { t } from '../../lib/i18n'");
         });
     });
 
     describe('Localization', () => {
-        it('should have localized titles for all supported locales', () => {
-            expect(terminosContent).toContain("es: 'Términos y Condiciones'");
-            expect(terminosContent).toContain("en: 'Terms and Conditions'");
-            expect(terminosContent).toContain("pt: 'Termos e Condições'");
-        });
-
-        it('should have localized meta descriptions', () => {
+        it('should use t() for localized titles', () => {
             expect(terminosContent).toContain(
-                'const descriptions: Record<SupportedLocale, string>'
+                "const title = t({ locale, namespace: 'terms', key: 'page.title' })"
             );
-            expect(terminosContent).toContain('Términos y condiciones de uso');
         });
 
-        it('should have localized home breadcrumb labels', () => {
-            expect(terminosContent).toContain('const homeLabels: Record<SupportedLocale, string>');
-            expect(terminosContent).toContain("es: 'Inicio'");
-            expect(terminosContent).toContain("en: 'Home'");
-            expect(terminosContent).toContain("pt: 'Início'");
+        it('should use t() for localized descriptions', () => {
+            expect(terminosContent).toContain(
+                "const description = t({ locale, namespace: 'terms', key: 'page.description' })"
+            );
+        });
+
+        it('should import HOME_BREADCRUMB from page-helpers', () => {
+            expect(terminosContent).toContain('HOME_BREADCRUMB');
+            expect(terminosContent).toContain("from '../../lib/page-helpers'");
         });
     });
 
@@ -94,8 +91,8 @@ describe('terminos-condiciones.astro', () => {
         });
 
         it('should pass title and description to SEOHead', () => {
-            expect(terminosContent).toContain('title={titles[locale]}');
-            expect(terminosContent).toContain('description={descriptions[locale]}');
+            expect(terminosContent).toContain('title={title}');
+            expect(terminosContent).toContain('description={description}');
         });
 
         it('should set page type to website', () => {
@@ -109,12 +106,14 @@ describe('terminos-condiciones.astro', () => {
         });
 
         it('should have home breadcrumb link', () => {
-            expect(terminosContent).toContain('{ label: homeLabels[locale], href: `/${locale}/`');
+            expect(terminosContent).toContain(
+                '{ label: HOME_BREADCRUMB[locale], href: `/${locale}/`'
+            );
         });
 
         it('should have terms page breadcrumb', () => {
             expect(terminosContent).toContain(
-                '{ label: titles[locale], href: `/${locale}/terminos-condiciones/`'
+                '{ label: title, href: `/${locale}/terminos-condiciones/`'
             );
         });
     });
@@ -221,41 +220,36 @@ describe('privacidad.astro', () => {
 
     describe('Locale validation', () => {
         it('should validate locale parameter', () => {
-            expect(privacidadContent).toContain('const { lang } = Astro.params');
-            expect(privacidadContent).toContain('if (!lang || !isValidLocale(lang))');
+            expect(privacidadContent).toContain('getLocaleFromParams(Astro.params)');
+            expect(privacidadContent).toContain('if (!locale)');
         });
 
         it('should redirect to /es/ on invalid locale', () => {
             expect(privacidadContent).toContain("return Astro.redirect('/es/')");
         });
 
-        it('should import locale helpers', () => {
-            expect(privacidadContent).toContain('isValidLocale');
-            expect(privacidadContent).toContain('type SupportedLocale');
+        it('should import locale helpers and i18n', () => {
+            expect(privacidadContent).toContain('getLocaleFromParams');
+            expect(privacidadContent).toContain("import { t } from '../../lib/i18n'");
         });
     });
 
     describe('Localization', () => {
-        it('should have localized titles for all supported locales', () => {
-            expect(privacidadContent).toContain("es: 'Política de Privacidad'");
-            expect(privacidadContent).toContain("en: 'Privacy Policy'");
-            expect(privacidadContent).toContain("pt: 'Política de Privacidade'");
+        it('should use t() for localized titles', () => {
+            expect(privacidadContent).toContain(
+                "const title = t({ locale, namespace: 'privacy', key: 'page.title' })"
+            );
         });
 
-        it('should have localized meta descriptions', () => {
+        it('should use t() for localized descriptions', () => {
             expect(privacidadContent).toContain(
-                'const descriptions: Record<SupportedLocale, string>'
+                "const description = t({ locale, namespace: 'privacy', key: 'page.description' })"
             );
-            expect(privacidadContent).toContain('Política de privacidad');
         });
 
-        it('should have localized home breadcrumb labels', () => {
-            expect(privacidadContent).toContain(
-                'const homeLabels: Record<SupportedLocale, string>'
-            );
-            expect(privacidadContent).toContain("es: 'Inicio'");
-            expect(privacidadContent).toContain("en: 'Home'");
-            expect(privacidadContent).toContain("pt: 'Início'");
+        it('should import HOME_BREADCRUMB from page-helpers', () => {
+            expect(privacidadContent).toContain('HOME_BREADCRUMB');
+            expect(privacidadContent).toContain("from '../../lib/page-helpers'");
         });
     });
 
@@ -266,8 +260,8 @@ describe('privacidad.astro', () => {
         });
 
         it('should pass title and description to SEOHead', () => {
-            expect(privacidadContent).toContain('title={titles[locale]}');
-            expect(privacidadContent).toContain('description={descriptions[locale]}');
+            expect(privacidadContent).toContain('title={title}');
+            expect(privacidadContent).toContain('description={description}');
         });
 
         it('should set page type to website', () => {
@@ -281,13 +275,13 @@ describe('privacidad.astro', () => {
         });
 
         it('should have home breadcrumb link', () => {
-            expect(privacidadContent).toContain('{ label: homeLabels[locale], href: `/${locale}/`');
+            expect(privacidadContent).toContain(
+                '{ label: HOME_BREADCRUMB[locale], href: `/${locale}/`'
+            );
         });
 
         it('should have privacy page breadcrumb', () => {
-            expect(privacidadContent).toContain(
-                '{ label: titles[locale], href: `/${locale}/privacidad/`'
-            );
+            expect(privacidadContent).toContain('{ label: title, href: `/${locale}/privacidad/`');
         });
     });
 

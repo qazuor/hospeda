@@ -54,6 +54,12 @@ describe('destinos/index.astro', () => {
             );
         });
 
+        it('should import DestinationErrorState', () => {
+            expect(content).toContain(
+                "import DestinationErrorState from '../../../components/error/DestinationErrorState.astro'"
+            );
+        });
+
         it('should import destinationsApi', () => {
             expect(content).toContain(
                 "import { destinationsApi } from '../../../lib/api/endpoints'"
@@ -63,8 +69,8 @@ describe('destinos/index.astro', () => {
 
     describe('Locale validation', () => {
         it('should validate locale parameter', () => {
-            expect(content).toContain('const { lang } = Astro.params');
-            expect(content).toContain('if (!lang || !isValidLocale(lang))');
+            expect(content).toContain('getLocaleFromParams(Astro.params)');
+            expect(content).toContain('if (!locale)');
         });
 
         it('should redirect to /es/ on invalid locale', () => {
@@ -72,59 +78,69 @@ describe('destinos/index.astro', () => {
         });
 
         it('should import locale helpers', () => {
-            expect(content).toContain('isValidLocale');
-            expect(content).toContain('type SupportedLocale');
+            expect(content).toContain('getLocaleFromParams');
         });
     });
 
     describe('Localization', () => {
-        it('should have localized titles for all supported locales', () => {
-            expect(content).toContain("es: 'Destinos'");
-            expect(content).toContain("en: 'Destinations'");
-            expect(content).toContain("pt: 'Destinos'");
+        it('should use t() for page title', () => {
+            expect(content).toContain(
+                "t({ locale, namespace: 'destination', key: 'listing.title' })"
+            );
         });
 
-        it('should have localized meta descriptions', () => {
-            expect(content).toContain('const descriptions: Record<SupportedLocale, string>');
-            expect(content).toContain('Descubre los destinos turísticos más fascinantes');
-            expect(content).toContain('Litoral argentino');
+        it('should use t() for page description', () => {
+            expect(content).toContain(
+                "t({ locale, namespace: 'destination', key: 'listing.description' })"
+            );
         });
 
         it('should have localized home breadcrumb labels', () => {
-            expect(content).toContain('const homeLabels: Record<SupportedLocale, string>');
-            expect(content).toContain("es: 'Inicio'");
-            expect(content).toContain("en: 'Home'");
-            expect(content).toContain("pt: 'Início'");
+            expect(content).toContain('HOME_BREADCRUMB');
+            expect(content).toContain("from '../../../lib/page-helpers'");
         });
 
-        it('should have localized hero headings', () => {
-            expect(content).toContain('const heroHeadings: Record<SupportedLocale, string>');
-            expect(content).toContain('Explora los Destinos del Litoral');
+        it('should use t() for hero heading', () => {
+            expect(content).toContain(
+                "t({ locale, namespace: 'destination', key: 'listing.hero.heading' })"
+            );
         });
 
-        it('should have localized hero descriptions', () => {
-            expect(content).toContain('const heroDescriptions: Record<SupportedLocale, string>');
-            expect(content).toContain('ciudades históricas, paisajes naturales');
+        it('should use t() for hero description', () => {
+            expect(content).toContain(
+                "t({ locale, namespace: 'destination', key: 'listing.hero.description' })"
+            );
         });
 
-        it('should have localized featured titles', () => {
-            expect(content).toContain('const featuredTitles: Record<SupportedLocale, string>');
-            expect(content).toContain("es: 'Destinos Destacados'");
-            expect(content).toContain("en: 'Featured Destinations'");
+        it('should use t() for featured title', () => {
+            expect(content).toContain(
+                "t({ locale, namespace: 'destination', key: 'listing.featured.title' })"
+            );
         });
 
-        it('should have localized empty state texts', () => {
-            expect(content).toContain('const emptyStateTitles: Record<SupportedLocale, string>');
+        it('should use t() for empty state texts', () => {
+            expect(content).toContain(
+                "t({ locale, namespace: 'destination', key: 'listing.emptyState.title' })"
+            );
+            expect(content).toContain(
+                "t({ locale, namespace: 'destination', key: 'listing.emptyState.message' })"
+            );
         });
 
-        it('should have localized regional titles', () => {
-            expect(content).toContain('const regionalTitles: Record<SupportedLocale, string>');
-            expect(content).toContain("es: 'La Región del Litoral'");
+        it('should use t() for regional title', () => {
+            expect(content).toContain(
+                "t({ locale, namespace: 'destination', key: 'listing.regional.title' })"
+            );
         });
 
-        it('should have localized regional texts', () => {
-            expect(content).toContain('const regionalTexts: Record<SupportedLocale, string>');
-            expect(content).toContain('provincias de Entre Ríos, Corrientes y Santa Fe');
+        it('should use t() for regional text', () => {
+            expect(content).toContain(
+                "t({ locale, namespace: 'destination', key: 'listing.regional.text' })"
+            );
+        });
+
+        it('should import t from lib/i18n', () => {
+            expect(content).toContain("import { t } from '../../../lib/i18n'");
         });
     });
 
@@ -135,8 +151,8 @@ describe('destinos/index.astro', () => {
         });
 
         it('should pass title and description to SEOHead', () => {
-            expect(content).toContain('title={titles[locale]}');
-            expect(content).toContain('description={descriptions[locale]}');
+            expect(content).toContain('title={pageTitle}');
+            expect(content).toContain('description={pageDescription}');
         });
 
         it('should set page type to website', () => {
@@ -154,19 +170,19 @@ describe('destinos/index.astro', () => {
         });
 
         it('should have home breadcrumb link', () => {
-            expect(content).toContain('{ label: homeLabels[locale], href: `/${locale}/`');
+            expect(content).toContain('{ label: HOME_BREADCRUMB[locale], href: `/${locale}/`');
         });
 
         it('should have destinations page breadcrumb', () => {
-            expect(content).toContain('{ label: titles[locale], href: `/${locale}/destinos/`');
+            expect(content).toContain('{ label: pageTitle, href: `/${locale}/destinos/`');
         });
     });
 
     describe('Content sections', () => {
         it('should have hero section', () => {
             expect(content).toContain('id="hero"');
-            expect(content).toContain('{heroHeadings[locale]}');
-            expect(content).toContain('{heroDescriptions[locale]}');
+            expect(content).toContain('{heroHeading}');
+            expect(content).toContain('{heroDescription}');
         });
 
         it('should have search bar section with DestinationFilters island', () => {
@@ -177,7 +193,7 @@ describe('destinos/index.astro', () => {
 
         it('should have featured destinations section', () => {
             expect(content).toContain('id="featured-destinations"');
-            expect(content).toContain('{featuredTitles[locale]}');
+            expect(content).toContain('{featuredTitle}');
         });
 
         it('should have destination grid area', () => {
@@ -189,14 +205,23 @@ describe('destinos/index.astro', () => {
             expect(content).toContain('<EmptyState');
         });
 
+        it('should track API error state', () => {
+            expect(content).toContain('const apiError = !result.ok');
+        });
+
+        it('should show DestinationErrorState when API fails', () => {
+            expect(content).toContain('<DestinationErrorState');
+            expect(content).toContain('apiError');
+        });
+
         it('should render DestinationCard for each destination', () => {
             expect(content).toContain('<DestinationCard');
         });
 
         it('should have regional highlight section', () => {
             expect(content).toContain('id="regional-highlight"');
-            expect(content).toContain('{regionalTitles[locale]}');
-            expect(content).toContain('{regionalTexts[locale]}');
+            expect(content).toContain('{regionalTitle}');
+            expect(content).toContain('{regionalText}');
         });
 
         it('should have provinces section', () => {
@@ -260,19 +285,21 @@ describe('destinos/index.astro', () => {
             expect(content).toContain('Cuna de la Constitución');
         });
 
-        it('should mention Concepción del Uruguay', () => {
-            expect(content).toContain('Concepción del Uruguay');
+        it('should mention Concepción del Uruguay (via i18n key)', () => {
+            expect(content).toContain(
+                "t({ locale, namespace: 'destination', key: 'listing.regional.text' })"
+            );
         });
     });
 
     describe('Page styling', () => {
-        it('should have main heading with proper styling', () => {
-            expect(content).toContain('text-4xl font-bold');
-            expect(content).toContain('md:text-5xl');
+        it('should have main heading with SectionTitle component', () => {
+            expect(content).toContain('<SectionTitle');
+            expect(content).toContain('{heroHeading}');
         });
 
-        it('should have section headings', () => {
-            expect(content).toContain('text-3xl font-semibold');
+        it('should have section headings with SectionTitle', () => {
+            expect(content).toContain('SectionTitle');
         });
 
         it('should have grid layout for destinations', () => {
@@ -320,14 +347,14 @@ describe('destinos/index.astro', () => {
         });
 
         it('should define getStaticPaths for locales', () => {
-            expect(content).toContain('export function getStaticPaths()');
+            expect(content).toContain('getStaticLocalePaths as getStaticPaths');
         });
     });
 
     describe('Accessibility', () => {
         it('should have proper heading hierarchy', () => {
-            expect(content).toContain('<h1');
-            expect(content).toContain('<h2');
+            expect(content).toContain('as="h1"');
+            expect(content).toContain('as="h2"');
             expect(content).toContain('<h3');
         });
 

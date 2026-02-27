@@ -41,7 +41,7 @@ describe('MobileMenu.client.tsx', () => {
                 />
             );
 
-            expect(screen.getByText('Iniciar sesion')).toBeInTheDocument();
+            expect(screen.getByText('Iniciar sesión')).toBeInTheDocument();
             expect(screen.getByText('Registrarse')).toBeInTheDocument();
         });
 
@@ -68,7 +68,7 @@ describe('MobileMenu.client.tsx', () => {
                 />
             );
 
-            expect(screen.getByText('Iniciar sesion')).toBeInTheDocument();
+            expect(screen.getByText('Iniciar sesión')).toBeInTheDocument();
             expect(screen.getByText('Registrarse')).toBeInTheDocument();
         });
 
@@ -106,12 +106,13 @@ describe('MobileMenu.client.tsx', () => {
             render(
                 <MobileMenu
                     navItems={mockNavItems}
+                    locale="en"
                     open={true}
                     onClose={handleClose}
                 />
             );
 
-            const closeButton = screen.getByLabelText('Close mobile menu');
+            const closeButton = screen.getByLabelText('Close menu');
             fireEvent.click(closeButton);
 
             expect(handleClose).toHaveBeenCalledTimes(1);
@@ -164,12 +165,13 @@ describe('MobileMenu.client.tsx', () => {
             render(
                 <MobileMenu
                     navItems={mockNavItems}
+                    locale="en"
                     open={true}
                     onClose={() => {}}
                 />
             );
 
-            const closeButton = screen.getByLabelText('Close mobile menu');
+            const closeButton = screen.getByLabelText('Close menu');
             expect(closeButton).toBeInTheDocument();
             expect(closeButton.tagName).toBe('BUTTON');
         });
@@ -178,12 +180,13 @@ describe('MobileMenu.client.tsx', () => {
             render(
                 <MobileMenu
                     navItems={mockNavItems}
+                    locale="en"
                     open={true}
                     onClose={() => {}}
                 />
             );
 
-            const closeButton = screen.getByLabelText('Close mobile menu');
+            const closeButton = screen.getByLabelText('Close menu');
             const svg = closeButton.querySelector('svg');
             expect(svg).toBeInTheDocument();
         });
@@ -229,7 +232,7 @@ describe('MobileMenu.client.tsx', () => {
                 />
             );
 
-            expect(screen.getByText('Iniciar sesion')).toBeInTheDocument();
+            expect(screen.getByText('Iniciar sesión')).toBeInTheDocument();
             expect(screen.getByText('Registrarse')).toBeInTheDocument();
         });
 
@@ -246,7 +249,7 @@ describe('MobileMenu.client.tsx', () => {
 
             expect(screen.getByText('Jane Smith')).toBeInTheDocument();
             expect(screen.getByText('jane@example.com')).toBeInTheDocument();
-            expect(screen.queryByText('Iniciar sesion')).not.toBeInTheDocument();
+            expect(screen.queryByText('Iniciar sesión')).not.toBeInTheDocument();
             expect(screen.queryByText('Registrarse')).not.toBeInTheDocument();
         });
     });
@@ -285,25 +288,27 @@ describe('MobileMenu.client.tsx', () => {
             render(
                 <MobileMenu
                     navItems={mockNavItems}
+                    locale="en"
                     open={true}
                     onClose={() => {}}
                 />
             );
 
-            const closeButton = screen.getByLabelText('Close mobile menu');
-            expect(closeButton).toHaveAttribute('aria-label', 'Close mobile menu');
+            const closeButton = screen.getByLabelText('Close menu');
+            expect(closeButton).toHaveAttribute('aria-label', 'Close menu');
         });
 
         it('should have aria-hidden on close icon SVG', () => {
             render(
                 <MobileMenu
                     navItems={mockNavItems}
+                    locale="en"
                     open={true}
                     onClose={() => {}}
                 />
             );
 
-            const closeButton = screen.getByLabelText('Close mobile menu');
+            const closeButton = screen.getByLabelText('Close menu');
             const svg = closeButton.querySelector('svg');
             expect(svg).toHaveAttribute('aria-hidden', 'true');
         });
@@ -312,6 +317,7 @@ describe('MobileMenu.client.tsx', () => {
             const { container } = render(
                 <MobileMenu
                     navItems={mockNavItems}
+                    locale="en"
                     open={true}
                     onClose={() => {}}
                 />
@@ -325,12 +331,13 @@ describe('MobileMenu.client.tsx', () => {
             render(
                 <MobileMenu
                     navItems={mockNavItems}
+                    locale="en"
                     open={true}
                     onClose={() => {}}
                 />
             );
 
-            const closeButton = screen.getByLabelText('Close mobile menu');
+            const closeButton = screen.getByLabelText('Close menu');
             expect(closeButton.className).toContain('focus-visible:outline');
         });
 
@@ -356,7 +363,7 @@ describe('MobileMenu.client.tsx', () => {
                 />
             );
 
-            const signInLink = screen.getByText('Iniciar sesion').closest('a');
+            const signInLink = screen.getByText('Iniciar sesión').closest('a');
             const signUpLink = screen.getByText('Registrarse').closest('a');
 
             expect(signInLink?.className).toContain('focus-visible:outline');
@@ -370,12 +377,13 @@ describe('MobileMenu.client.tsx', () => {
             render(
                 <MobileMenu
                     navItems={mockNavItems}
+                    locale="en"
                     open={true}
                     onClose={handleClose}
                 />
             );
 
-            const closeButton = screen.getByLabelText('Close mobile menu');
+            const closeButton = screen.getByLabelText('Close menu');
             fireEvent.click(closeButton);
 
             expect(handleClose).toHaveBeenCalledTimes(1);
@@ -572,12 +580,13 @@ describe('MobileMenu.client.tsx', () => {
             render(
                 <MobileMenu
                     navItems={mockNavItems}
+                    locale="en"
                     open={true}
                     onClose={() => {}}
                 />
             );
 
-            const closeButton = screen.getByLabelText('Close mobile menu');
+            const closeButton = screen.getByLabelText('Close menu');
             expect(closeButton.className).toContain('hover:bg-bg-secondary');
         });
 
@@ -585,12 +594,13 @@ describe('MobileMenu.client.tsx', () => {
             render(
                 <MobileMenu
                     navItems={mockNavItems}
+                    locale="en"
                     open={true}
                     onClose={() => {}}
                 />
             );
 
-            const closeButton = screen.getByLabelText('Close mobile menu');
+            const closeButton = screen.getByLabelText('Close menu');
             expect(closeButton.className).toContain('transition-colors');
         });
     });
@@ -600,12 +610,13 @@ describe('MobileMenu.client.tsx', () => {
             render(
                 <MobileMenu
                     navItems={mockNavItems}
+                    locale="en"
                     open={true}
                     onClose={() => {}}
                 />
             );
 
-            const closeButton = screen.getByLabelText('Close mobile menu');
+            const closeButton = screen.getByLabelText('Close menu');
             expect(closeButton).toHaveAttribute('type', 'button');
         });
 
@@ -613,12 +624,13 @@ describe('MobileMenu.client.tsx', () => {
             render(
                 <MobileMenu
                     navItems={mockNavItems}
+                    locale="en"
                     open={true}
                     onClose={() => {}}
                 />
             );
 
-            const closeButton = screen.getByLabelText('Close mobile menu');
+            const closeButton = screen.getByLabelText('Close menu');
             expect(closeButton).not.toBeDisabled();
         });
     });
@@ -688,7 +700,7 @@ describe('MobileMenu.client.tsx', () => {
                 />
             );
 
-            const signInLink = screen.getByText('Iniciar sesion').closest('a');
+            const signInLink = screen.getByText('Iniciar sesión').closest('a');
             const signUpLink = screen.getByText('Registrarse').closest('a');
 
             expect(signInLink).toHaveAttribute('href', '/es/auth/signin/');
@@ -723,7 +735,7 @@ describe('MobileMenu.client.tsx', () => {
                 />
             );
 
-            expect(screen.getByText('Iniciar sesion')).toBeInTheDocument();
+            expect(screen.getByText('Iniciar sesión')).toBeInTheDocument();
             expect(screen.getByText('Registrarse')).toBeInTheDocument();
         });
 
@@ -740,7 +752,7 @@ describe('MobileMenu.client.tsx', () => {
 
             expect(screen.getByText('Alice Johnson')).toBeInTheDocument();
             expect(screen.getByText('alice@example.com')).toBeInTheDocument();
-            expect(screen.queryByText('Iniciar sesion')).not.toBeInTheDocument();
+            expect(screen.queryByText('Iniciar sesión')).not.toBeInTheDocument();
         });
 
         it('should have correct auth link hrefs', () => {
@@ -752,7 +764,7 @@ describe('MobileMenu.client.tsx', () => {
                 />
             );
 
-            const signInLink = screen.getByText('Iniciar sesion').closest('a');
+            const signInLink = screen.getByText('Iniciar sesión').closest('a');
             const signUpLink = screen.getByText('Registrarse').closest('a');
 
             expect(signInLink).toHaveAttribute('href', '/es/auth/signin/');
@@ -782,7 +794,7 @@ describe('MobileMenu.client.tsx', () => {
                 />
             );
 
-            const signInLink = screen.getByText('Iniciar sesion').closest('a');
+            const signInLink = screen.getByText('Iniciar sesión').closest('a');
             expect(signInLink?.className).toContain('bg-bg-secondary');
         });
     });

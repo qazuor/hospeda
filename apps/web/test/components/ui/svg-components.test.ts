@@ -8,6 +8,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const uiDir = resolve(__dirname, '../../../src/components/ui');
+const dividersDir = resolve(__dirname, '../../../src/components/illustrations/dividers');
 const illustrationsDir = resolve(__dirname, '../../../src/components/illustrations');
 const categoryIconsDir = resolve(__dirname, '../../../src/components/illustrations/category-icons');
 
@@ -16,12 +17,17 @@ function readUi(name: string): string {
     return readFileSync(resolve(uiDir, name), 'utf8');
 }
 
+// Helper to read a divider component
+function readDivider(name: string): string {
+    return readFileSync(resolve(dividersDir, name), 'utf8');
+}
+
 describe('SVG divider components', () => {
     describe('RiverWavesDivider.astro', () => {
-        const content = readUi('RiverWavesDivider.astro');
+        const content = readDivider('RiverWavesDivider.astro');
 
         it('should exist as a file', () => {
-            expect(existsSync(resolve(uiDir, 'RiverWavesDivider.astro'))).toBe(true);
+            expect(existsSync(resolve(dividersDir, 'RiverWavesDivider.astro'))).toBe(true);
         });
 
         it('should have aria-hidden="true" for decorative role', () => {
@@ -63,10 +69,10 @@ describe('SVG divider components', () => {
     });
 
     describe('CostaneraTreelineDivider.astro', () => {
-        const content = readUi('CostaneraTreelineDivider.astro');
+        const content = readDivider('CostaneraTreelineDivider.astro');
 
         it('should exist as a file', () => {
-            expect(existsSync(resolve(uiDir, 'CostaneraTreelineDivider.astro'))).toBe(true);
+            expect(existsSync(resolve(dividersDir, 'CostaneraTreelineDivider.astro'))).toBe(true);
         });
 
         it('should have aria-hidden="true" for decorative role', () => {
@@ -103,10 +109,10 @@ describe('SVG divider components', () => {
     });
 
     describe('TotoraReedsDivider.astro', () => {
-        const content = readUi('TotoraReedsDivider.astro');
+        const content = readDivider('TotoraReedsDivider.astro');
 
         it('should exist as a file', () => {
-            expect(existsSync(resolve(uiDir, 'TotoraReedsDivider.astro'))).toBe(true);
+            expect(existsSync(resolve(dividersDir, 'TotoraReedsDivider.astro'))).toBe(true);
         });
 
         it('should have aria-hidden="true" for decorative role', () => {
@@ -151,10 +157,10 @@ describe('SVG divider components', () => {
     });
 
     describe('SimpleCurveDivider.astro', () => {
-        const content = readUi('SimpleCurveDivider.astro');
+        const content = readDivider('SimpleCurveDivider.astro');
 
         it('should exist as a file', () => {
-            expect(existsSync(resolve(uiDir, 'SimpleCurveDivider.astro'))).toBe(true);
+            expect(existsSync(resolve(dividersDir, 'SimpleCurveDivider.astro'))).toBe(true);
         });
 
         it('should have aria-hidden="true" for decorative role', () => {

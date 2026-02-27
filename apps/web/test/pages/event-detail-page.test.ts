@@ -52,8 +52,8 @@ describe('[slug].astro (Event Detail)', () => {
 
     describe('Locale validation', () => {
         it('should validate locale parameter', () => {
-            expect(content).toContain('const { lang, slug } = Astro.params');
-            expect(content).toContain('if (!lang || !isValidLocale(lang))');
+            expect(content).toContain('getLocaleFromParams(Astro.params)');
+            expect(content).toContain('if (!locale)');
         });
 
         it('should redirect to /es/ on invalid locale', () => {
@@ -61,8 +61,7 @@ describe('[slug].astro (Event Detail)', () => {
         });
 
         it('should import locale helpers', () => {
-            expect(content).toContain('isValidLocale');
-            expect(content).toContain('type SupportedLocale');
+            expect(content).toContain('getLocaleFromParams');
         });
 
         it('should import eventsApi', () => {
@@ -103,39 +102,37 @@ describe('[slug].astro (Event Detail)', () => {
         });
 
         it('should generate static paths for all locales', () => {
-            expect(content).toContain("const locales = ['es', 'en', 'pt']");
+            expect(content).toContain('SUPPORTED_LOCALES.flatMap');
         });
     });
 
     describe('Localization', () => {
-        it('should have localized home breadcrumb labels', () => {
-            expect(content).toContain('const homeLabels: Record<SupportedLocale, string>');
-            expect(content).toContain("es: 'Inicio'");
-            expect(content).toContain("en: 'Home'");
-            expect(content).toContain("pt: 'Início'");
+        it('should import HOME_BREADCRUMB from page-helpers', () => {
+            expect(content).toContain('HOME_BREADCRUMB');
+            expect(content).toContain("from '../../../lib/page-helpers'");
         });
 
-        it('should have localized events breadcrumb labels', () => {
-            expect(content).toContain('const eventsLabels: Record<SupportedLocale, string>');
-            expect(content).toContain("es: 'Eventos'");
-            expect(content).toContain("en: 'Events'");
-            expect(content).toContain("pt: 'Eventos'");
+        it('should import t function from i18n', () => {
+            expect(content).toContain("import { t } from '../../../lib/i18n'");
         });
 
-        it('should have localized section labels', () => {
-            expect(content).toContain('const labels = {');
-            expect(content).toContain('category:');
-            expect(content).toContain('description:');
-            expect(content).toContain('agenda:');
-            expect(content).toContain('pricing:');
-            expect(content).toContain('organizer:');
+        it('should use t() for events breadcrumb label', () => {
+            expect(content).toContain(
+                "const eventsLabel = t({ locale, namespace: 'event', key: 'breadcrumb.events' })"
+            );
         });
 
-        it('should have localized past event label', () => {
-            expect(content).toContain('pastEvent:');
-            expect(content).toContain("es: 'Evento Finalizado'");
-            expect(content).toContain("en: 'Past Event'");
-            expect(content).toContain("pt: 'Evento Encerrado'");
+        it('should use t() for section labels', () => {
+            expect(content).toContain("namespace: 'event'");
+            expect(content).toContain("key: 'detail.category'");
+            expect(content).toContain("key: 'detail.description'");
+            expect(content).toContain("key: 'detail.agenda'");
+            expect(content).toContain("key: 'detail.pricing'");
+            expect(content).toContain("key: 'detail.organizer'");
+        });
+
+        it('should use t() for past event label', () => {
+            expect(content).toContain("key: 'detail.pastEvent'");
         });
     });
 
@@ -147,7 +144,7 @@ describe('[slug].astro (Event Detail)', () => {
 
         it('should pass title and description to SEOHead', () => {
             expect(content).toContain('title={pageTitle}');
-            expect(content).toContain('description={descriptions[locale]}');
+            expect(content).toContain('description={metaDescription}');
         });
 
         it('should set page type to article', () => {
@@ -172,11 +169,11 @@ describe('[slug].astro (Event Detail)', () => {
         });
 
         it('should have home breadcrumb link', () => {
-            expect(content).toContain('{ label: homeLabels[locale], href: `/${locale}/`');
+            expect(content).toContain('{ label: HOME_BREADCRUMB[locale], href: `/${locale}/`');
         });
 
         it('should have events page breadcrumb', () => {
-            expect(content).toContain('{ label: eventsLabels[locale], href: `/${locale}/eventos/`');
+            expect(content).toContain('{ label: eventsLabel, href: `/${locale}/eventos/`');
         });
 
         it('should have current event breadcrumb', () => {
@@ -198,53 +195,53 @@ describe('[slug].astro (Event Detail)', () => {
 
         it('should have event description section', () => {
             expect(content).toContain('id="event-description"');
-            expect(content).toContain('{labels.description[locale]}');
+            expect(content).toContain('{labelDescription}');
             expect(content).toContain('{event.description');
         });
 
         it('should have event schedule/agenda section', () => {
             expect(content).toContain('id="event-schedule"');
-            expect(content).toContain('{labels.agenda[locale]}');
+            expect(content).toContain('{labelAgenda}');
             expect(content).toContain('{event.agenda.map');
         });
 
         it('should have event pricing section', () => {
             expect(content).toContain('id="event-pricing"');
-            expect(content).toContain('{labels.pricing[locale]}');
+            expect(content).toContain('{labelPricing}');
             expect(content).toContain('{event.price}');
         });
 
         it('should have organizer info section', () => {
             expect(content).toContain('id="event-organizer"');
-            expect(content).toContain('{labels.organizer[locale]}');
+            expect(content).toContain('{labelOrganizer}');
             expect(content).toContain('{event.organizer}');
         });
 
         it('should have related events section', () => {
             expect(content).toContain('id="related-events"');
-            expect(content).toContain('{labels.relatedEvents[locale]}');
+            expect(content).toContain('{labelRelatedEvents}');
         });
 
         it('should have share buttons section', () => {
             expect(content).toContain('id="share-buttons"');
-            expect(content).toContain('{labels.shareEvent[locale]}');
+            expect(content).toContain('{labelShareEvent}');
         });
     });
 
     describe('Event meta information', () => {
         it('should display event date', () => {
             expect(content).toContain('id="event-meta"');
-            expect(content).toContain('{labels.date[locale]}');
+            expect(content).toContain('{labelDate}');
             expect(content).toContain('{formatDate(event.startDate)}');
         });
 
         it('should display event time', () => {
-            expect(content).toContain('{labels.time[locale]}');
+            expect(content).toContain('{labelTime}');
             expect(content).toContain('{formatTime(event.startDate)}');
         });
 
         it('should display event location', () => {
-            expect(content).toContain('{labels.location[locale]}');
+            expect(content).toContain('{labelLocation}');
             expect(content).toContain('{event.location.name}');
         });
 
@@ -267,12 +264,12 @@ describe('[slug].astro (Event Detail)', () => {
         it('should display past event badge when event is past', () => {
             expect(content).toContain('id="past-event-badge"');
             expect(content).toContain('{isPastEvent &&');
-            expect(content).toContain('{labels.pastEvent[locale]}');
+            expect(content).toContain('{labelPastEvent}');
         });
 
         it('should conditionally show ticket button based on past event status', () => {
             expect(content).toContain('{!isPastEvent &&');
-            expect(content).toContain('{labels.getTickets[locale]}');
+            expect(content).toContain('{labelGetTickets}');
         });
     });
 
@@ -400,7 +397,7 @@ describe('[slug].astro (Event Detail)', () => {
         });
 
         it('should have aria-label for related events region', () => {
-            expect(content).toContain('aria-label={labels.relatedEvents[locale]}');
+            expect(content).toContain('aria-label={labelRelatedEvents}');
         });
 
         it('should have aria-hidden on decorative SVG icons', () => {

@@ -1,5 +1,5 @@
 /**
- * Tests for UserReviewsList.client.tsx, user-reviews-i18n.ts, and ReviewEditForm.tsx
+ * Tests for UserReviewsList.client.tsx, account.json locale files (reviews section), and ReviewEditForm.client.tsx
  *
  * Verifies component structure, exports, props interface, localization,
  * accessibility attributes, API integration, tab navigation, star rating patterns,
@@ -15,10 +15,10 @@ const componentPath = resolve(
 );
 const content = readFileSync(componentPath, 'utf8');
 
-const i18nPath = resolve(__dirname, '../../../src/components/account/user-reviews-i18n.ts');
-const i18nContent = readFileSync(i18nPath, 'utf8');
-
-const editFormPath = resolve(__dirname, '../../../src/components/account/ReviewEditForm.tsx');
+const editFormPath = resolve(
+    __dirname,
+    '../../../src/components/account/ReviewEditForm.client.tsx'
+);
 const editFormContent = readFileSync(editFormPath, 'utf8');
 
 describe('UserReviewsList.client.tsx', () => {
@@ -62,22 +62,26 @@ describe('UserReviewsList.client.tsx', () => {
         });
 
         it('should import userApi from endpoints', () => {
-            expect(content).toContain("import { userApi } from '../../lib/api/endpoints'");
+            expect(content).toContain(
+                "import { userApi } from '../../lib/api/endpoints-protected'"
+            );
         });
 
         it('should import addToast from toast store', () => {
             expect(content).toContain("import { addToast } from '../../store/toast-store'");
         });
 
-        it('should import TAB_LABELS and REVIEWS_MESSAGES from i18n file', () => {
-            expect(content).toContain('TAB_LABELS');
-            expect(content).toContain('REVIEWS_MESSAGES');
-            expect(content).toContain("from './user-reviews-i18n'");
+        it('should import useTranslation from hooks', () => {
+            expect(content).toContain('useTranslation');
+        });
+
+        it('should import SupportedLocale from lib/i18n', () => {
+            expect(content).toContain('SupportedLocale');
         });
 
         it('should import ReviewEditForm', () => {
             expect(content).toContain('ReviewEditForm');
-            expect(content).toContain("from './ReviewEditForm'");
+            expect(content).toContain("from './ReviewEditForm.client'");
         });
 
         it('should import apiClient', () => {
@@ -138,6 +142,18 @@ describe('UserReviewsList.client.tsx', () => {
             expect(content).toContain("{ id: 'destination'");
         });
 
+        it('should use t for all tab label', () => {
+            expect(content).toContain("t('reviews.tabs.all')");
+        });
+
+        it('should use t for accommodation tab label', () => {
+            expect(content).toContain("t('reviews.tabs.accommodation')");
+        });
+
+        it('should use t for destination tab label', () => {
+            expect(content).toContain("t('reviews.tabs.destination')");
+        });
+
         it('should have handleTabChange function', () => {
             expect(content).toContain('const handleTabChange = (tabId: ReviewType)');
         });
@@ -162,7 +178,7 @@ describe('UserReviewsList.client.tsx', () => {
         });
 
         it('should have aria-label on tablist nav', () => {
-            expect(content).toContain('aria-label="Review categories"');
+            expect(content).toContain("aria-label={tUi('accessibility.reviewCategories')}");
         });
 
         it('should have tab role on tab buttons', () => {
@@ -242,8 +258,8 @@ describe('UserReviewsList.client.tsx', () => {
             expect(content).toContain('const fetchReviews = useCallback(');
         });
 
-        it('should handle fetch error with toast', () => {
-            expect(content).toContain('messages.fetchError');
+        it('should handle fetch error with t call', () => {
+            expect(content).toContain("t('reviews.fetchError')");
         });
 
         it('should check result.ok before processing data', () => {
@@ -319,20 +335,20 @@ describe('UserReviewsList.client.tsx', () => {
             expect(content).toContain('<ChatIcon');
         });
 
-        it('should show empty message text', () => {
-            expect(content).toContain('{messages.empty}');
+        it('should show empty message text via t call', () => {
+            expect(content).toContain("t('reviews.empty')");
         });
 
-        it('should show empty action text', () => {
-            expect(content).toContain('{messages.emptyAction}');
+        it('should show empty action text via t call', () => {
+            expect(content).toContain("t('reviews.emptyAction')");
         });
 
         it('should show loading spinner animation', () => {
             expect(content).toContain('animate-spin');
         });
 
-        it('should show loading text during initial load', () => {
-            expect(content).toContain('{messages.loading}');
+        it('should show loading text via t call', () => {
+            expect(content).toContain("t('reviews.loading')");
         });
 
         it('should show inline loading indicator when loading more', () => {
@@ -369,10 +385,10 @@ describe('UserReviewsList.client.tsx', () => {
             expect(content).toContain('rating={review.rating}');
         });
 
-        it('should distinguish accommodation vs destination reviews', () => {
+        it('should distinguish accommodation vs destination reviews via t calls', () => {
             expect(content).toContain('review.accommodationId');
-            expect(content).toContain('messages.accommodationReview');
-            expect(content).toContain('messages.destinationReview');
+            expect(content).toContain("t('reviews.accommodationReview')");
+            expect(content).toContain("t('reviews.destinationReview')");
         });
     });
 
@@ -399,8 +415,13 @@ describe('UserReviewsList.client.tsx', () => {
             expect(content).toContain('review={review}');
         });
 
-        it('should pass messages to ReviewEditForm', () => {
-            expect(content).toContain('messages={messages}');
+        it('should pass inline messages object to ReviewEditForm using t calls', () => {
+            expect(content).toContain("t('reviews.ratingEditLabel')");
+            expect(content).toContain("t('reviews.titleLabel')");
+            expect(content).toContain("t('reviews.contentLabel')");
+            expect(content).toContain("t('reviews.cancelButton')");
+            expect(content).toContain("t('reviews.saveButton')");
+            expect(content).toContain("t('reviews.saving')");
         });
 
         it('should pass onSave handler to ReviewEditForm', () => {
@@ -431,9 +452,9 @@ describe('UserReviewsList.client.tsx', () => {
             expect(content).toContain('apiClient.delete');
         });
 
-        it('should use window.confirm before deleting', () => {
+        it('should use window.confirm before deleting with t call', () => {
             expect(content).toContain('window.confirm');
-            expect(content).toContain('messages.deleteConfirm');
+            expect(content).toContain("t('reviews.deleteConfirm')");
         });
 
         it('should show EditIcon button for each review', () => {
@@ -444,12 +465,12 @@ describe('UserReviewsList.client.tsx', () => {
             expect(content).toContain('<DeleteIcon');
         });
 
-        it('should show success toast after saving', () => {
-            expect(content).toContain('messages.updateSuccess');
+        it('should show success toast after saving via t call', () => {
+            expect(content).toContain("t('reviews.updateSuccess')");
         });
 
-        it('should show success toast after deleting', () => {
-            expect(content).toContain('messages.deleteSuccess');
+        it('should show success toast after deleting via t call', () => {
+            expect(content).toContain("t('reviews.deleteSuccess')");
         });
 
         it('should update reviews list optimistically on save', () => {
@@ -480,187 +501,235 @@ describe('UserReviewsList.client.tsx', () => {
     });
 });
 
-describe('user-reviews-i18n.ts', () => {
-    describe('Exports', () => {
-        it('should export TAB_LABELS', () => {
-            expect(i18nContent).toContain('export const TAB_LABELS');
+describe('account.json locale files - reviews section', () => {
+    const esAccountPath = resolve(
+        __dirname,
+        '../../../../../packages/i18n/src/locales/es/account.json'
+    );
+    const enAccountPath = resolve(
+        __dirname,
+        '../../../../../packages/i18n/src/locales/en/account.json'
+    );
+    const ptAccountPath = resolve(
+        __dirname,
+        '../../../../../packages/i18n/src/locales/pt/account.json'
+    );
+    const esAccount = JSON.parse(readFileSync(esAccountPath, 'utf8'));
+    const enAccount = JSON.parse(readFileSync(enAccountPath, 'utf8'));
+    const ptAccount = JSON.parse(readFileSync(ptAccountPath, 'utf8'));
+
+    describe('Structure', () => {
+        it('should have reviews section in Spanish locale', () => {
+            expect(esAccount.reviews).toBeDefined();
         });
 
-        it('should export REVIEWS_MESSAGES', () => {
-            expect(i18nContent).toContain('export const REVIEWS_MESSAGES');
+        it('should have reviews section in English locale', () => {
+            expect(enAccount.reviews).toBeDefined();
         });
 
-        it('should export ReviewsMessages interface', () => {
-            expect(i18nContent).toContain('export interface ReviewsMessages');
+        it('should have reviews section in Portuguese locale', () => {
+            expect(ptAccount.reviews).toBeDefined();
+        });
+
+        it('should have tabs subsection in Spanish locale', () => {
+            expect(esAccount.reviews.tabs).toBeDefined();
+        });
+
+        it('should have tabs subsection in English locale', () => {
+            expect(enAccount.reviews.tabs).toBeDefined();
+        });
+
+        it('should have tabs subsection in Portuguese locale', () => {
+            expect(ptAccount.reviews.tabs).toBeDefined();
         });
     });
 
     describe('Localization - Spanish (es)', () => {
-        it('should have Spanish all tab label', () => {
-            expect(i18nContent).toContain("all: 'Todas'");
-        });
-
-        it('should have Spanish accommodation tab label', () => {
-            expect(i18nContent).toContain("accommodation: 'Alojamientos'");
-        });
-
-        it('should have Spanish destination tab label', () => {
-            expect(i18nContent).toContain("destination: 'Destinos'");
+        it('should have Spanish tab labels', () => {
+            expect(esAccount.reviews.tabs.all).toBe('Todas');
+            expect(esAccount.reviews.tabs.accommodation).toBe('Alojamientos');
+            expect(esAccount.reviews.tabs.destination).toBe('Destinos');
         });
 
         it('should have Spanish empty state message', () => {
-            expect(i18nContent).toContain('No tienes resenas todavia');
+            expect(esAccount.reviews.empty).toBe('No tienes resenas todavia');
         });
 
         it('should have Spanish empty action message', () => {
-            expect(i18nContent).toContain(
+            expect(esAccount.reviews.emptyAction).toBe(
                 'Visita alojamientos y destinos para dejar tus primeras resenas'
             );
         });
 
         it('should have Spanish loading text', () => {
-            expect(i18nContent).toContain("loading: 'Cargando...'");
+            expect(esAccount.reviews.loading).toBe('Cargando...');
         });
 
         it('should have Spanish fetch error message', () => {
-            expect(i18nContent).toContain('Error al cargar las resenas');
+            expect(esAccount.reviews.fetchError).toBe('Error al cargar las resenas');
         });
 
         it('should have Spanish load more text', () => {
-            expect(i18nContent).toContain("loadMore: 'Cargar mas'");
+            expect(esAccount.reviews.loadMore).toBe('Cargar mas');
         });
 
         it('should have Spanish rating label', () => {
-            expect(i18nContent).toContain("ratingLabel: 'Puntuacion'");
+            expect(esAccount.reviews.ratingLabel).toBe('Puntuacion');
         });
 
         it('should have Spanish accommodation review type label', () => {
-            expect(i18nContent).toContain("accommodationReview: 'Resena de alojamiento'");
+            expect(esAccount.reviews.accommodationReview).toBe('Resena de alojamiento');
         });
 
         it('should have Spanish destination review type label', () => {
-            expect(i18nContent).toContain("destinationReview: 'Resena de destino'");
+            expect(esAccount.reviews.destinationReview).toBe('Resena de destino');
         });
 
         it('should have Spanish edit button label', () => {
-            expect(i18nContent).toContain("editButton: 'Editar resena'");
+            expect(esAccount.reviews.editButton).toBe('Editar resena');
         });
 
         it('should have Spanish delete button label', () => {
-            expect(i18nContent).toContain("deleteButton: 'Eliminar resena'");
+            expect(esAccount.reviews.deleteButton).toBe('Eliminar resena');
         });
 
         it('should have Spanish delete confirmation message', () => {
-            expect(i18nContent).toContain('Esta seguro que desea eliminar esta resena');
+            expect(esAccount.reviews.deleteConfirm).toContain(
+                'Esta seguro que desea eliminar esta resena'
+            );
         });
 
         it('should have Spanish update success message', () => {
-            expect(i18nContent).toContain('Resena actualizada correctamente');
+            expect(esAccount.reviews.updateSuccess).toBe('Resena actualizada correctamente');
         });
 
         it('should have Spanish delete success message', () => {
-            expect(i18nContent).toContain('Resena eliminada correctamente');
+            expect(esAccount.reviews.deleteSuccess).toBe('Resena eliminada correctamente');
+        });
+
+        it('should have Spanish save button label', () => {
+            expect(esAccount.reviews.saveButton).toBeDefined();
+        });
+
+        it('should have Spanish saving text', () => {
+            expect(esAccount.reviews.saving).toBeDefined();
         });
     });
 
     describe('Localization - English (en)', () => {
-        it('should have English all tab label', () => {
-            expect(i18nContent).toContain("all: 'All'");
-        });
-
-        it('should have English accommodation tab label', () => {
-            expect(i18nContent).toContain("accommodation: 'Accommodations'");
-        });
-
-        it('should have English destination tab label', () => {
-            expect(i18nContent).toContain("destination: 'Destinations'");
+        it('should have English tab labels', () => {
+            expect(enAccount.reviews.tabs.all).toBe('All');
+            expect(enAccount.reviews.tabs.accommodation).toBe('Accommodations');
+            expect(enAccount.reviews.tabs.destination).toBe('Destinations');
         });
 
         it('should have English empty state message', () => {
-            expect(i18nContent).toContain('You have no reviews yet');
+            expect(enAccount.reviews.empty).toBe('You have no reviews yet');
         });
 
         it('should have English loading text', () => {
-            expect(i18nContent).toContain("loading: 'Loading...'");
+            expect(enAccount.reviews.loading).toBe('Loading...');
         });
 
         it('should have English fetch error message', () => {
-            expect(i18nContent).toContain('Error loading reviews');
+            expect(enAccount.reviews.fetchError).toBe('Error loading reviews');
         });
 
         it('should have English load more text', () => {
-            expect(i18nContent).toContain("loadMore: 'Load more'");
+            expect(enAccount.reviews.loadMore).toBe('Load more');
         });
 
         it('should have English rating label', () => {
-            expect(i18nContent).toContain("ratingLabel: 'Rating'");
+            expect(enAccount.reviews.ratingLabel).toBe('Rating');
         });
 
         it('should have English accommodation review type label', () => {
-            expect(i18nContent).toContain("accommodationReview: 'Accommodation review'");
+            expect(enAccount.reviews.accommodationReview).toBe('Accommodation review');
         });
 
         it('should have English destination review type label', () => {
-            expect(i18nContent).toContain("destinationReview: 'Destination review'");
+            expect(enAccount.reviews.destinationReview).toBe('Destination review');
         });
 
         it('should have English edit button label', () => {
-            expect(i18nContent).toContain("editButton: 'Edit review'");
+            expect(enAccount.reviews.editButton).toBe('Edit review');
         });
 
         it('should have English delete button label', () => {
-            expect(i18nContent).toContain("deleteButton: 'Delete review'");
+            expect(enAccount.reviews.deleteButton).toBe('Delete review');
         });
 
         it('should have English delete confirmation message', () => {
-            expect(i18nContent).toContain('Are you sure you want to delete this review');
+            expect(enAccount.reviews.deleteConfirm).toContain(
+                'Are you sure you want to delete this review'
+            );
         });
 
         it('should have English update success message', () => {
-            expect(i18nContent).toContain('Review updated successfully');
+            expect(enAccount.reviews.updateSuccess).toBe('Review updated successfully');
         });
 
         it('should have English delete success message', () => {
-            expect(i18nContent).toContain('Review deleted successfully');
+            expect(enAccount.reviews.deleteSuccess).toBe('Review deleted successfully');
+        });
+
+        it('should have English save button label', () => {
+            expect(enAccount.reviews.saveButton).toBeDefined();
+        });
+
+        it('should have English saving text', () => {
+            expect(enAccount.reviews.saving).toBeDefined();
         });
     });
 
     describe('Localization - Portuguese (pt)', () => {
-        it('should have Portuguese all tab label', () => {
-            expect(i18nContent).toContain("all: 'Todas'");
+        it('should have Portuguese tab labels', () => {
+            expect(ptAccount.reviews.tabs.all).toBe('Todas');
+            expect(ptAccount.reviews.tabs.accommodation).toBe('Acomodacoes');
+            expect(ptAccount.reviews.tabs.destination).toBe('Destinos');
         });
 
         it('should have Portuguese empty state message', () => {
-            expect(i18nContent).toContain('Voce nao tem avaliacoes ainda');
+            expect(ptAccount.reviews.empty).toBe('Voce nao tem avaliacoes ainda');
         });
 
         it('should have Portuguese loading text', () => {
-            expect(i18nContent).toContain("loading: 'Carregando...'");
+            expect(ptAccount.reviews.loading).toBe('Carregando...');
         });
 
         it('should have Portuguese fetch error message', () => {
-            expect(i18nContent).toContain('Erro ao carregar avaliacoes');
+            expect(ptAccount.reviews.fetchError).toBe('Erro ao carregar avaliacoes');
         });
 
         it('should have Portuguese load more text', () => {
-            expect(i18nContent).toContain("loadMore: 'Carregar mais'");
+            expect(ptAccount.reviews.loadMore).toBe('Carregar mais');
         });
 
         it('should have Portuguese edit button label', () => {
-            expect(i18nContent).toContain("editButton: 'Editar avaliacao'");
+            expect(ptAccount.reviews.editButton).toBe('Editar avaliacao');
         });
 
         it('should have Portuguese delete button label', () => {
-            expect(i18nContent).toContain("deleteButton: 'Excluir avaliacao'");
+            expect(ptAccount.reviews.deleteButton).toBe('Excluir avaliacao');
         });
 
         it('should have Portuguese delete confirmation message', () => {
-            expect(i18nContent).toContain('Tem certeza que deseja excluir esta avaliacao');
+            expect(ptAccount.reviews.deleteConfirm).toContain(
+                'Tem certeza que deseja excluir esta avaliacao'
+            );
+        });
+
+        it('should have Portuguese update success message', () => {
+            expect(ptAccount.reviews.updateSuccess).toBe('Avaliacao atualizada com sucesso');
+        });
+
+        it('should have Portuguese delete success message', () => {
+            expect(ptAccount.reviews.deleteSuccess).toBe('Avaliacao excluida com sucesso');
         });
     });
 });
 
-describe('ReviewEditForm.tsx', () => {
+describe('ReviewEditForm.client.tsx', () => {
     describe('Module exports', () => {
         it('should export ReviewEditForm as named export', () => {
             expect(editFormContent).toContain('export function ReviewEditForm(');

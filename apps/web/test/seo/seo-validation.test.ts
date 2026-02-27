@@ -164,7 +164,7 @@ describe('SEO Component Validation', () => {
             });
 
             it('should accept locale prop with type checking', () => {
-                expect(seoHeadContent).toContain("locale?: 'es' | 'en'");
+                expect(seoHeadContent).toContain('locale?: SupportedLocale');
             });
 
             it('should accept type prop for OG type', () => {
@@ -351,18 +351,17 @@ describe('Page-Level SEO Checks', () => {
         });
 
         it('should import BaseLayout', () => {
-            expect(homepageContent).toContain(
-                "import BaseLayout from '../../layouts/BaseLayout.astro'"
-            );
+            expect(homepageContent).toContain('import BaseLayout');
+            expect(homepageContent).toContain('BaseLayout.astro');
         });
 
         it('should use BaseLayout with title prop', () => {
             expect(homepageContent).toContain('<BaseLayout');
-            expect(homepageContent).toContain('title={t.pageTitle}');
+            expect(homepageContent).toContain('title={pageTitle}');
         });
 
         it('should use BaseLayout with description prop', () => {
-            expect(homepageContent).toContain('description={t.pageDescription}');
+            expect(homepageContent).toContain('description={pageDescription}');
         });
 
         it('should use BaseLayout with locale prop', () => {
@@ -370,11 +369,11 @@ describe('Page-Level SEO Checks', () => {
         });
 
         it('should have localized title', () => {
-            expect(homepageContent).toContain('pageTitle:');
+            expect(homepageContent).toContain("key: 'page.title'");
         });
 
         it('should have localized description', () => {
-            expect(homepageContent).toContain('pageDescription:');
+            expect(homepageContent).toContain("key: 'page.description'");
         });
     });
 

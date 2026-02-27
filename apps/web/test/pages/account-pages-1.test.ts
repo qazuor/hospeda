@@ -54,45 +54,42 @@ describe('mi-cuenta/index.astro', () => {
 
     describe('Locale validation', () => {
         it('should validate locale parameter', () => {
-            expect(accountIndexContent).toContain('const { lang } = Astro.params');
-            expect(accountIndexContent).toContain('if (!lang || !isValidLocale(lang))');
+            expect(accountIndexContent).toContain('getLocaleFromParams(Astro.params)');
+            expect(accountIndexContent).toContain('if (!locale)');
         });
 
         it('should redirect to /es/ on invalid locale', () => {
             expect(accountIndexContent).toContain("return Astro.redirect('/es/')");
         });
 
-        it('should import locale helpers', () => {
-            expect(accountIndexContent).toContain('isValidLocale');
-            expect(accountIndexContent).toContain('type SupportedLocale');
+        it('should import locale helpers and i18n function', () => {
+            expect(accountIndexContent).toContain('getLocaleFromParams');
+            expect(accountIndexContent).toContain("import { t } from '../../../lib/i18n'");
         });
     });
 
     describe('Localization', () => {
-        it('should have localized titles for all supported locales', () => {
-            expect(accountIndexContent).toContain("es: 'Mi Cuenta'");
-            expect(accountIndexContent).toContain("en: 'My Account'");
-            expect(accountIndexContent).toContain("pt: 'Minha Conta'");
-        });
-
-        it('should have localized meta descriptions', () => {
+        it('should use t() function for title', () => {
             expect(accountIndexContent).toContain(
-                'const descriptions: Record<SupportedLocale, string>'
+                "const title = t({ locale, namespace: 'account', key: 'pages.dashboard.title' })"
             );
         });
 
-        it('should have localized home breadcrumb labels', () => {
+        it('should use t() function for description', () => {
             expect(accountIndexContent).toContain(
-                'const homeLabels: Record<SupportedLocale, string>'
+                "const description = t({ locale, namespace: 'account', key: 'pages.dashboard.description' })"
             );
-            expect(accountIndexContent).toContain("es: 'Inicio'");
-            expect(accountIndexContent).toContain("en: 'Home'");
-            expect(accountIndexContent).toContain("pt: 'Início'");
         });
 
-        it('should have localized greetings', () => {
-            expect(accountIndexContent).toContain('const greetings:');
-            expect(accountIndexContent).toContain("es: 'Bienvenido'");
+        it('should use t() function for greeting', () => {
+            expect(accountIndexContent).toContain(
+                "const greeting = t({ locale, namespace: 'account', key: 'pages.dashboard.greeting' })"
+            );
+        });
+
+        it('should import HOME_BREADCRUMB from page-helpers', () => {
+            expect(accountIndexContent).toContain('HOME_BREADCRUMB');
+            expect(accountIndexContent).toContain("from '../../../lib/page-helpers'");
         });
     });
 
@@ -105,8 +102,8 @@ describe('mi-cuenta/index.astro', () => {
         });
 
         it('should pass title and description to SEOHead', () => {
-            expect(accountIndexContent).toContain('title={titles[locale]}');
-            expect(accountIndexContent).toContain('description={descriptions[locale]}');
+            expect(accountIndexContent).toContain('title={title}');
+            expect(accountIndexContent).toContain('description={description}');
         });
 
         it('should set page type to website', () => {
@@ -125,12 +122,12 @@ describe('mi-cuenta/index.astro', () => {
         });
 
         it('should include home breadcrumb', () => {
-            expect(accountIndexContent).toContain('label: homeLabels[locale]');
+            expect(accountIndexContent).toContain('label: HOME_BREADCRUMB[locale]');
             expect(accountIndexContent).toContain('href: `/${locale}/`');
         });
 
-        it('should include account breadcrumb', () => {
-            expect(accountIndexContent).toContain('label: titles[locale]');
+        it('should include account breadcrumb with title variable', () => {
+            expect(accountIndexContent).toContain('label: title');
             expect(accountIndexContent).toContain('href: `/${locale}/mi-cuenta/`');
         });
     });
@@ -152,7 +149,7 @@ describe('mi-cuenta/index.astro', () => {
         });
 
         it('should display localized greeting', () => {
-            expect(accountIndexContent).toContain('{greetings[locale]}');
+            expect(accountIndexContent).toContain('{greeting}');
         });
     });
 
@@ -161,8 +158,14 @@ describe('mi-cuenta/index.astro', () => {
             expect(accountIndexContent).toContain('id="account-nav"');
         });
 
-        it('should render navigation items from locale', () => {
-            expect(accountIndexContent).toContain('navItems[locale].map');
+        it('should render navigation items', () => {
+            expect(accountIndexContent).toContain('navItems.map');
+        });
+
+        it('should construct navItems with t() calls', () => {
+            expect(accountIndexContent).toContain(
+                "label: t({ locale, namespace: 'account', key: 'pages.dashboard.nav.editProfile' })"
+            );
         });
     });
 
@@ -171,18 +174,30 @@ describe('mi-cuenta/index.astro', () => {
             expect(accountIndexContent).toContain('id="account-stats"');
         });
 
+        it('should use individual stat label variables', () => {
+            expect(accountIndexContent).toContain(
+                "const statFavoritesLabel = t({ locale, namespace: 'account', key: 'pages.dashboard.stats.favorites' })"
+            );
+            expect(accountIndexContent).toContain(
+                "const statReviewsLabel = t({ locale, namespace: 'account', key: 'pages.dashboard.stats.reviews' })"
+            );
+            expect(accountIndexContent).toContain(
+                "const statSubscriptionLabel = t({ locale, namespace: 'account', key: 'pages.dashboard.stats.subscription' })"
+            );
+        });
+
         it('should display favorites stat card', () => {
-            expect(accountIndexContent).toContain('{statsLabels[locale].favorites}');
+            expect(accountIndexContent).toContain('{statFavoritesLabel}');
             expect(accountIndexContent).toContain('id="stat-favorites"');
         });
 
         it('should display reviews stat card', () => {
-            expect(accountIndexContent).toContain('{statsLabels[locale].reviews}');
+            expect(accountIndexContent).toContain('{statReviewsLabel}');
             expect(accountIndexContent).toContain('id="stat-reviews"');
         });
 
         it('should display subscription stat card', () => {
-            expect(accountIndexContent).toContain('{statsLabels[locale].subscription}');
+            expect(accountIndexContent).toContain('{statSubscriptionLabel}');
             expect(accountIndexContent).toContain('id="stat-subscription"');
         });
 
@@ -194,16 +209,20 @@ describe('mi-cuenta/index.astro', () => {
     });
 
     describe('Localization texts', () => {
-        it('should define greeting texts', () => {
-            expect(accountIndexContent).toContain('const greetings:');
+        it('should define greeting via t() function', () => {
+            expect(accountIndexContent).toContain('const greeting = t({');
         });
 
-        it('should define stat labels', () => {
-            expect(accountIndexContent).toContain('const statsLabels:');
+        it('should define stat labels via t() functions', () => {
+            expect(accountIndexContent).toContain('const statFavoritesLabel = t({');
+            expect(accountIndexContent).toContain('const statReviewsLabel = t({');
+            expect(accountIndexContent).toContain('const statSubscriptionLabel = t({');
         });
 
-        it('should define navigation items', () => {
-            expect(accountIndexContent).toContain('const navItems:');
+        it('should define stat descriptions via t() functions', () => {
+            expect(accountIndexContent).toContain('const statFavoritesDesc = t({');
+            expect(accountIndexContent).toContain('const statReviewsDesc = t({');
+            expect(accountIndexContent).toContain('const statSubscriptionDesc = t({');
         });
     });
 
@@ -220,14 +239,12 @@ describe('mi-cuenta/index.astro', () => {
         });
 
         it('should update stat-subscription-status based on plan.status in loadStats script', () => {
-            // Arrange: the script reads plan.status to pick the correct label attribute
             expect(accountIndexContent).toContain("getElementById('stat-subscription-status')");
             expect(accountIndexContent).toContain('plan.status');
             expect(accountIndexContent).toContain('data-label-${plan.status}');
         });
 
         it('should handle null plan with free label fallback in loadStats script', () => {
-            // Arrange: when API returns no plan object, the script falls back to data-label-free
             expect(accountIndexContent).toContain("getAttribute('data-label-free')");
         });
     });
@@ -242,47 +259,45 @@ describe('mi-cuenta/index.astro', () => {
         });
 
         it('should have data-label-active attribute on the status element', () => {
-            expect(accountIndexContent).toContain(
-                'data-label-active={statsDescriptions[locale].activeStatus}'
-            );
+            expect(accountIndexContent).toContain('data-label-active={statActiveStatus}');
         });
 
         it('should have data-label-trial attribute on the status element', () => {
-            expect(accountIndexContent).toContain(
-                'data-label-trial={statsDescriptions[locale].trialStatus}'
-            );
+            expect(accountIndexContent).toContain('data-label-trial={statTrialStatus}');
         });
 
         it('should have data-label-free attribute on the status element', () => {
-            expect(accountIndexContent).toContain(
-                'data-label-free={statsDescriptions[locale].freeStatus}'
-            );
+            expect(accountIndexContent).toContain('data-label-free={statFreeStatus}');
         });
     });
 
-    describe('statsDescriptions localization', () => {
-        it('should have subscriptionStatus in statsDescriptions', () => {
-            expect(accountIndexContent).toContain('subscriptionStatus:');
+    describe('Status label localization', () => {
+        it('should have subscriptionStatus via t() function', () => {
+            expect(accountIndexContent).toContain(
+                "const statSubscriptionStatus = t({ locale, namespace: 'account', key: 'pages.dashboard.stats.subscriptionStatus' })"
+            );
         });
 
-        it('should have activeStatus in statsDescriptions', () => {
-            expect(accountIndexContent).toContain('activeStatus:');
+        it('should have activeStatus via t() function', () => {
+            expect(accountIndexContent).toContain(
+                "const statActiveStatus = t({ locale, namespace: 'account', key: 'pages.dashboard.stats.activeStatus' })"
+            );
         });
 
-        it('should have trialStatus in statsDescriptions', () => {
-            expect(accountIndexContent).toContain('trialStatus:');
+        it('should have trialStatus via t() function', () => {
+            expect(accountIndexContent).toContain(
+                "const statTrialStatus = t({ locale, namespace: 'account', key: 'pages.dashboard.stats.trialStatus' })"
+            );
         });
 
-        it('should have freeStatus in statsDescriptions', () => {
-            expect(accountIndexContent).toContain('freeStatus:');
-        });
-
-        it('should define statsDescriptions with all required locale keys', () => {
-            expect(accountIndexContent).toContain('const statsDescriptions:');
+        it('should have freeStatus via t() function', () => {
+            expect(accountIndexContent).toContain(
+                "const statFreeStatus = t({ locale, namespace: 'account', key: 'pages.dashboard.stats.freeStatus' })"
+            );
         });
 
         it('should render subscriptionStatus as the initial status text', () => {
-            expect(accountIndexContent).toContain('{statsDescriptions[locale].subscriptionStatus}');
+            expect(accountIndexContent).toContain('{statSubscriptionStatus}');
         });
     });
 });
@@ -326,40 +341,37 @@ describe('mi-cuenta/favoritos.astro', () => {
 
     describe('Locale validation', () => {
         it('should validate locale parameter', () => {
-            expect(favoritosContent).toContain('const { lang } = Astro.params');
-            expect(favoritosContent).toContain('if (!lang || !isValidLocale(lang))');
+            expect(favoritosContent).toContain('getLocaleFromParams(Astro.params)');
+            expect(favoritosContent).toContain('if (!locale)');
         });
 
         it('should redirect to /es/ on invalid locale', () => {
             expect(favoritosContent).toContain("return Astro.redirect('/es/')");
         });
 
-        it('should import locale helpers', () => {
-            expect(favoritosContent).toContain('isValidLocale');
-            expect(favoritosContent).toContain('type SupportedLocale');
+        it('should import locale helpers and i18n function', () => {
+            expect(favoritosContent).toContain('getLocaleFromParams');
+            expect(favoritosContent).toContain("import { t } from '../../../lib/i18n'");
         });
     });
 
     describe('Localization', () => {
-        it('should have localized titles for all supported locales', () => {
-            expect(favoritosContent).toContain("es: 'Mis Favoritos'");
-            expect(favoritosContent).toContain("en: 'My Favorites'");
-            expect(favoritosContent).toContain("pt: 'Meus Favoritos'");
+        it('should use t() function for title', () => {
+            expect(favoritosContent).toContain(
+                "const title = t({ locale, namespace: 'account', key: 'pages.favorites.title' })"
+            );
         });
 
-        it('should have localized meta descriptions', () => {
+        it('should use t() function for description', () => {
             expect(favoritosContent).toContain(
-                'const descriptions: Record<SupportedLocale, string>'
+                "const description = t({ locale, namespace: 'account', key: 'pages.favorites.description' })"
             );
-            expect(favoritosContent).toContain('Gestiona tus alojamientos, destinos, eventos');
         });
 
-        it('should have localized account breadcrumb labels', () => {
+        it('should use t() function for accountLabel', () => {
             expect(favoritosContent).toContain(
-                'const accountLabels: Record<SupportedLocale, string>'
+                "const accountLabel = t({ locale, namespace: 'account', key: 'pages.accountLabel' })"
             );
-            expect(favoritosContent).toContain("es: 'Mi Cuenta'");
-            expect(favoritosContent).toContain("en: 'My Account'");
         });
     });
 
@@ -370,8 +382,8 @@ describe('mi-cuenta/favoritos.astro', () => {
         });
 
         it('should pass title and description to SEOHead', () => {
-            expect(favoritosContent).toContain('title={titles[locale]}');
-            expect(favoritosContent).toContain('description={descriptions[locale]}');
+            expect(favoritosContent).toContain('title={title}');
+            expect(favoritosContent).toContain('description={description}');
         });
 
         it('should set page type to website', () => {
@@ -390,17 +402,17 @@ describe('mi-cuenta/favoritos.astro', () => {
         });
 
         it('should include home breadcrumb', () => {
-            expect(favoritosContent).toContain('label: homeLabels[locale]');
+            expect(favoritosContent).toContain('label: HOME_BREADCRUMB[locale]');
             expect(favoritosContent).toContain('href: `/${locale}/`');
         });
 
-        it('should include account breadcrumb', () => {
-            expect(favoritosContent).toContain('label: accountLabels[locale]');
+        it('should include account breadcrumb with accountLabel', () => {
+            expect(favoritosContent).toContain('label: accountLabel');
             expect(favoritosContent).toContain('href: `/${locale}/mi-cuenta/`');
         });
 
-        it('should include favorites breadcrumb', () => {
-            expect(favoritosContent).toContain('label: titles[locale]');
+        it('should include favorites breadcrumb with title', () => {
+            expect(favoritosContent).toContain('label: title');
             expect(favoritosContent).toContain('href: `/${locale}/mi-cuenta/favoritos/`');
         });
     });
@@ -459,38 +471,37 @@ describe('mi-cuenta/resenas.astro', () => {
 
     describe('Locale validation', () => {
         it('should validate locale parameter', () => {
-            expect(resenasContent).toContain('const { lang } = Astro.params');
-            expect(resenasContent).toContain('if (!lang || !isValidLocale(lang))');
+            expect(resenasContent).toContain('getLocaleFromParams(Astro.params)');
+            expect(resenasContent).toContain('if (!locale)');
         });
 
         it('should redirect to /es/ on invalid locale', () => {
             expect(resenasContent).toContain("return Astro.redirect('/es/')");
         });
 
-        it('should import locale helpers', () => {
-            expect(resenasContent).toContain('isValidLocale');
-            expect(resenasContent).toContain('type SupportedLocale');
+        it('should import locale helpers and i18n function', () => {
+            expect(resenasContent).toContain('getLocaleFromParams');
+            expect(resenasContent).toContain("import { t } from '../../../lib/i18n'");
         });
     });
 
     describe('Localization', () => {
-        it('should have localized titles for all supported locales', () => {
-            expect(resenasContent).toContain("es: 'Mis Resenas'");
-            expect(resenasContent).toContain("en: 'My Reviews'");
-            expect(resenasContent).toContain("pt: 'Minhas Avaliacoes'");
-        });
-
-        it('should have localized meta descriptions', () => {
-            expect(resenasContent).toContain('const descriptions: Record<SupportedLocale, string>');
-            expect(resenasContent).toContain('Gestiona tus resenas de alojamientos');
-        });
-
-        it('should have localized account breadcrumb labels', () => {
+        it('should use t() function for title', () => {
             expect(resenasContent).toContain(
-                'const accountLabels: Record<SupportedLocale, string>'
+                "const title = t({ locale, namespace: 'account', key: 'pages.reviews.title' })"
             );
-            expect(resenasContent).toContain("es: 'Mi Cuenta'");
-            expect(resenasContent).toContain("en: 'My Account'");
+        });
+
+        it('should use t() function for description', () => {
+            expect(resenasContent).toContain(
+                "const description = t({ locale, namespace: 'account', key: 'pages.reviews.description' })"
+            );
+        });
+
+        it('should use t() function for accountLabel', () => {
+            expect(resenasContent).toContain(
+                "const accountLabel = t({ locale, namespace: 'account', key: 'pages.accountLabel' })"
+            );
         });
     });
 
@@ -501,8 +512,8 @@ describe('mi-cuenta/resenas.astro', () => {
         });
 
         it('should pass title and description to SEOHead', () => {
-            expect(resenasContent).toContain('title={titles[locale]}');
-            expect(resenasContent).toContain('description={descriptions[locale]}');
+            expect(resenasContent).toContain('title={title}');
+            expect(resenasContent).toContain('description={description}');
         });
 
         it('should set page type to website', () => {
@@ -521,17 +532,17 @@ describe('mi-cuenta/resenas.astro', () => {
         });
 
         it('should include home breadcrumb', () => {
-            expect(resenasContent).toContain('label: homeLabels[locale]');
+            expect(resenasContent).toContain('label: HOME_BREADCRUMB[locale]');
             expect(resenasContent).toContain('href: `/${locale}/`');
         });
 
-        it('should include account breadcrumb', () => {
-            expect(resenasContent).toContain('label: accountLabels[locale]');
+        it('should include account breadcrumb with accountLabel', () => {
+            expect(resenasContent).toContain('label: accountLabel');
             expect(resenasContent).toContain('href: `/${locale}/mi-cuenta/`');
         });
 
-        it('should include reviews breadcrumb', () => {
-            expect(resenasContent).toContain('label: titles[locale]');
+        it('should include reviews breadcrumb with title', () => {
+            expect(resenasContent).toContain('label: title');
             expect(resenasContent).toContain('href: `/${locale}/mi-cuenta/resenas/`');
         });
     });

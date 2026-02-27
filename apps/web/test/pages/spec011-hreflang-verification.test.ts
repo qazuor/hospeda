@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 
 /**
  * Test Suite: SPEC-011 hreflang Verification
@@ -52,7 +52,7 @@ describe('SPEC-011: hreflang Verification', () => {
         });
 
         it('should pass locale prop to SEOHead', () => {
-            expect(content).toMatch(/<SEOHead[\s\S]*?locale=\{locale === 'pt' \? 'es' : locale\}/);
+            expect(content).toMatch(/<SEOHead[\s\S]*?locale=\{locale\}/);
         });
 
         it('should pass title prop to SEOHead', () => {
@@ -107,7 +107,7 @@ describe('SPEC-011: hreflang Verification', () => {
         });
 
         it('should pass locale prop to SEOHead', () => {
-            expect(content).toMatch(/<SEOHead[\s\S]*?locale=\{locale === 'pt' \? 'es' : locale\}/);
+            expect(content).toMatch(/<SEOHead[\s\S]*?locale=\{locale\}/);
         });
 
         it('should pass title prop to SEOHead', () => {
@@ -137,7 +137,7 @@ describe('SPEC-011: hreflang Verification', () => {
         });
 
         it('should validate locale parameter', () => {
-            expect(content).toContain('isValidLocale(lang)');
+            expect(content).toContain('getLocaleFromParams(Astro.params)');
         });
 
         it('should validate tag parameter', () => {
@@ -166,15 +166,15 @@ describe('SPEC-011: hreflang Verification', () => {
         });
 
         it('should pass locale prop to SEOHead', () => {
-            expect(content).toMatch(/<SEOHead[\s\S]*?locale=\{locale === 'pt' \? 'es' : locale\}/);
+            expect(content).toMatch(/<SEOHead[\s\S]*?locale=\{locale\}/);
         });
 
         it('should pass title prop to SEOHead', () => {
-            expect(content).toMatch(/<SEOHead[\s\S]*?title=\{titles\[locale\]\}/);
+            expect(content).toMatch(/<SEOHead[\s\S]*?title=\{pageTitle\}/);
         });
 
         it('should pass description prop to SEOHead', () => {
-            expect(content).toMatch(/<SEOHead[\s\S]*?description=\{descriptions\[locale\]\}/);
+            expect(content).toMatch(/<SEOHead[\s\S]*?description=\{pageDescription\}/);
         });
 
         it('should pass canonical prop to SEOHead', () => {
@@ -196,15 +196,15 @@ describe('SPEC-011: hreflang Verification', () => {
         });
 
         it('should have getStaticPaths for generating locale combinations', () => {
-            expect(content).toContain('export function getStaticPaths()');
+            expect(content).toContain('getStaticLocalePaths as getStaticPaths');
         });
 
-        it('should define localized titles', () => {
-            expect(content).toContain('const titles: Record<SupportedLocale, string>');
+        it('should define pageTitle via t()', () => {
+            expect(content).toContain('const pageTitle = t({');
         });
 
-        it('should define localized descriptions', () => {
-            expect(content).toContain('const descriptions: Record<SupportedLocale, string>');
+        it('should define pageDescription via t()', () => {
+            expect(content).toContain('const pageDescription = t({');
         });
     });
 
@@ -229,7 +229,7 @@ describe('SPEC-011: hreflang Verification', () => {
         });
 
         it('should pass locale prop to SEOHead', () => {
-            expect(content).toMatch(/<SEOHead[\s\S]*?locale=\{locale === 'pt' \? 'es' : locale\}/);
+            expect(content).toMatch(/<SEOHead[\s\S]*?locale=\{locale\}/);
         });
 
         it('should pass title prop to SEOHead', () => {
@@ -259,7 +259,7 @@ describe('SPEC-011: hreflang Verification', () => {
         });
 
         it('should validate locale parameter', () => {
-            expect(content).toContain('isValidLocale(lang)');
+            expect(content).toContain('getLocaleFromParams(Astro.params)');
         });
 
         it('should validate slug parameter', () => {
@@ -349,13 +349,13 @@ describe('SPEC-011: hreflang Verification', () => {
                 'utf8'
             );
 
-            expect(eventCategoryContent).toContain('isValidLocale');
-            expect(postTagContent).toContain('isValidLocale');
-            expect(ownersContent).toContain('isValidLocale');
-            expect(destinationAccommodationsContent).toContain('isValidLocale');
+            expect(eventCategoryContent).toContain('getLocaleFromParams');
+            expect(postTagContent).toContain('getLocaleFromParams');
+            expect(ownersContent).toContain('getLocaleFromParams');
+            expect(destinationAccommodationsContent).toContain('getLocaleFromParams');
         });
 
-        it('All pages should use SupportedLocale type', () => {
+        it('All pages should use locale validation from page-helpers', () => {
             const eventCategoryContent = readFileSync(PAGE_PATHS.eventCategory, 'utf8');
             const postTagContent = readFileSync(PAGE_PATHS.postTag, 'utf8');
             const ownersContent = readFileSync(PAGE_PATHS.owners, 'utf8');
@@ -364,10 +364,10 @@ describe('SPEC-011: hreflang Verification', () => {
                 'utf8'
             );
 
-            expect(eventCategoryContent).toContain('SupportedLocale');
-            expect(postTagContent).toContain('SupportedLocale');
-            expect(ownersContent).toContain('SupportedLocale');
-            expect(destinationAccommodationsContent).toContain('SupportedLocale');
+            expect(eventCategoryContent).toContain('getLocaleFromParams');
+            expect(postTagContent).toContain('getLocaleFromParams');
+            expect(ownersContent).toContain('getLocaleFromParams');
+            expect(destinationAccommodationsContent).toContain('getLocaleFromParams');
         });
 
         it('All pages should define breadcrumb items', () => {

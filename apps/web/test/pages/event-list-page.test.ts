@@ -39,6 +39,12 @@ describe('Event List Page', () => {
             );
         });
 
+        it('should import EventErrorState', () => {
+            expect(content).toContain(
+                "import EventErrorState from '../../../components/error/EventErrorState.astro'"
+            );
+        });
+
         it('should import SEOHead', () => {
             expect(content).toContain(
                 "import SEOHead from '../../../components/seo/SEOHead.astro'"
@@ -46,7 +52,11 @@ describe('Event List Page', () => {
         });
 
         it('should import i18n utilities', () => {
-            expect(content).toContain('import { isValidLocale, type SupportedLocale }');
+            expect(content).toContain('getLocaleFromParams');
+        });
+
+        it('should import t function from i18n', () => {
+            expect(content).toContain("import { t } from '../../../lib/i18n'");
         });
 
         it('should import eventsApi', () => {
@@ -80,8 +90,8 @@ describe('Event List Page', () => {
 
     describe('Locale Validation', () => {
         it('should validate locale from params', () => {
-            expect(content).toContain('const { lang } = Astro.params');
-            expect(content).toContain('if (!lang || !isValidLocale(lang))');
+            expect(content).toContain('getLocaleFromParams(Astro.params)');
+            expect(content).toContain('if (!locale)');
         });
 
         it('should redirect to /es/ for invalid locale', () => {
@@ -89,7 +99,7 @@ describe('Event List Page', () => {
         });
 
         it('should cast valid locale to SupportedLocale type', () => {
-            expect(content).toContain('const locale = lang as SupportedLocale');
+            expect(content).toContain('const locale = getLocaleFromParams(Astro.params)');
         });
     });
 
@@ -109,44 +119,32 @@ describe('Event List Page', () => {
     });
 
     describe('Localization', () => {
-        it('should have texts for Spanish (es)', () => {
-            expect(content).toContain('es: {');
-            expect(content).toMatch(/title:\s*'Eventos'/);
+        it('should use t() for page title', () => {
+            expect(content).toContain("t({ locale, namespace: 'event', key: 'listPage.title' })");
         });
 
-        it('should have texts for English (en)', () => {
-            expect(content).toContain('en: {');
-            expect(content).toMatch(/title:\s*'Events'/);
+        it('should use t() for page description', () => {
+            expect(content).toContain(
+                "t({ locale, namespace: 'event', key: 'listPage.description' })"
+            );
         });
 
-        it('should have texts for Portuguese (pt)', () => {
-            expect(content).toContain('pt: {');
-            expect(content).toMatch(/title:\s*'Eventos'/);
+        it('should use t() for home label', () => {
+            expect(content).toContain("t({ locale, namespace: 'event', key: 'listPage.home' })");
         });
 
-        it('should have all required text keys', () => {
-            const requiredKeys = [
-                'title',
-                'description',
-                'home',
-                'events',
-                'upcoming',
-                'past',
-                'all',
-                'filterByCategory',
-                'allCategories',
-                'festival',
-                'fair',
-                'sport',
-                'cultural',
-                'gastronomy',
-                'noEvents',
-                'noEventsDescription'
-            ];
+        it('should use t() for category labels', () => {
+            expect(content).toContain("key: 'listPage.allCategories'");
+            expect(content).toContain("key: 'listPage.festival'");
+            expect(content).toContain("key: 'listPage.fair'");
+            expect(content).toContain("key: 'listPage.sport'");
+            expect(content).toContain("key: 'listPage.cultural'");
+            expect(content).toContain("key: 'listPage.gastronomy'");
+        });
 
-            for (const key of requiredKeys) {
-                expect(content).toContain(`${key}:`);
-            }
+        it('should use t() for empty state labels', () => {
+            expect(content).toContain("key: 'listPage.noEvents'");
+            expect(content).toContain("key: 'listPage.noEventsDescription'");
         });
     });
 
@@ -156,11 +154,11 @@ describe('Event List Page', () => {
         });
 
         it('should include home breadcrumb', () => {
-            expect(content).toContain('label: t.home');
+            expect(content).toContain('label: homeLabel');
         });
 
         it('should include events breadcrumb', () => {
-            expect(content).toContain('label: t.events');
+            expect(content).toContain('label: eventsLabel');
         });
 
         it('should render Breadcrumb component', () => {
@@ -170,12 +168,12 @@ describe('Event List Page', () => {
 
     describe('Page Title', () => {
         it('should have h1 with title', () => {
-            expect(content).toContain('<h1');
-            expect(content).toContain('{t.title}');
+            expect(content).toContain('as="h1"');
+            expect(content).toContain('{pageTitle}');
         });
 
         it('should have mb-6 spacing on h1', () => {
-            expect(content).toContain('class="mb-6 text-3xl font-bold"');
+            expect(content).toContain('class="mb-6"');
         });
     });
 
@@ -186,17 +184,17 @@ describe('Event List Page', () => {
 
         it('should have upcoming timeframe option', () => {
             expect(content).toContain("'upcoming'");
-            expect(content).toContain('t.upcoming');
+            expect(content).toContain('upcomingLabel');
         });
 
         it('should have past timeframe option', () => {
             expect(content).toContain("'past'");
-            expect(content).toContain('t.past');
+            expect(content).toContain('pastLabel');
         });
 
         it('should have all timeframe option', () => {
             expect(content).toContain("'all'");
-            expect(content).toContain('t.all');
+            expect(content).toContain('allLabel');
         });
 
         it('should include current category in timeframe links', () => {
@@ -216,20 +214,20 @@ describe('Event List Page', () => {
 
         it('should have label for category filter', () => {
             expect(content).toContain('for="category-filter"');
-            expect(content).toContain('{t.filterByCategory}');
+            expect(content).toContain('{filterByCategoryLabel}');
         });
 
-        it('should have 6 category options', () => {
-            const categoryCount = [
-                'allCategories',
-                'festival',
-                'fair',
-                'sport',
-                'cultural',
-                'gastronomy'
+        it('should have 6 category options using label variables', () => {
+            const categoryLabels = [
+                'allCategoriesLabel',
+                'festivalLabel',
+                'fairLabel',
+                'sportLabel',
+                'culturalLabel',
+                'gastronomyLabel'
             ];
-            for (const cat of categoryCount) {
-                expect(content).toContain(`label: t.${cat}`);
+            for (const label of categoryLabels) {
+                expect(content).toContain(label);
             }
         });
 
@@ -259,11 +257,22 @@ describe('Event List Page', () => {
         });
 
         it('should pass noEvents title to EmptyState', () => {
-            expect(content).toContain('title={t.noEvents}');
+            expect(content).toContain('title={noEventsLabel}');
         });
 
         it('should pass noEventsDescription message to EmptyState', () => {
-            expect(content).toContain('message={t.noEventsDescription}');
+            expect(content).toContain('message={noEventsDescriptionLabel}');
+        });
+    });
+
+    describe('Error State', () => {
+        it('should track API error state', () => {
+            expect(content).toContain('const apiError = !apiResult.ok');
+        });
+
+        it('should show EventErrorState when API fails', () => {
+            expect(content).toContain('<EventErrorState');
+            expect(content).toContain('apiError');
         });
     });
 
@@ -274,11 +283,11 @@ describe('Event List Page', () => {
         });
 
         it('should pass title to SEOHead', () => {
-            expect(content).toContain('title={t.title}');
+            expect(content).toContain('title={pageTitle}');
         });
 
         it('should pass description to SEOHead', () => {
-            expect(content).toContain('description={t.description}');
+            expect(content).toContain('description={pageDescription}');
         });
 
         it('should pass canonical URL to SEOHead', () => {
@@ -363,9 +372,8 @@ describe('Event List Page', () => {
             expect(content).not.toContain('export default');
         });
 
-        it('should have proper TypeScript types', () => {
-            expect(content).toContain('Record<');
-            expect(content).toContain('SupportedLocale');
+        it('should use t() function for all user-facing strings', () => {
+            expect(content).toContain("namespace: 'event'");
         });
 
         it('should be under 500 lines', () => {
@@ -377,8 +385,8 @@ describe('Event List Page', () => {
     describe('Component Usage', () => {
         it('should use BaseLayout with props', () => {
             expect(content).toContain('<BaseLayout');
-            expect(content).toContain('title={t.title}');
-            expect(content).toContain('description={t.description}');
+            expect(content).toContain('title={pageTitle}');
+            expect(content).toContain('description={pageDescription}');
             expect(content).toContain('locale={locale}');
         });
 

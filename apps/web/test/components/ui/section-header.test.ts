@@ -37,27 +37,24 @@ describe('SectionHeader.astro', () => {
             expect(content).toContain("'center'");
         });
 
+        it('should accept optional underline prop', () => {
+            expect(content).toContain('underline?: boolean');
+        });
+
         it('should accept optional class prop', () => {
             expect(content).toContain('class?: string');
         });
     });
 
     describe('Typography', () => {
-        it('should render H2 with font-serif token', () => {
-            expect(content).toContain('<h2');
-            expect(content).toContain('font-serif');
+        it('should use SectionTitle for the heading', () => {
+            expect(content).toContain('SectionTitle');
+            expect(content).toContain("import SectionTitle from './SectionTitle.astro'");
         });
 
-        it('should use display-section font size token for H2', () => {
-            expect(content).toContain('fs-display-section');
-        });
-
-        it('should use font-accent for accent subtitle', () => {
-            expect(content).toContain('font-accent');
-        });
-
-        it('should use accent-subtitle font size token', () => {
-            expect(content).toContain('fs-accent-subtitle');
+        it('should use SectionSubtitle for the accent subtitle', () => {
+            expect(content).toContain('SectionSubtitle');
+            expect(content).toContain("import SectionSubtitle from './SectionSubtitle.astro'");
         });
     });
 

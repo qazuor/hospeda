@@ -23,8 +23,10 @@ describe('FeaturedSection.astro', () => {
             expect(content).toContain('class?: string');
         });
 
-        it('should default viewAllLabel to "Ver todos"', () => {
-            expect(content).toContain("viewAllLabel = 'Ver todos'");
+        it('should resolve viewAllLabel via i18n fallback', () => {
+            expect(content).toContain('resolvedViewAllLabel');
+            expect(content).toContain("namespace: 'common'");
+            expect(content).toContain("key: 'viewAll'");
         });
     });
 
@@ -47,8 +49,8 @@ describe('FeaturedSection.astro', () => {
             expect(content).toContain('<Container>');
         });
 
-        it('should render h2 for title', () => {
-            expect(content).toContain('<h2');
+        it('should render SectionTitle for title', () => {
+            expect(content).toContain('<SectionTitle>');
             expect(content).toContain('{title}');
         });
 
@@ -73,8 +75,8 @@ describe('FeaturedSection.astro', () => {
             expect(content).toContain('href={viewAllHref}');
         });
 
-        it('should display viewAllLabel text', () => {
-            expect(content).toContain('{viewAllLabel}');
+        it('should display resolved viewAllLabel text', () => {
+            expect(content).toContain('{resolvedViewAllLabel}');
         });
 
         it('should have arrow indicator', () => {

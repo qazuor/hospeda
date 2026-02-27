@@ -44,9 +44,9 @@ describe('Destination Detail Page', () => {
             );
         });
 
-        it('should import AccommodationCard component', () => {
+        it('should import AccommodationCardFeatured component', () => {
             expect(content).toContain(
-                "import AccommodationCard from '../../../components/accommodation/AccommodationCard.astro'"
+                "import AccommodationCardFeatured from '../../../components/accommodation/AccommodationCardFeatured.astro'"
             );
         });
 
@@ -86,10 +86,13 @@ describe('Destination Detail Page', () => {
             );
         });
 
-        it('should import i18n utilities', () => {
-            expect(content).toContain(
-                "import { isValidLocale, type SupportedLocale } from '../../../lib/i18n'"
-            );
+        it('should import i18n utilities from page-helpers', () => {
+            expect(content).toContain("from '../../../lib/page-helpers'");
+            expect(content).toContain('getLocaleFromParams');
+        });
+
+        it('should import t from i18n lib', () => {
+            expect(content).toContain("import { t as i18nT } from '../../../lib/i18n'");
         });
 
         it('should import TipTap renderer', () => {
@@ -107,25 +110,18 @@ describe('Destination Detail Page', () => {
 
     describe('Route Parameters', () => {
         it('should use catch-all path parameter', () => {
-            expect(content).toContain('const { lang, path } = Astro.params');
-        });
-
-        it('should extract destination data from props', () => {
-            expect(content).toContain('const { destinationData } = Astro.props');
+            expect(content).toContain('const { path } = Astro.params');
         });
     });
 
     describe('Locale Validation', () => {
-        it('should validate locale with isValidLocale', () => {
-            expect(content).toContain('if (!lang || !isValidLocale(lang))');
+        it('should validate locale with getLocaleFromParams', () => {
+            expect(content).toContain('getLocaleFromParams(Astro.params)');
+            expect(content).toContain('if (!locale)');
         });
 
         it('should redirect to default locale if invalid', () => {
             expect(content).toContain("return Astro.redirect('/es/')");
-        });
-
-        it('should cast lang to SupportedLocale', () => {
-            expect(content).toContain('const locale = lang as SupportedLocale');
         });
     });
 
@@ -135,11 +131,13 @@ describe('Destination Detail Page', () => {
         });
 
         it('should include home link in breadcrumb', () => {
-            expect(content).toContain('{ label: t.home, href: `/${locale}/` }');
+            expect(content).toContain("{ label: tDetail('home'), href: `/${locale}/` }");
         });
 
         it('should include destinations link in breadcrumb', () => {
-            expect(content).toContain('{ label: t.destinations, href: `/${locale}/destinos/` }');
+            expect(content).toContain(
+                "{ label: tDetail('destinations'), href: `/${locale}/destinos/` }"
+            );
         });
 
         it('should include destination name in breadcrumb', () => {
@@ -246,7 +244,7 @@ describe('Destination Detail Page', () => {
         });
 
         it('should display description heading', () => {
-            expect(content).toContain('{t.description}');
+            expect(content).toContain("{tDetail('description')}");
         });
 
         it('should use prose class for description content', () => {
@@ -260,7 +258,7 @@ describe('Destination Detail Page', () => {
         });
 
         it('should display gallery heading', () => {
-            expect(content).toContain('{t.gallery}');
+            expect(content).toContain("{tDetail('gallery')}");
         });
 
         it('should render ImageGallery with client:visible', () => {
@@ -274,26 +272,26 @@ describe('Destination Detail Page', () => {
         });
 
         it('should display climate heading', () => {
-            expect(content).toContain('{t.climate}');
+            expect(content).toContain("{tDetail('climate')}");
         });
 
         it('should display summer temperature', () => {
-            expect(content).toContain('{t.summer}');
+            expect(content).toContain("{tDetail('summer')}");
             expect(content).toContain('{destinationClimate.summer}');
         });
 
         it('should display winter temperature', () => {
-            expect(content).toContain('{t.winter}');
+            expect(content).toContain("{tDetail('winter')}");
             expect(content).toContain('{destinationClimate.winter}');
         });
 
         it('should display best season', () => {
-            expect(content).toContain('{t.bestSeason}');
+            expect(content).toContain("{tDetail('bestSeason')}");
             expect(content).toContain('{destinationClimate.bestSeason}');
         });
 
         it('should display rainfall information', () => {
-            expect(content).toContain('{t.rainfall}');
+            expect(content).toContain("{tDetail('rainfall')}");
             expect(content).toContain('{destinationClimate.rainfall}');
         });
 
@@ -308,7 +306,7 @@ describe('Destination Detail Page', () => {
         });
 
         it('should display how to get there heading', () => {
-            expect(content).toContain('{t.howToGetThere}');
+            expect(content).toContain("{tDetail('howToGetThere')}");
         });
 
         it('should use prose class for rendered content', () => {
@@ -323,7 +321,7 @@ describe('Destination Detail Page', () => {
         });
 
         it('should display attractions heading', () => {
-            expect(content).toContain('{t.attractions}');
+            expect(content).toContain("{tDetail('attractions')}");
         });
 
         it('should render attractions list', () => {
@@ -345,7 +343,7 @@ describe('Destination Detail Page', () => {
         });
 
         it('should display map heading', () => {
-            expect(content).toContain('{t.map}');
+            expect(content).toContain("{tDetail('map')}");
         });
 
         it('should render MapView with client:visible', () => {
@@ -379,13 +377,13 @@ describe('Destination Detail Page', () => {
 
         it('should use Section component for accommodations', () => {
             expect(content).toContain(
-                '<Section title={`${t.accommodationsIn} ${destinationName}`}'
+                "<Section title={`${tDetail('accommodationsIn')} ${destinationName}`}"
             );
         });
 
-        it('should render AccommodationCard in grid', () => {
+        it('should render AccommodationCardFeatured in grid', () => {
             expect(content).toContain('previewAccommodations.map');
-            expect(content).toContain('<AccommodationCard accommodation={accommodation}');
+            expect(content).toContain('<AccommodationCardFeatured accommodation={accommodation}');
         });
 
         it('should pass locale to AccommodationCard', () => {
@@ -394,8 +392,8 @@ describe('Destination Detail Page', () => {
 
         it('should show EmptyState when no accommodations', () => {
             expect(content).toContain('<EmptyState');
-            expect(content).toContain('title={t.noAccommodations}');
-            expect(content).toContain('message={t.noAccommodationsMessage}');
+            expect(content).toContain("title={tDetail('noAccommodations')}");
+            expect(content).toContain("message={tDetail('noAccommodationsMessage')}");
         });
 
         it('should use conditional rendering for accommodations', () => {
@@ -409,7 +407,9 @@ describe('Destination Detail Page', () => {
         });
 
         it('should use Section component for events', () => {
-            expect(content).toContain('<Section title={`${t.eventsIn} ${destinationName}`}');
+            expect(content).toContain(
+                "<Section title={`${tDetail('eventsIn')} ${destinationName}`}"
+            );
         });
 
         it('should render EventCard in grid', () => {
@@ -423,8 +423,8 @@ describe('Destination Detail Page', () => {
 
         it('should show EmptyState when no events', () => {
             expect(content).toContain('<EmptyState');
-            expect(content).toContain('title={t.noEvents}');
-            expect(content).toContain('message={t.noEventsMessage}');
+            expect(content).toContain("title={tDetail('noEvents')}");
+            expect(content).toContain("message={tDetail('noEventsMessage')}");
         });
 
         it('should use conditional rendering for events', () => {
@@ -478,59 +478,36 @@ describe('Destination Detail Page', () => {
     });
 
     describe('Localization', () => {
-        it('should define texts for Spanish locale', () => {
-            expect(content).toContain('es: {');
-            expect(content).toContain("home: 'Inicio'");
-            expect(content).toContain("destinations: 'Destinos'");
-            expect(content).toContain("description: 'Descripción'");
+        it('should import i18n t function', () => {
+            expect(content).toContain("import { t as i18nT } from '../../../lib/i18n'");
         });
 
-        it('should define texts for English locale', () => {
-            expect(content).toContain('en: {');
-            expect(content).toContain("home: 'Home'");
-            expect(content).toContain("destinations: 'Destinations'");
-            expect(content).toContain("description: 'Description'");
+        it('should define tDetail helper using i18n', () => {
+            expect(content).toContain('const tDetail = (key: string)');
+            expect(content).toContain("namespace: 'destinations'");
+            expect(content).toContain('`detailPage.${key}`');
         });
 
-        it('should define texts for Portuguese locale', () => {
-            expect(content).toContain('pt: {');
-            expect(content).toContain("home: 'Início'");
-            expect(content).toContain("destinations: 'Destinos'");
-            expect(content).toContain("description: 'Descrição'");
+        it('should use tDetail for home and destinations keys', () => {
+            expect(content).toContain("tDetail('home')");
+            expect(content).toContain("tDetail('destinations')");
         });
 
-        it('should have localized text for gallery', () => {
-            expect(content).toContain("gallery: 'Galería'");
-            expect(content).toContain("gallery: 'Gallery'");
-            expect(content).toContain("gallery: 'Galeria'");
+        it('should use tDetail for gallery and climate keys', () => {
+            expect(content).toContain("tDetail('gallery')");
+            expect(content).toContain("tDetail('climate')");
         });
 
-        it('should have localized text for climate', () => {
-            expect(content).toContain("climate: 'Clima'");
-            expect(content).toContain("climate: 'Climate'");
+        it('should use tDetail for howToGetThere and attractions', () => {
+            expect(content).toContain("tDetail('howToGetThere')");
+            expect(content).toContain("tDetail('attractions')");
         });
 
-        it('should have localized text for how to get there', () => {
-            expect(content).toContain("howToGetThere: 'Cómo llegar'");
-            expect(content).toContain("howToGetThere: 'How to get there'");
-            expect(content).toContain("howToGetThere: 'Como chegar'");
-        });
-
-        it('should have localized text for attractions', () => {
-            expect(content).toContain("attractions: 'Qué hacer'");
-            expect(content).toContain("attractions: 'Things to do'");
-            expect(content).toContain("attractions: 'O que fazer'");
-        });
-
-        it('should have localized empty state messages', () => {
-            expect(content).toContain('noAccommodations');
-            expect(content).toContain('noAccommodationsMessage');
-            expect(content).toContain('noEvents');
-            expect(content).toContain('noEventsMessage');
-        });
-
-        it('should select locale-specific texts', () => {
-            expect(content).toContain('const t = texts[locale]');
+        it('should have localized empty state messages via tDetail', () => {
+            expect(content).toContain("tDetail('noAccommodations')");
+            expect(content).toContain("tDetail('noAccommodationsMessage')");
+            expect(content).toContain("tDetail('noEvents')");
+            expect(content).toContain("tDetail('noEventsMessage')");
         });
     });
 
@@ -591,7 +568,7 @@ describe('Destination Detail Page', () => {
         });
 
         it('should handle catch-all path parameter', () => {
-            expect(content).toContain('const { lang, path } = Astro.params');
+            expect(content).toContain('const { path } = Astro.params');
         });
     });
 
@@ -601,7 +578,7 @@ describe('Destination Detail Page', () => {
         });
 
         it('should generate static paths for all locales', () => {
-            expect(content).toContain("const locales = ['es', 'en', 'pt']");
+            expect(content).toContain('const locales = SUPPORTED_LOCALES');
         });
     });
 });

@@ -157,11 +157,11 @@ describe('Accessibility Tests', () => {
             });
 
             it('should pass title prop to BaseLayout', () => {
-                expect(homepageContent).toContain('title={t.pageTitle}');
+                expect(homepageContent).toContain('title={pageTitle}');
             });
 
             it('should pass description prop to BaseLayout', () => {
-                expect(homepageContent).toContain('description={t.pageDescription}');
+                expect(homepageContent).toContain('description={pageDescription}');
             });
         });
 
@@ -306,7 +306,7 @@ describe('Accessibility Tests', () => {
             });
 
             it('should have close button with aria-label', () => {
-                expect(modalContent).toContain('aria-label="Close modal"');
+                expect(modalContent).toContain("aria-label={t('accessibility.closeModal')}");
             });
 
             it('should have focus-visible styles on close button', () => {
@@ -423,7 +423,7 @@ describe('Accessibility Tests', () => {
 
             it('should use section element with aria-label on container', () => {
                 expect(accordionContent).toContain('<section');
-                expect(accordionContent).toContain('aria-label="Frequently Asked Questions"');
+                expect(accordionContent).toContain("aria-label={t('accessibility.faqSection')}");
             });
         });
 
@@ -435,24 +435,32 @@ describe('Accessibility Tests', () => {
             });
 
             it('should have aria-label on native share button', () => {
-                expect(shareButtonsContent).toContain('aria-label="Share via device"');
+                expect(shareButtonsContent).toContain(
+                    "aria-label={t('accessibility.shareViaDevice')}"
+                );
             });
 
             it('should have aria-label on WhatsApp button', () => {
-                expect(shareButtonsContent).toContain('aria-label="Share on WhatsApp"');
+                expect(shareButtonsContent).toContain(
+                    "aria-label={t('accessibility.shareOnWhatsApp')}"
+                );
             });
 
             it('should have aria-label on Facebook button', () => {
-                expect(shareButtonsContent).toContain('aria-label="Share on Facebook"');
+                expect(shareButtonsContent).toContain(
+                    "aria-label={t('accessibility.shareOnFacebook')}"
+                );
             });
 
             it('should have aria-label on Twitter button', () => {
-                expect(shareButtonsContent).toContain('aria-label="Share on Twitter"');
+                expect(shareButtonsContent).toContain(
+                    "aria-label={t('accessibility.shareOnTwitter')}"
+                );
             });
 
             it('should have dynamic aria-label on copy button', () => {
                 expect(shareButtonsContent).toContain(
-                    "aria-label={copied ? 'Link copied' : 'Copy link to clipboard'}"
+                    "aria-label={copied ? t('accessibility.linkCopied') : t('accessibility.copyLink')}"
                 );
             });
 
@@ -742,7 +750,7 @@ describe('Accessibility Tests', () => {
             });
 
             it('should update aria-label for copy state', () => {
-                expect(shareButtonsContent).toContain('Link copied');
+                expect(shareButtonsContent).toContain("t('accessibility.linkCopied')");
             });
         });
     });
@@ -955,7 +963,7 @@ describe('Accessibility Tests', () => {
             });
 
             it('should have descriptive aria-labels', () => {
-                expect(shareButtonsContent).toContain('aria-label="Share on');
+                expect(shareButtonsContent).toContain("aria-label={t('accessibility.shareOn");
             });
         });
     });

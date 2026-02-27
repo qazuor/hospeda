@@ -27,8 +27,8 @@ describe('SEOHead.astro', () => {
             expect(content).toContain('noindex?: boolean');
         });
 
-        it('should accept locale prop with es, en, or pt values', () => {
-            expect(content).toContain("locale?: 'es' | 'en' | 'pt'");
+        it('should accept locale prop with SupportedLocale type', () => {
+            expect(content).toContain('locale?: SupportedLocale');
         });
 
         it('should accept type prop with website or article values', () => {
@@ -286,8 +286,8 @@ describe('SEOHead.astro', () => {
             expect(content).toContain('export interface Props');
         });
 
-        it('should use strict locale type', () => {
-            expect(content).toContain("'es' | 'en' | 'pt'");
+        it('should use SupportedLocale type for locale', () => {
+            expect(content).toContain('SupportedLocale');
         });
 
         it('should use strict type for Open Graph type', () => {

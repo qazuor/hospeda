@@ -132,18 +132,22 @@ describe('Pagination.astro', () => {
     });
 
     describe('Localization', () => {
-        it('should have Spanish labels', () => {
-            expect(content).toContain("previous: 'Anterior'");
-            expect(content).toContain("next: 'Siguiente'");
+        it('should use i18n for pagination labels', () => {
+            expect(content).toContain(
+                "import { t as translate, type SupportedLocale } from '../../lib/i18n'"
+            );
         });
 
-        it('should have English labels', () => {
-            expect(content).toContain("previous: 'Previous'");
-            expect(content).toContain("next: 'Next'");
+        it('should use ui.pagination namespace', () => {
+            expect(content).toContain("namespace: 'ui'");
+            expect(content).toContain('key: `pagination.');
         });
 
-        it('should have Portuguese labels', () => {
-            expect(content).toContain("next: 'Próximo'");
+        it('should have previous, next, page, and of labels', () => {
+            expect(content).toContain("previous: pt('previous')");
+            expect(content).toContain("next: pt('next')");
+            expect(content).toContain("page: pt('page')");
+            expect(content).toContain("of: pt('of')");
         });
     });
 

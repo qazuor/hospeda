@@ -29,7 +29,12 @@ describe('MapView.client.tsx', () => {
 
     describe('Props', () => {
         it('should accept markers prop', () => {
-            render(<MapView markers={mockMarkers} />);
+            render(
+                <MapView
+                    locale="en"
+                    markers={mockMarkers}
+                />
+            );
             expect(screen.getByText('Hotel Example')).toBeInTheDocument();
             expect(screen.getByText('Cabaña Example')).toBeInTheDocument();
             expect(screen.getByText('Hostel Example')).toBeInTheDocument();
@@ -38,6 +43,7 @@ describe('MapView.client.tsx', () => {
         it('should accept center prop', () => {
             const { container } = render(
                 <MapView
+                    locale="en"
                     markers={mockMarkers}
                     center={[-32.4833, -58.2333]}
                 />
@@ -48,7 +54,12 @@ describe('MapView.client.tsx', () => {
         });
 
         it('should default center to [0, 0] when not provided', () => {
-            const { container } = render(<MapView markers={mockMarkers} />);
+            const { container } = render(
+                <MapView
+                    locale="en"
+                    markers={mockMarkers}
+                />
+            );
             const centerText = container.querySelector('.text-xs.text-gray-500');
             expect(centerText?.textContent).toContain('0.0000');
         });
@@ -56,6 +67,7 @@ describe('MapView.client.tsx', () => {
         it('should accept zoom prop', () => {
             const { container } = render(
                 <MapView
+                    locale="en"
                     markers={mockMarkers}
                     zoom={15}
                 />
@@ -65,7 +77,12 @@ describe('MapView.client.tsx', () => {
         });
 
         it('should default zoom to 13 when not provided', () => {
-            const { container } = render(<MapView markers={mockMarkers} />);
+            const { container } = render(
+                <MapView
+                    locale="en"
+                    markers={mockMarkers}
+                />
+            );
             const zoomText = container.querySelector('.text-xs.text-gray-500');
             expect(zoomText?.textContent).toContain('Zoom: 13');
         });
@@ -73,6 +90,7 @@ describe('MapView.client.tsx', () => {
         it('should accept height prop', () => {
             const { container } = render(
                 <MapView
+                    locale="en"
                     markers={mockMarkers}
                     height="500px"
                 />
@@ -82,7 +100,12 @@ describe('MapView.client.tsx', () => {
         });
 
         it('should default height to 400px when not provided', () => {
-            const { container } = render(<MapView markers={mockMarkers} />);
+            const { container } = render(
+                <MapView
+                    locale="en"
+                    markers={mockMarkers}
+                />
+            );
             const mapContainer = container.querySelector('[role="img"]');
             expect(mapContainer).toHaveStyle({ height: '400px' });
         });
@@ -90,6 +113,7 @@ describe('MapView.client.tsx', () => {
         it('should accept className prop', () => {
             const { container } = render(
                 <MapView
+                    locale="en"
                     markers={mockMarkers}
                     className="custom-map-class"
                 />
@@ -101,7 +125,12 @@ describe('MapView.client.tsx', () => {
 
     describe('Rendering', () => {
         it('should render map container', () => {
-            const { container } = render(<MapView markers={mockMarkers} />);
+            const { container } = render(
+                <MapView
+                    locale="en"
+                    markers={mockMarkers}
+                />
+            );
             const mapContainer = container.querySelector('[role="img"]');
             expect(mapContainer).toBeInTheDocument();
         });
@@ -109,6 +138,7 @@ describe('MapView.client.tsx', () => {
         it('should render map container with correct height', () => {
             const { container } = render(
                 <MapView
+                    locale="en"
                     markers={mockMarkers}
                     height="600px"
                 />
@@ -118,45 +148,80 @@ describe('MapView.client.tsx', () => {
         });
 
         it('should render all markers in list', () => {
-            render(<MapView markers={mockMarkers} />);
+            render(
+                <MapView
+                    locale="en"
+                    markers={mockMarkers}
+                />
+            );
             expect(screen.getByText('Hotel Example')).toBeInTheDocument();
             expect(screen.getByText('Cabaña Example')).toBeInTheDocument();
             expect(screen.getByText('Hostel Example')).toBeInTheDocument();
         });
 
         it('should render marker coordinates', () => {
-            render(<MapView markers={mockMarkers} />);
+            render(
+                <MapView
+                    locale="en"
+                    markers={mockMarkers}
+                />
+            );
             expect(screen.getByText('-32.4833, -58.2333')).toBeInTheDocument();
             expect(screen.getByText('-32.4900, -58.2400')).toBeInTheDocument();
         });
 
         it('should render marker popup when provided', () => {
-            render(<MapView markers={mockMarkers} />);
+            render(
+                <MapView
+                    locale="en"
+                    markers={mockMarkers}
+                />
+            );
             expect(screen.getByText('Beautiful hotel in the city center')).toBeInTheDocument();
             expect(screen.getByText('Budget-friendly accommodation')).toBeInTheDocument();
         });
 
         it('should not render popup for markers without popup prop', () => {
-            render(<MapView markers={mockMarkers} />);
+            render(
+                <MapView
+                    locale="en"
+                    markers={mockMarkers}
+                />
+            );
             const cabanaItem = screen.getByText('Cabaña Example').closest('li');
             const popupElement = cabanaItem?.querySelector('.text-xs.text-gray-600');
             expect(popupElement).not.toBeInTheDocument();
         });
 
         it('should render marker count', () => {
-            render(<MapView markers={mockMarkers} />);
+            render(
+                <MapView
+                    locale="en"
+                    markers={mockMarkers}
+                />
+            );
             expect(screen.getByText('Locations (3)')).toBeInTheDocument();
         });
 
         it('should render map loading indicator', () => {
-            render(<MapView markers={mockMarkers} />);
-            expect(screen.getByText('Map Loading...')).toBeInTheDocument();
+            render(
+                <MapView
+                    locale="en"
+                    markers={mockMarkers}
+                />
+            );
+            expect(screen.getByText('Map loading...')).toBeInTheDocument();
         });
     });
 
     describe('Data Attributes', () => {
         it('should have data-map-provider attribute set to "leaflet"', () => {
-            const { container } = render(<MapView markers={mockMarkers} />);
+            const { container } = render(
+                <MapView
+                    locale="en"
+                    markers={mockMarkers}
+                />
+            );
             const wrapper = container.querySelector('[data-map-provider]');
             expect(wrapper).toHaveAttribute('data-map-provider', 'leaflet');
         });
@@ -164,17 +229,32 @@ describe('MapView.client.tsx', () => {
 
     describe('Empty State', () => {
         it('should render empty state when markers array is empty', () => {
-            render(<MapView markers={[]} />);
+            render(
+                <MapView
+                    locale="en"
+                    markers={[]}
+                />
+            );
             expect(screen.getByText('No locations to display')).toBeInTheDocument();
         });
 
         it('should not render marker list when markers array is empty', () => {
-            render(<MapView markers={[]} />);
+            render(
+                <MapView
+                    locale="en"
+                    markers={[]}
+                />
+            );
             expect(screen.queryByRole('region', { name: 'Map markers' })).not.toBeInTheDocument();
         });
 
         it('should render map container even when markers array is empty', () => {
-            const { container } = render(<MapView markers={[]} />);
+            const { container } = render(
+                <MapView
+                    locale="en"
+                    markers={[]}
+                />
+            );
             const mapContainer = container.querySelector('[role="img"]');
             expect(mapContainer).toBeInTheDocument();
         });
@@ -182,13 +262,23 @@ describe('MapView.client.tsx', () => {
 
     describe('Accessibility', () => {
         it('should have role="img" on map container', () => {
-            const { container } = render(<MapView markers={mockMarkers} />);
+            const { container } = render(
+                <MapView
+                    locale="en"
+                    markers={mockMarkers}
+                />
+            );
             const mapContainer = container.querySelector('[role="img"]');
             expect(mapContainer).toBeInTheDocument();
         });
 
         it('should have aria-label describing number of locations', () => {
-            render(<MapView markers={mockMarkers} />);
+            render(
+                <MapView
+                    locale="en"
+                    markers={mockMarkers}
+                />
+            );
             const mapContainer = screen.getByLabelText('Map showing 3 locations');
             expect(mapContainer).toBeInTheDocument();
         });
@@ -197,19 +287,34 @@ describe('MapView.client.tsx', () => {
             const firstMarker = mockMarkers[0];
             if (!firstMarker) throw new Error('First marker is undefined');
             const singleMarker: ReadonlyArray<MapMarker> = [firstMarker];
-            render(<MapView markers={singleMarker} />);
-            const mapContainer = screen.getByLabelText('Map showing 1 location');
+            render(
+                <MapView
+                    locale="en"
+                    markers={singleMarker}
+                />
+            );
+            const mapContainer = screen.getByLabelText('Map showing 1 locations');
             expect(mapContainer).toBeInTheDocument();
         });
 
         it('should have aria-label with "0 locations" for empty markers', () => {
-            render(<MapView markers={[]} />);
+            render(
+                <MapView
+                    locale="en"
+                    markers={[]}
+                />
+            );
             const mapContainer = screen.getByLabelText('Map showing 0 locations');
             expect(mapContainer).toBeInTheDocument();
         });
 
         it('should have aria-hidden on decorative SVG icons', () => {
-            const { container } = render(<MapView markers={mockMarkers} />);
+            const { container } = render(
+                <MapView
+                    locale="en"
+                    markers={mockMarkers}
+                />
+            );
             const icons = Array.from(container.querySelectorAll('svg'));
             for (const icon of icons) {
                 expect(icon).toHaveAttribute('aria-hidden', 'true');
@@ -217,7 +322,12 @@ describe('MapView.client.tsx', () => {
         });
 
         it('should have section on marker list', () => {
-            render(<MapView markers={mockMarkers} />);
+            render(
+                <MapView
+                    locale="en"
+                    markers={mockMarkers}
+                />
+            );
             const markerList = screen.getByRole('region', { name: 'Map markers' });
             expect(markerList).toBeInTheDocument();
         });
@@ -225,25 +335,45 @@ describe('MapView.client.tsx', () => {
 
     describe('Styling', () => {
         it('should have rounded corners on map container', () => {
-            const { container } = render(<MapView markers={mockMarkers} />);
+            const { container } = render(
+                <MapView
+                    locale="en"
+                    markers={mockMarkers}
+                />
+            );
             const mapContainer = container.querySelector('[role="img"]');
             expect(mapContainer?.className).toContain('rounded-lg');
         });
 
         it('should have border on map container', () => {
-            const { container } = render(<MapView markers={mockMarkers} />);
+            const { container } = render(
+                <MapView
+                    locale="en"
+                    markers={mockMarkers}
+                />
+            );
             const mapContainer = container.querySelector('[role="img"]');
             expect(mapContainer?.className).toContain('border');
         });
 
         it('should have gradient background on map container', () => {
-            const { container } = render(<MapView markers={mockMarkers} />);
+            const { container } = render(
+                <MapView
+                    locale="en"
+                    markers={mockMarkers}
+                />
+            );
             const mapContainer = container.querySelector('[role="img"]');
             expect(mapContainer?.className).toContain('bg-gradient-to-br');
         });
 
         it('should have hover styles on marker items', () => {
-            const { container } = render(<MapView markers={mockMarkers} />);
+            const { container } = render(
+                <MapView
+                    locale="en"
+                    markers={mockMarkers}
+                />
+            );
             const markerItems = container.querySelectorAll('section li');
             for (const item of Array.from(markerItems)) {
                 expect(item.className).toContain('hover:bg-gray-100');
@@ -251,7 +381,12 @@ describe('MapView.client.tsx', () => {
         });
 
         it('should have transition styles on marker items', () => {
-            const { container } = render(<MapView markers={mockMarkers} />);
+            const { container } = render(
+                <MapView
+                    locale="en"
+                    markers={mockMarkers}
+                />
+            );
             const markerItems = container.querySelectorAll('section li');
             for (const item of Array.from(markerItems)) {
                 expect(item.className).toContain('transition-colors');
@@ -261,7 +396,12 @@ describe('MapView.client.tsx', () => {
 
     describe('Marker Keys', () => {
         it('should use marker id as key for list items', () => {
-            const { container } = render(<MapView markers={mockMarkers} />);
+            const { container } = render(
+                <MapView
+                    locale="en"
+                    markers={mockMarkers}
+                />
+            );
             const markerItems = container.querySelectorAll('section li');
             expect(markerItems.length).toBe(mockMarkers.length);
         });
@@ -271,6 +411,7 @@ describe('MapView.client.tsx', () => {
         it('should forward className to root element', () => {
             const { container } = render(
                 <MapView
+                    locale="en"
                     markers={mockMarkers}
                     className="test-class"
                 />
@@ -282,6 +423,7 @@ describe('MapView.client.tsx', () => {
         it('should combine className with default classes', () => {
             const { container } = render(
                 <MapView
+                    locale="en"
                     markers={mockMarkers}
                     className="test-class"
                 />
@@ -294,6 +436,7 @@ describe('MapView.client.tsx', () => {
         it('should not add extra spaces when className is empty', () => {
             const { container } = render(
                 <MapView
+                    locale="en"
                     markers={mockMarkers}
                     className=""
                 />

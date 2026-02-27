@@ -68,9 +68,9 @@ describe('FilterSidebar.client.tsx', () => {
 
             expect(screen.getByLabelText('Hotel')).toBeInTheDocument();
             expect(screen.getByLabelText('Cabaña')).toBeInTheDocument();
-            expect(screen.getByLabelText('Departamento')).toBeInTheDocument();
+            expect(screen.getByLabelText('Apartamento')).toBeInTheDocument();
             expect(screen.getByLabelText('Rural')).toBeInTheDocument();
-            expect(screen.getByLabelText('Hostel')).toBeInTheDocument();
+            expect(screen.getByLabelText('Hostal')).toBeInTheDocument();
             expect(screen.getByLabelText('Boutique')).toBeInTheDocument();
         });
 
@@ -333,7 +333,7 @@ describe('FilterSidebar.client.tsx', () => {
             const hotelCheckbox = screen.getByLabelText('Hotel');
             fireEvent.click(hotelCheckbox);
 
-            const removeButton = screen.getByLabelText('Remove hotel filter');
+            const removeButton = screen.getByLabelText('Quitar filtro Hotel');
             fireEvent.click(removeButton);
 
             await waitFor(() => {
@@ -347,7 +347,7 @@ describe('FilterSidebar.client.tsx', () => {
             const priceMinInput = screen.getByLabelText('Mínimo');
             fireEvent.change(priceMinInput, { target: { value: '1000' } });
 
-            const removeButton = screen.getByLabelText('Remove minimum price filter');
+            const removeButton = screen.getByLabelText('Quitar filtro Mínimo');
             fireEvent.click(removeButton);
 
             await waitFor(() => {
@@ -361,7 +361,7 @@ describe('FilterSidebar.client.tsx', () => {
             const priceMaxInput = screen.getByLabelText('Máximo');
             fireEvent.change(priceMaxInput, { target: { value: '5000' } });
 
-            const removeButton = screen.getByLabelText('Remove maximum price filter');
+            const removeButton = screen.getByLabelText('Quitar filtro Máximo');
             fireEvent.click(removeButton);
 
             await waitFor(() => {
@@ -375,7 +375,7 @@ describe('FilterSidebar.client.tsx', () => {
             const destinationSelect = screen.getByRole('combobox');
             fireEvent.change(destinationSelect, { target: { value: 'colon' } });
 
-            const removeButton = screen.getByLabelText('Remove destination filter');
+            const removeButton = screen.getByLabelText('Quitar filtro Destino');
             fireEvent.click(removeButton);
 
             await waitFor(() => {
@@ -389,7 +389,7 @@ describe('FilterSidebar.client.tsx', () => {
             const wifiCheckbox = screen.getByLabelText('WiFi');
             fireEvent.click(wifiCheckbox);
 
-            const removeButton = screen.getByLabelText('Remove wifi filter');
+            const removeButton = screen.getByLabelText('Quitar filtro WiFi');
             fireEvent.click(removeButton);
 
             await waitFor(() => {
@@ -403,7 +403,7 @@ describe('FilterSidebar.client.tsx', () => {
             const thirdStar = screen.getByLabelText('3 estrellas');
             fireEvent.click(thirdStar);
 
-            const removeButton = screen.getByLabelText('Remove rating filter');
+            const removeButton = screen.getByLabelText('Quitar filtro Calificación mínima');
             fireEvent.click(removeButton);
 
             await waitFor(() => {
@@ -550,7 +550,7 @@ describe('FilterSidebar.client.tsx', () => {
 
             expect(screen.getByLabelText('Hotel')).toBeInTheDocument();
             expect(screen.getByLabelText('Cabaña')).toBeInTheDocument();
-            expect(screen.getByLabelText('Departamento')).toBeInTheDocument();
+            expect(screen.getByLabelText('Apartamento')).toBeInTheDocument();
         });
 
         it('should display English type labels', () => {

@@ -34,9 +34,7 @@ describe('eventos/categoria/[category]/index.astro', () => {
         });
 
         it('should generate paths for all 3 locales', () => {
-            expect(indexContent).toContain("'es'");
-            expect(indexContent).toContain("'en'");
-            expect(indexContent).toContain("'pt'");
+            expect(indexContent).toContain('SUPPORTED_LOCALES');
         });
 
         it('should generate paths for all 5 categories', () => {
@@ -99,8 +97,12 @@ describe('eventos/categoria/[category]/index.astro', () => {
 
         it('should import i18n utilities', () => {
             expect(indexContent).toContain(
-                "import { isValidLocale, type SupportedLocale } from '../../../../../lib/i18n'"
+                "import { getLocaleFromParams, SUPPORTED_LOCALES } from '../../../../../lib/page-helpers'"
             );
+        });
+
+        it('should import t from lib/i18n', () => {
+            expect(indexContent).toContain("import { t } from '../../../../../lib/i18n'");
         });
 
         it('should import eventsApi', () => {
@@ -111,20 +113,13 @@ describe('eventos/categoria/[category]/index.astro', () => {
     });
 
     describe('Locale Validation', () => {
-        it('should extract lang and category from params', () => {
-            expect(indexContent).toContain('const { lang, category } = Astro.params;');
-        });
-
-        it('should validate locale with isValidLocale', () => {
-            expect(indexContent).toContain('if (!lang || !isValidLocale(lang))');
+        it('should extract locale with getLocaleFromParams', () => {
+            expect(indexContent).toContain('getLocaleFromParams(Astro.params)');
+            expect(indexContent).toContain('if (!locale)');
         });
 
         it('should redirect to /es/ if locale is invalid', () => {
             expect(indexContent).toContain("return Astro.redirect('/es/');");
-        });
-
-        it('should cast validated locale to SupportedLocale', () => {
-            expect(indexContent).toContain('const locale = lang as SupportedLocale;');
         });
     });
 
@@ -191,108 +186,45 @@ describe('eventos/categoria/[category]/index.astro', () => {
     });
 
     describe('Localized Category Names', () => {
-        it('should define categoryNames record', () => {
+        it('should use t() for category name', () => {
             expect(indexContent).toContain(
-                'const categoryNames: Record<SupportedLocale, Record<EventCategory, string>> = {'
+                "t({ locale, namespace: 'event', key: `categoryPage.categories.${eventCategory}.name` })"
             );
-        });
-
-        it('should have Spanish category names', () => {
-            expect(indexContent).toContain("festival: 'Festivales'");
-            expect(indexContent).toContain("fair: 'Ferias'");
-            expect(indexContent).toContain("sport: 'Deportes'");
-            expect(indexContent).toContain("cultural: 'Culturales'");
-            expect(indexContent).toContain("gastronomy: 'Gastronomía'");
-        });
-
-        it('should have English category names', () => {
-            expect(indexContent).toContain("festival: 'Festivals'");
-            expect(indexContent).toContain("fair: 'Fairs'");
-            expect(indexContent).toContain("sport: 'Sports'");
-            expect(indexContent).toContain("cultural: 'Cultural Events'");
-            expect(indexContent).toContain("gastronomy: 'Gastronomy'");
-        });
-
-        it('should have Portuguese category names', () => {
-            expect(indexContent).toContain("festival: 'Festivais'");
-            expect(indexContent).toContain("fair: 'Feiras'");
-            expect(indexContent).toContain("sport: 'Esportes'");
-            expect(indexContent).toContain("cultural: 'Eventos Culturais'");
-            expect(indexContent).toContain("gastronomy: 'Gastronomia'");
         });
     });
 
     describe('Localized Category Descriptions', () => {
-        it('should define categoryDescriptions record', () => {
+        it('should use t() for category description', () => {
             expect(indexContent).toContain(
-                'const categoryDescriptions: Record<SupportedLocale, Record<EventCategory, string>> = {'
-            );
-        });
-
-        it('should have Spanish festival description', () => {
-            expect(indexContent).toContain(
-                'Descubre los mejores festivales en Concepción del Uruguay'
-            );
-        });
-
-        it('should have English festival description', () => {
-            expect(indexContent).toContain('Discover the best festivals in Concepción del Uruguay');
-        });
-
-        it('should have Portuguese festival description', () => {
-            expect(indexContent).toContain(
-                'Descubra os melhores festivais em Concepción del Uruguay'
+                "t({ locale, namespace: 'event', key: `categoryPage.categories.${eventCategory}.description` })"
             );
         });
     });
 
     describe('Localized Page Titles', () => {
-        it('should define pageTitles record', () => {
+        it('should use t() for page title', () => {
             expect(indexContent).toContain(
-                'const pageTitles: Record<SupportedLocale, Record<EventCategory, string>> = {'
+                "t({ locale, namespace: 'event', key: `categoryPage.categories.${eventCategory}.pageTitle` })"
             );
-        });
-
-        it('should have Spanish page titles', () => {
-            expect(indexContent).toContain("festival: 'Eventos - Festivales'");
-            expect(indexContent).toContain("fair: 'Eventos - Ferias'");
-        });
-
-        it('should have English page titles', () => {
-            expect(indexContent).toContain("festival: 'Events - Festivals'");
-            expect(indexContent).toContain("fair: 'Events - Fairs'");
-        });
-
-        it('should have Portuguese page titles', () => {
-            expect(indexContent).toContain("festival: 'Eventos - Festivais'");
-            expect(indexContent).toContain("fair: 'Eventos - Feiras'");
         });
     });
 
     describe('Localized Common Labels', () => {
-        it('should define labels record', () => {
+        it('should use t() for breadcrumb home', () => {
             expect(indexContent).toContain(
-                'const labels: Record<SupportedLocale, Record<string, string>> = {'
+                "t({ locale, namespace: 'event', key: 'categoryPage.labels.breadcrumbHome' })"
             );
         });
 
-        it('should have home breadcrumb labels for all locales', () => {
-            expect(indexContent).toContain("home: 'Inicio'");
-            expect(indexContent).toContain("home: 'Home'");
-            expect(indexContent).toContain("home: 'Início'");
-        });
-
-        it('should have events breadcrumb labels for all locales', () => {
-            expect(indexContent).toContain("events: 'Eventos'");
-        });
-
-        it('should have noResults messages for all locales', () => {
+        it('should use t() for breadcrumb events', () => {
             expect(indexContent).toContain(
-                "noResults: 'No hay eventos de categoría {category} disponibles'"
+                "t({ locale, namespace: 'event', key: 'categoryPage.labels.breadcrumbEvents' })"
             );
-            expect(indexContent).toContain("noResults: 'No {category} events available'");
+        });
+
+        it('should use t() for empty title with category interpolation', () => {
             expect(indexContent).toContain(
-                "noResults: 'Não há eventos da categoria {category} disponíveis'"
+                "t({ locale, namespace: 'event', key: 'categoryPage.labels.emptyTitle', params: { category: categoryName.toLowerCase() } })"
             );
         });
     });
@@ -318,8 +250,8 @@ describe('eventos/categoria/[category]/index.astro', () => {
             expect(indexContent).toContain('canonical={canonicalUrl}');
         });
 
-        it('should handle Portuguese locale mapping', () => {
-            expect(indexContent).toContain("locale={locale === 'pt' ? 'es' : locale}");
+        it('should pass locale directly to SEOHead', () => {
+            expect(indexContent).toContain('locale={locale}');
         });
 
         it('should set page type to website', () => {
@@ -333,12 +265,12 @@ describe('eventos/categoria/[category]/index.astro', () => {
         });
 
         it('should include home breadcrumb link', () => {
-            expect(indexContent).toContain('{ label: labels[locale].home, href: `/${locale}/` }');
+            expect(indexContent).toContain('{ label: breadcrumbHome, href: `/${locale}/` }');
         });
 
         it('should include events breadcrumb link', () => {
             expect(indexContent).toContain(
-                '{ label: labels[locale].events, href: `/${locale}/eventos/` }'
+                '{ label: breadcrumbEvents, href: `/${locale}/eventos/` }'
             );
         });
 
@@ -388,7 +320,8 @@ describe('eventos/categoria/[category]/index.astro', () => {
 
     describe('Event Grid', () => {
         it('should render EventCard components', () => {
-            expect(indexContent).toContain('<EventCard event={event} locale={locale}');
+            expect(indexContent).toContain('<EventCard event={toEventCardProps(');
+            expect(indexContent).toContain('locale={locale}');
         });
 
         it('should use responsive grid layout', () => {
@@ -401,11 +334,9 @@ describe('eventos/categoria/[category]/index.astro', () => {
     });
 
     describe('Empty State', () => {
-        it('should generate empty state message replacing {category} placeholder', () => {
+        it('should generate empty state message', () => {
             expect(indexContent).toContain('const emptyMessage =');
-            expect(indexContent).toContain(
-                "labels[locale].noResults.replace('{category}', categoryName.toLowerCase())"
-            );
+            expect(indexContent).toContain('emptyTitle');
         });
 
         it('should render EmptyState component with message', () => {
@@ -508,20 +439,20 @@ describe('eventos/categoria/[category]/index.astro', () => {
 
 describe('eventos/categoria/[category]/page/[page].astro', () => {
     describe('Imports', () => {
-        it('should import isValidLocale from i18n', () => {
-            expect(paginationContent).toContain(
-                "import { isValidLocale } from '../../../../../../lib/i18n'"
-            );
+        it('should import getLocaleFromParams from page-helpers', () => {
+            expect(paginationContent).toContain('getLocaleFromParams');
+            expect(paginationContent).toContain("from '../../../../../../lib/page-helpers'");
         });
     });
 
     describe('Locale Validation', () => {
-        it('should extract lang, category, and page from params', () => {
-            expect(paginationContent).toContain('const { lang, category, page } = Astro.params;');
+        it('should extract category and page from params', () => {
+            expect(paginationContent).toContain('const { category, page } = Astro.params;');
         });
 
-        it('should validate locale with isValidLocale', () => {
-            expect(paginationContent).toContain('if (!lang || !isValidLocale(lang))');
+        it('should validate locale with getLocaleFromParams', () => {
+            expect(paginationContent).toContain('getLocaleFromParams(Astro.params)');
+            expect(paginationContent).toContain('if (!locale)');
         });
 
         it('should redirect to /es/ on invalid locale', () => {
@@ -546,7 +477,7 @@ describe('eventos/categoria/[category]/page/[page].astro', () => {
         });
 
         it('should redirect to eventos page on invalid category', () => {
-            expect(paginationContent).toContain('return Astro.redirect(`/${lang}/eventos/`);');
+            expect(paginationContent).toContain('return Astro.redirect(`/${locale}/eventos/`);');
         });
     });
 
@@ -560,7 +491,7 @@ describe('eventos/categoria/[category]/page/[page].astro', () => {
         it('should redirect on invalid page number (NaN or < 1)', () => {
             expect(paginationContent).toContain('if (Number.isNaN(pageNum) || pageNum < 1)');
             expect(paginationContent).toContain(
-                'return Astro.redirect(`/${lang}/eventos/categoria/${category}/`);'
+                'return Astro.redirect(`/${locale}/eventos/categoria/${category}/`);'
             );
         });
     });
@@ -569,7 +500,7 @@ describe('eventos/categoria/[category]/page/[page].astro', () => {
         it('should redirect page 1 to the canonical base URL', () => {
             expect(paginationContent).toContain('if (pageNum === 1)');
             expect(paginationContent).toContain(
-                'return Astro.redirect(`/${lang}/eventos/categoria/${category}/`);'
+                'return Astro.redirect(`/${locale}/eventos/categoria/${category}/`);'
             );
         });
     });
@@ -577,7 +508,7 @@ describe('eventos/categoria/[category]/page/[page].astro', () => {
     describe('Rewrite to Index With Query Param', () => {
         it('should rewrite to the category index page with page query parameter', () => {
             expect(paginationContent).toContain(
-                'return Astro.rewrite(`/${lang}/eventos/categoria/${category}/?page=${pageNum}`);'
+                'return Astro.rewrite(`/${locale}/eventos/categoria/${category}/?page=${pageNum}`);'
             );
         });
     });

@@ -7,8 +7,9 @@ const content = readFileSync(componentPath, 'utf8');
 
 describe('BlogPostCard.astro', () => {
     describe('Props', () => {
-        it('should define BlogPostCardData interface', () => {
-            expect(content).toContain('interface BlogPostCardData');
+        it('should import BlogPostCardData from transforms', () => {
+            expect(content).toContain('import type { BlogPostCardData } from');
+            expect(content).toContain('lib/api/transforms');
         });
 
         it('should accept post prop', () => {
@@ -23,8 +24,8 @@ describe('BlogPostCard.astro', () => {
             expect(content).toContain('locale?: string');
         });
 
-        it('should accept optional tags prop in data interface', () => {
-            expect(content).toContain('tags?: string[]');
+        it('should use BlogPostCardData type for post prop', () => {
+            expect(content).toContain('post: BlogPostCardData');
         });
     });
 

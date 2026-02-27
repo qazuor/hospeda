@@ -43,37 +43,36 @@ describe('beneficios.astro', () => {
 
     describe('Locale validation', () => {
         it('should validate locale parameter', () => {
-            expect(content).toContain('const { lang } = Astro.params');
-            expect(content).toContain('if (!lang || !isValidLocale(lang))');
+            expect(content).toContain('getLocaleFromParams(Astro.params)');
+            expect(content).toContain('if (!locale)');
         });
 
         it('should redirect to /es/ on invalid locale', () => {
             expect(content).toContain("return Astro.redirect('/es/')");
         });
 
-        it('should import locale helpers', () => {
-            expect(content).toContain('isValidLocale');
-            expect(content).toContain('type SupportedLocale');
+        it('should import locale helpers and i18n', () => {
+            expect(content).toContain('getLocaleFromParams');
+            expect(content).toContain("import { t } from '../../lib/i18n'");
         });
     });
 
     describe('Localization', () => {
-        it('should have localized titles for all supported locales', () => {
-            expect(content).toContain("es: 'Beneficios'");
-            expect(content).toContain("en: 'Benefits'");
-            expect(content).toContain("pt: 'Beneficios'");
+        it('should use t() for localized titles', () => {
+            expect(content).toContain(
+                "const title = t({ locale, namespace: 'benefits', key: 'page.title' })"
+            );
         });
 
-        it('should have localized meta descriptions', () => {
-            expect(content).toContain('const descriptions: Record<SupportedLocale, string>');
-            expect(content).toContain('Descubre los beneficios de usar Hospeda');
+        it('should use t() for localized descriptions', () => {
+            expect(content).toContain(
+                "const description = t({ locale, namespace: 'benefits', key: 'page.description' })"
+            );
         });
 
-        it('should have localized home breadcrumb labels', () => {
-            expect(content).toContain('const homeLabels: Record<SupportedLocale, string>');
-            expect(content).toContain("es: 'Inicio'");
-            expect(content).toContain("en: 'Home'");
-            expect(content).toContain("pt: 'Início'");
+        it('should import HOME_BREADCRUMB from page-helpers', () => {
+            expect(content).toContain('HOME_BREADCRUMB');
+            expect(content).toContain("from '../../lib/page-helpers'");
         });
     });
 
@@ -84,8 +83,8 @@ describe('beneficios.astro', () => {
         });
 
         it('should pass title and description to SEOHead', () => {
-            expect(content).toContain('title={titles[locale]}');
-            expect(content).toContain('description={descriptions[locale]}');
+            expect(content).toContain('title={title}');
+            expect(content).toContain('description={description}');
         });
 
         it('should set page type to website', () => {
@@ -103,11 +102,11 @@ describe('beneficios.astro', () => {
         });
 
         it('should have home breadcrumb link', () => {
-            expect(content).toContain('{ label: homeLabels[locale], href: `/${locale}/`');
+            expect(content).toContain('{ label: HOME_BREADCRUMB[locale], href: `/${locale}/`');
         });
 
         it('should have benefits page breadcrumb', () => {
-            expect(content).toContain('{ label: titles[locale], href: `/${locale}/beneficios/`');
+            expect(content).toContain('{ label: title, href: `/${locale}/beneficios/`');
         });
     });
 

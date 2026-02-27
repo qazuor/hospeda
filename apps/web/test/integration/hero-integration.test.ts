@@ -92,14 +92,14 @@ describe('Hero Integration Tests', () => {
 
     describe('Homepage wiring', () => {
         it('Homepage should pass headline and searchLabels to HeroSection', () => {
-            expect(homepage).toContain('headline={t.heroHeadline}');
-            expect(homepage).toContain('subheadline={t.heroSubheadline}');
-            expect(homepage).toContain('searchLabels={t.searchLabels}');
+            expect(homepage).toContain('headline={heroHeadline}');
+            expect(homepage).toContain('subheadline={heroSubheadline}');
+            expect(homepage).toContain('searchLabels={searchLabels}');
         });
 
-        it('Homepage should pass apiBaseUrl from env', () => {
+        it('Homepage should pass apiBaseUrl from getApiUrl', () => {
             expect(homepage).toContain('apiBaseUrl={apiBaseUrl}');
-            expect(homepage).toContain('import.meta.env.PUBLIC_API_URL');
+            expect(homepage).toContain('getApiUrl()');
         });
 
         it('Homepage should NOT pass categoryBadges (removed)', () => {
@@ -107,15 +107,17 @@ describe('Hero Integration Tests', () => {
         });
 
         it('Homepage should pass statsLabels', () => {
-            expect(homepage).toContain('statsLabels={t.statsLabels}');
+            expect(homepage).toContain(
+                'statsLabels={{ destinations: statsDestinations, accommodations: statsAccommodations }}'
+            );
         });
 
         it('Homepage should pass counterItems', () => {
-            expect(homepage).toContain('counterItems={counterItems[locale]}');
+            expect(homepage).toContain('counterItems={counterItems}');
         });
 
         it('Homepage should pass rotatingPhrases', () => {
-            expect(homepage).toContain('rotatingPhrases={rotatingPhrases[locale]}');
+            expect(homepage).toContain('rotatingPhrases={rotatingPhrases}');
         });
     });
 

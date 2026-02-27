@@ -17,14 +17,24 @@ describe('UserNav.client.tsx', () => {
 
     describe('Props', () => {
         it('should accept user prop with avatarUrl', () => {
-            const { container } = render(<UserNav user={mockUser} />);
+            const { container } = render(
+                <UserNav
+                    user={mockUser}
+                    locale="en"
+                />
+            );
             const avatar = container.querySelector('img[src="https://example.com/avatar.jpg"]');
             expect(avatar).toBeInTheDocument();
             expect(avatar).toHaveAttribute('src', 'https://example.com/avatar.jpg');
         });
 
         it('should accept user prop without avatarUrl', () => {
-            render(<UserNav user={mockUserNoAvatar} />);
+            render(
+                <UserNav
+                    user={mockUserNoAvatar}
+                    locale="en"
+                />
+            );
             const initialsElement = screen.getByText('JS');
             expect(initialsElement).toBeInTheDocument();
         });
@@ -43,7 +53,7 @@ describe('UserNav.client.tsx', () => {
 
         it('should default to es locale when locale is not provided', () => {
             render(<UserNav user={mockUser} />);
-            const button = screen.getByRole('button', { name: /user menu/i });
+            const button = screen.getByRole('button', { name: /menu de usuario/i });
             fireEvent.click(button);
             expect(screen.getByText('Mi Cuenta')).toBeInTheDocument();
         });
@@ -52,6 +62,7 @@ describe('UserNav.client.tsx', () => {
             const { container } = render(
                 <UserNav
                     user={mockUser}
+                    locale="en"
                     className="custom-class"
                 />
             );
@@ -62,12 +73,22 @@ describe('UserNav.client.tsx', () => {
 
     describe('Rendering', () => {
         it('should render user name in trigger button', () => {
-            render(<UserNav user={mockUser} />);
+            render(
+                <UserNav
+                    user={mockUser}
+                    locale="en"
+                />
+            );
             expect(screen.getByText('John Doe')).toBeInTheDocument();
         });
 
         it('should render avatar image when avatarUrl is provided', () => {
-            const { container } = render(<UserNav user={mockUser} />);
+            const { container } = render(
+                <UserNav
+                    user={mockUser}
+                    locale="en"
+                />
+            );
             const avatar = container.querySelector('img[src="https://example.com/avatar.jpg"]');
             expect(avatar).toBeInTheDocument();
             expect(avatar).toHaveAttribute('alt', '');
@@ -75,35 +96,60 @@ describe('UserNav.client.tsx', () => {
         });
 
         it('should render initials circle when avatarUrl is not provided', () => {
-            render(<UserNav user={mockUserNoAvatar} />);
+            render(
+                <UserNav
+                    user={mockUserNoAvatar}
+                    locale="en"
+                />
+            );
             const initialsElement = screen.getByText('JS');
             expect(initialsElement).toBeInTheDocument();
             expect(initialsElement).toHaveClass('bg-primary', 'text-white', 'rounded-full');
         });
 
         it('should render chevron icon in trigger button', () => {
-            render(<UserNav user={mockUser} />);
+            render(
+                <UserNav
+                    user={mockUser}
+                    locale="en"
+                />
+            );
             const button = screen.getByRole('button', { name: /user menu/i });
             const chevron = button.querySelector('svg');
             expect(chevron).toBeInTheDocument();
         });
 
         it('should not render dropdown menu by default', () => {
-            render(<UserNav user={mockUser} />);
+            render(
+                <UserNav
+                    user={mockUser}
+                    locale="en"
+                />
+            );
             expect(screen.queryByRole('menu')).not.toBeInTheDocument();
         });
     });
 
     describe('Dropdown Menu', () => {
         it('should open dropdown menu on trigger button click', () => {
-            render(<UserNav user={mockUser} />);
+            render(
+                <UserNav
+                    user={mockUser}
+                    locale="en"
+                />
+            );
             const button = screen.getByRole('button', { name: /user menu/i });
             fireEvent.click(button);
             expect(screen.getByRole('menu', { name: 'User menu' })).toBeInTheDocument();
         });
 
         it('should close dropdown menu on second trigger button click', () => {
-            render(<UserNav user={mockUser} />);
+            render(
+                <UserNav
+                    user={mockUser}
+                    locale="en"
+                />
+            );
             const button = screen.getByRole('button', { name: /user menu/i });
 
             fireEvent.click(button);
@@ -114,7 +160,12 @@ describe('UserNav.client.tsx', () => {
         });
 
         it('should display user name and email in menu header', () => {
-            render(<UserNav user={mockUser} />);
+            render(
+                <UserNav
+                    user={mockUser}
+                    locale="en"
+                />
+            );
             const button = screen.getByRole('button', { name: /user menu/i });
             fireEvent.click(button);
 
@@ -130,7 +181,7 @@ describe('UserNav.client.tsx', () => {
                     locale="es"
                 />
             );
-            const button = screen.getByRole('button', { name: /user menu/i });
+            const button = screen.getByRole('button', { name: /menu de usuario/i });
             fireEvent.click(button);
 
             expect(screen.getByRole('menuitem', { name: 'Mi Cuenta' })).toBeInTheDocument();
@@ -164,7 +215,7 @@ describe('UserNav.client.tsx', () => {
                     locale="pt"
                 />
             );
-            const button = screen.getByRole('button', { name: /user menu/i });
+            const button = screen.getByRole('button', { name: /menu do usuario/i });
             fireEvent.click(button);
 
             expect(screen.getByRole('menuitem', { name: 'Minha Conta' })).toBeInTheDocument();
@@ -175,7 +226,12 @@ describe('UserNav.client.tsx', () => {
         });
 
         it('should render separator between menu items and sign out', () => {
-            render(<UserNav user={mockUser} />);
+            render(
+                <UserNav
+                    user={mockUser}
+                    locale="en"
+                />
+            );
             const button = screen.getByRole('button', { name: /user menu/i });
             fireEvent.click(button);
 
@@ -193,7 +249,7 @@ describe('UserNav.client.tsx', () => {
                     locale="es"
                 />
             );
-            const button = screen.getByRole('button', { name: /user menu/i });
+            const button = screen.getByRole('button', { name: /menu de usuario/i });
             fireEvent.click(button);
 
             const link = screen.getByRole('menuitem', { name: 'Mi Cuenta' });
@@ -221,7 +277,7 @@ describe('UserNav.client.tsx', () => {
                     locale="pt"
                 />
             );
-            const button = screen.getByRole('button', { name: /user menu/i });
+            const button = screen.getByRole('button', { name: /menu do usuario/i });
             fireEvent.click(button);
 
             const link = screen.getByRole('menuitem', { name: 'Minhas Avaliações' });
@@ -235,7 +291,7 @@ describe('UserNav.client.tsx', () => {
                     locale="es"
                 />
             );
-            const button = screen.getByRole('button', { name: /user menu/i });
+            const button = screen.getByRole('button', { name: /menu de usuario/i });
             fireEvent.click(button);
 
             const link = screen.getByRole('menuitem', { name: 'Preferencias' });
@@ -245,8 +301,13 @@ describe('UserNav.client.tsx', () => {
 
     describe('Sign Out Button', () => {
         it('should render sign out button as button element', () => {
-            render(<UserNav user={mockUser} />);
-            const button = screen.getByRole('button', { name: /user menu/i });
+            render(
+                <UserNav
+                    user={mockUser}
+                    locale="es"
+                />
+            );
+            const button = screen.getByRole('button', { name: /menu de usuario/i });
             fireEvent.click(button);
 
             const signOutButton = screen.getByRole('menuitem', { name: 'Cerrar sesión' });
@@ -255,8 +316,13 @@ describe('UserNav.client.tsx', () => {
         });
 
         it('should handle sign out click without errors', () => {
-            render(<UserNav user={mockUser} />);
-            const button = screen.getByRole('button', { name: /user menu/i });
+            render(
+                <UserNav
+                    user={mockUser}
+                    locale="es"
+                />
+            );
+            const button = screen.getByRole('button', { name: /menu de usuario/i });
             fireEvent.click(button);
 
             const signOutButton = screen.getByRole('menuitem', { name: 'Cerrar sesión' });
@@ -264,8 +330,13 @@ describe('UserNav.client.tsx', () => {
         });
 
         it('should close menu after sign out is clicked', () => {
-            render(<UserNav user={mockUser} />);
-            const button = screen.getByRole('button', { name: /user menu/i });
+            render(
+                <UserNav
+                    user={mockUser}
+                    locale="es"
+                />
+            );
+            const button = screen.getByRole('button', { name: /menu de usuario/i });
             fireEvent.click(button);
 
             const signOutButton = screen.getByRole('menuitem', { name: 'Cerrar sesión' });
@@ -277,32 +348,57 @@ describe('UserNav.client.tsx', () => {
 
     describe('Accessibility', () => {
         it('should have aria-expanded="false" when menu is closed', () => {
-            render(<UserNav user={mockUser} />);
+            render(
+                <UserNav
+                    user={mockUser}
+                    locale="en"
+                />
+            );
             const button = screen.getByRole('button', { name: /user menu/i });
             expect(button).toHaveAttribute('aria-expanded', 'false');
         });
 
         it('should have aria-expanded="true" when menu is open', () => {
-            render(<UserNav user={mockUser} />);
+            render(
+                <UserNav
+                    user={mockUser}
+                    locale="en"
+                />
+            );
             const button = screen.getByRole('button', { name: /user menu/i });
             fireEvent.click(button);
             expect(button).toHaveAttribute('aria-expanded', 'true');
         });
 
         it('should have aria-haspopup="menu" on trigger button', () => {
-            render(<UserNav user={mockUser} />);
+            render(
+                <UserNav
+                    user={mockUser}
+                    locale="en"
+                />
+            );
             const button = screen.getByRole('button', { name: /user menu/i });
             expect(button).toHaveAttribute('aria-haspopup', 'menu');
         });
 
         it('should have aria-label on trigger button', () => {
-            render(<UserNav user={mockUser} />);
+            render(
+                <UserNav
+                    user={mockUser}
+                    locale="en"
+                />
+            );
             const button = screen.getByRole('button', { name: 'User menu for John Doe' });
             expect(button).toBeInTheDocument();
         });
 
         it('should have role="menu" on dropdown', () => {
-            render(<UserNav user={mockUser} />);
+            render(
+                <UserNav
+                    user={mockUser}
+                    locale="en"
+                />
+            );
             const button = screen.getByRole('button', { name: /user menu/i });
             fireEvent.click(button);
 
@@ -312,7 +408,12 @@ describe('UserNav.client.tsx', () => {
         });
 
         it('should have role="menuitem" on all menu links', () => {
-            render(<UserNav user={mockUser} />);
+            render(
+                <UserNav
+                    user={mockUser}
+                    locale="en"
+                />
+            );
             const button = screen.getByRole('button', { name: /user menu/i });
             fireEvent.click(button);
 
@@ -321,26 +422,46 @@ describe('UserNav.client.tsx', () => {
         });
 
         it('should have aria-hidden="true" on avatar image', () => {
-            const { container } = render(<UserNav user={mockUser} />);
+            const { container } = render(
+                <UserNav
+                    user={mockUser}
+                    locale="en"
+                />
+            );
             const avatar = container.querySelector('img[src="https://example.com/avatar.jpg"]');
             expect(avatar).toHaveAttribute('aria-hidden', 'true');
         });
 
         it('should have aria-hidden="true" on initials circle', () => {
-            const { container } = render(<UserNav user={mockUserNoAvatar} />);
+            const { container } = render(
+                <UserNav
+                    user={mockUserNoAvatar}
+                    locale="en"
+                />
+            );
             const initialsCircle = container.querySelector('.bg-primary.text-white.rounded-full');
             expect(initialsCircle).toHaveAttribute('aria-hidden', 'true');
         });
 
         it('should have aria-label on chevron icon', () => {
-            render(<UserNav user={mockUser} />);
+            render(
+                <UserNav
+                    user={mockUser}
+                    locale="en"
+                />
+            );
             const button = screen.getByRole('button', { name: /user menu/i });
             const chevron = button.querySelector('svg');
             expect(chevron).toHaveAttribute('aria-label');
         });
 
         it('should have focus-visible styles on trigger button', () => {
-            render(<UserNav user={mockUser} />);
+            render(
+                <UserNav
+                    user={mockUser}
+                    locale="en"
+                />
+            );
             const button = screen.getByRole('button', { name: /user menu/i });
             expect(button.className).toContain('focus-visible:outline');
         });
@@ -348,7 +469,12 @@ describe('UserNav.client.tsx', () => {
 
     describe('Keyboard Interaction', () => {
         it('should close menu on Escape key press', () => {
-            render(<UserNav user={mockUser} />);
+            render(
+                <UserNav
+                    user={mockUser}
+                    locale="en"
+                />
+            );
             const button = screen.getByRole('button', { name: /user menu/i });
             fireEvent.click(button);
 
@@ -360,7 +486,12 @@ describe('UserNav.client.tsx', () => {
         });
 
         it('should return focus to trigger button after closing with Escape', () => {
-            render(<UserNav user={mockUser} />);
+            render(
+                <UserNav
+                    user={mockUser}
+                    locale="en"
+                />
+            );
             const button = screen.getByRole('button', { name: /user menu/i });
             fireEvent.click(button);
 
@@ -370,7 +501,12 @@ describe('UserNav.client.tsx', () => {
         });
 
         it('should not close menu on other key presses', () => {
-            render(<UserNav user={mockUser} />);
+            render(
+                <UserNav
+                    user={mockUser}
+                    locale="en"
+                />
+            );
             const button = screen.getByRole('button', { name: /user menu/i });
             fireEvent.click(button);
 
@@ -386,7 +522,10 @@ describe('UserNav.client.tsx', () => {
         it('should close menu when clicking outside', () => {
             render(
                 <div>
-                    <UserNav user={mockUser} />
+                    <UserNav
+                        user={mockUser}
+                        locale="en"
+                    />
                     <div data-testid="outside">Outside element</div>
                 </div>
             );
@@ -402,7 +541,12 @@ describe('UserNav.client.tsx', () => {
         });
 
         it('should not close menu when clicking inside menu', () => {
-            render(<UserNav user={mockUser} />);
+            render(
+                <UserNav
+                    user={mockUser}
+                    locale="en"
+                />
+            );
             const button = screen.getByRole('button', { name: /user menu/i });
             fireEvent.click(button);
 
@@ -413,7 +557,12 @@ describe('UserNav.client.tsx', () => {
         });
 
         it('should not close menu when clicking trigger button again (toggle)', () => {
-            render(<UserNav user={mockUser} />);
+            render(
+                <UserNav
+                    user={mockUser}
+                    locale="en"
+                />
+            );
             const button = screen.getByRole('button', { name: /user menu/i });
             fireEvent.click(button);
 
@@ -426,45 +575,80 @@ describe('UserNav.client.tsx', () => {
     describe('User Initials', () => {
         it('should display correct initials for single word name', () => {
             const singleNameUser = { name: 'Madonna', email: 'madonna@example.com' };
-            render(<UserNav user={singleNameUser} />);
+            render(
+                <UserNav
+                    user={singleNameUser}
+                    locale="en"
+                />
+            );
             expect(screen.getByText('M')).toBeInTheDocument();
         });
 
         it('should display correct initials for two word name', () => {
             const twoNameUser = { name: 'John Doe', email: 'john@example.com' };
-            render(<UserNav user={twoNameUser} />);
+            render(
+                <UserNav
+                    user={twoNameUser}
+                    locale="en"
+                />
+            );
             expect(screen.getByText('JD')).toBeInTheDocument();
         });
 
         it('should display correct initials for three word name', () => {
             const threeNameUser = { name: 'John Michael Doe', email: 'john@example.com' };
-            render(<UserNav user={threeNameUser} />);
+            render(
+                <UserNav
+                    user={threeNameUser}
+                    locale="en"
+                />
+            );
             expect(screen.getByText('JD')).toBeInTheDocument();
         });
 
         it('should display initials in uppercase', () => {
             const lowercaseUser = { name: 'john doe', email: 'john@example.com' };
-            render(<UserNav user={lowercaseUser} />);
+            render(
+                <UserNav
+                    user={lowercaseUser}
+                    locale="en"
+                />
+            );
             expect(screen.getByText('JD')).toBeInTheDocument();
         });
 
         it('should handle empty name gracefully', () => {
             const emptyNameUser = { name: '', email: 'test@example.com' };
-            const { container } = render(<UserNav user={emptyNameUser} />);
+            const { container } = render(
+                <UserNav
+                    user={emptyNameUser}
+                    locale="en"
+                />
+            );
             const initialsCircle = container.querySelector('.bg-primary.text-white.rounded-full');
             expect(initialsCircle?.textContent).toBe('');
         });
 
         it('should handle name with extra whitespace', () => {
             const spacedUser = { name: '  John   Doe  ', email: 'john@example.com' };
-            render(<UserNav user={spacedUser} />);
+            render(
+                <UserNav
+                    user={spacedUser}
+                    locale="en"
+                />
+            );
             expect(screen.getByText('JD')).toBeInTheDocument();
         });
     });
 
     describe('Styling', () => {
         it('should apply correct styles to trigger button', () => {
-            render(<UserNav user={mockUser} />);
+            render(
+                <UserNav
+                    user={mockUser}
+                    locale="en"
+                />
+            );
             const button = screen.getByRole('button', { name: /user menu/i });
             expect(button.className).toContain('rounded-lg');
             expect(button.className).toContain('hover:bg-gray-100');
@@ -472,7 +656,12 @@ describe('UserNav.client.tsx', () => {
         });
 
         it('should apply correct styles to dropdown menu', () => {
-            render(<UserNav user={mockUser} />);
+            render(
+                <UserNav
+                    user={mockUser}
+                    locale="en"
+                />
+            );
             const button = screen.getByRole('button', { name: /user menu/i });
             fireEvent.click(button);
 
@@ -484,7 +673,12 @@ describe('UserNav.client.tsx', () => {
         });
 
         it('should rotate chevron icon when menu is open', () => {
-            render(<UserNav user={mockUser} />);
+            render(
+                <UserNav
+                    user={mockUser}
+                    locale="en"
+                />
+            );
             const button = screen.getByRole('button', { name: /user menu/i });
 
             const chevronBefore = button.querySelector('svg');
@@ -499,8 +693,13 @@ describe('UserNav.client.tsx', () => {
         });
 
         it('should apply hover styles to menu items', () => {
-            render(<UserNav user={mockUser} />);
-            const button = screen.getByRole('button', { name: /user menu/i });
+            render(
+                <UserNav
+                    user={mockUser}
+                    locale="es"
+                />
+            );
+            const button = screen.getByRole('button', { name: /menu de usuario/i });
             fireEvent.click(button);
 
             const menuItem = screen.getByRole('menuitem', { name: 'Mi Cuenta' });
@@ -509,8 +708,13 @@ describe('UserNav.client.tsx', () => {
         });
 
         it('should apply distinct style to sign out button', () => {
-            render(<UserNav user={mockUser} />);
-            const button = screen.getByRole('button', { name: /user menu/i });
+            render(
+                <UserNav
+                    user={mockUser}
+                    locale="es"
+                />
+            );
+            const button = screen.getByRole('button', { name: /menu de usuario/i });
             fireEvent.click(button);
 
             const signOutButton = screen.getByRole('menuitem', { name: 'Cerrar sesión' });
@@ -521,7 +725,12 @@ describe('UserNav.client.tsx', () => {
 
     describe('Responsive Design', () => {
         it('should hide user name on small screens', () => {
-            render(<UserNav user={mockUser} />);
+            render(
+                <UserNav
+                    user={mockUser}
+                    locale="en"
+                />
+            );
             const nameElement = screen.getByText('John Doe');
             expect(nameElement.className).toContain('hidden');
             expect(nameElement.className).toContain('sm:inline');

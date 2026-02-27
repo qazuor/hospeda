@@ -16,6 +16,7 @@ describe('Modal.client.tsx', () => {
                     title="Test Modal"
                     open={true}
                     onClose={() => {}}
+                    locale="en"
                 >
                     Content
                 </Modal>
@@ -42,6 +43,7 @@ describe('Modal.client.tsx', () => {
                     title="Test Modal"
                     open={true}
                     onClose={() => {}}
+                    locale="en"
                 >
                     Content
                 </Modal>
@@ -58,6 +60,7 @@ describe('Modal.client.tsx', () => {
                     title="Test Modal"
                     open={true}
                     onClose={handleClose}
+                    locale="en"
                 >
                     Content
                 </Modal>
@@ -92,6 +95,7 @@ describe('Modal.client.tsx', () => {
                     title="Test Modal"
                     open={true}
                     onClose={() => {}}
+                    locale="en"
                 >
                     Content
                 </Modal>
@@ -106,6 +110,7 @@ describe('Modal.client.tsx', () => {
                     title="My Modal Title"
                     open={true}
                     onClose={() => {}}
+                    locale="en"
                 >
                     Content
                 </Modal>
@@ -121,6 +126,7 @@ describe('Modal.client.tsx', () => {
                     title="Test Modal"
                     open={true}
                     onClose={() => {}}
+                    locale="en"
                 >
                     Content
                 </Modal>
@@ -136,6 +142,7 @@ describe('Modal.client.tsx', () => {
                     title="Test Modal"
                     open={true}
                     onClose={() => {}}
+                    locale="en"
                 >
                     <div data-testid="modal-content">Content here</div>
                 </Modal>
@@ -149,6 +156,7 @@ describe('Modal.client.tsx', () => {
                     title="Test Modal"
                     open={true}
                     onClose={() => {}}
+                    locale="en"
                 >
                     Content
                 </Modal>
@@ -166,6 +174,7 @@ describe('Modal.client.tsx', () => {
                     title="Test Modal"
                     open={true}
                     onClose={() => {}}
+                    locale="en"
                 >
                     Content
                 </Modal>
@@ -180,6 +189,7 @@ describe('Modal.client.tsx', () => {
                     title="Test Modal"
                     open={true}
                     onClose={() => {}}
+                    locale="en"
                 >
                     Content
                 </Modal>
@@ -195,6 +205,7 @@ describe('Modal.client.tsx', () => {
                     title="Test Modal"
                     open={true}
                     onClose={() => {}}
+                    locale="en"
                 >
                     Content
                 </Modal>
@@ -212,6 +223,7 @@ describe('Modal.client.tsx', () => {
                     title="Test Modal"
                     open={true}
                     onClose={() => {}}
+                    locale="en"
                 >
                     Content
                 </Modal>
@@ -226,6 +238,7 @@ describe('Modal.client.tsx', () => {
                     title="Test Modal"
                     open={true}
                     onClose={() => {}}
+                    locale="en"
                 >
                     Content
                 </Modal>
@@ -241,6 +254,7 @@ describe('Modal.client.tsx', () => {
                     title="Test Modal"
                     open={true}
                     onClose={() => {}}
+                    locale="en"
                 >
                     Content
                 </Modal>
@@ -258,6 +272,7 @@ describe('Modal.client.tsx', () => {
                     title="Test Modal"
                     open={true}
                     onClose={handleClose}
+                    locale="en"
                 >
                     Content
                 </Modal>
@@ -362,6 +377,7 @@ describe('Modal.client.tsx', () => {
                     title="Test Modal"
                     open={true}
                     onClose={() => {}}
+                    locale="en"
                 >
                     Content
                 </Modal>
@@ -376,6 +392,7 @@ describe('Modal.client.tsx', () => {
                     title="Test Modal"
                     open={true}
                     onClose={() => {}}
+                    locale="en"
                 >
                     Content
                 </Modal>
@@ -396,6 +413,7 @@ describe('Modal.client.tsx', () => {
                     title="Test Modal"
                     open={false}
                     onClose={() => {}}
+                    locale="en"
                 >
                     Content
                 </Modal>
@@ -412,6 +430,7 @@ describe('Modal.client.tsx', () => {
                     title="Test Modal"
                     open={true}
                     onClose={() => {}}
+                    locale="en"
                 >
                     Content
                 </Modal>
@@ -426,6 +445,7 @@ describe('Modal.client.tsx', () => {
                     title="Test Modal"
                     open={true}
                     onClose={() => {}}
+                    locale="en"
                 >
                     Content
                 </Modal>
@@ -440,6 +460,7 @@ describe('Modal.client.tsx', () => {
                     title="Test Modal"
                     open={true}
                     onClose={() => {}}
+                    locale="en"
                 >
                     Content
                 </Modal>
@@ -454,6 +475,7 @@ describe('Modal.client.tsx', () => {
                     title="Test Modal"
                     open={true}
                     onClose={() => {}}
+                    locale="en"
                 >
                     Content
                 </Modal>
@@ -468,6 +490,7 @@ describe('Modal.client.tsx', () => {
                     title="Test Modal"
                     open={true}
                     onClose={() => {}}
+                    locale="en"
                 >
                     Content
                 </Modal>
@@ -482,6 +505,7 @@ describe('Modal.client.tsx', () => {
                     title="Test Modal"
                     open={true}
                     onClose={() => {}}
+                    locale="en"
                 >
                     Content
                 </Modal>
@@ -496,6 +520,7 @@ describe('Modal.client.tsx', () => {
                     title="Test Modal"
                     open={true}
                     onClose={() => {}}
+                    locale="en"
                 >
                     Content
                 </Modal>
@@ -512,6 +537,7 @@ describe('Modal.client.tsx', () => {
                     title="Test Modal"
                     open={true}
                     onClose={() => {}}
+                    locale="en"
                 >
                     Content
                 </Modal>
@@ -526,6 +552,7 @@ describe('Modal.client.tsx', () => {
                     title="Test Modal"
                     open={true}
                     onClose={() => {}}
+                    locale="en"
                 >
                     Content
                 </Modal>
@@ -542,6 +569,7 @@ describe('Modal.client.tsx', () => {
                     title="Test Modal"
                     open={true}
                     onClose={() => {}}
+                    locale="en"
                 >
                     Content
                 </Modal>
@@ -556,6 +584,7 @@ describe('Modal.client.tsx', () => {
                     title="Test Modal"
                     open={true}
                     onClose={() => {}}
+                    locale="en"
                 >
                     Content
                 </Modal>
@@ -570,6 +599,7 @@ describe('Modal.client.tsx', () => {
                     title="Test Modal"
                     open={true}
                     onClose={() => {}}
+                    locale="en"
                 >
                     Content
                 </Modal>
@@ -584,6 +614,7 @@ describe('Modal.client.tsx', () => {
                     title="Test Modal"
                     open={true}
                     onClose={() => {}}
+                    locale="en"
                 >
                     Content
                 </Modal>
@@ -598,6 +629,7 @@ describe('Modal.client.tsx', () => {
                     title="Test Modal"
                     open={true}
                     onClose={() => {}}
+                    locale="en"
                 >
                     Content
                 </Modal>

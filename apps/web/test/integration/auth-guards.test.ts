@@ -36,7 +36,7 @@ describe('Auth guards for mi-cuenta pages', () => {
             });
 
             it('should validate locale parameter', () => {
-                expect(content).toContain('isValidLocale');
+                expect(content).toContain('getLocaleFromParams(Astro.params)');
             });
 
             it('should redirect invalid locales to /es/', () => {

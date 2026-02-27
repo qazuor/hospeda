@@ -43,8 +43,8 @@ describe('quienes-somos.astro', () => {
 
     describe('Locale validation', () => {
         it('should validate locale parameter', () => {
-            expect(content).toContain('const { lang } = Astro.params');
-            expect(content).toContain('if (!lang || !isValidLocale(lang))');
+            expect(content).toContain('getLocaleFromParams(Astro.params)');
+            expect(content).toContain('if (!locale)');
         });
 
         it('should redirect to /es/ on invalid locale', () => {
@@ -52,28 +52,55 @@ describe('quienes-somos.astro', () => {
         });
 
         it('should import locale helpers', () => {
-            expect(content).toContain('isValidLocale');
-            expect(content).toContain('type SupportedLocale');
+            expect(content).toContain('getLocaleFromParams');
+            expect(content).toContain('HOME_BREADCRUMB');
+            expect(content).toContain("from '../../lib/page-helpers'");
+        });
+
+        it('should not use SupportedLocale type import', () => {
+            expect(content).not.toContain('type SupportedLocale');
         });
     });
 
-    describe('Localization', () => {
-        it('should have localized titles for all supported locales', () => {
-            expect(content).toContain("es: 'Quienes Somos'");
-            expect(content).toContain("en: 'About Us'");
-            expect(content).toContain("pt: 'Sobre Nós'");
+    describe('i18n usage', () => {
+        it('should import t function from lib/i18n', () => {
+            expect(content).toContain("import { t } from '../../lib/i18n'");
         });
 
-        it('should have localized meta descriptions', () => {
-            expect(content).toContain('const descriptions: Record<SupportedLocale, string>');
-            expect(content).toContain('la plataforma que conecta viajeros con alojamientos');
+        it('should use t() with about namespace for title', () => {
+            expect(content).toContain("t({ locale, namespace: 'about', key: 'page.title' })");
         });
 
-        it('should have localized home breadcrumb labels', () => {
-            expect(content).toContain('const homeLabels: Record<SupportedLocale, string>');
-            expect(content).toContain("es: 'Inicio'");
-            expect(content).toContain("en: 'Home'");
-            expect(content).toContain("pt: 'Início'");
+        it('should use t() with about namespace for description', () => {
+            expect(content).toContain("t({ locale, namespace: 'about', key: 'page.description' })");
+        });
+
+        it('should use t() calls for all section content', () => {
+            expect(content).toContain("namespace: 'about'");
+            expect(content).toContain("key: 'page.heroText'");
+            expect(content).toContain("key: 'page.missionTitle'");
+            expect(content).toContain("key: 'page.missionText'");
+            expect(content).toContain("key: 'page.valuesTitle'");
+            expect(content).toContain("key: 'page.regionTitle'");
+            expect(content).toContain("key: 'page.ctaTitle'");
+            expect(content).toContain("key: 'page.ctaButton'");
+        });
+
+        it('should use t() calls for values content', () => {
+            expect(content).toContain("key: 'page.values.authenticity.title'");
+            expect(content).toContain("key: 'page.values.authenticity.text'");
+            expect(content).toContain("key: 'page.values.community.title'");
+            expect(content).toContain("key: 'page.values.community.text'");
+            expect(content).toContain("key: 'page.values.quality.title'");
+            expect(content).toContain("key: 'page.values.quality.text'");
+            expect(content).toContain("key: 'page.values.sustainability.title'");
+            expect(content).toContain("key: 'page.values.sustainability.text'");
+        });
+
+        it('should not use inline Record-based translation objects', () => {
+            expect(content).not.toContain('Record<SupportedLocale');
+            expect(content).not.toContain("es: 'Quienes Somos'");
+            expect(content).not.toContain("en: 'About Us'");
         });
     });
 
@@ -83,9 +110,14 @@ describe('quienes-somos.astro', () => {
             expect(content).toContain('canonical={canonicalUrl}');
         });
 
-        it('should pass title and description to SEOHead', () => {
-            expect(content).toContain('title={titles[locale]}');
-            expect(content).toContain('description={descriptions[locale]}');
+        it('should pass pageTitle and pageDescription to BaseLayout', () => {
+            expect(content).toContain('title={pageTitle}');
+            expect(content).toContain('description={pageDescription}');
+        });
+
+        it('should pass pageTitle and pageDescription to SEOHead', () => {
+            expect(content).toContain('title={pageTitle}');
+            expect(content).toContain('description={pageDescription}');
         });
 
         it('should set page type to website', () => {
@@ -103,62 +135,58 @@ describe('quienes-somos.astro', () => {
         });
 
         it('should have home breadcrumb link', () => {
-            expect(content).toContain('{ label: homeLabels[locale], href: `/${locale}/`');
+            expect(content).toContain('{ label: HOME_BREADCRUMB[locale], href: `/${locale}/`');
         });
 
-        it('should have about us page breadcrumb', () => {
-            expect(content).toContain('{ label: titles[locale], href: `/${locale}/quienes-somos/`');
+        it('should have about us page breadcrumb using pageTitle', () => {
+            expect(content).toContain('{ label: pageTitle, href: `/${locale}/quienes-somos/`');
         });
     });
 
     describe('Content sections', () => {
         it('should have hero section', () => {
             expect(content).toContain('id="hero"');
-            expect(content).toContain('Hospeda es la plataforma que conecta viajeros');
+            expect(content).toContain('{heroText}');
         });
 
         it('should have mission section', () => {
             expect(content).toContain('id="mission"');
-            expect(content).toContain('Nuestra Misión');
-            expect(content).toContain('Conectar viajeros con alojamientos auténticos');
+            expect(content).toContain('{missionTitle}');
+            expect(content).toContain('{missionText}');
         });
 
         it('should have values section', () => {
             expect(content).toContain('id="values"');
-            expect(content).toContain('Nuestros Valores');
+            expect(content).toContain('{valuesTitle}');
         });
 
         it('should have region section', () => {
             expect(content).toContain('id="region"');
-            expect(content).toContain('Nuestra Región');
-            expect(content).toContain('Concepción del Uruguay');
+            expect(content).toContain('{regionTitle}');
+            expect(content).toContain('{regionText1}');
+            expect(content).toContain('{regionText2}');
         });
 
         it('should have contact CTA section', () => {
             expect(content).toContain('id="contact-cta"');
-            expect(content).toContain('Conectemos y Crezcamos Juntos');
+            expect(content).toContain('{ctaTitle}');
+            expect(content).toContain('{ctaText}');
         });
     });
 
     describe('Values content', () => {
-        it('should have Authenticity value', () => {
-            expect(content).toContain('Autenticidad');
-            expect(content).toContain('experiencias genuinas');
+        it('should build values array from t() calls', () => {
+            expect(content).toContain('const values = [');
+            expect(content).toContain("key: 'page.values.authenticity.title'");
+            expect(content).toContain("key: 'page.values.community.title'");
+            expect(content).toContain("key: 'page.values.quality.title'");
+            expect(content).toContain("key: 'page.values.sustainability.title'");
         });
 
-        it('should have Community value', () => {
-            expect(content).toContain('Comunidad');
-            expect(content).toContain('tejido social local');
-        });
-
-        it('should have Quality value', () => {
-            expect(content).toContain('Calidad');
-            expect(content).toContain('alojamientos verificados');
-        });
-
-        it('should have Sustainability value', () => {
-            expect(content).toContain('Sustentabilidad');
-            expect(content).toContain('turísticas responsables');
+        it('should iterate values array in template', () => {
+            expect(content).toContain('values.map((value, index)');
+            expect(content).toContain('{value.title}');
+            expect(content).toContain('{value.text}');
         });
     });
 

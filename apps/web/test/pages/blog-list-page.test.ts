@@ -52,6 +52,12 @@ describe('publicaciones/index.astro', () => {
             );
         });
 
+        it('should import PostErrorState', () => {
+            expect(content).toContain(
+                "import PostErrorState from '../../../components/error/PostErrorState.astro'"
+            );
+        });
+
         it('should import BlogPostCard', () => {
             expect(content).toContain(
                 "import BlogPostCard from '../../../components/blog/BlogPostCard.astro'"
@@ -61,8 +67,8 @@ describe('publicaciones/index.astro', () => {
 
     describe('Locale validation', () => {
         it('should validate locale parameter', () => {
-            expect(content).toContain('const { lang } = Astro.params');
-            expect(content).toContain('if (!lang || !isValidLocale(lang))');
+            expect(content).toContain('getLocaleFromParams(Astro.params)');
+            expect(content).toContain('if (!locale)');
         });
 
         it('should redirect to /es/ on invalid locale', () => {
@@ -70,57 +76,89 @@ describe('publicaciones/index.astro', () => {
         });
 
         it('should import locale helpers', () => {
-            expect(content).toContain('isValidLocale');
-            expect(content).toContain('type SupportedLocale');
+            expect(content).toContain('getLocaleFromParams');
+            expect(content).toContain('HOME_BREADCRUMB');
         });
     });
 
     describe('Localization', () => {
-        it('should have localized titles for all supported locales', () => {
-            expect(content).toContain("es: 'Blog'");
-            expect(content).toContain("en: 'Blog'");
-            expect(content).toContain("pt: 'Blog'");
+        it('should import t from i18n lib', () => {
+            expect(content).toContain("import { t } from '../../../lib/i18n'");
         });
 
-        it('should have localized meta descriptions', () => {
-            expect(content).toContain('const descriptions: Record<SupportedLocale, string>');
+        it('should use i18n t function for page title', () => {
+            expect(content).toContain("t({ locale, namespace: 'blog', key: 'listPage.title' })");
+        });
+
+        it('should use i18n t function for page description', () => {
             expect(content).toContain(
-                'consejos de viaje y novedades sobre turismo en el Litoral argentino'
+                "t({ locale, namespace: 'blog', key: 'listPage.description' })"
             );
         });
 
-        it('should have localized home breadcrumb labels', () => {
-            expect(content).toContain('const homeLabels: Record<SupportedLocale, string>');
-            expect(content).toContain("es: 'Inicio'");
-            expect(content).toContain("en: 'Home'");
-            expect(content).toContain("pt: 'Início'");
-        });
-
-        it('should have localized hero headings', () => {
-            expect(content).toContain('const heroHeadings: Record<SupportedLocale, string>');
-            expect(content).toContain("es: 'Blog de Hospeda'");
-            expect(content).toContain("en: 'Hospeda Blog'");
-            expect(content).toContain("pt: 'Blog da Hospeda'");
-        });
-
-        it('should have localized category labels', () => {
+        it('should use i18n t function for hero heading', () => {
             expect(content).toContain(
-                'const categoryLabels: Record<SupportedLocale, Record<string, string>>'
+                "t({ locale, namespace: 'blog', key: 'listPage.heroHeading' })"
             );
-            expect(content).toContain("all: 'Todos'");
-            expect(content).toContain("destinations: 'Destinos'");
-            expect(content).toContain("accommodations: 'Alojamientos'");
-            expect(content).toContain("events: 'Eventos'");
-            expect(content).toContain("gastronomy: 'Gastronomía'");
-            expect(content).toContain("tips: 'Consejos'");
         });
 
-        it('should have localized pagination labels', () => {
+        it('should use i18n t function for hero description', () => {
             expect(content).toContain(
-                'const paginationLabels: Record<SupportedLocale, { previous: string; next: string }>'
+                "t({ locale, namespace: 'blog', key: 'listPage.heroDescription' })"
             );
-            expect(content).toContain("previous: 'Anterior'");
-            expect(content).toContain("next: 'Siguiente'");
+        });
+
+        it('should use i18n t function for featured title', () => {
+            expect(content).toContain(
+                "t({ locale, namespace: 'blog', key: 'listPage.featuredTitle' })"
+            );
+        });
+
+        it('should use i18n t function for empty state', () => {
+            expect(content).toContain(
+                "t({ locale, namespace: 'blog', key: 'listPage.emptyState' })"
+            );
+        });
+
+        it('should use i18n t function for category all', () => {
+            expect(content).toContain(
+                "t({ locale, namespace: 'blog', key: 'listPage.categories.all' })"
+            );
+        });
+
+        it('should use i18n t function for category destinations', () => {
+            expect(content).toContain(
+                "t({ locale, namespace: 'blog', key: 'listPage.categories.destinations' })"
+            );
+        });
+
+        it('should use i18n t function for category accommodations', () => {
+            expect(content).toContain(
+                "t({ locale, namespace: 'blog', key: 'listPage.categories.accommodations' })"
+            );
+        });
+
+        it('should use i18n t function for category events', () => {
+            expect(content).toContain(
+                "t({ locale, namespace: 'blog', key: 'listPage.categories.events' })"
+            );
+        });
+
+        it('should use i18n t function for category gastronomy', () => {
+            expect(content).toContain(
+                "t({ locale, namespace: 'blog', key: 'listPage.categories.gastronomy' })"
+            );
+        });
+
+        it('should use i18n t function for category tips', () => {
+            expect(content).toContain(
+                "t({ locale, namespace: 'blog', key: 'listPage.categories.tips' })"
+            );
+        });
+
+        it('should import HOME_BREADCRUMB from page-helpers', () => {
+            expect(content).toContain('HOME_BREADCRUMB');
+            expect(content).toContain("from '../../../lib/page-helpers'");
         });
     });
 
@@ -130,9 +168,9 @@ describe('publicaciones/index.astro', () => {
             expect(content).toContain('canonical={canonicalUrl}');
         });
 
-        it('should pass title and description to SEOHead', () => {
-            expect(content).toContain('title={titles[locale]}');
-            expect(content).toContain('description={descriptions[locale]}');
+        it('should pass pageTitle and pageDescription to SEOHead', () => {
+            expect(content).toContain('title={pageTitle}');
+            expect(content).toContain('description={pageDescription}');
         });
 
         it('should set page type to website', () => {
@@ -146,24 +184,24 @@ describe('publicaciones/index.astro', () => {
         });
 
         it('should have home breadcrumb link', () => {
-            expect(content).toContain('{ label: homeLabels[locale], href: `/${locale}/`');
+            expect(content).toContain('{ label: HOME_BREADCRUMB[locale], href: `/${locale}/`');
         });
 
-        it('should have blog page breadcrumb', () => {
-            expect(content).toContain('{ label: titles[locale], href: `/${locale}/publicaciones/`');
+        it('should have blog page breadcrumb using pageTitle', () => {
+            expect(content).toContain('{ label: pageTitle, href: `/${locale}/publicaciones/`');
         });
     });
 
     describe('Content sections', () => {
         it('should have hero section', () => {
             expect(content).toContain('id="hero"');
-            expect(content).toContain('{heroHeadings[locale]}');
-            expect(content).toContain('{heroDescriptions[locale]}');
+            expect(content).toContain('{heroHeading}');
+            expect(content).toContain('{heroDescription}');
         });
 
         it('should have featured post section', () => {
             expect(content).toContain('id="featured-post"');
-            expect(content).toContain('{featuredTitles[locale]}');
+            expect(content).toContain('{featuredTitle}');
         });
 
         it('should have category filter section', () => {
@@ -183,9 +221,7 @@ describe('publicaciones/index.astro', () => {
 
     describe('Hero section', () => {
         it('should have main heading', () => {
-            expect(content).toContain('<h1');
-            expect(content).toContain('text-4xl font-bold');
-            expect(content).toContain('md:text-5xl');
+            expect(content).toContain('as="h1"');
         });
 
         it('should have hero description', () => {
@@ -233,32 +269,32 @@ describe('publicaciones/index.astro', () => {
         });
 
         it('should have all categories link', () => {
-            expect(content).toContain('{categoryLabels[locale].all}');
+            expect(content).toContain('{catAll}');
             expect(content).toContain("aria-current={!category ? 'page' : undefined}");
         });
 
         it('should have destinations category link', () => {
-            expect(content).toContain('{categoryLabels[locale].destinations}');
+            expect(content).toContain('{catDestinations}');
             expect(content).toContain('categoria=destinos');
         });
 
         it('should have accommodations category link', () => {
-            expect(content).toContain('{categoryLabels[locale].accommodations}');
+            expect(content).toContain('{catAccommodations}');
             expect(content).toContain('categoria=alojamientos');
         });
 
         it('should have events category link', () => {
-            expect(content).toContain('{categoryLabels[locale].events}');
+            expect(content).toContain('{catEvents}');
             expect(content).toContain('categoria=eventos');
         });
 
         it('should have gastronomy category link', () => {
-            expect(content).toContain('{categoryLabels[locale].gastronomy}');
+            expect(content).toContain('{catGastronomy}');
             expect(content).toContain('categoria=gastronomia');
         });
 
         it('should have tips category link', () => {
-            expect(content).toContain('{categoryLabels[locale].tips}');
+            expect(content).toContain('{catTips}');
             expect(content).toContain('categoria=consejos');
         });
     });
@@ -283,8 +319,17 @@ describe('publicaciones/index.astro', () => {
             expect(content).toContain('<EmptyState');
         });
 
-        it('should have empty state text', () => {
-            expect(content).toContain('{emptyStateTexts[locale]}');
+        it('should have empty state text using emptyStateText variable', () => {
+            expect(content).toContain('{emptyStateText}');
+        });
+
+        it('should track API error state', () => {
+            expect(content).toContain('const apiError = !apiResult.ok');
+        });
+
+        it('should show PostErrorState when API fails', () => {
+            expect(content).toContain('<PostErrorState');
+            expect(content).toContain('apiError');
         });
     });
 

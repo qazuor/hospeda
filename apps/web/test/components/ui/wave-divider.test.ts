@@ -2,7 +2,10 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const componentPath = resolve(__dirname, '../../../src/components/ui/WaveDivider.astro');
+const componentPath = resolve(
+    __dirname,
+    '../../../src/components/illustrations/dividers/WaveDivider.astro'
+);
 const content = readFileSync(componentPath, 'utf8');
 
 describe('WaveDivider.astro', () => {

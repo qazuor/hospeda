@@ -43,8 +43,8 @@ describe('busqueda.astro', () => {
 
     describe('Locale validation', () => {
         it('should validate locale parameter', () => {
-            expect(content).toContain('const { lang } = Astro.params');
-            expect(content).toContain('if (!lang || !isValidLocale(lang))');
+            expect(content).toContain('getLocaleFromParams(Astro.params)');
+            expect(content).toContain('if (!locale)');
         });
 
         it('should redirect to /es/ on invalid locale', () => {
@@ -52,8 +52,8 @@ describe('busqueda.astro', () => {
         });
 
         it('should import locale helpers', () => {
-            expect(content).toContain('isValidLocale');
-            expect(content).toContain('type SupportedLocale');
+            expect(content).toContain('getLocaleFromParams');
+            expect(content).toContain('HOME_BREADCRUMB');
         });
     });
 
@@ -72,52 +72,59 @@ describe('busqueda.astro', () => {
     });
 
     describe('Localization', () => {
-        it('should have localized titles for all supported locales', () => {
-            expect(content).toContain("es: 'Resultados de búsqueda'");
-            expect(content).toContain("en: 'Search Results'");
-            expect(content).toContain("pt: 'Resultados da busca'");
+        it('should import i18n t function', () => {
+            expect(content).toContain("import { t as i18nT } from '../../lib/i18n'");
         });
 
-        it('should have localized meta descriptions', () => {
-            expect(content).toContain('const descriptions: Record<SupportedLocale, string>');
-            expect(content).toContain('alojamientos, destinos, eventos y publicaciones');
+        it('should define tSearch helper using i18n', () => {
+            expect(content).toContain('const tSearch = (key: string)');
+            expect(content).toContain("namespace: 'search'");
+            expect(content).toContain('`resultsPage.${key}`');
         });
 
-        it('should have localized home breadcrumb labels', () => {
-            expect(content).toContain('const homeLabels: Record<SupportedLocale, string>');
-            expect(content).toContain("es: 'Inicio'");
-            expect(content).toContain("en: 'Home'");
-            expect(content).toContain("pt: 'Início'");
+        it('should use tSearch for page title and description', () => {
+            expect(content).toContain("const pageTitle = tSearch('title')");
+            expect(content).toContain("const pageDescription = tSearch('description')");
         });
 
-        it('should have localized search headings', () => {
-            expect(content).toContain('const searchHeadings: Record<SupportedLocale, string>');
-            expect(content).toContain("es: 'Resultados para'");
-            expect(content).toContain("en: 'Results for'");
-            expect(content).toContain("pt: 'Resultados para'");
+        it('should use tSearch for search heading and placeholder', () => {
+            expect(content).toContain("const searchHeading = tSearch('heading')");
+            expect(content).toContain("const searchPlaceholder = tSearch('placeholder')");
         });
 
-        it('should have localized search placeholders', () => {
-            expect(content).toContain('const searchPlaceholders: Record<SupportedLocale, string>');
-            expect(content).toContain('Buscar alojamientos');
+        it('should import HOME_BREADCRUMB from page-helpers', () => {
+            expect(content).toContain('HOME_BREADCRUMB');
+            expect(content).toContain("from '../../lib/page-helpers'");
         });
 
-        it('should have localized category labels', () => {
-            expect(content).toContain('const categoryLabels: Record<SupportedLocale,');
-            expect(content).toContain('accommodations:');
-            expect(content).toContain('destinations:');
-            expect(content).toContain('events:');
-            expect(content).toContain('posts:');
+        it('should use tSearch for category labels', () => {
+            expect(content).toContain(
+                "const catAccommodations = tSearch('categories.accommodations')"
+            );
+            expect(content).toContain("const catDestinations = tSearch('categories.destinations')");
+            expect(content).toContain("const catEvents = tSearch('categories.events')");
+            expect(content).toContain("const catPosts = tSearch('categories.posts')");
         });
 
-        it('should have localized empty state texts', () => {
-            expect(content).toContain('const emptyStateTexts: Record<SupportedLocale, string>');
-            expect(content).toContain('No se encontraron resultados');
+        it('should use tSearch for empty state texts', () => {
+            expect(content).toContain("const emptyStateText = tSearch('emptyState')");
+            expect(content).toContain("const emptySuggestion = tSearch('emptySuggestion')");
         });
 
-        it('should have localized empty state suggestions', () => {
-            expect(content).toContain('const emptySuggestions: Record<SupportedLocale, string>');
-            expect(content).toContain('Intenta con otros términos');
+        it('should use tSearch for view all links', () => {
+            expect(content).toContain(
+                "const viewAllAccommodations = tSearch('viewAll.accommodations')"
+            );
+            expect(content).toContain(
+                "const viewAllDestinations = tSearch('viewAll.destinations')"
+            );
+            expect(content).toContain("const viewAllEvents = tSearch('viewAll.events')");
+            expect(content).toContain("const viewAllPosts = tSearch('viewAll.posts')");
+        });
+
+        it('should use tSearch for results count text', () => {
+            expect(content).toContain("const resultsFound = tSearch('resultsFound')");
+            expect(content).toContain("const noResultsFound = tSearch('noResults')");
         });
     });
 
@@ -128,8 +135,8 @@ describe('busqueda.astro', () => {
         });
 
         it('should pass title and description to SEOHead', () => {
-            expect(content).toContain('title={titles[locale]}');
-            expect(content).toContain('description={descriptions[locale]}');
+            expect(content).toContain('title={pageTitle}');
+            expect(content).toContain('description={pageDescription}');
         });
 
         it('should set page type to website', () => {
@@ -147,11 +154,11 @@ describe('busqueda.astro', () => {
         });
 
         it('should have home breadcrumb link', () => {
-            expect(content).toContain('{ label: homeLabels[locale], href: `/${locale}/`');
+            expect(content).toContain('{ label: HOME_BREADCRUMB[locale], href: `/${locale}/`');
         });
 
         it('should have search page breadcrumb', () => {
-            expect(content).toContain('{ label: titles[locale], href: `/${locale}/busqueda/`');
+            expect(content).toContain('{ label: pageTitle, href: `/${locale}/busqueda/`');
         });
     });
 
@@ -184,13 +191,12 @@ describe('busqueda.astro', () => {
 
     describe('Search header (when query exists)', () => {
         it('should display search header conditionally', () => {
-            expect(content).toContain('{');
             expect(content).toContain('query');
             expect(content).toContain('id="search-header"');
         });
 
         it('should show query in search heading', () => {
-            expect(content).toContain('{searchHeadings[locale]}');
+            expect(content).toContain('{searchHeading}');
             expect(content).toContain('"{query}"');
         });
 
@@ -206,22 +212,22 @@ describe('busqueda.astro', () => {
 
         it('should have accommodations results section', () => {
             expect(content).toContain('id="accommodations-results"');
-            expect(content).toContain('{categoryLabels[locale].accommodations}');
+            expect(content).toContain('{catAccommodations}');
         });
 
         it('should have destinations results section', () => {
             expect(content).toContain('id="destinations-results"');
-            expect(content).toContain('{categoryLabels[locale].destinations}');
+            expect(content).toContain('{catDestinations}');
         });
 
         it('should have events results section', () => {
             expect(content).toContain('id="events-results"');
-            expect(content).toContain('{categoryLabels[locale].events}');
+            expect(content).toContain('{catEvents}');
         });
 
         it('should have posts results section', () => {
             expect(content).toContain('id="posts-results"');
-            expect(content).toContain('{categoryLabels[locale].posts}');
+            expect(content).toContain('{catPosts}');
         });
 
         it('should have grid layout for results', () => {
@@ -233,51 +239,56 @@ describe('busqueda.astro', () => {
         });
     });
 
+    describe('Error State', () => {
+        it('should import GenericErrorState', () => {
+            expect(content).toContain(
+                "import GenericErrorState from '../../components/error/GenericErrorState.astro'"
+            );
+        });
+
+        it('should track API error when all requests fail', () => {
+            expect(content).toContain('apiError');
+        });
+
+        it('should show GenericErrorState when all APIs fail', () => {
+            expect(content).toContain('<GenericErrorState');
+        });
+    });
+
     describe('Empty state (no query)', () => {
         it('should have empty-state article', () => {
             expect(content).toContain('id="empty-state"');
         });
 
         it('should display empty state heading', () => {
-            expect(content).toContain('{emptyStateTexts[locale]}');
+            expect(content).toContain('{emptyStateText}');
         });
 
         it('should display suggestion text', () => {
-            expect(content).toContain('{emptySuggestions[locale]}');
+            expect(content).toContain('{emptySuggestion}');
         });
 
         it('should have popular searches section', () => {
-            expect(content).toContain('{popularSearchesHeadings[locale]}');
+            expect(content).toContain('{popularSearchesHeading}');
         });
 
         it('should have popular search links', () => {
-            expect(content).toContain('popularSearches[locale]');
-            expect(content).toContain('.map((search)');
+            expect(content).toContain('popularSearches.map((search)');
         });
     });
 
     describe('Popular searches', () => {
-        it('should define popular searches for all locales', () => {
-            expect(content).toContain('const popularSearches: Record<SupportedLocale,');
+        it('should define popular searches via i18n mapping', () => {
+            expect(content).toContain('const popularSearches');
+            expect(content).toContain('[0, 1, 2, 3].map');
         });
 
-        it('should have Hoteles/Hotels search', () => {
-            expect(content).toContain('Hoteles');
-            expect(content).toContain('Hotels');
+        it('should use tSearch for popular search labels', () => {
+            expect(content).toContain('tSearch(`popular.${i}.label`)');
         });
 
-        it('should have Cabañas/Cabins search', () => {
-            expect(content).toContain('Cabañas');
-            expect(content).toContain('Cabins');
-        });
-
-        it('should have Concepción del Uruguay search', () => {
-            expect(content).toContain('Concepción del Uruguay');
-        });
-
-        it('should have Eventos/Events search', () => {
-            expect(content).toContain('Eventos');
-            expect(content).toContain('Events');
+        it('should use tSearch for popular search queries', () => {
+            expect(content).toContain('tSearch(`popular.${i}.query`)');
         });
 
         it('should link to busqueda page with query parameter', () => {
@@ -297,12 +308,12 @@ describe('busqueda.astro', () => {
 
     describe('Accessibility', () => {
         it('should have aria-label on search input', () => {
-            expect(content).toContain('aria-label={searchPlaceholders[locale]}');
+            expect(content).toContain('aria-label={searchPlaceholder}');
         });
 
         it('should have aria-label on result regions', () => {
             expect(content).toContain('role="region"');
-            expect(content).toContain('aria-label={categoryLabels[locale]');
+            expect(content).toContain('aria-label={cat');
         });
 
         it('should have aria-hidden on decorative icons', () => {
@@ -342,7 +353,7 @@ describe('busqueda.astro', () => {
         });
 
         it('should have placeholder text', () => {
-            expect(content).toContain('placeholder={searchPlaceholders[locale]}');
+            expect(content).toContain('placeholder={searchPlaceholder}');
         });
     });
 });

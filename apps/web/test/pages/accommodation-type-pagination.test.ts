@@ -14,18 +14,20 @@ const content = readFileSync(pagePath, 'utf8');
 
 describe('alojamientos/tipo/[type]/page/[page].astro', () => {
     describe('Imports', () => {
-        it('should import isValidLocale from i18n', () => {
-            expect(content).toContain("import { isValidLocale } from '../../../../../../lib/i18n'");
+        it('should import getLocaleFromParams from page-helpers', () => {
+            expect(content).toContain('getLocaleFromParams');
+            expect(content).toContain("from '../../../../../../lib/page-helpers'");
         });
     });
 
     describe('Locale validation', () => {
-        it('should extract lang, type, and page from params', () => {
-            expect(content).toContain('const { lang, type, page } = Astro.params');
+        it('should extract type and page from params', () => {
+            expect(content).toContain('const { type, page } = Astro.params');
         });
 
-        it('should validate locale', () => {
-            expect(content).toContain('if (!lang || !isValidLocale(lang))');
+        it('should validate locale with getLocaleFromParams', () => {
+            expect(content).toContain('getLocaleFromParams(Astro.params)');
+            expect(content).toContain('if (!locale)');
         });
 
         it('should redirect to /es/ on invalid locale', () => {
@@ -50,7 +52,7 @@ describe('alojamientos/tipo/[type]/page/[page].astro', () => {
         });
 
         it('should redirect to alojamientos on invalid type', () => {
-            expect(content).toContain('return Astro.redirect(`/${lang}/alojamientos/`)');
+            expect(content).toContain('return Astro.redirect(`/${locale}/alojamientos/`)');
         });
     });
 
@@ -62,7 +64,7 @@ describe('alojamientos/tipo/[type]/page/[page].astro', () => {
         it('should redirect on invalid page number (NaN or < 1)', () => {
             expect(content).toContain('if (Number.isNaN(pageNum) || pageNum < 1)');
             expect(content).toContain(
-                'return Astro.redirect(`/${lang}/alojamientos/tipo/${type}/`)'
+                'return Astro.redirect(`/${locale}/alojamientos/tipo/${type}/`)'
             );
         });
     });
@@ -71,7 +73,7 @@ describe('alojamientos/tipo/[type]/page/[page].astro', () => {
         it('should redirect page 1 to the canonical base URL', () => {
             expect(content).toContain('if (pageNum === 1)');
             expect(content).toContain(
-                'return Astro.redirect(`/${lang}/alojamientos/tipo/${type}/`)'
+                'return Astro.redirect(`/${locale}/alojamientos/tipo/${type}/`)'
             );
         });
     });
@@ -79,7 +81,7 @@ describe('alojamientos/tipo/[type]/page/[page].astro', () => {
     describe('Rewrite to index with query param', () => {
         it('should rewrite to the type index page with page query parameter', () => {
             expect(content).toContain(
-                'return Astro.rewrite(`/${lang}/alojamientos/tipo/${type}/?page=${pageNum}`)'
+                'return Astro.rewrite(`/${locale}/alojamientos/tipo/${type}/?page=${pageNum}`)'
             );
         });
     });

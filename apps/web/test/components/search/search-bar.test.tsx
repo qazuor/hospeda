@@ -19,13 +19,15 @@ describe('SearchBar.client.tsx', () => {
     describe('Props', () => {
         it('should accept locale prop', () => {
             render(<SearchBar locale="en" />);
-            const input = screen.getByPlaceholderText('Search accommodations, destinations...');
+            const input = screen.getByPlaceholderText(
+                'Search accommodations, destinations, events...'
+            );
             expect(input).toBeInTheDocument();
         });
 
         it('should default to Spanish locale when locale is not provided', () => {
             render(<SearchBar />);
-            const input = screen.getByPlaceholderText('Buscar alojamientos, destinos...');
+            const input = screen.getByPlaceholderText('Buscar alojamientos, destinos, eventos...');
             expect(input).toBeInTheDocument();
         });
 
@@ -36,19 +38,34 @@ describe('SearchBar.client.tsx', () => {
         });
 
         it('should accept defaultValue prop', () => {
-            render(<SearchBar defaultValue="beach resort" />);
+            render(
+                <SearchBar
+                    locale="en"
+                    defaultValue="beach resort"
+                />
+            );
             const input = screen.getByRole('textbox', { name: 'Search' }) as HTMLInputElement;
             expect(input.value).toBe('beach resort');
         });
 
         it('should accept onSearch callback', () => {
             const handleSearch = vi.fn();
-            render(<SearchBar onSearch={handleSearch} />);
+            render(
+                <SearchBar
+                    locale="en"
+                    onSearch={handleSearch}
+                />
+            );
             expect(handleSearch).not.toHaveBeenCalled();
         });
 
         it('should accept className prop', () => {
-            const { container } = render(<SearchBar className="custom-search-class" />);
+            const { container } = render(
+                <SearchBar
+                    locale="en"
+                    className="custom-search-class"
+                />
+            );
             const wrapper = container.firstChild as HTMLElement;
             expect(wrapper).toHaveClass('custom-search-class');
         });
@@ -56,19 +73,19 @@ describe('SearchBar.client.tsx', () => {
 
     describe('Rendering', () => {
         it('should render search input', () => {
-            render(<SearchBar />);
+            render(<SearchBar locale="en" />);
             const input = screen.getByRole('textbox', { name: 'Search' });
             expect(input).toBeInTheDocument();
         });
 
         it('should render search icon', () => {
-            const { container } = render(<SearchBar />);
+            const { container } = render(<SearchBar locale="en" />);
             const icons = container.querySelectorAll('svg');
             expect(icons.length).toBeGreaterThan(0);
         });
 
         it('should render search button', () => {
-            render(<SearchBar />);
+            render(<SearchBar locale="en" />);
             const buttons = screen.getAllByRole('button', { name: 'Search' });
             const searchButton = buttons.find(
                 (btn) =>
@@ -78,37 +95,42 @@ describe('SearchBar.client.tsx', () => {
         });
 
         it('should not render clear button when input is empty', () => {
-            render(<SearchBar />);
+            render(<SearchBar locale="en" />);
             const clearButton = screen.queryByRole('button', { name: 'Clear search' });
             expect(clearButton).not.toBeInTheDocument();
         });
 
         it('should render clear button when input has text', () => {
-            render(<SearchBar defaultValue="test" />);
+            render(
+                <SearchBar
+                    locale="en"
+                    defaultValue="test"
+                />
+            );
             const clearButton = screen.getByRole('button', { name: 'Clear search' });
             expect(clearButton).toBeInTheDocument();
         });
     });
 
     describe('Locale-specific placeholders', () => {
-        it('should use Spanish placeholder', () => {
+        it('should use Spanish placeholder from i18n', () => {
             render(<SearchBar locale="es" />);
             expect(
-                screen.getByPlaceholderText('Buscar alojamientos, destinos...')
+                screen.getByPlaceholderText('Buscar alojamientos, destinos, eventos...')
             ).toBeInTheDocument();
         });
 
-        it('should use English placeholder', () => {
+        it('should use English placeholder from i18n', () => {
             render(<SearchBar locale="en" />);
             expect(
-                screen.getByPlaceholderText('Search accommodations, destinations...')
+                screen.getByPlaceholderText('Search accommodations, destinations, events...')
             ).toBeInTheDocument();
         });
 
-        it('should use Portuguese placeholder', () => {
+        it('should use Portuguese placeholder from i18n', () => {
             render(<SearchBar locale="pt" />);
             expect(
-                screen.getByPlaceholderText('Buscar hospedagens, destinos...')
+                screen.getByPlaceholderText('Pesquisar acomodações, destinos, eventos...')
             ).toBeInTheDocument();
         });
 
@@ -121,14 +143,14 @@ describe('SearchBar.client.tsx', () => {
             );
             expect(screen.getByPlaceholderText('Find hotels')).toBeInTheDocument();
             expect(
-                screen.queryByPlaceholderText('Buscar alojamientos, destinos...')
+                screen.queryByPlaceholderText('Buscar alojamientos, destinos, eventos...')
             ).not.toBeInTheDocument();
         });
     });
 
     describe('Input interaction', () => {
         it('should update input value when typing', () => {
-            render(<SearchBar />);
+            render(<SearchBar locale="en" />);
             const input = screen.getByRole('textbox', { name: 'Search' }) as HTMLInputElement;
 
             fireEvent.change(input, { target: { value: 'hotel' } });
@@ -136,7 +158,7 @@ describe('SearchBar.client.tsx', () => {
         });
 
         it('should show clear button after typing', () => {
-            render(<SearchBar />);
+            render(<SearchBar locale="en" />);
             const input = screen.getByRole('textbox', { name: 'Search' });
 
             fireEvent.change(input, { target: { value: 'test query' } });
@@ -146,7 +168,12 @@ describe('SearchBar.client.tsx', () => {
         });
 
         it('should clear input when clear button is clicked', () => {
-            render(<SearchBar defaultValue="test query" />);
+            render(
+                <SearchBar
+                    locale="en"
+                    defaultValue="test query"
+                />
+            );
             const input = screen.getByRole('textbox', { name: 'Search' }) as HTMLInputElement;
             const clearButton = screen.getByRole('button', { name: 'Clear search' });
 
@@ -158,7 +185,12 @@ describe('SearchBar.client.tsx', () => {
         });
 
         it('should hide clear button after clearing input', () => {
-            render(<SearchBar defaultValue="test" />);
+            render(
+                <SearchBar
+                    locale="en"
+                    defaultValue="test"
+                />
+            );
             const clearButton = screen.getByRole('button', { name: 'Clear search' });
 
             fireEvent.click(clearButton);
@@ -170,7 +202,12 @@ describe('SearchBar.client.tsx', () => {
     describe('Search functionality', () => {
         it('should call onSearch callback when Enter key is pressed', () => {
             const handleSearch = vi.fn();
-            render(<SearchBar onSearch={handleSearch} />);
+            render(
+                <SearchBar
+                    locale="en"
+                    onSearch={handleSearch}
+                />
+            );
             const input = screen.getByRole('textbox', { name: 'Search' });
 
             fireEvent.change(input, { target: { value: 'mountain resort' } });
@@ -182,7 +219,12 @@ describe('SearchBar.client.tsx', () => {
 
         it('should call onSearch callback when search button is clicked', () => {
             const handleSearch = vi.fn();
-            render(<SearchBar onSearch={handleSearch} />);
+            render(
+                <SearchBar
+                    locale="en"
+                    onSearch={handleSearch}
+                />
+            );
             const input = screen.getByRole('textbox', { name: 'Search' });
             const searchButtons = screen.getAllByRole('button', { name: 'Search' });
             const searchButton = searchButtons[searchButtons.length - 1];
@@ -200,7 +242,12 @@ describe('SearchBar.client.tsx', () => {
 
         it('should not call onSearch when input is empty on Enter', () => {
             const handleSearch = vi.fn();
-            render(<SearchBar onSearch={handleSearch} />);
+            render(
+                <SearchBar
+                    locale="en"
+                    onSearch={handleSearch}
+                />
+            );
             const input = screen.getByRole('textbox', { name: 'Search' });
 
             fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' });
@@ -210,7 +257,12 @@ describe('SearchBar.client.tsx', () => {
 
         it('should not call onSearch when input is only whitespace', () => {
             const handleSearch = vi.fn();
-            render(<SearchBar onSearch={handleSearch} />);
+            render(
+                <SearchBar
+                    locale="en"
+                    onSearch={handleSearch}
+                />
+            );
             const input = screen.getByRole('textbox', { name: 'Search' });
 
             fireEvent.change(input, { target: { value: '   ' } });
@@ -221,7 +273,12 @@ describe('SearchBar.client.tsx', () => {
 
         it('should trim query before calling onSearch', () => {
             const handleSearch = vi.fn();
-            render(<SearchBar onSearch={handleSearch} />);
+            render(
+                <SearchBar
+                    locale="en"
+                    onSearch={handleSearch}
+                />
+            );
             const input = screen.getByRole('textbox', { name: 'Search' });
 
             fireEvent.change(input, { target: { value: '  hotel search  ' } });
@@ -234,7 +291,7 @@ describe('SearchBar.client.tsx', () => {
     describe('Navigation', () => {
         it('should navigate to search page with Spanish locale when Enter is pressed', () => {
             render(<SearchBar locale="es" />);
-            const input = screen.getByRole('textbox', { name: 'Search' });
+            const input = screen.getByRole('textbox', { name: 'Buscar' });
 
             fireEvent.change(input, { target: { value: 'playa' } });
             fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' });
@@ -254,7 +311,7 @@ describe('SearchBar.client.tsx', () => {
 
         it('should navigate to search page with Portuguese locale', () => {
             render(<SearchBar locale="pt" />);
-            const input = screen.getByRole('textbox', { name: 'Search' });
+            const input = screen.getByRole('textbox', { name: 'Buscar' });
 
             fireEvent.change(input, { target: { value: 'praia' } });
             fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' });
@@ -264,7 +321,7 @@ describe('SearchBar.client.tsx', () => {
 
         it('should encode query parameters when navigating', () => {
             render(<SearchBar locale="es" />);
-            const input = screen.getByRole('textbox', { name: 'Search' });
+            const input = screen.getByRole('textbox', { name: 'Buscar' });
 
             fireEvent.change(input, { target: { value: 'hotel & spa' } });
             fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' });
@@ -274,8 +331,8 @@ describe('SearchBar.client.tsx', () => {
 
         it('should navigate when search button is clicked', () => {
             render(<SearchBar locale="es" />);
-            const input = screen.getByRole('textbox', { name: 'Search' });
-            const searchButtons = screen.getAllByRole('button', { name: 'Search' });
+            const input = screen.getByRole('textbox', { name: 'Buscar' });
+            const searchButtons = screen.getAllByRole('button', { name: 'Buscar' });
             const searchButton = searchButtons[searchButtons.length - 1];
 
             if (!searchButton) {
@@ -296,7 +353,7 @@ describe('SearchBar.client.tsx', () => {
                     onSearch={handleSearch}
                 />
             );
-            const input = screen.getByRole('textbox', { name: 'Search' });
+            const input = screen.getByRole('textbox', { name: 'Buscar' });
 
             fireEvent.change(input, { target: { value: 'test' } });
             fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' });
@@ -308,7 +365,7 @@ describe('SearchBar.client.tsx', () => {
 
     describe('Debounce behavior', () => {
         it('should update input value immediately without waiting for debounce', () => {
-            render(<SearchBar />);
+            render(<SearchBar locale="en" />);
             const input = screen.getByRole('textbox', { name: 'Search' }) as HTMLInputElement;
 
             fireEvent.change(input, { target: { value: 'h' } });
@@ -324,7 +381,7 @@ describe('SearchBar.client.tsx', () => {
         it('should debounce internal state changes', () => {
             vi.useFakeTimers();
 
-            render(<SearchBar />);
+            render(<SearchBar locale="en" />);
             const input = screen.getByRole('textbox', { name: 'Search' }) as HTMLInputElement;
 
             fireEvent.change(input, { target: { value: 'test' } });
@@ -342,7 +399,7 @@ describe('SearchBar.client.tsx', () => {
         it('should clear debounce timeout on component unmount', () => {
             vi.useFakeTimers();
 
-            const { unmount } = render(<SearchBar />);
+            const { unmount } = render(<SearchBar locale="en" />);
             const input = screen.getByRole('textbox', { name: 'Search' });
 
             fireEvent.change(input, { target: { value: 'test' } });
@@ -359,7 +416,7 @@ describe('SearchBar.client.tsx', () => {
 
     describe('Button states', () => {
         it('should disable search button when input is empty', () => {
-            render(<SearchBar />);
+            render(<SearchBar locale="en" />);
             const searchButtons = screen.getAllByRole('button', { name: 'Search' });
             const searchButton = searchButtons[searchButtons.length - 1];
 
@@ -367,7 +424,7 @@ describe('SearchBar.client.tsx', () => {
         });
 
         it('should enable search button when input has text', () => {
-            render(<SearchBar />);
+            render(<SearchBar locale="en" />);
             const input = screen.getByRole('textbox', { name: 'Search' });
             const searchButtons = screen.getAllByRole('button', { name: 'Search' });
             const searchButton = searchButtons[searchButtons.length - 1];
@@ -378,7 +435,12 @@ describe('SearchBar.client.tsx', () => {
         });
 
         it('should disable search button after clearing input', () => {
-            render(<SearchBar defaultValue="test" />);
+            render(
+                <SearchBar
+                    locale="en"
+                    defaultValue="test"
+                />
+            );
             const clearButton = screen.getByRole('button', { name: 'Clear search' });
 
             fireEvent.click(clearButton);
@@ -391,26 +453,36 @@ describe('SearchBar.client.tsx', () => {
 
     describe('Accessibility', () => {
         it('should have aria-label on input', () => {
-            render(<SearchBar />);
+            render(<SearchBar locale="en" />);
             const input = screen.getByRole('textbox', { name: 'Search' });
             expect(input).toHaveAttribute('aria-label', 'Search');
         });
 
         it('should have aria-label on clear button', () => {
-            render(<SearchBar defaultValue="test" />);
+            render(
+                <SearchBar
+                    locale="en"
+                    defaultValue="test"
+                />
+            );
             const clearButton = screen.getByRole('button', { name: 'Clear search' });
             expect(clearButton).toHaveAttribute('aria-label', 'Clear search');
         });
 
         it('should have aria-label on search button', () => {
-            render(<SearchBar />);
+            render(<SearchBar locale="en" />);
             const searchButtons = screen.getAllByRole('button', { name: 'Search' });
             const searchButton = searchButtons[searchButtons.length - 1];
             expect(searchButton).toHaveAttribute('aria-label', 'Search');
         });
 
         it('should have aria-hidden on all SVG icons', () => {
-            const { container } = render(<SearchBar defaultValue="test" />);
+            const { container } = render(
+                <SearchBar
+                    locale="en"
+                    defaultValue="test"
+                />
+            );
             const icons = Array.from(container.querySelectorAll('svg'));
 
             for (const icon of icons) {
@@ -419,20 +491,25 @@ describe('SearchBar.client.tsx', () => {
         });
 
         it('should have type="button" on clear button', () => {
-            render(<SearchBar defaultValue="test" />);
+            render(
+                <SearchBar
+                    locale="en"
+                    defaultValue="test"
+                />
+            );
             const clearButton = screen.getByRole('button', { name: 'Clear search' });
             expect(clearButton).toHaveAttribute('type', 'button');
         });
 
         it('should have type="button" on search button', () => {
-            render(<SearchBar />);
+            render(<SearchBar locale="en" />);
             const searchButtons = screen.getAllByRole('button', { name: 'Search' });
             const searchButton = searchButtons[searchButtons.length - 1];
             expect(searchButton).toHaveAttribute('type', 'button');
         });
 
         it('should have type="text" on input', () => {
-            render(<SearchBar />);
+            render(<SearchBar locale="en" />);
             const input = screen.getByRole('textbox', { name: 'Search' });
             expect(input).toHaveAttribute('type', 'text');
         });
@@ -440,7 +517,7 @@ describe('SearchBar.client.tsx', () => {
 
     describe('Styling', () => {
         it('should have focus styles on input', () => {
-            render(<SearchBar />);
+            render(<SearchBar locale="en" />);
             const input = screen.getByRole('textbox', { name: 'Search' });
             expect(input.className).toContain('focus:border-primary');
             expect(input.className).toContain('focus:ring-2');
@@ -448,26 +525,31 @@ describe('SearchBar.client.tsx', () => {
         });
 
         it('should have rounded border on input', () => {
-            render(<SearchBar />);
+            render(<SearchBar locale="en" />);
             const input = screen.getByRole('textbox', { name: 'Search' });
             expect(input.className).toContain('rounded-lg');
             expect(input.className).toContain('border');
         });
 
         it('should have transition styles on input', () => {
-            render(<SearchBar />);
+            render(<SearchBar locale="en" />);
             const input = screen.getByRole('textbox', { name: 'Search' });
             expect(input.className).toContain('transition-colors');
         });
 
         it('should have hover styles on clear button', () => {
-            render(<SearchBar defaultValue="test" />);
+            render(
+                <SearchBar
+                    locale="en"
+                    defaultValue="test"
+                />
+            );
             const clearButton = screen.getByRole('button', { name: 'Clear search' });
             expect(clearButton.className).toContain('hover:bg-gray-400');
         });
 
         it('should have disabled styles on search button', () => {
-            render(<SearchBar />);
+            render(<SearchBar locale="en" />);
             const searchButtons = screen.getAllByRole('button', { name: 'Search' });
             const searchButton = searchButtons[searchButtons.length - 1];
 
@@ -480,7 +562,12 @@ describe('SearchBar.client.tsx', () => {
         });
 
         it('should forward className to wrapper', () => {
-            const { container } = render(<SearchBar className="another-class my-custom-class" />);
+            const { container } = render(
+                <SearchBar
+                    locale="en"
+                    className="another-class my-custom-class"
+                />
+            );
             const wrapper = container.firstChild as HTMLElement;
             expect(wrapper).toHaveClass('my-custom-class');
             expect(wrapper).toHaveClass('another-class');

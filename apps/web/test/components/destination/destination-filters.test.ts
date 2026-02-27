@@ -1,6 +1,10 @@
 /**
  * Tests for DestinationFilters client component.
  * Verifies component structure, props, filter options, and accessibility.
+ *
+ * The implementation is split across two files:
+ * - DestinationFilters.client.tsx  - orchestrator with state and API logic
+ * - DestinationFilterPanel.client.tsx - filter form UI sub-component
  */
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -12,9 +16,15 @@ const componentPath = resolve(
 );
 const content = readFileSync(componentPath, 'utf8');
 
+const panelPath = resolve(
+    __dirname,
+    '../../../src/components/destination/DestinationFilterPanel.client.tsx'
+);
+const panelContent = readFileSync(panelPath, 'utf8');
+
 const cardPath = resolve(
     __dirname,
-    '../../../src/components/destination/DestinationCardClient.tsx'
+    '../../../src/components/destination/DestinationCard.client.tsx'
 );
 const cardContent = readFileSync(cardPath, 'utf8');
 
@@ -56,66 +66,71 @@ describe('DestinationFilters.client.tsx', () => {
 
     describe('Search functionality', () => {
         it('should have a search input element', () => {
-            expect(content).toContain('type="text"');
-            expect(content).toContain('name="q"');
+            // search input is rendered by DestinationFilterPanel
+            expect(panelContent).toContain('type="text"');
+            expect(panelContent).toContain('name="q"');
         });
 
         it('should have a search submit button', () => {
-            expect(content).toContain('type="submit"');
+            expect(panelContent).toContain('type="submit"');
         });
 
         it('should use SearchIcon', () => {
-            expect(content).toContain('SearchIcon');
+            expect(panelContent).toContain('SearchIcon');
         });
 
         it('should handle form submission', () => {
-            expect(content).toContain('onSubmit={handleSearch}');
+            // onSearch handler is wired through DestinationFilterPanel
+            expect(panelContent).toContain('onSubmit={onSearch}');
+            expect(content).toContain('handleSearch');
         });
 
         it('should pre-populate search input from initial value', () => {
-            expect(content).toContain('value={query}');
+            expect(panelContent).toContain('value={query}');
         });
 
         it('should have onSubmit handler on the form', () => {
-            expect(content).toContain('onSubmit={handleSearch}');
+            expect(panelContent).toContain('onSubmit={onSearch}');
         });
     });
 
     describe('Type filter dropdown', () => {
         it('should have a type filter select element', () => {
-            expect(content).toContain('id="destination-type-filter"');
+            expect(panelContent).toContain('id="destination-type-filter"');
         });
 
         it('should include all DestinationTypeEnum values', () => {
-            expect(content).toContain("'COUNTRY'");
-            expect(content).toContain("'REGION'");
-            expect(content).toContain("'PROVINCE'");
-            expect(content).toContain("'DEPARTMENT'");
-            expect(content).toContain("'CITY'");
-            expect(content).toContain("'TOWN'");
-            expect(content).toContain("'NEIGHBORHOOD'");
+            // DESTINATION_TYPES constant lives in DestinationFilterPanel
+            expect(panelContent).toContain("'COUNTRY'");
+            expect(panelContent).toContain("'REGION'");
+            expect(panelContent).toContain("'PROVINCE'");
+            expect(panelContent).toContain("'DEPARTMENT'");
+            expect(panelContent).toContain("'CITY'");
+            expect(panelContent).toContain("'TOWN'");
+            expect(panelContent).toContain("'NEIGHBORHOOD'");
         });
 
         it('should have an "All types" default option', () => {
-            expect(content).toContain('allTypes');
+            expect(panelContent).toContain('allTypes');
         });
 
         it('should have a proper label for the type filter', () => {
-            expect(content).toContain('htmlFor="destination-type-filter"');
+            expect(panelContent).toContain('htmlFor="destination-type-filter"');
         });
 
         it('should handle type change', () => {
+            // handler lives in orchestrator, prop passed to panel
             expect(content).toContain('handleTypeChange');
         });
     });
 
     describe('Parent filter dropdown', () => {
         it('should have a parent filter select element', () => {
-            expect(content).toContain('id="destination-parent-filter"');
+            expect(panelContent).toContain('id="destination-parent-filter"');
         });
 
         it('should have a proper label for the parent filter', () => {
-            expect(content).toContain('htmlFor="destination-parent-filter"');
+            expect(panelContent).toContain('htmlFor="destination-parent-filter"');
         });
 
         it('should show parent filter conditionally based on type', () => {
@@ -128,12 +143,12 @@ describe('DestinationFilters.client.tsx', () => {
 
         it('should show loading state while fetching parents', () => {
             expect(content).toContain('isLoadingParents');
-            expect(content).toContain('loadingParents');
+            expect(panelContent).toContain('loadingParents');
         });
 
         it('should handle parent fetch errors', () => {
             expect(content).toContain('parentError');
-            expect(content).toContain('noParentsAvailable');
+            expect(panelContent).toContain('noParentsAvailable');
         });
 
         it('should clear parent when type changes', () => {
@@ -144,7 +159,7 @@ describe('DestinationFilters.client.tsx', () => {
 
     describe('Clear filters button', () => {
         it('should have a clear filters button', () => {
-            expect(content).toContain('clearFilters');
+            expect(panelContent).toContain('clearFilters');
         });
 
         it('should show clear button only when filters are active', () => {
@@ -211,17 +226,17 @@ describe('DestinationFilters.client.tsx', () => {
         });
 
         it('should have label elements associated with controls', () => {
-            expect(content).toContain('htmlFor="destination-search"');
-            expect(content).toContain('htmlFor="destination-type-filter"');
-            expect(content).toContain('htmlFor="destination-parent-filter"');
+            expect(panelContent).toContain('htmlFor="destination-search"');
+            expect(panelContent).toContain('htmlFor="destination-type-filter"');
+            expect(panelContent).toContain('htmlFor="destination-parent-filter"');
         });
 
         it('should have aria-label on search button', () => {
-            expect(content).toContain('aria-label={t.searchButton}');
+            expect(panelContent).toContain("aria-label={t('search.button')}");
         });
 
         it('should have aria-hidden on decorative icons', () => {
-            expect(content).toContain('aria-hidden="true"');
+            expect(panelContent).toContain('aria-hidden="true"');
         });
 
         it('should announce results count', () => {
@@ -230,24 +245,27 @@ describe('DestinationFilters.client.tsx', () => {
     });
 
     describe('Localization', () => {
-        it('should have Spanish labels', () => {
-            expect(content).toContain("searchPlaceholder: 'Buscar destinos...'");
+        it('should use useTranslation hook for i18n', () => {
+            expect(content).toContain('useTranslation');
+            expect(content).toContain("namespace: 'destinations'");
         });
 
-        it('should have English labels', () => {
-            expect(content).toContain("searchPlaceholder: 'Search destinations...'");
+        it('should use t function for search placeholder', () => {
+            expect(panelContent).toContain("t('search.placeholder')");
         });
 
-        it('should have Portuguese labels', () => {
-            expect(content).toContain("searchPlaceholder: 'Pesquisar destinos...'");
+        it('should use t function for type labels', () => {
+            expect(panelContent).toContain('t(`types.${type}`)');
         });
 
-        it('should select labels based on locale prop', () => {
-            expect(content).toContain('LABELS[locale]');
+        it('should use t function for filter labels', () => {
+            expect(panelContent).toContain("t('search.typeLabel')");
+            expect(panelContent).toContain("t('search.allTypes')");
+            expect(panelContent).toContain("t('search.clearFilters')");
         });
 
-        it('should fall back to Spanish labels', () => {
-            expect(content).toContain('LABELS.es');
+        it('should use SupportedLocale type', () => {
+            expect(content).toContain('SupportedLocale');
         });
     });
 
@@ -275,10 +293,38 @@ describe('DestinationFilters.client.tsx', () => {
         });
     });
 
-    describe('Client-side destination card (DestinationCardClient.tsx)', () => {
+    describe('DestinationFilterPanel sub-component', () => {
+        it('should import DestinationFilterPanel from separate file', () => {
+            expect(content).toContain('DestinationFilterPanel');
+            expect(content).toContain("'./DestinationFilterPanel.client'");
+        });
+
+        it('should export DestinationFilterPanel function', () => {
+            expect(panelContent).toContain('export function DestinationFilterPanel');
+        });
+
+        it('should not have default export in panel', () => {
+            expect(panelContent).not.toContain('export default');
+        });
+
+        it('should export DestinationFilterPanelProps interface', () => {
+            expect(panelContent).toContain('export interface DestinationFilterPanelProps');
+        });
+
+        it('should export DESTINATION_TYPES constant', () => {
+            expect(panelContent).toContain('export const DESTINATION_TYPES');
+        });
+
+        it('should be under 500 lines', () => {
+            const lines = panelContent.split('\n').length;
+            expect(lines).toBeLessThan(500);
+        });
+    });
+
+    describe('Client-side destination card (DestinationCard.client.tsx)', () => {
         it('should import DestinationCardClient from separate file', () => {
             expect(content).toContain('import { DestinationCardClient');
-            expect(content).toContain("from './DestinationCardClient'");
+            expect(content).toContain("from './DestinationCard.client'");
         });
 
         it('should export DestinationCardClient function', () => {
@@ -296,7 +342,7 @@ describe('DestinationFilters.client.tsx', () => {
 
         it('should render featured badge', () => {
             expect(cardContent).toContain('isFeatured');
-            expect(cardContent).toContain('t.featured');
+            expect(cardContent).toContain('labels.featured');
         });
 
         it('should render accommodation count', () => {
@@ -318,7 +364,7 @@ describe('DestinationFilters.client.tsx', () => {
         it('should use TypeScript interfaces with readonly', () => {
             expect(content).toContain('interface DestinationFiltersProps');
             expect(content).toContain('interface PaginationInfo');
-            // DestinationItem is in DestinationCardClient.tsx
+            // DestinationItem is in DestinationCard.client.tsx
             expect(cardContent).toContain('interface DestinationItem');
         });
 
@@ -329,9 +375,9 @@ describe('DestinationFilters.client.tsx', () => {
             expect(content).toContain('useRef');
         });
 
-        it('should be under 600 lines', () => {
+        it('should be under 500 lines', () => {
             const lines = content.split('\n').length;
-            expect(lines).toBeLessThan(600);
+            expect(lines).toBeLessThan(500);
         });
     });
 });

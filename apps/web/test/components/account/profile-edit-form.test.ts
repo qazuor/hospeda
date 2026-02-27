@@ -46,8 +46,8 @@ describe('ProfileEditForm.client.tsx', () => {
             expect(content).toContain('readonly email: string');
         });
 
-        it('should define locale prop with supported locales', () => {
-            expect(content).toContain("readonly locale: 'es' | 'en' | 'pt'");
+        it('should define locale prop as string', () => {
+            expect(content).toContain('readonly locale: string');
         });
     });
 
@@ -65,109 +65,73 @@ describe('ProfileEditForm.client.tsx', () => {
         });
 
         it('should import userApi from endpoints', () => {
-            expect(content).toContain("import { userApi } from '../../lib/api/endpoints'");
+            expect(content).toContain(
+                "import { userApi } from '../../lib/api/endpoints-protected'"
+            );
         });
 
         it('should import addToast from toast store', () => {
             expect(content).toContain("import { addToast } from '../../store/toast-store'");
         });
-    });
 
-    describe('Localization - Spanish (es)', () => {
-        it('should have Spanish name label', () => {
-            expect(content).toContain('Nombre completo');
-        });
-
-        it('should have Spanish email label', () => {
-            expect(content).toContain('Correo electrónico');
-        });
-
-        it('should have Spanish bio label', () => {
-            expect(content).toContain("bio: 'Biografía'");
-        });
-
-        it('should have Spanish save button text', () => {
-            expect(content).toContain('Guardar cambios');
-        });
-
-        it('should have Spanish cancel text', () => {
-            expect(content).toContain("cancel: 'Cancelar'");
-        });
-
-        it('should have Spanish success message', () => {
-            expect(content).toContain('Perfil actualizado correctamente.');
-        });
-
-        it('should have Spanish error message', () => {
+        it('should import useTranslation hook', () => {
             expect(content).toContain(
-                'Error al actualizar el perfil. Por favor, intenta de nuevo.'
+                "import { useTranslation } from '../../hooks/useTranslation'"
             );
         });
-
-        it('should have Spanish validation messages', () => {
-            expect(content).toContain('El nombre es obligatorio.');
-            expect(content).toContain('El nombre debe tener al menos 2 caracteres.');
-            expect(content).toContain('La biografía no puede superar los 500 caracteres.');
-        });
     });
 
-    describe('Localization - English (en)', () => {
-        it('should have English name label', () => {
-            expect(content).toContain('Full name');
+    describe('Localization - useTranslation integration', () => {
+        it('should use useTranslation hook with account namespace', () => {
+            expect(content).toContain("namespace: 'account'");
         });
 
-        it('should have English email label', () => {
-            expect(content).toContain('Email address');
+        it('should use t function for name label', () => {
+            expect(content).toContain("t('profileEdit.name')");
         });
 
-        it('should have English save button text', () => {
-            expect(content).toContain('Save changes');
+        it('should use t function for email label', () => {
+            expect(content).toContain("t('profileEdit.email')");
         });
 
-        it('should have English cancel text', () => {
-            expect(content).toContain("cancel: 'Cancel'");
+        it('should use t function for bio label', () => {
+            expect(content).toContain("t('profileEdit.bio')");
         });
 
-        it('should have English success message', () => {
-            expect(content).toContain('Profile updated successfully.');
+        it('should use t function for save button text', () => {
+            expect(content).toContain("t('profileEdit.save')");
         });
 
-        it('should have English error message', () => {
-            expect(content).toContain('Failed to update profile. Please try again.');
+        it('should use t function for cancel text', () => {
+            expect(content).toContain("t('profileEdit.cancel')");
         });
 
-        it('should have English validation messages', () => {
-            expect(content).toContain('Name is required.');
-            expect(content).toContain('Name must be at least 2 characters long.');
-            expect(content).toContain('Biography cannot exceed 500 characters.');
-        });
-    });
-
-    describe('Localization - Portuguese (pt)', () => {
-        it('should have Portuguese name label', () => {
-            expect(content).toContain('Nome completo');
+        it('should use t function for success message', () => {
+            expect(content).toContain("t('profileEdit.successMessage')");
         });
 
-        it('should have Portuguese email label', () => {
-            expect(content).toContain('Endereço de e-mail');
+        it('should use t function for error message', () => {
+            expect(content).toContain("t('profileEdit.errorMessage')");
         });
 
-        it('should have Portuguese save button text', () => {
-            expect(content).toContain('Salvar alterações');
+        it('should use t function for name required validation', () => {
+            expect(content).toContain("t('profileEdit.validationNameRequired')");
         });
 
-        it('should have Portuguese success message', () => {
-            expect(content).toContain('Perfil atualizado com sucesso.');
+        it('should use t function for name min length validation', () => {
+            expect(content).toContain("t('profileEdit.validationNameMinLength')");
         });
 
-        it('should have Portuguese error message', () => {
-            expect(content).toContain('Erro ao atualizar o perfil. Por favor, tente novamente.');
+        it('should use t function for bio max length validation', () => {
+            expect(content).toContain("t('profileEdit.validationBioMaxLength')");
         });
 
-        it('should have Portuguese validation messages', () => {
-            expect(content).toContain('O nome é obrigatório.');
-            expect(content).toContain('O nome deve ter pelo menos 2 caracteres.');
-            expect(content).toContain('A biografia não pode exceder 500 caracteres.');
+        it('should use t function for email helper text', () => {
+            expect(content).toContain("t('profileEdit.emailHelper')");
+        });
+
+        it('should use t function for bio helper text', () => {
+            expect(content).toContain("t('profileEdit.bioHelper')");
         });
     });
 
@@ -311,12 +275,12 @@ describe('ProfileEditForm.client.tsx', () => {
     describe('Toast notifications', () => {
         it('should show success toast on successful save', () => {
             expect(content).toContain("type: 'success'");
-            expect(content).toContain('texts.successMessage');
+            expect(content).toContain("t('profileEdit.successMessage')");
         });
 
         it('should show error toast on failed save', () => {
             expect(content).toContain("type: 'error'");
-            expect(content).toContain('texts.errorMessage');
+            expect(content).toContain("t('profileEdit.errorMessage')");
         });
 
         it('should pass duration 5000 to toasts', () => {
@@ -330,17 +294,17 @@ describe('ProfileEditForm.client.tsx', () => {
         });
 
         it('should validate that name is not empty', () => {
-            expect(content).toContain('texts.validationNameRequired');
+            expect(content).toContain("t('profileEdit.validationNameRequired')");
         });
 
         it('should validate name minimum length of 2', () => {
             expect(content).toContain('trimmedName.length < 2');
-            expect(content).toContain('texts.validationNameMinLength');
+            expect(content).toContain("t('profileEdit.validationNameMinLength')");
         });
 
         it('should validate bio maximum length of 500', () => {
             expect(content).toContain('bio.length > 500');
-            expect(content).toContain('texts.validationBioMaxLength');
+            expect(content).toContain("t('profileEdit.validationBioMaxLength')");
         });
 
         it('should clear errors when user changes input', () => {
@@ -382,13 +346,22 @@ describe('ProfileEditForm.client.tsx', () => {
         });
     });
 
-    describe('Localized texts record', () => {
-        it('should define localizedTexts for all 3 locales', () => {
-            expect(content).toContain("Record<'es' | 'en' | 'pt', LocalizedTexts>");
+    describe('Translation hook usage', () => {
+        it('should call useTranslation with locale and account namespace', () => {
+            expect(content).toContain('useTranslation(');
+            expect(content).toContain("namespace: 'account'");
         });
 
-        it('should define LocalizedTexts interface', () => {
-            expect(content).toContain('interface LocalizedTexts');
+        it('should destructure t from useTranslation result', () => {
+            expect(content).toContain('const { t } = useTranslation(');
+        });
+
+        it('should not define inline localizedTexts record', () => {
+            expect(content).not.toContain('localizedTexts');
+        });
+
+        it('should not define LocalizedTexts interface', () => {
+            expect(content).not.toContain('interface LocalizedTexts');
         });
     });
 });

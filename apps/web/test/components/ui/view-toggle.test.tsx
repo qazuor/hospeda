@@ -5,20 +5,30 @@ import { ViewToggle } from '../../../src/components/ui/ViewToggle.client';
 describe('ViewToggle.client.tsx', () => {
     describe('Props', () => {
         it('should accept defaultView prop', () => {
-            render(<ViewToggle defaultView="map" />);
+            render(
+                <ViewToggle
+                    defaultView="map"
+                    locale="en"
+                />
+            );
             const mapButton = screen.getByLabelText('Map view');
             expect(mapButton).toHaveAttribute('aria-pressed', 'true');
         });
 
         it('should default to grid view when defaultView is not provided', () => {
-            render(<ViewToggle />);
+            render(<ViewToggle locale="en" />);
             const gridButton = screen.getByLabelText('Grid view');
             expect(gridButton).toHaveAttribute('aria-pressed', 'true');
         });
 
         it('should accept onChange callback', () => {
             const handleChange = vi.fn();
-            render(<ViewToggle onChange={handleChange} />);
+            render(
+                <ViewToggle
+                    onChange={handleChange}
+                    locale="en"
+                />
+            );
 
             const mapButton = screen.getByLabelText('Map view');
             fireEvent.click(mapButton);
@@ -28,7 +38,12 @@ describe('ViewToggle.client.tsx', () => {
         });
 
         it('should accept className prop', () => {
-            const { container } = render(<ViewToggle className="custom-class" />);
+            const { container } = render(
+                <ViewToggle
+                    className="custom-class"
+                    locale="en"
+                />
+            );
             const toggleGroup = container.querySelector('fieldset');
             expect(toggleGroup).toHaveClass('custom-class');
         });
@@ -36,19 +51,19 @@ describe('ViewToggle.client.tsx', () => {
 
     describe('Rendering', () => {
         it('should render toggle group with grid and map buttons', () => {
-            render(<ViewToggle />);
+            render(<ViewToggle locale="en" />);
             expect(screen.getByLabelText('Grid view')).toBeInTheDocument();
             expect(screen.getByLabelText('Map view')).toBeInTheDocument();
         });
 
         it('should render toggle group as fieldset', () => {
-            const { container } = render(<ViewToggle />);
+            const { container } = render(<ViewToggle locale="en" />);
             const toggleGroup = container.querySelector('fieldset');
             expect(toggleGroup).toBeInTheDocument();
         });
 
         it('should have aria-label on toggle group', () => {
-            const { container } = render(<ViewToggle />);
+            const { container } = render(<ViewToggle locale="en" />);
             const toggleGroup = container.querySelector('fieldset');
             expect(toggleGroup).toHaveAttribute('aria-label', 'View toggle');
         });
@@ -56,31 +71,41 @@ describe('ViewToggle.client.tsx', () => {
 
     describe('Accessibility', () => {
         it('should have aria-pressed="true" on active button', () => {
-            render(<ViewToggle defaultView="grid" />);
+            render(
+                <ViewToggle
+                    defaultView="grid"
+                    locale="en"
+                />
+            );
             const gridButton = screen.getByLabelText('Grid view');
             expect(gridButton).toHaveAttribute('aria-pressed', 'true');
         });
 
         it('should have aria-pressed="false" on inactive button', () => {
-            render(<ViewToggle defaultView="grid" />);
+            render(
+                <ViewToggle
+                    defaultView="grid"
+                    locale="en"
+                />
+            );
             const mapButton = screen.getByLabelText('Map view');
             expect(mapButton).toHaveAttribute('aria-pressed', 'false');
         });
 
         it('should have aria-label on grid button', () => {
-            render(<ViewToggle />);
+            render(<ViewToggle locale="en" />);
             const gridButton = screen.getByLabelText('Grid view');
             expect(gridButton).toHaveAttribute('aria-label', 'Grid view');
         });
 
         it('should have aria-label on map button', () => {
-            render(<ViewToggle />);
+            render(<ViewToggle locale="en" />);
             const mapButton = screen.getByLabelText('Map view');
             expect(mapButton).toHaveAttribute('aria-label', 'Map view');
         });
 
         it('should have aria-hidden on SVG icons', () => {
-            const { container } = render(<ViewToggle />);
+            const { container } = render(<ViewToggle locale="en" />);
             const icons = Array.from(container.querySelectorAll('svg'));
             for (const icon of icons) {
                 expect(icon).toHaveAttribute('aria-hidden', 'true');
@@ -88,7 +113,7 @@ describe('ViewToggle.client.tsx', () => {
         });
 
         it('should have focus-visible styles', () => {
-            render(<ViewToggle />);
+            render(<ViewToggle locale="en" />);
             const gridButton = screen.getByLabelText('Grid view');
             expect(gridButton.className).toContain('focus-visible:outline');
         });
@@ -96,7 +121,12 @@ describe('ViewToggle.client.tsx', () => {
 
     describe('Interaction', () => {
         it('should switch to map view when map button is clicked', () => {
-            render(<ViewToggle defaultView="grid" />);
+            render(
+                <ViewToggle
+                    defaultView="grid"
+                    locale="en"
+                />
+            );
 
             const mapButton = screen.getByLabelText('Map view');
             fireEvent.click(mapButton);
@@ -106,7 +136,12 @@ describe('ViewToggle.client.tsx', () => {
         });
 
         it('should switch to grid view when grid button is clicked', () => {
-            render(<ViewToggle defaultView="map" />);
+            render(
+                <ViewToggle
+                    defaultView="map"
+                    locale="en"
+                />
+            );
 
             const gridButton = screen.getByLabelText('Grid view');
             fireEvent.click(gridButton);
@@ -121,6 +156,7 @@ describe('ViewToggle.client.tsx', () => {
                 <ViewToggle
                     defaultView="grid"
                     onChange={handleChange}
+                    locale="en"
                 />
             );
 
@@ -137,7 +173,12 @@ describe('ViewToggle.client.tsx', () => {
 
         it('should update active state when same button is clicked', () => {
             const handleChange = vi.fn();
-            render(<ViewToggle onChange={handleChange} />);
+            render(
+                <ViewToggle
+                    onChange={handleChange}
+                    locale="en"
+                />
+            );
 
             const gridButton = screen.getByLabelText('Grid view');
             fireEvent.click(gridButton);
@@ -149,46 +190,66 @@ describe('ViewToggle.client.tsx', () => {
 
     describe('Styling', () => {
         it('should apply active styles to grid button when selected', () => {
-            render(<ViewToggle defaultView="grid" />);
+            render(
+                <ViewToggle
+                    defaultView="grid"
+                    locale="en"
+                />
+            );
             const gridButton = screen.getByLabelText('Grid view');
             expect(gridButton.className).toContain('bg-primary');
             expect(gridButton.className).toContain('text-white');
         });
 
         it('should apply active styles to map button when selected', () => {
-            render(<ViewToggle defaultView="map" />);
+            render(
+                <ViewToggle
+                    defaultView="map"
+                    locale="en"
+                />
+            );
             const mapButton = screen.getByLabelText('Map view');
             expect(mapButton.className).toContain('bg-primary');
             expect(mapButton.className).toContain('text-white');
         });
 
         it('should apply inactive styles to non-selected buttons', () => {
-            render(<ViewToggle defaultView="grid" />);
+            render(
+                <ViewToggle
+                    defaultView="grid"
+                    locale="en"
+                />
+            );
             const mapButton = screen.getByLabelText('Map view');
             expect(mapButton.className).toContain('bg-transparent');
             expect(mapButton.className).toContain('text-gray-700');
         });
 
         it('should have hover styles on inactive buttons', () => {
-            render(<ViewToggle defaultView="grid" />);
+            render(
+                <ViewToggle
+                    defaultView="grid"
+                    locale="en"
+                />
+            );
             const mapButton = screen.getByLabelText('Map view');
             expect(mapButton.className).toContain('hover:bg-gray-100');
         });
 
         it('should have transition styles on buttons', () => {
-            render(<ViewToggle />);
+            render(<ViewToggle locale="en" />);
             const gridButton = screen.getByLabelText('Grid view');
             expect(gridButton.className).toContain('transition-colors');
         });
 
         it('should have rounded corners on toggle group', () => {
-            const { container } = render(<ViewToggle />);
+            const { container } = render(<ViewToggle locale="en" />);
             const toggleGroup = container.querySelector('fieldset');
             expect(toggleGroup?.className).toContain('rounded-lg');
         });
 
         it('should have border on toggle group', () => {
-            const { container } = render(<ViewToggle />);
+            const { container } = render(<ViewToggle locale="en" />);
             const toggleGroup = container.querySelector('fieldset');
             expect(toggleGroup?.className).toContain('border');
         });
@@ -196,7 +257,7 @@ describe('ViewToggle.client.tsx', () => {
 
     describe('Button attributes', () => {
         it('should have type="button" on both buttons', () => {
-            render(<ViewToggle />);
+            render(<ViewToggle locale="en" />);
             const gridButton = screen.getByLabelText('Grid view');
             const mapButton = screen.getByLabelText('Map view');
             expect(gridButton).toHaveAttribute('type', 'button');
@@ -204,7 +265,7 @@ describe('ViewToggle.client.tsx', () => {
         });
 
         it('should not be disabled by default', () => {
-            render(<ViewToggle />);
+            render(<ViewToggle locale="en" />);
             const gridButton = screen.getByLabelText('Grid view');
             const mapButton = screen.getByLabelText('Map view');
             expect(gridButton).not.toBeDisabled();

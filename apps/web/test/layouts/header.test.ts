@@ -44,23 +44,23 @@ describe('Header.astro', () => {
     });
 
     describe('Navigation links', () => {
-        it('should include Alojamientos link', () => {
-            expect(content).toContain('Alojamientos');
+        it('should include accommodations link via i18n', () => {
+            expect(content).toContain("key: 'accommodations'");
             expect(content).toContain('/alojamientos/');
         });
 
-        it('should include Destinos link', () => {
-            expect(content).toContain('Destinos');
+        it('should include destinations link via i18n', () => {
+            expect(content).toContain("key: 'destinations'");
             expect(content).toContain('/destinos/');
         });
 
-        it('should include Eventos link', () => {
-            expect(content).toContain('Eventos');
+        it('should include events link via i18n', () => {
+            expect(content).toContain("key: 'events'");
             expect(content).toContain('/eventos/');
         });
 
-        it('should include Blog link', () => {
-            expect(content).toContain('Blog');
+        it('should include blog link via i18n', () => {
+            expect(content).toContain("key: 'blog'");
             expect(content).toContain('/publicaciones/');
         });
     });
@@ -175,6 +175,20 @@ describe('Header.astro', () => {
     describe('Logo animation', () => {
         it('should have transition-opacity duration-300 on logo', () => {
             expect(content).toContain('transition-opacity duration-300');
+        });
+    });
+
+    describe('i18n integration', () => {
+        it('should import t function from lib/i18n', () => {
+            expect(content).toContain("import { t, type SupportedLocale } from '../lib/i18n'");
+        });
+
+        it('should use nav namespace for link labels', () => {
+            expect(content).toContain("namespace: 'nav'");
+        });
+
+        it('should use ownerCta key for CTA button', () => {
+            expect(content).toContain("key: 'ownerCta'");
         });
     });
 

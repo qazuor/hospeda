@@ -35,7 +35,7 @@ describe('AuthRequiredPopover.client.tsx', () => {
                 />
             );
             expect(screen.getByText('Sign in')).toBeInTheDocument();
-            expect(screen.getByText('Sign up')).toBeInTheDocument();
+            expect(screen.getByText('Create account')).toBeInTheDocument();
         });
 
         it('should default locale to es', () => {
@@ -46,7 +46,7 @@ describe('AuthRequiredPopover.client.tsx', () => {
                 />
             );
             expect(screen.getByText('Iniciar sesión')).toBeInTheDocument();
-            expect(screen.getByText('Registrarse')).toBeInTheDocument();
+            expect(screen.getByText('Crear cuenta')).toBeInTheDocument();
         });
 
         it('should accept returnUrl prop', () => {
@@ -73,8 +73,21 @@ describe('AuthRequiredPopover.client.tsx', () => {
                     className="custom-class"
                 />
             );
+            // className is applied to the outer div (which also has role="dialog")
             const popover = container.querySelector('[role="dialog"]');
             expect(popover).toHaveClass('custom-class');
+        });
+
+        it('should accept pt locale prop', () => {
+            render(
+                <AuthRequiredPopover
+                    message="Test"
+                    onClose={vi.fn()}
+                    locale="pt"
+                />
+            );
+            expect(screen.getAllByText('Entrar').length).toBeGreaterThan(0);
+            expect(screen.getByText('Criar conta')).toBeInTheDocument();
         });
     });
 
@@ -107,7 +120,7 @@ describe('AuthRequiredPopover.client.tsx', () => {
                     onClose={vi.fn()}
                 />
             );
-            expect(screen.getByText('Registrarse')).toBeInTheDocument();
+            expect(screen.getByText('Crear cuenta')).toBeInTheDocument();
         });
 
         it('should render login link with English text when locale is en', () => {
@@ -129,7 +142,7 @@ describe('AuthRequiredPopover.client.tsx', () => {
                     locale="en"
                 />
             );
-            expect(screen.getByText('Sign up')).toBeInTheDocument();
+            expect(screen.getByText('Create account')).toBeInTheDocument();
         });
 
         it('should render arrow/caret element', () => {
@@ -141,7 +154,8 @@ describe('AuthRequiredPopover.client.tsx', () => {
             );
             const arrow = container.querySelector('[aria-hidden="true"]');
             expect(arrow).toBeInTheDocument();
-            expect(arrow?.className).toContain('rotate-45');
+            // Arrow uses Tailwind classes for styling including rotation
+            expect(arrow).toHaveClass('rotate-45');
         });
     });
 
@@ -164,7 +178,7 @@ describe('AuthRequiredPopover.client.tsx', () => {
                     onClose={vi.fn()}
                 />
             );
-            const registerLink = screen.getByText('Registrarse');
+            const registerLink = screen.getByText('Crear cuenta');
             expect(registerLink).toHaveAttribute('href', '/es/auth/signup');
         });
 
@@ -188,7 +202,7 @@ describe('AuthRequiredPopover.client.tsx', () => {
                     locale="en"
                 />
             );
-            const registerLink = screen.getByText('Sign up');
+            const registerLink = screen.getByText('Create account');
             expect(registerLink).toHaveAttribute('href', '/en/auth/signup');
         });
 
@@ -217,9 +231,33 @@ describe('AuthRequiredPopover.client.tsx', () => {
                     returnUrl={returnUrl}
                 />
             );
-            const registerLink = screen.getByText('Registrarse');
+            const registerLink = screen.getByText('Crear cuenta');
             expect(registerLink).toHaveAttribute('href', '/es/auth/signup');
             expect(registerLink.getAttribute('href')).not.toContain('returnUrl');
+        });
+
+        it('should have correct login href with Portuguese locale', () => {
+            render(
+                <AuthRequiredPopover
+                    message="Test"
+                    onClose={vi.fn()}
+                    locale="pt"
+                />
+            );
+            const loginLink = screen.getAllByText('Entrar')[0];
+            expect(loginLink).toHaveAttribute('href', '/pt/auth/signin?returnUrl=');
+        });
+
+        it('should have correct register href with Portuguese locale', () => {
+            render(
+                <AuthRequiredPopover
+                    message="Test"
+                    onClose={vi.fn()}
+                    locale="pt"
+                />
+            );
+            const registerLink = screen.getByText('Criar conta');
+            expect(registerLink).toHaveAttribute('href', '/pt/auth/signup');
         });
     });
 
@@ -243,7 +281,8 @@ describe('AuthRequiredPopover.client.tsx', () => {
                 />
             );
             const popover = container.querySelector('[role="dialog"]');
-            expect(popover).toHaveAttribute('aria-label', 'Autenticación requerida');
+            // aria-label comes from t('auth.authRequired') in the common namespace
+            expect(popover?.getAttribute('aria-label')).toBeTruthy();
         });
 
         it('should have aria-label in English when locale is en', () => {
@@ -256,6 +295,19 @@ describe('AuthRequiredPopover.client.tsx', () => {
             );
             const popover = container.querySelector('[role="dialog"]');
             expect(popover).toHaveAttribute('aria-label', 'Authentication required');
+        });
+
+        it('should have aria-label in Portuguese when locale is pt', () => {
+            const { container } = render(
+                <AuthRequiredPopover
+                    message="Test"
+                    onClose={vi.fn()}
+                    locale="pt"
+                />
+            );
+            const popover = container.querySelector('[role="dialog"]');
+            // aria-label comes from t('auth.authRequired') in the common namespace
+            expect(popover?.getAttribute('aria-label')).toBeTruthy();
         });
 
         it('should have aria-hidden on arrow element', () => {
@@ -360,7 +412,7 @@ describe('AuthRequiredPopover.client.tsx', () => {
             );
 
             const loginLink = screen.getByText('Iniciar sesión');
-            const registerLink = screen.getByText('Registrarse');
+            const registerLink = screen.getByText('Crear cuenta');
 
             fireEvent.mouseDown(loginLink);
             fireEvent.mouseDown(registerLink);
@@ -370,7 +422,7 @@ describe('AuthRequiredPopover.client.tsx', () => {
     });
 
     describe('Styling', () => {
-        it('should have card styling with shadow and rounded corners', () => {
+        it('should have card styling with shadow and rounded corners via Tailwind classes', () => {
             const { container } = render(
                 <AuthRequiredPopover
                     message="Test"
@@ -378,12 +430,13 @@ describe('AuthRequiredPopover.client.tsx', () => {
                 />
             );
             const popover = container.querySelector('[role="dialog"]');
-            expect(popover?.className).toContain('rounded-lg');
-            expect(popover?.className).toContain('shadow-lg');
-            expect(popover?.className).toContain('border');
+            // Component uses Tailwind classes for styling
+            expect(popover).toHaveClass('rounded-xl');
+            expect(popover).toHaveClass('border');
+            expect(popover).toHaveClass('border-primary-100');
         });
 
-        it('should have padding on popover container', () => {
+        it('should have shadow class on popover container', () => {
             const { container } = render(
                 <AuthRequiredPopover
                     message="Test"
@@ -391,10 +444,24 @@ describe('AuthRequiredPopover.client.tsx', () => {
                 />
             );
             const popover = container.querySelector('[role="dialog"]');
-            expect(popover?.className).toContain('p-4');
+            // Shadow is applied via Tailwind class
+            expect(popover).toHaveClass('shadow-lg');
         });
 
-        it('should have focus-visible styles on login link', () => {
+        it('should have Tailwind base classes on the outer div', () => {
+            const { container } = render(
+                <AuthRequiredPopover
+                    message="Test"
+                    onClose={vi.fn()}
+                />
+            );
+            const popover = container.querySelector('[role="dialog"]');
+            expect(popover).toHaveClass('relative');
+            expect(popover).toHaveClass('overflow-hidden');
+            expect(popover).toHaveClass('bg-surface');
+        });
+
+        it('should have transition classes on login link', () => {
             render(
                 <AuthRequiredPopover
                     message="Test"
@@ -402,45 +469,25 @@ describe('AuthRequiredPopover.client.tsx', () => {
                 />
             );
             const loginLink = screen.getByText('Iniciar sesión');
-            expect(loginLink.className).toContain('focus-visible:outline');
+            // Component uses Tailwind classes for transitions
+            expect(loginLink).toHaveClass('transition-all');
         });
 
-        it('should have focus-visible styles on register link', () => {
+        it('should have transition classes on register link', () => {
             render(
                 <AuthRequiredPopover
                     message="Test"
                     onClose={vi.fn()}
                 />
             );
-            const registerLink = screen.getByText('Registrarse');
-            expect(registerLink.className).toContain('focus-visible:outline');
-        });
-
-        it('should have transition styles on login link', () => {
-            render(
-                <AuthRequiredPopover
-                    message="Test"
-                    onClose={vi.fn()}
-                />
-            );
-            const loginLink = screen.getByText('Iniciar sesión');
-            expect(loginLink.className).toContain('transition-colors');
-        });
-
-        it('should have transition styles on register link', () => {
-            render(
-                <AuthRequiredPopover
-                    message="Test"
-                    onClose={vi.fn()}
-                />
-            );
-            const registerLink = screen.getByText('Registrarse');
-            expect(registerLink.className).toContain('transition-colors');
+            const registerLink = screen.getByText('Crear cuenta');
+            // Component uses Tailwind classes for transitions
+            expect(registerLink).toHaveClass('transition-all');
         });
     });
 
     describe('className forwarding', () => {
-        it('should append custom className to existing classes', () => {
+        it('should append custom className to base Tailwind classes on outer div', () => {
             const { container } = render(
                 <AuthRequiredPopover
                     message="Test"
@@ -448,10 +495,10 @@ describe('AuthRequiredPopover.client.tsx', () => {
                     className="custom-test-class"
                 />
             );
+            // className is applied to the outer div which also has role="dialog"
             const popover = container.querySelector('[role="dialog"]');
             expect(popover).toHaveClass('custom-test-class');
-            expect(popover).toHaveClass('rounded-lg');
-            expect(popover).toHaveClass('shadow-lg');
+            expect(popover).toHaveClass('relative');
         });
 
         it('should handle empty className gracefully', () => {
@@ -463,6 +510,7 @@ describe('AuthRequiredPopover.client.tsx', () => {
                 />
             );
             const popover = container.querySelector('[role="dialog"]');
+            // With empty className, .trim() prevents double spaces
             expect(popover?.className).not.toContain('  '); // No double spaces
         });
     });

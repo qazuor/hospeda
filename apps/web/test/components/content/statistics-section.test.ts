@@ -137,27 +137,17 @@ describe('CounterAnimation.client.tsx', () => {
         });
     });
 
-    describe('IntersectionObserver', () => {
-        it('should use IntersectionObserver for viewport detection', () => {
-            expect(counterContent).toContain('IntersectionObserver');
+    describe('Shared hook usage', () => {
+        it('should import useViewportTrigger from shared hook', () => {
+            expect(counterContent).toContain('useViewportTrigger');
         });
 
-        it('should use useEffect for setup', () => {
-            expect(counterContent).toContain('useEffect');
+        it('should import useCountUp from shared hook', () => {
+            expect(counterContent).toContain('useCountUp');
         });
 
-        it('should use useRef for element reference', () => {
-            expect(counterContent).toContain('useRef');
-        });
-
-        it('should prevent re-triggering with hasAnimated ref', () => {
-            expect(counterContent).toContain('hasAnimated');
-        });
-    });
-
-    describe('Reduced motion', () => {
-        it('should check prefers-reduced-motion', () => {
-            expect(counterContent).toContain('prefers-reduced-motion');
+        it('should import from hooks/useCountUp', () => {
+            expect(counterContent).toContain("from '../../hooks/useCountUp'");
         });
     });
 
@@ -167,21 +157,13 @@ describe('CounterAnimation.client.tsx', () => {
         });
     });
 
-    describe('Animation', () => {
-        it('should use requestAnimationFrame for smooth animation', () => {
-            expect(counterContent).toContain('requestAnimationFrame');
-        });
-
-        it('should use easeOutQuart easing function', () => {
-            expect(counterContent).toContain('easeOutQuart');
+    describe('Animation config', () => {
+        it('should use quart easing preset', () => {
+            expect(counterContent).toContain("easing: 'quart'");
         });
 
         it('should animate over 2 seconds', () => {
-            expect(counterContent).toContain('2000');
-        });
-
-        it('should clean up with observer.disconnect', () => {
-            expect(counterContent).toContain('observer.disconnect');
+            expect(counterContent).toContain('duration: 2000');
         });
     });
 
@@ -190,12 +172,16 @@ describe('CounterAnimation.client.tsx', () => {
             expect(counterContent).toContain('suffix');
         });
 
+        it('should display prefix before the number', () => {
+            expect(counterContent).toContain('prefix');
+        });
+
         it('should display label below the number', () => {
             expect(counterContent).toContain('label');
         });
 
-        it('should use useState for current count value', () => {
-            expect(counterContent).toContain('useState');
+        it('should format number with es-AR locale', () => {
+            expect(counterContent).toContain("toLocaleString('es-AR')");
         });
     });
 });

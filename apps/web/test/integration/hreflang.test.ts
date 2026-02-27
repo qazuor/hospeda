@@ -11,12 +11,13 @@ const content = readFileSync(seoHeadPath, 'utf8');
 
 describe('Hreflang implementation', () => {
     describe('SUPPORTED_LOCALES', () => {
-        it('should define all three supported locales', () => {
-            expect(content).toContain("'es', 'en', 'pt'");
+        it('should import SUPPORTED_LOCALES from lib/i18n', () => {
+            expect(content).toContain('SUPPORTED_LOCALES');
+            expect(content).toContain("from '../../lib/i18n'");
         });
 
-        it('should be declared as const', () => {
-            expect(content).toContain('as const');
+        it('should use SupportedLocale type', () => {
+            expect(content).toContain('SupportedLocale');
         });
     });
 

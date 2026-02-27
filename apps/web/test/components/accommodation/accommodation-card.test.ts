@@ -4,14 +4,15 @@ import { describe, expect, it } from 'vitest';
 
 const componentPath = resolve(
     __dirname,
-    '../../../src/components/accommodation/AccommodationCard.astro'
+    '../../../src/components/accommodation/AccommodationCardFeatured.astro'
 );
 const content = readFileSync(componentPath, 'utf8');
 
-describe('AccommodationCard.astro', () => {
+describe('AccommodationCardFeatured.astro', () => {
     describe('Props', () => {
-        it('should define AccommodationCardData interface', () => {
-            expect(content).toContain('interface AccommodationCardData');
+        it('should import AccommodationCardData from transforms', () => {
+            expect(content).toContain('import type { AccommodationCardData } from');
+            expect(content).toContain('lib/api/transforms');
         });
 
         it('should accept accommodation prop', () => {
@@ -26,15 +27,8 @@ describe('AccommodationCard.astro', () => {
             expect(content).toContain('locale?: string');
         });
 
-        it('should accept optional price prop in data interface', () => {
-            expect(content).toContain('price?:');
-            expect(content).toContain('amount: number');
-            expect(content).toContain('currency: string');
-            expect(content).toContain('period: string');
-        });
-
-        it('should accept optional amenities prop in data interface', () => {
-            expect(content).toContain('amenities?: Array<{ key: string; label: string }>');
+        it('should use AccommodationCardData type for accommodation prop', () => {
+            expect(content).toContain('accommodation: AccommodationCardData');
         });
     });
 
@@ -57,7 +51,7 @@ describe('AccommodationCard.astro', () => {
         });
 
         it('should link to detail page', () => {
-            expect(content).toContain('/alojamientos/');
+            expect(content).toContain('buildDetailUrl');
             expect(content).toContain('slug');
         });
 
@@ -89,7 +83,8 @@ describe('AccommodationCard.astro', () => {
 
     describe('Hover effects', () => {
         it('should apply translateY hover lift on card', () => {
-            expect(content).toContain('hover:-translate-y-1');
+            // Card uses CSS-in-style translateY on inner elements instead of Tailwind utility on root
+            expect(content).toContain('translateY');
         });
 
         it('should apply shadow-xl on hover', () => {
@@ -115,9 +110,9 @@ describe('AccommodationCard.astro', () => {
             expect(content).toContain('typeLabel');
         });
 
-        it('should have type label mapping', () => {
-            expect(content).toContain('HOTEL');
-            expect(content).toContain('CABIN');
+        it('should use i18n for type labels', () => {
+            expect(content).toContain('getTypeI18nKey');
+            expect(content).toContain('namespace: "accommodations"');
         });
     });
 
@@ -138,16 +133,16 @@ describe('AccommodationCard.astro', () => {
             expect(content).toContain('amenities');
         });
 
-        it('should limit badge items to 4', () => {
-            expect(content).toContain('slice(0, 4)');
+        it('should limit badge items to 6', () => {
+            expect(content).toContain('slice(0, 6)');
         });
 
         it('should mark amenity icons as decorative', () => {
             expect(content).toContain('aria-hidden');
         });
 
-        it('should have amenity config mapping for icon-to-label', () => {
-            expect(content).toContain('amenityConfig');
+        it('should resolve icons dynamically via resolveIcon', () => {
+            expect(content).toContain('resolveIcon');
         });
     });
 
@@ -163,7 +158,7 @@ describe('AccommodationCard.astro', () => {
         });
 
         it('should display summary with line clamp', () => {
-            expect(content).toContain('line-clamp-2');
+            expect(content).toContain('line-clamp-3');
             expect(content).toContain('summary');
         });
     });
@@ -175,7 +170,8 @@ describe('AccommodationCard.astro', () => {
 
         it('should have accessible label for favorite', () => {
             expect(content).toContain('aria-label');
-            expect(content).toContain('favorites');
+            // FavoriteButtonIsland component handles aria-label internally
+            expect(content).toContain('FavoriteButtonIsland');
         });
     });
 
