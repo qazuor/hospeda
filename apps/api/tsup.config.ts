@@ -1,7 +1,7 @@
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
-    entry: ['src/index.ts'],
+    entry: ['src/index.ts', 'src/vercel.ts'],
     outDir: 'dist',
     target: 'es2022',
     format: ['esm', 'cjs'],
@@ -11,6 +11,7 @@ export default defineConfig({
     dts: true,
     bundle: true,
     tsconfig: './tsconfig.json',
+    external: ['@sentry/profiling-node'],
     noExternal: [
         /@repo\/.*/,
         '@repo/config',

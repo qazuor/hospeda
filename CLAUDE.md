@@ -15,7 +15,7 @@
 - **Database**: PostgreSQL with Drizzle ORM
 - **Authentication**: Better Auth
 - **Monitoring**: Sentry
-- **Deployment**: Fly.io (API), Vercel (Web/Admin)
+- **Deployment**: Vercel (API, Web, Admin)
 
 ### Architecture
 

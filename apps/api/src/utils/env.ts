@@ -453,13 +453,20 @@ export const getResponseConfig = () => ({
 });
 
 /**
- * Database pool configuration helper
+ * Database pool configuration helper.
+ * In serverless environments (Vercel), defaults to max 3 connections
+ * to stay within Neon pooler limits.
  */
-export const getDatabasePoolConfig = () => ({
-    max: safeEnv.getNumber('DB_POOL_MAX_CONNECTIONS', 10),
-    idleTimeoutMillis: safeEnv.getNumber('DB_POOL_IDLE_TIMEOUT_MS', 30000),
-    connectionTimeoutMillis: safeEnv.getNumber('DB_POOL_CONNECTION_TIMEOUT_MS', 2000)
-});
+export const getDatabasePoolConfig = () => {
+    const isServerless = !!process.env.VERCEL;
+    const defaultMax = isServerless ? 3 : 10;
+
+    return {
+        max: safeEnv.getNumber('DB_POOL_MAX_CONNECTIONS', defaultMax),
+        idleTimeoutMillis: safeEnv.getNumber('DB_POOL_IDLE_TIMEOUT_MS', 30000),
+        connectionTimeoutMillis: safeEnv.getNumber('DB_POOL_CONNECTION_TIMEOUT_MS', 2000)
+    };
+};
 
 /**
  * Creates the API environment validation function.

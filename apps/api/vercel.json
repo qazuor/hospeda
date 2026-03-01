@@ -1,0 +1,61 @@
+{
+    "$schema": "https://openapi.vercel.sh/vercel.json",
+    "framework": null,
+    "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
+    "buildCommand": "cd ../.. && pnpm turbo run build --filter=hospeda-api",
+    "outputDirectory": "dist",
+    "nodeVersion": "20",
+    "rewrites": [
+        {
+            "source": "/(.*)",
+            "destination": "/vercel.js"
+        }
+    ],
+    "headers": [
+        {
+            "source": "/(.*)",
+            "headers": [
+                { "key": "X-Content-Type-Options", "value": "nosniff" },
+                { "key": "X-Frame-Options", "value": "DENY" },
+                { "key": "X-XSS-Protection", "value": "0" },
+                { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+                {
+                    "key": "Permissions-Policy",
+                    "value": "camera=(), microphone=(), geolocation=()"
+                },
+                {
+                    "key": "Strict-Transport-Security",
+                    "value": "max-age=31536000; includeSubDomains; preload"
+                }
+            ]
+        }
+    ],
+    "crons": [
+        {
+            "path": "/api/v1/cron/trial-expiry",
+            "schedule": "0 2 * * *"
+        },
+        {
+            "path": "/api/v1/cron/addon-expiry",
+            "schedule": "0 5 * * *"
+        },
+        {
+            "path": "/api/v1/cron/notification-schedule",
+            "schedule": "0 8 * * *"
+        },
+        {
+            "path": "/api/v1/cron/webhook-retry",
+            "schedule": "0 */1 * * *"
+        },
+        {
+            "path": "/api/v1/cron/exchange-rate-fetch",
+            "schedule": "*/15 * * * *"
+        }
+    ],
+    "functions": {
+        "dist/vercel.js": {
+            "maxDuration": 30,
+            "memory": 512
+        }
+    }
+}

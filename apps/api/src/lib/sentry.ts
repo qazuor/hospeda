@@ -35,6 +35,7 @@ interface SentryConfig {
 }
 
 const isDev = process.env.NODE_ENV !== 'production';
+const isServerless = !!process.env.VERCEL;
 
 /**
  * Default Sentry configuration
@@ -89,8 +90,8 @@ export function initializeSentry(config: SentryConfig = {}): boolean {
                 }
             },
 
-            // Integrations - skip profiling in development to avoid console noise
-            integrations: isDev ? [] : [nodeProfilingIntegration()],
+            // Integrations - skip profiling in development and serverless (native bindings unsupported)
+            integrations: isDev || isServerless ? [] : [nodeProfilingIntegration()],
 
             // Before send hook - filter sensitive data
             beforeSend(event, _hint) {

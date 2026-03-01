@@ -1,6 +1,7 @@
 import type { Context, MiddlewareHandler, Schema } from 'hono';
 
 import { OpenAPIHono } from '@hono/zod-openapi';
+import { bodyLimit } from 'hono/body-limit';
 import { requestId } from 'hono/request-id';
 import { actorMiddleware } from '../middlewares/actor';
 import { authMiddleware } from '../middlewares/auth';
@@ -21,12 +22,30 @@ import { trialMiddleware } from '../middlewares/trial';
 import { validationMiddleware } from '../middlewares/validation';
 import type { AppBindings, AppMiddleware, AppOpenAPI } from '../types';
 
-// Import mock auth middleware for testing (only loaded in test env)
-let mockAuthMiddleware: MiddlewareHandler<AppBindings> | null = null;
-if (process.env.NODE_ENV === 'test') {
-    // Dynamic import to avoid loading in production
-    mockAuthMiddleware = (await import('../../test/helpers/mockAuthMiddleware')).mockAuthMiddleware;
-}
+// Lazy-loaded mock auth middleware for testing (avoids top-level await for CJS compat)
+let mockAuthMiddlewareCache: MiddlewareHandler<AppBindings> | null = null;
+let mockAuthLoaded = false;
+
+/**
+ * Middleware that lazily loads and delegates to mock auth in test environments.
+ * No-ops in non-test environments.
+ */
+const lazyMockAuthMiddleware: MiddlewareHandler<AppBindings> = async (c, next) => {
+    if (process.env.NODE_ENV !== 'test') {
+        await next();
+        return;
+    }
+    if (!mockAuthLoaded) {
+        mockAuthMiddlewareCache = (await import('../../test/helpers/mockAuthMiddleware'))
+            .mockAuthMiddleware;
+        mockAuthLoaded = true;
+    }
+    if (mockAuthMiddlewareCache) {
+        await mockAuthMiddlewareCache(c, next);
+    } else {
+        await next();
+    }
+};
 
 // Strongly typed middleware functions
 const serveEmojiFavicon =
@@ -79,6 +98,30 @@ export default function createApp() {
         // Performance: compression early for all responses
         .use(wrapMiddleware(compressionMiddleware()))
 
+        // Body size limit (enforced at stream level, covers chunked transfer encoding)
+        // Vercel serverless has a 4.5MB payload limit; local dev allows 10MB
+        .use(
+            wrapMiddleware(
+                bodyLimit({
+                    maxSize: process.env.VERCEL
+                        ? 4.5 * 1024 * 1024 // 4.5MB for Vercel serverless
+                        : 10 * 1024 * 1024, // 10MB for long-running server
+                    onError: (c) => {
+                        return c.json(
+                            {
+                                success: false,
+                                error: {
+                                    code: 'REQUEST_TOO_LARGE',
+                                    message: 'Request body exceeds the maximum allowed size'
+                                }
+                            },
+                            413
+                        );
+                    }
+                })
+            )
+        )
+
         // Request processing: validation BEFORE caching to avoid caching invalid requests
         .use(wrapMiddleware(validationMiddleware()))
 
@@ -92,9 +135,9 @@ export default function createApp() {
         // Response validation (development/test only by default)
         .use(wrapMiddleware(responseValidatorMiddleware));
 
-    // Mock authentication for testing (injected before real auth)
-    if (mockAuthMiddleware) {
-        app.use(wrapMiddleware(mockAuthMiddleware));
+    // Mock authentication for testing (injected before real auth, lazy-loaded)
+    if (process.env.NODE_ENV === 'test') {
+        app.use(wrapMiddleware(lazyMockAuthMiddleware));
     }
 
     // Authentication and authorization
