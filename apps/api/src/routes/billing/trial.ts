@@ -7,6 +7,7 @@
  * Routes:
  * - GET  /api/v1/billing/trial/status - Get current trial status (authenticated)
  * - POST /api/v1/billing/trial/start - Start trial for authenticated user
+ * - POST /api/v1/billing/trial/reactivate - Convert trial to paid subscription (authenticated)
  * - POST /api/v1/billing/trial/extend - Extend trial by additional days (admin only)
  * - POST /api/v1/billing/trial/check-expiry - Trigger expired trial check (admin only)
  *
@@ -35,11 +36,10 @@ const trialStatusResponseSchema = z.object({
 });
 
 /**
- * Start trial request schema
+ * Start trial request schema.
+ * No body required.. all HOST users receive the same trial.
  */
-const startTrialRequestSchema = z.object({
-    userType: z.enum(['owner', 'complex'])
-});
+const _startTrialRequestSchema = z.object({});
 
 /**
  * Start trial response schema
@@ -63,7 +63,24 @@ const extendTrialRequestSchema = z.object({
  */
 const extendTrialResponseSchema = z.object({
     success: z.boolean(),
+    previousTrialEnd: z.string().nullable(),
     newTrialEnd: z.string().nullable(),
+    message: z.string()
+});
+
+/**
+ * Reactivate from trial request schema
+ */
+const reactivateTrialRequestSchema = z.object({
+    planId: z.string().min(1, 'Plan ID is required')
+});
+
+/**
+ * Reactivate from trial response schema
+ */
+const reactivateTrialResponseSchema = z.object({
+    success: z.boolean(),
+    subscriptionId: z.string().nullable(),
     message: z.string()
 });
 
@@ -147,27 +164,13 @@ export const startTrialRoute = createSimpleRoute({
             });
         }
 
-        // Parse request body
-        const body = await c.req.json();
-        const parseResult = startTrialRequestSchema.safeParse(body);
-
-        if (!parseResult.success) {
-            throw new HTTPException(400, {
-                message: 'Invalid request body',
-                cause: parseResult.error.flatten()
-            });
-        }
-
-        const { userType } = parseResult.data;
         const customerId = billingCustomerId;
-
         const billing = getQZPayBilling();
         const trialService = new TrialService(billing);
 
         try {
             const subscriptionId = await trialService.startTrial({
-                customerId,
-                userType
+                customerId
             });
 
             if (!subscriptionId) {
@@ -189,7 +192,6 @@ export const startTrialRoute = createSimpleRoute({
             apiLogger.error(
                 {
                     customerId,
-                    userType,
                     error: errorMessage
                 },
                 'Failed to start trial'
@@ -242,6 +244,7 @@ export const extendTrialRoute = createAdminRoute({
 
             return {
                 success: true,
+                previousTrialEnd: result.previousTrialEnd,
                 newTrialEnd: result.newTrialEnd,
                 message: `Trial extended by ${additionalDays} day(s)`
             };
@@ -259,8 +262,88 @@ export const extendTrialRoute = createAdminRoute({
 
             return {
                 success: false,
+                previousTrialEnd: null,
                 newTrialEnd: null,
                 message: `Failed to extend trial: ${errorMessage}`
+            };
+        }
+    }
+});
+
+/**
+ * POST /api/v1/billing/trial/reactivate
+ * Convert an expired or active trial to a paid subscription
+ *
+ * This endpoint cancels any existing trial subscription and creates
+ * a new paid subscription on the specified plan.
+ *
+ */
+export const reactivateTrialRoute = createSimpleRoute({
+    method: 'post',
+    path: '/reactivate',
+    summary: 'Reactivate from trial',
+    description:
+        'Convert trial subscription to a paid plan. Cancels existing trial and creates new subscription.',
+    tags: ['Billing', 'Trial'],
+    responseSchema: reactivateTrialResponseSchema,
+    handler: async (c) => {
+        const billingEnabled = c.get('billingEnabled');
+
+        if (!billingEnabled) {
+            throw new HTTPException(503, {
+                message: 'Billing service is not configured'
+            });
+        }
+
+        const billingCustomerId = c.get('billingCustomerId');
+
+        if (!billingCustomerId) {
+            throw new HTTPException(400, {
+                message: 'No billing account found'
+            });
+        }
+
+        const body = await c.req.json();
+        const parseResult = reactivateTrialRequestSchema.safeParse(body);
+
+        if (!parseResult.success) {
+            throw new HTTPException(400, {
+                message: 'Invalid request body',
+                cause: parseResult.error.flatten()
+            });
+        }
+
+        const { planId } = parseResult.data;
+        const billing = getQZPayBilling();
+        const trialService = new TrialService(billing);
+
+        try {
+            const subscriptionId = await trialService.reactivateFromTrial({
+                customerId: billingCustomerId,
+                planId
+            });
+
+            return {
+                success: true,
+                subscriptionId,
+                message: 'Successfully converted trial to paid subscription'
+            };
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+
+            apiLogger.error(
+                {
+                    customerId: billingCustomerId,
+                    planId,
+                    error: errorMessage
+                },
+                'Failed to reactivate from trial'
+            );
+
+            return {
+                success: false,
+                subscriptionId: null,
+                message: `Failed to reactivate: ${errorMessage}`
             };
         }
     }
@@ -332,13 +415,115 @@ export const checkExpiryRoute = createAdminRoute({
 });
 
 /**
+ * Reactivate subscription request schema (for canceled subscriptions)
+ */
+const reactivateSubscriptionRequestSchema = z.object({
+    planId: z.string().min(1, 'Plan ID is required')
+});
+
+/**
+ * Reactivate subscription response schema
+ */
+const reactivateSubscriptionResponseSchema = z.object({
+    success: z.boolean(),
+    subscriptionId: z.string().nullable(),
+    previousPlanId: z.string().nullable().optional(),
+    message: z.string()
+});
+
+/**
+ * POST /api/v1/billing/trial/reactivate-subscription
+ * Reactivate a canceled subscription by creating a new one on the specified plan.
+ *
+ * Unlike /reactivate (trial-to-paid only), this endpoint handles any canceled
+ * subscription regardless of whether it originated from a trial.
+ *
+ * Rejects if the user has an active or trialing subscription (use plan-change instead).
+ * Rejects if no canceled subscription exists (nothing to reactivate).
+ */
+export const reactivateSubscriptionRoute = createSimpleRoute({
+    method: 'post',
+    path: '/reactivate-subscription',
+    summary: 'Reactivate canceled subscription',
+    description:
+        'Reactivate a canceled subscription by creating a new paid subscription on the specified plan.',
+    tags: ['Billing'],
+    responseSchema: reactivateSubscriptionResponseSchema,
+    handler: async (c) => {
+        const billingEnabled = c.get('billingEnabled');
+
+        if (!billingEnabled) {
+            throw new HTTPException(503, {
+                message: 'Billing service is not configured'
+            });
+        }
+
+        const billingCustomerId = c.get('billingCustomerId');
+
+        if (!billingCustomerId) {
+            throw new HTTPException(400, {
+                message: 'No billing account found'
+            });
+        }
+
+        const body = await c.req.json();
+        const parseResult = reactivateSubscriptionRequestSchema.safeParse(body);
+
+        if (!parseResult.success) {
+            throw new HTTPException(400, {
+                message: 'Invalid request body',
+                cause: parseResult.error.flatten()
+            });
+        }
+
+        const { planId } = parseResult.data;
+        const billing = getQZPayBilling();
+        const trialService = new TrialService(billing);
+
+        try {
+            const result = await trialService.reactivateSubscription({
+                customerId: billingCustomerId,
+                planId
+            });
+
+            return {
+                success: true,
+                subscriptionId: result.subscriptionId,
+                previousPlanId: result.previousPlanId,
+                message: 'Successfully reactivated subscription'
+            };
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+
+            apiLogger.error(
+                {
+                    customerId: billingCustomerId,
+                    planId,
+                    error: errorMessage
+                },
+                'Failed to reactivate subscription'
+            );
+
+            return {
+                success: false,
+                subscriptionId: null,
+                previousPlanId: null,
+                message: `Failed to reactivate subscription: ${errorMessage}`
+            };
+        }
+    }
+});
+
+/**
  * Trial routes router
  */
 const trialRouter = createRouter();
 
 trialRouter.route('/', getTrialStatusRoute);
 trialRouter.route('/', startTrialRoute);
+trialRouter.route('/', reactivateTrialRoute);
+trialRouter.route('/', reactivateSubscriptionRoute);
 trialRouter.route('/', extendTrialRoute);
 trialRouter.route('/', checkExpiryRoute);
 
-export default trialRouter;
+export { trialRouter };

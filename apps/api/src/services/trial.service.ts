@@ -1,11 +1,11 @@
 /**
  * Trial Service
  *
- * Manages 14-day trial lifecycle for owner and complex users.
+ * Manages 14-day trial lifecycle for all HOST users.
  * Handles trial creation, status checks, expiry detection, and reactivation.
  *
  * Features:
- * - Auto-start trial on registration (owner/complex only)
+ * - Auto-start trial on HOST registration
  * - 14-day countdown tracking
  * - Auto-block on expiry (dashboard blocked, listings hidden, data preserved)
  * - Trial to paid subscription conversion
@@ -16,7 +16,7 @@
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
-import { COMPLEX_TRIAL_DAYS, OWNER_TRIAL_DAYS } from '@repo/billing';
+import { OWNER_TRIAL_DAYS } from '@repo/billing';
 import { NotificationType, type TrialEventPayload } from '@repo/notifications';
 import { clearEntitlementCache } from '../middlewares/entitlement';
 import { apiLogger } from '../utils/logger';
@@ -40,13 +40,15 @@ export interface TrialStatus {
 }
 
 /**
- * Input for starting a trial
+ * Input for starting a trial.
+ *
+ * All HOST users receive the same trial plan and duration.
+ * The accommodation type (simple vs complex/hotel) is determined later
+ * when the user creates their first accommodation, not at trial start.
  */
 export interface StartTrialInput {
     /** Billing customer ID */
     customerId: string;
-    /** User type (determines which plan to use) */
-    userType: 'owner' | 'complex';
 }
 
 /**
@@ -57,6 +59,26 @@ export interface ReactivateFromTrialInput {
     customerId: string;
     /** New plan ID to subscribe to */
     planId: string;
+}
+
+/**
+ * Input for reactivating a canceled subscription (BILL-13)
+ */
+export interface ReactivateSubscriptionInput {
+    /** Billing customer ID */
+    customerId: string;
+    /** New plan ID to subscribe to */
+    planId: string;
+}
+
+/**
+ * Result from reactivating a canceled subscription
+ */
+export interface ReactivateSubscriptionResult {
+    /** New subscription ID */
+    subscriptionId: string;
+    /** Previous plan ID (from the canceled subscription), or null */
+    previousPlanId: string | null;
 }
 
 /**
@@ -103,17 +125,18 @@ export class TrialService {
             return null;
         }
 
-        const { customerId, userType } = input;
+        const { customerId } = input;
 
         try {
-            // Determine plan based on user type
-            const planSlug = userType === 'owner' ? 'owner-basico' : 'complex-basico';
-            const trialDays = userType === 'owner' ? OWNER_TRIAL_DAYS : COMPLEX_TRIAL_DAYS;
+            // All users start on the same base plan with the same trial duration.
+            // The accommodation type (simple cabin vs hotel/complex) is an attribute
+            // of the accommodation entity, not the user or subscription.
+            const planSlug = 'owner-basico';
+            const trialDays = OWNER_TRIAL_DAYS;
 
             apiLogger.info(
                 {
                     customerId,
-                    userType,
                     planSlug,
                     trialDays
                 },
@@ -161,8 +184,7 @@ export class TrialService {
                 planId: plan.id,
                 trialDays,
                 metadata: {
-                    userType,
-                    autoStarted: true,
+                    autoStarted: 'true',
                     createdBy: 'trial-service'
                 }
             });
@@ -184,7 +206,6 @@ export class TrialService {
             apiLogger.error(
                 {
                     customerId,
-                    userType,
                     error: errorMessage
                 },
                 'Failed to start trial'
@@ -429,7 +450,7 @@ export class TrialService {
     async extendTrial(input: {
         subscriptionId: string;
         additionalDays: number;
-    }): Promise<{ newTrialEnd: string }> {
+    }): Promise<{ previousTrialEnd: string; newTrialEnd: string }> {
         if (!this.billing) {
             throw new Error('Billing not enabled');
         }
@@ -459,10 +480,9 @@ export class TrialService {
             const newTrialEnd = new Date(currentTrialEnd);
             newTrialEnd.setDate(newTrialEnd.getDate() + additionalDays);
 
-            // Update the subscription metadata to track extension
-            // QZPay service input only supports planId, metadata, etc.
-            // We store extension info in metadata for audit trail
+            // Update both the actual trialEnd field and metadata for audit trail
             await this.billing.subscriptions.update(subscriptionId, {
+                trialEnd: newTrialEnd,
                 metadata: {
                     ...((subscription.metadata as Record<string, string>) || {}),
                     trialExtendedAt: new Date().toISOString(),
@@ -482,7 +502,10 @@ export class TrialService {
                 'Trial period extended successfully'
             );
 
-            return { newTrialEnd: newTrialEnd.toISOString() };
+            return {
+                previousTrialEnd: currentTrialEnd.toISOString(),
+                newTrialEnd: newTrialEnd.toISOString()
+            };
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
 
@@ -573,6 +596,106 @@ export class TrialService {
                     error: errorMessage
                 },
                 'Failed to reactivate customer from trial'
+            );
+
+            throw error;
+        }
+    }
+
+    /**
+     * Reactivate a canceled subscription by creating a new paid subscription.
+     *
+     * Rejects if:
+     * - Any subscription is active or trialing (use plan-change instead)
+     * - No canceled subscription exists (nothing to reactivate)
+     *
+     * @param input - Reactivation parameters
+     * @returns New subscription ID and previous plan ID
+     */
+    async reactivateSubscription(
+        input: ReactivateSubscriptionInput
+    ): Promise<ReactivateSubscriptionResult> {
+        if (!this.billing) {
+            throw new Error('Billing not enabled');
+        }
+
+        const { customerId, planId } = input;
+
+        try {
+            apiLogger.info({ customerId, planId }, 'Reactivating canceled subscription');
+
+            const subscriptions = await this.billing.subscriptions.getByCustomerId(customerId);
+
+            if (!subscriptions || subscriptions.length === 0) {
+                throw new Error('No canceled subscription found to reactivate');
+            }
+
+            // Reject if any subscription is active or trialing
+            const activeOrTrialing = subscriptions.find(
+                (sub) =>
+                    sub.status === 'active' || sub.status === 'trialing' || sub.status === 'trial'
+            );
+
+            if (activeOrTrialing) {
+                const statusLabel = activeOrTrialing.status === 'active' ? 'active' : 'trialing';
+                throw new Error(
+                    `Cannot reactivate: ${statusLabel} subscription exists. Use plan-change instead.`
+                );
+            }
+
+            // Find a canceled subscription to reactivate from
+            const canceledSub = subscriptions.find(
+                (sub) => sub.status === 'canceled' || sub.status === 'cancelled'
+            );
+
+            if (!canceledSub) {
+                throw new Error('No canceled subscription found to reactivate');
+            }
+
+            const previousPlanId = canceledSub.planId ?? null;
+
+            // Cancel all existing canceled subscriptions (idempotent cleanup)
+            for (const sub of subscriptions) {
+                if (sub.status === 'canceled' || sub.status === 'cancelled') {
+                    try {
+                        await this.billing.subscriptions.cancel(sub.id);
+                    } catch {
+                        // Already canceled, ignore
+                    }
+                }
+            }
+
+            // Create new paid subscription
+            const newSubscription = await this.billing.subscriptions.create({
+                customerId,
+                planId,
+                metadata: {
+                    reactivatedFromCanceled: 'true',
+                    reactivatedAt: new Date().toISOString(),
+                    previousPlanId: previousPlanId ?? undefined
+                }
+            });
+
+            apiLogger.info(
+                {
+                    customerId,
+                    newSubscriptionId: newSubscription.id,
+                    planId,
+                    previousPlanId
+                },
+                'Successfully reactivated canceled subscription'
+            );
+
+            return {
+                subscriptionId: newSubscription.id,
+                previousPlanId
+            };
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+
+            apiLogger.error(
+                { customerId, planId, error: errorMessage },
+                'Failed to reactivate canceled subscription'
             );
 
             throw error;
