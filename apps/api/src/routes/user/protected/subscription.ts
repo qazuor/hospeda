@@ -12,7 +12,14 @@ import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
 /** Allowed subscription status values */
-const SUBSCRIPTION_STATUSES = ['active', 'trial', 'cancelled', 'expired', 'pending'] as const;
+const SUBSCRIPTION_STATUSES = [
+    'active',
+    'trial',
+    'cancelled',
+    'expired',
+    'past_due',
+    'pending'
+] as const;
 
 /** Maps QZPay subscription status values to our API status enum */
 const QZPAY_STATUS_MAP: Record<string, (typeof SUBSCRIPTION_STATUSES)[number]> = {
@@ -22,7 +29,7 @@ const QZPAY_STATUS_MAP: Record<string, (typeof SUBSCRIPTION_STATUSES)[number]> =
     canceled: 'cancelled',
     cancelled: 'cancelled',
     expired: 'expired',
-    past_due: 'expired',
+    past_due: 'past_due',
     unpaid: 'expired',
     incomplete: 'pending',
     incomplete_expired: 'expired',
@@ -41,7 +48,16 @@ const SubscriptionResponseSchema = z.object({
             currentPeriodEnd: z.string().nullable(),
             cancelAtPeriodEnd: z.boolean(),
             trialEndsAt: z.string().nullable(),
-            monthlyPriceArs: z.number()
+            monthlyPriceArs: z.number(),
+            paymentMethod: z
+                .object({
+                    brand: z.string(),
+                    last4: z.string(),
+                    expMonth: z.number(),
+                    expYear: z.number()
+                })
+                .nullable()
+                .optional()
         })
         .nullable()
 });
@@ -136,9 +152,13 @@ export const userSubscriptionRoute = createProtectedRoute({
             return { subscription: null };
         }
 
-        // Find the most recent active or trial subscription
+        // Find the most recent active, trial, or past_due subscription
         const activeSubscription = subscriptions.find(
-            (sub) => sub.status === 'active' || sub.status === 'trialing' || sub.status === 'trial'
+            (sub) =>
+                sub.status === 'active' ||
+                sub.status === 'trialing' ||
+                sub.status === 'trial' ||
+                sub.status === 'past_due'
         );
 
         if (!activeSubscription) {
@@ -190,7 +210,8 @@ export const userSubscriptionRoute = createProtectedRoute({
                 currentPeriodEnd: toIsoString(activeSubscription.currentPeriodEnd),
                 cancelAtPeriodEnd: activeSubscription.cancelAtPeriodEnd ?? false,
                 trialEndsAt: toIsoString(activeSubscription.trialEnd),
-                monthlyPriceArs
+                monthlyPriceArs,
+                paymentMethod: null
             }
         };
     },
