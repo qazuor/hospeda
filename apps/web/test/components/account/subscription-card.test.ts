@@ -94,27 +94,41 @@ describe('SubscriptionCard.client.tsx', () => {
         });
 
         it('should have color class for active status', () => {
-            expect(content).toContain("active: 'bg-green-100 text-green-800'");
+            expect(content).toContain(
+                "active: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'"
+            );
         });
 
         it('should have color class for trial status', () => {
-            expect(content).toContain("trial: 'bg-amber-100 text-amber-800'");
+            expect(content).toContain(
+                "trial: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'"
+            );
         });
 
         it('should have color class for cancelled status', () => {
-            expect(content).toContain("cancelled: 'bg-red-100 text-red-800'");
+            expect(content).toContain(
+                "cancelled: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'"
+            );
         });
 
         it('should have color class for expired status', () => {
-            expect(content).toContain("expired: 'bg-gray-100 text-gray-700'");
+            expect(content).toContain("expired: 'bg-surface-alt text-text-secondary'");
         });
 
         it('should have color class for pending status', () => {
-            expect(content).toContain("pending: 'bg-blue-100 text-blue-800'");
+            expect(content).toContain(
+                "pending: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'"
+            );
+        });
+
+        it('should have color class for past_due status', () => {
+            expect(content).toContain(
+                "past_due: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'"
+            );
         });
 
         it('should have color class for free status', () => {
-            expect(content).toContain("free: 'bg-gray-100 text-gray-700'");
+            expect(content).toContain("free: 'bg-surface-alt text-text-secondary'");
         });
     });
 
@@ -123,16 +137,19 @@ describe('SubscriptionCard.client.tsx', () => {
             expect(content).toContain('function formatLocalDate(');
         });
 
-        it('should use toLocaleDateString in formatLocalDate', () => {
-            expect(content).toContain('toLocaleDateString(locale');
+        it('should use formatDate from @repo/i18n in formatLocalDate', () => {
+            expect(content).toContain('formatCurrency');
+            expect(content).toContain('formatDate');
+            expect(content).toContain("from '@repo/i18n'");
+            expect(content).toContain('formatDate({');
         });
 
         it('should define formatArsPrice function', () => {
             expect(content).toContain('function formatArsPrice(');
         });
 
-        it('should use Intl.NumberFormat for ARS currency formatting', () => {
-            expect(content).toContain('new Intl.NumberFormat(');
+        it('should use formatCurrency from @repo/i18n for ARS currency formatting', () => {
+            expect(content).toContain('formatCurrency({');
             expect(content).toContain("currency: 'ARS'");
         });
 
@@ -230,8 +247,8 @@ describe('SubscriptionCard.client.tsx', () => {
             expect(content).toContain('setIsLoading(false)');
         });
 
-        it('should log error to console on exception', () => {
-            expect(content).toContain("console.error('Error fetching subscription:'");
+        it('should log error to webLogger on exception', () => {
+            expect(content).toContain("webLogger.error('Error fetching subscription:'");
         });
 
         it('should call fetchSubscription on mount via useEffect', () => {
@@ -374,6 +391,34 @@ describe('SubscriptionCard.client.tsx', () => {
             expect(content).toContain(
                 "t('subscription.trialEndsIn', undefined, { days: trialDaysRemaining })"
             );
+        });
+
+        it('should show past_due warning when status is past_due', () => {
+            expect(content).toContain("status === 'past_due'");
+        });
+
+        it('should display pastDueNotice message via t function', () => {
+            expect(content).toContain("t('subscription.pastDueNotice')");
+        });
+
+        it('should display updatePaymentMethod link via t function', () => {
+            expect(content).toContain("t('subscription.updatePaymentMethod')");
+        });
+
+        it('should render payment method section when paymentMethod exists', () => {
+            expect(content).toContain('{paymentMethod && (');
+        });
+
+        it('should display paymentMethodLabel heading via t function', () => {
+            expect(content).toContain("t('subscription.paymentMethodLabel')");
+        });
+
+        it('should display paymentMethodCard via t function', () => {
+            expect(content).toContain("t('subscription.paymentMethodCard'");
+        });
+
+        it('should display paymentMethodExpires via t function', () => {
+            expect(content).toContain("t('subscription.paymentMethodExpires'");
         });
 
         it('should show cancellation notice when cancelAtPeriodEnd is true', () => {
@@ -587,6 +632,7 @@ describe('SubscriptionCard.client.tsx', () => {
             expect(content).toContain("trial: t('subscription.statusTrial')");
             expect(content).toContain("cancelled: t('subscription.statusCancelled')");
             expect(content).toContain("expired: t('subscription.statusExpired')");
+            expect(content).toContain("past_due: t('subscription.statusPastDue')");
             expect(content).toContain("pending: t('subscription.statusPending')");
             expect(content).toContain("free: t('subscription.statusFree')");
         });
@@ -643,8 +689,14 @@ describe('account.json locale files - subscription section', () => {
                 'statusTrial',
                 'statusCancelled',
                 'statusExpired',
+                'statusPastDue',
                 'statusPending',
                 'statusFree',
+                'pastDueNotice',
+                'updatePaymentMethod',
+                'paymentMethodLabel',
+                'paymentMethodCard',
+                'paymentMethodExpires',
                 'trialEndsIn',
                 'cancelNotice',
                 'renewsOn',
@@ -677,8 +729,14 @@ describe('account.json locale files - subscription section', () => {
                 'statusTrial',
                 'statusCancelled',
                 'statusExpired',
+                'statusPastDue',
                 'statusPending',
                 'statusFree',
+                'pastDueNotice',
+                'updatePaymentMethod',
+                'paymentMethodLabel',
+                'paymentMethodCard',
+                'paymentMethodExpires',
                 'trialEndsIn',
                 'cancelNotice',
                 'renewsOn',
@@ -711,8 +769,14 @@ describe('account.json locale files - subscription section', () => {
                 'statusTrial',
                 'statusCancelled',
                 'statusExpired',
+                'statusPastDue',
                 'statusPending',
                 'statusFree',
+                'pastDueNotice',
+                'updatePaymentMethod',
+                'paymentMethodLabel',
+                'paymentMethodCard',
+                'paymentMethodExpires',
                 'trialEndsIn',
                 'cancelNotice',
                 'renewsOn',
@@ -790,6 +854,10 @@ describe('account.json locale files - subscription section', () => {
 
         it('should have Spanish pending status label', () => {
             expect(esAccount.subscription.statusPending).toBe('Pendiente');
+        });
+
+        it('should have Spanish past_due status label', () => {
+            expect(esAccount.subscription.statusPastDue).toBe('Pago pendiente');
         });
 
         it('should have Spanish free status label', () => {
@@ -891,6 +959,10 @@ describe('account.json locale files - subscription section', () => {
             expect(enAccount.subscription.statusPending).toBe('Pending');
         });
 
+        it('should have English past_due status label', () => {
+            expect(enAccount.subscription.statusPastDue).toBe('Past Due');
+        });
+
         it('should have English free status label', () => {
             expect(enAccount.subscription.statusFree).toBe('Free');
         });
@@ -986,6 +1058,10 @@ describe('account.json locale files - subscription section', () => {
 
         it('should have Portuguese pending status label', () => {
             expect(ptAccount.subscription.statusPending).toBe('Pendente');
+        });
+
+        it('should have Portuguese past_due status label', () => {
+            expect(ptAccount.subscription.statusPastDue).toBe('Pagamento pendente');
         });
 
         it('should have Portuguese free status label', () => {

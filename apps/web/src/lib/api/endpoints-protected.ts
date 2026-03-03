@@ -85,12 +85,18 @@ export const userBookmarksApi = {
 export interface SubscriptionData {
     readonly planSlug: string;
     readonly planName: string;
-    readonly status: 'active' | 'trial' | 'cancelled' | 'expired' | 'pending';
+    readonly status: 'active' | 'trial' | 'cancelled' | 'expired' | 'past_due' | 'pending';
     readonly currentPeriodStart: string | null;
     readonly currentPeriodEnd: string | null;
     readonly cancelAtPeriodEnd: boolean;
     readonly trialEndsAt: string | null;
     readonly monthlyPriceArs: number;
+    readonly paymentMethod?: {
+        readonly brand: string;
+        readonly last4: string;
+        readonly expMonth: number;
+        readonly expYear: number;
+    } | null;
 }
 
 /** Protected user API endpoints */

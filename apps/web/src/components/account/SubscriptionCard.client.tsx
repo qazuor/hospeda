@@ -1,3 +1,4 @@
+import { formatCurrency, formatDate, toBcp47Locale } from '@repo/i18n';
 import { AlertTriangleIcon, CheckIcon, RefreshIcon } from '@repo/icons';
 /**
  * Subscription card component displaying the user's current plan and billing info.
@@ -15,6 +16,7 @@ import { useTranslation } from '../../hooks/useTranslation';
 import type { SubscriptionData } from '../../lib/api/endpoints-protected';
 import { userApi } from '../../lib/api/endpoints-protected';
 import type { SupportedLocale } from '../../lib/i18n';
+import { webLogger } from '../../lib/logger';
 
 /** Props for the SubscriptionCard component */
 interface SubscriptionCardProps {
@@ -27,37 +29,37 @@ const SKELETON_FEATURE_KEYS = ['feat-1', 'feat-2', 'feat-3', 'feat-4'] as const;
 
 /** Status badge color classes by subscription status */
 const STATUS_BADGE_CLASSES: Readonly<Record<SubscriptionData['status'] | 'free', string>> = {
-    active: 'bg-green-100 text-green-800',
-    trial: 'bg-amber-100 text-amber-800',
-    cancelled: 'bg-red-100 text-red-800',
-    expired: 'bg-gray-100 text-gray-700',
-    pending: 'bg-blue-100 text-blue-800',
-    free: 'bg-gray-100 text-gray-700'
+    active: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+    trial: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
+    cancelled: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+    expired: 'bg-surface-alt text-text-secondary',
+    past_due: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+    pending: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+    free: 'bg-surface-alt text-text-secondary'
 } as const;
 
 /**
- * Format a date string as a localized short date.
+ * Format a date string as a localized long date using @repo/i18n.
  */
 function formatLocalDate(dateString: string, locale: string): string {
-    return new Date(dateString).toLocaleDateString(locale, {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
+    return formatDate({
+        date: dateString,
+        locale: toBcp47Locale(locale),
+        options: { year: 'numeric', month: 'long', day: 'numeric' }
     });
 }
 
 /**
- * Format an ARS price as a localized currency string.
+ * Format an ARS price as a localized currency string using @repo/i18n.
  * Example output: "$1.500 ARS/mes"
  */
 function formatArsPrice(amount: number, locale: string): string {
-    const formatted = new Intl.NumberFormat(locale === 'en' ? 'en-AR' : 'es-AR', {
-        style: 'currency',
-        currency: 'ARS',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-    }).format(amount);
-    return `${formatted} ARS/mes`;
+    const formatted = formatCurrency({
+        value: amount,
+        locale: toBcp47Locale(locale),
+        currency: 'ARS'
+    });
+    return `${formatted}/mes`;
 }
 
 /**
@@ -104,14 +106,14 @@ interface FeaturesListProps {
 function FeaturesList({ features, heading }: FeaturesListProps) {
     return (
         <div className="space-y-3">
-            <h3 className="font-semibold text-gray-700 text-sm uppercase tracking-wide">
+            <h3 className="font-semibold text-sm text-text-secondary uppercase tracking-wide">
                 {heading}
             </h3>
             <ul className="space-y-2">
                 {features.map((feature) => (
                     <li
                         key={feature}
-                        className="flex items-center gap-2 text-gray-600 text-sm"
+                        className="flex items-center gap-2 text-sm text-text-secondary"
                     >
                         <CheckIcon
                             size="xs"
@@ -141,8 +143,8 @@ interface UpgradeCtaProps {
 function UpgradeCta({ heading, description, buttonText, href }: UpgradeCtaProps) {
     return (
         <div className="space-y-2 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 p-4">
-            <h3 className="font-semibold text-gray-900">{heading}</h3>
-            <p className="text-gray-600 text-sm">{description}</p>
+            <h3 className="font-semibold text-text">{heading}</h3>
+            <p className="text-sm text-text-secondary">{description}</p>
             <a
                 href={href}
                 className="mt-2 inline-block rounded-md bg-primary px-4 py-2 font-semibold text-sm text-white transition-colors hover:bg-primary-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
@@ -176,8 +178,15 @@ function ActiveSubscriptionView({
     features,
     statusLabels
 }: ActiveSubscriptionViewProps) {
-    const { planName, status, monthlyPriceArs, trialEndsAt, cancelAtPeriodEnd, currentPeriodEnd } =
-        subscription;
+    const {
+        planName,
+        status,
+        monthlyPriceArs,
+        trialEndsAt,
+        cancelAtPeriodEnd,
+        currentPeriodEnd,
+        paymentMethod
+    } = subscription;
 
     const trialDaysRemaining =
         status === 'trial' && trialEndsAt ? computeTrialDaysRemaining(trialEndsAt) : null;
@@ -190,7 +199,7 @@ function ActiveSubscriptionView({
         <div className="space-y-6">
             {/* Plan header */}
             <div className="space-y-2">
-                <h2 className="font-bold text-gray-900 text-xl">{planName}</h2>
+                <h2 className="font-bold text-text text-xl">{planName}</h2>
                 <StatusBadge
                     statusKey={status}
                     label={statusLabels[status] ?? status}
@@ -199,7 +208,7 @@ function ActiveSubscriptionView({
 
             {/* Price */}
             <div>
-                <p className="font-bold text-2xl text-gray-900">
+                <p className="font-bold text-2xl text-text">
                     {isFree
                         ? t('subscription.freePlanPrice')
                         : formatArsPrice(monthlyPriceArs, locale)}
@@ -208,26 +217,67 @@ function ActiveSubscriptionView({
 
             {/* Trial warning */}
             {trialDaysRemaining !== null && (
-                <p className="rounded-md bg-amber-50 px-3 py-2 font-medium text-amber-800 text-sm">
+                <p className="rounded-md bg-amber-50 px-3 py-2 font-medium text-amber-800 text-sm dark:bg-amber-900/20 dark:text-amber-300">
                     {t('subscription.trialEndsIn', undefined, { days: trialDaysRemaining })}
                 </p>
             )}
 
+            {/* Past due warning */}
+            {status === 'past_due' && (
+                <div
+                    className="rounded-md bg-red-50 px-3 py-2 dark:bg-red-900/20"
+                    role="alert"
+                >
+                    <p className="font-medium text-red-700 text-sm dark:text-red-300">
+                        {t('subscription.pastDueNotice')}
+                    </p>
+                    <a
+                        href={upgradeHref}
+                        className="mt-1 inline-block font-semibold text-red-700 text-sm underline hover:text-red-800 dark:text-red-300 dark:hover:text-red-200"
+                    >
+                        {t('subscription.updatePaymentMethod')}
+                    </a>
+                </div>
+            )}
+
+            {/* Payment method */}
+            {paymentMethod && (
+                <div className="space-y-1">
+                    <h3 className="font-semibold text-sm text-text-secondary uppercase tracking-wide">
+                        {t('subscription.paymentMethodLabel')}
+                    </h3>
+                    <p className="text-sm text-text">
+                        {t('subscription.paymentMethodCard', undefined, {
+                            brand:
+                                paymentMethod.brand.charAt(0).toUpperCase() +
+                                paymentMethod.brand.slice(1),
+                            last4: paymentMethod.last4
+                        })}
+                    </p>
+                    <p className="text-text-tertiary text-xs">
+                        {t('subscription.paymentMethodExpires', undefined, {
+                            month: String(paymentMethod.expMonth).padStart(2, '0'),
+                            year: paymentMethod.expYear
+                        })}
+                    </p>
+                </div>
+            )}
+
             {/* Cancellation notice */}
             {cancelAtPeriodEnd && formattedPeriodEnd && (
-                <p className="rounded-md bg-red-50 px-3 py-2 font-medium text-red-700 text-sm">
+                <p className="rounded-md bg-red-50 px-3 py-2 font-medium text-red-700 text-sm dark:bg-red-900/20 dark:text-red-300">
                     {t('subscription.cancelNotice', undefined, { date: formattedPeriodEnd })}
                 </p>
             )}
 
             {/* Renewal info */}
             {!cancelAtPeriodEnd && status === 'active' && formattedPeriodEnd && (
-                <p className="text-gray-500 text-sm">
+                <p className="text-sm text-text-tertiary">
                     {t('subscription.renewsOn', undefined, { date: formattedPeriodEnd })}
                 </p>
             )}
 
-            <hr className="border-gray-100" />
+            <hr className="border-border" />
 
             {/* Features list */}
             <FeaturesList
@@ -238,7 +288,7 @@ function ActiveSubscriptionView({
             {/* Upgrade CTA - only for free plan */}
             {isFree && (
                 <>
-                    <hr className="border-gray-100" />
+                    <hr className="border-border" />
                     <UpgradeCta
                         heading={t('subscription.upgradeHeading')}
                         description={t('subscription.upgradeDescription')}
@@ -266,9 +316,7 @@ function FreePlanView({ upgradeHref, t, features, statusLabels }: FreePlanViewPr
         <div className="space-y-6">
             {/* Plan header */}
             <div className="space-y-2">
-                <h2 className="font-bold text-gray-900 text-xl">
-                    {t('subscription.freePlanName')}
-                </h2>
+                <h2 className="font-bold text-text text-xl">{t('subscription.freePlanName')}</h2>
                 <StatusBadge
                     statusKey="free"
                     label={statusLabels.free ?? 'Free'}
@@ -277,12 +325,10 @@ function FreePlanView({ upgradeHref, t, features, statusLabels }: FreePlanViewPr
 
             {/* Price */}
             <div>
-                <p className="font-bold text-2xl text-gray-900">
-                    {t('subscription.freePlanPrice')}
-                </p>
+                <p className="font-bold text-2xl text-text">{t('subscription.freePlanPrice')}</p>
             </div>
 
-            <hr className="border-gray-100" />
+            <hr className="border-border" />
 
             {/* Features list */}
             <FeaturesList
@@ -290,7 +336,7 @@ function FreePlanView({ upgradeHref, t, features, statusLabels }: FreePlanViewPr
                 heading={t('subscription.featuresHeading')}
             />
 
-            <hr className="border-gray-100" />
+            <hr className="border-border" />
 
             {/* Upgrade CTA */}
             <UpgradeCta
@@ -328,6 +374,7 @@ export function SubscriptionCard({ locale, upgradeHref }: SubscriptionCardProps)
         trial: t('subscription.statusTrial'),
         cancelled: t('subscription.statusCancelled'),
         expired: t('subscription.statusExpired'),
+        past_due: t('subscription.statusPastDue'),
         pending: t('subscription.statusPending'),
         free: t('subscription.statusFree')
     };
@@ -346,7 +393,7 @@ export function SubscriptionCard({ locale, upgradeHref }: SubscriptionCardProps)
             }
         } catch (err) {
             setError(true);
-            console.error('Error fetching subscription:', err);
+            webLogger.error('Error fetching subscription:', err);
         } finally {
             setIsLoading(false);
         }
@@ -360,7 +407,7 @@ export function SubscriptionCard({ locale, upgradeHref }: SubscriptionCardProps)
     if (isLoading) {
         return (
             <output
-                className="block rounded-lg border border-gray-200 p-6"
+                className="block rounded-lg border border-border p-6"
                 aria-busy="true"
                 aria-label={t('subscription.loading')}
             >
@@ -369,19 +416,19 @@ export function SubscriptionCard({ locale, upgradeHref }: SubscriptionCardProps)
                 {/* Skeleton placeholder matching the loaded state height */}
                 <div className="animate-pulse space-y-4">
                     {/* Plan name skeleton */}
-                    <div className="h-6 w-1/3 rounded bg-gray-200" />
+                    <div className="h-6 w-1/3 rounded bg-surface-alt" />
 
                     {/* Status badge skeleton */}
-                    <div className="h-5 w-20 rounded bg-gray-200" />
+                    <div className="h-5 w-20 rounded bg-surface-alt" />
 
                     {/* Price skeleton */}
-                    <div className="h-8 w-1/4 rounded bg-gray-200" />
+                    <div className="h-8 w-1/4 rounded bg-surface-alt" />
 
                     {/* Divider */}
-                    <div className="border-gray-100 border-t" />
+                    <div className="border-border border-t" />
 
                     {/* Features heading skeleton */}
-                    <div className="h-4 w-2/5 rounded bg-gray-200" />
+                    <div className="h-4 w-2/5 rounded bg-surface-alt" />
 
                     {/* Feature list skeleton */}
                     <div className="space-y-2">
@@ -390,27 +437,27 @@ export function SubscriptionCard({ locale, upgradeHref }: SubscriptionCardProps)
                                 key={key}
                                 className="flex items-center gap-2"
                             >
-                                <div className="h-3 w-3 shrink-0 rounded-full bg-gray-200" />
-                                <div className="h-3 w-3/5 rounded bg-gray-200" />
+                                <div className="h-3 w-3 shrink-0 rounded-full bg-surface-alt" />
+                                <div className="h-3 w-3/5 rounded bg-surface-alt" />
                             </div>
                         ))}
                     </div>
 
                     {/* Divider */}
-                    <div className="border-gray-100 border-t" />
+                    <div className="border-border border-t" />
 
                     {/* Upgrade section skeleton */}
                     <div className="space-y-2">
-                        <div className="h-5 w-1/4 rounded bg-gray-200" />
-                        <div className="h-4 w-4/5 rounded bg-gray-200" />
-                        <div className="mt-2 h-10 w-28 rounded bg-gray-200" />
+                        <div className="h-5 w-1/4 rounded bg-surface-alt" />
+                        <div className="h-4 w-4/5 rounded bg-surface-alt" />
+                        <div className="mt-2 h-10 w-28 rounded bg-surface-alt" />
                     </div>
                 </div>
 
                 {/* Visible loading text below skeleton */}
-                <div className="mt-6 flex items-center gap-3 border-gray-100 border-t pt-4">
+                <div className="mt-6 flex items-center gap-3 border-border border-t pt-4">
                     <div className="h-5 w-5 shrink-0 animate-spin rounded-full border-primary border-b-2" />
-                    <span className="text-gray-600 text-sm">{t('subscription.loading')}</span>
+                    <span className="text-sm text-text-secondary">{t('subscription.loading')}</span>
                 </div>
             </output>
         );
@@ -420,24 +467,24 @@ export function SubscriptionCard({ locale, upgradeHref }: SubscriptionCardProps)
     if (error) {
         return (
             <div
-                className="rounded-lg border border-red-200 bg-red-50 p-6"
+                className="rounded-lg border border-red-200 bg-red-50 p-6 dark:border-red-800/50 dark:bg-red-900/20"
                 role="alert"
             >
                 <div className="flex flex-col items-center gap-4 text-center">
                     <AlertTriangleIcon
                         size="lg"
                         weight="fill"
-                        className="text-red-500"
+                        className="text-red-500 dark:text-red-400"
                         aria-hidden="true"
                     />
-                    <p className="font-medium text-red-700 text-sm">
+                    <p className="font-medium text-red-700 text-sm dark:text-red-400">
                         {t('subscription.loadError')}
                     </p>
                     <button
                         type="button"
                         onClick={fetchSubscription}
                         aria-label={tUi('accessibility.retryLoading')}
-                        className="inline-flex items-center gap-2 rounded-md border border-red-300 bg-white px-4 py-2 font-medium text-red-700 text-sm transition-colors hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
+                        className="inline-flex items-center gap-2 rounded-md border border-error/30 bg-surface px-4 py-2 font-medium text-error text-sm transition-colors hover:bg-error/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-error focus-visible:ring-offset-2"
                     >
                         <RefreshIcon
                             size="xs"
@@ -453,7 +500,7 @@ export function SubscriptionCard({ locale, upgradeHref }: SubscriptionCardProps)
 
     // Loaded state
     return (
-        <div className="rounded-lg border border-gray-200 p-6 shadow-sm">
+        <div className="rounded-lg border border-border p-6 shadow-sm">
             {data !== null ? (
                 <ActiveSubscriptionView
                     subscription={data}
