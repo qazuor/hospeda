@@ -35,8 +35,19 @@ vi.mock('@repo/db', () => ({
         resolvedAt: 'resolvedAt',
         createdAt: 'createdAt'
     },
+    billingWebhookEvents: {
+        id: 'id',
+        providerEventId: 'providerEventId',
+        provider: 'provider',
+        type: 'type',
+        status: 'status',
+        payload: 'payload',
+        createdAt: 'createdAt'
+    },
     eq: vi.fn(),
-    isNull: vi.fn()
+    isNull: vi.fn(),
+    and: vi.fn((...conditions: unknown[]) => ({ __and: true, conditions })),
+    lt: vi.fn((_col: unknown, _val: unknown) => ({ __lt: true }))
 }));
 
 // Mock logger

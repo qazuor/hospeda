@@ -465,7 +465,7 @@ describe('MercadoPago Webhook Handler', () => {
     });
 
     describe('handleWebhookEvent - idempotency', () => {
-        it('should INSERT new event and store ID in webhookEventIds', async () => {
+        it('should INSERT new event and persist to database', async () => {
             const mockReturning = vi.fn().mockResolvedValue([{ id: 'webhook_new_123' }]);
             const mockValues = vi.fn().mockReturnValue({ returning: mockReturning });
             const mockInsert = vi.fn().mockReturnValue({ values: mockValues });
@@ -487,7 +487,8 @@ describe('MercadoPago Webhook Handler', () => {
                 status: 'pending',
                 payload: event
             });
-            expect(webhookEventIds.get('req_new')).toBe('webhook_new_123');
+            // Handler stores providerEventId internally for error handling
+            // (requestProviderEventIds is private). We verify the DB insert succeeded.
             expect(result).toBeUndefined();
         });
 
@@ -583,7 +584,8 @@ describe('MercadoPago Webhook Handler', () => {
                 error: null,
                 processedAt: null
             });
-            expect(webhookEventIds.get('req_retry')).toBe('webhook_failed_123');
+            // Handler stores providerEventId internally for error handling
+            // (requestProviderEventIds is private). We verify the DB update succeeded.
             expect(result).toBeUndefined();
         });
 
@@ -823,9 +825,21 @@ describe('MercadoPago Webhook Handler', () => {
             });
         });
 
-        it('should update webhook event status to failed in DB', async () => {
-            webhookEventIds.set('req_fail', 'webhook_fail_123');
+        it('should update webhook event status to failed in DB when event was persisted', async () => {
+            // First, populate the internal requestProviderEventIds by running handleWebhookEvent
+            const mockReturning = vi.fn().mockResolvedValue([{ id: 'webhook_fail_123' }]);
+            const mockValues = vi.fn().mockReturnValue({ returning: mockReturning });
+            const mockInsert = vi.fn().mockReturnValue({ values: mockValues });
 
+            vi.mocked(getDb).mockReturnValue({ insert: mockInsert } as unknown as ReturnType<
+                typeof getDb
+            >);
+
+            const context = createMockContext({ requestId: 'req_fail' });
+            const event = createMockEvent({ id: 'evt_fail', type: 'payment.created', data: {} });
+            await handleWebhookEvent(context, event);
+
+            // Now set up DB mock for the error handler's markEventFailedByProviderId call
             const mockWhere = vi.fn().mockResolvedValue(undefined);
             const mockSet = vi.fn().mockReturnValue({ where: mockWhere });
             const mockUpdate = vi.fn().mockReturnValue({ set: mockSet });
@@ -835,7 +849,6 @@ describe('MercadoPago Webhook Handler', () => {
             >);
 
             const error = new Error('Processing failed');
-            const context = createMockContext({ requestId: 'req_fail' });
 
             await handleWebhookError(error, context);
 
@@ -846,9 +859,25 @@ describe('MercadoPago Webhook Handler', () => {
             });
         });
 
-        it('should clean up webhookEventIds map', async () => {
-            webhookEventIds.set('req_cleanup', 'webhook_cleanup_123');
+        it('should clean up internal event tracking after error handling', async () => {
+            // First, populate the internal requestProviderEventIds
+            const mockReturning = vi.fn().mockResolvedValue([{ id: 'webhook_cleanup_123' }]);
+            const mockValues = vi.fn().mockReturnValue({ returning: mockReturning });
+            const mockInsert = vi.fn().mockReturnValue({ values: mockValues });
 
+            vi.mocked(getDb).mockReturnValue({ insert: mockInsert } as unknown as ReturnType<
+                typeof getDb
+            >);
+
+            const context = createMockContext({ requestId: 'req_cleanup' });
+            const event = createMockEvent({
+                id: 'evt_cleanup',
+                type: 'payment.created',
+                data: {}
+            });
+            await handleWebhookEvent(context, event);
+
+            // Set up DB mock for error handler
             const mockWhere = vi.fn().mockResolvedValue(undefined);
             const mockSet = vi.fn().mockReturnValue({ where: mockWhere });
             const mockUpdate = vi.fn().mockReturnValue({ set: mockSet });
@@ -858,16 +887,42 @@ describe('MercadoPago Webhook Handler', () => {
             >);
 
             const error = new Error('Processing failed');
-            const context = createMockContext({ requestId: 'req_cleanup' });
-
             await handleWebhookError(error, context);
 
-            expect(webhookEventIds.has('req_cleanup')).toBe(false);
+            // Calling handleWebhookError again with same requestId should NOT call update
+            // because the internal map entry was cleaned up
+            vi.mocked(getDb).mockReturnValue({ update: vi.fn() } as unknown as ReturnType<
+                typeof getDb
+            >);
+            const mockUpdate2 = vi.fn();
+            vi.mocked(getDb).mockReturnValue({ update: mockUpdate2 } as unknown as ReturnType<
+                typeof getDb
+            >);
+
+            await handleWebhookError(new Error('Second error'), context);
+
+            expect(mockUpdate2).not.toHaveBeenCalled();
         });
 
         it('should handle DB update failure gracefully', async () => {
-            webhookEventIds.set('req_db_fail', 'webhook_123');
+            // First, populate the internal requestProviderEventIds
+            const mockReturning = vi.fn().mockResolvedValue([{ id: 'webhook_db_fail' }]);
+            const mockValues = vi.fn().mockReturnValue({ returning: mockReturning });
+            const mockInsert = vi.fn().mockReturnValue({ values: mockValues });
 
+            vi.mocked(getDb).mockReturnValue({ insert: mockInsert } as unknown as ReturnType<
+                typeof getDb
+            >);
+
+            const context = createMockContext({ requestId: 'req_db_fail' });
+            const event = createMockEvent({
+                id: 'evt_db_fail',
+                type: 'payment.created',
+                data: {}
+            });
+            await handleWebhookEvent(context, event);
+
+            // Now set up DB mock to fail on update
             const mockWhere = vi.fn().mockRejectedValue(new Error('DB connection lost'));
             const mockSet = vi.fn().mockReturnValue({ where: mockWhere });
             const mockUpdate = vi.fn().mockReturnValue({ set: mockSet });
@@ -877,7 +932,6 @@ describe('MercadoPago Webhook Handler', () => {
             >);
 
             const error = new Error('Processing failed');
-            const context = createMockContext({ requestId: 'req_db_fail' });
 
             await expect(handleWebhookError(error, context)).resolves.toBeUndefined();
         });
