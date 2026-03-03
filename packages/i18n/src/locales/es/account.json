@@ -53,13 +53,35 @@
         "statusCancelled": "Cancelado",
         "statusExpired": "Expirado",
         "statusPending": "Pendiente",
+        "statusPastDue": "Pago pendiente",
         "statusFree": "Gratuito",
+        "pastDueNotice": "Tu pago esta vencido. Actualiza tu metodo de pago para evitar la suspension del servicio.",
+        "updatePaymentMethod": "Actualizar metodo de pago",
+        "paymentMethodLabel": "Metodo de pago",
+        "paymentMethodCard": "{{brand}} ••{{last4}}",
+        "paymentMethodExpires": "Vence {{month}}/{{year}}",
         "trialEndsIn": "Prueba finaliza en {{days}} dias",
         "cancelNotice": "Plan finaliza el {{date}}",
         "renewsOn": "Se renueva el {{date}}",
         "billingSection": "Facturacion",
         "noBillingInfo": "No hay informacion de facturacion disponible",
         "billingHint": "La informacion de facturacion se actualizara cuando realices tu primera suscripcion"
+    },
+    "favorites": {
+        "tabs": {
+            "accommodation": "Alojamientos",
+            "destination": "Destinos",
+            "event": "Eventos",
+            "post": "Blog"
+        },
+        "empty": "No tienes favoritos en esta categoria",
+        "emptyAction": "Comienza explorando contenido para guardar tus favoritos",
+        "delete": "Eliminar",
+        "deleteSuccess": "Favorito eliminado correctamente",
+        "deleteError": "Error al eliminar el favorito",
+        "loadMore": "Cargar mas",
+        "loading": "Cargando...",
+        "fetchError": "Error al cargar los favoritos"
     },
     "reviews": {
         "tabs": {

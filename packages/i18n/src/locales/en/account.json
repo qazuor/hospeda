@@ -53,13 +53,35 @@
         "statusCancelled": "Cancelled",
         "statusExpired": "Expired",
         "statusPending": "Pending",
+        "statusPastDue": "Past Due",
         "statusFree": "Free",
+        "pastDueNotice": "Your payment is overdue. Update your payment method to avoid service suspension.",
+        "updatePaymentMethod": "Update payment method",
+        "paymentMethodLabel": "Payment method",
+        "paymentMethodCard": "{{brand}} ••{{last4}}",
+        "paymentMethodExpires": "Expires {{month}}/{{year}}",
         "trialEndsIn": "Trial ends in {{days}} days",
         "cancelNotice": "Plan ends on {{date}}",
         "renewsOn": "Renews on {{date}}",
         "billingSection": "Billing",
         "noBillingInfo": "No billing information available",
         "billingHint": "Billing information will be updated when you make your first subscription"
+    },
+    "favorites": {
+        "tabs": {
+            "accommodation": "Accommodations",
+            "destination": "Destinations",
+            "event": "Events",
+            "post": "Blog"
+        },
+        "empty": "You have no favorites in this category",
+        "emptyAction": "Start exploring content to save your favorites",
+        "delete": "Delete",
+        "deleteSuccess": "Favorite deleted successfully",
+        "deleteError": "Error deleting favorite",
+        "loadMore": "Load more",
+        "loading": "Loading...",
+        "fetchError": "Error loading favorites"
     },
     "reviews": {
         "tabs": {
