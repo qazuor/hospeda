@@ -9,6 +9,7 @@
 // Core configuration and data
 export {
     defaultLocale,
+    defaultIntlLocale,
     locales,
     namespaces,
     trans,
@@ -21,3 +22,16 @@ export type { TranslationKey, TranslationKeys } from './types';
 
 // React hooks for translations
 export { useTranslations } from './hooks/use-translations';
+
+// Pluralization utilities
+export { pluralize } from './pluralization';
+
+// Formatting utilities
+export {
+    formatDate,
+    formatNumber,
+    formatCurrency,
+    resolveDefaultCurrency,
+    toBcp47Locale
+} from './formatting';
+export type { FormatDateInput, FormatNumberInput, FormatCurrencyInput } from './formatting';

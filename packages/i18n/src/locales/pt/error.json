@@ -1,9 +1,18 @@
 {
     "404": {
         "title": "Página não encontrada",
-        "heading": "A página que você está procurando não existe.",
-        "description": "A página que você está procurando não existe.",
-        "message": "A página que você está procurando não existe."
+        "heading": "Página não encontrada",
+        "description": "Desculpe, a página que você está procurando não existe ou foi movida.",
+        "message": "Desculpe, a página que você está procurando não existe ou foi movida.",
+        "goHome": "Voltar ao início"
+    },
+    "500": {
+        "title": "Erro do servidor",
+        "heading": "Erro do servidor",
+        "description": "Desculpe, algo deu errado em nossos servidores. Por favor, tente novamente mais tarde.",
+        "message": "Desculpe, algo deu errado. Por favor, tente novamente mais tarde.",
+        "retry": "Tentar novamente",
+        "goHome": "Voltar ao início"
     },
     "form": {
         "validation-failed": "A validação do formulário falhou. Por favor, corrija os erros e tente novamente.",

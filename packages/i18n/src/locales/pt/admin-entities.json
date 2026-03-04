@@ -140,7 +140,12 @@
         "approve": "Aprovar",
         "reject": "Rejeitar",
         "activate": "Ativar",
-        "deactivate": "Desativar"
+        "deactivate": "Desativar",
+        "viewPlans": "Ver planos"
+    },
+    "limits": {
+        "accommodationLimitReached": "Limite de acomodações atingido",
+        "accommodationLimitDesc": "Você atingiu o número máximo de acomodações permitidas no seu plano atual. Atualize seu plano para criar mais acomodações."
     },
     "confirmations": {
         "delete": {
@@ -283,6 +288,116 @@
             "sports": "Esportes",
             "theater": "Teatro",
             "other": "Outro"
+        }
+    },
+    "viewFields": {
+        "boolean": {
+            "yes": "Sim",
+            "no": "Não",
+            "enabled": "Habilitado",
+            "disabled": "Desabilitado",
+            "true": "Verdadeiro",
+            "false": "Falso"
+        },
+        "currency": {
+            "noAmount": "Sem valor"
+        },
+        "richText": {
+            "characters": "caracteres",
+            "formattedContent": "Conteúdo formatado",
+            "plainText": "Texto simples"
+        },
+        "image": {
+            "caption": "Legenda",
+            "description": "Descrição",
+            "altText": "Texto alternativo",
+            "badge": "Imagem",
+            "clickToPreview": "Clique para visualizar"
+        },
+        "gallery": {
+            "imageSingular": "imagem",
+            "imagesPlural": "imagens",
+            "layout": "Layout",
+            "clickToPreview": "Clique nas imagens para visualizar",
+            "sortable": "Galeria ordenável",
+            "imageAlt": "Imagem da galeria",
+            "preview": "Visualizar"
+        }
+    },
+    "ownerPromotions": {
+        "columns": {
+            "title": "Título",
+            "owner": "Proprietário",
+            "accommodation": "Acomodação",
+            "discountType": "Tipo de Desconto",
+            "discountValue": "Valor",
+            "validFrom": "Válido Desde",
+            "validUntil": "Válido Até",
+            "redemptions": "Resgates",
+            "status": "Status",
+            "createdAt": "Criado",
+            "freeNight_one": "{{count}} noite grátis",
+            "freeNight_other": "{{count}} noites grátis"
+        },
+        "discountTypes": {
+            "percentage": "Porcentagem",
+            "fixed": "Valor Fixo",
+            "freeNight": "Noite Grátis"
+        },
+        "statuses": {
+            "active": "Ativo",
+            "inactive": "Inativo",
+            "expired": "Expirado"
+        }
+    },
+    "fields": {
+        "image": {
+            "uploadedAlt": "Imagem enviada",
+            "altTextLabel": "Texto Alternativo",
+            "altTextPlaceholder": "Descreva a imagem para acessibilidade",
+            "captionLabel": "Legenda",
+            "captionPlaceholder": "Legenda da imagem",
+            "descriptionLabel": "Descrição",
+            "descriptionPlaceholder": "Descrição detalhada",
+            "uploadAriaLabel": "Enviar imagem",
+            "uploading": "Enviando...",
+            "dropText": "Arraste uma imagem aqui, ou clique para selecionar",
+            "fileConstraints": "{types} até {maxSize}",
+            "selectButton": "Selecionar Imagem"
+        },
+        "gallery": {
+            "imageAlt": "Imagem da galeria {index}",
+            "captionPlaceholder": "Legenda",
+            "altTextPlaceholder": "Texto alternativo",
+            "uploadAriaLabel": "Enviar imagens",
+            "uploading": "Enviando...",
+            "addImages": "Adicionar imagens ({current}/{max})",
+            "fileConstraints": "{types} até {maxSize} cada",
+            "selectButton": "Selecionar Imagens"
+        },
+        "fileUploadNotImplemented": "Upload de arquivos ainda não implementado",
+        "unknownFieldType": "Tipo de campo desconhecido: {type}"
+    },
+    "entitlementGate": {
+        "premiumFeature": "Recurso premium",
+        "titleWithSection": "{section} - Recurso Premium",
+        "titleDefault": "Recurso Premium",
+        "description": "Este recurso está disponível em planos superiores. Atualize seu plano para acessar esta seção.",
+        "fieldPremium": "{field} - Premium",
+        "fieldPremiumDescription": "Este recurso está disponível em planos superiores"
+    },
+    "limitGate": {
+        "fieldLimitReached": "{field} - Limite atingido",
+        "description": "Você atingiu o limite do seu plano atual"
+    },
+    "selects": {
+        "destination": {
+            "placeholder": "Selecionar um destino...",
+            "unknown": "Destino Desconhecido"
+        },
+        "owner": {
+            "placeholder": "Selecionar um proprietário...",
+            "unknown": "Usuário Desconhecido"
         }
     }
 }

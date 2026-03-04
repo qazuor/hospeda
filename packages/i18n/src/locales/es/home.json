@@ -60,6 +60,8 @@
         "rural": "Rural",
         "viewAriaLabel": "Ver alojamientos tipo {{type}}",
         "viewWithCountAriaLabel": "Ver {{count}} alojamientos tipo {{type}}",
+        "count_one": "{{count}} alojamiento",
+        "count_other": "{{count}} alojamientos",
         "countSingular": "{{count}} alojamiento",
         "countPlural": "{{count}} alojamientos"
     },
@@ -124,6 +126,8 @@
         "ctaLabel": "Buscar",
         "loadingText": "Cargando...",
         "searchAriaLabel": "Buscar alojamientos",
-        "closePanelAriaLabel": "Cerrar panel"
+        "closePanelAriaLabel": "Cerrar panel",
+        "moreSelected_one": "& {{count}} más",
+        "moreSelected_other": "& {{count}} más"
     }
 }

@@ -96,8 +96,12 @@
         },
         "card": {
             "accommodations": "{{count}} alojamiento | {{count}} alojamientos",
+            "accommodation_one": "{{count}} alojamiento",
+            "accommodation_other": "{{count}} alojamientos",
             "accommodationSingular": "{{count}} alojamiento",
             "accommodationPlural": "{{count}} alojamientos",
+            "event_one": "{{count}} evento",
+            "event_other": "{{count}} eventos",
             "events": "{{count}} evento | {{count}} eventos",
             "eventSingular": "{{count}} evento",
             "eventPlural": "{{count}} eventos",
@@ -136,6 +140,7 @@
         "pageDescription": "Descubrí los mejores alojamientos en"
     },
     "detailPage": {
+        "seoDescription": "Descubre {name} en {province}. Guía completa con alojamientos, eventos, atracciones y cómo llegar.",
         "home": "Inicio",
         "destinations": "Destinos",
         "description": "Descripción",
@@ -156,6 +161,10 @@
         "noEvents": "No hay eventos próximos",
         "noEventsMessage": "No hay eventos programados para este destino en este momento.",
         "accommodationsIn": "Alojamientos en",
-        "eventsIn": "Eventos en"
+        "eventsIn": "Eventos en",
+        "accommodationCount_one": "{{count}} alojamiento disponible",
+        "accommodationCount_other": "{{count}} alojamientos disponibles",
+        "eventCount_one": "{{count}} evento proximo",
+        "eventCount_other": "{{count}} eventos proximos"
     }
 }

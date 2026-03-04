@@ -94,6 +94,10 @@
             "emptyTitle": "Não há eventos da categoria {category} disponíveis"
         }
     },
+    "calendar": {
+        "prevMonth": "Mês anterior",
+        "nextMonth": "Próximo mês"
+    },
     "listPage": {
         "title": "Eventos",
         "description": "Descubra os próximos eventos no Litoral argentino",

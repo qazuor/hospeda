@@ -52,7 +52,48 @@
     },
     "cron": {
         "title": "Scheduled Tasks",
-        "description": "Manage and monitor system scheduled tasks (cron jobs)"
+        "description": "Manage and monitor system scheduled tasks (cron jobs)",
+        "loading": "Loading scheduled tasks...",
+        "errorLoading": "Error loading scheduled tasks",
+        "noJobs": "No scheduled tasks registered",
+        "stats": {
+            "totalJobs": "Total tasks",
+            "activeJobs": "Active tasks",
+            "disabledJobs": "Disabled tasks"
+        },
+        "refreshing": "Updating...",
+        "info": {
+            "title": "Information about scheduled tasks",
+            "autoRun": "Scheduled tasks run automatically according to their schedule",
+            "manualRun": "You can manually run any active task using the \"Run now\" button",
+            "dryRunInfo": "\"Dry Run\" mode runs the task without making real database changes",
+            "autoRefresh": "The list updates automatically every minute"
+        },
+        "card": {
+            "statusActive": "Active",
+            "statusDisabled": "Disabled",
+            "scheduleLabel": "Schedule:",
+            "dryRunLabel": "Dry Run mode",
+            "dryRunHint": "Run without making real changes",
+            "runButton": "Run now",
+            "runningButton": "Running...",
+            "successTitle": "Execution successful",
+            "errorTitle": "Execution error",
+            "processedLabel": "Processed:",
+            "errorsLabel": "Errors:",
+            "durationLabel": "Duration:",
+            "modeLabel": "Mode:",
+            "modeDryRun": "Test",
+            "modeReal": "Real",
+            "runErrorTitle": "Error running task"
+        },
+        "schedules": {
+            "daily": "Daily at midnight",
+            "every5min": "Every 5 minutes",
+            "hourly": "Every hour",
+            "weekly": "Weekly (Sundays)",
+            "monthly": "Monthly (day 1)"
+        }
     },
     "metrics": {
         "title": "Usage Analytics",
@@ -71,7 +112,38 @@
         "loadingUsage": "Loading usage analytics...",
         "errorUsage": "Error loading analytics",
         "emptyTitle": "Search for a customer to view their usage analytics",
-        "emptyDescription": "Use the search field to find a customer by email"
+        "emptyDescription": "Use the search field to find a customer by email",
+        "systemStats": {
+            "totalCustomers": "Total Customers",
+            "activePlans": "Active Plans",
+            "approachingLimits": "Near Limit",
+            "approachingLimitsHint": "Customers with > 90% usage on any limit",
+            "categoryOwner": "Owners",
+            "categoryComplex": "Complexes",
+            "categoryTourist": "Tourists"
+        },
+        "approachingLimits": {
+            "noClientsTitle": "No customers near their limits",
+            "noClientsHint": "All customers are using less than",
+            "noClientsHintSuffix": "% of their limits",
+            "cardTitle": "Customers Near Limit",
+            "clientsUsing": "customer",
+            "clientsUsingPlural": "customers",
+            "clientsUsingSuffix": "using more than",
+            "clientsUsingSuffix2": "% of some limit"
+        },
+        "usageDisplay": {
+            "customerInfoTitle": "Customer Information",
+            "emailLabel": "Email",
+            "nameLabel": "Name",
+            "categoryLabel": "Category",
+            "currentPlanLabel": "Current Plan",
+            "usageSummaryTitle": "Usage Summary",
+            "totalLimits": "total limits",
+            "atCapacity": "at capacity",
+            "noLimitsMessage": "No limits configured for this customer",
+            "nearCapacityWarning": "This limit is near or has reached its maximum capacity"
+        }
     },
     "plans": {
         "title": "Subscription Plans",
@@ -88,7 +160,87 @@
         "categoryOwner": "Owner",
         "categoryComplex": "Complex",
         "categoryTourist": "Tourist",
-        "createPlan": "Create plan"
+        "createPlan": "Create plan",
+        "columns": {
+            "name": "Name",
+            "category": "Category",
+            "monthlyPrice": "Monthly Price",
+            "annualPrice": "Annual Price",
+            "entitlements": "Permissions",
+            "limits": "Limits",
+            "status": "Status",
+            "actions": "Actions",
+            "perMonth": "/mo",
+            "permissionsCount": "permissions",
+            "limitsCount": "limits"
+        },
+        "categoryLabels": {
+            "owner": "Owner",
+            "complex": "Complex",
+            "tourist": "Tourist"
+        },
+        "statusActive": "Active",
+        "statusInactive": "Inactive",
+        "statusDefault": "Default",
+        "actionActivate": "Activate",
+        "actionDeactivate": "Deactivate",
+        "actionEdit": "Edit",
+        "actionDelete": "Delete",
+        "dialog": {
+            "createTitle": "Create Plan",
+            "editTitle": "Edit Plan",
+            "createDescription": "Fill out the form to create a new subscription plan",
+            "editDescription": "Modify the details of the existing plan",
+            "sections": {
+                "basicInfo": "Basic information",
+                "pricing": "Pricing",
+                "trial": "Trial period",
+                "entitlements": "Features (Entitlements)",
+                "limits": "Limits",
+                "configuration": "Configuration"
+            },
+            "fields": {
+                "slug": "Slug",
+                "slugPlaceholder": "owner-basic",
+                "slugHint": "Unique plan identifier",
+                "name": "Name",
+                "namePlaceholder": "Basic Owner",
+                "category": "Category",
+                "description": "Description",
+                "descriptionPlaceholder": "Describe the plan...",
+                "monthlyArs": "Monthly (ARS)",
+                "monthlyArsHint": "Price in pesos (converted to cents)",
+                "annualArs": "Annual (ARS)",
+                "annualArsHint": "Leave at 0 if no annual option",
+                "usdRef": "USD Ref.",
+                "usdRefHint": "Reference price in dollars",
+                "hasTrial": "Trial enabled",
+                "hasTrialHint": "Allow testing the plan for free",
+                "trialDays": "Trial days",
+                "limitsHint": "-1 = unlimited, 0 = not applicable",
+                "sortOrder": "Order",
+                "sortOrderHint": "Display order in pricing tables",
+                "isDefault": "Default plan",
+                "isDefaultHint": "Automatically assigned to new users",
+                "isActive": "Active",
+                "isActiveHint": "Available for subscription"
+            },
+            "entitlementGroups": {
+                "owner": "Owner",
+                "accommodation": "Accommodation",
+                "complex": "Complex",
+                "tourist": "Tourist"
+            },
+            "cancelButton": "Cancel",
+            "saveButton": "Save changes",
+            "createButton": "Create plan",
+            "successCreate": "Plan created",
+            "successUpdate": "Plan updated",
+            "successMessageCreate": "was created successfully",
+            "successMessageUpdate": "was updated successfully",
+            "errorTitle": "Error",
+            "errorMessage": "Error saving the plan"
+        }
     },
     "addons": {
         "title": "Purchased Add-ons",
@@ -122,7 +274,117 @@
         "toastActivatedTitle": "Add-on activated",
         "toastActivatedMessage": "The add-on was successfully force-activated",
         "toastErrorTitle": "Error",
-        "toastErrorMessage": "Error processing the action"
+        "toastErrorMessage": "Error processing the action",
+        "catalogColumns": {
+            "name": "Name",
+            "billingType": "Type",
+            "price": "Price",
+            "duration": "Duration",
+            "categories": "Categories",
+            "status": "Status",
+            "actions": "Actions",
+            "perMonth": "/mo",
+            "daysUnit": "days"
+        },
+        "billingTypeLabels": {
+            "oneTime": "One-time",
+            "recurring": "Recurring"
+        },
+        "categoryLabels": {
+            "owner": "Owner",
+            "complex": "Complex",
+            "tourist": "Tourist"
+        },
+        "purchasedColumns": {
+            "customer": "Customer",
+            "addon": "Add-on",
+            "status": "Status",
+            "purchasedAt": "Purchase Date",
+            "expiresAt": "Expiry Date",
+            "price": "Price",
+            "paymentId": "Payment ID",
+            "actions": "Actions",
+            "noExpiry": "No expiry",
+            "openMenu": "Open menu",
+            "viewDetails": "View details",
+            "forceExpire": "Force expiry",
+            "forceActivate": "Force activation"
+        },
+        "purchasedStatuses": {
+            "active": "Active",
+            "expired": "Expired",
+            "cancelled": "Cancelled"
+        },
+        "actionActivate": "Activate",
+        "actionDeactivate": "Deactivate",
+        "actionEdit": "Edit",
+        "actionDelete": "Delete",
+        "catalogDialog": {
+            "createTitle": "Create Add-on",
+            "editTitle": "Edit Add-on",
+            "createDescription": "Fill out the form to create a new add-on",
+            "editDescription": "Modify the details of the existing add-on",
+            "sections": {
+                "basicInfo": "Basic information",
+                "billing": "Billing",
+                "benefits": "Benefits",
+                "configuration": "Configuration"
+            },
+            "fields": {
+                "slug": "Slug",
+                "name": "Name",
+                "description": "Description",
+                "descriptionPlaceholder": "Describe the add-on...",
+                "billingType": "Type",
+                "priceArs": "Price (ARS)",
+                "durationDays": "Duration (days)",
+                "durationHintOneTime": "Days the benefit lasts",
+                "durationHintRecurring": "Not applicable for recurring",
+                "affectsLimitKey": "Affected limit",
+                "limitIncrease": "Increase",
+                "grantsEntitlement": "Enables feature",
+                "targetCategories": "Target categories",
+                "categoryOwner": "Owner",
+                "categoryComplex": "Complex",
+                "sortOrder": "Order",
+                "sortOrderHint": "Display order",
+                "isActive": "Status",
+                "isActiveHint": "Enable add-on",
+                "none": "None",
+                "noneEntitlement": "None"
+            },
+            "billingTypes": {
+                "oneTime": "One-time",
+                "recurring": "Recurring"
+            },
+            "cancelButton": "Cancel",
+            "saveButton": "Save changes",
+            "createButton": "Create add-on",
+            "successCreate": "Add-on created",
+            "successUpdate": "Add-on updated",
+            "successMessageCreate": "was created successfully",
+            "successMessageUpdate": "was updated successfully",
+            "errorTitle": "Error",
+            "errorMessage": "Error saving the add-on"
+        },
+        "detailsDialog": {
+            "title": "Purchased Add-on Details",
+            "description": "Full details of the add-on purchased by the customer",
+            "customerSection": "Customer Information",
+            "addonSection": "Add-on Information",
+            "purchaseSection": "Purchase Information",
+            "emailLabel": "Email:",
+            "nameLabel": "Name:",
+            "customerIdLabel": "Customer ID:",
+            "addonNameLabel": "Name:",
+            "addonSlugLabel": "Slug:",
+            "statusLabel": "Status:",
+            "priceLabel": "Price:",
+            "purchasedAtLabel": "Purchase date:",
+            "expiresAtLabel": "Expiry date:",
+            "paymentIdLabel": "Payment ID:",
+            "recordIdLabel": "Record ID:"
+        }
     },
     "settings": {
         "title": "Billing Configuration",
@@ -298,8 +560,8 @@
         "loadingNotifications": "Loading notifications...",
         "errorLoading": "Error loading notifications",
         "noNotifications": "No notifications",
-        "notificationCount": "notification",
-        "notificationCountPlural": "notifications",
+        "notificationCount_one": "{{count}} notification",
+        "notificationCount_other": "{{count}} notifications",
         "apiCheckError": "Verify the API is available",
         "emptyTitle": "No notifications recorded yet.",
         "emptyHint": "Notifications will appear here when the system sends them.",
@@ -336,11 +598,12 @@
         "dateTo": "Date To",
         "clearDateFilters": "Clear Date Filters",
         "listTitle": "Invoice List",
+        "loading": "Loading...",
         "loadingInvoices": "Loading invoices...",
         "errorLoading": "Error loading invoices",
         "noInvoices": "No invoices",
-        "invoiceCount": "invoice",
-        "invoiceCountPlural": "invoices",
+        "invoiceCount_one": "{{count}} invoice",
+        "invoiceCount_other": "{{count}} invoices",
         "apiCheckError": "Verify the API is available",
         "emptyTitle": "No invoices recorded yet.",
         "emptyHint": "Invoices will be generated automatically when payments are processed.",
@@ -354,6 +617,7 @@
             "actions": "Actions"
         },
         "viewButton": "View",
+        "viewDetails": "View Details",
         "dialog": {
             "invoicePrefix": "Invoice",
             "issuedOn": "Issued on",
@@ -427,8 +691,8 @@
         "errorLoading": "Error loading events",
         "noEvents": "No events",
         "noDeadLetterEvents": "No events in the retry queue",
-        "eventCount": "event",
-        "eventCountPlural": "events",
+        "eventCount_one": "{{count}} event",
+        "eventCount_other": "{{count}} events",
         "apiCheckError": "Verify the API is available",
         "emptyEventsTitle": "No events recorded yet.",
         "emptyEventsHint": "Events will appear here when webhooks are received.",
@@ -496,6 +760,18 @@
             "edit": "Edit",
             "delete": "Delete"
         },
+        "discountTypeLabels": {
+            "percentage": "Percentage",
+            "fixedAmount": "Fixed amount",
+            "freeNight": "Free night",
+            "specialPrice": "Special price"
+        },
+        "statusActiveLabel": "Active",
+        "statusInactiveLabel": "Inactive",
+        "actionActivate": "Activate",
+        "actionDeactivate": "Deactivate",
+        "actionEdit": "Edit",
+        "actionDelete": "Delete",
         "filters": {
             "allStatuses": "All statuses",
             "active": "Active",
@@ -569,8 +845,8 @@
         "loadingPayments": "Loading payments...",
         "errorLoading": "Error loading payments",
         "noPayments": "No payments",
-        "paymentCount": "payment",
-        "paymentCountPlural": "payments",
+        "paymentCount_one": "{{count}} payment",
+        "paymentCount_other": "{{count}} payments",
         "apiCheckError": "Verify the API is available",
         "emptyTitle": "No payments recorded yet.",
         "emptyHint": "Payments will appear here when users make transactions.",
@@ -647,8 +923,8 @@
         "loadingSubscriptions": "Loading subscriptions...",
         "errorLoading": "Error loading subscriptions",
         "noSubscriptions": "No subscriptions",
-        "subscriptionCount": "subscription",
-        "subscriptionCountPlural": "subscriptions",
+        "subscriptionCount_one": "{{count}} subscription",
+        "subscriptionCount_other": "{{count}} subscriptions",
         "apiCheckError": "Verify the API is available",
         "emptyTitle": "No subscriptions recorded yet.",
         "emptyHint": "Subscriptions will appear here when users subscribe to a plan.",
@@ -750,6 +1026,121 @@
             "trialExtendError": "Error extending trial:"
         }
     },
+    "exchangeRates": {
+        "columns": {
+            "currencyPair": "Pair",
+            "rate": "Rate",
+            "inverseRate": "Inverse Rate",
+            "rateType": "Rate Type",
+            "source": "Source",
+            "lastUpdated": "Last Updated",
+            "actions": "Actions",
+            "stale": "(stale)"
+        },
+        "rateTypes": {
+            "oficial": "Official",
+            "blue": "Blue",
+            "mep": "MEP",
+            "ccl": "CCL",
+            "tarjeta": "Card",
+            "standard": "Standard"
+        },
+        "sources": {
+            "dolarapi": "DolarAPI",
+            "exchangerateApi": "ExchangeRate-API",
+            "manual": "Manual"
+        },
+        "deleteButton": "Delete",
+        "relativeTime": {
+            "justNow": "just now",
+            "minutes": "{n} min ago",
+            "hours": "{n}h ago",
+            "oneDay": "1 day ago",
+            "days": "{n} days ago"
+        },
+        "manualOverrideDialog": {
+            "title": "Create Manual Override",
+            "description": "Define a manual exchange rate that will override automatic rates",
+            "sections": {
+                "currencyPair": "Currency pair",
+                "rateDetails": "Rate details"
+            },
+            "fields": {
+                "fromCurrency": "Source Currency",
+                "toCurrency": "Target Currency",
+                "rate": "Rate",
+                "inverseRateHint": "Inverse rate:",
+                "rateType": "Rate Type",
+                "expiresAt": "Expires At (optional)",
+                "expiresAtHint": "Leave empty for no expiration"
+            },
+            "cancelButton": "Cancel",
+            "createButton": "Create Override",
+            "validationError": "Validation error",
+            "validationRatePositive": "The rate must be a positive number",
+            "successTitle": "Override created",
+            "successMessage": "Manual override created successfully",
+            "errorTitle": "Error",
+            "errorMessage": "Error creating override"
+        },
+        "fetchConfig": {
+            "loading": "Loading configuration...",
+            "sections": {
+                "defaultRateType": "Default Rate Type",
+                "fetchIntervals": "Fetch Intervals",
+                "disclaimer": "Disclaimer Settings",
+                "autoFetch": "Auto Fetch"
+            },
+            "fields": {
+                "defaultRateType": "Rate Type",
+                "defaultRateTypeHint": "ARS rate type used by default in conversions",
+                "dolarApiInterval": "DolarAPI Interval (minutes)",
+                "dolarApiIntervalHint": "ARS rate fetch frequency (5-60 minutes)",
+                "exchangeRateApiInterval": "ExchangeRate-API Interval (hours)",
+                "exchangeRateApiIntervalHint": "International rate fetch frequency (1-24 hours)",
+                "showDisclaimer": "Show Disclaimer",
+                "showDisclaimerHint": "Show legal notice on currency conversions",
+                "disclaimerText": "Disclaimer Text",
+                "disclaimerTextHint": "Custom text shown in conversions",
+                "enableAutoFetch": "Enable Auto-Fetch",
+                "enableAutoFetchHint": "Automatically fetch rates based on configured intervals"
+            },
+            "saveButton": "Save Configuration",
+            "validationError": "Validation error",
+            "validationDolarApi": "DolarAPI interval must be between 5 and 60 minutes",
+            "validationExchangeRateApi": "ExchangeRate-API interval must be between 1 and 24 hours",
+            "successTitle": "Configuration saved",
+            "successMessage": "Configuration updated successfully",
+            "errorTitle": "Error",
+            "errorMessage": "Error saving configuration"
+        },
+        "historyView": {
+            "filtersTitle": "Filters",
+            "fields": {
+                "fromCurrency": "Source Currency",
+                "toCurrency": "Target Currency",
+                "rateType": "Rate Type",
+                "source": "Source",
+                "from": "From",
+                "to": "To"
+            },
+            "selectAll": "All",
+            "selectAllTypes": "All",
+            "clearFilters": "Clear Filters",
+            "tableHeaders": {
+                "date": "Date",
+                "pair": "Pair",
+                "rate": "Rate",
+                "type": "Type",
+                "source": "Source"
+            },
+            "loading": "Loading history...",
+            "error": "Error loading history:",
+            "unknownError": "Unknown error",
+            "noRecords": "No records found",
+            "showingCount": "Showing {n} records"
+        }
+    },
     "promoCodes": {
         "title": "Promo Codes",
         "description": "Manage discount codes and promotions for subscriptions",
@@ -771,6 +1162,39 @@
         "tableTitle": "Promo Codes",
         "filteredLabel": "Filtered:",
         "tableDescription": "Manage discounts and promotions for subscription plans",
+        "columns": {
+            "code": "Code",
+            "type": "Type",
+            "discount": "Discount",
+            "usage": "Usage",
+            "validity": "Validity",
+            "plans": "Plans",
+            "features": "Features",
+            "status": "Status",
+            "actions": "Actions",
+            "allPlans": "All",
+            "stackable": "Stackable",
+            "firstPurchase": "First purchase",
+            "minimum": "Minimum",
+            "validFrom": "From {date}",
+            "validRange": "{from} - {until}",
+            "statusActive": "Active",
+            "statusExpired": "Expired",
+            "statusInactive": "Inactive"
+        },
+        "typeLabels": {
+            "percentage": "Percentage",
+            "fixed": "Fixed Amount"
+        },
+        "planLabels": {
+            "owner": "Owner",
+            "complex": "Complex",
+            "tourist": "Tourist"
+        },
+        "actionActivate": "Activate",
+        "actionDeactivate": "Deactivate",
+        "actionEdit": "Edit",
+        "actionDelete": "Delete",
         "form": {
             "createTitle": "Create promo code",
             "editTitle": "Edit promo code",

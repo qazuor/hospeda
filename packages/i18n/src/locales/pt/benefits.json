@@ -70,5 +70,60 @@
     "page": {
         "title": "Beneficios",
         "description": "Descubra os benefícios de usar a Hospeda para turistas e proprietários de acomodações no Litoral argentino"
+    },
+    "hero": {
+        "description": "A Hospeda conecta viajantes com acomodações autênticas e apoia proprietários com ferramentas profissionais. Descubra os benefícios de fazer parte da nossa comunidade."
+    },
+    "tourists": {
+        "heading": "Benefícios para Turistas",
+        "wideSelection": {
+            "title": "Ampla Seleção Verificada",
+            "description": "Acesse uma variedade de acomodações verificadas e de qualidade em Concepción del Uruguay e na região do Litoral argentino."
+        },
+        "secureBooking": {
+            "title": "Reservas e Pagamentos Seguros",
+            "description": "Sistema de reservas confiável com pagamentos seguros através do MercadoPago. Suas informações estão protegidas o tempo todo."
+        },
+        "authenticExperiences": {
+            "title": "Experiências Locais Autênticas",
+            "description": "Descubra acomodações que refletem a cultura e hospitalidade local. Viva experiências genuínas em cada estadia."
+        },
+        "realReviews": {
+            "title": "Avaliações Reais de Viajantes",
+            "description": "Leia opiniões autênticas de outros viajantes. Tome decisões informadas baseadas em experiências reais."
+        },
+        "customerSupport": {
+            "title": "Suporte ao Cliente",
+            "description": "Equipe de suporte dedicada para ajudá-lo antes, durante e depois da sua estadia. Estamos aqui para você."
+        }
+    },
+    "owners": {
+        "heading": "Benefícios para Proprietários",
+        "increasedVisibility": {
+            "title": "Maior Visibilidade",
+            "description": "Alcance milhares de viajantes que buscam acomodações na região. Aumente suas reservas com nossa plataforma otimizada."
+        },
+        "easyManagement": {
+            "title": "Gestão Fácil de Propriedades",
+            "description": "Painel de administração intuitivo para gerenciar reservas, disponibilidade, preços e comunicação com hóspedes."
+        },
+        "securePayments": {
+            "title": "Pagamentos Seguros via MercadoPago",
+            "description": "Receba pagamentos de forma segura e confiável. Integração direta com MercadoPago para transações protegidas."
+        },
+        "analytics": {
+            "title": "Análises e Relatórios",
+            "description": "Acesse métricas detalhadas sobre suas reservas, ocupação e desempenho. Tome decisões baseadas em dados."
+        },
+        "growingCommunity": {
+            "title": "Comunidade em Crescimento",
+            "description": "Faça parte de uma rede em expansão de proprietários e viajantes. Participe de eventos e treinamentos exclusivos."
+        }
+    },
+    "plans": {
+        "heading": "Descubra Nossos Planos",
+        "description": "Explore os planos e preços desenvolvidos para turistas e proprietários. Encontre a opção perfeita para você.",
+        "touristPricing": "Ver preços para turistas",
+        "ownerPricing": "Ver preços para proprietários"
     }
 }

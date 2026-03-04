@@ -140,7 +140,12 @@
         "approve": "Aprobar",
         "reject": "Rechazar",
         "activate": "Activar",
-        "deactivate": "Desactivar"
+        "deactivate": "Desactivar",
+        "viewPlans": "Ver planes"
+    },
+    "limits": {
+        "accommodationLimitReached": "Límite de alojamientos alcanzado",
+        "accommodationLimitDesc": "Has alcanzado el límite máximo de alojamientos permitidos en tu plan actual. Actualiza tu plan para crear más alojamientos."
     },
     "confirmations": {
         "delete": {
@@ -283,6 +288,116 @@
             "sports": "Deportes",
             "theater": "Teatro",
             "other": "Otro"
+        }
+    },
+    "viewFields": {
+        "boolean": {
+            "yes": "Sí",
+            "no": "No",
+            "enabled": "Habilitado",
+            "disabled": "Deshabilitado",
+            "true": "Verdadero",
+            "false": "Falso"
+        },
+        "currency": {
+            "noAmount": "Sin monto"
+        },
+        "richText": {
+            "characters": "caracteres",
+            "formattedContent": "Contenido formateado",
+            "plainText": "Texto plano"
+        },
+        "image": {
+            "caption": "Leyenda",
+            "description": "Descripción",
+            "altText": "Texto alternativo",
+            "badge": "Imagen",
+            "clickToPreview": "Clic para vista previa"
+        },
+        "gallery": {
+            "imageSingular": "imagen",
+            "imagesPlural": "imágenes",
+            "layout": "Diseño",
+            "clickToPreview": "Clic en imágenes para vista previa",
+            "sortable": "Galería ordenable",
+            "imageAlt": "Imagen de galería",
+            "preview": "Vista previa"
+        }
+    },
+    "fields": {
+        "fileUploadNotImplemented": "Carga de archivos aún no implementada",
+        "unknownFieldType": "Tipo de campo desconocido: {type}",
+        "image": {
+            "uploadedAlt": "Imagen subida",
+            "altTextLabel": "Texto alternativo",
+            "altTextPlaceholder": "Describe la imagen para accesibilidad",
+            "captionLabel": "Leyenda",
+            "captionPlaceholder": "Leyenda de la imagen",
+            "descriptionLabel": "Descripción",
+            "descriptionPlaceholder": "Descripción detallada",
+            "uploadAriaLabel": "Subir imagen",
+            "uploading": "Subiendo...",
+            "dropText": "Suelta una imagen aquí, o haz clic para seleccionar",
+            "fileConstraints": "Tipos: {types}, tamaño máximo: {maxSize}",
+            "selectButton": "Seleccionar imagen"
+        },
+        "gallery": {
+            "imageAlt": "Imagen de galería {index}",
+            "captionPlaceholder": "Leyenda",
+            "altTextPlaceholder": "Texto alternativo",
+            "uploadAriaLabel": "Subir imágenes",
+            "uploading": "Subiendo...",
+            "addImages": "Agregar imágenes ({current}/{max})",
+            "fileConstraints": "Tipos: {types}, tamaño máximo: {maxSize} cada una",
+            "selectButton": "Seleccionar imágenes"
+        }
+    },
+    "entitlementGate": {
+        "premiumFeature": "Función premium",
+        "titleWithSection": "{section} - Función Premium",
+        "titleDefault": "Función Premium",
+        "description": "Esta funcionalidad está disponible en planes superiores. Actualiza tu plan para acceder a esta sección.",
+        "fieldPremium": "{field} - Premium",
+        "fieldPremiumDescription": "Esta funcionalidad está disponible en planes superiores"
+    },
+    "limitGate": {
+        "fieldLimitReached": "{field} - Límite alcanzado",
+        "description": "Has alcanzado el límite de tu plan actual"
+    },
+    "ownerPromotions": {
+        "columns": {
+            "title": "Título",
+            "owner": "Propietario",
+            "accommodation": "Alojamiento",
+            "discountType": "Tipo de Descuento",
+            "discountValue": "Valor",
+            "validFrom": "Válido Desde",
+            "validUntil": "Válido Hasta",
+            "redemptions": "Canjes",
+            "status": "Estado",
+            "createdAt": "Creado",
+            "freeNight_one": "{{count}} noche gratis",
+            "freeNight_other": "{{count}} noches gratis"
+        },
+        "discountTypes": {
+            "percentage": "Porcentaje",
+            "fixed": "Monto Fijo",
+            "freeNight": "Noche Gratis"
+        },
+        "statuses": {
+            "active": "Activo",
+            "inactive": "Inactivo",
+            "expired": "Expirado"
+        }
+    },
+    "selects": {
+        "destination": {
+            "placeholder": "Seleccionar un destino...",
+            "unknown": "Destino Desconocido"
+        },
+        "owner": {
+            "placeholder": "Seleccionar un propietario...",
+            "unknown": "Usuario Desconocido"
         }
     }
 }

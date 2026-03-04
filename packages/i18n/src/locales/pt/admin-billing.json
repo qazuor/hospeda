@@ -52,7 +52,48 @@
     },
     "cron": {
         "title": "Tarefas Agendadas",
-        "description": "Gerencie e monitore as tarefas agendadas do sistema (cron jobs)"
+        "description": "Gerencie e monitore as tarefas agendadas do sistema (cron jobs)",
+        "loading": "Carregando tarefas agendadas...",
+        "errorLoading": "Erro ao carregar tarefas agendadas",
+        "noJobs": "Nenhuma tarefa agendada registrada",
+        "stats": {
+            "totalJobs": "Total de tarefas",
+            "activeJobs": "Tarefas ativas",
+            "disabledJobs": "Tarefas desabilitadas"
+        },
+        "refreshing": "Atualizando...",
+        "info": {
+            "title": "Informações sobre tarefas agendadas",
+            "autoRun": "As tarefas agendadas são executadas automaticamente conforme sua programação",
+            "manualRun": "Você pode executar manualmente qualquer tarefa ativa usando o botão \"Executar agora\"",
+            "dryRunInfo": "O modo \"Dry Run\" executa a tarefa sem fazer alterações reais no banco de dados",
+            "autoRefresh": "A lista é atualizada automaticamente a cada minuto"
+        },
+        "card": {
+            "statusActive": "Ativo",
+            "statusDisabled": "Desabilitado",
+            "scheduleLabel": "Programação:",
+            "dryRunLabel": "Modo Dry Run",
+            "dryRunHint": "Executar sem fazer alterações reais",
+            "runButton": "Executar agora",
+            "runningButton": "Executando...",
+            "successTitle": "Execução bem-sucedida",
+            "errorTitle": "Erro na execução",
+            "processedLabel": "Processados:",
+            "errorsLabel": "Erros:",
+            "durationLabel": "Duração:",
+            "modeLabel": "Modo:",
+            "modeDryRun": "Teste",
+            "modeReal": "Real",
+            "runErrorTitle": "Erro ao executar tarefa"
+        },
+        "schedules": {
+            "daily": "Diariamente à meia-noite",
+            "every5min": "A cada 5 minutos",
+            "hourly": "A cada hora",
+            "weekly": "Semanalmente (domingos)",
+            "monthly": "Mensalmente (dia 1)"
+        }
     },
     "metrics": {
         "title": "Análises de Uso",
@@ -71,7 +112,38 @@
         "loadingUsage": "Carregando análises de uso...",
         "errorUsage": "Erro ao carregar análises",
         "emptyTitle": "Busque um cliente para ver suas análises de uso",
-        "emptyDescription": "Use o campo de busca para encontrar um cliente por email"
+        "emptyDescription": "Use o campo de busca para encontrar um cliente por email",
+        "systemStats": {
+            "totalCustomers": "Total de Clientes",
+            "activePlans": "Planos Ativos",
+            "approachingLimits": "Perto do Limite",
+            "approachingLimitsHint": "Clientes com uso > 90% em algum limite",
+            "categoryOwner": "Proprietários",
+            "categoryComplex": "Complexos",
+            "categoryTourist": "Turistas"
+        },
+        "approachingLimits": {
+            "noClientsTitle": "Nenhum cliente próximo dos seus limites",
+            "noClientsHint": "Todos os clientes estão usando menos de",
+            "noClientsHintSuffix": "% de seus limites",
+            "cardTitle": "Clientes Próximos do Limite",
+            "clientsUsing": "cliente",
+            "clientsUsingPlural": "clientes",
+            "clientsUsingSuffix": "usando mais de",
+            "clientsUsingSuffix2": "% de algum limite"
+        },
+        "usageDisplay": {
+            "customerInfoTitle": "Informações do Cliente",
+            "emailLabel": "Email",
+            "nameLabel": "Nome",
+            "categoryLabel": "Categoria",
+            "currentPlanLabel": "Plano Atual",
+            "usageSummaryTitle": "Resumo de Uso",
+            "totalLimits": "limites totais",
+            "atCapacity": "no limite",
+            "noLimitsMessage": "Nenhum limite configurado para este cliente",
+            "nearCapacityWarning": "Este limite está próximo ou atingiu sua capacidade máxima"
+        }
     },
     "plans": {
         "title": "Planos de Assinatura",
@@ -88,7 +160,87 @@
         "categoryOwner": "Proprietário",
         "categoryComplex": "Complexo",
         "categoryTourist": "Turista",
-        "createPlan": "Criar plano"
+        "createPlan": "Criar plano",
+        "columns": {
+            "name": "Nome",
+            "category": "Categoria",
+            "monthlyPrice": "Preço Mensal",
+            "annualPrice": "Preço Anual",
+            "entitlements": "Permissões",
+            "limits": "Limites",
+            "status": "Status",
+            "actions": "Ações",
+            "perMonth": "/mês",
+            "permissionsCount": "permissões",
+            "limitsCount": "limites"
+        },
+        "categoryLabels": {
+            "owner": "Proprietário",
+            "complex": "Complexo",
+            "tourist": "Turista"
+        },
+        "statusActive": "Ativo",
+        "statusInactive": "Inativo",
+        "statusDefault": "Padrão",
+        "actionActivate": "Ativar",
+        "actionDeactivate": "Desativar",
+        "actionEdit": "Editar",
+        "actionDelete": "Excluir",
+        "dialog": {
+            "createTitle": "Criar Plano",
+            "editTitle": "Editar Plano",
+            "createDescription": "Preencha o formulário para criar um novo plano de assinatura",
+            "editDescription": "Modifique os detalhes do plano existente",
+            "sections": {
+                "basicInfo": "Informações básicas",
+                "pricing": "Preços",
+                "trial": "Período de teste",
+                "entitlements": "Funcionalidades (Entitlements)",
+                "limits": "Limites",
+                "configuration": "Configuração"
+            },
+            "fields": {
+                "slug": "Slug",
+                "slugPlaceholder": "owner-basico",
+                "slugHint": "Identificador único do plano",
+                "name": "Nome",
+                "namePlaceholder": "Básico Proprietário",
+                "category": "Categoria",
+                "description": "Descrição",
+                "descriptionPlaceholder": "Descreva o plano...",
+                "monthlyArs": "Mensal (ARS)",
+                "monthlyArsHint": "Preço em pesos (convertido para centavos)",
+                "annualArs": "Anual (ARS)",
+                "annualArsHint": "Deixar em 0 se não houver opção anual",
+                "usdRef": "Ref. USD",
+                "usdRefHint": "Preço de referência em dólares",
+                "hasTrial": "Trial habilitado",
+                "hasTrialHint": "Permitir testar o plano gratuitamente",
+                "trialDays": "Dias de teste",
+                "limitsHint": "-1 = ilimitado, 0 = não aplicável",
+                "sortOrder": "Ordem",
+                "sortOrderHint": "Ordem de exibição nas tabelas de preços",
+                "isDefault": "Plano padrão",
+                "isDefaultHint": "Atribuído automaticamente a novos usuários",
+                "isActive": "Ativo",
+                "isActiveHint": "Disponível para assinatura"
+            },
+            "entitlementGroups": {
+                "owner": "Proprietário",
+                "accommodation": "Acomodação",
+                "complex": "Complexo",
+                "tourist": "Turista"
+            },
+            "cancelButton": "Cancelar",
+            "saveButton": "Salvar alterações",
+            "createButton": "Criar plano",
+            "successCreate": "Plano criado",
+            "successUpdate": "Plano atualizado",
+            "successMessageCreate": "foi criado com sucesso",
+            "successMessageUpdate": "foi atualizado com sucesso",
+            "errorTitle": "Erro",
+            "errorMessage": "Erro ao salvar o plano"
+        }
     },
     "addons": {
         "title": "Add-ons Comprados",
@@ -122,7 +274,117 @@
         "toastActivatedTitle": "Add-on ativado",
         "toastActivatedMessage": "O add-on foi forçado a ativar com sucesso",
         "toastErrorTitle": "Erro",
-        "toastErrorMessage": "Erro ao processar a ação"
+        "toastErrorMessage": "Erro ao processar a ação",
+        "catalogColumns": {
+            "name": "Nome",
+            "billingType": "Tipo",
+            "price": "Preço",
+            "duration": "Duração",
+            "categories": "Categorias",
+            "status": "Status",
+            "actions": "Ações",
+            "perMonth": "/mês",
+            "daysUnit": "dias"
+        },
+        "billingTypeLabels": {
+            "oneTime": "Único",
+            "recurring": "Recorrente"
+        },
+        "categoryLabels": {
+            "owner": "Proprietário",
+            "complex": "Complexo",
+            "tourist": "Turista"
+        },
+        "purchasedColumns": {
+            "customer": "Cliente",
+            "addon": "Add-on",
+            "status": "Status",
+            "purchasedAt": "Data de Compra",
+            "expiresAt": "Data de Expiração",
+            "price": "Preço",
+            "paymentId": "ID de Pagamento",
+            "actions": "Ações",
+            "noExpiry": "Sem expiração",
+            "openMenu": "Abrir menu",
+            "viewDetails": "Ver detalhes",
+            "forceExpire": "Forçar expiração",
+            "forceActivate": "Forçar ativação"
+        },
+        "purchasedStatuses": {
+            "active": "Ativo",
+            "expired": "Expirado",
+            "cancelled": "Cancelado"
+        },
+        "actionActivate": "Ativar",
+        "actionDeactivate": "Desativar",
+        "actionEdit": "Editar",
+        "actionDelete": "Excluir",
+        "catalogDialog": {
+            "createTitle": "Criar Add-on",
+            "editTitle": "Editar Add-on",
+            "createDescription": "Preencha o formulário para criar um novo add-on",
+            "editDescription": "Modifique os detalhes do add-on existente",
+            "sections": {
+                "basicInfo": "Informações básicas",
+                "billing": "Faturamento",
+                "benefits": "Benefícios",
+                "configuration": "Configuração"
+            },
+            "fields": {
+                "slug": "Slug",
+                "name": "Nome",
+                "description": "Descrição",
+                "descriptionPlaceholder": "Descreva o add-on...",
+                "billingType": "Tipo",
+                "priceArs": "Preço (ARS)",
+                "durationDays": "Duração (dias)",
+                "durationHintOneTime": "Dias que o benefício dura",
+                "durationHintRecurring": "Não aplicável para recorrentes",
+                "affectsLimitKey": "Limite afetado",
+                "limitIncrease": "Incremento",
+                "grantsEntitlement": "Habilita funcionalidade",
+                "targetCategories": "Categorias alvo",
+                "categoryOwner": "Proprietário",
+                "categoryComplex": "Complexo",
+                "sortOrder": "Ordem",
+                "sortOrderHint": "Ordem de visualização",
+                "isActive": "Status",
+                "isActiveHint": "Ativar add-on",
+                "none": "Nenhum",
+                "noneEntitlement": "Nenhuma"
+            },
+            "billingTypes": {
+                "oneTime": "Único",
+                "recurring": "Recorrente"
+            },
+            "cancelButton": "Cancelar",
+            "saveButton": "Salvar alterações",
+            "createButton": "Criar add-on",
+            "successCreate": "Add-on criado",
+            "successUpdate": "Add-on atualizado",
+            "successMessageCreate": "foi criado com sucesso",
+            "successMessageUpdate": "foi atualizado com sucesso",
+            "errorTitle": "Erro",
+            "errorMessage": "Erro ao salvar o add-on"
+        },
+        "detailsDialog": {
+            "title": "Detalhes do Add-on Comprado",
+            "description": "Informações completas do add-on adquirido pelo cliente",
+            "customerSection": "Informações do Cliente",
+            "addonSection": "Informações do Add-on",
+            "purchaseSection": "Informações de Compra",
+            "emailLabel": "Email:",
+            "nameLabel": "Nome:",
+            "customerIdLabel": "Customer ID:",
+            "addonNameLabel": "Nome:",
+            "addonSlugLabel": "Slug:",
+            "statusLabel": "Status:",
+            "priceLabel": "Preço:",
+            "purchasedAtLabel": "Data de compra:",
+            "expiresAtLabel": "Data de expiração:",
+            "paymentIdLabel": "ID de Pagamento:",
+            "recordIdLabel": "ID do registro:"
+        }
     },
     "settings": {
         "title": "Configuração de Faturamento",
@@ -298,8 +560,8 @@
         "loadingNotifications": "Carregando notificações...",
         "errorLoading": "Erro ao carregar notificações",
         "noNotifications": "Não há notificações",
-        "notificationCount": "notificação",
-        "notificationCountPlural": "notificações",
+        "notificationCount_one": "{{count}} notificação",
+        "notificationCount_other": "{{count}} notificações",
         "apiCheckError": "Verifique se a API está disponível",
         "emptyTitle": "Ainda não há notificações registradas.",
         "emptyHint": "As notificações aparecerão aqui quando o sistema as enviar.",
@@ -336,11 +598,12 @@
         "dateTo": "Data Final",
         "clearDateFilters": "Limpar Filtros de Data",
         "listTitle": "Listagem de Faturas",
+        "loading": "Carregando...",
         "loadingInvoices": "Carregando faturas...",
         "errorLoading": "Erro ao carregar faturas",
         "noInvoices": "Não há faturas",
-        "invoiceCount": "fatura",
-        "invoiceCountPlural": "faturas",
+        "invoiceCount_one": "{{count}} fatura",
+        "invoiceCount_other": "{{count}} faturas",
         "apiCheckError": "Verifique se a API está disponível",
         "emptyTitle": "Ainda não há faturas registradas.",
         "emptyHint": "As faturas serão geradas automaticamente quando os pagamentos forem processados.",
@@ -354,6 +617,7 @@
             "actions": "Ações"
         },
         "viewButton": "Ver",
+        "viewDetails": "Ver Detalhes",
         "dialog": {
             "invoicePrefix": "Fatura",
             "issuedOn": "Emitida em",
@@ -427,8 +691,8 @@
         "errorLoading": "Erro ao carregar eventos",
         "noEvents": "Não há eventos",
         "noDeadLetterEvents": "Não há eventos na fila de tentativas",
-        "eventCount": "evento",
-        "eventCountPlural": "eventos",
+        "eventCount_one": "{{count}} evento",
+        "eventCount_other": "{{count}} eventos",
         "apiCheckError": "Verifique se a API está disponível",
         "emptyEventsTitle": "Ainda não há eventos registrados.",
         "emptyEventsHint": "Os eventos aparecerão aqui quando webhooks forem recebidos.",
@@ -489,6 +753,18 @@
         },
         "statusActive": "Ativo",
         "statusInactive": "Inativo",
+        "discountTypeLabels": {
+            "percentage": "Percentual",
+            "fixedAmount": "Valor fixo",
+            "freeNight": "Noite grátis",
+            "specialPrice": "Preço especial"
+        },
+        "statusActiveLabel": "Ativo",
+        "statusInactiveLabel": "Inativo",
+        "actionActivate": "Ativar",
+        "actionDeactivate": "Desativar",
+        "actionEdit": "Editar",
+        "actionDelete": "Excluir",
         "actions": {
             "view": "Ver",
             "deactivate": "Desativar",
@@ -569,8 +845,8 @@
         "loadingPayments": "Carregando pagamentos...",
         "errorLoading": "Erro ao carregar pagamentos",
         "noPayments": "Não há pagamentos",
-        "paymentCount": "pagamento",
-        "paymentCountPlural": "pagamentos",
+        "paymentCount_one": "{{count}} pagamento",
+        "paymentCount_other": "{{count}} pagamentos",
         "apiCheckError": "Verifique se a API está disponível",
         "emptyTitle": "Ainda não há pagamentos registrados.",
         "emptyHint": "Os pagamentos aparecerão aqui quando os usuários realizarem transações.",
@@ -647,8 +923,8 @@
         "loadingSubscriptions": "Carregando assinaturas...",
         "errorLoading": "Erro ao carregar assinaturas",
         "noSubscriptions": "Não há assinaturas",
-        "subscriptionCount": "assinatura",
-        "subscriptionCountPlural": "assinaturas",
+        "subscriptionCount_one": "{{count}} assinatura",
+        "subscriptionCount_other": "{{count}} assinaturas",
         "apiCheckError": "Verifique se a API está disponível",
         "emptyTitle": "Ainda não há assinaturas registradas.",
         "emptyHint": "As assinaturas aparecerão aqui quando os usuários se inscreverem em um plano.",
@@ -750,6 +1026,121 @@
             "trialExtendError": "Erro ao estender teste:"
         }
     },
+    "exchangeRates": {
+        "columns": {
+            "currencyPair": "Par",
+            "rate": "Taxa",
+            "inverseRate": "Taxa Inversa",
+            "rateType": "Tipo de Taxa",
+            "source": "Fonte",
+            "lastUpdated": "Última Atualização",
+            "actions": "Ações",
+            "stale": "(desatualizado)"
+        },
+        "rateTypes": {
+            "oficial": "Oficial",
+            "blue": "Blue",
+            "mep": "MEP",
+            "ccl": "CCL",
+            "tarjeta": "Cartão",
+            "standard": "Padrão"
+        },
+        "sources": {
+            "dolarapi": "DolarAPI",
+            "exchangerateApi": "ExchangeRate-API",
+            "manual": "Manual"
+        },
+        "deleteButton": "Excluir",
+        "relativeTime": {
+            "justNow": "agora mesmo",
+            "minutes": "há {n} min",
+            "hours": "há {n}h",
+            "oneDay": "há 1 dia",
+            "days": "há {n} dias"
+        },
+        "manualOverrideDialog": {
+            "title": "Criar Override Manual",
+            "description": "Defina uma taxa de câmbio manual que substituirá as taxas automáticas",
+            "sections": {
+                "currencyPair": "Par de moedas",
+                "rateDetails": "Detalhes da taxa"
+            },
+            "fields": {
+                "fromCurrency": "Moeda Origem",
+                "toCurrency": "Moeda Destino",
+                "rate": "Taxa",
+                "inverseRateHint": "Taxa inversa:",
+                "rateType": "Tipo de Taxa",
+                "expiresAt": "Expira Em (opcional)",
+                "expiresAtHint": "Deixe vazio para não expirar"
+            },
+            "cancelButton": "Cancelar",
+            "createButton": "Criar Override",
+            "validationError": "Erro de validação",
+            "validationRatePositive": "A taxa deve ser um número positivo",
+            "successTitle": "Override criado",
+            "successMessage": "Override manual criado com sucesso",
+            "errorTitle": "Erro",
+            "errorMessage": "Erro ao criar override"
+        },
+        "fetchConfig": {
+            "loading": "Carregando configuração...",
+            "sections": {
+                "defaultRateType": "Tipo de Taxa Padrão",
+                "fetchIntervals": "Intervalos de Atualização",
+                "disclaimer": "Configuração de Disclaimer",
+                "autoFetch": "Obtenção Automática"
+            },
+            "fields": {
+                "defaultRateType": "Tipo de Taxa",
+                "defaultRateTypeHint": "Tipo de taxa ARS que será usado por padrão nas conversões",
+                "dolarApiInterval": "Intervalo DolarAPI (minutos)",
+                "dolarApiIntervalHint": "Frequência de obtenção de taxas ARS (5-60 minutos)",
+                "exchangeRateApiInterval": "Intervalo ExchangeRate-API (horas)",
+                "exchangeRateApiIntervalHint": "Frequência de obtenção de taxas internacionais (1-24 horas)",
+                "showDisclaimer": "Mostrar Disclaimer",
+                "showDisclaimerHint": "Mostrar aviso legal nas conversões de moeda",
+                "disclaimerText": "Texto do Disclaimer",
+                "disclaimerTextHint": "Texto personalizado que será exibido nas conversões",
+                "enableAutoFetch": "Habilitar Auto-Fetch",
+                "enableAutoFetchHint": "Obter taxas automaticamente conforme os intervalos configurados"
+            },
+            "saveButton": "Salvar Configuração",
+            "validationError": "Erro de validação",
+            "validationDolarApi": "O intervalo do DolarAPI deve estar entre 5 e 60 minutos",
+            "validationExchangeRateApi": "O intervalo do ExchangeRate-API deve estar entre 1 e 24 horas",
+            "successTitle": "Configuração salva",
+            "successMessage": "A configuração foi atualizada com sucesso",
+            "errorTitle": "Erro",
+            "errorMessage": "Erro ao salvar configuração"
+        },
+        "historyView": {
+            "filtersTitle": "Filtros",
+            "fields": {
+                "fromCurrency": "Moeda Origem",
+                "toCurrency": "Moeda Destino",
+                "rateType": "Tipo de Taxa",
+                "source": "Fonte",
+                "from": "De",
+                "to": "Até"
+            },
+            "selectAll": "Todas",
+            "selectAllTypes": "Todos",
+            "clearFilters": "Limpar Filtros",
+            "tableHeaders": {
+                "date": "Data",
+                "pair": "Par",
+                "rate": "Taxa",
+                "type": "Tipo",
+                "source": "Fonte"
+            },
+            "loading": "Carregando histórico...",
+            "error": "Erro ao carregar histórico:",
+            "unknownError": "Erro desconhecido",
+            "noRecords": "Nenhum registro encontrado",
+            "showingCount": "Exibindo {n} registros"
+        }
+    },
     "promoCodes": {
         "title": "Códigos Promocionais",
         "description": "Gerencie códigos de desconto e promoções para assinaturas",
@@ -771,6 +1162,39 @@
         "tableTitle": "Códigos Promocionais",
         "filteredLabel": "Filtrados:",
         "tableDescription": "Gerencie descontos e promoções para planos de assinatura",
+        "columns": {
+            "code": "Código",
+            "type": "Tipo",
+            "discount": "Desconto",
+            "usage": "Usos",
+            "validity": "Vigência",
+            "plans": "Planos",
+            "features": "Características",
+            "status": "Status",
+            "actions": "Ações",
+            "allPlans": "Todos",
+            "stackable": "Acumulável",
+            "firstPurchase": "Primeira compra",
+            "minimum": "Mínimo",
+            "validFrom": "A partir de {date}",
+            "validRange": "{from} - {until}",
+            "statusActive": "Ativo",
+            "statusExpired": "Expirado",
+            "statusInactive": "Inativo"
+        },
+        "typeLabels": {
+            "percentage": "Percentual",
+            "fixed": "Valor Fixo"
+        },
+        "planLabels": {
+            "owner": "Proprietário",
+            "complex": "Complexo",
+            "tourist": "Turista"
+        },
+        "actionActivate": "Ativar",
+        "actionDeactivate": "Desativar",
+        "actionEdit": "Editar",
+        "actionDelete": "Excluir",
         "form": {
             "createTitle": "Criar código promocional",
             "editTitle": "Editar código promocional",

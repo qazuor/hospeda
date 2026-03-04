@@ -8,6 +8,7 @@
 
 import { useMemo } from 'react';
 import { defaultLocale, trans } from '../config';
+import { pluralize } from '../pluralization';
 import type { TranslationKey } from '../types';
 
 /**
@@ -54,7 +55,30 @@ export const useTranslations = (locale: string = defaultLocale) => {
             }, raw);
         };
 
-        return { t, locale };
+        /**
+         * Pluralization function that resolves _one/_other keys based on count.
+         *
+         * @param key - The base translation key (without _one/_other suffix).
+         * @param count - The count value to determine plural form.
+         * @param params - Optional additional parameters for interpolation.
+         * @returns The resolved plural translation string.
+         *
+         * @example
+         * ```tsx
+         * tPlural('review.list.totalReviews', 5) // "5 reviews"
+         * tPlural('review.list.totalReviews', 1) // "1 review"
+         * ```
+         */
+        const tPlural = (key: string, count: number, params?: Record<string, unknown>): string => {
+            return pluralize({
+                t: (k: string, p?: Record<string, unknown>) => t(k as TranslationKey, p),
+                key,
+                count,
+                params
+            });
+        };
+
+        return { t, tPlural, locale };
     }, [locale]);
 
     return translator;

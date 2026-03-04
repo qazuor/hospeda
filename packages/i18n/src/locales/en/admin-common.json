@@ -1,6 +1,8 @@
 {
     "actions": {
-        "seeAll": "See all"
+        "seeAll": "See all",
+        "tryAgain": "Try again",
+        "clearSelection": "Clear selection"
     },
     "notifications": {
         "title": "Notifications",
@@ -46,5 +48,203 @@
         "start": "Impersonate user",
         "confirm": "Are you sure you want to impersonate this user?",
         "error": "Failed to impersonate user. Please try again."
+    },
+    "bulk": {
+        "itemCount_one": "{{count}} item",
+        "itemCount_other": "{{count}} items"
+    },
+    "gallery": {
+        "imageCount_one": "{{count}} image",
+        "imageCount_other": "{{count}} images"
+    },
+    "states": {
+        "loading": "Loading...",
+        "loadingSection": "Loading section...",
+        "loadingOptions": "Loading options...",
+        "noData": "No data",
+        "noDataAvailable": "No data available",
+        "noSelection": "No selection",
+        "noOptionsAvailable": "No options available",
+        "noImage": "No image",
+        "noGallery": "No gallery",
+        "invalidGallery": "Invalid gallery",
+        "emptyGallery": "Empty gallery",
+        "noValidImages": "No valid images",
+        "noPrice": "No price",
+        "invalidPrice": "Invalid price",
+        "failedToLoad": "Failed to load",
+        "noContent": "No content",
+        "noImagesInGallery": "No images in gallery",
+        "noAccessibleFields": "No accessible fields in this section",
+        "noDataToDisplay": "No data to display in this section",
+        "noAccessibleSections": "No accessible sections",
+        "noCompoundConfig": "No compound config",
+        "noWidgetRenderer": "No widget renderer",
+        "selectAnOption": "Select an option...",
+        "errorState": "Error state",
+        "somethingWentWrong": "Something went wrong",
+        "notAvailable": "N/A"
+    },
+    "errors": {
+        "errorLoading": "Error Loading {{name}}",
+        "errorLoadingPage": "Error Loading Page"
+    },
+    "errorBoundary": {
+        "notFound": {
+            "title": "Not Found",
+            "description": "The resource you are looking for does not exist or has been removed."
+        },
+        "accessDenied": {
+            "title": "Access Denied",
+            "description": "You do not have permission to access this resource."
+        },
+        "connectionError": {
+            "title": "Connection Error",
+            "description": "Unable to connect to the server. Please check your internet connection."
+        },
+        "generic": {
+            "title": "Something went wrong",
+            "description": "An unexpected error occurred. Please try again."
+        },
+        "actions": {
+            "retryWithRefresh": "Retry with page refresh",
+            "tryAgain": "Try again",
+            "goBack": "Go back",
+            "returnToDashboard": "Return to dashboard",
+            "reloadPage": "Reload page",
+            "reportError": "Report error"
+        },
+        "global": {
+            "title": "Application Error",
+            "description": "The application encountered an unexpected error. Try reloading the page."
+        },
+        "devOnly": {
+            "title": "Error Details (Development Only)",
+            "errorMessage": "Error Message",
+            "stackTrace": "Stack Trace"
+        },
+        "query": {
+            "networkError": {
+                "title": "Network Error",
+                "description": "Could not reach the server. Check your connection and try again."
+            },
+            "timeout": {
+                "title": "Request Timeout",
+                "description": "The server took too long to respond. Please try again."
+            },
+            "serverError": {
+                "title": "Server Error",
+                "description": "The server encountered an internal error. Please try again later."
+            },
+            "authRequired": {
+                "title": "Authentication Required",
+                "description": "Your session has expired. Please sign in again."
+            },
+            "generic": {
+                "title": "Data Loading Error",
+                "description": "Failed to load the requested data. Please try again."
+            },
+            "actions": {
+                "refreshData": "Refresh data",
+                "clearCacheRetry": "Clear cache and retry"
+            }
+        }
+    },
+    "toastErrors": {
+        "cancelled": {
+            "title": "Request Cancelled",
+            "description": "The request was cancelled."
+        },
+        "timeout": {
+            "title": "Request Timeout",
+            "description": "The request timed out. Please try again."
+        },
+        "connectionError": {
+            "title": "Connection Error",
+            "description": "Could not connect to the server."
+        },
+        "generic": {
+            "title": "Error",
+            "description": "An unexpected error occurred."
+        },
+        "api": {
+            "badRequest": "Invalid request. Please check the data and try again.",
+            "unauthorized": "Your session has expired. Please sign in again.",
+            "forbidden": "You do not have permission to perform this action.",
+            "notFound": "The requested resource was not found.",
+            "conflict": "A conflict occurred. The resource may have been modified.",
+            "validation": "Validation error. Please check the form fields.",
+            "tooManyRequests": "Too many requests. Please wait a moment.",
+            "serverError": "Server error. Please try again later."
+        }
+    },
+    "entityForm": {
+        "noAccessibleFields": "No accessible fields available.",
+        "noDataToDisplay": "No data to display.",
+        "noAccessibleSections": "No accessible sections available.",
+        "noPermission": "You do not have permission to view this content."
+    },
+    "relativeTime": {
+        "justNow": "Just now",
+        "minutes": "{{n}} minute(s) ago",
+        "hours": "{{n}} hour(s) ago",
+        "oneDay": "1 day ago",
+        "days": "{{n}} days ago",
+        "notAvailable": "N/A"
+    },
+    "placeholders": {
+        "billing": {
+            "addonNameExample": "e.g. Visibility boost (7 days)",
+            "exchangeRateDisclaimer": "Exchange rates are fetched from external providers and may vary. Rates shown are for reference only."
+        }
+    },
+    "bulkToolbar": {
+        "selectItems": "Select Items",
+        "itemsSelected_one": "{{count}} item selected",
+        "itemsSelected_other": "{{count}} items selected",
+        "updateSelected": "Update Selected",
+        "deleteSelected": "Delete Selected",
+        "clearSelection": "Clear Selection",
+        "exitSelectMode": "Exit Select Mode",
+        "selectItemAriaLabel": "Select item {{id}}",
+        "selectAllAriaLabel": "Select all items"
+    },
+    "entityView": {
+        "noValue": "No value",
+        "fieldsDisplayed_one": "{{count}} field displayed",
+        "fieldsDisplayed_other": "{{count}} fields displayed",
+        "editable": "Editable",
+        "hideEmpty": "Hide Empty",
+        "showEmpty": "Show Empty",
+        "hideControls": "Hide Controls",
+        "showControls": "Show Controls",
+        "refresh": "Refresh",
+        "print": "Print",
+        "export": "Export",
+        "edit": "Edit",
+        "fieldsAvailable_one": "{{count}} field available",
+        "fieldsAvailable_other": "{{count}} fields available",
+        "sectionOf": "Section {{current}} of {{total}}",
+        "viewMode": "{{mode}} view"
+    },
+    "tableCells": {
+        "empty": "Empty",
+        "andMore": "and {count} more",
+        "invalidDate": "Invalid date",
+        "widgetError": "Widget error"
+    },
+    "validatedForm": {
+        "submit": "Submit",
+        "submitting": "Submitting...",
+        "reset": "Reset",
+        "formIsValid": "Form is valid",
+        "validationErrors": "Form Validation Errors",
+        "fixErrorsBeforeSubmitting": "Please fix the errors above before submitting.",
+        "errorCount_one": "{{count}} error",
+        "errorCount_other": "{{count}} errors",
+        "srSubmitting": "Form is being submitted...",
+        "srSuccess": "Form submitted successfully",
+        "srFailed": "Form submission failed: {{error}}",
+        "srHasErrors": "Form has {{count}} validation errors"
     }
 }

@@ -1,6 +1,8 @@
 {
     "actions": {
-        "seeAll": "Ver todo"
+        "seeAll": "Ver todo",
+        "tryAgain": "Intentar de nuevo",
+        "clearSelection": "Limpiar selección"
     },
     "notifications": {
         "title": "Notificaciones",
@@ -46,5 +48,203 @@
         "start": "Suplantar usuario",
         "confirm": "¿Estás seguro de que quieres suplantar a este usuario?",
         "error": "Error al suplantar usuario. Intenta de nuevo."
+    },
+    "bulk": {
+        "itemCount_one": "{{count}} elemento",
+        "itemCount_other": "{{count}} elementos"
+    },
+    "gallery": {
+        "imageCount_one": "{{count}} imagen",
+        "imageCount_other": "{{count}} imágenes"
+    },
+    "states": {
+        "loading": "Cargando...",
+        "loadingSection": "Cargando sección...",
+        "loadingOptions": "Cargando opciones...",
+        "noData": "Sin datos",
+        "noDataAvailable": "Sin datos disponibles",
+        "noSelection": "Sin selección",
+        "noOptionsAvailable": "Sin opciones disponibles",
+        "noImage": "Sin imagen",
+        "noGallery": "Sin galería",
+        "invalidGallery": "Galería inválida",
+        "emptyGallery": "Galería vacía",
+        "noValidImages": "Sin imágenes válidas",
+        "noPrice": "Sin precio",
+        "invalidPrice": "Precio inválido",
+        "failedToLoad": "Error al cargar",
+        "noContent": "Sin contenido",
+        "noImagesInGallery": "Sin imágenes en la galería",
+        "noAccessibleFields": "Sin campos accesibles en esta sección",
+        "noDataToDisplay": "Sin datos para mostrar en esta sección",
+        "noAccessibleSections": "Sin secciones accesibles",
+        "noCompoundConfig": "Sin configuración compuesta",
+        "noWidgetRenderer": "Sin renderizador de widget",
+        "selectAnOption": "Selecciona una opción...",
+        "errorState": "Estado de error",
+        "somethingWentWrong": "Algo salió mal",
+        "notAvailable": "N/D"
+    },
+    "errors": {
+        "errorLoading": "Error al cargar {{name}}",
+        "errorLoadingPage": "Error al cargar la página"
+    },
+    "errorBoundary": {
+        "notFound": {
+            "title": "No encontrado",
+            "description": "El recurso que busca no existe o fue eliminado."
+        },
+        "accessDenied": {
+            "title": "Acceso denegado",
+            "description": "No tiene permiso para acceder a este recurso."
+        },
+        "connectionError": {
+            "title": "Error de conexión",
+            "description": "No se pudo conectar al servidor. Verifique su conexión a internet."
+        },
+        "generic": {
+            "title": "Algo salió mal",
+            "description": "Ocurrió un error inesperado. Por favor, intente de nuevo."
+        },
+        "actions": {
+            "retryWithRefresh": "Reintentar con recarga",
+            "tryAgain": "Intentar de nuevo",
+            "goBack": "Volver",
+            "returnToDashboard": "Volver al panel",
+            "reloadPage": "Recargar página",
+            "reportError": "Reportar error"
+        },
+        "global": {
+            "title": "Error de la aplicación",
+            "description": "La aplicación encontró un error inesperado. Intente recargar la página."
+        },
+        "devOnly": {
+            "title": "Detalles del error (solo desarrollo)",
+            "errorMessage": "Mensaje de error",
+            "stackTrace": "Traza de pila"
+        },
+        "query": {
+            "networkError": {
+                "title": "Error de red",
+                "description": "No se pudo contactar al servidor. Verifique su conexión e intente de nuevo."
+            },
+            "timeout": {
+                "title": "Tiempo de espera agotado",
+                "description": "El servidor tardó demasiado en responder. Intente de nuevo."
+            },
+            "serverError": {
+                "title": "Error del servidor",
+                "description": "El servidor encontró un error interno. Intente de nuevo más tarde."
+            },
+            "authRequired": {
+                "title": "Autenticación requerida",
+                "description": "Su sesión expiró. Inicie sesión de nuevo."
+            },
+            "generic": {
+                "title": "Error al cargar datos",
+                "description": "No se pudieron cargar los datos solicitados. Intente de nuevo."
+            },
+            "actions": {
+                "refreshData": "Actualizar datos",
+                "clearCacheRetry": "Limpiar caché y reintentar"
+            }
+        }
+    },
+    "toastErrors": {
+        "cancelled": {
+            "title": "Solicitud cancelada",
+            "description": "La solicitud fue cancelada."
+        },
+        "timeout": {
+            "title": "Tiempo de espera agotado",
+            "description": "La solicitud excedió el tiempo de espera. Intente de nuevo."
+        },
+        "connectionError": {
+            "title": "Error de conexión",
+            "description": "No se pudo conectar al servidor."
+        },
+        "generic": {
+            "title": "Error",
+            "description": "Ocurrió un error inesperado."
+        },
+        "api": {
+            "badRequest": "Solicitud inválida. Verifique los datos e intente de nuevo.",
+            "unauthorized": "Su sesión expiró. Inicie sesión de nuevo.",
+            "forbidden": "No tiene permiso para realizar esta acción.",
+            "notFound": "El recurso solicitado no fue encontrado.",
+            "conflict": "Ocurrió un conflicto. El recurso pudo haber sido modificado.",
+            "validation": "Error de validación. Verifique los campos del formulario.",
+            "tooManyRequests": "Demasiadas solicitudes. Espere un momento.",
+            "serverError": "Error del servidor. Intente de nuevo más tarde."
+        }
+    },
+    "entityForm": {
+        "noAccessibleFields": "No hay campos accesibles disponibles.",
+        "noDataToDisplay": "No hay datos para mostrar.",
+        "noAccessibleSections": "No hay secciones accesibles disponibles.",
+        "noPermission": "No tiene permiso para ver este contenido."
+    },
+    "relativeTime": {
+        "justNow": "Justo ahora",
+        "minutes": "Hace {{n}} minuto(s)",
+        "hours": "Hace {{n}} hora(s)",
+        "oneDay": "Hace 1 día",
+        "days": "Hace {{n}} días",
+        "notAvailable": "N/D"
+    },
+    "placeholders": {
+        "billing": {
+            "addonNameExample": "ej. Boost de visibilidad (7 días)",
+            "exchangeRateDisclaimer": "Las tasas de cambio se obtienen de proveedores externos y pueden variar. Las tasas mostradas son solo de referencia."
+        }
+    },
+    "bulkToolbar": {
+        "selectItems": "Seleccionar elementos",
+        "itemsSelected_one": "{{count}} elemento seleccionado",
+        "itemsSelected_other": "{{count}} elementos seleccionados",
+        "updateSelected": "Actualizar seleccionados",
+        "deleteSelected": "Eliminar seleccionados",
+        "clearSelection": "Limpiar selección",
+        "exitSelectMode": "Salir del modo selección",
+        "selectItemAriaLabel": "Seleccionar elemento {{id}}",
+        "selectAllAriaLabel": "Seleccionar todos los elementos"
+    },
+    "entityView": {
+        "noValue": "Sin valor",
+        "fieldsDisplayed_one": "{{count}} campo mostrado",
+        "fieldsDisplayed_other": "{{count}} campos mostrados",
+        "editable": "Editable",
+        "hideEmpty": "Ocultar vacíos",
+        "showEmpty": "Mostrar vacíos",
+        "hideControls": "Ocultar controles",
+        "showControls": "Mostrar controles",
+        "refresh": "Actualizar",
+        "print": "Imprimir",
+        "export": "Exportar",
+        "edit": "Editar",
+        "fieldsAvailable_one": "{{count}} campo disponible",
+        "fieldsAvailable_other": "{{count}} campos disponibles",
+        "sectionOf": "Sección {{current}} de {{total}}",
+        "viewMode": "Vista {{mode}}"
+    },
+    "tableCells": {
+        "empty": "Vacío",
+        "andMore": "y {count} más",
+        "invalidDate": "Fecha inválida",
+        "widgetError": "Error de widget"
+    },
+    "validatedForm": {
+        "submit": "Enviar",
+        "submitting": "Enviando...",
+        "reset": "Restablecer",
+        "formIsValid": "Formulario válido",
+        "validationErrors": "Errores de validación del formulario",
+        "fixErrorsBeforeSubmitting": "Por favor, corrija los errores anteriores antes de enviar.",
+        "errorCount_one": "{{count}} error",
+        "errorCount_other": "{{count}} errores",
+        "srSubmitting": "El formulario se está enviando...",
+        "srSuccess": "Formulario enviado exitosamente",
+        "srFailed": "Error al enviar el formulario: {{error}}",
+        "srHasErrors": "El formulario tiene {{count}} errores de validación"
     }
 }

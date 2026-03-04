@@ -140,7 +140,12 @@
         "approve": "Approve",
         "reject": "Reject",
         "activate": "Activate",
-        "deactivate": "Deactivate"
+        "deactivate": "Deactivate",
+        "viewPlans": "View plans"
+    },
+    "limits": {
+        "accommodationLimitReached": "Accommodation limit reached",
+        "accommodationLimitDesc": "You have reached the maximum number of accommodations allowed on your current plan. Upgrade your plan to create more accommodations."
     },
     "confirmations": {
         "delete": {
@@ -283,6 +288,116 @@
             "sports": "Sports",
             "theater": "Theater",
             "other": "Other"
+        }
+    },
+    "viewFields": {
+        "boolean": {
+            "yes": "Yes",
+            "no": "No",
+            "enabled": "Enabled",
+            "disabled": "Disabled",
+            "true": "True",
+            "false": "False"
+        },
+        "currency": {
+            "noAmount": "No amount"
+        },
+        "richText": {
+            "characters": "characters",
+            "formattedContent": "Formatted content",
+            "plainText": "Plain text"
+        },
+        "image": {
+            "caption": "Caption",
+            "description": "Description",
+            "altText": "Alt text",
+            "badge": "Image",
+            "clickToPreview": "Click to preview"
+        },
+        "gallery": {
+            "imageSingular": "image",
+            "imagesPlural": "images",
+            "layout": "Layout",
+            "clickToPreview": "Click images to preview",
+            "sortable": "Sortable gallery",
+            "imageAlt": "Gallery image",
+            "preview": "Preview"
+        }
+    },
+    "ownerPromotions": {
+        "columns": {
+            "title": "Title",
+            "owner": "Owner",
+            "accommodation": "Accommodation",
+            "discountType": "Discount Type",
+            "discountValue": "Value",
+            "validFrom": "Valid From",
+            "validUntil": "Valid Until",
+            "redemptions": "Redemptions",
+            "status": "Status",
+            "createdAt": "Created",
+            "freeNight_one": "{{count}} free night",
+            "freeNight_other": "{{count}} free nights"
+        },
+        "discountTypes": {
+            "percentage": "Percentage",
+            "fixed": "Fixed Amount",
+            "freeNight": "Free Night"
+        },
+        "statuses": {
+            "active": "Active",
+            "inactive": "Inactive",
+            "expired": "Expired"
+        }
+    },
+    "fields": {
+        "image": {
+            "uploadedAlt": "Uploaded image",
+            "altTextLabel": "Alt Text",
+            "altTextPlaceholder": "Describe the image for accessibility",
+            "captionLabel": "Caption",
+            "captionPlaceholder": "Image caption",
+            "descriptionLabel": "Description",
+            "descriptionPlaceholder": "Detailed description",
+            "uploadAriaLabel": "Upload image",
+            "uploading": "Uploading...",
+            "dropText": "Drop an image here, or click to select",
+            "fileConstraints": "{types} up to {maxSize}",
+            "selectButton": "Select Image"
+        },
+        "gallery": {
+            "imageAlt": "Gallery image {index}",
+            "captionPlaceholder": "Caption",
+            "altTextPlaceholder": "Alt text",
+            "uploadAriaLabel": "Upload images",
+            "uploading": "Uploading...",
+            "addImages": "Add images ({current}/{max})",
+            "fileConstraints": "{types} up to {maxSize} each",
+            "selectButton": "Select Images"
+        },
+        "fileUploadNotImplemented": "File upload not yet implemented",
+        "unknownFieldType": "Unknown field type: {type}"
+    },
+    "entitlementGate": {
+        "premiumFeature": "Premium feature",
+        "titleWithSection": "{section} - Premium Feature",
+        "titleDefault": "Premium Feature",
+        "description": "This feature is available on higher plans. Upgrade your plan to access this section.",
+        "fieldPremium": "{field} - Premium",
+        "fieldPremiumDescription": "This feature is available on higher plans"
+    },
+    "limitGate": {
+        "fieldLimitReached": "{field} - Limit reached",
+        "description": "You have reached the limit of your current plan"
+    },
+    "selects": {
+        "destination": {
+            "placeholder": "Select a destination...",
+            "unknown": "Unknown Destination"
+        },
+        "owner": {
+            "placeholder": "Select an owner...",
+            "unknown": "Unknown User"
         }
     }
 }

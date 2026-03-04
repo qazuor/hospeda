@@ -6,6 +6,8 @@
  */
 
 export const defaultLocale = 'es' as const;
+/** BCP 47 locale tag used for Intl formatting (dates, numbers, currency). */
+export const defaultIntlLocale = 'es-AR' as const;
 export const locales = ['es', 'en', 'pt'] as const;
 
 export type Locale = (typeof locales)[number];
@@ -218,7 +220,7 @@ const rawTranslations = {
         contact: contactEs,
         destinations: destinationEs,
         error: errorEs,
-        event: eventEs,
+        events: eventEs,
         'exchange-rate': exchangeRateEs,
         footer: footerEs,
         home: homeEs,
@@ -254,7 +256,7 @@ const rawTranslations = {
         contact: contactEn,
         destinations: destinationEn,
         error: errorEn,
-        event: eventEn,
+        events: eventEn,
         'exchange-rate': exchangeRateEn,
         footer: footerEn,
         home: homeEn,
@@ -290,7 +292,7 @@ const rawTranslations = {
         contact: contactPt,
         destinations: destinationPt,
         error: errorPt,
-        event: eventPt,
+        events: eventPt,
         'exchange-rate': exchangeRatePt,
         footer: footerPt,
         home: homePt,

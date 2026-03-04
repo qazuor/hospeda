@@ -70,5 +70,60 @@
     "page": {
         "title": "Benefits",
         "description": "Discover the benefits of using Hospeda for tourists and accommodation owners in the Argentine Litoral region"
+    },
+    "hero": {
+        "description": "Hospeda connects travelers with authentic accommodations and supports property owners with professional tools. Discover the benefits of being part of our community."
+    },
+    "tourists": {
+        "heading": "Benefits for Tourists",
+        "wideSelection": {
+            "title": "Wide Verified Selection",
+            "description": "Access a variety of verified, quality accommodations in Concepcion del Uruguay and the Argentine Litoral region."
+        },
+        "secureBooking": {
+            "title": "Secure Bookings and Payments",
+            "description": "Reliable booking system with secure payments through MercadoPago. Your information is protected at all times."
+        },
+        "authenticExperiences": {
+            "title": "Authentic Local Experiences",
+            "description": "Discover accommodations that reflect local culture and hospitality. Live genuine experiences during every stay."
+        },
+        "realReviews": {
+            "title": "Real Traveler Reviews",
+            "description": "Read authentic reviews from other travelers. Make informed decisions based on real experiences."
+        },
+        "customerSupport": {
+            "title": "Customer Support",
+            "description": "Dedicated support team to help you before, during, and after your stay. We are here for you."
+        }
+    },
+    "owners": {
+        "heading": "Benefits for Property Owners",
+        "increasedVisibility": {
+            "title": "Increased Visibility",
+            "description": "Reach thousands of travelers looking for accommodations in the region. Boost your bookings with our optimized platform."
+        },
+        "easyManagement": {
+            "title": "Easy Property Management",
+            "description": "Intuitive admin panel to manage bookings, availability, pricing, and guest communication."
+        },
+        "securePayments": {
+            "title": "Secure Payments via MercadoPago",
+            "description": "Receive payments securely and reliably. Direct integration with MercadoPago for protected transactions."
+        },
+        "analytics": {
+            "title": "Analytics and Reports",
+            "description": "Access detailed metrics on your bookings, occupancy, and performance. Make data-driven decisions."
+        },
+        "growingCommunity": {
+            "title": "Growing Community",
+            "description": "Be part of an expanding network of property owners and travelers. Participate in exclusive events and training."
+        }
+    },
+    "plans": {
+        "heading": "Discover Our Plans",
+        "description": "Explore plans and pricing designed for tourists and property owners. Find the perfect option for you.",
+        "touristPricing": "View tourist pricing",
+        "ownerPricing": "View owner pricing"
     }
 }

@@ -94,6 +94,10 @@
             "emptyTitle": "No {category} events available"
         }
     },
+    "calendar": {
+        "prevMonth": "Previous month",
+        "nextMonth": "Next month"
+    },
     "listPage": {
         "title": "Events",
         "description": "Discover upcoming events in the Argentine Litoral",

@@ -60,6 +60,8 @@
         "rural": "Rural",
         "viewAriaLabel": "View {{type}} accommodations",
         "viewWithCountAriaLabel": "View {{count}} {{type}} accommodations",
+        "count_one": "{{count}} accommodation",
+        "count_other": "{{count}} accommodations",
         "countSingular": "{{count}} accommodation",
         "countPlural": "{{count}} accommodations"
     },
@@ -124,6 +126,8 @@
         "ctaLabel": "Search",
         "loadingText": "Loading...",
         "searchAriaLabel": "Search accommodations",
-        "closePanelAriaLabel": "Close panel"
+        "closePanelAriaLabel": "Close panel",
+        "moreSelected_one": "& {{count}} more",
+        "moreSelected_other": "& {{count}} more"
     }
 }

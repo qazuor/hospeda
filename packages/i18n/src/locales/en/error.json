@@ -1,9 +1,18 @@
 {
     "404": {
         "title": "Page not found",
-        "heading": "The page you're looking for doesn't exist.",
-        "description": "The page you're looking for doesn't exist.",
-        "message": "The page you're looking for doesn't exist."
+        "heading": "Page not found",
+        "description": "Sorry, the page you are looking for does not exist or has been moved.",
+        "message": "Sorry, the page you are looking for does not exist or has been moved.",
+        "goHome": "Go to home"
+    },
+    "500": {
+        "title": "Server error",
+        "heading": "Server error",
+        "description": "Sorry, something went wrong on our servers. Please try again later.",
+        "message": "Sorry, something went wrong. Please try again later.",
+        "retry": "Retry",
+        "goHome": "Go to home"
     },
     "form": {
         "validation-failed": "Form validation failed. Please fix the errors and try again.",
