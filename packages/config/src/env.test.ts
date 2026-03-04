@@ -82,11 +82,11 @@ describe('env utilities', () => {
 
         it('should generate correct define mappings', () => {
             vi.stubEnv('HOSPEDA_API_URL', 'https://api.example.com');
-            vi.stubEnv('HOSPEDA_CLERK_KEY', 'pk_test_123');
+            vi.stubEnv('HOSPEDA_BETTER_AUTH_URL', 'http://localhost:3001/api/auth');
 
             const plugin = exposeSharedEnv({
                 PUBLIC_API_URL: 'HOSPEDA_API_URL',
-                PUBLIC_CLERK_PUBLISHABLE_KEY: 'HOSPEDA_CLERK_KEY'
+                PUBLIC_BETTER_AUTH_URL: 'HOSPEDA_BETTER_AUTH_URL'
             });
 
             const config =
@@ -97,8 +97,8 @@ describe('env utilities', () => {
                 define: {
                     'import.meta.env.PUBLIC_API_URL': '"https://api.example.com"',
                     'import.meta.env.VITE_API_URL': '"https://api.example.com"',
-                    'import.meta.env.PUBLIC_CLERK_PUBLISHABLE_KEY': '"pk_test_123"',
-                    'import.meta.env.VITE_CLERK_PUBLISHABLE_KEY': '"pk_test_123"'
+                    'import.meta.env.PUBLIC_BETTER_AUTH_URL': '"http://localhost:3001/api/auth"',
+                    'import.meta.env.VITE_BETTER_AUTH_URL': '"http://localhost:3001/api/auth"'
                 }
             });
         });

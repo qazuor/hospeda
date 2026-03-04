@@ -52,8 +52,8 @@ describe('Auth UI Package - Basic Tests', () => {
         expect(formatUserName()).toBe('Anonymous');
     });
 
-    it('should mock Clerk hooks correctly', () => {
-        // This test verifies that our Clerk mocks are working
+    it('should mock Better Auth hooks correctly', () => {
+        // This test verifies that our Better Auth mocks are working
         // In a real component test, we would import and use the actual hooks
         expect(true).toBe(true);
     });

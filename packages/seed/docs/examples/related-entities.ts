@@ -72,9 +72,9 @@ interface SeedRelatedEntitiesOptions {
  */
 interface UserData {
   /**
-   * External user ID from Clerk authentication
+   * External user ID from Better Auth authentication
    */
-  clerkId: string;
+  authProviderId: string;
 
   /**
    * User's email address
@@ -168,35 +168,35 @@ interface IdMapper {
 
 /**
  * Sample user data for seeding.
- * In production, users would come from Clerk authentication.
+ * In production, users would come from Better Auth authentication.
  */
 const SAMPLE_USERS: ReadonlyArray<UserData> = [
   {
-    clerkId: 'user_seed_001',
+    authProviderId: 'user_seed_001',
     email: 'maria.garcia@example.com',
     firstName: 'María',
     lastName: 'García',
   },
   {
-    clerkId: 'user_seed_002',
+    authProviderId: 'user_seed_002',
     email: 'juan.martinez@example.com',
     firstName: 'Juan',
     lastName: 'Martínez',
   },
   {
-    clerkId: 'user_seed_003',
+    authProviderId: 'user_seed_003',
     email: 'ana.rodriguez@example.com',
     firstName: 'Ana',
     lastName: 'Rodríguez',
   },
   {
-    clerkId: 'user_seed_004',
+    authProviderId: 'user_seed_004',
     email: 'carlos.lopez@example.com',
     firstName: 'Carlos',
     lastName: 'López',
   },
   {
-    clerkId: 'user_seed_005',
+    authProviderId: 'user_seed_005',
     email: 'lucia.fernandez@example.com',
     firstName: 'Lucía',
     lastName: 'Fernández',

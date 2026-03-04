@@ -31,7 +31,7 @@ export const UserSearchHttpSchema = BaseHttpSearchSchema.extend({
     email: z.string().email().optional(),
     firstName: z.string().min(1).max(100).optional(),
     lastName: z.string().min(1).max(100).optional(),
-    clerkId: z.string().min(1).optional(),
+    authProviderId: z.string().min(1).optional(),
 
     // Enum filters
     role: RoleEnumSchema.optional(),

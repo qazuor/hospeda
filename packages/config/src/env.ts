@@ -173,7 +173,7 @@ export function getEnvNumber(name: string, fallback?: number): number {
  *   plugins: [
  *     exposeSharedEnv({
  *       PUBLIC_API_URL: 'HOSPEDA_API_URL',
- *       PUBLIC_CLERK_PUBLISHABLE_KEY: 'HOSPEDA_CLERK_PUBLISHABLE_KEY'
+ *       PUBLIC_BETTER_AUTH_URL: 'HOSPEDA_BETTER_AUTH_URL'
  *     }, {
  *       validate: true,
  *       context: 'Admin App'
@@ -253,7 +253,7 @@ export const commonEnvMappings = {
      */
     basic: {
         PUBLIC_API_URL: 'HOSPEDA_API_URL',
-        PUBLIC_CLERK_PUBLISHABLE_KEY: 'HOSPEDA_CLERK_PUBLISHABLE_KEY'
+        PUBLIC_BETTER_AUTH_URL: 'HOSPEDA_BETTER_AUTH_URL'
     } as EnvMapping,
 
     /**
@@ -261,7 +261,7 @@ export const commonEnvMappings = {
      */
     extended: {
         PUBLIC_API_URL: 'HOSPEDA_API_URL',
-        PUBLIC_CLERK_PUBLISHABLE_KEY: 'HOSPEDA_CLERK_PUBLISHABLE_KEY',
+        PUBLIC_BETTER_AUTH_URL: 'HOSPEDA_BETTER_AUTH_URL',
         PUBLIC_DEBUG_ACTOR_ID: 'HOSPEDA_DEBUG_ACTOR_ID',
         PUBLIC_SUPPORTED_LOCALES: 'HOSPEDA_SUPPORTED_LOCALES',
         PUBLIC_DEFAULT_LOCALE: 'HOSPEDA_DEFAULT_LOCALE'
@@ -288,16 +288,15 @@ export const commonEnvSchemas = {
         NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
         HOSPEDA_API_URL: z.string().url('Must be a valid URL'),
         HOSPEDA_SITE_URL: z.string().url('Must be a valid URL'),
-        HOSPEDA_CLERK_PUBLISHABLE_KEY: z.string().min(1, 'Clerk publishable key is required')
+        HOSPEDA_BETTER_AUTH_URL: z.string().min(1, 'Better Auth URL is required')
     }),
 
     /**
      * Authentication configuration
      */
     auth: z.object({
-        HOSPEDA_CLERK_PUBLISHABLE_KEY: z.string().min(1, 'Clerk publishable key is required'),
-        CLERK_SECRET_KEY: z.string().min(1, 'Clerk secret key is required').optional(),
-        CLERK_WEBHOOK_SECRET: z.string().optional()
+        HOSPEDA_BETTER_AUTH_URL: z.string().min(1, 'Better Auth URL is required'),
+        HOSPEDA_BETTER_AUTH_SECRET: z.string().min(1, 'Better Auth secret is required').optional()
     }),
 
     /**

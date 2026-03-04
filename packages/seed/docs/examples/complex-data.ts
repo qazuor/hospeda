@@ -14,7 +14,7 @@
  *
  * Entities created:
  * - Destinations (with coordinates and images)
- * - Users (with Clerk IDs and profiles)
+ * - Users (with auth provider IDs and profiles)
  * - Accommodations (with pricing and availability)
  * - Amenities (many-to-many with accommodations)
  * - Features (many-to-many with accommodations)
@@ -196,7 +196,7 @@ function generateDestination(index: number) {
 }
 
 /**
- * Generates realistic user data with Clerk integration
+ * Generates realistic user data with auth provider integration
  */
 function generateUser(index: number) {
   const firstName = faker.person.firstName();
@@ -206,7 +206,7 @@ function generateUser(index: number) {
     .toLowerCase();
 
   return {
-    clerkId: `user_seed_${String(index).padStart(6, '0')}`,
+    authProviderId: `user_seed_${String(index).padStart(6, '0')}`,
     email,
     firstName,
     lastName,

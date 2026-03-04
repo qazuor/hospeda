@@ -1,6 +1,6 @@
 # @repo/auth-ui
 
-Pre-built authentication UI components for React using Clerk. Provides ready-to-use sign-in, sign-up, and user menu components with consistent styling and behavior across the Hospeda platform.
+Pre-built authentication UI components for React using Better Auth. Provides ready-to-use sign-in, sign-up, and user menu components with consistent styling and behavior across the Hospeda platform.
 
 ## Installation
 
@@ -22,38 +22,38 @@ pnpm install
 
 ## Prerequisites
 
-This package requires Clerk to be configured in your application:
+This package requires Better Auth to be configured in your application:
 
-1. **Clerk Account**: Sign up at [clerk.com](https://clerk.com)
+1. **Better Auth Account**: Sign up at [better-auth.com](https://better-auth.com)
 2. **API Keys**: Set up environment variables:
 
 ```bash
 # .env or .env.local
-CLERK_PUBLISHABLE_KEY=pk_test_...
-CLERK_SECRET_KEY=sk_test_...
+HOSPEDA_BETTER_AUTH_URL=pk_test_...
+HOSPEDA_BETTER_AUTH_SECRET=sk_test_...
 ```
 
-3. **Clerk Provider**: Wrap your app with `ClerkProvider`:
+3. **Better Auth Provider**: Wrap your app with `Better AuthProvider`:
 
 ```tsx
-import { ClerkProvider } from '@clerk/clerk-react';
+import { Better AuthProvider } from '@repo/auth-ui';
 
 export function App() {
   return (
-    <ClerkProvider publishableKey={import.meta.env.CLERK_PUBLISHABLE_KEY}>
+    <Better AuthProvider publishableKey={import.meta.env.HOSPEDA_BETTER_AUTH_URL}>
       {/* Your app */}
-    </ClerkProvider>
+    </Better AuthProvider>
   );
 }
 ```
 
-For detailed setup, see [Clerk React Documentation](https://clerk.com/docs/quickstarts/react).
+For detailed setup, see [Better Auth React Documentation](https://better-auth.com/docs/quickstarts/react).
 
 ## What's Included
 
 ### Components
 
-- **SignInForm** - Email/password sign-in form with Clerk integration
+- **SignInForm** - Email/password sign-in form with Better Auth integration
 - **SignUpForm** - User registration form with validation
 - **SignOutButton** - Sign-out button with callback support
 - **SimpleUserMenu** - Basic user menu (name/avatar only)
@@ -195,7 +195,7 @@ export function Navbar() {
 
 **Features:**
 
-- User avatar (from Clerk)
+- User avatar (from Better Auth)
 - User name display
 - Loading state
 - Minimal UI
@@ -227,7 +227,7 @@ export function AppHeader() {
 
 - Dropdown menu
 - User avatar and name
-- Settings link (Clerk user profile)
+- Settings link (Better Auth user profile)
 - Sign-out action
 - Smooth animations
 
@@ -237,13 +237,13 @@ All components use Tailwind CSS classes and are designed to work with the Hosped
 
 ### Customizing Appearance
 
-**Option 1: Override Tailwind classes**
+#### Option 1: Override Tailwind Classes
 
 ```tsx
 <SignInForm className="custom-class" />
 ```
 
-**Option 2: Wrap with custom container**
+#### Option 2: Wrap With Custom Container
 
 ```tsx
 <div className="bg-white p-8 rounded-lg shadow-lg">
@@ -251,7 +251,7 @@ All components use Tailwind CSS classes and are designed to work with the Hosped
 </div>
 ```
 
-**Option 3: Use CSS modules**
+#### Option 3: Use CSS Modules
 
 ```tsx
 import styles from './auth.module.css';
@@ -285,7 +285,7 @@ module.exports = {
 ### Protected Routes
 
 ```tsx
-import { useAuth } from '@clerk/clerk-react';
+import { useAuth } from '@repo/auth-ui';
 import { Navigate } from 'react-router-dom';
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -368,10 +368,10 @@ export function RegisterPage() {
 }
 ```
 
-### Using Clerk Hooks
+### Using Better Auth Hooks
 
 ```tsx
-import { useAuth, useUser } from '@clerk/clerk-react';
+import { useAuth, useUser } from '@repo/auth-ui';
 import { UserMenu } from '@repo/auth-ui';
 
 export function Dashboard() {
@@ -399,7 +399,7 @@ export function Dashboard() {
 ### Handling Auth State
 
 ```tsx
-import { useAuth } from '@clerk/clerk-react';
+import { useAuth } from '@repo/auth-ui';
 import { SignInForm } from '@repo/auth-ui';
 
 export function ConditionalAuth() {
@@ -476,13 +476,13 @@ Components expect these API endpoints:
 
 ### POST /api/v1/public/auth/signin
 
-Syncs Clerk user to database on sign-in.
+Syncs Better Auth user to database on sign-in.
 
 **Request:**
 
 ```json
 {
-  "clerkUserId": "user_abc123"
+  "authUserId": "user_abc123"
 }
 ```
 
@@ -493,7 +493,7 @@ Syncs Clerk user to database on sign-in.
   "success": true,
   "data": {
     "id": "usr_xyz789",
-    "clerkUserId": "user_abc123",
+    "authUserId": "user_abc123",
     "email": "user@example.com"
   }
 }
@@ -507,7 +507,7 @@ Creates database user on sign-up.
 
 ```json
 {
-  "clerkUserId": "user_abc123",
+  "authUserId": "user_abc123",
   "email": "user@example.com",
   "firstName": "Juan",
   "lastName": "Pérez"
@@ -521,7 +521,7 @@ Creates database user on sign-up.
   "success": true,
   "data": {
     "id": "usr_xyz789",
-    "clerkUserId": "user_abc123",
+    "authUserId": "user_abc123",
     "email": "user@example.com"
   }
 }
@@ -570,14 +570,14 @@ export function LoginWithToast() {
 
 ## Testing
 
-### Mocking Clerk in Tests
+### Mocking Better Auth in Tests
 
 ```tsx
 import { render, screen } from '@testing-library/react';
 import { SignInForm } from '@repo/auth-ui';
 
-// Mock Clerk hooks
-vi.mock('@clerk/clerk-react', () => ({
+// Mock Better Auth hooks
+vi.mock('@repo/auth-ui', () => ({
   useAuth: () => ({ isSignedIn: false, isLoaded: true }),
   useSignIn: () => ({
     isLoaded: true,
@@ -594,7 +594,7 @@ test('renders sign in form', () => {
 
 ## Dependencies
 
-- **@clerk/clerk-react** (^5.40.0+) - Authentication provider
+- **@repo/auth-ui** (^5.40.0+) - Authentication provider
 - **react** (^19.0.0) - UI framework
 - **@repo/i18n** - Internationalization
 - **lucide-react** - Icons
@@ -602,18 +602,23 @@ test('renders sign in form', () => {
 ## Related Packages
 
 - [@repo/i18n](../i18n) - Internationalization
-- [@clerk/clerk-react](https://clerk.com/docs/references/react/overview) - Clerk React SDK
+- [@repo/auth-ui](https://better-auth.com/docs/references/react/overview) - Better Auth React SDK
+
+## Related Documentation
+
+- [Authentication Guide](../../docs/guides/authentication.md)
+- [ADR-002: Better Auth over Clerk](../../docs/decisions/ADR-002-better-auth-over-clerk.md)
 
 ## Troubleshooting
 
-### "Clerk is not loaded"
+### "Better Auth is not loaded"
 
-Make sure `ClerkProvider` wraps your app:
+Make sure `Better AuthProvider` wraps your app:
 
 ```tsx
-<ClerkProvider publishableKey={process.env.CLERK_PUBLISHABLE_KEY}>
+<Better AuthProvider publishableKey={process.env.HOSPEDA_BETTER_AUTH_URL}>
   <App />
-</ClerkProvider>
+</Better AuthProvider>
 ```
 
 ### "User not synced to database"
@@ -623,7 +628,7 @@ Check that your API endpoints are working:
 ```bash
 curl -X POST http://localhost:3000/api/v1/public/auth/signup \
   -H "Content-Type: application/json" \
-  -d '{"clerkUserId":"user_123","email":"test@example.com"}'
+  -d '{"authUserId":"user_123","email":"test@example.com"}'
 ```
 
 ### "Components not styled"

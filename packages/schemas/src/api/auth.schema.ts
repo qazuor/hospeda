@@ -58,7 +58,7 @@ export const AuthStatusResponseSchema = z.object({
     success: z.boolean(),
     data: z.object({
         isAuthenticated: z.boolean().describe('Whether user is authenticated'),
-        userId: z.string().nullish().describe('Clerk user ID if authenticated'),
+        userId: z.string().nullish().describe('User ID if authenticated'),
         actor: ActorSchema
     }),
     metadata: z.object({
