@@ -74,12 +74,12 @@ const categoryApiValue: Record<EventCategory, string> = {
   gastronomy: 'GASTRONOMY',
 };
 
-const categoryName = t({ locale, namespace: 'event', key: `categoryPage.categories.${eventCategory}.name` });
-const categoryDescription = t({ locale, namespace: 'event', key: `categoryPage.categories.${eventCategory}.description` });
-const pageTitle = t({ locale, namespace: 'event', key: `categoryPage.categories.${eventCategory}.pageTitle` });
-const breadcrumbHome = t({ locale, namespace: 'event', key: 'categoryPage.labels.breadcrumbHome' });
-const breadcrumbEvents = t({ locale, namespace: 'event', key: 'categoryPage.labels.breadcrumbEvents' });
-const emptyTitle = t({ locale, namespace: 'event', key: 'categoryPage.labels.emptyTitle', params: { category: categoryName.toLowerCase() } });
+const categoryName = t({ locale, namespace: 'events', key: `categoryPage.categories.${eventCategory}.name` });
+const categoryDescription = t({ locale, namespace: 'events', key: `categoryPage.categories.${eventCategory}.description` });
+const pageTitle = t({ locale, namespace: 'events', key: `categoryPage.categories.${eventCategory}.pageTitle` });
+const breadcrumbHome = t({ locale, namespace: 'events', key: 'categoryPage.labels.breadcrumbHome' });
+const breadcrumbEvents = t({ locale, namespace: 'events', key: 'categoryPage.labels.breadcrumbEvents' });
+const emptyTitle = t({ locale, namespace: 'events', key: 'categoryPage.labels.emptyTitle', params: { category: categoryName.toLowerCase() } });
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
 /**

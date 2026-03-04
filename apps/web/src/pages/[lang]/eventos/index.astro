@@ -35,22 +35,22 @@ const sortBy = url.searchParams.get('sortBy') || 'startDate';
 /**
  * Localized page text variables
  */
-const pageTitle = t({ locale, namespace: 'event', key: 'listPage.title' });
-const pageDescription = t({ locale, namespace: 'event', key: 'listPage.description' });
-const homeLabel = t({ locale, namespace: 'event', key: 'listPage.home' });
-const eventsLabel = t({ locale, namespace: 'event', key: 'listPage.events' });
-const upcomingLabel = t({ locale, namespace: 'event', key: 'listPage.upcoming' });
-const pastLabel = t({ locale, namespace: 'event', key: 'listPage.past' });
-const allLabel = t({ locale, namespace: 'event', key: 'listPage.all' });
-const filterByCategoryLabel = t({ locale, namespace: 'event', key: 'listPage.filterByCategory' });
-const allCategoriesLabel = t({ locale, namespace: 'event', key: 'listPage.allCategories' });
-const festivalLabel = t({ locale, namespace: 'event', key: 'listPage.festival' });
-const fairLabel = t({ locale, namespace: 'event', key: 'listPage.fair' });
-const sportLabel = t({ locale, namespace: 'event', key: 'listPage.sport' });
-const culturalLabel = t({ locale, namespace: 'event', key: 'listPage.cultural' });
-const gastronomyLabel = t({ locale, namespace: 'event', key: 'listPage.gastronomy' });
-const noEventsLabel = t({ locale, namespace: 'event', key: 'listPage.noEvents' });
-const noEventsDescriptionLabel = t({ locale, namespace: 'event', key: 'listPage.noEventsDescription' });
+const pageTitle = t({ locale, namespace: 'events', key: 'listPage.title' });
+const pageDescription = t({ locale, namespace: 'events', key: 'listPage.description' });
+const homeLabel = t({ locale, namespace: 'events', key: 'listPage.home' });
+const eventsLabel = t({ locale, namespace: 'events', key: 'listPage.events' });
+const upcomingLabel = t({ locale, namespace: 'events', key: 'listPage.upcoming' });
+const pastLabel = t({ locale, namespace: 'events', key: 'listPage.past' });
+const allLabel = t({ locale, namespace: 'events', key: 'listPage.all' });
+const filterByCategoryLabel = t({ locale, namespace: 'events', key: 'listPage.filterByCategory' });
+const allCategoriesLabel = t({ locale, namespace: 'events', key: 'listPage.allCategories' });
+const festivalLabel = t({ locale, namespace: 'events', key: 'listPage.festival' });
+const fairLabel = t({ locale, namespace: 'events', key: 'listPage.fair' });
+const sportLabel = t({ locale, namespace: 'events', key: 'listPage.sport' });
+const culturalLabel = t({ locale, namespace: 'events', key: 'listPage.cultural' });
+const gastronomyLabel = t({ locale, namespace: 'events', key: 'listPage.gastronomy' });
+const noEventsLabel = t({ locale, namespace: 'events', key: 'listPage.noEvents' });
+const noEventsDescriptionLabel = t({ locale, namespace: 'events', key: 'listPage.noEventsDescription' });
 
 /**
  * Category filter options
@@ -107,10 +107,10 @@ const eventCards = events.map((evt) =>
 
     <!-- Filters bar -->
     <div
-      class="mb-8 flex flex-col gap-4 rounded-lg border border-gray-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between"
+      class="mb-8 flex flex-col gap-4 rounded-lg border border-border bg-surface p-4 sm:flex-row sm:items-center sm:justify-between"
     >
       <!-- Timeframe toggle -->
-      <div class="flex gap-1 rounded-lg bg-gray-100 p-1" role="tablist">
+      <div class="flex gap-1 rounded-lg bg-surface-alt p-1" role="tablist">
         {
           ['upcoming', 'past', 'all'].map((tf) => (
             <a
@@ -120,8 +120,8 @@ const eventCards = events.map((evt) =>
               class:list={[
                 'rounded-md px-4 py-2 text-sm font-medium transition-colors',
                 timeframe === tf
-                  ? 'bg-white text-primary shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900',
+                  ? 'bg-surface text-primary shadow-sm'
+                  : 'text-text-secondary hover:text-text',
               ]}
             >
               {tf === 'upcoming' ? upcomingLabel : tf === 'past' ? pastLabel : allLabel}
@@ -132,12 +132,12 @@ const eventCards = events.map((evt) =>
 
       <!-- Category filter -->
       <div class="flex items-center gap-2">
-        <label for="category-filter" class="whitespace-nowrap text-sm font-medium text-gray-700">
+        <label for="category-filter" class="whitespace-nowrap text-sm font-medium text-text">
           {filterByCategoryLabel}:
         </label>
         <select
           id="category-filter"
-          class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+          class="rounded-md border border-border bg-surface px-3 py-2 text-sm text-text focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
         >
           {
             categories.map((cat) => (

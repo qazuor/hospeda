@@ -19,8 +19,11 @@ import { HomeIcon, ShieldIcon, LocationIcon, StarIcon, InfoIcon, UserIcon, Check
 const locale = getLocaleFromParams(Astro.params);
 if (!locale) return Astro.redirect('/es/');
 
-const title = t({ locale, namespace: 'benefits', key: 'page.title' });
-const description = t({ locale, namespace: 'benefits', key: 'page.description' });
+/** Helper to get translations from the benefits namespace */
+const tBen = (key: string) => t({ locale, namespace: 'benefits', key });
+
+const title = tBen('page.title');
+const description = tBen('page.description');
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
@@ -54,16 +57,14 @@ const breadcrumbItems = [
 						{title}
 					</h1>
 					<p class="text-xl leading-relaxed text-text-secondary">
-						Hospeda conecta viajeros con alojamientos auténticos y apoya a propietarios con
-						herramientas profesionales. Descubre los beneficios de formar parte de nuestra
-						comunidad.
+						{tBen('hero.description')}
 					</p>
 				</article>
 
 				<!-- Benefits for Tourists Section -->
 				<article id="tourist-benefits" class="mb-16">
 					<h2 class="mb-8 text-center text-3xl font-semibold text-text-primary">
-						Beneficios para Turistas
+						{tBen('tourists.heading')}
 					</h2>
 					<div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
 						<!-- Benefit 1: Wide Selection -->
@@ -74,11 +75,10 @@ const breadcrumbItems = [
 								<HomeIcon size={32} className="text-primary" aria-hidden="true" />
 							</div>
 							<h3 class="mb-2 text-xl font-semibold text-text-primary">
-								Amplia Selección Verificada
+								{tBen('tourists.wideSelection.title')}
 							</h3>
 							<p class="text-text-secondary">
-								Accede a una variedad de alojamientos verificados y de calidad en Concepción
-								del Uruguay y la región del Litoral argentino.
+								{tBen('tourists.wideSelection.description')}
 							</p>
 						</div>
 
@@ -90,11 +90,10 @@ const breadcrumbItems = [
 								<ShieldIcon size={32} className="text-primary" aria-hidden="true" />
 							</div>
 							<h3 class="mb-2 text-xl font-semibold text-text-primary">
-								Reservas y Pagos Seguros
+								{tBen('tourists.secureBooking.title')}
 							</h3>
 							<p class="text-text-secondary">
-								Sistema de reservas confiable con pagos seguros a través de MercadoPago. Tu
-								información está protegida en todo momento.
+								{tBen('tourists.secureBooking.description')}
 							</p>
 						</div>
 
@@ -106,11 +105,10 @@ const breadcrumbItems = [
 								<LocationIcon size={32} className="text-primary" aria-hidden="true" />
 							</div>
 							<h3 class="mb-2 text-xl font-semibold text-text-primary">
-								Experiencias Locales Auténticas
+								{tBen('tourists.authenticExperiences.title')}
 							</h3>
 							<p class="text-text-secondary">
-								Descubre alojamientos que reflejan la cultura y hospitalidad local. Vive
-								experiencias genuinas en cada estadía.
+								{tBen('tourists.authenticExperiences.description')}
 							</p>
 						</div>
 
@@ -122,11 +120,10 @@ const breadcrumbItems = [
 								<StarIcon size={32} className="text-primary" weight="regular" aria-hidden="true" />
 							</div>
 							<h3 class="mb-2 text-xl font-semibold text-text-primary">
-								Reseñas Reales de Viajeros
+								{tBen('tourists.realReviews.title')}
 							</h3>
 							<p class="text-text-secondary">
-								Lee opiniones auténticas de otros viajeros. Toma decisiones informadas basadas
-								en experiencias reales.
+								{tBen('tourists.realReviews.description')}
 							</p>
 						</div>
 
@@ -137,10 +134,11 @@ const breadcrumbItems = [
 							>
 								<InfoIcon size={32} className="text-primary" aria-hidden="true" />
 							</div>
-							<h3 class="mb-2 text-xl font-semibold text-text-primary">Soporte al Cliente</h3>
+							<h3 class="mb-2 text-xl font-semibold text-text-primary">
+								{tBen('tourists.customerSupport.title')}
+							</h3>
 							<p class="text-text-secondary">
-								Equipo de soporte dedicado para ayudarte antes, durante y después de tu
-								estadía. Estamos aquí para ti.
+								{tBen('tourists.customerSupport.description')}
 							</p>
 						</div>
 					</div>
@@ -149,7 +147,7 @@ const breadcrumbItems = [
 				<!-- Benefits for Property Owners Section -->
 				<article id="owner-benefits" class="mb-16">
 					<h2 class="mb-8 text-center text-3xl font-semibold text-text-primary">
-						Beneficios para Propietarios
+						{tBen('owners.heading')}
 					</h2>
 					<div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
 						<!-- Benefit 1: Increased Visibility -->
@@ -160,11 +158,10 @@ const breadcrumbItems = [
 								<UserIcon size={32} className="text-primary" aria-hidden="true" />
 							</div>
 							<h3 class="mb-2 text-xl font-semibold text-text-primary">
-								Mayor Visibilidad
+								{tBen('owners.increasedVisibility.title')}
 							</h3>
 							<p class="text-text-secondary">
-								Alcanza a miles de viajeros que buscan alojamientos en la región. Aumenta tus
-								reservas con nuestra plataforma optimizada.
+								{tBen('owners.increasedVisibility.description')}
 							</p>
 						</div>
 
@@ -176,11 +173,10 @@ const breadcrumbItems = [
 								<CheckIcon size={32} className="text-primary" aria-hidden="true" />
 							</div>
 							<h3 class="mb-2 text-xl font-semibold text-text-primary">
-								Gestión Fácil de Propiedades
+								{tBen('owners.easyManagement.title')}
 							</h3>
 							<p class="text-text-secondary">
-								Panel de administración intuitivo para gestionar reservas, disponibilidad,
-								precios y comunicación con huéspedes.
+								{tBen('owners.easyManagement.description')}
 							</p>
 						</div>
 
@@ -192,11 +188,10 @@ const breadcrumbItems = [
 								<ShieldIcon size={32} className="text-primary" aria-hidden="true" />
 							</div>
 							<h3 class="mb-2 text-xl font-semibold text-text-primary">
-								Pagos Seguros vía MercadoPago
+								{tBen('owners.securePayments.title')}
 							</h3>
 							<p class="text-text-secondary">
-								Recibe pagos de forma segura y confiable. Integración directa con MercadoPago
-								para transacciones protegidas.
+								{tBen('owners.securePayments.description')}
 							</p>
 						</div>
 
@@ -208,11 +203,10 @@ const breadcrumbItems = [
 								<InfoIcon size={32} className="text-primary" aria-hidden="true" />
 							</div>
 							<h3 class="mb-2 text-xl font-semibold text-text-primary">
-								Análisis e Informes
+								{tBen('owners.analytics.title')}
 							</h3>
 							<p class="text-text-secondary">
-								Accede a métricas detalladas sobre tus reservas, ocupación y rendimiento.
-								Toma decisiones basadas en datos.
+								{tBen('owners.analytics.description')}
 							</p>
 						</div>
 
@@ -224,11 +218,10 @@ const breadcrumbItems = [
 								<UsersIcon size={32} className="text-primary" aria-hidden="true" />
 							</div>
 							<h3 class="mb-2 text-xl font-semibold text-text-primary">
-								Comunidad en Crecimiento
+								{tBen('owners.growingCommunity.title')}
 							</h3>
 							<p class="text-text-secondary">
-								Forma parte de una red en expansión de propietarios y viajeros. Participa en
-								eventos y capacitaciones exclusivas.
+								{tBen('owners.growingCommunity.description')}
 							</p>
 						</div>
 					</div>
@@ -240,24 +233,23 @@ const breadcrumbItems = [
 						class="rounded-lg bg-primary/10 p-8 text-center shadow-sm transition-shadow hover:shadow-md"
 					>
 						<h2 class="mb-4 text-3xl font-semibold text-text-primary">
-							Descubre Nuestros Planes
+							{tBen('plans.heading')}
 						</h2>
 						<p class="mb-8 text-lg leading-relaxed text-text-secondary">
-							Explora los planes y precios diseñados para turistas y propietarios. Encuentra
-							la opción perfecta para ti.
+							{tBen('plans.description')}
 						</p>
 						<div class="flex flex-col gap-4 sm:flex-row sm:justify-center">
 							<a
 								href={`/${locale}/precios-turistas/`}
 								class="inline-block rounded-lg bg-primary px-8 py-3 font-semibold text-white transition-colors hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
 							>
-								Ver precios para turistas
+								{tBen('plans.touristPricing')}
 							</a>
 							<a
 								href={`/${locale}/precios-propietarios/`}
-								class="inline-block rounded-lg border-2 border-primary bg-white px-8 py-3 font-semibold text-primary transition-colors hover:bg-primary hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+								class="inline-block rounded-lg border-2 border-primary bg-surface px-8 py-3 font-semibold text-primary transition-colors hover:bg-primary hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
 							>
-								Ver precios para propietarios
+								{tBen('plans.ownerPricing')}
 							</a>
 						</div>
 					</div>

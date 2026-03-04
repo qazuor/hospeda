@@ -19,9 +19,11 @@ import { ShareButtons } from '../../../components/ui/ShareButtons.client.tsx';
 import BlogPostCard from '../../../components/blog/BlogPostCard.astro';
 import { SUPPORTED_LOCALES, getLocaleFromParams } from '../../../lib/page-helpers';
 import { renderTiptapContent } from '../../../lib/tiptap-renderer';
+import { sanitizeHtml } from '../../../lib/sanitize-html';
 import { postsApi } from '../../../lib/api/endpoints';
 import { fetchAllPages } from '../../../lib/api/client';
 import { toPostCardProps } from '../../../lib/api/transforms';
+import { formatDate, toBcp47Locale } from '@repo/i18n';
 import { t as i18nT } from '../../../lib/i18n';
 
 const { slug } = Astro.params;
@@ -69,7 +71,7 @@ const relatedPosts = allPosts
 /**
  * Render TipTap content to HTML
  */
-const renderedContent = renderTiptapContent({ content: post.content });
+const renderedContent = sanitizeHtml({ html: renderTiptapContent({ content: post.content }) });
 
 /**
  * Localized labels from i18n
@@ -85,14 +87,11 @@ const homeLabel = i18nT({ locale, namespace: 'blog', key: 'detail.home' });
  * Format publication date according to locale
  */
 const publishDate = new Date(post.publishedAt || Date.now());
-const formattedDate = publishDate.toLocaleDateString(
-	locale === 'es' ? 'es-AR' : locale === 'pt' ? 'pt-BR' : 'en-US',
-	{
-		year: 'numeric',
-		month: 'long',
-		day: 'numeric',
-	}
-);
+const formattedDate = formatDate({
+	date: publishDate,
+	locale: toBcp47Locale(locale),
+	options: { year: 'numeric', month: 'long', day: 'numeric' },
+});
 
 /**
  * Breadcrumb navigation items
@@ -153,7 +152,7 @@ const canonicalUrl = new URL(pageUrl, Astro.site).href;
 			</h1>
 
 			<!-- Author info + meta -->
-			<div class="mb-8 flex items-center gap-4 text-gray-600">
+			<div class="mb-8 flex items-center gap-4 text-text-secondary">
 				<img
 					src={post.author?.avatar || '/images/placeholder-avatar.svg'}
 					alt={post.author?.name || 'Anonymous'}
@@ -161,7 +160,7 @@ const canonicalUrl = new URL(pageUrl, Astro.site).href;
 					loading="lazy"
 				/>
 				<div>
-					<p class="font-medium text-gray-900">{post.author?.name || 'Anonymous'}</p>
+					<p class="font-medium text-text">{post.author?.name || 'Anonymous'}</p>
 					<p class="text-sm">
 						{formattedDate} · {post.readingTime || 5}
 						{readingTimeLabel}
@@ -174,7 +173,7 @@ const canonicalUrl = new URL(pageUrl, Astro.site).href;
 
 			<!-- Tags -->
 			<div class="mt-8 border-t pt-6">
-				<h3 class="mb-3 text-sm font-semibold uppercase text-gray-500">
+				<h3 class="mb-3 text-sm font-semibold uppercase text-text-tertiary">
 					{tagsLabel}
 				</h3>
 				<div class="flex flex-wrap gap-2">
@@ -188,7 +187,7 @@ const canonicalUrl = new URL(pageUrl, Astro.site).href;
 
 			<!-- Share -->
 			<div class="mt-6 border-t pt-6">
-				<h3 class="mb-3 text-sm font-semibold uppercase text-gray-500">
+				<h3 class="mb-3 text-sm font-semibold uppercase text-text-tertiary">
 					{shareLabel}
 				</h3>
 				<ShareButtons client:visible url={canonicalUrl} title={post.title} />

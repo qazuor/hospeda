@@ -1,17 +1,34 @@
 ---
-export const prerender = true;
-
 /**
  * 404 Page Not Found error page.
- * Static page with Spanish default locale, minimal design, and home link.
+ * Server-rendered to detect locale from URL path or Accept-Language header.
+ * Falls back to Spanish (default locale).
  */
 import BaseLayout from '../layouts/BaseLayout.astro';
 import SEOHead from '../components/seo/SEOHead.astro';
+import { isValidLocale, parseAcceptLanguage, t } from '../lib/i18n';
+import type { SupportedLocale } from '../lib/i18n';
 
-const title = 'Pagina no encontrada';
-const description =
-	'Lo sentimos, la pagina que buscas no existe o fue movida. Por favor regresa al inicio.';
-const locale = 'es';
+/**
+ * Detect locale from URL path first segment, then Accept-Language header.
+ */
+const pathSegments = Astro.url.pathname.split('/').filter(Boolean);
+const firstSegment = pathSegments[0] ?? '';
+let locale: SupportedLocale = 'es';
+
+if (isValidLocale(firstSegment)) {
+	locale = firstSegment;
+} else {
+	locale = parseAcceptLanguage(Astro.request.headers.get('accept-language'));
+}
+
+const tError = (key: string) => t({ locale, namespace: 'error', key });
+
+const title = tError('404.title');
+const description = tError('404.description');
+const heading = tError('404.heading');
+const message = tError('404.message');
+const goHomeLabel = tError('404.goHome');
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 ---
 
@@ -26,8 +43,8 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 		type="website"
 	/>
 
-	<div class="min-h-screen flex items-center justify-center px-4 py-16 bg-gradient-to-b from-bg to-bg-alt">
-		<div class="max-w-2xl w-full text-center">
+	<div class="flex min-h-screen items-center justify-center bg-gradient-to-b from-bg to-bg-alt px-4 py-16">
+		<div class="w-full max-w-2xl text-center">
 			<!-- Decorative 404 text -->
 			<div class="mb-8">
 				<span class="text-9xl font-bold text-primary opacity-20" aria-hidden="true">404</span>
@@ -70,19 +87,19 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 			</div>
 
 			<!-- Heading -->
-			<h1 class="text-4xl font-bold text-text mb-4">Pagina no encontrada</h1>
+			<h1 class="mb-4 text-4xl font-bold text-text">{heading}</h1>
 
 			<!-- Message -->
-			<p class="text-lg text-text-secondary mb-8 max-w-md mx-auto">
-				Lo sentimos, la pagina que buscas no existe o fue movida.
+			<p class="mx-auto mb-8 max-w-md text-lg text-text-secondary">
+				{message}
 			</p>
 
 			<!-- Home link -->
 			<a
-				href="/es/"
-				class="inline-flex items-center justify-center px-6 py-3 text-base font-semibold text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+				href={`/${locale}/`}
+				class="inline-flex items-center justify-center rounded-lg bg-primary px-6 py-3 text-base font-semibold text-white transition-colors hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
 			>
-				Volver al inicio
+				{goHomeLabel}
 			</a>
 		</div>
 	</div>

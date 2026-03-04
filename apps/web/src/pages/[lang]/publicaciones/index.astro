@@ -13,6 +13,7 @@ import EmptyState from '../../../components/ui/EmptyState.astro';
 import PostErrorState from '../../../components/error/PostErrorState.astro';
 import Pagination from '../../../components/ui/Pagination.astro';
 import BlogPostCard from '../../../components/blog/BlogPostCard.astro';
+import { formatDate, toBcp47Locale } from '@repo/i18n';
 import { getLocaleFromParams, HOME_BREADCRUMB } from '../../../lib/page-helpers';
 import { postsApi } from '../../../lib/api/endpoints';
 import { toPostCardProps } from '../../../lib/api/transforms';
@@ -146,7 +147,7 @@ const postCards = posts.map((post) =>
 											</p>
 											{featuredPost.publishedAt && (
 												<time datetime={featuredPost.publishedAt} class="text-sm text-text-tertiary">
-													{new Date(featuredPost.publishedAt).toLocaleDateString(locale)}
+													{formatDate({ date: new Date(featuredPost.publishedAt), locale: toBcp47Locale(locale) })}
 												</time>
 											)}
 										</div>

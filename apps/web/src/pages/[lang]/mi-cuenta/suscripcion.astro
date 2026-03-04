@@ -1,6 +1,7 @@
 ---
 /**
- * Subscription page - displays current plan and billing information.
+ * Subscription page - displays current plan, billing information,
+ * usage overview, add-ons, invoices, and payment history.
  * Protected page under /mi-cuenta/ requiring authentication.
  * Validates locale parameter and redirects invalid locales to Spanish (default).
  */
@@ -10,7 +11,7 @@ import Breadcrumb from '../../../components/ui/Breadcrumb.astro';
 import Container from '../../../components/ui/Container.astro';
 import { getLocaleFromParams, HOME_BREADCRUMB } from '../../../lib/page-helpers';
 import { t } from '../../../lib/i18n';
-import { SubscriptionCard } from '../../../components/account/SubscriptionCard.client';
+import { SubscriptionDashboard } from '../../../components/account/SubscriptionDashboard.client';
 
 const locale = getLocaleFromParams(Astro.params);
 if (!locale) return Astro.redirect('/es/');
@@ -37,11 +38,6 @@ const breadcrumbItems = [
 	{ label: accountLabel, href: `/${locale}/mi-cuenta/` },
 	{ label: title, href: `/${locale}/mi-cuenta/suscripcion/` },
 ];
-
-/**
- * Subscription data will be enhanced client-side via API when billing is available.
- * For now, shows "Free Plan" as the default.
- */
 ---
 
 <BaseLayout title={title} description={description} locale={locale}>
@@ -68,10 +64,9 @@ const breadcrumbItems = [
 				</p>
 			</div>
 
-			<SubscriptionCard
-				client:load
+			<SubscriptionDashboard
+				client:idle
 				locale={locale}
-				upgradeHref={`/${locale}/precios/turistas/`}
 			/>
 		</div>
 	</Container>

@@ -28,6 +28,7 @@ import Section from '../../../components/ui/Section.astro';
 import Badge from '../../../components/ui/Badge.astro';
 import Breadcrumb from '../../../components/ui/Breadcrumb.astro';
 import SEOHead from '../../../components/seo/SEOHead.astro';
+import PlaceJsonLd from '../../../components/seo/PlaceJsonLd.astro';
 import AccommodationCardFeatured from '../../../components/accommodation/AccommodationCardFeatured.astro';
 import EventCard from '../../../components/event/EventCard.astro';
 import EmptyState from '../../../components/ui/EmptyState.astro';
@@ -36,8 +37,9 @@ import { ShareButtons } from '../../../components/ui/ShareButtons.client.tsx';
 import FavoriteButtonIsland from '../../../components/ui/FavoriteButtonIsland.astro';
 import { MapView } from '../../../components/map/MapView.client.tsx';
 import { SUPPORTED_LOCALES, getLocaleFromParams } from '../../../lib/page-helpers';
-import { t as i18nT } from '../../../lib/i18n';
+import { t as i18nT, tPlural as i18nTPlural } from '../../../lib/i18n';
 import { renderTiptapContent } from '../../../lib/tiptap-renderer';
+import { sanitizeHtml } from '../../../lib/sanitize-html';
 import { destinationsApi, accommodationsApi, eventsApi } from '../../../lib/api/endpoints';
 import { fetchAllPages } from '../../../lib/api/client';
 import { toAccommodationCardProps, toEventCardProps } from '../../../lib/api/transforms';
@@ -151,11 +153,13 @@ if (destinationId) {
 const descriptionContent = destination.description || destination.summary || { type: 'doc', content: [] };
 const howToGetThereContent = destination.howToGetThere || { type: 'doc', content: [] };
 
-const renderedDescription = renderTiptapContent({ content: descriptionContent });
-const renderedHowToGetThere = renderTiptapContent({ content: howToGetThereContent });
+const renderedDescription = sanitizeHtml({ html: renderTiptapContent({ content: descriptionContent }) });
+const renderedHowToGetThere = sanitizeHtml({ html: renderTiptapContent({ content: howToGetThereContent }) });
 
 /** Helper to translate destination detail page keys */
 const tDetail = (key: string) => i18nT({ locale, namespace: 'destinations', key: `detailPage.${key}` });
+/** Helper for pluralized destination detail page keys */
+const tDetailPlural = (key: string, count: number) => i18nTPlural({ locale, namespace: 'destinations', key: `detailPage.${key}`, count });
 
 /**
  * Extract data from destination with fallbacks
@@ -220,9 +224,21 @@ const mapMarkers = destinationLocation.lat && destinationLocation.lng
   <SEOHead
     slot="head"
     title={destinationName}
-    description={`Descubre ${destinationName} en ${destinationProvince}. Guía completa con alojamientos, eventos, atracciones y cómo llegar.`}
+    description={tDetail('seoDescription').replace('{name}', destinationName).replace('{province}', destinationProvince)}
     image={destinationHeroImage}
     locale={locale}
+  />
+  <PlaceJsonLd
+    slot="head"
+    name={destinationName}
+    description={tDetail('seoDescription').replace('{name}', destinationName).replace('{province}', destinationProvince)}
+    url={new URL(pageUrl, Astro.site).href}
+    image={destinationHeroImage}
+    address={{
+      addressLocality: destinationName,
+      addressRegion: destinationProvince || undefined,
+      addressCountry: 'AR',
+    }}
   />
 
   <Container>
@@ -251,7 +267,7 @@ const mapMarkers = destinationLocation.lat && destinationLocation.lng
         entityType="destination"
         entityName={destinationName}
       >
-        <div slot="fallback" class="h-10 w-10 animate-pulse rounded-full bg-gray-200" />
+        <div slot="fallback" class="h-10 w-10 animate-pulse rounded-full bg-surface-alt" />
       </FavoriteButtonIsland>
       <ShareButtons
         client:visible
@@ -356,7 +372,7 @@ const mapMarkers = destinationLocation.lat && destinationLocation.lng
           <h3 class="text-lg font-semibold text-text">{tDetail('accommodationsTitle')}</h3>
           <p class="mt-2 text-3xl font-bold text-primary">{accommodationCount}</p>
           <p class="mt-1 text-sm text-text-tertiary">
-            {accommodationCount === 1 ? 'alojamiento disponible' : 'alojamientos disponibles'}
+            {tDetailPlural('accommodationCount', accommodationCount)}
           </p>
           <a
             href={accommodationsListUrl}
@@ -371,7 +387,7 @@ const mapMarkers = destinationLocation.lat && destinationLocation.lng
           <h3 class="text-lg font-semibold text-text">{tDetail('eventsTitle')}</h3>
           <p class="mt-2 text-3xl font-bold text-primary">{eventCount}</p>
           <p class="mt-1 text-sm text-text-tertiary">
-            {eventCount === 1 ? 'evento próximo' : 'eventos próximos'}
+            {tDetailPlural('eventCount', eventCount)}
           </p>
           <a
             href={eventsListUrl}

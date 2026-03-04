@@ -22,6 +22,7 @@ import { CalendarIcon, ClockIcon, LocationIcon, ImageIcon } from '@repo/icons';
 import { ShareButtons } from '../../../components/ui/ShareButtons.client';
 import { toEventCardProps } from '../../../lib/api/transforms';
 import { extractFeaturedImageUrl } from '../../../lib/media';
+import { formatDate as i18nFormatDate, toBcp47Locale } from '@repo/i18n';
 import { t } from '../../../lib/i18n';
 
 /**
@@ -85,23 +86,23 @@ const metaDescription = eventDescription.substring(0, 155) + (eventDescription.l
 /**
  * Localized events breadcrumb label
  */
-const eventsLabel = t({ locale, namespace: 'event', key: 'breadcrumb.events' });
+const eventsLabel = t({ locale, namespace: 'events', key: 'breadcrumb.events' });
 
 /**
  * Localized section labels
  */
-const labelCategory = t({ locale, namespace: 'event', key: 'detail.category' });
-const labelDate = t({ locale, namespace: 'event', key: 'detail.date' });
-const labelTime = t({ locale, namespace: 'event', key: 'detail.time' });
-const labelLocation = t({ locale, namespace: 'event', key: 'detail.location' });
-const labelDescription = t({ locale, namespace: 'event', key: 'detail.description' });
-const labelAgenda = t({ locale, namespace: 'event', key: 'detail.agenda' });
-const labelPricing = t({ locale, namespace: 'event', key: 'detail.pricing' });
-const labelOrganizer = t({ locale, namespace: 'event', key: 'detail.organizer' });
-const labelGetTickets = t({ locale, namespace: 'event', key: 'detail.getTickets' });
-const labelRelatedEvents = t({ locale, namespace: 'event', key: 'detail.relatedEvents' });
-const labelShareEvent = t({ locale, namespace: 'event', key: 'detail.shareEvent' });
-const labelPastEvent = t({ locale, namespace: 'event', key: 'detail.pastEvent' });
+const labelCategory = t({ locale, namespace: 'events', key: 'detail.category' });
+const labelDate = t({ locale, namespace: 'events', key: 'detail.date' });
+const labelTime = t({ locale, namespace: 'events', key: 'detail.time' });
+const labelLocation = t({ locale, namespace: 'events', key: 'detail.location' });
+const labelDescription = t({ locale, namespace: 'events', key: 'detail.description' });
+const labelAgenda = t({ locale, namespace: 'events', key: 'detail.agenda' });
+const labelPricing = t({ locale, namespace: 'events', key: 'detail.pricing' });
+const labelOrganizer = t({ locale, namespace: 'events', key: 'detail.organizer' });
+const labelGetTickets = t({ locale, namespace: 'events', key: 'detail.getTickets' });
+const labelRelatedEvents = t({ locale, namespace: 'events', key: 'detail.relatedEvents' });
+const labelShareEvent = t({ locale, namespace: 'events', key: 'detail.shareEvent' });
+const labelPastEvent = t({ locale, namespace: 'events', key: 'detail.pastEvent' });
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
@@ -127,27 +128,28 @@ const relatedEventCards = relatedEventsRaw.map((evt) =>
 	toEventCardProps({ item: evt as Record<string, unknown> })
 );
 
+/** BCP 47 locale for Intl formatting */
+const bcp47Locale = toBcp47Locale(locale);
+
 /**
  * Format date for display
  */
 const formatDate = (dateString: string): string => {
-	const date = new Date(dateString);
-	const options: Intl.DateTimeFormatOptions = {
-		year: 'numeric',
-		month: 'long',
-		day: 'numeric',
-	};
-	return date.toLocaleDateString(locale === 'es' ? 'es-AR' : locale === 'pt' ? 'pt-BR' : 'en-US', options);
+	return i18nFormatDate({
+		date: dateString,
+		locale: bcp47Locale,
+		options: { year: 'numeric', month: 'long', day: 'numeric' },
+	});
 };
 
 /**
  * Format time for display
  */
 const formatTime = (dateString: string): string => {
-	const date = new Date(dateString);
-	return date.toLocaleTimeString(locale === 'es' ? 'es-AR' : locale === 'pt' ? 'pt-BR' : 'en-US', {
-		hour: '2-digit',
-		minute: '2-digit',
+	return i18nFormatDate({
+		date: dateString,
+		locale: bcp47Locale,
+		options: { hour: '2-digit', minute: '2-digit' },
 	});
 };
 ---
@@ -187,7 +189,7 @@ const formatTime = (dateString: string): string => {
 							{event.category}
 						</span>
 						{isPastEvent && (
-							<span id="past-event-badge" class="inline-flex items-center rounded-full bg-gray-500/10 px-3 py-1 text-sm font-semibold text-gray-600">
+							<span id="past-event-badge" class="inline-flex items-center rounded-full bg-text-tertiary/10 px-3 py-1 text-sm font-semibold text-text-secondary">
 								{labelPastEvent}
 							</span>
 						)}
@@ -233,7 +235,7 @@ const formatTime = (dateString: string): string => {
 				<!-- Event Image Area -->
 				<article id="event-image" class="mb-12">
 					{eventImageUrl ? (
-						<div class="aspect-video w-full overflow-hidden rounded-lg bg-gray-200">
+						<div class="aspect-video w-full overflow-hidden rounded-lg bg-surface-alt">
 							<img
 								src={eventImageUrl}
 								alt={event.name}
@@ -243,7 +245,7 @@ const formatTime = (dateString: string): string => {
 							/>
 						</div>
 					) : (
-						<div class="aspect-video w-full overflow-hidden rounded-lg bg-gray-200">
+						<div class="aspect-video w-full overflow-hidden rounded-lg bg-surface-alt">
 							<div class="flex h-full items-center justify-center text-text-tertiary">
 								<ImageIcon size={64} weight="regular" aria-hidden="true" />
 							</div>
